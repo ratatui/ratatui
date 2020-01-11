@@ -33,6 +33,13 @@ pub struct Sparkline<'a> {
     max: Option<u64>,
     /// A set of bar symbols used to represent the give data
     bar_set: symbols::bar::Set,
+    // The direction to render the sparkine, either from left to right, or from right to left
+    direction: RenderDirection,
+}
+
+pub enum RenderDirection {
+    LTR,
+    RTL,
 }
 
 impl<'a> Default for Sparkline<'a> {
@@ -43,6 +50,7 @@ impl<'a> Default for Sparkline<'a> {
             data: &[],
             max: None,
             bar_set: symbols::bar::NINE_LEVELS,
+            direction: RenderDirection::LTR,
         }
     }
 }
@@ -70,6 +78,11 @@ impl<'a> Sparkline<'a> {
 
     pub fn bar_set(mut self, bar_set: symbols::bar::Set) -> Sparkline<'a> {
         self.bar_set = bar_set;
+        self
+    }
+
+    pub fn direction(mut self, direction: RenderDirection) -> Sparkline<'a> {
+        self.direction = direction;
         self
     }
 }
@@ -119,7 +132,11 @@ impl<'a> Widget for Sparkline<'a> {
                     7 => self.bar_set.seven_eighths,
                     _ => self.bar_set.full,
                 };
-                buf.get_mut(spark_area.left() + i as u16, spark_area.top() + j)
+                let x = match self.direction {
+                    RenderDirection::LTR => spark_area.left() + i as u16,
+                    RenderDirection::RTL => spark_area.right() - i as u16 - 1,
+                };
+                buf.get_mut(x, spark_area.top() + j)
                     .set_symbol(symbol)
                     .set_style(self.style);
 
