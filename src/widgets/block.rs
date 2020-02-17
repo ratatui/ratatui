@@ -9,6 +9,18 @@ pub enum BorderType {
     Plain,
     Rounded,
     Double,
+    Thick,
+}
+
+impl BorderType {
+    pub fn line_symbols(border_type: BorderType) -> line::Set {
+        match border_type {
+            BorderType::Plain => line::NORMAL,
+            BorderType::Rounded => line::ROUNDED,
+            BorderType::Double => line::DOUBLE,
+            BorderType::Thick => line::THICK,
+        }
+    }
 }
 
 /// Base widget to be used with all upper level ones. It may be used to display a box border around
@@ -120,50 +132,35 @@ impl<'a> Widget for Block<'a> {
 
         buf.set_background(area, self.style.bg);
 
+        let symbols = BorderType::line_symbols(self.border_type);
         // Sides
         if self.borders.intersects(Borders::LEFT) {
-            let symbol = match self.border_type {
-                BorderType::Double => line::DOUBLE_VERTICAL,
-                _ => line::VERTICAL,
-            };
             for y in area.top()..area.bottom() {
                 buf.get_mut(area.left(), y)
-                    .set_symbol(symbol)
+                    .set_symbol(symbols.vertical)
                     .set_style(self.border_style);
             }
         }
         if self.borders.intersects(Borders::TOP) {
-            let symbol = match self.border_type {
-                BorderType::Double => line::DOUBLE_HORIZONTAL,
-                _ => line::HORIZONTAL,
-            };
             for x in area.left()..area.right() {
                 buf.get_mut(x, area.top())
-                    .set_symbol(symbol)
+                    .set_symbol(symbols.horizontal)
                     .set_style(self.border_style);
             }
         }
         if self.borders.intersects(Borders::RIGHT) {
             let x = area.right() - 1;
-            let symbol = match self.border_type {
-                BorderType::Double => line::DOUBLE_VERTICAL,
-                _ => line::VERTICAL,
-            };
             for y in area.top()..area.bottom() {
                 buf.get_mut(x, y)
-                    .set_symbol(symbol)
+                    .set_symbol(symbols.vertical)
                     .set_style(self.border_style);
             }
         }
         if self.borders.intersects(Borders::BOTTOM) {
             let y = area.bottom() - 1;
-            let symbol = match self.border_type {
-                BorderType::Double => line::DOUBLE_HORIZONTAL,
-                _ => line::HORIZONTAL,
-            };
             for x in area.left()..area.right() {
                 buf.get_mut(x, y)
-                    .set_symbol(symbol)
+                    .set_symbol(symbols.horizontal)
                     .set_style(self.border_style);
             }
         }
@@ -171,46 +168,22 @@ impl<'a> Widget for Block<'a> {
         // Corners
         if self.borders.contains(Borders::LEFT | Borders::TOP) {
             buf.get_mut(area.left(), area.top())
-                .set_symbol({
-                    match self.border_type {
-                        BorderType::Double => line::DOUBLE_TOP_LEFT,
-                        BorderType::Rounded => line::ROUNDED_TOP_LEFT,
-                        _ => line::TOP_LEFT,
-                    }
-                })
+                .set_symbol(symbols.top_left)
                 .set_style(self.border_style);
         }
         if self.borders.contains(Borders::RIGHT | Borders::TOP) {
             buf.get_mut(area.right() - 1, area.top())
-                .set_symbol({
-                    match self.border_type {
-                        BorderType::Double => line::DOUBLE_TOP_RIGHT,
-                        BorderType::Rounded => line::ROUNDED_TOP_RIGHT,
-                        _ => line::TOP_RIGHT,
-                    }
-                })
+                .set_symbol(symbols.top_right)
                 .set_style(self.border_style);
         }
         if self.borders.contains(Borders::LEFT | Borders::BOTTOM) {
             buf.get_mut(area.left(), area.bottom() - 1)
-                .set_symbol({
-                    match self.border_type {
-                        BorderType::Double => line::DOUBLE_BOTTOM_LEFT,
-                        BorderType::Rounded => line::ROUNDED_BOTTOM_LEFT,
-                        _ => line::BOTTOM_LEFT,
-                    }
-                })
+                .set_symbol(symbols.bottom_left)
                 .set_style(self.border_style);
         }
         if self.borders.contains(Borders::RIGHT | Borders::BOTTOM) {
             buf.get_mut(area.right() - 1, area.bottom() - 1)
-                .set_symbol({
-                    match self.border_type {
-                        BorderType::Double => line::DOUBLE_BOTTOM_RIGHT,
-                        BorderType::Rounded => line::ROUNDED_BOTTOM_RIGHT,
-                        _ => line::BOTTOM_RIGHT,
-                    }
-                })
+                .set_symbol(symbols.bottom_right)
                 .set_style(self.border_style);
         }
 
