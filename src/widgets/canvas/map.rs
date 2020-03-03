@@ -1,9 +1,12 @@
-use crate::style::Color;
-use crate::widgets::canvas::points::PointsIterator;
-use crate::widgets::canvas::world::{WORLD_HIGH_RESOLUTION, WORLD_LOW_RESOLUTION};
-use crate::widgets::canvas::Shape;
+use crate::{
+    style::Color,
+    widgets::canvas::{
+        world::{WORLD_HIGH_RESOLUTION, WORLD_LOW_RESOLUTION},
+        Painter, Shape,
+    },
+};
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum MapResolution {
     Low,
     High,
@@ -19,6 +22,7 @@ impl MapResolution {
 }
 
 /// Shape to draw a world map with the given resolution and color
+#[derive(Debug, Clone)]
 pub struct Map {
     pub resolution: MapResolution,
     pub color: Color,
@@ -33,19 +37,12 @@ impl Default for Map {
     }
 }
 
-impl<'a> Shape<'a> for Map {
-    fn color(&self) -> Color {
-        self.color
-    }
-    fn points(&'a self) -> Box<dyn Iterator<Item = (f64, f64)> + 'a> {
-        Box::new(self.into_iter())
-    }
-}
-
-impl<'a> IntoIterator for &'a Map {
-    type Item = (f64, f64);
-    type IntoIter = PointsIterator<'a>;
-    fn into_iter(self) -> Self::IntoIter {
-        PointsIterator::from(self.resolution.data())
+impl Shape for Map {
+    fn draw(&self, painter: &mut Painter) {
+        for (x, y) in self.resolution.data() {
+            if let Some((x, y)) = painter.get_point(*x, *y) {
+                painter.paint(x, y, self.color);
+            }
+        }
     }
 }

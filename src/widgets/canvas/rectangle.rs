@@ -1,54 +1,52 @@
-use crate::layout::Rect;
-use crate::style::Color;
-use crate::widgets::canvas::{Line, Shape};
-use itertools::Itertools;
+use crate::{
+    style::Color,
+    widgets::canvas::{Line, Painter, Shape},
+};
 
 /// Shape to draw a rectangle from a `Rect` with the given color
+#[derive(Debug, Clone)]
 pub struct Rectangle {
-    pub rect: Rect,
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
     pub color: Color,
 }
 
-impl<'a> Shape<'a> for Rectangle {
-    fn color(&self) -> Color {
-        self.color
-    }
-
-    fn points(&'a self) -> Box<dyn Iterator<Item = (f64, f64)> + 'a> {
-        let left_line = Line {
-            x1: f64::from(self.rect.x),
-            y1: f64::from(self.rect.y),
-            x2: f64::from(self.rect.x),
-            y2: f64::from(self.rect.y + self.rect.height),
-            color: self.color,
-        };
-        let top_line = Line {
-            x1: f64::from(self.rect.x),
-            y1: f64::from(self.rect.y + self.rect.height),
-            x2: f64::from(self.rect.x + self.rect.width),
-            y2: f64::from(self.rect.y + self.rect.height),
-            color: self.color,
-        };
-        let right_line = Line {
-            x1: f64::from(self.rect.x + self.rect.width),
-            y1: f64::from(self.rect.y),
-            x2: f64::from(self.rect.x + self.rect.width),
-            y2: f64::from(self.rect.y + self.rect.height),
-            color: self.color,
-        };
-        let bottom_line = Line {
-            x1: f64::from(self.rect.x),
-            y1: f64::from(self.rect.y),
-            x2: f64::from(self.rect.x + self.rect.width),
-            y2: f64::from(self.rect.y),
-            color: self.color,
-        };
-        Box::new(
-            left_line.into_iter().merge(
-                top_line
-                    .into_iter()
-                    .merge(right_line.into_iter().merge(bottom_line.into_iter())),
-            ),
-        )
+impl Shape for Rectangle {
+    fn draw(&self, painter: &mut Painter) {
+        let lines: [Line; 4] = [
+            Line {
+                x1: self.x,
+                y1: self.y,
+                x2: self.x,
+                y2: self.y + self.height,
+                color: self.color,
+            },
+            Line {
+                x1: self.x,
+                y1: self.y + self.height,
+                x2: self.x + self.width,
+                y2: self.y + self.height,
+                color: self.color,
+            },
+            Line {
+                x1: self.x + self.width,
+                y1: self.y,
+                x2: self.x + self.width,
+                y2: self.y + self.height,
+                color: self.color,
+            },
+            Line {
+                x1: self.x,
+                y1: self.y,
+                x2: self.x + self.width,
+                y2: self.y,
+                color: self.color,
+            },
+        ];
+        for line in &lines {
+            line.draw(painter);
+        }
     }
 }

@@ -47,8 +47,8 @@ impl Constraint {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Margin {
-    vertical: u16,
-    horizontal: u16,
+    pub vertical: u16,
+    pub horizontal: u16,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -58,7 +58,6 @@ pub enum Alignment {
     Right,
 }
 
-// TODO: enforce constraints size once const generics has landed
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Layout {
     direction: Direction,

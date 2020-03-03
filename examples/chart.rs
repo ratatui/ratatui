@@ -1,19 +1,30 @@
 #[allow(dead_code)]
 mod util;
 
+use crate::util::{
+    event::{Event, Events},
+    SinSignal,
+};
 use std::io;
+use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
+use tui::{
+    backend::TermionBackend,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Modifier, Style},
+    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Marker},
+    Terminal,
+};
 
-use termion::event::Key;
-use termion::input::MouseTerminal;
-use termion::raw::IntoRawMode;
-use termion::screen::AlternateScreen;
-use tui::backend::TermionBackend;
-use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Axis, Block, Borders, Chart, Dataset, Marker};
-use tui::Terminal;
-
-use crate::util::event::{Event, Events};
-use crate::util::SinSignal;
+const DATA: [(f64, f64); 5] = [(0.0, 0.0), (1.0, 1.0), (2.0, 2.0), (3.0, 3.0), (4.0, 4.0)];
+const DATA2: [(f64, f64); 7] = [
+    (0.0, 0.0),
+    (10.0, 1.0),
+    (20.0, 0.5),
+    (30.0, 1.5),
+    (40.0, 1.0),
+    (50.0, 2.5),
+    (60.0, 3.0),
+];
 
 struct App {
     signal1: SinSignal,
@@ -69,6 +80,17 @@ fn main() -> Result<(), failure::Error> {
     loop {
         terminal.draw(|mut f| {
             let size = f.size();
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(
+                    [
+                        Constraint::Ratio(1, 3),
+                        Constraint::Ratio(1, 3),
+                        Constraint::Ratio(1, 3),
+                    ]
+                    .as_ref(),
+                )
+                .split(size);
             let x_labels = [
                 format!("{}", app.window[0]),
                 format!("{}", (app.window[0] + app.window[1]) / 2.0),
@@ -89,7 +111,7 @@ fn main() -> Result<(), failure::Error> {
             let chart = Chart::default()
                 .block(
                     Block::default()
-                        .title("Chart")
+                        .title("Chart 1")
                         .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
                         .borders(Borders::ALL),
                 )
@@ -110,7 +132,71 @@ fn main() -> Result<(), failure::Error> {
                         .labels(&["-20", "0", "20"]),
                 )
                 .datasets(&datasets);
-            f.render_widget(chart, size);
+            f.render_widget(chart, chunks[0]);
+
+            let datasets = [Dataset::default()
+                .name("data")
+                .marker(Marker::Braille)
+                .style(Style::default().fg(Color::Yellow))
+                .graph_type(GraphType::Line)
+                .data(&DATA)];
+            let chart = Chart::default()
+                .block(
+                    Block::default()
+                        .title("Chart 2")
+                        .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
+                        .borders(Borders::ALL),
+                )
+                .x_axis(
+                    Axis::default()
+                        .title("X Axis")
+                        .style(Style::default().fg(Color::Gray))
+                        .labels_style(Style::default().modifier(Modifier::ITALIC))
+                        .bounds([0.0, 5.0])
+                        .labels(&["0", "2.5", "5.0"]),
+                )
+                .y_axis(
+                    Axis::default()
+                        .title("Y Axis")
+                        .style(Style::default().fg(Color::Gray))
+                        .labels_style(Style::default().modifier(Modifier::ITALIC))
+                        .bounds([0.0, 5.0])
+                        .labels(&["0", "2.5", "5.0"]),
+                )
+                .datasets(&datasets);
+            f.render_widget(chart, chunks[1]);
+
+            let datasets = [Dataset::default()
+                .name("data")
+                .marker(Marker::Braille)
+                .style(Style::default().fg(Color::Yellow))
+                .graph_type(GraphType::Line)
+                .data(&DATA2)];
+            let chart = Chart::default()
+                .block(
+                    Block::default()
+                        .title("Chart 3")
+                        .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
+                        .borders(Borders::ALL),
+                )
+                .x_axis(
+                    Axis::default()
+                        .title("X Axis")
+                        .style(Style::default().fg(Color::Gray))
+                        .labels_style(Style::default().modifier(Modifier::ITALIC))
+                        .bounds([0.0, 50.0])
+                        .labels(&["0", "25", "50"]),
+                )
+                .y_axis(
+                    Axis::default()
+                        .title("Y Axis")
+                        .style(Style::default().fg(Color::Gray))
+                        .labels_style(Style::default().modifier(Modifier::ITALIC))
+                        .bounds([0.0, 5.0])
+                        .labels(&["0", "2.5", "5"]),
+                )
+                .datasets(&datasets);
+            f.render_widget(chart, chunks[2]);
         })?;
 
         match events.next()? {

@@ -1,13 +1,15 @@
+use crate::{
+    buffer::Buffer,
+    layout::{Constraint, Rect},
+    style::Style,
+    symbols,
+    widgets::{
+        canvas::{Canvas, Line, Points},
+        Block, Borders, Widget,
+    },
+};
 use std::{borrow::Cow, cmp::max};
-
 use unicode_width::UnicodeWidthStr;
-
-use crate::buffer::Buffer;
-use crate::layout::{Constraint, Rect};
-use crate::style::Style;
-use crate::symbols;
-use crate::widgets::canvas::{Canvas, Line, Points};
-use crate::widgets::{Block, Borders, Widget};
 
 /// An X or Y axis for the chart widget
 pub struct Axis<'a, L>

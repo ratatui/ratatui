@@ -20,10 +20,10 @@ use crate::util::event::{Config, Event, Events};
 struct App {
     x: f64,
     y: f64,
-    ball: Rect,
+    ball: Rectangle,
     playground: Rect,
-    vx: u16,
-    vy: u16,
+    vx: f64,
+    vy: f64,
     dir_x: bool,
     dir_y: bool,
 }
@@ -33,21 +33,29 @@ impl App {
         App {
             x: 0.0,
             y: 0.0,
-            ball: Rect::new(10, 30, 10, 10),
+            ball: Rectangle {
+                x: 10.0,
+                y: 30.0,
+                width: 10.0,
+                height: 10.0,
+                color: Color::Yellow,
+            },
             playground: Rect::new(10, 10, 100, 100),
-            vx: 1,
-            vy: 1,
+            vx: 1.0,
+            vy: 1.0,
             dir_x: true,
             dir_y: true,
         }
     }
 
     fn update(&mut self) {
-        if self.ball.left() < self.playground.left() || self.ball.right() > self.playground.right()
+        if self.ball.x < self.playground.left() as f64
+            || self.ball.x + self.ball.width > self.playground.right() as f64
         {
             self.dir_x = !self.dir_x;
         }
-        if self.ball.top() < self.playground.top() || self.ball.bottom() > self.playground.bottom()
+        if self.ball.y < self.playground.top() as f64
+            || self.ball.y + self.ball.height > self.playground.bottom() as f64
         {
             self.dir_y = !self.dir_y;
         }
@@ -77,7 +85,7 @@ fn main() -> Result<(), failure::Error> {
 
     // Setup event handlers
     let config = Config {
-        tick_rate: Duration::from_millis(100),
+        tick_rate: Duration::from_millis(250),
         ..Default::default()
     };
     let events = Events::with_config(config);
@@ -106,10 +114,7 @@ fn main() -> Result<(), failure::Error> {
             let canvas = Canvas::default()
                 .block(Block::default().borders(Borders::ALL).title("Pong"))
                 .paint(|ctx| {
-                    ctx.draw(&Rectangle {
-                        rect: app.ball,
-                        color: Color::Yellow,
-                    });
+                    ctx.draw(&app.ball);
                 })
                 .x_bounds([10.0, 110.0])
                 .y_bounds([10.0, 110.0]);

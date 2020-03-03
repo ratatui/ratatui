@@ -259,12 +259,10 @@ where
             });
             ctx.layer();
             ctx.draw(&Rectangle {
-                rect: Rect {
-                    x: 0,
-                    y: 30,
-                    width: 10,
-                    height: 10,
-                },
+                x: 0.0,
+                y: 30.0,
+                width: 10.0,
+                height: 10.0,
                 color: Color::Yellow,
             });
             for (i, s1) in app.servers.iter().enumerate() {
