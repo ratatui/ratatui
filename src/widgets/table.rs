@@ -12,10 +12,10 @@ use crate::style::Style;
 use crate::widgets::{Block, Widget};
 
 /// Holds data to be displayed in a Table widget
-pub enum Row<D, I>
+pub enum Row<D>
 where
-    D: Iterator<Item = I>,
-    I: Display,
+    D: Iterator,
+    D::Item: Display,
 {
     Data(D),
     StyledData(D, Style),
@@ -45,14 +45,7 @@ where
 ///     .style(Style::default().fg(Color::White))
 ///     .column_spacing(1);
 /// ```
-pub struct Table<'a, T, H, I, D, R>
-where
-    T: Display,
-    H: Iterator<Item = T>,
-    I: Display,
-    D: Iterator<Item = I>,
-    R: Iterator<Item = Row<D, I>>,
-{
+pub struct Table<'a, H, R> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,
     /// Base style for the widget
@@ -71,15 +64,12 @@ where
     rows: R,
 }
 
-impl<'a, T, H, I, D, R> Default for Table<'a, T, H, I, D, R>
+impl<'a, H, R> Default for Table<'a, H, R>
 where
-    T: Display,
-    H: Iterator<Item = T> + Default,
-    I: Display,
-    D: Iterator<Item = I>,
-    R: Iterator<Item = Row<D, I>> + Default,
+    H: Iterator + Default,
+    R: Iterator + Default,
 {
-    fn default() -> Table<'a, T, H, I, D, R> {
+    fn default() -> Table<'a, H, R> {
         Table {
             block: None,
             style: Style::default(),
@@ -92,20 +82,18 @@ where
         }
     }
 }
-
-impl<'a, T, H, I, D, R> Table<'a, T, H, I, D, R>
+impl<'a, H, D, R> Table<'a, H, R>
 where
-    T: Display,
-    H: Iterator<Item = T>,
-    I: Display,
-    D: Iterator<Item = I>,
-    R: Iterator<Item = Row<D, I>>,
+    H: Iterator,
+    D: Iterator,
+    D::Item: Display,
+    R: Iterator<Item = Row<D>>,
 {
-    pub fn new(header: H, rows: R) -> Table<'a, T, H, I, D, R> {
+    pub fn new(header: H, rows: R) -> Table<'a, H, R> {
         Table {
             block: None,
             style: Style::default(),
-            header,
+            header: header.into_iter(),
             header_style: Style::default(),
             widths: &[],
             rows,
@@ -113,25 +101,25 @@ where
             header_gap: 1,
         }
     }
-    pub fn block(mut self, block: Block<'a>) -> Table<'a, T, H, I, D, R> {
+    pub fn block(mut self, block: Block<'a>) -> Table<'a, H, R> {
         self.block = Some(block);
         self
     }
 
-    pub fn header<II>(mut self, header: II) -> Table<'a, T, H, I, D, R>
+    pub fn header<II>(mut self, header: II) -> Table<'a, H, R>
     where
-        II: IntoIterator<Item = T, IntoIter = H>,
+        II: IntoIterator<Item = H::Item, IntoIter = H>,
     {
         self.header = header.into_iter();
         self
     }
 
-    pub fn header_style(mut self, style: Style) -> Table<'a, T, H, I, D, R> {
+    pub fn header_style(mut self, style: Style) -> Table<'a, H, R> {
         self.header_style = style;
         self
     }
 
-    pub fn widths(mut self, widths: &'a [Constraint]) -> Table<'a, T, H, I, D, R> {
+    pub fn widths(mut self, widths: &'a [Constraint]) -> Table<'a, H, R> {
         let between_0_and_100 = |&w| match w {
             Constraint::Percentage(p) => p <= 100,
             _ => true,
@@ -144,37 +132,37 @@ where
         self
     }
 
-    pub fn rows<II>(mut self, rows: II) -> Table<'a, T, H, I, D, R>
+    pub fn rows<II>(mut self, rows: II) -> Table<'a, H, R>
     where
-        II: IntoIterator<Item = Row<D, I>, IntoIter = R>,
+        II: IntoIterator<Item = Row<D>, IntoIter = R>,
     {
         self.rows = rows.into_iter();
         self
     }
 
-    pub fn style(mut self, style: Style) -> Table<'a, T, H, I, D, R> {
+    pub fn style(mut self, style: Style) -> Table<'a, H, R> {
         self.style = style;
         self
     }
 
-    pub fn column_spacing(mut self, spacing: u16) -> Table<'a, T, H, I, D, R> {
+    pub fn column_spacing(mut self, spacing: u16) -> Table<'a, H, R> {
         self.column_spacing = spacing;
         self
     }
 
-    pub fn header_gap(mut self, gap: u16) -> Table<'a, T, H, I, D, R> {
+    pub fn header_gap(mut self, gap: u16) -> Table<'a, H, R> {
         self.header_gap = gap;
         self
     }
 }
 
-impl<'a, T, H, I, D, R> Widget for Table<'a, T, H, I, D, R>
+impl<'a, H, D, R> Widget for Table<'a, H, R>
 where
-    T: Display,
-    H: Iterator<Item = T>,
-    I: Display,
-    D: Iterator<Item = I>,
-    R: Iterator<Item = Row<D, I>>,
+    H: Iterator,
+    H::Item: Display,
+    D: Iterator,
+    D::Item: Display,
+    R: Iterator<Item = Row<D>>,
 {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
         // Render block if necessary and get the drawing area
