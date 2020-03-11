@@ -87,6 +87,7 @@ You can run all examples by running `make run-examples`.
 * [ytop](https://github.com/cjbassi/ytop)
 * [zenith](https://github.com/bvaisvil/zenith)
 * [bottom](https://github.com/ClementTsang/bottom)
+* [oha](https://github.com/hatoo/oha)
 
 ### Alternatives
 
