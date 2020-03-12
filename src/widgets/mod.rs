@@ -20,7 +20,7 @@ pub use self::gauge::Gauge;
 pub use self::list::{List, ListState};
 pub use self::paragraph::Paragraph;
 pub use self::sparkline::Sparkline;
-pub use self::table::{Row, Table};
+pub use self::table::{Row, Table, TableState};
 pub use self::tabs::Tabs;
 
 use crate::buffer::Buffer;

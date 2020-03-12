@@ -1,15 +1,47 @@
-use std::collections::HashMap;
-use std::fmt::Display;
-use std::iter::Iterator;
+use crate::{
+    buffer::Buffer,
+    layout::{Constraint, Rect},
+    style::Style,
+    widgets::{Block, StatefulWidget, Widget},
+};
+use cassowary::{
+    strength::{MEDIUM, REQUIRED, WEAK},
+    WeightedRelation::*,
+    {Expression, Solver},
+};
+use std::{
+    collections::HashMap,
+    fmt::Display,
+    iter::{self, Iterator},
+};
+use unicode_width::UnicodeWidthStr;
 
-use cassowary::strength::{MEDIUM, REQUIRED, WEAK};
-use cassowary::WeightedRelation::*;
-use cassowary::{Expression, Solver};
+pub struct TableState {
+    offset: usize,
+    selected: Option<usize>,
+}
 
-use crate::buffer::Buffer;
-use crate::layout::{Constraint, Rect};
-use crate::style::Style;
-use crate::widgets::{Block, Widget};
+impl Default for TableState {
+    fn default() -> TableState {
+        TableState {
+            offset: 0,
+            selected: None,
+        }
+    }
+}
+
+impl TableState {
+    pub fn selected(&self) -> Option<usize> {
+        self.selected
+    }
+
+    pub fn select(&mut self, index: Option<usize>) {
+        self.selected = index;
+        if index.is_none() {
+            self.offset = 0;
+        }
+    }
+}
 
 /// Holds data to be displayed in a Table widget
 pub enum Row<D>
@@ -60,6 +92,10 @@ pub struct Table<'a, H, R> {
     column_spacing: u16,
     /// Space between the header and the rows
     header_gap: u16,
+    /// Style used to render the selected row
+    highlight_style: Style,
+    /// Symbol in front of the selected rom
+    highlight_symbol: Option<&'a str>,
     /// Data to display in each row
     rows: R,
 }
@@ -76,9 +112,11 @@ where
             header: H::default(),
             header_style: Style::default(),
             widths: &[],
-            rows: R::default(),
             column_spacing: 1,
             header_gap: 1,
+            highlight_style: Style::default(),
+            highlight_symbol: None,
+            rows: R::default(),
         }
     }
 }
@@ -96,9 +134,11 @@ where
             header: header.into_iter(),
             header_style: Style::default(),
             widths: &[],
-            rows,
             column_spacing: 1,
             header_gap: 1,
+            highlight_style: Style::default(),
+            highlight_symbol: None,
+            rows,
         }
     }
     pub fn block(mut self, block: Block<'a>) -> Table<'a, H, R> {
@@ -145,6 +185,16 @@ where
         self
     }
 
+    pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Table<'a, H, R> {
+        self.highlight_symbol = Some(highlight_symbol);
+        self
+    }
+
+    pub fn highlight_style(mut self, highlight_style: Style) -> Table<'a, H, R> {
+        self.highlight_style = highlight_style;
+        self
+    }
+
     pub fn column_spacing(mut self, spacing: u16) -> Table<'a, H, R> {
         self.column_spacing = spacing;
         self
@@ -156,7 +206,7 @@ where
     }
 }
 
-impl<'a, H, D, R> Widget for Table<'a, H, R>
+impl<'a, H, D, R> StatefulWidget for Table<'a, H, R>
 where
     H: Iterator,
     H::Item: Display,
@@ -164,7 +214,9 @@ where
     D::Item: Display,
     R: Iterator<Item = Row<D>>,
 {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
+    type State = TableState;
+
+    fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         // Render block if necessary and get the drawing area
         let table_area = match self.block {
             Some(ref mut b) => {
@@ -234,22 +286,69 @@ where
         }
         y += 1 + self.header_gap;
 
+        // Use highlight_style only if something is selected
+        let (selected, highlight_style) = match state.selected {
+            Some(i) => (Some(i), self.highlight_style),
+            None => (None, self.style),
+        };
+        let highlight_symbol = self.highlight_symbol.unwrap_or("");
+        let blank_symbol = iter::repeat(" ")
+            .take(highlight_symbol.width())
+            .collect::<String>();
+
         // Draw rows
         let default_style = Style::default();
         if y < table_area.bottom() {
             let remaining = (table_area.bottom() - y) as usize;
-            for (i, row) in self.rows.by_ref().take(remaining).enumerate() {
-                let (data, style) = match row {
-                    Row::Data(d) => (d, default_style),
-                    Row::StyledData(d, s) => (d, s),
+
+            // Make sure the table shows the selected item
+            state.offset = if let Some(selected) = selected {
+                if selected >= remaining + state.offset - 1 {
+                    selected + 1 - remaining
+                } else if selected < state.offset {
+                    selected
+                } else {
+                    state.offset
+                }
+            } else {
+                0
+            };
+            for (i, row) in self.rows.skip(state.offset).take(remaining).enumerate() {
+                let (data, style, symbol) = match row {
+                    Row::Data(d) | Row::StyledData(d, _)
+                        if Some(i) == state.selected.map(|s| s - state.offset) =>
+                    {
+                        (d, highlight_style, highlight_symbol)
+                    }
+                    Row::Data(d) => (d, default_style, blank_symbol.as_ref()),
+                    Row::StyledData(d, s) => (d, s, blank_symbol.as_ref()),
                 };
                 x = table_area.left();
-                for (w, elt) in solved_widths.iter().zip(data) {
-                    buf.set_stringn(x, y + i as u16, format!("{}", elt), *w as usize, style);
+                for (c, (w, elt)) in solved_widths.iter().zip(data).enumerate() {
+                    let s = if c == 0 {
+                        format!("{}{}", symbol, elt)
+                    } else {
+                        format!("{}", elt)
+                    };
+                    buf.set_stringn(x, y + i as u16, s, *w as usize, style);
                     x += *w + self.column_spacing;
                 }
             }
         }
+    }
+}
+
+impl<'a, H, D, R> Widget for Table<'a, H, R>
+where
+    H: Iterator,
+    H::Item: Display,
+    D: Iterator,
+    D::Item: Display,
+    R: Iterator<Item = Row<D>>,
+{
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let mut state = TableState::default();
+        StatefulWidget::render(self, area, buf, &mut state);
     }
 }
 
