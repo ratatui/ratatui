@@ -102,11 +102,11 @@ watch-doc: ## Watch file changes and rebuild the documentation if any
 
 .PHONY: stable
 stable: RUST_CHANNEL = stable
-stable: build test ## Run build and tests for stable
+stable: build lint test ## Run build and tests for stable
 
 .PHONY: beta
 beta: RUST_CHANNEL = beta
-beta: build test ## Run build and tests for beta
+beta: build lint test ## Run build and tests for beta
 
 .PHONY: nightly
 nightly: RUST_CHANNEL = nightly
