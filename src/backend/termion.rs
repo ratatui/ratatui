@@ -1,4 +1,3 @@
-use log::debug;
 use std::fmt;
 use std::io;
 use std::io::Write;
@@ -115,7 +114,6 @@ where
             string.push_str(&cell.symbol);
             inst += 1;
         }
-        debug!("{} instructions outputed.", inst);
         write!(
             self.stdout,
             "{}{}{}{}",

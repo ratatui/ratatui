@@ -1,10 +1,10 @@
-use log::debug;
+use crate::{
+    backend::Backend,
+    buffer::Cell,
+    layout::Rect,
+    style::{Color, Modifier},
+};
 use std::io;
-
-use super::Backend;
-use crate::buffer::Cell;
-use crate::layout::Rect;
-use crate::style::{Color, Modifier};
 
 pub struct RustboxBackend {
     rustbox: rustbox::RustBox,
@@ -30,9 +30,7 @@ impl Backend for RustboxBackend {
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
-        let mut inst = 0;
         for (x, y, cell) in content {
-            inst += 1;
             self.rustbox.print(
                 x as usize,
                 y as usize,
@@ -42,7 +40,6 @@ impl Backend for RustboxBackend {
                 &cell.symbol,
             );
         }
-        debug!("{} instructions outputed", inst);
         Ok(())
     }
     fn hide_cursor(&mut self) -> Result<(), io::Error> {

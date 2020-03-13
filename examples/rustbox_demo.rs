@@ -2,26 +2,25 @@ mod demo;
 #[allow(dead_code)]
 mod util;
 
-use std::time::{Duration, Instant};
-
-use rustbox::keyboard::Key;
-use structopt::StructOpt;
-use tui::backend::RustboxBackend;
-use tui::Terminal;
-
 use crate::demo::{ui, App};
+use argh::FromArgs;
+use rustbox::keyboard::Key;
+use std::{
+    error::Error,
+    time::{Duration, Instant},
+};
+use tui::{backend::RustboxBackend, Terminal};
 
-#[derive(Debug, StructOpt)]
+/// Rustbox demo
+#[derive(Debug, FromArgs)]
 struct Cli {
-    #[structopt(long = "tick-rate", default_value = "250")]
+    /// time in ms between two ticks.
+    #[argh(option, default = "250")]
     tick_rate: u64,
-    #[structopt(long = "log")]
-    log: bool,
 }
 
-fn main() -> Result<(), failure::Error> {
-    let cli = Cli::from_args();
-    stderrlog::new().quiet(!cli.log).verbosity(4).init()?;
+fn main() -> Result<(), Box<dyn Error>> {
+    let cli: Cli = argh::from_env();
 
     let backend = RustboxBackend::new()?;
     let mut terminal = Terminal::new(backend)?;

@@ -2,33 +2,25 @@ mod demo;
 #[allow(dead_code)]
 mod util;
 
-use std::io;
-use std::time::Duration;
-
-use structopt::StructOpt;
-use termion::event::Key;
-use termion::input::MouseTerminal;
-use termion::raw::IntoRawMode;
-use termion::screen::AlternateScreen;
-use tui::backend::TermionBackend;
-use tui::Terminal;
-
 use crate::{
     demo::{ui, App},
     util::event::{Config, Event, Events},
 };
+use argh::FromArgs;
+use std::{error::Error, io, time::Duration};
+use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
+use tui::{backend::TermionBackend, Terminal};
 
-#[derive(Debug, StructOpt)]
+/// Termion demo
+#[derive(Debug, FromArgs)]
 struct Cli {
-    #[structopt(long = "tick-rate", default_value = "250")]
+    /// time in ms between two ticks.
+    #[argh(option, default = "250")]
     tick_rate: u64,
-    #[structopt(long = "log")]
-    log: bool,
 }
 
-fn main() -> Result<(), failure::Error> {
-    let cli = Cli::from_args();
-    stderrlog::new().quiet(!cli.log).verbosity(4).init()?;
+fn main() -> Result<(), Box<dyn Error>> {
+    let cli: Cli = argh::from_env();
 
     let events = Events::with_config(Config {
         tick_rate: Duration::from_millis(cli.tick_rate),

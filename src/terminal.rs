@@ -1,4 +1,3 @@
-use log::error;
 use std::io;
 
 use crate::backend::Backend;
@@ -65,7 +64,7 @@ where
         // Attempt to restore the cursor state
         if self.hidden_cursor {
             if let Err(err) = self.show_cursor() {
-                error!("Failed to show the cursor: {}", err);
+                eprintln!("Failed to show the cursor: {}", err);
             }
         }
     }

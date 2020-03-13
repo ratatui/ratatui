@@ -1,21 +1,19 @@
 #[allow(dead_code)]
 mod util;
 
-use std::io;
-use std::time::Duration;
-
-use termion::event::Key;
-use termion::input::MouseTerminal;
-use termion::raw::IntoRawMode;
-use termion::screen::AlternateScreen;
-use tui::backend::TermionBackend;
-use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::Color;
-use tui::widgets::canvas::{Canvas, Map, MapResolution, Rectangle};
-use tui::widgets::{Block, Borders};
-use tui::Terminal;
-
 use crate::util::event::{Config, Event, Events};
+use std::{error::Error, io, time::Duration};
+use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
+use tui::{
+    backend::TermionBackend,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::Color,
+    widgets::{
+        canvas::{Canvas, Map, MapResolution, Rectangle},
+        Block, Borders,
+    },
+    Terminal,
+};
 
 struct App {
     x: f64,
@@ -74,7 +72,7 @@ impl App {
     }
 }
 
-fn main() -> Result<(), failure::Error> {
+fn main() -> Result<(), Box<dyn Error>> {
     // Terminal initialization
     let stdout = io::stdout().into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);

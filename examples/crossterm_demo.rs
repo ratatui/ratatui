@@ -4,18 +4,19 @@ mod demo;
 mod util;
 
 use crate::demo::{ui, App};
+use argh::FromArgs;
 use crossterm::{
     event::{self, Event as CEvent, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use std::{
+    error::Error,
     io::{stdout, Write},
     sync::mpsc,
     thread,
     time::Duration,
 };
-use structopt::StructOpt;
 use tui::{backend::CrosstermBackend, Terminal};
 
 enum Event<I> {
@@ -23,17 +24,16 @@ enum Event<I> {
     Tick,
 }
 
-#[derive(Debug, StructOpt)]
+/// Crossterm demo
+#[derive(Debug, FromArgs)]
 struct Cli {
-    #[structopt(long = "tick-rate", default_value = "250")]
+    /// time in ms between two ticks.
+    #[argh(option, default = "250")]
     tick_rate: u64,
-    #[structopt(long = "log")]
-    log: bool,
 }
 
-fn main() -> Result<(), failure::Error> {
-    let cli = Cli::from_args();
-    stderrlog::new().quiet(!cli.log).verbosity(4).init()?;
+fn main() -> Result<(), Box<dyn Error>> {
+    let cli: Cli = argh::from_env();
 
     enable_raw_mode()?;
 

@@ -2,27 +2,26 @@ mod demo;
 #[allow(dead_code)]
 mod util;
 
-use std::io;
-use std::time::{Duration, Instant};
-
-use easycurses;
-use structopt::StructOpt;
-use tui::backend::CursesBackend;
-use tui::Terminal;
-
 use crate::demo::{ui, App};
+use argh::FromArgs;
+use easycurses;
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
+};
+use tui::{backend::CursesBackend, Terminal};
 
-#[derive(Debug, StructOpt)]
+/// Curses demo
+#[derive(Debug, FromArgs)]
 struct Cli {
-    #[structopt(long = "tick-rate", default_value = "250")]
+    /// time in ms between two ticks.
+    #[argh(option, default = "250")]
     tick_rate: u64,
-    #[structopt(long = "log")]
-    log: bool,
 }
 
-fn main() -> Result<(), failure::Error> {
-    let cli = Cli::from_args();
-    stderrlog::new().quiet(!cli.log).verbosity(4).init()?;
+fn main() -> Result<(), Box<dyn Error>> {
+    let cli: Cli = argh::from_env();
 
     let mut backend = CursesBackend::new().ok_or(io::Error::new(io::ErrorKind::Other, ""))?;
     let curses = backend.get_curses_mut();
