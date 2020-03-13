@@ -48,12 +48,10 @@ impl Shape for Line {
             } else {
                 draw_line_low(painter, x1, y1, x2, y2, self.color);
             }
+        } else if y1 > y2 {
+            draw_line_high(painter, x2, y2, x1, y1, self.color);
         } else {
-            if y1 > y2 {
-                draw_line_high(painter, x2, y2, x1, y1, self.color);
-            } else {
-                draw_line_high(painter, x1, y1, x2, y2, self.color);
-            }
+            draw_line_high(painter, x1, y1, x2, y2, self.color);
         }
     }
 }

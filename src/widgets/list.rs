@@ -41,14 +41,12 @@ impl ListState {
 /// ```
 /// # use tui::widgets::{Block, Borders, List, Text};
 /// # use tui::style::{Style, Color, Modifier};
-/// # fn main() {
 /// let items = ["Item 1", "Item 2", "Item 3"].iter().map(|i| Text::raw(*i));
 /// List::new(items)
 ///     .block(Block::default().title("List").borders(Borders::ALL))
 ///     .style(Style::default().fg(Color::White))
 ///     .highlight_style(Style::default().modifier(Modifier::ITALIC))
 ///     .highlight_symbol(">>");
-/// # }
 /// ```
 pub struct List<'b, L>
 where

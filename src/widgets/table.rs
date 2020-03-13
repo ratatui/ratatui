@@ -131,7 +131,7 @@ where
         Table {
             block: None,
             style: Style::default(),
-            header: header.into_iter(),
+            header,
             header_style: Style::default(),
             widths: &[],
             column_spacing: 1,
