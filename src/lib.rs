@@ -65,8 +65,8 @@
 //! ## Building a User Interface (UI)
 //!
 //! Every component of your interface will be implementing the `Widget` trait.  The library comes
-//! with a predefined set of widgets that should met most of your use cases. You are also free to
-//! implement your owns.
+//! with a predefined set of widgets that should meet most of your use cases. You are also free to
+//! implement your own.
 //!
 //! Each widget follows a builder pattern API providing a default configuration along with methods
 //! to customize them. The widget is then registered using its `render` method that take a `Frame`
