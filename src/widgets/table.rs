@@ -340,6 +340,7 @@ impl<'a> Table<'a> {
 pub struct TableState {
     offset: usize,
     selected: Option<usize>,
+    pub page_size: Option<usize>,
 }
 
 impl TableState {
@@ -425,6 +426,7 @@ impl<'a> StatefulWidget for Table<'a> {
         }
         let (start, end) = self.get_row_bounds(state.selected, state.offset, rows_height);
         state.offset = start;
+        state.page_size = Some(end - start);
         for (i, table_row) in self
             .rows
             .iter_mut()

@@ -12,38 +12,28 @@ use ratatui::{
 };
 use std::{error::Error, io};
 
-struct App<'a> {
+struct App {
     state: TableState,
-    items: Vec<Vec<&'a str>>,
+    items: Vec<Vec<String>>,
 }
 
-impl<'a> App<'a> {
-    fn new() -> App<'a> {
+impl App {
+    fn new() -> App {
+        let mut items = vec![];
+        let max_row = 100;
+        items.resize(max_row, vec![]);
+        for row in 0..100 {
+            for column in 0..3 {
+                items[row].push(format!("{}.{}", row, column))
+            }
+        }
+
         App {
             state: TableState::default(),
-            items: vec![
-                vec!["Row11", "Row12", "Row13"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row31", "Row32", "Row33"],
-                vec!["Row41", "Row42", "Row43"],
-                vec!["Row51", "Row52", "Row53"],
-                vec!["Row61", "Row62\nTest", "Row63"],
-                vec!["Row71", "Row72", "Row73"],
-                vec!["Row81", "Row82", "Row83"],
-                vec!["Row91", "Row92", "Row93"],
-                vec!["Row101", "Row102", "Row103"],
-                vec!["Row111", "Row112", "Row113"],
-                vec!["Row121", "Row122", "Row123"],
-                vec!["Row131", "Row132", "Row133"],
-                vec!["Row141", "Row142", "Row143"],
-                vec!["Row151", "Row152", "Row153"],
-                vec!["Row161", "Row162", "Row163"],
-                vec!["Row171", "Row172", "Row173"],
-                vec!["Row181", "Row182", "Row183"],
-                vec!["Row191", "Row192", "Row193"],
-            ],
+            items,
         }
     }
+
     pub fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
@@ -65,6 +55,37 @@ impl<'a> App<'a> {
                     self.items.len() - 1
                 } else {
                     i - 1
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+    }
+
+    pub fn next_page(&mut self) {
+        let page_size = self.state.page_size.unwrap_or(1);
+        let i = match self.state.selected() {
+            Some(i) => {
+                if (i + page_size) > self.items.len() - 1 {
+                    i + page_size - self.items.len()
+                } else {
+                    i + page_size
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+    }
+
+    pub fn previous_page(&mut self) {
+        let page_size = self.state.page_size.unwrap_or(1);
+        let i = match self.state.selected() {
+            Some(i) => {
+                if i >= page_size {
+                    i - page_size
+                } else {
+                    let remainder = page_size - i;
+                    self.items.len() - remainder - i
                 }
             }
             None => 0,
@@ -111,6 +132,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     KeyCode::Char('q') => return Ok(()),
                     KeyCode::Down => app.next(),
                     KeyCode::Up => app.previous(),
+                    KeyCode::PageDown => app.next_page(),
+                    KeyCode::PageUp => app.previous_page(),
                     _ => {}
                 }
             }
@@ -140,7 +163,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .max()
             .unwrap_or(0)
             + 1;
-        let cells = item.iter().map(|c| Cell::from(*c));
+        let cells = item.iter().map(|c| Cell::from(c.to_owned()));
         Row::new(cells).height(height as u16).bottom_margin(1)
     });
     let t = Table::new(rows)
