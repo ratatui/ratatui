@@ -95,6 +95,11 @@ path = "examples/layout.rs"
 required-features = ["termion"]
 
 [[example]]
+name = "popup"
+path = "examples/popup.rs"
+required-features = ["termion"]
+
+[[example]]
 name = "block"
 path = "examples/block.rs"
 required-features = ["termion"]
