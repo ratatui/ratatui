@@ -88,6 +88,7 @@ You can run all examples by running `make run-examples`.
 * [zenith](https://github.com/bvaisvil/zenith)
 * [bottom](https://github.com/ClementTsang/bottom)
 * [oha](https://github.com/hatoo/oha)
+* [gitui](https://github.com/extrawurst/gitui)
 
 ### Alternatives
 
