@@ -30,6 +30,9 @@ struct Cli {
     /// time in ms between two ticks.
     #[argh(option, default = "250")]
     tick_rate: u64,
+    /// whether unicode symbols are used to improve the overall look of the app
+    #[argh(option, default = "true")]
+    enhanced_graphics: bool,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -48,10 +51,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Setup input handling
     let (tx, rx) = mpsc::channel();
 
+    let tick_rate = Duration::from_millis(cli.tick_rate);
     thread::spawn(move || {
         loop {
             // poll for tick rate duration, if no events, sent tick event.
-            if event::poll(Duration::from_millis(cli.tick_rate)).unwrap() {
+            if event::poll(tick_rate).unwrap() {
                 if let CEvent::Key(key) = event::read().unwrap() {
                     tx.send(Event::Input(key)).unwrap();
                 }
@@ -61,7 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
-    let mut app = App::new("Crossterm Demo");
+    let mut app = App::new("Crossterm Demo", cli.enhanced_graphics);
 
     terminal.clear()?;
 

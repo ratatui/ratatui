@@ -108,17 +108,18 @@ pub struct App<'a> {
     pub should_quit: bool,
     pub tabs: TabsState<'a>,
     pub show_chart: bool,
-    pub progress: u16,
+    pub progress: f64,
     pub sparkline: Signal<RandomSignal>,
     pub tasks: StatefulList<&'a str>,
     pub logs: StatefulList<(&'a str, &'a str)>,
     pub signals: Signals,
     pub barchart: Vec<(&'a str, u64)>,
     pub servers: Vec<Server<'a>>,
+    pub enhanced_graphics: bool,
 }
 
 impl<'a> App<'a> {
-    pub fn new(title: &'a str) -> App<'a> {
+    pub fn new(title: &'a str, enhanced_graphics: bool) -> App<'a> {
         let mut rand_signal = RandomSignal::new(0, 100);
         let sparkline_points = rand_signal.by_ref().take(300).collect();
         let mut sin_signal = SinSignal::new(0.2, 3.0, 18.0);
@@ -130,7 +131,7 @@ impl<'a> App<'a> {
             should_quit: false,
             tabs: TabsState::new(vec!["Tab0", "Tab1"]),
             show_chart: true,
-            progress: 0,
+            progress: 0.0,
             sparkline: Signal {
                 source: rand_signal,
                 points: sparkline_points,
@@ -178,6 +179,7 @@ impl<'a> App<'a> {
                     status: "Up",
                 },
             ],
+            enhanced_graphics,
         }
     }
 
@@ -211,9 +213,9 @@ impl<'a> App<'a> {
 
     pub fn on_tick(&mut self) {
         // Update progress
-        self.progress += 5;
-        if self.progress > 100 {
-            self.progress = 0;
+        self.progress += 0.001;
+        if self.progress > 1.0 {
+            self.progress = 0.0;
         }
 
         self.sparkline.on_tick();

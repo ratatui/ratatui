@@ -17,6 +17,9 @@ struct Cli {
     /// time in ms between two ticks.
     #[argh(option, default = "250")]
     tick_rate: u64,
+    /// whether unicode symbols are used to improve the overall look of the app
+    #[argh(option, default = "true")]
+    enhanced_graphics: bool,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -34,7 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    let mut app = App::new("Termion demo");
+    let mut app = App::new("Termion demo", cli.enhanced_graphics);
     loop {
         terminal.draw(|mut f| ui::draw(&mut f, &mut app))?;
 

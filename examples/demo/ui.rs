@@ -1,12 +1,15 @@
-use tui::backend::Backend;
-use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Modifier, Style};
-use tui::widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle};
-use tui::widgets::{
-    Axis, BarChart, Block, Borders, Chart, Dataset, Gauge, List, Marker, Paragraph, Row, Sparkline,
-    Table, Tabs, Text,
+use tui::{
+    backend::Backend,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    symbols,
+    widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle},
+    widgets::{
+        Axis, BarChart, Block, Borders, Chart, Dataset, Gauge, List, Paragraph, Row, Sparkline,
+        Table, Tabs, Text,
+    },
+    Frame,
 };
-use tui::Frame;
 
 use crate::demo::App;
 
@@ -58,7 +61,7 @@ where
     let block = Block::default().borders(Borders::ALL).title("Graphs");
     f.render_widget(block, area);
 
-    let label = format!("{} / 100", app.progress);
+    let label = format!("{:.2}%", app.progress * 100.0);
     let gauge = Gauge::default()
         .block(Block::default().title("Gauge:"))
         .style(
@@ -68,13 +71,18 @@ where
                 .modifier(Modifier::ITALIC | Modifier::BOLD),
         )
         .label(&label)
-        .percent(app.progress);
+        .ratio(app.progress);
     f.render_widget(gauge, chunks[0]);
 
     let sparkline = Sparkline::default()
         .block(Block::default().title("Sparkline:"))
         .style(Style::default().fg(Color::Green))
-        .data(&app.sparkline.points);
+        .data(&app.sparkline.points)
+        .bar_set(if app.enhanced_graphics {
+            symbols::bar::NINE_LEVELS
+        } else {
+            symbols::bar::THREE_LEVELS
+        });
     f.render_widget(sparkline, chunks[1]);
 }
 
@@ -134,6 +142,11 @@ where
             .data(&app.barchart)
             .bar_width(3)
             .bar_gap(2)
+            .bar_set(if app.enhanced_graphics {
+                symbols::bar::NINE_LEVELS
+            } else {
+                symbols::bar::THREE_LEVELS
+            })
             .value_style(
                 Style::default()
                     .fg(Color::Black)
@@ -153,12 +166,16 @@ where
         let datasets = [
             Dataset::default()
                 .name("data2")
-                .marker(Marker::Dot)
+                .marker(symbols::Marker::Dot)
                 .style(Style::default().fg(Color::Cyan))
                 .data(&app.signals.sin1.points),
             Dataset::default()
                 .name("data3")
-                .marker(Marker::Braille)
+                .marker(if app.enhanced_graphics {
+                    symbols::Marker::Braille
+                } else {
+                    symbols::Marker::Dot
+                })
                 .style(Style::default().fg(Color::Yellow))
                 .data(&app.signals.sin2.points),
         ];
@@ -284,6 +301,11 @@ where
                 };
                 ctx.print(server.coords.1, server.coords.0, "X", color);
             }
+        })
+        .marker(if app.enhanced_graphics {
+            symbols::Marker::Braille
+        } else {
+            symbols::Marker::Dot
         })
         .x_bounds([-180.0, 180.0])
         .y_bounds([-90.0, 90.0]);
