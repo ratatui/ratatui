@@ -1,12 +1,12 @@
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    style::Style,
+    symbols,
+    widgets::{Block, Widget},
+};
 use std::cmp::{max, min};
-
 use unicode_width::UnicodeWidthStr;
-
-use crate::buffer::Buffer;
-use crate::layout::Rect;
-use crate::style::Style;
-use crate::symbols::bar;
-use crate::widgets::{Block, Widget};
 
 /// Display multiple bars in a single widgets
 ///
@@ -32,6 +32,8 @@ pub struct BarChart<'a> {
     bar_width: u16,
     /// The gap between each bar
     bar_gap: u16,
+    /// Set of symbols used to display the data
+    bar_set: symbols::bar::Set,
     /// Style of the values printed at the bottom of each bar
     value_style: Style,
     /// Style of the labels printed under each bar
@@ -56,6 +58,7 @@ impl<'a> Default for BarChart<'a> {
             values: Vec::new(),
             bar_width: 1,
             bar_gap: 1,
+            bar_set: symbols::bar::NINE_LEVELS,
             value_style: Default::default(),
             label_style: Default::default(),
             style: Default::default(),
@@ -77,6 +80,7 @@ impl<'a> BarChart<'a> {
         self.block = Some(block);
         self
     }
+
     pub fn max(mut self, max: u64) -> BarChart<'a> {
         self.max = Some(max);
         self
@@ -86,18 +90,27 @@ impl<'a> BarChart<'a> {
         self.bar_width = width;
         self
     }
+
     pub fn bar_gap(mut self, gap: u16) -> BarChart<'a> {
         self.bar_gap = gap;
         self
     }
+
+    pub fn bar_set(mut self, bar_set: symbols::bar::Set) -> BarChart<'a> {
+        self.bar_set = bar_set;
+        self
+    }
+
     pub fn value_style(mut self, style: Style) -> BarChart<'a> {
         self.value_style = style;
         self
     }
+
     pub fn label_style(mut self, style: Style) -> BarChart<'a> {
         self.label_style = style;
         self
     }
+
     pub fn style(mut self, style: Style) -> BarChart<'a> {
         self.style = style;
         self
@@ -141,15 +154,15 @@ impl<'a> Widget for BarChart<'a> {
         for j in (0..chart_area.height - 1).rev() {
             for (i, d) in data.iter_mut().enumerate() {
                 let symbol = match d.1 {
-                    0 => " ",
-                    1 => bar::ONE_EIGHTH,
-                    2 => bar::ONE_QUARTER,
-                    3 => bar::THREE_EIGHTHS,
-                    4 => bar::HALF,
-                    5 => bar::FIVE_EIGHTHS,
-                    6 => bar::THREE_QUARTERS,
-                    7 => bar::SEVEN_EIGHTHS,
-                    _ => bar::FULL,
+                    0 => self.bar_set.empty,
+                    1 => self.bar_set.one_eighth,
+                    2 => self.bar_set.one_quarter,
+                    3 => self.bar_set.three_eighths,
+                    4 => self.bar_set.half,
+                    5 => self.bar_set.five_eighths,
+                    6 => self.bar_set.three_quarters,
+                    7 => self.bar_set.seven_eighths,
+                    _ => self.bar_set.full,
                 };
 
                 for x in 0..self.bar_width {

@@ -1,10 +1,11 @@
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    style::Style,
+    symbols,
+    widgets::{Block, Widget},
+};
 use std::cmp::min;
-
-use crate::buffer::Buffer;
-use crate::layout::Rect;
-use crate::style::Style;
-use crate::symbols::bar;
-use crate::widgets::{Block, Widget};
 
 /// Widget to render a sparkline over one or more lines.
 ///
@@ -29,6 +30,8 @@ pub struct Sparkline<'a> {
     /// The maximum value to take to compute the maximum bar height (if nothing is specified, the
     /// widget uses the max of the dataset)
     max: Option<u64>,
+    /// A set of bar symbols used to represent the give data
+    bar_set: symbols::bar::Set,
 }
 
 impl<'a> Default for Sparkline<'a> {
@@ -38,6 +41,7 @@ impl<'a> Default for Sparkline<'a> {
             style: Default::default(),
             data: &[],
             max: None,
+            bar_set: symbols::bar::NINE_LEVELS,
         }
     }
 }
@@ -60,6 +64,11 @@ impl<'a> Sparkline<'a> {
 
     pub fn max(mut self, max: u64) -> Sparkline<'a> {
         self.max = Some(max);
+        self
+    }
+
+    pub fn bar_set(mut self, bar_set: symbols::bar::Set) -> Sparkline<'a> {
+        self.bar_set = bar_set;
         self
     }
 }
@@ -98,15 +107,15 @@ impl<'a> Widget for Sparkline<'a> {
         for j in (0..spark_area.height).rev() {
             for (i, d) in data.iter_mut().enumerate() {
                 let symbol = match *d {
-                    0 => " ",
-                    1 => bar::ONE_EIGHTH,
-                    2 => bar::ONE_QUARTER,
-                    3 => bar::THREE_EIGHTHS,
-                    4 => bar::HALF,
-                    5 => bar::FIVE_EIGHTHS,
-                    6 => bar::THREE_QUARTERS,
-                    7 => bar::SEVEN_EIGHTHS,
-                    _ => bar::FULL,
+                    0 => self.bar_set.empty,
+                    1 => self.bar_set.one_eighth,
+                    2 => self.bar_set.one_quarter,
+                    3 => self.bar_set.three_eighths,
+                    4 => self.bar_set.half,
+                    5 => self.bar_set.five_eighths,
+                    6 => self.bar_set.three_quarters,
+                    7 => self.bar_set.seven_eighths,
+                    _ => self.bar_set.full,
                 };
                 buf.get_mut(spark_area.left() + i as u16, spark_area.top() + j)
                     .set_symbol(symbol)
