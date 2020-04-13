@@ -56,6 +56,13 @@ you can see the same demo using the `crossterm` backend with the following comma
 cargo run --example crossterm_demo --no-default-features --features="crossterm" --release -- --tick-rate 200
 ```
 
+If the user interface contains glyphs that are not displayed correctly by your terminal, you may want to run
+the demo without those symbols:
+
+```
+cargo run --example crossterm_demo --no-default-features --features="crossterm" --release -- --tick-rate 200 --enhanced-graphics false
+```
+
 ### Widgets
 
 The library comes with the following list of widgets:
