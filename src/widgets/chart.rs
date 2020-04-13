@@ -81,14 +81,6 @@ where
     }
 }
 
-/// Marker to use when plotting data points
-pub enum Marker {
-    /// One point per cell
-    Dot,
-    /// Up to 8 points per cell
-    Braille,
-}
-
 /// Used to determine which style of graphing to use
 pub enum GraphType {
     /// Draw each point
@@ -104,7 +96,7 @@ pub struct Dataset<'a> {
     /// A reference to the actual data
     data: &'a [(f64, f64)],
     /// Symbol used for each points of this dataset
-    marker: Marker,
+    marker: symbols::Marker,
     /// Determines graph type used for drawing points
     graph_type: GraphType,
     /// Style used to plot this dataset
@@ -116,7 +108,7 @@ impl<'a> Default for Dataset<'a> {
         Dataset {
             name: Cow::from(""),
             data: &[],
-            marker: Marker::Dot,
+            marker: symbols::Marker::Dot,
             graph_type: GraphType::Scatter,
             style: Style::default(),
         }
@@ -137,7 +129,7 @@ impl<'a> Dataset<'a> {
         self
     }
 
-    pub fn marker(mut self, marker: Marker) -> Dataset<'a> {
+    pub fn marker(mut self, marker: symbols::Marker) -> Dataset<'a> {
         self.marker = marker;
         self
     }
@@ -195,7 +187,8 @@ impl Default for ChartLayout {
 /// # Examples
 ///
 /// ```
-/// # use tui::widgets::{Block, Borders, Chart, Axis, Dataset, Marker, GraphType};
+/// # use tui::symbols;
+/// # use tui::widgets::{Block, Borders, Chart, Axis, Dataset, GraphType};
 /// # use tui::style::{Style, Color};
 /// Chart::default()
 ///     .block(Block::default().title("Chart"))
@@ -213,13 +206,13 @@ impl Default for ChartLayout {
 ///         .labels(&["0.0", "5.0", "10.0"]))
 ///     .datasets(&[Dataset::default()
 ///                     .name("data1")
-///                     .marker(Marker::Dot)
+///                     .marker(symbols::Marker::Dot)
 ///                     .graph_type(GraphType::Scatter)
 ///                     .style(Style::default().fg(Color::Cyan))
 ///                     .data(&[(0.0, 5.0), (1.0, 6.0), (1.5, 6.434)]),
 ///                 Dataset::default()
 ///                     .name("data2")
-///                     .marker(Marker::Braille)
+///                     .marker(symbols::Marker::Braille)
 ///                     .graph_type(GraphType::Line)
 ///                     .style(Style::default().fg(Color::Magenta))
 ///                     .data(&[(4.0, 5.0), (5.0, 8.0), (7.66, 13.5)])]);
@@ -491,52 +484,29 @@ where
         }
 
         for dataset in self.datasets {
-            match dataset.marker {
-                Marker::Dot => {
-                    for &(x, y) in dataset.data.iter().filter(|&&(x, y)| {
-                        !(x < self.x_axis.bounds[0]
-                            || x > self.x_axis.bounds[1]
-                            || y < self.y_axis.bounds[0]
-                            || y > self.y_axis.bounds[1])
-                    }) {
-                        let dy = ((self.y_axis.bounds[1] - y) * f64::from(graph_area.height - 1)
-                            / (self.y_axis.bounds[1] - self.y_axis.bounds[0]))
-                            as u16;
-                        let dx = ((x - self.x_axis.bounds[0]) * f64::from(graph_area.width - 1)
-                            / (self.x_axis.bounds[1] - self.x_axis.bounds[0]))
-                            as u16;
-
-                        buf.get_mut(graph_area.left() + dx, graph_area.top() + dy)
-                            .set_symbol(symbols::DOT)
-                            .set_fg(dataset.style.fg)
-                            .set_bg(dataset.style.bg);
-                    }
-                }
-                Marker::Braille => {
-                    Canvas::default()
-                        .background_color(self.style.bg)
-                        .x_bounds(self.x_axis.bounds)
-                        .y_bounds(self.y_axis.bounds)
-                        .paint(|ctx| {
-                            ctx.draw(&Points {
-                                coords: dataset.data,
+            Canvas::default()
+                .background_color(self.style.bg)
+                .x_bounds(self.x_axis.bounds)
+                .y_bounds(self.y_axis.bounds)
+                .marker(dataset.marker)
+                .paint(|ctx| {
+                    ctx.draw(&Points {
+                        coords: dataset.data,
+                        color: dataset.style.fg,
+                    });
+                    if let GraphType::Line = dataset.graph_type {
+                        for i in 0..dataset.data.len() - 1 {
+                            ctx.draw(&Line {
+                                x1: dataset.data[i].0,
+                                y1: dataset.data[i].1,
+                                x2: dataset.data[i + 1].0,
+                                y2: dataset.data[i + 1].1,
                                 color: dataset.style.fg,
-                            });
-                            if let GraphType::Line = dataset.graph_type {
-                                for i in 0..dataset.data.len() - 1 {
-                                    ctx.draw(&Line {
-                                        x1: dataset.data[i].0,
-                                        y1: dataset.data[i].1,
-                                        x2: dataset.data[i + 1].0,
-                                        y2: dataset.data[i + 1].1,
-                                        color: dataset.style.fg,
-                                    })
-                                }
-                            }
-                        })
-                        .render(graph_area, buf);
-                }
-            }
+                            })
+                        }
+                    }
+                })
+                .render(graph_area, buf);
         }
 
         if let Some(legend_area) = layout.legend_area {

@@ -16,7 +16,7 @@ mod tabs;
 
 pub use self::barchart::BarChart;
 pub use self::block::{Block, BorderType};
-pub use self::chart::{Axis, Chart, Dataset, GraphType, Marker};
+pub use self::chart::{Axis, Chart, Dataset, GraphType};
 pub use self::clear::Clear;
 pub use self::gauge::Gauge;
 pub use self::list::{List, ListState};

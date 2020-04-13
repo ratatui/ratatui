@@ -1,8 +1,11 @@
-use tui::backend::TestBackend;
-use tui::layout::Rect;
-use tui::style::{Color, Style};
-use tui::widgets::{Axis, Block, Borders, Chart, Dataset, Marker};
-use tui::Terminal;
+use tui::{
+    backend::TestBackend,
+    layout::Rect,
+    style::{Color, Style},
+    symbols,
+    widgets::{Axis, Block, Borders, Chart, Dataset},
+    Terminal,
+};
 
 #[test]
 fn zero_axes_ok() {
@@ -12,7 +15,7 @@ fn zero_axes_ok() {
     terminal
         .draw(|mut f| {
             let datasets = [Dataset::default()
-                .marker(Marker::Braille)
+                .marker(symbols::Marker::Braille)
                 .style(Style::default().fg(Color::Magenta))
                 .data(&[(0.0, 0.0)])];
             let chart = Chart::default()

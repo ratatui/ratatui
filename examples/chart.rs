@@ -11,7 +11,8 @@ use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Marker},
+    symbols,
+    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType},
     Terminal,
 };
 
@@ -99,12 +100,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             let datasets = [
                 Dataset::default()
                     .name("data2")
-                    .marker(Marker::Dot)
+                    .marker(symbols::Marker::Dot)
                     .style(Style::default().fg(Color::Cyan))
                     .data(&app.data1),
                 Dataset::default()
                     .name("data3")
-                    .marker(Marker::Braille)
+                    .marker(symbols::Marker::Braille)
                     .style(Style::default().fg(Color::Yellow))
                     .data(&app.data2),
             ];
@@ -136,7 +137,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let datasets = [Dataset::default()
                 .name("data")
-                .marker(Marker::Braille)
+                .marker(symbols::Marker::Braille)
                 .style(Style::default().fg(Color::Yellow))
                 .graph_type(GraphType::Line)
                 .data(&DATA)];
@@ -168,7 +169,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let datasets = [Dataset::default()
                 .name("data")
-                .marker(Marker::Braille)
+                .marker(symbols::Marker::Braille)
                 .style(Style::default().fg(Color::Yellow))
                 .graph_type(GraphType::Line)
                 .data(&DATA2)];

@@ -13,18 +13,10 @@ use crate::{
     buffer::Buffer,
     layout::Rect,
     style::{Color, Style},
+    symbols,
     widgets::{Block, Widget},
 };
 use std::fmt::Debug;
-
-pub const DOTS: [[u16; 2]; 4] = [
-    [0x0001, 0x0008],
-    [0x0002, 0x0010],
-    [0x0004, 0x0020],
-    [0x0040, 0x0080],
-];
-pub const BRAILLE_OFFSET: u16 = 0x2800;
-pub const BRAILLE_BLANK: char = '⠀';
 
 /// Interface for all shapes that may be drawn on a Canvas widget.
 pub trait Shape {
@@ -46,18 +38,49 @@ struct Layer {
     colors: Vec<Color>,
 }
 
+trait Grid: Debug {
+    fn width(&self) -> u16;
+    fn height(&self) -> u16;
+    fn resolution(&self) -> (f64, f64);
+    fn paint(&mut self, x: usize, y: usize, color: Color);
+    fn save(&self) -> Layer;
+    fn reset(&mut self);
+}
+
 #[derive(Debug, Clone)]
-struct Grid {
+struct BrailleGrid {
+    width: u16,
+    height: u16,
     cells: Vec<u16>,
     colors: Vec<Color>,
 }
 
-impl Grid {
-    fn new(width: usize, height: usize) -> Grid {
-        Grid {
-            cells: vec![BRAILLE_OFFSET; width * height],
-            colors: vec![Color::Reset; width * height],
+impl BrailleGrid {
+    fn new(width: u16, height: u16) -> BrailleGrid {
+        let length = usize::from(width * height);
+        BrailleGrid {
+            width,
+            height,
+            cells: vec![symbols::braille::BLANK; length],
+            colors: vec![Color::Reset; length],
         }
+    }
+}
+
+impl Grid for BrailleGrid {
+    fn width(&self) -> u16 {
+        self.width
+    }
+
+    fn height(&self) -> u16 {
+        self.height
+    }
+
+    fn resolution(&self) -> (f64, f64) {
+        (
+            f64::from(self.width) * 2.0 - 1.0,
+            f64::from(self.height) * 4.0 - 1.0,
+        )
     }
 
     fn save(&self) -> Layer {
@@ -69,10 +92,80 @@ impl Grid {
 
     fn reset(&mut self) {
         for c in &mut self.cells {
-            *c = BRAILLE_OFFSET;
+            *c = symbols::braille::BLANK;
         }
         for c in &mut self.colors {
             *c = Color::Reset;
+        }
+    }
+
+    fn paint(&mut self, x: usize, y: usize, color: Color) {
+        let index = y / 4 * self.width as usize + x / 2;
+        if let Some(c) = self.cells.get_mut(index) {
+            *c |= symbols::braille::DOTS[y % 4][x % 2];
+        }
+        if let Some(c) = self.colors.get_mut(index) {
+            *c = color;
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct DotGrid {
+    width: u16,
+    height: u16,
+    cells: Vec<char>,
+    colors: Vec<Color>,
+}
+
+impl DotGrid {
+    fn new(width: u16, height: u16) -> DotGrid {
+        let length = usize::from(width * height);
+        DotGrid {
+            width,
+            height,
+            cells: vec![' '; length],
+            colors: vec![Color::Reset; length],
+        }
+    }
+}
+
+impl Grid for DotGrid {
+    fn width(&self) -> u16 {
+        self.width
+    }
+
+    fn height(&self) -> u16 {
+        self.height
+    }
+
+    fn resolution(&self) -> (f64, f64) {
+        (f64::from(self.width) - 1.0, f64::from(self.height) - 1.0)
+    }
+
+    fn save(&self) -> Layer {
+        Layer {
+            string: self.cells.iter().collect(),
+            colors: self.colors.clone(),
+        }
+    }
+
+    fn reset(&mut self) {
+        for c in &mut self.cells {
+            *c = ' ';
+        }
+        for c in &mut self.colors {
+            *c = Color::Reset;
+        }
+    }
+
+    fn paint(&mut self, x: usize, y: usize, color: Color) {
+        let index = y * self.width as usize + x;
+        if let Some(c) = self.cells.get_mut(index) {
+            *c = '•';
+        }
+        if let Some(c) = self.colors.get_mut(index) {
+            *c = color;
         }
     }
 }
@@ -80,17 +173,17 @@ impl Grid {
 #[derive(Debug)]
 pub struct Painter<'a, 'b> {
     context: &'a mut Context<'b>,
-    resolution: [f64; 2],
+    resolution: (f64, f64),
 }
 
 impl<'a, 'b> Painter<'a, 'b> {
-    /// Convert the (x, y) coordinates to location of a braille dot on the grid
+    /// Convert the (x, y) coordinates to location of a point on the grid
     ///
     /// # Examples:
     /// ```
-    /// use tui::widgets::canvas::{Painter, Context};
+    /// use tui::{symbols, widgets::canvas::{Painter, Context}};
     ///
-    /// let mut ctx = Context::new(2, 2, [1.0, 2.0], [0.0, 2.0]);
+    /// let mut ctx = Context::new(2, 2, [1.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
     /// let point = painter.get_point(1.0, 0.0);
     /// assert_eq!(point, Some((0, 7)));
@@ -113,65 +206,63 @@ impl<'a, 'b> Painter<'a, 'b> {
         }
         let width = (self.context.x_bounds[1] - self.context.x_bounds[0]).abs();
         let height = (self.context.y_bounds[1] - self.context.y_bounds[0]).abs();
-        let x = ((x - left) * self.resolution[0] / width) as usize;
-        let y = ((top - y) * self.resolution[1] / height) as usize;
+        let x = ((x - left) * self.resolution.0 / width) as usize;
+        let y = ((top - y) * self.resolution.1 / height) as usize;
         Some((x, y))
     }
 
-    /// Paint a braille dot
+    /// Paint a point of the grid
     ///
     /// # Examples:
     /// ```
-    /// use tui::{style::Color, widgets::canvas::{Painter, Context}};
+    /// use tui::{style::Color, symbols, widgets::canvas::{Painter, Context}};
     ///
-    /// let mut ctx = Context::new(1, 1, [0.0, 2.0], [0.0, 2.0]);
+    /// let mut ctx = Context::new(1, 1, [0.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
     /// let cell = painter.paint(1, 3, Color::Red);
     /// ```
     pub fn paint(&mut self, x: usize, y: usize, color: Color) {
-        let index = y / 4 * self.context.width as usize + x / 2;
-        if let Some(c) = self.context.grid.cells.get_mut(index) {
-            *c |= DOTS[y % 4][x % 2];
-        }
-        if let Some(c) = self.context.grid.colors.get_mut(index) {
-            *c = color;
-        }
+        self.context.grid.paint(x, y, color);
     }
 }
 
 impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
     fn from(context: &'a mut Context<'b>) -> Painter<'a, 'b> {
+        let resolution = context.grid.resolution();
         Painter {
-            resolution: [
-                f64::from(context.width) * 2.0 - 1.0,
-                f64::from(context.height) * 4.0 - 1.0,
-            ],
             context,
+            resolution,
         }
     }
 }
 
 /// Holds the state of the Canvas when painting to it.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Context<'a> {
-    width: u16,
-    height: u16,
     x_bounds: [f64; 2],
     y_bounds: [f64; 2],
-    grid: Grid,
+    grid: Box<dyn Grid>,
     dirty: bool,
     layers: Vec<Layer>,
     labels: Vec<Label<'a>>,
 }
 
 impl<'a> Context<'a> {
-    pub fn new(width: u16, height: u16, x_bounds: [f64; 2], y_bounds: [f64; 2]) -> Context<'a> {
+    pub fn new(
+        width: u16,
+        height: u16,
+        x_bounds: [f64; 2],
+        y_bounds: [f64; 2],
+        marker: symbols::Marker,
+    ) -> Context<'a> {
+        let grid: Box<dyn Grid> = match marker {
+            symbols::Marker::Dot => Box::new(DotGrid::new(width, height)),
+            symbols::Marker::Braille => Box::new(BrailleGrid::new(width, height)),
+        };
         Context {
-            width,
-            height,
             x_bounds,
             y_bounds,
-            grid: Grid::new(width as usize, height as usize),
+            grid,
             dirty: false,
             layers: Vec::new(),
             labels: Vec::new(),
@@ -252,6 +343,7 @@ where
     y_bounds: [f64; 2],
     painter: Option<F>,
     background_color: Color,
+    marker: symbols::Marker,
 }
 
 impl<'a, F> Default for Canvas<'a, F>
@@ -265,6 +357,7 @@ where
             y_bounds: [0.0, 0.0],
             painter: None,
             background_color: Color::Reset,
+            marker: symbols::Marker::Braille,
         }
     }
 }
@@ -277,10 +370,12 @@ where
         self.block = Some(block);
         self
     }
+
     pub fn x_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
         self.x_bounds = bounds;
         self
     }
+
     pub fn y_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
         self.y_bounds = bounds;
         self
@@ -294,6 +389,24 @@ where
 
     pub fn background_color(mut self, color: Color) -> Canvas<'a, F> {
         self.background_color = color;
+        self
+    }
+
+    /// Change the type of points used to draw the shapes. By default the braille patterns are used
+    /// as they provide a more fine grained result but you might want to use the simple dot instead
+    /// if the targeted terminal does not support those symbols.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use tui::widgets::canvas::Canvas;
+    /// # use tui::symbols;
+    /// Canvas::default().marker(symbols::Marker::Braille).paint(|ctx| {});
+    ///
+    /// Canvas::default().marker(symbols::Marker::Dot).paint(|ctx| {});
+    /// ```
+    pub fn marker(mut self, marker: symbols::Marker) -> Canvas<'a, F> {
+        self.marker = marker;
         self
     }
 }
@@ -324,6 +437,7 @@ where
             canvas_area.height,
             self.x_bounds,
             self.y_bounds,
+            self.marker,
         );
         // Paint to this context
         painter(&mut ctx);
@@ -337,7 +451,7 @@ where
                 .zip(layer.colors.into_iter())
                 .enumerate()
             {
-                if ch != BRAILLE_BLANK {
+                if ch != ' ' && ch != '\u{2800}' {
                     let (x, y) = (i % width, i / width);
                     buf.get_mut(x as u16 + canvas_area.left(), y as u16 + canvas_area.top())
                         .set_char(ch)
