@@ -2,6 +2,8 @@
 
 ## To be released
 
+## v0.9.0 - 2020-04-14
+
 ### Features
 
 * Introduce stateful widgets, i.e widgets that can take advantage of keeping

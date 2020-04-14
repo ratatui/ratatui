@@ -1,6 +1,6 @@
 [package]
 name = "tui"
-version = "0.8.0"
+version = "0.9.0"
 authors = ["Florian Dehau <work@fdehau.com>"]
 description = """
 A library to build rich terminal user interfaces or dashboards
@@ -8,7 +8,7 @@ A library to build rich terminal user interfaces or dashboards
 keywords = ["tui", "terminal", "dashboard"]
 repository = "https://github.com/fdehau/tui-rs"
 license = "MIT"
-exclude = ["assets/*", ".travis.yml", ".github"]
+exclude = ["assets/*", ".github"]
 autoexamples = true
 edition = "2018"
 
@@ -25,7 +25,7 @@ itertools = "0.9"
 either = "1.5"
 unicode-segmentation = "1.2"
 unicode-width = "0.1"
-termion = { version = "1.5" , optional = true }
+termion = { version = "1.5", optional = true }
 rustbox = { version = "0.11", optional = true }
 crossterm = { version = "0.17", optional = true }
 easycurses = { version = "0.12.2", optional = true }
