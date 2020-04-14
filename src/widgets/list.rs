@@ -195,16 +195,11 @@ where
                         list_area.width as usize,
                         highlight_style,
                     );
-                    (x + 1, Some(highlight_style))
+                    (x, Some(highlight_style))
                 } else {
-                    let (x, _) = buf.set_stringn(
-                        x,
-                        y,
-                        &blank_symbol,
-                        list_area.width as usize,
-                        highlight_style,
-                    );
-                    (x + 1, None)
+                    let (x, _) =
+                        buf.set_stringn(x, y, &blank_symbol, list_area.width as usize, self.style);
+                    (x, None)
                 }
             } else {
                 (x, None)

@@ -114,7 +114,7 @@ where
             let tasks = List::new(tasks)
                 .block(Block::default().borders(Borders::ALL).title("List"))
                 .highlight_style(Style::default().fg(Color::Yellow).modifier(Modifier::BOLD))
-                .highlight_symbol(">");
+                .highlight_symbol("> ");
             f.render_stateful_widget(tasks, chunks[0], &mut app.tasks.state);
 
             // Draw logs
