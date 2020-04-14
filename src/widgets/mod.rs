@@ -47,7 +47,7 @@ bitflags! {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Text<'b> {
     Raw(Cow<'b, str>),
     Styled(Cow<'b, str>, Style),

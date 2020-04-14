@@ -7,6 +7,7 @@ use crate::layout::{Corner, Rect};
 use crate::style::Style;
 use crate::widgets::{Block, StatefulWidget, Text, Widget};
 
+#[derive(Debug, Clone)]
 pub struct ListState {
     offset: usize,
     selected: Option<usize>,
@@ -48,6 +49,7 @@ impl ListState {
 ///     .highlight_style(Style::default().modifier(Modifier::ITALIC))
 ///     .highlight_symbol(">>");
 /// ```
+#[derive(Debug, Clone)]
 pub struct List<'b, L>
 where
     L: Iterator<Item = Text<'b>>,

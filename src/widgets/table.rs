@@ -16,6 +16,7 @@ use std::{
 };
 use unicode_width::UnicodeWidthStr;
 
+#[derive(Debug, Clone)]
 pub struct TableState {
     offset: usize,
     selected: Option<usize>,
@@ -44,6 +45,7 @@ impl TableState {
 }
 
 /// Holds data to be displayed in a Table widget
+#[derive(Debug, Clone)]
 pub enum Row<D>
 where
     D: Iterator,
@@ -77,6 +79,7 @@ where
 ///     .style(Style::default().fg(Color::White))
 ///     .column_spacing(1);
 /// ```
+#[derive(Debug, Clone)]
 pub struct Table<'a, H, R> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,

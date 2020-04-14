@@ -21,6 +21,7 @@ use crate::widgets::{Block, Widget};
 ///     .highlight_style(Style::default().fg(Color::Yellow))
 ///     .divider(DOT);
 /// ```
+#[derive(Debug, Clone)]
 pub struct Tabs<'a, T>
 where
     T: AsRef<str> + 'a,

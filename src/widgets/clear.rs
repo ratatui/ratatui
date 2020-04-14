@@ -22,6 +22,7 @@ use crate::widgets::Widget;
 ///
 /// For a more complete example how to utilize `Clear` to realize popups see
 /// the example `examples/popup.rs`
+#[derive(Debug, Clone)]
 pub struct Clear;
 
 impl Widget for Clear {

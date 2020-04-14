@@ -34,6 +34,7 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 ///     .alignment(Alignment::Center)
 ///     .wrap(true);
 /// ```
+#[derive(Debug, Clone)]
 pub struct Paragraph<'a, 't, T>
 where
     T: Iterator<Item = &'t Text<'t>>,

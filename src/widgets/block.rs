@@ -4,7 +4,7 @@ use crate::style::Style;
 use crate::symbols::line;
 use crate::widgets::{Borders, Widget};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum BorderType {
     Plain,
     Rounded,
@@ -39,7 +39,7 @@ impl BorderType {
 ///     .border_type(BorderType::Rounded)
 ///     .style(Style::default().bg(Color::Black));
 /// ```
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Block<'a> {
     /// Optional title place on the upper left of the block
     title: Option<&'a str>,

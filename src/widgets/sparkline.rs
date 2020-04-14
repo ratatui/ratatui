@@ -20,6 +20,7 @@ use std::cmp::min;
 ///     .max(5)
 ///     .style(Style::default().fg(Color::Red).bg(Color::White));
 /// ```
+#[derive(Debug, Clone)]
 pub struct Sparkline<'a> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,

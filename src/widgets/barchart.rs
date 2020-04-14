@@ -25,6 +25,7 @@ use unicode_width::UnicodeWidthStr;
 ///     .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
 ///     .max(4);
 /// ```
+#[derive(Debug, Clone)]
 pub struct BarChart<'a> {
     /// Block to wrap the widget in
     block: Option<Block<'a>>,

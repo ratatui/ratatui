@@ -12,6 +12,7 @@ use std::{borrow::Cow, cmp::max};
 use unicode_width::UnicodeWidthStr;
 
 /// An X or Y axis for the chart widget
+#[derive(Debug, Clone)]
 pub struct Axis<'a, L>
 where
     L: AsRef<str> + 'a,
@@ -82,6 +83,7 @@ where
 }
 
 /// Used to determine which style of graphing to use
+#[derive(Debug, Clone, Copy)]
 pub enum GraphType {
     /// Draw each point
     Scatter,
@@ -90,6 +92,7 @@ pub enum GraphType {
 }
 
 /// A group of data points
+#[derive(Debug, Clone)]
 pub struct Dataset<'a> {
     /// Name of the dataset (used in the legend if shown)
     name: Cow<'a, str>,
@@ -217,6 +220,7 @@ impl Default for ChartLayout {
 ///                     .style(Style::default().fg(Color::Magenta))
 ///                     .data(&[(4.0, 5.0), (5.0, 8.0), (7.66, 13.5)])]);
 /// ```
+#[derive(Debug, Clone)]
 pub struct Chart<'a, LX, LY>
 where
     LX: AsRef<str> + 'a,

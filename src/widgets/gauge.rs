@@ -17,6 +17,7 @@ use crate::widgets::{Block, Widget};
 ///     .style(Style::default().fg(Color::White).bg(Color::Black).modifier(Modifier::ITALIC))
 ///     .percent(20);
 /// ```
+#[derive(Debug, Clone)]
 pub struct Gauge<'a> {
     block: Option<Block<'a>>,
     ratio: f64,

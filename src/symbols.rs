@@ -8,6 +8,7 @@ pub mod block {
     pub const ONE_QUARTER: &str = "▎";
     pub const ONE_EIGHTH: &str = "▏";
 
+    #[derive(Debug, Clone)]
     pub struct Set {
         pub full: &'static str,
         pub seven_eighths: &'static str,
@@ -55,6 +56,7 @@ pub mod bar {
     pub const ONE_QUARTER: &str = "▂";
     pub const ONE_EIGHTH: &str = "▁";
 
+    #[derive(Debug, Clone)]
     pub struct Set {
         pub full: &'static str,
         pub seven_eighths: &'static str,
@@ -141,6 +143,7 @@ pub mod line {
     pub const DOUBLE_CROSS: &str = "╬";
     pub const THICK_CROSS: &str = "╋";
 
+    #[derive(Debug, Clone)]
     pub struct Set {
         pub vertical: &'static str,
         pub horizontal: &'static str,
