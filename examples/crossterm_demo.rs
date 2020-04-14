@@ -15,7 +15,7 @@ use std::{
     io::{stdout, Write},
     sync::mpsc,
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tui::{backend::CrosstermBackend, Terminal};
 
@@ -53,15 +53,18 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let tick_rate = Duration::from_millis(cli.tick_rate);
     thread::spawn(move || {
+        let mut last_tick = Instant::now();
         loop {
             // poll for tick rate duration, if no events, sent tick event.
-            if event::poll(tick_rate).unwrap() {
+            if event::poll(tick_rate - last_tick.elapsed()).unwrap() {
                 if let CEvent::Key(key) = event::read().unwrap() {
                     tx.send(Event::Input(key)).unwrap();
                 }
             }
-
-            tx.send(Event::Tick).unwrap();
+            if last_tick.elapsed() >= tick_rate {
+                tx.send(Event::Tick).unwrap();
+                last_tick = Instant::now();
+            }
         }
     });
 
