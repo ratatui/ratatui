@@ -188,7 +188,7 @@ where
                 // Not supported
                 _ => (list_area.left(), list_area.top() + i as u16),
             };
-            let (x, style) = if let Some(s) = selected {
+            let (elem_x, style) = if let Some(s) = selected {
                 if s == i + state.offset {
                     let (x, _) = buf.set_stringn(
                         x,
@@ -206,18 +206,14 @@ where
             } else {
                 (x, None)
             };
+
+            let max_element_width = (list_area.width - (elem_x - x)) as usize;
             match item {
                 Text::Raw(ref v) => {
-                    buf.set_stringn(
-                        x,
-                        y,
-                        v,
-                        list_area.width as usize,
-                        style.unwrap_or(self.style),
-                    );
+                    buf.set_stringn(elem_x, y, v, max_element_width, style.unwrap_or(self.style));
                 }
                 Text::Styled(ref v, s) => {
-                    buf.set_stringn(x, y, v, list_area.width as usize, style.unwrap_or(s));
+                    buf.set_stringn(elem_x, y, v, max_element_width, style.unwrap_or(s));
                 }
             };
         }
