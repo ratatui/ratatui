@@ -1,8 +1,10 @@
 use tui::{
     backend::TestBackend,
     buffer::Buffer,
+    layout::Rect,
     style::{Color, Style},
-    widgets::{List, ListState, Text},
+    symbols,
+    widgets::{Block, Borders, List, ListState, Text},
     Terminal,
 };
 
@@ -31,4 +33,57 @@ fn it_should_highlight_the_selected_item() {
         expected.get_mut(x, 1).set_bg(Color::Yellow);
     }
     assert_eq!(*terminal.backend().buffer(), expected);
+}
+
+#[test]
+fn it_should_truncate_items() {
+    let backend = TestBackend::new(10, 2);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    struct TruncateTestCase<'a> {
+        name: &'a str,
+        selected: Option<usize>,
+        items: Vec<Text<'a>>,
+        expected: Buffer,
+    }
+
+    let cases = vec![
+        TruncateTestCase {
+            name: "an item is selected",
+            selected: Some(0),
+            items: vec![Text::raw("A very long line"), Text::raw("A very long line")],
+            expected: Buffer::with_lines(vec![
+                format!(">> A ve{}  ", symbols::line::VERTICAL),
+                format!("   A ve{}  ", symbols::line::VERTICAL),
+            ]),
+        },
+        TruncateTestCase {
+            name: "no item is selected",
+            selected: None,
+            items: vec![Text::raw("A very long line"), Text::raw("A very long line")],
+            expected: Buffer::with_lines(vec![
+                format!("A very {}  ", symbols::line::VERTICAL),
+                format!("A very {}  ", symbols::line::VERTICAL),
+            ]),
+        },
+    ];
+    for mut case in cases {
+        let mut state = ListState::default();
+        state.select(case.selected);
+        let items = case.items.drain(..);
+        terminal
+            .draw(|mut f| {
+                let list = List::new(items.into_iter())
+                    .block(Block::default().borders(Borders::RIGHT))
+                    .highlight_symbol(">> ");
+                f.render_stateful_widget(list, Rect::new(0, 0, 8, 2), &mut state);
+            })
+            .unwrap();
+        assert_eq!(
+            *terminal.backend().buffer(),
+            case.expected,
+            "Failed to assert the buffer matches the expected one when {}",
+            case.name
+        );
+    }
 }
