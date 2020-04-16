@@ -40,7 +40,24 @@ where
         self.terminal.known_size
     }
 
-    /// Calls the draw method of a given widget on the current buffer
+    /// Render a [`Widget`] to the current buffer using [`Widget::render`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use std::io;
+    /// # use tui::Terminal;
+    /// # use tui::backend::TermionBackend;
+    /// # use tui::layout::Rect;
+    /// # use tui::widgets::Block;
+    /// # let stdout = io::stdout();
+    /// # let backend = TermionBackend::new(stdout);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
+    /// let block = Block::default();
+    /// let area = Rect::new(0, 0, 5, 5);
+    /// let mut frame = terminal.get_frame();
+    /// frame.render_widget(block, area);
+    /// ```
     pub fn render_widget<W>(&mut self, widget: W, area: Rect)
     where
         W: Widget,
@@ -48,6 +65,30 @@ where
         widget.render(area, self.terminal.current_buffer_mut());
     }
 
+    /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
+    ///
+    /// The last argument should be an instance of the [`StatefulWidget::State`] associated to the
+    /// given [`StatefulWidget`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use std::io;
+    /// # use tui::Terminal;
+    /// # use tui::backend::TermionBackend;
+    /// # use tui::layout::Rect;
+    /// # use tui::widgets::{List, ListState, Text};
+    /// # let stdout = io::stdout();
+    /// # let backend = TermionBackend::new(stdout);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
+    /// let mut state = ListState::default();
+    /// state.select(Some(1));
+    /// let items = vec![Text::raw("Item 1"), Text::raw("Item 2")];
+    /// let list = List::new(items.into_iter());
+    /// let area = Rect::new(0, 0, 5, 5);
+    /// let mut frame = terminal.get_frame();
+    /// frame.render_stateful_widget(list, area, &mut state);
+    /// ```
     pub fn render_stateful_widget<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
     where
         W: StatefulWidget,

@@ -9,7 +9,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! tui = "0.8"
+//! tui = "0.9"
 //! termion = "1.5"
 //! ```
 //!
@@ -19,8 +19,8 @@
 //!
 //! ```toml
 //! [dependencies]
-//! crossterm = "0.14"
-//! tui = { version = "0.8", default-features = false, features = ['crossterm'] }
+//! crossterm = "0.17"
+//! tui = { version = "0.9", default-features = false, features = ['crossterm'] }
 //! ```
 //!
 //! The same logic applies for all other available backends.
@@ -45,16 +45,18 @@
 //! }
 //! ```
 //!
-//! If you had previously chosen `rustbox` as a backend, the terminal can be created in a similar
+//! If you had previously chosen `crossterm` as a backend, the terminal can be created in a similar
 //! way:
 //!
 //! ```rust,ignore
+//! use std::io;
 //! use tui::Terminal;
-//! use tui::backend::RustboxBackend;
+//! use tui::backend::CrosstermBackend;
 //!
 //! fn main() -> Result<(), io::Error> {
-//!     let backend = RustboxBackend::new()?;
-//!     let mut terminal = Terminal::new(backend);
+//!     let stdout = io::stdout();
+//!     let backend = CrosstermBackend::new(stdout);
+//!     let mut terminal = Terminal::new(backend)?;
 //!     Ok(())
 //! }
 //! ```
@@ -64,13 +66,13 @@
 //!
 //! ## Building a User Interface (UI)
 //!
-//! Every component of your interface will be implementing the `Widget` trait.  The library comes
+//! Every component of your interface will be implementing the `Widget` trait. The library comes
 //! with a predefined set of widgets that should meet most of your use cases. You are also free to
 //! implement your own.
 //!
 //! Each widget follows a builder pattern API providing a default configuration along with methods
-//! to customize them. The widget is then registered using its `render` method that take a `Frame`
-//! instance and an area to draw to.
+//! to customize them. The widget is then rendered using the [`Frame::render_widget`] which take
+//! your widget instance an area to draw to.
 //!
 //! The following example renders a block of the size of the terminal:
 //!
