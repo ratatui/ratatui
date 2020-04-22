@@ -97,6 +97,7 @@ You can run all examples by running `make run-examples`.
 * [bottom](https://github.com/ClementTsang/bottom)
 * [oha](https://github.com/hatoo/oha)
 * [gitui](https://github.com/extrawurst/gitui)
+* [desed](https://github.com/SoptikHa2/desed)
 
 ### Alternatives
 
