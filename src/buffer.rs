@@ -322,6 +322,9 @@ impl Buffer {
         let max_offset = min(self.area.right() as usize, width.saturating_add(x as usize));
         for s in graphemes {
             let width = s.width();
+            if width == 0 {
+                continue;
+            }
             // `x_offset + width > max_offset` could be integer overflow on 32-bit machines if we
             // change dimenstions to usize or u32 and someone resizes the terminal to 1x2^32.
             if width > max_offset.saturating_sub(x_offset) {
@@ -518,6 +521,22 @@ mod tests {
         // Width truncation:
         buffer.set_string(0, 0, "123456", Style::default());
         assert_eq!(buffer, Buffer::with_lines(vec!["12345"]));
+    }
+
+    #[test]
+    fn buffer_set_string_zero_width() {
+        let area = Rect::new(0, 0, 1, 1);
+        let mut buffer = Buffer::empty(area);
+
+        // Leading grapheme with zero width
+        let s = "\u{1}a";
+        buffer.set_stringn(0, 0, s, 1, Style::default());
+        assert_eq!(buffer, Buffer::with_lines(vec!["a"]));
+
+        // Trailing grapheme with zero with
+        let s = "a\u{1}";
+        buffer.set_stringn(0, 0, s, 1, Style::default());
+        assert_eq!(buffer, Buffer::with_lines(vec!["a"]));
     }
 
     #[test]
