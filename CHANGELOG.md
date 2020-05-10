@@ -2,6 +2,12 @@
 
 ## To be released
 
+## v0.9.3 - 2020-05-11
+
+### Bug Fixes
+
+* Fix usize overflows in `widgets::Chart` when a dataset is empty.
+
 ## v0.9.2 - 2020-05-10
 
 ### Bug Fixes
