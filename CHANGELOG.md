@@ -2,6 +2,12 @@
 
 ## To be released
 
+## v0.9.2 - 2020-05-10
+
+### Bug Fixes
+
+* Fix usize overflows in `widgets::canvas::Line` drawing algorithm.
+
 ## v0.9.1 - 2020-04-16
 
 ### Bug Fixes
