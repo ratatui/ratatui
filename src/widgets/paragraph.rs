@@ -1,12 +1,15 @@
-use either::Either;
-use unicode_segmentation::UnicodeSegmentation;
+use crate::{
+    buffer::Buffer,
+    layout::{Alignment, Rect},
+    style::Style,
+    text::{StyledGrapheme, Text},
+    widgets::{
+        reflow::{LineComposer, LineTruncator, WordWrapper},
+        Block, Widget,
+    },
+};
+use std::iter;
 use unicode_width::UnicodeWidthStr;
-
-use crate::buffer::Buffer;
-use crate::layout::{Alignment, Rect};
-use crate::style::Style;
-use crate::widgets::reflow::{LineComposer, LineTruncator, Styled, WordWrapper};
-use crate::widgets::{Block, Text, Widget};
 
 fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
     match alignment {
@@ -21,24 +24,26 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 /// # Examples
 ///
 /// ```
-/// # use tui::widgets::{Block, Borders, Paragraph, Text, Wrap};
-/// # use tui::style::{Style, Color};
+/// # use tui::text::{Text, Spans, Span};
+/// # use tui::widgets::{Block, Borders, Paragraph, Wrap};
+/// # use tui::style::{Style, StyleDiff, Color, Modifier};
 /// # use tui::layout::{Alignment};
-/// let text = [
-///     Text::raw("First line\n"),
-///     Text::styled("Second line\n", Style::default().fg(Color::Red))
+/// let text = vec![
+///     Spans::from(vec![
+///         Span::raw("First"),
+///         Span::styled("line",StyleDiff::default().add_modifier(Modifier::ITALIC)),
+///         Span::raw("."),
+///     ]),
+///     Spans::from(Span::styled("Second line", StyleDiff::default().fg(Color::Red))),
 /// ];
-/// Paragraph::new(text.iter())
+/// Paragraph::new(text)
 ///     .block(Block::default().title("Paragraph").borders(Borders::ALL))
 ///     .style(Style::default().fg(Color::White).bg(Color::Black))
 ///     .alignment(Alignment::Center)
 ///     .wrap(Wrap { trim: true });
 /// ```
 #[derive(Debug, Clone)]
-pub struct Paragraph<'a, 't, T>
-where
-    T: Iterator<Item = &'t Text<'t>>,
-{
+pub struct Paragraph<'a> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,
     /// Widget style
@@ -46,9 +51,7 @@ where
     /// How to wrap the text
     wrap: Option<Wrap>,
     /// The text to display
-    text: T,
-    /// Should we parse the text for embedded commands
-    raw: bool,
+    text: Text<'a>,
     /// Scroll
     scroll: (u16, u16),
     /// Alignment of the text
@@ -57,16 +60,17 @@ where
 
 /// Describes how to wrap text across lines.
 ///
-/// # Example
+/// ## Examples
 ///
 /// ```
-/// # use tui::widgets::{Paragraph, Text, Wrap};
-/// let bullet_points = [Text::raw(r#"Some indented points:
+/// # use tui::widgets::{Paragraph, Wrap};
+/// # use tui::text::Text;
+/// let bullet_points = Text::from(r#"Some indented points:
 ///     - First thing goes here and is long so that it wraps
-///     - Here is another point that is long enough to wrap"#)];
+///     - Here is another point that is long enough to wrap"#);
 ///
 /// // With leading spaces trimmed (window width of 30 chars):
-/// Paragraph::new(bullet_points.iter()).wrap(Wrap { trim: true });
+/// Paragraph::new(bullet_points.clone()).wrap(Wrap { trim: true });
 /// // Some indented points:
 /// // - First thing goes here and is
 /// // long so that it wraps
@@ -74,74 +78,67 @@ where
 /// // is long enough to wrap
 ///
 /// // But without trimming, indentation is preserved:
-/// Paragraph::new(bullet_points.iter()).wrap(Wrap { trim: false });
+/// Paragraph::new(bullet_points).wrap(Wrap { trim: false });
 /// // Some indented points:
 /// //     - First thing goes here
 /// // and is long so that it wraps
 /// //     - Here is another point
 /// // that is long enough to wrap
+/// ```
 #[derive(Debug, Clone, Copy)]
 pub struct Wrap {
     /// Should leading whitespace be trimmed
     pub trim: bool,
 }
 
-impl<'a, 't, T> Paragraph<'a, 't, T>
-where
-    T: Iterator<Item = &'t Text<'t>>,
-{
-    pub fn new(text: T) -> Paragraph<'a, 't, T> {
+impl<'a> Paragraph<'a> {
+    pub fn new<T>(text: T) -> Paragraph<'a>
+    where
+        T: Into<Text<'a>>,
+    {
         Paragraph {
             block: None,
             style: Default::default(),
             wrap: None,
-            raw: false,
-            text,
+            text: text.into(),
             scroll: (0, 0),
             alignment: Alignment::Left,
         }
     }
 
-    pub fn block(mut self, block: Block<'a>) -> Paragraph<'a, 't, T> {
+    pub fn block(mut self, block: Block<'a>) -> Paragraph<'a> {
         self.block = Some(block);
         self
     }
 
-    pub fn style(mut self, style: Style) -> Paragraph<'a, 't, T> {
+    pub fn style(mut self, style: Style) -> Paragraph<'a> {
         self.style = style;
         self
     }
 
-    pub fn wrap(mut self, wrap: Wrap) -> Paragraph<'a, 't, T> {
+    pub fn wrap(mut self, wrap: Wrap) -> Paragraph<'a> {
         self.wrap = Some(wrap);
         self
     }
 
-    pub fn raw(mut self, flag: bool) -> Paragraph<'a, 't, T> {
-        self.raw = flag;
-        self
-    }
-
-    pub fn scroll(mut self, offset: (u16, u16)) -> Paragraph<'a, 't, T> {
+    pub fn scroll(mut self, offset: (u16, u16)) -> Paragraph<'a> {
         self.scroll = offset;
         self
     }
 
-    pub fn alignment(mut self, alignment: Alignment) -> Paragraph<'a, 't, T> {
+    pub fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {
         self.alignment = alignment;
         self
     }
 }
 
-impl<'a, 't, 'b, T> Widget for Paragraph<'a, 't, T>
-where
-    T: Iterator<Item = &'t Text<'t>>,
-{
+impl<'a> Widget for Paragraph<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
-        let text_area = match self.block {
-            Some(ref mut b) => {
+        let text_area = match self.block.take() {
+            Some(b) => {
+                let inner_area = b.inner(area);
                 b.render(area, buf);
-                b.inner(area)
+                inner_area
             }
             None => area,
         };
@@ -153,15 +150,17 @@ where
         buf.set_background(text_area, self.style.bg);
 
         let style = self.style;
-        let mut styled = self.text.by_ref().flat_map(|t| match *t {
-            Text::Raw(ref d) => {
-                let data: &'t str = d; // coerce to &str
-                Either::Left(UnicodeSegmentation::graphemes(data, true).map(|g| Styled(g, style)))
-            }
-            Text::Styled(ref d, s) => {
-                let data: &'t str = d; // coerce to &str
-                Either::Right(UnicodeSegmentation::graphemes(data, true).map(move |g| Styled(g, s)))
-            }
+        let mut styled = self.text.lines.iter().flat_map(|spans| {
+            spans
+                .0
+                .iter()
+                .flat_map(|span| span.styled_graphemes(style))
+                // Required given the way composers work but might be refactored out if we change
+                // composers to operate on lines instead of a stream of graphemes.
+                .chain(iter::once(StyledGrapheme {
+                    symbol: "\n",
+                    style: self.style,
+                }))
         });
 
         let mut line_composer: Box<dyn LineComposer> = if let Some(Wrap { trim }) = self.wrap {
@@ -177,7 +176,7 @@ where
         while let Some((current_line, current_line_width)) = line_composer.next_line() {
             if y >= self.scroll.0 {
                 let mut x = get_line_offset(current_line_width, text_area.width, self.alignment);
-                for Styled(symbol, style) in current_line {
+                for StyledGrapheme { symbol, style } in current_line {
                     buf.get_mut(text_area.left() + x, text_area.top() + y - self.scroll.0)
                         .set_symbol(if symbol.is_empty() {
                             // If the symbol is empty, the last char which rendered last time will

@@ -83,14 +83,17 @@ where
     /// # use tui::Terminal;
     /// # use tui::backend::TermionBackend;
     /// # use tui::layout::Rect;
-    /// # use tui::widgets::{List, ListState, Text};
+    /// # use tui::widgets::{List, ListItem, ListState};
     /// # let stdout = io::stdout();
     /// # let backend = TermionBackend::new(stdout);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// let mut state = ListState::default();
     /// state.select(Some(1));
-    /// let items = vec![Text::raw("Item 1"), Text::raw("Item 2")];
-    /// let list = List::new(items.into_iter());
+    /// let items = vec![
+    ///     ListItem::new("Item 1"),
+    ///     ListItem::new("Item 2"),
+    /// ];
+    /// let list = List::new(items);
     /// let area = Rect::new(0, 0, 5, 5);
     /// let mut frame = terminal.get_frame();
     /// frame.render_stateful_widget(list, area, &mut state);

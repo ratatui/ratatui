@@ -6,6 +6,7 @@ SHELL=/bin/bash
 RUST_CHANNEL ?= stable
 CARGO_FLAGS =
 RUSTUP_INSTALLED = $(shell command -v rustup 2> /dev/null)
+TEST_FILTER ?=
 
 ifndef RUSTUP_INSTALLED
   CARGO = cargo
@@ -59,16 +60,16 @@ clippy: ## Check the style of the source code and catch common errors
 
 .PHONY: test
 test: ## Run the tests
-	$(CARGO) test --all-features
+	$(CARGO) test --all-features $(TEST_FILTER)
 
 # =============================== Examples ====================================
 
 .PHONY: build-examples
 build-examples: ## Build all examples
-	@$(CARGO) build --examples --all-features
+	@$(CARGO) build --release --examples --all-features
 
 .PHONY: run-examples
-run-examples: ## Run all examples
+run-examples: build-examples ## Run all examples
 	@for file in examples/*.rs; do \
 	  name=$$(basename $${file/.rs/}); \
 	  $(CARGO) run --all-features --release --example $$name; \
@@ -78,6 +79,7 @@ run-examples: ## Run all examples
 
 
 .PHONY: doc
+doc: RUST_CHANNEL = nightly
 doc: ## Build the documentation (available at ./target/doc)
 	$(CARGO) doc
 
@@ -95,8 +97,9 @@ watch-test: ## Watch files changes and run the tests if any
 	watchman-make -p 'src/**/*.rs' 'tests/**/*.rs' 'examples/**/*.rs' -t test
 
 .PHONY: watch-doc
+watch-doc: RUST_CHANNEL = nightly
 watch-doc: ## Watch file changes and rebuild the documentation if any
-	watchman-make -p 'src/**/*.rs' -t doc
+	$(CARGO) watch -x doc -x 'test --doc'
 
 # ================================= Pipelines =================================
 

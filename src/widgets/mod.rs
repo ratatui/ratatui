@@ -15,9 +15,6 @@
 //! - [`Sparkline`]
 //! - [`Clear`]
 
-use bitflags::bitflags;
-use std::borrow::Cow;
-
 mod barchart;
 mod block;
 pub mod canvas;
@@ -36,15 +33,14 @@ pub use self::block::{Block, BorderType};
 pub use self::chart::{Axis, Chart, Dataset, GraphType};
 pub use self::clear::Clear;
 pub use self::gauge::Gauge;
-pub use self::list::{List, ListState};
+pub use self::list::{List, ListItem, ListState};
 pub use self::paragraph::{Paragraph, Wrap};
 pub use self::sparkline::Sparkline;
 pub use self::table::{Row, Table, TableState};
 pub use self::tabs::Tabs;
 
-use crate::buffer::Buffer;
-use crate::layout::Rect;
-use crate::style::Style;
+use crate::{buffer::Buffer, layout::Rect};
+use bitflags::bitflags;
 
 bitflags! {
     /// Bitflags that can be composed to set the visible borders essentially on the block widget.
@@ -61,22 +57,6 @@ bitflags! {
         const LEFT = 0b0001_0000;
         /// Show all borders
         const ALL = Self::TOP.bits | Self::RIGHT.bits | Self::BOTTOM.bits | Self::LEFT.bits;
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Text<'b> {
-    Raw(Cow<'b, str>),
-    Styled(Cow<'b, str>, Style),
-}
-
-impl<'b> Text<'b> {
-    pub fn raw<D: Into<Cow<'b, str>>>(data: D) -> Text<'b> {
-        Text::Raw(data.into())
-    }
-
-    pub fn styled<D: Into<Cow<'b, str>>>(data: D, style: Style) -> Text<'b> {
-        Text::Styled(data.into(), style)
     }
 }
 
@@ -108,7 +88,7 @@ pub trait Widget {
 /// # use std::io;
 /// # use tui::Terminal;
 /// # use tui::backend::{Backend, TermionBackend};
-/// # use tui::widgets::{Widget, List, ListState, Text};
+/// # use tui::widgets::{Widget, List, ListItem, ListState};
 ///
 /// // Let's say we have some events to display.
 /// struct Events {
@@ -187,7 +167,7 @@ pub trait Widget {
 ///     terminal.draw(|f| {
 ///         // The items managed by the application are transformed to something
 ///         // that is understood by tui.
-///         let items = events.items.iter().map(Text::raw);
+///         let items: Vec<ListItem>= events.items.iter().map(|i| ListItem::new(i.as_ref())).collect();
 ///         // The `List` widget is then built with those items.
 ///         let list = List::new(items);
 ///         // Finally the widget is rendered using the associated state. `events.state` is

@@ -7,7 +7,8 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, StyleDiff},
+    text::Span,
     widgets::{Block, BorderType, Borders},
     Terminal,
 };
@@ -40,39 +41,40 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .margin(4)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(f.size());
-            {
-                let chunks = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                    .split(chunks[0]);
-                let block = Block::default()
-                    .title("With background")
-                    .title_style(Style::default().fg(Color::Yellow))
-                    .style(Style::default().bg(Color::Green));
-                f.render_widget(block, chunks[0]);
-                let title_style = Style::default()
+
+            let top_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .split(chunks[0]);
+            let block = Block::default()
+                .title(vec![
+                    Span::styled("With", StyleDiff::default().fg(Color::Yellow)),
+                    Span::from(" background"),
+                ])
+                .style(Style::default().bg(Color::Green));
+            f.render_widget(block, top_chunks[0]);
+
+            let block = Block::default().title(Span::styled(
+                "Styled title",
+                StyleDiff::default()
                     .fg(Color::White)
                     .bg(Color::Red)
-                    .modifier(Modifier::BOLD);
-                let block = Block::default()
-                    .title("Styled title")
-                    .title_style(title_style);
-                f.render_widget(block, chunks[1]);
-            }
-            {
-                let chunks = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                    .split(chunks[1]);
-                let block = Block::default().title("With borders").borders(Borders::ALL);
-                f.render_widget(block, chunks[0]);
-                let block = Block::default()
-                    .title("With styled borders and doubled borders")
-                    .border_style(Style::default().fg(Color::Cyan))
-                    .borders(Borders::LEFT | Borders::RIGHT)
-                    .border_type(BorderType::Double);
-                f.render_widget(block, chunks[1]);
-            }
+                    .add_modifier(Modifier::BOLD),
+            ));
+            f.render_widget(block, top_chunks[1]);
+
+            let bottom_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .split(chunks[1]);
+            let block = Block::default().title("With borders").borders(Borders::ALL);
+            f.render_widget(block, bottom_chunks[0]);
+            let block = Block::default()
+                .title("With styled borders and doubled borders")
+                .border_style(Style::default().fg(Color::Cyan))
+                .borders(Borders::LEFT | Borders::RIGHT)
+                .border_type(BorderType::Double);
+            f.render_widget(block, bottom_chunks[1]);
         })?;
 
         if let Event::Input(key) = events.next()? {

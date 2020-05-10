@@ -10,8 +10,9 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, StyleDiff},
     symbols,
+    text::Span,
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType},
     Terminal,
 };
@@ -92,12 +93,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .as_ref(),
                 )
                 .split(size);
-            let x_labels = [
-                format!("{}", app.window[0]),
-                format!("{}", (app.window[0] + app.window[1]) / 2.0),
-                format!("{}", app.window[1]),
+            let x_labels = vec![
+                Span::styled(
+                    format!("{}", app.window[0]),
+                    StyleDiff::default().modifier(Modifier::BOLD),
+                ),
+                Span::raw(format!("{}", (app.window[0] + app.window[1]) / 2.0)),
+                Span::styled(
+                    format!("{}", app.window[1]),
+                    StyleDiff::default().modifier(Modifier::BOLD),
+                ),
             ];
-            let datasets = [
+            let datasets = vec![
                 Dataset::default()
                     .name("data2")
                     .marker(symbols::Marker::Dot)
@@ -109,94 +116,118 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .style(Style::default().fg(Color::Yellow))
                     .data(&app.data2),
             ];
-            let chart = Chart::default()
+
+            let chart = Chart::new(datasets)
                 .block(
                     Block::default()
-                        .title("Chart 1")
-                        .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
+                        .title(Span::styled(
+                            "Chart 1",
+                            StyleDiff::default()
+                                .fg(Color::Cyan)
+                                .modifier(Modifier::BOLD),
+                        ))
                         .borders(Borders::ALL),
                 )
                 .x_axis(
                     Axis::default()
                         .title("X Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
-                        .bounds(app.window)
-                        .labels(&x_labels),
+                        .labels(x_labels)
+                        .bounds(app.window),
                 )
                 .y_axis(
                     Axis::default()
                         .title("Y Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
-                        .bounds([-20.0, 20.0])
-                        .labels(&["-20", "0", "20"]),
-                )
-                .datasets(&datasets);
+                        .labels(vec![
+                            Span::styled("-20", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::raw("0"),
+                            Span::styled("20", StyleDiff::default().modifier(Modifier::BOLD)),
+                        ])
+                        .bounds([-20.0, 20.0]),
+                );
             f.render_widget(chart, chunks[0]);
 
-            let datasets = [Dataset::default()
+            let datasets = vec![Dataset::default()
                 .name("data")
                 .marker(symbols::Marker::Braille)
                 .style(Style::default().fg(Color::Yellow))
                 .graph_type(GraphType::Line)
                 .data(&DATA)];
-            let chart = Chart::default()
+            let chart = Chart::new(datasets)
                 .block(
                     Block::default()
-                        .title("Chart 2")
-                        .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
+                        .title(Span::styled(
+                            "Chart 2",
+                            StyleDiff::default()
+                                .fg(Color::Cyan)
+                                .modifier(Modifier::BOLD),
+                        ))
                         .borders(Borders::ALL),
                 )
                 .x_axis(
                     Axis::default()
                         .title("X Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
                         .bounds([0.0, 5.0])
-                        .labels(&["0", "2.5", "5.0"]),
+                        .labels(vec![
+                            Span::styled("0", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::raw("2.5"),
+                            Span::styled("5.0", StyleDiff::default().modifier(Modifier::BOLD)),
+                        ]),
                 )
                 .y_axis(
                     Axis::default()
                         .title("Y Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
                         .bounds([0.0, 5.0])
-                        .labels(&["0", "2.5", "5.0"]),
-                )
-                .datasets(&datasets);
+                        .labels(vec![
+                            Span::styled("0", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::raw("2.5"),
+                            Span::styled("5.0", StyleDiff::default().modifier(Modifier::BOLD)),
+                        ]),
+                );
             f.render_widget(chart, chunks[1]);
 
-            let datasets = [Dataset::default()
+            let datasets = vec![Dataset::default()
                 .name("data")
                 .marker(symbols::Marker::Braille)
                 .style(Style::default().fg(Color::Yellow))
                 .graph_type(GraphType::Line)
                 .data(&DATA2)];
-            let chart = Chart::default()
+            let chart = Chart::new(datasets)
                 .block(
                     Block::default()
-                        .title("Chart 3")
-                        .title_style(Style::default().fg(Color::Cyan).modifier(Modifier::BOLD))
+                        .title(Span::styled(
+                            "Chart 3",
+                            StyleDiff::default()
+                                .fg(Color::Cyan)
+                                .modifier(Modifier::BOLD),
+                        ))
                         .borders(Borders::ALL),
                 )
                 .x_axis(
                     Axis::default()
                         .title("X Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
                         .bounds([0.0, 50.0])
-                        .labels(&["0", "25", "50"]),
+                        .labels(vec![
+                            Span::styled("0", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::raw("25"),
+                            Span::styled("50", StyleDiff::default().modifier(Modifier::BOLD)),
+                        ]),
                 )
                 .y_axis(
                     Axis::default()
                         .title("Y Axis")
                         .style(Style::default().fg(Color::Gray))
-                        .labels_style(Style::default().modifier(Modifier::ITALIC))
                         .bounds([0.0, 5.0])
-                        .labels(&["0", "2.5", "5"]),
-                )
-                .datasets(&datasets);
+                        .labels(vec![
+                            Span::styled("0", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::raw("2.5"),
+                            Span::styled("5", StyleDiff::default().modifier(Modifier::BOLD)),
+                        ]),
+                );
             f.render_widget(chart, chunks[2]);
         })?;
 

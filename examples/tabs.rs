@@ -10,7 +10,8 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
+    style::{Color, Modifier, Style, StyleDiff},
+    text::{Span, Spans},
     widgets::{Block, Borders, Tabs},
     Terminal,
 };
@@ -47,12 +48,23 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let block = Block::default().style(Style::default().bg(Color::White));
             f.render_widget(block, size);
-            let tabs = Tabs::default()
+            let titles = app
+                .tabs
+                .titles
+                .iter()
+                .map(|t| {
+                    let (first, rest) = t.split_at(1);
+                    Spans::from(vec![
+                        Span::styled(first, StyleDiff::default().fg(Color::Yellow)),
+                        Span::styled(rest, StyleDiff::default().fg(Color::Green)),
+                    ])
+                })
+                .collect();
+            let tabs = Tabs::new(titles)
                 .block(Block::default().borders(Borders::ALL).title("Tabs"))
-                .titles(&app.tabs.titles)
                 .select(app.tabs.index)
                 .style(Style::default().fg(Color::Cyan))
-                .highlight_style(Style::default().fg(Color::Yellow));
+                .highlight_style_diff(StyleDiff::default().modifier(Modifier::BOLD));
             f.render_widget(tabs, chunks[0]);
             let inner = match app.tabs.index {
                 0 => Block::default().title("Inner 0").borders(Borders::ALL),

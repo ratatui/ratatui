@@ -221,10 +221,11 @@ where
 
     fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         // Render block if necessary and get the drawing area
-        let table_area = match self.block {
-            Some(ref mut b) => {
+        let table_area = match self.block.take() {
+            Some(b) => {
+                let inner_area = b.inner(area);
                 b.render(area, buf);
-                b.inner(area)
+                inner_area
             }
             None => area,
         };

@@ -2,9 +2,9 @@ use tui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Style},
+    style::{Color, StyleDiff},
     symbols,
-    widgets::{Block, Borders, List, ListState, Text},
+    widgets::{Block, Borders, List, ListItem, ListState},
     Terminal,
 };
 
@@ -18,12 +18,12 @@ fn widgets_list_should_highlight_the_selected_item() {
         .draw(|f| {
             let size = f.size();
             let items = vec![
-                Text::raw("Item 1"),
-                Text::raw("Item 2"),
-                Text::raw("Item 3"),
+                ListItem::new("Item 1"),
+                ListItem::new("Item 2"),
+                ListItem::new("Item 3"),
             ];
-            let list = List::new(items.into_iter())
-                .highlight_style(Style::default().bg(Color::Yellow))
+            let list = List::new(items)
+                .highlight_style_diff(StyleDiff::default().bg(Color::Yellow))
                 .highlight_symbol(">> ");
             f.render_stateful_widget(list, size, &mut state);
         })
@@ -42,7 +42,7 @@ fn widgets_list_should_truncate_items() {
 
     struct TruncateTestCase<'a> {
         selected: Option<usize>,
-        items: Vec<Text<'a>>,
+        items: Vec<ListItem<'a>>,
         expected: Buffer,
     }
 
@@ -50,7 +50,10 @@ fn widgets_list_should_truncate_items() {
         // An item is selected
         TruncateTestCase {
             selected: Some(0),
-            items: vec![Text::raw("A very long line"), Text::raw("A very long line")],
+            items: vec![
+                ListItem::new("A very long line"),
+                ListItem::new("A very long line"),
+            ],
             expected: Buffer::with_lines(vec![
                 format!(">> A ve{}  ", symbols::line::VERTICAL),
                 format!("   A ve{}  ", symbols::line::VERTICAL),
@@ -59,20 +62,22 @@ fn widgets_list_should_truncate_items() {
         // No item is selected
         TruncateTestCase {
             selected: None,
-            items: vec![Text::raw("A very long line"), Text::raw("A very long line")],
+            items: vec![
+                ListItem::new("A very long line"),
+                ListItem::new("A very long line"),
+            ],
             expected: Buffer::with_lines(vec![
                 format!("A very {}  ", symbols::line::VERTICAL),
                 format!("A very {}  ", symbols::line::VERTICAL),
             ]),
         },
     ];
-    for mut case in cases {
+    for case in cases {
         let mut state = ListState::default();
         state.select(case.selected);
-        let items = case.items.drain(..);
         terminal
             .draw(|f| {
-                let list = List::new(items)
+                let list = List::new(case.items.clone())
                     .block(Block::default().borders(Borders::RIGHT))
                     .highlight_symbol(">> ");
                 f.render_stateful_widget(list, Rect::new(0, 0, 8, 2), &mut state);

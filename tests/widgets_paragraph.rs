@@ -2,7 +2,8 @@ use tui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Alignment,
-    widgets::{Block, Borders, Paragraph, Text, Wrap},
+    text::{Spans, Text},
+    widgets::{Block, Borders, Paragraph, Wrap},
     Terminal,
 };
 
@@ -20,8 +21,8 @@ fn widgets_paragraph_can_wrap_its_content() {
         terminal
             .draw(|f| {
                 let size = f.size();
-                let text = [Text::raw(SAMPLE_STRING)];
-                let paragraph = Paragraph::new(text.iter())
+                let text = vec![Spans::from(SAMPLE_STRING)];
+                let paragraph = Paragraph::new(text)
                     .block(Block::default().borders(Borders::ALL))
                     .alignment(alignment)
                     .wrap(Wrap { trim: true });
@@ -87,8 +88,8 @@ fn widgets_paragraph_renders_double_width_graphemes() {
     terminal
         .draw(|f| {
             let size = f.size();
-            let text = [Text::raw(s)];
-            let paragraph = Paragraph::new(text.iter())
+            let text = vec![Spans::from(s)];
+            let paragraph = Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL))
                 .wrap(Wrap { trim: true });
             f.render_widget(paragraph, size);
@@ -119,8 +120,8 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
     terminal
         .draw(|f| {
             let size = f.size();
-            let text = [Text::raw(s)];
-            let paragraph = Paragraph::new(text.iter())
+            let text = vec![Spans::from(s)];
+            let paragraph = Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL))
                 .wrap(Wrap { trim: true });
             f.render_widget(paragraph, size);
@@ -149,13 +150,10 @@ fn widgets_paragraph_can_scroll_horizontally() {
         terminal
             .draw(|f| {
                 let size = f.size();
-                let text = [Text::raw(
-                    "段落现在可以水平滚动了！
-Paragraph can scroll horizontally!
-Short line
-",
-                )];
-                let paragraph = Paragraph::new(text.iter())
+                let text = Text::from(
+                    "段落现在可以水平滚动了！\nParagraph can scroll horizontally!\nShort line",
+                );
+                let paragraph = Paragraph::new(text)
                     .block(Block::default().borders(Borders::ALL))
                     .alignment(alignment)
                     .scroll(scroll);

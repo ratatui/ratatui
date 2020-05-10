@@ -1,9 +1,10 @@
-use unicode_width::UnicodeWidthStr;
-
-use crate::buffer::Buffer;
-use crate::layout::Rect;
-use crate::style::{Color, Style};
-use crate::widgets::{Block, Widget};
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    style::{Color, Style},
+    text::Span,
+    widgets::{Block, Widget},
+};
 
 /// A widget to display a task progress.
 ///
@@ -21,7 +22,7 @@ use crate::widgets::{Block, Widget};
 pub struct Gauge<'a> {
     block: Option<Block<'a>>,
     ratio: f64,
-    label: Option<&'a str>,
+    label: Option<Span<'a>>,
     style: Style,
 }
 
@@ -61,8 +62,11 @@ impl<'a> Gauge<'a> {
         self
     }
 
-    pub fn label(mut self, string: &'a str) -> Gauge<'a> {
-        self.label = Some(string);
+    pub fn label<T>(mut self, label: T) -> Gauge<'a>
+    where
+        T: Into<Span<'a>>,
+    {
+        self.label = Some(label.into());
         self
     }
 
@@ -74,10 +78,11 @@ impl<'a> Gauge<'a> {
 
 impl<'a> Widget for Gauge<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
-        let gauge_area = match self.block {
-            Some(ref mut b) => {
+        let gauge_area = match self.block.take() {
+            Some(b) => {
+                let inner_area = b.inner(area);
                 b.render(area, buf);
-                b.inner(area)
+                inner_area
             }
             None => area,
         };
@@ -92,6 +97,11 @@ impl<'a> Widget for Gauge<'a> {
         let center = gauge_area.height / 2 + gauge_area.top();
         let width = (f64::from(gauge_area.width) * self.ratio).round() as u16;
         let end = gauge_area.left() + width;
+        // Label
+        let ratio = self.ratio;
+        let label = self
+            .label
+            .unwrap_or_else(|| Span::from(format!("{}%", (ratio * 100.0).round())));
         for y in gauge_area.top()..gauge_area.bottom() {
             // Gauge
             for x in gauge_area.left()..end {
@@ -99,12 +109,9 @@ impl<'a> Widget for Gauge<'a> {
             }
 
             if y == center {
-                // Label
-                let precent_label = format!("{}%", (self.ratio * 100.0).round());
-                let label = self.label.unwrap_or(&precent_label);
                 let label_width = label.width() as u16;
                 let middle = (gauge_area.width - label_width) / 2 + gauge_area.left();
-                buf.set_string(middle, y, label, self.style);
+                buf.set_span(middle, y, &label, gauge_area.right() - middle, self.style);
             }
 
             // Fix colors

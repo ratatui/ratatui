@@ -89,7 +89,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .block(Block::default().title("Gauge2").borders(Borders::ALL))
                 .style(Style::default().fg(Color::Magenta).bg(Color::Green))
                 .percent(app.progress2)
-                .label(&label);
+                .label(label);
             f.render_widget(gauge, chunks[1]);
 
             let gauge = Gauge::default()
@@ -103,7 +103,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .block(Block::default().title("Gauge4").borders(Borders::ALL))
                 .style(Style::default().fg(Color::Cyan).modifier(Modifier::ITALIC))
                 .percent(app.progress4)
-                .label(&label);
+                .label(label);
             f.render_widget(gauge, chunks[3]);
         })?;
 

@@ -4,13 +4,12 @@ mod util;
 use crate::util::event::{Event, Events};
 use std::{error::Error, io};
 use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
-use tui::layout::Rect;
-use tui::widgets::Clear;
 use tui::{
     backend::TermionBackend,
-    layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    widgets::{Block, Borders, Paragraph, Text, Wrap},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, StyleDiff},
+    text::{Span, Spans},
+    widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Terminal,
 };
 
@@ -66,27 +65,27 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let mut long_line = s.repeat(usize::from(size.width)*usize::from(size.height)/300);
                 long_line.push('\n');
 
-            let text = [
-                Text::raw("This is a line \n"),
-                Text::styled("This is a line   \n", Style::default().fg(Color::Red)),
-                Text::styled("This is a line\n", Style::default().bg(Color::Blue)),
-                Text::styled(
+            let text = vec![
+                Spans::from("This is a line "),
+                Spans::from(Span::styled("This is a line   ", StyleDiff::default().fg(Color::Red))),
+                Spans::from(Span::styled("This is a line", StyleDiff::default().bg(Color::Blue))),
+                Spans::from(Span::styled(
                     "This is a longer line\n",
-                    Style::default().modifier(Modifier::CROSSED_OUT),
-                ),
-                Text::styled(&long_line, Style::default().bg(Color::Green)),
-                Text::styled(
+                    StyleDiff::default().modifier(Modifier::CROSSED_OUT),
+                )),
+                Spans::from(Span::styled(&long_line, StyleDiff::default().bg(Color::Green))),
+                Spans::from(Span::styled(
                     "This is a line\n",
-                    Style::default().fg(Color::Green).modifier(Modifier::ITALIC),
-                ),
+                    StyleDiff::default().fg(Color::Green).modifier(Modifier::ITALIC),
+                )),
             ];
 
-            let paragraph = Paragraph::new(text.iter())
+            let paragraph = Paragraph::new(text.clone())
                 .block(Block::default().title("Left Block").borders(Borders::ALL))
                 .alignment(Alignment::Left).wrap(Wrap { trim: true });
             f.render_widget(paragraph, chunks[0]);
 
-            let paragraph = Paragraph::new(text.iter())
+            let paragraph = Paragraph::new(text)
                 .block(Block::default().title("Right Block").borders(Borders::ALL))
                 .alignment(Alignment::Left).wrap(Wrap { trim: true });
             f.render_widget(paragraph, chunks[1]);

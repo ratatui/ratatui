@@ -22,8 +22,6 @@ curses = ["easycurses", "pancurses"]
 [dependencies]
 bitflags = "1.0"
 cassowary = "0.3"
-itertools = "0.9"
-either = "1.5"
 unicode-segmentation = "1.2"
 unicode-width = "0.1"
 termion = { version = "1.5", optional = true }

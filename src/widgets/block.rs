@@ -1,8 +1,11 @@
-use crate::buffer::Buffer;
-use crate::layout::Rect;
-use crate::style::Style;
-use crate::symbols::line;
-use crate::widgets::{Borders, Widget};
+use crate::{
+    buffer::Buffer,
+    layout::Rect,
+    style::{Style, StyleDiff},
+    symbols::line,
+    text::{Span, Spans},
+    widgets::{Borders, Widget},
+};
 
 #[derive(Debug, Clone, Copy)]
 pub enum BorderType {
@@ -33,18 +36,15 @@ impl BorderType {
 /// # use tui::style::{Style, Color};
 /// Block::default()
 ///     .title("Block")
-///     .title_style(Style::default().fg(Color::Red))
 ///     .borders(Borders::LEFT | Borders::RIGHT)
 ///     .border_style(Style::default().fg(Color::White))
 ///     .border_type(BorderType::Rounded)
 ///     .style(Style::default().bg(Color::Black));
 /// ```
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Block<'a> {
     /// Optional title place on the upper left of the block
-    title: Option<&'a str>,
-    /// Title style
-    title_style: Style,
+    title: Option<Spans<'a>>,
     /// Visible borders
     borders: Borders,
     /// Border style
@@ -60,7 +60,6 @@ impl<'a> Default for Block<'a> {
     fn default() -> Block<'a> {
         Block {
             title: None,
-            title_style: Default::default(),
             borders: Borders::NONE,
             border_style: Default::default(),
             border_type: BorderType::Plain,
@@ -70,13 +69,23 @@ impl<'a> Default for Block<'a> {
 }
 
 impl<'a> Block<'a> {
-    pub fn title(mut self, title: &'a str) -> Block<'a> {
-        self.title = Some(title);
+    pub fn title<T>(mut self, title: T) -> Block<'a>
+    where
+        T: Into<Spans<'a>>,
+    {
+        self.title = Some(title.into());
         self
     }
 
+    #[deprecated(
+        since = "0.10.0",
+        note = "You should use styling capabilities of `text::Spans` given as argument of the `title` method to apply styling to the title."
+    )]
     pub fn title_style(mut self, style: Style) -> Block<'a> {
-        self.title_style = style;
+        if let Some(t) = self.title {
+            let title = String::from(t);
+            self.title = Some(Spans::from(Span::styled(title, StyleDiff::from(style))));
+        }
         self
     }
 
@@ -199,13 +208,7 @@ impl<'a> Widget for Block<'a> {
                 0
             };
             let width = area.width - lx - rx;
-            buf.set_stringn(
-                area.left() + lx,
-                area.top(),
-                title,
-                width as usize,
-                self.title_style,
-            );
+            buf.set_spans(area.left() + lx, area.top(), &title, width, self.style);
         }
     }
 }

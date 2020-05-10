@@ -19,8 +19,9 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
-    widgets::{Block, Borders, List, Paragraph, Text},
+    style::{Color, Modifier, Style, StyleDiff},
+    text::{Span, Spans},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
     Terminal,
 };
 use unicode_width::UnicodeWidthStr;
@@ -81,15 +82,27 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .split(f.size());
 
             let msg = match app.input_mode {
-                InputMode::Normal => "Press q to exit, e to start editing.",
-                InputMode::Editing => "Press Esc to stop editing, Enter to record the message",
+                InputMode::Normal => vec![
+                    Span::raw("Press "),
+                    Span::styled("q", StyleDiff::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" to exit, "),
+                    Span::styled("e", StyleDiff::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" to start editing."),
+                ],
+                InputMode::Editing => vec![
+                    Span::raw("Press "),
+                    Span::styled("Esc", StyleDiff::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" to stop editing, "),
+                    Span::styled("Enter", StyleDiff::default().add_modifier(Modifier::BOLD)),
+                    Span::raw(" to record the message"),
+                ],
             };
-            let text = [Text::raw(msg)];
-            let help_message = Paragraph::new(text.iter());
+            let text = vec![Spans::from(msg)];
+            let help_message = Paragraph::new(text);
             f.render_widget(help_message, chunks[0]);
 
-            let text = [Text::raw(&app.input)];
-            let input = Paragraph::new(text.iter())
+            let text = vec![Spans::from(app.input.as_ref())];
+            let input = Paragraph::new(text)
                 .style(Style::default().fg(Color::Yellow))
                 .block(Block::default().borders(Borders::ALL).title("Input"));
             f.render_widget(input, chunks[1]);
@@ -109,11 +122,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
 
-            let messages = app
+            let messages: Vec<ListItem> = app
                 .messages
                 .iter()
                 .enumerate()
-                .map(|(i, m)| Text::raw(format!("{}: {}", i, m)));
+                .map(|(i, m)| {
+                    let content = vec![Spans::from(Span::raw(format!("{}: {}", i, m)))];
+                    ListItem::new(content)
+                })
+                .collect();
             let messages =
                 List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
             f.render_widget(messages, chunks[2]);

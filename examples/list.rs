@@ -10,27 +10,46 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Corner, Direction, Layout},
-    style::{Color, Modifier, Style},
-    widgets::{Block, Borders, List, Text},
+    style::{Color, Modifier, Style, StyleDiff},
+    text::{Span, Spans},
+    widgets::{Block, Borders, List, ListItem},
     Terminal,
 };
 
 struct App<'a> {
-    items: StatefulList<&'a str>,
+    items: StatefulList<(&'a str, usize)>,
     events: Vec<(&'a str, &'a str)>,
-    info_style: Style,
-    warning_style: Style,
-    error_style: Style,
-    critical_style: Style,
 }
 
 impl<'a> App<'a> {
     fn new() -> App<'a> {
         App {
             items: StatefulList::with_items(vec![
-                "Item0", "Item1", "Item2", "Item3", "Item4", "Item5", "Item6", "Item7", "Item8",
-                "Item9", "Item10", "Item11", "Item12", "Item13", "Item14", "Item15", "Item16",
-                "Item17", "Item18", "Item19", "Item20", "Item21", "Item22", "Item23", "Item24",
+                ("Item0", 1),
+                ("Item1", 2),
+                ("Item2", 1),
+                ("Item3", 3),
+                ("Item4", 1),
+                ("Item5", 4),
+                ("Item6", 1),
+                ("Item7", 3),
+                ("Item8", 1),
+                ("Item9", 6),
+                ("Item10", 1),
+                ("Item11", 3),
+                ("Item12", 1),
+                ("Item13", 2),
+                ("Item14", 1),
+                ("Item15", 1),
+                ("Item16", 4),
+                ("Item17", 1),
+                ("Item18", 5),
+                ("Item19", 4),
+                ("Item20", 1),
+                ("Item21", 2),
+                ("Item22", 1),
+                ("Item23", 3),
+                ("Item24", 1),
             ]),
             events: vec![
                 ("Event1", "INFO"),
@@ -60,10 +79,6 @@ impl<'a> App<'a> {
                 ("Event25", "INFO"),
                 ("Event26", "INFO"),
             ],
-            info_style: Style::default().fg(Color::White),
-            warning_style: Style::default().fg(Color::Yellow),
-            error_style: Style::default().fg(Color::Magenta),
-            critical_style: Style::default().fg(Color::Red),
         }
     }
 
@@ -96,25 +111,60 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let style = Style::default().fg(Color::Black).bg(Color::White);
 
-            let items = app.items.items.iter().map(|i| Text::raw(*i));
+            let items: Vec<ListItem> = app
+                .items
+                .items
+                .iter()
+                .map(|i| {
+                    let mut lines = vec![Spans::from(i.0)];
+                    for _ in 0..i.1 {
+                        lines.push(Spans::from(Span::styled(
+                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+                            StyleDiff::default().modifier(Modifier::ITALIC),
+                        )));
+                    }
+                    ListItem::new(lines)
+                })
+                .collect();
             let items = List::new(items)
                 .block(Block::default().borders(Borders::ALL).title("List"))
                 .style(style)
-                .highlight_style(style.fg(Color::LightGreen).modifier(Modifier::BOLD))
-                .highlight_symbol(">");
+                .highlight_style_diff(
+                    StyleDiff::default()
+                        .fg(Color::LightGreen)
+                        .add_modifier(Modifier::BOLD),
+                )
+                .highlight_symbol(">> ");
             f.render_stateful_widget(items, chunks[0], &mut app.items.state);
 
-            let events = app.events.iter().map(|&(evt, level)| {
-                Text::styled(
-                    format!("{}: {}", level, evt),
-                    match level {
-                        "ERROR" => app.error_style,
-                        "CRITICAL" => app.critical_style,
-                        "WARNING" => app.warning_style,
-                        _ => app.info_style,
-                    },
-                )
-            });
+            let events: Vec<ListItem> = app
+                .events
+                .iter()
+                .map(|&(evt, level)| {
+                    let s = match level {
+                        "CRITICAL" => StyleDiff::default().fg(Color::Red),
+                        "ERROR" => StyleDiff::default().fg(Color::Magenta),
+                        "WARNING" => StyleDiff::default().fg(Color::Yellow),
+                        "INFO" => StyleDiff::default().fg(Color::Blue),
+                        _ => StyleDiff::default(),
+                    };
+                    let header = Spans::from(vec![
+                        Span::styled(format!("{:<9}", level), s),
+                        Span::raw(" "),
+                        Span::styled(
+                            "2020-01-01 10:00:00",
+                            StyleDiff::default().modifier(Modifier::ITALIC),
+                        ),
+                    ]);
+                    let log = Spans::from(vec![Span::raw(evt)]);
+                    ListItem::new(vec![
+                        Spans::from("-".repeat(chunks[1].width as usize)),
+                        header,
+                        Spans::from(""),
+                        log,
+                    ])
+                })
+                .collect();
             let events_list = List::new(events)
                 .block(Block::default().borders(Borders::ALL).title("List"))
                 .start_corner(Corner::BottomLeft);

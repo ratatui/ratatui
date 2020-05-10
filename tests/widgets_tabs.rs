@@ -1,4 +1,7 @@
-use tui::{backend::TestBackend, buffer::Buffer, layout::Rect, symbols, widgets::Tabs, Terminal};
+use tui::{
+    backend::TestBackend, buffer::Buffer, layout::Rect, symbols, text::Spans, widgets::Tabs,
+    Terminal,
+};
 
 #[test]
 fn widgets_tabs_should_not_panic_on_narrow_areas() {
@@ -6,7 +9,7 @@ fn widgets_tabs_should_not_panic_on_narrow_areas() {
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let tabs = Tabs::default().titles(&["Tab1", "Tab2"]);
+            let tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Spans::from).collect());
             f.render_widget(
                 tabs,
                 Rect {
@@ -28,7 +31,7 @@ fn widgets_tabs_should_truncate_the_last_item() {
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let tabs = Tabs::default().titles(&["Tab1", "Tab2"]);
+            let tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Spans::from).collect());
             f.render_widget(
                 tabs,
                 Rect {
@@ -40,6 +43,6 @@ fn widgets_tabs_should_truncate_the_last_item() {
             );
         })
         .unwrap();
-    let expected = Buffer::with_lines(vec![format!(" Tab1 {} Ta", symbols::line::VERTICAL)]);
+    let expected = Buffer::with_lines(vec![format!(" Tab1 {} T ", symbols::line::VERTICAL)]);
     terminal.backend().assert_buffer(&expected);
 }

@@ -1,8 +1,9 @@
 use crate::{
     buffer::Buffer,
     layout::{Constraint, Rect},
-    style::Style,
+    style::{Style, StyleDiff},
     symbols,
+    text::{Span, Spans},
     widgets::{
         canvas::{Canvas, Line, Points},
         Block, Borders, Widget,
@@ -13,70 +14,60 @@ use unicode_width::UnicodeWidthStr;
 
 /// An X or Y axis for the chart widget
 #[derive(Debug, Clone)]
-pub struct Axis<'a, L>
-where
-    L: AsRef<str> + 'a,
-{
+pub struct Axis<'a> {
     /// Title displayed next to axis end
-    title: Option<&'a str>,
-    /// Style of the title
-    title_style: Style,
+    title: Option<Spans<'a>>,
     /// Bounds for the axis (all data points outside these limits will not be represented)
     bounds: [f64; 2],
     /// A list of labels to put to the left or below the axis
-    labels: Option<&'a [L]>,
-    /// The labels' style
-    labels_style: Style,
+    labels: Option<Vec<Span<'a>>>,
     /// The style used to draw the axis itself
     style: Style,
 }
 
-impl<'a, L> Default for Axis<'a, L>
-where
-    L: AsRef<str>,
-{
-    fn default() -> Axis<'a, L> {
+impl<'a> Default for Axis<'a> {
+    fn default() -> Axis<'a> {
         Axis {
             title: None,
-            title_style: Default::default(),
             bounds: [0.0, 0.0],
             labels: None,
-            labels_style: Default::default(),
             style: Default::default(),
         }
     }
 }
 
-impl<'a, L> Axis<'a, L>
-where
-    L: AsRef<str>,
-{
-    pub fn title(mut self, title: &'a str) -> Axis<'a, L> {
-        self.title = Some(title);
+impl<'a> Axis<'a> {
+    pub fn title<T>(mut self, title: T) -> Axis<'a>
+    where
+        T: Into<Spans<'a>>,
+    {
+        self.title = Some(title.into());
         self
     }
 
-    pub fn title_style(mut self, style: Style) -> Axis<'a, L> {
-        self.title_style = style;
+    #[deprecated(
+        since = "0.10.0",
+        note = "You should use styling capabilities of `text::Spans` given as argument of the `title` method to apply styling to the title."
+    )]
+    pub fn title_style(mut self, style: Style) -> Axis<'a> {
+        if let Some(t) = self.title {
+            let title = String::from(t);
+            self.title = Some(Spans::from(Span::styled(title, StyleDiff::from(style))));
+        }
         self
     }
 
-    pub fn bounds(mut self, bounds: [f64; 2]) -> Axis<'a, L> {
+    pub fn bounds(mut self, bounds: [f64; 2]) -> Axis<'a> {
         self.bounds = bounds;
         self
     }
 
-    pub fn labels(mut self, labels: &'a [L]) -> Axis<'a, L> {
+    pub fn labels(mut self, labels: Vec<Span<'a>>) -> Axis<'a> {
         self.labels = Some(labels);
         self
     }
 
-    pub fn labels_style(mut self, style: Style) -> Axis<'a, L> {
-        self.labels_style = style;
-        self
-    }
-
-    pub fn style(mut self, style: Style) -> Axis<'a, L> {
+    pub fn style(mut self, style: Style) -> Axis<'a> {
         self.style = style;
         self
     }
@@ -192,104 +183,84 @@ impl Default for ChartLayout {
 /// ```
 /// # use tui::symbols;
 /// # use tui::widgets::{Block, Borders, Chart, Axis, Dataset, GraphType};
-/// # use tui::style::{Style, Color};
-/// Chart::default()
+/// # use tui::style::{Style, StyleDiff, Color};
+/// # use tui::text::Span;
+/// let datasets = vec![
+///     Dataset::default()
+///         .name("data1")
+///         .marker(symbols::Marker::Dot)
+///         .graph_type(GraphType::Scatter)
+///         .style(Style::default().fg(Color::Cyan))
+///         .data(&[(0.0, 5.0), (1.0, 6.0), (1.5, 6.434)]),
+///     Dataset::default()
+///         .name("data2")
+///         .marker(symbols::Marker::Braille)
+///         .graph_type(GraphType::Line)
+///         .style(Style::default().fg(Color::Magenta))
+///         .data(&[(4.0, 5.0), (5.0, 8.0), (7.66, 13.5)]),
+/// ];
+/// Chart::new(datasets)
 ///     .block(Block::default().title("Chart"))
 ///     .x_axis(Axis::default()
-///         .title("X Axis")
-///         .title_style(Style::default().fg(Color::Red))
+///         .title(Span::styled("X Axis", StyleDiff::default().fg(Color::Red)))
 ///         .style(Style::default().fg(Color::White))
 ///         .bounds([0.0, 10.0])
-///         .labels(&["0.0", "5.0", "10.0"]))
+///         .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()))
 ///     .y_axis(Axis::default()
-///         .title("Y Axis")
-///         .title_style(Style::default().fg(Color::Red))
+///         .title(Span::styled("Y Axis", StyleDiff::default().fg(Color::Red)))
 ///         .style(Style::default().fg(Color::White))
 ///         .bounds([0.0, 10.0])
-///         .labels(&["0.0", "5.0", "10.0"]))
-///     .datasets(&[Dataset::default()
-///                     .name("data1")
-///                     .marker(symbols::Marker::Dot)
-///                     .graph_type(GraphType::Scatter)
-///                     .style(Style::default().fg(Color::Cyan))
-///                     .data(&[(0.0, 5.0), (1.0, 6.0), (1.5, 6.434)]),
-///                 Dataset::default()
-///                     .name("data2")
-///                     .marker(symbols::Marker::Braille)
-///                     .graph_type(GraphType::Line)
-///                     .style(Style::default().fg(Color::Magenta))
-///                     .data(&[(4.0, 5.0), (5.0, 8.0), (7.66, 13.5)])]);
+///         .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()));
 /// ```
 #[derive(Debug, Clone)]
-pub struct Chart<'a, LX, LY>
-where
-    LX: AsRef<str> + 'a,
-    LY: AsRef<str> + 'a,
-{
+pub struct Chart<'a> {
     /// A block to display around the widget eventually
     block: Option<Block<'a>>,
     /// The horizontal axis
-    x_axis: Axis<'a, LX>,
+    x_axis: Axis<'a>,
     /// The vertical axis
-    y_axis: Axis<'a, LY>,
+    y_axis: Axis<'a>,
     /// A reference to the datasets
-    datasets: &'a [Dataset<'a>],
+    datasets: Vec<Dataset<'a>>,
     /// The widget base style
     style: Style,
-    /// Constraints used to determine whether the legend should be shown or
-    /// not
+    /// Constraints used to determine whether the legend should be shown or not
     hidden_legend_constraints: (Constraint, Constraint),
 }
 
-impl<'a, LX, LY> Default for Chart<'a, LX, LY>
-where
-    LX: AsRef<str>,
-    LY: AsRef<str>,
-{
-    fn default() -> Chart<'a, LX, LY> {
+impl<'a> Chart<'a> {
+    pub fn new(datasets: Vec<Dataset<'a>>) -> Chart<'a> {
         Chart {
             block: None,
             x_axis: Axis::default(),
             y_axis: Axis::default(),
             style: Default::default(),
-            datasets: &[],
+            datasets,
             hidden_legend_constraints: (Constraint::Ratio(1, 4), Constraint::Ratio(1, 4)),
         }
     }
-}
 
-impl<'a, LX, LY> Chart<'a, LX, LY>
-where
-    LX: AsRef<str>,
-    LY: AsRef<str>,
-{
-    pub fn block(mut self, block: Block<'a>) -> Chart<'a, LX, LY> {
+    pub fn block(mut self, block: Block<'a>) -> Chart<'a> {
         self.block = Some(block);
         self
     }
 
-    pub fn style(mut self, style: Style) -> Chart<'a, LX, LY> {
+    pub fn style(mut self, style: Style) -> Chart<'a> {
         self.style = style;
         self
     }
 
-    pub fn x_axis(mut self, axis: Axis<'a, LX>) -> Chart<'a, LX, LY> {
+    pub fn x_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
         self.x_axis = axis;
         self
     }
 
-    pub fn y_axis(mut self, axis: Axis<'a, LY>) -> Chart<'a, LX, LY> {
+    pub fn y_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
         self.y_axis = axis;
         self
     }
 
-    pub fn datasets(mut self, datasets: &'a [Dataset<'a>]) -> Chart<'a, LX, LY> {
-        self.datasets = datasets;
-        self
-    }
-
-    /// Set the constraints used to determine whether the legend should be shown or
-    /// not.
+    /// Set the constraints used to determine whether the legend should be shown or not.
     ///
     /// # Examples
     ///
@@ -302,13 +273,10 @@ where
     /// );
     /// // Hide the legend when either its width is greater than 33% of the total widget width
     /// // or if its height is greater than 25% of the total widget height.
-    /// let _chart: Chart<String, String> = Chart::default()
+    /// let _chart: Chart = Chart::new(vec![])
     ///     .hidden_legend_constraints(constraints);
     /// ```
-    pub fn hidden_legend_constraints(
-        mut self,
-        constraints: (Constraint, Constraint),
-    ) -> Chart<'a, LX, LY> {
+    pub fn hidden_legend_constraints(mut self, constraints: (Constraint, Constraint)) -> Chart<'a> {
         self.hidden_legend_constraints = constraints;
         self
     }
@@ -328,14 +296,14 @@ where
             y -= 1;
         }
 
-        if let Some(y_labels) = self.y_axis.labels {
+        if let Some(ref y_labels) = self.y_axis.labels {
             let mut max_width = y_labels
                 .iter()
-                .fold(0, |acc, l| max(l.as_ref().width(), acc))
+                .fold(0, |acc, l| max(l.content.width(), acc))
                 as u16;
-            if let Some(x_labels) = self.x_axis.labels {
+            if let Some(ref x_labels) = self.x_axis.labels {
                 if !x_labels.is_empty() {
-                    max_width = max(max_width, x_labels[0].as_ref().width() as u16);
+                    max_width = max(max_width, x_labels[0].content.width() as u16);
                 }
             }
             if x + max_width < area.right() {
@@ -358,14 +326,14 @@ where
             layout.graph_area = Rect::new(x, area.top(), area.right() - x, y - area.top() + 1);
         }
 
-        if let Some(title) = self.x_axis.title {
+        if let Some(ref title) = self.x_axis.title {
             let w = title.width() as u16;
             if w < layout.graph_area.width && layout.graph_area.height > 2 {
                 layout.title_x = Some((x + layout.graph_area.width - w, y));
             }
         }
 
-        if let Some(title) = self.y_axis.title {
+        if let Some(ref title) = self.y_axis.title {
             let w = title.width() as u16;
             if w + 1 < layout.graph_area.width && layout.graph_area.height > 2 {
                 layout.title_y = Some((x + 1, area.top()));
@@ -399,16 +367,13 @@ where
     }
 }
 
-impl<'a, LX, LY> Widget for Chart<'a, LX, LY>
-where
-    LX: AsRef<str>,
-    LY: AsRef<str>,
-{
+impl<'a> Widget for Chart<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
-        let chart_area = match self.block {
-            Some(ref mut b) => {
+        let chart_area = match self.block.take() {
+            Some(b) => {
+                let inner_area = b.inner(area);
                 b.render(area, buf);
-                b.inner(area)
+                inner_area
             }
             None => area,
         };
@@ -423,26 +388,39 @@ where
 
         if let Some((x, y)) = layout.title_x {
             let title = self.x_axis.title.unwrap();
-            buf.set_string(x, y, title, self.x_axis.title_style);
+            buf.set_spans(
+                x,
+                y,
+                &title,
+                graph_area.right().saturating_sub(x),
+                self.style,
+            );
         }
 
         if let Some((x, y)) = layout.title_y {
             let title = self.y_axis.title.unwrap();
-            buf.set_string(x, y, title, self.y_axis.title_style);
+            buf.set_spans(
+                x,
+                y,
+                &title,
+                graph_area.right().saturating_sub(x),
+                self.style,
+            );
         }
 
         if let Some(y) = layout.label_x {
             let labels = self.x_axis.labels.unwrap();
-            let total_width = labels.iter().fold(0, |acc, l| l.as_ref().width() + acc) as u16;
+            let total_width = labels.iter().fold(0, |acc, l| l.content.width() + acc) as u16;
             let labels_len = labels.len() as u16;
             if total_width < graph_area.width && labels_len > 1 {
                 for (i, label) in labels.iter().enumerate() {
-                    buf.set_string(
+                    buf.set_span(
                         graph_area.left() + i as u16 * (graph_area.width - 1) / (labels_len - 1)
-                            - label.as_ref().width() as u16,
+                            - label.content.width() as u16,
                         y,
-                        label.as_ref(),
-                        self.x_axis.labels_style,
+                        label,
+                        label.width() as u16,
+                        self.style,
                     );
                 }
             }
@@ -454,11 +432,12 @@ where
             for (i, label) in labels.iter().enumerate() {
                 let dy = i as u16 * (graph_area.height - 1) / (labels_len - 1);
                 if dy < graph_area.bottom() {
-                    buf.set_string(
+                    buf.set_span(
                         x,
                         graph_area.bottom() - 1 - dy,
-                        label.as_ref(),
-                        self.y_axis.labels_style,
+                        label,
+                        label.width() as u16,
+                        self.style,
                     );
                 }
             }
@@ -488,7 +467,7 @@ where
             }
         }
 
-        for dataset in self.datasets {
+        for dataset in &self.datasets {
             Canvas::default()
                 .background_color(self.style.bg)
                 .x_bounds(self.x_axis.bounds)
@@ -543,12 +522,6 @@ mod tests {
     #[test]
     fn it_should_hide_the_legend() {
         let data = [(0.0, 5.0), (1.0, 6.0), (3.0, 7.0)];
-        let datasets = (0..10)
-            .map(|i| {
-                let name = format!("Dataset #{}", i);
-                Dataset::default().name(name).data(&data)
-            })
-            .collect::<Vec<_>>();
         let cases = [
             LegendTestCase {
                 chart_area: Rect::new(0, 0, 100, 100),
@@ -562,11 +535,16 @@ mod tests {
             },
         ];
         for case in &cases {
-            let chart: Chart<String, String> = Chart::default()
+            let datasets = (0..10)
+                .map(|i| {
+                    let name = format!("Dataset #{}", i);
+                    Dataset::default().name(name).data(&data)
+                })
+                .collect::<Vec<_>>();
+            let chart = Chart::new(datasets)
                 .x_axis(Axis::default().title("X axis"))
                 .y_axis(Axis::default().title("Y axis"))
-                .hidden_legend_constraints(case.hidden_legend_constraints)
-                .datasets(datasets.as_slice());
+                .hidden_legend_constraints(case.hidden_legend_constraints);
             let layout = chart.layout(case.chart_area);
             assert_eq!(layout.legend_area, case.legend_area);
         }
