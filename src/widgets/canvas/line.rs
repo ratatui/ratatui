@@ -64,7 +64,11 @@ fn draw_line_low(painter: &mut Painter, x1: usize, y1: usize, x2: usize, y2: usi
     for x in x1..=x2 {
         painter.paint(x, y, color);
         if d > 0 {
-            y = if y1 > y2 { y - 1 } else { y + 1 };
+            y = if y1 > y2 {
+                y.saturating_sub(1)
+            } else {
+                y.saturating_add(1)
+            };
             d -= 2 * dx;
         }
         d += 2 * dy;
@@ -79,7 +83,11 @@ fn draw_line_high(painter: &mut Painter, x1: usize, y1: usize, x2: usize, y2: us
     for y in y1..=y2 {
         painter.paint(x, y, color);
         if d > 0 {
-            x = if x1 > x2 { x - 1 } else { x + 1 };
+            x = if x1 > x2 {
+                x.saturating_sub(1)
+            } else {
+                x.saturating_add(1)
+            };
             d -= 2 * dy;
         }
         d += 2 * dx;
