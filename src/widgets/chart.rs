@@ -304,6 +304,7 @@ where
     /// // or if its height is greater than 25% of the total widget height.
     /// let _chart: Chart<String, String> = Chart::default()
     ///     .hidden_legend_constraints(constraints);
+    /// ```
     pub fn hidden_legend_constraints(
         mut self,
         constraints: (Constraint, Constraint),
@@ -499,12 +500,12 @@ where
                         color: dataset.style.fg,
                     });
                     if let GraphType::Line = dataset.graph_type {
-                        for i in 0..dataset.data.len() - 1 {
+                        for data in dataset.data.windows(2) {
                             ctx.draw(&Line {
-                                x1: dataset.data[i].0,
-                                y1: dataset.data[i].1,
-                                x2: dataset.data[i + 1].0,
-                                y2: dataset.data[i + 1].1,
+                                x1: data[0].0,
+                                y1: data[0].1,
+                                x2: data[1].0,
+                                y2: data[1].1,
                                 color: dataset.style.fg,
                             })
                         }

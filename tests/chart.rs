@@ -3,7 +3,7 @@ use tui::{
     layout::Rect,
     style::{Color, Style},
     symbols,
-    widgets::{Axis, Block, Borders, Chart, Dataset},
+    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType::Line},
     Terminal,
 };
 
@@ -67,6 +67,36 @@ fn handles_overflow() {
                     y: 0,
                     width: 80,
                     height: 30,
+                },
+            );
+        })
+        .unwrap();
+}
+
+#[test]
+fn empty_dataset_line_test() {
+    let backend = TestBackend::new(100, 100);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|mut f| {
+            let datasets = [Dataset::default().data(&[]).graph_type(Line)];
+            let chart = Chart::default()
+                .block(
+                    Block::default()
+                        .title("Empty Dataset With Line")
+                        .borders(Borders::ALL),
+                )
+                .x_axis(Axis::default().bounds([0.0, 0.0]).labels(&["0.0", "1.0"]))
+                .y_axis(Axis::default().bounds([0.0, 1.0]).labels(&["0.0", "1.0"]))
+                .datasets(&datasets);
+            f.render_widget(
+                chart,
+                Rect {
+                    x: 0,
+                    y: 0,
+                    width: 100,
+                    height: 100,
                 },
             );
         })
