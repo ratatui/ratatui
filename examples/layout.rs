@@ -42,13 +42,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             f.render_widget(block, chunks[2]);
         })?;
 
-        match events.next()? {
-            Event::Input(input) => {
-                if let Key::Char('q') = input {
-                    break;
-                }
+        if let Event::Input(input) = events.next()? {
+            if let Key::Char('q') = input {
+                break;
             }
-            _ => {}
         }
     }
 

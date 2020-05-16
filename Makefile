@@ -52,7 +52,7 @@ fmt: ## Check the format of the source code
 
 .PHONY: clippy
 clippy: ## Check the style of the source code and catch common errors
-	$(CARGO) clippy --all-features
+	$(CARGO) clippy --all-targets --all-features -- -D warnings
 
 
 # ================================ Test =======================================

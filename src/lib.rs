@@ -145,8 +145,6 @@
 //! you might need a blank space somewhere, try to pass an additional constraint and don't use the
 //! corresponding area.
 
-#![deny(warnings)]
-
 pub mod backend;
 pub mod buffer;
 pub mod layout;

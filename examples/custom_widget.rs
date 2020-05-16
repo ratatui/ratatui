@@ -48,13 +48,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             f.render_widget(label, size);
         })?;
 
-        match events.next()? {
-            Event::Input(key) => {
-                if key == Key::Char('q') {
-                    break;
-                }
+        if let Event::Input(key) = events.next()? {
+            if key == Key::Char('q') {
+                break;
             }
-            _ => {}
         }
     }
 

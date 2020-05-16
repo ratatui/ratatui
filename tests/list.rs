@@ -73,7 +73,7 @@ fn it_should_truncate_items() {
         let items = case.items.drain(..);
         terminal
             .draw(|mut f| {
-                let list = List::new(items.into_iter())
+                let list = List::new(items)
                     .block(Block::default().borders(Borders::RIGHT))
                     .highlight_symbol(">> ");
                 f.render_stateful_widget(list, Rect::new(0, 0, 8, 2), &mut state);

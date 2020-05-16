@@ -47,15 +47,15 @@ fn handles_overflow() {
                 .marker(symbols::Marker::Braille)
                 .style(Style::default().fg(Color::Magenta))
                 .data(&[
-                    (1588298471.0, 1.0),
-                    (1588298473.0, 0.0),
-                    (1588298496.0, 1.0),
+                    (1_588_298_471.0, 1.0),
+                    (1_588_298_473.0, 0.0),
+                    (1_588_298_496.0, 1.0),
                 ])];
             let chart = Chart::default()
                 .block(Block::default().title("Plot").borders(Borders::ALL))
                 .x_axis(
                     Axis::default()
-                        .bounds([1588298471.0, 1588992600.0])
+                        .bounds([1_588_298_471.0, 1_588_992_600.0])
                         .labels(&["1588298471.0", "1588992600.0"]),
                 )
                 .y_axis(Axis::default().bounds([0.0, 1.0]).labels(&["0.0", "1.0"]))

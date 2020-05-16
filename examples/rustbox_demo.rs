@@ -35,8 +35,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let tick_rate = Duration::from_millis(cli.tick_rate);
     loop {
         terminal.draw(|mut f| ui::draw(&mut f, &mut app))?;
-        match terminal.backend().rustbox().peek_event(tick_rate, false) {
-            Ok(rustbox::Event::KeyEvent(key)) => match key {
+        if let Ok(rustbox::Event::KeyEvent(key)) =
+            terminal.backend().rustbox().peek_event(tick_rate, false)
+        {
+            match key {
                 Key::Char(c) => {
                     app.on_key(c);
                 }
@@ -53,8 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     app.on_right();
                 }
                 _ => {}
-            },
-            _ => {}
+            }
         }
         if last_tick.elapsed() > tick_rate {
             app.on_tick();

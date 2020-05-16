@@ -64,16 +64,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             f.render_widget(inner, chunks[1]);
         })?;
 
-        match events.next()? {
-            Event::Input(input) => match input {
+        if let Event::Input(input) = events.next()? {
+            match input {
                 Key::Char('q') => {
                     break;
                 }
                 Key::Right => app.tabs.next(),
                 Key::Left => app.tabs.previous(),
                 _ => {}
-            },
-            _ => {}
+            }
         }
     }
     Ok(())

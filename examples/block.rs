@@ -75,13 +75,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         })?;
 
-        match events.next()? {
-            Event::Input(key) => {
-                if key == Key::Char('q') {
-                    break;
-                }
+        if let Event::Input(key) = events.next()? {
+            if key == Key::Char('q') {
+                break;
             }
-            _ => {}
         }
     }
     Ok(())

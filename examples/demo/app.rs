@@ -1,12 +1,12 @@
 use crate::util::{RandomSignal, SinSignal, StatefulList, TabsState};
 
-const TASKS: [&'static str; 24] = [
+const TASKS: [&str; 24] = [
     "Item1", "Item2", "Item3", "Item4", "Item5", "Item6", "Item7", "Item8", "Item9", "Item10",
     "Item11", "Item12", "Item13", "Item14", "Item15", "Item16", "Item17", "Item18", "Item19",
     "Item20", "Item21", "Item22", "Item23", "Item24",
 ];
 
-const LOGS: [(&'static str, &'static str); 26] = [
+const LOGS: [(&str, &str); 26] = [
     ("Event1", "INFO"),
     ("Event2", "INFO"),
     ("Event3", "CRITICAL"),
@@ -35,7 +35,7 @@ const LOGS: [(&'static str, &'static str); 26] = [
     ("Event26", "INFO"),
 ];
 
-const EVENTS: [(&'static str, u64); 24] = [
+const EVENTS: [(&str, u64); 24] = [
     ("B1", 9),
     ("B2", 12),
     ("B3", 5),

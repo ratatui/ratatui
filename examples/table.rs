@@ -100,7 +100,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let rows = table
                 .items
                 .iter()
-                .map(|i| Row::StyledData(i.into_iter(), normal_style));
+                .map(|i| Row::StyledData(i.iter(), normal_style));
             let t = Table::new(header.iter(), rows)
                 .block(Block::default().borders(Borders::ALL).title("Table"))
                 .highlight_style(selected_style)
@@ -113,8 +113,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             f.render_stateful_widget(t, rects[0], &mut table.state);
         })?;
 
-        match events.next()? {
-            Event::Input(key) => match key {
+        if let Event::Input(key) = events.next()? {
+            match key {
                 Key::Char('q') => {
                     break;
                 }
@@ -125,8 +125,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     table.previous();
                 }
                 _ => {}
-            },
-            _ => {}
+            }
         };
     }
 

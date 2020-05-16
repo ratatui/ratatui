@@ -4,7 +4,6 @@ mod util;
 
 use crate::demo::{ui, App};
 use argh::FromArgs;
-use easycurses;
 use std::{
     error::Error,
     io,
@@ -26,7 +25,8 @@ struct Cli {
 fn main() -> Result<(), Box<dyn Error>> {
     let cli: Cli = argh::from_env();
 
-    let mut backend = CursesBackend::new().ok_or(io::Error::new(io::ErrorKind::Other, ""))?;
+    let mut backend =
+        CursesBackend::new().ok_or_else(|| io::Error::new(io::ErrorKind::Other, ""))?;
     let curses = backend.get_curses_mut();
     curses.set_echo(false);
     curses.set_input_timeout(easycurses::TimeoutMode::WaitUpTo(50));
@@ -41,28 +41,25 @@ fn main() -> Result<(), Box<dyn Error>> {
     let tick_rate = Duration::from_millis(cli.tick_rate);
     loop {
         terminal.draw(|mut f| ui::draw(&mut f, &mut app))?;
-        match terminal.backend_mut().get_curses_mut().get_input() {
-            Some(input) => {
-                match input {
-                    easycurses::Input::Character(c) => {
-                        app.on_key(c);
-                    }
-                    easycurses::Input::KeyUp => {
-                        app.on_up();
-                    }
-                    easycurses::Input::KeyDown => {
-                        app.on_down();
-                    }
-                    easycurses::Input::KeyLeft => {
-                        app.on_left();
-                    }
-                    easycurses::Input::KeyRight => {
-                        app.on_right();
-                    }
-                    _ => {}
-                };
-            }
-            _ => {}
+        if let Some(input) = terminal.backend_mut().get_curses_mut().get_input() {
+            match input {
+                easycurses::Input::Character(c) => {
+                    app.on_key(c);
+                }
+                easycurses::Input::KeyUp => {
+                    app.on_up();
+                }
+                easycurses::Input::KeyDown => {
+                    app.on_down();
+                }
+                easycurses::Input::KeyLeft => {
+                    app.on_left();
+                }
+                easycurses::Input::KeyRight => {
+                    app.on_right();
+                }
+                _ => {}
+            };
         };
         terminal.backend_mut().get_curses_mut().flush_input();
         if last_tick.elapsed() > tick_rate {

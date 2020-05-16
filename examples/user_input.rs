@@ -118,8 +118,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         io::stdout().flush().ok();
 
         // Handle input
-        match events.next()? {
-            Event::Input(input) => match app.input_mode {
+        if let Event::Input(input) = events.next()? {
+            match app.input_mode {
                 InputMode::Normal => match input {
                     Key::Char('e') => {
                         app.input_mode = InputMode::Editing;
@@ -146,8 +146,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
                     _ => {}
                 },
-            },
-            _ => {}
+            }
         }
     }
     Ok(())
