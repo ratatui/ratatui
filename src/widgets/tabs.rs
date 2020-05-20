@@ -122,7 +122,7 @@ where
             }
         }) {
             x += 1;
-            if x > tabs_area.right() {
+            if x >= tabs_area.right() {
                 break;
             } else {
                 buf.set_string(x, tabs_area.top(), title.as_ref(), style);
