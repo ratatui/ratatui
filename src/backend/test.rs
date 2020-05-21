@@ -1,8 +1,12 @@
-use crate::backend::Backend;
-use crate::buffer::{Buffer, Cell};
-use crate::layout::Rect;
-use std::io;
+use crate::{
+    backend::Backend,
+    buffer::{Buffer, Cell},
+    layout::Rect,
+};
+use std::{fmt::Write, io};
+use unicode_width::UnicodeWidthStr;
 
+/// A backend used for the integration tests.
 #[derive(Debug)]
 pub struct TestBackend {
     width: u16,
@@ -10,6 +14,35 @@ pub struct TestBackend {
     height: u16,
     cursor: bool,
     pos: (u16, u16),
+}
+
+/// Returns a string representation of the given buffer for debugging purpose.
+fn buffer_view(buffer: &Buffer) -> String {
+    let mut view = String::with_capacity(buffer.content.len() + buffer.area.height as usize * 3);
+    for cells in buffer.content.chunks(buffer.area.width as usize) {
+        let mut overwritten = vec![];
+        let mut skip: usize = 0;
+        view.push('"');
+        for (x, c) in cells.iter().enumerate() {
+            if skip == 0 {
+                view.push_str(&c.symbol);
+            } else {
+                overwritten.push((x, &c.symbol))
+            }
+            skip = std::cmp::max(skip, c.symbol.width()).saturating_sub(1);
+        }
+        view.push('"');
+        if !overwritten.is_empty() {
+            write!(
+                &mut view,
+                " Hidden by multi-width symbols: {:?}",
+                overwritten
+            )
+            .unwrap();
+        }
+        view.push_str("\n");
+    }
+    view
 }
 
 impl TestBackend {
@@ -26,6 +59,44 @@ impl TestBackend {
     pub fn buffer(&self) -> &Buffer {
         &self.buffer
     }
+
+    pub fn assert_buffer(&self, expected: &Buffer) {
+        assert_eq!(expected.area, self.buffer.area);
+        let diff = expected.diff(&self.buffer);
+        if diff.is_empty() {
+            return;
+        }
+
+        let mut debug_info = String::from("Buffers are not equal");
+        debug_info.push_str("\n");
+        debug_info.push_str("Expected:");
+        debug_info.push_str("\n");
+        let expected_view = buffer_view(expected);
+        debug_info.push_str(&expected_view);
+        debug_info.push_str("\n");
+        debug_info.push_str("Got:");
+        debug_info.push_str("\n");
+        let view = buffer_view(&self.buffer);
+        debug_info.push_str(&view);
+        debug_info.push_str("\n");
+
+        debug_info.push_str("Diff:");
+        debug_info.push_str("\n");
+        let nice_diff = diff
+            .iter()
+            .enumerate()
+            .map(|(i, (x, y, cell))| {
+                let expected_cell = expected.get(*x, *y);
+                format!(
+                    "{}: at ({}, {}) expected {:?} got {:?}",
+                    i, x, y, expected_cell, cell
+                )
+            })
+            .collect::<Vec<String>>()
+            .join("\n");
+        debug_info.push_str(&nice_diff);
+        panic!(debug_info);
+    }
 }
 
 impl Backend for TestBackend {
@@ -40,27 +111,34 @@ impl Backend for TestBackend {
         }
         Ok(())
     }
+
     fn hide_cursor(&mut self) -> Result<(), io::Error> {
         self.cursor = false;
         Ok(())
     }
+
     fn show_cursor(&mut self) -> Result<(), io::Error> {
         self.cursor = true;
         Ok(())
     }
+
     fn get_cursor(&mut self) -> Result<(u16, u16), io::Error> {
         Ok(self.pos)
     }
+
     fn set_cursor(&mut self, x: u16, y: u16) -> Result<(), io::Error> {
         self.pos = (x, y);
         Ok(())
     }
+
     fn clear(&mut self) -> Result<(), io::Error> {
         Ok(())
     }
+
     fn size(&self) -> Result<Rect, io::Error> {
         Ok(Rect::new(0, 0, self.width, self.height))
     }
+
     fn flush(&mut self) -> Result<(), io::Error> {
         Ok(())
     }

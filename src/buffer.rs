@@ -1,12 +1,10 @@
+use crate::{
+    layout::Rect,
+    style::{Color, Modifier, Style},
+};
 use std::cmp::min;
-use std::fmt;
-use std::usize;
-
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
-
-use crate::layout::Rect;
-use crate::style::{Color, Modifier, Style};
 
 /// A buffer cell
 #[derive(Debug, Clone, PartialEq)]
@@ -92,7 +90,7 @@ impl Default for Cell {
 /// buf.get_mut(5, 0).set_char('x');
 /// assert_eq!(buf.get(5, 0).symbol, "x");
 /// ```
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Buffer {
     /// The area represented by this buffer
     pub area: Rect,
@@ -107,49 +105,6 @@ impl Default for Buffer {
             area: Default::default(),
             content: Vec::new(),
         }
-    }
-}
-
-impl fmt::Debug for Buffer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "Buffer: {:?}", self.area)?;
-        f.write_str("Content (quoted lines):\n")?;
-        for cells in self.content.chunks(self.area.width as usize) {
-            let mut line = String::new();
-            let mut overwritten = vec![];
-            let mut skip: usize = 0;
-            for (x, c) in cells.iter().enumerate() {
-                if skip == 0 {
-                    line.push_str(&c.symbol);
-                } else {
-                    overwritten.push((x, &c.symbol))
-                }
-                skip = std::cmp::max(skip, c.symbol.width()).saturating_sub(1);
-            }
-            f.write_fmt(format_args!("{:?},", line))?;
-            if !overwritten.is_empty() {
-                f.write_fmt(format_args!(
-                    " Hidden by multi-width symbols: {:?}",
-                    overwritten
-                ))?;
-            }
-            f.write_str("\n")?;
-        }
-        f.write_str("Style:\n")?;
-        for cells in self.content.chunks(self.area.width as usize) {
-            f.write_str("|")?;
-            for cell in cells {
-                write!(
-                    f,
-                    "{} {} {}|",
-                    cell.style.fg.code(),
-                    cell.style.bg.code(),
-                    cell.style.modifier.code()
-                )?;
-            }
-            f.write_str("\n")?;
-        }
-        Ok(())
     }
 }
 
