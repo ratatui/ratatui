@@ -41,5 +41,5 @@ fn it_draws_a_block() {
     for x in 1..=5 {
         expected.get_mut(x, 0).set_fg(Color::LightBlue);
     }
-    assert_eq!(&expected, terminal.backend().buffer());
+    terminal.backend().assert_buffer(&expected);
 }

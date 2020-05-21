@@ -1,8 +1,10 @@
-use tui::backend::TestBackend;
-use tui::buffer::Buffer;
-use tui::layout::Alignment;
-use tui::widgets::{Block, Borders, Paragraph, Text};
-use tui::Terminal;
+use tui::{
+    backend::TestBackend,
+    buffer::Buffer,
+    layout::Alignment,
+    widgets::{Block, Borders, Paragraph, Text},
+    Terminal,
+};
 
 const SAMPLE_STRING: &str = "The library is based on the principle of immediate rendering with \
      intermediate buffers. This means that at each new frame you should build all widgets that are \
@@ -11,7 +13,7 @@ const SAMPLE_STRING: &str = "The library is based on the principle of immediate 
 
 #[test]
 fn paragraph_render_wrap() {
-    let render = |alignment| {
+    let test_case = |alignment, expected| {
         let backend = TestBackend::new(20, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
@@ -26,11 +28,11 @@ fn paragraph_render_wrap() {
                 f.render_widget(paragraph, size);
             })
             .unwrap();
-        terminal.backend().buffer().clone()
+        terminal.backend().assert_buffer(&expected);
     };
 
-    assert_eq!(
-        render(Alignment::Left),
+    test_case(
+        Alignment::Left,
         Buffer::with_lines(vec![
             "┌──────────────────┐",
             "│The library is    │",
@@ -42,10 +44,10 @@ fn paragraph_render_wrap() {
             "│buffers. This     │",
             "│means that at each│",
             "└──────────────────┘",
-        ])
+        ]),
     );
-    assert_eq!(
-        render(Alignment::Right),
+    test_case(
+        Alignment::Right,
         Buffer::with_lines(vec![
             "┌──────────────────┐",
             "│    The library is│",
@@ -57,10 +59,10 @@ fn paragraph_render_wrap() {
             "│     buffers. This│",
             "│means that at each│",
             "└──────────────────┘",
-        ])
+        ]),
     );
-    assert_eq!(
-        render(Alignment::Center),
+    test_case(
+        Alignment::Center,
         Buffer::with_lines(vec![
             "┌──────────────────┐",
             "│  The library is  │",
@@ -72,7 +74,7 @@ fn paragraph_render_wrap() {
             "│   buffers. This  │",
             "│means that at each│",
             "└──────────────────┘",
-        ])
+        ]),
     );
 }
 
@@ -105,7 +107,7 @@ fn paragraph_render_double_width() {
         "│を行う場│",
         "└────────┘",
     ]);
-    assert_eq!(&expected, terminal.backend().buffer());
+    terminal.backend().assert_buffer(&expected);
 }
 
 #[test]
@@ -135,5 +137,5 @@ fn paragraph_render_mixed_width() {
         "│、      │",
         "└────────┘",
     ]);
-    assert_eq!(&expected, terminal.backend().buffer());
+    terminal.backend().assert_buffer(&expected);
 }

@@ -1,8 +1,10 @@
-use tui::backend::TestBackend;
-use tui::buffer::Buffer;
-use tui::layout::{Constraint, Direction, Layout};
-use tui::widgets::{Block, Borders, Gauge};
-use tui::Terminal;
+use tui::{
+    backend::TestBackend,
+    buffer::Buffer,
+    layout::{Constraint, Direction, Layout},
+    widgets::{Block, Borders, Gauge},
+    Terminal,
+};
 
 #[test]
 fn gauge_render() {
@@ -38,5 +40,5 @@ fn gauge_render() {
         "                                        ",
         "                                        ",
     ]);
-    assert_eq!(&expected, terminal.backend().buffer());
+    terminal.backend().assert_buffer(&expected);
 }
