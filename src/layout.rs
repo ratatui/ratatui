@@ -174,12 +174,12 @@ impl Layout {
     ///     ]
     /// );
     /// ```
-    pub fn split(self, area: Rect) -> Vec<Rect> {
+    pub fn split(&self, area: Rect) -> Vec<Rect> {
         // TODO: Maybe use a fixed size cache ?
         LAYOUT_CACHE.with(|c| {
             c.borrow_mut()
                 .entry((area, self.clone()))
-                .or_insert_with(|| split(area, &self))
+                .or_insert_with(|| split(area, self))
                 .clone()
         })
     }
