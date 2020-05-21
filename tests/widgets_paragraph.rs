@@ -12,7 +12,7 @@ const SAMPLE_STRING: &str = "The library is based on the principle of immediate 
      interactive UI, this may introduce overhead for highly dynamic content.";
 
 #[test]
-fn paragraph_render_wrap() {
+fn widgets_paragraph_can_wrap_its_content() {
     let test_case = |alignment, expected| {
         let backend = TestBackend::new(20, 10);
         let mut terminal = Terminal::new(backend).unwrap();
@@ -79,7 +79,7 @@ fn paragraph_render_wrap() {
 }
 
 #[test]
-fn paragraph_render_double_width() {
+fn widgets_paragraph_renders_double_width_graphemes() {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend).unwrap();
 
@@ -111,7 +111,7 @@ fn paragraph_render_double_width() {
 }
 
 #[test]
-fn paragraph_render_mixed_width() {
+fn widgets_paragraph_renders_mixed_width_graphemes() {
     let backend = TestBackend::new(10, 7);
     let mut terminal = Terminal::new(backend).unwrap();
 

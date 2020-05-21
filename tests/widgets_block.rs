@@ -6,7 +6,7 @@ use tui::widgets::{Block, Borders};
 use tui::Terminal;
 
 #[test]
-fn it_draws_a_block() {
+fn widgets_block_renders() {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal

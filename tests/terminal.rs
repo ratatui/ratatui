@@ -1,8 +1,10 @@
-use tui::backend::{Backend, TestBackend};
-use tui::Terminal;
+use tui::{
+    backend::{Backend, TestBackend},
+    Terminal,
+};
 
 #[test]
-fn buffer_size_limited() {
+fn terminal_buffer_size_should_be_limited() {
     let backend = TestBackend::new(400, 400);
     let terminal = Terminal::new(backend).unwrap();
     let size = terminal.backend().size().unwrap();

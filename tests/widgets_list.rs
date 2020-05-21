@@ -9,7 +9,7 @@ use tui::{
 };
 
 #[test]
-fn it_should_highlight_the_selected_item() {
+fn widgets_list_should_highlight_the_selected_item() {
     let backend = TestBackend::new(10, 3);
     let mut terminal = Terminal::new(backend).unwrap();
     let mut state = ListState::default();
@@ -32,24 +32,23 @@ fn it_should_highlight_the_selected_item() {
     for x in 0..9 {
         expected.get_mut(x, 1).set_bg(Color::Yellow);
     }
-    assert_eq!(*terminal.backend().buffer(), expected);
+    terminal.backend().assert_buffer(&expected);
 }
 
 #[test]
-fn it_should_truncate_items() {
+fn widgets_list_should_truncate_items() {
     let backend = TestBackend::new(10, 2);
     let mut terminal = Terminal::new(backend).unwrap();
 
     struct TruncateTestCase<'a> {
-        name: &'a str,
         selected: Option<usize>,
         items: Vec<Text<'a>>,
         expected: Buffer,
     }
 
     let cases = vec![
+        // An item is selected
         TruncateTestCase {
-            name: "an item is selected",
             selected: Some(0),
             items: vec![Text::raw("A very long line"), Text::raw("A very long line")],
             expected: Buffer::with_lines(vec![
@@ -57,8 +56,8 @@ fn it_should_truncate_items() {
                 format!("   A ve{}  ", symbols::line::VERTICAL),
             ]),
         },
+        // No item is selected
         TruncateTestCase {
-            name: "no item is selected",
             selected: None,
             items: vec![Text::raw("A very long line"), Text::raw("A very long line")],
             expected: Buffer::with_lines(vec![
@@ -79,11 +78,6 @@ fn it_should_truncate_items() {
                 f.render_stateful_widget(list, Rect::new(0, 0, 8, 2), &mut state);
             })
             .unwrap();
-        assert_eq!(
-            *terminal.backend().buffer(),
-            case.expected,
-            "Failed to assert the buffer matches the expected one when {}",
-            case.name
-        );
+        terminal.backend().assert_buffer(&case.expected);
     }
 }

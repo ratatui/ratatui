@@ -5,7 +5,7 @@ use tui::widgets::{Block, Borders, Row, Table};
 use tui::Terminal;
 
 #[test]
-fn table_column_spacing() {
+fn widgets_table_column_spacing_can_be_changed() {
     let test_case = |column_spacing, expected| {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
@@ -106,7 +106,7 @@ fn table_column_spacing() {
 }
 
 #[test]
-fn table_widths() {
+fn widgets_table_columns_widths_can_use_fixed_length_constraints() {
     let test_case = |widths, expected| {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
@@ -197,7 +197,7 @@ fn table_widths() {
 }
 
 #[test]
-fn table_percentage_widths() {
+fn widgets_table_columns_widths_can_use_percentage_constraints() {
     let test_case = |widths, expected| {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
@@ -306,7 +306,7 @@ fn table_percentage_widths() {
 }
 
 #[test]
-fn table_mixed_widths() {
+fn widgets_table_columns_widths_can_use_mixed_constraints() {
     let test_case = |widths, expected| {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();

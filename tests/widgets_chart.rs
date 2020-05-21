@@ -8,7 +8,7 @@ use tui::{
 };
 
 #[test]
-fn zero_axes_ok() {
+fn widgets_chart_can_have_axis_with_zero_length_bounds() {
     let backend = TestBackend::new(100, 100);
     let mut terminal = Terminal::new(backend).unwrap();
 
@@ -37,7 +37,7 @@ fn zero_axes_ok() {
 }
 
 #[test]
-fn handles_overflow() {
+fn widgets_chart_handles_overflows() {
     let backend = TestBackend::new(80, 30);
     let mut terminal = Terminal::new(backend).unwrap();
 
@@ -74,7 +74,7 @@ fn handles_overflow() {
 }
 
 #[test]
-fn empty_dataset_line_test() {
+fn widgets_chart_can_have_empty_datasets() {
     let backend = TestBackend::new(100, 100);
     let mut terminal = Terminal::new(backend).unwrap();
 
