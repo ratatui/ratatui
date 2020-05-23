@@ -13,6 +13,11 @@ mod crossterm;
 #[cfg(feature = "crossterm")]
 pub use self::crossterm::CrosstermBackend;
 
+#[cfg(feature = "termwiz")]
+mod termwiz;
+#[cfg(feature = "termwiz")]
+pub use self::termwiz::TermwizBackend;
+
 mod test;
 pub use self::test::TestBackend;
 
