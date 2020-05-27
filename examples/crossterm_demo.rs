@@ -6,7 +6,7 @@ mod util;
 use crate::demo::{ui, App};
 use argh::FromArgs;
 use crossterm::{
-    event::{self, Event as CEvent, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -41,7 +41,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     enable_raw_mode()?;
 
     let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen)?;
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
 
     let backend = CrosstermBackend::new(stdout);
 
@@ -78,7 +78,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             Event::Input(event) => match event.code {
                 KeyCode::Char('q') => {
                     disable_raw_mode()?;
-                    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+                    execute!(
+                        terminal.backend_mut(),
+                        LeaveAlternateScreen,
+                        DisableMouseCapture
+                    )?;
                     terminal.show_cursor()?;
                     break;
                 }
