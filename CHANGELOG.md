@@ -2,6 +2,8 @@
 
 ## To be released
 
+* Add feature-gated (`serde`) serialization of `Style`.
+
 ## v0.9.5 - 2020-05-21
 
 ### Bug Fixes
