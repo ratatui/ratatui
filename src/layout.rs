@@ -209,6 +209,8 @@ fn split(area: Rect, layout: &Layout) -> Vec<Rect> {
     let mut ccs: Vec<CassowaryConstraint> =
         Vec::with_capacity(elements.len() * 4 + layout.constraints.len() * 6);
     for elt in &elements {
+        ccs.push(elt.width | GE(REQUIRED) | 0f64);
+        ccs.push(elt.height | GE(REQUIRED) | 0f64);
         ccs.push(elt.left() | GE(REQUIRED) | f64::from(dest_area.left()));
         ccs.push(elt.top() | GE(REQUIRED) | f64::from(dest_area.top()));
         ccs.push(elt.right() | LE(REQUIRED) | f64::from(dest_area.right()));
