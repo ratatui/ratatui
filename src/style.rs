@@ -156,4 +156,169 @@ impl Style {
         self.modifier = modifier;
         self
     }
+
+    /// Creates a new [`Style`] by applying the given diff to its properties.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use tui::style::{Color, Modifier, Style, StyleDiff};
+    /// let style = Style::default().fg(Color::Green).bg(Color::Black).modifier(Modifier::BOLD);
+    ///
+    /// let diff = StyleDiff::default();
+    /// let patched = style.patch(diff);
+    /// assert_eq!(patched, style);
+    ///
+    /// let diff = StyleDiff::default().fg(Color::Blue).add_modifier(Modifier::ITALIC);
+    /// let patched = style.patch(diff);
+    /// assert_eq!(
+    ///     patched,
+    ///     Style {
+    ///         fg: Color::Blue,
+    ///         bg: Color::Black,
+    ///         modifier: Modifier::BOLD | Modifier::ITALIC,
+    ///     }
+    /// );
+    /// ```
+    pub fn patch(mut self, diff: StyleDiff) -> Style {
+        if let Some(c) = diff.fg {
+            self.fg = c;
+        }
+        if let Some(c) = diff.bg {
+            self.bg = c;
+        }
+        if let Some(m) = diff.modifier {
+            self.modifier = m;
+        }
+        if let Some(m) = diff.add_modifier {
+            self.modifier.insert(m)
+        }
+        if let Some(m) = diff.sub_modifier {
+            self.modifier.remove(m)
+        }
+        self
+    }
+}
+
+/// StyleDiff is a set of updates that can be applied to a [`Style`] to get a
+/// new one.
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct StyleDiff {
+    fg: Option<Color>,
+    bg: Option<Color>,
+    modifier: Option<Modifier>,
+    add_modifier: Option<Modifier>,
+    sub_modifier: Option<Modifier>,
+}
+
+impl Default for StyleDiff {
+    fn default() -> StyleDiff {
+        StyleDiff {
+            fg: None,
+            bg: None,
+            modifier: None,
+            add_modifier: None,
+            sub_modifier: None,
+        }
+    }
+}
+
+impl From<Style> for StyleDiff {
+    fn from(s: Style) -> StyleDiff {
+        StyleDiff {
+            fg: Some(s.fg),
+            bg: Some(s.bg),
+            modifier: Some(s.modifier),
+            add_modifier: None,
+            sub_modifier: None,
+        }
+    }
+}
+
+impl StyleDiff {
+    /// Changes the foreground color.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use tui::style::{Color, Style, StyleDiff};
+    /// let style = Style::default().fg(Color::Blue);
+    /// let diff = StyleDiff::default().fg(Color::Red);
+    /// assert_eq!(style.patch(diff), Style::default().fg(Color::Red));
+    /// ```
+    pub fn fg(mut self, color: Color) -> StyleDiff {
+        self.fg = Some(color);
+        self
+    }
+
+    /// Changes the background color.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use tui::style::{Color, Style, StyleDiff};
+    /// let style = Style::default().bg(Color::Blue);
+    /// let diff = StyleDiff::default().bg(Color::Red);
+    /// assert_eq!(style.patch(diff), Style::default().bg(Color::Red));
+    /// ```
+    pub fn bg(mut self, color: Color) -> StyleDiff {
+        self.bg = Some(color);
+        self
+    }
+
+    /// Changes the text emphasis.
+    ///
+    /// When applied, it replaces the `Style` modifier with the given value.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use tui::style::{Color, Modifier, Style, StyleDiff};
+    /// let style = Style::default().modifier(Modifier::BOLD);
+    /// let diff = StyleDiff::default().modifier(Modifier::ITALIC);
+    /// assert_eq!(style.patch(diff), Style::default().modifier(Modifier::ITALIC));
+    /// ```
+    pub fn modifier(mut self, modifier: Modifier) -> StyleDiff {
+        self.modifier = Some(modifier);
+        self
+    }
+
+    /// Changes the text emphasis.
+    ///
+    /// When applied, it adds the given modifiers to the `Style` modifier.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use tui::style::{Color, Modifier, Style, StyleDiff};
+    /// let style = Style::default().modifier(Modifier::BOLD);
+    /// let diff = StyleDiff::default().add_modifier(Modifier::ITALIC);
+    /// assert_eq!(style.patch(diff), Style::default().modifier(Modifier::BOLD | Modifier::ITALIC));
+    /// ```
+    pub fn add_modifier(mut self, modifier: Modifier) -> StyleDiff {
+        self.add_modifier
+            .get_or_insert_with(Modifier::empty)
+            .insert(modifier);
+        self
+    }
+
+    /// Changes the text emphasis.
+    ///
+    /// When applied, it removes the given modifiers from the `Style` modifier.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use tui::style::{Color, Modifier, Style, StyleDiff};
+    /// let style = Style::default().modifier(Modifier::BOLD | Modifier::ITALIC);
+    /// let diff = StyleDiff::default().remove_modifier(Modifier::ITALIC);
+    /// assert_eq!(style.patch(diff), Style::default().modifier(Modifier::BOLD));
+    /// ```
+    pub fn remove_modifier(mut self, modifier: Modifier) -> StyleDiff {
+        self.sub_modifier
+            .get_or_insert_with(Modifier::empty)
+            .insert(modifier);
+        self
+    }
 }
