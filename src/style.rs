@@ -190,12 +190,8 @@ impl Style {
         if let Some(m) = diff.modifier {
             self.modifier = m;
         }
-        if let Some(m) = diff.add_modifier {
-            self.modifier.insert(m)
-        }
-        if let Some(m) = diff.sub_modifier {
-            self.modifier.remove(m)
-        }
+        self.modifier.insert(diff.add_modifier);
+        self.modifier.remove(diff.sub_modifier);
         self
     }
 }
@@ -208,8 +204,8 @@ pub struct StyleDiff {
     fg: Option<Color>,
     bg: Option<Color>,
     modifier: Option<Modifier>,
-    add_modifier: Option<Modifier>,
-    sub_modifier: Option<Modifier>,
+    add_modifier: Modifier,
+    sub_modifier: Modifier,
 }
 
 impl Default for StyleDiff {
@@ -218,8 +214,8 @@ impl Default for StyleDiff {
             fg: None,
             bg: None,
             modifier: None,
-            add_modifier: None,
-            sub_modifier: None,
+            add_modifier: Modifier::empty(),
+            sub_modifier: Modifier::empty(),
         }
     }
 }
@@ -230,8 +226,8 @@ impl From<Style> for StyleDiff {
             fg: Some(s.fg),
             bg: Some(s.bg),
             modifier: Some(s.modifier),
-            add_modifier: None,
-            sub_modifier: None,
+            add_modifier: Modifier::empty(),
+            sub_modifier: Modifier::empty(),
         }
     }
 }
@@ -280,6 +276,8 @@ impl StyleDiff {
     /// assert_eq!(style.patch(diff), Style::default().modifier(Modifier::ITALIC));
     /// ```
     pub fn modifier(mut self, modifier: Modifier) -> StyleDiff {
+        self.add_modifier = Modifier::empty();
+        self.sub_modifier = Modifier::empty();
         self.modifier = Some(modifier);
         self
     }
@@ -297,9 +295,8 @@ impl StyleDiff {
     /// assert_eq!(style.patch(diff), Style::default().modifier(Modifier::BOLD | Modifier::ITALIC));
     /// ```
     pub fn add_modifier(mut self, modifier: Modifier) -> StyleDiff {
-        self.add_modifier
-            .get_or_insert_with(Modifier::empty)
-            .insert(modifier);
+        self.sub_modifier.remove(modifier);
+        self.add_modifier.insert(modifier);
         self
     }
 
@@ -316,9 +313,106 @@ impl StyleDiff {
     /// assert_eq!(style.patch(diff), Style::default().modifier(Modifier::BOLD));
     /// ```
     pub fn remove_modifier(mut self, modifier: Modifier) -> StyleDiff {
-        self.sub_modifier
-            .get_or_insert_with(Modifier::empty)
-            .insert(modifier);
+        self.add_modifier.remove(modifier);
+        self.sub_modifier.insert(modifier);
         self
+    }
+
+    /// Results in a combined style diff that is equivalent to applying the two individual diffs to
+    /// a style one after the other.
+    ///
+    /// ## Examples
+    /// ```
+    /// # use tui::style::{Color, Modifier, Style, StyleDiff};
+    /// let style_1 = StyleDiff::default().fg(Color::Yellow);
+    /// let style_2 = StyleDiff::default().bg(Color::Red);
+    /// let combined = style_1.patch(style_2);
+    /// assert_eq!(
+    ///     Style::default().patch(style_1).patch(style_2),
+    ///     Style::default().patch(combined));
+    /// ```
+    pub fn patch(mut self, other: StyleDiff) -> StyleDiff {
+        self.fg = other.fg.or(self.fg);
+        self.bg = other.bg.or(self.bg);
+        self.modifier = other.modifier.or(self.modifier);
+
+        // If the other is about to specify a full modifier, it would fully override whatever
+        // add/sub modifiers the current style wants to apply so ignore those in that case.
+        if other.modifier.is_some() {
+            self.add_modifier = other.add_modifier;
+            self.sub_modifier = other.sub_modifier;
+        } else {
+            self.add_modifier.remove(other.sub_modifier);
+            self.add_modifier.insert(other.add_modifier);
+            self.sub_modifier.remove(other.add_modifier);
+            self.sub_modifier.insert(other.sub_modifier);
+        }
+        self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn diffs() -> Vec<StyleDiff> {
+        vec![
+            StyleDiff::default(),
+            StyleDiff::default().fg(Color::Yellow),
+            StyleDiff::default().bg(Color::Yellow),
+            StyleDiff::default().modifier(Modifier::BOLD),
+            StyleDiff::default().modifier(Modifier::ITALIC),
+            StyleDiff::default().modifier(Modifier::ITALIC | Modifier::BOLD),
+            StyleDiff::default().add_modifier(Modifier::BOLD),
+            StyleDiff::default().remove_modifier(Modifier::BOLD),
+            StyleDiff::default().add_modifier(Modifier::ITALIC),
+            StyleDiff::default().remove_modifier(Modifier::ITALIC),
+            StyleDiff::default().add_modifier(Modifier::ITALIC | Modifier::BOLD),
+            StyleDiff::default().remove_modifier(Modifier::ITALIC | Modifier::BOLD),
+        ]
+    }
+
+    #[test]
+    fn combined_patch_gives_same_result_as_individual_patch() {
+        let diffs = diffs();
+        for &a in &diffs {
+            for &b in &diffs {
+                for &c in &diffs {
+                    for &d in &diffs {
+                        let combined = a.patch(b.patch(c.patch(d)));
+
+                        assert_eq!(
+                            Style::default().patch(a).patch(b).patch(c).patch(d),
+                            Style::default().patch(combined)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn diffs_respect_later_modifiers() {
+        let diffs = diffs();
+        for &a in &diffs {
+            for &b in &diffs {
+                let random_diff = a.patch(b);
+
+                let set_bold = random_diff.modifier(Modifier::BOLD);
+                assert_eq!(Style::default().patch(set_bold).modifier, Modifier::BOLD);
+
+                let add_bold = random_diff.add_modifier(Modifier::BOLD);
+                assert!(Style::default()
+                    .patch(add_bold)
+                    .modifier
+                    .contains(Modifier::BOLD));
+
+                let remove_bold = random_diff.remove_modifier(Modifier::BOLD);
+                assert!(!Style::default()
+                    .patch(remove_bold)
+                    .modifier
+                    .contains(Modifier::BOLD));
+            }
+        }
     }
 }
