@@ -212,7 +212,7 @@ where
     B: Backend,
 {
     let text = [
-        Text::raw("This is a paragraph with several lines. You can change style your text the way you want.\n\nFox example: "),
+        Text::raw("This is a paragraph with several lines. You can change style your text the way you want.\n\nFor example: "),
         Text::styled("under", Style::default().fg(Color::Red)),
         Text::raw(" "),
         Text::styled("the", Style::default().fg(Color::Green)),
