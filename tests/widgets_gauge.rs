@@ -11,7 +11,7 @@ fn widgets_gauge_renders() {
     let backend = TestBackend::new(40, 10);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
-        .draw(|mut f| {
+        .draw(|f| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(2)

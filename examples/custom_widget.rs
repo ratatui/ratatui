@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let events = Events::new();
 
     loop {
-        terminal.draw(|mut f| {
+        terminal.draw(|f| {
             let size = f.size();
             let label = Label::default().text("Test");
             f.render_widget(label, size);

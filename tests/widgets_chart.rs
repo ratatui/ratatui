@@ -13,7 +13,7 @@ fn widgets_chart_can_have_axis_with_zero_length_bounds() {
     let mut terminal = Terminal::new(backend).unwrap();
 
     terminal
-        .draw(|mut f| {
+        .draw(|f| {
             let datasets = [Dataset::default()
                 .marker(symbols::Marker::Braille)
                 .style(Style::default().fg(Color::Magenta))
@@ -42,7 +42,7 @@ fn widgets_chart_handles_overflows() {
     let mut terminal = Terminal::new(backend).unwrap();
 
     terminal
-        .draw(|mut f| {
+        .draw(|f| {
             let datasets = [Dataset::default()
                 .marker(symbols::Marker::Braille)
                 .style(Style::default().fg(Color::Magenta))
@@ -79,7 +79,7 @@ fn widgets_chart_can_have_empty_datasets() {
     let mut terminal = Terminal::new(backend).unwrap();
 
     terminal
-        .draw(|mut f| {
+        .draw(|f| {
             let datasets = [Dataset::default().data(&[]).graph_type(Line)];
             let chart = Chart::default()
                 .block(

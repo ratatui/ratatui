@@ -29,6 +29,12 @@ where
     B: Backend,
 {
     terminal: &'a mut Terminal<B>,
+
+    /// Where should the cursor be after drawing this frame?
+    ///
+    /// If `None`, the cursor is hidden and its position is controlled by the backend. If `Some((x,
+    /// y))`, the cursor is shown and placed at `(x, y)` after the call to `Terminal::draw()`.
+    cursor_position: Option<(u16, u16)>,
 }
 
 impl<'a, B> Frame<'a, B>
@@ -95,6 +101,16 @@ where
     {
         widget.render(area, self.terminal.current_buffer_mut(), state);
     }
+
+    /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
+    /// coordinates. If this method is not called, the cursor will be hidden.
+    ///
+    /// Note that this will interfere with calls to `Terminal::hide_cursor()`,
+    /// `Terminal::show_cursor()`, and `Terminal::set_cursor()`. Pick one of the APIs and stick
+    /// with it.
+    pub fn set_cursor(&mut self, x: u16, y: u16) {
+        self.cursor_position = Some((x, y));
+    }
 }
 
 impl<B> Drop for Terminal<B>
@@ -115,7 +131,7 @@ impl<B> Terminal<B>
 where
     B: Backend,
 {
-    /// Wrapper around Termion initialization. Each buffer is initialized with a blank string and
+    /// Wrapper around Terminal initialization. Each buffer is initialized with a blank string and
     /// default colors for the foreground and the background
     pub fn new(backend: B) -> io::Result<Terminal<B>> {
         let size = backend.size()?;
@@ -130,7 +146,10 @@ where
 
     /// Get a Frame object which provides a consistent view into the terminal state for rendering.
     pub fn get_frame(&mut self) -> Frame<B> {
-        Frame { terminal: self }
+        Frame {
+            terminal: self,
+            cursor_position: None,
+        }
     }
 
     pub fn current_buffer_mut(&mut self) -> &mut Buffer {
@@ -178,16 +197,29 @@ where
     /// and prepares for the next draw call.
     pub fn draw<F>(&mut self, f: F) -> io::Result<()>
     where
-        F: FnOnce(Frame<B>),
+        F: FnOnce(&mut Frame<B>),
     {
         // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
         // and the terminal (if growing), which may OOB.
         self.autoresize()?;
 
-        f(self.get_frame());
+        let mut frame = self.get_frame();
+        f(&mut frame);
+        // We can't change the cursor position right away because we have to flush the frame to
+        // stdout first. But we also can't keep the frame around, since it holds a &mut to
+        // Terminal. Thus, we're taking the important data out of the Frame and dropping it.
+        let cursor_position = frame.cursor_position;
 
         // Draw to stdout
         self.flush()?;
+
+        match cursor_position {
+            None => self.hide_cursor()?,
+            Some((x, y)) => {
+                self.show_cursor()?;
+                self.set_cursor(x, y)?;
+            }
+        }
 
         // Swap buffers
         self.buffers[1 - self.current].reset();

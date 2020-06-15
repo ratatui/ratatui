@@ -15,7 +15,7 @@ fn widgets_list_should_highlight_the_selected_item() {
     let mut state = ListState::default();
     state.select(Some(1));
     terminal
-        .draw(|mut f| {
+        .draw(|f| {
             let size = f.size();
             let items = vec![
                 Text::raw("Item 1"),
@@ -71,7 +71,7 @@ fn widgets_list_should_truncate_items() {
         state.select(case.selected);
         let items = case.items.drain(..);
         terminal
-            .draw(|mut f| {
+            .draw(|f| {
                 let list = List::new(items)
                     .block(Block::default().borders(Borders::RIGHT))
                     .highlight_symbol(">> ");

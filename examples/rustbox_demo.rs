@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut last_tick = Instant::now();
     let tick_rate = Duration::from_millis(cli.tick_rate);
     loop {
-        terminal.draw(|mut f| ui::draw(&mut f, &mut app))?;
+        terminal.draw(|f| ui::draw(f, &mut app))?;
         if let Ok(rustbox::Event::KeyEvent(key)) =
             terminal.backend().rustbox().peek_event(tick_rate, false)
         {

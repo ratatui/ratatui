@@ -18,7 +18,7 @@ fn widgets_paragraph_can_wrap_its_content() {
         let mut terminal = Terminal::new(backend).unwrap();
 
         terminal
-            .draw(|mut f| {
+            .draw(|f| {
                 let size = f.size();
                 let text = [Text::raw(SAMPLE_STRING)];
                 let paragraph = Paragraph::new(text.iter())
@@ -85,7 +85,7 @@ fn widgets_paragraph_renders_double_width_graphemes() {
 
     let s = "コンピュータ上で文字を扱う場合、典型的には文字による通信を行う場合にその両端点では、";
     terminal
-        .draw(|mut f| {
+        .draw(|f| {
             let size = f.size();
             let text = [Text::raw(s)];
             let paragraph = Paragraph::new(text.iter())
@@ -117,7 +117,7 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
 
     let s = "aコンピュータ上で文字を扱う場合、";
     terminal
-        .draw(|mut f| {
+        .draw(|f| {
             let size = f.size();
             let text = [Text::raw(s)];
             let paragraph = Paragraph::new(text.iter())

@@ -40,7 +40,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut last_tick = Instant::now();
     let tick_rate = Duration::from_millis(cli.tick_rate);
     loop {
-        terminal.draw(|mut f| ui::draw(&mut f, &mut app))?;
+        terminal.draw(|f| ui::draw(f, &mut app))?;
         if let Some(input) = terminal.backend_mut().get_curses_mut().get_input() {
             match input {
                 easycurses::Input::Character(c) => {

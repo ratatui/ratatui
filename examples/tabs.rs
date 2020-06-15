@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Main loop
     loop {
-        terminal.draw(|mut f| {
+        terminal.draw(|f| {
             let size = f.size();
             let chunks = Layout::default()
                 .direction(Direction::Vertical)

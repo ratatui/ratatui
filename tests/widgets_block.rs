@@ -10,7 +10,7 @@ fn widgets_block_renders() {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
-        .draw(|mut f| {
+        .draw(|f| {
             let block = Block::default()
                 .title("Title")
                 .borders(Borders::ALL)

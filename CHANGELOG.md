@@ -2,7 +2,17 @@
 
 ## To be released
 
+### Breaking Changes
+
+* `Terminal::draw()` now requires a closure that takes `&mut Frame`.
+
+### Features
+
 * Add feature-gated (`serde`) serialization of `Style`.
+* Add `Frame::set_cursor()` to dictate where the cursor should be placed after
+    the call to `Terminial::draw()`. Calling this method would also make the
+    cursor visible after the call to `draw()`. See example usage in
+    *examples/user_input.rs*.
 
 ## v0.9.5 - 2020-05-21
 

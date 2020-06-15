@@ -73,7 +73,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     terminal.clear()?;
 
     loop {
-        terminal.draw(|mut f| ui::draw(&mut f, &mut app))?;
+        terminal.draw(|f| ui::draw(f, &mut app))?;
         match rx.recv()? {
             Event::Input(event) => match event.code {
                 KeyCode::Char('q') => {

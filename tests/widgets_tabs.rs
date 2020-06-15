@@ -5,7 +5,7 @@ fn widgets_tabs_should_not_panic_on_narrow_areas() {
     let backend = TestBackend::new(1, 1);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
-        .draw(|mut f| {
+        .draw(|f| {
             let tabs = Tabs::default().titles(&["Tab1", "Tab2"]);
             f.render_widget(
                 tabs,
@@ -27,7 +27,7 @@ fn widgets_tabs_should_truncate_the_last_item() {
     let backend = TestBackend::new(10, 1);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
-        .draw(|mut f| {
+        .draw(|f| {
             let tabs = Tabs::default().titles(&["Tab1", "Tab2"]);
             f.render_widget(
                 tabs,

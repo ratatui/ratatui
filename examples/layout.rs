@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let events = Events::new();
 
     loop {
-        terminal.draw(|mut f| {
+        terminal.draw(|f| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(

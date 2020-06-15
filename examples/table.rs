@@ -88,7 +88,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Input
     loop {
-        terminal.draw(|mut f| {
+        terminal.draw(|f| {
             let rects = Layout::default()
                 .constraints([Constraint::Percentage(100)].as_ref())
                 .margin(5)

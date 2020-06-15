@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut scroll: u16 = 0;
     loop {
-        terminal.draw(|mut f| {
+        terminal.draw(|f| {
             let size = f.size();
 
             // Words made "loooong" to demonstrate line breaking.

@@ -14,13 +14,8 @@
 mod util;
 
 use crate::util::event::{Event, Events};
-use std::{
-    error::Error,
-    io::{self, Write},
-};
-use termion::{
-    cursor::Goto, event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen,
-};
+use std::{error::Error, io};
+use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
@@ -71,7 +66,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     loop {
         // Draw UI
-        terminal.draw(|mut f| {
+        terminal.draw(|f| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(2)
@@ -98,6 +93,22 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .style(Style::default().fg(Color::Yellow))
                 .block(Block::default().borders(Borders::ALL).title("Input"));
             f.render_widget(input, chunks[1]);
+            match app.input_mode {
+                InputMode::Normal =>
+                    // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
+                    {}
+
+                InputMode::Editing => {
+                    // Make the cursor visible and ask tui-rs to put it at the specified coordinates after rendering
+                    f.set_cursor(
+                        // Put cursor past the end of the input text
+                        chunks[1].x + app.input.width() as u16 + 1,
+                        // Move one line down, from the border to the input line
+                        chunks[1].y + 1,
+                    )
+                }
+            }
+
             let messages = app
                 .messages
                 .iter()
@@ -107,15 +118,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
             f.render_widget(messages, chunks[2]);
         })?;
-
-        // Put the cursor back inside the input box
-        write!(
-            terminal.backend_mut(),
-            "{}",
-            Goto(4 + app.input.width() as u16, 5)
-        )?;
-        // stdout is buffered, flush it to see the effect immediately when hitting backspace
-        io::stdout().flush().ok();
 
         // Handle input
         if let Event::Input(input) = events.next()? {

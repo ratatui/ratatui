@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut app = App::new("Termion demo", cli.enhanced_graphics);
     loop {
-        terminal.draw(|mut f| ui::draw(&mut f, &mut app))?;
+        terminal.draw(|f| ui::draw(f, &mut app))?;
 
         match events.next()? {
             Event::Input(key) => match key {

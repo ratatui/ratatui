@@ -184,7 +184,7 @@ pub trait Widget {
 /// ]);
 ///
 /// loop {
-///     terminal.draw(|mut f| {
+///     terminal.draw(|f| {
 ///         // The items managed by the application are transformed to something
 ///         // that is understood by tui.
 ///         let items = events.items.iter().map(Text::raw);

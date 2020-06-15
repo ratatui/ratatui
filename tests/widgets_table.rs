@@ -11,7 +11,7 @@ fn widgets_table_column_spacing_can_be_changed() {
         let mut terminal = Terminal::new(backend).unwrap();
 
         terminal
-            .draw(|mut f| {
+            .draw(|f| {
                 let size = f.size();
                 let table = Table::new(
                     ["Head1", "Head2", "Head3"].iter(),
@@ -112,7 +112,7 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints() {
         let mut terminal = Terminal::new(backend).unwrap();
 
         terminal
-            .draw(|mut f| {
+            .draw(|f| {
                 let size = f.size();
                 let table = Table::new(
                     ["Head1", "Head2", "Head3"].iter(),
@@ -203,7 +203,7 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
         let mut terminal = Terminal::new(backend).unwrap();
 
         terminal
-            .draw(|mut f| {
+            .draw(|f| {
                 let size = f.size();
                 let table = Table::new(
                     ["Head1", "Head2", "Head3"].iter(),
@@ -312,7 +312,7 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
         let mut terminal = Terminal::new(backend).unwrap();
 
         terminal
-            .draw(|mut f| {
+            .draw(|f| {
                 let size = f.size();
                 let table = Table::new(
                     ["Head1", "Head2", "Head3"].iter(),

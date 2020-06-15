@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let events = Events::new();
 
     loop {
-        terminal.draw(|mut f| {
+        terminal.draw(|f| {
             // Wrapping block for a group
             // Just draw the block and the group on the same area and build the group
             // with at least a margin of 1
