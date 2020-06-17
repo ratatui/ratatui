@@ -99,6 +99,7 @@ You can run all examples by running `make run-examples`.
 * [gitui](https://github.com/extrawurst/gitui)
 * [rust-sadari-cli](https://github.com/24seconds/rust-sadari-cli)
 * [desed](https://github.com/SoptikHa2/desed)
+* [diskonaut](https://github.com/imsnif/diskonaut)
 
 ### Alternatives
 
