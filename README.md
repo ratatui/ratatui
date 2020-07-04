@@ -37,7 +37,7 @@ you may rely on the previously cited libraries to achieve such features.
 ### Demo
 
 The demo shown in the gif can be run with all available backends
-(`exmples/*_demo.rs` files). For example to see the `termion` version one could
+(`examples/*_demo.rs` files). For example to see the `termion` version one could
 run:
 
 ```
