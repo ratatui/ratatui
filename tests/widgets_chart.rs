@@ -21,7 +21,7 @@ fn widgets_chart_can_have_axis_with_zero_length_bounds() {
             let chart = Chart::default()
                 .block(Block::default().title("Plot").borders(Borders::ALL))
                 .x_axis(Axis::default().bounds([0.0, 0.0]).labels(&["0.0", "1.0"]))
-                .y_axis(Axis::default().bounds([0.0, 1.0]).labels(&["0.0", "1.0"]))
+                .y_axis(Axis::default().bounds([0.0, 0.0]).labels(&["0.0", "1.0"]))
                 .datasets(&datasets);
             f.render_widget(
                 chart,

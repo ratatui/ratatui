@@ -206,6 +206,9 @@ impl<'a, 'b> Painter<'a, 'b> {
         }
         let width = (self.context.x_bounds[1] - self.context.x_bounds[0]).abs();
         let height = (self.context.y_bounds[1] - self.context.y_bounds[0]).abs();
+        if width == 0.0 || height == 0.0 {
+            return None;
+        }
         let x = ((x - left) * self.resolution.0 / width) as usize;
         let y = ((top - y) * self.resolution.1 / height) as usize;
         Some((x, y))
