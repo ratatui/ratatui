@@ -37,7 +37,7 @@ pub use self::chart::{Axis, Chart, Dataset, GraphType};
 pub use self::clear::Clear;
 pub use self::gauge::Gauge;
 pub use self::list::{List, ListState};
-pub use self::paragraph::Paragraph;
+pub use self::paragraph::{Paragraph, Wrap};
 pub use self::sparkline::Sparkline;
 pub use self::table::{Row, Table, TableState};
 pub use self::tabs::Tabs;

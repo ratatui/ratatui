@@ -10,7 +10,7 @@ use tui::{
     backend::TermionBackend,
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, Paragraph, Text},
+    widgets::{Block, Borders, Paragraph, Text, Wrap},
     Terminal,
 };
 
@@ -83,12 +83,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let paragraph = Paragraph::new(text.iter())
                 .block(Block::default().title("Left Block").borders(Borders::ALL))
-                .alignment(Alignment::Left).wrap(true);
+                .alignment(Alignment::Left).wrap(Wrap { trim: true });
             f.render_widget(paragraph, chunks[0]);
 
             let paragraph = Paragraph::new(text.iter())
                 .block(Block::default().title("Right Block").borders(Borders::ALL))
-                .alignment(Alignment::Left).wrap(true);
+                .alignment(Alignment::Left).wrap(Wrap { trim: true });
             f.render_widget(paragraph, chunks[1]);
 
             let block = Block::default().title("Popup").borders(Borders::ALL);

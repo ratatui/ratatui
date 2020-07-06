@@ -2,7 +2,7 @@ use tui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Alignment,
-    widgets::{Block, Borders, Paragraph, Text},
+    widgets::{Block, Borders, Paragraph, Text, Wrap},
     Terminal,
 };
 
@@ -24,7 +24,7 @@ fn widgets_paragraph_can_wrap_its_content() {
                 let paragraph = Paragraph::new(text.iter())
                     .block(Block::default().borders(Borders::ALL))
                     .alignment(alignment)
-                    .wrap(true);
+                    .wrap(Wrap { trim: true });
                 f.render_widget(paragraph, size);
             })
             .unwrap();
@@ -90,7 +90,7 @@ fn widgets_paragraph_renders_double_width_graphemes() {
             let text = [Text::raw(s)];
             let paragraph = Paragraph::new(text.iter())
                 .block(Block::default().borders(Borders::ALL))
-                .wrap(true);
+                .wrap(Wrap { trim: true });
             f.render_widget(paragraph, size);
         })
         .unwrap();
@@ -122,7 +122,7 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
             let text = [Text::raw(s)];
             let paragraph = Paragraph::new(text.iter())
                 .block(Block::default().borders(Borders::ALL))
-                .wrap(true);
+                .wrap(Wrap { trim: true });
             f.render_widget(paragraph, size);
         })
         .unwrap();

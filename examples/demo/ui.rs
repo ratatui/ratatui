@@ -6,7 +6,7 @@ use tui::{
     widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle},
     widgets::{
         Axis, BarChart, Block, Borders, Chart, Dataset, Gauge, List, Paragraph, Row, Sparkline,
-        Table, Tabs, Text,
+        Table, Tabs, Text, Wrap,
     },
     Frame,
 };
@@ -232,7 +232,9 @@ where
         .borders(Borders::ALL)
         .title("Footer")
         .title_style(Style::default().fg(Color::Magenta).modifier(Modifier::BOLD));
-    let paragraph = Paragraph::new(text.iter()).block(block).wrap(true);
+    let paragraph = Paragraph::new(text.iter())
+        .block(block)
+        .wrap(Wrap { trim: true });
     f.render_widget(paragraph, area);
 }
 
