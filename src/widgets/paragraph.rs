@@ -50,7 +50,7 @@ where
     /// Should we parse the text for embedded commands
     raw: bool,
     /// Scroll
-    scroll: u16,
+    scroll: (u16, u16),
     /// Aligenment of the text
     alignment: Alignment,
 }
@@ -66,7 +66,7 @@ where
             wrapping: false,
             raw: false,
             text,
-            scroll: 0,
+            scroll: (0, 0),
             alignment: Alignment::Left,
         }
     }
@@ -91,7 +91,7 @@ where
         self
     }
 
-    pub fn scroll(mut self, offset: u16) -> Paragraph<'a, 't, T> {
+    pub fn scroll(mut self, offset: (u16, u16)) -> Paragraph<'a, 't, T> {
         self.scroll = offset;
         self
     }
@@ -136,21 +136,31 @@ where
         let mut line_composer: Box<dyn LineComposer> = if self.wrapping {
             Box::new(WordWrapper::new(&mut styled, text_area.width))
         } else {
-            Box::new(LineTruncator::new(&mut styled, text_area.width))
+            let mut line_composer = Box::new(LineTruncator::new(&mut styled, text_area.width));
+            if let Alignment::Left = self.alignment {
+                line_composer.set_horizontal_offset(self.scroll.1);
+            }
+            line_composer
         };
         let mut y = 0;
         while let Some((current_line, current_line_width)) = line_composer.next_line() {
-            if y >= self.scroll {
+            if y >= self.scroll.0 {
                 let mut x = get_line_offset(current_line_width, text_area.width, self.alignment);
                 for Styled(symbol, style) in current_line {
-                    buf.get_mut(text_area.left() + x, text_area.top() + y - self.scroll)
-                        .set_symbol(symbol)
+                    buf.get_mut(text_area.left() + x, text_area.top() + y - self.scroll.0)
+                        .set_symbol(if symbol.is_empty() {
+                            // If the symbol is empty, the last char which rendered last time will
+                            // leave on the line. It's a quick fix.
+                            " "
+                        } else {
+                            symbol
+                        })
                         .set_style(*style);
                     x += symbol.width() as u16;
                 }
             }
             y += 1;
-            if y >= text_area.height + self.scroll {
+            if y >= text_area.height + self.scroll.0 {
                 break;
             }
         }

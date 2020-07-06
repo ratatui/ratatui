@@ -1,4 +1,5 @@
 use crate::style::Style;
+use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 const NBSP: &str = "\u{00a0}";
@@ -124,6 +125,8 @@ pub struct LineTruncator<'a, 'b> {
     symbols: &'b mut dyn Iterator<Item = Styled<'a>>,
     max_line_width: u16,
     current_line: Vec<Styled<'a>>,
+    /// Record the offet to skip render
+    horizontal_offset: u16,
 }
 
 impl<'a, 'b> LineTruncator<'a, 'b> {
@@ -134,8 +137,13 @@ impl<'a, 'b> LineTruncator<'a, 'b> {
         LineTruncator {
             symbols,
             max_line_width,
+            horizontal_offset: 0,
             current_line: vec![],
         }
+    }
+
+    pub fn set_horizontal_offset(&mut self, horizontal_offset: u16) {
+        self.horizontal_offset = horizontal_offset;
     }
 }
 
@@ -150,6 +158,7 @@ impl<'a, 'b> LineComposer<'a> for LineTruncator<'a, 'b> {
 
         let mut skip_rest = false;
         let mut symbols_exhausted = true;
+        let mut horizontal_offset = self.horizontal_offset as usize;
         for Styled(symbol, style) in &mut self.symbols {
             symbols_exhausted = false;
 
@@ -169,6 +178,19 @@ impl<'a, 'b> LineComposer<'a> for LineTruncator<'a, 'b> {
                 break;
             }
 
+            let symbol = if horizontal_offset == 0 {
+                symbol
+            } else {
+                let w = symbol.width();
+                if w > horizontal_offset {
+                    let t = trim_offset(symbol, horizontal_offset);
+                    horizontal_offset = 0;
+                    t
+                } else {
+                    horizontal_offset -= w;
+                    ""
+                }
+            };
             current_line_width += symbol.width() as u16;
             self.current_line.push(Styled(symbol, style));
         }
@@ -187,6 +209,22 @@ impl<'a, 'b> LineComposer<'a> for LineTruncator<'a, 'b> {
             Some((&self.current_line[..], current_line_width))
         }
     }
+}
+
+/// This function will return a str slice which start at specified offset.
+/// As src is a unicode str, start offset has to be calculated with each character.
+fn trim_offset(src: &str, mut offset: usize) -> &str {
+    let mut start = 0;
+    for c in UnicodeSegmentation::graphemes(src, true) {
+        let w = c.width();
+        if w <= offset {
+            offset -= w;
+            start += c.len();
+        } else {
+            break;
+        }
+    }
+    &src[start..]
 }
 
 #[cfg(test)]

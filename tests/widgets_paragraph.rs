@@ -139,3 +139,63 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
     ]);
     terminal.backend().assert_buffer(&expected);
 }
+
+#[test]
+fn widgets_paragraph_can_scroll_horizontally() {
+    let test_case = |alignment, scroll, expected| {
+        let backend = TestBackend::new(20, 10);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                let text = [Text::raw(
+                    "段落现在可以水平滚动了！
+Paragraph can scroll horizontally!
+Short line
+",
+                )];
+                let paragraph = Paragraph::new(text.iter())
+                    .block(Block::default().borders(Borders::ALL))
+                    .alignment(alignment)
+                    .scroll(scroll);
+                f.render_widget(paragraph, size);
+            })
+            .unwrap();
+        terminal.backend().assert_buffer(&expected);
+    };
+
+    test_case(
+        Alignment::Left,
+        (0, 7),
+        Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│在可以水平滚动了！│",
+            "│ph can scroll hori│",
+            "│ine               │",
+            "│                  │",
+            "│                  │",
+            "│                  │",
+            "│                  │",
+            "│                  │",
+            "└──────────────────┘",
+        ]),
+    );
+    // only support Alignment::Left
+    test_case(
+        Alignment::Right,
+        (0, 7),
+        Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│段落现在可以水平滚│",
+            "│Paragraph can scro│",
+            "│        Short line│",
+            "│                  │",
+            "│                  │",
+            "│                  │",
+            "│                  │",
+            "│                  │",
+            "└──────────────────┘",
+        ]),
+    );
+}

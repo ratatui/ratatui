@@ -82,7 +82,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .block(block.clone().title("Center, wrap"))
                 .alignment(Alignment::Center)
                 .wrap(true)
-                .scroll(scroll);
+                .scroll((scroll, 0));
             f.render_widget(paragraph, chunks[2]);
             let paragraph = Paragraph::new(text.iter())
                 .block(block.clone().title("Right, wrap"))
