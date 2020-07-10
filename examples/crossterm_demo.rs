@@ -46,7 +46,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
 
     let mut terminal = Terminal::new(backend)?;
-    terminal.hide_cursor()?;
 
     // Setup input handling
     let (tx, rx) = mpsc::channel();

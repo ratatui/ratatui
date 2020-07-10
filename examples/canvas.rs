@@ -79,7 +79,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let stdout = AlternateScreen::from(stdout);
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    terminal.hide_cursor()?;
 
     // Setup event handlers
     let config = Config {

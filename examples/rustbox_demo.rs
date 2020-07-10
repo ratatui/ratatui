@@ -27,7 +27,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let backend = RustboxBackend::new()?;
     let mut terminal = Terminal::new(backend)?;
-    terminal.hide_cursor()?;
 
     let mut app = App::new("Rustbox demo", cli.enhanced_graphics);
 
