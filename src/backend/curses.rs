@@ -3,7 +3,7 @@ use std::io;
 use crate::backend::Backend;
 use crate::buffer::Cell;
 use crate::layout::Rect;
-use crate::style::{Color, Modifier, Style};
+use crate::style::{Color, Modifier};
 use crate::symbols::{bar, block};
 #[cfg(unix)]
 use crate::symbols::{line, DOT};
@@ -41,44 +41,41 @@ impl Backend for CursesBackend {
     {
         let mut last_col = 0;
         let mut last_row = 0;
-        let mut style = Style {
-            fg: Color::Reset,
-            bg: Color::Reset,
-            modifier: Modifier::empty(),
-        };
+        let mut fg = Color::Reset;
+        let mut bg = Color::Reset;
+        let mut modifier = Modifier::empty();
         let mut curses_style = CursesStyle {
             fg: easycurses::Color::White,
             bg: easycurses::Color::Black,
         };
         let mut update_color = false;
         for (col, row, cell) in content {
-            // eprintln!("{:?}", cell);
             if row != last_row || col != last_col + 1 {
                 self.curses.move_rc(i32::from(row), i32::from(col));
             }
             last_col = col;
             last_row = row;
-            if cell.style.modifier != style.modifier {
-                apply_modifier_diff(&mut self.curses.win, style.modifier, cell.style.modifier);
-                style.modifier = cell.style.modifier;
+            if cell.modifier != modifier {
+                apply_modifier_diff(&mut self.curses.win, modifier, cell.modifier);
+                modifier = cell.modifier;
             };
-            if cell.style.fg != style.fg {
+            if cell.fg != fg {
                 update_color = true;
-                if let Some(ccolor) = cell.style.fg.into() {
-                    style.fg = cell.style.fg;
+                if let Some(ccolor) = cell.fg.into() {
+                    fg = cell.fg;
                     curses_style.fg = ccolor;
                 } else {
-                    style.fg = Color::White;
+                    fg = Color::White;
                     curses_style.fg = easycurses::Color::White;
                 }
             };
-            if cell.style.bg != style.bg {
+            if cell.bg != bg {
                 update_color = true;
-                if let Some(ccolor) = cell.style.bg.into() {
-                    style.bg = cell.style.bg;
+                if let Some(ccolor) = cell.bg.into() {
+                    bg = cell.bg;
                     curses_style.bg = ccolor;
                 } else {
-                    style.bg = Color::Black;
+                    bg = Color::Black;
                     curses_style.bg = easycurses::Color::Black;
                 }
             };

@@ -10,7 +10,7 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style, StyleDiff},
+    style::{Color, Modifier, Style},
     symbols,
     text::Span,
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType},
@@ -95,12 +95,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             let x_labels = vec![
                 Span::styled(
                     format!("{}", app.window[0]),
-                    StyleDiff::default().modifier(Modifier::BOLD),
+                    Style::default().add_modifier(Modifier::BOLD),
                 ),
                 Span::raw(format!("{}", (app.window[0] + app.window[1]) / 2.0)),
                 Span::styled(
                     format!("{}", app.window[1]),
-                    StyleDiff::default().modifier(Modifier::BOLD),
+                    Style::default().add_modifier(Modifier::BOLD),
                 ),
             ];
             let datasets = vec![
@@ -121,9 +121,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Block::default()
                         .title(Span::styled(
                             "Chart 1",
-                            StyleDiff::default()
+                            Style::default()
                                 .fg(Color::Cyan)
-                                .modifier(Modifier::BOLD),
+                                .add_modifier(Modifier::BOLD),
                         ))
                         .borders(Borders::ALL),
                 )
@@ -139,9 +139,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .title("Y Axis")
                         .style(Style::default().fg(Color::Gray))
                         .labels(vec![
-                            Span::styled("-20", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::styled("-20", Style::default().add_modifier(Modifier::BOLD)),
                             Span::raw("0"),
-                            Span::styled("20", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::styled("20", Style::default().add_modifier(Modifier::BOLD)),
                         ])
                         .bounds([-20.0, 20.0]),
                 );
@@ -158,9 +158,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Block::default()
                         .title(Span::styled(
                             "Chart 2",
-                            StyleDiff::default()
+                            Style::default()
                                 .fg(Color::Cyan)
-                                .modifier(Modifier::BOLD),
+                                .add_modifier(Modifier::BOLD),
                         ))
                         .borders(Borders::ALL),
                 )
@@ -170,9 +170,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .style(Style::default().fg(Color::Gray))
                         .bounds([0.0, 5.0])
                         .labels(vec![
-                            Span::styled("0", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
                             Span::raw("2.5"),
-                            Span::styled("5.0", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::styled("5.0", Style::default().add_modifier(Modifier::BOLD)),
                         ]),
                 )
                 .y_axis(
@@ -181,9 +181,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .style(Style::default().fg(Color::Gray))
                         .bounds([0.0, 5.0])
                         .labels(vec![
-                            Span::styled("0", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
                             Span::raw("2.5"),
-                            Span::styled("5.0", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::styled("5.0", Style::default().add_modifier(Modifier::BOLD)),
                         ]),
                 );
             f.render_widget(chart, chunks[1]);
@@ -199,9 +199,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Block::default()
                         .title(Span::styled(
                             "Chart 3",
-                            StyleDiff::default()
+                            Style::default()
                                 .fg(Color::Cyan)
-                                .modifier(Modifier::BOLD),
+                                .add_modifier(Modifier::BOLD),
                         ))
                         .borders(Borders::ALL),
                 )
@@ -211,9 +211,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .style(Style::default().fg(Color::Gray))
                         .bounds([0.0, 50.0])
                         .labels(vec![
-                            Span::styled("0", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
                             Span::raw("25"),
-                            Span::styled("50", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::styled("50", Style::default().add_modifier(Modifier::BOLD)),
                         ]),
                 )
                 .y_axis(
@@ -222,9 +222,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .style(Style::default().fg(Color::Gray))
                         .bounds([0.0, 5.0])
                         .labels(vec![
-                            Span::styled("0", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
                             Span::raw("2.5"),
-                            Span::styled("5", StyleDiff::default().modifier(Modifier::BOLD)),
+                            Span::styled("5", Style::default().add_modifier(Modifier::BOLD)),
                         ]),
                 );
             f.render_widget(chart, chunks[2]);

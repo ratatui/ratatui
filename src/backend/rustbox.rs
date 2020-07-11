@@ -34,9 +34,9 @@ impl Backend for RustboxBackend {
             self.rustbox.print(
                 x as usize,
                 y as usize,
-                cell.style.modifier.into(),
-                cell.style.fg.into(),
-                cell.style.bg.into(),
+                cell.modifier.into(),
+                cell.fg.into(),
+                cell.bg.into(),
                 &cell.symbol,
             );
         }

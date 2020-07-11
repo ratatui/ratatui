@@ -220,6 +220,8 @@ where
     type State = TableState;
 
     fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        buf.set_style(area, self.style);
+
         // Render block if necessary and get the drawing area
         let table_area = match self.block.take() {
             Some(b) => {
@@ -229,8 +231,6 @@ where
             }
             None => area,
         };
-
-        buf.set_background(table_area, self.style.bg);
 
         let mut solver = Solver::new();
         let mut var_indices = HashMap::new();

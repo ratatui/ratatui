@@ -93,7 +93,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .margin(5)
                 .split(f.size());
 
-            let selected_style = Style::default().fg(Color::Yellow).modifier(Modifier::BOLD);
+            let selected_style = Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD);
             let normal_style = Style::default().fg(Color::White);
             let header = ["Header1", "Header2", "Header3"];
             let rows = table

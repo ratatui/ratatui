@@ -10,7 +10,7 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Corner, Direction, Layout},
-    style::{Color, Modifier, Style, StyleDiff},
+    style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, List, ListItem},
     Terminal,
@@ -108,8 +108,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
                 .split(f.size());
 
-            let style = Style::default().fg(Color::Black).bg(Color::White);
-
             let items: Vec<ListItem> = app
                 .items
                 .items
@@ -119,18 +117,17 @@ fn main() -> Result<(), Box<dyn Error>> {
                     for _ in 0..i.1 {
                         lines.push(Spans::from(Span::styled(
                             "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-                            StyleDiff::default().modifier(Modifier::ITALIC),
+                            Style::default().add_modifier(Modifier::ITALIC),
                         )));
                     }
-                    ListItem::new(lines)
+                    ListItem::new(lines).style(Style::default().fg(Color::Black).bg(Color::White))
                 })
                 .collect();
             let items = List::new(items)
                 .block(Block::default().borders(Borders::ALL).title("List"))
-                .style(style)
-                .highlight_style_diff(
-                    StyleDiff::default()
-                        .fg(Color::LightGreen)
+                .highlight_style(
+                    Style::default()
+                        .bg(Color::LightGreen)
                         .add_modifier(Modifier::BOLD),
                 )
                 .highlight_symbol(">> ");
@@ -141,18 +138,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .iter()
                 .map(|&(evt, level)| {
                     let s = match level {
-                        "CRITICAL" => StyleDiff::default().fg(Color::Red),
-                        "ERROR" => StyleDiff::default().fg(Color::Magenta),
-                        "WARNING" => StyleDiff::default().fg(Color::Yellow),
-                        "INFO" => StyleDiff::default().fg(Color::Blue),
-                        _ => StyleDiff::default(),
+                        "CRITICAL" => Style::default().fg(Color::Red),
+                        "ERROR" => Style::default().fg(Color::Magenta),
+                        "WARNING" => Style::default().fg(Color::Yellow),
+                        "INFO" => Style::default().fg(Color::Blue),
+                        _ => Style::default(),
                     };
                     let header = Spans::from(vec![
                         Span::styled(format!("{:<9}", level), s),
                         Span::raw(" "),
                         Span::styled(
                             "2020-01-01 10:00:00",
-                            StyleDiff::default().modifier(Modifier::ITALIC),
+                            Style::default().add_modifier(Modifier::ITALIC),
                         ),
                     ]);
                     let log = Spans::from(vec![Span::raw(evt)]);

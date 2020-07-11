@@ -7,7 +7,7 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, StyleDiff},
+    style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Terminal,
@@ -66,16 +66,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let text = vec![
                 Spans::from("This is a line "),
-                Spans::from(Span::styled("This is a line   ", StyleDiff::default().fg(Color::Red))),
-                Spans::from(Span::styled("This is a line", StyleDiff::default().bg(Color::Blue))),
+                Spans::from(Span::styled("This is a line   ", Style::default().fg(Color::Red))),
+                Spans::from(Span::styled("This is a line", Style::default().bg(Color::Blue))),
                 Spans::from(Span::styled(
                     "This is a longer line\n",
-                    StyleDiff::default().modifier(Modifier::CROSSED_OUT),
+                    Style::default().add_modifier(Modifier::CROSSED_OUT),
                 )),
-                Spans::from(Span::styled(&long_line, StyleDiff::default().bg(Color::Green))),
+                Spans::from(Span::styled(&long_line, Style::default().bg(Color::Green))),
                 Spans::from(Span::styled(
                     "This is a line\n",
-                    StyleDiff::default().fg(Color::Green).modifier(Modifier::ITALIC),
+                    Style::default().fg(Color::Green).add_modifier(Modifier::ITALIC),
                 )),
             ];
 

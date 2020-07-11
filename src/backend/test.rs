@@ -106,8 +106,7 @@ impl Backend for TestBackend {
     {
         for (x, y, c) in content {
             let cell = self.buffer.get_mut(x, y);
-            cell.symbol = c.symbol.clone();
-            cell.style = c.style;
+            *cell = c.clone();
         }
         Ok(())
     }

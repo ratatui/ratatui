@@ -1,7 +1,7 @@
 use crate::{
     buffer::Buffer,
     layout::Rect,
-    style::{Style, StyleDiff},
+    style::Style,
     symbols::line,
     text::{Span, Spans},
     widgets::{Borders, Widget},
@@ -84,7 +84,7 @@ impl<'a> Block<'a> {
     pub fn title_style(mut self, style: Style) -> Block<'a> {
         if let Some(t) = self.title {
             let title = String::from(t);
-            self.title = Some(Spans::from(Span::styled(title, StyleDiff::from(style))));
+            self.title = Some(Spans::from(Span::styled(title, style)));
         }
         self
     }
@@ -135,11 +135,11 @@ impl<'a> Block<'a> {
 
 impl<'a> Widget for Block<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
+
         if area.width < 2 || area.height < 2 {
             return;
         }
-
-        buf.set_background(area, self.style.bg);
 
         let symbols = BorderType::line_symbols(self.border_type);
         // Sides
@@ -208,7 +208,7 @@ impl<'a> Widget for Block<'a> {
                 0
             };
             let width = area.width - lx - rx;
-            buf.set_spans(area.left() + lx, area.top(), &title, width, self.style);
+            buf.set_spans(area.left() + lx, area.top(), &title, width);
         }
     }
 }

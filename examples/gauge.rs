@@ -79,28 +79,32 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let gauge = Gauge::default()
                 .block(Block::default().title("Gauge1").borders(Borders::ALL))
-                .style(Style::default().fg(Color::Yellow))
+                .gauge_style(Style::default().fg(Color::Yellow))
                 .percent(app.progress1);
             f.render_widget(gauge, chunks[0]);
 
             let label = format!("{}/100", app.progress2);
             let gauge = Gauge::default()
                 .block(Block::default().title("Gauge2").borders(Borders::ALL))
-                .style(Style::default().fg(Color::Magenta).bg(Color::Green))
+                .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Green))
                 .percent(app.progress2)
                 .label(label);
             f.render_widget(gauge, chunks[1]);
 
             let gauge = Gauge::default()
                 .block(Block::default().title("Gauge3").borders(Borders::ALL))
-                .style(Style::default().fg(Color::Yellow))
+                .gauge_style(Style::default().fg(Color::Yellow))
                 .ratio(app.progress3);
             f.render_widget(gauge, chunks[2]);
 
             let label = format!("{}/100", app.progress2);
             let gauge = Gauge::default()
-                .block(Block::default().title("Gauge4").borders(Borders::ALL))
-                .style(Style::default().fg(Color::Cyan).modifier(Modifier::ITALIC))
+                .block(Block::default().title("Gauge4"))
+                .gauge_style(
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::ITALIC),
+                )
                 .percent(app.progress4)
                 .label(label);
             f.render_widget(gauge, chunks[3]);

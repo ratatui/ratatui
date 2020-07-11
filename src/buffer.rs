@@ -11,7 +11,9 @@ use unicode_width::UnicodeWidthStr;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cell {
     pub symbol: String,
-    pub style: Style,
+    pub fg: Color,
+    pub bg: Color,
+    pub modifier: Modifier,
 }
 
 impl Cell {
@@ -28,29 +30,33 @@ impl Cell {
     }
 
     pub fn set_fg(&mut self, color: Color) -> &mut Cell {
-        self.style.fg = color;
+        self.fg = color;
         self
     }
 
     pub fn set_bg(&mut self, color: Color) -> &mut Cell {
-        self.style.bg = color;
-        self
-    }
-
-    pub fn set_modifier(&mut self, modifier: Modifier) -> &mut Cell {
-        self.style.modifier = modifier;
+        self.bg = color;
         self
     }
 
     pub fn set_style(&mut self, style: Style) -> &mut Cell {
-        self.style = style;
+        if let Some(c) = style.fg {
+            self.fg = c;
+        }
+        if let Some(c) = style.bg {
+            self.bg = c;
+        }
+        self.modifier.insert(style.add_modifier);
+        self.modifier.remove(style.sub_modifier);
         self
     }
 
     pub fn reset(&mut self) {
         self.symbol.clear();
         self.symbol.push(' ');
-        self.style.reset();
+        self.fg = Color::Reset;
+        self.bg = Color::Reset;
+        self.modifier = Modifier::empty();
     }
 }
 
@@ -58,7 +64,9 @@ impl Default for Cell {
     fn default() -> Cell {
         Cell {
             symbol: " ".into(),
-            style: Default::default(),
+            fg: Color::Reset,
+            bg: Color::Reset,
+            modifier: Modifier::empty(),
         }
     }
 }
@@ -83,11 +91,10 @@ impl Default for Cell {
 /// buf.set_string(3, 0, "string", Style::default().fg(Color::Red).bg(Color::White));
 /// assert_eq!(buf.get(5, 0), &Cell{
 ///     symbol: String::from("r"),
-///     style: Style {
-///         fg: Color::Red,
-///         bg: Color::White,
-///         modifier: Modifier::empty()
-///     }});
+///     fg: Color::Red,
+///     bg: Color::White,
+///     modifier: Modifier::empty()
+/// });
 /// buf.get_mut(5, 0).set_char('x');
 /// assert_eq!(buf.get(5, 0).symbol, "x");
 /// ```
@@ -299,14 +306,7 @@ impl Buffer {
         (x_offset as u16, y)
     }
 
-    pub fn set_spans<'a>(
-        &mut self,
-        x: u16,
-        y: u16,
-        spans: &Spans<'a>,
-        width: u16,
-        base_style: Style,
-    ) -> (u16, u16) {
+    pub fn set_spans<'a>(&mut self, x: u16, y: u16, spans: &Spans<'a>, width: u16) -> (u16, u16) {
         let mut remaining_width = width;
         let mut x = x;
         for span in &spans.0 {
@@ -318,7 +318,7 @@ impl Buffer {
                 y,
                 span.content.as_ref(),
                 remaining_width as usize,
-                base_style.patch(span.style_diff),
+                span.style,
             );
             let w = pos.0.saturating_sub(x);
             x = pos.0;
@@ -327,27 +327,26 @@ impl Buffer {
         (x, y)
     }
 
-    pub fn set_span<'a>(
-        &mut self,
-        x: u16,
-        y: u16,
-        span: &Span<'a>,
-        width: u16,
-        base_style: Style,
-    ) -> (u16, u16) {
-        self.set_stringn(
-            x,
-            y,
-            span.content.as_ref(),
-            width as usize,
-            base_style.patch(span.style_diff),
-        )
+    pub fn set_span<'a>(&mut self, x: u16, y: u16, span: &Span<'a>, width: u16) -> (u16, u16) {
+        self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
     }
 
+    #[deprecated(
+        since = "0.10.0",
+        note = "You should use styling capabilities of `Buffer::set_style`"
+    )]
     pub fn set_background(&mut self, area: Rect, color: Color) {
         for y in area.top()..area.bottom() {
             for x in area.left()..area.right() {
                 self.get_mut(x, y).set_bg(color);
+            }
+        }
+    }
+
+    pub fn set_style(&mut self, area: Rect, style: Style) {
+        for y in area.top()..area.bottom() {
+            for x in area.left()..area.right() {
+                self.get_mut(x, y).set_style(style);
             }
         }
     }

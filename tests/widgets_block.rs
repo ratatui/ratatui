@@ -2,7 +2,7 @@ use tui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Rect,
-    style::{Color, StyleDiff},
+    style::{Color, Style},
     text::Span,
     widgets::{Block, Borders},
     Terminal,
@@ -15,10 +15,7 @@ fn widgets_block_renders() {
     terminal
         .draw(|f| {
             let block = Block::default()
-                .title(Span::styled(
-                    "Title",
-                    StyleDiff::default().fg(Color::LightBlue),
-                ))
+                .title(Span::styled("Title", Style::default().fg(Color::LightBlue)))
                 .borders(Borders::ALL);
             f.render_widget(
                 block,

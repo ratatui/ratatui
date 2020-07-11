@@ -1,7 +1,7 @@
 use crate::{
     buffer::Buffer,
     layout::{Corner, Rect},
-    style::{Style, StyleDiff},
+    style::Style,
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
 };
@@ -39,7 +39,7 @@ impl ListState {
 #[derive(Debug, Clone)]
 pub struct ListItem<'a> {
     content: Text<'a>,
-    style_diff: StyleDiff,
+    style: Style,
 }
 
 impl<'a> ListItem<'a> {
@@ -49,12 +49,12 @@ impl<'a> ListItem<'a> {
     {
         ListItem {
             content: content.into(),
-            style_diff: StyleDiff::default(),
+            style: Style::default(),
         }
     }
 
-    pub fn style_diff(mut self, style_diff: StyleDiff) -> ListItem<'a> {
-        self.style_diff = style_diff;
+    pub fn style(mut self, style: Style) -> ListItem<'a> {
+        self.style = style;
         self
     }
 
@@ -69,12 +69,12 @@ impl<'a> ListItem<'a> {
 ///
 /// ```
 /// # use tui::widgets::{Block, Borders, List, ListItem};
-/// # use tui::style::{Style, StyleDiff, Color, Modifier};
+/// # use tui::style::{Style, Color, Modifier};
 /// let items = [ListItem::new("Item 1"), ListItem::new("Item 2"), ListItem::new("Item 3")];
 /// List::new(items)
 ///     .block(Block::default().title("List").borders(Borders::ALL))
 ///     .style(Style::default().fg(Color::White))
-///     .highlight_style_diff(StyleDiff::default().modifier(Modifier::ITALIC))
+///     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
 ///     .highlight_symbol(">>");
 /// ```
 #[derive(Debug, Clone)]
@@ -85,7 +85,7 @@ pub struct List<'a> {
     style: Style,
     start_corner: Corner,
     /// Style used to render selected item
-    highlight_style_diff: StyleDiff,
+    highlight_style: Style,
     /// Symbol in front of the selected item (Shift all items to the right)
     highlight_symbol: Option<&'a str>,
 }
@@ -100,7 +100,7 @@ impl<'a> List<'a> {
             style: Style::default(),
             items: items.into(),
             start_corner: Corner::TopLeft,
-            highlight_style_diff: StyleDiff::default(),
+            highlight_style: Style::default(),
             highlight_symbol: None,
         }
     }
@@ -120,8 +120,8 @@ impl<'a> List<'a> {
         self
     }
 
-    pub fn highlight_style_diff(mut self, diff: StyleDiff) -> List<'a> {
-        self.highlight_style_diff = diff;
+    pub fn highlight_style(mut self, style: Style) -> List<'a> {
+        self.highlight_style = style;
         self
     }
 
@@ -135,6 +135,7 @@ impl<'a> StatefulWidget for List<'a> {
     type State = ListState;
 
     fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        buf.set_style(area, self.style);
         let list_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
@@ -147,8 +148,6 @@ impl<'a> StatefulWidget for List<'a> {
         if list_area.width < 1 || list_area.height < 1 {
             return;
         }
-
-        buf.set_background(list_area, self.style.bg);
 
         if self.items.is_empty() {
             return;
@@ -191,6 +190,7 @@ impl<'a> StatefulWidget for List<'a> {
             .collect::<String>();
 
         let mut current_height = 0;
+        let has_selection = state.selected.is_some();
         for (i, item) in self
             .items
             .iter_mut()
@@ -215,40 +215,27 @@ impl<'a> StatefulWidget for List<'a> {
                 width: list_area.width,
                 height: item.height() as u16,
             };
-            let item_style = self.style.patch(item.style_diff);
-            buf.set_background(area, item_style.bg);
-            let elem_x = if let Some(s) = state.selected {
-                if s == i {
-                    for line in &mut item.content.lines {
-                        for span in &mut line.0 {
-                            span.style_diff = span.style_diff.patch(self.highlight_style_diff);
-                        }
-                    }
-                    let (x, _) = buf.set_stringn(
-                        x,
-                        y,
-                        highlight_symbol,
-                        list_area.width as usize,
-                        item_style.patch(self.highlight_style_diff),
-                    );
-                    x
+            let item_style = self.style.patch(item.style);
+            buf.set_style(area, item_style);
+
+            let is_selected = state.selected.map(|s| s == i).unwrap_or(false);
+            let elem_x = if has_selection {
+                let symbol = if is_selected {
+                    highlight_symbol
                 } else {
-                    let (x, _) =
-                        buf.set_stringn(x, y, &blank_symbol, list_area.width as usize, item_style);
-                    x
-                }
+                    &blank_symbol
+                };
+                let (x, _) = buf.set_stringn(x, y, symbol, list_area.width as usize, item_style);
+                x
             } else {
                 x
             };
             let max_element_width = (list_area.width - (elem_x - x)) as usize;
             for (j, line) in item.content.lines.iter().enumerate() {
-                buf.set_spans(
-                    elem_x,
-                    y + j as u16,
-                    line,
-                    max_element_width as u16,
-                    self.style,
-                );
+                buf.set_spans(elem_x, y + j as u16, line, max_element_width as u16);
+            }
+            if is_selected {
+                buf.set_style(area, self.highlight_style);
             }
         }
     }

@@ -10,7 +10,7 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style, StyleDiff},
+    style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, Tabs},
     Terminal,
@@ -45,7 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
                 .split(size);
 
-            let block = Block::default().style(Style::default().bg(Color::White));
+            let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
             f.render_widget(block, size);
             let titles = app
                 .tabs
@@ -54,8 +54,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .map(|t| {
                     let (first, rest) = t.split_at(1);
                     Spans::from(vec![
-                        Span::styled(first, StyleDiff::default().fg(Color::Yellow)),
-                        Span::styled(rest, StyleDiff::default().fg(Color::Green)),
+                        Span::styled(first, Style::default().fg(Color::Yellow)),
+                        Span::styled(rest, Style::default().fg(Color::Green)),
                     ])
                 })
                 .collect();
@@ -63,7 +63,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .block(Block::default().borders(Borders::ALL).title("Tabs"))
                 .select(app.tabs.index)
                 .style(Style::default().fg(Color::Cyan))
-                .highlight_style_diff(StyleDiff::default().modifier(Modifier::BOLD));
+                .highlight_style(
+                    Style::default()
+                        .add_modifier(Modifier::BOLD)
+                        .bg(Color::Black),
+                );
             f.render_widget(tabs, chunks[0]);
             let inner = match app.tabs.index {
                 0 => Block::default().title("Inner 0").borders(Borders::ALL),

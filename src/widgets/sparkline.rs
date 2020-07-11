@@ -121,8 +121,7 @@ impl<'a> Widget for Sparkline<'a> {
                 };
                 buf.get_mut(spark_area.left() + i as u16, spark_area.top() + j)
                     .set_symbol(symbol)
-                    .set_fg(self.style.fg)
-                    .set_bg(self.style.bg);
+                    .set_style(self.style);
 
                 if *d > 8 {
                     *d -= 8;

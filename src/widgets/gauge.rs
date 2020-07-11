@@ -15,7 +15,7 @@ use crate::{
 /// # use tui::style::{Style, Color, Modifier};
 /// Gauge::default()
 ///     .block(Block::default().borders(Borders::ALL).title("Progress"))
-///     .style(Style::default().fg(Color::White).bg(Color::Black).modifier(Modifier::ITALIC))
+///     .gauge_style(Style::default().fg(Color::White).bg(Color::Black).add_modifier(Modifier::ITALIC))
 ///     .percent(20);
 /// ```
 #[derive(Debug, Clone)]
@@ -24,6 +24,7 @@ pub struct Gauge<'a> {
     ratio: f64,
     label: Option<Span<'a>>,
     style: Style,
+    gauge_style: Style,
 }
 
 impl<'a> Default for Gauge<'a> {
@@ -32,7 +33,8 @@ impl<'a> Default for Gauge<'a> {
             block: None,
             ratio: 0.0,
             label: None,
-            style: Default::default(),
+            style: Style::default(),
+            gauge_style: Style::default(),
         }
     }
 }
@@ -74,10 +76,16 @@ impl<'a> Gauge<'a> {
         self.style = style;
         self
     }
+
+    pub fn gauge_style(mut self, style: Style) -> Gauge<'a> {
+        self.gauge_style = style;
+        self
+    }
 }
 
 impl<'a> Widget for Gauge<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
         let gauge_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
@@ -86,12 +94,9 @@ impl<'a> Widget for Gauge<'a> {
             }
             None => area,
         };
+        buf.set_style(gauge_area, self.gauge_style);
         if gauge_area.height < 1 {
             return;
-        }
-
-        if self.style.bg != Color::Reset {
-            buf.set_background(gauge_area, self.style.bg);
         }
 
         let center = gauge_area.height / 2 + gauge_area.top();
@@ -111,14 +116,14 @@ impl<'a> Widget for Gauge<'a> {
             if y == center {
                 let label_width = label.width() as u16;
                 let middle = (gauge_area.width - label_width) / 2 + gauge_area.left();
-                buf.set_span(middle, y, &label, gauge_area.right() - middle, self.style);
+                buf.set_span(middle, y, &label, gauge_area.right() - middle);
             }
 
             // Fix colors
             for x in gauge_area.left()..end {
                 buf.get_mut(x, y)
-                    .set_fg(self.style.bg)
-                    .set_bg(self.style.fg);
+                    .set_fg(self.gauge_style.bg.unwrap_or(Color::Reset))
+                    .set_bg(self.gauge_style.fg.unwrap_or(Color::Reset));
             }
         }
     }

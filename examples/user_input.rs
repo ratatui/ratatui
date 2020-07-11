@@ -19,8 +19,8 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style, StyleDiff},
-    text::{Span, Spans},
+    style::{Color, Modifier, Style},
+    text::{Span, Spans, Text},
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Terminal,
 };
@@ -81,29 +81,38 @@ fn main() -> Result<(), Box<dyn Error>> {
                 )
                 .split(f.size());
 
-            let msg = match app.input_mode {
-                InputMode::Normal => vec![
-                    Span::raw("Press "),
-                    Span::styled("q", StyleDiff::default().add_modifier(Modifier::BOLD)),
-                    Span::raw(" to exit, "),
-                    Span::styled("e", StyleDiff::default().add_modifier(Modifier::BOLD)),
-                    Span::raw(" to start editing."),
-                ],
-                InputMode::Editing => vec![
-                    Span::raw("Press "),
-                    Span::styled("Esc", StyleDiff::default().add_modifier(Modifier::BOLD)),
-                    Span::raw(" to stop editing, "),
-                    Span::styled("Enter", StyleDiff::default().add_modifier(Modifier::BOLD)),
-                    Span::raw(" to record the message"),
-                ],
+            let (msg, style) = match app.input_mode {
+                InputMode::Normal => (
+                    vec![
+                        Span::raw("Press "),
+                        Span::styled("q", Style::default().add_modifier(Modifier::BOLD)),
+                        Span::raw(" to exit, "),
+                        Span::styled("e", Style::default().add_modifier(Modifier::BOLD)),
+                        Span::raw(" to start editing."),
+                    ],
+                    Style::default().add_modifier(Modifier::RAPID_BLINK),
+                ),
+                InputMode::Editing => (
+                    vec![
+                        Span::raw("Press "),
+                        Span::styled("Esc", Style::default().add_modifier(Modifier::BOLD)),
+                        Span::raw(" to stop editing, "),
+                        Span::styled("Enter", Style::default().add_modifier(Modifier::BOLD)),
+                        Span::raw(" to record the message"),
+                    ],
+                    Style::default(),
+                ),
             };
-            let text = vec![Spans::from(msg)];
+            let mut text = Text::from(Spans::from(msg));
+            text.patch_style(style);
             let help_message = Paragraph::new(text);
             f.render_widget(help_message, chunks[0]);
 
-            let text = vec![Spans::from(app.input.as_ref())];
-            let input = Paragraph::new(text)
-                .style(Style::default().fg(Color::Yellow))
+            let input = Paragraph::new(app.input.as_ref())
+                .style(match app.input_mode {
+                    InputMode::Normal => Style::default(),
+                    InputMode::Editing => Style::default().fg(Color::Yellow),
+                })
                 .block(Block::default().borders(Borders::ALL).title("Input"));
             f.render_widget(input, chunks[1]);
             match app.input_mode {

@@ -2,7 +2,7 @@ use tui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Rect,
-    style::{Color, StyleDiff},
+    style::{Color, Style},
     symbols,
     widgets::{Block, Borders, List, ListItem, ListState},
     Terminal,
@@ -23,13 +23,13 @@ fn widgets_list_should_highlight_the_selected_item() {
                 ListItem::new("Item 3"),
             ];
             let list = List::new(items)
-                .highlight_style_diff(StyleDiff::default().bg(Color::Yellow))
+                .highlight_style(Style::default().bg(Color::Yellow))
                 .highlight_symbol(">> ");
             f.render_stateful_widget(list, size, &mut state);
         })
         .unwrap();
     let mut expected = Buffer::with_lines(vec!["   Item 1 ", ">> Item 2 ", "   Item 3 "]);
-    for x in 0..9 {
+    for x in 0..10 {
         expected.get_mut(x, 1).set_bg(Color::Yellow);
     }
     terminal.backend().assert_buffer(&expected);

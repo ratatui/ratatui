@@ -26,15 +26,15 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 /// ```
 /// # use tui::text::{Text, Spans, Span};
 /// # use tui::widgets::{Block, Borders, Paragraph, Wrap};
-/// # use tui::style::{Style, StyleDiff, Color, Modifier};
+/// # use tui::style::{Style, Color, Modifier};
 /// # use tui::layout::{Alignment};
 /// let text = vec![
 ///     Spans::from(vec![
 ///         Span::raw("First"),
-///         Span::styled("line",StyleDiff::default().add_modifier(Modifier::ITALIC)),
+///         Span::styled("line",Style::default().add_modifier(Modifier::ITALIC)),
 ///         Span::raw("."),
 ///     ]),
-///     Spans::from(Span::styled("Second line", StyleDiff::default().fg(Color::Red))),
+///     Spans::from(Span::styled("Second line", Style::default().fg(Color::Red))),
 /// ];
 /// Paragraph::new(text)
 ///     .block(Block::default().title("Paragraph").borders(Borders::ALL))
@@ -134,6 +134,7 @@ impl<'a> Paragraph<'a> {
 
 impl<'a> Widget for Paragraph<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
         let text_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
@@ -146,8 +147,6 @@ impl<'a> Widget for Paragraph<'a> {
         if text_area.height < 1 {
             return;
         }
-
-        buf.set_background(text_area, self.style.bg);
 
         let style = self.style;
         let mut styled = self.text.lines.iter().flat_map(|spans| {

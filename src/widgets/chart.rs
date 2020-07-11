@@ -1,7 +1,7 @@
 use crate::{
     buffer::Buffer,
     layout::{Constraint, Rect},
-    style::{Style, StyleDiff},
+    style::{Color, Style},
     symbols,
     text::{Span, Spans},
     widgets::{
@@ -52,7 +52,7 @@ impl<'a> Axis<'a> {
     pub fn title_style(mut self, style: Style) -> Axis<'a> {
         if let Some(t) = self.title {
             let title = String::from(t);
-            self.title = Some(Spans::from(Span::styled(title, StyleDiff::from(style))));
+            self.title = Some(Spans::from(Span::styled(title, style)));
         }
         self
     }
@@ -183,7 +183,7 @@ impl Default for ChartLayout {
 /// ```
 /// # use tui::symbols;
 /// # use tui::widgets::{Block, Borders, Chart, Axis, Dataset, GraphType};
-/// # use tui::style::{Style, StyleDiff, Color};
+/// # use tui::style::{Style, Color};
 /// # use tui::text::Span;
 /// let datasets = vec![
 ///     Dataset::default()
@@ -202,12 +202,12 @@ impl Default for ChartLayout {
 /// Chart::new(datasets)
 ///     .block(Block::default().title("Chart"))
 ///     .x_axis(Axis::default()
-///         .title(Span::styled("X Axis", StyleDiff::default().fg(Color::Red)))
+///         .title(Span::styled("X Axis", Style::default().fg(Color::Red)))
 ///         .style(Style::default().fg(Color::White))
 ///         .bounds([0.0, 10.0])
 ///         .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()))
 ///     .y_axis(Axis::default()
-///         .title(Span::styled("Y Axis", StyleDiff::default().fg(Color::Red)))
+///         .title(Span::styled("Y Axis", Style::default().fg(Color::Red)))
 ///         .style(Style::default().fg(Color::White))
 ///         .bounds([0.0, 10.0])
 ///         .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()));
@@ -369,6 +369,7 @@ impl<'a> Chart<'a> {
 
 impl<'a> Widget for Chart<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
         let chart_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
@@ -384,28 +385,14 @@ impl<'a> Widget for Chart<'a> {
             return;
         }
 
-        buf.set_background(chart_area, self.style.bg);
-
         if let Some((x, y)) = layout.title_x {
             let title = self.x_axis.title.unwrap();
-            buf.set_spans(
-                x,
-                y,
-                &title,
-                graph_area.right().saturating_sub(x),
-                self.style,
-            );
+            buf.set_spans(x, y, &title, graph_area.right().saturating_sub(x));
         }
 
         if let Some((x, y)) = layout.title_y {
             let title = self.y_axis.title.unwrap();
-            buf.set_spans(
-                x,
-                y,
-                &title,
-                graph_area.right().saturating_sub(x),
-                self.style,
-            );
+            buf.set_spans(x, y, &title, graph_area.right().saturating_sub(x));
         }
 
         if let Some(y) = layout.label_x {
@@ -420,7 +407,6 @@ impl<'a> Widget for Chart<'a> {
                         y,
                         label,
                         label.width() as u16,
-                        self.style,
                     );
                 }
             }
@@ -432,13 +418,7 @@ impl<'a> Widget for Chart<'a> {
             for (i, label) in labels.iter().enumerate() {
                 let dy = i as u16 * (graph_area.height - 1) / (labels_len - 1);
                 if dy < graph_area.bottom() {
-                    buf.set_span(
-                        x,
-                        graph_area.bottom() - 1 - dy,
-                        label,
-                        label.width() as u16,
-                        self.style,
-                    );
+                    buf.set_span(x, graph_area.bottom() - 1 - dy, label, label.width() as u16);
                 }
             }
         }
@@ -469,14 +449,14 @@ impl<'a> Widget for Chart<'a> {
 
         for dataset in &self.datasets {
             Canvas::default()
-                .background_color(self.style.bg)
+                .background_color(self.style.bg.unwrap_or(Color::Reset))
                 .x_bounds(self.x_axis.bounds)
                 .y_bounds(self.y_axis.bounds)
                 .marker(dataset.marker)
                 .paint(|ctx| {
                     ctx.draw(&Points {
                         coords: dataset.data,
-                        color: dataset.style.fg,
+                        color: dataset.style.fg.unwrap_or(Color::Reset),
                     });
                     if let GraphType::Line = dataset.graph_type {
                         for data in dataset.data.windows(2) {
@@ -485,7 +465,7 @@ impl<'a> Widget for Chart<'a> {
                                 y1: data[0].1,
                                 x2: data[1].0,
                                 y2: data[1].1,
-                                color: dataset.style.fg,
+                                color: dataset.style.fg.unwrap_or(Color::Reset),
                             })
                         }
                     }

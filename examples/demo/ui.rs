@@ -1,7 +1,8 @@
+use crate::demo::App;
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style, StyleDiff},
+    style::{Color, Modifier, Style},
     symbols,
     text::{Span, Spans},
     widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle},
@@ -12,8 +13,6 @@ use tui::{
     Frame,
 };
 
-use crate::demo::App;
-
 pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let chunks = Layout::default()
         .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
@@ -22,17 +21,11 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .tabs
         .titles
         .iter()
-        .map(|t| {
-            Spans::from(vec![Span::styled(
-                *t,
-                StyleDiff::default().fg(Color::Green),
-            )])
-        })
+        .map(|t| Spans::from(Span::styled(*t, Style::default().fg(Color::Green))))
         .collect();
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title(app.title))
-        .style(Style::default().fg(Color::Green))
-        .highlight_style_diff(StyleDiff::default().fg(Color::Yellow))
+        .highlight_style(Style::default().fg(Color::Yellow))
         .select(app.tabs.index);
     f.render_widget(tabs, chunks[0]);
     match app.tabs.index {
@@ -75,11 +68,11 @@ where
     let label = format!("{:.2}%", app.progress * 100.0);
     let gauge = Gauge::default()
         .block(Block::default().title("Gauge:"))
-        .style(
+        .gauge_style(
             Style::default()
                 .fg(Color::Magenta)
                 .bg(Color::Black)
-                .modifier(Modifier::ITALIC | Modifier::BOLD),
+                .add_modifier(Modifier::ITALIC | Modifier::BOLD),
         )
         .label(label)
         .ratio(app.progress);
@@ -129,15 +122,15 @@ where
                 .collect();
             let tasks = List::new(tasks)
                 .block(Block::default().borders(Borders::ALL).title("List"))
-                .highlight_style_diff(StyleDiff::default().modifier(Modifier::BOLD))
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD))
                 .highlight_symbol("> ");
             f.render_stateful_widget(tasks, chunks[0], &mut app.tasks.state);
 
             // Draw logs
-            let info_style = StyleDiff::default().fg(Color::Blue);
-            let warning_style = StyleDiff::default().fg(Color::Yellow);
-            let error_style = StyleDiff::default().fg(Color::Magenta);
-            let critical_style = StyleDiff::default().fg(Color::Red);
+            let info_style = Style::default().fg(Color::Blue);
+            let warning_style = Style::default().fg(Color::Yellow);
+            let error_style = Style::default().fg(Color::Magenta);
+            let critical_style = Style::default().fg(Color::Red);
             let logs: Vec<ListItem> = app
                 .logs
                 .items
@@ -174,17 +167,17 @@ where
                 Style::default()
                     .fg(Color::Black)
                     .bg(Color::Green)
-                    .modifier(Modifier::ITALIC),
+                    .add_modifier(Modifier::ITALIC),
             )
             .label_style(Style::default().fg(Color::Yellow))
-            .style(Style::default().fg(Color::Green));
+            .bar_style(Style::default().fg(Color::Green));
         f.render_widget(barchart, chunks[1]);
     }
     if app.show_chart {
         let x_labels = vec![
             Span::styled(
                 format!("{}", app.signals.window[0]),
-                StyleDiff::default().modifier(Modifier::BOLD),
+                Style::default().add_modifier(Modifier::BOLD),
             ),
             Span::raw(format!(
                 "{}",
@@ -192,7 +185,7 @@ where
             )),
             Span::styled(
                 format!("{}", app.signals.window[1]),
-                StyleDiff::default().modifier(Modifier::BOLD),
+                Style::default().add_modifier(Modifier::BOLD),
             ),
         ];
         let datasets = vec![
@@ -216,9 +209,9 @@ where
                 Block::default()
                     .title(Span::styled(
                         "Chart",
-                        StyleDiff::default()
+                        Style::default()
                             .fg(Color::Cyan)
-                            .modifier(Modifier::BOLD),
+                            .add_modifier(Modifier::BOLD),
                     ))
                     .borders(Borders::ALL),
             )
@@ -235,9 +228,9 @@ where
                     .style(Style::default().fg(Color::Gray))
                     .bounds([-20.0, 20.0])
                     .labels(vec![
-                        Span::styled("-20", StyleDiff::default().modifier(Modifier::BOLD)),
+                        Span::styled("-20", Style::default().add_modifier(Modifier::BOLD)),
                         Span::raw("0"),
-                        Span::styled("20", StyleDiff::default().modifier(Modifier::BOLD)),
+                        Span::styled("20", Style::default().add_modifier(Modifier::BOLD)),
                     ]),
             );
         f.render_widget(chart, chunks[1]);
@@ -253,22 +246,22 @@ where
         Spans::from(""),
         Spans::from(vec![
             Span::from("For example: "),
-            Span::styled("under", StyleDiff::default().fg(Color::Red)),
+            Span::styled("under", Style::default().fg(Color::Red)),
             Span::raw(" "),
-            Span::styled("the", StyleDiff::default().fg(Color::Green)),
+            Span::styled("the", Style::default().fg(Color::Green)),
             Span::raw(" "),
-            Span::styled("rainbow", StyleDiff::default().fg(Color::Blue)),
+            Span::styled("rainbow", Style::default().fg(Color::Blue)),
             Span::raw("."),
         ]),
         Spans::from(vec![
             Span::raw("Oh and if you didn't "),
-            Span::styled("notice", StyleDiff::default().modifier(Modifier::ITALIC)),
+            Span::styled("notice", Style::default().add_modifier(Modifier::ITALIC)),
             Span::raw(" you can "),
-            Span::styled("automatically", StyleDiff::default().modifier(Modifier::BOLD)),
+            Span::styled("automatically", Style::default().add_modifier(Modifier::BOLD)),
             Span::raw(" "),
-            Span::styled("wrap", StyleDiff::default().modifier(Modifier::REVERSED)),
+            Span::styled("wrap", Style::default().add_modifier(Modifier::REVERSED)),
             Span::raw(" your "),
-            Span::styled("text", StyleDiff::default().modifier(Modifier::UNDERLINED)),
+            Span::styled("text", Style::default().add_modifier(Modifier::UNDERLINED)),
             Span::raw(".")
         ]),
         Spans::from(
@@ -277,9 +270,9 @@ where
     ];
     let block = Block::default().borders(Borders::ALL).title(Span::styled(
         "Footer",
-        StyleDiff::default()
+        Style::default()
             .fg(Color::Magenta)
-            .modifier(Modifier::BOLD),
+            .add_modifier(Modifier::BOLD),
     ));
     let paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: true });
     f.render_widget(paragraph, area);
@@ -296,7 +289,7 @@ where
     let up_style = Style::default().fg(Color::Green);
     let failure_style = Style::default()
         .fg(Color::Red)
-        .modifier(Modifier::RAPID_BLINK | Modifier::CROSSED_OUT);
+        .add_modifier(Modifier::RAPID_BLINK | Modifier::CROSSED_OUT);
     let header = ["Server", "Location", "Status"];
     let rows = app.servers.iter().map(|s| {
         let style = if s.status == "Up" {

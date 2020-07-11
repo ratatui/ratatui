@@ -21,32 +21,32 @@
 //! ```rust
 //! # use tui::widgets::Block;
 //! # use tui::text::{Span, Spans};
-//! # use tui::style::{Color, StyleDiff};
+//! # use tui::style::{Color, Style};
 //! // A simple string with no styling.
 //! // Converted to Spans(vec![
-//! //   Span { content: Cow::Borrowed("My title"), style_diff: StyleDiff { .. } }
+//! //   Span { content: Cow::Borrowed("My title"), style: Style { .. } }
 //! // ])
 //! let block = Block::default().title("My title");
 //!
 //! // A simple string with a unique style.
 //! // Converted to Spans(vec![
-//! //   Span { content: Cow::Borrowed("My title"), style_diff: StyleDiff { fg: Some(Color::Yellow), .. }
+//! //   Span { content: Cow::Borrowed("My title"), style: Style { fg: Some(Color::Yellow), .. }
 //! // ])
 //! let block = Block::default().title(
-//!     Span::styled("My title", StyleDiff::default().fg(Color::Yellow))
+//!     Span::styled("My title", Style::default().fg(Color::Yellow))
 //! );
 //!
 //! // A string with multiple styles.
 //! // Converted to Spans(vec![
-//! //   Span { content: Cow::Borrowed("My"), style_diff: StyleDiff { fg: Some(Color::Yellow), .. } },
+//! //   Span { content: Cow::Borrowed("My"), style: Style { fg: Some(Color::Yellow), .. } },
 //! //   Span { content: Cow::Borrowed(" title"), .. }
 //! // ])
 //! let block = Block::default().title(vec![
-//!     Span::styled("My", StyleDiff::default().fg(Color::Yellow)),
+//!     Span::styled("My", Style::default().fg(Color::Yellow)),
 //!     Span::raw(" title"),
 //! ]);
 //! ```
-use crate::style::{Style, StyleDiff};
+use crate::style::Style;
 use std::{borrow::Cow, cmp::max};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -62,7 +62,7 @@ pub struct StyledGrapheme<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Span<'a> {
     pub content: Cow<'a, str>,
-    pub style_diff: StyleDiff,
+    pub style: Style,
 }
 
 impl<'a> Span<'a> {
@@ -81,7 +81,7 @@ impl<'a> Span<'a> {
     {
         Span {
             content: content.into(),
-            style_diff: StyleDiff::default(),
+            style: Style::default(),
         }
     }
 
@@ -91,18 +91,18 @@ impl<'a> Span<'a> {
     ///
     /// ```rust
     /// # use tui::text::Span;
-    /// # use tui::style::{Color, Modifier, StyleDiff};
-    /// let style = StyleDiff::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+    /// # use tui::style::{Color, Modifier, Style};
+    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// Span::styled("My text", style);
     /// Span::styled(String::from("My text"), style);
     /// ```
-    pub fn styled<T>(content: T, style_diff: StyleDiff) -> Span<'a>
+    pub fn styled<T>(content: T, style: Style) -> Span<'a>
     where
         T: Into<Cow<'a, str>>,
     {
         Span {
             content: content.into(),
-            style_diff,
+            style,
         }
     }
 
@@ -113,17 +113,17 @@ impl<'a> Span<'a> {
 
     /// Returns an iterator over the graphemes held by this span.
     ///
-    /// `base_style` is the [`Style`] that will be patched with each grapheme [`StyleDiff`] to get
+    /// `base_style` is the [`Style`] that will be patched with each grapheme [`Style`] to get
     /// the resulting [`Style`].
     ///
     /// ## Examples
     ///
     /// ```rust
     /// # use tui::text::{Span, StyledGrapheme};
-    /// # use tui::style::{Color, Modifier, Style, StyleDiff};
+    /// # use tui::style::{Color, Modifier, Style};
     /// # use std::iter::Iterator;
-    /// let style_diff = StyleDiff::default().fg(Color::Yellow);
-    /// let span = Span::styled("Text", style_diff);
+    /// let style = Style::default().fg(Color::Yellow);
+    /// let span = Span::styled("Text", style);
     /// let style = Style::default().fg(Color::Green).bg(Color::Black);
     /// let styled_graphemes = span.styled_graphemes(style);
     /// assert_eq!(
@@ -131,33 +131,37 @@ impl<'a> Span<'a> {
     ///         StyledGrapheme {
     ///             symbol: "T",
     ///             style: Style {
-    ///                 fg: Color::Yellow,
-    ///                 bg: Color::Black,
-    ///                 modifier: Modifier::empty(),
+    ///                 fg: Some(Color::Yellow),
+    ///                 bg: Some(Color::Black),
+    ///                 add_modifier: Modifier::empty(),
+    ///                 sub_modifier: Modifier::empty(),
     ///             },
     ///         },
     ///         StyledGrapheme {
     ///             symbol: "e",
     ///             style: Style {
-    ///                 fg: Color::Yellow,
-    ///                 bg: Color::Black,
-    ///                 modifier: Modifier::empty(),
+    ///                 fg: Some(Color::Yellow),
+    ///                 bg: Some(Color::Black),
+    ///                 add_modifier: Modifier::empty(),
+    ///                 sub_modifier: Modifier::empty(),
     ///             },
     ///         },
     ///         StyledGrapheme {
     ///             symbol: "x",
     ///             style: Style {
-    ///                 fg: Color::Yellow,
-    ///                 bg: Color::Black,
-    ///                 modifier: Modifier::empty(),
+    ///                 fg: Some(Color::Yellow),
+    ///                 bg: Some(Color::Black),
+    ///                 add_modifier: Modifier::empty(),
+    ///                 sub_modifier: Modifier::empty(),
     ///             },
     ///         },
     ///         StyledGrapheme {
     ///             symbol: "t",
     ///             style: Style {
-    ///                 fg: Color::Yellow,
-    ///                 bg: Color::Black,
-    ///                 modifier: Modifier::empty(),
+    ///                 fg: Some(Color::Yellow),
+    ///                 bg: Some(Color::Black),
+    ///                 add_modifier: Modifier::empty(),
+    ///                 sub_modifier: Modifier::empty(),
     ///             },
     ///         },
     ///     ],
@@ -171,7 +175,7 @@ impl<'a> Span<'a> {
         UnicodeSegmentation::graphemes(self.content.as_ref(), true)
             .map(move |g| StyledGrapheme {
                 symbol: g,
-                style: base_style.patch(self.style_diff),
+                style: base_style.patch(self.style),
             })
             .filter(|s| s.symbol != "\n")
     }
@@ -206,9 +210,9 @@ impl<'a> Spans<'a> {
     ///
     /// ```rust
     /// # use tui::text::{Span, Spans};
-    /// # use tui::style::{Color, StyleDiff};
+    /// # use tui::style::{Color, Style};
     /// let spans = Spans::from(vec![
-    ///     Span::styled("My", StyleDiff::default().fg(Color::Yellow)),
+    ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::raw(" text"),
     /// ]);
     /// assert_eq!(7, spans.width());
@@ -290,6 +294,14 @@ impl<'a> Text<'a> {
     pub fn height(&self) -> usize {
         self.lines.len()
     }
+
+    pub fn patch_style(&mut self, style: Style) {
+        for line in &mut self.lines {
+            for span in &mut line.0 {
+                span.style = span.style.patch(style);
+            }
+        }
+    }
 }
 
 impl<'a> From<&'a str> for Text<'a> {
@@ -297,6 +309,20 @@ impl<'a> From<&'a str> for Text<'a> {
         Text {
             lines: s.lines().map(Spans::from).collect(),
         }
+    }
+}
+
+impl<'a> From<Span<'a>> for Text<'a> {
+    fn from(span: Span<'a>) -> Text<'a> {
+        Text {
+            lines: vec![Spans::from(span)],
+        }
+    }
+}
+
+impl<'a> From<Spans<'a>> for Text<'a> {
+    fn from(spans: Spans<'a>) -> Text<'a> {
+        Text { lines: vec![spans] }
     }
 }
 

@@ -1,7 +1,7 @@
 use crate::{
     buffer::Buffer,
     layout::Rect,
-    style::{Style, StyleDiff},
+    style::Style,
     symbols,
     text::{Span, Spans},
     widgets::{Block, Widget},
@@ -33,8 +33,8 @@ pub struct Tabs<'a> {
     selected: usize,
     /// The style used to draw the text
     style: Style,
-    /// Style diff to apply to the selected item
-    highlight_style_diff: StyleDiff,
+    /// Style to apply to the selected item
+    highlight_style: Style,
     /// Tab divider
     divider: Span<'a>,
 }
@@ -46,7 +46,7 @@ impl<'a> Tabs<'a> {
             titles,
             selected: 0,
             style: Default::default(),
-            highlight_style_diff: Default::default(),
+            highlight_style: Default::default(),
             divider: Span::raw(symbols::line::VERTICAL),
         }
     }
@@ -66,14 +66,8 @@ impl<'a> Tabs<'a> {
         self
     }
 
-    #[deprecated(since = "0.10.0", note = "You should use `Tabs::highlight_style_diff`")]
     pub fn highlight_style(mut self, style: Style) -> Tabs<'a> {
-        self.highlight_style_diff = StyleDiff::from(style);
-        self
-    }
-
-    pub fn highlight_style_diff(mut self, diff: StyleDiff) -> Tabs<'a> {
-        self.highlight_style_diff = diff;
+        self.highlight_style = style;
         self
     }
 
@@ -88,6 +82,7 @@ impl<'a> Tabs<'a> {
 
 impl<'a> Widget for Tabs<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
         let tabs_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
@@ -101,35 +96,33 @@ impl<'a> Widget for Tabs<'a> {
             return;
         }
 
-        buf.set_background(tabs_area, self.style.bg);
-
         let mut x = tabs_area.left();
         let titles_length = self.titles.len();
-        for (i, mut title) in self.titles.into_iter().enumerate() {
+        for (i, title) in self.titles.into_iter().enumerate() {
             let last_title = titles_length - 1 == i;
-            if i == self.selected {
-                for span in &mut title.0 {
-                    span.style_diff = span.style_diff.patch(self.highlight_style_diff);
-                }
-            }
             x = x.saturating_add(1);
             let remaining_width = tabs_area.right().saturating_sub(x);
             if remaining_width == 0 {
                 break;
             }
-            let pos = buf.set_spans(x, tabs_area.top(), &title, remaining_width, self.style);
+            let pos = buf.set_spans(x, tabs_area.top(), &title, remaining_width);
+            if i == self.selected {
+                buf.set_style(
+                    Rect {
+                        x,
+                        y: tabs_area.top(),
+                        width: pos.0.saturating_sub(x),
+                        height: 1,
+                    },
+                    self.highlight_style,
+                );
+            }
             x = pos.0.saturating_add(1);
             let remaining_width = tabs_area.right().saturating_sub(x);
             if remaining_width == 0 || last_title {
                 break;
             }
-            let pos = buf.set_span(
-                x,
-                tabs_area.top(),
-                &self.divider,
-                remaining_width,
-                self.style,
-            );
+            let pos = buf.set_span(x, tabs_area.top(), &self.divider, remaining_width);
             x = pos.0;
         }
     }

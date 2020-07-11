@@ -7,7 +7,7 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style, StyleDiff},
+    style::{Color, Modifier, Style},
     text::Span,
     widgets::{Block, BorderType, Borders},
     Terminal,
@@ -47,7 +47,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .split(chunks[0]);
             let block = Block::default()
                 .title(vec![
-                    Span::styled("With", StyleDiff::default().fg(Color::Yellow)),
+                    Span::styled("With", Style::default().fg(Color::Yellow)),
                     Span::from(" background"),
                 ])
                 .style(Style::default().bg(Color::Green));
@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let block = Block::default().title(Span::styled(
                 "Styled title",
-                StyleDiff::default()
+                Style::default()
                     .fg(Color::White)
                     .bg(Color::Red)
                     .add_modifier(Modifier::BOLD),

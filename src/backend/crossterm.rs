@@ -1,8 +1,9 @@
-use std::{
-    fmt,
-    io::{self, Write},
+use crate::{
+    backend::Backend,
+    buffer::Cell,
+    layout::Rect,
+    style::{Color, Modifier},
 };
-
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
     execute, queue,
@@ -12,10 +13,10 @@ use crossterm::{
     },
     terminal::{self, Clear, ClearType},
 };
-
-use crate::backend::Backend;
-use crate::style::{Color, Modifier};
-use crate::{buffer::Cell, layout::Rect, style};
+use std::{
+    fmt,
+    io::{self, Write},
+};
 
 pub struct CrosstermBackend<W: Write> {
     buffer: W,
@@ -54,41 +55,39 @@ where
         use fmt::Write;
 
         let mut string = String::with_capacity(content.size_hint().0 * 3);
-        let mut style = style::Style::default();
+        let mut fg = Color::Reset;
+        let mut bg = Color::Reset;
+        let mut modifier = Modifier::empty();
         let mut last_y = 0;
         let mut last_x = 0;
-        let mut inst = 0;
 
+        map_error(queue!(string, MoveTo(0, 0)))?;
         for (x, y, cell) in content {
-            if y != last_y || x != last_x + 1 || inst == 0 {
+            if y != last_y || x != last_x + 1 {
                 map_error(queue!(string, MoveTo(x, y)))?;
             }
             last_x = x;
             last_y = y;
-            if cell.style.modifier != style.modifier {
+            if cell.modifier != modifier {
                 let diff = ModifierDiff {
-                    from: style.modifier,
-                    to: cell.style.modifier,
+                    from: modifier,
+                    to: cell.modifier,
                 };
                 diff.queue(&mut string)?;
-                inst += 1;
-                style.modifier = cell.style.modifier;
+                modifier = cell.modifier;
             }
-            if cell.style.fg != style.fg {
-                let color = CColor::from(cell.style.fg);
+            if cell.fg != fg {
+                let color = CColor::from(cell.fg);
                 map_error(queue!(string, SetForegroundColor(color)))?;
-                style.fg = cell.style.fg;
-                inst += 1;
+                fg = cell.fg;
             }
-            if cell.style.bg != style.bg {
-                let color = CColor::from(cell.style.bg);
+            if cell.bg != bg {
+                let color = CColor::from(cell.bg);
                 map_error(queue!(string, SetBackgroundColor(color)))?;
-                style.bg = cell.style.bg;
-                inst += 1;
+                bg = cell.bg;
             }
 
             string.push_str(&cell.symbol);
-            inst += 1;
         }
 
         map_error(queue!(
