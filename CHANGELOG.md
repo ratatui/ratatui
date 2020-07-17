@@ -2,6 +2,8 @@
 
 ## To be released
 
+## v0.10.0 - 2020-07-17
+
 ### Breaking changes
 
 #### Easier cursor management
