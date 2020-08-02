@@ -1,9 +1,41 @@
+use crate::{
+    backend::Backend,
+    buffer::Buffer,
+    layout::Rect,
+    widgets::{StatefulWidget, Widget},
+};
 use std::io;
 
-use crate::backend::Backend;
-use crate::buffer::Buffer;
-use crate::layout::Rect;
-use crate::widgets::{StatefulWidget, Widget};
+#[derive(Debug, Clone, PartialEq)]
+/// UNSTABLE
+enum ResizeBehavior {
+    Fixed,
+    Auto,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+/// UNSTABLE
+pub struct Viewport {
+    area: Rect,
+    resize_behavior: ResizeBehavior,
+}
+
+impl Viewport {
+    /// UNSTABLE
+    pub fn fixed(area: Rect) -> Viewport {
+        Viewport {
+            area,
+            resize_behavior: ResizeBehavior::Fixed,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+/// Options to pass to [`Terminal::draw_with_options`]
+pub struct TerminalOptions {
+    /// Viewport used to draw to the terminal
+    pub viewport: Viewport,
+}
 
 /// Interface to the terminal backed by Termion
 #[derive(Debug)]
@@ -19,8 +51,8 @@ where
     current: usize,
     /// Whether the cursor is currently hidden
     hidden_cursor: bool,
-    /// Terminal size used for rendering.
-    known_size: Rect,
+    /// Viewport
+    viewport: Viewport,
 }
 
 /// Represents a consistent terminal interface for rendering.
@@ -43,7 +75,7 @@ where
 {
     /// Terminal size, guaranteed not to change when rendering.
     pub fn size(&self) -> Rect {
-        self.terminal.known_size
+        self.terminal.viewport.area
     }
 
     /// Render a [`Widget`] to the current buffer using [`Widget::render`].
@@ -138,12 +170,28 @@ where
     /// default colors for the foreground and the background
     pub fn new(backend: B) -> io::Result<Terminal<B>> {
         let size = backend.size()?;
+        Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport {
+                    area: size,
+                    resize_behavior: ResizeBehavior::Auto,
+                },
+            },
+        )
+    }
+
+    /// UNSTABLE
+    pub fn with_options(backend: B, options: TerminalOptions) -> io::Result<Terminal<B>> {
         Ok(Terminal {
             backend,
-            buffers: [Buffer::empty(size), Buffer::empty(size)],
+            buffers: [
+                Buffer::empty(options.viewport.area),
+                Buffer::empty(options.viewport.area),
+            ],
             current: 0,
             hidden_cursor: false,
-            known_size: size,
+            viewport: options.viewport,
         })
     }
 
@@ -183,16 +231,18 @@ where
         self.buffers[self.current].resize(area);
         self.buffers[1 - self.current].reset();
         self.buffers[1 - self.current].resize(area);
-        self.known_size = area;
+        self.viewport.area = area;
         self.backend.clear()
     }
 
     /// Queries the backend for size and resizes if it doesn't match the previous size.
     pub fn autoresize(&mut self) -> io::Result<()> {
-        let size = self.size()?;
-        if self.known_size != size {
-            self.resize(size)?;
-        }
+        if self.viewport.resize_behavior == ResizeBehavior::Auto {
+            let size = self.size()?;
+            if size != self.viewport.area {
+                self.resize(size)?;
+            }
+        };
         Ok(())
     }
 
@@ -238,20 +288,25 @@ where
         self.hidden_cursor = true;
         Ok(())
     }
+
     pub fn show_cursor(&mut self) -> io::Result<()> {
         self.backend.show_cursor()?;
         self.hidden_cursor = false;
         Ok(())
     }
+
     pub fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
         self.backend.get_cursor()
     }
+
     pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
         self.backend.set_cursor(x, y)
     }
+
     pub fn clear(&mut self) -> io::Result<()> {
         self.backend.clear()
     }
+
     /// Queries the real size of the backend.
     pub fn size(&self) -> io::Result<Rect> {
         self.backend.size()
