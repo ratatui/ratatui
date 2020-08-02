@@ -32,6 +32,10 @@ comes from the terminal emulator than the library itself.
 Moreover, the library does not provide any input handling nor any event system and
 you may rely on the previously cited libraries to achieve such features.
 
+### Rust version requirements
+
+Since version 0.10.0, `tui` requires **rustc version 1.44.0 or greater**.
+
 ### [Documentation](https://docs.rs/tui)
 
 ### Demo

@@ -6,6 +6,9 @@ jobs:
   linux:
     name: Linux
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: ["1.44.0", "stable"]
     steps:
       - name: "Install dependencies"
         run: sudo apt-get install libncurses5-dev
@@ -13,7 +16,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: default
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
           override: true
       - name: "Format"
         uses: actions-rs/cargo@v1
@@ -52,12 +55,15 @@ jobs:
   windows:
     name: Windows
     runs-on: windows-latest
+    strategy:
+      matrix:
+        rust: ["1.44.0", "stable"]
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
         with:
           profile: default
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
           override: true
       - name: "Check (crossterm)"
         uses: actions-rs/cargo@v1
