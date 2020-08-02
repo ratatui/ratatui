@@ -2,6 +2,10 @@
 
 ## To be released
 
+### Fixes
+
+* Fix incorrect output when the first diff to draw is on the second cell of the terminal (#347).
+
 ## v0.10.0 - 2020-07-17
 
 ### Breaking changes

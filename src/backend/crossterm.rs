@@ -58,16 +58,13 @@ where
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
         let mut modifier = Modifier::empty();
-        let mut last_y = 0;
-        let mut last_x = 0;
-
-        map_error(queue!(string, MoveTo(0, 0)))?;
+        let mut last_pos: Option<(u16, u16)> = None;
         for (x, y, cell) in content {
-            if y != last_y || x != last_x + 1 {
+            // Move the cursor if the previous location was not (x - 1, y)
+            if !matches!(last_pos, Some(p) if x == p.0 + 1 && y == p.1) {
                 map_error(queue!(string, MoveTo(x, y)))?;
             }
-            last_x = x;
-            last_y = y;
+            last_pos = Some((x, y));
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,

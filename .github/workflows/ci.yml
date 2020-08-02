@@ -47,6 +47,8 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
+        env:
+          RUST_BACKTRACE: full
       - name: "Clippy"
         uses: actions-rs/cargo@v1
         with:
@@ -75,3 +77,5 @@ jobs:
         with:
           command: test
           args: --no-default-features --features=crossterm --tests --examples
+        env:
+          RUST_BACKTRACE: full
