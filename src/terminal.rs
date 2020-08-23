@@ -229,10 +229,9 @@ where
     /// This leads to a full clear of the screen.
     pub fn resize(&mut self, area: Rect) -> io::Result<()> {
         self.buffers[self.current].resize(area);
-        self.buffers[1 - self.current].reset();
         self.buffers[1 - self.current].resize(area);
         self.viewport.area = area;
-        self.backend.clear()
+        self.clear()
     }
 
     /// Queries the backend for size and resizes if it doesn't match the previous size.
@@ -303,8 +302,12 @@ where
         self.backend.set_cursor(x, y)
     }
 
+    /// Clear the terminal and force a full redraw on the next draw call.
     pub fn clear(&mut self) -> io::Result<()> {
-        self.backend.clear()
+        self.backend.clear()?;
+        // Reset the back buffer to make sure the next update will redraw everything.
+        self.buffers[1 - self.current].reset();
+        Ok(())
     }
 
     /// Queries the real size of the backend.
