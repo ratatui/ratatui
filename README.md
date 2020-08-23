@@ -104,6 +104,7 @@ You can run all examples by running `make run-examples`.
 * [rust-sadari-cli](https://github.com/24seconds/rust-sadari-cli)
 * [desed](https://github.com/SoptikHa2/desed)
 * [diskonaut](https://github.com/imsnif/diskonaut)
+* [tickrs](https://github.com/tarkah/tickrs)
 
 ### Alternatives
 
