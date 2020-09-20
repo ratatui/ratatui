@@ -105,6 +105,7 @@ You can run all examples by running `make run-examples`.
 * [desed](https://github.com/SoptikHa2/desed)
 * [diskonaut](https://github.com/imsnif/diskonaut)
 * [tickrs](https://github.com/tarkah/tickrs)
+* [rusty-krab-manager](https://github.com/aryakaul/rusty-krab-manager)
 
 ### Alternatives
 
