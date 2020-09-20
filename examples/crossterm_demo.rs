@@ -55,7 +55,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         let mut last_tick = Instant::now();
         loop {
             // poll for tick rate duration, if no events, sent tick event.
-            if event::poll(tick_rate - last_tick.elapsed()).unwrap() {
+            let timeout = tick_rate
+                .checked_sub(last_tick.elapsed())
+                .unwrap_or_else(|| Duration::from_secs(0));
+            if event::poll(timeout).unwrap() {
                 if let CEvent::Key(key) = event::read().unwrap() {
                     tx.send(Event::Input(key)).unwrap();
                 }
