@@ -13,10 +13,7 @@ use crossterm::{
     },
     terminal::{self, Clear, ClearType},
 };
-use std::{
-    fmt,
-    io::{self, Write},
-};
+use std::io::{self, Write};
 
 pub struct CrosstermBackend<W: Write> {
     buffer: W,
@@ -52,9 +49,6 @@ where
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
-        use fmt::Write;
-
-        let mut string = String::with_capacity(content.size_hint().0 * 3);
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
         let mut modifier = Modifier::empty();
@@ -62,7 +56,7 @@ where
         for (x, y, cell) in content {
             // Move the cursor if the previous location was not (x - 1, y)
             if !matches!(last_pos, Some(p) if x == p.0 + 1 && y == p.1) {
-                map_error(queue!(string, MoveTo(x, y)))?;
+                map_error(queue!(self.buffer, MoveTo(x, y)))?;
             }
             last_pos = Some((x, y));
             if cell.modifier != modifier {
@@ -70,26 +64,25 @@ where
                     from: modifier,
                     to: cell.modifier,
                 };
-                diff.queue(&mut string)?;
+                diff.queue(&mut self.buffer)?;
                 modifier = cell.modifier;
             }
             if cell.fg != fg {
                 let color = CColor::from(cell.fg);
-                map_error(queue!(string, SetForegroundColor(color)))?;
+                map_error(queue!(self.buffer, SetForegroundColor(color)))?;
                 fg = cell.fg;
             }
             if cell.bg != bg {
                 let color = CColor::from(cell.bg);
-                map_error(queue!(string, SetBackgroundColor(color)))?;
+                map_error(queue!(self.buffer, SetBackgroundColor(color)))?;
                 bg = cell.bg;
             }
 
-            string.push_str(&cell.symbol);
+            map_error(queue!(self.buffer, Print(&cell.symbol)))?;
         }
 
         map_error(queue!(
             self.buffer,
-            Print(string),
             SetForegroundColor(CColor::Reset),
             SetBackgroundColor(CColor::Reset),
             SetAttribute(CAttribute::Reset)
@@ -165,11 +158,10 @@ struct ModifierDiff {
     pub to: Modifier,
 }
 
-#[cfg(unix)]
 impl ModifierDiff {
     fn queue<W>(&self, mut w: W) -> io::Result<()>
     where
-        W: fmt::Write,
+        W: io::Write,
     {
         //use crossterm::Attribute;
         let removed = self.from - self.to;
@@ -224,31 +216,6 @@ impl ModifierDiff {
             map_error(queue!(w, SetAttribute(CAttribute::RapidBlink)))?;
         }
 
-        Ok(())
-    }
-}
-
-#[cfg(windows)]
-impl ModifierDiff {
-    fn queue<W>(&self, mut w: W) -> io::Result<()>
-    where
-        W: fmt::Write,
-    {
-        let removed = self.from - self.to;
-        if removed.contains(Modifier::BOLD) {
-            map_error(queue!(w, SetAttribute(CAttribute::NormalIntensity)))?;
-        }
-        if removed.contains(Modifier::UNDERLINED) {
-            map_error(queue!(w, SetAttribute(CAttribute::NoUnderline)))?;
-        }
-
-        let added = self.to - self.from;
-        if added.contains(Modifier::BOLD) {
-            map_error(queue!(w, SetAttribute(CAttribute::Bold)))?;
-        }
-        if added.contains(Modifier::UNDERLINED) {
-            map_error(queue!(w, SetAttribute(CAttribute::Underlined)))?;
-        }
         Ok(())
     }
 }
