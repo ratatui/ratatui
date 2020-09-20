@@ -2,8 +2,16 @@
 
 ## To be released
 
+## v0.11.0 - 2020-09-20
+
+### Features
+
+* Add the dot character as a new type of canvas marker (#350).
+* Support more style modifiers on Windows (#368).
+
 ### Fixes
 
+* Clearing the terminal through `Terminal::clear` will cause the whole UI to be redrawn (#380).
 * Fix incorrect output when the first diff to draw is on the second cell of the terminal (#347).
 
 ## v0.10.0 - 2020-07-17
