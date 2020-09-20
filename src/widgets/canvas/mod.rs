@@ -111,26 +111,28 @@ impl Grid for BrailleGrid {
 }
 
 #[derive(Debug, Clone)]
-struct DotGrid {
+struct CharGrid {
     width: u16,
     height: u16,
     cells: Vec<char>,
     colors: Vec<Color>,
+    cell_char: char,
 }
 
-impl DotGrid {
-    fn new(width: u16, height: u16) -> DotGrid {
+impl CharGrid {
+    fn new(width: u16, height: u16, cell_char: char) -> CharGrid {
         let length = usize::from(width * height);
-        DotGrid {
+        CharGrid {
             width,
             height,
             cells: vec![' '; length],
             colors: vec![Color::Reset; length],
+            cell_char,
         }
     }
 }
 
-impl Grid for DotGrid {
+impl Grid for CharGrid {
     fn width(&self) -> u16 {
         self.width
     }
@@ -162,7 +164,7 @@ impl Grid for DotGrid {
     fn paint(&mut self, x: usize, y: usize, color: Color) {
         let index = y * self.width as usize + x;
         if let Some(c) = self.cells.get_mut(index) {
-            *c = '•';
+            *c = self.cell_char;
         }
         if let Some(c) = self.colors.get_mut(index) {
             *c = color;
@@ -259,7 +261,8 @@ impl<'a> Context<'a> {
         marker: symbols::Marker,
     ) -> Context<'a> {
         let grid: Box<dyn Grid> = match marker {
-            symbols::Marker::Dot => Box::new(DotGrid::new(width, height)),
+            symbols::Marker::Dot => Box::new(CharGrid::new(width, height, '•')),
+            symbols::Marker::Block => Box::new(CharGrid::new(width, height, '▄')),
             symbols::Marker::Braille => Box::new(BrailleGrid::new(width, height)),
         };
         Context {
@@ -396,8 +399,8 @@ where
     }
 
     /// Change the type of points used to draw the shapes. By default the braille patterns are used
-    /// as they provide a more fine grained result but you might want to use the simple dot instead
-    /// if the targeted terminal does not support those symbols.
+    /// as they provide a more fine grained result but you might want to use the simple dot or
+    /// block instead if the targeted terminal does not support those symbols.
     ///
     /// # Examples
     ///
@@ -407,6 +410,8 @@ where
     /// Canvas::default().marker(symbols::Marker::Braille).paint(|ctx| {});
     ///
     /// Canvas::default().marker(symbols::Marker::Dot).paint(|ctx| {});
+    ///
+    /// Canvas::default().marker(symbols::Marker::Block).paint(|ctx| {});
     /// ```
     pub fn marker(mut self, marker: symbols::Marker) -> Canvas<'a, F> {
         self.marker = marker;
