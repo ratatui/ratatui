@@ -297,10 +297,7 @@ impl<'a> Chart<'a> {
         }
 
         if let Some(ref y_labels) = self.y_axis.labels {
-            let mut max_width = y_labels
-                .iter()
-                .fold(0, |acc, l| max(l.content.width(), acc))
-                as u16;
+            let mut max_width = y_labels.iter().map(Span::width).max().unwrap_or_default() as u16;
             if let Some(ref x_labels) = self.x_axis.labels {
                 if !x_labels.is_empty() {
                     max_width = max(max_width, x_labels[0].content.width() as u16);
@@ -397,7 +394,7 @@ impl<'a> Widget for Chart<'a> {
 
         if let Some(y) = layout.label_x {
             let labels = self.x_axis.labels.unwrap();
-            let total_width = labels.iter().fold(0, |acc, l| l.content.width() + acc) as u16;
+            let total_width = labels.iter().map(Span::width).sum::<usize>() as u16;
             let labels_len = labels.len() as u16;
             if total_width < graph_area.width && labels_len > 1 {
                 for (i, label) in labels.iter().enumerate() {

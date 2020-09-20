@@ -139,9 +139,11 @@ impl Buffer {
         S: AsRef<str>,
     {
         let height = lines.len() as u16;
-        let width = lines.iter().fold(0, |acc, item| {
-            std::cmp::max(acc, item.as_ref().width() as u16)
-        });
+        let width = lines
+            .iter()
+            .map(|i| i.as_ref().width() as u16)
+            .max()
+            .unwrap_or_default();
         let mut buffer = Buffer::empty(Rect {
             x: 0,
             y: 0,

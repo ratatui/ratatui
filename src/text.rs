@@ -47,7 +47,7 @@
 //! ]);
 //! ```
 use crate::style::Style;
-use std::{borrow::Cow, cmp::max};
+use std::borrow::Cow;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
@@ -218,7 +218,7 @@ impl<'a> Spans<'a> {
     /// assert_eq!(7, spans.width());
     /// ```
     pub fn width(&self) -> usize {
-        self.0.iter().fold(0, |acc, s| acc + s.width())
+        self.0.iter().map(Span::width).sum()
     }
 }
 
@@ -279,7 +279,11 @@ impl<'a> Text<'a> {
     /// assert_eq!(15, text.width());
     /// ```
     pub fn width(&self) -> usize {
-        self.lines.iter().fold(0, |acc, l| max(acc, l.width()))
+        self.lines
+            .iter()
+            .map(Spans::width)
+            .max()
+            .unwrap_or_default()
     }
 
     /// Returns the height.

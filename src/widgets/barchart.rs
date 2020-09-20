@@ -5,7 +5,7 @@ use crate::{
     symbols,
     widgets::{Block, Widget},
 };
-use std::cmp::{max, min};
+use std::cmp::min;
 use unicode_width::UnicodeWidthStr;
 
 /// Display multiple bars in a single widgets
@@ -145,7 +145,7 @@ impl<'a> Widget for BarChart<'a> {
 
         let max = self
             .max
-            .unwrap_or_else(|| self.data.iter().fold(0, |acc, &(_, v)| max(v, acc)));
+            .unwrap_or_else(|| self.data.iter().map(|t| t.1).max().unwrap_or_default());
         let max_index = min(
             (chart_area.width / (self.bar_width + self.bar_gap)) as usize,
             self.data.len(),
