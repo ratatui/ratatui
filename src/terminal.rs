@@ -31,7 +31,7 @@ impl Viewport {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-/// Options to pass to [`Terminal::draw_with_options`]
+/// Options to pass to [`Terminal::with_options`]
 pub struct TerminalOptions {
     /// Viewport used to draw to the terminal
     pub viewport: Viewport,
