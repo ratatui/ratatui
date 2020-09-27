@@ -157,7 +157,7 @@ impl<'a> Widget for BarChart<'a> {
             .map(|&(l, v)| {
                 (
                     l,
-                    v * u64::from(chart_area.height) * 8 / std::cmp::max(max, 1),
+                    v * u64::from(chart_area.height - 1) * 8 / std::cmp::max(max, 1),
                 )
             })
             .collect::<Vec<(&str, u64)>>();
