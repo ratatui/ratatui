@@ -32,7 +32,7 @@ pub use self::barchart::BarChart;
 pub use self::block::{Block, BorderType};
 pub use self::chart::{Axis, Chart, Dataset, GraphType};
 pub use self::clear::Clear;
-pub use self::gauge::Gauge;
+pub use self::gauge::{Gauge, LineGauge};
 pub use self::list::{List, ListItem, ListState};
 pub use self::paragraph::{Paragraph, Wrap};
 pub use self::sparkline::Sparkline;

@@ -1,8 +1,10 @@
 use tui::{
     backend::TestBackend,
     buffer::Buffer,
-    layout::{Constraint, Direction, Layout},
-    widgets::{Block, Borders, Gauge},
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Style},
+    symbols,
+    widgets::{Block, Borders, Gauge, LineGauge},
     Terminal,
 };
 
@@ -40,5 +42,57 @@ fn widgets_gauge_renders() {
         "                                        ",
         "                                        ",
     ]);
+    terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widgets_line_gauge_renders() {
+    let backend = TestBackend::new(20, 4);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let gauge = LineGauge::default()
+                .gauge_style(Style::default().fg(Color::Green).bg(Color::White))
+                .ratio(0.43);
+            f.render_widget(
+                gauge,
+                Rect {
+                    x: 0,
+                    y: 0,
+                    width: 20,
+                    height: 1,
+                },
+            );
+            let gauge = LineGauge::default()
+                .block(Block::default().title("Gauge 2").borders(Borders::ALL))
+                .gauge_style(Style::default().fg(Color::Green))
+                .line_set(symbols::line::THICK)
+                .ratio(0.211_313_934_313_1);
+            f.render_widget(
+                gauge,
+                Rect {
+                    x: 0,
+                    y: 1,
+                    width: 20,
+                    height: 3,
+                },
+            );
+        })
+        .unwrap();
+    let mut expected = Buffer::with_lines(vec![
+        "43% ────────────────",
+        "┌Gauge 2───────────┐",
+        "│21% ━━━━━━━━━━━━━━│",
+        "└──────────────────┘",
+    ]);
+    for col in 4..10 {
+        expected.get_mut(col, 0).set_fg(Color::Green);
+    }
+    for col in 10..20 {
+        expected.get_mut(col, 0).set_fg(Color::White);
+    }
+    for col in 5..7 {
+        expected.get_mut(col, 2).set_fg(Color::Green);
+    }
     terminal.backend().assert_buffer(&expected);
 }

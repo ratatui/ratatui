@@ -7,8 +7,8 @@ use tui::{
     text::{Span, Spans},
     widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle},
     widgets::{
-        Axis, BarChart, Block, Borders, Chart, Dataset, Gauge, List, ListItem, Paragraph, Row,
-        Sparkline, Table, Tabs, Wrap,
+        Axis, BarChart, Block, Borders, Chart, Dataset, Gauge, LineGauge, List, ListItem,
+        Paragraph, Row, Sparkline, Table, Tabs, Wrap,
     },
     Frame,
 };
@@ -42,8 +42,8 @@ where
     let chunks = Layout::default()
         .constraints(
             [
-                Constraint::Length(7),
-                Constraint::Min(7),
+                Constraint::Length(9),
+                Constraint::Min(8),
                 Constraint::Length(7),
             ]
             .as_ref(),
@@ -59,7 +59,14 @@ where
     B: Backend,
 {
     let chunks = Layout::default()
-        .constraints([Constraint::Length(2), Constraint::Length(3)].as_ref())
+        .constraints(
+            [
+                Constraint::Length(2),
+                Constraint::Length(3),
+                Constraint::Length(1),
+            ]
+            .as_ref(),
+        )
         .margin(1)
         .split(area);
     let block = Block::default().borders(Borders::ALL).title("Graphs");
@@ -88,6 +95,17 @@ where
             symbols::bar::THREE_LEVELS
         });
     f.render_widget(sparkline, chunks[1]);
+
+    let line_gauge = LineGauge::default()
+        .block(Block::default().title("LineGauge:"))
+        .gauge_style(Style::default().fg(Color::Magenta))
+        .line_set(if app.enhanced_graphics {
+            symbols::line::THICK
+        } else {
+            symbols::line::NORMAL
+        })
+        .ratio(app.progress);
+    f.render_widget(line_gauge, chunks[2]);
 }
 
 fn draw_charts<B>(f: &mut Frame<B>, app: &mut App, area: Rect)

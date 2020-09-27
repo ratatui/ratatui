@@ -2,7 +2,8 @@ use crate::{
     buffer::Buffer,
     layout::Rect,
     style::{Color, Style},
-    text::Span,
+    symbols,
+    text::{Span, Spans},
     widgets::{Block, Widget},
 };
 
@@ -125,6 +126,137 @@ impl<'a> Widget for Gauge<'a> {
                     .set_fg(self.gauge_style.bg.unwrap_or(Color::Reset))
                     .set_bg(self.gauge_style.fg.unwrap_or(Color::Reset));
             }
+        }
+    }
+}
+
+/// A compact widget to display a task progress over a single line.
+///
+/// # Examples:
+///
+/// ```
+/// # use tui::widgets::{Widget, LineGauge, Block, Borders};
+/// # use tui::style::{Style, Color, Modifier};
+/// # use tui::symbols;
+/// LineGauge::default()
+///     .block(Block::default().borders(Borders::ALL).title("Progress"))
+///     .gauge_style(Style::default().fg(Color::White).bg(Color::Black).add_modifier(Modifier::BOLD))
+///     .line_set(symbols::line::THICK)
+///     .ratio(0.4);
+/// ```
+pub struct LineGauge<'a> {
+    block: Option<Block<'a>>,
+    ratio: f64,
+    label: Option<Spans<'a>>,
+    line_set: symbols::line::Set,
+    style: Style,
+    gauge_style: Style,
+}
+
+impl<'a> Default for LineGauge<'a> {
+    fn default() -> Self {
+        Self {
+            block: None,
+            ratio: 0.0,
+            label: None,
+            style: Style::default(),
+            line_set: symbols::line::NORMAL,
+            gauge_style: Style::default(),
+        }
+    }
+}
+
+impl<'a> LineGauge<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
+        self.block = Some(block);
+        self
+    }
+
+    pub fn ratio(mut self, ratio: f64) -> Self {
+        assert!(
+            ratio <= 1.0 && ratio >= 0.0,
+            "Ratio should be between 0 and 1 inclusively."
+        );
+        self.ratio = ratio;
+        self
+    }
+
+    pub fn line_set(mut self, set: symbols::line::Set) -> Self {
+        self.line_set = set;
+        self
+    }
+
+    pub fn label<T>(mut self, label: T) -> Self
+    where
+        T: Into<Spans<'a>>,
+    {
+        self.label = Some(label.into());
+        self
+    }
+
+    pub fn style(mut self, style: Style) -> Self {
+        self.style = style;
+        self
+    }
+
+    pub fn gauge_style(mut self, style: Style) -> Self {
+        self.gauge_style = style;
+        self
+    }
+}
+
+impl<'a> Widget for LineGauge<'a> {
+    fn render(mut self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
+        let gauge_area = match self.block.take() {
+            Some(b) => {
+                let inner_area = b.inner(area);
+                b.render(area, buf);
+                inner_area
+            }
+            None => area,
+        };
+
+        if gauge_area.height < 1 {
+            return;
+        }
+
+        let ratio = self.ratio;
+        let label = self
+            .label
+            .unwrap_or_else(move || Spans::from(format!("{:.0}%", ratio * 100.0)));
+        let (col, row) = buf.set_spans(
+            gauge_area.left(),
+            gauge_area.top(),
+            &label,
+            gauge_area.width,
+        );
+        let start = col + 1;
+        if start >= gauge_area.right() {
+            return;
+        }
+
+        let end = start
+            + (f64::from(gauge_area.right().saturating_sub(start)) * self.ratio).floor() as u16;
+        for col in start..end {
+            buf.get_mut(col, row)
+                .set_symbol(self.line_set.horizontal)
+                .set_style(Style {
+                    fg: self.gauge_style.fg,
+                    bg: None,
+                    add_modifier: self.gauge_style.add_modifier,
+                    sub_modifier: self.gauge_style.sub_modifier,
+                });
+        }
+        for col in end..gauge_area.right() {
+            buf.get_mut(col, row)
+                .set_symbol(self.line_set.horizontal)
+                .set_style(Style {
+                    fg: self.gauge_style.bg,
+                    bg: None,
+                    add_modifier: self.gauge_style.add_modifier,
+                    sub_modifier: self.gauge_style.sub_modifier,
+                });
         }
     }
 }
