@@ -333,7 +333,7 @@ impl<'a> Chart<'a> {
         if let Some(ref title) = self.y_axis.title {
             let w = title.width() as u16;
             if w + 1 < layout.graph_area.width && layout.graph_area.height > 2 {
-                layout.title_y = Some((x + 1, area.top()));
+                layout.title_y = Some((x, area.top()));
             }
         }
 
@@ -367,6 +367,11 @@ impl<'a> Chart<'a> {
 impl<'a> Widget for Chart<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
+        // Sample the style of the entire widget. This sample will be used to reset the style of
+        // the cells that are part of the components put on top of the grah area (i.e legend and
+        // axis names).
+        let original_style = buf.get(area.left(), area.top()).style();
+
         let chart_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
@@ -380,16 +385,6 @@ impl<'a> Widget for Chart<'a> {
         let graph_area = layout.graph_area;
         if graph_area.width < 1 || graph_area.height < 1 {
             return;
-        }
-
-        if let Some((x, y)) = layout.title_x {
-            let title = self.x_axis.title.unwrap();
-            buf.set_spans(x, y, &title, graph_area.right().saturating_sub(x));
-        }
-
-        if let Some((x, y)) = layout.title_y {
-            let title = self.y_axis.title.unwrap();
-            buf.set_spans(x, y, &title, graph_area.right().saturating_sub(x));
         }
 
         if let Some(y) = layout.label_x {
@@ -471,6 +466,7 @@ impl<'a> Widget for Chart<'a> {
         }
 
         if let Some(legend_area) = layout.legend_area {
+            buf.set_style(legend_area, original_style);
             Block::default()
                 .borders(Borders::ALL)
                 .render(legend_area, buf);
@@ -482,6 +478,36 @@ impl<'a> Widget for Chart<'a> {
                     dataset.style,
                 );
             }
+        }
+
+        if let Some((x, y)) = layout.title_x {
+            let title = self.x_axis.title.unwrap();
+            let width = graph_area.right().saturating_sub(x);
+            buf.set_style(
+                Rect {
+                    x,
+                    y,
+                    width,
+                    height: 1,
+                },
+                original_style,
+            );
+            buf.set_spans(x, y, &title, width);
+        }
+
+        if let Some((x, y)) = layout.title_y {
+            let title = self.y_axis.title.unwrap();
+            let width = graph_area.right().saturating_sub(x);
+            buf.set_style(
+                Rect {
+                    x,
+                    y,
+                    width,
+                    height: 1,
+                },
+                original_style,
+            );
+            buf.set_spans(x, y, &title, width);
         }
     }
 }
