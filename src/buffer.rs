@@ -51,6 +51,13 @@ impl Cell {
         self
     }
 
+    pub fn style(&self) -> Style {
+        Style::default()
+            .fg(self.fg)
+            .bg(self.bg)
+            .add_modifier(self.modifier)
+    }
+
     pub fn reset(&mut self) {
         self.symbol.clear();
         self.symbol.push(' ');
