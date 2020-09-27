@@ -2,9 +2,22 @@
 
 ## To be released
 
+## v0.12.0 - 2020-09-27
+
+### Features
+
+* Make it easier to work with string with multiple lines in `Text` (#361).
+
+### Fixes
+
+* Fix a style leak in `Graph` so components drawn on top of the plotted data (i.e legend and axis
+titles) are not affected by the style of the `Dataset`s (#388).
+* Make sure `BarChart` shows bars with the max height only when the plotted data is actually equal
+to the max (#383).
+
 ## v0.11.0 - 2020-09-20
 
-### Features
+### Features
 
 * Add the dot character as a new type of canvas marker (#350).
 * Support more style modifiers on Windows (#368).
