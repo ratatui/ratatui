@@ -40,7 +40,7 @@ fn buffer_view(buffer: &Buffer) -> String {
             )
             .unwrap();
         }
-        view.push_str("\n");
+        view.push('\n');
     }
     view
 }
@@ -68,20 +68,20 @@ impl TestBackend {
         }
 
         let mut debug_info = String::from("Buffers are not equal");
-        debug_info.push_str("\n");
+        debug_info.push('\n');
         debug_info.push_str("Expected:");
-        debug_info.push_str("\n");
+        debug_info.push('\n');
         let expected_view = buffer_view(expected);
         debug_info.push_str(&expected_view);
-        debug_info.push_str("\n");
+        debug_info.push('\n');
         debug_info.push_str("Got:");
-        debug_info.push_str("\n");
+        debug_info.push('\n');
         let view = buffer_view(&self.buffer);
         debug_info.push_str(&view);
-        debug_info.push_str("\n");
+        debug_info.push('\n');
 
         debug_info.push_str("Diff:");
-        debug_info.push_str("\n");
+        debug_info.push('\n');
         let nice_diff = diff
             .iter()
             .enumerate()
