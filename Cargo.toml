@@ -26,7 +26,7 @@ unicode-segmentation = "1.2"
 unicode-width = "0.1"
 termion = { version = "1.5", optional = true }
 rustbox = { version = "0.11", optional = true }
-crossterm = { version = "0.17", optional = true }
+crossterm = { version = "0.18", optional = true }
 easycurses = { version = "0.12.2", optional = true }
 pancurses = { version = "0.16.1", optional = true, features = ["win32a"] }
 serde = { version = "1", "optional" = true, features = ["derive"]}
