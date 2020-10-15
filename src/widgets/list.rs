@@ -36,7 +36,7 @@ impl ListState {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ListItem<'a> {
     content: Text<'a>,
     style: Style,
