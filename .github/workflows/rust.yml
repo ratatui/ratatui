@@ -1,0 +1,118 @@
+name: Rust
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 'Log versions'
+        run: |
+          rustc --version
+          cargo --version
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-lint-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run clippy
+        run: cargo clippy --verbose --all-targets --all-features -- -D warnings
+      - name: Check format
+        run: cargo fmt -- --check --verbose
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 'Log versions'
+        run: |
+          rustc --version
+          cargo --version
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-test-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build
+        run: cargo build --verbose --locked --all-targets
+
+      - name: Run tests
+        run: cargo test --verbose --all-targets
+
+  release:
+    name: Release ${{ matrix.config.triple }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - os: ubuntu-latest
+            triple: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            triple: armv7-unknown-linux-gnueabihf
+          - os: ubuntu-latest
+            triple: aarch64-unknown-linux-gnu
+          - os: macOS-latest
+            triple: x86_64-apple-darwin
+          - os: windows-latest
+            triple: x86_64-pc-windows-msvc
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Log versions
+        run: |
+          rustc --version
+          cargo --version
+
+      - name: Prepare Windows
+        if: runner.os == 'Windows'
+        run: choco install --no-progress llvm
+
+      - name: install cross-compile armv7
+        if: matrix.config.triple == 'armv7-unknown-linux-gnueabihf'
+        run: |
+          sudo apt-get install -y g++-arm-linux-gnueabihf llvm
+          mkdir -p ~/.cargo
+          echo '[target.${{ matrix.config.triple }}]' > ~/.cargo/config
+          echo 'linker = "arm-linux-gnueabihf-g++"' >> ~/.cargo/config
+
+      - name: install cross-compile arm64
+        if: matrix.config.triple == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get install -y g++-aarch64-linux-gnu llvm
+          mkdir -p ~/.cargo
+          echo '[target.${{ matrix.config.triple }}]' > ~/.cargo/config
+          echo 'linker = "aarch64-linux-gnu-g++"' >> ~/.cargo/config
+
+      - name: Add Target
+        run: rustup target add ${{ matrix.config.triple }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ matrix.config.triple }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ matrix.config.triple }}-cargo-release-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build release
+        run: cargo build --release --verbose --locked --all-targets --target ${{ matrix.config.triple }}
