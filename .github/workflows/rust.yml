@@ -51,7 +51,7 @@ jobs:
           key: ${{ runner.os }}-cargo-test-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
-        run: cargo build --verbose --locked --all-targets
+        run: cargo build --verbose --all-targets
 
       - name: Run tests
         run: cargo test --verbose --all-targets
@@ -115,4 +115,4 @@ jobs:
           key: ${{ matrix.config.triple }}-cargo-release-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build release
-        run: cargo build --release --verbose --locked --all-targets --target ${{ matrix.config.triple }}
+        run: cargo build --release --verbose --all-targets --target ${{ matrix.config.triple }}
