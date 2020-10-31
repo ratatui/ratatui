@@ -15,8 +15,6 @@ pub mod identifier;
 
 pub use self::flatten::flatten;
 
-// https://docs.rs/tui/0.12.0/tui/widgets/index.html
-
 #[derive(Debug, Clone)]
 pub struct TreeState {
     offset: usize,
@@ -197,7 +195,6 @@ impl<'a> StatefulWidget for Tree<'a> {
         } else {
             visible
                 .iter()
-                // TODO: use longest possible path, it does not need to be exactly the same
                 .position(|o| o.identifier == state.selected)
                 .unwrap_or(0)
         };
