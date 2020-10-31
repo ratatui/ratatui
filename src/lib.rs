@@ -277,7 +277,7 @@ impl<'a> StatefulWidget for Tree<'a> {
                 } else {
                     "\u{25b6}" // Arrow to right
                 };
-                let string = format!("{:>width$}{} ", "", symbol, width = item.depth() * 3);
+                let string = format!("{:>width$}{} ", "", symbol, width = item.depth() * 2);
                 let max_width = area.width.saturating_sub(after_highlight_symbol_x - x);
                 let (x, _) = buf.set_stringn(
                     after_highlight_symbol_x,
