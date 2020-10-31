@@ -64,14 +64,6 @@ jobs:
         config:
           - os: ubuntu-latest
             triple: x86_64-unknown-linux-gnu
-          - os: ubuntu-latest
-            triple: armv7-unknown-linux-gnueabihf
-          - os: ubuntu-latest
-            triple: aarch64-unknown-linux-gnu
-          - os: macOS-latest
-            triple: x86_64-apple-darwin
-          - os: windows-latest
-            triple: x86_64-pc-windows-msvc
 
     steps:
       - uses: actions/checkout@v2
@@ -79,26 +71,6 @@ jobs:
         run: |
           rustc --version
           cargo --version
-
-      - name: Prepare Windows
-        if: runner.os == 'Windows'
-        run: choco install --no-progress llvm
-
-      - name: install cross-compile armv7
-        if: matrix.config.triple == 'armv7-unknown-linux-gnueabihf'
-        run: |
-          sudo apt-get install -y g++-arm-linux-gnueabihf llvm
-          mkdir -p ~/.cargo
-          echo '[target.${{ matrix.config.triple }}]' > ~/.cargo/config
-          echo 'linker = "arm-linux-gnueabihf-g++"' >> ~/.cargo/config
-
-      - name: install cross-compile arm64
-        if: matrix.config.triple == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo apt-get install -y g++-aarch64-linux-gnu llvm
-          mkdir -p ~/.cargo
-          echo '[target.${{ matrix.config.triple }}]' > ~/.cargo/config
-          echo 'linker = "aarch64-linux-gnu-g++"' >> ~/.cargo/config
 
       - name: Add Target
         run: rustup target add ${{ matrix.config.triple }}
