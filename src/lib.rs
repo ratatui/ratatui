@@ -19,7 +19,7 @@ pub use self::flatten::flatten;
 pub struct TreeState {
     offset: usize,
     selected: TreeIdentifierVec,
-    pub opened: HashSet<TreeIdentifierVec>,
+    opened: HashSet<TreeIdentifierVec>,
 }
 
 impl Default for TreeState {
@@ -63,6 +63,10 @@ impl TreeState {
 
     pub fn close_all(&mut self) {
         self.opened.clear();
+    }
+
+    pub fn get_all_opened(&self) -> Vec<TreeIdentifierVec> {
+        self.opened.iter().cloned().collect()
     }
 }
 
@@ -184,7 +188,7 @@ impl<'a> StatefulWidget for Tree<'a> {
             return;
         }
 
-        let visible = flatten(&state.opened, &self.items);
+        let visible = flatten(&state.get_all_opened(), &self.items);
         if visible.is_empty() {
             return;
         }

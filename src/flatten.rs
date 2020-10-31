@@ -2,7 +2,6 @@
 
 use crate::identifier::{TreeIdentifier, TreeIdentifierVec};
 use crate::TreeItem;
-use std::collections::HashSet;
 
 pub struct Flattened<'a> {
     pub identifier: Vec<usize>,
@@ -15,15 +14,12 @@ impl<'a> Flattened<'a> {
     }
 }
 
-pub fn flatten<'a>(
-    opened: &HashSet<TreeIdentifierVec>,
-    items: &'a [TreeItem<'a>],
-) -> Vec<Flattened<'a>> {
+pub fn flatten<'a>(opened: &[TreeIdentifierVec], items: &'a [TreeItem<'a>]) -> Vec<Flattened<'a>> {
     internal(opened, items, &[])
 }
 
 fn internal<'a>(
-    opened: &HashSet<TreeIdentifierVec>,
+    opened: &[TreeIdentifierVec],
     items: &'a [TreeItem<'a>],
     current: TreeIdentifier,
 ) -> Vec<Flattened<'a>> {
@@ -78,8 +74,7 @@ fn get_example_tree_items<'a>() -> Vec<TreeItem<'a>> {
 #[test]
 fn get_opened_nothing_opened_is_top_level() {
     let items = get_example_tree_items();
-    let opened = HashSet::new();
-    let result = flatten(&opened, &items);
+    let result = flatten(&[], &items);
     let result_text: Vec<_> = result
         .iter()
         .map(|o| get_naive_string_from_text(&o.item.text))
@@ -90,7 +85,7 @@ fn get_opened_nothing_opened_is_top_level() {
 #[test]
 fn get_opened_wrong_opened_is_only_top_level() {
     let items = get_example_tree_items();
-    let opened = [vec![0], vec![1, 1]].iter().cloned().collect();
+    let opened = [vec![0], vec![1, 1]];
     let result = flatten(&opened, &items);
     let result_text: Vec<_> = result
         .iter()
@@ -102,7 +97,7 @@ fn get_opened_wrong_opened_is_only_top_level() {
 #[test]
 fn get_opened_one_is_opened() {
     let items = get_example_tree_items();
-    let opened = [vec![1]].iter().cloned().collect();
+    let opened = [vec![1]];
     let result = flatten(&opened, &items);
     let result_text: Vec<_> = result
         .iter()
@@ -114,7 +109,7 @@ fn get_opened_one_is_opened() {
 #[test]
 fn get_opened_all_opened() {
     let items = get_example_tree_items();
-    let opened = [vec![1], vec![1, 1]].iter().cloned().collect();
+    let opened = [vec![1], vec![1, 1]];
     let result = flatten(&opened, &items);
     let result_text: Vec<_> = result
         .iter()

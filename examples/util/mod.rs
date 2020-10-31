@@ -24,7 +24,7 @@ impl<'a> StatefulTree<'a> {
     }
 
     fn move_up_down(&mut self, down: bool) {
-        let visible = flatten(&self.state.opened, &self.items);
+        let visible = flatten(&self.state.get_all_opened(), &self.items);
         let current_identifier = self.state.selected();
         let current_index = visible
             .iter()
