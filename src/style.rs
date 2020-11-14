@@ -54,14 +54,66 @@ bitflags! {
 
 /// Style let you control the main characteristics of the displayed elements.
 ///
-/// ## Examples
-///
 /// ```rust
 /// # use tui::style::{Color, Modifier, Style};
 /// Style::default()
 ///     .fg(Color::Black)
 ///     .bg(Color::Green)
 ///     .add_modifier(Modifier::ITALIC | Modifier::BOLD);
+/// ```
+///
+/// It represents an incremental change. If you apply the styles S1, S2, S3 to a cell of the
+/// terminal buffer, the style of this cell will be the result of the merge of S1, S2 and S3, not
+/// just S3.
+///
+/// ```rust
+/// # use tui::style::{Color, Modifier, Style};
+/// # use tui::buffer::Buffer;
+/// # use tui::layout::Rect;
+/// let styles = [
+///     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD | Modifier::ITALIC),
+///     Style::default().bg(Color::Red),
+///     Style::default().fg(Color::Yellow).remove_modifier(Modifier::ITALIC),
+/// ];
+/// let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+/// for style in &styles {
+///   buffer.get_mut(0, 0).set_style(*style);
+/// }
+/// assert_eq!(
+///     Style {
+///         fg: Some(Color::Yellow),
+///         bg: Some(Color::Red),
+///         add_modifier: Modifier::BOLD,
+///         sub_modifier: Modifier::empty(),
+///     },
+///     buffer.get(0, 0).style(),
+/// );
+/// ```
+///
+/// The default implementation returns a `Style` that does not modify anything. If you wish to
+/// reset all properties until that point use [`Style::reset`].
+///
+/// ```
+/// # use tui::style::{Color, Modifier, Style};
+/// # use tui::buffer::Buffer;
+/// # use tui::layout::Rect;
+/// let styles = [
+///     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD | Modifier::ITALIC),
+///     Style::reset().fg(Color::Yellow),
+/// ];
+/// let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+/// for style in &styles {
+///   buffer.get_mut(0, 0).set_style(*style);
+/// }
+/// assert_eq!(
+///     Style {
+///         fg: Some(Color::Yellow),
+///         bg: Some(Color::Reset),
+///         add_modifier: Modifier::empty(),
+///         sub_modifier: Modifier::empty(),
+///     },
+///     buffer.get(0, 0).style(),
+/// );
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
