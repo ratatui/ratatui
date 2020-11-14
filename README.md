@@ -107,6 +107,7 @@ You can run all examples by running `make run-examples`.
 * [tickrs](https://github.com/tarkah/tickrs)
 * [rusty-krab-manager](https://github.com/aryakaul/rusty-krab-manager)
 * [termchat](https://github.com/lemunozm/termchat)
+* [taskwarrior-tui](https://github.com/kdheepak/taskwarrior-tui)
 
 ### Alternatives
 
