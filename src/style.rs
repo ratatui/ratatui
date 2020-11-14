@@ -84,6 +84,16 @@ impl Default for Style {
 }
 
 impl Style {
+    /// Returns a `Style` resetting all properties.
+    pub fn reset() -> Style {
+        Style {
+            fg: Some(Color::Reset),
+            bg: Some(Color::Reset),
+            add_modifier: Modifier::empty(),
+            sub_modifier: Modifier::all(),
+        }
+    }
+
     /// Changes the foreground color.
     ///
     /// ## Examples
