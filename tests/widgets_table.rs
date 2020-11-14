@@ -248,9 +248,9 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
     // columns of not enough width trims the data
     test_case(
         &[
-            Constraint::Percentage(10),
-            Constraint::Percentage(10),
-            Constraint::Percentage(10),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
         ],
         Buffer::with_lines(vec![
             "┌────────────────────────────┐",
@@ -269,9 +269,9 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
     // columns of large width just before pushing a column off
     test_case(
         &[
-            Constraint::Percentage(30),
-            Constraint::Percentage(30),
-            Constraint::Percentage(30),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
         ],
         Buffer::with_lines(vec![
             "┌────────────────────────────┐",
@@ -292,12 +292,12 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
         &[Constraint::Percentage(50), Constraint::Percentage(50)],
         Buffer::with_lines(vec![
             "┌────────────────────────────┐",
-            "│Head1          Head2        │",
+            "│Head1         Head2         │",
             "│                            │",
-            "│Row11          Row12        │",
-            "│Row21          Row22        │",
-            "│Row31          Row32        │",
-            "│Row41          Row42        │",
+            "│Row11         Row12         │",
+            "│Row21         Row22         │",
+            "│Row31         Row32         │",
+            "│Row41         Row42         │",
             "│                            │",
             "│                            │",
             "└────────────────────────────┘",
@@ -356,9 +356,9 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
     // columns of not enough width trims the data
     test_case(
         &[
-            Constraint::Percentage(10),
+            Constraint::Percentage(11),
             Constraint::Length(20),
-            Constraint::Percentage(10),
+            Constraint::Percentage(11),
         ],
         Buffer::with_lines(vec![
             "┌────────────────────────────┐",
@@ -377,9 +377,9 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
     // columns of large width just before pushing a column off
     test_case(
         &[
-            Constraint::Percentage(30),
+            Constraint::Percentage(33),
             Constraint::Length(10),
-            Constraint::Percentage(30),
+            Constraint::Percentage(33),
         ],
         Buffer::with_lines(vec![
             "┌────────────────────────────┐",
@@ -410,6 +410,115 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
             "│Row21            Row22      │",
             "│Row31            Row32      │",
             "│Row41            Row42      │",
+            "│                            │",
+            "│                            │",
+            "└────────────────────────────┘",
+        ]),
+    );
+}
+
+#[test]
+fn widgets_table_columns_widths_can_use_ratio_constraints() {
+    let test_case = |widths, expected| {
+        let backend = TestBackend::new(30, 10);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                let table = Table::new(
+                    ["Head1", "Head2", "Head3"].iter(),
+                    vec![
+                        Row::Data(["Row11", "Row12", "Row13"].iter()),
+                        Row::Data(["Row21", "Row22", "Row23"].iter()),
+                        Row::Data(["Row31", "Row32", "Row33"].iter()),
+                        Row::Data(["Row41", "Row42", "Row43"].iter()),
+                    ]
+                    .into_iter(),
+                )
+                .block(Block::default().borders(Borders::ALL))
+                .widths(widths)
+                .column_spacing(0);
+                f.render_widget(table, size);
+            })
+            .unwrap();
+        terminal.backend().assert_buffer(&expected);
+    };
+
+    // columns of zero width show nothing
+    test_case(
+        &[
+            Constraint::Ratio(0, 1),
+            Constraint::Ratio(0, 1),
+            Constraint::Ratio(0, 1),
+        ],
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│                            │",
+            "│                            │",
+            "│                            │",
+            "│                            │",
+            "│                            │",
+            "│                            │",
+            "│                            │",
+            "│                            │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // columns of not enough width trims the data
+    test_case(
+        &[
+            Constraint::Ratio(1, 9),
+            Constraint::Ratio(1, 9),
+            Constraint::Ratio(1, 9),
+        ],
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│HeaHeaHea                   │",
+            "│                            │",
+            "│RowRowRow                   │",
+            "│RowRowRow                   │",
+            "│RowRowRow                   │",
+            "│RowRowRow                   │",
+            "│                            │",
+            "│                            │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // columns of large width just before pushing a column off
+    test_case(
+        &[
+            Constraint::Ratio(1, 3),
+            Constraint::Ratio(1, 3),
+            Constraint::Ratio(1, 3),
+        ],
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│Head1    Head2    Head3     │",
+            "│                            │",
+            "│Row11    Row12    Row13     │",
+            "│Row21    Row22    Row23     │",
+            "│Row31    Row32    Row33     │",
+            "│Row41    Row42    Row43     │",
+            "│                            │",
+            "│                            │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // percentages summing to 100 should give equal widths
+    test_case(
+        &[Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)],
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│Head1         Head2         │",
+            "│                            │",
+            "│Row11         Row12         │",
+            "│Row21         Row22         │",
+            "│Row31         Row32         │",
+            "│Row41         Row42         │",
             "│                            │",
             "│                            │",
             "└────────────────────────────┘",
