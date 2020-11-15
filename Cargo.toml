@@ -17,13 +17,13 @@ exclude = [".github"]
 unicode-width = "0.1"
 
 [dependencies.tui]
-version = "0.12"
+version = "0.13"
 default-features = false
 
 [dev-dependencies]
 termion = "1.5"
 
 [dev-dependencies.tui]
-version = "0.12"
+version = "0.13"
 default-features = false
 features = ["termion"]
