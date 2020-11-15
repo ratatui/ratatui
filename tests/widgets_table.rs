@@ -1,8 +1,10 @@
-use tui::backend::TestBackend;
-use tui::buffer::Buffer;
-use tui::layout::Constraint;
-use tui::widgets::{Block, Borders, Row, Table};
-use tui::Terminal;
+use tui::{
+    backend::TestBackend,
+    buffer::Buffer,
+    layout::Constraint,
+    widgets::{Block, Borders, Row, Table},
+    Terminal,
+};
 
 #[test]
 fn widgets_table_column_spacing_can_be_changed() {
@@ -13,16 +15,13 @@ fn widgets_table_column_spacing_can_be_changed() {
         terminal
             .draw(|f| {
                 let size = f.size();
-                let table = Table::new(
-                    ["Head1", "Head2", "Head3"].iter(),
-                    vec![
-                        Row::Data(["Row11", "Row12", "Row13"].iter()),
-                        Row::Data(["Row21", "Row22", "Row23"].iter()),
-                        Row::Data(["Row31", "Row32", "Row33"].iter()),
-                        Row::Data(["Row41", "Row42", "Row43"].iter()),
-                    ]
-                    .into_iter(),
-                )
+                let table = Table::new(vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]),
+                ])
+                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))
                 .widths(&[
                     Constraint::Length(5),
@@ -114,16 +113,13 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints() {
         terminal
             .draw(|f| {
                 let size = f.size();
-                let table = Table::new(
-                    ["Head1", "Head2", "Head3"].iter(),
-                    vec![
-                        Row::Data(["Row11", "Row12", "Row13"].iter()),
-                        Row::Data(["Row21", "Row22", "Row23"].iter()),
-                        Row::Data(["Row31", "Row32", "Row33"].iter()),
-                        Row::Data(["Row41", "Row42", "Row43"].iter()),
-                    ]
-                    .into_iter(),
-                )
+                let table = Table::new(vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]),
+                ])
+                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))
                 .widths(widths);
                 f.render_widget(table, size);
@@ -205,16 +201,13 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
         terminal
             .draw(|f| {
                 let size = f.size();
-                let table = Table::new(
-                    ["Head1", "Head2", "Head3"].iter(),
-                    vec![
-                        Row::Data(["Row11", "Row12", "Row13"].iter()),
-                        Row::Data(["Row21", "Row22", "Row23"].iter()),
-                        Row::Data(["Row31", "Row32", "Row33"].iter()),
-                        Row::Data(["Row41", "Row42", "Row43"].iter()),
-                    ]
-                    .into_iter(),
-                )
+                let table = Table::new(vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]),
+                ])
+                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))
                 .widths(widths)
                 .column_spacing(0);
@@ -314,16 +307,13 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
         terminal
             .draw(|f| {
                 let size = f.size();
-                let table = Table::new(
-                    ["Head1", "Head2", "Head3"].iter(),
-                    vec![
-                        Row::Data(["Row11", "Row12", "Row13"].iter()),
-                        Row::Data(["Row21", "Row22", "Row23"].iter()),
-                        Row::Data(["Row31", "Row32", "Row33"].iter()),
-                        Row::Data(["Row41", "Row42", "Row43"].iter()),
-                    ]
-                    .into_iter(),
-                )
+                let table = Table::new(vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]),
+                ])
+                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))
                 .widths(widths);
                 f.render_widget(table, size);
@@ -426,16 +416,13 @@ fn widgets_table_columns_widths_can_use_ratio_constraints() {
         terminal
             .draw(|f| {
                 let size = f.size();
-                let table = Table::new(
-                    ["Head1", "Head2", "Head3"].iter(),
-                    vec![
-                        Row::Data(["Row11", "Row12", "Row13"].iter()),
-                        Row::Data(["Row21", "Row22", "Row23"].iter()),
-                        Row::Data(["Row31", "Row32", "Row33"].iter()),
-                        Row::Data(["Row41", "Row42", "Row43"].iter()),
-                    ]
-                    .into_iter(),
-                )
+                let table = Table::new(vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]),
+                ])
+                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))
                 .widths(widths)
                 .column_spacing(0);
