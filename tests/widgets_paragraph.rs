@@ -2,7 +2,7 @@ use tui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Alignment,
-    text::{Spans, Text},
+    text::{Span, Spans, Text},
     widgets::{Block, Borders, Paragraph, Wrap},
     Terminal,
 };
@@ -141,6 +141,27 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
     terminal.backend().assert_buffer(&expected);
 }
 
+#[test]
+fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
+    let nbsp: &str = "\u{00a0}";
+    let line = Spans::from(vec![Span::raw("NBSP"), Span::raw(nbsp)]);
+    let backend = TestBackend::new(20, 3);
+    let mut terminal = Terminal::new(backend).unwrap();
+    let expected = Buffer::with_lines(vec![
+        "┌──────────────────┐",
+        "│NBSP\u{00a0}             │",
+        "└──────────────────┘",
+    ]);
+    terminal
+        .draw(|f| {
+            let size = f.size();
+
+            let paragraph = Paragraph::new(line).block(Block::default().borders(Borders::ALL));
+            f.render_widget(paragraph, size);
+        })
+        .unwrap();
+    terminal.backend().assert_buffer(&expected);
+}
 #[test]
 fn widgets_paragraph_can_scroll_horizontally() {
     let test_case = |alignment, scroll, expected| {
