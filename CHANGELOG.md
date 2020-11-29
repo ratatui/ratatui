@@ -2,6 +2,65 @@
 
 ## To be released
 
+### Breaking changes
+
+#### New API for the Table widget
+
+The `Table` widget got a lot of improvements that should make it easier to work with:
+* It should not longer panic when rendered on small areas.
+* `Row`s are now a collection of `Cell`s, themselves wrapping a `Text`. This means you can style
+the entire `Table`, an entire `Row`, an entire `Cell` and rely on the styling capabilities of
+`Text` to get full control over the look of your `Table`.
+* `Row`s can have multiple lines.
+* The header is now optional and is just another `Row` always visible at the top.
+* `Row`s can have a bottom margin.
+* The header alignment is no longer off when an item is selected.
+
+Taking the example of the code in `examples/demo/ui.rs`, this is what you may have to change:
+```diff
+     let failure_style = Style::default()
+         .fg(Color::Red)
+         .add_modifier(Modifier::RAPID_BLINK | Modifier::CROSSED_OUT);
+-    let header = ["Server", "Location", "Status"];
+     let rows = app.servers.iter().map(|s| {
+         let style = if s.status == "Up" {
+             up_style
+         } else {
+             failure_style
+         };
+-        Row::StyledData(vec![s.name, s.location, s.status].into_iter(), style)
++        Row::new(vec![s.name, s.location, s.status]).style(style)
+     });
+-    let table = Table::new(header.iter(), rows)
++    let table = Table::new(rows)
++        .header(
++            Row::new(vec!["Server", "Location", "Status"])
++                .style(Style::default().fg(Color::Yellow))
++                .bottom_margin(1),
++        )
+         .block(Block::default().title("Servers").borders(Borders::ALL))
+-        .header_style(Style::default().fg(Color::Yellow))
+         .widths(&[
+             Constraint::Length(15),
+             Constraint::Length(15),
+```
+Here, we had to:
+- Change the way we construct [`Row`](https://docs.rs/tui/*/tui/widgets/struct.Row.html) which is no
+longer an `enum` but a `struct`. It accepts anything that can be converted to an iterator of things
+that can be converted to a [`Cell`](https://docs.rs/tui/*/tui/widgets/struct.Cell.html)
+- The header is no longer a required parameter so we use
+[`Table::header`](https://docs.rs/tui/*/tui/widgets/struct.Table.html#method.header) to set it.
+`Table::header_style` has been removed since the style can be directly set using
+[`Row::style`](https://docs.rs/tui/*/tui/widgets/struct.Row.html#method.style). In addition, we want
+to preserve the old margin between the header and the rest of the rows so we add a bottom margin to
+the header using
+[`Row::bottom_margin`](https://docs.rs/tui/*/tui/widgets/struct.Row.html#method.bottom_margin).
+
+You may want to look at the documentation of the different types to get a better understanding:
+- [`Table`](https://docs.rs/tui/*/tui/widgets/struct.Table.html)
+- [`Row`](https://docs.rs/tui/*/tui/widgets/struct.Row.html)
+- [`Cell`](https://docs.rs/tui/*/tui/widgets/struct.Cell.html)
+
 ## v0.13.0 - 2020-11-14
 
 ### Features
