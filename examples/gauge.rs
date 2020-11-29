@@ -107,7 +107,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 )
                 .percent(app.progress4)
                 .label(label)
-                .use_unicode(false);
+                .use_unicode(true);
             f.render_widget(gauge, chunks[3]);
         })?;
 

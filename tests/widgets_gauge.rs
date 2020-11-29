@@ -23,11 +23,13 @@ fn widgets_gauge_renders() {
             let gauge = Gauge::default()
                 .block(Block::default().title("Percentage").borders(Borders::ALL))
                 .gauge_style(Style::default().bg(Color::Blue).fg(Color::Red))
+                .use_unicode(true)
                 .percent(43);
             f.render_widget(gauge, chunks[0]);
             let gauge = Gauge::default()
                 .block(Block::default().title("Ratio").borders(Borders::ALL))
                 .gauge_style(Style::default().bg(Color::Blue).fg(Color::Red))
+                .use_unicode(true)
                 .ratio(0.511_313_934_313_1);
             f.render_widget(gauge, chunks[1]);
         })

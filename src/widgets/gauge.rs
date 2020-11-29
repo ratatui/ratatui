@@ -35,7 +35,7 @@ impl<'a> Default for Gauge<'a> {
             block: None,
             ratio: 0.0,
             label: None,
-            use_unicode: true,
+            use_unicode: false,
             style: Style::default(),
             gauge_style: Style::default(),
         }
@@ -168,6 +168,7 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
         _ => " ",
     }
 }
+
 /// A compact widget to display a task progress over a single line.
 ///
 /// # Examples:
