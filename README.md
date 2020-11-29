@@ -108,6 +108,7 @@ You can run all examples by running `make run-examples`.
 * [rusty-krab-manager](https://github.com/aryakaul/rusty-krab-manager)
 * [termchat](https://github.com/lemunozm/termchat)
 * [taskwarrior-tui](https://github.com/kdheepak/taskwarrior-tui)
+* [gping](https://github.com/orf/gping/)
 
 ### Alternatives
 
