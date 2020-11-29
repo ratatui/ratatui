@@ -319,7 +319,8 @@ where
     let table = Table::new(rows)
         .header(
             Row::new(vec!["Server", "Location", "Status"])
-                .style(Style::default().fg(Color::Yellow)),
+                .style(Style::default().fg(Color::Yellow))
+                .bottom_margin(1),
         )
         .block(Block::default().title("Servers").borders(Borders::ALL))
         .widths(&[
