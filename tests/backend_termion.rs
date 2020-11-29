@@ -34,21 +34,21 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
         let mut s = String::new();
         // First draw
         write!(s, "{}", cursor::Goto(1, 1))?;
-        s.push_str("a");
+        s.push('a');
         write!(s, "{}", color::Fg(color::Reset))?;
         write!(s, "{}", color::Bg(color::Reset))?;
         write!(s, "{}", style::Reset)?;
         write!(s, "{}", cursor::Hide)?;
         // Second draw
         write!(s, "{}", cursor::Goto(2, 1))?;
-        s.push_str("b");
+        s.push('b');
         write!(s, "{}", color::Fg(color::Reset))?;
         write!(s, "{}", color::Bg(color::Reset))?;
         write!(s, "{}", style::Reset)?;
         write!(s, "{}", cursor::Hide)?;
         // Third draw
         write!(s, "{}", cursor::Goto(3, 1))?;
-        s.push_str("c");
+        s.push('c');
         write!(s, "{}", color::Fg(color::Reset))?;
         write!(s, "{}", color::Bg(color::Reset))?;
         write!(s, "{}", style::Reset)?;
