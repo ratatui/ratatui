@@ -22,11 +22,80 @@ fn widgets_gauge_renders() {
 
             let gauge = Gauge::default()
                 .block(Block::default().title("Percentage").borders(Borders::ALL))
+                .gauge_style(Style::default().bg(Color::Blue).fg(Color::Red))
                 .percent(43);
             f.render_widget(gauge, chunks[0]);
             let gauge = Gauge::default()
                 .block(Block::default().title("Ratio").borders(Borders::ALL))
-                .ratio(0.211_313_934_313_1);
+                .gauge_style(Style::default().bg(Color::Blue).fg(Color::Red))
+                .ratio(0.511_313_934_313_1);
+            f.render_widget(gauge, chunks[1]);
+        })
+        .unwrap();
+    let mut expected = Buffer::with_lines(vec![
+        "                                        ",
+        "                                        ",
+        "  ┌Percentage────────────────────────┐  ",
+        "  │              ▋43%                │  ",
+        "  └──────────────────────────────────┘  ",
+        "  ┌Ratio─────────────────────────────┐  ",
+        "  │               51%                │  ",
+        "  └──────────────────────────────────┘  ",
+        "                                        ",
+        "                                        ",
+    ]);
+
+    for i in 3..17 {
+        expected
+            .get_mut(i, 3)
+            .set_bg(Color::Red)
+            .set_fg(Color::Blue);
+    }
+    for i in 17..37 {
+        expected
+            .get_mut(i, 3)
+            .set_bg(Color::Blue)
+            .set_fg(Color::Red);
+    }
+
+    for i in 3..20 {
+        expected
+            .get_mut(i, 6)
+            .set_bg(Color::Red)
+            .set_fg(Color::Blue);
+    }
+    for i in 20..37 {
+        expected
+            .get_mut(i, 6)
+            .set_bg(Color::Blue)
+            .set_fg(Color::Red);
+    }
+
+    terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widgets_gauge_renders_no_unicode() {
+    let backend = TestBackend::new(40, 10);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(2)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .split(f.size());
+
+            let gauge = Gauge::default()
+                .block(Block::default().title("Percentage").borders(Borders::ALL))
+                .percent(43)
+                .use_unicode(false);
+            f.render_widget(gauge, chunks[0]);
+            let gauge = Gauge::default()
+                .block(Block::default().title("Ratio").borders(Borders::ALL))
+                .ratio(0.211_313_934_313_1)
+                .use_unicode(false);
             f.render_widget(gauge, chunks[1]);
         })
         .unwrap();

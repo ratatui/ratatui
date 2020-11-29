@@ -106,7 +106,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .add_modifier(Modifier::ITALIC),
                 )
                 .percent(app.progress4)
-                .label(label);
+                .label(label)
+                .use_unicode(false);
             f.render_widget(gauge, chunks[3]);
         })?;
 
