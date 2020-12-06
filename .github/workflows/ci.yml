@@ -8,6 +8,9 @@ on:
 
 name: CI
 
+env:
+  CI_CARGO_MAKE_VERSION: 0.32.9
+
 jobs:
   linux:
     name: Linux
@@ -18,39 +21,30 @@ jobs:
     steps:
       - name: "Install dependencies"
         run: sudo apt-get install libncurses5-dev
+      - uses: hecrj/setup-rust-action@967aec96c6a27a0ce15c1dac3aaba332d60565e2
+        with:
+          rust-version: ${{ matrix.rust }}
+          components: rustfmt,clippy
       - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
+      - name: "Cache cargo make"
+        id: cache-cargo-make
+        uses: actions/cache@v2
         with:
-          profile: default
-          toolchain: ${{ matrix.rust }}
-          override: true
+          path: ~/.cargo/bin/cargo-make
+          key: ${{ runner.os }}-${{ matrix.rust }}-${{ env.CI_CARGO_MAKE_VERSION }}
       - name: "Install cargo-make"
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-make
+        if: steps.cache-cargo-make.outputs.cache-hit != 'true'
+        run: cargo install cargo-make --version ${{ env.CI_CARGO_MAKE_VERSION }}
       - name: "Format"
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: fmt
+        run: cargo make fmt
       - name: "Check"
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: check
+        run: cargo make check
       - name: "Test"
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: test
+        run: cargo make test
         env:
           RUST_BACKTRACE: full
       - name: "Clippy"
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: clippy
+        run: cargo make clippy
   windows:
     name: Windows
     runs-on: windows-latest
@@ -59,35 +53,27 @@ jobs:
         rust: ["1.44.0", "stable"]
     steps:
       - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
+      - uses: hecrj/setup-rust-action@967aec96c6a27a0ce15c1dac3aaba332d60565e2
         with:
-          profile: default
-          toolchain: ${{ matrix.rust }}
-          override: true
+          rust-version: ${{ matrix.rust }}
+          components: rustfmt,clippy
+      - uses: actions/checkout@v1
+      - name: "Cache cargo make"
+        id: cache-cargo-make
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/bin/cargo-make
+          key: ${{ runner.os }}-${{ matrix.rust }}-${{ env.CI_CARGO_MAKE_VERSION }}
       - name: "Install cargo-make"
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-make
+        if: steps.cache-cargo-make.outputs.cache-hit != 'true'
+        run: cargo install cargo-make --version ${{ env.CI_CARGO_MAKE_VERSION }}
       - name: "Format"
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: fmt
+        run: cargo make fmt
       - name: "Check"
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: check
+        run: cargo make check
       - name: "Test"
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: test
+        run: cargo make test
         env:
           RUST_BACKTRACE: full
       - name: "Clippy"
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: clippy
+        run: cargo make clippy
