@@ -18,42 +18,33 @@ jobs:
           profile: default
           toolchain: ${{ matrix.rust }}
           override: true
+      - name: "Install cargo-make"
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-make
       - name: "Format"
         uses: actions-rs/cargo@v1
         with:
-          command: fmt
-          args: --all -- --check
+          command: make
+          args: fmt
       - name: "Check"
         uses: actions-rs/cargo@v1
         with:
-          command: check
-          args: --examples
-      - name: "Check (crossterm)"
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --no-default-features --features=crossterm --example crossterm_demo
-      - name: "Check (rustbox)"
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-default-features --features=rustbox --example rustbox_demo
-      - name: "Check (curses)"
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --no-default-features --features=curses --example curses_demo
+          command: make
+          args: check
       - name: "Test"
         uses: actions-rs/cargo@v1
         with:
-          command: test
+          command: make
+          args: test
         env:
           RUST_BACKTRACE: full
       - name: "Clippy"
         uses: actions-rs/cargo@v1
         with:
-          command: clippy
-          args: --all-targets --all-features -- -D warnings
+          command: make
+          args: clippy
   windows:
     name: Windows
     runs-on: windows-latest
@@ -67,15 +58,30 @@ jobs:
           profile: default
           toolchain: ${{ matrix.rust }}
           override: true
-      - name: "Check (crossterm)"
+      - name: "Install cargo-make"
         uses: actions-rs/cargo@v1
         with:
-          command: check
-          args: --no-default-features --features=crossterm --example crossterm_demo
-      - name: "Test (crossterm)"
+          command: install
+          args: cargo-make
+      - name: "Format"
         uses: actions-rs/cargo@v1
         with:
-          command: test
-          args: --no-default-features --features=crossterm --tests --examples
+          command: make
+          args: fmt
+      - name: "Check"
+        uses: actions-rs/cargo@v1
+        with:
+          command: make
+          args: check
+      - name: "Test"
+        uses: actions-rs/cargo@v1
+        with:
+          command: make
+          args: test
         env:
           RUST_BACKTRACE: full
+      - name: "Clippy"
+        uses: actions-rs/cargo@v1
+        with:
+          command: make
+          args: clippy
