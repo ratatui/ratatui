@@ -1,0 +1,111 @@
+[config]
+skip_core_tasks = true
+
+[env.TUI_FEATURES]
+source = "${CARGO_MAKE_RUST_TARGET_OS}"
+default_value = "unknown"
+
+[env.TUI_FEATURES.mapping]
+linux = "serde,crossterm,termion,rustbox,curses"
+macos = "serde,crossterm,termion,rustbox,curses"
+windows = "serde,crossterm"
+
+[tasks.default]
+dependencies = [
+  "check",
+]
+
+[tasks.ci]
+dependencies = [
+  "fmt",
+  "check",
+  "test",
+  "clippy",
+]
+
+
+[tasks.fmt]
+command = "cargo"
+args = [
+  "fmt",
+  "--all",
+  "--",
+  "--check",
+]
+
+[tasks.check]
+command = "cargo"
+args = [
+  "check",
+  "--no-default-features",
+  "--features",
+  "${TUI_FEATURES}",
+  "--all-targets",
+]
+
+[tasks.build]
+command = "cargo"
+args = [
+  "build",
+  "--no-default-features",
+  "--features",
+  "${TUI_FEATURES}",
+  "--all-targets",
+]
+
+[tasks.clippy]
+command = "cargo"
+args = [
+  "clippy",
+  "--no-default-features",
+  "--features",
+  "${TUI_FEATURES}",
+  "--",
+  "-D",
+  "warnings",
+]
+
+[tasks.test]
+linux_alias = "test-unix"
+mac_alias = "test-unix"
+windows_alias = "test-windows"
+
+[tasks.test-unix]
+command = "cargo"
+args = [
+  "test",
+  "--no-default-features",
+  "--features",
+  "${TUI_FEATURES}"
+]
+
+# Documentation tests cannot be run on Windows for now
+[tasks.test-windows]
+command = "cargo"
+args = [
+  "test",
+  "--no-default-features",
+  "--features",
+  "${TUI_FEATURES}",
+  "--lib",
+  "--tests",
+  "--examples",
+]
+
+[tasks.run-examples]
+linux_alias = "run-examples-unix"
+mac_alias = "run-examples-unix"
+windows_alias = "run-examples-windows"
+
+[tasks.run-examples-unix]
+script = '''
+#!/usr/bin/env bash
+cargo build --examples --features ${TUI_FEATURES} --release
+for file in examples/*.rs; do
+  name="$(basename "${file/.rs/}")"
+  cargo run --features ${TUI_FEATURES} --release --example "${name}"
+done
+'''
+
+[tasks.run-examples-windows]
+# TODO
