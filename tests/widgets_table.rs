@@ -685,3 +685,33 @@ fn widgets_table_can_have_elements_styled_individually() {
     }
     terminal.backend().assert_buffer(&expected);
 }
+
+#[test]
+fn widgets_table_should_render_even_if_empty() {
+    let backend = TestBackend::new(30, 4);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(vec![])
+                .header(Row::new(vec!["Head1", "Head2", "Head3"]))
+                .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
+                .widths(&[
+                    Constraint::Length(6),
+                    Constraint::Length(6),
+                    Constraint::Length(6),
+                ])
+                .column_spacing(1);
+            f.render_widget(table, size);
+        })
+        .unwrap();
+
+    let expected = Buffer::with_lines(vec![
+        "│Head1  Head2  Head3         │",
+        "│                            │",
+        "│                            │",
+        "│                            │",
+    ]);
+
+    terminal.backend().assert_buffer(&expected);
+}

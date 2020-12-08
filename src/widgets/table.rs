@@ -402,9 +402,6 @@ impl<'a> StatefulWidget for Table<'a> {
             return;
         }
         buf.set_style(area, self.style);
-        if self.rows.is_empty() {
-            return;
-        }
         let table_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
@@ -457,6 +454,9 @@ impl<'a> StatefulWidget for Table<'a> {
         }
 
         // Draw rows
+        if self.rows.is_empty() {
+            return;
+        }
         let (start, end) = self.get_row_bounds(state.selected, state.offset, rows_height);
         state.offset = start;
         for (i, table_row) in self
