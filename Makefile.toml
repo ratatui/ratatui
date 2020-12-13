@@ -92,20 +92,51 @@ args = [
   "--examples",
 ]
 
+[tasks.run-example]
+private = true
+condition = { env_set = ["TUI_EXAMPLE_NAME", "TUI_FEATURES"] }
+command = "cargo"
+args = [
+    "run",
+    "--features",
+    "${TUI_FEATURES}",
+    "--release",
+    "--example",
+    "${TUI_EXAMPLE_NAME}"
+]
+
+[tasks.run-example-windows]
+private = true
+condition = { env = {"TUI_EXAMPLE_NAME" = "crossterm_demo"} }
+run_task = "run-example"
+
+[tasks.run-example-router]
+private = true
+run_task = [
+    { name = "run-example-windows", condition = { platforms = ["window"] } },
+    { name = "run-example" }
+]
+
+[tasks.build-examples]
+condition = { env_set = ["TUI_FEATURES"] }
+command = "cargo"
+args = [
+    "build",
+    "--examples",
+    "--features",
+    "${TUI_FEATURES}",
+    "--release"
+]
+
 [tasks.run-examples]
-linux_alias = "run-examples-unix"
-mac_alias = "run-examples-unix"
-windows_alias = "run-examples-windows"
-
-[tasks.run-examples-unix]
+dependencies = ["build-examples"]
 script = '''
-#!/usr/bin/env bash
-cargo build --examples --features ${TUI_FEATURES} --release
-for file in examples/*.rs; do
-  name="$(basename "${file/.rs/}")"
-  cargo run --features ${TUI_FEATURES} --release --example "${name}"
-done
+#!@duckscript
+files = glob_array ./examples/*.rs
+for file in ${files}
+  name = basename ${file}
+  name = substring ${name} -3
+  set_env TUI_EXAMPLE_NAME ${name}
+  cm_run_task run-example-router
+end
 '''
-
-[tasks.run-examples-windows]
-# TODO
