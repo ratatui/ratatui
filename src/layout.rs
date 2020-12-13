@@ -401,7 +401,7 @@ impl Rect {
     }
 
     pub fn right(self) -> u16 {
-        self.x + self.width
+        self.x.saturating_add(self.width)
     }
 
     pub fn top(self) -> u16 {
@@ -409,7 +409,7 @@ impl Rect {
     }
 
     pub fn bottom(self) -> u16 {
-        self.y + self.height
+        self.y.saturating_add(self.height)
     }
 
     pub fn inner(self, margin: &Margin) -> Rect {

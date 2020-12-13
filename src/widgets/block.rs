@@ -111,23 +111,20 @@ impl<'a> Block<'a> {
 
     /// Compute the inner area of a block based on its border visibility rules.
     pub fn inner(&self, area: Rect) -> Rect {
-        if area.width < 2 || area.height < 2 {
-            return Rect::default();
-        }
         let mut inner = area;
         if self.borders.intersects(Borders::LEFT) {
-            inner.x += 1;
-            inner.width -= 1;
+            inner.x = inner.x.saturating_add(1).min(inner.right());
+            inner.width = inner.width.saturating_sub(1);
         }
         if self.borders.intersects(Borders::TOP) || self.title.is_some() {
-            inner.y += 1;
-            inner.height -= 1;
+            inner.y = inner.y.saturating_add(1).min(inner.bottom());
+            inner.height = inner.height.saturating_sub(1);
         }
         if self.borders.intersects(Borders::RIGHT) {
-            inner.width -= 1;
+            inner.width = inner.width.saturating_sub(1);
         }
         if self.borders.intersects(Borders::BOTTOM) {
-            inner.height -= 1;
+            inner.height = inner.height.saturating_sub(1);
         }
         inner
     }
@@ -209,5 +206,306 @@ impl<'a> Widget for Block<'a> {
             let width = area.width.saturating_sub(lx).saturating_sub(rx);
             buf.set_spans(area.left() + lx, area.top(), &title, width);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::layout::Rect;
+
+    #[test]
+    fn inner_takes_into_account_the_borders() {
+        // No borders
+        assert_eq!(
+            Block::default().inner(Rect::default()),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 0
+            },
+            "no borders, width=0, height=0"
+        );
+        assert_eq!(
+            Block::default().inner(Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 1
+            }),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 1
+            },
+            "no borders, width=1, height=1"
+        );
+
+        // Left border
+        assert_eq!(
+            Block::default().borders(Borders::LEFT).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 1
+            }),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 1
+            },
+            "left, width=0"
+        );
+        assert_eq!(
+            Block::default().borders(Borders::LEFT).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 1
+            }),
+            Rect {
+                x: 1,
+                y: 0,
+                width: 0,
+                height: 1
+            },
+            "left, width=1"
+        );
+        assert_eq!(
+            Block::default().borders(Borders::LEFT).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 2,
+                height: 1
+            }),
+            Rect {
+                x: 1,
+                y: 0,
+                width: 1,
+                height: 1
+            },
+            "left, width=2"
+        );
+
+        // Top border
+        assert_eq!(
+            Block::default().borders(Borders::TOP).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 0
+            }),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 0
+            },
+            "top, height=0"
+        );
+        assert_eq!(
+            Block::default().borders(Borders::TOP).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 1
+            }),
+            Rect {
+                x: 0,
+                y: 1,
+                width: 1,
+                height: 0
+            },
+            "top, height=1"
+        );
+        assert_eq!(
+            Block::default().borders(Borders::TOP).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 2
+            }),
+            Rect {
+                x: 0,
+                y: 1,
+                width: 1,
+                height: 1
+            },
+            "top, height=2"
+        );
+
+        // Right border
+        assert_eq!(
+            Block::default().borders(Borders::RIGHT).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 1
+            }),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 1
+            },
+            "right, width=0"
+        );
+        assert_eq!(
+            Block::default().borders(Borders::RIGHT).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 1
+            }),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 1
+            },
+            "right, width=1"
+        );
+        assert_eq!(
+            Block::default().borders(Borders::RIGHT).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 2,
+                height: 1
+            }),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 1
+            },
+            "right, width=2"
+        );
+
+        // Bottom border
+        assert_eq!(
+            Block::default().borders(Borders::BOTTOM).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 0
+            }),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 0
+            },
+            "bottom, height=0"
+        );
+        assert_eq!(
+            Block::default().borders(Borders::BOTTOM).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 1
+            }),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 0
+            },
+            "bottom, height=1"
+        );
+        assert_eq!(
+            Block::default().borders(Borders::BOTTOM).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 2
+            }),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 1
+            },
+            "bottom, height=2"
+        );
+
+        // All borders
+        assert_eq!(
+            Block::default()
+                .borders(Borders::ALL)
+                .inner(Rect::default()),
+            Rect {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 0
+            },
+            "all borders, width=0, height=0"
+        );
+        assert_eq!(
+            Block::default().borders(Borders::ALL).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 1
+            }),
+            Rect {
+                x: 1,
+                y: 1,
+                width: 0,
+                height: 0,
+            },
+            "all borders, width=1, height=1"
+        );
+        assert_eq!(
+            Block::default().borders(Borders::ALL).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 2,
+                height: 2,
+            }),
+            Rect {
+                x: 1,
+                y: 1,
+                width: 0,
+                height: 0,
+            },
+            "all borders, width=2, height=2"
+        );
+        assert_eq!(
+            Block::default().borders(Borders::ALL).inner(Rect {
+                x: 0,
+                y: 0,
+                width: 3,
+                height: 3,
+            }),
+            Rect {
+                x: 1,
+                y: 1,
+                width: 1,
+                height: 1,
+            },
+            "all borders, width=3, height=3"
+        );
+    }
+
+    #[test]
+    fn inner_takes_into_account_the_title() {
+        assert_eq!(
+            Block::default().title("Test").inner(Rect {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 1,
+            }),
+            Rect {
+                x: 0,
+                y: 1,
+                width: 0,
+                height: 0,
+            },
+        );
     }
 }

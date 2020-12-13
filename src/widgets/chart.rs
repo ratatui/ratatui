@@ -366,6 +366,9 @@ impl<'a> Chart<'a> {
 
 impl<'a> Widget for Chart<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
+        if area.area() == 0 {
+            return;
+        }
         buf.set_style(area, self.style);
         // Sample the style of the entire widget. This sample will be used to reset the style of
         // the cells that are part of the components put on top of the grah area (i.e legend and

@@ -14,6 +14,40 @@ fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {
 }
 
 #[test]
+fn widgets_chart_can_render_on_small_areas() {
+    let test_case = |width, height| {
+        let backend = TestBackend::new(width, height);
+        let mut terminal = Terminal::new(backend).unwrap();
+        terminal
+            .draw(|f| {
+                let datasets = vec![Dataset::default()
+                    .marker(symbols::Marker::Braille)
+                    .style(Style::default().fg(Color::Magenta))
+                    .data(&[(0.0, 0.0)])];
+                let chart = Chart::new(datasets)
+                    .block(Block::default().title("Plot").borders(Borders::ALL))
+                    .x_axis(
+                        Axis::default()
+                            .bounds([0.0, 0.0])
+                            .labels(create_labels(&["0.0", "1.0"])),
+                    )
+                    .y_axis(
+                        Axis::default()
+                            .bounds([0.0, 0.0])
+                            .labels(create_labels(&["0.0", "1.0"])),
+                    );
+                f.render_widget(chart, f.size());
+            })
+            .unwrap();
+    };
+    test_case(0, 0);
+    test_case(0, 1);
+    test_case(1, 0);
+    test_case(1, 1);
+    test_case(2, 2);
+}
+
+#[test]
 fn widgets_chart_can_have_axis_with_zero_length_bounds() {
     let backend = TestBackend::new(100, 100);
     let mut terminal = Terminal::new(backend).unwrap();
