@@ -44,7 +44,7 @@ fn internal<'a>(
 }
 
 #[cfg(test)]
-fn get_naive_string_from_text<'a>(text: &tui::text::Text<'a>) -> String {
+fn get_naive_string_from_text(text: &tui::text::Text<'_>) -> String {
     text.lines
         .first()
         .unwrap()
@@ -56,7 +56,7 @@ fn get_naive_string_from_text<'a>(text: &tui::text::Text<'a>) -> String {
 }
 
 #[cfg(test)]
-fn get_example_tree_items<'a>() -> Vec<TreeItem<'a>> {
+fn get_example_tree_items() -> Vec<TreeItem<'static>> {
     vec![
         TreeItem::new_leaf("a"),
         TreeItem::new(
