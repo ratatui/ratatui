@@ -19,7 +19,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! crossterm = "0.18"
+//! crossterm = "0.19"
 //! tui = { version = "0.14", default-features = false, features = ['crossterm'] }
 //! ```
 //!
