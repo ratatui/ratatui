@@ -148,6 +148,14 @@ where
     }
 }
 
+/// CompletedFrame represents the state of the terminal after all changes performed in the last
+/// [`Terminal::draw`] call have been applied. Therefore, it is only valid until the next call to
+/// [`Terminal::draw`].
+pub struct CompletedFrame<'a> {
+    pub buffer: &'a Buffer,
+    pub area: Rect,
+}
+
 impl<B> Drop for Terminal<B>
 where
     B: Backend,
@@ -247,7 +255,7 @@ where
 
     /// Synchronizes terminal size, calls the rendering closure, flushes the current internal state
     /// and prepares for the next draw call.
-    pub fn draw<F>(&mut self, f: F) -> io::Result<()>
+    pub fn draw<F>(&mut self, f: F) -> io::Result<CompletedFrame>
     where
         F: FnOnce(&mut Frame<B>),
     {
@@ -279,7 +287,10 @@ where
 
         // Flush
         self.backend.flush()?;
-        Ok(())
+        Ok(CompletedFrame {
+            buffer: &self.buffers[1 - self.current],
+            area: self.viewport.area,
+        })
     }
 
     pub fn hide_cursor(&mut self) -> io::Result<()> {

@@ -94,7 +94,8 @@
 //!             .title("Block")
 //!             .borders(Borders::ALL);
 //!         f.render_widget(block, size);
-//!     })
+//!     })?;
+//!     Ok(())
 //! }
 //! ```
 //!
@@ -136,7 +137,8 @@
 //!              .title("Block 2")
 //!              .borders(Borders::ALL);
 //!         f.render_widget(block, chunks[1]);
-//!     })
+//!     })?;
+//!     Ok(())
 //! }
 //! ```
 //!
