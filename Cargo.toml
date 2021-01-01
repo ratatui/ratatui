@@ -1,15 +1,16 @@
 [package]
 name = "tui"
-version = "0.13.0"
+version = "0.14.0"
 authors = ["Florian Dehau <work@fdehau.com>"]
 description = """
 A library to build rich terminal user interfaces or dashboards
 """
-documentation = "https://docs.rs/tui/0.10.0/tui/"
+documentation = "https://docs.rs/tui/0.14.0/tui/"
 keywords = ["tui", "terminal", "dashboard"]
 repository = "https://github.com/fdehau/tui-rs"
+readme = "README.md"
 license = "MIT"
-exclude = ["assets/*", ".github"]
+exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
 autoexamples = true
 edition = "2018"
 
