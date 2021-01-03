@@ -8,8 +8,7 @@ keywords = ["tui", "terminal", "tree", "widget"]
 license = "MIT"
 readme = "readme.md"
 repository = "https://github.com/EdJoPaTo/tui-rs-tree-widget"
-
-exclude = [".github"]
+include = ["src/**/*", "readme.md"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
