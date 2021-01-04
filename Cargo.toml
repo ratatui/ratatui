@@ -16,13 +16,13 @@ include = ["src/**/*", "readme.md"]
 unicode-width = "0.1"
 
 [dependencies.tui]
-version = "0.13"
+version = "0.14"
 default-features = false
 
 [dev-dependencies]
 termion = "1.5"
 
 [dev-dependencies.tui]
-version = "0.13"
+version = "0.14"
 default-features = false
 features = ["termion"]
