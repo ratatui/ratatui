@@ -1,7 +1,7 @@
 [package]
 name = "tui-tree-widget"
 description = "Tree Widget for tui-rs"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["EdJoPaTo <tui-tree-widget-rust-crate@edjopato.de>"]
 edition = "2018"
 keywords = ["tui", "terminal", "tree", "widget"]
@@ -20,7 +20,7 @@ version = "0.14"
 default-features = false
 
 [dev-dependencies]
-termion = "1.5"
+termion = "1"
 
 [dev-dependencies.tui]
 version = "0.14"
