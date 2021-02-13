@@ -68,6 +68,10 @@ impl TreeState {
     pub fn get_all_opened(&self) -> Vec<TreeIdentifierVec> {
         self.opened.iter().cloned().collect()
     }
+
+    pub fn get_offset(&self) -> usize {
+        self.offset
+    }
 }
 
 #[derive(Debug, Clone)]
