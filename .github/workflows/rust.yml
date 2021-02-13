@@ -14,19 +14,17 @@ jobs:
         run: |
           rustc --version
           cargo --version
-      - name: Cache cargo registry
-        uses: actions/cache@v1
+      - name: Cache cargo
+        uses: actions/cache@v2
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-lint-target-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run clippy
-        run: cargo clippy --verbose --all-targets --all-features -- -D warnings
+        run: cargo clippy --verbose --all-targets --all-features -- -D warnings -D clippy::pedantic
       - name: Check format
         run: cargo fmt -- --check --verbose
 
@@ -39,16 +37,14 @@ jobs:
         run: |
           rustc --version
           cargo --version
-      - name: Cache cargo registry
-        uses: actions/cache@v1
+      - name: Cache cargo
+        uses: actions/cache@v2
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-test-target-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
         run: cargo build --verbose --all-targets
@@ -75,16 +71,18 @@ jobs:
       - name: Add Target
         run: rustup target add ${{ matrix.config.triple }}
 
-      - name: Cache cargo registry
-        uses: actions/cache@v1
+      - name: Cache cargo
+        uses: actions/cache@v2
         with:
-          path: ~/.cargo/registry
-          key: ${{ matrix.config.triple }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ matrix.config.triple }}-cargo-release-target-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ matrix.config.triple }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build release
         run: cargo build --release --verbose --all-targets --target ${{ matrix.config.triple }}
+
+      - name: inspect target dir
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        run: ls -al target/*/release
