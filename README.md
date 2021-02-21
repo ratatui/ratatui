@@ -109,6 +109,7 @@ You can run all examples by running `make run-examples`.
 * [termchat](https://github.com/lemunozm/termchat)
 * [taskwarrior-tui](https://github.com/kdheepak/taskwarrior-tui)
 * [gping](https://github.com/orf/gping/)
+* [Vector](https://vector.dev)
 
 ### Alternatives
 
