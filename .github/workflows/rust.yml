@@ -14,7 +14,6 @@ jobs:
         os:
           - ubuntu-latest
           - macOS-latest
-          - windows-latest
     steps:
       - uses: actions/checkout@v2
 
@@ -63,7 +62,6 @@ jobs:
         os:
           - ubuntu-latest
           - macOS-latest
-          - windows-latest
         toolchain:
           - stable
           - nightly
