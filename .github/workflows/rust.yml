@@ -5,84 +5,80 @@ on:
   pull_request:
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
+  clippy:
+    name: Clippy ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
     steps:
       - uses: actions/checkout@v2
-      - name: 'Log versions'
-        run: |
-          rustc --version
-          cargo --version
-      - name: Cache cargo
-        uses: actions/cache@v2
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
+          toolchain: stable
+          override: true
+          profile: minimal
+          components: clippy
 
       - name: Run clippy
-        run: cargo clippy --verbose --all-targets --all-features -- -D warnings -D clippy::pedantic
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --verbose --all-targets --all-features -- -D clippy::all -D clippy::pedantic
+
+  rustfmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+          components: rustfmt
+
       - name: Check format
-        run: cargo fmt -- --check --verbose
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check --verbose
 
   test:
-    name: Test
-    runs-on: ubuntu-latest
+    name: Test ${{ matrix.os }} ${{ matrix.toolchain }}
+    runs-on: ${{ matrix.os }}
+    needs: clippy
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+          - windows-latest
+        toolchain:
+          - stable
+          - nightly
     steps:
       - uses: actions/checkout@v2
-      - name: 'Log versions'
-        run: |
-          rustc --version
-          cargo --version
-      - name: Cache cargo
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build
-        run: cargo build --verbose --all-targets
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          profile: minimal
+          override: true
 
       - name: Run tests
-        run: cargo test --verbose --all-targets
-
-  release:
-    name: Release ${{ matrix.config.triple }}
-    runs-on: ${{ matrix.config.os }}
-    strategy:
-      matrix:
-        config:
-          - os: ubuntu-latest
-            triple: x86_64-unknown-linux-gnu
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Log versions
-        run: |
-          rustc --version
-          cargo --version
-
-      - name: Add Target
-        run: rustup target add ${{ matrix.config.triple }}
-
-      - name: Cache cargo
-        uses: actions/cache@v2
+        uses: actions-rs/cargo@v1
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ matrix.config.triple }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Build release
-        run: cargo build --release --verbose --all-targets --target ${{ matrix.config.triple }}
-
-      - name: inspect target dir
-        if: runner.os == 'Linux' || runner.os == 'macOS'
-        run: ls -al target/*/release
+          command: test
+          args: --verbose --locked --all-features
