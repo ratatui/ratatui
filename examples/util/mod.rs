@@ -9,15 +9,15 @@ pub struct StatefulTree<'a> {
 
 impl<'a> StatefulTree<'a> {
     #[allow(dead_code)]
-    pub fn new() -> StatefulTree<'a> {
-        StatefulTree {
+    pub fn new() -> Self {
+        Self {
             state: TreeState::default(),
             items: Vec::new(),
         }
     }
 
-    pub fn with_items(items: Vec<TreeItem<'a>>) -> StatefulTree<'a> {
-        StatefulTree {
+    pub fn with_items(items: Vec<TreeItem<'a>>) -> Self {
+        Self {
             state: TreeState::default(),
             items,
         }

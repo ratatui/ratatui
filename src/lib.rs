@@ -23,8 +23,8 @@ pub struct TreeState {
 }
 
 impl Default for TreeState {
-    fn default() -> TreeState {
-        TreeState {
+    fn default() -> Self {
+        Self {
             offset: 0,
             selected: Vec::new(),
             opened: HashSet::new(),
@@ -82,23 +82,23 @@ pub struct TreeItem<'a> {
 }
 
 impl<'a> TreeItem<'a> {
-    pub fn new_leaf<T>(text: T) -> TreeItem<'a>
+    pub fn new_leaf<T>(text: T) -> Self
     where
         T: Into<Text<'a>>,
     {
-        TreeItem {
+        Self {
             text: text.into(),
             style: Style::default(),
             children: Vec::new(),
         }
     }
 
-    pub fn new<T, Children>(text: T, children: Children) -> TreeItem<'a>
+    pub fn new<T, Children>(text: T, children: Children) -> Self
     where
         T: Into<Text<'a>>,
         Children: Into<Vec<TreeItem<'a>>>,
     {
-        TreeItem {
+        Self {
             text: text.into(),
             style: Style::default(),
             children: children.into(),
@@ -109,7 +109,7 @@ impl<'a> TreeItem<'a> {
         self.text.height()
     }
 
-    pub fn style(mut self, style: Style) -> TreeItem<'a> {
+    pub fn style(mut self, style: Style) -> Self {
         self.style = style;
         self
     }
@@ -133,11 +133,11 @@ pub struct Tree<'a> {
 }
 
 impl<'a> Tree<'a> {
-    pub fn new<T>(items: T) -> Tree<'a>
+    pub fn new<T>(items: T) -> Self
     where
         T: Into<Vec<TreeItem<'a>>>,
     {
-        Tree {
+        Self {
             block: None,
             style: Style::default(),
             items: items.into(),
@@ -147,27 +147,27 @@ impl<'a> Tree<'a> {
         }
     }
 
-    pub fn block(mut self, block: Block<'a>) -> Tree<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
 
-    pub fn style(mut self, style: Style) -> Tree<'a> {
+    pub fn style(mut self, style: Style) -> Self {
         self.style = style;
         self
     }
 
-    pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Tree<'a> {
+    pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
 
-    pub fn highlight_style(mut self, style: Style) -> Tree<'a> {
+    pub fn highlight_style(mut self, style: Style) -> Self {
         self.highlight_style = style;
         self
     }
 
-    pub fn start_corner(mut self, corner: Corner) -> Tree<'a> {
+    pub fn start_corner(mut self, corner: Corner) -> Self {
         self.start_corner = corner;
         self
     }

@@ -25,8 +25,8 @@ pub struct Config {
 }
 
 impl Default for Config {
-    fn default() -> Config {
-        Config {
+    fn default() -> Self {
+        Self {
             exit_key: Key::Char('q'),
             tick_rate: Duration::from_millis(250),
         }
@@ -34,11 +34,11 @@ impl Default for Config {
 }
 
 impl Events {
-    pub fn new() -> Events {
-        Events::with_config(Config::default())
+    pub fn new() -> Self {
+        Self::with_config(Config::default())
     }
 
-    pub fn with_config(config: Config) -> Events {
+    pub fn with_config(config: Config) -> Self {
         let (tx, rx) = mpsc::channel();
         {
             let tx = tx.clone();
@@ -63,7 +63,7 @@ impl Events {
             }
             thread::sleep(config.tick_rate);
         });
-        Events { rx }
+        Self { rx }
     }
 
     pub fn next(&self) -> Result<Event<Key>, mpsc::RecvError> {

@@ -20,8 +20,8 @@ struct App<'a> {
 }
 
 impl<'a> App<'a> {
-    fn new() -> App<'a> {
-        App {
+    fn new() -> Self {
+        Self {
             tree: StatefulTree::with_items(vec![
                 TreeItem::new_leaf("a"),
                 TreeItem::new(
