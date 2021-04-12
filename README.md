@@ -111,6 +111,7 @@ You can run all examples by running `make run-examples`.
 * [gping](https://github.com/orf/gping/)
 * [Vector](https://vector.dev)
 * [KDash](https://github.com/kdash-rs/kdash)
+* [xplr](https://github.com/sayanarijit/xplr)
 
 ### Alternatives
 
