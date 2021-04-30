@@ -1,0 +1,26 @@
+name: Rust Code Formatting
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  rustfmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+          components: rustfmt
+
+      - name: Check format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check --verbose
