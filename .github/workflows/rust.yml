@@ -1,4 +1,4 @@
-name: Test Rust
+name: Test and Build Rust
 
 on:
   push:
@@ -59,3 +59,45 @@ jobs:
         with:
           command: test
           args: --verbose --all-features
+
+  release:
+    name: Release ${{ matrix.triple }}
+    runs-on: ${{ matrix.os }}
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            triple: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            triple: arm-unknown-linux-gnueabihf
+          - os: ubuntu-latest
+            triple: armv7-unknown-linux-gnueabihf
+          - os: ubuntu-latest
+            triple: aarch64-unknown-linux-gnu
+          - os: macOS-latest
+            triple: x86_64-apple-darwin
+          - os: macOS-latest
+            triple: aarch64-apple-darwin
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+          target: ${{ matrix.triple }}
+
+      - name: Build release
+        uses: actions-rs/cargo@v1
+        env:
+          # TODO: Remove this once it's the default
+          SDKROOT: /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk
+        with:
+          command: build
+          args: --release --verbose --target ${{ matrix.triple }}
+          use-cross: ${{ runner.os == 'Linux' && matrix.triple != 'x86_64-unknown-linux-gnu' }}
