@@ -49,6 +49,9 @@ impl TreeState {
         }
     }
 
+    /// Open a tree node.
+    /// Returns `true` if the node was closed and has been opened.
+    /// Returns `false` if the node was already open.
     pub fn open(&mut self, identifier: TreeIdentifierVec) -> bool {
         if identifier.is_empty() {
             false
@@ -57,6 +60,9 @@ impl TreeState {
         }
     }
 
+    /// Close a tree node.
+    /// Returns `true` if the node was open and has been closed.
+    /// Returns `false` if the node was already closed.
     pub fn close(&mut self, identifier: TreeIdentifier) -> bool {
         self.opened.remove(identifier)
     }
@@ -103,6 +109,14 @@ impl<'a> TreeItem<'a> {
             style: Style::default(),
             children: children.into(),
         }
+    }
+
+    pub fn child(&self, index: usize) -> Option<&Self> {
+        self.children.get(index)
+    }
+
+    pub fn child_mut(&mut self, index: usize) -> Option<&mut Self> {
+        self.children.get_mut(index)
     }
 
     pub fn height(&self) -> usize {
