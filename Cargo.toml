@@ -33,7 +33,7 @@ pancurses = { version = "0.16.1", optional = true, features = ["win32a"] }
 serde = { version = "1", "optional" = true, features = ["derive"]}
 
 [dev-dependencies]
-rand = "0.7"
+rand = "0.8"
 argh = "0.1"
 
 [package.metadata.docs.rs]
