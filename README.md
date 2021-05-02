@@ -50,8 +50,8 @@ cargo run --example termion_demo --release -- --tick-rate 200
 
 where `tick-rate` is the UI refresh rate in ms.
 
-The UI code is in [examples/demo/ui.rs](examples/demo/ui.rs) while the
-application state is in [examples/demo/app.rs](examples/demo/app.rs).
+The UI code is in [examples/demo/ui.rs](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/demo/ui.rs) while the
+application state is in [examples/demo/app.rs](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/demo/app.rs).
 
 Beware that the `termion_demo` only works on Unix platforms. If you are a Windows user,
 you can see the same demo using the `crossterm` backend with the following command:
@@ -71,16 +71,16 @@ cargo run --example crossterm_demo --no-default-features --features="crossterm" 
 
 The library comes with the following list of widgets:
 
-  * [Block](examples/block.rs)
-  * [Gauge](examples/gauge.rs)
-  * [Sparkline](examples/sparkline.rs)
-  * [Chart](examples/chart.rs)
-  * [BarChart](examples/barchart.rs)
-  * [List](examples/list.rs)
-  * [Table](examples/table.rs)
-  * [Paragraph](examples/paragraph.rs)
-  * [Canvas (with line, point cloud, map)](examples/canvas.rs)
-  * [Tabs](examples/tabs.rs)
+  * [Block](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/block.rs)
+  * [Gauge](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/gauge.rs)
+  * [Sparkline](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/sparkline.rs)
+  * [Chart](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/chart.rs)
+  * [BarChart](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/barchart.rs)
+  * [List](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/list.rs)
+  * [Table](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/table.rs)
+  * [Paragraph](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/paragraph.rs)
+  * [Canvas (with line, point cloud, map)](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/canvas.rs)
+  * [Tabs](https://github.com/fdehau/tui-rs/blob/v0.15.0/examples/tabs.rs)
 
 Click on each item to see the source of the example. Run the examples with with 
 cargo (e.g. to run the demo `cargo run --example demo`), and quit by pressing `q`.
