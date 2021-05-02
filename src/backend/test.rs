@@ -101,7 +101,7 @@ impl TestBackend {
             .collect::<Vec<String>>()
             .join("\n");
         debug_info.push_str(&nice_diff);
-        panic!(debug_info);
+        panic!("{}", debug_info);
     }
 }
 
