@@ -110,6 +110,7 @@ You can run all examples by running `make run-examples`.
 * [taskwarrior-tui](https://github.com/kdheepak/taskwarrior-tui)
 * [gping](https://github.com/orf/gping/)
 * [Vector](https://vector.dev)
+* [KDash](https://github.com/kdash-rs/kdash)
 
 ### Alternatives
 
