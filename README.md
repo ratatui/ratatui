@@ -113,6 +113,7 @@ You can run all examples by running `make run-examples`.
 * [Vector](https://vector.dev)
 * [KDash](https://github.com/kdash-rs/kdash)
 * [xplr](https://github.com/sayanarijit/xplr)
+* [minesweep](https://github.com/cpcloud/minesweep-rs)
 
 ### Alternatives
 
