@@ -23,6 +23,7 @@ use unicode_width::UnicodeWidthStr;
 /// # use tui::widgets::Cell;
 /// # use tui::style::{Style, Modifier};
 /// # use tui::text::{Span, Spans, Text};
+/// # use std::borrow::Cow;
 /// Cell::from("simple string");
 ///
 /// Cell::from(Span::from("span"));
@@ -33,6 +34,8 @@ use unicode_width::UnicodeWidthStr;
 /// ]));
 ///
 /// Cell::from(Text::from("a text"));
+///
+/// Cell::from(Text::from(Cow::Borrowed("hello")));
 /// ```
 ///
 /// You can apply a [`Style`] on the entire [`Cell`] using [`Cell::style`] or rely on the styling
@@ -78,6 +81,16 @@ where
 /// Row::new(vec![
 ///     Cell::from("Cell1"),
 ///     Cell::from("Cell2").style(Style::default().fg(Color::Yellow)),
+/// ]);
+/// ```
+///
+/// You can also construct a row from any type that can be converted into [`Text`]:
+/// ```rust
+/// # use std::borrow::Cow;
+/// # use tui::widgets::Row;
+/// Row::new(vec![
+///     Cow::Borrowed("hello"),
+///     Cow::Owned("world".to_uppercase()),
 /// ]);
 /// ```
 ///
