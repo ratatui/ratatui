@@ -75,10 +75,10 @@ fn get_example_tree_items() -> Vec<TreeItem<'static>> {
 fn get_opened_nothing_opened_is_top_level() {
     let items = get_example_tree_items();
     let result = flatten(&[], &items);
-    let result_text: Vec<_> = result
+    let result_text = result
         .iter()
         .map(|o| get_naive_string_from_text(&o.item.text))
-        .collect();
+        .collect::<Vec<_>>();
     assert_eq!(result_text, ["a", "b", "h"]);
 }
 
@@ -87,10 +87,10 @@ fn get_opened_wrong_opened_is_only_top_level() {
     let items = get_example_tree_items();
     let opened = [vec![0], vec![1, 1]];
     let result = flatten(&opened, &items);
-    let result_text: Vec<_> = result
+    let result_text = result
         .iter()
         .map(|o| get_naive_string_from_text(&o.item.text))
-        .collect();
+        .collect::<Vec<_>>();
     assert_eq!(result_text, ["a", "b", "h"]);
 }
 
@@ -99,10 +99,10 @@ fn get_opened_one_is_opened() {
     let items = get_example_tree_items();
     let opened = [vec![1]];
     let result = flatten(&opened, &items);
-    let result_text: Vec<_> = result
+    let result_text = result
         .iter()
         .map(|o| get_naive_string_from_text(&o.item.text))
-        .collect();
+        .collect::<Vec<_>>();
     assert_eq!(result_text, ["a", "b", "c", "d", "g", "h"]);
 }
 
@@ -111,9 +111,9 @@ fn get_opened_all_opened() {
     let items = get_example_tree_items();
     let opened = [vec![1], vec![1, 1]];
     let result = flatten(&opened, &items);
-    let result_text: Vec<_> = result
+    let result_text = result
         .iter()
         .map(|o| get_naive_string_from_text(&o.item.text))
-        .collect();
+        .collect::<Vec<_>>();
     assert_eq!(result_text, ["a", "b", "c", "d", "e", "f", "g", "h"]);
 }
