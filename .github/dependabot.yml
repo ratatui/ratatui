@@ -5,8 +5,10 @@ version: 2
 updates:
   - package-ecosystem: "cargo"
     directory: "/"
+    open-pull-requests-limit: 30
     schedule:
       interval: "weekly"
+      time: "03:37" # UTC
     commit-message:
       prefix: "chore(cargo):"
 
