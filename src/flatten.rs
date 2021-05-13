@@ -31,7 +31,7 @@ fn internal<'a>(
 
         result.push(Flattened {
             item,
-            identifier: child_identifier.to_vec(),
+            identifier: child_identifier.clone(),
         });
 
         if opened.contains(&child_identifier) {

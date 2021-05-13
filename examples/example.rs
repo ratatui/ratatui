@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         terminal.draw(|f| {
             let area = f.size();
 
-            let items = Tree::new(app.tree.items.to_vec())
+            let items = Tree::new(app.tree.items.clone())
                 .block(
                     Block::default()
                         .borders(Borders::ALL)

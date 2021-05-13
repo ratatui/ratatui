@@ -44,6 +44,7 @@ impl Events {
             let tx = tx.clone();
             thread::spawn(move || {
                 let stdin = io::stdin();
+                #[allow(clippy::manual_flatten)]
                 for evt in stdin.keys() {
                     if let Ok(key) = evt {
                         if let Err(err) = tx.send(Event::Input(key)) {

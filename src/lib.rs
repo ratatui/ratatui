@@ -34,7 +34,7 @@ impl Default for TreeState {
 
 impl TreeState {
     pub fn selected(&self) -> Vec<usize> {
-        self.selected.to_owned()
+        self.selected.clone()
     }
 
     pub fn select<I>(&mut self, identifier: I)

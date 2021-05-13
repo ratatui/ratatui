@@ -37,7 +37,7 @@ impl<'a> StatefulTree<'a> {
             }
             .min(visible.len() - 1)
         });
-        let new_identifier = visible.get(new_index).unwrap().identifier.to_owned();
+        let new_identifier = visible.get(new_index).unwrap().identifier.clone();
         self.state.select(new_identifier);
     }
 
