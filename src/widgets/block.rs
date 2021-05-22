@@ -1,6 +1,6 @@
 use crate::{
     buffer::Buffer,
-    layout::Rect,
+    layout::{Alignment, Rect},
     style::Style,
     symbols::line,
     text::{Span, Spans},
@@ -45,6 +45,9 @@ impl BorderType {
 pub struct Block<'a> {
     /// Optional title place on the upper left of the block
     title: Option<Spans<'a>>,
+    /// Title alignment. The default is top left of the block, but one can choose to place
+    /// title in the top middle, or top right of the block
+    title_alignment: Alignment,
     /// Visible borders
     borders: Borders,
     /// Border style
@@ -60,6 +63,7 @@ impl<'a> Default for Block<'a> {
     fn default() -> Block<'a> {
         Block {
             title: None,
+            title_alignment: Alignment::Left,
             borders: Borders::NONE,
             border_style: Default::default(),
             border_type: BorderType::Plain,
@@ -86,6 +90,11 @@ impl<'a> Block<'a> {
             let title = String::from(t);
             self.title = Some(Spans::from(Span::styled(title, style)));
         }
+        self
+    }
+
+    pub fn title_alignment(mut self, alignment: Alignment) -> Block<'a> {
+        self.title_alignment = alignment;
         self
     }
 
@@ -192,19 +201,38 @@ impl<'a> Widget for Block<'a> {
                 .set_style(self.border_style);
         }
 
+        // Title
         if let Some(title) = self.title {
-            let lx = if self.borders.intersects(Borders::LEFT) {
+            let left_border_dx = if self.borders.intersects(Borders::LEFT) {
                 1
             } else {
                 0
             };
-            let rx = if self.borders.intersects(Borders::RIGHT) {
+
+            let right_border_dx = if self.borders.intersects(Borders::RIGHT) {
                 1
             } else {
                 0
             };
-            let width = area.width.saturating_sub(lx).saturating_sub(rx);
-            buf.set_spans(area.left() + lx, area.top(), &title, width);
+
+            let title_area_width = area
+                .width
+                .saturating_sub(left_border_dx)
+                .saturating_sub(right_border_dx);
+
+            let title_dx = match self.title_alignment {
+                Alignment::Left => left_border_dx,
+                Alignment::Center => area.width.saturating_sub(title.width() as u16) / 2,
+                Alignment::Right => area
+                    .width
+                    .saturating_sub(title.width() as u16)
+                    .saturating_sub(right_border_dx),
+            };
+
+            let title_x = area.left() + title_dx;
+            let title_y = area.top();
+
+            buf.set_spans(title_x, title_y, &title, title_area_width);
         }
     }
 }
@@ -500,6 +528,40 @@ mod tests {
                 width: 0,
                 height: 1,
             }),
+            Rect {
+                x: 0,
+                y: 1,
+                width: 0,
+                height: 0,
+            },
+        );
+        assert_eq!(
+            Block::default()
+                .title("Test")
+                .title_alignment(Alignment::Center)
+                .inner(Rect {
+                    x: 0,
+                    y: 0,
+                    width: 0,
+                    height: 1,
+                }),
+            Rect {
+                x: 0,
+                y: 1,
+                width: 0,
+                height: 0,
+            },
+        );
+        assert_eq!(
+            Block::default()
+                .title("Test")
+                .title_alignment(Alignment::Right)
+                .inner(Rect {
+                    x: 0,
+                    y: 0,
+                    width: 0,
+                    height: 1,
+                }),
             Rect {
                 x: 0,
                 y: 1,
