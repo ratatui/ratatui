@@ -60,7 +60,7 @@ impl<'a> Gauge<'a> {
     /// Sets ratio ([0.0, 1.0]) directly.
     pub fn ratio(mut self, ratio: f64) -> Gauge<'a> {
         assert!(
-            ratio <= 1.0 && ratio >= 0.0,
+            (0.0..=1.0).contains(&ratio),
             "Ratio should be between 0 and 1 inclusively."
         );
         self.ratio = ratio;
@@ -213,7 +213,7 @@ impl<'a> LineGauge<'a> {
 
     pub fn ratio(mut self, ratio: f64) -> Self {
         assert!(
-            ratio <= 1.0 && ratio >= 0.0,
+            (0.0..=1.0).contains(&ratio),
             "Ratio should be between 0 and 1 inclusively."
         );
         self.ratio = ratio;

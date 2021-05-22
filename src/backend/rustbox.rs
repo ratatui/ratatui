@@ -88,9 +88,9 @@ fn rgb_to_byte(r: u8, g: u8, b: u8) -> u16 {
     u16::from((r & 0xC0) + ((g & 0xE0) >> 2) + ((b & 0xE0) >> 5))
 }
 
-impl Into<rustbox::Color> for Color {
-    fn into(self) -> rustbox::Color {
-        match self {
+impl From<Color> for rustbox::Color {
+    fn from(color: Color) -> rustbox::Color {
+        match color {
             Color::Reset => rustbox::Color::Default,
             Color::Black | Color::Gray | Color::DarkGray => rustbox::Color::Black,
             Color::Red | Color::LightRed => rustbox::Color::Red,
@@ -106,16 +106,16 @@ impl Into<rustbox::Color> for Color {
     }
 }
 
-impl Into<rustbox::Style> for Modifier {
-    fn into(self) -> rustbox::Style {
+impl From<Modifier> for rustbox::Style {
+    fn from(modifier: Modifier) -> rustbox::Style {
         let mut result = rustbox::Style::empty();
-        if self.contains(Modifier::BOLD) {
+        if modifier.contains(Modifier::BOLD) {
             result.insert(rustbox::RB_BOLD);
         }
-        if self.contains(Modifier::UNDERLINED) {
+        if modifier.contains(Modifier::UNDERLINED) {
             result.insert(rustbox::RB_UNDERLINE);
         }
-        if self.contains(Modifier::REVERSED) {
+        if modifier.contains(Modifier::REVERSED) {
             result.insert(rustbox::RB_REVERSE);
         }
         result
