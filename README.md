@@ -96,6 +96,7 @@ You can run all examples by running `make run-examples`.
 * [spotify-tui](https://github.com/Rigellute/spotify-tui)
 * [bandwhich](https://github.com/imsnif/bandwhich)
 * [kmon](https://github.com/orhun/kmon)
+* [gpg-tui](https://github.com/orhun/gpg-tui)
 * [ytop](https://github.com/cjbassi/ytop)
 * [zenith](https://github.com/bvaisvil/zenith)
 * [bottom](https://github.com/ClementTsang/bottom)
