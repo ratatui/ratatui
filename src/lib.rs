@@ -2,7 +2,6 @@
 
 use crate::identifier::{TreeIdentifier, TreeIdentifierVec};
 use std::collections::HashSet;
-use std::iter;
 use tui::buffer::Buffer;
 use tui::layout::{Corner, Rect};
 use tui::style::Style;
@@ -245,9 +244,7 @@ impl<'a> StatefulWidget for Tree<'a> {
         state.offset = start;
 
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
-        let blank_symbol = iter::repeat(" ")
-            .take(highlight_symbol.width())
-            .collect::<String>();
+        let blank_symbol = " ".repeat(highlight_symbol.width());
 
         let mut current_height = 0;
         let has_selection = !state.selected.is_empty();
