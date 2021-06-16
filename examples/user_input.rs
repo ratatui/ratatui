@@ -60,7 +60,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     // Setup event handlers
-    let mut events = Events::new();
+    let events = Events::new();
 
     // Create default app state
     let mut app = App::default();
@@ -151,7 +151,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 InputMode::Normal => match input {
                     Key::Char('e') => {
                         app.input_mode = InputMode::Editing;
-                        events.disable_exit_key();
                     }
                     Key::Char('q') => {
                         break;
@@ -170,7 +169,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
                     Key::Esc => {
                         app.input_mode = InputMode::Normal;
-                        events.enable_exit_key();
                     }
                     _ => {}
                 },
