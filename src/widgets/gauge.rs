@@ -107,56 +107,45 @@ impl<'a> Widget for Gauge<'a> {
             return;
         }
 
-        let center = gauge_area.height / 2 + gauge_area.top();
-        let width = f64::from(gauge_area.width) * self.ratio;
-        //go to regular rounding behavior if we're not using unicode blocks
-        let end = gauge_area.left()
-            + if self.use_unicode {
-                width.floor() as u16
-            } else {
-                width.round() as u16
-            };
-        // Label
-        let ratio = self.ratio;
-        let label = self
-            .label
-            .unwrap_or_else(|| Span::from(format!("{}%", (ratio * 100.0).round())));
+        // compute label value and its position
+        // label is put at the center of the gauge_area
+        let label = {
+            let pct = f64::round(self.ratio * 100.0);
+            self.label
+                .unwrap_or_else(|| Span::from(format!("{}%", pct)))
+        };
+        let clamped_label_width = gauge_area.width.min(label.width() as u16);
+        let label_col = gauge_area.left() + (gauge_area.width - clamped_label_width) / 2;
+        let label_row = gauge_area.top() + gauge_area.height / 2;
+
+        // the gauge will be filled proportionally to the ratio
+        let filled_width = f64::from(gauge_area.width) * self.ratio;
+        let end = if self.use_unicode {
+            gauge_area.left() + filled_width.floor() as u16
+        } else {
+            gauge_area.left() + filled_width.round() as u16
+        };
         for y in gauge_area.top()..gauge_area.bottom() {
-            // Gauge
+            // render the filled area (left to end)
             for x in gauge_area.left()..end {
-                buf.get_mut(x, y).set_symbol(" ");
-            }
-
-            //set unicode block
-            if self.use_unicode && self.ratio < 1.0 {
-                buf.get_mut(end, y)
-                    .set_symbol(get_unicode_block(width % 1.0));
-            }
-
-            let mut color_end = end;
-
-            if y == center {
-                let label_width = label.width() as u16;
-                let middle = (gauge_area.width - label_width) / 2 + gauge_area.left();
-                buf.set_span(middle, y, &label, gauge_area.right() - middle);
-                if self.use_unicode && end >= middle && end < middle + label_width {
-                    color_end = gauge_area.left() + (width.round() as u16); //set color on the label to the rounded gauge level
-                }
-            }
-
-            // Fix colors
-            for x in gauge_area.left()..color_end {
+                // spaces are needed to apply the background styling
                 buf.get_mut(x, y)
+                    .set_symbol(" ")
                     .set_fg(self.gauge_style.bg.unwrap_or(Color::Reset))
                     .set_bg(self.gauge_style.fg.unwrap_or(Color::Reset));
             }
+            if self.use_unicode && self.ratio < 1.0 {
+                buf.get_mut(end, y)
+                    .set_symbol(get_unicode_block(filled_width % 1.0));
+            }
         }
+        // set the span
+        buf.set_span(label_col, label_row, &label, clamped_label_width);
     }
 }
 
 fn get_unicode_block<'a>(frac: f64) -> &'a str {
     match (frac * 8.0).round() as u16 {
-        //get how many eighths the fraction is closest to
         1 => symbols::block::ONE_EIGHTH,
         2 => symbols::block::ONE_QUARTER,
         3 => symbols::block::THREE_EIGHTHS,
