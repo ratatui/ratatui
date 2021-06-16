@@ -106,7 +106,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let events = Events::new();
 
-    // Create a new app with some exapmle state
+    // Create a new app with some example state
     let mut app = App::new();
 
     loop {
@@ -171,7 +171,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             Style::default().add_modifier(Modifier::ITALIC),
                         ),
                     ]);
-                    // The event gets it's own line
+                    // The event gets its own line
                     let log = Spans::from(vec![Span::raw(event)]);
 
                     // Here several things happen:

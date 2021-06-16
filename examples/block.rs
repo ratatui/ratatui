@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             // with at least a margin of 1
             let size = f.size();
 
-            // Surounding block
+            // Surrounding block
             let block = Block::default()
                 .borders(Borders::ALL)
                 .title("Main block with round corners")
