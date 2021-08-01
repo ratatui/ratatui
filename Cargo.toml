@@ -1,11 +1,11 @@
 [package]
 name = "tui"
-version = "0.15.0"
+version = "0.16.0"
 authors = ["Florian Dehau <work@fdehau.com>"]
 description = """
 A library to build rich terminal user interfaces or dashboards
 """
-documentation = "https://docs.rs/tui/0.15.0/tui/"
+documentation = "https://docs.rs/tui/0.16.0/tui/"
 keywords = ["tui", "terminal", "dashboard"]
 repository = "https://github.com/fdehau/tui-rs"
 readme = "README.md"
