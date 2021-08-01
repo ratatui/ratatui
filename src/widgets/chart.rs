@@ -296,18 +296,8 @@ impl<'a> Chart<'a> {
             y -= 1;
         }
 
-        if let Some(ref y_labels) = self.y_axis.labels {
-            let mut max_width = y_labels.iter().map(Span::width).max().unwrap_or_default() as u16;
-            if let Some(ref x_labels) = self.x_axis.labels {
-                if !x_labels.is_empty() {
-                    max_width = max(max_width, x_labels[0].content.width() as u16);
-                }
-            }
-            if x + max_width < area.right() {
-                layout.label_y = Some(x);
-                x += max_width;
-            }
-        }
+        layout.label_y = self.y_axis.labels.as_ref().and(Some(x));
+        x += self.max_width_of_labels_left_of_y_axis(area);
 
         if self.x_axis.labels.is_some() && y > area.top() {
             layout.axis_x = Some(y);
@@ -362,6 +352,82 @@ impl<'a> Chart<'a> {
         }
         layout
     }
+
+    fn max_width_of_labels_left_of_y_axis(&self, area: Rect) -> u16 {
+        let mut max_width = self
+            .y_axis
+            .labels
+            .as_ref()
+            .map(|l| l.iter().map(Span::width).max().unwrap_or_default() as u16)
+            .unwrap_or_default();
+        if let Some(ref x_labels) = self.x_axis.labels {
+            if !x_labels.is_empty() {
+                max_width = max(max_width, x_labels[0].content.width() as u16);
+            }
+        }
+        // labels of y axis and first label of x axis can take at most 1/3rd of the total width
+        max_width.min(area.width / 3)
+    }
+
+    fn render_x_labels(
+        &mut self,
+        buf: &mut Buffer,
+        layout: &ChartLayout,
+        chart_area: Rect,
+        graph_area: Rect,
+    ) {
+        let y = match layout.label_x {
+            Some(y) => y,
+            None => return,
+        };
+        let labels = self.x_axis.labels.as_ref().unwrap();
+        let labels_len = labels.len() as u16;
+        if labels_len < 2 {
+            return;
+        }
+        let width_between_ticks = graph_area.width / (labels_len - 1);
+        for (i, label) in labels.iter().enumerate() {
+            let label_width = label.width() as u16;
+            let label_width = if i == 0 {
+                // the first label is put between the left border of the chart and the y axis.
+                graph_area
+                    .left()
+                    .saturating_sub(chart_area.left())
+                    .min(label_width)
+            } else {
+                // other labels are put on the left of each tick on the x axis
+                width_between_ticks.min(label_width)
+            };
+            buf.set_span(
+                graph_area.left() + i as u16 * width_between_ticks - label_width,
+                y,
+                label,
+                label_width,
+            );
+        }
+    }
+
+    fn render_y_labels(
+        &mut self,
+        buf: &mut Buffer,
+        layout: &ChartLayout,
+        chart_area: Rect,
+        graph_area: Rect,
+    ) {
+        let x = match layout.label_y {
+            Some(x) => x,
+            None => return,
+        };
+        let labels = self.y_axis.labels.as_ref().unwrap();
+        let labels_len = labels.len() as u16;
+        let label_width = graph_area.left().saturating_sub(chart_area.left());
+        for (i, label) in labels.iter().enumerate() {
+            let dy = i as u16 * (graph_area.height - 1) / (labels_len - 1);
+            if dy < graph_area.bottom() {
+                buf.set_span(x, graph_area.bottom() - 1 - dy, label, label_width as u16);
+            }
+        }
+    }
 }
 
 impl<'a> Widget for Chart<'a> {
@@ -390,33 +456,8 @@ impl<'a> Widget for Chart<'a> {
             return;
         }
 
-        if let Some(y) = layout.label_x {
-            let labels = self.x_axis.labels.unwrap();
-            let total_width = labels.iter().map(Span::width).sum::<usize>() as u16;
-            let labels_len = labels.len() as u16;
-            if total_width < graph_area.width && labels_len > 1 {
-                for (i, label) in labels.iter().enumerate() {
-                    buf.set_span(
-                        graph_area.left() + i as u16 * (graph_area.width - 1) / (labels_len - 1)
-                            - label.content.width() as u16,
-                        y,
-                        label,
-                        label.width() as u16,
-                    );
-                }
-            }
-        }
-
-        if let Some(x) = layout.label_y {
-            let labels = self.y_axis.labels.unwrap();
-            let labels_len = labels.len() as u16;
-            for (i, label) in labels.iter().enumerate() {
-                let dy = i as u16 * (graph_area.height - 1) / (labels_len - 1);
-                if dy < graph_area.bottom() {
-                    buf.set_span(x, graph_area.bottom() - 1 - dy, label, label.width() as u16);
-                }
-            }
-        }
+        self.render_x_labels(buf, &layout, chart_area, graph_area);
+        self.render_y_labels(buf, &layout, chart_area, graph_area);
 
         if let Some(y) = layout.axis_x {
             for x in graph_area.left()..graph_area.right() {

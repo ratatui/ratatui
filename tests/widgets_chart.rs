@@ -48,6 +48,78 @@ fn widgets_chart_can_render_on_small_areas() {
 }
 
 #[test]
+fn widgets_chart_handles_long_labels() {
+    let test_case = |x_labels, y_labels, lines| {
+        let backend = TestBackend::new(10, 5);
+        let mut terminal = Terminal::new(backend).unwrap();
+        terminal
+            .draw(|f| {
+                let datasets = vec![Dataset::default()
+                    .marker(symbols::Marker::Braille)
+                    .style(Style::default().fg(Color::Magenta))
+                    .data(&[(2.0, 2.0)])];
+                let mut x_axis = Axis::default().bounds([0.0, 1.0]);
+                if let Some((left_label, right_label)) = x_labels {
+                    x_axis = x_axis.labels(vec![Span::from(left_label), Span::from(right_label)]);
+                }
+                let mut y_axis = Axis::default().bounds([0.0, 1.0]);
+                if let Some((left_label, right_label)) = y_labels {
+                    y_axis = y_axis.labels(vec![Span::from(left_label), Span::from(right_label)]);
+                }
+                let chart = Chart::new(datasets).x_axis(x_axis).y_axis(y_axis);
+                f.render_widget(chart, f.size());
+            })
+            .unwrap();
+        let expected = Buffer::with_lines(lines);
+        terminal.backend().assert_buffer(&expected);
+    };
+    test_case(
+        Some(("AAAA", "B")),
+        None,
+        vec![
+            "          ",
+            "          ",
+            "          ",
+            "   ───────",
+            "AAA      B",
+        ],
+    );
+    test_case(
+        Some(("A", "BBBB")),
+        None,
+        vec![
+            "          ",
+            "          ",
+            "          ",
+            " ─────────",
+            "A     BBBB",
+        ],
+    );
+    test_case(
+        Some(("AAAAAAAAAAA", "B")),
+        None,
+        vec![
+            "          ",
+            "          ",
+            "          ",
+            "   ───────",
+            "AAA      B",
+        ],
+    );
+    test_case(
+        Some(("A", "B")),
+        Some(("CCCCCCC", "D")),
+        vec![
+            "D  │      ",
+            "   │      ",
+            "CCC│      ",
+            "   └──────",
+            "   A     B",
+        ],
+    );
+}
+
+#[test]
 fn widgets_chart_can_have_axis_with_zero_length_bounds() {
     let backend = TestBackend::new(100, 100);
     let mut terminal = Terminal::new(backend).unwrap();
