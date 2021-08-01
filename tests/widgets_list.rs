@@ -86,3 +86,43 @@ fn widgets_list_should_truncate_items() {
         terminal.backend().assert_buffer(&case.expected);
     }
 }
+
+#[test]
+fn widgets_list_should_clamp_offset_if_items_are_removed() {
+    let backend = TestBackend::new(10, 4);
+    let mut terminal = Terminal::new(backend).unwrap();
+    let mut state = ListState::default();
+
+    // render with 6 items => offset will be at 2
+    state.select(Some(5));
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let items = vec![
+                ListItem::new("Item 0"),
+                ListItem::new("Item 1"),
+                ListItem::new("Item 2"),
+                ListItem::new("Item 3"),
+                ListItem::new("Item 4"),
+                ListItem::new("Item 5"),
+            ];
+            let list = List::new(items).highlight_symbol(">> ");
+            f.render_stateful_widget(list, size, &mut state);
+        })
+        .unwrap();
+    let expected = Buffer::with_lines(vec!["   Item 2 ", "   Item 3 ", "   Item 4 ", ">> Item 5 "]);
+    terminal.backend().assert_buffer(&expected);
+
+    // render again with 1 items => check offset is clamped to 1
+    state.select(Some(1));
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let items = vec![ListItem::new("Item 3")];
+            let list = List::new(items).highlight_symbol(">> ");
+            f.render_stateful_widget(list, size, &mut state);
+        })
+        .unwrap();
+    let expected = Buffer::with_lines(vec!["   Item 3 ", "          ", "          ", "          "]);
+    terminal.backend().assert_buffer(&expected);
+}

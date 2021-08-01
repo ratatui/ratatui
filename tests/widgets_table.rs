@@ -749,3 +749,75 @@ fn widgets_table_columns_dont_panic() {
     state.select(Some(0));
     test_case(&mut state, table1.clone(), table1_width);
 }
+
+#[test]
+fn widgets_table_should_clamp_offset_if_rows_are_removed() {
+    let backend = TestBackend::new(30, 8);
+    let mut terminal = Terminal::new(backend).unwrap();
+    let mut state = TableState::default();
+
+    // render with 6 items => offset will be at 2
+    state.select(Some(5));
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(vec![
+                Row::new(vec!["Row01", "Row02", "Row03"]),
+                Row::new(vec!["Row11", "Row12", "Row13"]),
+                Row::new(vec!["Row21", "Row22", "Row23"]),
+                Row::new(vec!["Row31", "Row32", "Row33"]),
+                Row::new(vec!["Row41", "Row42", "Row43"]),
+                Row::new(vec!["Row51", "Row52", "Row53"]),
+            ])
+            .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+            .block(Block::default().borders(Borders::ALL))
+            .widths(&[
+                Constraint::Length(5),
+                Constraint::Length(5),
+                Constraint::Length(5),
+            ])
+            .column_spacing(1);
+            f.render_stateful_widget(table, size, &mut state);
+        })
+        .unwrap();
+    let expected = Buffer::with_lines(vec![
+        "┌────────────────────────────┐",
+        "│Head1 Head2 Head3           │",
+        "│                            │",
+        "│Row21 Row22 Row23           │",
+        "│Row31 Row32 Row33           │",
+        "│Row41 Row42 Row43           │",
+        "│Row51 Row52 Row53           │",
+        "└────────────────────────────┘",
+    ]);
+    terminal.backend().assert_buffer(&expected);
+
+    // render with 1 item => offset will be at 1
+    state.select(Some(1));
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(vec![Row::new(vec!["Row31", "Row32", "Row33"])])
+                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+                .block(Block::default().borders(Borders::ALL))
+                .widths(&[
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                ])
+                .column_spacing(1);
+            f.render_stateful_widget(table, size, &mut state);
+        })
+        .unwrap();
+    let expected = Buffer::with_lines(vec![
+        "┌────────────────────────────┐",
+        "│Head1 Head2 Head3           │",
+        "│                            │",
+        "│Row31 Row32 Row33           │",
+        "│                            │",
+        "│                            │",
+        "│                            │",
+        "└────────────────────────────┘",
+    ]);
+    terminal.backend().assert_buffer(&expected);
+}

@@ -302,6 +302,7 @@ impl<'a> Table<'a> {
         offset: usize,
         max_height: u16,
     ) -> (usize, usize) {
+        let offset = offset.min(self.rows.len().saturating_sub(1));
         let mut start = offset;
         let mut end = offset;
         let mut height = 0;
