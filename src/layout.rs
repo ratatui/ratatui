@@ -63,6 +63,9 @@ pub struct Layout {
     direction: Direction,
     margin: Margin,
     constraints: Vec<Constraint>,
+    /// Whether the last chunk of the computed layout should be expanded to fill the available
+    /// space.
+    expand_to_fill: bool,
 }
 
 thread_local! {
@@ -78,6 +81,7 @@ impl Default for Layout {
                 vertical: 0,
             },
             constraints: Vec::new(),
+            expand_to_fill: true,
         }
     }
 }
@@ -111,6 +115,11 @@ impl Layout {
 
     pub fn direction(mut self, direction: Direction) -> Layout {
         self.direction = direction;
+        self
+    }
+
+    pub(crate) fn expand_to_fill(mut self, expand_to_fill: bool) -> Layout {
+        self.expand_to_fill = expand_to_fill;
         self
     }
 
@@ -222,11 +231,13 @@ fn split(area: Rect, layout: &Layout) -> Vec<Rect> {
             Direction::Vertical => first.top() | EQ(REQUIRED) | f64::from(dest_area.top()),
         });
     }
-    if let Some(last) = elements.last() {
-        ccs.push(match layout.direction {
-            Direction::Horizontal => last.right() | EQ(REQUIRED) | f64::from(dest_area.right()),
-            Direction::Vertical => last.bottom() | EQ(REQUIRED) | f64::from(dest_area.bottom()),
-        });
+    if layout.expand_to_fill {
+        if let Some(last) = elements.last() {
+            ccs.push(match layout.direction {
+                Direction::Horizontal => last.right() | EQ(REQUIRED) | f64::from(dest_area.right()),
+                Direction::Vertical => last.bottom() | EQ(REQUIRED) | f64::from(dest_area.bottom()),
+            });
+        }
     }
     match layout.direction {
         Direction::Horizontal => {
@@ -299,14 +310,16 @@ fn split(area: Rect, layout: &Layout) -> Vec<Rect> {
         }
     }
 
-    // Fix imprecision by extending the last item a bit if necessary
-    if let Some(last) = results.last_mut() {
-        match layout.direction {
-            Direction::Vertical => {
-                last.height = dest_area.bottom() - last.y;
-            }
-            Direction::Horizontal => {
-                last.width = dest_area.right() - last.x;
+    if layout.expand_to_fill {
+        // Fix imprecision by extending the last item a bit if necessary
+        if let Some(last) = results.last_mut() {
+            match layout.direction {
+                Direction::Vertical => {
+                    last.height = dest_area.bottom() - last.y;
+                }
+                Direction::Horizontal => {
+                    last.width = dest_area.right() - last.x;
+                }
             }
         }
     }
