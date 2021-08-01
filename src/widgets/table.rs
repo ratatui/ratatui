@@ -10,10 +10,7 @@ use cassowary::{
     WeightedRelation::*,
     {Expression, Solver},
 };
-use std::{
-    collections::HashMap,
-    iter::{self, Iterator},
-};
+use std::collections::HashMap;
 use unicode_width::UnicodeWidthStr;
 
 /// A [`Cell`] contains the [`Text`] to be displayed in a [`Row`] of a [`Table`].
@@ -427,9 +424,7 @@ impl<'a> StatefulWidget for Table<'a> {
         let has_selection = state.selected.is_some();
         let columns_widths = self.get_columns_widths(table_area.width, has_selection);
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
-        let blank_symbol = iter::repeat(" ")
-            .take(highlight_symbol.width())
-            .collect::<String>();
+        let blank_symbol = " ".repeat(highlight_symbol.width());
         let mut current_height = 0;
         let mut rows_height = table_area.height;
 

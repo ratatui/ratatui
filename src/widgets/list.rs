@@ -5,7 +5,6 @@ use crate::{
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
 };
-use std::iter::{self, Iterator};
 use unicode_width::UnicodeWidthStr;
 
 #[derive(Debug, Clone)]
@@ -185,9 +184,7 @@ impl<'a> StatefulWidget for List<'a> {
         state.offset = start;
 
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
-        let blank_symbol = iter::repeat(" ")
-            .take(highlight_symbol.width())
-            .collect::<String>();
+        let blank_symbol = " ".repeat(highlight_symbol.width());
 
         let mut current_height = 0;
         let has_selection = state.selected.is_some();
