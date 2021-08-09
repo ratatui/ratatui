@@ -10,11 +10,4 @@ updates:
       interval: "weekly"
       time: "03:37" # UTC
     commit-message:
-      prefix: "chore(cargo):"
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "ci(actions):"
+      prefix: "build(cargo):"
