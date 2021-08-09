@@ -15,13 +15,13 @@ include = ["src/**/*", "README.md"]
 unicode-width = "0.1"
 
 [dependencies.tui]
-version = "0.15"
+version = "0.16"
 default-features = false
 
 [dev-dependencies]
 termion = "1"
 
 [dev-dependencies.tui]
-version = "0.15"
+version = "0.16"
 default-features = false
 features = ["termion"]
