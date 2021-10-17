@@ -4,6 +4,7 @@ use tui::{
     layout::Rect,
     style::{Color, Style},
     symbols,
+    text::Spans,
     widgets::{Block, Borders, List, ListItem, ListState},
     Terminal,
 };
@@ -153,7 +154,8 @@ fn widgets_list_should_display_multiline_items() {
         ">> Item 2 ",
         "   Item 2b",
         "   Item 3 ",
-        "   Item 3c"]);
+        "   Item 3c",
+    ]);
     for x in 0..10 {
         expected.get_mut(x, 2).set_bg(Color::Yellow);
         expected.get_mut(x, 3).set_bg(Color::Yellow);
@@ -188,7 +190,8 @@ fn widgets_list_should_repeat_highlight_symbol() {
         ">> Item 2 ",
         ">> Item 2b",
         "   Item 3 ",
-        "   Item 3c"]);
+        "   Item 3c",
+    ]);
     for x in 0..10 {
         expected.get_mut(x, 2).set_bg(Color::Yellow);
         expected.get_mut(x, 3).set_bg(Color::Yellow);

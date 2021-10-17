@@ -1,8 +1,10 @@
 # Changelog
 
 ## To be released
+
 ### Features
-* Add option to `widgets::List` to repeat the hightlight symbol for each line of multi-line items.
+
+* Add option to `widgets::List` to repeat the hightlight symbol for each line of multi-line items (#533).
 
 ## v0.16.0 - 2021-08-01
 

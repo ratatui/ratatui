@@ -126,7 +126,7 @@ impl<'a> List<'a> {
         self.highlight_style = style;
         self
     }
-    
+
     pub fn repeat_highlight_symbol(mut self, repeat: bool) -> List<'a> {
         self.repeat_highlight_symbol = repeat;
         self
@@ -239,13 +239,19 @@ impl<'a> StatefulWidget for List<'a> {
                 // if the item is selected, we need to display the hightlight symbol:
                 // - either for the first line of the item only,
                 // - or for each line of the item if the appropriate option is set
-                let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol){
+                let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
                     highlight_symbol
                 } else {
                     &blank_symbol
                 };
                 let (elem_x, max_element_width) = if has_selection {
-                    let (elem_x, _) = buf.set_stringn(x, y + j as u16, symbol, list_area.width as usize, item_style);
+                    let (elem_x, _) = buf.set_stringn(
+                        x,
+                        y + j as u16,
+                        symbol,
+                        list_area.width as usize,
+                        item_style,
+                    );
                     (elem_x, (list_area.width - (elem_x - x)) as u16)
                 } else {
                     (x, list_area.width)
