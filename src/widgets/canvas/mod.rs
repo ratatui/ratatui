@@ -14,6 +14,7 @@ use crate::{
     layout::Rect,
     style::{Color, Style},
     symbols,
+    text::Spans,
     widgets::{Block, Widget},
 };
 use std::fmt::Debug;
@@ -26,10 +27,9 @@ pub trait Shape {
 /// Label to draw some text on the canvas
 #[derive(Debug, Clone)]
 pub struct Label<'a> {
-    pub x: f64,
-    pub y: f64,
-    pub text: &'a str,
-    pub color: Color,
+    x: f64,
+    y: f64,
+    spans: Spans<'a>,
 }
 
 #[derive(Debug, Clone)]
@@ -293,8 +293,15 @@ impl<'a> Context<'a> {
     }
 
     /// Print a string on the canvas at the given position
-    pub fn print(&mut self, x: f64, y: f64, text: &'a str, color: Color) {
-        self.labels.push(Label { x, y, text, color });
+    pub fn print<T>(&mut self, x: f64, y: f64, spans: T)
+    where
+        T: Into<Spans<'a>>,
+    {
+        self.labels.push(Label {
+            x,
+            y,
+            spans: spans.into(),
+        });
     }
 
     /// Push the last layer if necessary
@@ -433,6 +440,8 @@ where
             None => area,
         };
 
+        buf.set_style(canvas_area, Style::default().bg(self.background_color));
+
         let width = canvas_area.width as usize;
 
         let painter = match self.painter {
@@ -464,14 +473,12 @@ where
                     let (x, y) = (i % width, i / width);
                     buf.get_mut(x as u16 + canvas_area.left(), y as u16 + canvas_area.top())
                         .set_char(ch)
-                        .set_fg(color)
-                        .set_bg(self.background_color);
+                        .set_fg(color);
                 }
             }
         }
 
         // Finally draw the labels
-        let style = Style::default().bg(self.background_color);
         let left = self.x_bounds[0];
         let right = self.x_bounds[1];
         let top = self.y_bounds[1];
@@ -490,13 +497,7 @@ where
         {
             let x = ((label.x - left) * resolution.0 / width) as u16 + canvas_area.left();
             let y = ((top - label.y) * resolution.1 / height) as u16 + canvas_area.top();
-            buf.set_stringn(
-                x,
-                y,
-                label.text,
-                (canvas_area.right() - x) as usize,
-                style.fg(label.color),
-            );
+            buf.set_spans(x, y, &label.spans, canvas_area.right() - x);
         }
     }
 }

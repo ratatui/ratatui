@@ -7,7 +7,8 @@ use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::Altern
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Direction, Layout, Rect},
-    style::Color,
+    style::{Color, Style},
+    text::Span,
     widgets::{
         canvas::{Canvas, Map, MapResolution, Rectangle},
         Block, Borders,
@@ -103,7 +104,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                         color: Color::White,
                         resolution: MapResolution::High,
                     });
-                    ctx.print(app.x, -app.y, "You are here", Color::Yellow);
+                    ctx.print(
+                        app.x,
+                        -app.y,
+                        Span::styled("You are here", Style::default().fg(Color::Yellow)),
+                    );
                 })
                 .x_bounds([-180.0, 180.0])
                 .y_bounds([-90.0, 90.0]);

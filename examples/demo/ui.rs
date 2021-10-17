@@ -363,7 +363,11 @@ where
                 } else {
                     Color::Red
                 };
-                ctx.print(server.coords.1, server.coords.0, "X", color);
+                ctx.print(
+                    server.coords.1,
+                    server.coords.0,
+                    Span::styled("X", Style::default().fg(color)),
+                );
             }
         })
         .marker(if app.enhanced_graphics {
