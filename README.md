@@ -116,6 +116,7 @@ You can run all examples by running `make run-examples`.
 * [minesweep](https://github.com/cpcloud/minesweep-rs)
 * [Battleship.rs](https://github.com/deepu105/battleship-rs)
 * [termscp](https://github.com/veeso/termscp)
+* [joshuto](https://github.com/kamiyaa/joshuto)
 
 ### Alternatives
 
