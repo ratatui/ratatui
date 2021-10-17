@@ -87,6 +87,8 @@ pub struct List<'a> {
     highlight_style: Style,
     /// Symbol in front of the selected item (Shift all items to the right)
     highlight_symbol: Option<&'a str>,
+    /// Whether to repeat the highlight symbol for each line of the selected item
+    repeat_highlight_symbol: bool,
 }
 
 impl<'a> List<'a> {
@@ -101,6 +103,7 @@ impl<'a> List<'a> {
             start_corner: Corner::TopLeft,
             highlight_style: Style::default(),
             highlight_symbol: None,
+            repeat_highlight_symbol: false,
         }
     }
 
@@ -121,6 +124,11 @@ impl<'a> List<'a> {
 
     pub fn highlight_style(mut self, style: Style) -> List<'a> {
         self.highlight_style = style;
+        self
+    }
+    
+    pub fn repeat_highlight_symbol(mut self, repeat: bool) -> List<'a> {
+        self.repeat_highlight_symbol = repeat;
         self
     }
 
@@ -227,19 +235,21 @@ impl<'a> StatefulWidget for List<'a> {
             buf.set_style(area, item_style);
 
             let is_selected = state.selected.map(|s| s == i).unwrap_or(false);
-            let elem_x = if has_selection {
-                let symbol = if is_selected {
+            for (j, line) in item.content.lines.iter().enumerate() {
+                // if the item is selected, we need to display the hightlight symbol:
+                // - either for the first line of the item only,
+                // - or for each line of the item if the appropriate option is set
+                let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol){
                     highlight_symbol
                 } else {
                     &blank_symbol
                 };
-                let (x, _) = buf.set_stringn(x, y, symbol, list_area.width as usize, item_style);
-                x
-            } else {
-                x
-            };
-            let max_element_width = (list_area.width - (elem_x - x)) as usize;
-            for (j, line) in item.content.lines.iter().enumerate() {
+                let (elem_x, max_element_width) = if has_selection {
+                    let (elem_x, _) = buf.set_stringn(x, y + j as u16, symbol, list_area.width as usize, item_style);
+                    (elem_x, (list_area.width - (elem_x - x)) as u16)
+                } else {
+                    (x, list_area.width)
+                };
                 buf.set_spans(elem_x, y + j as u16, line, max_element_width as u16);
             }
             if is_selected {
