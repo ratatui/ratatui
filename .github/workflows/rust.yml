@@ -11,45 +11,44 @@ jobs:
   test:
     name: Test ${{ matrix.os }} ${{ matrix.toolchain }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.experimental }}
+    continue-on-error: ${{ matrix.toolchain == 'nightly' }}
     strategy:
       fail-fast: false
       matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+        toolchain:
+          - stable
+        clippyargs:
+          - -D clippy::pedantic -D warnings
+        features:
+          - --all-features
         include:
-          # Check stable on the main platforms and ensure there is not even a single warning
-          - os: ubuntu-latest
-            toolchain: stable
-            clippyargs: -D clippy::pedantic -D warnings
-            experimental: false
-          - os: macOS-latest
-            toolchain: stable
-            clippyargs: -D clippy::pedantic -D warnings
-            experimental: false
-
-          # Check beta/nightly (potentially buggy) and maybe get some glances on soon to be lints
+          # Check future versions and maybe get some glances on soon to be lints
           - os: ubuntu-latest
             toolchain: beta
-            clippyargs: -W clippy::pedantic
-            experimental: true
+            clippyargs: -W clippy::pedantic -W clippy::nursery -W clippy::cargo
+            features: --all-features
           - os: ubuntu-latest
             toolchain: nightly
             clippyargs: -W clippy::pedantic
-            experimental: true
+            features: --all-features
 
           # Check if it is still running on older Rust versions.
           # Sometimes they dont have lint bugfixes which results in false positives -> Dont error, just warn.
           # Also some specified lints are not yet existing in the older rust version -> allow unknown lints.
+          # https://packages.debian.org/search?keywords=rustc
+          # https://pkgs.alpinelinux.org/packages?name=rust
           - os: ubuntu-latest
             toolchain: 1.48.0 # Debian 11 Bullseye
             clippyargs: -A unknown-lints -A clippy::unknown-clippy-lints
-            experimental: false
+            features: --all-features
           - os: ubuntu-latest
-            toolchain: 1.52.0 # Alpine 3.14
+            toolchain: 1.52.1 # Alpine 3.14
             clippyargs: -A unknown-lints
-            experimental: false
+            features: --all-features
     steps:
-      - uses: actions/checkout@v2
-
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -58,17 +57,25 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.toolchain }}
 
-      - name: Run clippy
+      - uses: actions/checkout@v2
+
+      - name: Check clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --verbose --all-targets --all-features -- ${{ matrix.clippyargs }}
+          args: --verbose --all-targets ${{ matrix.features }} -- ${{ matrix.clippyargs }}
+
+      - name: Check docs
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --verbose --no-deps ${{ matrix.features }}
 
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --verbose --all-features
+          args: --verbose ${{ matrix.features }}
 
   github-release:
     name: Release ${{ matrix.triple }}
@@ -87,13 +94,11 @@ jobs:
           - os: ubuntu-latest
             triple: aarch64-unknown-linux-gnu
 
-          - os: macOS-latest
+          - os: macos-latest
             triple: x86_64-apple-darwin
-          - os: macOS-latest
+          - os: macos-latest
             triple: aarch64-apple-darwin
     steps:
-      - uses: actions/checkout@v2
-
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -102,10 +107,12 @@ jobs:
           target: ${{ matrix.triple }}
           toolchain: stable
 
+      - uses: actions/checkout@v2
+
       - name: Build
         uses: actions-rs/cargo@v1
         env:
-          # TODO: Remove this once it's the default
+          # TODO: Remove this once macos-11 is macos-latest
           SDKROOT: /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk
         with:
           command: build

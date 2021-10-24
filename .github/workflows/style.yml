@@ -9,8 +9,6 @@ jobs:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -18,6 +16,8 @@ jobs:
           override: true
           profile: minimal
           components: rustfmt
+
+      - uses: actions/checkout@v2
 
       - name: Check format
         uses: actions-rs/cargo@v1
