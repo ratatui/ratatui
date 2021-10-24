@@ -1,6 +1,5 @@
 #![allow(clippy::must_use_candidate)]
 
-use crate::identifier::{TreeIdentifier, TreeIdentifierVec};
 use std::collections::HashSet;
 use tui::buffer::Buffer;
 use tui::layout::{Corner, Rect};
@@ -9,10 +8,13 @@ use tui::text::Text;
 use tui::widgets::{Block, StatefulWidget, Widget};
 use unicode_width::UnicodeWidthStr;
 
-pub mod flatten;
-pub mod identifier;
+mod flatten;
+mod identifier;
 
-pub use self::flatten::flatten;
+pub use flatten::{flatten, Flattened};
+pub use identifier::{
+    get_without_leaf as get_identifier_without_leaf, TreeIdentifier, TreeIdentifierVec,
+};
 
 #[derive(Debug, Default, Clone)]
 pub struct TreeState {

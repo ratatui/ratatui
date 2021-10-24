@@ -1,6 +1,6 @@
 pub mod event;
 
-use tui_tree_widget::{flatten, identifier, TreeItem, TreeState};
+use tui_tree_widget::{flatten, get_identifier_without_leaf, TreeItem, TreeState};
 
 pub struct StatefulTree<'a> {
     pub state: TreeState,
@@ -52,7 +52,7 @@ impl<'a> StatefulTree<'a> {
     pub fn close(&mut self) {
         let selected = self.state.selected();
         if !self.state.close(&selected) {
-            let (head, _) = identifier::get_without_leaf(&selected);
+            let (head, _) = get_identifier_without_leaf(&selected);
             self.state.select(head);
         }
     }
