@@ -14,21 +14,11 @@ pub mod identifier;
 
 pub use self::flatten::flatten;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct TreeState {
     offset: usize,
     selected: TreeIdentifierVec,
     opened: HashSet<TreeIdentifierVec>,
-}
-
-impl Default for TreeState {
-    fn default() -> Self {
-        Self {
-            offset: 0,
-            selected: Vec::new(),
-            opened: HashSet::new(),
-        }
-    }
 }
 
 impl TreeState {
@@ -74,7 +64,7 @@ impl TreeState {
         self.opened.iter().cloned().collect()
     }
 
-    pub fn get_offset(&self) -> usize {
+    pub const fn get_offset(&self) -> usize {
         self.offset
     }
 }
@@ -122,7 +112,7 @@ impl<'a> TreeItem<'a> {
         self.text.height()
     }
 
-    pub fn style(mut self, style: Style) -> Self {
+    pub const fn style(mut self, style: Style) -> Self {
         self.style = style;
         self
     }
@@ -165,22 +155,22 @@ impl<'a> Tree<'a> {
         self
     }
 
-    pub fn style(mut self, style: Style) -> Self {
+    pub const fn style(mut self, style: Style) -> Self {
         self.style = style;
         self
     }
 
-    pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
+    pub const fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
 
-    pub fn highlight_style(mut self, style: Style) -> Self {
+    pub const fn highlight_style(mut self, style: Style) -> Self {
         self.highlight_style = style;
         self
     }
 
-    pub fn start_corner(mut self, corner: Corner) -> Self {
+    pub const fn start_corner(mut self, corner: Corner) -> Self {
         self.start_corner = corner;
         self
     }
