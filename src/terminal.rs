@@ -82,14 +82,12 @@ where
     ///
     /// # Examples
     ///
-    /// ```rust,no_run
-    /// # use std::io;
+    /// ```rust
     /// # use tui::Terminal;
-    /// # use tui::backend::TermionBackend;
+    /// # use tui::backend::TestBackend;
     /// # use tui::layout::Rect;
     /// # use tui::widgets::Block;
-    /// # let stdout = io::stdout();
-    /// # let backend = TermionBackend::new(stdout);
+    /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// let block = Block::default();
     /// let area = Rect::new(0, 0, 5, 5);
@@ -110,14 +108,12 @@ where
     ///
     /// # Examples
     ///
-    /// ```rust,no_run
-    /// # use std::io;
+    /// ```rust
     /// # use tui::Terminal;
-    /// # use tui::backend::TermionBackend;
+    /// # use tui::backend::TestBackend;
     /// # use tui::layout::Rect;
     /// # use tui::widgets::{List, ListItem, ListState};
-    /// # let stdout = io::stdout();
-    /// # let backend = TermionBackend::new(stdout);
+    /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// let mut state = ListState::default();
     /// state.select(Some(1));

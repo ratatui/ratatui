@@ -87,7 +87,7 @@ pub trait Widget {
 /// ```rust,no_run
 /// # use std::io;
 /// # use tui::Terminal;
-/// # use tui::backend::{Backend, TermionBackend};
+/// # use tui::backend::{Backend, TestBackend};
 /// # use tui::widgets::{Widget, List, ListItem, ListState};
 ///
 /// // Let's say we have some events to display.
@@ -154,9 +154,8 @@ pub trait Widget {
 ///     }
 /// }
 ///
-/// let stdout = io::stdout();
-/// let backend = TermionBackend::new(stdout);
-/// let mut terminal = Terminal::new(backend).unwrap();
+/// # let backend = TestBackend::new(5, 5);
+/// # let mut terminal = Terminal::new(backend).unwrap();
 ///
 /// let mut events = Events::new(vec![
 ///     String::from("Item 1"),

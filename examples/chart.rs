@@ -1,20 +1,25 @@
 #[allow(dead_code)]
 mod util;
 
-use crate::util::{
-    event::{Event, Events},
-    SinSignal,
+use crate::util::SinSignal;
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{error::Error, io};
-use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
+};
 use tui::{
-    backend::TermionBackend,
+    backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     symbols,
     text::Span,
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType},
-    Terminal,
+    Frame, Terminal,
 };
 
 const DATA: [(f64, f64); 5] = [(0.0, 0.0), (1.0, 1.0), (2.0, 2.0), (3.0, 3.0), (4.0, 4.0)];
@@ -51,7 +56,7 @@ impl App {
         }
     }
 
-    fn update(&mut self) {
+    fn on_tick(&mut self) {
         for _ in 0..5 {
             self.data1.remove(0);
         }
@@ -66,181 +71,208 @@ impl App {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    // Terminal initialization
-    let stdout = io::stdout().into_raw_mode()?;
-    let stdout = MouseTerminal::from(stdout);
-    let stdout = AlternateScreen::from(stdout);
-    let backend = TermionBackend::new(stdout);
+    // setup terminal
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let events = Events::new();
+    // create app and run it
+    let tick_rate = Duration::from_millis(250);
+    let app = App::new();
+    let res = run_app(&mut terminal, app, tick_rate);
 
-    // App
-    let mut app = App::new();
+    // restore terminal
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
 
-    loop {
-        terminal.draw(|f| {
-            let size = f.size();
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Ratio(1, 3),
-                        Constraint::Ratio(1, 3),
-                        Constraint::Ratio(1, 3),
-                    ]
-                    .as_ref(),
-                )
-                .split(size);
-            let x_labels = vec![
-                Span::styled(
-                    format!("{}", app.window[0]),
-                    Style::default().add_modifier(Modifier::BOLD),
-                ),
-                Span::raw(format!("{}", (app.window[0] + app.window[1]) / 2.0)),
-                Span::styled(
-                    format!("{}", app.window[1]),
-                    Style::default().add_modifier(Modifier::BOLD),
-                ),
-            ];
-            let datasets = vec![
-                Dataset::default()
-                    .name("data2")
-                    .marker(symbols::Marker::Dot)
-                    .style(Style::default().fg(Color::Cyan))
-                    .data(&app.data1),
-                Dataset::default()
-                    .name("data3")
-                    .marker(symbols::Marker::Braille)
-                    .style(Style::default().fg(Color::Yellow))
-                    .data(&app.data2),
-            ];
-
-            let chart = Chart::new(datasets)
-                .block(
-                    Block::default()
-                        .title(Span::styled(
-                            "Chart 1",
-                            Style::default()
-                                .fg(Color::Cyan)
-                                .add_modifier(Modifier::BOLD),
-                        ))
-                        .borders(Borders::ALL),
-                )
-                .x_axis(
-                    Axis::default()
-                        .title("X Axis")
-                        .style(Style::default().fg(Color::Gray))
-                        .labels(x_labels)
-                        .bounds(app.window),
-                )
-                .y_axis(
-                    Axis::default()
-                        .title("Y Axis")
-                        .style(Style::default().fg(Color::Gray))
-                        .labels(vec![
-                            Span::styled("-20", Style::default().add_modifier(Modifier::BOLD)),
-                            Span::raw("0"),
-                            Span::styled("20", Style::default().add_modifier(Modifier::BOLD)),
-                        ])
-                        .bounds([-20.0, 20.0]),
-                );
-            f.render_widget(chart, chunks[0]);
-
-            let datasets = vec![Dataset::default()
-                .name("data")
-                .marker(symbols::Marker::Braille)
-                .style(Style::default().fg(Color::Yellow))
-                .graph_type(GraphType::Line)
-                .data(&DATA)];
-            let chart = Chart::new(datasets)
-                .block(
-                    Block::default()
-                        .title(Span::styled(
-                            "Chart 2",
-                            Style::default()
-                                .fg(Color::Cyan)
-                                .add_modifier(Modifier::BOLD),
-                        ))
-                        .borders(Borders::ALL),
-                )
-                .x_axis(
-                    Axis::default()
-                        .title("X Axis")
-                        .style(Style::default().fg(Color::Gray))
-                        .bounds([0.0, 5.0])
-                        .labels(vec![
-                            Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
-                            Span::raw("2.5"),
-                            Span::styled("5.0", Style::default().add_modifier(Modifier::BOLD)),
-                        ]),
-                )
-                .y_axis(
-                    Axis::default()
-                        .title("Y Axis")
-                        .style(Style::default().fg(Color::Gray))
-                        .bounds([0.0, 5.0])
-                        .labels(vec![
-                            Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
-                            Span::raw("2.5"),
-                            Span::styled("5.0", Style::default().add_modifier(Modifier::BOLD)),
-                        ]),
-                );
-            f.render_widget(chart, chunks[1]);
-
-            let datasets = vec![Dataset::default()
-                .name("data")
-                .marker(symbols::Marker::Braille)
-                .style(Style::default().fg(Color::Yellow))
-                .graph_type(GraphType::Line)
-                .data(&DATA2)];
-            let chart = Chart::new(datasets)
-                .block(
-                    Block::default()
-                        .title(Span::styled(
-                            "Chart 3",
-                            Style::default()
-                                .fg(Color::Cyan)
-                                .add_modifier(Modifier::BOLD),
-                        ))
-                        .borders(Borders::ALL),
-                )
-                .x_axis(
-                    Axis::default()
-                        .title("X Axis")
-                        .style(Style::default().fg(Color::Gray))
-                        .bounds([0.0, 50.0])
-                        .labels(vec![
-                            Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
-                            Span::raw("25"),
-                            Span::styled("50", Style::default().add_modifier(Modifier::BOLD)),
-                        ]),
-                )
-                .y_axis(
-                    Axis::default()
-                        .title("Y Axis")
-                        .style(Style::default().fg(Color::Gray))
-                        .bounds([0.0, 5.0])
-                        .labels(vec![
-                            Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
-                            Span::raw("2.5"),
-                            Span::styled("5", Style::default().add_modifier(Modifier::BOLD)),
-                        ]),
-                );
-            f.render_widget(chart, chunks[2]);
-        })?;
-
-        match events.next()? {
-            Event::Input(input) => {
-                if input == Key::Char('q') {
-                    break;
-                }
-            }
-            Event::Tick => {
-                app.update();
-            }
-        }
+    if let Err(err) = res {
+        println!("{:?}", err)
     }
 
     Ok(())
+}
+
+fn run_app<B: Backend>(
+    terminal: &mut Terminal<B>,
+    mut app: App,
+    tick_rate: Duration,
+) -> io::Result<()> {
+    let mut last_tick = Instant::now();
+    loop {
+        terminal.draw(|f| ui(f, &mut app))?;
+
+        let timeout = tick_rate
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or_else(|| Duration::from_secs(0));
+        if crossterm::event::poll(timeout)? {
+            if let Event::Key(key) = event::read()? {
+                match key.code {
+                    KeyCode::Char('q') => return Ok(()),
+                    _ => {}
+                }
+            }
+        }
+        if last_tick.elapsed() >= tick_rate {
+            app.on_tick();
+            last_tick = Instant::now();
+        }
+    }
+}
+
+fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+    let size = f.size();
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Ratio(1, 3),
+                Constraint::Ratio(1, 3),
+                Constraint::Ratio(1, 3),
+            ]
+            .as_ref(),
+        )
+        .split(size);
+    let x_labels = vec![
+        Span::styled(
+            format!("{}", app.window[0]),
+            Style::default().add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(format!("{}", (app.window[0] + app.window[1]) / 2.0)),
+        Span::styled(
+            format!("{}", app.window[1]),
+            Style::default().add_modifier(Modifier::BOLD),
+        ),
+    ];
+    let datasets = vec![
+        Dataset::default()
+            .name("data2")
+            .marker(symbols::Marker::Dot)
+            .style(Style::default().fg(Color::Cyan))
+            .data(&app.data1),
+        Dataset::default()
+            .name("data3")
+            .marker(symbols::Marker::Braille)
+            .style(Style::default().fg(Color::Yellow))
+            .data(&app.data2),
+    ];
+
+    let chart = Chart::new(datasets)
+        .block(
+            Block::default()
+                .title(Span::styled(
+                    "Chart 1",
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                ))
+                .borders(Borders::ALL),
+        )
+        .x_axis(
+            Axis::default()
+                .title("X Axis")
+                .style(Style::default().fg(Color::Gray))
+                .labels(x_labels)
+                .bounds(app.window),
+        )
+        .y_axis(
+            Axis::default()
+                .title("Y Axis")
+                .style(Style::default().fg(Color::Gray))
+                .labels(vec![
+                    Span::styled("-20", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw("0"),
+                    Span::styled("20", Style::default().add_modifier(Modifier::BOLD)),
+                ])
+                .bounds([-20.0, 20.0]),
+        );
+    f.render_widget(chart, chunks[0]);
+
+    let datasets = vec![Dataset::default()
+        .name("data")
+        .marker(symbols::Marker::Braille)
+        .style(Style::default().fg(Color::Yellow))
+        .graph_type(GraphType::Line)
+        .data(&DATA)];
+    let chart = Chart::new(datasets)
+        .block(
+            Block::default()
+                .title(Span::styled(
+                    "Chart 2",
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                ))
+                .borders(Borders::ALL),
+        )
+        .x_axis(
+            Axis::default()
+                .title("X Axis")
+                .style(Style::default().fg(Color::Gray))
+                .bounds([0.0, 5.0])
+                .labels(vec![
+                    Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw("2.5"),
+                    Span::styled("5.0", Style::default().add_modifier(Modifier::BOLD)),
+                ]),
+        )
+        .y_axis(
+            Axis::default()
+                .title("Y Axis")
+                .style(Style::default().fg(Color::Gray))
+                .bounds([0.0, 5.0])
+                .labels(vec![
+                    Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw("2.5"),
+                    Span::styled("5.0", Style::default().add_modifier(Modifier::BOLD)),
+                ]),
+        );
+    f.render_widget(chart, chunks[1]);
+
+    let datasets = vec![Dataset::default()
+        .name("data")
+        .marker(symbols::Marker::Braille)
+        .style(Style::default().fg(Color::Yellow))
+        .graph_type(GraphType::Line)
+        .data(&DATA2)];
+    let chart = Chart::new(datasets)
+        .block(
+            Block::default()
+                .title(Span::styled(
+                    "Chart 3",
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                ))
+                .borders(Borders::ALL),
+        )
+        .x_axis(
+            Axis::default()
+                .title("X Axis")
+                .style(Style::default().fg(Color::Gray))
+                .bounds([0.0, 50.0])
+                .labels(vec![
+                    Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw("25"),
+                    Span::styled("50", Style::default().add_modifier(Modifier::BOLD)),
+                ]),
+        )
+        .y_axis(
+            Axis::default()
+                .title("Y Axis")
+                .style(Style::default().fg(Color::Gray))
+                .bounds([0.0, 5.0])
+                .labels(vec![
+                    Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw("2.5"),
+                    Span::styled("5", Style::default().add_modifier(Modifier::BOLD)),
+                ]),
+        );
+    f.render_widget(chart, chunks[2]);
 }

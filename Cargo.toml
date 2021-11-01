@@ -17,8 +17,7 @@ edition = "2018"
 [badges]
 
 [features]
-default = ["termion"]
-curses = ["easycurses", "pancurses"]
+default = ["crossterm"]
 
 [dependencies]
 bitflags = "1.3"
@@ -26,10 +25,7 @@ cassowary = "0.3"
 unicode-segmentation = "1.2"
 unicode-width = "0.1"
 termion = { version = "1.5", optional = true }
-rustbox = { version = "0.11", optional = true }
-crossterm = { version = "0.20", optional = true }
-easycurses = { version = "0.12.2", optional = true }
-pancurses = { version = "0.16.1", optional = true, features = ["win32a"] }
+crossterm = { version = "0.22", optional = true }
 serde = { version = "1", "optional" = true, features = ["derive"]}
 
 [dev-dependencies]
@@ -41,91 +37,6 @@ argh = "0.1"
 features = ["termion", "crossterm", "curses"]
 
 [[example]]
-name = "canvas"
-path = "examples/canvas.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "user_input"
-path = "examples/user_input.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "gauge"
-path = "examples/gauge.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "barchart"
-path = "examples/barchart.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "chart"
-path = "examples/chart.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "paragraph"
-path = "examples/paragraph.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "list"
-path = "examples/list.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "table"
-path = "examples/table.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "tabs"
-path = "examples/tabs.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "custom_widget"
-path = "examples/custom_widget.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "layout"
-path = "examples/layout.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "popup"
-path = "examples/popup.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "block"
-path = "examples/block.rs"
-required-features = ["termion"]
-
-[[example]]
-name = "sparkline"
-path = "examples/sparkline.rs"
-required-features = ["termion"]
-
-[[example]]
 name = "termion_demo"
 path = "examples/termion_demo.rs"
 required-features = ["termion"]
-
-[[example]]
-name = "rustbox_demo"
-path = "examples/rustbox_demo.rs"
-required-features = ["rustbox"]
-
-[[example]]
-name = "crossterm_demo"
-path = "examples/crossterm_demo.rs"
-required-features = ["crossterm"]
-
-[[example]]
-name = "curses_demo"
-path = "examples/curses_demo.rs"
-required-features = ["curses"]

@@ -6,8 +6,8 @@ source = "${CARGO_MAKE_RUST_TARGET_OS}"
 default_value = "unknown"
 
 [env.TUI_FEATURES.mapping]
-linux = "serde,crossterm,termion,rustbox,curses"
-macos = "serde,crossterm,termion,rustbox,curses"
+linux = "serde,crossterm,termion"
+macos = "serde,crossterm,termion"
 windows = "serde,crossterm"
 
 [tasks.default]
@@ -66,30 +66,12 @@ args = [
 ]
 
 [tasks.test]
-linux_alias = "test-unix"
-mac_alias = "test-unix"
-windows_alias = "test-windows"
-
-[tasks.test-unix]
 command = "cargo"
 args = [
   "test",
   "--no-default-features",
   "--features",
   "${TUI_FEATURES}"
-]
-
-# Documentation tests cannot be run on Windows for now
-[tasks.test-windows]
-command = "cargo"
-args = [
-  "test",
-  "--no-default-features",
-  "--features",
-  "${TUI_FEATURES}",
-  "--lib",
-  "--tests",
-  "--examples",
 ]
 
 [tasks.run-example]
