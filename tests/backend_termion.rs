@@ -8,14 +8,14 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
     {
         use ratatui::{
             backend::TermionBackend, layout::Rect, widgets::Paragraph, Terminal, TerminalOptions,
-            Viewport,
+            ViewportVariant,
         };
         let backend = TermionBackend::new(&mut stdout);
         let area = Rect::new(0, 0, 3, 1);
         let mut terminal = Terminal::with_options(
             backend,
             TerminalOptions {
-                viewport: Viewport::fixed(area),
+                viewport: ViewportVariant::Fixed(area),
             },
         )?;
         terminal.draw(|f| {

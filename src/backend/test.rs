@@ -1,5 +1,5 @@
 use crate::{
-    backend::Backend,
+    backend::{Backend, ClearType},
     buffer::{Buffer, Cell},
     layout::Rect,
 };
@@ -117,6 +117,10 @@ impl Backend for TestBackend {
         Ok(())
     }
 
+    fn append_lines(&mut self, _n: u16) -> Result<(), io::Error> {
+        Ok(())
+    }
+
     fn hide_cursor(&mut self) -> Result<(), io::Error> {
         self.cursor = false;
         Ok(())
@@ -136,7 +140,7 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn clear(&mut self) -> Result<(), io::Error> {
+    fn clear(&mut self, _clear_type: ClearType) -> Result<(), io::Error> {
         self.buffer.reset();
         Ok(())
     }

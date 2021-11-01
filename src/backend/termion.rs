@@ -1,5 +1,5 @@
-use super::Backend;
 use crate::{
+    backend::{Backend, ClearType},
     buffer::Cell,
     layout::Rect,
     style::{Color, Modifier},
@@ -42,10 +42,21 @@ impl<W> Backend for TermionBackend<W>
 where
     W: Write,
 {
-    /// Clears the entire screen and move the cursor to the top left of the screen
-    fn clear(&mut self) -> io::Result<()> {
-        write!(self.stdout, "{}", termion::clear::All)?;
-        write!(self.stdout, "{}", termion::cursor::Goto(1, 1))?;
+    fn clear(&mut self, clear_type: ClearType) -> io::Result<()> {
+        match clear_type {
+            ClearType::All => write!(self.stdout, "{}", termion::clear::All)?,
+            ClearType::AfterCursor => write!(self.stdout, "{}", termion::clear::AfterCursor)?,
+            ClearType::BeforeCursor => write!(self.stdout, "{}", termion::clear::BeforeCursor)?,
+            ClearType::CurrentLine => write!(self.stdout, "{}", termion::clear::CurrentLine)?,
+            ClearType::UntilNewLine => write!(self.stdout, "{}", termion::clear::UntilNewline)?,
+        };
+        self.stdout.flush()
+    }
+
+    fn append_lines(&mut self, n: u16) -> io::Result<()> {
+        for _ in 0..n {
+            writeln!(self.stdout)?;
+        }
         self.stdout.flush()
     }
 
