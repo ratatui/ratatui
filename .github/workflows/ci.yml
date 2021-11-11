@@ -9,7 +9,7 @@ on:
 name: CI
 
 env:
-  CI_CARGO_MAKE_VERSION: 0.32.9
+  CI_CARGO_MAKE_VERSION: 0.35.6
 
 jobs:
   linux:
@@ -38,16 +38,10 @@ jobs:
       - name: "Install cargo-make"
         if: steps.cache-cargo-make.outputs.cache-hit != 'true'
         run: cargo install cargo-make --version ${{ env.CI_CARGO_MAKE_VERSION }}
-      - name: "Format"
-        run: cargo make fmt
-      - name: "Check"
-        run: cargo make check
-      - name: "Test"
-        run: cargo make test
+      - name: "Format / Build / Test"
+        run: cargo make ci
         env:
           RUST_BACKTRACE: full
-      - name: "Clippy"
-        run: cargo make clippy
   windows:
     name: Windows
     runs-on: windows-latest
@@ -73,13 +67,7 @@ jobs:
       - name: "Install cargo-make"
         if: steps.cache-cargo-make.outputs.cache-hit != 'true'
         run: cargo install cargo-make --version ${{ env.CI_CARGO_MAKE_VERSION }}
-      - name: "Format"
-        run: cargo make fmt
-      - name: "Check"
-        run: cargo make check
-      - name: "Test"
-        run: cargo make test
+      - name: "Format / Build / Test"
+        run: cargo make ci
         env:
           RUST_BACKTRACE: full
-      - name: "Clippy"
-        run: cargo make clippy

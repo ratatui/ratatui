@@ -1,9 +1,4 @@
-mod demo;
-#[allow(dead_code)]
-mod util;
-
-use crate::demo::{ui, App};
-use argh::FromArgs;
+use crate::{app::App, ui};
 use std::{error::Error, io, sync::mpsc, thread, time::Duration};
 use termion::{
     event::Key,
@@ -16,20 +11,7 @@ use tui::{
     Terminal,
 };
 
-/// Termion demo
-#[derive(Debug, FromArgs)]
-struct Cli {
-    /// time in ms between two ticks.
-    #[argh(option, default = "250")]
-    tick_rate: u64,
-    /// whether unicode symbols are used to improve the overall look of the app
-    #[argh(option, default = "true")]
-    enhanced_graphics: bool,
-}
-
-fn main() -> Result<(), Box<dyn Error>> {
-    let cli: Cli = argh::from_env();
-
+pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
     // setup terminal
     let stdout = io::stdout().into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);
@@ -38,8 +20,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     // create app and run it
-    let tick_rate = Duration::from_millis(cli.tick_rate);
-    let app = App::new("Termion demo", cli.enhanced_graphics);
+    let app = App::new("Termion demo", enhanced_graphics);
     run_app(&mut terminal, app, tick_rate)?;
 
     Ok(())

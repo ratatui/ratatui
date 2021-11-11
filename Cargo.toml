@@ -37,6 +37,57 @@ argh = "0.1"
 features = ["termion", "crossterm", "curses"]
 
 [[example]]
-name = "termion_demo"
-path = "examples/termion_demo.rs"
-required-features = ["termion"]
+name = "barchart"
+required-features = ["crossterm"]
+
+[[example]]
+name = "block"
+required-features = ["crossterm"]
+
+[[example]]
+name = "canvas"
+required-features = ["crossterm"]
+
+[[example]]
+name = "chart"
+required-features = ["crossterm"]
+
+[[example]]
+name = "custom_widget"
+required-features = ["crossterm"]
+
+[[example]]
+name = "gauge"
+required-features = ["crossterm"]
+
+[[example]]
+name = "layout"
+required-features = ["crossterm"]
+
+[[example]]
+name = "list"
+required-features = ["crossterm"]
+
+[[example]]
+name = "paragraph"
+required-features = ["crossterm"]
+
+[[example]]
+name = "popup"
+required-features = ["crossterm"]
+
+[[example]]
+name = "sparkline"
+required-features = ["crossterm"]
+
+[[example]]
+name = "table"
+required-features = ["crossterm"]
+
+[[example]]
+name = "tabs"
+required-features = ["crossterm"]
+
+[[example]]
+name = "user_input"
+required-features = ["crossterm"]

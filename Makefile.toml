@@ -1,28 +1,34 @@
 [config]
 skip_core_tasks = true
 
-[env.TUI_FEATURES]
-source = "${CARGO_MAKE_RUST_TARGET_OS}"
-default_value = "unknown"
-
-[env.TUI_FEATURES.mapping]
-linux = "serde,crossterm,termion"
-macos = "serde,crossterm,termion"
-windows = "serde,crossterm"
-
-[tasks.default]
-dependencies = [
-  "check",
-]
-
 [tasks.ci]
-dependencies = [
-  "fmt",
-  "check",
-  "test",
-  "clippy",
+run_task = [
+    { name = "ci-unix", condition = { platforms = ["linux", "mac"] } },
+    { name = "ci-windows", condition = { platforms = ["windows"] } },
 ]
 
+[tasks.ci-unix]
+private = true
+dependencies = [
+    "fmt",
+    "check-crossterm",
+    "check-termion",
+    "test-crossterm",
+    "test-termion",
+    "clippy-crossterm",
+    "clippy-termion",
+    "test-doc",
+]
+
+[tasks.ci-windows]
+private = true
+dependencies = [
+    "fmt",
+    "check-crossterm",
+    "test-crossterm",
+    "clippy-crossterm",
+    "test-doc",
+]
 
 [tasks.fmt]
 command = "cargo"
@@ -33,8 +39,17 @@ args = [
   "--check",
 ]
 
+[tasks.check-crossterm]
+env = { TUI_FEATURES = "serde,crossterm" }
+run_task = "check"
+
+[tasks.check-termion]
+env = { TUI_FEATURES = "serde,termion" }
+run_task = "check"
+
 [tasks.check]
 command = "cargo"
+condition = { env_set = ["TUI_FEATURES"] }
 args = [
   "check",
   "--no-default-features",
@@ -43,8 +58,17 @@ args = [
   "--all-targets",
 ]
 
+[tasks.build-crossterm]
+env = { TUI_FEATURES = "serde,crossterm" }
+run_task = "build"
+
+[tasks.build-termion]
+env = { TUI_FEATURES = "serde,termion" }
+run_task = "build"
+
 [tasks.build]
 command = "cargo"
+condition = { env_set = ["TUI_FEATURES"] }
 args = [
   "build",
   "--no-default-features",
@@ -53,8 +77,17 @@ args = [
   "--all-targets",
 ]
 
+[tasks.clippy-crossterm]
+env = { TUI_FEATURES = "serde,crossterm" }
+run_task = "clippy"
+
+[tasks.clippy-termion]
+env = { TUI_FEATURES = "serde,termion" }
+run_task = "clippy"
+
 [tasks.clippy]
 command = "cargo"
+condition = { env_set = ["TUI_FEATURES"] }
 args = [
   "clippy",
   "--no-default-features",
@@ -65,48 +98,50 @@ args = [
   "warnings",
 ]
 
+[tasks.test-crossterm]
+env = { TUI_FEATURES = "serde,crossterm" }
+run_task = "test"
+
+[tasks.test-termion]
+env = { TUI_FEATURES = "serde,termion" }
+run_task = "test"
+
 [tasks.test]
 command = "cargo"
+condition = { env_set = ["TUI_FEATURES"] }
 args = [
   "test",
   "--no-default-features",
   "--features",
-  "${TUI_FEATURES}"
+  "${TUI_FEATURES}",
+  "--lib",
+  "--tests",
+  "--examples",
+]
+
+[tasks.test-doc]
+command = "cargo"
+args = [
+  "test",
+  "--doc",
 ]
 
 [tasks.run-example]
 private = true
-condition = { env_set = ["TUI_EXAMPLE_NAME", "TUI_FEATURES"] }
+condition = { env_set = ["TUI_EXAMPLE_NAME"] }
 command = "cargo"
 args = [
     "run",
-    "--features",
-    "${TUI_FEATURES}",
     "--release",
     "--example",
     "${TUI_EXAMPLE_NAME}"
 ]
 
-[tasks.run-example-windows]
-private = true
-condition = { env = {"TUI_EXAMPLE_NAME" = "crossterm_demo"} }
-run_task = "run-example"
-
-[tasks.run-example-router]
-private = true
-run_task = [
-    { name = "run-example-windows", condition = { platforms = ["window"] } },
-    { name = "run-example" }
-]
-
 [tasks.build-examples]
-condition = { env_set = ["TUI_FEATURES"] }
 command = "cargo"
 args = [
     "build",
     "--examples",
-    "--features",
-    "${TUI_FEATURES}",
     "--release"
 ]
 
@@ -119,6 +154,6 @@ for file in ${files}
   name = basename ${file}
   name = substring ${name} -3
   set_env TUI_EXAMPLE_NAME ${name}
-  cm_run_task run-example-router
+  cm_run_task run-example
 end
 '''

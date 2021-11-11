@@ -1,7 +1,3 @@
-#[allow(dead_code)]
-mod util;
-
-use crate::util::TabsState;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -18,13 +14,27 @@ use tui::{
 };
 
 struct App<'a> {
-    tabs: TabsState<'a>,
+    pub titles: Vec<&'a str>,
+    pub index: usize,
 }
 
 impl<'a> App<'a> {
     fn new() -> App<'a> {
         App {
-            tabs: TabsState::new(vec!["Tab0", "Tab1", "Tab2", "Tab3"]),
+            titles: vec!["Tab0", "Tab1", "Tab2", "Tab3"],
+            index: 0,
+        }
+    }
+
+    pub fn next(&mut self) {
+        self.index = (self.index + 1) % self.titles.len();
+    }
+
+    pub fn previous(&mut self) {
+        if self.index > 0 {
+            self.index -= 1;
+        } else {
+            self.index = self.titles.len() - 1;
         }
     }
 }
@@ -64,8 +74,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
-                KeyCode::Right => app.tabs.next(),
-                KeyCode::Left => app.tabs.previous(),
+                KeyCode::Right => app.next(),
+                KeyCode::Left => app.previous(),
                 _ => {}
             }
         }
@@ -83,7 +93,6 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
     f.render_widget(block, size);
     let titles = app
-        .tabs
         .titles
         .iter()
         .map(|t| {
@@ -96,7 +105,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .collect();
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title("Tabs"))
-        .select(app.tabs.index)
+        .select(app.index)
         .style(Style::default().fg(Color::Cyan))
         .highlight_style(
             Style::default()
@@ -104,7 +113,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 .bg(Color::Black),
         );
     f.render_widget(tabs, chunks[0]);
-    let inner = match app.tabs.index {
+    let inner = match app.index {
         0 => Block::default().title("Inner 0").borders(Borders::ALL),
         1 => Block::default().title("Inner 1").borders(Borders::ALL),
         2 => Block::default().title("Inner 2").borders(Borders::ALL),

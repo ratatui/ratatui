@@ -11,15 +11,9 @@ user interfaces and dashboards. It is heavily inspired by the `Javascript`
 library [blessed-contrib](https://github.com/yaronn/blessed-contrib) and the
 `Go` library [termui](https://github.com/gizak/termui).
 
-The library itself supports four different backends to draw to the terminal. You
-can either choose from:
-
+The library supports multiple backends:
+  - [crossterm](https://github.com/crossterm-rs/crossterm) [default]
   - [termion](https://github.com/ticki/termion)
-  - [rustbox](https://github.com/gchp/rustbox)
-  - [crossterm](https://github.com/crossterm-rs/crossterm)
-  - [pancurses](https://github.com/ihalila/pancurses)
-
-However, some features may only be available in one of the four.
 
 The library is based on the principle of immediate rendering with intermediate
 buffers. This means that at each new frame you should build all widgets that are
@@ -34,18 +28,19 @@ you may rely on the previously cited libraries to achieve such features.
 
 ### Rust version requirements
 
-Since version 0.10.0, `tui` requires **rustc version 1.44.0 or greater**.
+Since version 0.17.0, `tui` requires **rustc version 1.52.1 or greater**.
 
 ### [Documentation](https://docs.rs/tui)
 
 ### Demo
 
-The demo shown in the gif can be run with all available backends
-(`examples/*_demo.rs` files). For example to see the `termion` version one could
-run:
+The demo shown in the gif can be run with all available backends.
 
 ```
-cargo run --example termion_demo --release -- --tick-rate 200
+# crossterm
+cargo run --example demo --release -- --tick-rate 200
+# termion
+cargo run --example demo --no-default-features --features=termion --release -- --tick-rate 200
 ```
 
 where `tick-rate` is the UI refresh rate in ms.
@@ -53,18 +48,11 @@ where `tick-rate` is the UI refresh rate in ms.
 The UI code is in [examples/demo/ui.rs](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/demo/ui.rs) while the
 application state is in [examples/demo/app.rs](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/demo/app.rs).
 
-Beware that the `termion_demo` only works on Unix platforms. If you are a Windows user,
-you can see the same demo using the `crossterm` backend with the following command:
-
-```
-cargo run --example crossterm_demo --no-default-features --features="crossterm" --release -- --tick-rate 200
-```
-
 If the user interface contains glyphs that are not displayed correctly by your terminal, you may want to run
 the demo without those symbols:
 
 ```
-cargo run --example crossterm_demo --no-default-features --features="crossterm" --release -- --tick-rate 200 --enhanced-graphics false
+cargo run --example demo --release -- --tick-rate 200 --enhanced-graphics false
 ```
 
 ### Widgets
@@ -83,9 +71,10 @@ The library comes with the following list of widgets:
   * [Tabs](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/tabs.rs)
 
 Click on each item to see the source of the example. Run the examples with with 
-cargo (e.g. to run the demo `cargo run --example demo`), and quit by pressing `q`.
+cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by pressing `q`.
 
-You can run all examples by running `make run-examples`.
+You can run all examples by running `cargo make run-examples` (require
+`cargo-make` that can be installed with `cargo install cargo-make`).
 
 ### Third-party widgets
 

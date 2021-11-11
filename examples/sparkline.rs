@@ -1,11 +1,11 @@
-#[allow(dead_code)]
-mod util;
-
-use crate::util::RandomSignal;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use rand::{
+    distributions::{Distribution, Uniform},
+    rngs::ThreadRng,
 };
 use std::{
     error::Error,
@@ -19,6 +19,28 @@ use tui::{
     widgets::{Block, Borders, Sparkline},
     Frame, Terminal,
 };
+
+#[derive(Clone)]
+pub struct RandomSignal {
+    distribution: Uniform<u64>,
+    rng: ThreadRng,
+}
+
+impl RandomSignal {
+    pub fn new(lower: u64, upper: u64) -> RandomSignal {
+        RandomSignal {
+            distribution: Uniform::new(lower, upper),
+            rng: rand::thread_rng(),
+        }
+    }
+}
+
+impl Iterator for RandomSignal {
+    type Item = u64;
+    fn next(&mut self) -> Option<u64> {
+        Some(self.distribution.sample(&mut self.rng))
+    }
+}
 
 struct App {
     signal: RandomSignal,

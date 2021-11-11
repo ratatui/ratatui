@@ -1,10 +1,4 @@
-#[allow(dead_code)]
-mod demo;
-#[allow(dead_code)]
-mod util;
-
-use crate::demo::{ui, App};
-use argh::FromArgs;
+use crate::{app::App, ui};
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -20,20 +14,7 @@ use tui::{
     Terminal,
 };
 
-/// Crossterm demo
-#[derive(Debug, FromArgs)]
-struct Cli {
-    /// time in ms between two ticks.
-    #[argh(option, default = "250")]
-    tick_rate: u64,
-    /// whether unicode symbols are used to improve the overall look of the app
-    #[argh(option, default = "true")]
-    enhanced_graphics: bool,
-}
-
-fn main() -> Result<(), Box<dyn Error>> {
-    let cli: Cli = argh::from_env();
-
+pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
     // setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -42,8 +23,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     // create app and run it
-    let tick_rate = Duration::from_millis(cli.tick_rate);
-    let app = App::new("Crossterm Demo", cli.enhanced_graphics);
+    let app = App::new("Crossterm Demo", enhanced_graphics);
     let res = run_app(&mut terminal, app, tick_rate);
 
     // restore terminal
