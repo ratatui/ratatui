@@ -117,6 +117,7 @@ You can run all examples by running `make run-examples`.
 * [Battleship.rs](https://github.com/deepu105/battleship-rs)
 * [termscp](https://github.com/veeso/termscp)
 * [joshuto](https://github.com/kamiyaa/joshuto)
+* [adsb_deku/radar](https://github.com/wcampbell0x2a/adsb_deku#radar-tui)
 
 ### Alternatives
 
