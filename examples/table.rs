@@ -149,7 +149,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .widths(&[
             Constraint::Percentage(50),
             Constraint::Length(30),
-            Constraint::Max(10),
+            Constraint::Min(10),
         ]);
     f.render_stateful_widget(t, rects[0], &mut app.state);
 }
