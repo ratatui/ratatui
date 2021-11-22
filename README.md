@@ -107,6 +107,7 @@ You can run all examples by running `cargo make run-examples` (require
 * [termscp](https://github.com/veeso/termscp)
 * [joshuto](https://github.com/kamiyaa/joshuto)
 * [adsb_deku/radar](https://github.com/wcampbell0x2a/adsb_deku#radar-tui)
+* [hoard](https://github.com/Hyde46/hoard)
 
 ### Alternatives
 
