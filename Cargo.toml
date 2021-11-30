@@ -95,12 +95,22 @@ name = "demo"
 doc-scrape-examples = false
 
 [[example]]
+name = "filter"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
 name = "gauge"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
 name = "hello_world"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "inline"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
@@ -151,10 +161,5 @@ doc-scrape-examples = true
 
 [[example]]
 name = "user_input"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
-name = "inline"
 required-features = ["crossterm"]
 doc-scrape-examples = true
