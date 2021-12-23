@@ -26,7 +26,7 @@ unicode-segmentation = "1.2"
 unicode-width = "0.1"
 termion = { version = "1.5", optional = true }
 crossterm = { version = "0.22", optional = true }
-serde = { version = "1", "optional" = true, features = ["derive"]}
+serde = { version = "1", optional = true, features = ["derive"]}
 
 [dev-dependencies]
 rand = "0.8"
