@@ -335,19 +335,10 @@ impl<'a> Table<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct TableState {
     offset: usize,
     selected: Option<usize>,
-}
-
-impl Default for TableState {
-    fn default() -> TableState {
-        TableState {
-            offset: 0,
-            selected: None,
-        }
-    }
 }
 
 impl TableState {

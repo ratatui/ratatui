@@ -141,7 +141,7 @@ impl<'a> Dataset<'a> {
 
 /// A container that holds all the infos about where to display each elements of the chart (axis,
 /// labels, legend, ...).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 struct ChartLayout {
     /// Location of the title of the x axis
     title_x: Option<(u16, u16)>,
@@ -159,21 +159,6 @@ struct ChartLayout {
     legend_area: Option<Rect>,
     /// Area of the graph
     graph_area: Rect,
-}
-
-impl Default for ChartLayout {
-    fn default() -> ChartLayout {
-        ChartLayout {
-            title_x: None,
-            title_y: None,
-            label_x: None,
-            label_y: None,
-            axis_x: None,
-            axis_y: None,
-            legend_area: None,
-            graph_area: Rect::default(),
-        }
-    }
 }
 
 /// A widget to plot one or more dataset in a cartesian coordinate system
