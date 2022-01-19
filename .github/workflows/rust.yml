@@ -9,43 +9,37 @@ on:
 
 jobs:
   test:
-    name: Test ${{ matrix.os }} ${{ matrix.toolchain }}
+    name: Test ${{ matrix.toolchain }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.toolchain == 'nightly' }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
         toolchain:
           - stable
+        os:
+          - ubuntu-latest
+          - macos-11
         clippyargs:
           - -D clippy::pedantic -D warnings
         features:
           - --all-features
         include:
           # Check future versions and maybe get some glances on soon to be lints
-          - os: ubuntu-latest
-            toolchain: beta
+          - toolchain: beta
+            os: ubuntu-latest
+            features: --all-features
             clippyargs: -W clippy::pedantic -W clippy::nursery -W clippy::cargo
+          - toolchain: nightly
+            os: ubuntu-latest
             features: --all-features
-          - os: ubuntu-latest
-            toolchain: nightly
             clippyargs: -W clippy::pedantic
-            features: --all-features
 
-          # Check if it is still running on older Rust versions.
-          # Sometimes they dont have lint bugfixes which results in false positives -> Dont error, just warn.
-          # Also some specified lints are not yet existing in the older rust version -> allow unknown lints.
-          # https://packages.debian.org/search?keywords=rustc
-          # https://pkgs.alpinelinux.org/packages?name=rust
+          # Check the minimum supported Rust version (MSRV).
+          # Sometimes old rust versions don't yet have the lints (allow unknown) or don't have fixes in lints (false positives -> don't error, just warn).
+          # When a certain distro is a target look up its version: https://repology.org/project/rust/versions
           - os: ubuntu-latest
-            toolchain: 1.48.0 # Debian 11 Bullseye
-            clippyargs: -A unknown-lints -A clippy::unknown-clippy-lints
-            features: --all-features
-          - os: ubuntu-latest
-            toolchain: 1.52.1 # Alpine 3.14
+            toolchain: 1.48.0
             clippyargs: -A unknown-lints
             features: --all-features
     steps:
@@ -85,19 +79,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            triple: x86_64-unknown-linux-gnu
-          - os: ubuntu-latest
-            triple: arm-unknown-linux-gnueabihf
-          - os: ubuntu-latest
-            triple: armv7-unknown-linux-gnueabihf
-          - os: ubuntu-latest
-            triple: aarch64-unknown-linux-gnu
+          - triple: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - triple: arm-unknown-linux-gnueabihf
+            os: ubuntu-latest
+          - triple: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+          - triple: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
 
-          - os: macos-latest
-            triple: x86_64-apple-darwin
-          - os: macos-latest
-            triple: aarch64-apple-darwin
+          - triple: x86_64-apple-darwin
+            os: macos-11
+          - triple: aarch64-apple-darwin
+            os: macos-11
     steps:
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
@@ -111,9 +105,6 @@ jobs:
 
       - name: Build
         uses: actions-rs/cargo@v1
-        env:
-          # TODO: Remove this once macos-11 is macos-latest
-          SDKROOT: /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk
         with:
           command: build
           args: --release --verbose --all-features --target ${{ matrix.triple }}
