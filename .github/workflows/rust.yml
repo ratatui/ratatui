@@ -4,8 +4,8 @@ on:
   push:
   pull_request:
   schedule:
-    # Check if it works with current dependencies (weekly on Wednesday 2:32 UTC)
-    - cron: '32 2 * * 3'
+    # Check if it works with current dependencies
+    - cron: '42 2 * * 6' # weekly on Saturday 2:42 UTC
 
 jobs:
   test:

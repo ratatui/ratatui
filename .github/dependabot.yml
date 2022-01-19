@@ -8,6 +8,7 @@ updates:
     open-pull-requests-limit: 30
     schedule:
       interval: "weekly"
-      time: "03:37" # UTC
+      day: "saturday"
+      time: "02:42" # UTC
     commit-message:
       prefix: "build(cargo):"
