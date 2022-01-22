@@ -12,7 +12,7 @@ readme = "README.md"
 license = "MIT"
 exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
 autoexamples = true
-edition = "2018"
+edition = "2021"
 
 [badges]
 
