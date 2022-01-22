@@ -45,8 +45,8 @@ cargo run --example demo --no-default-features --features=termion --release -- -
 
 where `tick-rate` is the UI refresh rate in ms.
 
-The UI code is in [examples/demo/ui.rs](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/demo/ui.rs) while the
-application state is in [examples/demo/app.rs](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/demo/app.rs).
+The UI code is in [examples/demo/ui.rs](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/demo/ui.rs) while the
+application state is in [examples/demo/app.rs](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/demo/app.rs).
 
 If the user interface contains glyphs that are not displayed correctly by your terminal, you may want to run
 the demo without those symbols:
@@ -59,16 +59,16 @@ cargo run --example demo --release -- --tick-rate 200 --enhanced-graphics false
 
 The library comes with the following list of widgets:
 
-  * [Block](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/block.rs)
-  * [Gauge](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/gauge.rs)
-  * [Sparkline](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/sparkline.rs)
-  * [Chart](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/chart.rs)
-  * [BarChart](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/barchart.rs)
-  * [List](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/list.rs)
-  * [Table](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/table.rs)
-  * [Paragraph](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/paragraph.rs)
-  * [Canvas (with line, point cloud, map)](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/canvas.rs)
-  * [Tabs](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/tabs.rs)
+  * [Block](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/block.rs)
+  * [Gauge](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/gauge.rs)
+  * [Sparkline](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/sparkline.rs)
+  * [Chart](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/chart.rs)
+  * [BarChart](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/barchart.rs)
+  * [List](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/list.rs)
+  * [Table](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/table.rs)
+  * [Paragraph](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/paragraph.rs)
+  * [Canvas (with line, point cloud, map)](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/canvas.rs)
+  * [Tabs](https://github.com/fdehau/tui-rs/blob/v0.17.0/examples/tabs.rs)
 
 Click on each item to see the source of the example. Run the examples with with 
 cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by pressing `q`.
