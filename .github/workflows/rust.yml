@@ -19,7 +19,7 @@ jobs:
           - stable
         os:
           - ubuntu-latest
-          - macos-11
+          - macos-latest
         clippyargs:
           - -D clippy::pedantic -D warnings
         features:
@@ -52,6 +52,12 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
 
       - uses: actions/checkout@v2
+
+      - name: Fetch dependencies
+        uses: actions-rs/cargo@v1
+        with:
+          command: fetch
+          args: --verbose
 
       - name: Check clippy
         uses: actions-rs/cargo@v1
@@ -89,9 +95,9 @@ jobs:
             os: ubuntu-latest
 
           - triple: x86_64-apple-darwin
-            os: macos-11
+            os: macos-latest
           - triple: aarch64-apple-darwin
-            os: macos-11
+            os: macos-latest
     steps:
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
@@ -102,6 +108,12 @@ jobs:
           toolchain: stable
 
       - uses: actions/checkout@v2
+
+      - name: Fetch dependencies
+        uses: actions-rs/cargo@v1
+        with:
+          command: fetch
+          args: --verbose
 
       - name: Build
         uses: actions-rs/cargo@v1
