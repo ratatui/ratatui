@@ -7,7 +7,7 @@ repository = "https://github.com/EdJoPaTo/tui-rs-tree-widget"
 documentation = "https://docs.rs/tui-tree-widget"
 authors = ["EdJoPaTo <tui-tree-widget-rust-crate@edjopato.de>"]
 edition = "2018"
-rust-version = "1.48.0"
+rust-version = "1.56.1"
 keywords = ["tui", "terminal", "tree", "widget"]
 include = ["src/**/*", "README.md"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -16,13 +16,13 @@ include = ["src/**/*", "README.md"]
 unicode-width = "0.1"
 
 [dependencies.tui]
-version = "0.16"
+version = "0.17"
 default-features = false
 
 [dev-dependencies]
 termion = "1"
 
 [dev-dependencies.tui]
-version = "0.16"
+version = "0.17"
 default-features = false
 features = ["termion"]
