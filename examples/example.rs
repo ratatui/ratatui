@@ -82,6 +82,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Key::Right => {
                     app.tree.open();
                 }
+                Key::Char('\n') => {
+                    app.tree.toggle();
+                }
                 Key::Down => {
                     app.tree.next();
                 }
