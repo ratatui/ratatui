@@ -1,7 +1,7 @@
 [package]
 name = "tui-tree-widget"
 description = "Tree Widget for tui-rs"
-version = "0.8.0"
+version = "0.8.1"
 license = "MIT"
 repository = "https://github.com/EdJoPaTo/tui-rs-tree-widget"
 documentation = "https://docs.rs/tui-tree-widget"
