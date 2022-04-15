@@ -10,6 +10,22 @@ use ratatui::{
 };
 
 #[test]
+fn list_should_shows_the_length() {
+    let items = vec![
+        ListItem::new("Item 1"),
+        ListItem::new("Item 2"),
+        ListItem::new("Item 3"),
+    ];
+    let list = List::new(items);
+    assert_eq!(list.len(), 3);
+    assert!(!list.is_empty());
+
+    let empty_list = List::new(vec![]);
+    assert_eq!(empty_list.len(), 0);
+    assert!(empty_list.is_empty());
+}
+
+#[test]
 fn widgets_list_should_highlight_the_selected_item() {
     let backend = TestBackend::new(10, 3);
     let mut terminal = Terminal::new(backend).unwrap();

@@ -132,6 +132,14 @@ impl<'a> List<'a> {
         self
     }
 
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
+
     fn get_items_bounds(
         &self,
         selected: Option<usize>,
