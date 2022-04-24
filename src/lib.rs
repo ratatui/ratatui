@@ -9,8 +9,8 @@
 //!
 //! ```toml
 //! [dependencies]
-//! tui = "0.17"
-//! crossterm = "0.22"
+//! tui = "0.18"
+//! crossterm = "0.23"
 //! ```
 //!
 //! The crate is using the `crossterm` backend by default that works on most platforms. But if for
@@ -20,7 +20,7 @@
 //! ```toml
 //! [dependencies]
 //! termion = "1.5"
-//! tui = { version = "0.17", default-features = false, features = ['termion'] }
+//! tui = { version = "0.18", default-features = false, features = ['termion'] }
 //!
 //! ```
 //!

@@ -2,6 +2,12 @@
 
 ## To be released
 
+## v0.18.0 - 2022-04-24
+
+### Features
+
+* Update `crossterm` to `0.23`
+
 ## v0.17.0 - 2022-01-22
 
 ### Features
