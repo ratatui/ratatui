@@ -5,7 +5,10 @@
 //! [`Backend`]: trait.Backend.html
 //! [`CrosstermBackend`]: struct.CrosstermBackend.html
 
-use std::io::{self, Write};
+use std::{
+    io::{self, Write},
+    ops::{Deref, DerefMut},
+};
 
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
@@ -68,6 +71,20 @@ where
     /// Flushes the underlying buffer.
     fn flush(&mut self) -> io::Result<()> {
         self.buffer.flush()
+    }
+}
+
+impl<W: Write> Deref for CrosstermBackend<W> {
+    type Target = W;
+
+    fn deref(&self) -> &Self::Target {
+        &self.buffer
+    }
+}
+
+impl<W: Write> DerefMut for CrosstermBackend<W> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.buffer
     }
 }
 
