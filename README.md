@@ -26,6 +26,8 @@ comes from the terminal emulator than the library itself.
 Moreover, the library does not provide any input handling nor any event system and
 you may rely on the previously cited libraries to achieve such features.
 
+**I'm actively looking for help maintaining this crate. See [this issue](https://github.com/fdehau/tui-rs/issues/654)**
+
 ### Rust version requirements
 
 Since version 0.17.0, `tui` requires **rustc version 1.56.1 or greater**.
