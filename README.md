@@ -81,6 +81,8 @@ You can run all examples by running `cargo make run-examples` (require
 ### Third-party widgets
 
 * [tui-logger](https://github.com/gin66/tui-logger)
+* [tui-textarea](https://github.com/rhysd/tui-textarea): simple yet powerful multi-line text editor widget supporting several key shortcuts, undo/redo, text search, etc.
+* [tui-rs-tree-widgets](https://github.com/EdJoPaTo/tui-rs-tree-widget): widget for tree data structures.
 
 ### Apps using tui
 
@@ -117,6 +119,10 @@ You can run all examples by running `cargo make run-examples` (require
 * [meteo-tui](https://github.com/16arpi/meteo-tui): french weather via the command line.
 * [picterm](https://github.com/ksk001100/picterm): preview images in your terminal.
 * [gobang](https://github.com/TaKO8Ki/gobang): a cross-platform TUI database management tool.
+* [oxker](https://github.com/mrjackwills/oxker): a simple tui to view & control docker containers.
+* [trippy](https://github.com/fujiapple852/trippy): a network diagnostic tool.
+* [cotp](https://github.com/replydev/cotp): a trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality.
+* [hg-tui](https://github.com/kaixinbaba/hg-tui): view [hellogithub.com](https://hellogithub.com/) website on the terminal.
 
 ### Alternatives
 
