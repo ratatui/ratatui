@@ -8,7 +8,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 /// A buffer cell
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Cell {
     pub symbol: String,
     pub fg: Color,
@@ -105,7 +105,7 @@ impl Default for Cell {
 /// buf.get_mut(5, 0).set_char('x');
 /// assert_eq!(buf.get(5, 0).symbol, "x");
 /// ```
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Buffer {
     /// The area represented by this buffer
     pub area: Rect,

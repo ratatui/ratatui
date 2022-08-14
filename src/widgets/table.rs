@@ -31,7 +31,7 @@ use unicode_width::UnicodeWidthStr;
 ///
 /// You can apply a [`Style`] on the entire [`Cell`] using [`Cell::style`] or rely on the styling
 /// capabilities of [`Text`].
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Cell<'a> {
     content: Text<'a>,
     style: Style,
@@ -86,7 +86,7 @@ where
 /// ```
 ///
 /// By default, a row has a height of 1 but you can change this using [`Row::height`].
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Row<'a> {
     cells: Vec<Cell<'a>>,
     height: u16,
@@ -186,7 +186,7 @@ impl<'a> Row<'a> {
 /// // ...and potentially show a symbol in front of the selection.
 /// .highlight_symbol(">>");
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Table<'a> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,
