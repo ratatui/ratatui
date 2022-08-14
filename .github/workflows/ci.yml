@@ -9,7 +9,7 @@ on:
 name: CI
 
 env:
-  CI_CARGO_MAKE_VERSION: 0.35.8
+  CI_CARGO_MAKE_VERSION: 0.35.16
 
 jobs:
   linux:
