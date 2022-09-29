@@ -48,6 +48,8 @@ pub struct Block<'a> {
     /// Title alignment. The default is top left of the block, but one can choose to place
     /// title in the top middle, or top right of the block
     title_alignment: Alignment,
+    /// Whether or not title goes on top or bottom row of the block
+    title_on_bottom: bool,
     /// Visible borders
     borders: Borders,
     /// Border style
@@ -64,6 +66,7 @@ impl<'a> Default for Block<'a> {
         Block {
             title: None,
             title_alignment: Alignment::Left,
+            title_on_bottom: false,
             borders: Borders::NONE,
             border_style: Default::default(),
             border_type: BorderType::Plain,
@@ -95,6 +98,11 @@ impl<'a> Block<'a> {
 
     pub fn title_alignment(mut self, alignment: Alignment) -> Block<'a> {
         self.title_alignment = alignment;
+        self
+    }
+
+    pub fn title_on_bottom(mut self) -> Block<'a> {
+        self.title_on_bottom = true;
         self
     }
 
@@ -230,7 +238,11 @@ impl<'a> Widget for Block<'a> {
             };
 
             let title_x = area.left() + title_dx;
-            let title_y = area.top();
+            let title_y = if self.title_on_bottom {
+                area.bottom() - 1
+            } else {
+                area.top()
+            };
 
             buf.set_spans(title_x, title_y, &title, title_area_width);
         }
@@ -571,3 +583,4 @@ mod tests {
         );
     }
 }
+
