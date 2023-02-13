@@ -10,7 +10,7 @@
 
 This fork was created after the original repository was **no longer maintained**. The original maintainer had created an [issue](https://github.com/fdehau/tui-rs/issues/654) to which he didn't reply leaving us with no choice but to create this fork in order to **continue development on this crate.**
 
-In order to organize ourselves, we have created a **temporary** [discord]() server. We have not yet determined with the community what will be our definitive communication medium.
+In order to organize ourselves, we have created a **temporary** [discord](https://discord.gg/pMCEU9hNEj) server. We have not yet determined with the community what will be our definitive communication medium.
 
 Please make sure you read the updated contributing guidelines, especially if you are interested in working on a PR or issue opened in the previous repository.
 
