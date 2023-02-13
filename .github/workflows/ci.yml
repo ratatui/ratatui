@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: ["1.56.1", "stable"]
+        rust: ["1.59", "stable"]
     steps:
       - uses: hecrj/setup-rust-action@967aec96c6a27a0ce15c1dac3aaba332d60565e2
         with:
@@ -45,7 +45,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        rust: ["1.56.1", "stable"]
+        rust: ["1.59", "stable"]
     steps:
       - uses: actions/checkout@v1
       - uses: hecrj/setup-rust-action@967aec96c6a27a0ce15c1dac3aaba332d60565e2
