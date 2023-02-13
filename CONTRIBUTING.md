@@ -2,11 +2,11 @@
 
 ## Pull Requests
 
-**All** pull requests opened on the original repository have been imported. We'll be going through any open PRs in a timely manner, starting with the **smallest bug fixes and REAMDE updates**. If you have an open PR make sure to let us know about it on our [discord](https://discord.gg/pMCEU9hNEj) as it helps to know you are still active.
+**All** pull requests opened on the original repository have been imported. We'll be going through any open PRs in a timely manner, starting with the **smallest bug fixes and README updates**. If you have an open PR make sure to let us know about it on our [discord](https://discord.gg/pMCEU9hNEj) as it helps to know you are still active.
 
 ## Issues
 
-We have been unsuccessfull in importing all issues opened on the previous repository.
+We have been unsuccessful in importing all issues opened on the previous repository.
 For that reason, anyone wanting to **work on or discuss** an issue will have to follow the following workflow :
 
 - Recreate the issue
