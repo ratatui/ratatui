@@ -12,8 +12,9 @@ library [blessed-contrib](https://github.com/yaronn/blessed-contrib) and the
 `Go` library [termui](https://github.com/gizak/termui).
 
 The library supports multiple backends:
-  - [crossterm](https://github.com/crossterm-rs/crossterm) [default]
-  - [termion](https://github.com/ticki/termion)
+
+- [crossterm](https://github.com/crossterm-rs/crossterm) [default]
+- [termion](https://github.com/ticki/termion)
 
 The library is based on the principle of immediate rendering with intermediate
 buffers. This means that at each new frame you should build all widgets that are
@@ -59,18 +60,18 @@ cargo run --example demo --release -- --tick-rate 200 --enhanced-graphics false
 
 The library comes with the following list of widgets:
 
-  * [Block](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/block.rs)
-  * [Gauge](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/gauge.rs)
-  * [Sparkline](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/sparkline.rs)
-  * [Chart](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/chart.rs)
-  * [BarChart](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/barchart.rs)
-  * [List](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/list.rs)
-  * [Table](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/table.rs)
-  * [Paragraph](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/paragraph.rs)
-  * [Canvas (with line, point cloud, map)](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/canvas.rs)
-  * [Tabs](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/tabs.rs)
+- [Block](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/block.rs)
+- [Gauge](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/gauge.rs)
+- [Sparkline](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/sparkline.rs)
+- [Chart](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/chart.rs)
+- [BarChart](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/barchart.rs)
+- [List](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/list.rs)
+- [Table](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/table.rs)
+- [Paragraph](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/paragraph.rs)
+- [Canvas (with line, point cloud, map)](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/canvas.rs)
+- [Tabs](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/tabs.rs)
 
-Click on each item to see the source of the example. Run the examples with with 
+Click on each item to see the source of the example. Run the examples with with
 cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by pressing `q`.
 
 You can run all examples by running `cargo make run-examples` (require
@@ -78,54 +79,54 @@ You can run all examples by running `cargo make run-examples` (require
 
 ### Third-party libraries, bootstrapping templates and widgets
 
-* [Ansi-to-tui](https://github.com/uttarayan21/ansi-to-tui) — Convert ansi colored text to `tui::text::Text`
-* [Color-to-tui](https://github.com/uttarayan21/color-to-tui) — Parse hex colors to `tui::style::Color`
-* [Rust-tui-template](https://github.com/orhun/rust-tui-template) — A template for bootstrapping a Rust TUI application with Tui-rs & crossterm
-* [Simple-tui-rs](https://github.com/pmsanford/simple-tui-rs) — A simple example tui-rs app
-* [Tui-builder](https://github.com/jkelleyrtp/tui-builder) — Batteries-included MVC framework for Tui-rs + Crossterm apps
-* [Tui-clap](https://github.com/kegesch/tui-clap-rs) — Use clap-rs together with Tui-rs
-* [Tui-log](https://github.com/kegesch/tui-log-rs) — Example of how to use logging with Tui-rs
-* [tui-logger](https://github.com/gin66/tui-logger) — Logger and Widget for Tui-rs
-* [Tui-realm](https://github.com/veeso/tui-realm) — Tui-rs framework to build stateful applications with a React/Elm inspired approach
-* [Tui-realm-treeview](https://github.com/veeso/tui-realm-treeview) — Treeview component for Tui-realm
-* [Tui tree widget](https://github.com/EdJoPaTo/tui-rs-tree-widget) — Tree Widget for Tui-rs
-* [Tui-windows](https://github.com/markatk/tui-windows-rs) — Tui-rs abstraction to handle multiple windows and their rendering
+- [ansi-to-tui](https://github.com/uttarayan21/ansi-to-tui) — Convert ansi colored text to `tui::text::Text`
+- [color-to-tui](https://github.com/uttarayan21/color-to-tui) — Parse hex colors to `tui::style::Color`
+- [rust-tui-template](https://github.com/orhun/rust-tui-template) — A template for bootstrapping a Rust TUI application with Tui-rs & crossterm
+- [simple-tui-rs](https://github.com/pmsanford/simple-tui-rs) — A simple example tui-rs app
+- [tui-builder](https://github.com/jkelleyrtp/tui-builder) — Batteries-included MVC framework for Tui-rs + Crossterm apps
+- [tui-clap](https://github.com/kegesch/tui-clap-rs) — Use clap-rs together with Tui-rs
+- [tui-log](https://github.com/kegesch/tui-log-rs) — Example of how to use logging with Tui-rs
+- [tui-logger](https://github.com/gin66/tui-logger) — Logger and Widget for Tui-rs
+- [tui-realm](https://github.com/veeso/tui-realm) — Tui-rs framework to build stateful applications with a React/Elm inspired approach
+- [tui-realm-treeview](https://github.com/veeso/tui-realm-treeview) — Treeview component for Tui-realm
+- [tui tree widget](https://github.com/EdJoPaTo/tui-rs-tree-widget) — Tree Widget for Tui-rs
+- [tui-windows](https://github.com/markatk/tui-windows-rs) — Tui-rs abstraction to handle multiple windows and their rendering
 
 ### Apps using tui
 
-* [Adsb_deku/radar](https://github.com/wcampbell0x2a/adsb_deku#radar-tui) — Rust ADS-B decoder + TUI radar application
-* [Bandwhich](https://github.com/imsnif/bandwhich) — Terminal utility for displaying current network utilization by process, connection and remote IP/hostname
-* [Battleship.rs](https://github.com/deepu105/battleship-rs) — A terminal battleship game in Rust
-* [Bottom](https://github.com/ClementTsang/bottom) — Yet another cross-platform graphical process/system monitor
-* [Conclusive](https://github.com/mrusme/conclusive) — Command line client for Plausible Analytics
-* [Cotp](https://github.com/replydev/cotp) — Trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality
-* [Cube timer](https://github.com/paarthmadan/cube) — A tui-based Rubik's cube timer written in Rust
-* [Desed](https://github.com/SoptikHa2/desed) — Debugger for Sed: demystify and debug your sed scripts, from comfort of your terminal
-* [Diskonaut](https://github.com/imsnif/diskonaut) — Terminal disk space navigator
-* [Exhaust](https://github.com/heyrict/exhaust) — Exhaust all your possibilities.. for the next coming exam
-* [Game-of-life-rs](https://github.com/kachark/game-of-life-rs) — Conway's Game of Life implemented in Rust and visualized with Tui-rs
-* [Gitui](https://github.com/extrawurst/gitui) — Blazing fast terminal-ui for Git written in Rust
-* [Gpg-tui](https://github.com/orhun/gpg-tui) — Manage your GnuPG keys with ease!
-* [Gping](https://github.com/orf/gping) — Ping, but with a graph
-* [Joshuto](https://github.com/kamiyaa/joshuto) — Ranger-like terminal file manager written in Rust
-* [KDash](https://github.com/kdash-rs/kdash) — A simple and fast dashboard for Kubernetes
-* [Kmon](https://github.com/orhun/kmon) — Linux Kernel Manager and Activity Monitor
-* [Minesweep](https://github.com/cpcloud/minesweep-rs) — Sweep some mines for fun, and probably not for profit
-* [Oha](https://github.com/hatoo/oha) — HTTP load generator, inspired by rakyll/hey with tui animation
-* [Rrtop](https://github.com/wojciech-zurek/rrtop) — Redis monitoring (top like) app
-* [Rust-sadari-cli](https://github.com/24seconds/rust-sadari-cli) — Sadari game based on terminal
-* [Rusty-krab-manager](https://github.com/aryakaul/rusty-krab-manager) — Time-management TUI in Rust
-* [Spotify-tui](https://github.com/Rigellute/spotify-tui) — Spotify for the terminal written in Rust
-* [Taskwarrior-tui](https://github.com/kdheepak/taskwarrior-tui) — A terminal user interface for Taskwarrior
-* [Termchat](https://github.com/lemunozm/termchat) — Terminal chat through the LAN with video streaming and file transfer
-* [Termscp](https://github.com/veeso/termscp) — A feature rich terminal UI file transfer and explorer with support for SCP/SFTP/FTP/S3
-* [Tick-rs](https://github.com/tarkah/tickrs) — Realtime ticker data in your terminal
-* [Tsuchita](https://github.com/kamiyaa/tsuchita) — Client-server notification center for dbus desktop notifications
-* [Tuinance](https://github.com/landchad/tuinance) — Display financial data on the terminal
-* [Vector](https://vector.dev) — A lightweight, ultra-fast tool for building observability pipelines
-* [Xplr](https://github.com/sayanarijit/xplr) — A hackable, minimal, fast TUI file explorer
-* [Ytop](https://github.com/cjbassi/ytop) — A TUI system monitor written in Rust (no longer maintained)
-* [Zenith](https://github.com/bvaisvil/zenith) — Sort of like top or htop but with zoom-able charts, CPU, GPU, network, and disk usage
+- [adsb_deku/radar](https://github.com/wcampbell0x2a/adsb_deku#radar-tui) — Rust ADS-B decoder + TUI radar application
+- [bandwhich](https://github.com/imsnif/bandwhich) — Terminal utility for displaying current network utilization by process, connection and remote IP/hostname
+- [battleship.rs](https://github.com/deepu105/battleship-rs) — A terminal battleship game in Rust
+- [bottom](https://github.com/ClementTsang/bottom) — Yet another cross-platform graphical process/system monitor
+- [conclusive](https://github.com/mrusme/conclusive) — Command line client for Plausible Analytics
+- [cotp](https://github.com/replydev/cotp) — Trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality
+- [cube timer](https://github.com/paarthmadan/cube) — A tui-based Rubik's cube timer written in Rust
+- [desed](https://github.com/SoptikHa2/desed) — Debugger for Sed: demystify and debug your sed scripts, from comfort of your terminal
+- [diskonaut](https://github.com/imsnif/diskonaut) — Terminal disk space navigator
+- [exhaust](https://github.com/heyrict/exhaust) — Exhaust all your possibilities.. for the next coming exam
+- [game-of-life-rs](https://github.com/kachark/game-of-life-rs) — Conway's Game of Life implemented in Rust and visualized with Tui-rs
+- [gitui](https://github.com/extrawurst/gitui) — Blazing fast terminal-ui for Git written in Rust
+- [gpg-tui](https://github.com/orhun/gpg-tui) — Manage your GnuPG keys with ease!
+- [gping](https://github.com/orf/gping) — Ping, but with a graph
+- [joshuto](https://github.com/kamiyaa/joshuto) — Ranger-like terminal file manager written in Rust
+- [kDash](https://github.com/kdash-rs/kdash) — A simple and fast dashboard for Kubernetes
+- [kmon](https://github.com/orhun/kmon) — Linux Kernel Manager and Activity Monitor
+- [minesweep](https://github.com/cpcloud/minesweep-rs) — Sweep some mines for fun, and probably not for profit
+- [oha](https://github.com/hatoo/oha) — HTTP load generator, inspired by rakyll/hey with tui animation
+- [rrtop](https://github.com/wojciech-zurek/rrtop) — Redis monitoring (top like) app
+- [rust-sadari-cli](https://github.com/24seconds/rust-sadari-cli) — Sadari game based on terminal
+- [rusty-krab-manager](https://github.com/aryakaul/rusty-krab-manager) — Time-management TUI in Rust
+- [spotify-tui](https://github.com/Rigellute/spotify-tui) — Spotify for the terminal written in Rust
+- [taskwarrior-tui](https://github.com/kdheepak/taskwarrior-tui) — A terminal user interface for Taskwarrior
+- [termchat](https://github.com/lemunozm/termchat) — Terminal chat through the LAN with video streaming and file transfer
+- [termscp](https://github.com/veeso/termscp) — A feature rich terminal UI file transfer and explorer with support for SCP/SFTP/FTP/S3
+- [tick-rs](https://github.com/tarkah/tickrs) — Realtime ticker data in your terminal
+- [tsuchita](https://github.com/kamiyaa/tsuchita) — Client-server notification center for dbus desktop notifications
+- [tuinance](https://github.com/landchad/tuinance) — Display financial data on the terminal
+- [vector](https://vector.dev) — A lightweight, ultra-fast tool for building observability pipelines
+- [xplr](https://github.com/sayanarijit/xplr) — A hackable, minimal, fast TUI file explorer
+- [ytop](https://github.com/cjbassi/ytop) — A TUI system monitor written in Rust (no longer maintained)
+- [zenith](https://github.com/bvaisvil/zenith) — Sort of like top or htop but with zoom-able charts, CPU, GPU, network, and disk usage
 
 ### Alternatives
 
