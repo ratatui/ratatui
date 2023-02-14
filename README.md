@@ -96,6 +96,7 @@ You can run all examples by running `cargo make run-examples` (require
 * [tui-logger](https://github.com/gin66/tui-logger)
 * [tui-textarea](https://github.com/rhysd/tui-textarea): simple yet powerful multi-line text editor widget supporting several key shortcuts, undo/redo, text search, etc.
 * [tui-rs-tree-widgets](https://github.com/EdJoPaTo/tui-rs-tree-widget): widget for tree data structures.
+* [tui-input](https://github.com/sayanarijit/tui-input): TUI input library supporting multiple backends and tui-rs.
 
 # Apps using tui
 
@@ -118,7 +119,7 @@ You can run all examples by running `cargo make run-examples` (require
 * [gping](https://github.com/orf/gping/)
 * [Vector](https://vector.dev)
 * [KDash](https://github.com/kdash-rs/kdash)
-* [xplr](https://github.com/sayanarijit/xplr)
+* [xplr](https://github.com/sayanarijit/xplr): a hackable, minimal, fast TUI file explorer.
 * [minesweep](https://github.com/cpcloud/minesweep-rs)
 * [Battleship.rs](https://github.com/deepu105/battleship-rs)
 * [termscp](https://github.com/veeso/termscp)
