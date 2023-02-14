@@ -298,7 +298,7 @@ impl<'a> Text<'a> {
         };
 
         Text {
-            lines: if lines.len() == 0 {
+            lines: if lines.is_empty() {
                 vec![Spans::from("")]
             } else {
                 lines
