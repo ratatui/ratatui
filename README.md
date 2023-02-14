@@ -125,6 +125,7 @@ You can run all examples by running `cargo make run-examples` (require
 * [joshuto](https://github.com/kamiyaa/joshuto)
 * [adsb_deku/radar](https://github.com/wcampbell0x2a/adsb_deku#radar-tui)
 * [hoard](https://github.com/Hyde46/hoard)
+* [ruscode](https://github.com/MissterHao/ruscode): A visual studio code's workspaces organizer written in Rust.
 * [tokio-console](https://github.com/tokio-rs/console): a diagnostics and debugging tool for asynchronous Rust programs.
 * [hwatch](https://github.com/blacknon/hwatch): a alternative watch command that records the result of command execution and can display its history and diffs.
 * [ytui-music](https://github.com/sudipghimire533/ytui-music): listen to music from youtube inside your terminal.
