@@ -6,6 +6,16 @@
 
 <img src="./assets/demo.gif" alt="Demo cast under Linux Termite with Inconsolata font 12pt">
 
+# What is this fork?
+
+This fork was created to continue maintenance on the original TUI project. The original maintainer had created an [issue](https://github.com/fdehau/tui-rs/issues/654) explaining how he couldn't find time to continue development, which led to us creating this fork. From here, we hope to continue developing the TUI crate.
+
+In order to organize ourselves, we have created a **temporary** [discord server](https://discord.gg/pMCEU9hNEj). We have not yet determined with the community what will be our definitive communication medium.
+
+Please make sure you read the updated contributing guidelines, especially if you are interested in working on a PR or issue opened in the previous repository.
+
+# Introduction
+
 `tui-rs` is a [Rust](https://www.rust-lang.org) library to build rich terminal
 user interfaces and dashboards. It is heavily inspired by the `Javascript`
 library [blessed-contrib](https://github.com/yaronn/blessed-contrib) and the
@@ -26,15 +36,16 @@ comes from the terminal emulator than the library itself.
 Moreover, the library does not provide any input handling nor any event system and
 you may rely on the previously cited libraries to achieve such features.
 
-**I'm actively looking for help maintaining this crate. See [this issue](https://github.com/fdehau/tui-rs/issues/654)**
 
-### Rust version requirements
+## Rust version requirements
 
 Since version 0.17.0, `tui` requires **rustc version 1.56.1 or greater**.
 
-### [Documentation](https://docs.rs/tui)
+# Documentation
 
-### Demo
+The documentation can be found on [docs.rs.](https://docs.rs/tui)
+
+# Demo
 
 The demo shown in the gif can be run with all available backends.
 
@@ -57,7 +68,9 @@ the demo without those symbols:
 cargo run --example demo --release -- --tick-rate 200 --enhanced-graphics false
 ```
 
-### Widgets
+# Widgets
+
+## Built in
 
 The library comes with the following list of widgets:
 
@@ -78,13 +91,13 @@ cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by p
 You can run all examples by running `cargo make run-examples` (require
 `cargo-make` that can be installed with `cargo install cargo-make`).
 
-### Third-party widgets
+## Third-party
 
 * [tui-logger](https://github.com/gin66/tui-logger)
 * [tui-textarea](https://github.com/rhysd/tui-textarea): simple yet powerful multi-line text editor widget supporting several key shortcuts, undo/redo, text search, etc.
 * [tui-rs-tree-widgets](https://github.com/EdJoPaTo/tui-rs-tree-widget): widget for tree data structures.
 
-### Apps using tui
+# Apps using tui
 
 * [spotify-tui](https://github.com/Rigellute/spotify-tui)
 * [bandwhich](https://github.com/imsnif/bandwhich)
@@ -124,12 +137,13 @@ You can run all examples by running `cargo make run-examples` (require
 * [cotp](https://github.com/replydev/cotp): a trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality.
 * [hg-tui](https://github.com/kaixinbaba/hg-tui): view [hellogithub.com](https://hellogithub.com/) website on the terminal.
 * [edma](https://github.com/nomadiz/edma): a terminal app for embedded database management
+* [hncli](https://github.com/pierreyoda/hncli): an Hacker News TUI reader.
 
 ### Alternatives
 
 You might want to checkout [Cursive](https://github.com/gyscos/Cursive) for an
 alternative solution to build text user interfaces in Rust.
 
-## License
+# License
 
 [MIT](LICENSE)
