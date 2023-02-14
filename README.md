@@ -136,6 +136,7 @@ You can run all examples by running `cargo make run-examples` (require
 * [trippy](https://github.com/fujiapple852/trippy): a network diagnostic tool.
 * [cotp](https://github.com/replydev/cotp): a trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality.
 * [hg-tui](https://github.com/kaixinbaba/hg-tui): view [hellogithub.com](https://hellogithub.com/) website on the terminal.
+* [edma](https://github.com/nomadiz/edma): a terminal app for embedded database management
 * [hncli](https://github.com/pierreyoda/hncli): an Hacker News TUI reader.
 
 ### Alternatives
