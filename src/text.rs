@@ -52,14 +52,14 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 /// A grapheme associated to a style.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StyledGrapheme<'a> {
     pub symbol: &'a str,
     pub style: Style,
 }
 
 /// A string where all graphemes have the same style.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Span<'a> {
     pub content: Cow<'a, str>,
     pub style: Style,
@@ -194,14 +194,8 @@ impl<'a> From<&'a str> for Span<'a> {
 }
 
 /// A string composed of clusters of graphemes, each with their own style.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct Spans<'a>(pub Vec<Span<'a>>);
-
-impl<'a> Default for Spans<'a> {
-    fn default() -> Spans<'a> {
-        Spans(Vec::new())
-    }
-}
 
 impl<'a> Spans<'a> {
     /// Returns the width of the underlying string.
@@ -279,15 +273,9 @@ impl<'a> From<Spans<'a>> for String {
 /// text.extend(Text::styled("Some more lines\nnow with more style!", style));
 /// assert_eq!(6, text.height());
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct Text<'a> {
     pub lines: Vec<Spans<'a>>,
-}
-
-impl<'a> Default for Text<'a> {
-    fn default() -> Text<'a> {
-        Text { lines: Vec::new() }
-    }
 }
 
 impl<'a> Text<'a> {

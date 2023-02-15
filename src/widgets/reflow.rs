@@ -403,8 +403,8 @@ mod test {
         let text = "コンピュータ上で文字を扱う場合、典型的には文字による通信を行う場合にその両端点\
                     では、";
         let (word_wrapper, word_wrapper_width) =
-            run_composer(Composer::WordWrapper { trim: true }, &text, width);
-        let (line_truncator, _) = run_composer(Composer::LineTruncator, &text, width);
+            run_composer(Composer::WordWrapper { trim: true }, text, width);
+        let (line_truncator, _) = run_composer(Composer::LineTruncator, text, width);
         assert_eq!(line_truncator, vec!["コンピュータ上で文字"]);
         let wrapped = vec![
             "コンピュータ上で文字",
@@ -489,7 +489,7 @@ mod test {
         assert_eq!(word_wrapper, vec!["AAAAAAAAAAAAAAA", "AAAA\u{00a0}AAA",]);
 
         // Ensure that if the character was a regular space, it would be wrapped differently.
-        let text_space = text.replace("\u{00a0}", " ");
+        let text_space = text.replace('\u{00a0}', " ");
         let (word_wrapper_space, _) =
             run_composer(Composer::WordWrapper { trim: true }, &text_space, width);
         assert_eq!(word_wrapper_space, vec!["AAAAAAAAAAAAAAA AAAA", "AAA",]);

@@ -90,6 +90,7 @@ command = "cargo"
 condition = { env_set = ["TUI_FEATURES"] }
 args = [
   "clippy",
+  "--all-targets",
   "--no-default-features",
   "--features",
   "${TUI_FEATURES}",

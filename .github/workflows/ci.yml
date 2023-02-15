@@ -9,7 +9,7 @@ on:
 name: CI
 
 env:
-  CI_CARGO_MAKE_VERSION: 0.35.6
+  CI_CARGO_MAKE_VERSION: 0.35.16
 
 jobs:
   linux:
@@ -17,10 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: ["1.52.1", "stable"]
+        rust: ["1.56.1", "stable"]
     steps:
-      - name: "Install dependencies"
-        run: sudo apt-get install libncurses5-dev
       - uses: hecrj/setup-rust-action@967aec96c6a27a0ce15c1dac3aaba332d60565e2
         with:
           rust-version: ${{ matrix.rust }}
@@ -47,7 +45,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        rust: ["1.52.1", "stable"]
+        rust: ["1.56.1", "stable"]
     steps:
       - uses: actions/checkout@v1
       - uses: hecrj/setup-rust-action@967aec96c6a27a0ce15c1dac3aaba332d60565e2

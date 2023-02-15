@@ -45,9 +45,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
         terminal.draw(ui)?;
 
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => return Ok(()),
-                _ => {}
+            if let KeyCode::Char('q') = key.code {
+                return Ok(());
             }
         }
     }

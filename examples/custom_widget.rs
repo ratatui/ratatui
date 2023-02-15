@@ -13,14 +13,9 @@ use tui::{
     Frame, Terminal,
 };
 
+#[derive(Default)]
 struct Label<'a> {
     text: &'a str,
-}
-
-impl<'a> Default for Label<'a> {
-    fn default() -> Label<'a> {
-        Label { text: "" }
-    }
 }
 
 impl<'a> Widget for Label<'a> {
@@ -68,9 +63,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
         terminal.draw(ui)?;
 
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => return Ok(()),
-                _ => {}
+            if let KeyCode::Char('q') = key.code {
+                return Ok(());
             }
         }
     }

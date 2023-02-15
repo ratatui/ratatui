@@ -8,7 +8,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 /// A buffer cell
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Cell {
     pub symbol: String,
     pub fg: Color,
@@ -105,22 +105,13 @@ impl Default for Cell {
 /// buf.get_mut(5, 0).set_char('x');
 /// assert_eq!(buf.get(5, 0).symbol, "x");
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Buffer {
     /// The area represented by this buffer
     pub area: Rect,
     /// The content of the buffer. The length of this Vec should always be equal to area.width *
     /// area.height
     pub content: Vec<Cell>,
-}
-
-impl Default for Buffer {
-    fn default() -> Buffer {
-        Buffer {
-            area: Default::default(),
-            content: Vec::new(),
-        }
-    }
 }
 
 impl Buffer {
@@ -298,7 +289,7 @@ impl Buffer {
                 continue;
             }
             // `x_offset + width > max_offset` could be integer overflow on 32-bit machines if we
-            // change dimenstions to usize or u32 and someone resizes the terminal to 1x2^32.
+            // change dimensions to usize or u32 and someone resizes the terminal to 1x2^32.
             if width > max_offset.saturating_sub(x_offset) {
                 break;
             }
@@ -443,9 +434,9 @@ impl Buffer {
         let width = self.area.width;
 
         let mut updates: Vec<(u16, u16, &Cell)> = vec![];
-        // Cells invalidated by drawing/replacing preceeding multi-width characters:
+        // Cells invalidated by drawing/replacing preceding multi-width characters:
         let mut invalidated: usize = 0;
-        // Cells from the current buffer to skip due to preceeding multi-width characters taking their
+        // Cells from the current buffer to skip due to preceding multi-width characters taking their
         // place (the skipped cells should be blank anyway):
         let mut to_skip: usize = 0;
         for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {

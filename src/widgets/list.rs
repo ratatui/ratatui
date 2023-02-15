@@ -7,19 +7,10 @@ use crate::{
 };
 use unicode_width::UnicodeWidthStr;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ListState {
     offset: usize,
     selected: Option<usize>,
-}
-
-impl Default for ListState {
-    fn default() -> ListState {
-        ListState {
-            offset: 0,
-            selected: None,
-        }
-    }
 }
 
 impl ListState {
@@ -35,7 +26,7 @@ impl ListState {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListItem<'a> {
     content: Text<'a>,
     style: Style,

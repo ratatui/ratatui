@@ -6,6 +6,16 @@
 
 <img src="./assets/demo.gif" alt="Demo cast under Linux Termite with Inconsolata font 12pt">
 
+# What is this fork?
+
+This fork was created to continue maintenance on the original TUI project. The original maintainer had created an [issue](https://github.com/fdehau/tui-rs/issues/654) explaining how he couldn't find time to continue development, which led to us creating this fork. From here, we hope to continue developing the TUI crate.
+
+In order to organize ourselves, we have created a **temporary** [discord server](https://discord.gg/pMCEU9hNEj). We have not yet determined with the community what will be our definitive communication medium.
+
+Please make sure you read the updated contributing guidelines, especially if you are interested in working on a PR or issue opened in the previous repository.
+
+# Introduction
+
 `tui-rs` is a [Rust](https://www.rust-lang.org) library to build rich terminal
 user interfaces and dashboards. It is heavily inspired by the `Javascript`
 library [blessed-contrib](https://github.com/yaronn/blessed-contrib) and the
@@ -27,13 +37,15 @@ comes from the terminal emulator than the library itself.
 Moreover, the library does not provide any input handling nor any event system and
 you may rely on the previously cited libraries to achieve such features.
 
-### Rust version requirements
+## Rust version requirements
 
-Since version 0.17.0, `tui` requires **rustc version 1.52.1 or greater**.
+Since version 0.17.0, `tui` requires **rustc version 1.56.1 or greater**.
 
-### [Documentation](https://docs.rs/tui)
+# Documentation
 
-### Demo
+The documentation can be found on [docs.rs.](https://docs.rs/tui)
+
+# Demo
 
 The demo shown in the gif can be run with all available backends.
 
@@ -46,8 +58,8 @@ cargo run --example demo --no-default-features --features=termion --release -- -
 
 where `tick-rate` is the UI refresh rate in ms.
 
-The UI code is in [examples/demo/ui.rs](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/demo/ui.rs) while the
-application state is in [examples/demo/app.rs](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/demo/app.rs).
+The UI code is in [examples/demo/ui.rs](https://github.com/fdehau/tui-rs/blob/v0.19.0/examples/demo/ui.rs) while the
+application state is in [examples/demo/app.rs](https://github.com/fdehau/tui-rs/blob/v0.19.0/examples/demo/app.rs).
 
 If the user interface contains glyphs that are not displayed correctly by your terminal, you may want to run
 the demo without those symbols:
@@ -56,7 +68,9 @@ the demo without those symbols:
 cargo run --example demo --release -- --tick-rate 200 --enhanced-graphics false
 ```
 
-### Widgets
+# Widgets
+
+## Built in
 
 The library comes with the following list of widgets:
 
@@ -92,7 +106,7 @@ You can run all examples by running `cargo make run-examples` (require
 - [tui tree widget](https://github.com/EdJoPaTo/tui-rs-tree-widget) — Tree Widget for Tui-rs
 - [tui-windows](https://github.com/markatk/tui-windows-rs) — Tui-rs abstraction to handle multiple windows and their rendering
 
-### Apps using tui
+# Apps using tui
 
 - [adsb_deku/radar](https://github.com/wcampbell0x2a/adsb_deku#radar-tui) — Rust ADS-B decoder + TUI radar application
 - [bandwhich](https://github.com/imsnif/bandwhich) — Terminal utility for displaying current network utilization by process, connection and remote IP/hostname
@@ -133,6 +147,6 @@ You can run all examples by running `cargo make run-examples` (require
 You might want to checkout [Cursive](https://github.com/gyscos/Cursive) for an
 alternative solution to build text user interfaces in Rust.
 
-## License
+# License
 
 [MIT](LICENSE)

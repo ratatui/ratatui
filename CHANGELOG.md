@@ -2,9 +2,58 @@
 
 ## To be released
 
+## v0.19.0 - 2022-08-14
+
+### Features
+
+* Bump `crossterm` to `0.25`
+
+## v0.18.0 - 2022-04-24
+
+### Features
+
+* Update `crossterm` to `0.23`
+
+## v0.17.0 - 2022-01-22
+
 ### Features
 
 * Add option to `widgets::List` to repeat the hightlight symbol for each line of multi-line items (#533).
+* Add option to control the alignment of `Axis` labels in the `Chart` widget (#568).
+
+### Breaking changes
+
+* The minimum supported rust version is now `1.56.1`.
+
+#### New default backend and consolidated backend options (#553)
+
+* `crossterm` is now the default backend.
+If you are already using the `crossterm` backend, you can simplify your dependency specification in `Cargo.toml`:
+```diff
+- tui = { version = "0.16", default-features = false, features = ["crossterm"] }
++ tui = "0.17"
+```
+If you are using the `termion` backend, your `Cargo` is now a bit more verbose:
+```diff
+- tui = "0.16"
++ tui = { version = "0.17", default-features = false, features = ["termion"] }
+```
+
+`crossterm` has also been bumped to version `0.22`.
+
+Because of their apparent low usage, `curses` and `rustbox` backends have been removed.
+If you are using one of them, you can import their last implementation in your own project:
+* [curses](https://github.com/fdehau/tui-rs/blob/v0.16.0/src/backend/curses.rs)
+* [rustbox](https://github.com/fdehau/tui-rs/blob/v0.16.0/src/backend/rustbox.rs)
+
+#### Canvas labels (#543)
+
+* Labels of the `Canvas` widget are now `text::Spans`.
+The signature of `widgets::canvas::Context::print` has thus been updated:
+```diff
+- ctx.print(x, y, "Some text", Color::Yellow);
++ ctx.print(x, y, Span::styled("Some text", Style::default().fg(Color::Yellow)))
+```
 
 ## v0.16.0 - 2021-08-01
 

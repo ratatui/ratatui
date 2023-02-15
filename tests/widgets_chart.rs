@@ -1,3 +1,4 @@
+use tui::layout::Alignment;
 use tui::{
     backend::TestBackend,
     buffer::Buffer,
@@ -11,6 +12,22 @@ use tui::{
 
 fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {
     labels.iter().map(|l| Span::from(*l)).collect()
+}
+
+fn axis_test_case<S>(width: u16, height: u16, x_axis: Axis, y_axis: Axis, lines: Vec<S>)
+where
+    S: AsRef<str>,
+{
+    let backend = TestBackend::new(width, height);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let chart = Chart::new(vec![]).x_axis(x_axis).y_axis(y_axis);
+            f.render_widget(chart, f.size());
+        })
+        .unwrap();
+    let expected = Buffer::with_lines(lines);
+    terminal.backend().assert_buffer(&expected);
 }
 
 #[test]
@@ -49,33 +66,26 @@ fn widgets_chart_can_render_on_small_areas() {
 
 #[test]
 fn widgets_chart_handles_long_labels() {
-    let test_case = |x_labels, y_labels, lines| {
-        let backend = TestBackend::new(10, 5);
-        let mut terminal = Terminal::new(backend).unwrap();
-        terminal
-            .draw(|f| {
-                let datasets = vec![Dataset::default()
-                    .marker(symbols::Marker::Braille)
-                    .style(Style::default().fg(Color::Magenta))
-                    .data(&[(2.0, 2.0)])];
-                let mut x_axis = Axis::default().bounds([0.0, 1.0]);
-                if let Some((left_label, right_label)) = x_labels {
-                    x_axis = x_axis.labels(vec![Span::from(left_label), Span::from(right_label)]);
-                }
-                let mut y_axis = Axis::default().bounds([0.0, 1.0]);
-                if let Some((left_label, right_label)) = y_labels {
-                    y_axis = y_axis.labels(vec![Span::from(left_label), Span::from(right_label)]);
-                }
-                let chart = Chart::new(datasets).x_axis(x_axis).y_axis(y_axis);
-                f.render_widget(chart, f.size());
-            })
-            .unwrap();
-        let expected = Buffer::with_lines(lines);
-        terminal.backend().assert_buffer(&expected);
+    let test_case = |x_labels, y_labels, x_alignment, lines| {
+        let mut x_axis = Axis::default().bounds([0.0, 1.0]);
+        if let Some((left_label, right_label)) = x_labels {
+            x_axis = x_axis
+                .labels(vec![Span::from(left_label), Span::from(right_label)])
+                .labels_alignment(x_alignment);
+        }
+
+        let mut y_axis = Axis::default().bounds([0.0, 1.0]);
+        if let Some((left_label, right_label)) = y_labels {
+            y_axis = y_axis.labels(vec![Span::from(left_label), Span::from(right_label)]);
+        }
+
+        axis_test_case(10, 5, x_axis, y_axis, lines);
     };
+
     test_case(
         Some(("AAAA", "B")),
         None,
+        Alignment::Left,
         vec![
             "          ",
             "          ",
@@ -87,6 +97,7 @@ fn widgets_chart_handles_long_labels() {
     test_case(
         Some(("A", "BBBB")),
         None,
+        Alignment::Left,
         vec![
             "          ",
             "          ",
@@ -98,6 +109,7 @@ fn widgets_chart_handles_long_labels() {
     test_case(
         Some(("AAAAAAAAAAA", "B")),
         None,
+        Alignment::Left,
         vec![
             "          ",
             "          ",
@@ -109,12 +121,136 @@ fn widgets_chart_handles_long_labels() {
     test_case(
         Some(("A", "B")),
         Some(("CCCCCCC", "D")),
+        Alignment::Left,
         vec![
             "D  │      ",
             "   │      ",
             "CCC│      ",
             "   └──────",
             "   A     B",
+        ],
+    );
+    test_case(
+        Some(("AAAAAAAAAA", "B")),
+        Some(("C", "D")),
+        Alignment::Center,
+        vec![
+            "D  │      ",
+            "   │      ",
+            "C  │      ",
+            "   └──────",
+            "AAAAAAA  B",
+        ],
+    );
+    test_case(
+        Some(("AAAAAAA", "B")),
+        Some(("C", "D")),
+        Alignment::Right,
+        vec![
+            "D│        ",
+            " │        ",
+            "C│        ",
+            " └────────",
+            " AAAAA   B",
+        ],
+    );
+    test_case(
+        Some(("AAAAAAA", "BBBBBBB")),
+        Some(("C", "D")),
+        Alignment::Right,
+        vec![
+            "D│        ",
+            " │        ",
+            "C│        ",
+            " └────────",
+            " AAAAABBBB",
+        ],
+    );
+}
+
+#[test]
+fn widgets_chart_handles_x_axis_labels_alignments() {
+    let test_case = |y_alignment, lines| {
+        let x_axis = Axis::default()
+            .labels(vec![Span::from("AAAA"), Span::from("B"), Span::from("C")])
+            .labels_alignment(y_alignment);
+
+        let y_axis = Axis::default();
+
+        axis_test_case(10, 5, x_axis, y_axis, lines);
+    };
+
+    test_case(
+        Alignment::Left,
+        vec![
+            "          ",
+            "          ",
+            "          ",
+            "   ───────",
+            "AAA   B  C",
+        ],
+    );
+    test_case(
+        Alignment::Center,
+        vec![
+            "          ",
+            "          ",
+            "          ",
+            "  ────────",
+            "AAAA B   C",
+        ],
+    );
+    test_case(
+        Alignment::Right,
+        vec![
+            "          ",
+            "          ",
+            "          ",
+            "──────────",
+            "AAA  B   C",
+        ],
+    );
+}
+
+#[test]
+fn widgets_chart_handles_y_axis_labels_alignments() {
+    let test_case = |y_alignment, lines| {
+        let x_axis = Axis::default().labels(create_labels(&["AAAAA", "B"]));
+
+        let y_axis = Axis::default()
+            .labels(create_labels(&["C", "D"]))
+            .labels_alignment(y_alignment);
+
+        axis_test_case(20, 5, x_axis, y_axis, lines);
+    };
+    test_case(
+        Alignment::Left,
+        vec![
+            "D   │               ",
+            "    │               ",
+            "C   │               ",
+            "    └───────────────",
+            "AAAAA              B",
+        ],
+    );
+    test_case(
+        Alignment::Center,
+        vec![
+            "  D │               ",
+            "    │               ",
+            "  C │               ",
+            "    └───────────────",
+            "AAAAA              B",
+        ],
+    );
+    test_case(
+        Alignment::Right,
+        vec![
+            "   D│               ",
+            "    │               ",
+            "   C│               ",
+            "    └───────────────",
+            "AAAAA              B",
         ],
     );
 }
@@ -329,7 +465,7 @@ fn widgets_chart_can_have_a_legend() {
         "│    │ ••                                               •• │",
         "│0.0 │•                                              X Axis│",
         "│    └─────────────────────────────────────────────────────│",
-        "│  0.0                      50.0                     100.0 │",
+        "│  0.0                        50.0                    100.0│",
         "└──────────────────────────────────────────────────────────┘",
     ]);
 
