@@ -10,7 +10,7 @@
 ///   * Pressing Enter pushes the current input in the history of previous
 ///   messages
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -93,7 +93,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     }
                     _ => {}
                 },
-                InputMode::Editing => match key.code {
+                InputMode::Editing if key.kind == KeyEventKind::Press => match key.code {
                     KeyCode::Enter => {
                         app.messages.push(app.input.drain(..).collect());
                     }
@@ -108,6 +108,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     }
                     _ => {}
                 },
+                _ => {}
             }
         }
     }
