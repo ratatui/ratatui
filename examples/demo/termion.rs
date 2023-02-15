@@ -13,7 +13,11 @@ use tui::{
 
 pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
     // setup terminal
-    let stdout = io::stdout().into_alternate_screen().unwrap();
+    let stdout = io::stdout()
+        .into_raw_mode()
+        .unwrap()
+        .into_alternate_screen()
+        .unwrap();
     let stdout = MouseTerminal::from(stdout);
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
