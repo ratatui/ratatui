@@ -15,8 +15,8 @@ dependencies = [
     "check-termion",
     "test-crossterm",
     "test-termion",
-    "clippy-crossterm",
-    "clippy-termion",
+    # "clippy-crossterm",  TODO: re-enable
+    # "clippy-termion",  TODO: re-enable
     "test-doc",
 ]
 

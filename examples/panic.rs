@@ -59,7 +59,7 @@ fn main() -> Result<()> {
     reset_terminal()?;
 
     if let Err(err) = res {
-        println!("{:?}", err);
+        println!("{err:?}");
     }
 
     Ok(())

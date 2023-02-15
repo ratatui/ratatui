@@ -306,7 +306,7 @@ impl Buffer {
         (x_offset as u16, y)
     }
 
-    pub fn set_spans<'a>(&mut self, x: u16, y: u16, spans: &Spans<'a>, width: u16) -> (u16, u16) {
+    pub fn set_spans(&mut self, x: u16, y: u16, spans: &Spans<'_>, width: u16) -> (u16, u16) {
         let mut remaining_width = width;
         let mut x = x;
         for span in &spans.0 {
@@ -327,7 +327,7 @@ impl Buffer {
         (x, y)
     }
 
-    pub fn set_span<'a>(&mut self, x: u16, y: u16, span: &Span<'a>, width: u16) -> (u16, u16) {
+    pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, width: u16) -> (u16, u16) {
         self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
     }
 
