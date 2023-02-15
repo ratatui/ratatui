@@ -176,6 +176,10 @@ impl<'a> Widget for Paragraph<'a> {
             if y >= self.scroll.0 {
                 let mut x = get_line_offset(current_line_width, text_area.width, self.alignment);
                 for StyledGrapheme { symbol, style } in current_line {
+                    let width = symbol.width();
+                    if width == 0 {
+                        continue;
+                    }
                     buf.get_mut(text_area.left() + x, text_area.top() + y - self.scroll.0)
                         .set_symbol(if symbol.is_empty() {
                             // If the symbol is empty, the last char which rendered last time will
@@ -185,7 +189,7 @@ impl<'a> Widget for Paragraph<'a> {
                             symbol
                         })
                         .set_style(*style);
-                    x += symbol.width() as u16;
+                    x += width as u16;
                 }
             }
             y += 1;
@@ -193,5 +197,18 @@ impl<'a> Widget for Paragraph<'a> {
                 break;
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn zero_width_char_at_end_of_line() {
+        let line = "foo\0";
+        let paragraph = Paragraph::new(line);
+        let mut buf = Buffer::with_lines(vec![line]);
+        paragraph.render(*buf.area(), &mut buf);
     }
 }
