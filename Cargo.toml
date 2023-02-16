@@ -13,7 +13,7 @@ license = "MIT"
 exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
 autoexamples = true
 edition = "2021"
-rust-version = "1.56.1"
+rust-version = "1.59.0"
 
 [badges]
 
