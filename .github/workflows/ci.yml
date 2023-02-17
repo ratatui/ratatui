@@ -12,59 +12,34 @@ env:
   CI_CARGO_MAKE_VERSION: 0.35.16
 
 jobs:
-  linux:
-    name: Linux
-    runs-on: ubuntu-latest
+  test:
     strategy:
       matrix:
-        rust: ["1.56.1", "stable"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: ["1.59.0", "stable"]
+        include:
+          - os: ubuntu-latest
+            cargo_make_path: ~/.cargo/bin/cargo-make
+          - os: windows-latest
+            cargo_make_path: ~\.cargo\bin\cargo-make.exe
+          - os: macos-latest
+            cargo_make_path: ~/.cargo/bin/cargo-make
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: hecrj/setup-rust-action@967aec96c6a27a0ce15c1dac3aaba332d60565e2
+      - uses: hecrj/setup-rust-action@50a120e4d34903c2c1383dec0e9b1d349a9cc2b1
         with:
           rust-version: ${{ matrix.rust }}
           components: rustfmt,clippy
-      - uses: actions/checkout@v1
-      - name: "Get cargo bin directory"
-        id: cargo-bin-dir
-        run: echo "::set-output name=dir::$HOME/.cargo/bin"
+      - uses: actions/checkout@v3
       - name: "Cache cargo make"
         id: cache-cargo-make
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
-          path: ${{ steps.cargo-bin-dir.outputs.dir }}/cargo-make
+          path: ${{ matrix.cargo_make_path }}
           key: ${{ runner.os }}-${{ matrix.rust }}-cargo-make-${{ env.CI_CARGO_MAKE_VERSION }}
       - name: "Install cargo-make"
         if: steps.cache-cargo-make.outputs.cache-hit != 'true'
-        run: cargo install cargo-make --version ${{ env.CI_CARGO_MAKE_VERSION }}
-      - name: "Format / Build / Test"
-        run: cargo make ci
-        env:
-          RUST_BACKTRACE: full
-  windows:
-    name: Windows
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        rust: ["1.56.1", "stable"]
-    steps:
-      - uses: actions/checkout@v1
-      - uses: hecrj/setup-rust-action@967aec96c6a27a0ce15c1dac3aaba332d60565e2
-        with:
-          rust-version: ${{ matrix.rust }}
-          components: rustfmt,clippy
-      - uses: actions/checkout@v1
-      - name: "Get cargo bin directory"
-        id: cargo-bin-dir
-        run: echo "::set-output name=dir::$HOME\.cargo\bin"
-      - name: "Cache cargo make"
-        id: cache-cargo-make
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.cargo-bin-dir.outputs.dir }}\cargo-make.exe
-          key: ${{ runner.os }}-${{ matrix.rust }}-cargo-make-${{ env.CI_CARGO_MAKE_VERSION }}
-      - name: "Install cargo-make"
-        if: steps.cache-cargo-make.outputs.cache-hit != 'true'
-        run: cargo install cargo-make --version ${{ env.CI_CARGO_MAKE_VERSION }}
+        run: cargo install cargo-make --version "${CI_CARGO_MAKE_VERSION}"
       - name: "Format / Build / Test"
         run: cargo make ci
         env:

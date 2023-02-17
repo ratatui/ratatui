@@ -4,7 +4,7 @@ use termion::{
     event::Key,
     input::{MouseTerminal, TermRead},
     raw::IntoRawMode,
-    screen::AlternateScreen,
+    screen::IntoAlternateScreen,
 };
 use tui::{
     backend::{Backend, TermionBackend},
@@ -13,9 +13,12 @@ use tui::{
 
 pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
     // setup terminal
-    let stdout = io::stdout().into_raw_mode()?;
+    let stdout = io::stdout()
+        .into_raw_mode()
+        .unwrap()
+        .into_alternate_screen()
+        .unwrap();
     let stdout = MouseTerminal::from(stdout);
-    let stdout = AlternateScreen::from(stdout);
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 

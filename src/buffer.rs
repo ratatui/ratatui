@@ -289,7 +289,7 @@ impl Buffer {
                 continue;
             }
             // `x_offset + width > max_offset` could be integer overflow on 32-bit machines if we
-            // change dimenstions to usize or u32 and someone resizes the terminal to 1x2^32.
+            // change dimensions to usize or u32 and someone resizes the terminal to 1x2^32.
             if width > max_offset.saturating_sub(x_offset) {
                 break;
             }
@@ -306,7 +306,7 @@ impl Buffer {
         (x_offset as u16, y)
     }
 
-    pub fn set_spans<'a>(&mut self, x: u16, y: u16, spans: &Spans<'a>, width: u16) -> (u16, u16) {
+    pub fn set_spans(&mut self, x: u16, y: u16, spans: &Spans<'_>, width: u16) -> (u16, u16) {
         let mut remaining_width = width;
         let mut x = x;
         for span in &spans.0 {
@@ -327,7 +327,7 @@ impl Buffer {
         (x, y)
     }
 
-    pub fn set_span<'a>(&mut self, x: u16, y: u16, span: &Span<'a>, width: u16) -> (u16, u16) {
+    pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, width: u16) -> (u16, u16) {
         self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
     }
 
@@ -434,9 +434,9 @@ impl Buffer {
         let width = self.area.width;
 
         let mut updates: Vec<(u16, u16, &Cell)> = vec![];
-        // Cells invalidated by drawing/replacing preceeding multi-width characters:
+        // Cells invalidated by drawing/replacing preceding multi-width characters:
         let mut invalidated: usize = 0;
-        // Cells from the current buffer to skip due to preceeding multi-width characters taking their
+        // Cells from the current buffer to skip due to preceding multi-width characters taking their
         // place (the skipped cells should be blank anyway):
         let mut to_skip: usize = 0;
         for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
