@@ -15,13 +15,15 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         rust: ["1.59.0", "stable"]
         include:
           - os: ubuntu-latest
             cargo_make_path: ~/.cargo/bin/cargo-make
           - os: windows-latest
             cargo_make_path: ~\.cargo\bin\cargo-make.exe
+          - os: macos-latest
+            cargo_make_path: ~/.cargo/bin/cargo-make
     runs-on: ${{ matrix.os }}
     steps:
       - uses: hecrj/setup-rust-action@50a120e4d34903c2c1383dec0e9b1d349a9cc2b1
