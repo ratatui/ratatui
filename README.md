@@ -105,6 +105,9 @@ You can run all examples by running `cargo make run-examples` (require
 - [tui-realm-treeview](https://github.com/veeso/tui-realm-treeview) — Treeview component for Tui-realm
 - [tui tree widget](https://github.com/EdJoPaTo/tui-rs-tree-widget) — Tree Widget for Tui-rs
 - [tui-windows](https://github.com/markatk/tui-windows-rs) — Tui-rs abstraction to handle multiple windows and their rendering
+- [tui-textarea](https://github.com/rhysd/tui-textarea): Simple yet powerful multi-line text editor widget supporting several key shortcuts, undo/redo, text search, etc.
+- [tui-rs-tree-widgets](https://github.com/EdJoPaTo/tui-rs-tree-widget): Widget for tree data structures.
+- [tui-input](https://github.com/sayanarijit/tui-input): TUI input library supporting multiple backends and tui-rs.
 
 # Apps using tui
 
