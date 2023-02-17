@@ -293,17 +293,13 @@ impl<'a> Text<'a> {
         T: Into<Cow<'a, str>>,
     {
         let lines: Vec<_> = match content.into() {
+            Cow::Borrowed("") => vec![Spans::from("")],
             Cow::Borrowed(s) => s.lines().map(Spans::from).collect(),
+            Cow::Owned(s) if s.is_empty() => vec![Spans::from("")],
             Cow::Owned(s) => s.lines().map(|l| Spans::from(l.to_owned())).collect(),
         };
 
-        Text {
-            lines: if lines.is_empty() {
-                vec![Spans::from("")]
-            } else {
-                lines
-            },
-        }
+        Text { lines }
     }
 
     /// Create some text (potentially multiple lines) with a style.
