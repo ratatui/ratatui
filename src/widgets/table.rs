@@ -352,6 +352,13 @@ impl TableState {
             self.offset = 0;
         }
     }
+
+    /// Returns a copy of the receiver's scroll offset.
+    ///
+    /// This is useful, for example, if you need to "synchronize" the scrolling of a `Table` and a `Paragraph`.
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
 }
 
 impl<'a> StatefulWidget for Table<'a> {
