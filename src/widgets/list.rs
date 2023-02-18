@@ -51,6 +51,10 @@ impl<'a> ListItem<'a> {
     pub fn height(&self) -> usize {
         self.content.height()
     }
+
+    pub fn width(&self) -> usize {
+        self.content.width()
+    }
 }
 
 /// A widget to display several items among which one can be selected (optional)
