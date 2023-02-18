@@ -140,8 +140,8 @@ impl Layout {
     ///         height: 10,
     ///     });
     /// assert_eq!(
-    ///     chunks,
-    ///     vec![
+    ///     chunks[..],
+    ///     [
     ///         Rect {
     ///             x: 2,
     ///             y: 2,
@@ -167,8 +167,8 @@ impl Layout {
     ///         height: 2,
     ///     });
     /// assert_eq!(
-    ///     chunks,
-    ///     vec![
+    ///     chunks[..],
+    ///     [
     ///         Rect {
     ///             x: 0,
     ///             y: 0,
