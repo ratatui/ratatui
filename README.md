@@ -130,6 +130,7 @@ You can run all examples by running `cargo make run-examples` (require
 - [kmon](https://github.com/orhun/kmon) — Linux Kernel Manager and Activity Monitor
 - [minesweep](https://github.com/cpcloud/minesweep-rs) — Sweep some mines for fun, and probably not for profit
 - [oha](https://github.com/hatoo/oha) — HTTP load generator, inspired by rakyll/hey with tui animation
+- [poketex](https://github.com/ckaznable/poketex) — A simple pokedex based on TUI
 - [rrtop](https://github.com/wojciech-zurek/rrtop) — Redis monitoring (top like) app
 - [rust-sadari-cli](https://github.com/24seconds/rust-sadari-cli) — Sadari game based on terminal
 - [rusty-krab-manager](https://github.com/aryakaul/rusty-krab-manager) — Time-management TUI in Rust
