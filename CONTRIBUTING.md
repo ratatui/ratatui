@@ -21,6 +21,13 @@ If you close an issue that you have "imported" to this fork, please make sure th
 
 # Contributing
 
+## Implementation Guidelines
+
+### Use of unsafe for optimization purposes
+
+**Do not** use unsafe to achieve better performances. This is subject to change, [see.](https://github.com/tui-rs-revival/tui-rs-revival/discussions/66)
+The only exception to this rule is if it's to fix **reproducible slowness.**
+
 ## Building
 
 [cargo-make]: https://github.com/sagiegurari/cargo-make "cargo-make"
@@ -30,8 +37,6 @@ It wraps common `cargo` commands with sane defaults depending on your platform o
 Building the project should be as easy as running `cargo make build`.
 
 ## :hammer_and_wrench: Pull requests
-
-
 
 All contributions are obviously welcome.
 Please include as many details as possible in your PR description to help the reviewer (follow the provided template).
