@@ -69,8 +69,9 @@ pub struct Layout {
     expand_to_fill: bool,
 }
 
+type Cache = HashMap<(Rect, Layout), Rc<[Rect]>>;
 thread_local! {
-    static LAYOUT_CACHE: RefCell<HashMap<(Rect, Layout), Rc<[Rect]>>> = RefCell::new(HashMap::new());
+    static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(HashMap::new());
 }
 
 impl Default for Layout {
