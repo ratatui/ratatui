@@ -128,6 +128,7 @@ You can run all examples by running `cargo make run-examples` (require
 - [joshuto](https://github.com/kamiyaa/joshuto) — Ranger-like terminal file manager written in Rust
 - [kDash](https://github.com/kdash-rs/kdash) — A simple and fast dashboard for Kubernetes
 - [kmon](https://github.com/orhun/kmon) — Linux Kernel Manager and Activity Monitor
+- [kubectl-watch](https://github.com/imuxin/kubectl-watch) — A kubectl plugin to provide a pretty delta change view of being watched kubernetes resources
 - [minesweep](https://github.com/cpcloud/minesweep-rs) — Sweep some mines for fun, and probably not for profit
 - [oha](https://github.com/hatoo/oha) — HTTP load generator, inspired by rakyll/hey with tui animation
 - [poketex](https://github.com/ckaznable/poketex) — A simple pokedex based on TUI
