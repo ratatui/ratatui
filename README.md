@@ -131,6 +131,7 @@ You can run all examples by running `cargo make run-examples` (require
 - [kubectl-watch](https://github.com/imuxin/kubectl-watch) — A kubectl plugin to provide a pretty delta change view of being watched kubernetes resources
 - [minesweep](https://github.com/cpcloud/minesweep-rs) — Sweep some mines for fun, and probably not for profit
 - [oha](https://github.com/hatoo/oha) — HTTP load generator, inspired by rakyll/hey with tui animation
+- [oxker](https://github.com/mrjackwills/oxker) — a simple tui to view & control docker containers
 - [poketex](https://github.com/ckaznable/poketex) — A simple pokedex based on TUI
 - [rrtop](https://github.com/wojciech-zurek/rrtop) — Redis monitoring (top like) app
 - [rust-sadari-cli](https://github.com/24seconds/rust-sadari-cli) — Sadari game based on terminal
