@@ -39,7 +39,7 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.rust }}-cargo-make-${{ env.CI_CARGO_MAKE_VERSION }}
       - name: "Install cargo-make"
         if: steps.cache-cargo-make.outputs.cache-hit != 'true'
-        run: cargo install cargo-make --version "${CI_CARGO_MAKE_VERSION}"
+        run: cargo install cargo-make --version ${{ env.CI_CARGO_MAKE_VERSION }}
       - name: "Format / Build / Test"
         run: cargo make ci
         env:
