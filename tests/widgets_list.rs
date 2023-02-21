@@ -198,3 +198,30 @@ fn widgets_list_should_repeat_highlight_symbol() {
     }
     terminal.backend().assert_buffer(&expected);
 }
+
+#[test]
+fn widget_list_should_not_ignore_empty_string_items() {
+    let backend = TestBackend::new(6, 4);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            let items = vec![
+                ListItem::new("Item 1"),
+                ListItem::new(""),
+                ListItem::new(""),
+                ListItem::new("Item 4"),
+            ];
+
+            let list = List::new(items)
+                .style(Style::default())
+                .highlight_style(Style::default());
+
+            f.render_widget(list, f.size());
+        })
+        .unwrap();
+
+    let expected = Buffer::with_lines(vec!["Item 1", "", "", "Item 4"]);
+
+    terminal.backend().assert_buffer(&expected);
+}
