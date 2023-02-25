@@ -44,3 +44,20 @@ jobs:
         run: cargo make ci
         env:
           RUST_BACKTRACE: full
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v3
+      - name: Checkout
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: "Check conventional commits"
+        uses: crate-ci/committed@master
+        with:
+          args: "-vv"
+          commits: "HEAD"
