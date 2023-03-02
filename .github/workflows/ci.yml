@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: ["1.59.0", "stable"]
+        rust: ["1.63.0", "stable"]
         include:
           - os: ubuntu-latest
             cargo_make_path: ~/.cargo/bin/cargo-make
