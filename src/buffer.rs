@@ -176,7 +176,7 @@ impl Buffer {
         &mut self.content[i]
     }
 
-    /// Returns the index in the Vec<Cell> for the given global (x, y) coordinates.
+    /// Returns the index in the `Vec<Cell>` for the given global (x, y) coordinates.
     ///
     /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
     ///
