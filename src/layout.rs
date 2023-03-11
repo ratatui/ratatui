@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::cmp::{max, min};
 use std::collections::HashMap;
 
-use cassowary::strength::{REQUIRED, WEAK};
+use cassowary::strength::{MEDIUM, REQUIRED, WEAK};
 use cassowary::WeightedRelation::*;
 use cassowary::{Constraint as CassowaryConstraint, Expression, Solver, Variable};
 
@@ -248,18 +248,28 @@ fn split(area: Rect, layout: &Layout) -> Vec<Rect> {
                 ccs.push(elements[i].y | EQ(REQUIRED) | f64::from(dest_area.y));
                 ccs.push(elements[i].height | EQ(REQUIRED) | f64::from(dest_area.height));
                 ccs.push(match *size {
-                    Constraint::Length(v) => elements[i].width | EQ(WEAK) | f64::from(v),
+                    Constraint::Length(v) => elements[i].width | EQ(MEDIUM) | f64::from(v),
                     Constraint::Percentage(v) => {
-                        elements[i].width | EQ(WEAK) | (f64::from(v * dest_area.width) / 100.0)
+                        elements[i].width | EQ(MEDIUM) | (f64::from(v * dest_area.width) / 100.0)
                     }
                     Constraint::Ratio(n, d) => {
                         elements[i].width
-                            | EQ(WEAK)
+                            | EQ(MEDIUM)
                             | (f64::from(dest_area.width) * f64::from(n) / f64::from(d))
                     }
-                    Constraint::Min(v) => elements[i].width | GE(WEAK) | f64::from(v),
-                    Constraint::Max(v) => elements[i].width | LE(WEAK) | f64::from(v),
+                    Constraint::Min(v) => elements[i].width | GE(MEDIUM) | f64::from(v),
+                    Constraint::Max(v) => elements[i].width | LE(MEDIUM) | f64::from(v),
                 });
+
+                match *size {
+                    Constraint::Min(v) => {
+                        ccs.push(elements[i].width | EQ(WEAK) | f64::from(v));
+                    }
+                    Constraint::Max(v) => {
+                        ccs.push(elements[i].width | EQ(WEAK) | f64::from(v));
+                    }
+                    _ => {}
+                }
             }
         }
         Direction::Vertical => {
@@ -270,18 +280,28 @@ fn split(area: Rect, layout: &Layout) -> Vec<Rect> {
                 ccs.push(elements[i].x | EQ(REQUIRED) | f64::from(dest_area.x));
                 ccs.push(elements[i].width | EQ(REQUIRED) | f64::from(dest_area.width));
                 ccs.push(match *size {
-                    Constraint::Length(v) => elements[i].height | EQ(WEAK) | f64::from(v),
+                    Constraint::Length(v) => elements[i].height | EQ(MEDIUM) | f64::from(v),
                     Constraint::Percentage(v) => {
-                        elements[i].height | EQ(WEAK) | (f64::from(v * dest_area.height) / 100.0)
+                        elements[i].height | EQ(MEDIUM) | (f64::from(v * dest_area.height) / 100.0)
                     }
                     Constraint::Ratio(n, d) => {
                         elements[i].height
-                            | EQ(WEAK)
+                            | EQ(MEDIUM)
                             | (f64::from(dest_area.height) * f64::from(n) / f64::from(d))
                     }
-                    Constraint::Min(v) => elements[i].height | GE(WEAK) | f64::from(v),
-                    Constraint::Max(v) => elements[i].height | LE(WEAK) | f64::from(v),
+                    Constraint::Min(v) => elements[i].height | GE(MEDIUM) | f64::from(v),
+                    Constraint::Max(v) => elements[i].height | LE(MEDIUM) | f64::from(v),
                 });
+
+                match *size {
+                    Constraint::Min(v) => {
+                        ccs.push(elements[i].height | EQ(WEAK) | f64::from(v));
+                    }
+                    Constraint::Max(v) => {
+                        ccs.push(elements[i].height | EQ(WEAK) | f64::from(v));
+                    }
+                    _ => {}
+                }
             }
         }
     }
