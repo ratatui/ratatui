@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::cmp::{max, min};
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use cassowary::strength::{MEDIUM, REQUIRED, WEAK};
 use cassowary::WeightedRelation::*;
@@ -68,8 +69,9 @@ pub struct Layout {
     expand_to_fill: bool,
 }
 
+type Cache = HashMap<(Rect, Layout), Rc<[Rect]>>;
 thread_local! {
-    static LAYOUT_CACHE: RefCell<HashMap<(Rect, Layout), Vec<Rect>>> = RefCell::new(HashMap::new());
+    static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(HashMap::new());
 }
 
 impl Default for Layout {
@@ -139,8 +141,8 @@ impl Layout {
     ///         height: 10,
     ///     });
     /// assert_eq!(
-    ///     chunks,
-    ///     vec![
+    ///     chunks[..],
+    ///     [
     ///         Rect {
     ///             x: 2,
     ///             y: 2,
@@ -166,8 +168,8 @@ impl Layout {
     ///         height: 2,
     ///     });
     /// assert_eq!(
-    ///     chunks,
-    ///     vec![
+    ///     chunks[..],
+    ///     [
     ///         Rect {
     ///             x: 0,
     ///             y: 0,
@@ -183,7 +185,7 @@ impl Layout {
     ///     ]
     /// );
     /// ```
-    pub fn split(&self, area: Rect) -> Vec<Rect> {
+    pub fn split(&self, area: Rect) -> Rc<[Rect]> {
         // TODO: Maybe use a fixed size cache ?
         LAYOUT_CACHE.with(|c| {
             c.borrow_mut()
@@ -194,7 +196,7 @@ impl Layout {
     }
 }
 
-fn split(area: Rect, layout: &Layout) -> Vec<Rect> {
+fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
     let mut solver = Solver::new();
     let mut vars: HashMap<Variable, (usize, usize)> = HashMap::new();
     let elements = layout
@@ -202,11 +204,13 @@ fn split(area: Rect, layout: &Layout) -> Vec<Rect> {
         .iter()
         .map(|_| Element::new())
         .collect::<Vec<Element>>();
-    let mut results = layout
+    let mut res = layout
         .constraints
         .iter()
         .map(|_| Rect::default())
-        .collect::<Vec<Rect>>();
+        .collect::<Rc<[Rect]>>();
+
+    let mut results = Rc::get_mut(&mut res).expect("newly created Rc should have no shared refs");
 
     let dest_area = area.inner(&layout.margin);
     for (i, e) in elements.iter().enumerate() {
@@ -343,7 +347,7 @@ fn split(area: Rect, layout: &Layout) -> Vec<Rect> {
             }
         }
     }
-    results
+    res
 }
 
 /// A container used by the solver inside split
