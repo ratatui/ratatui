@@ -137,6 +137,7 @@ You can run all examples by running `cargo make run-examples` (require
 - [rust-sadari-cli](https://github.com/24seconds/rust-sadari-cli) — Sadari game based on terminal
 - [rusty-krab-manager](https://github.com/aryakaul/rusty-krab-manager) — Time-management TUI in Rust
 - [spotify-tui](https://github.com/Rigellute/spotify-tui) — Spotify for the terminal written in Rust
+- [systeroid](https://github.com/orhun/systeroid) - A more powerful alternative to sysctl(8) with a terminal user interface
 - [taskwarrior-tui](https://github.com/kdheepak/taskwarrior-tui) — A terminal user interface for Taskwarrior
 - [termchat](https://github.com/lemunozm/termchat) — Terminal chat through the LAN with video streaming and file transfer
 - [termscp](https://github.com/veeso/termscp) — A feature rich terminal UI file transfer and explorer with support for SCP/SFTP/FTP/S3
