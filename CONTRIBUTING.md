@@ -17,7 +17,7 @@ You can then resume the conversation by replying to this new issue you have crea
 
 ### Closing Issues
 
-If you close an issue that you have "imported" to this fork, please make sure that you add the issue to the **CLOSED_ISSUES.md**. This will enable us to keep track of which issues have been closed from the original repo, in case we are able to have the original repository transfered.
+If you close an issue that you have "imported" to this fork, please make sure that you add the issue to the **CLOSED_ISSUES.md**. This will enable us to keep track of which issues have been closed from the original repo, in case we are able to have the original repository transferred.
 
 # Contributing
 
