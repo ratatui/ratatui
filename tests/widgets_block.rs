@@ -384,7 +384,7 @@ fn widgets_block_title_alignment_bottom() {
     test_case(
         Alignment::Left,
         Borders::LEFT | Borders::TOP | Borders::RIGHT,
-        Buffer::with_lines(vec![" ┌───────────┐ ", " └Title──────┘ "]),
+        Buffer::with_lines(vec![" ┌───────────┐ ", " │Title      │ "]),
     );
 
     // title bottom-left with no left border
@@ -419,7 +419,7 @@ fn widgets_block_title_alignment_bottom() {
     test_case(
         Alignment::Center,
         Borders::LEFT | Borders::TOP | Borders::RIGHT,
-        Buffer::with_lines(vec![" ┌───────────┐ ", " └   Title   ┘ "]),
+        Buffer::with_lines(vec![" ┌───────────┐ ", " │   Title   │ "]),
     );
 
     // title center with no left border
@@ -454,7 +454,7 @@ fn widgets_block_title_alignment_bottom() {
     test_case(
         Alignment::Right,
         Borders::LEFT | Borders::TOP | Borders::RIGHT,
-        Buffer::with_lines(vec![" ┌───────────┐ ", " └      Title┘ "]),
+        Buffer::with_lines(vec![" ┌───────────┐ ", " │      Title│ "]),
     );
 
     // title bottom-right with no left border
