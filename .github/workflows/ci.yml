@@ -72,3 +72,5 @@ jobs:
         with:
           args: "-vv"
           commits: "HEAD"
+      - name: "Check typos"
+        uses: crate-ci/typos@master
