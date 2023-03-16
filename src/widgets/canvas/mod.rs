@@ -461,7 +461,7 @@ where
         painter(&mut ctx);
         ctx.finish();
 
-        // Retreive painted points for each layer
+        // Retrieve painted points for each layer
         for layer in ctx.layers {
             for (i, (ch, color)) in layer
                 .string

@@ -231,7 +231,7 @@ impl<'a> StatefulWidget for List<'a> {
 
             let is_selected = state.selected.map(|s| s == i).unwrap_or(false);
             for (j, line) in item.content.lines.iter().enumerate() {
-                // if the item is selected, we need to display the hightlight symbol:
+                // if the item is selected, we need to display the highlight symbol:
                 // - either for the first line of the item only,
                 // - or for each line of the item if the appropriate option is set
                 let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol) {

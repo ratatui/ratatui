@@ -18,7 +18,7 @@
 
 ### Features
 
-* Add option to `widgets::List` to repeat the hightlight symbol for each line of multi-line items (#533).
+* Add option to `widgets::List` to repeat the highlight symbol for each line of multi-line items (#533).
 * Add option to control the alignment of `Axis` labels in the `Chart` widget (#568).
 
 ### Breaking changes
@@ -276,7 +276,7 @@ In this new release, you may now write this as:
 ```rust
 Block::default()
     .style(Style::default().bg(Color::Green))
-    // The style is not overidden anymore, we simply add new style rule for the title.
+    // The style is not overridden anymore, we simply add new style rule for the title.
     .title(Span::styled("My title", Style::default().add_modifier(Modifier::BOLD)))
 ```
 
@@ -284,9 +284,9 @@ In addition, the crate now provides a method `patch` to combine two styles into 
 rules:
 
 ```rust
-let style = Style::default().modifer(Modifier::BOLD);
+let style = Style::default().modifier(Modifier::BOLD);
 let style = style.patch(Style::default().add_modifier(Modifier::ITALIC));
-// style.modifer == Modifier::BOLD | Modifier::ITALIC, the modifier has been enriched not overidden
+// style.modifier == Modifier::BOLD | Modifier::ITALIC, the modifier has been enriched not overridden
 ```
 
 - `Style::modifier` has been removed in favor of `Style::add_modifier` and `Style::remove_modifier`.
@@ -604,7 +604,7 @@ let style = Style::default().add_modifier(Modifier::ITALIC | Modifier::BOLD);
 
 ### Bug Fixes
 
-* Ensure correct behavoir of the alternate screens with the `Crossterm` backend.
+* Ensure correct behavior of the alternate screens with the `Crossterm` backend.
 * Fix out of bounds panic when two `Buffer` are merged.
 
 ## v0.4.0 - 2019-02-03
@@ -673,7 +673,7 @@ additional `termion` features.
 
 * Replace `Item` by a generic and flexible `Text` that can be used in both
 `Paragraph` and `List` widgets.
-* Remove unecessary borrows on `Style`.
+* Remove unnecessary borrows on `Style`.
 
 ## v0.3.0-beta.0 - 2018-09-04
 
@@ -696,7 +696,7 @@ widgets on the given `Frame`
 * All widgets use the consumable builder pattern
 * `SelectableList` can have no selected item and the highlight symbol is hidden
 in this case
-* Remove markup langage inside `Paragraph`. `Paragraph` now expects an iterator
+* Remove markup language inside `Paragraph`. `Paragraph` now expects an iterator
 of `Text` items
 
 ## v0.2.3 - 2018-06-09
@@ -704,7 +704,7 @@ of `Text` items
 ### Features
 
 * Add `start_corner` option for `List`
-* Add more text aligment options for `Paragraph`
+* Add more text alignment options for `Paragraph`
 
 ## v0.2.2 - 2018-05-06
 
