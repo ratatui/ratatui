@@ -62,8 +62,8 @@ impl<'a> ListItem<'a> {
 /// # Examples
 ///
 /// ```
-/// # use tui::widgets::{Block, Borders, List, ListItem};
-/// # use tui::style::{Style, Color, Modifier};
+/// # use ratatui::widgets::{Block, Borders, List, ListItem};
+/// # use ratatui::style::{Style, Color, Modifier};
 /// let items = [ListItem::new("Item 1"), ListItem::new("Item 2"), ListItem::new("Item 3")];
 /// List::new(items)
 ///     .block(Block::default().title("List").borders(Borders::ALL))

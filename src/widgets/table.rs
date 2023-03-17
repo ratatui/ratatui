@@ -11,9 +11,9 @@ use unicode_width::UnicodeWidthStr;
 ///
 /// It can be created from anything that can be converted to a [`Text`].
 /// ```rust
-/// # use tui::widgets::Cell;
-/// # use tui::style::{Style, Modifier};
-/// # use tui::text::{Span, Spans, Text};
+/// # use ratatui::widgets::Cell;
+/// # use ratatui::style::{Style, Modifier};
+/// # use ratatui::text::{Span, Spans, Text};
 /// # use std::borrow::Cow;
 /// Cell::from("simple string");
 ///
@@ -61,14 +61,14 @@ where
 ///
 /// A [`Row`] is a collection of cells. It can be created from simple strings:
 /// ```rust
-/// # use tui::widgets::Row;
+/// # use ratatui::widgets::Row;
 /// Row::new(vec!["Cell1", "Cell2", "Cell3"]);
 /// ```
 ///
 /// But if you need a bit more control over individual cells, you can explicitly create [`Cell`]s:
 /// ```rust
-/// # use tui::widgets::{Row, Cell};
-/// # use tui::style::{Style, Color};
+/// # use ratatui::widgets::{Row, Cell};
+/// # use ratatui::style::{Style, Color};
 /// Row::new(vec![
 ///     Cell::from("Cell1"),
 ///     Cell::from("Cell2").style(Style::default().fg(Color::Yellow)),
@@ -78,7 +78,7 @@ where
 /// You can also construct a row from any type that can be converted into [`Text`]:
 /// ```rust
 /// # use std::borrow::Cow;
-/// # use tui::widgets::Row;
+/// # use ratatui::widgets::Row;
 /// Row::new(vec![
 ///     Cow::Borrowed("hello"),
 ///     Cow::Owned("world".to_uppercase()),
@@ -139,10 +139,10 @@ impl<'a> Row<'a> {
 ///
 /// It is a collection of [`Row`]s, themselves composed of [`Cell`]s:
 /// ```rust
-/// # use tui::widgets::{Block, Borders, Table, Row, Cell};
-/// # use tui::layout::Constraint;
-/// # use tui::style::{Style, Color, Modifier};
-/// # use tui::text::{Text, Spans, Span};
+/// # use ratatui::widgets::{Block, Borders, Table, Row, Cell};
+/// # use ratatui::layout::Constraint;
+/// # use ratatui::style::{Style, Color, Modifier};
+/// # use ratatui::text::{Text, Spans, Span};
 /// Table::new(vec![
 ///     // Row can be created from simple strings.
 ///     Row::new(vec!["Row11", "Row12", "Row13"]),

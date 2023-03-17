@@ -130,7 +130,7 @@ impl Layout {
     ///
     /// # Examples
     /// ```
-    /// # use tui::layout::{Rect, Constraint, Direction, Layout};
+    /// # use ratatui::layout::{Rect, Constraint, Direction, Layout};
     /// let chunks = Layout::default()
     ///     .direction(Direction::Vertical)
     ///     .constraints([Constraint::Length(5), Constraint::Min(0)].as_ref())

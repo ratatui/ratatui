@@ -83,10 +83,10 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # use tui::Terminal;
-    /// # use tui::backend::TestBackend;
-    /// # use tui::layout::Rect;
-    /// # use tui::widgets::Block;
+    /// # use ratatui::Terminal;
+    /// # use ratatui::backend::TestBackend;
+    /// # use ratatui::layout::Rect;
+    /// # use ratatui::widgets::Block;
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// let block = Block::default();
@@ -109,10 +109,10 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # use tui::Terminal;
-    /// # use tui::backend::TestBackend;
-    /// # use tui::layout::Rect;
-    /// # use tui::widgets::{List, ListItem, ListState};
+    /// # use ratatui::Terminal;
+    /// # use ratatui::backend::TestBackend;
+    /// # use ratatui::layout::Rect;
+    /// # use ratatui::widgets::{List, ListItem, ListState};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// let mut state = ListState::default();

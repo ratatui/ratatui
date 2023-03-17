@@ -24,10 +24,10 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 /// # Examples
 ///
 /// ```
-/// # use tui::text::{Text, Spans, Span};
-/// # use tui::widgets::{Block, Borders, Paragraph, Wrap};
-/// # use tui::style::{Style, Color, Modifier};
-/// # use tui::layout::{Alignment};
+/// # use ratatui::text::{Text, Spans, Span};
+/// # use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+/// # use ratatui::style::{Style, Color, Modifier};
+/// # use ratatui::layout::{Alignment};
 /// let text = vec![
 ///     Spans::from(vec![
 ///         Span::raw("First"),
@@ -63,8 +63,8 @@ pub struct Paragraph<'a> {
 /// ## Examples
 ///
 /// ```
-/// # use tui::widgets::{Paragraph, Wrap};
-/// # use tui::text::Text;
+/// # use ratatui::widgets::{Paragraph, Wrap};
+/// # use ratatui::text::Text;
 /// let bullet_points = Text::from(r#"Some indented points:
 ///     - First thing goes here and is long so that it wraps
 ///     - Here is another point that is long enough to wrap"#);

@@ -183,7 +183,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     ///
     /// # Examples:
     /// ```
-    /// use tui::{symbols, widgets::canvas::{Painter, Context}};
+    /// use ratatui::{symbols, widgets::canvas::{Painter, Context}};
     ///
     /// let mut ctx = Context::new(2, 2, [1.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
@@ -220,7 +220,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     ///
     /// # Examples:
     /// ```
-    /// use tui::{style::Color, symbols, widgets::canvas::{Painter, Context}};
+    /// use ratatui::{style::Color, symbols, widgets::canvas::{Painter, Context}};
     ///
     /// let mut ctx = Context::new(1, 1, [0.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
@@ -317,10 +317,10 @@ impl<'a> Context<'a> {
 /// # Examples
 ///
 /// ```
-/// # use tui::widgets::{Block, Borders};
-/// # use tui::layout::Rect;
-/// # use tui::widgets::canvas::{Canvas, Shape, Line, Rectangle, Map, MapResolution};
-/// # use tui::style::Color;
+/// # use ratatui::widgets::{Block, Borders};
+/// # use ratatui::layout::Rect;
+/// # use ratatui::widgets::canvas::{Canvas, Shape, Line, Rectangle, Map, MapResolution};
+/// # use ratatui::style::Color;
 /// Canvas::default()
 ///     .block(Block::default().title("Canvas").borders(Borders::ALL))
 ///     .x_bounds([-180.0, 180.0])
@@ -412,8 +412,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use tui::widgets::canvas::Canvas;
-    /// # use tui::symbols;
+    /// # use ratatui::widgets::canvas::Canvas;
+    /// # use ratatui::symbols;
     /// Canvas::default().marker(symbols::Marker::Braille).paint(|ctx| {});
     ///
     /// Canvas::default().marker(symbols::Marker::Dot).paint(|ctx| {});

@@ -12,10 +12,10 @@ use crate::{
 /// # Examples
 ///
 /// ```
-/// # use tui::widgets::{Block, Borders, Tabs};
-/// # use tui::style::{Style, Color};
-/// # use tui::text::{Spans};
-/// # use tui::symbols::{DOT};
+/// # use ratatui::widgets::{Block, Borders, Tabs};
+/// # use ratatui::style::{Style, Color};
+/// # use ratatui::text::{Spans};
+/// # use ratatui::symbols::{DOT};
 /// let titles = ["Tab1", "Tab2", "Tab3", "Tab4"].iter().cloned().map(Spans::from).collect();
 /// Tabs::new(titles)
 ///     .block(Block::default().title("Tabs").borders(Borders::ALL))
