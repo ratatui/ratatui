@@ -123,6 +123,7 @@ You can run all examples by running `cargo make run-examples` (require
 - [exhaust](https://github.com/heyrict/exhaust) — Exhaust all your possibilities.. for the next coming exam
 - [game-of-life-rs](https://github.com/kachark/game-of-life-rs) — Conway's Game of Life implemented in Rust and visualized with Tui-rs
 - [gitui](https://github.com/extrawurst/gitui) — Blazing fast terminal-ui for Git written in Rust
+- [glicol-cli](https://github.com/glicol/glicol-cli) - Music live coding in terminal
 - [gpg-tui](https://github.com/orhun/gpg-tui) — Manage your GnuPG keys with ease!
 - [gping](https://github.com/orf/gping) — Ping, but with a graph
 - [joshuto](https://github.com/kamiyaa/joshuto) — Ranger-like terminal file manager written in Rust
