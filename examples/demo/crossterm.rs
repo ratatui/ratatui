@@ -4,14 +4,14 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    Terminal,
+};
 use std::{
     error::Error,
     io,
     time::{Duration, Instant},
-};
-use tui::{
-    backend::{Backend, CrosstermBackend},
-    Terminal,
 };
 
 pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {

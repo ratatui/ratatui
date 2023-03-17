@@ -6,7 +6,7 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
     let mut bytes = Vec::new();
     let mut stdout = Cursor::new(&mut bytes);
     {
-        use tui::{
+        use ratatui::{
             backend::TermionBackend, layout::Rect, widgets::Paragraph, Terminal, TerminalOptions,
             Viewport,
         };

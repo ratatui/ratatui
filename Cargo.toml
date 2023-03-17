@@ -1,13 +1,13 @@
 [package]
-name = "tui"
+name = "ratatui"
 version = "0.19.0"
 authors = ["Florian Dehau <work@fdehau.com>"]
 description = """
 A library to build rich terminal user interfaces or dashboards
 """
-documentation = "https://docs.rs/tui/0.19.0/tui/"
+documentation = "https://docs.rs/ratatui/latest/ratatui/"
 keywords = ["tui", "terminal", "dashboard"]
-repository = "https://github.com/fdehau/tui-rs"
+repository = "https://github.com/tui-rs-revival/ratatui"
 readme = "README.md"
 license = "MIT"
 exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]

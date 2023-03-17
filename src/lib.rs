@@ -34,7 +34,7 @@
 //!
 //! ```rust,no_run
 //! use std::io;
-//! use tui::{backend::CrosstermBackend, Terminal};
+//! use ratatui::{backend::CrosstermBackend, Terminal};
 //!
 //! fn main() -> Result<(), io::Error> {
 //!     let stdout = io::stdout();
@@ -49,7 +49,7 @@
 //!
 //! ```rust,ignore
 //! use std::io;
-//! use tui::{backend::TermionBackend, Terminal};
+//! use ratatui::{backend::TermionBackend, Terminal};
 //! use termion::raw::IntoRawMode;
 //!
 //! fn main() -> Result<(), io::Error> {
@@ -77,7 +77,7 @@
 //!
 //! ```rust,no_run
 //! use std::{io, thread, time::Duration};
-//! use tui::{
+//! use ratatui::{
 //!     backend::CrosstermBackend,
 //!     widgets::{Widget, Block, Borders},
 //!     layout::{Layout, Constraint, Direction},
@@ -127,7 +127,7 @@
 //! full customization. And `Layout` is no exception:
 //!
 //! ```rust,no_run
-//! use tui::{
+//! use ratatui::{
 //!     backend::Backend,
 //!     layout::{Constraint, Direction, Layout},
 //!     widgets::{Block, Borders},

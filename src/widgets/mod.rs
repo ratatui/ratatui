@@ -86,9 +86,9 @@ pub trait Widget {
 ///
 /// ```rust,no_run
 /// # use std::io;
-/// # use tui::Terminal;
-/// # use tui::backend::{Backend, TestBackend};
-/// # use tui::widgets::{Widget, List, ListItem, ListState};
+/// # use ratatui::Terminal;
+/// # use ratatui::backend::{Backend, TestBackend};
+/// # use ratatui::widgets::{Widget, List, ListItem, ListState};
 ///
 /// // Let's say we have some events to display.
 /// struct Events {

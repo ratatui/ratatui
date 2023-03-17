@@ -19,9 +19,9 @@
 //! its `title` property (which is a [`Spans`] under the hood):
 //!
 //! ```rust
-//! # use tui::widgets::Block;
-//! # use tui::text::{Span, Spans};
-//! # use tui::style::{Color, Style};
+//! # use ratatui::widgets::Block;
+//! # use ratatui::text::{Span, Spans};
+//! # use ratatui::style::{Color, Style};
 //! // A simple string with no styling.
 //! // Converted to Spans(vec![
 //! //   Span { content: Cow::Borrowed("My title"), style: Style { .. } }
@@ -71,7 +71,7 @@ impl<'a> Span<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::text::Span;
+    /// # use ratatui::text::Span;
     /// Span::raw("My text");
     /// Span::raw(String::from("My text"));
     /// ```
@@ -90,8 +90,8 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use tui::text::Span;
-    /// # use tui::style::{Color, Modifier, Style};
+    /// # use ratatui::text::Span;
+    /// # use ratatui::style::{Color, Modifier, Style};
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// Span::styled("My text", style);
     /// Span::styled(String::from("My text"), style);
@@ -119,8 +119,8 @@ impl<'a> Span<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::text::{Span, StyledGrapheme};
-    /// # use tui::style::{Color, Modifier, Style};
+    /// # use ratatui::text::{Span, StyledGrapheme};
+    /// # use ratatui::style::{Color, Modifier, Style};
     /// # use std::iter::Iterator;
     /// let style = Style::default().fg(Color::Yellow);
     /// let span = Span::styled("Text", style);
@@ -203,8 +203,8 @@ impl<'a> Spans<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::text::{Span, Spans};
-    /// # use tui::style::{Color, Style};
+    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::style::{Color, Style};
     /// let spans = Spans::from(vec![
     ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::raw(" text"),
@@ -257,8 +257,8 @@ impl<'a> From<Spans<'a>> for String {
 /// [`core::iter::Extend`] which enables the concatenation of several [`Text`] blocks.
 ///
 /// ```rust
-/// # use tui::text::Text;
-/// # use tui::style::{Color, Modifier, Style};
+/// # use ratatui::text::Text;
+/// # use ratatui::style::{Color, Modifier, Style};
 /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
 ///
 /// // An initial two lines of `Text` built from a `&str`
@@ -284,7 +284,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::text::Text;
+    /// # use ratatui::text::Text;
     /// Text::raw("The first line\nThe second line");
     /// Text::raw(String::from("The first line\nThe second line"));
     /// ```
@@ -307,8 +307,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use tui::text::Text;
-    /// # use tui::style::{Color, Modifier, Style};
+    /// # use ratatui::text::Text;
+    /// # use ratatui::style::{Color, Modifier, Style};
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// Text::styled("The first line\nThe second line", style);
     /// Text::styled(String::from("The first line\nThe second line"), style);
@@ -327,7 +327,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// use tui::text::Text;
+    /// use ratatui::text::Text;
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(15, text.width());
     /// ```
@@ -344,7 +344,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// use tui::text::Text;
+    /// use ratatui::text::Text;
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(2, text.height());
     /// ```
@@ -357,8 +357,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use tui::text::Text;
-    /// # use tui::style::{Color, Modifier, Style};
+    /// # use ratatui::text::Text;
+    /// # use ratatui::style::{Color, Modifier, Style};
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// let mut raw_text = Text::raw("The first line\nThe second line");
     /// let styled_text = Text::styled(String::from("The first line\nThe second line"), style);

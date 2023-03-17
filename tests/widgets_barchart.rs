@@ -1,7 +1,7 @@
-use tui::backend::TestBackend;
-use tui::buffer::Buffer;
-use tui::widgets::{BarChart, Block, Borders};
-use tui::Terminal;
+use ratatui::backend::TestBackend;
+use ratatui::buffer::Buffer;
+use ratatui::widgets::{BarChart, Block, Borders};
+use ratatui::Terminal;
 
 #[test]
 fn widgets_barchart_not_full_below_max_value() {

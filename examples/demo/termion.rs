@@ -1,14 +1,14 @@
 use crate::{app::App, ui};
+use ratatui::{
+    backend::{Backend, TermionBackend},
+    Terminal,
+};
 use std::{error::Error, io, sync::mpsc, thread, time::Duration};
 use termion::{
     event::Key,
     input::{MouseTerminal, TermRead},
     raw::IntoRawMode,
     screen::IntoAlternateScreen,
-};
-use tui::{
-    backend::{Backend, TermionBackend},
-    Terminal,
 };
 
 pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {

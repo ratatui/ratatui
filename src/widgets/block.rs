@@ -32,8 +32,8 @@ impl BorderType {
 /// # Examples
 ///
 /// ```
-/// # use tui::widgets::{Block, BorderType, Borders};
-/// # use tui::style::{Style, Color};
+/// # use ratatui::widgets::{Block, BorderType, Borders};
+/// # use ratatui::style::{Style, Color};
 /// Block::default()
 ///     .title("Block")
 ///     .borders(Borders::LEFT | Borders::RIGHT)

@@ -24,11 +24,11 @@ use crossterm::event::{self, Event, KeyCode};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 
-use tui::backend::{Backend, CrosstermBackend};
-use tui::layout::Alignment;
-use tui::text::Spans;
-use tui::widgets::{Block, Borders, Paragraph};
-use tui::{Frame, Terminal};
+use ratatui::backend::{Backend, CrosstermBackend};
+use ratatui::layout::Alignment;
+use ratatui::text::Spans;
+use ratatui::widgets::{Block, Borders, Paragraph};
+use ratatui::{Frame, Terminal};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 

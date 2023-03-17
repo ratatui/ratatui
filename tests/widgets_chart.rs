@@ -1,5 +1,5 @@
-use tui::layout::Alignment;
-use tui::{
+use ratatui::layout::Alignment;
+use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Rect,
