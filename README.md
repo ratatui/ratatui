@@ -109,48 +109,11 @@ You can run all examples by running `cargo make run-examples` (require
 - [tui-rs-tree-widgets](https://github.com/EdJoPaTo/tui-rs-tree-widget): Widget for tree data structures.
 - [tui-input](https://github.com/sayanarijit/tui-input): TUI input library supporting multiple backends and tui-rs.
 
-# Apps using tui
+# Apps
 
-- [adsb_deku/radar](https://github.com/wcampbell0x2a/adsb_deku#radar-tui) — Rust ADS-B decoder + TUI radar application
-- [bandwhich](https://github.com/imsnif/bandwhich) — Terminal utility for displaying current network utilization by process, connection and remote IP/hostname
-- [battleship.rs](https://github.com/deepu105/battleship-rs) — A terminal battleship game in Rust
-- [bottom](https://github.com/ClementTsang/bottom) — Yet another cross-platform graphical process/system monitor
-- [conclusive](https://github.com/mrusme/conclusive) — Command line client for Plausible Analytics
-- [cotp](https://github.com/replydev/cotp) — Trustworthy, encrypted, command-line TOTP/HOTP authenticator app with import functionality
-- [cube timer](https://github.com/paarthmadan/cube) — A tui-based Rubik's cube timer written in Rust
-- [desed](https://github.com/SoptikHa2/desed) — Debugger for Sed: demystify and debug your sed scripts, from comfort of your terminal
-- [diskonaut](https://github.com/imsnif/diskonaut) — Terminal disk space navigator
-- [exhaust](https://github.com/heyrict/exhaust) — Exhaust all your possibilities.. for the next coming exam
-- [game-of-life-rs](https://github.com/kachark/game-of-life-rs) — Conway's Game of Life implemented in Rust and visualized with Tui-rs
-- [gitui](https://github.com/extrawurst/gitui) — Blazing fast terminal-ui for Git written in Rust
-- [glicol-cli](https://github.com/glicol/glicol-cli) - Music live coding in terminal
-- [gpg-tui](https://github.com/orhun/gpg-tui) — Manage your GnuPG keys with ease!
-- [gping](https://github.com/orf/gping) — Ping, but with a graph
-- [joshuto](https://github.com/kamiyaa/joshuto) — Ranger-like terminal file manager written in Rust
-- [kDash](https://github.com/kdash-rs/kdash) — A simple and fast dashboard for Kubernetes
-- [kmon](https://github.com/orhun/kmon) — Linux Kernel Manager and Activity Monitor
-- [kubectl-watch](https://github.com/imuxin/kubectl-watch) — A kubectl plugin to provide a pretty delta change view of being watched kubernetes resources
-- [minesweep](https://github.com/cpcloud/minesweep-rs) — Sweep some mines for fun, and probably not for profit
-- [oha](https://github.com/hatoo/oha) — HTTP load generator, inspired by rakyll/hey with tui animation
-- [oxker](https://github.com/mrjackwills/oxker) — a simple tui to view & control docker containers
-- [poketex](https://github.com/ckaznable/poketex) — A simple pokedex based on TUI
-- [rrtop](https://github.com/wojciech-zurek/rrtop) — Redis monitoring (top like) app
-- [rust-sadari-cli](https://github.com/24seconds/rust-sadari-cli) — Sadari game based on terminal
-- [rusty-krab-manager](https://github.com/aryakaul/rusty-krab-manager) — Time-management TUI in Rust
-- [spotify-tui](https://github.com/Rigellute/spotify-tui) — Spotify for the terminal written in Rust
-- [systeroid](https://github.com/orhun/systeroid) - A more powerful alternative to sysctl(8) with a terminal user interface
-- [taskwarrior-tui](https://github.com/kdheepak/taskwarrior-tui) — A terminal user interface for Taskwarrior
-- [termchat](https://github.com/lemunozm/termchat) — Terminal chat through the LAN with video streaming and file transfer
-- [termscp](https://github.com/veeso/termscp) — A feature rich terminal UI file transfer and explorer with support for SCP/SFTP/FTP/S3
-- [tick-rs](https://github.com/tarkah/tickrs) — Realtime ticker data in your terminal
-- [tsuchita](https://github.com/kamiyaa/tsuchita) — Client-server notification center for dbus desktop notifications
-- [tuinance](https://github.com/landchad/tuinance) — Display financial data on the terminal
-- [vector](https://vector.dev) — A lightweight, ultra-fast tool for building observability pipelines
-- [xplr](https://github.com/sayanarijit/xplr) — A hackable, minimal, fast TUI file explorer
-- [ytop](https://github.com/cjbassi/ytop) — A TUI system monitor written in Rust (no longer maintained)
-- [zenith](https://github.com/bvaisvil/zenith) — Sort of like top or htop but with zoom-able charts, CPU, GPU, network, and disk usage
+See the [list of applications using tui](./APPS.md).
 
-### Alternatives
+# Alternatives
 
 You might want to checkout [Cursive](https://github.com/gyscos/Cursive) for an
 alternative solution to build text user interfaces in Rust.
