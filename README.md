@@ -111,7 +111,7 @@ You can run all examples by running `cargo make run-examples` (require
 
 # Apps
 
-See the [list of applications using tui](./APPS.md).
+Check out the list of [close to 40 apps](./APPS.md) using `ratatui`!
 
 # Alternatives
 
