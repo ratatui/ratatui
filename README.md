@@ -1,10 +1,19 @@
-# tui-rs
+# ratatui
+
+A `tui`-rs fork.
 
 [![Build Status](https://github.com/fdehau/tui-rs/workflows/CI/badge.svg)](https://github.com/fdehau/tui-rs/actions?query=workflow%3ACI+)
 [![Crate Status](https://img.shields.io/crates/v/tui.svg)](https://crates.io/crates/tui)
 [![Docs Status](https://docs.rs/tui/badge.svg)](https://docs.rs/crate/tui/)
 
 <img src="./assets/demo.gif" alt="Demo cast under Linux Termite with Inconsolata font 12pt">
+
+# Install
+
+```toml
+[dependencies]
+tui = { package = "ratatui" }
+```
 
 # What is this fork?
 
@@ -16,7 +25,7 @@ Please make sure you read the updated contributing guidelines, especially if you
 
 # Introduction
 
-`tui-rs` is a [Rust](https://www.rust-lang.org) library to build rich terminal
+`tui`-rs is a [Rust](https://www.rust-lang.org) library to build rich terminal
 user interfaces and dashboards. It is heavily inspired by the `Javascript`
 library [blessed-contrib](https://github.com/yaronn/blessed-contrib) and the
 `Go` library [termui](https://github.com/gizak/termui).
