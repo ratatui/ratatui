@@ -2,7 +2,7 @@
 
 A `tui`-rs fork.
 
-[![Build Status](https://github.com/fdehau/tui-rs/workflows/CI/badge.svg)](https://github.com/fdehau/tui-rs/actions?query=workflow%3ACI+)
+[![Build Status](https://github.com/tui-rs-revival/ratatui/workflows/CI/badge.svg)](https://github.com/tui-rs-revival/ratatui/actions?query=workflow%3ACI+)
 [![Crate Status](https://img.shields.io/crates/v/tui.svg)](https://crates.io/crates/tui)
 [![Docs Status](https://docs.rs/tui/badge.svg)](https://docs.rs/crate/tui/)
 
@@ -67,8 +67,8 @@ cargo run --example demo --no-default-features --features=termion --release -- -
 
 where `tick-rate` is the UI refresh rate in ms.
 
-The UI code is in [examples/demo/ui.rs](https://github.com/fdehau/tui-rs/blob/v0.19.0/examples/demo/ui.rs) while the
-application state is in [examples/demo/app.rs](https://github.com/fdehau/tui-rs/blob/v0.19.0/examples/demo/app.rs).
+The UI code is in [examples/demo/ui.rs](https://github.com/tui-rs-revival/ratatui/blob/main/examples/demo/ui.rs) while the
+application state is in [examples/demo/app.rs](https://github.com/tui-rs-revival/ratatui/blob/main/examples/demo/app.rs).
 
 If the user interface contains glyphs that are not displayed correctly by your terminal, you may want to run
 the demo without those symbols:
@@ -83,16 +83,16 @@ cargo run --example demo --release -- --tick-rate 200 --enhanced-graphics false
 
 The library comes with the following list of widgets:
 
-- [Block](https://github.com/fdehau/tui-rs/blob/main/examples/block.rs)
-- [Gauge](https://github.com/fdehau/tui-rs/blob/main/examples/gauge.rs)
-- [Sparkline](https://github.com/fdehau/tui-rs/blob/main/examples/sparkline.rs)
-- [Chart](https://github.com/fdehau/tui-rs/blob/main/examples/chart.rs)
-- [BarChart](https://github.com/fdehau/tui-rs/blob/main/examples/barchart.rs)
-- [List](https://github.com/fdehau/tui-rs/blob/main/examples/list.rs)
-- [Table](https://github.com/fdehau/tui-rs/blob/main/examples/table.rs)
-- [Paragraph](https://github.com/fdehau/tui-rs/blob/main/examples/paragraph.rs)
-- [Canvas (with line, point cloud, map)](https://github.com/fdehau/tui-rs/blob/main/examples/canvas.rs)
-- [Tabs](https://github.com/fdehau/tui-rs/blob/main/examples/tabs.rs)
+- [Block](https://github.com/tui-rs-revival/ratatui/blob/main/examples/block.rs)
+- [Gauge](https://github.com/tui-rs-revival/ratatui/blob/main/examples/gauge.rs)
+- [Sparkline](https://github.com/tui-rs-revival/ratatui/blob/main/examples/sparkline.rs)
+- [Chart](https://github.com/tui-rs-revival/ratatui/blob/main/examples/chart.rs)
+- [BarChart](https://github.com/tui-rs-revival/ratatui/blob/main/examples/barchart.rs)
+- [List](https://github.com/tui-rs-revival/ratatui/blob/main/examples/list.rs)
+- [Table](https://github.com/tui-rs-revival/ratatui/blob/main/examples/table.rs)
+- [Paragraph](https://github.com/tui-rs-revival/ratatui/blob/main/examples/paragraph.rs)
+- [Canvas (with line, point cloud, map)](https://github.com/tui-rs-revival/ratatui/blob/main/examples/canvas.rs)
+- [Tabs](https://github.com/tui-rs-revival/ratatui/blob/main/examples/tabs.rs)
 
 Click on each item to see the source of the example. Run the examples with with
 cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by pressing `q`.
