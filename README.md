@@ -19,7 +19,8 @@ tui = { package = "ratatui" }
 
 This fork was created to continue maintenance on the original TUI project. The original maintainer had created an [issue](https://github.com/fdehau/tui-rs/issues/654) explaining how he couldn't find time to continue development, which led to us creating this fork. From here, we hope to continue developing the TUI crate.
 
-In order to organize ourselves, we have created a **temporary** [discord server](https://discord.gg/pMCEU9hNEj). We have not yet determined with the community what will be our definitive communication medium.
+In order to organize ourselves, we currently use a [discord server](https://discord.gg/pMCEU9hNEj), feel free to join and come chat ! There are also plans to implement a [matrix](https://matrix.org/) bridge in the near future.
+**Discord is not a MUST to contribute,** we follow a pretty standard github centered open source workflow keeping the most important conversations on github, open an issue or PR and it will be addressed.
 
 Please make sure you read the updated contributing guidelines, especially if you are interested in working on a PR or issue opened in the previous repository.
 
@@ -52,7 +53,7 @@ Since version 0.17.0, `ratatui` requires **rustc version 1.59.0 or greater**.
 
 # Documentation
 
-The documentation can be found on [docs.rs.](https://docs.rs/tui)
+The documentation can be found on [docs.rs.](https://docs.rs/ratatui)
 
 # Demo
 
