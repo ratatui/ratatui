@@ -17,10 +17,12 @@ tui = { package = "ratatui" }
 
 # What is this fork?
 
-This fork was created to continue maintenance on the original TUI project. The original maintainer had created an [issue](https://github.com/fdehau/tui-rs/issues/654) explaining how he couldn't find time to continue development, which led to us creating this fork. From here, we hope to continue developing the TUI crate.
+This fork was created to continue maintenance on the original TUI project. The original maintainer had created an [issue](https://github.com/fdehau/tui-rs/issues/654) explaining how he couldn't find time to continue development, which led to us creating this fork.
+
+With that in mind, **we the community** look forward to continuing the work started by [**Florian Dehau.**](https://github.com/fdehau) :rocket:
 
 In order to organize ourselves, we currently use a [discord server](https://discord.gg/pMCEU9hNEj), feel free to join and come chat ! There are also plans to implement a [matrix](https://matrix.org/) bridge in the near future.
-**Discord is not a MUST to contribute,** we follow a pretty standard github centered open source workflow keeping the most important conversations on github, open an issue or PR and it will be addressed.
+**Discord is not a MUST to contribute,** we follow a pretty standard github centered open source workflow keeping the most important conversations on github, open an issue or PR and it will be addressed. :smile:
 
 Please make sure you read the updated contributing guidelines, especially if you are interested in working on a PR or issue opened in the previous repository.
 
