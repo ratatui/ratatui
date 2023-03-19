@@ -1,6 +1,33 @@
 # Changelog
 
-## To be released
+## v0.20.0 - 2023-03-19
+
+This marks the first release of `ratatui`, a community-maintained fork of [tui](https://github.com/fdehau/tui-rs).
+
+The purpose of this release is to include **bug fixes** and **small changes** into the repository thus **no new features** are added. We have transferred all the pull requests from the original repository and worked on the low hanging ones to incorporate them in this "maintenance" release.
+
+Here is a list of changes:
+
+<!-- TODO -->
+
+#### Contributors
+
+Thank you so much to everyone that contributed to this release!
+
+- [@orhun](https://github.com/orhun)
+- [@mindoodoo](https://github.com/mindoodoo)
+- [@sayanarijit](https://github.com/sayanarijit)
+- [@Owletti](https://github.com/Owletti)
+- [@UncleScientist](https://github.com/UncleScientist)
+- [@rhysd](https://github.com/rhysd)
+- [@ckaznable](https://github.com/ckaznable)
+- [@imuxin](https://github.com/imuxin)
+- [@mrjackwills](https://github.com/mrjackwills)
+- [@conradludgate](https://github.com/conradludgate)
+- [@kianmeng](https://github.com/kianmeng)
+- [@chaosprint](https://github.com/chaosprint)
+
+And most importantly, special thanks to [Florian Dehau](https://github.com/fdehau) for creating this awesome library 💖
 
 ## v0.19.0 - 2022-08-14
 
