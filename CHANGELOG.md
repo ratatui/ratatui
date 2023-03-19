@@ -85,7 +85,7 @@ Thank you so much to everyone that contributed to this release!
 - [@kianmeng](https://github.com/kianmeng)
 - [@chaosprint](https://github.com/chaosprint)
 
-And most importantly, special thanks to [Florian Dehau](https://github.com/fdehau) for creating this awesome library 💖 We look forward to building on the strong foundations that the original crate layed out.
+And most importantly, special thanks to [Florian Dehau](https://github.com/fdehau) for creating this awesome library 💖 We look forward to building on the strong foundations that the original crate laid out.
 
 ## v0.19.0 - 2022-08-14
 
