@@ -384,11 +384,18 @@ where
         self
     }
 
+    /// Define the viewport of the canvas.
+    /// If you were to "zoom" to a certain part of the world you may want to choose different
+    /// bounds.
     pub fn x_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
         self.x_bounds = bounds;
         self
     }
 
+    /// Define the viewport of the canvas.
+    ///
+    /// If you were to "zoom" to a certain part of the world you may want to choose different
+    /// bounds.
     pub fn y_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
         self.y_bounds = bounds;
         self
