@@ -83,16 +83,16 @@ cargo run --example demo --release -- --tick-rate 200 --enhanced-graphics false
 
 The library comes with the following list of widgets:
 
-- [Block](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/block.rs)
-- [Gauge](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/gauge.rs)
-- [Sparkline](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/sparkline.rs)
-- [Chart](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/chart.rs)
-- [BarChart](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/barchart.rs)
-- [List](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/list.rs)
-- [Table](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/table.rs)
-- [Paragraph](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/paragraph.rs)
-- [Canvas (with line, point cloud, map)](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/canvas.rs)
-- [Tabs](https://github.com/fdehau/tui-rs/blob/v0.16.0/examples/tabs.rs)
+- [Block](https://github.com/fdehau/tui-rs/blob/main/examples/block.rs)
+- [Gauge](https://github.com/fdehau/tui-rs/blob/main/examples/gauge.rs)
+- [Sparkline](https://github.com/fdehau/tui-rs/blob/main/examples/sparkline.rs)
+- [Chart](https://github.com/fdehau/tui-rs/blob/main/examples/chart.rs)
+- [BarChart](https://github.com/fdehau/tui-rs/blob/main/examples/barchart.rs)
+- [List](https://github.com/fdehau/tui-rs/blob/main/examples/list.rs)
+- [Table](https://github.com/fdehau/tui-rs/blob/main/examples/table.rs)
+- [Paragraph](https://github.com/fdehau/tui-rs/blob/main/examples/paragraph.rs)
+- [Canvas (with line, point cloud, map)](https://github.com/fdehau/tui-rs/blob/main/examples/canvas.rs)
+- [Tabs](https://github.com/fdehau/tui-rs/blob/main/examples/tabs.rs)
 
 Click on each item to see the source of the example. Run the examples with with
 cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by pressing `q`.
