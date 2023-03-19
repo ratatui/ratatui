@@ -8,9 +8,7 @@ The purpose of this release is to include **bug fixes** and **small changes** in
 
 Here is a list of changes:
 
-<!-- TODO -->
-
-#### Contributors
+### Contributors
 
 Thank you so much to everyone that contributed to this release!
 
@@ -27,7 +25,7 @@ Thank you so much to everyone that contributed to this release!
 - [@kianmeng](https://github.com/kianmeng)
 - [@chaosprint](https://github.com/chaosprint)
 
-And most importantly, special thanks to [Florian Dehau](https://github.com/fdehau) for creating this awesome library 💖
+And most importantly, special thanks to [Florian Dehau](https://github.com/fdehau) for creating this awesome library 💖 We look forward to building on the strong foundations that the original crate layed out.
 
 ## v0.19.0 - 2022-08-14
 
