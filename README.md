@@ -1,6 +1,6 @@
 # ratatui
 
-A `tui`-rs fork.
+An actively maintained `tui`-rs fork.
 
 [![Build Status](https://github.com/tui-rs-revival/ratatui/workflows/CI/badge.svg)](https://github.com/tui-rs-revival/ratatui/actions?query=workflow%3ACI+)
 [![Crate Status](https://img.shields.io/crates/v/tui.svg)](https://crates.io/crates/ratatui)
@@ -17,15 +17,18 @@ tui = { package = "ratatui" }
 
 # What is this fork?
 
-This fork was created to continue maintenance on the original TUI project. The original maintainer had created an [issue](https://github.com/fdehau/tui-rs/issues/654) explaining how he couldn't find time to continue development, which led to us creating this fork. From here, we hope to continue developing the TUI crate.
+This fork was created to continue maintenance on the original TUI project. The original maintainer had created an [issue](https://github.com/fdehau/tui-rs/issues/654) explaining how he couldn't find time to continue development, which led to us creating this fork.
 
-In order to organize ourselves, we have created a **temporary** [discord server](https://discord.gg/pMCEU9hNEj). We have not yet determined with the community what will be our definitive communication medium.
+With that in mind, **we the community** look forward to continuing the work started by [**Florian Dehau.**](https://github.com/fdehau) :rocket:
+
+In order to organize ourselves, we currently use a [discord server](https://discord.gg/pMCEU9hNEj), feel free to join and come chat ! There are also plans to implement a [matrix](https://matrix.org/) bridge in the near future.
+**Discord is not a MUST to contribute,** we follow a pretty standard github centered open source workflow keeping the most important conversations on github, open an issue or PR and it will be addressed. :smile:
 
 Please make sure you read the updated contributing guidelines, especially if you are interested in working on a PR or issue opened in the previous repository.
 
 # Introduction
 
-`tui`-rs is a [Rust](https://www.rust-lang.org) library to build rich terminal
+`ratatui`-rs is a [Rust](https://www.rust-lang.org) library to build rich terminal
 user interfaces and dashboards. It is heavily inspired by the `Javascript`
 library [blessed-contrib](https://github.com/yaronn/blessed-contrib) and the
 `Go` library [termui](https://github.com/gizak/termui).
@@ -48,11 +51,11 @@ you may rely on the previously cited libraries to achieve such features.
 
 ## Rust version requirements
 
-Since version 0.17.0, `tui` requires **rustc version 1.59.0 or greater**.
+Since version 0.17.0, `ratatui` requires **rustc version 1.59.0 or greater**.
 
 # Documentation
 
-The documentation can be found on [docs.rs.](https://docs.rs/tui)
+The documentation can be found on [docs.rs.](https://docs.rs/ratatui)
 
 # Demo
 
