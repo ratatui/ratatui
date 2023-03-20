@@ -299,7 +299,9 @@ mod tests {
 
         for m in &mods {
             buffer.get_mut(0, 0).set_style(Style::reset());
-            buffer.get_mut(0, 0).set_style(Style::default().add_modifier(*m));
+            buffer
+                .get_mut(0, 0)
+                .set_style(Style::default().add_modifier(*m));
             let style = buffer.get(0, 0).style();
             assert!(style.add_modifier.contains(*m));
             assert!(!style.sub_modifier.contains(*m));
