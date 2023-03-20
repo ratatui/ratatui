@@ -2,7 +2,7 @@ use crate::{buffer::Buffer, layout::Rect, widgets::Widget};
 
 /// A widget to clear/reset a certain area to allow overdrawing (e.g. for popups).
 ///
-/// This widget **cannot be used to clear the terminal on the first render** as `tui` assumes the
+/// This widget **cannot be used to clear the terminal on the first render** as `ratatui` assumes the
 /// render area is empty. Use [`crate::Terminal::clear`] instead.
 ///
 /// # Examples

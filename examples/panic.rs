@@ -127,7 +127,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         Spans::from("with the `reset` command"),
         Spans::from(""),
         Spans::from("with the chained panic hook enabled,"),
-        Spans::from("you should see the panic report as you would without tui"),
+        Spans::from("you should see the panic report as you would without ratatui"),
         Spans::from(""),
         Spans::from("try first without the panic handler to see the difference"),
     ];

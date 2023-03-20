@@ -32,7 +32,7 @@ The only exception to this rule is if it's to fix **reproducible slowness.**
 
 [cargo-make]: https://github.com/sagiegurari/cargo-make "cargo-make"
 
-`tui` is an ordinary Rust project where common tasks are managed with [cargo-make].
+`ratatui` is an ordinary Rust project where common tasks are managed with [cargo-make].
 It wraps common `cargo` commands with sane defaults depending on your platform of choice.
 Building the project should be as easy as running `cargo make build`.
 
@@ -56,6 +56,6 @@ You can also check most of those things yourself locally using `cargo make ci` w
 ## Tests
 
 The test coverage of the crate is far from being ideal but we already have a fair amount of tests in place.
-Beside the usual doc and unit tests, one of the most valuable test you can write for `tui` is a test again the `TestBackend`.
+Beside the usual doc and unit tests, one of the most valuable test you can write for `ratatui` is a test against the `TestBackend`.
 It allows you to assert the content of the output buffer that would have been flushed to the terminal after a given draw call.
 See `widgets_block_renders` in [tests/widgets_block.rs](./tests/widget_block.rs) for an example.
