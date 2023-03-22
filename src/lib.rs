@@ -1,16 +1,17 @@
-//! [tui](https://github.com/fdehau/tui-rs) is a library used to build rich
+//! [ratatui](https://github.com/tui-rs-revival/ratatui) is a library used to build rich
 //! terminal users interfaces and dashboards.
 //!
-//! ![](https://raw.githubusercontent.com/fdehau/tui-rs/master/assets/demo.gif)
+//! ![](https://raw.githubusercontent.com/tui-rs-revival/ratatui/master/assets/demo.gif)
 //!
 //! # Get started
 //!
-//! ## Adding `tui` as a dependency
+//! ## Adding `ratatui` as a dependency
 //!
+//! Add the following to your `Cargo.toml`:
 //! ```toml
 //! [dependencies]
-//! tui = "0.19"
-//! crossterm = "0.25"
+//! crossterm = "0.26"
+//! ratatui = "0.20"
 //! ```
 //!
 //! The crate is using the `crossterm` backend by default that works on most platforms. But if for
@@ -20,7 +21,7 @@
 //! ```toml
 //! [dependencies]
 //! termion = "1.5"
-//! tui = { version = "0.19", default-features = false, features = ['termion'] }
+//! ratatui = { version = "0.20", default-features = false, features = ['termion'] }
 //!
 //! ```
 //!
@@ -28,7 +29,7 @@
 //!
 //! ## Creating a `Terminal`
 //!
-//! Every application using `tui` should start by instantiating a `Terminal`. It is a light
+//! Every application using `ratatui` should start by instantiating a `Terminal`. It is a light
 //! abstraction over available backends that provides basic functionalities such as clearing the
 //! screen, hiding the cursor, etc.
 //!

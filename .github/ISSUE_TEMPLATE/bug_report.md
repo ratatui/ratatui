@@ -7,7 +7,7 @@ assignees: ''
 ---
 
 <!--
-Hi there, sorry `tui` is not working as expected.
+Hi there, sorry `ratatui` is not working as expected.
 Please fill this bug report conscientiously.
 A detailed and complete issue is more likely to be processed quickly.
 -->
