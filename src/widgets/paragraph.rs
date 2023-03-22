@@ -52,7 +52,7 @@ pub struct Paragraph<'a> {
     wrap: Option<Wrap>,
     /// The text to display
     text: Text<'a>,
-    /// Scroll
+    /// Scroll (y, x)
     scroll: (u16, u16),
     /// Alignment of the text
     alignment: Alignment,
@@ -121,6 +121,7 @@ impl<'a> Paragraph<'a> {
         self
     }
 
+    /// offset = (y, x)
     pub fn scroll(mut self, offset: (u16, u16)) -> Paragraph<'a> {
         self.scroll = offset;
         self
@@ -162,25 +163,27 @@ impl<'a> Widget for Paragraph<'a> {
                 }))
         });
 
+        let (scroll_y, scroll_x) = self.scroll;
+
         let mut line_composer: Box<dyn LineComposer> = if let Some(Wrap { trim }) = self.wrap {
             Box::new(WordWrapper::new(&mut styled, text_area.width, trim))
         } else {
             let mut line_composer = Box::new(LineTruncator::new(&mut styled, text_area.width));
             if let Alignment::Left = self.alignment {
-                line_composer.set_horizontal_offset(self.scroll.1);
+                line_composer.set_horizontal_offset(scroll_x);
             }
             line_composer
         };
         let mut y = 0;
         while let Some((current_line, current_line_width)) = line_composer.next_line() {
-            if y >= self.scroll.0 {
+            if y >= scroll_y {
                 let mut x = get_line_offset(current_line_width, text_area.width, self.alignment);
                 for StyledGrapheme { symbol, style } in current_line {
                     let width = symbol.width();
                     if width == 0 {
                         continue;
                     }
-                    buf.get_mut(text_area.left() + x, text_area.top() + y - self.scroll.0)
+                    buf.get_mut(text_area.left() + x, text_area.top() + y - scroll_y)
                         .set_symbol(if symbol.is_empty() {
                             // If the symbol is empty, the last char which rendered last time will
                             // leave on the line. It's a quick fix.
@@ -193,7 +196,7 @@ impl<'a> Widget for Paragraph<'a> {
                 }
             }
             y += 1;
-            if y >= text_area.height + self.scroll.0 {
+            if y >= text_area.height + scroll_y {
                 break;
             }
         }
