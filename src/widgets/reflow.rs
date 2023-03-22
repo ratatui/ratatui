@@ -4,13 +4,6 @@ use unicode_width::UnicodeWidthStr;
 
 const NBSP: &str = "\u{00a0}";
 
-/// A state machine to pack styled symbols into lines.
-/// Cannot implement it as Iterator since it yields slices of the internal buffer (need streaming
-/// iterators for that).
-pub trait LineComposer<'a> {
-    fn next_line(&mut self) -> Option<(&[StyledGrapheme<'a>], u16)>;
-}
-
 /// A state machine that wraps lines on word boundaries.
 pub struct WordWrapper<'a, 'b> {
     symbols: &'b mut dyn Iterator<Item = StyledGrapheme<'a>>,
@@ -35,6 +28,13 @@ impl<'a, 'b> WordWrapper<'a, 'b> {
             trim,
         }
     }
+}
+
+/// A state machine to pack styled symbols into lines.
+/// Cannot implement it as Iterator since it yields slices of the internal buffer (need streaming
+/// iterators for that).
+pub trait LineComposer<'a> {
+    fn next_line(&mut self) -> Option<(&[StyledGrapheme<'a>], u16)>;
 }
 
 impl<'a, 'b> LineComposer<'a> for WordWrapper<'a, 'b> {
