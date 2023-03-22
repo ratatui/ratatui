@@ -91,8 +91,7 @@ where
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// let block = Block::default();
     /// let area = Rect::new(0, 0, 5, 5);
-    /// let mut frame = terminal.get_frame();
-    /// frame.render_widget(block, area);
+    /// terminal.draw(|frame| frame.render_widget(block, area))?;
     /// ```
     pub fn render_widget<W>(&mut self, widget: W, area: Rect)
     where
@@ -123,8 +122,7 @@ where
     /// ];
     /// let list = List::new(items);
     /// let area = Rect::new(0, 0, 5, 5);
-    /// let mut frame = terminal.get_frame();
-    /// frame.render_stateful_widget(list, area, &mut state);
+    /// terminal.draw(|frame| frame.render_stateful_widget(list, area, &mut state))?;
     /// ```
     pub fn render_stateful_widget<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
     where
@@ -199,14 +197,6 @@ where
         })
     }
 
-    /// Get a Frame object which provides a consistent view into the terminal state for rendering.
-    pub fn get_frame(&mut self) -> Frame<B> {
-        Frame {
-            terminal: self,
-            cursor_position: None,
-        }
-    }
-
     pub fn current_buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffers[self.current]
     }
@@ -260,7 +250,10 @@ where
         // and the terminal (if growing), which may OOB.
         self.autoresize()?;
 
-        let mut frame = self.get_frame();
+        let mut frame = Frame {
+            terminal: self,
+            cursor_position: None,
+        };
         f(&mut frame);
         // We can't change the cursor position right away because we have to flush the frame to
         // stdout first. But we also can't keep the frame around, since it holds a &mut to
