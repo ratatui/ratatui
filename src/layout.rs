@@ -202,15 +202,14 @@ impl Layout {
 }
 
 fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
+    let mut ccs: Vec<CassowaryConstraint> = Vec::with_capacity(layout.constraints.len() * 10);
+    let dest_area = area.inner(&layout.margin);
     let elements = layout
         .constraints
         .iter()
         .map(|_| Element::new())
         .collect::<Vec<Element>>();
-
-    let dest_area = area.inner(&layout.margin);
-    let mut ccs: Vec<CassowaryConstraint> = Vec::with_capacity(layout.constraints.len() * 10);
-    // All element are placed inside destination area
+    // All elements are placed inside destination area
     for elt in &elements {
         ccs.push(elt.width | GE(REQUIRED) | 0f64);
         ccs.push(elt.height | GE(REQUIRED) | 0f64);
@@ -219,12 +218,16 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         ccs.push(elt.right() | LE(REQUIRED) | f64::from(dest_area.right()));
         ccs.push(elt.bottom() | LE(REQUIRED) | f64::from(dest_area.bottom()));
     }
+
+    // First element edge alligned
     if let Some(first) = elements.first() {
         ccs.push(match layout.direction {
             Direction::Horizontal => first.left() | EQ(REQUIRED) | f64::from(dest_area.left()),
             Direction::Vertical => first.top() | EQ(REQUIRED) | f64::from(dest_area.top()),
         });
     }
+
+    // Extend constaints
     match layout.extend {
         Extend::Viewport => {
             if let Some(last) = elements.last() {
@@ -238,38 +241,41 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
                 });
             }
         }
+        // TEMP: might remove, none possibly acts as overflow
         Extend::Overflow => todo!(),
         Extend::None => (),
     }
 
     match layout.direction {
         Direction::Horizontal => {
+            // Elements placed directly after eachother (no gaps)
             for pair in elements.windows(2) {
                 ccs.push((pair[0].x + pair[0].width) | EQ(REQUIRED) | pair[1].x);
             }
-            for (i, size) in layout.constraints.iter().enumerate() {
-                ccs.push(elements[i].y | EQ(REQUIRED) | f64::from(dest_area.y));
-                ccs.push(elements[i].height | EQ(REQUIRED) | f64::from(dest_area.height));
-                ccs.push(match *size {
-                    Constraint::Length(v) => elements[i].width | EQ(MEDIUM) | f64::from(v),
+            for (element, constraint) in elements.iter().zip(layout.constraints.iter()) {
+                // Edges align with dest_area edges
+                ccs.push(element.y | EQ(REQUIRED) | f64::from(dest_area.y));
+                ccs.push(element.height | EQ(REQUIRED) | f64::from(dest_area.height));
+                ccs.push(match *constraint {
+                    Constraint::Length(v) => element.width | EQ(MEDIUM) | f64::from(v),
                     Constraint::Percentage(v) => {
-                        elements[i].width | EQ(MEDIUM) | (f64::from(v * dest_area.width) / 100.0)
+                        element.width | EQ(MEDIUM) | (f64::from(v * dest_area.width) / 100.0)
                     }
                     Constraint::Ratio(n, d) => {
-                        elements[i].width
+                        element.width
                             | EQ(MEDIUM)
                             | (f64::from(dest_area.width) * f64::from(n) / f64::from(d))
                     }
-                    Constraint::Min(v) => elements[i].width | GE(MEDIUM) | f64::from(v),
-                    Constraint::Max(v) => elements[i].width | LE(MEDIUM) | f64::from(v),
+                    Constraint::Min(v) => element.width | GE(MEDIUM) | f64::from(v),
+                    Constraint::Max(v) => element.width | LE(MEDIUM) | f64::from(v),
                 });
 
-                match *size {
+                match *constraint {
                     Constraint::Min(v) => {
-                        ccs.push(elements[i].width | EQ(WEAK) | f64::from(v));
+                        ccs.push(element.width | EQ(WEAK) | f64::from(v));
                     }
                     Constraint::Max(v) => {
-                        ccs.push(elements[i].width | EQ(WEAK) | f64::from(v));
+                        ccs.push(element.width | EQ(WEAK) | f64::from(v));
                     }
                     _ => {}
                 }
@@ -277,31 +283,33 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         }
         Direction::Vertical => {
             for pair in elements.windows(2) {
+                // Elements placed directly after eachother (no gaps)
                 ccs.push((pair[0].y + pair[0].height) | EQ(REQUIRED) | pair[1].y);
             }
-            for (i, size) in layout.constraints.iter().enumerate() {
-                ccs.push(elements[i].x | EQ(REQUIRED) | f64::from(dest_area.x));
-                ccs.push(elements[i].width | EQ(REQUIRED) | f64::from(dest_area.width));
-                ccs.push(match *size {
-                    Constraint::Length(v) => elements[i].height | EQ(MEDIUM) | f64::from(v),
+            for (element, constraint) in elements.iter().zip(layout.constraints.iter()) {
+                // Edges align with dest_area edges
+                ccs.push(element.x | EQ(REQUIRED) | f64::from(dest_area.x));
+                ccs.push(element.width | EQ(REQUIRED) | f64::from(dest_area.width));
+                ccs.push(match *constraint {
+                    Constraint::Length(v) => element.height | EQ(MEDIUM) | f64::from(v),
                     Constraint::Percentage(v) => {
-                        elements[i].height | EQ(MEDIUM) | (f64::from(v * dest_area.height) / 100.0)
+                        element.height | EQ(MEDIUM) | (f64::from(v * dest_area.height) / 100.0)
                     }
                     Constraint::Ratio(n, d) => {
-                        elements[i].height
+                        element.height
                             | EQ(MEDIUM)
                             | (f64::from(dest_area.height) * f64::from(n) / f64::from(d))
                     }
-                    Constraint::Min(v) => elements[i].height | GE(MEDIUM) | f64::from(v),
-                    Constraint::Max(v) => elements[i].height | LE(MEDIUM) | f64::from(v),
+                    Constraint::Min(v) => element.height | GE(MEDIUM) | f64::from(v),
+                    Constraint::Max(v) => element.height | LE(MEDIUM) | f64::from(v),
                 });
 
-                match *size {
+                match *constraint {
                     Constraint::Min(v) => {
-                        ccs.push(elements[i].height | EQ(WEAK) | f64::from(v));
+                        ccs.push(element.height | EQ(WEAK) | f64::from(v));
                     }
                     Constraint::Max(v) => {
-                        ccs.push(elements[i].height | EQ(WEAK) | f64::from(v));
+                        ccs.push(element.height | EQ(WEAK) | f64::from(v));
                     }
                     _ => {}
                 }
