@@ -256,28 +256,25 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
                 // Edges align with dest_area edges
                 ccs.push(element.y | EQ(REQUIRED) | f64::from(dest_area.y));
                 ccs.push(element.height | EQ(REQUIRED) | f64::from(dest_area.height));
-                ccs.push(match *constraint {
-                    Constraint::Length(v) => element.width | EQ(MEDIUM) | f64::from(v),
-                    Constraint::Percentage(v) => {
-                        element.width | EQ(MEDIUM) | (f64::from(v * dest_area.width) / 100.0)
-                    }
-                    Constraint::Ratio(n, d) => {
-                        element.width
-                            | EQ(MEDIUM)
-                            | (f64::from(dest_area.width) * f64::from(n) / f64::from(d))
-                    }
-                    Constraint::Min(v) => element.width | GE(MEDIUM) | f64::from(v),
-                    Constraint::Max(v) => element.width | LE(MEDIUM) | f64::from(v),
-                });
 
                 match *constraint {
                     Constraint::Min(v) => {
                         ccs.push(element.width | EQ(WEAK) | f64::from(v));
+                        ccs.push(element.width | GE(MEDIUM) | f64::from(v));
                     }
                     Constraint::Max(v) => {
                         ccs.push(element.width | EQ(WEAK) | f64::from(v));
+                        ccs.push(element.width | LE(MEDIUM) | f64::from(v));
                     }
-                    _ => {}
+                    Constraint::Length(v) => ccs.push(element.width | EQ(MEDIUM) | f64::from(v)),
+                    Constraint::Percentage(v) => ccs.push(
+                        element.width | EQ(MEDIUM) | (f64::from(v * dest_area.width) / 100.0),
+                    ),
+                    Constraint::Ratio(n, d) => ccs.push(
+                        element.width
+                            | EQ(MEDIUM)
+                            | (f64::from(dest_area.width) * f64::from(n) / f64::from(d)),
+                    ),
                 }
             }
         }
@@ -290,28 +287,25 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
                 // Edges align with dest_area edges
                 ccs.push(element.x | EQ(REQUIRED) | f64::from(dest_area.x));
                 ccs.push(element.width | EQ(REQUIRED) | f64::from(dest_area.width));
-                ccs.push(match *constraint {
-                    Constraint::Length(v) => element.height | EQ(MEDIUM) | f64::from(v),
-                    Constraint::Percentage(v) => {
-                        element.height | EQ(MEDIUM) | (f64::from(v * dest_area.height) / 100.0)
-                    }
-                    Constraint::Ratio(n, d) => {
-                        element.height
-                            | EQ(MEDIUM)
-                            | (f64::from(dest_area.height) * f64::from(n) / f64::from(d))
-                    }
-                    Constraint::Min(v) => element.height | GE(MEDIUM) | f64::from(v),
-                    Constraint::Max(v) => element.height | LE(MEDIUM) | f64::from(v),
-                });
 
                 match *constraint {
                     Constraint::Min(v) => {
                         ccs.push(element.height | EQ(WEAK) | f64::from(v));
+                        ccs.push(element.height | GE(MEDIUM) | f64::from(v))
                     }
                     Constraint::Max(v) => {
                         ccs.push(element.height | EQ(WEAK) | f64::from(v));
+                        ccs.push(element.height | LE(MEDIUM) | f64::from(v))
                     }
-                    _ => {}
+                    Constraint::Length(v) => ccs.push(element.height | EQ(MEDIUM) | f64::from(v)),
+                    Constraint::Percentage(v) => ccs.push(
+                        element.height | EQ(MEDIUM) | (f64::from(v * dest_area.height) / 100.0),
+                    ),
+                    Constraint::Ratio(n, d) => ccs.push(
+                        element.height
+                            | EQ(MEDIUM)
+                            | (f64::from(dest_area.height) * f64::from(n) / f64::from(d)),
+                    ),
                 }
             }
         }
