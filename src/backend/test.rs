@@ -140,9 +140,16 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn clear(&mut self, _clear_type: ClearType) -> Result<(), io::Error> {
-        self.buffer.reset();
-        Ok(())
+    fn clear(&mut self, clear_type: ClearType) -> Result<(), io::Error> {
+        if clear_type == ClearType::All {
+            self.buffer.reset();
+            Ok(())
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("clear_type [{clear_type:?}] not supported with test backend"),
+            ))
+        }
     }
 
     fn size(&self) -> Result<Rect, io::Error> {

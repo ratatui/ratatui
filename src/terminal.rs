@@ -7,23 +7,23 @@ use crate::{
 use std::io;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ViewportVariant {
+pub enum Viewport {
     Fullscreen,
     Inline(u16),
     Fixed(Rect),
+}
+
+impl Viewport {
+    pub fn fixed(area: Rect) -> Viewport {
+        Self::Fixed(area)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 /// Options to pass to [`Terminal::with_options`]
 pub struct TerminalOptions {
     /// Viewport used to draw to the terminal
-    pub viewport: ViewportVariant,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-struct Viewport {
-    variant: ViewportVariant,
-    area: Rect,
+    pub viewport: Viewport,
 }
 
 /// Interface to the terminal backed by Termion
@@ -42,6 +42,7 @@ where
     hidden_cursor: bool,
     /// Viewport
     viewport: Viewport,
+    viewport_area: Rect,
     /// Last known size of the terminal. Used to detect if the internal buffers have to be resized.
     last_known_size: Rect,
     /// Last known position of the cursor. Used to find the new area when the viewport is inlined
@@ -69,7 +70,7 @@ where
 {
     /// Frame size, guaranteed not to change when rendering.
     pub fn size(&self) -> Rect {
-        self.terminal.viewport.area
+        self.terminal.viewport_area
     }
 
     /// Render a [`Widget`] to the current buffer using [`Widget::render`].
@@ -170,7 +171,7 @@ where
         Terminal::with_options(
             backend,
             TerminalOptions {
-                viewport: ViewportVariant::Fullscreen,
+                viewport: Viewport::Fullscreen,
             },
         )
     }
@@ -178,37 +179,17 @@ where
     pub fn with_options(mut backend: B, options: TerminalOptions) -> io::Result<Terminal<B>> {
         let size = backend.size()?;
         let (viewport_area, cursor_pos) = match options.viewport {
-            ViewportVariant::Fullscreen => (size, (0, 0)),
-            ViewportVariant::Inline(height) => {
-                let pos = backend.get_cursor()?;
-                let mut row = pos.1;
-                let max_height = size.height.min(height);
-                backend.append_lines(max_height.saturating_sub(1))?;
-                let missing_lines = row.saturating_add(max_height).saturating_sub(size.height);
-                if missing_lines > 0 {
-                    row = row.saturating_sub(missing_lines);
-                }
-                (
-                    Rect {
-                        x: 0,
-                        y: row,
-                        width: size.width,
-                        height: max_height,
-                    },
-                    pos,
-                )
-            }
-            ViewportVariant::Fixed(area) => (area, (area.left(), area.top())),
+            Viewport::Fullscreen => (size, (0, 0)),
+            Viewport::Inline(height) => compute_inline_size(&mut backend, height, size, 0)?,
+            Viewport::Fixed(area) => (area, (area.left(), area.top())),
         };
         Ok(Terminal {
             backend,
             buffers: [Buffer::empty(viewport_area), Buffer::empty(viewport_area)],
             current: 0,
             hidden_cursor: false,
-            viewport: Viewport {
-                variant: options.viewport,
-                area: viewport_area,
-            },
+            viewport: options.viewport,
+            viewport_area,
             last_known_size: size,
             last_known_cursor_pos: cursor_pos,
         })
@@ -247,39 +228,17 @@ where
     }
 
     /// Queries the backend for size and resizes if it doesn't match the previous size.
-    pub fn resize(&mut self) -> io::Result<()> {
-        let size = self.size()?;
-        if self.last_known_size == size {
-            return Ok(());
-        }
-
-        let next_area = match self.viewport.variant {
-            ViewportVariant::Fullscreen => size,
-            ViewportVariant::Inline(height) => {
-                let (_, mut row) = self.get_cursor()?;
+    pub fn resize(&mut self, size: Rect) -> io::Result<()> {
+        let next_area = match self.viewport {
+            Viewport::Fullscreen => size,
+            Viewport::Inline(height) => {
                 let offset_in_previous_viewport = self
                     .last_known_cursor_pos
                     .1
-                    .saturating_sub(self.viewport.area.top());
-                let max_height = height.min(size.height);
-                let lines_after_cursor = height
-                    .saturating_sub(offset_in_previous_viewport)
-                    .saturating_sub(1);
-                let available_lines = size.height.saturating_sub(row).saturating_sub(1);
-                let missing_lines = lines_after_cursor.saturating_sub(available_lines);
-                self.backend.append_lines(lines_after_cursor)?;
-                if missing_lines > 0 {
-                    row = row.saturating_sub(missing_lines);
-                }
-                row = row.saturating_sub(offset_in_previous_viewport);
-                Rect {
-                    x: 0,
-                    y: row,
-                    width: size.width,
-                    height: max_height,
-                }
+                    .saturating_sub(self.viewport_area.top());
+                compute_inline_size(&mut self.backend, height, size, offset_in_previous_viewport)?.0
             }
-            ViewportVariant::Fixed(area) => area,
+            Viewport::Fixed(area) => area,
         };
         self.set_viewport_area(next_area);
         self.clear()?;
@@ -289,9 +248,21 @@ where
     }
 
     fn set_viewport_area(&mut self, area: Rect) {
-        self.viewport.area = area;
         self.buffers[self.current].resize(area);
         self.buffers[1 - self.current].resize(area);
+        self.viewport_area = area;
+    }
+
+    /// Queries the backend for size and resizes if it doesn't match the previous size.
+    pub fn autoresize(&mut self) -> io::Result<()> {
+        // fixed viewports do not get autoresized
+        if matches!(self.viewport, Viewport::Fullscreen | Viewport::Inline(_)) {
+            let size = self.size()?;
+            if size != self.last_known_size {
+                self.resize(size)?;
+            }
+        };
+        Ok(())
     }
 
     /// Synchronizes terminal size, calls the rendering closure, flushes the current internal state
@@ -302,7 +273,7 @@ where
     {
         // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
         // and the terminal (if growing), which may OOB.
-        self.resize()?;
+        self.autoresize()?;
 
         let mut frame = self.get_frame();
         f(&mut frame);
@@ -359,14 +330,14 @@ where
 
     /// Clear the terminal and force a full redraw on the next draw call.
     pub fn clear(&mut self) -> io::Result<()> {
-        match self.viewport.variant {
-            ViewportVariant::Fullscreen => self.backend.clear(ClearType::All)?,
-            ViewportVariant::Inline(_) => {
+        match self.viewport {
+            Viewport::Fullscreen => self.backend.clear(ClearType::All)?,
+            Viewport::Inline(_) => {
                 self.backend
-                    .set_cursor(self.viewport.area.left(), self.viewport.area.top())?;
+                    .set_cursor(self.viewport_area.left(), self.viewport_area.top())?;
                 self.backend.clear(ClearType::AfterCursor)?;
             }
-            ViewportVariant::Fixed(area) => {
+            Viewport::Fixed(area) => {
                 for row in area.top()..area.bottom() {
                     self.backend.set_cursor(0, row)?;
                     self.backend.clear(ClearType::AfterCursor)?;
@@ -415,11 +386,11 @@ where
     /// ## Insert a single line before the current viewport
     ///
     /// ```rust
-    /// # use tui::widgets::{Paragraph, Widget};
-    /// # use tui::text::{Spans, Span};
-    /// # use tui::style::{Color, Style};
-    /// # use tui::{Terminal};
-    /// # use tui::backend::TestBackend;
+    /// # use ratatui::widgets::{Paragraph, Widget};
+    /// # use ratatui::text::{Spans, Span};
+    /// # use ratatui::style::{Color, Style};
+    /// # use ratatui::{Terminal};
+    /// # use ratatui::backend::TestBackend;
     /// # let backend = TestBackend::new(10, 10);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// terminal.insert_before(1, |buf| {
@@ -434,7 +405,7 @@ where
     where
         F: FnOnce(&mut Buffer),
     {
-        if !matches!(self.viewport.variant, ViewportVariant::Inline(_)) {
+        if !matches!(self.viewport, Viewport::Inline(_)) {
             return Ok(());
         }
 
@@ -442,11 +413,11 @@ where
         let height = height.min(self.last_known_size.height);
         self.backend.append_lines(height)?;
         let missing_lines =
-            height.saturating_sub(self.last_known_size.bottom() - self.viewport.area.top());
+            height.saturating_sub(self.last_known_size.bottom() - self.viewport_area.top());
         let area = Rect {
-            x: self.viewport.area.left(),
-            y: self.viewport.area.top().saturating_sub(missing_lines),
-            width: self.viewport.area.width,
+            x: self.viewport_area.left(),
+            y: self.viewport_area.top().saturating_sub(missing_lines),
+            width: self.viewport_area.width,
             height,
         };
         let mut buffer = Buffer::empty(area);
@@ -461,16 +432,51 @@ where
         self.backend.flush()?;
 
         let remaining_lines = self.last_known_size.height - area.bottom();
-        let missing_lines = self.viewport.area.height.saturating_sub(remaining_lines);
-        self.backend.append_lines(self.viewport.area.height)?;
+        let missing_lines = self.viewport_area.height.saturating_sub(remaining_lines);
+        self.backend.append_lines(self.viewport_area.height)?;
 
         self.set_viewport_area(Rect {
             x: area.left(),
             y: area.bottom().saturating_sub(missing_lines),
             width: area.width,
-            height: self.viewport.area.height,
+            height: self.viewport_area.height,
         });
 
         Ok(())
     }
+}
+
+fn compute_inline_size<B: Backend>(
+    backend: &mut B,
+    height: u16,
+    size: Rect,
+    offset_in_previous_viewport: u16,
+) -> io::Result<(Rect, (u16, u16))> {
+    let pos = backend.get_cursor()?;
+    let mut row = pos.1;
+
+    let max_height = size.height.min(height);
+
+    let lines_after_cursor = height
+        .saturating_sub(offset_in_previous_viewport)
+        .saturating_sub(1);
+
+    backend.append_lines(lines_after_cursor)?;
+
+    let available_lines = size.height.saturating_sub(row).saturating_sub(1);
+    let missing_lines = lines_after_cursor.saturating_sub(available_lines);
+    if missing_lines > 0 {
+        row = row.saturating_sub(missing_lines);
+    }
+    row = row.saturating_sub(offset_in_previous_viewport);
+
+    Ok((
+        Rect {
+            x: 0,
+            y: row,
+            width: size.width,
+            height: max_height,
+        },
+        pos,
+    ))
 }

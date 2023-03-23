@@ -8,7 +8,7 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
     {
         use ratatui::{
             backend::TermionBackend, layout::Rect, widgets::Paragraph, Terminal, TerminalOptions,
-            ViewportVariant,
+            Viewport,
         };
         let backend = TermionBackend::new(&mut stdout);
         let area = Rect::new(0, 0, 3, 1);

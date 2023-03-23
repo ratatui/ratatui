@@ -6,7 +6,7 @@ use ratatui::{
     symbols,
     text::{Span, Spans},
     widgets::{Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
-    Frame, Terminal, TerminalOptions, ViewportVariant,
+    Frame, Terminal, TerminalOptions, Viewport,
 };
 use std::{
     collections::{BTreeMap, VecDeque},
@@ -77,7 +77,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::with_options(
         backend,
         TerminalOptions {
-            viewport: ViewportVariant::Inline(8),
+            viewport: Viewport::Inline(8),
         },
     )?;
 
@@ -182,7 +182,7 @@ fn run_app<B: Backend>(
                 }
             }
             Event::Resize => {
-                terminal.resize()?;
+                terminal.autoresize()?;
             }
             Event::Tick => {}
             Event::DownloadUpdate(worker_id, _download_id, progress) => {
