@@ -60,13 +60,18 @@ pub enum Alignment {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Extend {
+    Viewport,
+    Overflow,
+    None,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Layout {
     direction: Direction,
     margin: Margin,
     constraints: Vec<Constraint>,
-    /// Whether the last chunk of the computed layout should be expanded to fill the available
-    /// space.
-    expand_to_fill: bool,
+    extend: Extend,
 }
 
 type Cache = HashMap<(Rect, Layout), Rc<[Rect]>>;
@@ -83,7 +88,7 @@ impl Default for Layout {
                 vertical: 0,
             },
             constraints: Vec::new(),
-            expand_to_fill: true,
+            extend: Extend::Viewport,
         }
     }
 }
@@ -120,8 +125,8 @@ impl Layout {
         self
     }
 
-    pub(crate) fn expand_to_fill(mut self, expand_to_fill: bool) -> Layout {
-        self.expand_to_fill = expand_to_fill;
+    pub(crate) fn extend(mut self, extend: Extend) -> Layout {
+        self.extend = extend;
         self
     }
 
@@ -197,30 +202,16 @@ impl Layout {
 }
 
 fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
-    let mut solver = Solver::new();
-    let mut vars: HashMap<Variable, (usize, usize)> = HashMap::new();
     let elements = layout
         .constraints
         .iter()
         .map(|_| Element::new())
         .collect::<Vec<Element>>();
-    let mut res = layout
-        .constraints
-        .iter()
-        .map(|_| Rect::default())
-        .collect::<Rc<[Rect]>>();
-
-    let mut results = Rc::get_mut(&mut res).expect("newly created Rc should have no shared refs");
 
     let dest_area = area.inner(&layout.margin);
-    for (i, e) in elements.iter().enumerate() {
-        vars.insert(e.x, (i, 0));
-        vars.insert(e.y, (i, 1));
-        vars.insert(e.width, (i, 2));
-        vars.insert(e.height, (i, 3));
-    }
     let mut ccs: Vec<CassowaryConstraint> =
         Vec::with_capacity(elements.len() * 4 + layout.constraints.len() * 6);
+    // Element is placed inside destination area
     for elt in &elements {
         ccs.push(elt.width | GE(REQUIRED) | 0f64);
         ccs.push(elt.height | GE(REQUIRED) | 0f64);
@@ -235,14 +226,23 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
             Direction::Vertical => first.top() | EQ(REQUIRED) | f64::from(dest_area.top()),
         });
     }
-    if layout.expand_to_fill {
-        if let Some(last) = elements.last() {
-            ccs.push(match layout.direction {
-                Direction::Horizontal => last.right() | EQ(REQUIRED) | f64::from(dest_area.right()),
-                Direction::Vertical => last.bottom() | EQ(REQUIRED) | f64::from(dest_area.bottom()),
-            });
+    match layout.extend {
+        Extend::Viewport => {
+            if let Some(last) = elements.last() {
+                ccs.push(match layout.direction {
+                    Direction::Horizontal => {
+                        last.right() | EQ(REQUIRED) | f64::from(dest_area.right())
+                    }
+                    Direction::Vertical => {
+                        last.bottom() | EQ(REQUIRED) | f64::from(dest_area.bottom())
+                    }
+                });
+            }
         }
+        Extend::Overflow => todo!(),
+        Extend::None => (),
     }
+
     match layout.direction {
         Direction::Horizontal => {
             for pair in elements.windows(2) {
@@ -309,6 +309,23 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
             }
         }
     }
+
+    let mut vars: HashMap<Variable, (usize, usize)> = HashMap::new();
+    for (i, e) in elements.iter().enumerate() {
+        vars.insert(e.x, (i, 0));
+        vars.insert(e.y, (i, 1));
+        vars.insert(e.width, (i, 2));
+        vars.insert(e.height, (i, 3));
+    }
+
+    let mut res = layout
+        .constraints
+        .iter()
+        .map(|_| Rect::default())
+        .collect::<Rc<[Rect]>>();
+    let mut results = Rc::get_mut(&mut res).expect("newly created Rc should have no shared refs");
+
+    let mut solver = Solver::new();
     solver.add_constraints(&ccs).unwrap();
     for &(var, value) in solver.fetch_changes() {
         let (index, attr) = vars[&var];
@@ -334,18 +351,22 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         }
     }
 
-    if layout.expand_to_fill {
-        // Fix imprecision by extending the last item a bit if necessary
-        if let Some(last) = results.last_mut() {
-            match layout.direction {
-                Direction::Vertical => {
-                    last.height = dest_area.bottom() - last.y;
-                }
-                Direction::Horizontal => {
-                    last.width = dest_area.right() - last.x;
+    match layout.extend {
+        Extend::Viewport => {
+            // Fix imprecision by extending the last item a bit if necessary
+            if let Some(last) = results.last_mut() {
+                match layout.direction {
+                    Direction::Vertical => {
+                        last.height = dest_area.bottom() - last.y;
+                    }
+                    Direction::Horizontal => {
+                        last.width = dest_area.right() - last.x;
+                    }
                 }
             }
         }
+        Extend::Overflow => (),
+        Extend::None => (),
     }
     res
 }
