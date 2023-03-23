@@ -5,7 +5,6 @@ use crate::{
     widgets::{StatefulWidget, Widget},
 };
 use std::io;
-use tracing::{event, span, Level};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ViewportVariant {
@@ -254,8 +253,6 @@ where
             return Ok(());
         }
 
-        event!(Level::DEBUG, last_known_size = ?self.last_known_size, ?size, "terminal size changed");
-
         let next_area = match self.viewport.variant {
             ViewportVariant::Fullscreen => size,
             ViewportVariant::Inline(height) => {
@@ -295,7 +292,6 @@ where
         self.viewport.area = area;
         self.buffers[self.current].resize(area);
         self.buffers[1 - self.current].resize(area);
-        event!(Level::DEBUG, area = ?area, "viewport changed");
     }
 
     /// Synchronizes terminal size, calls the rendering closure, flushes the current internal state
@@ -304,9 +300,6 @@ where
     where
         F: FnOnce(&mut Frame<B>),
     {
-        let span = span!(Level::DEBUG, "draw");
-        let _guard = span.enter();
-
         // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
         // and the terminal (if growing), which may OOB.
         self.resize()?;
@@ -335,8 +328,6 @@ where
 
         // Flush
         self.backend.flush()?;
-
-        event!(Level::DEBUG, "completed frame");
 
         Ok(CompletedFrame {
             buffer: &self.buffers[1 - self.current],
@@ -368,7 +359,6 @@ where
 
     /// Clear the terminal and force a full redraw on the next draw call.
     pub fn clear(&mut self) -> io::Result<()> {
-        event!(Level::DEBUG, "clear");
         match self.viewport.variant {
             ViewportVariant::Fullscreen => self.backend.clear(ClearType::All)?,
             ViewportVariant::Inline(_) => {
@@ -444,8 +434,6 @@ where
     where
         F: FnOnce(&mut Buffer),
     {
-        let span = span!(Level::DEBUG, "insert_before");
-        let _guard = span.enter();
         if !matches!(self.viewport.variant, ViewportVariant::Inline(_)) {
             return Ok(());
         }

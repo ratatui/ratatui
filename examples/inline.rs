@@ -1,14 +1,5 @@
 use rand::distributions::{Distribution, Uniform};
-use std::{
-    collections::{BTreeMap, VecDeque},
-    error::Error,
-    io,
-    sync::mpsc,
-    thread,
-    time::{Duration, Instant},
-};
-use tracing::{event, span, Level};
-use tui::{
+use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -16,6 +7,14 @@ use tui::{
     text::{Span, Spans},
     widgets::{Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
     Frame, Terminal, TerminalOptions, ViewportVariant,
+};
+use std::{
+    collections::{BTreeMap, VecDeque},
+    error::Error,
+    io,
+    sync::mpsc,
+    thread,
+    time::{Duration, Instant},
 };
 
 const NUM_DOWNLOADS: usize = 10;
@@ -72,11 +71,6 @@ struct Worker {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .with_writer(io::stderr)
-        .init();
-
     crossterm::terminal::enable_raw_mode()?;
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
@@ -181,8 +175,6 @@ fn run_app<B: Backend>(
         }
         redraw = true;
 
-        let span = span!(Level::INFO, "recv");
-        let _guard = span.enter();
         match rx.recv()? {
             Event::Input(event) => {
                 if event.code == crossterm::event::KeyCode::Char('q') {
@@ -190,26 +182,15 @@ fn run_app<B: Backend>(
                 }
             }
             Event::Resize => {
-                event!(Level::INFO, "resize");
                 terminal.resize()?;
             }
-            Event::Tick => {
-                event!(Level::INFO, "tick");
-            }
-            Event::DownloadUpdate(worker_id, download_id, progress) => {
-                event!(
-                    Level::INFO,
-                    worker_id,
-                    download_id,
-                    progress,
-                    "download update"
-                );
+            Event::Tick => {}
+            Event::DownloadUpdate(worker_id, _download_id, progress) => {
                 let download = downloads.in_progress.get_mut(&worker_id).unwrap();
                 download.progress = progress;
                 redraw = false
             }
             Event::DownloadDone(worker_id, download_id) => {
-                event!(Level::INFO, worker_id, download_id, "download done");
                 let download = downloads.in_progress.remove(&worker_id).unwrap();
                 terminal.insert_before(1, |buf| {
                     Paragraph::new(Spans::from(vec![
@@ -271,8 +252,8 @@ fn ui<B: Backend>(f: &mut Frame<B>, downloads: &Downloads) {
     // in progress downloads
     let items: Vec<ListItem> = downloads
         .in_progress
-        .iter()
-        .map(|(_worker_id, download)| {
+        .values()
+        .map(|download| {
             ListItem::new(Spans::from(vec![
                 Span::raw(symbols::DOT),
                 Span::styled(
