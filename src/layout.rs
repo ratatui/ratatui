@@ -209,9 +209,8 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         .collect::<Vec<Element>>();
 
     let dest_area = area.inner(&layout.margin);
-    let mut ccs: Vec<CassowaryConstraint> =
-        Vec::with_capacity(elements.len() * 4 + layout.constraints.len() * 6);
-    // Element is placed inside destination area
+    let mut ccs: Vec<CassowaryConstraint> = Vec::with_capacity(layout.constraints.len() * 10);
+    // All element are placed inside destination area
     for elt in &elements {
         ccs.push(elt.width | GE(REQUIRED) | 0f64);
         ccs.push(elt.height | GE(REQUIRED) | 0f64);
