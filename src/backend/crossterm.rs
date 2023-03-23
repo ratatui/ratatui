@@ -56,7 +56,7 @@ where
         for (x, y, cell) in content {
             // Move the cursor if the previous location was not (x - 1, y)
             if !matches!(last_pos, Some(p) if x == p.0 + 1 && y == p.1) {
-                queue!(self.buffer, MoveTo(x, y))?;
+                map_error(queue!(self.buffer, MoveTo(x, y)))?;
             }
             last_pos = Some((x, y));
             if cell.modifier != modifier {
@@ -69,44 +69,45 @@ where
             }
             if cell.fg != fg {
                 let color = CColor::from(cell.fg);
-                queue!(self.buffer, SetForegroundColor(color))?;
+                map_error(queue!(self.buffer, SetForegroundColor(color)))?;
                 fg = cell.fg;
             }
             if cell.bg != bg {
                 let color = CColor::from(cell.bg);
-                queue!(self.buffer, SetBackgroundColor(color))?;
+                map_error(queue!(self.buffer, SetBackgroundColor(color)))?;
                 bg = cell.bg;
             }
 
-            queue!(self.buffer, Print(&cell.symbol))?;
+            map_error(queue!(self.buffer, Print(&cell.symbol)))?;
         }
 
-        queue!(
+        map_error(queue!(
             self.buffer,
             SetForegroundColor(CColor::Reset),
             SetBackgroundColor(CColor::Reset),
             SetAttribute(CAttribute::Reset)
-        )
+        ))
     }
 
     fn hide_cursor(&mut self) -> io::Result<()> {
-        execute!(self.buffer, Hide)
+        map_error(execute!(self.buffer, Hide))
     }
 
     fn show_cursor(&mut self) -> io::Result<()> {
-        execute!(self.buffer, Show)
+        map_error(execute!(self.buffer, Show))
     }
 
     fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
         crossterm::cursor::position()
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 
     fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
-        execute!(self.buffer, MoveTo(x, y))
+        map_error(execute!(self.buffer, MoveTo(x, y)))
     }
 
     fn clear(&mut self, clear_type: ClearType) -> io::Result<()> {
-        execute!(
+        map_error(execute!(
             self.buffer,
             Clear(match clear_type {
                 ClearType::All => crossterm::terminal::ClearType::All,
@@ -115,14 +116,14 @@ where
                 ClearType::CurrentLine => crossterm::terminal::ClearType::CurrentLine,
                 ClearType::UntilNewLine => crossterm::terminal::ClearType::UntilNewLine,
             })
-        )
+        ))
     }
 
     fn append_lines(&mut self, n: u16) -> io::Result<()> {
         for _ in 0..n {
-            queue!(self.buffer, Print("\n"))?;
+            map_error(queue!(self.buffer, Print("\n")))?;
         }
-        self.buffer.flush()
+        Ok(())
     }
 
     fn size(&self) -> io::Result<Rect> {
@@ -135,6 +136,10 @@ where
     fn flush(&mut self) -> io::Result<()> {
         self.buffer.flush()
     }
+}
+
+fn map_error(error: crossterm::Result<()>) -> io::Result<()> {
+    error.map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
 }
 
 impl From<Color> for CColor {
@@ -177,54 +182,54 @@ impl ModifierDiff {
         //use crossterm::Attribute;
         let removed = self.from - self.to;
         if removed.contains(Modifier::REVERSED) {
-            queue!(w, SetAttribute(CAttribute::NoReverse))?;
+            map_error(queue!(w, SetAttribute(CAttribute::NoReverse)))?;
         }
         if removed.contains(Modifier::BOLD) {
-            queue!(w, SetAttribute(CAttribute::NormalIntensity))?;
+            map_error(queue!(w, SetAttribute(CAttribute::NormalIntensity)))?;
             if self.to.contains(Modifier::DIM) {
-                queue!(w, SetAttribute(CAttribute::Dim))?;
+                map_error(queue!(w, SetAttribute(CAttribute::Dim)))?;
             }
         }
         if removed.contains(Modifier::ITALIC) {
-            queue!(w, SetAttribute(CAttribute::NoItalic))?;
+            map_error(queue!(w, SetAttribute(CAttribute::NoItalic)))?;
         }
         if removed.contains(Modifier::UNDERLINED) {
-            queue!(w, SetAttribute(CAttribute::NoUnderline))?;
+            map_error(queue!(w, SetAttribute(CAttribute::NoUnderline)))?;
         }
         if removed.contains(Modifier::DIM) {
-            queue!(w, SetAttribute(CAttribute::NormalIntensity))?;
+            map_error(queue!(w, SetAttribute(CAttribute::NormalIntensity)))?;
         }
         if removed.contains(Modifier::CROSSED_OUT) {
-            queue!(w, SetAttribute(CAttribute::NotCrossedOut))?;
+            map_error(queue!(w, SetAttribute(CAttribute::NotCrossedOut)))?;
         }
         if removed.contains(Modifier::SLOW_BLINK) || removed.contains(Modifier::RAPID_BLINK) {
-            queue!(w, SetAttribute(CAttribute::NoBlink))?;
+            map_error(queue!(w, SetAttribute(CAttribute::NoBlink)))?;
         }
 
         let added = self.to - self.from;
         if added.contains(Modifier::REVERSED) {
-            queue!(w, SetAttribute(CAttribute::Reverse))?;
+            map_error(queue!(w, SetAttribute(CAttribute::Reverse)))?;
         }
         if added.contains(Modifier::BOLD) {
-            queue!(w, SetAttribute(CAttribute::Bold))?;
+            map_error(queue!(w, SetAttribute(CAttribute::Bold)))?;
         }
         if added.contains(Modifier::ITALIC) {
-            queue!(w, SetAttribute(CAttribute::Italic))?;
+            map_error(queue!(w, SetAttribute(CAttribute::Italic)))?;
         }
         if added.contains(Modifier::UNDERLINED) {
-            queue!(w, SetAttribute(CAttribute::Underlined))?;
+            map_error(queue!(w, SetAttribute(CAttribute::Underlined)))?;
         }
         if added.contains(Modifier::DIM) {
-            queue!(w, SetAttribute(CAttribute::Dim))?;
+            map_error(queue!(w, SetAttribute(CAttribute::Dim)))?;
         }
         if added.contains(Modifier::CROSSED_OUT) {
-            queue!(w, SetAttribute(CAttribute::CrossedOut))?;
+            map_error(queue!(w, SetAttribute(CAttribute::CrossedOut)))?;
         }
         if added.contains(Modifier::SLOW_BLINK) {
-            queue!(w, SetAttribute(CAttribute::SlowBlink))?;
+            map_error(queue!(w, SetAttribute(CAttribute::SlowBlink)))?;
         }
         if added.contains(Modifier::RAPID_BLINK) {
-            queue!(w, SetAttribute(CAttribute::RapidBlink))?;
+            map_error(queue!(w, SetAttribute(CAttribute::RapidBlink)))?;
         }
 
         Ok(())
