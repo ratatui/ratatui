@@ -177,7 +177,10 @@ where
     }
 
     pub fn with_options(mut backend: B, options: TerminalOptions) -> io::Result<Terminal<B>> {
-        let size = backend.size()?;
+        let size = match options.viewport {
+            Viewport::Fullscreen | Viewport::Inline(_) => backend.size()?,
+            Viewport::Fixed(area) => area,
+        };
         let (viewport_area, cursor_pos) = match options.viewport {
             Viewport::Fullscreen => (size, (0, 0)),
             Viewport::Inline(height) => compute_inline_size(&mut backend, height, size, 0)?,

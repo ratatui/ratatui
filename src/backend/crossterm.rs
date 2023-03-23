@@ -123,7 +123,7 @@ where
         for _ in 0..n {
             map_error(queue!(self.buffer, Print("\n")))?;
         }
-        Ok(())
+        self.buffer.flush()
     }
 
     fn size(&self) -> io::Result<Rect> {
