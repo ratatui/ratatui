@@ -311,12 +311,13 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         }
     }
 
-    let mut vars: HashMap<Variable, (usize, usize)> = HashMap::new();
+    // variables: key=element_edge value=(element_index, dimension)
+    let mut vars: HashMap<Variable, (usize, Dimension)> = HashMap::new();
     for (i, e) in elements.iter().enumerate() {
-        vars.insert(e.x, (i, 0));
-        vars.insert(e.y, (i, 1));
-        vars.insert(e.width, (i, 2));
-        vars.insert(e.height, (i, 3));
+        vars.insert(e.x, (i, Dimension::X));
+        vars.insert(e.y, (i, Dimension::Y));
+        vars.insert(e.width, (i, Dimension::Width));
+        vars.insert(e.height, (i, Dimension::Height));
     }
 
     let mut res = layout
@@ -328,27 +329,21 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
 
     let mut solver = Solver::new();
     solver.add_constraints(&ccs).unwrap();
+
     for &(var, value) in solver.fetch_changes() {
-        let (index, attr) = vars[&var];
+        let (element_idx, dimension) = &vars[&var];
+
         let value = if value.is_sign_negative() {
             0
         } else {
             value as u16
         };
-        match attr {
-            0 => {
-                results[index].x = value;
-            }
-            1 => {
-                results[index].y = value;
-            }
-            2 => {
-                results[index].width = value;
-            }
-            3 => {
-                results[index].height = value;
-            }
-            _ => {}
+
+        match dimension {
+            Dimension::X => results[*element_idx].x = value,
+            Dimension::Y => results[*element_idx].y = value,
+            Dimension::Width => results[*element_idx].width = value,
+            Dimension::Height => results[*element_idx].height = value,
         }
     }
 
@@ -370,6 +365,13 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         Extend::None => (),
     }
     res
+}
+
+enum Dimension {
+    X,
+    Y,
+    Width,
+    Height,
 }
 
 /// A container used by the solver inside split
