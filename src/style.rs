@@ -75,7 +75,7 @@ bitflags! {
 ///     Style::default().bg(Color::Red),
 ///     Style::default().fg(Color::Yellow).remove_modifier(Modifier::ITALIC),
 /// ];
-/// let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+/// let mut buffer = Buffer::empty(10, 10);
 /// for style in &styles {
 ///   buffer.get_mut(0, 0).set_style(*style);
 /// }
@@ -101,7 +101,7 @@ bitflags! {
 ///     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD | Modifier::ITALIC),
 ///     Style::reset().fg(Color::Yellow),
 /// ];
-/// let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+/// let mut buffer = Buffer::empty(10, 10);
 /// for style in &styles {
 ///   buffer.get_mut(0, 0).set_style(*style);
 /// }
@@ -285,7 +285,7 @@ mod tests {
 
     #[test]
     fn combine_individual_modifiers() {
-        use crate::{buffer::Buffer, layout::Rect};
+        use crate::buffer::Buffer;
 
         let mods = vec![
             Modifier::BOLD,
@@ -299,7 +299,7 @@ mod tests {
             Modifier::CROSSED_OUT,
         ];
 
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+        let mut buffer = Buffer::empty(1, 1);
 
         for m in &mods {
             buffer.get_mut(0, 0).set_style(Style::reset());

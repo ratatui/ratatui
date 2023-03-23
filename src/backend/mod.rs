@@ -1,7 +1,5 @@
-use std::io;
-
 use crate::buffer::Cell;
-use crate::layout::Rect;
+use std::io;
 
 #[cfg(feature = "termion")]
 mod termion;
@@ -17,14 +15,20 @@ mod test;
 pub use self::test::TestBackend;
 
 pub trait Backend {
-    fn draw<'a, I>(&mut self, content: I) -> Result<(), io::Error>
+    fn draw<'a, I>(&self, content: I) -> Result<(), io::Error>
     where
-        I: Iterator<Item = (u16, u16, &'a Cell)>;
-    fn hide_cursor(&mut self) -> Result<(), io::Error>;
-    fn show_cursor(&mut self) -> Result<(), io::Error>;
-    fn get_cursor(&mut self) -> Result<(u16, u16), io::Error>;
-    fn set_cursor(&mut self, x: u16, y: u16) -> Result<(), io::Error>;
-    fn clear(&mut self) -> Result<(), io::Error>;
-    fn size(&self) -> Result<Rect, io::Error>;
-    fn flush(&mut self) -> Result<(), io::Error>;
+        I: Iterator<Item = &'a (u16, u16, &'a Cell)>;
+    fn hide_cursor(&self) -> io::Result<()>;
+    fn show_cursor(&self) -> io::Result<()>;
+    fn get_cursor(&self) -> io::Result<(u16, u16)>;
+    fn set_cursor(&self, x: u16, y: u16) -> io::Result<()>;
+    fn clear(&self) -> io::Result<()>;
+    fn clear_region(&self) -> io::Result<()>;
+    fn dimensions(&self) -> io::Result<(u16, u16)>;
+    /// Return the size of the terminal
+    fn size(&self) -> io::Result<usize> {
+        let (w, h) = self.dimensions()?;
+        Ok(w as usize * h as usize)
+    }
+    fn flush(&self) -> io::Result<()>;
 }

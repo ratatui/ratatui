@@ -23,7 +23,7 @@ where
     terminal
         .draw(|f| {
             let chart = Chart::new(vec![]).x_axis(x_axis).y_axis(y_axis);
-            f.render_widget(chart, f.size());
+            f.render_widget(chart, f.viewport_area());
         })
         .unwrap();
     let expected = Buffer::with_lines(lines);
@@ -53,7 +53,7 @@ fn widgets_chart_can_render_on_small_areas() {
                             .bounds([0.0, 0.0])
                             .labels(create_labels(&["0.0", "1.0"])),
                     );
-                f.render_widget(chart, f.size());
+                f.render_widget(chart, f.viewport_area());
             })
             .unwrap();
     };

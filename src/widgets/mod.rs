@@ -20,6 +20,7 @@ mod block;
 pub mod canvas;
 mod chart;
 mod clear;
+mod fill;
 mod gauge;
 mod list;
 mod paragraph;
@@ -32,6 +33,7 @@ pub use self::barchart::BarChart;
 pub use self::block::{Block, BorderType};
 pub use self::chart::{Axis, Chart, Dataset, GraphType};
 pub use self::clear::Clear;
+pub use self::fill::Fill;
 pub use self::gauge::{Gauge, LineGauge};
 pub use self::list::{List, ListItem, ListState};
 pub use self::paragraph::{Paragraph, Wrap};
@@ -171,7 +173,7 @@ pub trait Widget {
 ///         let list = List::new(items);
 ///         // Finally the widget is rendered using the associated state. `events.state` is
 ///         // effectively the only thing that we will "remember" from this draw call.
-///         f.render_stateful_widget(list, f.size(), &mut events.state);
+///         f.render_stateful_widget(list, f.viewport_area(), &mut events.state);
 ///     });
 ///
 ///     // In response to some input events or an external http request or whatever:

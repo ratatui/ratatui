@@ -152,7 +152,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(f.size());
+        .split(f.viewport_area());
     let canvas = Canvas::default()
         .block(Block::default().borders(Borders::ALL).title("World"))
         .paint(|ctx| {

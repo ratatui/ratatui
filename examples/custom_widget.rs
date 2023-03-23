@@ -71,7 +71,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 }
 
 fn ui<B: Backend>(f: &mut Frame<B>) {
-    let size = f.size();
+    let size = f.viewport_area();
     let label = Label::default().text("Test");
     f.render_widget(label, size);
 }

@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::{app::App, help::Help};
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
@@ -14,9 +14,23 @@ use ratatui::{
 };
 
 pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+    let help = Help::new();
+    let viewport_area = f.viewport_area();
+    let buffer_size = Rect {
+        height: viewport_area.height + help.height,
+        ..viewport_area
+    };
+    f.resize_buffers(buffer_size.width, buffer_size.height);
     let chunks = Layout::default()
-        .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
-        .split(f.size());
+        .constraints(
+            [
+                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(help.height),
+            ]
+            .as_ref(),
+        )
+        .split(buffer_size);
     let titles = app
         .tabs
         .titles
@@ -28,12 +42,17 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .highlight_style(Style::default().fg(Color::Yellow))
         .select(app.tabs.index);
     f.render_widget(tabs, chunks[0]);
+    if app.shown_tab != app.tabs.index {
+        f.clear_region(chunks[1]);
+        app.shown_tab = app.tabs.index;
+    }
     match app.tabs.index {
         0 => draw_first_tab(f, app, chunks[1]),
         1 => draw_second_tab(f, app, chunks[1]),
         2 => draw_third_tab(f, app, chunks[1]),
         _ => {}
     };
+    f.render_widget(help.paragraph, chunks[2]);
 }
 
 fn draw_first_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)

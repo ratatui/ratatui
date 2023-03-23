@@ -61,7 +61,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
             ]
             .as_ref(),
         )
-        .split(f.size());
+        .split(f.viewport_area());
 
     let block = Block::default().title("Block").borders(Borders::ALL);
     f.render_widget(block, chunks[0]);

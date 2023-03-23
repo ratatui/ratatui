@@ -240,13 +240,8 @@ impl<'a> StatefulWidget for List<'a> {
                     &blank_symbol
                 };
                 let (elem_x, max_element_width) = if has_selection {
-                    let (elem_x, _) = buf.set_stringn(
-                        x,
-                        y + j as u16,
-                        symbol,
-                        list_area.width as usize,
-                        item_style,
-                    );
+                    let (elem_x, _) =
+                        buf.set_stringn(x, y + j as u16, symbol, list_area.width, item_style);
                     (elem_x, (list_area.width - (elem_x - x)))
                 } else {
                     (x, list_area.width)

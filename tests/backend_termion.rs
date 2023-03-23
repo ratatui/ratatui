@@ -15,7 +15,7 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
         let mut terminal = Terminal::with_options(
             backend,
             TerminalOptions {
-                viewport: Viewport::fixed(area),
+                viewport: Viewport::fixed(area.width, area.height),
             },
         )?;
         terminal.draw(|f| {

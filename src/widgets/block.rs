@@ -141,7 +141,7 @@ impl<'a> Block<'a> {
 
 impl<'a> Widget for Block<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        if area.area() == 0 {
+        if area.size() == 0 {
             return;
         }
         buf.set_style(area, self.style);

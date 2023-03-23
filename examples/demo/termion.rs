@@ -40,6 +40,7 @@ fn run_app<B: Backend>(
 
         match events.recv()? {
             Event::Input(key) => match key {
+                Key::Char(c) if c == 'd' => terminal.viewport_scroll(0, 1)?,
                 Key::Char(c) => app.on_key(c),
                 Key::Up => app.on_up(),
                 Key::Down => app.on_down(),

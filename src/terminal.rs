@@ -1,34 +1,12 @@
+use unicode_width::UnicodeWidthStr;
+
 use crate::{
     backend::Backend,
-    buffer::Buffer,
+    buffer::{Buffer, Cell},
     layout::Rect,
     widgets::{StatefulWidget, Widget},
 };
-use std::io;
-
-#[derive(Debug, Clone, PartialEq)]
-/// UNSTABLE
-enum ResizeBehavior {
-    Fixed,
-    Auto,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-/// UNSTABLE
-pub struct Viewport {
-    area: Rect,
-    resize_behavior: ResizeBehavior,
-}
-
-impl Viewport {
-    /// UNSTABLE
-    pub fn fixed(area: Rect) -> Viewport {
-        Viewport {
-            area,
-            resize_behavior: ResizeBehavior::Fixed,
-        }
-    }
-}
+use std::{cmp::min, io};
 
 #[derive(Debug, Clone, PartialEq)]
 /// Options to pass to [`Terminal::with_options`]
@@ -37,36 +15,12 @@ pub struct TerminalOptions {
     pub viewport: Viewport,
 }
 
-/// Interface to the terminal backed by Termion
-#[derive(Debug)]
-pub struct Terminal<B>
-where
-    B: Backend,
-{
-    backend: B,
-    /// Holds the results of the current and previous draw calls. The two are compared at the end
-    /// of each draw pass to output the necessary updates to the terminal
-    buffers: [Buffer; 2],
-    /// Index of the current buffer in the previous array
-    current: usize,
-    /// Whether the cursor is currently hidden
-    hidden_cursor: bool,
-    /// Viewport
-    viewport: Viewport,
-}
-
 /// Represents a consistent terminal interface for rendering.
 pub struct Frame<'a, B: 'a>
 where
     B: Backend,
 {
     terminal: &'a mut Terminal<B>,
-
-    /// Where should the cursor be after drawing this frame?
-    ///
-    /// If `None`, the cursor is hidden and its position is controlled by the backend. If `Some((x,
-    /// y))`, the cursor is shown and placed at `(x, y)` after the call to `Terminal::draw()`.
-    cursor_position: Option<(u16, u16)>,
 }
 
 impl<'a, B> Frame<'a, B>
@@ -74,8 +28,20 @@ where
     B: Backend,
 {
     /// Terminal size, guaranteed not to change when rendering.
-    pub fn size(&self) -> Rect {
-        self.terminal.viewport.area
+    pub fn viewport_area(&self) -> Rect {
+        self.terminal.viewport_area()
+    }
+
+    pub fn resize_buffers(&mut self, width: u16, height: u16) {
+        self.terminal.resize_buffers(width, height)
+    }
+
+    pub fn clear(&mut self) {
+        self.terminal.clear().unwrap();
+    }
+
+    pub fn clear_region(&mut self, area: Rect) {
+        self.terminal.clear_region(area).unwrap()
     }
 
     /// Render a [`Widget`] to the current buffer using [`Widget::render`].
@@ -91,13 +57,13 @@ where
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// let block = Block::default();
     /// let area = Rect::new(0, 0, 5, 5);
-    /// terminal.draw(|frame| frame.render_widget(block, area))?;
+    /// terminal.draw(|frame| frame.render_widget(block, area));
     /// ```
     pub fn render_widget<W>(&mut self, widget: W, area: Rect)
     where
         W: Widget,
     {
-        widget.render(area, self.terminal.current_buffer_mut());
+        widget.render(area, &mut self.terminal.buffers[self.terminal.current]);
     }
 
     /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
@@ -122,23 +88,21 @@ where
     /// ];
     /// let list = List::new(items);
     /// let area = Rect::new(0, 0, 5, 5);
-    /// terminal.draw(|frame| frame.render_stateful_widget(list, area, &mut state))?;
+    /// terminal.draw(|frame| frame.render_stateful_widget(list, area, &mut state));
     /// ```
     pub fn render_stateful_widget<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
     where
         W: StatefulWidget,
     {
-        widget.render(area, self.terminal.current_buffer_mut(), state);
+        widget.render(
+            area,
+            &mut self.terminal.buffers[self.terminal.current],
+            state,
+        );
     }
 
-    /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
-    /// coordinates. If this method is not called, the cursor will be hidden.
-    ///
-    /// Note that this will interfere with calls to `Terminal::hide_cursor()`,
-    /// `Terminal::show_cursor()`, and `Terminal::set_cursor()`. Pick one of the APIs and stick
-    /// with it.
-    pub fn set_cursor(&mut self, x: u16, y: u16) {
-        self.cursor_position = Some((x, y));
+    pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
+        self.terminal.set_cursor(x, y)
     }
 }
 
@@ -148,6 +112,24 @@ where
 pub struct CompletedFrame<'a> {
     pub buffer: &'a Buffer,
     pub area: Rect,
+}
+
+/// Interface to the terminal backed by Termion
+#[derive(Debug)]
+pub struct Terminal<B>
+where
+    B: Backend,
+{
+    backend: B,
+    /// Holds the results of the current and previous draw calls. The two are compared at the end
+    /// of each draw pass to output the necessary updates to the terminal
+    buffers: [Buffer; 2],
+    /// Index of the current buffer in the previous array
+    current: usize,
+    /// Whether the cursor is currently hidden
+    hidden_cursor: bool,
+    /// Viewport
+    viewport: Viewport,
 }
 
 impl<B> Drop for Terminal<B>
@@ -171,12 +153,12 @@ where
     /// Wrapper around Terminal initialization. Each buffer is initialized with a blank string and
     /// default colors for the foreground and the background
     pub fn new(backend: B) -> io::Result<Terminal<B>> {
-        let size = backend.size()?;
+        let (width, height) = backend.dimensions()?;
         Terminal::with_options(
             backend,
             TerminalOptions {
                 viewport: Viewport {
-                    area: size,
+                    area: Rect::new(0, 0, width, height),
                     resize_behavior: ResizeBehavior::Auto,
                 },
             },
@@ -185,20 +167,19 @@ where
 
     /// UNSTABLE
     pub fn with_options(backend: B, options: TerminalOptions) -> io::Result<Terminal<B>> {
+        let width = options.viewport.area.width;
+        let height = options.viewport.area.height;
         Ok(Terminal {
             backend,
-            buffers: [
-                Buffer::empty(options.viewport.area),
-                Buffer::empty(options.viewport.area),
-            ],
+            buffers: [Buffer::empty(width, height), Buffer::empty(width, height)],
             current: 0,
             hidden_cursor: false,
             viewport: options.viewport,
         })
     }
 
-    pub fn current_buffer_mut(&mut self) -> &mut Buffer {
-        &mut self.buffers[self.current]
+    pub fn viewport_area(&self) -> Rect {
+        self.viewport.area
     }
 
     pub fn backend(&self) -> &B {
@@ -209,35 +190,64 @@ where
         &mut self.backend
     }
 
-    /// Obtains a difference between the previous and the current buffer and passes it to the
-    /// current backend for drawing.
-    pub fn flush(&mut self) -> io::Result<()> {
-        let previous_buffer = &self.buffers[1 - self.current];
-        let current_buffer = &self.buffers[self.current];
-        let updates = previous_buffer.diff(current_buffer);
-        self.backend.draw(updates.into_iter())?;
-        self.backend.flush()
-    }
-
-    /// Updates the Terminal so that internal buffers match the requested size. Requested size will
-    /// be saved so the size can remain consistent when rendering.
-    /// This leads to a full clear of the screen.
-    pub fn resize(&mut self, area: Rect) -> io::Result<()> {
-        self.buffers[self.current].resize(area);
-        self.buffers[1 - self.current].resize(area);
-        self.viewport.area = area;
+    pub fn viewport_scroll(&mut self, x_step: u16, y_step: u16) -> io::Result<()> {
+        self.viewport.area.x += x_step;
+        self.viewport.area.y += y_step;
         self.clear()
     }
 
-    /// Queries the backend for size and resizes if it doesn't match the previous size.
-    pub fn autoresize(&mut self) -> io::Result<()> {
+    pub fn resize_buffers(&mut self, width: u16, height: u16) {
+        self.buffers
+            .iter_mut()
+            .for_each(|buffer| buffer.resize(width, height))
+    }
+
+    /// Obtains a difference between the previous and the current buffer and passes it to the
+    /// current backend for drawing.
+    pub fn flush(&mut self) -> io::Result<()> {
+        let updates = &self.diff();
+        self.backend.draw(updates.iter())?;
+        self.backend.flush()
+    }
+
+    /// Queries the backend for its viewport size and resizes frontend viewport size
+    /// if it doesn't match.
+    fn autoresize(&mut self) -> io::Result<()> {
         if self.viewport.resize_behavior == ResizeBehavior::Auto {
-            let size = self.size()?;
-            if size != self.viewport.area {
-                self.resize(size)?;
+            let (b_width, b_height) = self.backend.dimensions()?;
+            if self.backend.size()? != self.viewport.area.size() {
+                self.viewport.area.width = b_width;
+                self.viewport.area.height = b_height;
+                if self.buffers[0].cells.len() < self.backend.size()? {
+                    self.buffers
+                        .iter_mut()
+                        .for_each(|buffer| buffer.resize(b_width, b_height))
+                }
+                self.clear()?
             }
-        };
+        }
         Ok(())
+    }
+
+    fn clear(&mut self) -> io::Result<()> {
+        self.buffers.iter_mut().for_each(|buffer| buffer.reset());
+        self.backend.clear()
+    }
+
+    fn clear_region(&mut self, area: Rect) -> io::Result<()> {
+        self.buffers
+            .iter_mut()
+            .for_each(|buffer| Self::map_buffer_region(area, |x, y| buffer.get_mut(x, y).clear()));
+        let (backend_width, backend_height) = self.backend.dimensions()?;
+        let backend_area = Rect {
+            width: min(area.width, backend_width),
+            height: min(area.height, backend_height),
+            ..area
+        };
+        Self::map_buffer_region(backend_area, |x, y| {
+            //
+            self.backend.
+        });
     }
 
     /// Synchronizes terminal size, calls the rendering closure, flushes the current internal state
@@ -250,29 +260,13 @@ where
         // and the terminal (if growing), which may OOB.
         self.autoresize()?;
 
-        let mut frame = Frame {
-            terminal: self,
-            cursor_position: None,
-        };
+        let mut frame = Frame { terminal: self };
         f(&mut frame);
-        // We can't change the cursor position right away because we have to flush the frame to
-        // stdout first. But we also can't keep the frame around, since it holds a &mut to
-        // Terminal. Thus, we're taking the important data out of the Frame and dropping it.
-        let cursor_position = frame.cursor_position;
 
         // Draw to stdout
         self.flush()?;
 
-        match cursor_position {
-            None => self.hide_cursor()?,
-            Some((x, y)) => {
-                self.show_cursor()?;
-                self.set_cursor(x, y)?;
-            }
-        }
-
         // Swap buffers
-        self.buffers[1 - self.current].reset();
         self.current = 1 - self.current;
 
         Ok(CompletedFrame {
@@ -301,16 +295,98 @@ where
         self.backend.set_cursor(x, y)
     }
 
-    /// Clear the terminal and force a full redraw on the next draw call.
-    pub fn clear(&mut self) -> io::Result<()> {
-        self.backend.clear()?;
-        // Reset the back buffer to make sure the next update will redraw everything.
-        self.buffers[1 - self.current].reset();
-        Ok(())
+    // /// Clear the terminal and force a full redraw on the next draw call.
+    // pub fn clear(&mut self) -> io::Result<()> {
+    //     self.backend.clear()?;
+    //     // Reset the back buffer to make sure the next update will redraw everything.
+    //     self.buffers[1 - self.current].reset();
+    //     Ok(())
+    // }
+
+    /// Builds a minimal sequence of coordinates and Cells necessary to update the UI from
+    /// self to other. Will only scan part of buffer that is shown through the viewport.
+    ///
+    /// We're assuming that buffers are well-formed, that is no double-width cell is followed by
+    /// a non-blank cell, (grapheme alligned).
+    ///
+    /// # Multi-width characters handling:
+    ///
+    /// ```text
+    /// (Index:) `01`
+    /// Prev:    `コ`
+    /// Next:    `aa`
+    /// Updates: `0: a, 1: a'
+    /// ```
+    ///
+    /// ```text
+    /// (Index:) `01`
+    /// Prev:    `a `
+    /// Next:    `コ`
+    /// Updates: `0: コ` (double width symbol at index 0 - skip index 1)
+    /// ```
+    ///
+    /// ```text
+    /// (Index:) `012`
+    /// Prev:    `aaa`
+    /// Next:    `aコ`
+    /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
+    /// ```
+    pub fn diff(&self) -> Vec<(u16, u16, &Cell)> {
+        let prev_buffer = &self.buffers[1 - self.current];
+        let next_buffer = &self.buffers[self.current];
+
+        let mut updates: Vec<(u16, u16, &Cell)> = Vec::new();
+        // Cells invalidated by drawing/replacing preceding multi-width characters:
+        let mut invalidated: usize = 0;
+        // Cells from the current buffer to skip due to preceding multi-width characters taking their
+        // place (the skipped cells should be blank anyway):
+        let mut to_skip: usize = 0;
+        let area = self.viewport.area;
+        Self::map_buffer_region(area, |i_x, i_y| {
+            let curr_cell = prev_buffer.get(i_x, i_y);
+            let next_cell = next_buffer.get(i_x, i_y);
+
+            if (curr_cell != next_cell || invalidated > 0) && to_skip == 0 {
+                updates.push((i_x, i_y, next_cell));
+            }
+
+            to_skip = next_cell.symbol.width().saturating_sub(1);
+
+            let affected_width = std::cmp::max(curr_cell.symbol.width(), next_cell.symbol.width());
+            invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
+        });
+        updates
     }
 
-    /// Queries the real size of the backend.
-    pub fn size(&self) -> io::Result<Rect> {
-        self.backend.size()
+    fn map_buffer_region<F: FnMut(u16, u16)>(area: Rect, mut closure: F) {
+        for i_y in area.y..(area.y + area.height) {
+            for i_x in area.x..(area.x + area.width) {
+                closure(i_x, i_y)
+            }
+        }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+/// UNSTABLE
+pub struct Viewport {
+    area: Rect,
+    resize_behavior: ResizeBehavior,
+}
+
+impl Viewport {
+    /// UNSTABLE
+    pub fn fixed(width: u16, height: u16) -> Viewport {
+        Viewport {
+            area: Rect::new(0, 0, width, height),
+            resize_behavior: ResizeBehavior::Fixed,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+/// UNSTABLE
+enum ResizeBehavior {
+    Fixed,
+    Auto,
 }

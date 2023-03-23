@@ -118,7 +118,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .direction(Direction::Vertical)
         .margin(2)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(f.size());
+        .split(f.viewport_area());
     let barchart = BarChart::default()
         .block(Block::default().title("Data1").borders(Borders::ALL))
         .data(&app.data)

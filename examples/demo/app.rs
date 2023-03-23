@@ -224,6 +224,7 @@ pub struct Server<'a> {
 pub struct App<'a> {
     pub title: &'a str,
     pub should_quit: bool,
+    pub shown_tab: usize,
     pub tabs: TabsState<'a>,
     pub show_chart: bool,
     pub progress: f64,
@@ -247,6 +248,7 @@ impl<'a> App<'a> {
         App {
             title,
             should_quit: false,
+            shown_tab: 0,
             tabs: TabsState::new(vec!["Tab0", "Tab1", "Tab2"]),
             show_chart: true,
             progress: 0.0,

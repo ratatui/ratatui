@@ -493,7 +493,7 @@ impl<'a> Chart<'a> {
 
 impl<'a> Widget for Chart<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
-        if area.area() == 0 {
+        if area.size() == 0 {
             return;
         }
         buf.set_style(area, self.style);

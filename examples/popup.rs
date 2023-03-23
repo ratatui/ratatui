@@ -67,7 +67,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
-    let size = f.size();
+    let size = f.viewport_area();
 
     let chunks = Layout::default()
         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())

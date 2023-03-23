@@ -99,7 +99,7 @@
 //!     let mut terminal = Terminal::new(backend)?;
 //!
 //!     terminal.draw(|f| {
-//!         let size = f.size();
+//!         let size = f.viewport_area();
 //!         let block = Block::default()
 //!             .title("Block")
 //!             .borders(Borders::ALL);
@@ -145,7 +145,7 @@
 //!                 Constraint::Percentage(10)
 //!             ].as_ref()
 //!         )
-//!         .split(f.size());
+//!         .split(f.viewport_area());
 //!     let block = Block::default()
 //!          .title("Block")
 //!          .borders(Borders::ALL);

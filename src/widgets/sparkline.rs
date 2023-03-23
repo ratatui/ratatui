@@ -141,7 +141,7 @@ mod tests {
     fn it_does_not_panic_if_max_is_zero() {
         let widget = Sparkline::default().data(&[0, 0, 0]);
         let area = Rect::new(0, 0, 3, 1);
-        let mut buffer = Buffer::empty(area);
+        let mut buffer = Buffer::empty(3, 1);
         widget.render(area, &mut buffer);
     }
 
@@ -149,7 +149,7 @@ mod tests {
     fn it_does_not_panic_if_max_is_set_to_zero() {
         let widget = Sparkline::default().data(&[0, 1, 2]).max(0);
         let area = Rect::new(0, 0, 3, 1);
-        let mut buffer = Buffer::empty(area);
+        let mut buffer = Buffer::empty(3, 1);
         widget.render(area, &mut buffer);
     }
 }

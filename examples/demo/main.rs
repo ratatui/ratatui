@@ -1,11 +1,12 @@
 mod app;
 #[cfg(feature = "crossterm")]
 mod crossterm;
+mod help;
 #[cfg(feature = "termion")]
 mod termion;
 mod ui;
 
-#[cfg(feature = "crossterm")]
+#[cfg(not(feature = "termion"))]
 use crate::crossterm::run;
 #[cfg(feature = "termion")]
 use crate::termion::run;

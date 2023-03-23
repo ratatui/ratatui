@@ -56,7 +56,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
     // Wrapping block for a group
     // Just draw the block and the group on the same area and build the group
     // with at least a margin of 1
-    let size = f.size();
+    let size = f.viewport_area();
 
     // Surrounding block
     let block = Block::default()
@@ -70,7 +70,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
         .direction(Direction::Vertical)
         .margin(4)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(f.size());
+        .split(f.viewport_area());
 
     // Top two inner blocks
     let top_chunks = Layout::default()

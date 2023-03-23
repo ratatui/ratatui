@@ -17,7 +17,7 @@ fn widgets_list_should_highlight_the_selected_item() {
     state.select(Some(1));
     terminal
         .draw(|f| {
-            let size = f.size();
+            let size = f.viewport_area();
             let items = vec![
                 ListItem::new("Item 1"),
                 ListItem::new("Item 2"),
@@ -98,7 +98,7 @@ fn widgets_list_should_clamp_offset_if_items_are_removed() {
     state.select(Some(5));
     terminal
         .draw(|f| {
-            let size = f.size();
+            let size = f.viewport_area();
             let items = vec![
                 ListItem::new("Item 0"),
                 ListItem::new("Item 1"),
@@ -118,7 +118,7 @@ fn widgets_list_should_clamp_offset_if_items_are_removed() {
     state.select(Some(1));
     terminal
         .draw(|f| {
-            let size = f.size();
+            let size = f.viewport_area();
             let items = vec![ListItem::new("Item 3")];
             let list = List::new(items).highlight_symbol(">> ");
             f.render_stateful_widget(list, size, &mut state);
@@ -136,7 +136,7 @@ fn widgets_list_should_display_multiline_items() {
     state.select(Some(1));
     terminal
         .draw(|f| {
-            let size = f.size();
+            let size = f.viewport_area();
             let items = vec![
                 ListItem::new(vec![Spans::from("Item 1"), Spans::from("Item 1a")]),
                 ListItem::new(vec![Spans::from("Item 2"), Spans::from("Item 2b")]),
@@ -171,7 +171,7 @@ fn widgets_list_should_repeat_highlight_symbol() {
     state.select(Some(1));
     terminal
         .draw(|f| {
-            let size = f.size();
+            let size = f.viewport_area();
             let items = vec![
                 ListItem::new(vec![Spans::from("Item 1"), Spans::from("Item 1a")]),
                 ListItem::new(vec![Spans::from("Item 2"), Spans::from("Item 2b")]),
@@ -217,7 +217,7 @@ fn widget_list_should_not_ignore_empty_string_items() {
                 .style(Style::default())
                 .highlight_style(Style::default());
 
-            f.render_widget(list, f.size());
+            f.render_widget(list, f.viewport_area());
         })
         .unwrap();
 

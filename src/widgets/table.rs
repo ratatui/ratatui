@@ -366,7 +366,7 @@ impl<'a> StatefulWidget for Table<'a> {
     type State = TableState;
 
     fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        if area.area() == 0 {
+        if area.size() == 0 {
             return;
         }
         buf.set_style(area, self.style);
@@ -448,8 +448,7 @@ impl<'a> StatefulWidget for Table<'a> {
                 } else {
                     &blank_symbol
                 };
-                let (col, _) =
-                    buf.set_stringn(col, row, symbol, table_area.width as usize, table_row.style);
+                let (col, _) = buf.set_stringn(col, row, symbol, table_area.width, table_row.style);
                 col
             } else {
                 col

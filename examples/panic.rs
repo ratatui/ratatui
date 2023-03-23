@@ -138,5 +138,5 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
 
     let p = Paragraph::new(text).block(b).alignment(Alignment::Center);
 
-    f.render_widget(p, f.size());
+    f.render_widget(p, f.viewport_area());
 }

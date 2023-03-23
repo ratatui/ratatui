@@ -11,14 +11,13 @@ fn widgets_barchart_not_full_below_max_value() {
 
         terminal
             .draw(|f| {
-                let size = f.size();
                 let barchart = BarChart::default()
                     .block(Block::default().borders(Borders::ALL))
                     .data(&[("empty", 0), ("half", 50), ("almost", 99), ("full", 100)])
                     .max(100)
                     .bar_width(7)
                     .bar_gap(0);
-                f.render_widget(barchart, size);
+                f.render_widget(barchart, f.viewport_area());
             })
             .unwrap();
         terminal.backend().assert_buffer(&expected);

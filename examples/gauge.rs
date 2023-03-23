@@ -122,7 +122,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             ]
             .as_ref(),
         )
-        .split(f.size());
+        .split(f.viewport_area());
 
     let gauge = Gauge::default()
         .block(Block::default().title("Gauge1").borders(Borders::ALL))

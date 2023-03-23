@@ -1,7 +1,6 @@
 use crate::{
     backend::Backend,
     buffer::Cell,
-    layout::Rect,
     style::{Color, Modifier},
 };
 use crossterm::{
@@ -12,11 +11,15 @@ use crossterm::{
         SetForegroundColor,
     },
     terminal::{self, Clear, ClearType},
+    ExecutableCommand,
 };
-use std::io::{self, Write};
+use std::{
+    cell::RefCell,
+    io::{self, Write},
+};
 
 pub struct CrosstermBackend<W: Write> {
-    buffer: W,
+    stdout: RefCell<W>,
 }
 
 impl<W> CrosstermBackend<W>
@@ -24,7 +27,9 @@ where
     W: Write,
 {
     pub fn new(buffer: W) -> CrosstermBackend<W> {
-        CrosstermBackend { buffer }
+        CrosstermBackend {
+            stdout: RefCell::new(buffer),
+        }
     }
 }
 
@@ -33,11 +38,11 @@ where
     W: Write,
 {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.buffer.write(buf)
+        self.stdout.borrow_mut().write(buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.buffer.flush()
+        self.stdout.borrow_mut().flush()
     }
 }
 
@@ -45,85 +50,85 @@ impl<W> Backend for CrosstermBackend<W>
 where
     W: Write,
 {
-    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
+    fn draw<'a, I>(&self, content: I) -> io::Result<()>
     where
-        I: Iterator<Item = (u16, u16, &'a Cell)>,
+        I: Iterator<Item = &'a (u16, u16, &'a Cell)>,
     {
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
         let mut modifier = Modifier::empty();
         let mut last_pos: Option<(u16, u16)> = None;
+        let mut stdout = self.stdout.borrow_mut();
         for (x, y, cell) in content {
             // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.0 + 1 && y == p.1) {
-                map_error(queue!(self.buffer, MoveTo(x, y)))?;
+            if !matches!(last_pos, Some(p) if *x == p.0 + 1 && *y == p.1) {
+                map_result(queue!(stdout, MoveTo(*x, *y)))?;
             }
-            last_pos = Some((x, y));
+            last_pos = Some((*x, *y));
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
                     to: cell.modifier,
                 };
-                diff.queue(&mut self.buffer)?;
+                diff.queue(&mut *stdout)?;
                 modifier = cell.modifier;
             }
             if cell.fg != fg {
                 let color = CColor::from(cell.fg);
-                map_error(queue!(self.buffer, SetForegroundColor(color)))?;
+                map_result(queue!(stdout, SetForegroundColor(color)))?;
                 fg = cell.fg;
             }
             if cell.bg != bg {
                 let color = CColor::from(cell.bg);
-                map_error(queue!(self.buffer, SetBackgroundColor(color)))?;
+                map_result(queue!(stdout, SetBackgroundColor(color)))?;
                 bg = cell.bg;
             }
 
-            map_error(queue!(self.buffer, Print(&cell.symbol)))?;
+            map_result(queue!(stdout, Print(&cell.symbol)))?;
         }
 
-        map_error(queue!(
-            self.buffer,
+        map_result(queue!(
+            stdout,
             SetForegroundColor(CColor::Reset),
             SetBackgroundColor(CColor::Reset),
             SetAttribute(CAttribute::Reset)
         ))
     }
 
-    fn hide_cursor(&mut self) -> io::Result<()> {
-        map_error(execute!(self.buffer, Hide))
+    fn hide_cursor(&self) -> io::Result<()> {
+        map_result(execute!(self.stdout.borrow_mut(), Hide))
     }
 
-    fn show_cursor(&mut self) -> io::Result<()> {
-        map_error(execute!(self.buffer, Show))
+    fn show_cursor(&self) -> io::Result<()> {
+        map_result(execute!(self.stdout.borrow_mut(), Show))
     }
 
-    fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
+    fn get_cursor(&self) -> io::Result<(u16, u16)> {
         crossterm::cursor::position()
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 
-    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
-        map_error(execute!(self.buffer, MoveTo(x, y)))
+    fn set_cursor(&self, x: u16, y: u16) -> io::Result<()> {
+        map_result(execute!(self.stdout.borrow_mut(), MoveTo(x, y)))
     }
 
-    fn clear(&mut self) -> io::Result<()> {
-        map_error(execute!(self.buffer, Clear(ClearType::All)))
+    fn clear(&self) -> io::Result<()> {
+        map_result(execute!(self.stdout.borrow_mut(), Clear(ClearType::All)))
     }
 
-    fn size(&self) -> io::Result<Rect> {
-        let (width, height) =
-            terminal::size().map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+    fn
 
-        Ok(Rect::new(0, 0, width, height))
+    fn dimensions(&self) -> io::Result<(u16, u16)> {
+        terminal::size().map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 
-    fn flush(&mut self) -> io::Result<()> {
-        self.buffer.flush()
+    fn flush(&self) -> io::Result<()> {
+        self.stdout.borrow_mut().flush()
     }
 }
 
-fn map_error(error: crossterm::Result<()>) -> io::Result<()> {
-    error.map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
+fn map_result(result: crossterm::Result<()>) -> io::Result<()> {
+    result.map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
 }
 
 impl From<Color> for CColor {
@@ -159,61 +164,61 @@ struct ModifierDiff {
 }
 
 impl ModifierDiff {
-    fn queue<W>(&self, mut w: W) -> io::Result<()>
+    fn queue<W>(&self, w: &mut W) -> io::Result<()>
     where
         W: io::Write,
     {
         //use crossterm::Attribute;
         let removed = self.from - self.to;
         if removed.contains(Modifier::REVERSED) {
-            map_error(queue!(w, SetAttribute(CAttribute::NoReverse)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::NoReverse)))?;
         }
         if removed.contains(Modifier::BOLD) {
-            map_error(queue!(w, SetAttribute(CAttribute::NormalIntensity)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::NormalIntensity)))?;
             if self.to.contains(Modifier::DIM) {
-                map_error(queue!(w, SetAttribute(CAttribute::Dim)))?;
+                map_result(queue!(w, SetAttribute(CAttribute::Dim)))?;
             }
         }
         if removed.contains(Modifier::ITALIC) {
-            map_error(queue!(w, SetAttribute(CAttribute::NoItalic)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::NoItalic)))?;
         }
         if removed.contains(Modifier::UNDERLINED) {
-            map_error(queue!(w, SetAttribute(CAttribute::NoUnderline)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::NoUnderline)))?;
         }
         if removed.contains(Modifier::DIM) {
-            map_error(queue!(w, SetAttribute(CAttribute::NormalIntensity)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::NormalIntensity)))?;
         }
         if removed.contains(Modifier::CROSSED_OUT) {
-            map_error(queue!(w, SetAttribute(CAttribute::NotCrossedOut)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::NotCrossedOut)))?;
         }
         if removed.contains(Modifier::SLOW_BLINK) || removed.contains(Modifier::RAPID_BLINK) {
-            map_error(queue!(w, SetAttribute(CAttribute::NoBlink)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::NoBlink)))?;
         }
 
         let added = self.to - self.from;
         if added.contains(Modifier::REVERSED) {
-            map_error(queue!(w, SetAttribute(CAttribute::Reverse)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::Reverse)))?;
         }
         if added.contains(Modifier::BOLD) {
-            map_error(queue!(w, SetAttribute(CAttribute::Bold)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::Bold)))?;
         }
         if added.contains(Modifier::ITALIC) {
-            map_error(queue!(w, SetAttribute(CAttribute::Italic)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::Italic)))?;
         }
         if added.contains(Modifier::UNDERLINED) {
-            map_error(queue!(w, SetAttribute(CAttribute::Underlined)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::Underlined)))?;
         }
         if added.contains(Modifier::DIM) {
-            map_error(queue!(w, SetAttribute(CAttribute::Dim)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::Dim)))?;
         }
         if added.contains(Modifier::CROSSED_OUT) {
-            map_error(queue!(w, SetAttribute(CAttribute::CrossedOut)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::CrossedOut)))?;
         }
         if added.contains(Modifier::SLOW_BLINK) {
-            map_error(queue!(w, SetAttribute(CAttribute::SlowBlink)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::SlowBlink)))?;
         }
         if added.contains(Modifier::RAPID_BLINK) {
-            map_error(queue!(w, SetAttribute(CAttribute::RapidBlink)))?;
+            map_result(queue!(w, SetAttribute(CAttribute::RapidBlink)))?;
         }
 
         Ok(())

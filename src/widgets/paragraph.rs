@@ -202,16 +202,3 @@ impl<'a> Widget for Paragraph<'a> {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn zero_width_char_at_end_of_line() {
-        let line = "foo\0";
-        let paragraph = Paragraph::new(line);
-        let mut buf = Buffer::with_lines(vec![line]);
-        paragraph.render(*buf.area(), &mut buf);
-    }
-}

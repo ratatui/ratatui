@@ -76,12 +76,7 @@ fn widgets_block_renders_on_small_areas() {
                 width: 0,
                 height: 0,
             },
-            Buffer::empty(Rect {
-                x: 0,
-                y: 0,
-                width: 0,
-                height: 0,
-            }),
+            Buffer::empty(0, 0),
         );
         test_case(
             Block::default().title("Test").borders(borders),
@@ -91,12 +86,7 @@ fn widgets_block_renders_on_small_areas() {
                 width: 1,
                 height: 0,
             },
-            Buffer::empty(Rect {
-                x: 0,
-                y: 0,
-                width: 1,
-                height: 0,
-            }),
+            Buffer::empty(1, 0),
         );
         test_case(
             Block::default().title("Test").borders(borders),
@@ -106,12 +96,7 @@ fn widgets_block_renders_on_small_areas() {
                 width: 0,
                 height: 1,
             },
-            Buffer::empty(Rect {
-                x: 0,
-                y: 0,
-                width: 0,
-                height: 1,
-            }),
+            Buffer::empty(0, 1),
         );
         test_case(
             Block::default().title("Test").borders(borders),

@@ -30,7 +30,7 @@ impl Widget for Clear {
     fn render(self, area: Rect, buf: &mut Buffer) {
         for x in area.left()..area.right() {
             for y in area.top()..area.bottom() {
-                buf.get_mut(x, y).reset();
+                buf.get_mut(x, y).clear();
             }
         }
     }

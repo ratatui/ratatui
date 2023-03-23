@@ -144,7 +144,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             ]
             .as_ref(),
         )
-        .split(f.size());
+        .split(f.viewport_area());
     let sparkline = Sparkline::default()
         .block(
             Block::default()

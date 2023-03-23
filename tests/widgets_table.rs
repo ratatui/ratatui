@@ -16,7 +16,7 @@ fn widgets_table_column_spacing_can_be_changed() {
 
         terminal
             .draw(|f| {
-                let size = f.size();
+                let size = f.viewport_area();
                 let table = Table::new(vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
                     Row::new(vec!["Row21", "Row22", "Row23"]),
@@ -114,7 +114,7 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints() {
 
         terminal
             .draw(|f| {
-                let size = f.size();
+                let size = f.viewport_area();
                 let table = Table::new(vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
                     Row::new(vec!["Row21", "Row22", "Row23"]),
@@ -202,7 +202,7 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
 
         terminal
             .draw(|f| {
-                let size = f.size();
+                let size = f.viewport_area();
                 let table = Table::new(vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
                     Row::new(vec!["Row21", "Row22", "Row23"]),
@@ -308,7 +308,7 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
 
         terminal
             .draw(|f| {
-                let size = f.size();
+                let size = f.viewport_area();
                 let table = Table::new(vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
                     Row::new(vec!["Row21", "Row22", "Row23"]),
@@ -417,7 +417,7 @@ fn widgets_table_columns_widths_can_use_ratio_constraints() {
 
         terminal
             .draw(|f| {
-                let size = f.size();
+                let size = f.viewport_area();
                 let table = Table::new(vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
                     Row::new(vec!["Row21", "Row22", "Row23"]),
@@ -522,7 +522,7 @@ fn widgets_table_can_have_rows_with_multi_lines() {
         let mut terminal = Terminal::new(backend).unwrap();
         terminal
             .draw(|f| {
-                let size = f.size();
+                let size = f.viewport_area();
                 let table = Table::new(vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
                     Row::new(vec!["Row21", "Row22", "Row23"]).height(2),
@@ -617,7 +617,7 @@ fn widgets_table_can_have_elements_styled_individually() {
     state.select(Some(0));
     terminal
         .draw(|f| {
-            let size = f.size();
+            let size = f.viewport_area();
             let table = Table::new(vec![
                 Row::new(vec!["Row11", "Row12", "Row13"]).style(Style::default().fg(Color::Green)),
                 Row::new(vec![
@@ -692,7 +692,7 @@ fn widgets_table_should_render_even_if_empty() {
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let size = f.size();
+            let size = f.viewport_area();
             let table = Table::new(vec![])
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]))
                 .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
@@ -723,7 +723,7 @@ fn widgets_table_columns_dont_panic() {
         let mut terminal = Terminal::new(backend).unwrap();
         terminal
             .draw(|f| {
-                let size = f.size();
+                let size = f.viewport_area();
                 f.render_stateful_widget(table, size, state);
             })
             .unwrap();
@@ -760,7 +760,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
     state.select(Some(5));
     terminal
         .draw(|f| {
-            let size = f.size();
+            let size = f.viewport_area();
             let table = Table::new(vec![
                 Row::new(vec!["Row01", "Row02", "Row03"]),
                 Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -796,7 +796,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
     state.select(Some(1));
     terminal
         .draw(|f| {
-            let size = f.size();
+            let size = f.viewport_area();
             let table = Table::new(vec![Row::new(vec!["Row31", "Row32", "Row33"])])
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))

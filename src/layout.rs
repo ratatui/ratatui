@@ -1,11 +1,15 @@
-use std::cell::RefCell;
-use std::cmp::{max, min};
-use std::collections::HashMap;
-use std::rc::Rc;
+use std::{
+    cell::RefCell,
+    cmp::{max, min},
+    collections::HashMap,
+    rc::Rc,
+};
 
-use cassowary::strength::{MEDIUM, REQUIRED, WEAK};
-use cassowary::WeightedRelation::*;
-use cassowary::{Constraint as CassowaryConstraint, Expression, Solver, Variable};
+use cassowary::{
+    strength::{MEDIUM, REQUIRED, WEAK},
+    Constraint as CassowaryConstraint, Expression, Solver, Variable,
+    WeightedRelation::*,
+};
 
 #[derive(Debug, Hash, Clone, Copy, PartialEq, Eq)]
 pub enum Corner {
@@ -349,7 +353,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
 
     match layout.extend {
         Extend::Viewport => {
-            // Fix imprecision by extending the last item a bit if necessary
+            // Fix solution imprecision by extending the last item a bit if necessary
             if let Some(last) = results.last_mut() {
                 match layout.direction {
                     Direction::Vertical => {
@@ -442,8 +446,8 @@ impl Rect {
         }
     }
 
-    pub fn area(self) -> u16 {
-        self.width * self.height
+    pub fn size(self) -> usize {
+        self.width as usize * self.height as usize
     }
 
     pub fn left(self) -> u16 {
@@ -543,7 +547,7 @@ mod tests {
         for width in 256u16..300u16 {
             for height in 256u16..300u16 {
                 let rect = Rect::new(0, 0, width, height);
-                rect.area(); // Should not panic.
+                rect.size(); // Should not panic.
                 assert!(rect.width < width || rect.height < height);
                 // The target dimensions are rounded down so the math will not be too precise
                 // but let's make sure the ratios don't diverge crazily.
@@ -570,7 +574,7 @@ mod tests {
         for width in 0..256u16 {
             for height in 0..256u16 {
                 let rect = Rect::new(0, 0, width, height);
-                rect.area(); // Should not panic.
+                rect.size(); // Should not panic.
                 assert_eq!(rect.width, width);
                 assert_eq!(rect.height, height);
             }

@@ -25,7 +25,7 @@ fn widgets_canvas_draw_labels() {
                         Span::styled(label.clone(), Style::default().fg(Color::Blue)),
                     );
                 });
-            f.render_widget(canvas, f.size());
+            f.render_widget(canvas, f.viewport_area());
         })
         .unwrap();
 

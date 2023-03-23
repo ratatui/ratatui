@@ -1,25 +1,23 @@
+use unicode_width::UnicodeWidthStr;
+
 use crate::{
     backend::Backend,
     buffer::{Buffer, Cell},
-    layout::Rect,
 };
-use std::{fmt::Write, io};
-use unicode_width::UnicodeWidthStr;
+use std::{cell::RefCell, fmt::Write, io};
 
 /// A backend used for the integration tests.
 #[derive(Debug)]
 pub struct TestBackend {
-    width: u16,
-    buffer: Buffer,
-    height: u16,
-    cursor: bool,
-    pos: (u16, u16),
+    buffer: RefCell<Buffer>,
+    cursor: RefCell<bool>,
+    pos: RefCell<(u16, u16)>,
 }
 
 /// Returns a string representation of the given buffer for debugging purpose.
 fn buffer_view(buffer: &Buffer) -> String {
-    let mut view = String::with_capacity(buffer.content.len() + buffer.area.height as usize * 3);
-    for cells in buffer.content.chunks(buffer.area.width as usize) {
+    let mut view = String::with_capacity(buffer.cells.len());
+    for cells in buffer.cells.chunks(buffer.get_width() as usize) {
         let mut overwritten = vec![];
         let mut skip: usize = 0;
         view.push('"');
@@ -48,104 +46,94 @@ fn buffer_view(buffer: &Buffer) -> String {
 impl TestBackend {
     pub fn new(width: u16, height: u16) -> TestBackend {
         TestBackend {
-            width,
-            height,
-            buffer: Buffer::empty(Rect::new(0, 0, width, height)),
-            cursor: false,
-            pos: (0, 0),
+            buffer: RefCell::new(Buffer::empty(width, height)),
+            cursor: RefCell::new(false),
+            pos: RefCell::new((0, 0)),
         }
-    }
-
-    pub fn buffer(&self) -> &Buffer {
-        &self.buffer
-    }
-
-    pub fn resize(&mut self, width: u16, height: u16) {
-        self.buffer.resize(Rect::new(0, 0, width, height));
-        self.width = width;
-        self.height = height;
     }
 
     pub fn assert_buffer(&self, expected: &Buffer) {
-        assert_eq!(expected.area, self.buffer.area);
-        let diff = expected.diff(&self.buffer);
-        if diff.is_empty() {
+        assert_eq!(expected.size(), self.buffer.borrow().size());
+        if self.buffer.borrow().cells == expected.cells {
             return;
         }
 
-        let mut debug_info = String::from("Buffers are not equal");
-        debug_info.push('\n');
-        debug_info.push_str("Expected:");
-        debug_info.push('\n');
-        let expected_view = buffer_view(expected);
-        debug_info.push_str(&expected_view);
-        debug_info.push('\n');
-        debug_info.push_str("Got:");
-        debug_info.push('\n');
-        let view = buffer_view(&self.buffer);
-        debug_info.push_str(&view);
-        debug_info.push('\n');
-
-        debug_info.push_str("Diff:");
-        debug_info.push('\n');
-        let nice_diff = diff
+        let nice_diff = self
+            .buffer
+            .borrow()
+            .cells
             .iter()
             .enumerate()
-            .map(|(i, (x, y, cell))| {
-                let expected_cell = expected.get(*x, *y);
-                format!(
-                    "{}: at ({}, {}) expected {:?} got {:?}",
-                    i, x, y, expected_cell, cell
-                )
+            .filter_map(|(i, got_cell)| {
+                let expected_cell = &expected.cells[i];
+                match got_cell != expected_cell {
+                    true => {
+                        let (x, y) = expected.pos_of(i);
+                        Some(format!(
+                            "{}: at ({}, {}) expected {:?} got {:?}",
+                            i, x, y, expected_cell.symbol, got_cell.symbol
+                        ))
+                    }
+                    false => None,
+                }
             })
             .collect::<Vec<String>>()
             .join("\n");
-        debug_info.push_str(&nice_diff);
-        panic!("{}", debug_info);
+
+        panic!(
+            "Buffers are not equal:\nExpected:\n{}\nGot:\n{}\nDiff:\n{}\n",
+            buffer_view(expected),
+            buffer_view(&self.buffer.borrow()),
+            nice_diff
+        );
     }
 }
 
 impl Backend for TestBackend {
-    fn draw<'a, I>(&mut self, content: I) -> Result<(), io::Error>
+    fn draw<'a, I>(&self, content: I) -> Result<(), io::Error>
     where
-        I: Iterator<Item = (u16, u16, &'a Cell)>,
+        I: Iterator<Item = &'a (u16, u16, &'a Cell)>,
     {
+        let mut buffer = self.buffer.borrow_mut();
         for (x, y, c) in content {
-            let cell = self.buffer.get_mut(x, y);
-            *cell = c.clone();
+            let cell = buffer.get_mut(*x, *y);
+            *cell = (*c).clone();
         }
         Ok(())
     }
 
-    fn hide_cursor(&mut self) -> Result<(), io::Error> {
-        self.cursor = false;
+    fn hide_cursor(&self) -> Result<(), io::Error> {
+        *self.cursor.borrow_mut() = false;
         Ok(())
     }
 
-    fn show_cursor(&mut self) -> Result<(), io::Error> {
-        self.cursor = true;
+    fn show_cursor(&self) -> Result<(), io::Error> {
+        *self.cursor.borrow_mut() = true;
         Ok(())
     }
 
-    fn get_cursor(&mut self) -> Result<(u16, u16), io::Error> {
-        Ok(self.pos)
+    fn get_cursor(&self) -> Result<(u16, u16), io::Error> {
+        Ok(*self.pos.borrow())
     }
 
-    fn set_cursor(&mut self, x: u16, y: u16) -> Result<(), io::Error> {
-        self.pos = (x, y);
+    fn set_cursor(&self, x: u16, y: u16) -> Result<(), io::Error> {
+        *self.pos.borrow_mut() = (x, y);
         Ok(())
     }
 
-    fn clear(&mut self) -> Result<(), io::Error> {
-        self.buffer.reset();
+    fn clear(&self) -> Result<(), io::Error> {
+        self.buffer.borrow_mut().reset();
         Ok(())
     }
 
-    fn size(&self) -> Result<Rect, io::Error> {
-        Ok(Rect::new(0, 0, self.width, self.height))
+    fn dimensions(&self) -> io::Result<(u16, u16)> {
+        Ok((
+            self.buffer.borrow().get_width(),
+            self.buffer.borrow().get_height(),
+        ))
     }
 
-    fn flush(&mut self) -> Result<(), io::Error> {
+    fn flush(&self) -> Result<(), io::Error> {
         Ok(())
     }
 }

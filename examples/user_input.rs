@@ -16,13 +16,13 @@ use crossterm::{
 };
 use ratatui::{
     backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame, Terminal,
 };
-use std::{error::Error, io};
+use std::{error::Error, io, rc::Rc};
 use unicode_width::UnicodeWidthStr;
 
 enum InputMode {
@@ -80,7 +80,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
-        terminal.draw(|f| ui(f, &app))?;
+        let layout = get_ui_layout(terminal);
+        terminal.draw(|frame| ui(frame, &app, &layout))?;
+        match app.input_mode {
+            InputMode::Normal => terminal.hide_cursor()?,
+            InputMode::Editing => {
+                // Make the cursor visible and ask ratatui to put it at the specified coordinates after rendering
+                terminal.set_cursor(
+                    // Put cursor past the end of the input text
+                    layout[1].x + app.input.width() as u16 + 1,
+                    // Move one line down, from the border to the input line
+                    layout[1].y + 1,
+                )?
+            }
+        }
 
         if let Event::Key(key) = event::read()? {
             match app.input_mode {
@@ -114,8 +127,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
-    let chunks = Layout::default()
+fn get_ui_layout<B: Backend>(terminal: &Terminal<B>) -> Rc<[Rect]> {
+    Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
         .constraints(
@@ -126,8 +139,10 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             ]
             .as_ref(),
         )
-        .split(f.size());
+        .split(terminal.viewport_area())
+}
 
+fn ui<B: Backend>(f: &mut Frame<B>, app: &App, layout: &Rc<[Rect]>) {
     let (msg, style) = match app.input_mode {
         InputMode::Normal => (
             vec![
@@ -153,7 +168,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let mut text = Text::from(Spans::from(msg));
     text.patch_style(style);
     let help_message = Paragraph::new(text);
-    f.render_widget(help_message, chunks[0]);
+    f.render_widget(help_message, layout[0]);
 
     let input = Paragraph::new(app.input.as_ref())
         .style(match app.input_mode {
@@ -161,22 +176,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             InputMode::Editing => Style::default().fg(Color::Yellow),
         })
         .block(Block::default().borders(Borders::ALL).title("Input"));
-    f.render_widget(input, chunks[1]);
-    match app.input_mode {
-        InputMode::Normal =>
-            // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
-            {}
-
-        InputMode::Editing => {
-            // Make the cursor visible and ask ratatui to put it at the specified coordinates after rendering
-            f.set_cursor(
-                // Put cursor past the end of the input text
-                chunks[1].x + app.input.width() as u16 + 1,
-                // Move one line down, from the border to the input line
-                chunks[1].y + 1,
-            )
-        }
-    }
+    f.render_widget(input, layout[1]);
 
     let messages: Vec<ListItem> = app
         .messages
@@ -189,5 +189,5 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .collect();
     let messages =
         List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
-    f.render_widget(messages, chunks[2]);
+    f.render_widget(messages, layout[2]);
 }

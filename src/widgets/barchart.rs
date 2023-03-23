@@ -211,7 +211,7 @@ impl<'a> Widget for BarChart<'a> {
                 chart_area.left() + i as u16 * (self.bar_width + self.bar_gap),
                 chart_area.bottom() - 1,
                 label,
-                self.bar_width as usize,
+                self.bar_width,
                 self.label_style,
             );
         }
