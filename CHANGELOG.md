@@ -15,7 +15,7 @@
 
 Thank you so much to everyone that contributed to this release!
 
-- [@joshka](https://github.com/)
+- [@joshka](https://github.com/joshka)
 - [@todoesverso](https://github.com/todoesverso)
 - [@UncleScientist](https://github.com/UncleScientist)
 
