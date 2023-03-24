@@ -126,6 +126,12 @@ pub struct Style {
 
 impl Default for Style {
     fn default() -> Style {
+        Style::new()
+    }
+}
+
+impl Style {
+    pub const fn new() -> Style {
         Style {
             fg: None,
             bg: None,
@@ -133,11 +139,9 @@ impl Default for Style {
             sub_modifier: Modifier::empty(),
         }
     }
-}
 
-impl Style {
     /// Returns a `Style` resetting all properties.
-    pub fn reset() -> Style {
+    pub const fn reset() -> Style {
         Style {
             fg: Some(Color::Reset),
             bg: Some(Color::Reset),
@@ -156,7 +160,7 @@ impl Style {
     /// let diff = Style::default().fg(Color::Red);
     /// assert_eq!(style.patch(diff), Style::default().fg(Color::Red));
     /// ```
-    pub fn fg(mut self, color: Color) -> Style {
+    pub const fn fg(mut self, color: Color) -> Style {
         self.fg = Some(color);
         self
     }
@@ -171,7 +175,7 @@ impl Style {
     /// let diff = Style::default().bg(Color::Red);
     /// assert_eq!(style.patch(diff), Style::default().bg(Color::Red));
     /// ```
-    pub fn bg(mut self, color: Color) -> Style {
+    pub const fn bg(mut self, color: Color) -> Style {
         self.bg = Some(color);
         self
     }
