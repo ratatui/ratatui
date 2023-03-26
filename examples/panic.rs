@@ -28,7 +28,7 @@ use ratatui::backend::{Backend, CrosstermBackend};
 use ratatui::layout::Alignment;
 use ratatui::text::Spans;
 use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui::{Frame, Terminal};
+use ratatui::Terminal;
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -89,8 +89,7 @@ fn reset_terminal() -> Result<()> {
 /// Runs the TUI loop.
 fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
     loop {
-        terminal.draw(|f| ui(f, app))?;
-
+        draw_ui(terminal, app)?;
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('p') => {
@@ -110,7 +109,7 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
 }
 
 /// Render the TUI.
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
     let text = vec![
         if app.hook_enabled {
             Spans::from("HOOK IS CURRENTLY **ENABLED**")
@@ -138,5 +137,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
 
     let p = Paragraph::new(text).block(b).alignment(Alignment::Center);
 
-    f.render_widget(p, f.viewport_area());
+    terminal.render_widget(p, terminal.viewport_area());
+    terminal.flush()?;
+    Ok(())
 }

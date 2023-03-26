@@ -18,15 +18,12 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
                 viewport: Viewport::fixed(area.width, area.height),
             },
         )?;
-        terminal.draw(|f| {
-            f.render_widget(Paragraph::new("a"), area);
-        })?;
-        terminal.draw(|f| {
-            f.render_widget(Paragraph::new("ab"), area);
-        })?;
-        terminal.draw(|f| {
-            f.render_widget(Paragraph::new("abc"), area);
-        })?;
+        terminal.render_widget(Paragraph::new("a"), area);
+        terminal.flush()?;
+        terminal.render_widget(Paragraph::new("ab"), area);
+        terminal.flush()?;
+        terminal.render_widget(Paragraph::new("abc"), area);
+        terminal.flush()?;
     }
 
     let expected = {

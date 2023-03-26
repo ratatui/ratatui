@@ -20,7 +20,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
     widgets::{Block, Borders, List, ListItem, Paragraph},
-    Frame, Terminal,
+    Terminal,
 };
 use std::{error::Error, io, rc::Rc};
 use unicode_width::UnicodeWidthStr;
@@ -81,7 +81,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
         let layout = get_ui_layout(terminal);
-        terminal.draw(|frame| ui(frame, &app, &layout))?;
+        draw_ui(terminal, &app, &layout)?;
         match app.input_mode {
             InputMode::Normal => terminal.hide_cursor()?,
             InputMode::Editing => {
@@ -142,7 +142,11 @@ fn get_ui_layout<B: Backend>(terminal: &Terminal<B>) -> Rc<[Rect]> {
         .split(terminal.viewport_area())
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App, layout: &Rc<[Rect]>) {
+fn draw_ui<B: Backend>(
+    terminal: &mut Terminal<B>,
+    app: &App,
+    layout: &Rc<[Rect]>,
+) -> io::Result<()> {
     let (msg, style) = match app.input_mode {
         InputMode::Normal => (
             vec![
@@ -168,7 +172,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App, layout: &Rc<[Rect]>) {
     let mut text = Text::from(Spans::from(msg));
     text.patch_style(style);
     let help_message = Paragraph::new(text);
-    f.render_widget(help_message, layout[0]);
+    terminal.render_widget(help_message, layout[0]);
 
     let input = Paragraph::new(app.input.as_ref())
         .style(match app.input_mode {
@@ -176,7 +180,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App, layout: &Rc<[Rect]>) {
             InputMode::Editing => Style::default().fg(Color::Yellow),
         })
         .block(Block::default().borders(Borders::ALL).title("Input"));
-    f.render_widget(input, layout[1]);
+    terminal.render_widget(input, layout[1]);
 
     let messages: Vec<ListItem> = app
         .messages
@@ -189,5 +193,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App, layout: &Rc<[Rect]>) {
         .collect();
     let messages =
         List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
-    f.render_widget(messages, layout[2]);
+    terminal.render_widget(messages, layout[2]);
+    terminal.flush()?;
+    Ok(())
 }

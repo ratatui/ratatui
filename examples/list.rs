@@ -9,7 +9,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, List, ListItem, ListState},
-    Frame, Terminal,
+    Terminal,
 };
 use std::{
     error::Error,
@@ -179,8 +179,7 @@ fn run_app<B: Backend>(
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|f| ui(f, &mut app))?;
-
+        draw_ui(terminal, &mut app)?;
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
@@ -202,12 +201,12 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
     // Create two chunks with equal horizontal screen space
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(f.viewport_area());
+        .split(terminal.viewport_area());
 
     // Iterate through all elements in the `items` app and append some debug text to it.
     let items: Vec<ListItem> = app
@@ -237,7 +236,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .highlight_symbol(">> ");
 
     // We can now render the item list
-    f.render_stateful_widget(items, chunks[0], &mut app.items.state);
+    terminal.render_stateful_widget(items, chunks[0], &mut app.items.state);
 
     // Let's do the same for the events.
     // The event list doesn't have any state and only displays the current state of the list.
@@ -282,5 +281,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let events_list = List::new(events)
         .block(Block::default().borders(Borders::ALL).title("List"))
         .start_corner(Corner::BottomLeft);
-    f.render_widget(events_list, chunks[1]);
+    terminal.render_widget(events_list, chunks[1]);
+    terminal.flush()?;
+    Ok(())
 }

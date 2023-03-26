@@ -9,7 +9,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::Span,
     widgets::{Block, Borders, Gauge},
-    Frame, Terminal,
+    Terminal,
 };
 use std::{
     error::Error,
@@ -90,8 +90,7 @@ fn run_app<B: Backend>(
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|f| ui(f, &app))?;
-
+        draw_ui(terminal, &app)?;
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
@@ -109,7 +108,7 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -122,13 +121,13 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             ]
             .as_ref(),
         )
-        .split(f.viewport_area());
+        .split(terminal.viewport_area());
 
     let gauge = Gauge::default()
         .block(Block::default().title("Gauge1").borders(Borders::ALL))
         .gauge_style(Style::default().fg(Color::Yellow))
         .percent(app.progress1);
-    f.render_widget(gauge, chunks[0]);
+    terminal.render_widget(gauge, chunks[0]);
 
     let label = format!("{}/100", app.progress2);
     let gauge = Gauge::default()
@@ -136,7 +135,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Green))
         .percent(app.progress2)
         .label(label);
-    f.render_widget(gauge, chunks[1]);
+    terminal.render_widget(gauge, chunks[1]);
 
     let label = Span::styled(
         format!("{:.2}%", app.progress3 * 100.0),
@@ -150,7 +149,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .ratio(app.progress3)
         .label(label)
         .use_unicode(true);
-    f.render_widget(gauge, chunks[2]);
+    terminal.render_widget(gauge, chunks[2]);
 
     let label = format!("{}/100", app.progress2);
     let gauge = Gauge::default()
@@ -162,5 +161,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         )
         .percent(app.progress4)
         .label(label);
-    f.render_widget(gauge, chunks[3]);
+    terminal.render_widget(gauge, chunks[3]);
+    terminal.flush()?;
+    Ok(())
 }

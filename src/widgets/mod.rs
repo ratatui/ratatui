@@ -165,16 +165,15 @@ pub trait Widget {
 /// ]);
 ///
 /// loop {
-///     terminal.draw(|f| {
-///         // The items managed by the application are transformed to something
-///         // that is understood by ratatui.
-///         let items: Vec<ListItem>= events.items.iter().map(|i| ListItem::new(i.as_ref())).collect();
-///         // The `List` widget is then built with those items.
-///         let list = List::new(items);
-///         // Finally the widget is rendered using the associated state. `events.state` is
-///         // effectively the only thing that we will "remember" from this draw call.
-///         f.render_stateful_widget(list, f.viewport_area(), &mut events.state);
-///     });
+///     // The items managed by the application are transformed to something
+///     // that is understood by ratatui.
+///     let items: Vec<ListItem>= events.items.iter().map(|i| ListItem::new(i.as_ref())).collect();
+///     // The `List` widget is then built with those items.
+///     let list = List::new(items);
+///     // Finally the widget is rendered using the associated state. `events.state` is
+///     // effectively the only thing that we will "remember" from this draw call.
+///     terminal.render_stateful_widget(list, terminal.viewport_area(), &mut events.state);
+///     terminal.flush();
 ///
 ///     // In response to some input events or an external http request or whatever:
 ///     events.next();

@@ -8,7 +8,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     widgets::{BarChart, Block, Borders},
-    Frame, Terminal,
+    Terminal,
 };
 use std::{
     error::Error,
@@ -94,7 +94,7 @@ fn run_app<B: Backend>(
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|f| ui(f, &app))?;
+        draw_ui(terminal, &app)?;
 
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
@@ -113,19 +113,19 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(f.viewport_area());
+        .split(terminal.viewport_area());
     let barchart = BarChart::default()
         .block(Block::default().title("Data1").borders(Borders::ALL))
         .data(&app.data)
         .bar_width(9)
         .bar_style(Style::default().fg(Color::Yellow))
         .value_style(Style::default().fg(Color::Black).bg(Color::Yellow));
-    f.render_widget(barchart, chunks[0]);
+    terminal.render_widget(barchart, chunks[0]);
 
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
@@ -143,7 +143,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 .bg(Color::Green)
                 .add_modifier(Modifier::BOLD),
         );
-    f.render_widget(barchart, chunks[0]);
+    terminal.render_widget(barchart, chunks[0]);
 
     let barchart = BarChart::default()
         .block(Block::default().title("Data3").borders(Borders::ALL))
@@ -157,5 +157,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::ITALIC),
         );
-    f.render_widget(barchart, chunks[1]);
+    terminal.render_widget(barchart, chunks[1]);
+    terminal.flush()?;
+    Ok(())
 }

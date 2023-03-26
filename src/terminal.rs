@@ -13,93 +13,6 @@ pub struct TerminalOptions {
     pub viewport: Viewport,
 }
 
-/// Represents a consistent terminal interface for rendering.
-pub struct Frame<'a, B: 'a>
-where
-    B: Backend,
-{
-    terminal: &'a mut Terminal<B>,
-}
-
-impl<'a, B> Frame<'a, B>
-where
-    B: Backend,
-{
-    /// Terminal size, guaranteed not to change when rendering.
-    pub fn viewport_area(&self) -> Rect {
-        self.terminal.viewport_area()
-    }
-
-    pub fn resize_buffer(&mut self, width: u16, height: u16) {
-        self.terminal.resize_buffer(width, height)
-    }
-
-    pub fn clear(&mut self) {
-        self.terminal.clear().unwrap();
-    }
-
-    pub fn clear_region(&mut self, area: Rect) {
-        self.terminal.clear_buffer_region(area)
-    }
-
-    /// Render a [`Widget`] to the current buffer using [`Widget::render`].
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::Terminal;
-    /// # use ratatui::backend::TestBackend;
-    /// # use ratatui::layout::Rect;
-    /// # use ratatui::widgets::Block;
-    /// # let backend = TestBackend::new(5, 5);
-    /// # let mut terminal = Terminal::new(backend).unwrap();
-    /// let block = Block::default();
-    /// let area = Rect::new(0, 0, 5, 5);
-    /// terminal.draw(|frame| frame.render_widget(block, area));
-    /// ```
-    pub fn render_widget<W>(&mut self, widget: W, area: Rect)
-    where
-        W: Widget,
-    {
-        widget.render(area, &mut self.terminal.buffer);
-    }
-
-    /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
-    ///
-    /// The last argument should be an instance of the [`StatefulWidget::State`] associated to the
-    /// given [`StatefulWidget`].
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::Terminal;
-    /// # use ratatui::backend::TestBackend;
-    /// # use ratatui::layout::Rect;
-    /// # use ratatui::widgets::{List, ListItem, ListState};
-    /// # let backend = TestBackend::new(5, 5);
-    /// # let mut terminal = Terminal::new(backend).unwrap();
-    /// let mut state = ListState::default();
-    /// state.select(Some(1));
-    /// let items = vec![
-    ///     ListItem::new("Item 1"),
-    ///     ListItem::new("Item 2"),
-    /// ];
-    /// let list = List::new(items);
-    /// let area = Rect::new(0, 0, 5, 5);
-    /// terminal.draw(|frame| frame.render_stateful_widget(list, area, &mut state));
-    /// ```
-    pub fn render_stateful_widget<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
-    where
-        W: StatefulWidget,
-    {
-        widget.render(area, &mut self.terminal.buffer, state);
-    }
-
-    pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
-        self.terminal.set_cursor(x, y)
-    }
-}
-
 /// CompletedFrame represents the state of the terminal after all changes performed in the last
 /// [`Terminal::draw`] call have been applied. Therefore, it is only valid until the next call to
 /// [`Terminal::draw`].
@@ -167,6 +80,61 @@ where
         })
     }
 
+    /// Render a [`Widget`] to the current buffer using [`Widget::render`].
+    /// Should be proceeded with a call to terminal.flush().
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::Terminal;
+    /// # use ratatui::backend::TestBackend;
+    /// # use ratatui::layout::Rect;
+    /// # use ratatui::widgets::Block;
+    /// # let backend = TestBackend::new(5, 5);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
+    /// let block = Block::default();
+    /// let area = Rect::new(0, 0, 5, 5);
+    /// terminal.render_widget(block, area);
+    /// ```
+    pub fn render_widget<W>(&mut self, widget: W, area: Rect)
+    where
+        W: Widget,
+    {
+        widget.render(area, &mut self.buffer);
+    }
+
+    /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
+    /// Should be proceeded with a call to terminal.flush().
+    ///
+    /// The last argument should be an instance of the [`StatefulWidget::State`] associated to the
+    /// given [`StatefulWidget`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::Terminal;
+    /// # use ratatui::backend::TestBackend;
+    /// # use ratatui::layout::Rect;
+    /// # use ratatui::widgets::{List, ListItem, ListState};
+    /// # let backend = TestBackend::new(5, 5);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
+    /// let mut state = ListState::default();
+    /// state.select(Some(1));
+    /// let items = vec![
+    ///     ListItem::new("Item 1"),
+    ///     ListItem::new("Item 2"),
+    /// ];
+    /// let list = List::new(items);
+    /// let area = Rect::new(0, 0, 5, 5);
+    /// terminal.render_stateful_widget(list, area, &mut state);
+    /// ```
+    pub fn render_stateful_widget<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
+    where
+        W: StatefulWidget,
+    {
+        widget.render(area, &mut self.buffer, state);
+    }
+
     pub fn viewport_area(&self) -> Rect {
         self.viewport.area
     }
@@ -194,7 +162,7 @@ where
         }
         self.viewport.area.x = new_x_offset;
         self.viewport.area.y = new_y_offset;
-        self.draw_viewport_region()?;
+        self.flush_viewport_region()?;
         Ok(Ok(()))
     }
 
@@ -225,32 +193,24 @@ where
         self.backend.clear()
     }
 
-    fn clear_buffer_region(&mut self, area: Rect) {
+    pub fn clear_region(&mut self, area: Rect) {
         self.buffer.clear_region(area);
     }
 
     /// Synchronizes terminal size, calls the rendering closure, flushes the current internal state
     /// and prepares for the next draw call.
-    pub fn draw<F>(&mut self, f: F) -> io::Result<CompletedFrame>
-    where
-        F: FnOnce(&mut Frame<B>),
-    {
+    pub fn flush(&mut self) -> io::Result<CompletedFrame> {
         // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
         // and the terminal (if growing), which may OOB.
         self.autoresize()?;
-
-        let mut frame = Frame { terminal: self };
-        f(&mut frame);
-
-        self.draw_viewport_region()?;
-
+        self.flush_viewport_region()?;
         Ok(CompletedFrame {
             buffer: &self.buffer,
             area: self.viewport.area,
         })
     }
 
-    fn draw_viewport_region(&mut self) -> io::Result<()> {
+    fn flush_viewport_region(&mut self) -> io::Result<()> {
         let mut buffer_region = self.buffer.get_region(self.viewport_area());
         // TODO: translate to (0,0)
         buffer_region.iter_mut().for_each(|(x, y, _)| {

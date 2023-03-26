@@ -4,7 +4,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::Span,
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
-    Frame, Terminal,
+    Terminal,
 };
 use std::{error::Error, io};
 
@@ -54,8 +54,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
-        terminal.draw(|f| ui(f, &app))?;
-
+        draw_ui(terminal, &app)?;
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
@@ -66,8 +65,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
-    let size = f.viewport_area();
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
+    let size = terminal.viewport_area();
 
     let chunks = Layout::default()
         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
@@ -84,20 +83,22 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     ))
     .alignment(Alignment::Center)
     .wrap(Wrap { trim: true });
-    f.render_widget(paragraph, chunks[0]);
+    terminal.render_widget(paragraph, chunks[0]);
 
     let block = Block::default()
         .title("Content")
         .borders(Borders::ALL)
         .style(Style::default().bg(Color::Blue));
-    f.render_widget(block, chunks[1]);
+    terminal.render_widget(block, chunks[1]);
 
     if app.show_popup {
         let block = Block::default().title("Popup").borders(Borders::ALL);
         let area = centered_rect(60, 20, size);
-        f.render_widget(Clear, area); //this clears out the background
-        f.render_widget(block, area);
+        terminal.render_widget(Clear, area); //this clears out the background
+        terminal.render_widget(block, area);
     }
+    terminal.flush()?;
+    Ok(())
 }
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`

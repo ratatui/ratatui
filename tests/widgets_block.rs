@@ -12,22 +12,21 @@ use ratatui::{
 fn widgets_block_renders() {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend).unwrap();
-    terminal
-        .draw(|f| {
-            let block = Block::default()
-                .title(Span::styled("Title", Style::default().fg(Color::LightBlue)))
-                .borders(Borders::ALL);
-            f.render_widget(
-                block,
-                Rect {
-                    x: 0,
-                    y: 0,
-                    width: 8,
-                    height: 8,
-                },
-            );
-        })
-        .unwrap();
+
+    let block = Block::default()
+        .title(Span::styled("Title", Style::default().fg(Color::LightBlue)))
+        .borders(Borders::ALL);
+    terminal.render_widget(
+        block,
+        Rect {
+            x: 0,
+            y: 0,
+            width: 8,
+            height: 8,
+        },
+    );
+
+    terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec![
         "┌Title─┐  ",
         "│      │  ",
@@ -51,11 +50,8 @@ fn widgets_block_renders_on_small_areas() {
     let test_case = |block, area: Rect, expected| {
         let backend = TestBackend::new(area.width, area.height);
         let mut terminal = Terminal::new(backend).unwrap();
-        terminal
-            .draw(|f| {
-                f.render_widget(block, area);
-            })
-            .unwrap();
+        terminal.render_widget(block, area);
+        terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
 
@@ -215,12 +211,8 @@ fn widgets_block_title_alignment() {
             height: 2,
         };
 
-        terminal
-            .draw(|f| {
-                f.render_widget(block, area);
-            })
-            .unwrap();
-
+        terminal.render_widget(block, area);
+        terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
 

@@ -10,7 +10,7 @@ use ratatui::{
     symbols,
     text::Span,
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType},
-    Frame, Terminal,
+    Terminal,
 };
 use std::{
     error::Error,
@@ -130,7 +130,7 @@ fn run_app<B: Backend>(
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|f| ui(f, &app))?;
+        draw_ui(terminal, &app)?;
 
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
@@ -149,8 +149,8 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
-    let size = f.viewport_area();
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
+    let size = terminal.viewport_area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -215,7 +215,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 ])
                 .bounds([-20.0, 20.0]),
         );
-    f.render_widget(chart, chunks[0]);
+    terminal.render_widget(chart, chunks[0]);
 
     let datasets = vec![Dataset::default()
         .name("data")
@@ -256,7 +256,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                     Span::styled("5.0", Style::default().add_modifier(Modifier::BOLD)),
                 ]),
         );
-    f.render_widget(chart, chunks[1]);
+    terminal.render_widget(chart, chunks[1]);
 
     let datasets = vec![Dataset::default()
         .name("data")
@@ -297,5 +297,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                     Span::styled("5", Style::default().add_modifier(Modifier::BOLD)),
                 ]),
         );
-    f.render_widget(chart, chunks[2]);
+    terminal.render_widget(chart, chunks[2]);
+    terminal.flush()?;
+    Ok(())
 }

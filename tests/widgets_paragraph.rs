@@ -18,17 +18,14 @@ fn widgets_paragraph_can_wrap_its_content() {
         let backend = TestBackend::new(20, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        terminal
-            .draw(|f| {
-                let size = f.viewport_area();
-                let text = vec![Spans::from(SAMPLE_STRING)];
-                let paragraph = Paragraph::new(text)
-                    .block(Block::default().borders(Borders::ALL))
-                    .alignment(alignment)
-                    .wrap(Wrap { trim: true });
-                f.render_widget(paragraph, size);
-            })
-            .unwrap();
+        let size = terminal.viewport_area();
+        let text = vec![Spans::from(SAMPLE_STRING)];
+        let paragraph = Paragraph::new(text)
+            .block(Block::default().borders(Borders::ALL))
+            .alignment(alignment)
+            .wrap(Wrap { trim: true });
+        terminal.render_widget(paragraph, size);
+        terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
 
@@ -85,16 +82,14 @@ fn widgets_paragraph_renders_double_width_graphemes() {
     let mut terminal = Terminal::new(backend).unwrap();
 
     let s = "コンピュータ上で文字を扱う場合、典型的には文字による通信を行う場合にその両端点では、";
-    terminal
-        .draw(|f| {
-            let size = f.viewport_area();
-            let text = vec![Spans::from(s)];
-            let paragraph = Paragraph::new(text)
-                .block(Block::default().borders(Borders::ALL))
-                .wrap(Wrap { trim: true });
-            f.render_widget(paragraph, size);
-        })
-        .unwrap();
+
+    let size = terminal.viewport_area();
+    let text = vec![Spans::from(s)];
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+    terminal.render_widget(paragraph, size);
+    terminal.flush().unwrap();
 
     let expected = Buffer::with_lines(vec![
         "┌────────┐",
@@ -117,15 +112,13 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
     let mut terminal = Terminal::new(backend).unwrap();
 
     let s = "aコンピュータ上で文字を扱う場合、";
-    terminal
-        .draw(|f| {
-            let text = vec![Spans::from(s)];
-            let paragraph = Paragraph::new(text)
-                .block(Block::default().borders(Borders::ALL))
-                .wrap(Wrap { trim: true });
-            f.render_widget(paragraph, f.viewport_area());
-        })
-        .unwrap();
+
+    let text = vec![Spans::from(s)];
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+    terminal.render_widget(paragraph, terminal.viewport_area());
+    terminal.flush().unwrap();
 
     let expected = Buffer::with_lines(vec![
         // The internal width is 8 so only 4 slots for double-width characters.
@@ -151,14 +144,12 @@ fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
         "│NBSP\u{00a0}             │",
         "└──────────────────┘",
     ]);
-    terminal
-        .draw(|f| {
-            let size = f.viewport_area();
 
-            let paragraph = Paragraph::new(line).block(Block::default().borders(Borders::ALL));
-            f.render_widget(paragraph, size);
-        })
-        .unwrap();
+    let size = terminal.viewport_area();
+
+    let paragraph = Paragraph::new(line).block(Block::default().borders(Borders::ALL));
+    terminal.render_widget(paragraph, size);
+    terminal.flush().unwrap();
     terminal.backend().assert_buffer(&expected);
 }
 #[test]
@@ -167,18 +158,14 @@ fn widgets_paragraph_can_scroll_horizontally() {
         let backend = TestBackend::new(20, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        terminal
-            .draw(|f| {
-                let text = Text::from(
-                    "段落现在可以水平滚动了！\nParagraph can scroll horizontally!\nShort line",
-                );
-                let paragraph = Paragraph::new(text)
-                    .block(Block::default().borders(Borders::ALL))
-                    .alignment(alignment)
-                    .scroll(scroll);
-                f.render_widget(paragraph, f.viewport_area());
-            })
-            .unwrap();
+        let text =
+            Text::from("段落现在可以水平滚动了！\nParagraph can scroll horizontally!\nShort line");
+        let paragraph = Paragraph::new(text)
+            .block(Block::default().borders(Borders::ALL))
+            .alignment(alignment)
+            .scroll(scroll);
+        terminal.render_widget(paragraph, terminal.viewport_area());
+        terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
 

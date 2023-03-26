@@ -12,7 +12,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     widgets::{Block, Borders, Sparkline},
-    Frame, Terminal,
+    Terminal,
 };
 use std::{
     error::Error,
@@ -112,8 +112,7 @@ fn run_app<B: Backend>(
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|f| ui(f, &app))?;
-
+        draw_ui(terminal, &app)?;
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
@@ -131,7 +130,7 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -144,7 +143,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             ]
             .as_ref(),
         )
-        .split(f.viewport_area());
+        .split(terminal.viewport_area());
     let sparkline = Sparkline::default()
         .block(
             Block::default()
@@ -153,7 +152,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         )
         .data(&app.data1)
         .style(Style::default().fg(Color::Yellow));
-    f.render_widget(sparkline, chunks[0]);
+    terminal.render_widget(sparkline, chunks[0]);
     let sparkline = Sparkline::default()
         .block(
             Block::default()
@@ -162,7 +161,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         )
         .data(&app.data2)
         .style(Style::default().bg(Color::Green));
-    f.render_widget(sparkline, chunks[1]);
+    terminal.render_widget(sparkline, chunks[1]);
     // Multiline
     let sparkline = Sparkline::default()
         .block(
@@ -172,5 +171,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         )
         .data(&app.data3)
         .style(Style::default().fg(Color::Red));
-    f.render_widget(sparkline, chunks[2]);
+    terminal.render_widget(sparkline, chunks[2]);
+    terminal.flush()?;
+    Ok(())
 }

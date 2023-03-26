@@ -13,28 +13,26 @@ use ratatui::{
 fn widgets_gauge_renders() {
     let backend = TestBackend::new(40, 10);
     let mut terminal = Terminal::new(backend).unwrap();
-    terminal
-        .draw(|f| {
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(2)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                .split(f.viewport_area());
 
-            let gauge = Gauge::default()
-                .block(Block::default().title("Percentage").borders(Borders::ALL))
-                .gauge_style(Style::default().bg(Color::Blue).fg(Color::Red))
-                .use_unicode(true)
-                .percent(43);
-            f.render_widget(gauge, chunks[0]);
-            let gauge = Gauge::default()
-                .block(Block::default().title("Ratio").borders(Borders::ALL))
-                .gauge_style(Style::default().bg(Color::Blue).fg(Color::Red))
-                .use_unicode(true)
-                .ratio(0.511_313_934_313_1);
-            f.render_widget(gauge, chunks[1]);
-        })
-        .unwrap();
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(2)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .split(terminal.viewport_area());
+
+    let gauge = Gauge::default()
+        .block(Block::default().title("Percentage").borders(Borders::ALL))
+        .gauge_style(Style::default().bg(Color::Blue).fg(Color::Red))
+        .use_unicode(true)
+        .percent(43);
+    terminal.render_widget(gauge, chunks[0]);
+    let gauge = Gauge::default()
+        .block(Block::default().title("Ratio").borders(Borders::ALL))
+        .gauge_style(Style::default().bg(Color::Blue).fg(Color::Red))
+        .use_unicode(true)
+        .ratio(0.511_313_934_313_1);
+    terminal.render_widget(gauge, chunks[1]);
+    terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec![
         "                                        ",
         "                                        ",
@@ -82,26 +80,23 @@ fn widgets_gauge_renders_no_unicode() {
     let backend = TestBackend::new(40, 10);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    terminal
-        .draw(|f| {
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(2)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                .split(f.viewport_area());
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(2)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .split(terminal.viewport_area());
 
-            let gauge = Gauge::default()
-                .block(Block::default().title("Percentage").borders(Borders::ALL))
-                .percent(43)
-                .use_unicode(false);
-            f.render_widget(gauge, chunks[0]);
-            let gauge = Gauge::default()
-                .block(Block::default().title("Ratio").borders(Borders::ALL))
-                .ratio(0.211_313_934_313_1)
-                .use_unicode(false);
-            f.render_widget(gauge, chunks[1]);
-        })
-        .unwrap();
+    let gauge = Gauge::default()
+        .block(Block::default().title("Percentage").borders(Borders::ALL))
+        .percent(43)
+        .use_unicode(false);
+    terminal.render_widget(gauge, chunks[0]);
+    let gauge = Gauge::default()
+        .block(Block::default().title("Ratio").borders(Borders::ALL))
+        .ratio(0.211_313_934_313_1)
+        .use_unicode(false);
+    terminal.render_widget(gauge, chunks[1]);
+    terminal.flush().unwrap();
     let expected = Buffer::with_lines(vec![
         "                                        ",
         "                                        ",
@@ -122,25 +117,22 @@ fn widgets_gauge_applies_styles() {
     let backend = TestBackend::new(12, 5);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    terminal
-        .draw(|f| {
-            let gauge = Gauge::default()
-                .block(
-                    Block::default()
-                        .title(Span::styled("Test", Style::default().fg(Color::Red)))
-                        .borders(Borders::ALL),
-                )
-                .gauge_style(Style::default().fg(Color::Blue).bg(Color::Red))
-                .percent(43)
-                .label(Span::styled(
-                    "43%",
-                    Style::default()
-                        .fg(Color::Green)
-                        .add_modifier(Modifier::BOLD),
-                ));
-            f.render_widget(gauge, f.viewport_area());
-        })
-        .unwrap();
+    let gauge = Gauge::default()
+        .block(
+            Block::default()
+                .title(Span::styled("Test", Style::default().fg(Color::Red)))
+                .borders(Borders::ALL),
+        )
+        .gauge_style(Style::default().fg(Color::Blue).bg(Color::Red))
+        .percent(43)
+        .label(Span::styled(
+            "43%",
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        ));
+    terminal.render_widget(gauge, terminal.viewport_area());
+    terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec![
         "┌Test──────┐",
         "│          │",
@@ -188,14 +180,11 @@ fn widgets_gauge_supports_large_labels() {
     let backend = TestBackend::new(10, 1);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    terminal
-        .draw(|f| {
-            let gauge = Gauge::default()
-                .percent(43)
-                .label("43333333333333333333333333333%");
-            f.render_widget(gauge, f.viewport_area());
-        })
-        .unwrap();
+    let gauge = Gauge::default()
+        .percent(43)
+        .label("43333333333333333333333333333%");
+    terminal.render_widget(gauge, terminal.viewport_area());
+    terminal.flush().unwrap();
     let expected = Buffer::with_lines(vec!["4333333333"]);
     terminal.backend().assert_buffer(&expected);
 }
@@ -204,36 +193,34 @@ fn widgets_gauge_supports_large_labels() {
 fn widgets_line_gauge_renders() {
     let backend = TestBackend::new(20, 4);
     let mut terminal = Terminal::new(backend).unwrap();
-    terminal
-        .draw(|f| {
-            let gauge = LineGauge::default()
-                .gauge_style(Style::default().fg(Color::Green).bg(Color::White))
-                .ratio(0.43);
-            f.render_widget(
-                gauge,
-                Rect {
-                    x: 0,
-                    y: 0,
-                    width: 20,
-                    height: 1,
-                },
-            );
-            let gauge = LineGauge::default()
-                .block(Block::default().title("Gauge 2").borders(Borders::ALL))
-                .gauge_style(Style::default().fg(Color::Green))
-                .line_set(symbols::line::THICK)
-                .ratio(0.211_313_934_313_1);
-            f.render_widget(
-                gauge,
-                Rect {
-                    x: 0,
-                    y: 1,
-                    width: 20,
-                    height: 3,
-                },
-            );
-        })
-        .unwrap();
+
+    let gauge = LineGauge::default()
+        .gauge_style(Style::default().fg(Color::Green).bg(Color::White))
+        .ratio(0.43);
+    terminal.render_widget(
+        gauge,
+        Rect {
+            x: 0,
+            y: 0,
+            width: 20,
+            height: 1,
+        },
+    );
+    let gauge = LineGauge::default()
+        .block(Block::default().title("Gauge 2").borders(Borders::ALL))
+        .gauge_style(Style::default().fg(Color::Green))
+        .line_set(symbols::line::THICK)
+        .ratio(0.211_313_934_313_1);
+    terminal.render_widget(
+        gauge,
+        Rect {
+            x: 0,
+            y: 1,
+            width: 20,
+            height: 3,
+        },
+    );
+    terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec![
         "43% ────────────────",
         "┌Gauge 2───────────┐",

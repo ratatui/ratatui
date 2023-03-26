@@ -9,7 +9,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, Paragraph, Wrap},
-    Frame, Terminal,
+    Terminal,
 };
 use std::{
     error::Error,
@@ -68,8 +68,7 @@ fn run_app<B: Backend>(
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|f| ui(f, &app))?;
-
+        draw_ui(terminal, &app)?;
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
@@ -87,8 +86,8 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
-    let size = f.viewport_area();
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
+    let size = terminal.viewport_area();
 
     // Words made "loooong" to demonstrate line breaking.
     let s = "Veeeeeeeeeeeeeeeery    loooooooooooooooooong   striiiiiiiiiiiiiiiiiiiiiiiiiing.   ";
@@ -96,7 +95,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     long_line.push('\n');
 
     let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
-    f.render_widget(block, size);
+    terminal.render_widget(block, size);
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -148,24 +147,26 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .style(Style::default().bg(Color::White).fg(Color::Black))
         .block(create_block("Left, no wrap"))
         .alignment(Alignment::Left);
-    f.render_widget(paragraph, chunks[0]);
+    terminal.render_widget(paragraph, chunks[0]);
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().bg(Color::White).fg(Color::Black))
         .block(create_block("Left, wrap"))
         .alignment(Alignment::Left)
         .wrap(Wrap { trim: true });
-    f.render_widget(paragraph, chunks[1]);
+    terminal.render_widget(paragraph, chunks[1]);
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().bg(Color::White).fg(Color::Black))
         .block(create_block("Center, wrap"))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
         .scroll((app.scroll, 0));
-    f.render_widget(paragraph, chunks[2]);
+    terminal.render_widget(paragraph, chunks[2]);
     let paragraph = Paragraph::new(text)
         .style(Style::default().bg(Color::White).fg(Color::Black))
         .block(create_block("Right, wrap"))
         .alignment(Alignment::Right)
         .wrap(Wrap { trim: true });
-    f.render_widget(paragraph, chunks[3]);
+    terminal.render_widget(paragraph, chunks[3]);
+    terminal.flush()?;
+    Ok(())
 }

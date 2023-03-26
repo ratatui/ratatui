@@ -20,12 +20,9 @@ where
 {
     let backend = TestBackend::new(width, height);
     let mut terminal = Terminal::new(backend).unwrap();
-    terminal
-        .draw(|f| {
-            let chart = Chart::new(vec![]).x_axis(x_axis).y_axis(y_axis);
-            f.render_widget(chart, f.viewport_area());
-        })
-        .unwrap();
+    let chart = Chart::new(vec![]).x_axis(x_axis).y_axis(y_axis);
+    terminal.render_widget(chart, terminal.viewport_area());
+    terminal.flush().unwrap();
     let expected = Buffer::with_lines(lines);
     terminal.backend().assert_buffer(&expected);
 }
@@ -35,27 +32,24 @@ fn widgets_chart_can_render_on_small_areas() {
     let test_case = |width, height| {
         let backend = TestBackend::new(width, height);
         let mut terminal = Terminal::new(backend).unwrap();
-        terminal
-            .draw(|f| {
-                let datasets = vec![Dataset::default()
-                    .marker(symbols::Marker::Braille)
-                    .style(Style::default().fg(Color::Magenta))
-                    .data(&[(0.0, 0.0)])];
-                let chart = Chart::new(datasets)
-                    .block(Block::default().title("Plot").borders(Borders::ALL))
-                    .x_axis(
-                        Axis::default()
-                            .bounds([0.0, 0.0])
-                            .labels(create_labels(&["0.0", "1.0"])),
-                    )
-                    .y_axis(
-                        Axis::default()
-                            .bounds([0.0, 0.0])
-                            .labels(create_labels(&["0.0", "1.0"])),
-                    );
-                f.render_widget(chart, f.viewport_area());
-            })
-            .unwrap();
+        let datasets = vec![Dataset::default()
+            .marker(symbols::Marker::Braille)
+            .style(Style::default().fg(Color::Magenta))
+            .data(&[(0.0, 0.0)])];
+        let chart = Chart::new(datasets)
+            .block(Block::default().title("Plot").borders(Borders::ALL))
+            .x_axis(
+                Axis::default()
+                    .bounds([0.0, 0.0])
+                    .labels(create_labels(&["0.0", "1.0"])),
+            )
+            .y_axis(
+                Axis::default()
+                    .bounds([0.0, 0.0])
+                    .labels(create_labels(&["0.0", "1.0"])),
+            );
+        terminal.render_widget(chart, terminal.viewport_area());
+        terminal.flush().unwrap();
     };
     test_case(0, 0);
     test_case(0, 1);
@@ -260,35 +254,32 @@ fn widgets_chart_can_have_axis_with_zero_length_bounds() {
     let backend = TestBackend::new(100, 100);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    terminal
-        .draw(|f| {
-            let datasets = vec![Dataset::default()
-                .marker(symbols::Marker::Braille)
-                .style(Style::default().fg(Color::Magenta))
-                .data(&[(0.0, 0.0)])];
-            let chart = Chart::new(datasets)
-                .block(Block::default().title("Plot").borders(Borders::ALL))
-                .x_axis(
-                    Axis::default()
-                        .bounds([0.0, 0.0])
-                        .labels(create_labels(&["0.0", "1.0"])),
-                )
-                .y_axis(
-                    Axis::default()
-                        .bounds([0.0, 0.0])
-                        .labels(create_labels(&["0.0", "1.0"])),
-                );
-            f.render_widget(
-                chart,
-                Rect {
-                    x: 0,
-                    y: 0,
-                    width: 100,
-                    height: 100,
-                },
-            );
-        })
-        .unwrap();
+    let datasets = vec![Dataset::default()
+        .marker(symbols::Marker::Braille)
+        .style(Style::default().fg(Color::Magenta))
+        .data(&[(0.0, 0.0)])];
+    let chart = Chart::new(datasets)
+        .block(Block::default().title("Plot").borders(Borders::ALL))
+        .x_axis(
+            Axis::default()
+                .bounds([0.0, 0.0])
+                .labels(create_labels(&["0.0", "1.0"])),
+        )
+        .y_axis(
+            Axis::default()
+                .bounds([0.0, 0.0])
+                .labels(create_labels(&["0.0", "1.0"])),
+        );
+    terminal.render_widget(
+        chart,
+        Rect {
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+        },
+    );
+    terminal.flush().unwrap();
 }
 
 #[test]
@@ -296,39 +287,36 @@ fn widgets_chart_handles_overflows() {
     let backend = TestBackend::new(80, 30);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    terminal
-        .draw(|f| {
-            let datasets = vec![Dataset::default()
-                .marker(symbols::Marker::Braille)
-                .style(Style::default().fg(Color::Magenta))
-                .data(&[
-                    (1_588_298_471.0, 1.0),
-                    (1_588_298_473.0, 0.0),
-                    (1_588_298_496.0, 1.0),
-                ])];
-            let chart = Chart::new(datasets)
-                .block(Block::default().title("Plot").borders(Borders::ALL))
-                .x_axis(
-                    Axis::default()
-                        .bounds([1_588_298_471.0, 1_588_992_600.0])
-                        .labels(create_labels(&["1588298471.0", "1588992600.0"])),
-                )
-                .y_axis(
-                    Axis::default()
-                        .bounds([0.0, 1.0])
-                        .labels(create_labels(&["0.0", "1.0"])),
-                );
-            f.render_widget(
-                chart,
-                Rect {
-                    x: 0,
-                    y: 0,
-                    width: 80,
-                    height: 30,
-                },
-            );
-        })
-        .unwrap();
+    let datasets = vec![Dataset::default()
+        .marker(symbols::Marker::Braille)
+        .style(Style::default().fg(Color::Magenta))
+        .data(&[
+            (1_588_298_471.0, 1.0),
+            (1_588_298_473.0, 0.0),
+            (1_588_298_496.0, 1.0),
+        ])];
+    let chart = Chart::new(datasets)
+        .block(Block::default().title("Plot").borders(Borders::ALL))
+        .x_axis(
+            Axis::default()
+                .bounds([1_588_298_471.0, 1_588_992_600.0])
+                .labels(create_labels(&["1588298471.0", "1588992600.0"])),
+        )
+        .y_axis(
+            Axis::default()
+                .bounds([0.0, 1.0])
+                .labels(create_labels(&["0.0", "1.0"])),
+        );
+    terminal.render_widget(
+        chart,
+        Rect {
+            x: 0,
+            y: 0,
+            width: 80,
+            height: 30,
+        },
+    );
+    terminal.flush().unwrap();
 }
 
 #[test]
@@ -336,106 +324,101 @@ fn widgets_chart_can_have_empty_datasets() {
     let backend = TestBackend::new(100, 100);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    terminal
-        .draw(|f| {
-            let datasets = vec![Dataset::default().data(&[]).graph_type(Line)];
-            let chart = Chart::new(datasets)
-                .block(
-                    Block::default()
-                        .title("Empty Dataset With Line")
-                        .borders(Borders::ALL),
-                )
-                .x_axis(
-                    Axis::default()
-                        .bounds([0.0, 0.0])
-                        .labels(create_labels(&["0.0", "1.0"])),
-                )
-                .y_axis(
-                    Axis::default()
-                        .bounds([0.0, 1.0])
-                        .labels(create_labels(&["0.0", "1.0"])),
-                );
-            f.render_widget(
-                chart,
-                Rect {
-                    x: 0,
-                    y: 0,
-                    width: 100,
-                    height: 100,
-                },
-            );
-        })
-        .unwrap();
+    let datasets = vec![Dataset::default().data(&[]).graph_type(Line)];
+    let chart = Chart::new(datasets)
+        .block(
+            Block::default()
+                .title("Empty Dataset With Line")
+                .borders(Borders::ALL),
+        )
+        .x_axis(
+            Axis::default()
+                .bounds([0.0, 0.0])
+                .labels(create_labels(&["0.0", "1.0"])),
+        )
+        .y_axis(
+            Axis::default()
+                .bounds([0.0, 1.0])
+                .labels(create_labels(&["0.0", "1.0"])),
+        );
+    terminal.render_widget(
+        chart,
+        Rect {
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+        },
+    );
+    terminal.flush().unwrap();
 }
 
 #[test]
 fn widgets_chart_can_have_a_legend() {
     let backend = TestBackend::new(60, 30);
     let mut terminal = Terminal::new(backend).unwrap();
-    terminal
-        .draw(|f| {
-            let datasets = vec![
-                Dataset::default()
-                    .name("Dataset 1")
-                    .style(Style::default().fg(Color::Blue))
-                    .data(&[
-                        (0.0, 0.0),
-                        (10.0, 1.0),
-                        (20.0, 2.0),
-                        (30.0, 3.0),
-                        (40.0, 4.0),
-                        (50.0, 5.0),
-                        (60.0, 6.0),
-                        (70.0, 7.0),
-                        (80.0, 8.0),
-                        (90.0, 9.0),
-                        (100.0, 10.0),
-                    ])
-                    .graph_type(Line),
-                Dataset::default()
-                    .name("Dataset 2")
-                    .style(Style::default().fg(Color::Green))
-                    .data(&[
-                        (0.0, 10.0),
-                        (10.0, 9.0),
-                        (20.0, 8.0),
-                        (30.0, 7.0),
-                        (40.0, 6.0),
-                        (50.0, 5.0),
-                        (60.0, 4.0),
-                        (70.0, 3.0),
-                        (80.0, 2.0),
-                        (90.0, 1.0),
-                        (100.0, 0.0),
-                    ])
-                    .graph_type(Line),
-            ];
-            let chart = Chart::new(datasets)
-                .style(Style::default().bg(Color::White))
-                .block(Block::default().title("Chart Test").borders(Borders::ALL))
-                .x_axis(
-                    Axis::default()
-                        .bounds([0.0, 100.0])
-                        .title(Span::styled("X Axis", Style::default().fg(Color::Yellow)))
-                        .labels(create_labels(&["0.0", "50.0", "100.0"])),
-                )
-                .y_axis(
-                    Axis::default()
-                        .bounds([0.0, 10.0])
-                        .title("Y Axis")
-                        .labels(create_labels(&["0.0", "5.0", "10.0"])),
-                );
-            f.render_widget(
-                chart,
-                Rect {
-                    x: 0,
-                    y: 0,
-                    width: 60,
-                    height: 30,
-                },
-            );
-        })
-        .unwrap();
+
+    let datasets = vec![
+        Dataset::default()
+            .name("Dataset 1")
+            .style(Style::default().fg(Color::Blue))
+            .data(&[
+                (0.0, 0.0),
+                (10.0, 1.0),
+                (20.0, 2.0),
+                (30.0, 3.0),
+                (40.0, 4.0),
+                (50.0, 5.0),
+                (60.0, 6.0),
+                (70.0, 7.0),
+                (80.0, 8.0),
+                (90.0, 9.0),
+                (100.0, 10.0),
+            ])
+            .graph_type(Line),
+        Dataset::default()
+            .name("Dataset 2")
+            .style(Style::default().fg(Color::Green))
+            .data(&[
+                (0.0, 10.0),
+                (10.0, 9.0),
+                (20.0, 8.0),
+                (30.0, 7.0),
+                (40.0, 6.0),
+                (50.0, 5.0),
+                (60.0, 4.0),
+                (70.0, 3.0),
+                (80.0, 2.0),
+                (90.0, 1.0),
+                (100.0, 0.0),
+            ])
+            .graph_type(Line),
+    ];
+    let chart = Chart::new(datasets)
+        .style(Style::default().bg(Color::White))
+        .block(Block::default().title("Chart Test").borders(Borders::ALL))
+        .x_axis(
+            Axis::default()
+                .bounds([0.0, 100.0])
+                .title(Span::styled("X Axis", Style::default().fg(Color::Yellow)))
+                .labels(create_labels(&["0.0", "50.0", "100.0"])),
+        )
+        .y_axis(
+            Axis::default()
+                .bounds([0.0, 10.0])
+                .title("Y Axis")
+                .labels(create_labels(&["0.0", "5.0", "10.0"])),
+        );
+    terminal.render_widget(
+        chart,
+        Rect {
+            x: 0,
+            y: 0,
+            width: 60,
+            height: 30,
+        },
+    );
+    terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec![
         "┌Chart Test────────────────────────────────────────────────┐",
         "│10.0│Y Axis                                    ┌─────────┐│",

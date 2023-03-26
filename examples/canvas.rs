@@ -12,7 +12,7 @@ use ratatui::{
         canvas::{Canvas, Map, MapResolution, Rectangle},
         Block, Borders,
     },
-    Frame, Terminal,
+    Terminal,
 };
 use std::{
     error::Error,
@@ -113,7 +113,7 @@ fn run_app<B: Backend>(
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|f| ui(f, &app))?;
+        draw_ui(terminal, &app)?;
 
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
@@ -148,11 +148,11 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(f.viewport_area());
+        .split(terminal.viewport_area());
     let canvas = Canvas::default()
         .block(Block::default().borders(Borders::ALL).title("World"))
         .paint(|ctx| {
@@ -168,7 +168,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         })
         .x_bounds([-180.0, 180.0])
         .y_bounds([-90.0, 90.0]);
-    f.render_widget(canvas, chunks[0]);
+    terminal.render_widget(canvas, chunks[0]);
     let canvas = Canvas::default()
         .block(Block::default().borders(Borders::ALL).title("Pong"))
         .paint(|ctx| {
@@ -176,5 +176,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         })
         .x_bounds([10.0, 110.0])
         .y_bounds([10.0, 110.0]);
-    f.render_widget(canvas, chunks[1]);
+    terminal.render_widget(canvas, chunks[1]);
+    terminal.flush()?;
+    Ok(())
 }

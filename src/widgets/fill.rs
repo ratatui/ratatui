@@ -8,10 +8,10 @@ use crate::{
 /// # use ratatui::widgets::Fill;
 /// # use ratatui::layout::Rect;
 /// # use ratatui::buffer::Cell;
-/// # use ratatui::Frame;
+/// # use ratatui::Terminal;
 /// # use ratatui::backend::Backend;
-/// fn draw_on_clear<B: Backend>(frame: &mut Frame<B>, area: Rect) {
-///     frame.render_widget(Fill::new(Cell::default().set_symbol("a")), area);
+/// fn draw_on_clear<B: Backend>(terminal: &mut Terminal<B>, area: Rect) {
+///     terminal.render_widget(Fill::new(Cell::default().set_symbol("a")), area);
 /// }
 /// ```
 /// A widget to fill a given area.

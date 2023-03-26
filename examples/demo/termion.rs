@@ -36,7 +36,7 @@ fn run_app<B: Backend>(
 ) -> Result<(), Box<dyn Error>> {
     let events = events(tick_rate);
     loop {
-        terminal.draw(|f| ui::draw(f, &mut app))?;
+        ui::draw_ui(terminal, &mut app)?;
 
         match events.recv()? {
             Event::Input(key) => match key {

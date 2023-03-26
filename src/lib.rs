@@ -71,7 +71,7 @@
 //! implement your own.
 //!
 //! Each widget follows a builder pattern API providing a default configuration along with methods
-//! to customize them. The widget is then rendered using [`Frame::render_widget`] which takes
+//! to customize them. The widget is then rendered using [`Terminal::render_widget`] which takes
 //! your widget instance and an area to draw to.
 //!
 //! The following example renders a block of the size of the terminal:
@@ -98,13 +98,12 @@
 //!     let backend = CrosstermBackend::new(stdout);
 //!     let mut terminal = Terminal::new(backend)?;
 //!
-//!     terminal.draw(|f| {
-//!         let size = f.viewport_area();
-//!         let block = Block::default()
-//!             .title("Block")
-//!             .borders(Borders::ALL);
-//!         f.render_widget(block, size);
-//!     })?;
+//!     let size = terminal.viewport_area();
+//!     let block = Block::default()
+//!         .title("Block")
+//!         .borders(Borders::ALL);
+//!     terminal.render_widget(block, size);
+//!     terminal.flush()?;
 //!
 //!     thread::sleep(Duration::from_millis(5000));
 //!
@@ -132,9 +131,11 @@
 //!     backend::Backend,
 //!     layout::{Constraint, Direction, Layout},
 //!     widgets::{Block, Borders},
-//!     Frame,
+//!     Terminal,
 //! };
-//! fn ui<B: Backend>(f: &mut Frame<B>) {
+//! use std::io;
+//!
+//! fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 //!    let chunks = Layout::default()
 //!         .direction(Direction::Vertical)
 //!         .margin(1)
@@ -145,15 +146,17 @@
 //!                 Constraint::Percentage(10)
 //!             ].as_ref()
 //!         )
-//!         .split(f.viewport_area());
+//!         .split(terminal.viewport_area());
 //!     let block = Block::default()
 //!          .title("Block")
 //!          .borders(Borders::ALL);
-//!     f.render_widget(block, chunks[0]);
+//!     terminal.render_widget(block, chunks[0]);
 //!     let block = Block::default()
 //!          .title("Block 2")
 //!          .borders(Borders::ALL);
-//!     f.render_widget(block, chunks[1]);
+//!     terminal.render_widget(block, chunks[1]);
+//!     terminal.flush()?;
+//!     Ok(())
 //! }
 //! ```
 //!
@@ -171,4 +174,4 @@ pub mod terminal;
 pub mod text;
 pub mod widgets;
 
-pub use self::terminal::{Frame, Terminal, TerminalOptions, Viewport};
+pub use self::terminal::{Terminal, TerminalOptions, Viewport};

@@ -9,7 +9,7 @@ use ratatui::{
     layout::Rect,
     style::Style,
     widgets::Widget,
-    Frame, Terminal,
+    Terminal,
 };
 use std::{error::Error, io};
 
@@ -60,8 +60,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     loop {
-        terminal.draw(ui)?;
-
+        draw_ui(terminal)?;
         if let Event::Key(key) = event::read()? {
             if let KeyCode::Char('q') = key.code {
                 return Ok(());
@@ -70,8 +69,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>) {
-    let size = f.viewport_area();
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
+    let size = terminal.viewport_area();
     let label = Label::default().text("Test");
-    f.render_widget(label, size);
+    terminal.render_widget(label, size);
+    terminal.flush()?;
+    Ok(())
 }

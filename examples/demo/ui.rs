@@ -1,3 +1,5 @@
+use std::io;
+
 use crate::{app::App, util::*};
 use ratatui::{
     backend::Backend,
@@ -10,13 +12,13 @@ use ratatui::{
         Axis, BarChart, Block, Borders, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem,
         Paragraph, Row, Sparkline, Table, Tabs, Wrap,
     },
-    Frame,
+    Terminal,
 };
 
-pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+pub fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
     let help = ParagraphArea::new(HELP);
     let logo = ParagraphArea::new(LOGO);
-    let viewport_area = f.viewport_area();
+    let viewport_area = terminal.viewport_area();
     let panel_size = Rect {
         height: viewport_area.height + help.height,
         width: viewport_area.width,
@@ -33,7 +35,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .as_ref(),
         )
         .split(panel_size);
-    f.resize_buffer(panel_size.width + logo.width, panel_size.height);
+    terminal.resize_buffer(panel_size.width + logo.width, panel_size.height);
     let titles = app
         .tabs
         .titles
@@ -44,28 +46,30 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .block(Block::default().borders(Borders::ALL).title(app.title))
         .highlight_style(Style::default().fg(Color::Yellow))
         .select(app.tabs.index);
-    f.render_widget(tabs, chunks[0]);
+    terminal.render_widget(tabs, chunks[0]);
     if app.shown_tab != app.tabs.index {
-        f.clear_region(chunks[1]);
+        terminal.clear_region(chunks[1]);
         app.shown_tab = app.tabs.index;
     }
     match app.tabs.index {
-        0 => draw_first_tab(f, app, chunks[1]),
-        1 => draw_second_tab(f, app, chunks[1]),
-        2 => draw_third_tab(f, app, chunks[1]),
+        0 => render_first_tab(terminal, app, chunks[1]),
+        1 => render_second_tab(terminal, app, chunks[1]),
+        2 => render_third_tab(terminal, app, chunks[1]),
         _ => {}
     };
-    f.render_widget(help.paragraph, chunks[2]);
+    terminal.render_widget(help.paragraph, chunks[2]);
     let logo_area = Rect {
         x: panel_size.width,
         y: 0,
         width: logo.width,
         height: panel_size.height,
     };
-    f.render_widget(logo.paragraph, logo_area)
+    terminal.render_widget(logo.paragraph, logo_area);
+    terminal.flush()?;
+    Ok(())
 }
 
-fn draw_first_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
+fn render_first_tab<B>(terminal: &mut Terminal<B>, app: &mut App, area: Rect)
 where
     B: Backend,
 {
@@ -79,12 +83,12 @@ where
             .as_ref(),
         )
         .split(area);
-    draw_gauges(f, app, chunks[0]);
-    draw_charts(f, app, chunks[1]);
-    draw_text(f, chunks[2]);
+    render_guages(terminal, app, chunks[0]);
+    render_charts(terminal, app, chunks[1]);
+    render_text(terminal, chunks[2]);
 }
 
-fn draw_gauges<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
+fn render_guages<B>(terminal: &mut Terminal<B>, app: &mut App, area: Rect)
 where
     B: Backend,
 {
@@ -100,7 +104,7 @@ where
         .margin(1)
         .split(area);
     let block = Block::default().borders(Borders::ALL).title("Graphs");
-    f.render_widget(block, area);
+    terminal.render_widget(block, area);
 
     let label = format!("{:.2}%", app.progress * 100.0);
     let gauge = Gauge::default()
@@ -113,7 +117,7 @@ where
         )
         .label(label)
         .ratio(app.progress);
-    f.render_widget(gauge, chunks[0]);
+    terminal.render_widget(gauge, chunks[0]);
 
     let sparkline = Sparkline::default()
         .block(Block::default().title("Sparkline:"))
@@ -124,7 +128,7 @@ where
         } else {
             symbols::bar::THREE_LEVELS
         });
-    f.render_widget(sparkline, chunks[1]);
+    terminal.render_widget(sparkline, chunks[1]);
 
     let line_gauge = LineGauge::default()
         .block(Block::default().title("LineGauge:"))
@@ -135,10 +139,10 @@ where
             symbols::line::NORMAL
         })
         .ratio(app.progress);
-    f.render_widget(line_gauge, chunks[2]);
+    terminal.render_widget(line_gauge, chunks[2]);
 }
 
-fn draw_charts<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
+fn render_charts<B>(terminal: &mut Terminal<B>, app: &mut App, area: Rect)
 where
     B: Backend,
 {
@@ -172,7 +176,7 @@ where
                 .block(Block::default().borders(Borders::ALL).title("List"))
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD))
                 .highlight_symbol("> ");
-            f.render_stateful_widget(tasks, chunks[0], &mut app.tasks.state);
+            terminal.render_stateful_widget(tasks, chunks[0], &mut app.tasks.state);
 
             // Draw logs
             let info_style = Style::default().fg(Color::Blue);
@@ -198,7 +202,7 @@ where
                 })
                 .collect();
             let logs = List::new(logs).block(Block::default().borders(Borders::ALL).title("List"));
-            f.render_stateful_widget(logs, chunks[1], &mut app.logs.state);
+            terminal.render_stateful_widget(logs, chunks[1], &mut app.logs.state);
         }
 
         let barchart = BarChart::default()
@@ -219,7 +223,7 @@ where
             )
             .label_style(Style::default().fg(Color::Yellow))
             .bar_style(Style::default().fg(Color::Green));
-        f.render_widget(barchart, chunks[1]);
+        terminal.render_widget(barchart, chunks[1]);
     }
     if app.show_chart {
         let x_labels = vec![
@@ -281,11 +285,11 @@ where
                         Span::styled("20", Style::default().add_modifier(Modifier::BOLD)),
                     ]),
             );
-        f.render_widget(chart, chunks[1]);
+        terminal.render_widget(chart, chunks[1]);
     }
 }
 
-fn draw_text<B>(f: &mut Frame<B>, area: Rect)
+fn render_text<B>(terminal: &mut Terminal<B>, area: Rect)
 where
     B: Backend,
 {
@@ -323,10 +327,10 @@ where
             .add_modifier(Modifier::BOLD),
     ));
     let paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: true });
-    f.render_widget(paragraph, area);
+    terminal.render_widget(paragraph, area);
 }
 
-fn draw_second_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
+fn render_second_tab<B>(terminal: &mut Terminal<B>, app: &mut App, area: Rect)
 where
     B: Backend,
 {
@@ -358,7 +362,7 @@ where
             Constraint::Length(15),
             Constraint::Length(10),
         ]);
-    f.render_widget(table, chunks[0]);
+    terminal.render_widget(table, chunks[0]);
 
     let map = Canvas::default()
         .block(Block::default().title("World").borders(Borders::ALL))
@@ -406,10 +410,10 @@ where
         })
         .x_bounds([-180.0, 180.0])
         .y_bounds([-90.0, 90.0]);
-    f.render_widget(map, chunks[1]);
+    terminal.render_widget(map, chunks[1]);
 }
 
-fn draw_third_tab<B>(f: &mut Frame<B>, _app: &mut App, area: Rect)
+fn render_third_tab<B>(terminal: &mut Terminal<B>, _app: &mut App, area: Rect)
 where
     B: Backend,
 {
@@ -454,5 +458,5 @@ where
             Constraint::Ratio(1, 3),
             Constraint::Ratio(1, 3),
         ]);
-    f.render_widget(table, chunks[0]);
+    terminal.render_widget(table, chunks[0]);
 }

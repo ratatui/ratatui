@@ -7,7 +7,7 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     widgets::{Block, Borders},
-    Frame, Terminal,
+    Terminal,
 };
 use std::{error::Error, io};
 
@@ -40,8 +40,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     loop {
-        terminal.draw(|f| ui(f))?;
-
+        draw_ui(terminal)?;
         if let Event::Key(key) = event::read()? {
             if let KeyCode::Char('q') = key.code {
                 return Ok(());
@@ -50,7 +49,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>) {
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -61,10 +60,12 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
             ]
             .as_ref(),
         )
-        .split(f.viewport_area());
+        .split(terminal.viewport_area());
 
     let block = Block::default().title("Block").borders(Borders::ALL);
-    f.render_widget(block, chunks[0]);
+    terminal.render_widget(block, chunks[0]);
     let block = Block::default().title("Block 2").borders(Borders::ALL);
-    f.render_widget(block, chunks[2]);
+    terminal.render_widget(block, chunks[2]);
+    terminal.flush()?;
+    Ok(())
 }

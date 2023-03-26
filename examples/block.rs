@@ -9,7 +9,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::Span,
     widgets::{Block, BorderType, Borders},
-    Frame, Terminal,
+    Terminal,
 };
 use std::{error::Error, io};
 
@@ -42,8 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     loop {
-        terminal.draw(ui)?;
-
+        draw_ui(terminal)?;
         if let Event::Key(key) = event::read()? {
             if let KeyCode::Char('q') = key.code {
                 return Ok(());
@@ -52,11 +51,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>) {
+fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     // Wrapping block for a group
     // Just draw the block and the group on the same area and build the group
     // with at least a margin of 1
-    let size = f.viewport_area();
+    let size = terminal.viewport_area();
 
     // Surrounding block
     let block = Block::default()
@@ -64,13 +63,13 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
         .title("Main block with round corners")
         .title_alignment(Alignment::Center)
         .border_type(BorderType::Rounded);
-    f.render_widget(block, size);
+    terminal.render_widget(block, size);
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(4)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(f.viewport_area());
+        .split(terminal.viewport_area());
 
     // Top two inner blocks
     let top_chunks = Layout::default()
@@ -85,7 +84,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
             Span::from(" background"),
         ])
         .style(Style::default().bg(Color::Green));
-    f.render_widget(block, top_chunks[0]);
+    terminal.render_widget(block, top_chunks[0]);
 
     // Top right inner block with styled title aligned to the right
     let block = Block::default()
@@ -97,7 +96,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
                 .add_modifier(Modifier::BOLD),
         ))
         .title_alignment(Alignment::Right);
-    f.render_widget(block, top_chunks[1]);
+    terminal.render_widget(block, top_chunks[1]);
 
     // Bottom two inner blocks
     let bottom_chunks = Layout::default()
@@ -107,7 +106,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
 
     // Bottom left block with all default borders
     let block = Block::default().title("With borders").borders(Borders::ALL);
-    f.render_widget(block, bottom_chunks[0]);
+    terminal.render_widget(block, bottom_chunks[0]);
 
     // Bottom right block with styled left and right border
     let block = Block::default()
@@ -115,5 +114,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
         .border_style(Style::default().fg(Color::Cyan))
         .borders(Borders::LEFT | Borders::RIGHT)
         .border_type(BorderType::Double);
-    f.render_widget(block, bottom_chunks[1]);
+    terminal.render_widget(block, bottom_chunks[1]);
+    terminal.flush()?;
+    Ok(())
 }

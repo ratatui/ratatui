@@ -15,20 +15,17 @@ fn widgets_list_should_highlight_the_selected_item() {
     let mut terminal = Terminal::new(backend).unwrap();
     let mut state = ListState::default();
     state.select(Some(1));
-    terminal
-        .draw(|f| {
-            let size = f.viewport_area();
-            let items = vec![
-                ListItem::new("Item 1"),
-                ListItem::new("Item 2"),
-                ListItem::new("Item 3"),
-            ];
-            let list = List::new(items)
-                .highlight_style(Style::default().bg(Color::Yellow))
-                .highlight_symbol(">> ");
-            f.render_stateful_widget(list, size, &mut state);
-        })
-        .unwrap();
+    let size = terminal.viewport_area();
+    let items = vec![
+        ListItem::new("Item 1"),
+        ListItem::new("Item 2"),
+        ListItem::new("Item 3"),
+    ];
+    let list = List::new(items)
+        .highlight_style(Style::default().bg(Color::Yellow))
+        .highlight_symbol(">> ");
+    terminal.render_stateful_widget(list, size, &mut state);
+    terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec!["   Item 1 ", ">> Item 2 ", "   Item 3 "]);
     for x in 0..10 {
         expected.get_mut(x, 1).set_bg(Color::Yellow);
@@ -76,14 +73,12 @@ fn widgets_list_should_truncate_items() {
     for case in cases {
         let mut state = ListState::default();
         state.select(case.selected);
-        terminal
-            .draw(|f| {
-                let list = List::new(case.items.clone())
-                    .block(Block::default().borders(Borders::RIGHT))
-                    .highlight_symbol(">> ");
-                f.render_stateful_widget(list, Rect::new(0, 0, 8, 2), &mut state);
-            })
-            .unwrap();
+
+        let list = List::new(case.items.clone())
+            .block(Block::default().borders(Borders::RIGHT))
+            .highlight_symbol(">> ");
+        terminal.render_stateful_widget(list, Rect::new(0, 0, 8, 2), &mut state);
+        terminal.flush().unwrap();
         terminal.backend().assert_buffer(&case.expected);
     }
 }
@@ -96,34 +91,30 @@ fn widgets_list_should_clamp_offset_if_items_are_removed() {
 
     // render with 6 items => offset will be at 2
     state.select(Some(5));
-    terminal
-        .draw(|f| {
-            let size = f.viewport_area();
-            let items = vec![
-                ListItem::new("Item 0"),
-                ListItem::new("Item 1"),
-                ListItem::new("Item 2"),
-                ListItem::new("Item 3"),
-                ListItem::new("Item 4"),
-                ListItem::new("Item 5"),
-            ];
-            let list = List::new(items).highlight_symbol(">> ");
-            f.render_stateful_widget(list, size, &mut state);
-        })
-        .unwrap();
+
+    let size = terminal.viewport_area();
+    let items = vec![
+        ListItem::new("Item 0"),
+        ListItem::new("Item 1"),
+        ListItem::new("Item 2"),
+        ListItem::new("Item 3"),
+        ListItem::new("Item 4"),
+        ListItem::new("Item 5"),
+    ];
+    let list = List::new(items).highlight_symbol(">> ");
+    terminal.render_stateful_widget(list, size, &mut state);
+    terminal.flush().unwrap();
     let expected = Buffer::with_lines(vec!["   Item 2 ", "   Item 3 ", "   Item 4 ", ">> Item 5 "]);
     terminal.backend().assert_buffer(&expected);
 
     // render again with 1 items => check offset is clamped to 1
     state.select(Some(1));
-    terminal
-        .draw(|f| {
-            let size = f.viewport_area();
-            let items = vec![ListItem::new("Item 3")];
-            let list = List::new(items).highlight_symbol(">> ");
-            f.render_stateful_widget(list, size, &mut state);
-        })
-        .unwrap();
+
+    let size = terminal.viewport_area();
+    let items = vec![ListItem::new("Item 3")];
+    let list = List::new(items).highlight_symbol(">> ");
+    terminal.render_stateful_widget(list, size, &mut state);
+    terminal.flush().unwrap();
     let expected = Buffer::with_lines(vec!["   Item 3 ", "          ", "          ", "          "]);
     terminal.backend().assert_buffer(&expected);
 }
@@ -134,20 +125,18 @@ fn widgets_list_should_display_multiline_items() {
     let mut terminal = Terminal::new(backend).unwrap();
     let mut state = ListState::default();
     state.select(Some(1));
-    terminal
-        .draw(|f| {
-            let size = f.viewport_area();
-            let items = vec![
-                ListItem::new(vec![Spans::from("Item 1"), Spans::from("Item 1a")]),
-                ListItem::new(vec![Spans::from("Item 2"), Spans::from("Item 2b")]),
-                ListItem::new(vec![Spans::from("Item 3"), Spans::from("Item 3c")]),
-            ];
-            let list = List::new(items)
-                .highlight_style(Style::default().bg(Color::Yellow))
-                .highlight_symbol(">> ");
-            f.render_stateful_widget(list, size, &mut state);
-        })
-        .unwrap();
+
+    let size = terminal.viewport_area();
+    let items = vec![
+        ListItem::new(vec![Spans::from("Item 1"), Spans::from("Item 1a")]),
+        ListItem::new(vec![Spans::from("Item 2"), Spans::from("Item 2b")]),
+        ListItem::new(vec![Spans::from("Item 3"), Spans::from("Item 3c")]),
+    ];
+    let list = List::new(items)
+        .highlight_style(Style::default().bg(Color::Yellow))
+        .highlight_symbol(">> ");
+    terminal.render_stateful_widget(list, size, &mut state);
+    terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec![
         "   Item 1 ",
         "   Item 1a",
@@ -169,21 +158,19 @@ fn widgets_list_should_repeat_highlight_symbol() {
     let mut terminal = Terminal::new(backend).unwrap();
     let mut state = ListState::default();
     state.select(Some(1));
-    terminal
-        .draw(|f| {
-            let size = f.viewport_area();
-            let items = vec![
-                ListItem::new(vec![Spans::from("Item 1"), Spans::from("Item 1a")]),
-                ListItem::new(vec![Spans::from("Item 2"), Spans::from("Item 2b")]),
-                ListItem::new(vec![Spans::from("Item 3"), Spans::from("Item 3c")]),
-            ];
-            let list = List::new(items)
-                .highlight_style(Style::default().bg(Color::Yellow))
-                .highlight_symbol(">> ")
-                .repeat_highlight_symbol(true);
-            f.render_stateful_widget(list, size, &mut state);
-        })
-        .unwrap();
+
+    let size = terminal.viewport_area();
+    let items = vec![
+        ListItem::new(vec![Spans::from("Item 1"), Spans::from("Item 1a")]),
+        ListItem::new(vec![Spans::from("Item 2"), Spans::from("Item 2b")]),
+        ListItem::new(vec![Spans::from("Item 3"), Spans::from("Item 3c")]),
+    ];
+    let list = List::new(items)
+        .highlight_style(Style::default().bg(Color::Yellow))
+        .highlight_symbol(">> ")
+        .repeat_highlight_symbol(true);
+    terminal.render_stateful_widget(list, size, &mut state);
+    terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec![
         "   Item 1 ",
         "   Item 1a",
@@ -204,22 +191,19 @@ fn widget_list_should_not_ignore_empty_string_items() {
     let backend = TestBackend::new(6, 4);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    terminal
-        .draw(|f| {
-            let items = vec![
-                ListItem::new("Item 1"),
-                ListItem::new(""),
-                ListItem::new(""),
-                ListItem::new("Item 4"),
-            ];
+    let items = vec![
+        ListItem::new("Item 1"),
+        ListItem::new(""),
+        ListItem::new(""),
+        ListItem::new("Item 4"),
+    ];
 
-            let list = List::new(items)
-                .style(Style::default())
-                .highlight_style(Style::default());
+    let list = List::new(items)
+        .style(Style::default())
+        .highlight_style(Style::default());
 
-            f.render_widget(list, f.viewport_area());
-        })
-        .unwrap();
+    terminal.render_widget(list, terminal.viewport_area());
+    terminal.flush().unwrap();
 
     let expected = Buffer::with_lines(vec!["Item 1", "", "", "Item 4"]);
 

@@ -49,7 +49,7 @@ fn run_app<B: Backend>(
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|f| ui::draw(f, &mut app))?;
+        ui::draw_ui(terminal, &mut app)?;
 
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
