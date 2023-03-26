@@ -1,6 +1,7 @@
 use crate::{app::App, ui};
 use ratatui::{
     backend::{Backend, TermionBackend},
+    layout::{Constraint, Direction},
     Terminal,
 };
 use std::{error::Error, io, sync::mpsc, thread, time::Duration};
@@ -20,7 +21,11 @@ pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn E
         .unwrap();
     let stdout = MouseTerminal::from(stdout);
     let backend = TermionBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = Terminal::new_split(
+        backend,
+        vec![Constraint::Length(3), Constraint::Min(0)],
+        Direction::Vertical,
+    )?;
     terminal.hide_cursor()?;
 
     // create app and run it
@@ -46,6 +51,20 @@ fn run_app<B: Backend>(
                 Key::Char(c) if c == 'd' => terminal.viewport_scroll(0, 1)?.unwrap_or(()),
                 Key::Char(c) if c == 'n' => terminal.viewport_scroll(1, 0)?.unwrap_or(()),
                 Key::Char(c) if c == 'p' => terminal.viewport_scroll(-1, 0)?.unwrap_or(()),
+                Key::Char(c) if c == 'x' => terminal
+                    .split_viewport_scroll(|index| match index {
+                        0 => (1, 0),
+                        1 => (0, -1),
+                        _ => (0, 0),
+                    })?
+                    .unwrap_or(()),
+                Key::Char(c) if c == 'c' => terminal
+                    .split_viewport_scroll(|index| match index {
+                        0 => (0, 0),
+                        1 => (0, 1),
+                        _ => (0, 0),
+                    })?
+                    .unwrap_or(()),
                 Key::Char(c) => app.on_key(c),
                 Key::Up => app.on_up(),
                 Key::Down => app.on_down(),

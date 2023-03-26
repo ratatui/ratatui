@@ -152,7 +152,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(terminal.viewport_area());
+        .split(terminal.viewport_areas()[0]);
     let canvas = Canvas::default()
         .block(Block::default().borders(Borders::ALL).title("World"))
         .paint(|ctx| {
@@ -168,7 +168,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         })
         .x_bounds([-180.0, 180.0])
         .y_bounds([-90.0, 90.0]);
-    terminal.render_widget(canvas, chunks[0]);
+    terminal.render_widget(canvas, &chunks[0]);
     let canvas = Canvas::default()
         .block(Block::default().borders(Borders::ALL).title("Pong"))
         .paint(|ctx| {
@@ -176,6 +176,6 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         })
         .x_bounds([10.0, 110.0])
         .y_bounds([10.0, 110.0]);
-    terminal.render_widget(canvas, chunks[1]);
+    terminal.render_widget(canvas, &chunks[1]);
     terminal.flush()
 }

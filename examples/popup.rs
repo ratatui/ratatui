@@ -66,11 +66,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
-    let size = terminal.viewport_area();
-
     let chunks = Layout::default()
         .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
-        .split(size);
+        .split(terminal.viewport_areas()[0]);
 
     let text = if app.show_popup {
         "Press p to close the popup"
@@ -83,25 +81,25 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
     ))
     .alignment(Alignment::Center)
     .wrap(Wrap { trim: true });
-    terminal.render_widget(paragraph, chunks[0]);
+    terminal.render_widget(paragraph, &chunks[0]);
 
     let block = Block::default()
         .title("Content")
         .borders(Borders::ALL)
         .style(Style::default().bg(Color::Blue));
-    terminal.render_widget(block, chunks[1]);
+    terminal.render_widget(block, &chunks[1]);
 
     if app.show_popup {
         let block = Block::default().title("Popup").borders(Borders::ALL);
-        let area = centered_rect(60, 20, size);
-        terminal.clear_region(area);
-        terminal.render_widget(block, area);
+        let area = centered_rect(60, 20, terminal.viewport_areas()[0]);
+        terminal.clear_region(&area);
+        terminal.render_widget(block, &area);
     }
     terminal.flush()
 }
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`
-fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+fn centered_rect(percent_x: u16, percent_y: u16, rect: &Rect) -> Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -112,7 +110,7 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
             ]
             .as_ref(),
         )
-        .split(r);
+        .split(rect);
 
     Layout::default()
         .direction(Direction::Horizontal)
@@ -124,5 +122,6 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
             ]
             .as_ref(),
         )
-        .split(popup_layout[1])[1]
+        .split(&popup_layout[1])[1]
+        .clone()
 }

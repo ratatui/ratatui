@@ -121,13 +121,13 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
             ]
             .as_ref(),
         )
-        .split(terminal.viewport_area());
+        .split(terminal.viewport_areas()[0]);
 
     let gauge = Gauge::default()
         .block(Block::default().title("Gauge1").borders(Borders::ALL))
         .gauge_style(Style::default().fg(Color::Yellow))
         .percent(app.progress1);
-    terminal.render_widget(gauge, chunks[0]);
+    terminal.render_widget(gauge, &chunks[0]);
 
     let label = format!("{}/100", app.progress2);
     let gauge = Gauge::default()
@@ -135,7 +135,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Green))
         .percent(app.progress2)
         .label(label);
-    terminal.render_widget(gauge, chunks[1]);
+    terminal.render_widget(gauge, &chunks[1]);
 
     let label = Span::styled(
         format!("{:.2}%", app.progress3 * 100.0),
@@ -149,7 +149,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .ratio(app.progress3)
         .label(label)
         .use_unicode(true);
-    terminal.render_widget(gauge, chunks[2]);
+    terminal.render_widget(gauge, &chunks[2]);
 
     let label = format!("{}/100", app.progress2);
     let gauge = Gauge::default()
@@ -161,6 +161,6 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         )
         .percent(app.progress4)
         .label(label);
-    terminal.render_widget(gauge, chunks[3]);
+    terminal.render_widget(gauge, &chunks[3]);
     terminal.flush()
 }

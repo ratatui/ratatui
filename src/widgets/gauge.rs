@@ -92,7 +92,7 @@ impl<'a> Gauge<'a> {
 }
 
 impl<'a> Widget for Gauge<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
+    fn render(mut self, area: &Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
         let gauge_area = match self.block.take() {
             Some(b) => {
@@ -100,9 +100,9 @@ impl<'a> Widget for Gauge<'a> {
                 b.render(area, buf);
                 inner_area
             }
-            None => area,
+            None => area.clone(),
         };
-        buf.set_style(gauge_area, self.gauge_style);
+        buf.set_style(&gauge_area, self.gauge_style);
         if gauge_area.height < 1 {
             return;
         }
@@ -234,7 +234,7 @@ impl<'a> LineGauge<'a> {
 }
 
 impl<'a> Widget for LineGauge<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
+    fn render(mut self, area: &Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
         let gauge_area = match self.block.take() {
             Some(b) => {
@@ -242,7 +242,7 @@ impl<'a> Widget for LineGauge<'a> {
                 b.render(area, buf);
                 inner_area
             }
-            None => area,
+            None => area.clone(),
         };
 
         if gauge_area.height < 1 {

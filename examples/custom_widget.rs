@@ -19,7 +19,7 @@ struct Label<'a> {
 }
 
 impl<'a> Widget for Label<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(self, area: &Rect, buf: &mut Buffer) {
         buf.set_string(area.left(), area.top(), self.text, Style::default());
     }
 }
@@ -70,8 +70,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 }
 
 fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-    let size = terminal.viewport_area();
+    let size = terminal.viewport_areas()[0].clone();
     let label = Label::default().text("Test");
-    terminal.render_widget(label, size);
+    terminal.render_widget(label, &size);
     terminal.flush()
 }

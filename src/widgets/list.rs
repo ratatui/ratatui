@@ -174,7 +174,7 @@ impl<'a> List<'a> {
 impl<'a> StatefulWidget for List<'a> {
     type State = ListState;
 
-    fn render(mut self, area: Rect, buffer: &mut Buffer, state: &mut Self::State) {
+    fn render(mut self, area: &Rect, buffer: &mut Buffer, state: &mut Self::State) {
         buffer.clear_region(area);
         buffer.set_style(area, self.style);
         let list_area = match self.block.take() {
@@ -183,7 +183,7 @@ impl<'a> StatefulWidget for List<'a> {
                 block.render(area, buffer);
                 inner_area
             }
-            None => area,
+            None => area.clone(),
         };
 
         if list_area.width < 1 || list_area.height < 1 {
@@ -228,7 +228,7 @@ impl<'a> StatefulWidget for List<'a> {
                 height: item.height() as u16,
             };
             let item_style = self.style.patch(item.style);
-            buffer.set_style(area, item_style);
+            buffer.set_style(&area, item_style);
 
             let is_selected = state.selected.map(|s| s == i).unwrap_or(false);
             for (j, line) in item.content.lines.iter().enumerate() {
@@ -250,14 +250,14 @@ impl<'a> StatefulWidget for List<'a> {
                 buffer.set_spans(elem_x, y + j as u16, line, max_element_width);
             }
             if is_selected {
-                buffer.set_style(area, self.highlight_style);
+                buffer.set_style(&area, self.highlight_style);
             }
         }
     }
 }
 
 impl<'a> Widget for List<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(self, area: &Rect, buf: &mut Buffer) {
         let mut state = ListState::default();
         StatefulWidget::render(self, area, buf, &mut state);
     }

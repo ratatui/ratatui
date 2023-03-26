@@ -63,9 +63,7 @@ impl<W: Write> Backend for TermionBackend<W> {
     where
         I: Iterator<Item = &'a (u16, u16, &'a Cell)>,
     {
-        use std::fmt::Write;
-
-        let mut string = String::with_capacity(content.size_hint().0 * 3);
+        let mut string = Vec::with_capacity(content.size_hint().0 * 3);
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
         let mut modifier = Modifier::empty();
@@ -96,12 +94,12 @@ impl<W: Write> Backend for TermionBackend<W> {
                 write!(string, "{}", Bg(cell.bg)).unwrap();
                 bg = cell.bg;
             }
-            string.push_str(&cell.symbol);
+            write!(string, "{}", &cell.symbol).unwrap();
         }
+        self.stdout.write_all(&string)?;
         write!(
             self.stdout,
-            "{}{}{}{}",
-            string,
+            "{}{}{}",
             Fg(Color::Reset),
             Bg(Color::Reset),
             termion::style::Reset,

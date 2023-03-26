@@ -119,8 +119,8 @@ impl<'a> Block<'a> {
     }
 
     /// Compute the inner area of a block based on its border visibility rules.
-    pub fn inner(&self, area: Rect) -> Rect {
-        let mut inner = area;
+    pub fn inner(&self, area: &Rect) -> Rect {
+        let mut inner = area.clone();
         if self.borders.intersects(Borders::LEFT) {
             inner.x = inner.x.saturating_add(1).min(inner.right());
             inner.width = inner.width.saturating_sub(1);
@@ -140,7 +140,7 @@ impl<'a> Block<'a> {
 }
 
 impl<'a> Widget for Block<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(self, area: &Rect, buf: &mut Buffer) {
         if area.size() == 0 {
             return;
         }
@@ -246,7 +246,7 @@ mod tests {
     fn inner_takes_into_account_the_borders() {
         // No borders
         assert_eq!(
-            Block::default().inner(Rect::default()),
+            Block::default().inner(&Rect::default()),
             Rect {
                 x: 0,
                 y: 0,
@@ -256,7 +256,7 @@ mod tests {
             "no borders, width=0, height=0"
         );
         assert_eq!(
-            Block::default().inner(Rect {
+            Block::default().inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 1,
@@ -273,7 +273,7 @@ mod tests {
 
         // Left border
         assert_eq!(
-            Block::default().borders(Borders::LEFT).inner(Rect {
+            Block::default().borders(Borders::LEFT).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 0,
@@ -288,7 +288,7 @@ mod tests {
             "left, width=0"
         );
         assert_eq!(
-            Block::default().borders(Borders::LEFT).inner(Rect {
+            Block::default().borders(Borders::LEFT).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 1,
@@ -303,7 +303,7 @@ mod tests {
             "left, width=1"
         );
         assert_eq!(
-            Block::default().borders(Borders::LEFT).inner(Rect {
+            Block::default().borders(Borders::LEFT).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 2,
@@ -320,7 +320,7 @@ mod tests {
 
         // Top border
         assert_eq!(
-            Block::default().borders(Borders::TOP).inner(Rect {
+            Block::default().borders(Borders::TOP).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 1,
@@ -335,7 +335,7 @@ mod tests {
             "top, height=0"
         );
         assert_eq!(
-            Block::default().borders(Borders::TOP).inner(Rect {
+            Block::default().borders(Borders::TOP).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 1,
@@ -350,7 +350,7 @@ mod tests {
             "top, height=1"
         );
         assert_eq!(
-            Block::default().borders(Borders::TOP).inner(Rect {
+            Block::default().borders(Borders::TOP).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 1,
@@ -367,7 +367,7 @@ mod tests {
 
         // Right border
         assert_eq!(
-            Block::default().borders(Borders::RIGHT).inner(Rect {
+            Block::default().borders(Borders::RIGHT).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 0,
@@ -382,7 +382,7 @@ mod tests {
             "right, width=0"
         );
         assert_eq!(
-            Block::default().borders(Borders::RIGHT).inner(Rect {
+            Block::default().borders(Borders::RIGHT).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 1,
@@ -397,7 +397,7 @@ mod tests {
             "right, width=1"
         );
         assert_eq!(
-            Block::default().borders(Borders::RIGHT).inner(Rect {
+            Block::default().borders(Borders::RIGHT).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 2,
@@ -414,7 +414,7 @@ mod tests {
 
         // Bottom border
         assert_eq!(
-            Block::default().borders(Borders::BOTTOM).inner(Rect {
+            Block::default().borders(Borders::BOTTOM).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 1,
@@ -429,7 +429,7 @@ mod tests {
             "bottom, height=0"
         );
         assert_eq!(
-            Block::default().borders(Borders::BOTTOM).inner(Rect {
+            Block::default().borders(Borders::BOTTOM).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 1,
@@ -444,7 +444,7 @@ mod tests {
             "bottom, height=1"
         );
         assert_eq!(
-            Block::default().borders(Borders::BOTTOM).inner(Rect {
+            Block::default().borders(Borders::BOTTOM).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 1,
@@ -463,7 +463,7 @@ mod tests {
         assert_eq!(
             Block::default()
                 .borders(Borders::ALL)
-                .inner(Rect::default()),
+                .inner(&Rect::default()),
             Rect {
                 x: 0,
                 y: 0,
@@ -473,7 +473,7 @@ mod tests {
             "all borders, width=0, height=0"
         );
         assert_eq!(
-            Block::default().borders(Borders::ALL).inner(Rect {
+            Block::default().borders(Borders::ALL).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 1,
@@ -488,7 +488,7 @@ mod tests {
             "all borders, width=1, height=1"
         );
         assert_eq!(
-            Block::default().borders(Borders::ALL).inner(Rect {
+            Block::default().borders(Borders::ALL).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 2,
@@ -503,7 +503,7 @@ mod tests {
             "all borders, width=2, height=2"
         );
         assert_eq!(
-            Block::default().borders(Borders::ALL).inner(Rect {
+            Block::default().borders(Borders::ALL).inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 3,
@@ -522,7 +522,7 @@ mod tests {
     #[test]
     fn inner_takes_into_account_the_title() {
         assert_eq!(
-            Block::default().title("Test").inner(Rect {
+            Block::default().title("Test").inner(&Rect {
                 x: 0,
                 y: 0,
                 width: 0,
@@ -539,7 +539,7 @@ mod tests {
             Block::default()
                 .title("Test")
                 .title_alignment(Alignment::Center)
-                .inner(Rect {
+                .inner(&Rect {
                     x: 0,
                     y: 0,
                     width: 0,
@@ -556,7 +556,7 @@ mod tests {
             Block::default()
                 .title("Test")
                 .title_alignment(Alignment::Right)
-                .inner(Rect {
+                .inner(&Rect {
                     x: 0,
                     y: 0,
                     width: 0,

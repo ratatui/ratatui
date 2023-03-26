@@ -60,11 +60,11 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
             ]
             .as_ref(),
         )
-        .split(terminal.viewport_area());
+        .split(terminal.viewport_areas()[0]);
 
     let block = Block::default().title("Block").borders(Borders::ALL);
-    terminal.render_widget(block, chunks[0]);
+    terminal.render_widget(block, &chunks[0]);
     let block = Block::default().title("Block 2").borders(Borders::ALL);
-    terminal.render_widget(block, chunks[2]);
+    terminal.render_widget(block, &chunks[2]);
     terminal.flush()
 }

@@ -437,17 +437,17 @@ impl<'a, F> Widget for Canvas<'a, F>
 where
     F: Fn(&mut Context),
 {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
+    fn render(mut self, area: &Rect, buf: &mut Buffer) {
         let canvas_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
                 b.render(area, buf);
                 inner_area
             }
-            None => area,
+            None => area.clone(),
         };
 
-        buf.set_style(canvas_area, Style::default().bg(self.background_color));
+        buf.set_style(&canvas_area, Style::default().bg(self.background_color));
 
         let width = canvas_area.width as usize;
 

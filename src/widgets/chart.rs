@@ -283,7 +283,7 @@ impl<'a> Chart<'a> {
 
     /// Compute the internal layout of the chart given the area. If the area is too small some
     /// elements may be automatically hidden
-    fn layout(&self, area: Rect) -> ChartLayout {
+    fn layout(&self, area: &Rect) -> ChartLayout {
         let mut layout = ChartLayout::default();
         if area.height == 0 || area.width == 0 {
             return layout;
@@ -353,7 +353,7 @@ impl<'a> Chart<'a> {
         layout
     }
 
-    fn max_width_of_labels_left_of_y_axis(&self, area: Rect, has_y_axis: bool) -> u16 {
+    fn max_width_of_labels_left_of_y_axis(&self, area: &Rect, has_y_axis: bool) -> u16 {
         let mut max_width = self
             .y_axis
             .labels
@@ -378,13 +378,7 @@ impl<'a> Chart<'a> {
         max_width.min(area.width / 3)
     }
 
-    fn render_x_labels(
-        &mut self,
-        buf: &mut Buffer,
-        layout: &ChartLayout,
-        chart_area: Rect,
-        graph_area: Rect,
-    ) {
+    fn render_x_labels(&mut self, buf: &mut Buffer, layout: &ChartLayout, chart_area: &Rect) {
         let y = match layout.label_x {
             Some(y) => y,
             None => return,
@@ -395,14 +389,14 @@ impl<'a> Chart<'a> {
             return;
         }
 
-        let width_between_ticks = graph_area.width / labels_len;
+        let width_between_ticks = layout.graph_area.width / labels_len;
 
         let label_area = self.first_x_label_area(
             y,
             labels.first().unwrap().width() as u16,
             width_between_ticks,
             chart_area,
-            graph_area,
+            &layout.graph_area,
         );
 
         let label_alignment = match self.x_axis.labels_alignment {
@@ -415,13 +409,13 @@ impl<'a> Chart<'a> {
 
         for (i, label) in labels[1..labels.len() - 1].iter().enumerate() {
             // We add 1 to x (and width-1 below) to leave at least one space before each intermediate labels
-            let x = graph_area.left() + (i + 1) as u16 * width_between_ticks + 1;
+            let x = layout.graph_area.left() + (i + 1) as u16 * width_between_ticks + 1;
             let label_area = Rect::new(x, y, width_between_ticks.saturating_sub(1), 1);
 
             Self::render_label(buf, label, label_area, Alignment::Center);
         }
 
-        let x = graph_area.right() - width_between_ticks;
+        let x = layout.graph_area.right() - width_between_ticks;
         let label_area = Rect::new(x, y, width_between_ticks, 1);
         // The last label should be aligned Right to be at the edge of the graph area
         Self::render_label(buf, labels.last().unwrap(), label_area, Alignment::Right);
@@ -432,8 +426,8 @@ impl<'a> Chart<'a> {
         y: u16,
         label_width: u16,
         max_width_after_y_axis: u16,
-        chart_area: Rect,
-        graph_area: Rect,
+        chart_area: &Rect,
+        graph_area: &Rect,
     ) -> Rect {
         let (min_x, max_x) = match self.x_axis.labels_alignment {
             Alignment::Left => (chart_area.left(), graph_area.left()),
@@ -463,13 +457,7 @@ impl<'a> Chart<'a> {
         buf.set_span(x, label_area.top(), label, bounded_label_width);
     }
 
-    fn render_y_labels(
-        &mut self,
-        buf: &mut Buffer,
-        layout: &ChartLayout,
-        chart_area: Rect,
-        graph_area: Rect,
-    ) {
+    fn render_y_labels(&mut self, buf: &mut Buffer, layout: &ChartLayout, chart_area: &Rect) {
         let x = match layout.label_y {
             Some(x) => x,
             None => return,
@@ -477,12 +465,12 @@ impl<'a> Chart<'a> {
         let labels = self.y_axis.labels.as_ref().unwrap();
         let labels_len = labels.len() as u16;
         for (i, label) in labels.iter().enumerate() {
-            let dy = i as u16 * (graph_area.height - 1) / (labels_len - 1);
-            if dy < graph_area.bottom() {
+            let dy = i as u16 * (layout.graph_area.height - 1) / (labels_len - 1);
+            if dy < layout.graph_area.bottom() {
                 let label_area = Rect::new(
                     x,
-                    graph_area.bottom().saturating_sub(1) - dy,
-                    (graph_area.left() - chart_area.left()).saturating_sub(1),
+                    layout.graph_area.bottom().saturating_sub(1) - dy,
+                    (layout.graph_area.left() - chart_area.left()).saturating_sub(1),
                     1,
                 );
                 Self::render_label(buf, label, label_area, self.y_axis.labels_alignment);
@@ -492,7 +480,7 @@ impl<'a> Chart<'a> {
 }
 
 impl<'a> Widget for Chart<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
+    fn render(mut self, area: &Rect, buf: &mut Buffer) {
         if area.size() == 0 {
             return;
         }
@@ -508,20 +496,19 @@ impl<'a> Widget for Chart<'a> {
                 b.render(area, buf);
                 inner_area
             }
-            None => area,
+            None => area.clone(),
         };
 
-        let layout = self.layout(chart_area);
-        let graph_area = layout.graph_area;
-        if graph_area.width < 1 || graph_area.height < 1 {
+        let layout = self.layout(&chart_area);
+        if layout.graph_area.width < 1 || layout.graph_area.height < 1 {
             return;
         }
 
-        self.render_x_labels(buf, &layout, chart_area, graph_area);
-        self.render_y_labels(buf, &layout, chart_area, graph_area);
+        self.render_x_labels(buf, &layout, &chart_area);
+        self.render_y_labels(buf, &layout, &chart_area);
 
         if let Some(y) = layout.axis_x {
-            for x in graph_area.left()..graph_area.right() {
+            for x in layout.graph_area.left()..layout.graph_area.right() {
                 buf.get_mut(x, y)
                     .set_symbol(symbols::line::HORIZONTAL)
                     .set_style(self.x_axis.style);
@@ -529,7 +516,7 @@ impl<'a> Widget for Chart<'a> {
         }
 
         if let Some(x) = layout.axis_y {
-            for y in graph_area.top()..graph_area.bottom() {
+            for y in layout.graph_area.top()..layout.graph_area.bottom() {
                 buf.get_mut(x, y)
                     .set_symbol(symbols::line::VERTICAL)
                     .set_style(self.y_axis.style);
@@ -567,14 +554,14 @@ impl<'a> Widget for Chart<'a> {
                         }
                     }
                 })
-                .render(graph_area, buf);
+                .render(&layout.graph_area, buf);
         }
 
         if let Some(legend_area) = layout.legend_area {
-            buf.set_style(legend_area, original_style);
+            buf.set_style(&legend_area, original_style);
             Block::default()
                 .borders(Borders::ALL)
-                .render(legend_area, buf);
+                .render(&legend_area, buf);
             for (i, dataset) in self.datasets.iter().enumerate() {
                 buf.set_string(
                     legend_area.x + 1,
@@ -587,9 +574,9 @@ impl<'a> Widget for Chart<'a> {
 
         if let Some((x, y)) = layout.title_x {
             let title = self.x_axis.title.unwrap();
-            let width = graph_area.right().saturating_sub(x);
+            let width = layout.graph_area.right().saturating_sub(x);
             buf.set_style(
-                Rect {
+                &Rect {
                     x,
                     y,
                     width,
@@ -602,9 +589,9 @@ impl<'a> Widget for Chart<'a> {
 
         if let Some((x, y)) = layout.title_y {
             let title = self.y_axis.title.unwrap();
-            let width = graph_area.right().saturating_sub(x);
+            let width = layout.graph_area.right().saturating_sub(x);
             buf.set_style(
-                Rect {
+                &Rect {
                     x,
                     y,
                     width,
@@ -653,7 +640,7 @@ mod tests {
                 .x_axis(Axis::default().title("X axis"))
                 .y_axis(Axis::default().title("Y axis"))
                 .hidden_legend_constraints(case.hidden_legend_constraints);
-            let layout = chart.layout(case.chart_area);
+            let layout = chart.layout(&case.chart_area);
             assert_eq!(layout.legend_area, case.legend_area);
         }
     }

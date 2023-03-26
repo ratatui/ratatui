@@ -118,19 +118,19 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .direction(Direction::Vertical)
         .margin(2)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(terminal.viewport_area());
+        .split(terminal.viewport_areas()[0]);
     let barchart = BarChart::default()
         .block(Block::default().title("Data1").borders(Borders::ALL))
         .data(&app.data)
         .bar_width(9)
         .bar_style(Style::default().fg(Color::Yellow))
         .value_style(Style::default().fg(Color::Black).bg(Color::Yellow));
-    terminal.render_widget(barchart, chunks[0]);
+    terminal.render_widget(barchart, &chunks[0]);
 
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(chunks[1]);
+        .split(&chunks[1]);
 
     let barchart = BarChart::default()
         .block(Block::default().title("Data2").borders(Borders::ALL))
@@ -143,7 +143,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                 .bg(Color::Green)
                 .add_modifier(Modifier::BOLD),
         );
-    terminal.render_widget(barchart, chunks[0]);
+    terminal.render_widget(barchart, &chunks[0]);
 
     let barchart = BarChart::default()
         .block(Block::default().title("Data3").borders(Borders::ALL))
@@ -157,6 +157,6 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::ITALIC),
         );
-    terminal.render_widget(barchart, chunks[1]);
+    terminal.render_widget(barchart, &chunks[1]);
     terminal.flush()
 }

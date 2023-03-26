@@ -206,7 +206,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(terminal.viewport_area());
+        .split(terminal.viewport_areas()[0]);
 
     // Iterate through all elements in the `items` app and append some debug text to it.
     let items: Vec<ListItem> = app
@@ -236,7 +236,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
         .highlight_symbol(">> ");
 
     // We can now render the item list
-    terminal.render_stateful_widget(items, chunks[0], &mut app.items.state);
+    terminal.render_stateful_widget(items, &chunks[0], &mut app.items.state);
 
     // Let's do the same for the events.
     // The event list doesn't have any state and only displays the current state of the list.
@@ -281,6 +281,6 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
     let events_list = List::new(events)
         .block(Block::default().borders(Borders::ALL).title("List"))
         .start_corner(Corner::BottomLeft);
-    terminal.render_widget(events_list, chunks[1]);
+    terminal.render_widget(events_list, &chunks[1]);
     terminal.flush()
 }

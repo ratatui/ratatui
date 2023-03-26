@@ -6,6 +6,7 @@ use crossterm::{
 };
 use ratatui::{
     backend::{Backend, CrosstermBackend},
+    layout::{Constraint, Direction},
     Terminal,
 };
 use std::{
@@ -20,7 +21,11 @@ pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn E
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = Terminal::new_split(
+        backend,
+        vec![Constraint::Length(3), Constraint::Min(0)],
+        Direction::Vertical,
+    )?;
     terminal.hide_cursor()?;
 
     // create app and run it
@@ -58,9 +63,37 @@ fn run_app<B: Backend>(
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
-                    // Silently ignore viewport overscroll attempts.
+                    // Skipping viewport overscroll attempts.
+                    // See `viewport_scroll()` documentation for more.
                     KeyCode::Char(c) if c == 'd' => terminal.viewport_scroll(0, 1)?.unwrap_or(()),
                     KeyCode::Char(c) if c == 'u' => terminal.viewport_scroll(0, -1)?.unwrap_or(()),
+                    KeyCode::Char(c) if c == 'f' => terminal.viewport_scroll(1, 0)?.unwrap_or(()),
+                    KeyCode::Char(c) if c == 'p' => terminal.viewport_scroll(-1, 0)?.unwrap_or(()),
+                    // TEMP:
+                    KeyCode::Char(c) if c == 'n' => terminal
+                        .split_viewport_scroll(|index| match index {
+                            1 => (0, 1),
+                            _ => (0, 0),
+                        })?
+                        .unwrap_or(()),
+                    KeyCode::Char(c) if c == 'e' => terminal
+                        .split_viewport_scroll(|index| match index {
+                            1 => (0, -1),
+                            _ => (0, 0),
+                        })?
+                        .unwrap_or(()),
+                    KeyCode::Char(c) if c == 'i' => terminal
+                        .split_viewport_scroll(|index| match index {
+                            1 => (1, 0),
+                            _ => (0, 0),
+                        })?
+                        .unwrap_or(()),
+                    KeyCode::Char(c) if c == 'm' => terminal
+                        .split_viewport_scroll(|index| match index {
+                            1 => (-1, 0),
+                            _ => (0, 0),
+                        })?
+                        .unwrap_or(()),
                     KeyCode::Char(c) => app.on_key(c),
                     KeyCode::Left => app.on_left(),
                     KeyCode::Up => app.on_up(),

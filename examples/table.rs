@@ -119,7 +119,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
     let rects = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
         .margin(5)
-        .split(terminal.viewport_area());
+        .split(terminal.viewport_areas()[0]);
 
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
     let normal_style = Style::default().bg(Color::Blue);
@@ -150,6 +150,6 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
             Constraint::Length(30),
             Constraint::Min(10),
         ]);
-    terminal.render_stateful_widget(t, rects[0], &mut app.state);
+    terminal.render_stateful_widget(t, &rects[0], &mut app.state);
     terminal.flush()
 }

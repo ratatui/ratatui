@@ -98,11 +98,10 @@
 //!     let backend = CrosstermBackend::new(stdout);
 //!     let mut terminal = Terminal::new(backend)?;
 //!
-//!     let size = terminal.viewport_area();
 //!     let block = Block::default()
 //!         .title("Block")
 //!         .borders(Borders::ALL);
-//!     terminal.render_widget(block, size);
+//!     terminal.render_widget_on_viewport(block);
 //!     terminal.flush()?;
 //!
 //!     thread::sleep(Duration::from_millis(5000));
@@ -146,15 +145,15 @@
 //!                 Constraint::Percentage(10)
 //!             ].as_ref()
 //!         )
-//!         .split(terminal.viewport_area());
+//!         .split(terminal.viewport_areas()[0]);
 //!     let block = Block::default()
 //!          .title("Block")
 //!          .borders(Borders::ALL);
-//!     terminal.render_widget(block, chunks[0]);
+//!     terminal.render_widget(block, &chunks[0]);
 //!     let block = Block::default()
 //!          .title("Block 2")
 //!          .borders(Borders::ALL);
-//!     terminal.render_widget(block, chunks[1]);
+//!     terminal.render_widget(block, &chunks[1]);
 //!     terminal.flush()
 //! }
 //! ```
@@ -173,4 +172,4 @@ pub mod terminal;
 pub mod text;
 pub mod widgets;
 
-pub use self::terminal::{Terminal, TerminalOptions, Viewport};
+pub use self::terminal::Terminal;

@@ -82,15 +82,14 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
-    let size = terminal.viewport_area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(5)
         .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
-        .split(size);
+        .split(terminal.viewport_areas()[0]);
 
     let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
-    terminal.render_widget(block, size);
+    terminal.render_widget_on_viewport(block);
     let titles = app
         .titles
         .iter()
@@ -111,7 +110,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                 .add_modifier(Modifier::BOLD)
                 .bg(Color::Black),
         );
-    terminal.render_widget(tabs, chunks[0]);
+    terminal.render_widget(tabs, &chunks[0]);
     let inner = match app.index {
         0 => Block::default().title("Inner 0").borders(Borders::ALL),
         1 => Block::default().title("Inner 1").borders(Borders::ALL),
@@ -119,6 +118,6 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         3 => Block::default().title("Inner 3").borders(Borders::ALL),
         _ => unreachable!(),
     };
-    terminal.render_widget(inner, chunks[1]);
+    terminal.render_widget(inner, &chunks[1]);
     terminal.flush()
 }

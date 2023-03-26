@@ -75,14 +75,14 @@ impl<'a> Sparkline<'a> {
 }
 
 impl<'a> Widget for Sparkline<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
+    fn render(mut self, area: &Rect, buf: &mut Buffer) {
         let spark_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
                 b.render(area, buf);
                 inner_area
             }
-            None => area,
+            None => area.clone(),
         };
 
         if spark_area.height < 1 {
@@ -142,7 +142,7 @@ mod tests {
         let widget = Sparkline::default().data(&[0, 0, 0]);
         let area = Rect::new(0, 0, 3, 1);
         let mut buffer = Buffer::empty(3, 1);
-        widget.render(area, &mut buffer);
+        widget.render(&area, &mut buffer);
     }
 
     #[test]
@@ -150,6 +150,6 @@ mod tests {
         let widget = Sparkline::default().data(&[0, 1, 2]).max(0);
         let area = Rect::new(0, 0, 3, 1);
         let mut buffer = Buffer::empty(3, 1);
-        widget.render(area, &mut buffer);
+        widget.render(&area, &mut buffer);
     }
 }

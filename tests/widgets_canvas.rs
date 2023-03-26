@@ -23,7 +23,7 @@ fn widgets_canvas_draw_labels() {
                 Span::styled(label.clone(), Style::default().fg(Color::Blue)),
             );
         });
-    terminal.render_widget(canvas, terminal.viewport_area());
+    terminal.render_widget_on_viewport(canvas);
     terminal.flush().unwrap();
 
     let mut expected = Buffer::with_lines(vec!["    ", "    ", "     ", "     ", "test "]);

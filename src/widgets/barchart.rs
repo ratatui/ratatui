@@ -127,16 +127,16 @@ impl<'a> BarChart<'a> {
 }
 
 impl<'a> Widget for BarChart<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
+    fn render(mut self, area: &Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
 
         let chart_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
+            Some(block) => {
+                let inner_area = block.inner(area);
+                block.render(area, buf);
                 inner_area
             }
-            None => area,
+            None => area.clone(),
         };
 
         if chart_area.height < 2 {

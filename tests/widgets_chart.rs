@@ -21,7 +21,7 @@ where
     let backend = TestBackend::new(width, height);
     let mut terminal = Terminal::new(backend).unwrap();
     let chart = Chart::new(vec![]).x_axis(x_axis).y_axis(y_axis);
-    terminal.render_widget(chart, terminal.viewport_area());
+    terminal.render_widget_on_viewport(chart);
     terminal.flush().unwrap();
     let expected = Buffer::with_lines(lines);
     terminal.backend().assert_buffer(&expected);
@@ -48,7 +48,7 @@ fn widgets_chart_can_render_on_small_areas() {
                     .bounds([0.0, 0.0])
                     .labels(create_labels(&["0.0", "1.0"])),
             );
-        terminal.render_widget(chart, terminal.viewport_area());
+        terminal.render_widget_on_viewport(chart);
         terminal.flush().unwrap();
     };
     test_case(0, 0);
@@ -272,7 +272,7 @@ fn widgets_chart_can_have_axis_with_zero_length_bounds() {
         );
     terminal.render_widget(
         chart,
-        Rect {
+        &Rect {
             x: 0,
             y: 0,
             width: 100,
@@ -309,7 +309,7 @@ fn widgets_chart_handles_overflows() {
         );
     terminal.render_widget(
         chart,
-        Rect {
+        &Rect {
             x: 0,
             y: 0,
             width: 80,
@@ -343,7 +343,7 @@ fn widgets_chart_can_have_empty_datasets() {
         );
     terminal.render_widget(
         chart,
-        Rect {
+        &Rect {
             x: 0,
             y: 0,
             width: 100,
@@ -411,7 +411,7 @@ fn widgets_chart_can_have_a_legend() {
         );
     terminal.render_widget(
         chart,
-        Rect {
+        &Rect {
             x: 0,
             y: 0,
             width: 60,

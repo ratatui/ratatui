@@ -81,7 +81,7 @@ impl<'a> Tabs<'a> {
 }
 
 impl<'a> Widget for Tabs<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
+    fn render(mut self, area: &Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
         let tabs_area = match self.block.take() {
             Some(b) => {
@@ -89,7 +89,7 @@ impl<'a> Widget for Tabs<'a> {
                 b.render(area, buf);
                 inner_area
             }
-            None => area,
+            None => area.clone(),
         };
 
         if tabs_area.height < 1 {
@@ -108,7 +108,7 @@ impl<'a> Widget for Tabs<'a> {
             let pos = buf.set_spans(x, tabs_area.top(), &title, remaining_width);
             if i == self.selected {
                 buf.set_style(
-                    Rect {
+                    &Rect {
                         x,
                         y: tabs_area.top(),
                         width: pos.0.saturating_sub(x),

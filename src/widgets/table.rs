@@ -1,6 +1,6 @@
 use crate::{
     buffer::Buffer,
-    layout::{Constraint, Direction, Extend, Layout, Rect},
+    layout::{Constraint, Direction, Layout, Rect},
     style::Style,
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
@@ -283,8 +283,8 @@ impl<'a> Table<'a> {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(constraints)
-            .extend(Extend::None)
-            .split(Rect {
+            .extend(false)
+            .split(&Rect {
                 x: 0,
                 y: 0,
                 width: max_width,
@@ -365,7 +365,7 @@ impl TableState {
 impl<'a> StatefulWidget for Table<'a> {
     type State = TableState;
 
-    fn render(mut self, area: Rect, buffer: &mut Buffer, state: &mut Self::State) {
+    fn render(mut self, area: &Rect, buffer: &mut Buffer, state: &mut Self::State) {
         if area.size() == 0 {
             return;
         }
@@ -377,7 +377,7 @@ impl<'a> StatefulWidget for Table<'a> {
                 block.render(area, buffer);
                 inner_area
             }
-            None => area,
+            None => area.clone(),
         };
 
         let has_selection = state.selected.is_some();
@@ -391,7 +391,7 @@ impl<'a> StatefulWidget for Table<'a> {
         if let Some(ref header) = self.header {
             let max_header_height = table_area.height.min(header.total_height());
             buffer.set_style(
-                Rect {
+                &Rect {
                     x: table_area.left(),
                     y: table_area.top(),
                     width: table_area.width,
@@ -407,7 +407,7 @@ impl<'a> StatefulWidget for Table<'a> {
                 render_cell(
                     buffer,
                     cell,
-                    Rect {
+                    &Rect {
                         x: col,
                         y: table_area.top(),
                         width: *width,
@@ -441,7 +441,7 @@ impl<'a> StatefulWidget for Table<'a> {
                 width: table_area.width,
                 height: table_row.height,
             };
-            buffer.set_style(table_row_area, table_row.style);
+            buffer.set_style(&table_row_area, table_row.style);
             let is_selected = state.selected.map(|s| s == i).unwrap_or(false);
             let table_row_start_col = if has_selection {
                 let symbol = if is_selected {
@@ -460,7 +460,7 @@ impl<'a> StatefulWidget for Table<'a> {
                 render_cell(
                     buffer,
                     cell,
-                    Rect {
+                    &Rect {
                         x: col,
                         y: row,
                         width: *width,
@@ -470,13 +470,13 @@ impl<'a> StatefulWidget for Table<'a> {
                 col += *width + self.column_spacing;
             }
             if is_selected {
-                buffer.set_style(table_row_area, self.highlight_style);
+                buffer.set_style(&table_row_area, self.highlight_style);
             }
         }
     }
 }
 
-fn render_cell(buf: &mut Buffer, cell: &Cell, area: Rect) {
+fn render_cell(buf: &mut Buffer, cell: &Cell, area: &Rect) {
     buf.set_style(area, cell.style);
     for (i, spans) in cell.content.lines.iter().enumerate() {
         if i as u16 >= area.height {
@@ -487,7 +487,7 @@ fn render_cell(buf: &mut Buffer, cell: &Cell, area: Rect) {
 }
 
 impl<'a> Widget for Table<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(self, area: &Rect, buf: &mut Buffer) {
         let mut state = TableState::default();
         StatefulWidget::render(self, area, buf, &mut state);
     }

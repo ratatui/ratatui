@@ -1,27 +1,21 @@
 use crate::{
     backend::Backend,
     buffer::Buffer,
-    layout::Rect,
+    layout::{Constraint, Direction, Layout, Rect},
     widgets::{StatefulWidget, Widget},
 };
 use std::io::{self, Error, ErrorKind};
 
-#[derive(Debug, Clone, PartialEq)]
-/// Options to pass to [`Terminal::with_options`]
-pub struct TerminalOptions {
-    /// Viewport used to draw to the terminal
-    pub viewport: Viewport,
-}
-
 /// Interface to the terminal backed by Termion
-#[derive(Debug)]
 pub struct Terminal<B>
 where
     B: Backend,
 {
     backend: B,
     buffer: Buffer,
-    viewport: Viewport,
+    viewport_slit_constaints: Vec<Constraint>,
+    viewport_split_direction: Direction,
+    viewports: Vec<Viewport>,
 }
 
 impl<B> Drop for Terminal<B>
@@ -40,29 +34,50 @@ impl<B> Terminal<B>
 where
     B: Backend,
 {
-    /// Wrapper around Terminal initialization. Each buffer is initialized with a blank string and
-    /// default colors for the foreground and the background
+    /// Initializes a terminal with a buffer size the same as the backend size.
+    /// Buffer cells are initialized with empty strings using
+    /// default foreground and the background color.
     pub fn new(backend: B) -> io::Result<Terminal<B>> {
-        let (width, height) = backend.dimensions()?;
-        Terminal::with_options(
+        // NOTE: Direction arbitrary for single viewport setup
+        Self::new_split(
             backend,
-            TerminalOptions {
-                viewport: Viewport {
-                    area: Rect::new(0, 0, width, height),
-                    resize_behavior: ResizeBehavior::Auto,
-                },
-            },
+            vec![Constraint::Percentage(100)],
+            Direction::Horizontal,
         )
     }
 
-    /// UNSTABLE
-    pub fn with_options(backend: B, options: TerminalOptions) -> io::Result<Terminal<B>> {
-        let width = options.viewport.area.width;
-        let height = options.viewport.area.height;
+    /// Terminal can be initialized with split viewports.
+    /// Useful when parts of the buffer are to be individually scrolled,
+    /// without re-rendering buffer at all.
+    ///
+    /// Indidivual viewport scrolls are then controlled with `split_viewport_scroll`.
+    pub fn new_split(
+        backend: B,
+        constraints: Vec<Constraint>,
+        direction: Direction,
+    ) -> io::Result<Terminal<B>> {
+        let (width, height) = backend.dimensions()?;
+        let base_area = Rect {
+            x: 0,
+            y: 0,
+            width,
+            height,
+        };
         Ok(Terminal {
             backend,
             buffer: Buffer::empty(width, height),
-            viewport: options.viewport,
+            viewports: Layout::default()
+                .direction(direction.clone())
+                .constraints(constraints.as_ref())
+                .split(&base_area)
+                .into_iter()
+                .map(|region| Viewport {
+                    region,
+                    scroll: (0, 0),
+                })
+                .collect(),
+            viewport_slit_constaints: constraints,
+            viewport_split_direction: direction,
         })
     }
 
@@ -80,13 +95,14 @@ where
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// let block = Block::default();
     /// let area = Rect::new(0, 0, 5, 5);
-    /// terminal.render_widget(block, area);
+    /// terminal.render_widget(block, &area);
     /// ```
-    pub fn render_widget<W>(&mut self, widget: W, area: Rect)
-    where
-        W: Widget,
-    {
+    pub fn render_widget<W: Widget>(&mut self, widget: W, area: &Rect) {
         widget.render(area, &mut self.buffer);
+    }
+
+    pub fn render_widget_on_viewport<W: Widget>(&mut self, widget: W) {
+        widget.render(&self.viewports[0].region, &mut self.buffer)
     }
 
     /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
@@ -112,17 +128,30 @@ where
     /// ];
     /// let list = List::new(items);
     /// let area = Rect::new(0, 0, 5, 5);
-    /// terminal.render_stateful_widget(list, area, &mut state);
+    /// terminal.render_stateful_widget(list, &area, &mut state);
     /// ```
-    pub fn render_stateful_widget<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
-    where
-        W: StatefulWidget,
-    {
+    pub fn render_stateful_widget<W: StatefulWidget>(
+        &mut self,
+        widget: W,
+        area: &Rect,
+        state: &mut W::State,
+    ) {
         widget.render(area, &mut self.buffer, state);
     }
 
-    pub fn viewport_area(&self) -> Rect {
-        self.viewport.area
+    pub fn render_stateful_widget_on_viewport<W: StatefulWidget>(
+        &mut self,
+        widget: W,
+        state: &mut W::State,
+    ) {
+        widget.render(&self.viewports[0].region, &mut self.buffer, state);
+    }
+
+    pub fn viewport_areas(&self) -> Vec<&Rect> {
+        self.viewports
+            .iter()
+            .map(|viewport| &viewport.region)
+            .collect()
     }
 
     pub fn get_buffer(&self) -> &Buffer {
@@ -137,23 +166,88 @@ where
         &mut self.backend
     }
 
-    /// `Ok` content is `Result<()>`, Nested `Ok` representing a sucessfull scroll.
-    /// Nested `Err` representing a viewport scroll overflowing buffer attempt.
+    /// Returns Ok(Ok()) if viewport did not overflow and buffer could be flushed.
+    /// Returns Err() no overflow was detected by buffer flush failed.
+    /// Returns Ok(Err()) if scroll overflows.
+    /// Nested Results allow for fairly simple silent fail of scroll overflows
+    /// without disregarding the more serious flush errors with:
+    /// `terminal.viewport_scroll(-10, -10)?.unwrap_or(())`.
+    /*
+        IMPROVEMENT: Introduce a separate ViewportOverflow struct for the error?
+        Might require the introduction of the anyhow anyhow internally and externally
+        as the library would no longer only return io::Results.
+
+        Might be a more Rust idiomatic way of handling the nested Results shenanigans.
+    */
     pub fn viewport_scroll(&mut self, x_step: i16, y_step: i16) -> io::Result<io::Result<()>> {
-        let new_x_offset = self.viewport.area.x.saturating_add_signed(x_step);
-        let new_y_offset = self.viewport.area.y.saturating_add_signed(y_step);
-        if new_x_offset + self.viewport.area.width > self.buffer.get_width()
-            || new_y_offset + self.viewport.area.height > self.buffer.get_height()
-        {
-            return Ok(Err(Error::new(
-                ErrorKind::Other,
-                "Viewport scroll overflows buffer",
-            )));
+        self.split_viewport_scroll(|_| (x_step, y_step))
+    }
+
+    /// Used in combination with Terminal::new_split() to individually scroll split viewports.
+    /// Call is passed with a closure that returns the scroll for a given split viewport index,
+    /// The viewport index represents the respective viewport created by constraints given in Terminal::new_split([Constraint]).
+    pub fn split_viewport_scroll<F: Fn(usize) -> (i16, i16)>(
+        &mut self,
+        closure: F,
+    ) -> io::Result<io::Result<()>> {
+        for index in 0..self.viewports.len() {
+            let (x_step, y_step) = closure(index);
+            // We don't want to re-flush a region which hasn't moved.
+            if (x_step, y_step) == (0, 0) {
+                continue;
+            }
+
+            let (x_scroll, y_scroll) = self.viewports[index].scroll;
+            let new_scroll = (x_scroll + x_step, y_scroll + y_step);
+            if let Err(err) = self.assert_viewport_within_buffer(index, new_scroll) {
+                return Ok(Err(err));
+            }
+            self.viewports[index].scroll = new_scroll;
+            self.flush_viewport_region(index)?;
         }
-        self.viewport.area.x = new_x_offset;
-        self.viewport.area.y = new_y_offset;
-        self.flush_viewport_region()?;
         Ok(Ok(()))
+    }
+
+    fn assert_viewport_within_buffer(
+        &self,
+        viewport_index: usize,
+        new_scroll: (i16, i16),
+    ) -> io::Result<()> {
+        let viewport_region = &self.viewports[viewport_index].region;
+        let (new_x_scroll, new_y_scroll) = new_scroll;
+        let error = |side: &str, expected: i16, actual: i16| {
+            let msg = format!(
+                "Viewport scroll overflows buffer, index: {}, side: {}, expected: {}, actual: {}",
+                viewport_index, side, expected, actual
+            );
+            Error::new(ErrorKind::Other, msg)
+        };
+
+        // Check left
+        let new_x_begin = viewport_region.x as i16 + new_x_scroll;
+        let min = 0;
+        if new_x_begin < min {
+            return Err(error("left", min, new_x_begin));
+        }
+        // Check top
+        let new_y_begin = viewport_region.y as i16 + new_y_scroll;
+        if new_y_begin < min {
+            return Err(error("top", min, new_y_begin));
+        }
+        // Check right
+        let new_x_end = (viewport_region.width + viewport_region.x) as i16 + new_x_scroll;
+        let max = self.buffer.get_width() as i16;
+        if new_x_end > max {
+            return Err(error("right", max, new_x_end));
+        }
+        // Check bottom
+        let new_y_end = (viewport_region.height + viewport_region.y) as i16 + new_y_scroll;
+        let max = self.buffer.get_height() as i16;
+        if new_y_end > max {
+            return Err(error("bottom", max, new_y_end));
+        }
+
+        Ok(())
     }
 
     pub fn resize_buffer(&mut self, width: u16, height: u16) {
@@ -163,17 +257,33 @@ where
     /// Queries the backend for its viewport size and resizes frontend viewport size
     /// if it doesn't match.
     fn autoresize(&mut self) -> io::Result<()> {
-        if self.viewport.resize_behavior == ResizeBehavior::Auto {
+        let sum_viewport_sizes = self
+            .viewports
+            .iter()
+            .fold(0, |acc, viewport| acc + viewport.region.size());
+        if self.backend.size()? != sum_viewport_sizes {
             let (b_width, b_height) = self.backend.dimensions()?;
-            if self.backend.size()? != self.viewport.area.size() {
-                self.viewport.area.width = b_width;
-                self.viewport.area.height = b_height;
-                if self.buffer.cells.len() < self.backend.size()? {
-                    self.buffer.resize(b_width, b_height)
-                }
-                self.clear()?
+            let new_viewports = Layout::default()
+                .direction(self.viewport_split_direction.clone())
+                .constraints(self.viewport_slit_constaints.clone())
+                .split(&Rect {
+                    x: 0,
+                    y: 0,
+                    width: b_width,
+                    height: b_height,
+                });
+            // Only change height and width for scroll to persist
+            for (index, new_viewport) in new_viewports.iter().enumerate() {
+                self.viewports[index].region.width = new_viewport.width;
+                self.viewports[index].region.height = new_viewport.height;
             }
+
+            if self.buffer.cells.len() < self.backend.size()? {
+                self.buffer.resize(b_width, b_height)
+            }
+            self.clear()?
         }
+
         Ok(())
     }
 
@@ -183,7 +293,7 @@ where
         self.backend.clear()
     }
 
-    pub fn clear_region(&mut self, area: Rect) {
+    pub fn clear_region(&mut self, area: &Rect) {
         self.buffer.clear_region(area);
     }
 
@@ -191,14 +301,27 @@ where
     /// Content flushed is based on the viewport offset and backend terminal size.
     pub fn flush(&mut self) -> io::Result<()> {
         self.autoresize()?;
-        self.flush_viewport_region()
+        for index in 0..self.viewports.len() {
+            self.flush_viewport_region(index)?
+        }
+        Ok(())
     }
 
-    fn flush_viewport_region(&mut self) -> io::Result<()> {
-        let mut buffer_region = self.buffer.get_region(self.viewport_area());
+    /// Currently not translating to correct offset
+    /// Second viewport is being moved to
+    fn flush_viewport_region(&mut self, viewport_index: usize) -> io::Result<()> {
+        let (x_scroll, y_scroll) = self.viewports[viewport_index].scroll;
+        let mut scrolled_viewport_region = self.viewports[viewport_index].region.clone();
+        scrolled_viewport_region.x = scrolled_viewport_region.x.saturating_add_signed(x_scroll);
+        scrolled_viewport_region.y = scrolled_viewport_region.y.saturating_add_signed(y_scroll);
+
+        let mut buffer_region = self.buffer.get_region(&scrolled_viewport_region);
+        // Translate each cell so that it is placed inside the backend buffer.
+        // *_scroll values won't be unsound as they are checked for in viewport_scroll_split
+        // with assert_viewport_within_buffer.
         buffer_region.iter_mut().for_each(|(x, y, _)| {
-            *x -= self.viewport.area.x;
-            *y -= self.viewport.area.y;
+            *x = x.saturating_add_signed(-x_scroll);
+            *y = y.saturating_add_signed(-y_scroll);
         });
 
         self.backend.draw(buffer_region.iter())
@@ -221,26 +344,8 @@ where
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-/// UNSTABLE
+#[derive(Clone)]
 pub struct Viewport {
-    area: Rect,
-    resize_behavior: ResizeBehavior,
-}
-
-impl Viewport {
-    /// UNSTABLE
-    pub fn fixed(width: u16, height: u16) -> Viewport {
-        Viewport {
-            area: Rect::new(0, 0, width, height),
-            resize_behavior: ResizeBehavior::Fixed,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-/// UNSTABLE
-enum ResizeBehavior {
-    Fixed,
-    Auto,
+    region: Rect,
+    pub scroll: (i16, i16),
 }

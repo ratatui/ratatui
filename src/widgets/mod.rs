@@ -62,7 +62,7 @@ bitflags! {
 pub trait Widget {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.
-    fn render(self, area: Rect, buf: &mut Buffer);
+    fn render(self, area: &Rect, buf: &mut Buffer);
 }
 
 /// A `StatefulWidget` is a widget that can take advantage of some local state to remember things
@@ -168,7 +168,7 @@ pub trait Widget {
 ///     let list = List::new(items);
 ///     // Finally the widget is rendered using the associated state. `events.state` is
 ///     // effectively the only thing that we will "remember" from this draw call.
-///     terminal.render_stateful_widget(list, terminal.viewport_area(), &mut events.state);
+///     terminal.render_stateful_widget_on_viewport(list, &mut events.state);
 ///     terminal.flush();
 ///
 ///     // In response to some input events or an external http request or whatever:
@@ -177,5 +177,5 @@ pub trait Widget {
 /// ```
 pub trait StatefulWidget {
     type State;
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
+    fn render(self, area: &Rect, buf: &mut Buffer, state: &mut Self::State);
 }

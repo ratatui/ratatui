@@ -150,7 +150,7 @@ fn run_app<B: Backend>(
 }
 
 fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
-    let size = terminal.viewport_area();
+    let size = terminal.viewport_areas()[0];
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -215,7 +215,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                 ])
                 .bounds([-20.0, 20.0]),
         );
-    terminal.render_widget(chart, chunks[0]);
+    terminal.render_widget(chart, &chunks[0]);
 
     let datasets = vec![Dataset::default()
         .name("data")
@@ -256,7 +256,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                     Span::styled("5.0", Style::default().add_modifier(Modifier::BOLD)),
                 ]),
         );
-    terminal.render_widget(chart, chunks[1]);
+    terminal.render_widget(chart, &chunks[1]);
 
     let datasets = vec![Dataset::default()
         .name("data")
@@ -297,6 +297,6 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                     Span::styled("5", Style::default().add_modifier(Modifier::BOLD)),
                 ]),
         );
-    terminal.render_widget(chart, chunks[2]);
+    terminal.render_widget(chart, &chunks[2]);
     terminal.flush()
 }

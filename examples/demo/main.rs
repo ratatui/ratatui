@@ -6,10 +6,11 @@ mod termion;
 mod ui;
 mod util;
 
-#[cfg(not(feature = "termion"))]
+#[cfg(feature = "crossterm")]
 use crate::crossterm::run;
 #[cfg(feature = "termion")]
 use crate::termion::run;
+
 use argh::FromArgs;
 use std::{error::Error, time::Duration};
 

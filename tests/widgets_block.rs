@@ -18,7 +18,7 @@ fn widgets_block_renders() {
         .borders(Borders::ALL);
     terminal.render_widget(
         block,
-        Rect {
+        &Rect {
             x: 0,
             y: 0,
             width: 8,
@@ -50,7 +50,7 @@ fn widgets_block_renders_on_small_areas() {
     let test_case = |block, area: Rect, expected| {
         let backend = TestBackend::new(area.width, area.height);
         let mut terminal = Terminal::new(backend).unwrap();
-        terminal.render_widget(block, area);
+        terminal.render_widget(block, &area);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -211,7 +211,7 @@ fn widgets_block_title_alignment() {
             height: 2,
         };
 
-        terminal.render_widget(block, area);
+        terminal.render_widget(block, &area);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };

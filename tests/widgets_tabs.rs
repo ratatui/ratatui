@@ -10,7 +10,7 @@ fn widgets_tabs_should_not_panic_on_narrow_areas() {
     let tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Spans::from).collect());
     terminal.render_widget(
         tabs,
-        Rect {
+        &Rect {
             x: 0,
             y: 0,
             width: 1,
@@ -29,7 +29,7 @@ fn widgets_tabs_should_truncate_the_last_item() {
     let tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Spans::from).collect());
     terminal.render_widget(
         tabs,
-        Rect {
+        &Rect {
             x: 0,
             y: 0,
             width: 9,

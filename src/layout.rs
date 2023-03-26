@@ -2,7 +2,6 @@ use std::{
     cell::RefCell,
     cmp::{max, min},
     collections::HashMap,
-    rc::Rc,
 };
 
 use cassowary::{
@@ -64,21 +63,14 @@ pub enum Alignment {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Extend {
-    Viewport,
-    Overflow,
-    None,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Layout {
     direction: Direction,
     margin: Margin,
     constraints: Vec<Constraint>,
-    extend: Extend,
+    extend: bool,
 }
 
-type Cache = HashMap<(Rect, Layout), Rc<[Rect]>>;
+type Cache = HashMap<(Rect, Layout), Vec<Rect>>;
 thread_local! {
     static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(HashMap::new());
 }
@@ -92,7 +84,7 @@ impl Default for Layout {
                 vertical: 0,
             },
             constraints: Vec::new(),
-            extend: Extend::Viewport,
+            extend: true,
         }
     }
 }
@@ -129,7 +121,9 @@ impl Layout {
         self
     }
 
-    pub(crate) fn extend(mut self, extend: Extend) -> Layout {
+    /// Set or unset contstaint to extend last element to layout area boundary.
+    /// True by default.
+    pub(crate) fn extend(mut self, extend: bool) -> Layout {
         self.extend = extend;
         self
     }
@@ -143,7 +137,7 @@ impl Layout {
     /// let chunks = Layout::default()
     ///     .direction(Direction::Vertical)
     ///     .constraints([Constraint::Length(5), Constraint::Min(0)].as_ref())
-    ///     .split(Rect {
+    ///     .split(&Rect {
     ///         x: 2,
     ///         y: 2,
     ///         width: 10,
@@ -170,7 +164,7 @@ impl Layout {
     /// let chunks = Layout::default()
     ///     .direction(Direction::Horizontal)
     ///     .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
-    ///     .split(Rect {
+    ///     .split(&Rect {
     ///         x: 0,
     ///         y: 0,
     ///         width: 9,
@@ -194,18 +188,18 @@ impl Layout {
     ///     ]
     /// );
     /// ```
-    pub fn split(&self, area: Rect) -> Rc<[Rect]> {
+    pub fn split(&self, area: &Rect) -> Vec<Rect> {
         // TODO: Maybe use a fixed size cache ?
         LAYOUT_CACHE.with(|c| {
             c.borrow_mut()
-                .entry((area, self.clone()))
-                .or_insert_with(|| split(area, self))
+                .entry((area.clone(), self.clone()))
+                .or_insert_with(|| split(area.clone(), self))
                 .clone()
         })
     }
 }
 
-fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
+fn split(area: Rect, layout: &Layout) -> Vec<Rect> {
     let mut ccs: Vec<CassowaryConstraint> = Vec::with_capacity(layout.constraints.len() * 10);
     let dest_area = area.inner(&layout.margin);
     let elements = layout
@@ -231,23 +225,13 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         });
     }
 
-    // Extend constaints
-    match layout.extend {
-        Extend::Viewport => {
-            if let Some(last) = elements.last() {
-                ccs.push(match layout.direction {
-                    Direction::Horizontal => {
-                        last.right() | EQ(REQUIRED) | f64::from(dest_area.right())
-                    }
-                    Direction::Vertical => {
-                        last.bottom() | EQ(REQUIRED) | f64::from(dest_area.bottom())
-                    }
-                });
-            }
+    if layout.extend {
+        if let Some(last) = elements.last() {
+            ccs.push(match layout.direction {
+                Direction::Horizontal => last.right() | EQ(REQUIRED) | f64::from(dest_area.right()),
+                Direction::Vertical => last.bottom() | EQ(REQUIRED) | f64::from(dest_area.bottom()),
+            });
         }
-        // TEMP: might remove, none possibly acts as overflow
-        Extend::Overflow => todo!(),
-        Extend::None => (),
     }
 
     match layout.direction {
@@ -328,8 +312,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         .constraints
         .iter()
         .map(|_| Rect::default())
-        .collect::<Rc<[Rect]>>();
-    let mut results = Rc::get_mut(&mut res).expect("newly created Rc should have no shared refs");
+        .collect::<Vec<Rect>>();
 
     let mut solver = Solver::new();
     solver.add_constraints(&ccs).unwrap();
@@ -344,30 +327,27 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         };
 
         match dimension {
-            Dimension::X => results[*element_idx].x = value,
-            Dimension::Y => results[*element_idx].y = value,
-            Dimension::Width => results[*element_idx].width = value,
-            Dimension::Height => results[*element_idx].height = value,
+            Dimension::X => res[*element_idx].x = value,
+            Dimension::Y => res[*element_idx].y = value,
+            Dimension::Width => res[*element_idx].width = value,
+            Dimension::Height => res[*element_idx].height = value,
         }
     }
 
-    match layout.extend {
-        Extend::Viewport => {
-            // Fix solution imprecision by extending the last item a bit if necessary
-            if let Some(last) = results.last_mut() {
-                match layout.direction {
-                    Direction::Vertical => {
-                        last.height = dest_area.bottom() - last.y;
-                    }
-                    Direction::Horizontal => {
-                        last.width = dest_area.right() - last.x;
-                    }
+    if layout.extend {
+        // Fix solution imprecision by extending the last item a bit if necessary
+        if let Some(last) = res.last_mut() {
+            match layout.direction {
+                Direction::Vertical => {
+                    last.height = dest_area.bottom() - last.y;
+                }
+                Direction::Horizontal => {
+                    last.width = dest_area.right() - last.x;
                 }
             }
         }
-        Extend::Overflow => (),
-        Extend::None => (),
     }
+
     res
 }
 
@@ -415,7 +395,7 @@ impl Element {
 
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
 /// area they are supposed to render to.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Default)]
 pub struct Rect {
     pub x: u16,
     pub y: u16,
@@ -446,23 +426,23 @@ impl Rect {
         }
     }
 
-    pub fn size(self) -> usize {
+    pub fn size(&self) -> usize {
         self.width as usize * self.height as usize
     }
 
-    pub fn left(self) -> u16 {
+    pub fn left(&self) -> u16 {
         self.x
     }
 
-    pub fn right(self) -> u16 {
+    pub fn right(&self) -> u16 {
         self.x.saturating_add(self.width)
     }
 
-    pub fn top(self) -> u16 {
+    pub fn top(&self) -> u16 {
         self.y
     }
 
-    pub fn bottom(self) -> u16 {
+    pub fn bottom(&self) -> u16 {
         self.y.saturating_add(self.height)
     }
 
@@ -479,7 +459,7 @@ impl Rect {
         }
     }
 
-    pub fn union(self, other: Rect) -> Rect {
+    pub fn union(self, other: &Rect) -> Rect {
         let x1 = min(self.x, other.x);
         let y1 = min(self.y, other.y);
         let x2 = max(self.x + self.width, other.x + other.width);
@@ -492,7 +472,7 @@ impl Rect {
         }
     }
 
-    pub fn intersection(self, other: Rect) -> Rect {
+    pub fn intersection(self, other: &Rect) -> Rect {
         let x1 = max(self.x, other.x);
         let y1 = max(self.y, other.y);
         let x2 = min(self.x + self.width, other.x + other.width);
@@ -505,7 +485,7 @@ impl Rect {
         }
     }
 
-    pub fn intersects(self, other: Rect) -> bool {
+    pub fn intersects(self, other: &Rect) -> bool {
         self.x < other.x + other.width
             && self.x + self.width > other.x
             && self.y < other.y + other.height
@@ -536,7 +516,7 @@ mod tests {
                 ]
                 .as_ref(),
             )
-            .split(target);
+            .split(&target);
 
         assert_eq!(target.height, chunks.iter().map(|r| r.height).sum::<u16>());
         chunks.windows(2).for_each(|w| assert!(w[0].y <= w[1].y));

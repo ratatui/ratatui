@@ -171,13 +171,13 @@ impl Buffer {
         self.height
     }
 
-    pub fn get_region(&self, area: Rect) -> Vec<(u16, u16, &Cell)> {
+    pub fn get_region(&self, area: &Rect) -> Vec<(u16, u16, &Cell)> {
         let mut sub_buffer = Vec::with_capacity(area.size());
         Self::map_buffer_region(area, |x, y| sub_buffer.push((x, y, self.get(x, y))));
         sub_buffer
     }
 
-    fn map_buffer_region<F: FnMut(u16, u16)>(area: Rect, mut closure: F) {
+    fn map_buffer_region<F: FnMut(u16, u16)>(area: &Rect, mut closure: F) {
         for i_y in area.y..(area.y + area.height) {
             for i_x in area.x..(area.x + area.width) {
                 closure(i_x, i_y)
@@ -326,7 +326,7 @@ impl Buffer {
         }
     }
 
-    pub fn set_style(&mut self, area: Rect, style: Style) {
+    pub fn set_style(&mut self, area: &Rect, style: Style) {
         Self::map_buffer_region(area, |x, y| {
             self.get_mut(x, y).set_style(style);
         });
@@ -360,11 +360,11 @@ impl Buffer {
         }
     }
 
-    pub fn clear_region(&mut self, area: Rect) {
+    pub fn clear_region(&mut self, area: &Rect) {
         Self::map_buffer_region(area, |x, y| self.get_mut(x, y).clear())
     }
 
-    pub fn fill_region(&mut self, area: Rect, cell: &Cell) {
+    pub fn fill_region(&mut self, area: &Rect, cell: &Cell) {
         Self::map_buffer_region(area, |x, y| *self.get_mut(x, y) = cell.clone())
     }
 
@@ -372,7 +372,7 @@ impl Buffer {
     pub fn merge(&mut self, mut other: Buffer) {
         let a_self = Rect::new(0, 0, self.width, self.height);
         let a_other = Rect::new(0, 0, other.width, other.height);
-        let a_new = a_self.union(a_other);
+        let a_new = a_self.union(&a_other);
         self.resize(a_new.width, a_new.height);
 
         for i in (0..other.size()).rev() {
