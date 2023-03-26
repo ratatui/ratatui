@@ -6,18 +6,11 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
     let mut bytes = Vec::new();
     let mut stdout = Cursor::new(&mut bytes);
     {
-        use ratatui::{
-            backend::TermionBackend, layout::Rect, widgets::Paragraph, Terminal, TerminalOptions,
-            Viewport,
-        };
+        use ratatui::{backend::TermionBackend, layout::Rect, widgets::Paragraph, Terminal};
         let backend = TermionBackend::new(&mut stdout);
         let area = Rect::new(0, 0, 3, 1);
-        let mut terminal = Terminal::with_options(
-            backend,
-            TerminalOptions {
-                viewport: Viewport::fixed(area.width, area.height),
-            },
-        )?;
+        let mut terminal = Terminal::new(backend)?;
+        terminal.resize_buffer(3, 1);
         terminal.render_widget(Paragraph::new("a"), area);
         terminal.flush()?;
         terminal.render_widget(Paragraph::new("ab"), area);

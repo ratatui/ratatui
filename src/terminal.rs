@@ -6,13 +6,6 @@ use crate::{
 };
 use std::io::{self, Error, ErrorKind};
 
-#[derive(Debug, Clone, PartialEq)]
-/// Options to pass to [`Terminal::with_options`]
-pub struct TerminalOptions {
-    /// Viewport used to draw to the terminal
-    pub viewport: Viewport,
-}
-
 /// Interface to the terminal backed by Termion
 #[derive(Debug)]
 pub struct Terminal<B>
@@ -21,7 +14,7 @@ where
 {
     backend: B,
     buffer: Buffer,
-    viewport: Viewport,
+    viewport: Rect,
 }
 
 impl<B> Drop for Terminal<B>
@@ -40,29 +33,20 @@ impl<B> Terminal<B>
 where
     B: Backend,
 {
-    /// Wrapper around Terminal initialization. Each buffer is initialized with a blank string and
-    /// default colors for the foreground and the background
+    /// Initializes a terminal with a buffer size the same as the backend size.
+    /// Buffer cells are initialized with empty strings using
+    /// default foreground and the background color.
     pub fn new(backend: B) -> io::Result<Terminal<B>> {
         let (width, height) = backend.dimensions()?;
-        Terminal::with_options(
-            backend,
-            TerminalOptions {
-                viewport: Viewport {
-                    area: Rect::new(0, 0, width, height),
-                    resize_behavior: ResizeBehavior::Auto,
-                },
-            },
-        )
-    }
-
-    /// UNSTABLE
-    pub fn with_options(backend: B, options: TerminalOptions) -> io::Result<Terminal<B>> {
-        let width = options.viewport.area.width;
-        let height = options.viewport.area.height;
         Ok(Terminal {
             backend,
             buffer: Buffer::empty(width, height),
-            viewport: options.viewport,
+            viewport: Rect {
+                x: 0,
+                y: 0,
+                width,
+                height,
+            },
         })
     }
 
@@ -122,7 +106,7 @@ where
     }
 
     pub fn viewport_area(&self) -> Rect {
-        self.viewport.area
+        self.viewport
     }
 
     pub fn get_buffer(&self) -> &Buffer {
@@ -140,18 +124,18 @@ where
     /// `Ok` content is `Result<()>`, Nested `Ok` representing a sucessfull scroll.
     /// Nested `Err` representing a viewport scroll overflowing buffer attempt.
     pub fn viewport_scroll(&mut self, x_step: i16, y_step: i16) -> io::Result<io::Result<()>> {
-        let new_x_offset = self.viewport.area.x.saturating_add_signed(x_step);
-        let new_y_offset = self.viewport.area.y.saturating_add_signed(y_step);
-        if new_x_offset + self.viewport.area.width > self.buffer.get_width()
-            || new_y_offset + self.viewport.area.height > self.buffer.get_height()
+        let new_x_offset = self.viewport.x.saturating_add_signed(x_step);
+        let new_y_offset = self.viewport.y.saturating_add_signed(y_step);
+        if new_x_offset + self.viewport.width > self.buffer.get_width()
+            || new_y_offset + self.viewport.height > self.buffer.get_height()
         {
             return Ok(Err(Error::new(
                 ErrorKind::Other,
                 "Viewport scroll overflows buffer",
             )));
         }
-        self.viewport.area.x = new_x_offset;
-        self.viewport.area.y = new_y_offset;
+        self.viewport.x = new_x_offset;
+        self.viewport.y = new_y_offset;
         self.flush_viewport_region()?;
         Ok(Ok(()))
     }
@@ -163,17 +147,16 @@ where
     /// Queries the backend for its viewport size and resizes frontend viewport size
     /// if it doesn't match.
     fn autoresize(&mut self) -> io::Result<()> {
-        if self.viewport.resize_behavior == ResizeBehavior::Auto {
-            let (b_width, b_height) = self.backend.dimensions()?;
-            if self.backend.size()? != self.viewport.area.size() {
-                self.viewport.area.width = b_width;
-                self.viewport.area.height = b_height;
-                if self.buffer.cells.len() < self.backend.size()? {
-                    self.buffer.resize(b_width, b_height)
-                }
-                self.clear()?
+        let (b_width, b_height) = self.backend.dimensions()?;
+        if self.backend.size()? != self.viewport.size() {
+            self.viewport.width = b_width;
+            self.viewport.height = b_height;
+            if self.buffer.cells.len() < self.backend.size()? {
+                self.buffer.resize(b_width, b_height)
             }
+            self.clear()?
         }
+
         Ok(())
     }
 
@@ -197,8 +180,8 @@ where
     fn flush_viewport_region(&mut self) -> io::Result<()> {
         let mut buffer_region = self.buffer.get_region(self.viewport_area());
         buffer_region.iter_mut().for_each(|(x, y, _)| {
-            *x -= self.viewport.area.x;
-            *y -= self.viewport.area.y;
+            *x -= self.viewport.x;
+            *y -= self.viewport.y;
         });
 
         self.backend.draw(buffer_region.iter())
@@ -219,28 +202,4 @@ where
     pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
         self.backend.set_cursor(x, y)
     }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-/// UNSTABLE
-pub struct Viewport {
-    area: Rect,
-    resize_behavior: ResizeBehavior,
-}
-
-impl Viewport {
-    /// UNSTABLE
-    pub fn fixed(width: u16, height: u16) -> Viewport {
-        Viewport {
-            area: Rect::new(0, 0, width, height),
-            resize_behavior: ResizeBehavior::Fixed,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-/// UNSTABLE
-enum ResizeBehavior {
-    Fixed,
-    Auto,
 }

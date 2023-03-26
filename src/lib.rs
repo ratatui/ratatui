@@ -173,4 +173,4 @@ pub mod terminal;
 pub mod text;
 pub mod widgets;
 
-pub use self::terminal::{Terminal, TerminalOptions, Viewport};
+pub use self::terminal::Terminal;
