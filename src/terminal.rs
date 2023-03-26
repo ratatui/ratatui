@@ -4,7 +4,7 @@ use crate::{
     layout::Rect,
     widgets::{StatefulWidget, Widget},
 };
-use std::io;
+use std::io::{self, Error, ErrorKind};
 
 #[derive(Debug, Clone, PartialEq)]
 /// Options to pass to [`Terminal::with_options`]
@@ -30,7 +30,7 @@ where
         self.terminal.viewport_area()
     }
 
-    pub fn resize_buffers(&mut self, width: u16, height: u16) {
+    pub fn resize_buffer(&mut self, width: u16, height: u16) {
         self.terminal.resize_buffer(width, height)
     }
 
@@ -179,10 +179,23 @@ where
         &mut self.backend
     }
 
-    pub fn viewport_scroll(&mut self, x_step: u16, y_step: u16) -> io::Result<()> {
-        self.viewport.area.x += x_step;
-        self.viewport.area.y += y_step;
-        self.clear()
+    /// `Ok` content is `Result<()>`, Nested `Ok` representing a sucessfull scroll.
+    /// Nested `Err` representing a viewport scroll overflowing buffer attempt.
+    pub fn viewport_scroll(&mut self, x_step: i16, y_step: i16) -> io::Result<io::Result<()>> {
+        let new_x_offset = self.viewport.area.x.saturating_add_signed(x_step);
+        let new_y_offset = self.viewport.area.y.saturating_add_signed(y_step);
+        if new_x_offset + self.viewport.area.width > self.buffer.get_width()
+            || new_y_offset + self.viewport.area.height > self.buffer.get_height()
+        {
+            return Ok(Err(Error::new(
+                ErrorKind::Other,
+                "Viewport scroll overflows buffer",
+            )));
+        }
+        self.viewport.area.x = new_x_offset;
+        self.viewport.area.y = new_y_offset;
+        self.draw_viewport_region()?;
+        Ok(Ok(()))
     }
 
     pub fn resize_buffer(&mut self, width: u16, height: u16) {
@@ -229,13 +242,23 @@ where
         let mut frame = Frame { terminal: self };
         f(&mut frame);
 
-        self.backend
-            .draw(self.buffer.get_region(self.viewport_area()).iter())?;
+        self.draw_viewport_region()?;
 
         Ok(CompletedFrame {
             buffer: &self.buffer,
             area: self.viewport.area,
         })
+    }
+
+    fn draw_viewport_region(&mut self) -> io::Result<()> {
+        let mut buffer_region = self.buffer.get_region(self.viewport_area());
+        // TODO: translate to (0,0)
+        buffer_region.iter_mut().for_each(|(x, y, _)| {
+            *x -= self.viewport.area.x;
+            *y -= self.viewport.area.y;
+        });
+
+        self.backend.draw(buffer_region.iter())
     }
 
     pub fn hide_cursor(&mut self) -> io::Result<()> {

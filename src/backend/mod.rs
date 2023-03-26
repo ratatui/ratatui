@@ -15,14 +15,14 @@ mod test;
 pub use self::test::TestBackend;
 
 pub trait Backend {
-    fn draw<'a, I>(&self, content: I) -> Result<(), io::Error>
+    fn draw<'a, I>(&mut self, content: I) -> Result<(), io::Error>
     where
         I: Iterator<Item = &'a (u16, u16, &'a Cell)>;
-    fn hide_cursor(&self) -> io::Result<()>;
-    fn show_cursor(&self) -> io::Result<()>;
-    fn get_cursor(&self) -> io::Result<(u16, u16)>;
-    fn set_cursor(&self, x: u16, y: u16) -> io::Result<()>;
-    fn clear(&self) -> io::Result<()>;
+    fn hide_cursor(&mut self) -> io::Result<()>;
+    fn show_cursor(&mut self) -> io::Result<()>;
+    fn get_cursor(&mut self) -> io::Result<(u16, u16)>;
+    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()>;
+    fn clear(&mut self) -> io::Result<()>;
     fn dimensions(&self) -> io::Result<(u16, u16)>;
     /// Return the size of the terminal
     fn size(&self) -> io::Result<usize> {

@@ -4,70 +4,62 @@ use crate::{
     style::{Color, Modifier},
 };
 use std::{
-    cell::RefCell,
     fmt,
     io::{self, Write},
 };
 
 pub struct TermionBackend<W: Write> {
-    stdout: RefCell<W>,
+    stdout: W,
 }
 
 impl<W: Write> TermionBackend<W> {
     pub fn new(stdout: W) -> TermionBackend<W> {
-        TermionBackend {
-            stdout: RefCell::new(stdout),
-        }
+        TermionBackend { stdout }
     }
 }
 
 impl<W: Write> Write for TermionBackend<W> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.stdout.borrow_mut().write(buf)
+        self.stdout.write(buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.stdout.borrow_mut().flush()
+        self.stdout.flush()
     }
 }
 
 impl<W: Write> Backend for TermionBackend<W> {
     /// Clears the entire screen and move the cursor to the top left of the screen
-    fn clear(&self) -> io::Result<()> {
-        write!(self.stdout.borrow_mut(), "{}", termion::clear::All)?;
-        write!(self.stdout.borrow_mut(), "{}", termion::cursor::Goto(1, 1))?;
-        self.stdout.borrow_mut().flush()
+    fn clear(&mut self) -> io::Result<()> {
+        write!(self.stdout, "{}", termion::clear::All)?;
+        write!(self.stdout, "{}", termion::cursor::Goto(1, 1))?;
+        self.stdout.flush()
     }
 
     /// Hides cursor
-    fn hide_cursor(&self) -> io::Result<()> {
-        write!(self.stdout.borrow_mut(), "{}", termion::cursor::Hide)?;
-        self.stdout.borrow_mut().flush()
+    fn hide_cursor(&mut self) -> io::Result<()> {
+        write!(self.stdout, "{}", termion::cursor::Hide)?;
+        self.stdout.flush()
     }
 
     /// Shows cursor
-    fn show_cursor(&self) -> io::Result<()> {
-        write!(self.stdout.borrow_mut(), "{}", termion::cursor::Show)?;
-        self.stdout.borrow_mut().flush()
+    fn show_cursor(&mut self) -> io::Result<()> {
+        write!(self.stdout, "{}", termion::cursor::Show)?;
+        self.stdout.flush()
     }
 
     /// Gets cursor position (0-based index)
-    fn get_cursor(&self) -> io::Result<(u16, u16)> {
-        termion::cursor::DetectCursorPos::cursor_pos(&mut *self.stdout.borrow_mut())
-            .map(|(x, y)| (x - 1, y - 1))
+    fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
+        termion::cursor::DetectCursorPos::cursor_pos(&mut self.stdout).map(|(x, y)| (x - 1, y - 1))
     }
 
     /// Sets cursor position (0-based index)
-    fn set_cursor(&self, x: u16, y: u16) -> io::Result<()> {
-        write!(
-            self.stdout.borrow_mut(),
-            "{}",
-            termion::cursor::Goto(x + 1, y + 1)
-        )?;
-        self.stdout.borrow_mut().flush()
+    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
+        write!(self.stdout, "{}", termion::cursor::Goto(x + 1, y + 1))?;
+        self.stdout.flush()
     }
 
-    fn draw<'a, I>(&self, content: I) -> io::Result<()>
+    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = &'a (u16, u16, &'a Cell)>,
     {
@@ -107,14 +99,14 @@ impl<W: Write> Backend for TermionBackend<W> {
             string.push_str(&cell.symbol);
         }
         write!(
-            self.stdout.borrow_mut(),
+            self.stdout,
             "{}{}{}{}",
             string,
             Fg(Color::Reset),
             Bg(Color::Reset),
             termion::style::Reset,
         )?;
-        self.stdout.borrow_mut().flush()
+        self.stdout.flush()
     }
 
     /// Returns the terminal dimensions

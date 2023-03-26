@@ -4,14 +4,14 @@ use crate::{
     backend::Backend,
     buffer::{Buffer, Cell},
 };
-use std::{cell::RefCell, fmt::Write, io};
+use std::{fmt::Write, io};
 
 /// A backend used for the integration tests.
 #[derive(Debug)]
 pub struct TestBackend {
-    buffer: RefCell<Buffer>,
-    cursor: RefCell<bool>,
-    pos: RefCell<(u16, u16)>,
+    buffer: Buffer,
+    cursor: bool,
+    pos: (u16, u16),
 }
 
 /// Returns a string representation of the given buffer for debugging purpose.
@@ -46,21 +46,20 @@ fn buffer_view(buffer: &Buffer) -> String {
 impl TestBackend {
     pub fn new(width: u16, height: u16) -> TestBackend {
         TestBackend {
-            buffer: RefCell::new(Buffer::empty(width, height)),
-            cursor: RefCell::new(false),
-            pos: RefCell::new((0, 0)),
+            buffer: Buffer::empty(width, height),
+            cursor: false,
+            pos: (0, 0),
         }
     }
 
     pub fn assert_buffer(&self, expected: &Buffer) {
-        assert_eq!(expected.size(), self.buffer.borrow().size());
-        if self.buffer.borrow().cells == expected.cells {
+        assert_eq!(expected.size(), self.buffer.size());
+        if self.buffer.cells == expected.cells {
             return;
         }
 
         let nice_diff = self
             .buffer
-            .borrow()
             .cells
             .iter()
             .enumerate()
@@ -83,53 +82,48 @@ impl TestBackend {
         panic!(
             "Buffers are not equal:\nExpected:\n{}\nGot:\n{}\nDiff:\n{}\n",
             buffer_view(expected),
-            buffer_view(&self.buffer.borrow()),
+            buffer_view(&self.buffer),
             nice_diff
         );
     }
 }
 
 impl Backend for TestBackend {
-    fn draw<'a, I>(&self, content: I) -> Result<(), io::Error>
+    fn draw<'a, I>(&mut self, content: I) -> Result<(), io::Error>
     where
         I: Iterator<Item = &'a (u16, u16, &'a Cell)>,
     {
-        let mut buffer = self.buffer.borrow_mut();
         for (x, y, c) in content {
-            let cell = buffer.get_mut(*x, *y);
-            *cell = (*c).clone();
+            *self.buffer.get_mut(*x, *y) = (*c).clone();
         }
         Ok(())
     }
 
-    fn hide_cursor(&self) -> Result<(), io::Error> {
-        *self.cursor.borrow_mut() = false;
+    fn hide_cursor(&mut self) -> Result<(), io::Error> {
+        self.cursor = false;
         Ok(())
     }
 
-    fn show_cursor(&self) -> Result<(), io::Error> {
-        *self.cursor.borrow_mut() = true;
+    fn show_cursor(&mut self) -> Result<(), io::Error> {
+        self.cursor = true;
         Ok(())
     }
 
-    fn get_cursor(&self) -> Result<(u16, u16), io::Error> {
-        Ok(*self.pos.borrow())
+    fn get_cursor(&mut self) -> Result<(u16, u16), io::Error> {
+        Ok(self.pos)
     }
 
-    fn set_cursor(&self, x: u16, y: u16) -> Result<(), io::Error> {
-        *self.pos.borrow_mut() = (x, y);
+    fn set_cursor(&mut self, x: u16, y: u16) -> Result<(), io::Error> {
+        self.pos = (x, y);
         Ok(())
     }
 
-    fn clear(&self) -> Result<(), io::Error> {
-        self.buffer.borrow_mut().clear();
+    fn clear(&mut self) -> Result<(), io::Error> {
+        self.buffer.clear();
         Ok(())
     }
 
     fn dimensions(&self) -> io::Result<(u16, u16)> {
-        Ok((
-            self.buffer.borrow().get_width(),
-            self.buffer.borrow().get_height(),
-        ))
+        Ok((self.buffer.get_width(), self.buffer.get_height()))
     }
 }

@@ -327,11 +327,9 @@ impl Buffer {
     }
 
     pub fn set_style(&mut self, area: Rect, style: Style) {
-        for y in area.top()..area.bottom() {
-            for x in area.left()..area.right() {
-                self.get_mut(x, y).set_style(style);
-            }
-        }
+        Self::map_buffer_region(area, |x, y| {
+            self.get_mut(x, y).set_style(style);
+        });
     }
 
     /// Short-hand for width * height or cells.len()

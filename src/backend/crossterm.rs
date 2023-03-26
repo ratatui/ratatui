@@ -12,47 +12,42 @@ use crossterm::{
     },
     terminal::{self, Clear, ClearType},
 };
-use std::{
-    cell::RefCell,
-    io::{self, Write},
-};
+use std::io::{self, Write};
 
 pub struct CrosstermBackend<W: Write> {
-    stdout: RefCell<W>,
+    stdout: W,
 }
 
 impl<W: Write> CrosstermBackend<W> {
     pub fn new(buffer: W) -> CrosstermBackend<W> {
-        CrosstermBackend {
-            stdout: RefCell::new(buffer),
-        }
+        CrosstermBackend { stdout: buffer }
     }
 }
 
 impl<W: Write> Write for CrosstermBackend<W> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.stdout.borrow_mut().write(buf)
+        self.stdout.write(buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.stdout.borrow_mut().flush()
+        self.stdout.flush()
     }
 }
 
 impl<W: Write> Backend for CrosstermBackend<W> {
-    fn draw<'a, I>(&self, content: I) -> io::Result<()>
+    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = &'a (u16, u16, &'a Cell)>,
     {
+        let mut queue = Vec::with_capacity(content.size_hint().0 * 3);
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
         let mut modifier = Modifier::empty();
         let mut last_pos: Option<(u16, u16)> = None;
-        let mut stdout = self.stdout.borrow_mut();
         for (x, y, cell) in content {
             // Move the cursor if the previous location was not (x - 1, y)
             if !matches!(last_pos, Some(p) if *x == p.0 + 1 && *y == p.1) {
-                map_result(queue!(stdout, MoveTo(*x, *y)))?;
+                map_result(queue!(queue, MoveTo(*x, *y)))?;
             }
             last_pos = Some((*x, *y));
             if cell.modifier != modifier {
@@ -60,51 +55,51 @@ impl<W: Write> Backend for CrosstermBackend<W> {
                     from: modifier,
                     to: cell.modifier,
                 };
-                diff.queue(&mut *stdout)?;
+                diff.queue(&mut queue)?;
                 modifier = cell.modifier;
             }
             if cell.fg != fg {
                 let color = CColor::from(cell.fg);
-                map_result(queue!(stdout, SetForegroundColor(color)))?;
+                map_result(queue!(queue, SetForegroundColor(color)))?;
                 fg = cell.fg;
             }
             if cell.bg != bg {
                 let color = CColor::from(cell.bg);
-                map_result(queue!(stdout, SetBackgroundColor(color)))?;
+                map_result(queue!(queue, SetBackgroundColor(color)))?;
                 bg = cell.bg;
             }
 
-            map_result(queue!(stdout, Print(&cell.symbol)))?;
+            map_result(queue!(queue, Print(&cell.symbol)))?;
         }
 
         map_result(queue!(
-            stdout,
+            queue,
             SetForegroundColor(CColor::Reset),
             SetBackgroundColor(CColor::Reset),
             SetAttribute(CAttribute::Reset)
         ))?;
-        self.stdout.borrow_mut().flush()
+        self.stdout.write_all(queue.as_slice())
     }
 
-    fn hide_cursor(&self) -> io::Result<()> {
-        map_result(execute!(self.stdout.borrow_mut(), Hide))
+    fn hide_cursor(&mut self) -> io::Result<()> {
+        map_result(execute!(self.stdout, Hide))
     }
 
-    fn show_cursor(&self) -> io::Result<()> {
-        map_result(execute!(self.stdout.borrow_mut(), Show))
+    fn show_cursor(&mut self) -> io::Result<()> {
+        map_result(execute!(self.stdout, Show))
     }
 
-    fn get_cursor(&self) -> io::Result<(u16, u16)> {
+    fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
         crossterm::cursor::position()
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 
-    fn set_cursor(&self, x: u16, y: u16) -> io::Result<()> {
-        map_result(execute!(self.stdout.borrow_mut(), MoveTo(x, y)))
+    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
+        map_result(execute!(self.stdout, MoveTo(x, y)))
     }
 
-    fn clear(&self) -> io::Result<()> {
-        map_result(execute!(self.stdout.borrow_mut(), Clear(ClearType::All)))
+    fn clear(&mut self) -> io::Result<()> {
+        map_result(execute!(self.stdout, Clear(ClearType::All)))
     }
 
     fn dimensions(&self) -> io::Result<(u16, u16)> {
