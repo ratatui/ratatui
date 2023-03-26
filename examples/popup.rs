@@ -3,7 +3,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, Borders, Clear, Paragraph, Wrap},
+    widgets::{Block, Borders, Paragraph, Wrap},
     Terminal,
 };
 use std::{error::Error, io};
@@ -94,7 +94,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
     if app.show_popup {
         let block = Block::default().title("Popup").borders(Borders::ALL);
         let area = centered_rect(60, 20, size);
-        terminal.render_widget(Clear, area); //this clears out the background
+        terminal.clear_region(area);
         terminal.render_widget(block, area);
     }
     terminal.flush()?;

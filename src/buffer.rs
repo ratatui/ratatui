@@ -364,6 +364,10 @@ impl Buffer {
         Self::map_buffer_region(area, |x, y| self.get_mut(x, y).clear())
     }
 
+    pub fn fill_region(&mut self, area: Rect, cell: &Cell) {
+        Self::map_buffer_region(area, |x, y| *self.get_mut(x, y) = cell.clone())
+    }
+
     // Merge other buffer with self.
     pub fn merge(&mut self, mut other: Buffer) {
         let a_self = Rect::new(0, 0, self.width, self.height);
