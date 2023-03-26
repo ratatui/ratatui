@@ -1,6 +1,6 @@
 use crate::{
     buffer::Buffer,
-    layout::{Constraint, Direction, Extend, Layout, Rect},
+    layout::{Constraint, Direction, Layout, Rect},
     style::Style,
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
@@ -283,7 +283,7 @@ impl<'a> Table<'a> {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(constraints)
-            .extend(Extend::None)
+            .extend(false)
             .split(Rect {
                 x: 0,
                 y: 0,

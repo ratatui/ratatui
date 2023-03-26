@@ -64,18 +64,11 @@ pub enum Alignment {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Extend {
-    Viewport,
-    Overflow,
-    None,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Layout {
     direction: Direction,
     margin: Margin,
     constraints: Vec<Constraint>,
-    extend: Extend,
+    extend: bool,
 }
 
 type Cache = HashMap<(Rect, Layout), Rc<[Rect]>>;
@@ -92,7 +85,7 @@ impl Default for Layout {
                 vertical: 0,
             },
             constraints: Vec::new(),
-            extend: Extend::Viewport,
+            extend: true,
         }
     }
 }
@@ -129,7 +122,9 @@ impl Layout {
         self
     }
 
-    pub(crate) fn extend(mut self, extend: Extend) -> Layout {
+    /// Set or unset contstaint to extend last element to layout area boundary.
+    /// True by default.
+    pub(crate) fn extend(mut self, extend: bool) -> Layout {
         self.extend = extend;
         self
     }
@@ -231,23 +226,13 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         });
     }
 
-    // Extend constaints
-    match layout.extend {
-        Extend::Viewport => {
-            if let Some(last) = elements.last() {
-                ccs.push(match layout.direction {
-                    Direction::Horizontal => {
-                        last.right() | EQ(REQUIRED) | f64::from(dest_area.right())
-                    }
-                    Direction::Vertical => {
-                        last.bottom() | EQ(REQUIRED) | f64::from(dest_area.bottom())
-                    }
-                });
-            }
+    if layout.extend {
+        if let Some(last) = elements.last() {
+            ccs.push(match layout.direction {
+                Direction::Horizontal => last.right() | EQ(REQUIRED) | f64::from(dest_area.right()),
+                Direction::Vertical => last.bottom() | EQ(REQUIRED) | f64::from(dest_area.bottom()),
+            });
         }
-        // TEMP: might remove, none possibly acts as overflow
-        Extend::Overflow => todo!(),
-        Extend::None => (),
     }
 
     match layout.direction {
@@ -351,23 +336,20 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         }
     }
 
-    match layout.extend {
-        Extend::Viewport => {
-            // Fix solution imprecision by extending the last item a bit if necessary
-            if let Some(last) = results.last_mut() {
-                match layout.direction {
-                    Direction::Vertical => {
-                        last.height = dest_area.bottom() - last.y;
-                    }
-                    Direction::Horizontal => {
-                        last.width = dest_area.right() - last.x;
-                    }
+    if layout.extend {
+        // Fix solution imprecision by extending the last item a bit if necessary
+        if let Some(last) = results.last_mut() {
+            match layout.direction {
+                Direction::Vertical => {
+                    last.height = dest_area.bottom() - last.y;
+                }
+                Direction::Horizontal => {
+                    last.width = dest_area.right() - last.x;
                 }
             }
         }
-        Extend::Overflow => (),
-        Extend::None => (),
     }
+
     res
 }
 
