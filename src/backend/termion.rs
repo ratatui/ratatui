@@ -9,17 +9,11 @@ use std::{
     io::{self, Write},
 };
 
-pub struct TermionBackend<W>
-where
-    W: Write,
-{
+pub struct TermionBackend<W: Write> {
     stdout: RefCell<W>,
 }
 
-impl<W> TermionBackend<W>
-where
-    W: Write,
-{
+impl<W: Write> TermionBackend<W> {
     pub fn new(stdout: W) -> TermionBackend<W> {
         TermionBackend {
             stdout: RefCell::new(stdout),
@@ -27,10 +21,7 @@ where
     }
 }
 
-impl<W> Write for TermionBackend<W>
-where
-    W: Write,
-{
+impl<W: Write> Write for TermionBackend<W> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.stdout.borrow_mut().write(buf)
     }
@@ -40,10 +31,7 @@ where
     }
 }
 
-impl<W> Backend for TermionBackend<W>
-where
-    W: Write,
-{
+impl<W: Write> Backend for TermionBackend<W> {
     /// Clears the entire screen and move the cursor to the top left of the screen
     fn clear(&self) -> io::Result<()> {
         write!(self.stdout.borrow_mut(), "{}", termion::clear::All)?;

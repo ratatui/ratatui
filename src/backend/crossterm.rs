@@ -22,10 +22,7 @@ pub struct CrosstermBackend<W: Write> {
     stdout: RefCell<W>,
 }
 
-impl<W> CrosstermBackend<W>
-where
-    W: Write,
-{
+impl<W: Write> CrosstermBackend<W> {
     pub fn new(buffer: W) -> CrosstermBackend<W> {
         CrosstermBackend {
             stdout: RefCell::new(buffer),
@@ -33,10 +30,7 @@ where
     }
 }
 
-impl<W> Write for CrosstermBackend<W>
-where
-    W: Write,
-{
+impl<W: Write> Write for CrosstermBackend<W> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.stdout.borrow_mut().write(buf)
     }
@@ -46,10 +40,7 @@ where
     }
 }
 
-impl<W> Backend for CrosstermBackend<W>
-where
-    W: Write,
-{
+impl<W: Write> Backend for CrosstermBackend<W> {
     fn draw<'a, I>(&self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = &'a (u16, u16, &'a Cell)>,
@@ -116,8 +107,6 @@ where
         map_result(execute!(self.stdout.borrow_mut(), Clear(ClearType::All)))
     }
 
-    fn
-
     fn dimensions(&self) -> io::Result<(u16, u16)> {
         terminal::size().map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
@@ -164,10 +153,7 @@ struct ModifierDiff {
 }
 
 impl ModifierDiff {
-    fn queue<W>(&self, w: &mut W) -> io::Result<()>
-    where
-        W: io::Write,
-    {
+    fn queue<W: Write>(&self, w: &mut W) -> io::Result<()> {
         //use crossterm::Attribute;
         let removed = self.from - self.to;
         if removed.contains(Modifier::REVERSED) {
