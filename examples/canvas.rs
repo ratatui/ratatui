@@ -177,6 +177,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .x_bounds([10.0, 110.0])
         .y_bounds([10.0, 110.0]);
     terminal.render_widget(canvas, chunks[1]);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

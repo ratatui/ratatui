@@ -120,6 +120,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         _ => unreachable!(),
     };
     terminal.render_widget(inner, chunks[1]);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

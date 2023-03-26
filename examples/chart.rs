@@ -298,6 +298,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                 ]),
         );
     terminal.render_widget(chart, chunks[2]);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

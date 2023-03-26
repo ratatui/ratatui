@@ -115,6 +115,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
         .borders(Borders::LEFT | Borders::RIGHT)
         .border_type(BorderType::Double);
     terminal.render_widget(block, bottom_chunks[1]);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

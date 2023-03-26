@@ -162,6 +162,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .percent(app.progress4)
         .label(label);
     terminal.render_widget(gauge, chunks[3]);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

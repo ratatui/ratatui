@@ -194,6 +194,5 @@ fn draw_ui<B: Backend>(
     let messages =
         List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
     terminal.render_widget(messages, layout[2]);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

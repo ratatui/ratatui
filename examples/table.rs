@@ -151,6 +151,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
             Constraint::Min(10),
         ]);
     terminal.render_stateful_widget(t, rects[0], &mut app.state);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

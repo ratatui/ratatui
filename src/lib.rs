@@ -155,8 +155,7 @@
 //!          .title("Block 2")
 //!          .borders(Borders::ALL);
 //!     terminal.render_widget(block, chunks[1]);
-//!     terminal.flush()?;
-//!     Ok(())
+//!     terminal.flush()
 //! }
 //! ```
 //!

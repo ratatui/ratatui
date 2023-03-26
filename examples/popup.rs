@@ -97,8 +97,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         terminal.clear_region(area);
         terminal.render_widget(block, area);
     }
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`

@@ -13,14 +13,6 @@ pub struct TerminalOptions {
     pub viewport: Viewport,
 }
 
-/// CompletedFrame represents the state of the terminal after all changes performed in the last
-/// [`Terminal::draw`] call have been applied. Therefore, it is only valid until the next call to
-/// [`Terminal::draw`].
-pub struct CompletedFrame<'a> {
-    pub buffer: &'a Buffer,
-    pub area: Rect,
-}
-
 /// Interface to the terminal backed by Termion
 #[derive(Debug)]
 pub struct Terminal<B>
@@ -139,6 +131,10 @@ where
         self.viewport.area
     }
 
+    pub fn get_buffer(&self) -> &Buffer {
+        &self.buffer
+    }
+
     pub fn backend(&self) -> &B {
         &self.backend
     }
@@ -199,15 +195,11 @@ where
 
     /// Synchronizes terminal size, calls the rendering closure, flushes the current internal state
     /// and prepares for the next draw call.
-    pub fn flush(&mut self) -> io::Result<CompletedFrame> {
+    pub fn flush(&mut self) -> io::Result<()> {
         // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
         // and the terminal (if growing), which may OOB.
         self.autoresize()?;
-        self.flush_viewport_region()?;
-        Ok(CompletedFrame {
-            buffer: &self.buffer,
-            area: self.viewport.area,
-        })
+        self.flush_viewport_region()
     }
 
     fn flush_viewport_region(&mut self) -> io::Result<()> {

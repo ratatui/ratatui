@@ -167,6 +167,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .alignment(Alignment::Right)
         .wrap(Wrap { trim: true });
     terminal.render_widget(paragraph, chunks[3]);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

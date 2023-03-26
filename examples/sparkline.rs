@@ -172,6 +172,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .data(&app.data3)
         .style(Style::default().fg(Color::Red));
     terminal.render_widget(sparkline, chunks[2]);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

@@ -65,8 +65,7 @@ pub fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Res
         height: panel_size.height,
     };
     terminal.render_widget(logo.paragraph, logo_area);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }
 
 fn render_first_tab<B>(terminal: &mut Terminal<B>, app: &mut App, area: Rect)

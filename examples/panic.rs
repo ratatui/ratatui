@@ -138,6 +138,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
     let p = Paragraph::new(text).block(b).alignment(Alignment::Center);
 
     terminal.render_widget(p, terminal.viewport_area());
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

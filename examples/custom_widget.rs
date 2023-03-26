@@ -73,6 +73,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     let size = terminal.viewport_area();
     let label = Label::default().text("Test");
     terminal.render_widget(label, size);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

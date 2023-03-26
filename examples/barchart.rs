@@ -158,6 +158,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                 .add_modifier(Modifier::ITALIC),
         );
     terminal.render_widget(barchart, chunks[1]);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }

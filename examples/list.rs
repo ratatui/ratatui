@@ -282,6 +282,5 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
         .block(Block::default().borders(Borders::ALL).title("List"))
         .start_corner(Corner::BottomLeft);
     terminal.render_widget(events_list, chunks[1]);
-    terminal.flush()?;
-    Ok(())
+    terminal.flush()
 }
