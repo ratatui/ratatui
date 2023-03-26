@@ -1,4 +1,4 @@
-use crate::{app::App, help::Help};
+use crate::{app::App, util::*};
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
@@ -14,13 +14,15 @@ use ratatui::{
 };
 
 pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
-    let help = Help::new();
+    let help = ParagraphArea::new(HELP);
+    let logo = ParagraphArea::new(LOGO);
     let viewport_area = f.viewport_area();
-    let buffer_size = Rect {
+    let panel_size = Rect {
         height: viewport_area.height + help.height,
-        ..viewport_area
+        width: viewport_area.width,
+        x: 0,
+        y: 0,
     };
-    f.resize_buffers(buffer_size.width, buffer_size.height);
     let chunks = Layout::default()
         .constraints(
             [
@@ -30,7 +32,8 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             ]
             .as_ref(),
         )
-        .split(buffer_size);
+        .split(panel_size);
+    f.resize_buffer(panel_size.width + logo.width, panel_size.height);
     let titles = app
         .tabs
         .titles
@@ -53,6 +56,13 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         _ => {}
     };
     f.render_widget(help.paragraph, chunks[2]);
+    let logo_area = Rect {
+        x: panel_size.width,
+        y: 0,
+        width: logo.width,
+        height: panel_size.height,
+    };
+    f.render_widget(logo.paragraph, logo_area)
 }
 
 fn draw_first_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)

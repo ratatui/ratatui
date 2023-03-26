@@ -40,7 +40,11 @@ fn run_app<B: Backend>(
 
         match events.recv()? {
             Event::Input(key) => match key {
-                Key::Char(c) if c == 'd' => terminal.viewport_scroll(0, 1)?,
+                // Silently ignore viewport overscroll attempts.
+                Key::Char(c) if c == 'u' => terminal.viewport_scroll(0, -1)?.unwrap_or(()),
+                Key::Char(c) if c == 'd' => terminal.viewport_scroll(0, 1)?.unwrap_or(()),
+                Key::Char(c) if c == 'n' => terminal.viewport_scroll(1, 0)?.unwrap_or(()),
+                Key::Char(c) if c == 'p' => terminal.viewport_scroll(-1, 0)?.unwrap_or(()),
                 Key::Char(c) => app.on_key(c),
                 Key::Up => app.on_up(),
                 Key::Down => app.on_down(),
