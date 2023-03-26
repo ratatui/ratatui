@@ -23,12 +23,10 @@ pub trait Backend {
     fn get_cursor(&self) -> io::Result<(u16, u16)>;
     fn set_cursor(&self, x: u16, y: u16) -> io::Result<()>;
     fn clear(&self) -> io::Result<()>;
-    fn clear_region(&self) -> io::Result<()>;
     fn dimensions(&self) -> io::Result<(u16, u16)>;
     /// Return the size of the terminal
     fn size(&self) -> io::Result<usize> {
         let (w, h) = self.dimensions()?;
         Ok(w as usize * h as usize)
     }
-    fn flush(&self) -> io::Result<()>;
 }

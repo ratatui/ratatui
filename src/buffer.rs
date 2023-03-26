@@ -171,6 +171,19 @@ impl Buffer {
         self.height
     }
 
+    pub fn get_region(&self, area: Rect) -> Vec<(u16, u16, &Cell)> {
+        let mut sub_buffer = Vec::with_capacity(area.size());
+        Self::map_buffer_region(area, |x, y| sub_buffer.push((x, y, self.get(x, y))));
+        sub_buffer
+    }
+
+    fn map_buffer_region<F: FnMut(u16, u16)>(area: Rect, mut closure: F) {
+        for i_y in area.y..(area.y + area.height) {
+            for i_x in area.x..(area.x + area.width) {
+                closure(i_x, i_y)
+            }
+        }
+    }
     /// Returns the index in the `Vec<Cell>` for the given global (x, y) coordinates.
     ///
     /// # Examples
@@ -343,10 +356,14 @@ impl Buffer {
     }
 
     /// Reset all cells in the buffer
-    pub fn reset(&mut self) {
+    pub fn clear(&mut self) {
         for c in &mut self.cells {
             c.clear();
         }
+    }
+
+    pub fn clear_region(&mut self, area: Rect) {
+        Self::map_buffer_region(area, |x, y| self.get_mut(x, y).clear())
     }
 
     // Merge other buffer with self.

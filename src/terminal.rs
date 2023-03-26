@@ -1,12 +1,10 @@
-use unicode_width::UnicodeWidthStr;
-
 use crate::{
     backend::Backend,
-    buffer::{Buffer, Cell},
+    buffer::Buffer,
     layout::Rect,
     widgets::{StatefulWidget, Widget},
 };
-use std::{cmp::min, io};
+use std::io;
 
 #[derive(Debug, Clone, PartialEq)]
 /// Options to pass to [`Terminal::with_options`]
@@ -33,7 +31,7 @@ where
     }
 
     pub fn resize_buffers(&mut self, width: u16, height: u16) {
-        self.terminal.resize_buffers(width, height)
+        self.terminal.resize_buffer(width, height)
     }
 
     pub fn clear(&mut self) {
@@ -41,7 +39,7 @@ where
     }
 
     pub fn clear_region(&mut self, area: Rect) {
-        self.terminal.clear_region(area).unwrap()
+        self.terminal.clear_buffer_region(area)
     }
 
     /// Render a [`Widget`] to the current buffer using [`Widget::render`].
@@ -63,7 +61,7 @@ where
     where
         W: Widget,
     {
-        widget.render(area, &mut self.terminal.buffers[self.terminal.current]);
+        widget.render(area, &mut self.terminal.buffer);
     }
 
     /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
@@ -94,11 +92,7 @@ where
     where
         W: StatefulWidget,
     {
-        widget.render(
-            area,
-            &mut self.terminal.buffers[self.terminal.current],
-            state,
-        );
+        widget.render(area, &mut self.terminal.buffer, state);
     }
 
     pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
@@ -121,11 +115,7 @@ where
     B: Backend,
 {
     backend: B,
-    /// Holds the results of the current and previous draw calls. The two are compared at the end
-    /// of each draw pass to output the necessary updates to the terminal
-    buffers: [Buffer; 2],
-    /// Index of the current buffer in the previous array
-    current: usize,
+    buffer: Buffer,
     /// Whether the cursor is currently hidden
     hidden_cursor: bool,
     /// Viewport
@@ -171,8 +161,7 @@ where
         let height = options.viewport.area.height;
         Ok(Terminal {
             backend,
-            buffers: [Buffer::empty(width, height), Buffer::empty(width, height)],
-            current: 0,
+            buffer: Buffer::empty(width, height),
             hidden_cursor: false,
             viewport: options.viewport,
         })
@@ -196,18 +185,8 @@ where
         self.clear()
     }
 
-    pub fn resize_buffers(&mut self, width: u16, height: u16) {
-        self.buffers
-            .iter_mut()
-            .for_each(|buffer| buffer.resize(width, height))
-    }
-
-    /// Obtains a difference between the previous and the current buffer and passes it to the
-    /// current backend for drawing.
-    pub fn flush(&mut self) -> io::Result<()> {
-        let updates = &self.diff();
-        self.backend.draw(updates.iter())?;
-        self.backend.flush()
+    pub fn resize_buffer(&mut self, width: u16, height: u16) {
+        self.buffer.resize(width, height)
     }
 
     /// Queries the backend for its viewport size and resizes frontend viewport size
@@ -218,10 +197,8 @@ where
             if self.backend.size()? != self.viewport.area.size() {
                 self.viewport.area.width = b_width;
                 self.viewport.area.height = b_height;
-                if self.buffers[0].cells.len() < self.backend.size()? {
-                    self.buffers
-                        .iter_mut()
-                        .for_each(|buffer| buffer.resize(b_width, b_height))
+                if self.buffer.cells.len() < self.backend.size()? {
+                    self.buffer.resize(b_width, b_height)
                 }
                 self.clear()?
             }
@@ -229,25 +206,14 @@ where
         Ok(())
     }
 
+    /// Clears buffer and backend.
     fn clear(&mut self) -> io::Result<()> {
-        self.buffers.iter_mut().for_each(|buffer| buffer.reset());
+        self.buffer.clear();
         self.backend.clear()
     }
 
-    fn clear_region(&mut self, area: Rect) -> io::Result<()> {
-        self.buffers
-            .iter_mut()
-            .for_each(|buffer| Self::map_buffer_region(area, |x, y| buffer.get_mut(x, y).clear()));
-        let (backend_width, backend_height) = self.backend.dimensions()?;
-        let backend_area = Rect {
-            width: min(area.width, backend_width),
-            height: min(area.height, backend_height),
-            ..area
-        };
-        Self::map_buffer_region(backend_area, |x, y| {
-            //
-            self.backend.
-        });
+    fn clear_buffer_region(&mut self, area: Rect) {
+        self.buffer.clear_region(area);
     }
 
     /// Synchronizes terminal size, calls the rendering closure, flushes the current internal state
@@ -263,14 +229,11 @@ where
         let mut frame = Frame { terminal: self };
         f(&mut frame);
 
-        // Draw to stdout
-        self.flush()?;
-
-        // Swap buffers
-        self.current = 1 - self.current;
+        self.backend
+            .draw(self.buffer.get_region(self.viewport_area()).iter())?;
 
         Ok(CompletedFrame {
-            buffer: &self.buffers[1 - self.current],
+            buffer: &self.buffer,
             area: self.viewport.area,
         })
     }
@@ -293,77 +256,6 @@ where
 
     pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
         self.backend.set_cursor(x, y)
-    }
-
-    // /// Clear the terminal and force a full redraw on the next draw call.
-    // pub fn clear(&mut self) -> io::Result<()> {
-    //     self.backend.clear()?;
-    //     // Reset the back buffer to make sure the next update will redraw everything.
-    //     self.buffers[1 - self.current].reset();
-    //     Ok(())
-    // }
-
-    /// Builds a minimal sequence of coordinates and Cells necessary to update the UI from
-    /// self to other. Will only scan part of buffer that is shown through the viewport.
-    ///
-    /// We're assuming that buffers are well-formed, that is no double-width cell is followed by
-    /// a non-blank cell, (grapheme alligned).
-    ///
-    /// # Multi-width characters handling:
-    ///
-    /// ```text
-    /// (Index:) `01`
-    /// Prev:    `コ`
-    /// Next:    `aa`
-    /// Updates: `0: a, 1: a'
-    /// ```
-    ///
-    /// ```text
-    /// (Index:) `01`
-    /// Prev:    `a `
-    /// Next:    `コ`
-    /// Updates: `0: コ` (double width symbol at index 0 - skip index 1)
-    /// ```
-    ///
-    /// ```text
-    /// (Index:) `012`
-    /// Prev:    `aaa`
-    /// Next:    `aコ`
-    /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
-    /// ```
-    pub fn diff(&self) -> Vec<(u16, u16, &Cell)> {
-        let prev_buffer = &self.buffers[1 - self.current];
-        let next_buffer = &self.buffers[self.current];
-
-        let mut updates: Vec<(u16, u16, &Cell)> = Vec::new();
-        // Cells invalidated by drawing/replacing preceding multi-width characters:
-        let mut invalidated: usize = 0;
-        // Cells from the current buffer to skip due to preceding multi-width characters taking their
-        // place (the skipped cells should be blank anyway):
-        let mut to_skip: usize = 0;
-        let area = self.viewport.area;
-        Self::map_buffer_region(area, |i_x, i_y| {
-            let curr_cell = prev_buffer.get(i_x, i_y);
-            let next_cell = next_buffer.get(i_x, i_y);
-
-            if (curr_cell != next_cell || invalidated > 0) && to_skip == 0 {
-                updates.push((i_x, i_y, next_cell));
-            }
-
-            to_skip = next_cell.symbol.width().saturating_sub(1);
-
-            let affected_width = std::cmp::max(curr_cell.symbol.width(), next_cell.symbol.width());
-            invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
-        });
-        updates
-    }
-
-    fn map_buffer_region<F: FnMut(u16, u16)>(area: Rect, mut closure: F) {
-        for i_y in area.y..(area.y + area.height) {
-            for i_x in area.x..(area.x + area.width) {
-                closure(i_x, i_y)
-            }
-        }
     }
 }
 

@@ -113,16 +113,13 @@ impl<W: Write> Backend for TermionBackend<W> {
             Fg(Color::Reset),
             Bg(Color::Reset),
             termion::style::Reset,
-        )
+        )?;
+        self.stdout.borrow_mut().flush()
     }
 
     /// Returns the terminal dimensions
     fn dimensions(&self) -> io::Result<(u16, u16)> {
         termion::terminal_size()
-    }
-
-    fn flush(&self) -> io::Result<()> {
-        self.stdout.borrow_mut().flush()
     }
 }
 

@@ -365,15 +365,16 @@ impl TableState {
 impl<'a> StatefulWidget for Table<'a> {
     type State = TableState;
 
-    fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(mut self, area: Rect, buffer: &mut Buffer, state: &mut Self::State) {
         if area.size() == 0 {
             return;
         }
-        buf.set_style(area, self.style);
+        buffer.clear_region(area);
+        buffer.set_style(area, self.style);
         let table_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
+            Some(block) => {
+                let inner_area = block.inner(area);
+                block.render(area, buffer);
                 inner_area
             }
             None => area,
@@ -389,7 +390,7 @@ impl<'a> StatefulWidget for Table<'a> {
         // Draw header
         if let Some(ref header) = self.header {
             let max_header_height = table_area.height.min(header.total_height());
-            buf.set_style(
+            buffer.set_style(
                 Rect {
                     x: table_area.left(),
                     y: table_area.top(),
@@ -404,7 +405,7 @@ impl<'a> StatefulWidget for Table<'a> {
             }
             for (width, cell) in columns_widths.iter().zip(header.cells.iter()) {
                 render_cell(
-                    buf,
+                    buffer,
                     cell,
                     Rect {
                         x: col,
@@ -440,7 +441,7 @@ impl<'a> StatefulWidget for Table<'a> {
                 width: table_area.width,
                 height: table_row.height,
             };
-            buf.set_style(table_row_area, table_row.style);
+            buffer.set_style(table_row_area, table_row.style);
             let is_selected = state.selected.map(|s| s == i).unwrap_or(false);
             let table_row_start_col = if has_selection {
                 let symbol = if is_selected {
@@ -448,7 +449,8 @@ impl<'a> StatefulWidget for Table<'a> {
                 } else {
                     &blank_symbol
                 };
-                let (col, _) = buf.set_stringn(col, row, symbol, table_area.width, table_row.style);
+                let (col, _) =
+                    buffer.set_stringn(col, row, symbol, table_area.width, table_row.style);
                 col
             } else {
                 col
@@ -456,7 +458,7 @@ impl<'a> StatefulWidget for Table<'a> {
             let mut col = table_row_start_col;
             for (width, cell) in columns_widths.iter().zip(table_row.cells.iter()) {
                 render_cell(
-                    buf,
+                    buffer,
                     cell,
                     Rect {
                         x: col,
@@ -468,7 +470,7 @@ impl<'a> StatefulWidget for Table<'a> {
                 col += *width + self.column_spacing;
             }
             if is_selected {
-                buf.set_style(table_row_area, self.highlight_style);
+                buffer.set_style(table_row_area, self.highlight_style);
             }
         }
     }

@@ -174,12 +174,13 @@ impl<'a> List<'a> {
 impl<'a> StatefulWidget for List<'a> {
     type State = ListState;
 
-    fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        buf.set_style(area, self.style);
+    fn render(mut self, area: Rect, buffer: &mut Buffer, state: &mut Self::State) {
+        buffer.clear_region(area);
+        buffer.set_style(area, self.style);
         let list_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
+            Some(block) => {
+                let inner_area = block.inner(area);
+                block.render(area, buffer);
                 inner_area
             }
             None => area,
@@ -227,7 +228,7 @@ impl<'a> StatefulWidget for List<'a> {
                 height: item.height() as u16,
             };
             let item_style = self.style.patch(item.style);
-            buf.set_style(area, item_style);
+            buffer.set_style(area, item_style);
 
             let is_selected = state.selected.map(|s| s == i).unwrap_or(false);
             for (j, line) in item.content.lines.iter().enumerate() {
@@ -241,15 +242,15 @@ impl<'a> StatefulWidget for List<'a> {
                 };
                 let (elem_x, max_element_width) = if has_selection {
                     let (elem_x, _) =
-                        buf.set_stringn(x, y + j as u16, symbol, list_area.width, item_style);
+                        buffer.set_stringn(x, y + j as u16, symbol, list_area.width, item_style);
                     (elem_x, (list_area.width - (elem_x - x)))
                 } else {
                     (x, list_area.width)
                 };
-                buf.set_spans(elem_x, y + j as u16, line, max_element_width);
+                buffer.set_spans(elem_x, y + j as u16, line, max_element_width);
             }
             if is_selected {
-                buf.set_style(area, self.highlight_style);
+                buffer.set_style(area, self.highlight_style);
             }
         }
     }

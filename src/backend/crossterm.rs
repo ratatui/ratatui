@@ -11,7 +11,6 @@ use crossterm::{
         SetForegroundColor,
     },
     terminal::{self, Clear, ClearType},
-    ExecutableCommand,
 };
 use std::{
     cell::RefCell,
@@ -83,7 +82,8 @@ impl<W: Write> Backend for CrosstermBackend<W> {
             SetForegroundColor(CColor::Reset),
             SetBackgroundColor(CColor::Reset),
             SetAttribute(CAttribute::Reset)
-        ))
+        ))?;
+        self.stdout.borrow_mut().flush()
     }
 
     fn hide_cursor(&self) -> io::Result<()> {
@@ -109,10 +109,6 @@ impl<W: Write> Backend for CrosstermBackend<W> {
 
     fn dimensions(&self) -> io::Result<(u16, u16)> {
         terminal::size().map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
-    }
-
-    fn flush(&self) -> io::Result<()> {
-        self.stdout.borrow_mut().flush()
     }
 }
 

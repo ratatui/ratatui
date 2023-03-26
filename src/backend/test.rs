@@ -122,7 +122,7 @@ impl Backend for TestBackend {
     }
 
     fn clear(&self) -> Result<(), io::Error> {
-        self.buffer.borrow_mut().reset();
+        self.buffer.borrow_mut().clear();
         Ok(())
     }
 
@@ -131,9 +131,5 @@ impl Backend for TestBackend {
             self.buffer.borrow().get_width(),
             self.buffer.borrow().get_height(),
         ))
-    }
-
-    fn flush(&self) -> Result<(), io::Error> {
-        Ok(())
     }
 }
