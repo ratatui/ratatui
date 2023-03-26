@@ -21,6 +21,7 @@ pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn E
     let stdout = MouseTerminal::from(stdout);
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
+    terminal.hide_cursor()?;
 
     // create app and run it
     let app = App::new("Termion demo", enhanced_graphics);

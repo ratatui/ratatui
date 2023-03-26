@@ -21,9 +21,6 @@ where
 {
     backend: B,
     buffer: Buffer,
-    /// Whether the cursor is currently hidden
-    hidden_cursor: bool,
-    /// Viewport
     viewport: Viewport,
 }
 
@@ -33,10 +30,8 @@ where
 {
     fn drop(&mut self) {
         // Attempt to restore the cursor state
-        if self.hidden_cursor {
-            if let Err(err) = self.show_cursor() {
-                eprintln!("Failed to show the cursor: {}", err);
-            }
+        if let Err(err) = self.show_cursor() {
+            eprintln!("Failed to show the cursor: {}", err);
         }
     }
 }
@@ -67,7 +62,6 @@ where
         Ok(Terminal {
             backend,
             buffer: Buffer::empty(width, height),
-            hidden_cursor: false,
             viewport: options.viewport,
         })
     }
@@ -193,18 +187,15 @@ where
         self.buffer.clear_region(area);
     }
 
-    /// Synchronizes terminal size, calls the rendering closure, flushes the current internal state
-    /// and prepares for the next draw call.
+    /// Flush buffer content to backend.
+    /// Content flushed is based on the viewport offset and backend terminal size.
     pub fn flush(&mut self) -> io::Result<()> {
-        // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
-        // and the terminal (if growing), which may OOB.
         self.autoresize()?;
         self.flush_viewport_region()
     }
 
     fn flush_viewport_region(&mut self) -> io::Result<()> {
         let mut buffer_region = self.buffer.get_region(self.viewport_area());
-        // TODO: translate to (0,0)
         buffer_region.iter_mut().for_each(|(x, y, _)| {
             *x -= self.viewport.area.x;
             *y -= self.viewport.area.y;
@@ -214,15 +205,11 @@ where
     }
 
     pub fn hide_cursor(&mut self) -> io::Result<()> {
-        self.backend.hide_cursor()?;
-        self.hidden_cursor = true;
-        Ok(())
+        self.backend.hide_cursor()
     }
 
     pub fn show_cursor(&mut self) -> io::Result<()> {
-        self.backend.show_cursor()?;
-        self.hidden_cursor = false;
-        Ok(())
+        self.backend.show_cursor()
     }
 
     pub fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
