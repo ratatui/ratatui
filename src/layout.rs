@@ -459,7 +459,7 @@ impl Rect {
         }
     }
 
-    pub fn union(self, other: &Rect) -> Rect {
+    pub fn union(&self, other: &Rect) -> Rect {
         let x1 = min(self.x, other.x);
         let y1 = min(self.y, other.y);
         let x2 = max(self.x + self.width, other.x + other.width);
@@ -472,7 +472,7 @@ impl Rect {
         }
     }
 
-    pub fn intersection(self, other: &Rect) -> Rect {
+    pub fn intersection(&self, other: &Rect) -> Rect {
         let x1 = max(self.x, other.x);
         let y1 = max(self.y, other.y);
         let x2 = min(self.x + self.width, other.x + other.width);
@@ -485,7 +485,7 @@ impl Rect {
         }
     }
 
-    pub fn intersects(self, other: &Rect) -> bool {
+    pub fn intersects(&self, other: &Rect) -> bool {
         self.x < other.x + other.width
             && self.x + self.width > other.x
             && self.y < other.y + other.height

@@ -168,7 +168,7 @@ where
 
     /// Returns Ok(Ok()) if viewport did not overflow and buffer could be flushed.
     /// Returns Err() no overflow was detected by buffer flush failed.
-    /// Returns Ok(Err()) if scroll overflows.
+    /// Returns Ok(Err()) if scroll overflows or overlaps overviewports.
     /// Nested Results allow for fairly simple silent fail of scroll overflows
     /// without disregarding the more serious flush errors with:
     /// `terminal.viewport_scroll(-10, -10)?.unwrap_or(())`.
@@ -190,6 +190,8 @@ where
         &mut self,
         closure: F,
     ) -> io::Result<io::Result<()>> {
+        // (index, new_scroll)
+        let mut viewports_to_flush: ViewportToFlush = Vec::with_capacity(self.viewports.len());
         for index in 0..self.viewports.len() {
             let (x_step, y_step) = closure(index);
             // We don't want to re-flush a region which hasn't moved.
@@ -202,10 +204,22 @@ where
             if let Err(err) = self.assert_viewport_within_buffer(index, new_scroll) {
                 return Ok(Err(err));
             }
-            self.viewports[index].scroll = new_scroll;
-            self.flush_viewport_region(index)?;
+            // We don't want to update scroll and flush immediatedly as viewport overlap must first be checked.
+            // This has be done on all at he same time, otherwise it's not possible to scroll multiple viewports
+            // in unison.
+            viewports_to_flush.push((index, new_scroll));
         }
-        Ok(Ok(()))
+
+        match self.assert_nonoverlapping_viewports(viewports_to_flush) {
+            Ok(viewports_to_flush) => {
+                for (index, new_scroll) in viewports_to_flush {
+                    self.viewports[index].scroll = new_scroll;
+                    self.flush_viewport_region(index)?;
+                }
+                Ok(Ok(()))
+            }
+            Err(err) => Ok(Err(err)),
+        }
     }
 
     fn assert_viewport_within_buffer(
@@ -250,12 +264,55 @@ where
         Ok(())
     }
 
+    fn assert_nonoverlapping_viewports(
+        &self,
+        viewports_to_flush: ViewportToFlush,
+    ) -> io::Result<ViewportToFlush> {
+        let error = |index_one: usize, index_two: usize| {
+            let msg = format!("Viewport {} overlaps with {}.", index_one, index_two);
+            Error::new(ErrorKind::Other, msg)
+        };
+
+        // Create a new viewports array with all the scroll values applied
+        let mut next_viewport_regions = Vec::with_capacity(self.viewports.len());
+        for (viewport_index, viewport) in self.viewports.iter().enumerate() {
+            let scroll: (i16, i16);
+            if let Some((_, new_scroll)) = viewports_to_flush
+                .iter()
+                .find(|(index, _)| *index == viewport_index)
+            {
+                scroll = *new_scroll;
+            } else {
+                scroll = viewport.scroll;
+            }
+
+            let (x_scroll, y_scroll) = scroll;
+            let mut next_viewport_region = viewport.clone().region;
+            next_viewport_region.x = next_viewport_region.x.saturating_add_signed(x_scroll);
+            next_viewport_region.y = next_viewport_region.y.saturating_add_signed(y_scroll);
+            next_viewport_regions.push(next_viewport_region);
+        }
+
+        // Check if any viewport overlaps
+        for index_one in 0..self.viewports.len() {
+            for index_two in (index_one + 1)..self.viewports.len() {
+                let region_one = &next_viewport_regions[index_one];
+                let region_two = &next_viewport_regions[index_two];
+                if region_one.intersects(region_two) {
+                    return Err(error(index_one, index_two));
+                }
+            }
+        }
+
+        Ok(viewports_to_flush)
+    }
+
     pub fn resize_buffer(&mut self, width: u16, height: u16) {
         self.buffer.resize(width, height)
     }
 
-    /// Queries the backend for its viewport size and resizes frontend viewport size
-    /// if it doesn't match.
+    /// Queries the backend for its viewport size and  resizes frontend viewport
+    /// size if it doesn't match.
     fn autoresize(&mut self) -> io::Result<()> {
         let sum_viewport_sizes = self
             .viewports
@@ -343,6 +400,8 @@ where
         self.backend.set_cursor(x, y)
     }
 }
+
+type ViewportToFlush = Vec<(usize, (i16, i16))>;
 
 #[derive(Clone)]
 pub struct Viewport {
