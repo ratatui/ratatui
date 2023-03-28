@@ -42,7 +42,11 @@ impl<W> Backend for TermionBackend<W>
 where
     W: Write,
 {
-    fn clear(&mut self, clear_type: ClearType) -> io::Result<()> {
+    fn clear(&mut self) -> io::Result<()> {
+        self.clear_region(ClearType::All)
+    }
+
+    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
         match clear_type {
             ClearType::All => write!(self.stdout, "{}", termion::clear::All)?,
             ClearType::AfterCursor => write!(self.stdout, "{}", termion::clear::AfterCursor)?,

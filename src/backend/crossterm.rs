@@ -106,7 +106,11 @@ where
         map_error(execute!(self.buffer, MoveTo(x, y)))
     }
 
-    fn clear(&mut self, clear_type: ClearType) -> io::Result<()> {
+    fn clear(&mut self) -> io::Result<()> {
+        self.clear_region(ClearType::All)
+    }
+
+    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
         map_error(execute!(
             self.buffer,
             Clear(match clear_type {

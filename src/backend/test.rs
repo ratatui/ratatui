@@ -1,5 +1,5 @@
 use crate::{
-    backend::{Backend, ClearType},
+    backend::Backend,
     buffer::{Buffer, Cell},
     layout::Rect,
 };
@@ -117,10 +117,6 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn append_lines(&mut self, _n: u16) -> Result<(), io::Error> {
-        Ok(())
-    }
-
     fn hide_cursor(&mut self) -> Result<(), io::Error> {
         self.cursor = false;
         Ok(())
@@ -140,16 +136,9 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn clear(&mut self, clear_type: ClearType) -> Result<(), io::Error> {
-        if clear_type == ClearType::All {
-            self.buffer.reset();
-            Ok(())
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!("clear_type [{clear_type:?}] not supported with test backend"),
-            ))
-        }
+    fn clear(&mut self) -> Result<(), io::Error> {
+        self.buffer.reset();
+        Ok(())
     }
 
     fn size(&self) -> Result<Rect, io::Error> {

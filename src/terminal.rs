@@ -336,16 +336,16 @@ where
     /// Clear the terminal and force a full redraw on the next draw call.
     pub fn clear(&mut self) -> io::Result<()> {
         match self.viewport {
-            Viewport::Fullscreen => self.backend.clear(ClearType::All)?,
+            Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
             Viewport::Inline(_) => {
                 self.backend
                     .set_cursor(self.viewport_area.left(), self.viewport_area.top())?;
-                self.backend.clear(ClearType::AfterCursor)?;
+                self.backend.clear_region(ClearType::AfterCursor)?;
             }
             Viewport::Fixed(area) => {
                 for row in area.top()..area.bottom() {
                     self.backend.set_cursor(0, row)?;
-                    self.backend.clear(ClearType::AfterCursor)?;
+                    self.backend.clear_region(ClearType::AfterCursor)?;
                 }
             }
         }
