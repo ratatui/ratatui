@@ -319,18 +319,6 @@ impl<'a> App<'a> {
         self.tabs.previous();
     }
 
-    pub fn on_key(&mut self, c: char) {
-        match c {
-            'q' => {
-                self.should_quit = true;
-            }
-            't' => {
-                self.show_chart = !self.show_chart;
-            }
-            _ => {}
-        }
-    }
-
     pub fn on_tick(&mut self) {
         // Update progress
         self.progress += 0.001;

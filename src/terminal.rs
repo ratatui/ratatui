@@ -354,6 +354,12 @@ where
         self.buffer.clear_region(area);
     }
 
+    pub fn clear_viewport(&mut self) {
+        for viewport in &self.viewports {
+            self.buffer.clear_region(&viewport.region)
+        }
+    }
+
     /// Flush buffer content to backend.
     /// Content flushed is based on the viewport offset and backend terminal size.
     pub fn flush(&mut self) -> io::Result<()> {

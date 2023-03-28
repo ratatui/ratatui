@@ -46,26 +46,37 @@ fn run_app<B: Backend>(
 
         match events.recv()? {
             Event::Input(key) => match key {
-                // Silently ignore viewport overscroll attempts.
-                Key::Char(c) if c == 'u' => terminal.viewport_scroll(0, -1)?.unwrap_or(()),
-                Key::Char(c) if c == 'd' => terminal.viewport_scroll(0, 1)?.unwrap_or(()),
-                Key::Char(c) if c == 'n' => terminal.viewport_scroll(1, 0)?.unwrap_or(()),
-                Key::Char(c) if c == 'p' => terminal.viewport_scroll(-1, 0)?.unwrap_or(()),
-                Key::Char(c) if c == 'x' => terminal
+                // Skipping viewport overscroll attempts.
+                // See `viewport_scroll()` documentation for more.
+                Key::Char(c) if c == 'h' => terminal
                     .split_viewport_scroll(|index| match index {
-                        0 => (1, 0),
-                        1 => (0, -1),
+                        1 => (-1, 0),
                         _ => (0, 0),
                     })?
                     .unwrap_or(()),
-                Key::Char(c) if c == 'c' => terminal
+                Key::Char(c) if c == 'j' => terminal
                     .split_viewport_scroll(|index| match index {
-                        0 => (0, 0),
                         1 => (0, 1),
                         _ => (0, 0),
                     })?
                     .unwrap_or(()),
-                Key::Char(c) => app.on_key(c),
+                Key::Char(c) if c == 'k' => terminal
+                    .split_viewport_scroll(|index| match index {
+                        1 => (0, -1),
+                        _ => (0, 0),
+                    })?
+                    .unwrap_or(()),
+                Key::Char(c) if c == 'l' => terminal
+                    .split_viewport_scroll(|index| match index {
+                        1 => (1, 0),
+                        _ => (0, 0),
+                    })?
+                    .unwrap_or(()),
+                Key::Char(c) if c == 't' => {
+                    terminal.clear_viewport();
+                    app.show_chart = !app.show_chart;
+                }
+                Key::Char(c) if c == 'q' => app.should_quit = true,
                 Key::Up => app.on_up(),
                 Key::Down => app.on_down(),
                 Key::Left => app.on_left(),

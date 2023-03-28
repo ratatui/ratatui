@@ -65,36 +65,35 @@ fn run_app<B: Backend>(
                 match key.code {
                     // Skipping viewport overscroll attempts.
                     // See `viewport_scroll()` documentation for more.
-                    KeyCode::Char(c) if c == 'd' => terminal.viewport_scroll(0, 1)?.unwrap_or(()),
-                    KeyCode::Char(c) if c == 'u' => terminal.viewport_scroll(0, -1)?.unwrap_or(()),
-                    KeyCode::Char(c) if c == 'f' => terminal.viewport_scroll(1, 0)?.unwrap_or(()),
-                    KeyCode::Char(c) if c == 'p' => terminal.viewport_scroll(-1, 0)?.unwrap_or(()),
-                    // TEMP:
-                    KeyCode::Char(c) if c == 'n' => terminal
-                        .split_viewport_scroll(|index| match index {
-                            1 => (0, 1),
-                            _ => (0, 0),
-                        })?
-                        .unwrap_or(()),
-                    KeyCode::Char(c) if c == 'e' => terminal
-                        .split_viewport_scroll(|index| match index {
-                            1 => (0, -1),
-                            _ => (0, 0),
-                        })?
-                        .unwrap_or(()),
-                    KeyCode::Char(c) if c == 'i' => terminal
-                        .split_viewport_scroll(|index| match index {
-                            1 => (1, 0),
-                            _ => (0, 0),
-                        })?
-                        .unwrap_or(()),
-                    KeyCode::Char(c) if c == 'm' => terminal
+                    KeyCode::Char(c) if c == 'h' => terminal
                         .split_viewport_scroll(|index| match index {
                             1 => (-1, 0),
                             _ => (0, 0),
                         })?
                         .unwrap_or(()),
-                    KeyCode::Char(c) => app.on_key(c),
+                    KeyCode::Char(c) if c == 'j' => terminal
+                        .split_viewport_scroll(|index| match index {
+                            1 => (0, 1),
+                            _ => (0, 0),
+                        })?
+                        .unwrap_or(()),
+                    KeyCode::Char(c) if c == 'k' => terminal
+                        .split_viewport_scroll(|index| match index {
+                            1 => (0, -1),
+                            _ => (0, 0),
+                        })?
+                        .unwrap_or(()),
+                    KeyCode::Char(c) if c == 'l' => terminal
+                        .split_viewport_scroll(|index| match index {
+                            1 => (1, 0),
+                            _ => (0, 0),
+                        })?
+                        .unwrap_or(()),
+                    KeyCode::Char(c) if c == 't' => {
+                        terminal.clear_viewport();
+                        app.show_chart = !app.show_chart;
+                    }
+                    KeyCode::Char(c) if c == 'q' => app.should_quit = true,
                     KeyCode::Left => app.on_left(),
                     KeyCode::Up => app.on_up(),
                     KeyCode::Right => app.on_right(),
