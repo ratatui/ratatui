@@ -174,7 +174,7 @@ where
     /// `terminal.viewport_scroll(-10, -10)?.unwrap_or(())`.
     /*
         IMPROVEMENT: Introduce a separate ViewportOverflow struct for the error?
-        Might require the introduction of the anyhow anyhow internally and externally
+        Might require the introduction of the anyhow crate both internally and externally
         as the library would no longer only return io::Results.
 
         Might be a more Rust idiomatic way of handling the nested Results shenanigans.
@@ -184,13 +184,12 @@ where
     }
 
     /// Used in combination with Terminal::new_split() to individually scroll split viewports.
-    /// Call is passed with a closure that returns the scroll for a given split viewport index,
+    /// Call is passed with a closure that returns the scroll for a given split viewport index.
     /// The viewport index represents the respective viewport created by constraints given in Terminal::new_split([Constraint]).
     pub fn split_viewport_scroll<F: Fn(usize) -> (i16, i16)>(
         &mut self,
         closure: F,
     ) -> io::Result<io::Result<()>> {
-        // (index, new_scroll)
         let mut viewports_to_flush: ViewportToFlush = Vec::with_capacity(self.viewports.len());
         for index in 0..self.viewports.len() {
             let (x_step, y_step) = closure(index);
