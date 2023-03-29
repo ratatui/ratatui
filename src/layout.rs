@@ -123,7 +123,7 @@ impl Layout {
 
     /// Set or unset contstaint to extend last element to layout area boundary.
     /// True by default.
-    pub(crate) fn extend(mut self, extend: bool) -> Layout {
+    pub fn extend(mut self, extend: bool) -> Layout {
         self.extend = extend;
         self
     }
