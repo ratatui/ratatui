@@ -23,7 +23,7 @@ fn widgets_list_should_highlight_the_selected_item() {
     let list = List::new(items)
         .highlight_style(Style::default().bg(Color::Yellow))
         .highlight_symbol(">> ");
-    terminal.render_stateful_widget_on_viewport(list, &mut state);
+    terminal.render_stateful_widget_on_viewport(list, &mut state, 0);
     terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec!["   Item 1 ", ">> Item 2 ", "   Item 3 "]);
     for x in 0..10 {
@@ -100,7 +100,7 @@ fn widgets_list_should_clamp_offset_if_items_are_removed() {
         ListItem::new("Item 5"),
     ];
     let list = List::new(items).highlight_symbol(">> ");
-    terminal.render_stateful_widget_on_viewport(list, &mut state);
+    terminal.render_stateful_widget_on_viewport(list, &mut state, 0);
     terminal.flush().unwrap();
     let expected = Buffer::with_lines(vec!["   Item 2 ", "   Item 3 ", "   Item 4 ", ">> Item 5 "]);
     terminal.backend().assert_buffer(&expected);
@@ -110,7 +110,7 @@ fn widgets_list_should_clamp_offset_if_items_are_removed() {
 
     let items = vec![ListItem::new("Item 3")];
     let list = List::new(items).highlight_symbol(">> ");
-    terminal.render_stateful_widget_on_viewport(list, &mut state);
+    terminal.render_stateful_widget_on_viewport(list, &mut state, 0);
     terminal.flush().unwrap();
     let expected = Buffer::with_lines(vec!["   Item 3 ", "          ", "          ", "          "]);
     terminal.backend().assert_buffer(&expected);
@@ -131,7 +131,7 @@ fn widgets_list_should_display_multiline_items() {
     let list = List::new(items)
         .highlight_style(Style::default().bg(Color::Yellow))
         .highlight_symbol(">> ");
-    terminal.render_stateful_widget_on_viewport(list, &mut state);
+    terminal.render_stateful_widget_on_viewport(list, &mut state, 0);
     terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec![
         "   Item 1 ",
@@ -164,7 +164,7 @@ fn widgets_list_should_repeat_highlight_symbol() {
         .highlight_style(Style::default().bg(Color::Yellow))
         .highlight_symbol(">> ")
         .repeat_highlight_symbol(true);
-    terminal.render_stateful_widget_on_viewport(list, &mut state);
+    terminal.render_stateful_widget_on_viewport(list, &mut state, 0);
     terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec![
         "   Item 1 ",

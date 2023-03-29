@@ -144,8 +144,13 @@ where
         &mut self,
         widget: W,
         state: &mut W::State,
+        viewport_index: usize,
     ) {
-        widget.render(&self.viewports[0].region, &mut self.buffer, state);
+        widget.render(
+            &self.viewports[viewport_index].region,
+            &mut self.buffer,
+            state,
+        );
     }
 
     pub fn viewport_areas(&self) -> Vec<&Rect> {
