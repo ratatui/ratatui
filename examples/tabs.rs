@@ -89,7 +89,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .split(terminal.viewport_areas()[0]);
 
     let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
-    terminal.render_widget_on_viewport(block);
+    terminal.render_widget_on_viewport(block, 0);
     let titles = app
         .titles
         .iter()

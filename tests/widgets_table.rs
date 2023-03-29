@@ -28,7 +28,7 @@ fn widgets_table_column_spacing_can_be_changed() {
             Constraint::Length(5),
         ])
         .column_spacing(column_spacing);
-        terminal.render_widget_on_viewport(table);
+        terminal.render_widget_on_viewport(table, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -117,7 +117,7 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints() {
         .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
         .block(Block::default().borders(Borders::ALL))
         .widths(widths);
-        terminal.render_widget_on_viewport(table);
+        terminal.render_widget_on_viewport(table, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -202,7 +202,7 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
         .block(Block::default().borders(Borders::ALL))
         .widths(widths)
         .column_spacing(0);
-        terminal.render_widget_on_viewport(table);
+        terminal.render_widget_on_viewport(table, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -303,7 +303,7 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
         .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
         .block(Block::default().borders(Borders::ALL))
         .widths(widths);
-        terminal.render_widget_on_viewport(table);
+        terminal.render_widget_on_viewport(table, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -409,7 +409,7 @@ fn widgets_table_columns_widths_can_use_ratio_constraints() {
         .block(Block::default().borders(Borders::ALL))
         .widths(widths)
         .column_spacing(0);
-        terminal.render_widget_on_viewport(table);
+        terminal.render_widget_on_viewport(table, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -674,7 +674,7 @@ fn widgets_table_should_render_even_if_empty() {
             Constraint::Length(6),
         ])
         .column_spacing(1);
-    terminal.render_widget_on_viewport(table);
+    terminal.render_widget_on_viewport(table, 0);
     terminal.flush().unwrap();
 
     let expected = Buffer::with_lines(vec![

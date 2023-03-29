@@ -101,8 +101,9 @@ where
         widget.render(area, &mut self.buffer);
     }
 
-    pub fn render_widget_on_viewport<W: Widget>(&mut self, widget: W) {
-        widget.render(&self.viewports[0].region, &mut self.buffer)
+    /// Render the widget on a given viewport.
+    pub fn render_widget_on_viewport<W: Widget>(&mut self, widget: W, viewport_index: usize) {
+        widget.render(&self.viewports[viewport_index].region, &mut self.buffer)
     }
 
     /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].

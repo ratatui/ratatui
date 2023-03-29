@@ -131,7 +131,7 @@ fn widgets_gauge_applies_styles() {
                 .fg(Color::Green)
                 .add_modifier(Modifier::BOLD),
         ));
-    terminal.render_widget_on_viewport(gauge);
+    terminal.render_widget_on_viewport(gauge, 0);
     terminal.flush().unwrap();
     let mut expected = Buffer::with_lines(vec![
         "┌Test──────┐",
@@ -183,7 +183,7 @@ fn widgets_gauge_supports_large_labels() {
     let gauge = Gauge::default()
         .percent(43)
         .label("43333333333333333333333333333%");
-    terminal.render_widget_on_viewport(gauge);
+    terminal.render_widget_on_viewport(gauge, 0);
     terminal.flush().unwrap();
     let expected = Buffer::with_lines(vec!["4333333333"]);
     terminal.backend().assert_buffer(&expected);

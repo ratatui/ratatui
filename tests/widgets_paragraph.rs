@@ -23,7 +23,7 @@ fn widgets_paragraph_can_wrap_its_content() {
             .block(Block::default().borders(Borders::ALL))
             .alignment(alignment)
             .wrap(Wrap { trim: true });
-        terminal.render_widget_on_viewport(paragraph);
+        terminal.render_widget_on_viewport(paragraph, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -86,7 +86,7 @@ fn widgets_paragraph_renders_double_width_graphemes() {
     let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL))
         .wrap(Wrap { trim: true });
-    terminal.render_widget_on_viewport(paragraph);
+    terminal.render_widget_on_viewport(paragraph, 0);
     terminal.flush().unwrap();
 
     let expected = Buffer::with_lines(vec![
@@ -115,7 +115,7 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
     let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL))
         .wrap(Wrap { trim: true });
-    terminal.render_widget_on_viewport(paragraph);
+    terminal.render_widget_on_viewport(paragraph, 0);
     terminal.flush().unwrap();
 
     let expected = Buffer::with_lines(vec![
@@ -144,7 +144,7 @@ fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
     ]);
 
     let paragraph = Paragraph::new(line).block(Block::default().borders(Borders::ALL));
-    terminal.render_widget_on_viewport(paragraph);
+    terminal.render_widget_on_viewport(paragraph, 0);
     terminal.flush().unwrap();
     terminal.backend().assert_buffer(&expected);
 }
@@ -160,7 +160,7 @@ fn widgets_paragraph_can_scroll_horizontally() {
             .block(Block::default().borders(Borders::ALL))
             .alignment(alignment)
             .scroll(scroll);
-        terminal.render_widget_on_viewport(paragraph);
+        terminal.render_widget_on_viewport(paragraph, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };

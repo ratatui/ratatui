@@ -68,7 +68,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
         .title("Main block with round corners")
         .title_alignment(Alignment::Center)
         .border_type(BorderType::Rounded);
-    terminal.render_widget_on_viewport(block);
+    terminal.render_widget_on_viewport(block, 0);
 
     // Top two inner blocks
     let top_chunks = Layout::default()

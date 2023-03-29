@@ -15,7 +15,7 @@ fn widgets_barchart_not_full_below_max_value() {
             .max(100)
             .bar_width(7)
             .bar_gap(0);
-        terminal.render_widget_on_viewport(barchart);
+        terminal.render_widget_on_viewport(barchart, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };

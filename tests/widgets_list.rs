@@ -197,7 +197,7 @@ fn widget_list_should_not_ignore_empty_string_items() {
         .style(Style::default())
         .highlight_style(Style::default());
 
-    terminal.render_widget_on_viewport(list);
+    terminal.render_widget_on_viewport(list, 0);
     terminal.flush().unwrap();
 
     let expected = Buffer::with_lines(vec!["Item 1", "", "", "Item 4"]);

@@ -88,7 +88,7 @@ fn run_app<B: Backend>(
 
 fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
     let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
-    terminal.render_widget_on_viewport(block);
+    terminal.render_widget_on_viewport(block, 0);
 
     let size = terminal.viewport_areas()[0];
     let chunks = Layout::default()

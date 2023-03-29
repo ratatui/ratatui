@@ -21,7 +21,7 @@ where
     let backend = TestBackend::new(width, height);
     let mut terminal = Terminal::new(backend).unwrap();
     let chart = Chart::new(vec![]).x_axis(x_axis).y_axis(y_axis);
-    terminal.render_widget_on_viewport(chart);
+    terminal.render_widget_on_viewport(chart, 0);
     terminal.flush().unwrap();
     let expected = Buffer::with_lines(lines);
     terminal.backend().assert_buffer(&expected);
@@ -48,7 +48,7 @@ fn widgets_chart_can_render_on_small_areas() {
                     .bounds([0.0, 0.0])
                     .labels(create_labels(&["0.0", "1.0"])),
             );
-        terminal.render_widget_on_viewport(chart);
+        terminal.render_widget_on_viewport(chart, 0);
         terminal.flush().unwrap();
     };
     test_case(0, 0);
