@@ -312,8 +312,18 @@ where
         Ok(viewports_to_flush)
     }
 
-    pub fn resize_buffer(&mut self, width: u16, height: u16) {
+    pub fn resize_buffer_abs(&mut self, width: u16, height: u16) {
         self.buffer.resize(width, height)
+    }
+
+    /// Shorthand for: resize_buffer_abs(curr_width + width, curr_height + height),
+    /// but which also doesn't require any explicit copying.
+    /// Addition is saturating add signed, so negative values can also be supplied.
+    pub fn resize_buffer_rel(&mut self, width: i16, height: i16) {
+        self.buffer.resize(
+            self.buffer.get_width().saturating_add_signed(width),
+            self.buffer.get_height().saturating_add_signed(height),
+        )
     }
 
     /// Queries the backend for its viewport size and  resizes frontend viewport

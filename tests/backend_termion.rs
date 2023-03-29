@@ -10,7 +10,7 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
         let backend = TermionBackend::new(&mut stdout);
         let area = Rect::new(0, 0, 3, 1);
         let mut terminal = Terminal::new(backend)?;
-        terminal.resize_buffer(3, 1);
+        terminal.resize_buffer_abs(3, 1);
         terminal.render_widget(Paragraph::new("a"), &area);
         terminal.flush()?;
         terminal.render_widget(Paragraph::new("ab"), &area);
