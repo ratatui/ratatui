@@ -227,7 +227,6 @@ where
         let mut viewports_to_flush: ViewportToFlush = Vec::with_capacity(self.viewports.len());
         for index in 0..self.viewports.len() {
             let (x_offset, y_offset) = offset_closure(index);
-            // We don't want to re-flush a region which hasn't moved.
             let curr_viewport = &self.viewports[index];
             let (curr_x_scroll, curr_y_scroll) = curr_viewport.scroll;
             // Displacement from origo
@@ -248,9 +247,6 @@ where
             if let Err(err) = self.assert_viewport_within_buffer(index, new_scroll) {
                 return Ok(Err(err));
             }
-            // We don't want to update scroll and flush immediatedly as viewport overlap must first be checked.
-            // This has be done on all at he same time, otherwise it's not possible to scroll multiple viewports
-            // in unison.
             viewports_to_flush.push((index, new_scroll));
         }
 
