@@ -168,7 +168,7 @@ pub trait Widget {
 ///     let list = List::new(items);
 ///     // Finally the widget is rendered using the associated state. `events.state` is
 ///     // effectively the only thing that we will "remember" from this draw call.
-///     terminal.render_stateful_widget_on_viewport(list, &mut events.state);
+///     terminal.render_stateful_widget_on_viewport(list, &mut events.state, 0);
 ///     terminal.flush();
 ///
 ///     // In response to some input events or an external http request or whatever:

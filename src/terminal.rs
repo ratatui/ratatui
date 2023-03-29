@@ -194,11 +194,11 @@ where
     /// The viewport index represents the respective viewport created by constraints given in Terminal::new_split([Constraint]).
     pub fn split_viewport_scroll<F: Fn(usize) -> (i16, i16)>(
         &mut self,
-        closure: F,
+        step_closure: F,
     ) -> io::Result<io::Result<()>> {
         let mut viewports_to_flush: ViewportToFlush = Vec::with_capacity(self.viewports.len());
         for index in 0..self.viewports.len() {
-            let (x_step, y_step) = closure(index);
+            let (x_step, y_step) = step_closure(index);
             // We don't want to re-flush a region which hasn't moved.
             if (x_step, y_step) == (0, 0) {
                 continue;
@@ -206,6 +206,54 @@ where
 
             let (x_scroll, y_scroll) = self.viewports[index].scroll;
             let new_scroll = (x_scroll + x_step, y_scroll + y_step);
+            if let Err(err) = self.assert_viewport_within_buffer(index, new_scroll) {
+                return Ok(Err(err));
+            }
+            // We don't want to update scroll and flush immediatedly as viewport overlap must first be checked.
+            // This has be done on all at he same time, otherwise it's not possible to scroll multiple viewports
+            // in unison.
+            viewports_to_flush.push((index, new_scroll));
+        }
+
+        match self.assert_nonoverlapping_viewports(viewports_to_flush) {
+            Ok(viewports_to_flush) => {
+                for (index, new_scroll) in viewports_to_flush {
+                    self.viewports[index].scroll = new_scroll;
+                    self.flush_viewport_region(index)?;
+                }
+                Ok(Ok(()))
+            }
+            Err(err) => Ok(Err(err)),
+        }
+    }
+
+    /// The absolute version of slip_viewport_scroll
+    /// Useful if you are keeping track of the offset externally.
+    pub fn split_viewport_offset<F: Fn(usize) -> (u16, u16)>(
+        &mut self,
+        offset_closure: F,
+    ) -> io::Result<io::Result<()>> {
+        let mut viewports_to_flush: ViewportToFlush = Vec::with_capacity(self.viewports.len());
+        for index in 0..self.viewports.len() {
+            let (x_offset, y_offset) = offset_closure(index);
+            // We don't want to re-flush a region which hasn't moved.
+            let curr_viewport = &self.viewports[index];
+            let (curr_x_scroll, curr_y_scroll) = curr_viewport.scroll;
+            // Displacement from origo
+            let (curr_x_disclacement, curr_y_displacement) = (
+                curr_viewport.region.x.saturating_add_signed(curr_x_scroll),
+                curr_viewport.region.y.saturating_add_signed(curr_y_scroll),
+            );
+            if (x_offset, y_offset) == (curr_x_disclacement, curr_y_displacement) {
+                continue;
+            }
+
+            // Operation doesn't actually change the true offset, as it is still needed
+            // reposition back the split viewports back into one piece for the backend.
+            let new_scroll = (
+                x_offset as i16 - curr_viewport.region.x as i16,
+                y_offset as i16 - curr_viewport.region.y as i16,
+            );
             if let Err(err) = self.assert_viewport_within_buffer(index, new_scroll) {
                 return Ok(Err(err));
             }

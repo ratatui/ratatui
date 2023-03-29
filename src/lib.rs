@@ -101,7 +101,7 @@
 //!     let block = Block::default()
 //!         .title("Block")
 //!         .borders(Borders::ALL);
-//!     terminal.render_widget_on_viewport(block);
+//!     terminal.render_widget_on_viewport(block, 0);
 //!     terminal.flush()?;
 //!
 //!     thread::sleep(Duration::from_millis(5000));
