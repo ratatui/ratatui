@@ -370,9 +370,8 @@ where
         Ok(())
     }
 
-    /// Currently not translating to correct offset
-    /// Second viewport is being moved to
-    fn flush_viewport_region(&mut self, viewport_index: usize) -> io::Result<()> {
+    /// Fine grained version of flush.
+    pub fn flush_viewport_region(&mut self, viewport_index: usize) -> io::Result<()> {
         let (x_scroll, y_scroll) = self.viewports[viewport_index].scroll;
         let mut scrolled_viewport_region = self.viewports[viewport_index].region.clone();
         scrolled_viewport_region.x = scrolled_viewport_region.x.saturating_add_signed(x_scroll);
