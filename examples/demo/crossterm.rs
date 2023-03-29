@@ -90,7 +90,7 @@ fn run_app<B: Backend>(
                         })?
                         .unwrap_or(()),
                     KeyCode::Char(c) if c == 't' => {
-                        terminal.clear_viewport();
+                        terminal.clear_all_viewports();
                         app.show_chart = !app.show_chart;
                     }
                     KeyCode::Char(c) if c == 'q' => app.should_quit = true,

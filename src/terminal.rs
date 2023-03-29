@@ -359,7 +359,12 @@ where
         self.buffer.clear_region(area);
     }
 
-    pub fn clear_viewport(&mut self) {
+    pub fn clear_viewport(&mut self, viewport_index: usize) {
+        self.buffer
+            .clear_region(&self.viewports[viewport_index].region)
+    }
+
+    pub fn clear_all_viewports(&mut self) {
         for viewport in &self.viewports {
             self.buffer.clear_region(&viewport.region)
         }

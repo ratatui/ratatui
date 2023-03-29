@@ -73,7 +73,7 @@ fn run_app<B: Backend>(
                     })?
                     .unwrap_or(()),
                 Key::Char(c) if c == 't' => {
-                    terminal.clear_viewport();
+                    terminal.clear_all_viewports();
                     app.show_chart = !app.show_chart;
                 }
                 Key::Char(c) if c == 'q' => app.should_quit = true,
