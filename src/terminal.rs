@@ -215,16 +215,7 @@ where
             viewports_to_flush.push((index, new_scroll));
         }
 
-        match self.assert_nonoverlapping_viewports(viewports_to_flush) {
-            Ok(viewports_to_flush) => {
-                for (index, new_scroll) in viewports_to_flush {
-                    self.viewports[index].scroll = new_scroll;
-                    self.flush_viewport_region(index)?;
-                }
-                Ok(Ok(()))
-            }
-            Err(err) => Ok(Err(err)),
-        }
+        self.flush_viewports(viewports_to_flush)
     }
 
     /// The absolute version of slip_viewport_scroll
@@ -263,6 +254,13 @@ where
             viewports_to_flush.push((index, new_scroll));
         }
 
+        self.flush_viewports(viewports_to_flush)
+    }
+
+    fn flush_viewports(
+        &mut self,
+        viewports_to_flush: ViewportToFlush,
+    ) -> io::Result<io::Result<()>> {
         match self.assert_nonoverlapping_viewports(viewports_to_flush) {
             Ok(viewports_to_flush) => {
                 for (index, new_scroll) in viewports_to_flush {
