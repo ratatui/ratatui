@@ -92,10 +92,10 @@ impl<'a> Gauge<'a> {
 }
 
 impl<'a> Widget for Gauge<'a> {
-    fn render(&mut self, area: &Rect, buffer: &mut Buffer) {
+    fn render(&self, area: &Rect, buffer: &mut Buffer) {
         buffer.set_style(area, self.style);
-        let gauge_area = match self.block.take() {
-            Some(mut block) => {
+        let gauge_area = match &self.block {
+            Some(block) => {
                 let inner_area = block.inner(area);
                 block.render(area, buffer);
                 inner_area
@@ -237,10 +237,10 @@ impl<'a> LineGauge<'a> {
 }
 
 impl<'a> Widget for LineGauge<'a> {
-    fn render(&mut self, area: &Rect, buffer: &mut Buffer) {
+    fn render(&self, area: &Rect, buffer: &mut Buffer) {
         buffer.set_style(area, self.style);
-        let gauge_area = match self.block.take() {
-            Some(mut block) => {
+        let gauge_area = match &self.block {
+            Some(block) => {
                 let inner_area = block.inner(area);
                 block.render(area, buffer);
                 inner_area

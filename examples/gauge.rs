@@ -123,19 +123,19 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         )
         .split(terminal.viewport_areas()[0]);
 
-    let mut gauge = Gauge::default()
+    let gauge = Gauge::default()
         .block(Block::default().title("Gauge1").borders(Borders::ALL))
         .gauge_style(Style::default().fg(Color::Yellow))
         .percent(app.progress1);
-    terminal.render_widget(&mut gauge, &chunks[0]);
+    terminal.render_widget(&gauge, &chunks[0]);
 
     let label = format!("{}/100", app.progress2);
-    let mut gauge = Gauge::default()
+    let gauge = Gauge::default()
         .block(Block::default().title("Gauge2").borders(Borders::ALL))
         .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Green))
         .percent(app.progress2)
         .label(label);
-    terminal.render_widget(&mut gauge, &chunks[1]);
+    terminal.render_widget(&gauge, &chunks[1]);
 
     let label = Span::styled(
         format!("{:.2}%", app.progress3 * 100.0),
@@ -143,16 +143,16 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
             .fg(Color::Red)
             .add_modifier(Modifier::ITALIC | Modifier::BOLD),
     );
-    let mut gauge = Gauge::default()
+    let gauge = Gauge::default()
         .block(Block::default().title("Gauge3").borders(Borders::ALL))
         .gauge_style(Style::default().fg(Color::Yellow))
         .ratio(app.progress3)
         .label(label)
         .use_unicode(true);
-    terminal.render_widget(&mut gauge, &chunks[2]);
+    terminal.render_widget(&gauge, &chunks[2]);
 
     let label = format!("{}/100", app.progress2);
-    let mut gauge = Gauge::default()
+    let gauge = Gauge::default()
         .block(Block::default().title("Gauge4"))
         .gauge_style(
             Style::default()
@@ -161,6 +161,6 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         )
         .percent(app.progress4)
         .label(label);
-    terminal.render_widget(&mut gauge, &chunks[3]);
+    terminal.render_widget(&gauge, &chunks[3]);
     terminal.flush()
 }

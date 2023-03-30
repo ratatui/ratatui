@@ -62,9 +62,9 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
         )
         .split(terminal.viewport_areas()[0]);
 
-    let mut block = Block::default().title("Block").borders(Borders::ALL);
-    terminal.render_widget(&mut block, &chunks[0]);
-    let mut block = Block::default().title("Block 2").borders(Borders::ALL);
-    terminal.render_widget(&mut block, &chunks[2]);
+    let block = Block::default().title("Block").borders(Borders::ALL);
+    terminal.render_widget(&block, &chunks[0]);
+    let block = Block::default().title("Block 2").borders(Borders::ALL);
+    terminal.render_widget(&block, &chunks[2]);
     terminal.flush()
 }

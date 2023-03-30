@@ -167,16 +167,16 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App, layout: &[Rect]) -
     };
     let mut text = Text::from(Spans::from(msg));
     text.patch_style(style);
-    let mut help_message = Paragraph::new(text);
-    terminal.render_widget(&mut help_message, &layout[0]);
+    let help_message = Paragraph::new(text);
+    terminal.render_widget(&help_message, &layout[0]);
 
-    let mut input = Paragraph::new(app.input.as_ref())
+    let input = Paragraph::new(app.input.as_ref())
         .style(match app.input_mode {
             InputMode::Normal => Style::default(),
             InputMode::Editing => Style::default().fg(Color::Yellow),
         })
         .block(Block::default().borders(Borders::ALL).title("Input"));
-    terminal.render_widget(&mut input, &layout[1]);
+    terminal.render_widget(&input, &layout[1]);
 
     let messages: Vec<ListItem> = app
         .messages
@@ -187,8 +187,8 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App, layout: &[Rect]) -
             ListItem::new(content)
         })
         .collect();
-    let mut messages =
+    let messages =
         List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
-    terminal.render_widget(&mut messages, &layout[2]);
+    terminal.render_widget(&messages, &layout[2]);
     terminal.flush()
 }

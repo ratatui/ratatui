@@ -193,11 +193,11 @@ fn widget_list_should_not_ignore_empty_string_items() {
         ListItem::new("Item 4"),
     ];
 
-    let mut list = List::new(items)
+    let list = List::new(items)
         .style(Style::default())
         .highlight_style(Style::default());
 
-    terminal.render_widget_on_viewport(&mut list, 0);
+    terminal.render_widget_on_viewport(&list, 0);
     terminal.flush().unwrap();
 
     let expected = Buffer::with_lines(vec!["Item 1", "", "", "Item 4"]);

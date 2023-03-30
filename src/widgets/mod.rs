@@ -62,7 +62,7 @@ bitflags! {
 pub trait Widget {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.
-    fn render(&mut self, area: &Rect, buf: &mut Buffer);
+    fn render(&self, area: &Rect, buf: &mut Buffer);
 }
 
 /// A `StatefulWidget` is a widget that can take advantage of some local state to remember things
@@ -177,5 +177,5 @@ pub trait Widget {
 /// ```
 pub trait StatefulWidget {
     type State;
-    fn render(&mut self, area: &Rect, buf: &mut Buffer, state: &mut Self::State);
+    fn render(&self, area: &Rect, buf: &mut Buffer, state: &mut Self::State);
 }

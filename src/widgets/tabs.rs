@@ -81,10 +81,10 @@ impl<'a> Tabs<'a> {
 }
 
 impl<'a> Widget for Tabs<'a> {
-    fn render(&mut self, area: &Rect, buf: &mut Buffer) {
+    fn render(&self, area: &Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        let tabs_area = match self.block.take() {
-            Some(mut block) => {
+        let tabs_area = match &self.block {
+            Some(block) => {
                 let inner_area = block.inner(area);
                 block.render(area, buf);
                 inner_area
@@ -98,7 +98,7 @@ impl<'a> Widget for Tabs<'a> {
 
         let mut x = tabs_area.left();
         let titles_length = self.titles.len();
-        for (i, title) in self.titles.iter_mut().enumerate() {
+        for (i, title) in self.titles.iter().enumerate() {
             let last_title = titles_length - 1 == i;
             x = x.saturating_add(1);
             let remaining_width = tabs_area.right().saturating_sub(x);

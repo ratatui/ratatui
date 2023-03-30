@@ -186,7 +186,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
             .data(&app.data2),
     ];
 
-    let mut chart = Chart::new(datasets)
+    let chart = Chart::new(datasets)
         .block(
             Block::default()
                 .title(Span::styled(
@@ -215,7 +215,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                 ])
                 .bounds([-20.0, 20.0]),
         );
-    terminal.render_widget(&mut chart, &chunks[0]);
+    terminal.render_widget(&chart, &chunks[0]);
 
     let datasets = vec![Dataset::default()
         .name("data")
@@ -223,7 +223,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .style(Style::default().fg(Color::Yellow))
         .graph_type(GraphType::Line)
         .data(&DATA)];
-    let mut chart = Chart::new(datasets)
+    let chart = Chart::new(datasets)
         .block(
             Block::default()
                 .title(Span::styled(
@@ -256,7 +256,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                     Span::styled("5.0", Style::default().add_modifier(Modifier::BOLD)),
                 ]),
         );
-    terminal.render_widget(&mut chart, &chunks[1]);
+    terminal.render_widget(&chart, &chunks[1]);
 
     let datasets = vec![Dataset::default()
         .name("data")
@@ -264,7 +264,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .style(Style::default().fg(Color::Yellow))
         .graph_type(GraphType::Line)
         .data(&DATA2)];
-    let mut chart = Chart::new(datasets)
+    let chart = Chart::new(datasets)
         .block(
             Block::default()
                 .title(Span::styled(
@@ -297,6 +297,6 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                     Span::styled("5", Style::default().add_modifier(Modifier::BOLD)),
                 ]),
         );
-    terminal.render_widget(&mut chart, &chunks[2]);
+    terminal.render_widget(&chart, &chunks[2]);
     terminal.flush()
 }

@@ -19,11 +19,11 @@ fn widgets_paragraph_can_wrap_its_content() {
         let mut terminal = Terminal::new(backend).unwrap();
 
         let text = vec![Spans::from(SAMPLE_STRING)];
-        let mut paragraph = Paragraph::new(text)
+        let paragraph = Paragraph::new(text)
             .block(Block::default().borders(Borders::ALL))
             .alignment(alignment)
             .wrap(Wrap { trim: true });
-        terminal.render_widget_on_viewport(&mut paragraph, 0);
+        terminal.render_widget_on_viewport(&paragraph, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -83,10 +83,10 @@ fn widgets_paragraph_renders_double_width_graphemes() {
     let s = "コンピュータ上で文字を扱う場合、典型的には文字による通信を行う場合にその両端点では、";
 
     let text = vec![Spans::from(s)];
-    let mut paragraph = Paragraph::new(text)
+    let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL))
         .wrap(Wrap { trim: true });
-    terminal.render_widget_on_viewport(&mut paragraph, 0);
+    terminal.render_widget_on_viewport(&paragraph, 0);
     terminal.flush().unwrap();
 
     let expected = Buffer::with_lines(vec![
@@ -112,10 +112,10 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
     let s = "aコンピュータ上で文字を扱う場合、";
 
     let text = vec![Spans::from(s)];
-    let mut paragraph = Paragraph::new(text)
+    let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL))
         .wrap(Wrap { trim: true });
-    terminal.render_widget_on_viewport(&mut paragraph, 0);
+    terminal.render_widget_on_viewport(&paragraph, 0);
     terminal.flush().unwrap();
 
     let expected = Buffer::with_lines(vec![
@@ -143,8 +143,8 @@ fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
         "└──────────────────┘",
     ]);
 
-    let mut paragraph = Paragraph::new(line).block(Block::default().borders(Borders::ALL));
-    terminal.render_widget_on_viewport(&mut paragraph, 0);
+    let paragraph = Paragraph::new(line).block(Block::default().borders(Borders::ALL));
+    terminal.render_widget_on_viewport(&paragraph, 0);
     terminal.flush().unwrap();
     terminal.backend().assert_buffer(&expected);
 }
@@ -156,11 +156,11 @@ fn widgets_paragraph_can_scroll_horizontally() {
 
         let text =
             Text::from("段落现在可以水平滚动了！\nParagraph can scroll horizontally!\nShort line");
-        let mut paragraph = Paragraph::new(text)
+        let paragraph = Paragraph::new(text)
             .block(Block::default().borders(Borders::ALL))
             .alignment(alignment)
             .scroll(scroll);
-        terminal.render_widget_on_viewport(&mut paragraph, 0);
+        terminal.render_widget_on_viewport(&paragraph, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -203,7 +203,7 @@ fn widgets_paragraph_can_scroll_horizontally() {
 #[test]
 fn zero_width_char_at_end_of_line() {
     let line = "foo\0";
-    let mut paragraph = Paragraph::new(line);
+    let paragraph = Paragraph::new(line);
     let mut buf = Buffer::with_lines(vec![line]);
     paragraph.render(
         &Rect::new(0, 0, buf.get_width(), buf.get_height()),

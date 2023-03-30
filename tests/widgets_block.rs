@@ -13,11 +13,11 @@ fn widgets_block_renders() {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    let mut block = Block::default()
+    let block = Block::default()
         .title(Span::styled("Title", Style::default().fg(Color::LightBlue)))
         .borders(Borders::ALL);
     terminal.render_widget(
-        &mut block,
+        &block,
         &Rect {
             x: 0,
             y: 0,
@@ -198,12 +198,12 @@ fn widgets_block_title_alignment() {
             height: 2,
         };
 
-        let mut block = Block::default()
+        let block = Block::default()
             .title(Span::styled("Title", Style::default()))
             .title_alignment(alignment)
             .borders(borders);
 
-        terminal.render_widget(&mut block, &area);
+        terminal.render_widget(&block, &area);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -314,10 +314,10 @@ fn widgets_block_title_alignment() {
     );
 }
 
-fn test_case(mut block: Block, area: Rect, expected: Buffer) {
+fn test_case(block: Block, area: Rect, expected: Buffer) {
     let backend = TestBackend::new(area.width, area.height);
     let mut terminal = Terminal::new(backend).unwrap();
-    terminal.render_widget(&mut block, &area);
+    terminal.render_widget(&block, &area);
     terminal.flush().unwrap();
     terminal.backend().assert_buffer(&expected);
 }

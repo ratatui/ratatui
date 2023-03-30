@@ -7,9 +7,9 @@ use ratatui::{
 fn widgets_tabs_should_not_panic_on_narrow_areas() {
     let backend = TestBackend::new(1, 1);
     let mut terminal = Terminal::new(backend).unwrap();
-    let mut tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Spans::from).collect());
+    let tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Spans::from).collect());
     terminal.render_widget(
-        &mut tabs,
+        &tabs,
         &Rect {
             x: 0,
             y: 0,
@@ -26,9 +26,9 @@ fn widgets_tabs_should_not_panic_on_narrow_areas() {
 fn widgets_tabs_should_truncate_the_last_item() {
     let backend = TestBackend::new(10, 1);
     let mut terminal = Terminal::new(backend).unwrap();
-    let mut tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Spans::from).collect());
+    let tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Spans::from).collect());
     terminal.render_widget(
-        &mut tabs,
+        &tabs,
         &Rect {
             x: 0,
             y: 0,

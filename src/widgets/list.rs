@@ -174,11 +174,11 @@ impl<'a> List<'a> {
 impl<'a> StatefulWidget for List<'a> {
     type State = ListState;
 
-    fn render(&mut self, area: &Rect, buffer: &mut Buffer, state: &mut Self::State) {
+    fn render(&self, area: &Rect, buffer: &mut Buffer, state: &mut Self::State) {
         buffer.clear_region(area);
         buffer.set_style(area, self.style);
-        let list_area = match self.block.take() {
-            Some(mut block) => {
+        let list_area = match &self.block {
+            Some(block) => {
                 let inner_area = block.inner(area);
                 block.render(area, buffer);
                 inner_area
@@ -205,7 +205,7 @@ impl<'a> StatefulWidget for List<'a> {
         let has_selection = state.selected.is_some();
         for (i, item) in self
             .items
-            .iter_mut()
+            .iter()
             .enumerate()
             .skip(state.offset)
             .take(end - start)
@@ -257,7 +257,7 @@ impl<'a> StatefulWidget for List<'a> {
 }
 
 impl<'a> Widget for List<'a> {
-    fn render(&mut self, area: &Rect, buf: &mut Buffer) {
+    fn render(&self, area: &Rect, buf: &mut Buffer) {
         let mut state = ListState::default();
         StatefulWidget::render(self, area, buf, &mut state);
     }

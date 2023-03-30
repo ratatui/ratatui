@@ -278,9 +278,9 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
             ])
         })
         .collect();
-    let mut events_list = List::new(events)
+    let events_list = List::new(events)
         .block(Block::default().borders(Borders::ALL).title("List"))
         .start_corner(Corner::BottomLeft);
-    terminal.render_widget(&mut events_list, &chunks[1]);
+    terminal.render_widget(&events_list, &chunks[1]);
     terminal.flush()
 }

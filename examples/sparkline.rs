@@ -144,7 +144,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
             .as_ref(),
         )
         .split(terminal.viewport_areas()[0]);
-    let mut sparkline = Sparkline::default()
+    let sparkline = Sparkline::default()
         .block(
             Block::default()
                 .title("Data1")
@@ -152,8 +152,8 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         )
         .data(&app.data1)
         .style(Style::default().fg(Color::Yellow));
-    terminal.render_widget(&mut sparkline, &chunks[0]);
-    let mut sparkline = Sparkline::default()
+    terminal.render_widget(&sparkline, &chunks[0]);
+    let sparkline = Sparkline::default()
         .block(
             Block::default()
                 .title("Data2")
@@ -161,9 +161,9 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         )
         .data(&app.data2)
         .style(Style::default().bg(Color::Green));
-    terminal.render_widget(&mut sparkline, &chunks[1]);
+    terminal.render_widget(&sparkline, &chunks[1]);
     // Multiline
-    let mut sparkline = Sparkline::default()
+    let sparkline = Sparkline::default()
         .block(
             Block::default()
                 .title("Data3")
@@ -171,6 +171,6 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         )
         .data(&app.data3)
         .style(Style::default().fg(Color::Red));
-    terminal.render_widget(&mut sparkline, &chunks[2]);
+    terminal.render_widget(&sparkline, &chunks[2]);
     terminal.flush()
 }

@@ -97,14 +97,14 @@ where
     /// let area = Rect::new(0, 0, 5, 5);
     /// terminal.render_widget(block, &area);
     /// ```
-    pub fn render_widget<W: Widget + ?Sized>(&mut self, widget: &mut W, area: &Rect) {
+    pub fn render_widget<W: Widget + ?Sized>(&mut self, widget: &W, area: &Rect) {
         widget.render(area, &mut self.buffer);
     }
 
     /// Render the widget on a given viewport.
     pub fn render_widget_on_viewport<W: Widget + ?Sized>(
         &mut self,
-        widget: &mut W,
+        widget: &W,
         viewport_index: usize,
     ) {
         widget.render(&self.viewports[viewport_index].region, &mut self.buffer)

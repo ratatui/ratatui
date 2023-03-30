@@ -378,7 +378,7 @@ impl<'a> Chart<'a> {
         max_width.min(area.width / 3)
     }
 
-    fn render_x_labels(&mut self, buf: &mut Buffer, layout: &ChartLayout, chart_area: &Rect) {
+    fn render_x_labels(&self, buf: &mut Buffer, layout: &ChartLayout, chart_area: &Rect) {
         let y = match layout.label_x {
             Some(y) => y,
             None => return,
@@ -457,7 +457,7 @@ impl<'a> Chart<'a> {
         buf.set_span(x, label_area.top(), label, bounded_label_width);
     }
 
-    fn render_y_labels(&mut self, buf: &mut Buffer, layout: &ChartLayout, chart_area: &Rect) {
+    fn render_y_labels(&self, buf: &mut Buffer, layout: &ChartLayout, chart_area: &Rect) {
         let x = match layout.label_y {
             Some(x) => x,
             None => return,
@@ -480,7 +480,7 @@ impl<'a> Chart<'a> {
 }
 
 impl<'a> Widget for Chart<'a> {
-    fn render(&mut self, area: &Rect, buffer: &mut Buffer) {
+    fn render(&self, area: &Rect, buffer: &mut Buffer) {
         if area.size() == 0 {
             return;
         }
@@ -490,8 +490,8 @@ impl<'a> Widget for Chart<'a> {
         // axis names).
         let original_style = buffer.get(area.left(), area.top()).style();
 
-        let chart_area = match self.block.take() {
-            Some(mut block) => {
+        let chart_area = match &self.block {
+            Some(block) => {
                 let inner_area = block.inner(area);
                 block.render(area, buffer);
                 inner_area

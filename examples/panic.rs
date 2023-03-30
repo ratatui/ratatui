@@ -135,10 +135,10 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .title("Panic Handler Demo")
         .borders(Borders::ALL);
 
-    let mut paragraph = Paragraph::new(text)
+    let paragraph = Paragraph::new(text)
         .block(block)
         .alignment(Alignment::Center);
 
-    terminal.render_widget_on_viewport(&mut paragraph, 0);
+    terminal.render_widget_on_viewport(&paragraph, 0);
     terminal.flush()
 }

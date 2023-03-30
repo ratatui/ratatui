@@ -140,7 +140,7 @@ impl<'a> Block<'a> {
 }
 
 impl<'a> Widget for Block<'a> {
-    fn render(&mut self, area: &Rect, buf: &mut Buffer) {
+    fn render(&self, area: &Rect, buf: &mut Buffer) {
         if area.size() == 0 {
             return;
         }
