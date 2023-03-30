@@ -31,9 +31,9 @@ impl ParagraphArea<'static> {
             .collect();
 
         Self {
+            width,
             height: lines.len() as u16,
             paragraph: Paragraph::new(Text::from(lines)),
-            width,
         }
     }
 }

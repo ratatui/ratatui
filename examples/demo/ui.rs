@@ -20,8 +20,8 @@ pub fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Res
     let mut logo = ParagraphArea::new_logo();
     let (width, height) = terminal.backend().dimensions()?;
     let panel_size = Rect {
-        height: height + help.height,
         width,
+        height: height + help.height,
         x: 0,
         y: 0,
     };
@@ -35,7 +35,7 @@ pub fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Res
             .as_ref(),
         )
         .split(&panel_size);
-    terminal.resize_buffer_abs(logo.width, 0);
+    terminal.resize_buffer_abs(width + logo.width, height + help.height);
     let titles = app
         .tabs
         .titles
