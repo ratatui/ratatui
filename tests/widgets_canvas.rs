@@ -12,7 +12,7 @@ fn widgets_canvas_draw_labels() {
     let backend = TestBackend::new(5, 5);
     let mut terminal = Terminal::new(backend).unwrap();
     let label = String::from("test");
-    let canvas = Canvas::default()
+    let mut canvas = Canvas::default()
         .background_color(Color::Yellow)
         .x_bounds([0.0, 5.0])
         .y_bounds([0.0, 5.0])
@@ -23,7 +23,7 @@ fn widgets_canvas_draw_labels() {
                 Span::styled(label.clone(), Style::default().fg(Color::Blue)),
             );
         });
-    terminal.render_widget_on_viewport(canvas, 0);
+    terminal.render_widget_on_viewport(&mut canvas, 0);
     terminal.flush().unwrap();
 
     let mut expected = Buffer::with_lines(vec!["    ", "    ", "     ", "     ", "test "]);

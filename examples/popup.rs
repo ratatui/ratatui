@@ -75,25 +75,25 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
     } else {
         "Press p to show the popup"
     };
-    let paragraph = Paragraph::new(Span::styled(
+    let mut paragraph = Paragraph::new(Span::styled(
         text,
         Style::default().add_modifier(Modifier::SLOW_BLINK),
     ))
     .alignment(Alignment::Center)
     .wrap(Wrap { trim: true });
-    terminal.render_widget(paragraph, &chunks[0]);
+    terminal.render_widget(&mut paragraph, &chunks[0]);
 
-    let block = Block::default()
+    let mut block = Block::default()
         .title("Content")
         .borders(Borders::ALL)
         .style(Style::default().bg(Color::Blue));
-    terminal.render_widget(block, &chunks[1]);
+    terminal.render_widget(&mut block, &chunks[1]);
 
     if app.show_popup {
-        let block = Block::default().title("Popup").borders(Borders::ALL);
         let area = centered_rect(60, 20, terminal.viewport_areas()[0]);
+        let mut block = Block::default().title("Popup").borders(Borders::ALL);
         terminal.clear_region(&area);
-        terminal.render_widget(block, &area);
+        terminal.render_widget(&mut block, &area);
     }
     terminal.flush()
 }

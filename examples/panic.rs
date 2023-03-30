@@ -131,12 +131,14 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         Spans::from("try first without the panic handler to see the difference"),
     ];
 
-    let b = Block::default()
+    let block = Block::default()
         .title("Panic Handler Demo")
         .borders(Borders::ALL);
 
-    let p = Paragraph::new(text).block(b).alignment(Alignment::Center);
+    let mut paragraph = Paragraph::new(text)
+        .block(block)
+        .alignment(Alignment::Center);
 
-    terminal.render_widget_on_viewport(p, 0);
+    terminal.render_widget_on_viewport(&mut paragraph, 0);
     terminal.flush()
 }

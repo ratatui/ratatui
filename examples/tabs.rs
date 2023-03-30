@@ -88,8 +88,8 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
         .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
         .split(terminal.viewport_areas()[0]);
 
-    let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
-    terminal.render_widget_on_viewport(block, 0);
+    let mut block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
+    terminal.render_widget_on_viewport(&mut block, 0);
     let titles = app
         .titles
         .iter()
@@ -101,7 +101,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
             ])
         })
         .collect();
-    let tabs = Tabs::new(titles)
+    let mut tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title("Tabs"))
         .select(app.index)
         .style(Style::default().fg(Color::Cyan))
@@ -110,14 +110,14 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                 .add_modifier(Modifier::BOLD)
                 .bg(Color::Black),
         );
-    terminal.render_widget(tabs, &chunks[0]);
-    let inner = match app.index {
+    terminal.render_widget(&mut tabs, &chunks[0]);
+    let mut inner = match app.index {
         0 => Block::default().title("Inner 0").borders(Borders::ALL),
         1 => Block::default().title("Inner 1").borders(Borders::ALL),
         2 => Block::default().title("Inner 2").borders(Borders::ALL),
         3 => Block::default().title("Inner 3").borders(Borders::ALL),
         _ => unreachable!(),
     };
-    terminal.render_widget(inner, &chunks[1]);
+    terminal.render_widget(&mut inner, &chunks[1]);
     terminal.flush()
 }

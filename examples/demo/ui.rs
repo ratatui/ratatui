@@ -16,8 +16,8 @@ use ratatui::{
 };
 
 pub fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
-    let help = ParagraphArea::new_help();
-    let logo = ParagraphArea::new_logo();
+    let mut help = ParagraphArea::new_help();
+    let mut logo = ParagraphArea::new_logo();
     let (width, height) = terminal.backend().dimensions()?;
     let panel_size = Rect {
         height: height + help.height,
@@ -42,11 +42,11 @@ pub fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Res
         .iter()
         .map(|t| Spans::from(Span::styled(*t, Style::default().fg(Color::Green))))
         .collect();
-    let tabs = Tabs::new(titles)
+    let mut tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title(app.title))
         .highlight_style(Style::default().fg(Color::Yellow))
         .select(app.tabs.index);
-    terminal.render_widget(tabs, &chunks[0]);
+    terminal.render_widget(&mut tabs, &chunks[0]);
     if app.shown_tab != app.tabs.index {
         terminal.clear_region(&chunks[1]);
         app.shown_tab = app.tabs.index;
@@ -57,14 +57,14 @@ pub fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Res
         2 => render_third_tab(terminal, app, &chunks[1]),
         _ => {}
     };
-    terminal.render_widget(help.paragraph, &chunks[2]);
+    terminal.render_widget(&mut help.paragraph, &chunks[2]);
     let logo_area = Rect {
         x: panel_size.width,
         y: 0,
         width: logo.width,
         height: panel_size.height,
     };
-    terminal.render_widget(logo.paragraph, &logo_area);
+    terminal.render_widget(&mut logo.paragraph, &logo_area);
     terminal.flush()
 }
 
@@ -102,11 +102,11 @@ where
         )
         .margin(1)
         .split(area);
-    let block = Block::default().borders(Borders::ALL).title("Graphs");
-    terminal.render_widget(block, area);
+    let mut block = Block::default().borders(Borders::ALL).title("Graphs");
+    terminal.render_widget(&mut block, area);
 
     let label = format!("{:.2}%", app.progress * 100.0);
-    let gauge = Gauge::default()
+    let mut gauge = Gauge::default()
         .block(Block::default().title("Gauge:"))
         .gauge_style(
             Style::default()
@@ -116,9 +116,9 @@ where
         )
         .label(label)
         .ratio(app.progress);
-    terminal.render_widget(gauge, &chunks[0]);
+    terminal.render_widget(&mut gauge, &chunks[0]);
 
-    let sparkline = Sparkline::default()
+    let mut sparkline = Sparkline::default()
         .block(Block::default().title("Sparkline:"))
         .style(Style::default().fg(Color::Green))
         .data(&app.sparkline.points)
@@ -127,9 +127,9 @@ where
         } else {
             symbols::bar::THREE_LEVELS
         });
-    terminal.render_widget(sparkline, &chunks[1]);
+    terminal.render_widget(&mut sparkline, &chunks[1]);
 
-    let line_gauge = LineGauge::default()
+    let mut line_gauge = LineGauge::default()
         .block(Block::default().title("LineGauge:"))
         .gauge_style(Style::default().fg(Color::Magenta))
         .line_set(if app.enhanced_graphics {
@@ -138,7 +138,7 @@ where
             symbols::line::NORMAL
         })
         .ratio(app.progress);
-    terminal.render_widget(line_gauge, &chunks[2]);
+    terminal.render_widget(&mut line_gauge, &chunks[2]);
 }
 
 fn render_charts<B>(terminal: &mut Terminal<B>, app: &mut App, area: &Rect)
@@ -171,11 +171,11 @@ where
                 .iter()
                 .map(|i| ListItem::new(vec![Spans::from(Span::raw(*i))]))
                 .collect();
-            let tasks = List::new(tasks)
+            let mut tasks = List::new(tasks)
                 .block(Block::default().borders(Borders::ALL).title("List"))
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD))
                 .highlight_symbol("> ");
-            terminal.render_stateful_widget(tasks, &chunks[0], &mut app.tasks.state);
+            terminal.render_stateful_widget(&mut tasks, &chunks[0], &mut app.tasks.state);
 
             // Draw logs
             let info_style = Style::default().fg(Color::Blue);
@@ -200,11 +200,12 @@ where
                     ListItem::new(content)
                 })
                 .collect();
-            let logs = List::new(logs).block(Block::default().borders(Borders::ALL).title("List"));
-            terminal.render_stateful_widget(logs, &chunks[1], &mut app.logs.state);
+            let mut logs =
+                List::new(logs).block(Block::default().borders(Borders::ALL).title("List"));
+            terminal.render_stateful_widget(&mut logs, &chunks[1], &mut app.logs.state);
         }
 
-        let barchart = BarChart::default()
+        let mut barchart = BarChart::default()
             .block(Block::default().borders(Borders::ALL).title("Bar chart"))
             .data(&app.barchart)
             .bar_width(3)
@@ -222,7 +223,7 @@ where
             )
             .label_style(Style::default().fg(Color::Yellow))
             .bar_style(Style::default().fg(Color::Green));
-        terminal.render_widget(barchart, &chunks[1]);
+        terminal.render_widget(&mut barchart, &chunks[1]);
     }
     if app.show_chart {
         let x_labels = vec![
@@ -255,7 +256,7 @@ where
                 .style(Style::default().fg(Color::Yellow))
                 .data(&app.signals.sin2.points),
         ];
-        let chart = Chart::new(datasets)
+        let mut chart = Chart::new(datasets)
             .block(
                 Block::default()
                     .title(Span::styled(
@@ -284,7 +285,7 @@ where
                         Span::styled("20", Style::default().add_modifier(Modifier::BOLD)),
                     ]),
             );
-        terminal.render_widget(chart, &chunks[1]);
+        terminal.render_widget(&mut chart, &chunks[1]);
     }
 }
 
@@ -325,8 +326,8 @@ where
             .fg(Color::Magenta)
             .add_modifier(Modifier::BOLD),
     ));
-    let paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: true });
-    terminal.render_widget(paragraph, area);
+    let mut paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: true });
+    terminal.render_widget(&mut paragraph, area);
 }
 
 fn render_second_tab<B>(terminal: &mut Terminal<B>, app: &mut App, area: &Rect)
@@ -349,7 +350,7 @@ where
         };
         Row::new(vec![s.name, s.location, s.status]).style(style)
     });
-    let table = Table::new(rows)
+    let mut table = Table::new(rows)
         .header(
             Row::new(vec!["Server", "Location", "Status"])
                 .style(Style::default().fg(Color::Yellow))
@@ -361,9 +362,9 @@ where
             Constraint::Length(15),
             Constraint::Length(10),
         ]);
-    terminal.render_widget(table, &chunks[0]);
+    terminal.render_widget(&mut table, &chunks[0]);
 
-    let map = Canvas::default()
+    let mut map = Canvas::default()
         .block(Block::default().title("World").borders(Borders::ALL))
         .paint(|ctx| {
             ctx.draw(&Map {
@@ -409,7 +410,7 @@ where
         })
         .x_bounds([-180.0, 180.0])
         .y_bounds([-90.0, 90.0]);
-    terminal.render_widget(map, &chunks[1]);
+    terminal.render_widget(&mut map, &chunks[1]);
 }
 
 fn render_third_tab<B>(terminal: &mut Terminal<B>, _app: &mut App, area: &Rect)
@@ -450,12 +451,12 @@ where
             Row::new(cells)
         })
         .collect();
-    let table = Table::new(items)
+    let mut table = Table::new(items)
         .block(Block::default().title("Colors").borders(Borders::ALL))
         .widths(&[
             Constraint::Ratio(1, 3),
             Constraint::Ratio(1, 3),
             Constraint::Ratio(1, 3),
         ]);
-    terminal.render_widget(table, &chunks[0]);
+    terminal.render_widget(&mut table, &chunks[0]);
 }

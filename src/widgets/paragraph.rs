@@ -134,12 +134,12 @@ impl<'a> Paragraph<'a> {
 }
 
 impl<'a> Widget for Paragraph<'a> {
-    fn render(mut self, area: &Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
+    fn render(&mut self, area: &Rect, buffer: &mut Buffer) {
+        buffer.set_style(area, self.style);
         let text_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
+            Some(mut block) => {
+                let inner_area = block.inner(area);
+                block.render(area, buffer);
                 inner_area
             }
             None => area.clone(),
@@ -183,7 +183,8 @@ impl<'a> Widget for Paragraph<'a> {
                     if width == 0 {
                         continue;
                     }
-                    buf.get_mut(text_area.left() + x, text_area.top() + y - scroll_y)
+                    buffer
+                        .get_mut(text_area.left() + x, text_area.top() + y - scroll_y)
                         .set_symbol(if symbol.is_empty() {
                             // If the symbol is empty, the last char which rendered last time will
                             // leave on the line. It's a quick fix.

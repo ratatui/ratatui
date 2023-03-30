@@ -437,11 +437,11 @@ impl<'a, F> Widget for Canvas<'a, F>
 where
     F: Fn(&mut Context),
 {
-    fn render(mut self, area: &Rect, buf: &mut Buffer) {
+    fn render(&mut self, area: &Rect, buf: &mut Buffer) {
         let canvas_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
+            Some(mut block) => {
+                let inner_area = block.inner(area);
+                block.render(area, buf);
                 inner_area
             }
             None => area.clone(),

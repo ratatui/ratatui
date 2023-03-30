@@ -13,11 +13,11 @@ fn widgets_block_renders() {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    let block = Block::default()
+    let mut block = Block::default()
         .title(Span::styled("Title", Style::default().fg(Color::LightBlue)))
         .borders(Borders::ALL);
     terminal.render_widget(
-        block,
+        &mut block,
         &Rect {
             x: 0,
             y: 0,
@@ -47,14 +47,6 @@ fn widgets_block_renders() {
 
 #[test]
 fn widgets_block_renders_on_small_areas() {
-    let test_case = |block, area: Rect, expected| {
-        let backend = TestBackend::new(area.width, area.height);
-        let mut terminal = Terminal::new(backend).unwrap();
-        terminal.render_widget(block, &area);
-        terminal.flush().unwrap();
-        terminal.backend().assert_buffer(&expected);
-    };
-
     let one_cell_test_cases = [
         (Borders::NONE, "T"),
         (Borders::LEFT, "│"),
@@ -199,11 +191,6 @@ fn widgets_block_title_alignment() {
         let backend = TestBackend::new(15, 2);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let block = Block::default()
-            .title(Span::styled("Title", Style::default()))
-            .title_alignment(alignment)
-            .borders(borders);
-
         let area = Rect {
             x: 1,
             y: 0,
@@ -211,7 +198,12 @@ fn widgets_block_title_alignment() {
             height: 2,
         };
 
-        terminal.render_widget(block, &area);
+        let mut block = Block::default()
+            .title(Span::styled("Title", Style::default()))
+            .title_alignment(alignment)
+            .borders(borders);
+
+        terminal.render_widget(&mut block, &area);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -320,4 +312,12 @@ fn widgets_block_title_alignment() {
         Borders::NONE,
         Buffer::with_lines(vec!["         Title ", "               "]),
     );
+}
+
+fn test_case(mut block: Block, area: Rect, expected: Buffer) {
+    let backend = TestBackend::new(area.width, area.height);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal.render_widget(&mut block, &area);
+    terminal.flush().unwrap();
+    terminal.backend().assert_buffer(&expected);
 }

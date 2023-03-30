@@ -92,17 +92,17 @@ impl<'a> Gauge<'a> {
 }
 
 impl<'a> Widget for Gauge<'a> {
-    fn render(mut self, area: &Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
+    fn render(&mut self, area: &Rect, buffer: &mut Buffer) {
+        buffer.set_style(area, self.style);
         let gauge_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
+            Some(mut block) => {
+                let inner_area = block.inner(area);
+                block.render(area, buffer);
                 inner_area
             }
             None => area.clone(),
         };
-        buf.set_style(&gauge_area, self.gauge_style);
+        buffer.set_style(&gauge_area, self.gauge_style);
         if gauge_area.height < 1 {
             return;
         }
@@ -112,6 +112,7 @@ impl<'a> Widget for Gauge<'a> {
         let label = {
             let pct = f64::round(self.ratio * 100.0);
             self.label
+                .clone()
                 .unwrap_or_else(|| Span::from(format!("{}%", pct)))
         };
         let clamped_label_width = gauge_area.width.min(label.width() as u16);
@@ -129,18 +130,20 @@ impl<'a> Widget for Gauge<'a> {
             // render the filled area (left to end)
             for x in gauge_area.left()..end {
                 // spaces are needed to apply the background styling
-                buf.get_mut(x, y)
+                buffer
+                    .get_mut(x, y)
                     .set_symbol(" ")
                     .set_fg(self.gauge_style.bg.unwrap_or(Color::Reset))
                     .set_bg(self.gauge_style.fg.unwrap_or(Color::Reset));
             }
             if self.use_unicode && self.ratio < 1.0 {
-                buf.get_mut(end, y)
+                buffer
+                    .get_mut(end, y)
                     .set_symbol(get_unicode_block(filled_width % 1.0));
             }
         }
         // set the span
-        buf.set_span(label_col, label_row, &label, clamped_label_width);
+        buffer.set_span(label_col, label_row, &label, clamped_label_width);
     }
 }
 
@@ -234,12 +237,12 @@ impl<'a> LineGauge<'a> {
 }
 
 impl<'a> Widget for LineGauge<'a> {
-    fn render(mut self, area: &Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
+    fn render(&mut self, area: &Rect, buffer: &mut Buffer) {
+        buffer.set_style(area, self.style);
         let gauge_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
+            Some(mut block) => {
+                let inner_area = block.inner(area);
+                block.render(area, buffer);
                 inner_area
             }
             None => area.clone(),
@@ -252,8 +255,9 @@ impl<'a> Widget for LineGauge<'a> {
         let ratio = self.ratio;
         let label = self
             .label
+            .clone()
             .unwrap_or_else(move || Spans::from(format!("{:.0}%", ratio * 100.0)));
-        let (col, row) = buf.set_spans(
+        let (col, row) = buffer.set_spans(
             gauge_area.left(),
             gauge_area.top(),
             &label,
@@ -267,7 +271,8 @@ impl<'a> Widget for LineGauge<'a> {
         let end = start
             + (f64::from(gauge_area.right().saturating_sub(start)) * self.ratio).floor() as u16;
         for col in start..end {
-            buf.get_mut(col, row)
+            buffer
+                .get_mut(col, row)
                 .set_symbol(self.line_set.horizontal)
                 .set_style(Style {
                     fg: self.gauge_style.fg,
@@ -277,7 +282,8 @@ impl<'a> Widget for LineGauge<'a> {
                 });
         }
         for col in end..gauge_area.right() {
-            buf.get_mut(col, row)
+            buffer
+                .get_mut(col, row)
                 .set_symbol(self.line_set.horizontal)
                 .set_style(Style {
                     fg: self.gauge_style.bg,

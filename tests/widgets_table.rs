@@ -14,7 +14,7 @@ fn widgets_table_column_spacing_can_be_changed() {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let table = Table::new(vec![
+        let mut table = Table::new(vec![
             Row::new(vec!["Row11", "Row12", "Row13"]),
             Row::new(vec!["Row21", "Row22", "Row23"]),
             Row::new(vec!["Row31", "Row32", "Row33"]),
@@ -28,7 +28,7 @@ fn widgets_table_column_spacing_can_be_changed() {
             Constraint::Length(5),
         ])
         .column_spacing(column_spacing);
-        terminal.render_widget_on_viewport(table, 0);
+        terminal.render_widget_on_viewport(&mut table, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -108,7 +108,7 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints() {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let table = Table::new(vec![
+        let mut table = Table::new(vec![
             Row::new(vec!["Row11", "Row12", "Row13"]),
             Row::new(vec!["Row21", "Row22", "Row23"]),
             Row::new(vec!["Row31", "Row32", "Row33"]),
@@ -117,7 +117,7 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints() {
         .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
         .block(Block::default().borders(Borders::ALL))
         .widths(widths);
-        terminal.render_widget_on_viewport(table, 0);
+        terminal.render_widget_on_viewport(&mut table, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -192,7 +192,7 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let table = Table::new(vec![
+        let mut table = Table::new(vec![
             Row::new(vec!["Row11", "Row12", "Row13"]),
             Row::new(vec!["Row21", "Row22", "Row23"]),
             Row::new(vec!["Row31", "Row32", "Row33"]),
@@ -202,7 +202,7 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
         .block(Block::default().borders(Borders::ALL))
         .widths(widths)
         .column_spacing(0);
-        terminal.render_widget_on_viewport(table, 0);
+        terminal.render_widget_on_viewport(&mut table, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -294,7 +294,7 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let table = Table::new(vec![
+        let mut table = Table::new(vec![
             Row::new(vec!["Row11", "Row12", "Row13"]),
             Row::new(vec!["Row21", "Row22", "Row23"]),
             Row::new(vec!["Row31", "Row32", "Row33"]),
@@ -303,7 +303,7 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
         .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
         .block(Block::default().borders(Borders::ALL))
         .widths(widths);
-        terminal.render_widget_on_viewport(table, 0);
+        terminal.render_widget_on_viewport(&mut table, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -399,7 +399,7 @@ fn widgets_table_columns_widths_can_use_ratio_constraints() {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let table = Table::new(vec![
+        let mut table = Table::new(vec![
             Row::new(vec!["Row11", "Row12", "Row13"]),
             Row::new(vec!["Row21", "Row22", "Row23"]),
             Row::new(vec!["Row31", "Row32", "Row33"]),
@@ -409,7 +409,7 @@ fn widgets_table_columns_widths_can_use_ratio_constraints() {
         .block(Block::default().borders(Borders::ALL))
         .widths(widths)
         .column_spacing(0);
-        terminal.render_widget_on_viewport(table, 0);
+        terminal.render_widget_on_viewport(&mut table, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -501,7 +501,7 @@ fn widgets_table_can_have_rows_with_multi_lines() {
         let backend = TestBackend::new(30, 8);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let table = Table::new(vec![
+        let mut table = Table::new(vec![
             Row::new(vec!["Row11", "Row12", "Row13"]),
             Row::new(vec!["Row21", "Row22", "Row23"]).height(2),
             Row::new(vec!["Row31", "Row32", "Row33"]),
@@ -516,7 +516,7 @@ fn widgets_table_can_have_rows_with_multi_lines() {
             Constraint::Length(5),
         ])
         .column_spacing(1);
-        terminal.render_stateful_widget_on_viewport(table, state, 0);
+        terminal.render_stateful_widget_on_viewport(&mut table, state, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };
@@ -593,7 +593,7 @@ fn widgets_table_can_have_elements_styled_individually() {
     let mut state = TableState::default();
     state.select(Some(0));
 
-    let table = Table::new(vec![
+    let mut table = Table::new(vec![
         Row::new(vec!["Row11", "Row12", "Row13"]).style(Style::default().fg(Color::Green)),
         Row::new(vec![
             Cell::from("Row21"),
@@ -616,7 +616,7 @@ fn widgets_table_can_have_elements_styled_individually() {
         Constraint::Length(6),
     ])
     .column_spacing(1);
-    terminal.render_stateful_widget_on_viewport(table, &mut state, 0);
+    terminal.render_stateful_widget_on_viewport(&mut table, &mut state, 0);
     terminal.flush().unwrap();
 
     let mut expected = Buffer::with_lines(vec![
@@ -665,7 +665,7 @@ fn widgets_table_should_render_even_if_empty() {
     let backend = TestBackend::new(30, 4);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    let table = Table::new(vec![])
+    let mut table = Table::new(vec![])
         .header(Row::new(vec!["Head1", "Head2", "Head3"]))
         .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
         .widths(&[
@@ -674,7 +674,7 @@ fn widgets_table_should_render_even_if_empty() {
             Constraint::Length(6),
         ])
         .column_spacing(1);
-    terminal.render_widget_on_viewport(table, 0);
+    terminal.render_widget_on_viewport(&mut table, 0);
     terminal.flush().unwrap();
 
     let expected = Buffer::with_lines(vec![
@@ -689,7 +689,7 @@ fn widgets_table_should_render_even_if_empty() {
 
 #[test]
 fn widgets_table_columns_dont_panic() {
-    let test_case = |state: &mut TableState, table: Table, width: u16| {
+    let test_case = |state: &mut TableState, table: &mut Table, width: u16| {
         let backend = TestBackend::new(width, 8);
         let mut terminal = Terminal::new(backend).unwrap();
 
@@ -699,7 +699,7 @@ fn widgets_table_columns_dont_panic() {
 
     // based on https://github.com/fdehau/tui-rs/issues/470#issuecomment-852562848
     let table1_width = 98;
-    let table1 = Table::new(vec![Row::new(vec!["r1", "r2", "r3", "r4"])])
+    let mut table1 = Table::new(vec![Row::new(vec!["r1", "r2", "r3", "r4"])])
         .header(Row::new(vec!["h1", "h2", "h3", "h4"]))
         .block(Block::default().borders(Borders::ALL))
         .highlight_symbol(">> ")
@@ -715,7 +715,7 @@ fn widgets_table_columns_dont_panic() {
 
     // select first, which would cause a panic before fix
     state.select(Some(0));
-    test_case(&mut state, table1.clone(), table1_width);
+    test_case(&mut state, &mut table1, table1_width);
 }
 
 #[test]
@@ -727,7 +727,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
     // render with 6 items => offset will be at 2
     state.select(Some(5));
 
-    let table = Table::new(vec![
+    let mut table = Table::new(vec![
         Row::new(vec!["Row01", "Row02", "Row03"]),
         Row::new(vec!["Row11", "Row12", "Row13"]),
         Row::new(vec!["Row21", "Row22", "Row23"]),
@@ -743,7 +743,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
         Constraint::Length(5),
     ])
     .column_spacing(1);
-    terminal.render_stateful_widget_on_viewport(table, &mut state, 0);
+    terminal.render_stateful_widget_on_viewport(&mut table, &mut state, 0);
     terminal.flush().unwrap();
     let expected = Buffer::with_lines(vec![
         "┌────────────────────────────┐",
@@ -760,7 +760,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
     // render with 1 item => offset will be at 1
     state.select(Some(1));
 
-    let table = Table::new(vec![Row::new(vec!["Row31", "Row32", "Row33"])])
+    let mut table = Table::new(vec![Row::new(vec!["Row31", "Row32", "Row33"])])
         .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
         .block(Block::default().borders(Borders::ALL))
         .widths(&[
@@ -769,7 +769,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
             Constraint::Length(5),
         ])
         .column_spacing(1);
-    terminal.render_stateful_widget_on_viewport(table, &mut state, 0);
+    terminal.render_stateful_widget_on_viewport(&mut table, &mut state, 0);
     terminal.flush().unwrap();
     let expected = Buffer::with_lines(vec![
         "┌────────────────────────────┐",

@@ -20,8 +20,8 @@ where
 {
     let backend = TestBackend::new(width, height);
     let mut terminal = Terminal::new(backend).unwrap();
-    let chart = Chart::new(vec![]).x_axis(x_axis).y_axis(y_axis);
-    terminal.render_widget_on_viewport(chart, 0);
+    let mut chart = Chart::new(vec![]).x_axis(x_axis).y_axis(y_axis);
+    terminal.render_widget_on_viewport(&mut chart, 0);
     terminal.flush().unwrap();
     let expected = Buffer::with_lines(lines);
     terminal.backend().assert_buffer(&expected);
@@ -36,7 +36,7 @@ fn widgets_chart_can_render_on_small_areas() {
             .marker(symbols::Marker::Braille)
             .style(Style::default().fg(Color::Magenta))
             .data(&[(0.0, 0.0)])];
-        let chart = Chart::new(datasets)
+        let mut chart = Chart::new(datasets)
             .block(Block::default().title("Plot").borders(Borders::ALL))
             .x_axis(
                 Axis::default()
@@ -48,7 +48,7 @@ fn widgets_chart_can_render_on_small_areas() {
                     .bounds([0.0, 0.0])
                     .labels(create_labels(&["0.0", "1.0"])),
             );
-        terminal.render_widget_on_viewport(chart, 0);
+        terminal.render_widget_on_viewport(&mut chart, 0);
         terminal.flush().unwrap();
     };
     test_case(0, 0);
@@ -258,7 +258,7 @@ fn widgets_chart_can_have_axis_with_zero_length_bounds() {
         .marker(symbols::Marker::Braille)
         .style(Style::default().fg(Color::Magenta))
         .data(&[(0.0, 0.0)])];
-    let chart = Chart::new(datasets)
+    let mut chart = Chart::new(datasets)
         .block(Block::default().title("Plot").borders(Borders::ALL))
         .x_axis(
             Axis::default()
@@ -271,7 +271,7 @@ fn widgets_chart_can_have_axis_with_zero_length_bounds() {
                 .labels(create_labels(&["0.0", "1.0"])),
         );
     terminal.render_widget(
-        chart,
+        &mut chart,
         &Rect {
             x: 0,
             y: 0,
@@ -295,7 +295,7 @@ fn widgets_chart_handles_overflows() {
             (1_588_298_473.0, 0.0),
             (1_588_298_496.0, 1.0),
         ])];
-    let chart = Chart::new(datasets)
+    let mut chart = Chart::new(datasets)
         .block(Block::default().title("Plot").borders(Borders::ALL))
         .x_axis(
             Axis::default()
@@ -308,7 +308,7 @@ fn widgets_chart_handles_overflows() {
                 .labels(create_labels(&["0.0", "1.0"])),
         );
     terminal.render_widget(
-        chart,
+        &mut chart,
         &Rect {
             x: 0,
             y: 0,
@@ -325,7 +325,7 @@ fn widgets_chart_can_have_empty_datasets() {
     let mut terminal = Terminal::new(backend).unwrap();
 
     let datasets = vec![Dataset::default().data(&[]).graph_type(Line)];
-    let chart = Chart::new(datasets)
+    let mut chart = Chart::new(datasets)
         .block(
             Block::default()
                 .title("Empty Dataset With Line")
@@ -342,7 +342,7 @@ fn widgets_chart_can_have_empty_datasets() {
                 .labels(create_labels(&["0.0", "1.0"])),
         );
     terminal.render_widget(
-        chart,
+        &mut chart,
         &Rect {
             x: 0,
             y: 0,
@@ -394,7 +394,7 @@ fn widgets_chart_can_have_a_legend() {
             ])
             .graph_type(Line),
     ];
-    let chart = Chart::new(datasets)
+    let mut chart = Chart::new(datasets)
         .style(Style::default().bg(Color::White))
         .block(Block::default().title("Chart Test").borders(Borders::ALL))
         .x_axis(
@@ -410,7 +410,7 @@ fn widgets_chart_can_have_a_legend() {
                 .labels(create_labels(&["0.0", "5.0", "10.0"])),
         );
     terminal.render_widget(
-        chart,
+        &mut chart,
         &Rect {
             x: 0,
             y: 0,

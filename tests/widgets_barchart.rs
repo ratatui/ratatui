@@ -9,13 +9,13 @@ fn widgets_barchart_not_full_below_max_value() {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let barchart = BarChart::default()
+        let mut barchart = BarChart::default()
             .block(Block::default().borders(Borders::ALL))
             .data(&[("empty", 0), ("half", 50), ("almost", 99), ("full", 100)])
             .max(100)
             .bar_width(7)
             .bar_gap(0);
-        terminal.render_widget_on_viewport(barchart, 0);
+        terminal.render_widget_on_viewport(&mut barchart, 0);
         terminal.flush().unwrap();
         terminal.backend().assert_buffer(&expected);
     };

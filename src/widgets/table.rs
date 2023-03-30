@@ -365,14 +365,14 @@ impl TableState {
 impl<'a> StatefulWidget for Table<'a> {
     type State = TableState;
 
-    fn render(mut self, area: &Rect, buffer: &mut Buffer, state: &mut Self::State) {
+    fn render(&mut self, area: &Rect, buffer: &mut Buffer, state: &mut Self::State) {
         if area.size() == 0 {
             return;
         }
         buffer.clear_region(area);
         buffer.set_style(area, self.style);
         let table_area = match self.block.take() {
-            Some(block) => {
+            Some(mut block) => {
                 let inner_area = block.inner(area);
                 block.render(area, buffer);
                 inner_area
@@ -487,7 +487,7 @@ fn render_cell(buf: &mut Buffer, cell: &Cell, area: &Rect) {
 }
 
 impl<'a> Widget for Table<'a> {
-    fn render(self, area: &Rect, buf: &mut Buffer) {
+    fn render(&mut self, area: &Rect, buf: &mut Buffer) {
         let mut state = TableState::default();
         StatefulWidget::render(self, area, buf, &mut state);
     }

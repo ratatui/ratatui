@@ -63,12 +63,12 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
         .split(size);
     // Surrounding block
-    let block = Block::default()
+    let mut block = Block::default()
         .borders(Borders::ALL)
         .title("Main block with round corners")
         .title_alignment(Alignment::Center)
         .border_type(BorderType::Rounded);
-    terminal.render_widget_on_viewport(block, 0);
+    terminal.render_widget_on_viewport(&mut block, 0);
 
     // Top two inner blocks
     let top_chunks = Layout::default()
@@ -77,16 +77,16 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
         .split(&chunks[0]);
 
     // Top left inner block with green background
-    let block = Block::default()
+    let mut block = Block::default()
         .title(vec![
             Span::styled("With", Style::default().fg(Color::Yellow)),
             Span::from(" background"),
         ])
         .style(Style::default().bg(Color::Green));
-    terminal.render_widget(block, &top_chunks[0]);
+    terminal.render_widget(&mut block, &top_chunks[0]);
 
     // Top right inner block with styled title aligned to the right
-    let block = Block::default()
+    let mut block = Block::default()
         .title(Span::styled(
             "Styled title",
             Style::default()
@@ -95,7 +95,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
                 .add_modifier(Modifier::BOLD),
         ))
         .title_alignment(Alignment::Right);
-    terminal.render_widget(block, &top_chunks[1]);
+    terminal.render_widget(&mut block, &top_chunks[1]);
 
     // Bottom two inner blocks
     let bottom_chunks = Layout::default()
@@ -104,15 +104,15 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
         .split(&chunks[1]);
 
     // Bottom left block with all default borders
-    let block = Block::default().title("With borders").borders(Borders::ALL);
-    terminal.render_widget(block, &bottom_chunks[0]);
+    let mut block = Block::default().title("With borders").borders(Borders::ALL);
+    terminal.render_widget(&mut block, &bottom_chunks[0]);
 
     // Bottom right block with styled left and right border
-    let block = Block::default()
+    let mut block = Block::default()
         .title("With styled borders and doubled borders")
         .border_style(Style::default().fg(Color::Cyan))
         .borders(Borders::LEFT | Borders::RIGHT)
         .border_type(BorderType::Double);
-    terminal.render_widget(block, &bottom_chunks[1]);
+    terminal.render_widget(&mut block, &bottom_chunks[1]);
     terminal.flush()
 }

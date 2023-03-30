@@ -97,12 +97,16 @@ where
     /// let area = Rect::new(0, 0, 5, 5);
     /// terminal.render_widget(block, &area);
     /// ```
-    pub fn render_widget<W: Widget>(&mut self, widget: W, area: &Rect) {
+    pub fn render_widget<W: Widget + ?Sized>(&mut self, widget: &mut W, area: &Rect) {
         widget.render(area, &mut self.buffer);
     }
 
     /// Render the widget on a given viewport.
-    pub fn render_widget_on_viewport<W: Widget>(&mut self, widget: W, viewport_index: usize) {
+    pub fn render_widget_on_viewport<W: Widget + ?Sized>(
+        &mut self,
+        widget: &mut W,
+        viewport_index: usize,
+    ) {
         widget.render(&self.viewports[viewport_index].region, &mut self.buffer)
     }
 
@@ -133,7 +137,7 @@ where
     /// ```
     pub fn render_stateful_widget<W: StatefulWidget>(
         &mut self,
-        widget: W,
+        widget: &mut W,
         area: &Rect,
         state: &mut W::State,
     ) {
@@ -142,7 +146,7 @@ where
 
     pub fn render_stateful_widget_on_viewport<W: StatefulWidget>(
         &mut self,
-        widget: W,
+        widget: &mut W,
         state: &mut W::State,
         viewport_index: usize,
     ) {

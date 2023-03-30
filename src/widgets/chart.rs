@@ -480,20 +480,20 @@ impl<'a> Chart<'a> {
 }
 
 impl<'a> Widget for Chart<'a> {
-    fn render(mut self, area: &Rect, buf: &mut Buffer) {
+    fn render(&mut self, area: &Rect, buffer: &mut Buffer) {
         if area.size() == 0 {
             return;
         }
-        buf.set_style(area, self.style);
+        buffer.set_style(area, self.style);
         // Sample the style of the entire widget. This sample will be used to reset the style of
         // the cells that are part of the components put on top of the grah area (i.e legend and
         // axis names).
-        let original_style = buf.get(area.left(), area.top()).style();
+        let original_style = buffer.get(area.left(), area.top()).style();
 
         let chart_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
+            Some(mut block) => {
+                let inner_area = block.inner(area);
+                block.render(area, buffer);
                 inner_area
             }
             None => area.clone(),
@@ -504,12 +504,13 @@ impl<'a> Widget for Chart<'a> {
             return;
         }
 
-        self.render_x_labels(buf, &layout, &chart_area);
-        self.render_y_labels(buf, &layout, &chart_area);
+        self.render_x_labels(buffer, &layout, &chart_area);
+        self.render_y_labels(buffer, &layout, &chart_area);
 
         if let Some(y) = layout.axis_x {
             for x in layout.graph_area.left()..layout.graph_area.right() {
-                buf.get_mut(x, y)
+                buffer
+                    .get_mut(x, y)
                     .set_symbol(symbols::line::HORIZONTAL)
                     .set_style(self.x_axis.style);
             }
@@ -517,7 +518,8 @@ impl<'a> Widget for Chart<'a> {
 
         if let Some(x) = layout.axis_y {
             for y in layout.graph_area.top()..layout.graph_area.bottom() {
-                buf.get_mut(x, y)
+                buffer
+                    .get_mut(x, y)
                     .set_symbol(symbols::line::VERTICAL)
                     .set_style(self.y_axis.style);
             }
@@ -525,7 +527,8 @@ impl<'a> Widget for Chart<'a> {
 
         if let Some(y) = layout.axis_x {
             if let Some(x) = layout.axis_y {
-                buf.get_mut(x, y)
+                buffer
+                    .get_mut(x, y)
                     .set_symbol(symbols::line::BOTTOM_LEFT)
                     .set_style(self.x_axis.style);
             }
@@ -554,16 +557,16 @@ impl<'a> Widget for Chart<'a> {
                         }
                     }
                 })
-                .render(&layout.graph_area, buf);
+                .render(&layout.graph_area, buffer);
         }
 
         if let Some(legend_area) = layout.legend_area {
-            buf.set_style(&legend_area, original_style);
+            buffer.set_style(&legend_area, original_style);
             Block::default()
                 .borders(Borders::ALL)
-                .render(&legend_area, buf);
+                .render(&legend_area, buffer);
             for (i, dataset) in self.datasets.iter().enumerate() {
-                buf.set_string(
+                buffer.set_string(
                     legend_area.x + 1,
                     legend_area.y + 1 + i as u16,
                     &dataset.name,
@@ -573,9 +576,9 @@ impl<'a> Widget for Chart<'a> {
         }
 
         if let Some((x, y)) = layout.title_x {
-            let title = self.x_axis.title.unwrap();
+            let title = self.x_axis.title.clone().unwrap();
             let width = layout.graph_area.right().saturating_sub(x);
-            buf.set_style(
+            buffer.set_style(
                 &Rect {
                     x,
                     y,
@@ -584,13 +587,13 @@ impl<'a> Widget for Chart<'a> {
                 },
                 original_style,
             );
-            buf.set_spans(x, y, &title, width);
+            buffer.set_spans(x, y, &title, width);
         }
 
         if let Some((x, y)) = layout.title_y {
-            let title = self.y_axis.title.unwrap();
+            let title = self.y_axis.title.clone().unwrap();
             let width = layout.graph_area.right().saturating_sub(x);
-            buf.set_style(
+            buffer.set_style(
                 &Rect {
                     x,
                     y,
@@ -599,7 +602,7 @@ impl<'a> Widget for Chart<'a> {
                 },
                 original_style,
             );
-            buf.set_spans(x, y, &title, width);
+            buffer.set_spans(x, y, &title, width);
         }
     }
 }

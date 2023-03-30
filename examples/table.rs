@@ -140,7 +140,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
         let cells = item.iter().map(|c| Cell::from(*c));
         Row::new(cells).height(height as u16).bottom_margin(1)
     });
-    let t = Table::new(rows)
+    let mut table = Table::new(rows)
         .header(header)
         .block(Block::default().borders(Borders::ALL).title("Table"))
         .highlight_style(selected_style)
@@ -150,6 +150,6 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
             Constraint::Length(30),
             Constraint::Min(10),
         ]);
-    terminal.render_stateful_widget(t, &rects[0], &mut app.state);
+    terminal.render_stateful_widget(&mut table, &rects[0], &mut app.state);
     terminal.flush()
 }

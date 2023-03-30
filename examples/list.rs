@@ -226,7 +226,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
         .collect();
 
     // Create a List from all list items and highlight the currently selected one
-    let items = List::new(items)
+    let mut items = List::new(items)
         .block(Block::default().borders(Borders::ALL).title("List"))
         .highlight_style(
             Style::default()
@@ -236,7 +236,7 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
         .highlight_symbol(">> ");
 
     // We can now render the item list
-    terminal.render_stateful_widget(items, &chunks[0], &mut app.items.state);
+    terminal.render_stateful_widget(&mut items, &chunks[0], &mut app.items.state);
 
     // Let's do the same for the events.
     // The event list doesn't have any state and only displays the current state of the list.
@@ -278,9 +278,9 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
             ])
         })
         .collect();
-    let events_list = List::new(events)
+    let mut events_list = List::new(events)
         .block(Block::default().borders(Borders::ALL).title("List"))
         .start_corner(Corner::BottomLeft);
-    terminal.render_widget(events_list, &chunks[1]);
+    terminal.render_widget(&mut events_list, &chunks[1]);
     terminal.flush()
 }

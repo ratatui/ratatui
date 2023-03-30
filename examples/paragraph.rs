@@ -87,8 +87,8 @@ fn run_app<B: Backend>(
 }
 
 fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
-    let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
-    terminal.render_widget_on_viewport(block, 0);
+    let mut block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
+    terminal.render_widget_on_viewport(&mut block, 0);
 
     let size = terminal.viewport_areas()[0];
     let chunks = Layout::default()
@@ -141,29 +141,29 @@ fn draw_ui<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> 
                 Style::default().add_modifier(Modifier::BOLD),
             ))
     };
-    let paragraph = Paragraph::new(text.clone())
+    let mut paragraph = Paragraph::new(text.clone())
         .style(Style::default().bg(Color::White).fg(Color::Black))
         .block(create_block("Left, no wrap"))
         .alignment(Alignment::Left);
-    terminal.render_widget(paragraph, &chunks[0]);
-    let paragraph = Paragraph::new(text.clone())
+    terminal.render_widget(&mut paragraph, &chunks[0]);
+    let mut paragraph = Paragraph::new(text.clone())
         .style(Style::default().bg(Color::White).fg(Color::Black))
         .block(create_block("Left, wrap"))
         .alignment(Alignment::Left)
         .wrap(Wrap { trim: true });
-    terminal.render_widget(paragraph, &chunks[1]);
-    let paragraph = Paragraph::new(text.clone())
+    terminal.render_widget(&mut paragraph, &chunks[1]);
+    let mut paragraph = Paragraph::new(text.clone())
         .style(Style::default().bg(Color::White).fg(Color::Black))
         .block(create_block("Center, wrap"))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
         .scroll((app.scroll, 0));
-    terminal.render_widget(paragraph, &chunks[2]);
-    let paragraph = Paragraph::new(text)
+    terminal.render_widget(&mut paragraph, &chunks[2]);
+    let mut paragraph = Paragraph::new(text)
         .style(Style::default().bg(Color::White).fg(Color::Black))
         .block(create_block("Right, wrap"))
         .alignment(Alignment::Right)
         .wrap(Wrap { trim: true });
-    terminal.render_widget(paragraph, &chunks[3]);
+    terminal.render_widget(&mut paragraph, &chunks[3]);
     terminal.flush()
 }

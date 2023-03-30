@@ -11,11 +11,11 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
         let area = Rect::new(0, 0, 3, 1);
         let mut terminal = Terminal::new(backend)?;
         terminal.resize_buffer_abs(3, 1);
-        terminal.render_widget(Paragraph::new("a"), &area);
+        terminal.render_widget(&mut Paragraph::new("a"), &area);
         terminal.flush()?;
-        terminal.render_widget(Paragraph::new("ab"), &area);
+        terminal.render_widget(&mut Paragraph::new("ab"), &area);
         terminal.flush()?;
-        terminal.render_widget(Paragraph::new("abc"), &area);
+        terminal.render_widget(&mut Paragraph::new("abc"), &area);
         terminal.flush()?;
     }
 
