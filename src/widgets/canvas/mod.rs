@@ -443,8 +443,8 @@ impl<'a, F> Widget for Canvas<'a, F>
 where
     F: Fn(&mut Context),
 {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
-        let canvas_area = match self.block.take() {
+    fn render(&self, area: Rect, buf: &mut Buffer) {
+        let canvas_area = match &self.block {
             Some(b) => {
                 let inner_area = b.inner(area);
                 b.render(area, buf);

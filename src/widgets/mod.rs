@@ -96,11 +96,52 @@ impl Debug for Borders {
     }
 }
 
-/// Base requirements for a Widget
+/// A `Widget` is a component that can be drawn on the terminal. It is the base trait for all
+/// widgets.
+///
+/// For widgets that need to update their state when rendering, see [`StatefulWidget`].
+///
+/// # Example
+///
+/// ```rust
+/// # use ratatui::{buffer::Buffer, layout::Rect, style::Style, widgets::Widget};
+///
+/// struct GreetingWidget {
+///    name: String,
+/// }
+///
+/// impl GreetingWidget {
+///     fn new(name: &str) -> GreetingWidget {
+///         GreetingWidget {
+///             name: name.to_string(),
+///         }
+///     }
+/// }
+///
+/// impl Widget for GreetingWidget {
+///     fn render(&self, area: Rect, buf: &mut Buffer) {
+///         let message = format!("Hello, {}!", self.name);
+///         buf.set_string(area.left(), area.top(), message, Style::default());
+///     }
+/// }
+/// ```
+/// # WARNING: Breaking change
+///
+/// Prior to version 0.22.0, the `render` method was taking self as an owned value. This has been
+/// changed to take a reference to self instead. This is a breaking change for custom widgets. Most
+/// widget users should render the widget by calling [`crate::terminal::Frame::render`] which takes
+/// care of this change correctly (as it accepts both `Widget` and `&Widget`).
 pub trait Widget {
-    /// Draws the current state of the widget in the given buffer. That is the only method required
-    /// to implement a custom widget.
-    fn render(self, area: Rect, buf: &mut Buffer);
+    /// Renders the widget.
+    ///
+    /// The widget is rendered in the given [`Rect`] using the given [`Buffer`].
+    ///
+    /// # WARNING: Breaking change
+    ///
+    /// Prior to version 0.22.0, the `render` method was taking self as an owned value. This has
+    /// been changed to take a reference to self instead. This is a breaking change for custom
+    /// widgets.
+    fn render(&self, area: Rect, buf: &mut Buffer);
 }
 
 /// A `StatefulWidget` is a widget that can take advantage of some local state to remember things
@@ -214,9 +255,90 @@ pub trait Widget {
 ///     events.next();
 /// }
 /// ```
+///
+/// # WARNING: Breaking change
+///
+/// Prior to version 0.22.0, the `render` method was taking self as an owned value. This has been
+/// changed to take a reference to self instead. This is a breaking change for custom widgets. Most
+/// widget users should render the widget by calling [`crate::terminal::Frame::render`] which takes
+/// care of this change correctly (as it accepts both `Widget` and `&Widget`).
 pub trait StatefulWidget {
     type State;
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
+
+    /// Renders the widget.
+    ///
+    /// The widget is rendered in the given [`Rect`] using the given [`Buffer`].
+    /// The state is passed as a mutable reference and can be modified to store some information
+    /// between two draw calls.
+    ///
+    /// # WARNING: Breaking change
+    ///
+    /// Prior to version 0.22.0, the `render` method was taking self as an owned value. This has
+    /// been changed to take a reference to self instead. This is a breaking change for custom
+    /// widgets.
+    fn render(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
+}
+
+/// A trait that helps the `crate::Frame::render_widget` method to render both `Widget` and
+/// `&Widget`.
+///
+/// Prior to version 0.22.0, the `render_widget` method was taking self as an owned value. This has
+/// been changed to take a reference to self instead. This trait is implemented for all types that
+/// implement `Widget` and `&Widget`.
+pub trait AsWidgetRef<W>
+where
+    W: Widget,
+{
+    fn as_widget_ref(&self) -> &W;
+}
+
+impl<W> AsWidgetRef<W> for W
+where
+    W: Widget,
+{
+    fn as_widget_ref(&self) -> &W {
+        self
+    }
+}
+
+impl<W> AsWidgetRef<W> for &W
+where
+    W: Widget,
+{
+    fn as_widget_ref(&self) -> &W {
+        self
+    }
+}
+
+/// A trait that helps the `crate::Frame::render_stateful_widget` method to render both
+/// `StatefulWidget` and `&Widget`.
+///
+/// Prior to version 0.22.0, the `render_stateful_widget` method was taking self as an owned value.
+/// This has been changed to take a reference to self instead. This trait is implemented for all
+/// types that implement `StatefulWidget` and `&StatefulWidget`.
+pub trait AsStatefulWidgetRef<W>
+where
+    W: StatefulWidget,
+{
+    fn as_widget_ref(&self) -> &W;
+}
+
+impl<W> AsStatefulWidgetRef<W> for W
+where
+    W: StatefulWidget,
+{
+    fn as_widget_ref(&self) -> &W {
+        self
+    }
+}
+
+impl<W> AsStatefulWidgetRef<W> for &W
+where
+    W: StatefulWidget,
+{
+    fn as_widget_ref(&self) -> &W {
+        self
+    }
 }
 
 /// Macro that constructs and returns a [`Borders`] object from TOP, BOTTOM, LEFT, RIGHT, NONE, and ALL.
@@ -259,6 +381,8 @@ macro_rules! border {
 
 #[cfg(test)]
 mod tests {
+    use crate::{assert_buffer_eq, style::Style};
+
     use super::*;
 
     #[test]
@@ -276,5 +400,20 @@ mod tests {
             format!("{:?}", Borders::TOP | Borders::BOTTOM),
             "TOP | BOTTOM"
         );
+    }
+
+    struct TestWidget;
+
+    impl Widget for TestWidget {
+        fn render(&self, area: Rect, buf: &mut Buffer) {
+            buf.set_string(area.left(), area.top(), "test", Style::default());
+        }
+    }
+
+    #[test]
+    fn test_widget_render() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
+        TestWidget.render(buf.area, &mut buf);
+        assert_buffer_eq!(buf, Buffer::with_lines(vec!["test      "]));
     }
 }

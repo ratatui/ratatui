@@ -2,7 +2,7 @@ use crate::{
     backend::{Backend, ClearType},
     buffer::Buffer,
     layout::Rect,
-    widgets::{StatefulWidget, Widget},
+    widgets::{AsStatefulWidgetRef, AsWidgetRef, StatefulWidget, Widget},
 };
 use std::io;
 
@@ -83,11 +83,14 @@ where
     /// let mut frame = terminal.get_frame();
     /// frame.render_widget(block, area);
     /// ```
-    pub fn render_widget<W>(&mut self, widget: W, area: Rect)
+    pub fn render_widget<W, R>(&mut self, widget: R, area: Rect)
     where
         W: Widget,
+        R: AsWidgetRef<W>,
     {
-        widget.render(area, self.terminal.current_buffer_mut());
+        widget
+            .as_widget_ref()
+            .render(area, self.terminal.current_buffer_mut());
     }
 
     /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
@@ -115,11 +118,14 @@ where
     /// let mut frame = terminal.get_frame();
     /// frame.render_stateful_widget(list, area, &mut state);
     /// ```
-    pub fn render_stateful_widget<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
+    pub fn render_stateful_widget<W, R>(&mut self, widget: R, area: Rect, state: &mut W::State)
     where
         W: StatefulWidget,
+        R: AsStatefulWidgetRef<W>,
     {
-        widget.render(area, self.terminal.current_buffer_mut(), state);
+        widget
+            .as_widget_ref()
+            .render(area, self.terminal.current_buffer_mut(), state);
     }
 
     /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
@@ -478,4 +484,66 @@ fn compute_inline_size<B: Backend>(
         },
         pos,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{backend::TestBackend, style::Style};
+
+    struct TestWidget(&'static str);
+
+    impl Widget for TestWidget {
+        fn render(&self, area: Rect, buf: &mut Buffer) {
+            buf.set_string(area.left(), area.top(), self.0, Style::default());
+        }
+    }
+
+    struct TestStatefulWidget(&'static str);
+
+    impl StatefulWidget for TestStatefulWidget {
+        type State = u8;
+        fn render(&self, area: Rect, buf: &mut Buffer, state: &mut u8) {
+            let message = format!("{}: {state}", self.0);
+            *state += 1;
+            buf.set_string(area.left(), area.top(), message, Style::default());
+        }
+    }
+
+    #[test]
+    fn test_render_widget() -> io::Result<()> {
+        let backend = TestBackend::new(10, 6);
+        let mut terminal = Terminal::new(backend)?;
+        let mut state = 0;
+        terminal.draw(|frame| {
+            frame.render_widget(&TestWidget("borrow"), Rect::new(0, 0, 10, 1));
+            frame.render_widget(&TestWidget("borrow"), Rect::new(0, 1, 10, 1));
+            frame.render_widget(TestWidget("own"), Rect::new(0, 2, 10, 1));
+            frame.render_stateful_widget(
+                TestStatefulWidget("borrow"),
+                Rect::new(0, 3, 10, 1),
+                &mut state,
+            );
+            frame.render_stateful_widget(
+                TestStatefulWidget("borrow"),
+                Rect::new(0, 4, 10, 1),
+                &mut state,
+            );
+            frame.render_stateful_widget(
+                TestStatefulWidget("own"),
+                Rect::new(0, 5, 10, 1),
+                &mut state,
+            );
+        })?;
+        terminal.backend.assert_buffer(&Buffer::with_lines(vec![
+            "borrow    ",
+            "borrow    ",
+            "own       ",
+            "borrow: 0 ",
+            "borrow: 1 ",
+            "own: 2    ",
+        ]));
+        assert_eq!(state, 3);
+        Ok(())
+    }
 }

@@ -379,7 +379,7 @@ impl<'a> Chart<'a> {
     }
 
     fn render_x_labels(
-        &mut self,
+        &self,
         buf: &mut Buffer,
         layout: &ChartLayout,
         chart_area: Rect,
@@ -461,7 +461,7 @@ impl<'a> Chart<'a> {
     }
 
     fn render_y_labels(
-        &mut self,
+        &self,
         buf: &mut Buffer,
         layout: &ChartLayout,
         chart_area: Rect,
@@ -486,7 +486,7 @@ impl<'a> Chart<'a> {
 }
 
 impl<'a> Widget for Chart<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
+    fn render(&self, area: Rect, buf: &mut Buffer) {
         if area.area() == 0 {
             return;
         }
@@ -496,7 +496,7 @@ impl<'a> Widget for Chart<'a> {
         // axis names).
         let original_style = buf.get(area.left(), area.top()).style();
 
-        let chart_area = match self.block.take() {
+        let chart_area = match &self.block {
             Some(b) => {
                 let inner_area = b.inner(area);
                 b.render(area, buf);
@@ -580,7 +580,7 @@ impl<'a> Widget for Chart<'a> {
         }
 
         if let Some((x, y)) = layout.title_x {
-            let title = self.x_axis.title.unwrap();
+            let title = self.x_axis.title.as_ref().unwrap();
             let width = graph_area.right().saturating_sub(x);
             buf.set_style(
                 Rect {
@@ -591,11 +591,11 @@ impl<'a> Widget for Chart<'a> {
                 },
                 original_style,
             );
-            buf.set_line(x, y, &title, width);
+            buf.set_line(x, y, title, width);
         }
 
         if let Some((x, y)) = layout.title_y {
-            let title = self.y_axis.title.unwrap();
+            let title = self.y_axis.title.as_ref().unwrap();
             let width = graph_area.right().saturating_sub(x);
             buf.set_style(
                 Rect {
@@ -606,7 +606,7 @@ impl<'a> Widget for Chart<'a> {
                 },
                 original_style,
             );
-            buf.set_line(x, y, &title, width);
+            buf.set_line(x, y, title, width);
         }
     }
 }
