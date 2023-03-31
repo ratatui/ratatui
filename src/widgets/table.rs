@@ -375,12 +375,12 @@ impl TableState {
 impl<'a> StatefulWidget for Table<'a> {
     type State = TableState;
 
-    fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         if area.area() == 0 {
             return;
         }
         buf.set_style(area, self.style);
-        let table_area = match self.block.take() {
+        let table_area = match &self.block {
             Some(b) => {
                 let inner_area = b.inner(area);
                 b.render(area, buf);
@@ -437,7 +437,7 @@ impl<'a> StatefulWidget for Table<'a> {
         state.offset = start;
         for (i, table_row) in self
             .rows
-            .iter_mut()
+            .iter()
             .enumerate()
             .skip(state.offset)
             .take(end - start)
@@ -496,7 +496,7 @@ fn render_cell(buf: &mut Buffer, cell: &Cell, area: Rect) {
 }
 
 impl<'a> Widget for Table<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(&self, area: Rect, buf: &mut Buffer) {
         let mut state = TableState::default();
         StatefulWidget::render(self, area, buf, &mut state);
     }

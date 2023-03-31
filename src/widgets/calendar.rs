@@ -108,10 +108,10 @@ impl<'a, S: DateStyler> Monthly<'a, S> {
 }
 
 impl<'a, S: DateStyler> Widget for Monthly<'a, S> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
+    fn render(&self, area: Rect, buf: &mut Buffer) {
         // Block is used for borders and such
         // Draw that first, and use the blank area inside the block for our own purposes
-        let mut area = match self.block.take() {
+        let mut area = match &self.block {
             None => area,
             Some(b) => {
                 let inner = b.inner(area);

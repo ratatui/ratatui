@@ -250,7 +250,7 @@ impl<'a> Block<'a> {
 }
 
 impl<'a> Widget for Block<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(&self, area: Rect, buf: &mut Buffer) {
         if area.area() == 0 {
             return;
         }
@@ -312,7 +312,7 @@ impl<'a> Widget for Block<'a> {
         }
 
         // Title
-        if let Some(title) = self.title {
+        if let Some(title) = &self.title {
             let left_border_dx = u16::from(self.borders.intersects(Borders::LEFT));
             let right_border_dx = u16::from(self.borders.intersects(Borders::RIGHT));
 
@@ -337,7 +337,7 @@ impl<'a> Widget for Block<'a> {
                 area.top()
             };
 
-            buf.set_line(title_x, title_y, &title, title_area_width);
+            buf.set_line(title_x, title_y, title, title_area_width);
         }
     }
 }

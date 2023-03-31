@@ -200,9 +200,9 @@ impl<'a> List<'a> {
 impl<'a> StatefulWidget for List<'a> {
     type State = ListState;
 
-    fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
-        let list_area = match self.block.take() {
+        let list_area = match &self.block {
             Some(b) => {
                 let inner_area = b.inner(area);
                 b.render(area, buf);
@@ -230,7 +230,7 @@ impl<'a> StatefulWidget for List<'a> {
         let has_selection = state.selected.is_some();
         for (i, item) in self
             .items
-            .iter_mut()
+            .iter()
             .enumerate()
             .skip(state.offset)
             .take(end - start)
@@ -284,7 +284,7 @@ impl<'a> StatefulWidget for List<'a> {
 }
 
 impl<'a> Widget for List<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(&self, area: Rect, buf: &mut Buffer) {
         let mut state = ListState::default();
         StatefulWidget::render(self, area, buf, &mut state);
     }
@@ -417,7 +417,7 @@ mod tests {
     /// helper method to render a widget to an empty buffer with the default state
     fn render_widget(widget: List<'_>, width: u16, height: u16) -> Buffer {
         let mut buffer = Buffer::empty(Rect::new(0, 0, width, height));
-        Widget::render(widget, buffer.area, &mut buffer);
+        Widget::render(&widget, buffer.area, &mut buffer);
         buffer
     }
 
@@ -429,7 +429,7 @@ mod tests {
         height: u16,
     ) -> Buffer {
         let mut buffer = Buffer::empty(Rect::new(0, 0, width, height));
-        StatefulWidget::render(widget, buffer.area, &mut buffer, state);
+        StatefulWidget::render(&widget, buffer.area, &mut buffer, state);
         buffer
     }
 
@@ -440,11 +440,11 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
 
         // attempt to render into an area of the buffer with 0 width
-        Widget::render(list.clone(), Rect::new(0, 0, 0, 3), &mut buffer);
+        Widget::render(&list.clone(), Rect::new(0, 0, 0, 3), &mut buffer);
         assert_buffer_eq!(buffer, Buffer::empty(buffer.area));
 
         // attempt to render into an area of the buffer with 0 height
-        Widget::render(list.clone(), Rect::new(0, 0, 15, 0), &mut buffer);
+        Widget::render(&list.clone(), Rect::new(0, 0, 15, 0), &mut buffer);
         assert_buffer_eq!(buffer, Buffer::empty(buffer.area));
 
         let list = List::new(items)
@@ -452,7 +452,7 @@ mod tests {
             .block(Block::default().borders(Borders::all()));
         // attempt to render into an area of the buffer with zero height after
         // setting the block borders
-        Widget::render(list, Rect::new(0, 0, 15, 2), &mut buffer);
+        Widget::render(&list, Rect::new(0, 0, 15, 2), &mut buffer);
         assert_buffer_eq!(
             buffer,
             Buffer::with_lines(vec![
@@ -469,7 +469,7 @@ mod tests {
             let list = List::new(items.to_owned()).highlight_symbol(">>");
             let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
 
-            Widget::render(list, buffer.area, &mut buffer);
+            Widget::render(&list, buffer.area, &mut buffer);
 
             let expected = Buffer::with_lines(expected_lines);
             assert_buffer_eq!(buffer, expected);
@@ -483,7 +483,7 @@ mod tests {
             let mut state = ListState::default().with_selected(selected);
             let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
 
-            StatefulWidget::render(list, buffer.area, &mut buffer, &mut state);
+            StatefulWidget::render(&list, buffer.area, &mut buffer, &mut state);
 
             let expected = Buffer::with_lines(expected_lines);
             assert_buffer_eq!(buffer, expected);
