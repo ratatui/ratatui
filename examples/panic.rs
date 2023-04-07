@@ -87,6 +87,7 @@ fn reset_terminal() -> Result<()> {
 }
 
 /// Runs the TUI loop.
+#[allow(clippy::no_effect)]
 fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
     loop {
         terminal.draw(|f| ui(f, app))?;
