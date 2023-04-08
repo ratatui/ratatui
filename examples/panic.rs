@@ -102,11 +102,6 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     app.chain_hook();
                 }
 
-                // hack to make it work on powershell
-                KeyCode::Enter => {
-                    ();
-                }
-
                 _ => {
                     return Ok(());
                 }
