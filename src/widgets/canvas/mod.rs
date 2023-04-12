@@ -260,9 +260,13 @@ impl<'a> Context<'a> {
         y_bounds: [f64; 2],
         marker: symbols::Marker,
     ) -> Context<'a> {
+        let dot = symbols::DOT.chars().next().unwrap();
+        let block = symbols::block::FULL.chars().next().unwrap();
+        let bar = symbols::bar::HALF.chars().next().unwrap();
         let grid: Box<dyn Grid> = match marker {
-            symbols::Marker::Dot => Box::new(CharGrid::new(width, height, '•')),
-            symbols::Marker::Block => Box::new(CharGrid::new(width, height, '▄')),
+            symbols::Marker::Dot => Box::new(CharGrid::new(width, height, dot)),
+            symbols::Marker::Block => Box::new(CharGrid::new(width, height, block)),
+            symbols::Marker::Bar => Box::new(CharGrid::new(width, height, bar)),
             symbols::Marker::Braille => Box::new(BrailleGrid::new(width, height)),
         };
         Context {
@@ -506,5 +510,105 @@ where
             let y = ((top - label.y) * resolution.1 / height) as u16 + canvas_area.top();
             buf.set_spans(x, y, &label.spans, canvas_area.right() - x);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{buffer::Cell, symbols::Marker};
+    use indoc::indoc;
+
+    // helper to test the canvas checks that drawing a vertical and horizontal line
+    // results in the expected output
+    fn test_marker(marker: Marker, expected: &str) {
+        let area = Rect::new(0, 0, 5, 5);
+        let mut cell = Cell::default();
+        cell.set_char('x');
+        let mut buf = Buffer::filled(area, &cell);
+        let horizontal_line = Line {
+            x1: 0.0,
+            y1: 0.0,
+            x2: 10.0,
+            y2: 0.0,
+            color: Color::Reset,
+        };
+        let vertical_line = Line {
+            x1: 0.0,
+            y1: 0.0,
+            x2: 0.0,
+            y2: 10.0,
+            color: Color::Reset,
+        };
+        Canvas::default()
+            .marker(marker)
+            .paint(|ctx| {
+                ctx.draw(&vertical_line);
+                ctx.draw(&horizontal_line);
+            })
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .render(area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(expected.lines().collect()));
+    }
+
+    #[test]
+    fn test_bar_marker() {
+        test_marker(
+            Marker::Bar,
+            indoc!(
+                "
+                ▄xxxx
+                ▄xxxx
+                ▄xxxx
+                ▄xxxx
+                ▄▄▄▄▄"
+            ),
+        );
+    }
+
+    #[test]
+    fn test_block_marker() {
+        test_marker(
+            Marker::Block,
+            indoc!(
+                "
+                █xxxx
+                █xxxx
+                █xxxx
+                █xxxx
+                █████"
+            ),
+        );
+    }
+
+    #[test]
+    fn test_braille_marker() {
+        test_marker(
+            Marker::Braille,
+            indoc!(
+                "
+                ⡇xxxx
+                ⡇xxxx
+                ⡇xxxx
+                ⡇xxxx
+                ⣇⣀⣀⣀⣀"
+            ),
+        );
+    }
+
+    #[test]
+    fn test_dot_marker() {
+        test_marker(
+            Marker::Dot,
+            indoc!(
+                "
+                •xxxx
+                •xxxx
+                •xxxx
+                •xxxx
+                •••••"
+            ),
+        );
     }
 }
