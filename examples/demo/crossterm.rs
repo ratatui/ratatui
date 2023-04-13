@@ -1,6 +1,6 @@
 use crate::{app::App, ui};
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -56,13 +56,15 @@ fn run_app<B: Backend>(
             .unwrap_or_else(|| Duration::from_secs(0));
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char(c) => app.on_key(c),
-                    KeyCode::Left => app.on_left(),
-                    KeyCode::Up => app.on_up(),
-                    KeyCode::Right => app.on_right(),
-                    KeyCode::Down => app.on_down(),
-                    _ => {}
+                if key.kind == KeyEventKind::Press {
+                    match key.code {
+                        KeyCode::Char(c) => app.on_key(c),
+                        KeyCode::Left => app.on_left(),
+                        KeyCode::Up => app.on_up(),
+                        KeyCode::Right => app.on_right(),
+                        KeyCode::Down => app.on_down(),
+                        _ => {}
+                    }
                 }
             }
         }
