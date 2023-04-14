@@ -33,6 +33,14 @@ pub struct Sparkline<'a> {
     max: Option<u64>,
     /// A set of bar symbols used to represent the give data
     bar_set: symbols::bar::Set,
+    // The direction to render the sparkine, either from left to right, or from right to left
+    direction: RenderDirection,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum RenderDirection {
+    LeftToRight,
+    RightToLeft,
 }
 
 impl<'a> Default for Sparkline<'a> {
@@ -43,6 +51,7 @@ impl<'a> Default for Sparkline<'a> {
             data: &[],
             max: None,
             bar_set: symbols::bar::NINE_LEVELS,
+            direction: RenderDirection::LeftToRight,
         }
     }
 }
@@ -70,6 +79,11 @@ impl<'a> Sparkline<'a> {
 
     pub fn bar_set(mut self, bar_set: symbols::bar::Set) -> Sparkline<'a> {
         self.bar_set = bar_set;
+        self
+    }
+
+    pub fn direction(mut self, direction: RenderDirection) -> Sparkline<'a> {
+        self.direction = direction;
         self
     }
 }
@@ -119,7 +133,11 @@ impl<'a> Widget for Sparkline<'a> {
                     7 => self.bar_set.seven_eighths,
                     _ => self.bar_set.full,
                 };
-                buf.get_mut(spark_area.left() + i as u16, spark_area.top() + j)
+                let x = match self.direction {
+                    RenderDirection::LeftToRight => spark_area.left() + i as u16,
+                    RenderDirection::RightToLeft => spark_area.right() - i as u16 - 1,
+                };
+                buf.get_mut(x, spark_area.top() + j)
                     .set_symbol(symbol)
                     .set_style(self.style);
 
@@ -135,21 +153,57 @@ impl<'a> Widget for Sparkline<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::buffer::Cell;
+
     use super::*;
+
+    // Helper function to render a sparkline to a buffer with a given width
+    // filled with x symbols to make it easier to assert on the result
+    fn render(widget: Sparkline, width: u16) -> Buffer {
+        let area = Rect::new(0, 0, width, 1);
+        let mut cell = Cell::default();
+        cell.set_symbol("x");
+        let mut buffer = Buffer::filled(area, &cell);
+        widget.render(area, &mut buffer);
+        buffer
+    }
 
     #[test]
     fn it_does_not_panic_if_max_is_zero() {
         let widget = Sparkline::default().data(&[0, 0, 0]);
-        let area = Rect::new(0, 0, 3, 1);
-        let mut buffer = Buffer::empty(area);
-        widget.render(area, &mut buffer);
+        let buffer = render(widget, 6);
+        assert_eq!(buffer, Buffer::with_lines(vec!["   xxx"]));
     }
 
     #[test]
     fn it_does_not_panic_if_max_is_set_to_zero() {
         let widget = Sparkline::default().data(&[0, 1, 2]).max(0);
-        let area = Rect::new(0, 0, 3, 1);
-        let mut buffer = Buffer::empty(area);
-        widget.render(area, &mut buffer);
+        let buffer = render(widget, 6);
+        assert_eq!(buffer, Buffer::with_lines(vec!["   xxx"]));
+    }
+
+    #[test]
+    fn it_draws() {
+        let widget = Sparkline::default().data(&[0, 1, 2, 3, 4, 5, 6, 7, 8]);
+        let buffer = render(widget, 12);
+        assert_eq!(buffer, Buffer::with_lines(vec![" ▁▂▃▄▅▆▇█xxx"]));
+    }
+
+    #[test]
+    fn it_renders_left_to_right() {
+        let widget = Sparkline::default()
+            .data(&[0, 1, 2, 3, 4, 5, 6, 7, 8])
+            .direction(RenderDirection::LeftToRight);
+        let buffer = render(widget, 12);
+        assert_eq!(buffer, Buffer::with_lines(vec![" ▁▂▃▄▅▆▇█xxx"]));
+    }
+
+    #[test]
+    fn it_renders_right_to_left() {
+        let widget = Sparkline::default()
+            .data(&[0, 1, 2, 3, 4, 5, 6, 7, 8])
+            .direction(RenderDirection::RightToLeft);
+        let buffer = render(widget, 12);
+        assert_eq!(buffer, Buffer::with_lines(vec!["xxx█▇▆▅▄▃▂▁ "]));
     }
 }
