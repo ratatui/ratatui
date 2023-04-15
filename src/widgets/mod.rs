@@ -13,10 +13,13 @@
 //! - [`BarChart`]
 //! - [`Gauge`]
 //! - [`Sparkline`]
+//! - [`calendar::Monthly`]
 //! - [`Clear`]
 
 mod barchart;
 mod block;
+#[cfg(feature = "widget-calendar")]
+pub mod calendar;
 pub mod canvas;
 mod chart;
 mod clear;
