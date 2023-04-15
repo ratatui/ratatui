@@ -35,6 +35,7 @@ serde = { version = "1", optional = true, features = ["derive"]}
 [dev-dependencies]
 rand = "0.8"
 argh = "0.1"
+indoc = "2.0"
 
 [[example]]
 name = "barchart"
