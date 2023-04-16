@@ -13,12 +13,6 @@ pub enum Viewport {
     Fixed(Rect),
 }
 
-impl Viewport {
-    pub fn fixed(area: Rect) -> Viewport {
-        Self::Fixed(area)
-    }
-}
-
 #[derive(Debug, Clone, PartialEq)]
 /// Options to pass to [`Terminal::with_options`]
 pub struct TerminalOptions {
