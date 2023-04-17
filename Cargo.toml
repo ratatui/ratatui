@@ -96,3 +96,7 @@ required-features = ["crossterm"]
 [[example]]
 name = "user_input"
 required-features = ["crossterm"]
+
+[[example]]
+name = "inline"
+required-features = ["crossterm"]

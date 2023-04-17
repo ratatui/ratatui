@@ -1,5 +1,5 @@
 use crate::{
-    backend::Backend,
+    backend::{Backend, ClearType},
     buffer::Cell,
     layout::Rect,
     style::{Color, Modifier},
@@ -11,7 +11,7 @@ use crossterm::{
         Attribute as CAttribute, Color as CColor, Print, SetAttribute, SetBackgroundColor,
         SetForegroundColor,
     },
-    terminal::{self, Clear, ClearType},
+    terminal::{self, Clear},
 };
 use std::io::{self, Write};
 
@@ -107,7 +107,27 @@ where
     }
 
     fn clear(&mut self) -> io::Result<()> {
-        map_error(execute!(self.buffer, Clear(ClearType::All)))
+        self.clear_region(ClearType::All)
+    }
+
+    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
+        map_error(execute!(
+            self.buffer,
+            Clear(match clear_type {
+                ClearType::All => crossterm::terminal::ClearType::All,
+                ClearType::AfterCursor => crossterm::terminal::ClearType::FromCursorDown,
+                ClearType::BeforeCursor => crossterm::terminal::ClearType::FromCursorUp,
+                ClearType::CurrentLine => crossterm::terminal::ClearType::CurrentLine,
+                ClearType::UntilNewLine => crossterm::terminal::ClearType::UntilNewLine,
+            })
+        ))
+    }
+
+    fn append_lines(&mut self, n: u16) -> io::Result<()> {
+        for _ in 0..n {
+            map_error(queue!(self.buffer, Print("\n")))?;
+        }
+        self.buffer.flush()
     }
 
     fn size(&self) -> io::Result<Rect> {
