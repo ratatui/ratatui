@@ -2,7 +2,7 @@
 
 | Name                                                                 | Description                                                                                               | Author                                                   |
 | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| [adsb_deku/radar](https://github.com/rsadsb/adsb_deku#radar-tui)     | Rust ADS-B decoder + TUI radar application                                                                | [Rust ADS-B](https://github.com/rsadsb)                  |
+| [adsb_deku/radar](https://github.com/rsadsb/adsb_deku)               | Rust ADS-B decoder + TUI radar application                                                                | [Rust ADS-B](https://github.com/rsadsb)                  |
 | [bandwhich](https://github.com/imsnif/bandwhich)                     | Terminal utility for displaying current network utilization by process, connection and remote IP/hostname | [Aram Drevekenin](https://github.com/imsnif)             |
 | [battleship.rs](https://github.com/deepu105/battleship-rs)           | A terminal battleship game in Rust                                                                        | [Deepu K Sasidharan](https://github.com/deepu105)        |
 | [bottom](https://github.com/ClementTsang/bottom)                     | Yet another cross-platform graphical process/system monitor                                               | [Clement Tsang](https://github.com/ClementTsang)         |
