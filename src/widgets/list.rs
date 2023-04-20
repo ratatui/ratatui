@@ -7,19 +7,10 @@ use crate::{
 };
 use unicode_width::UnicodeWidthStr;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ListState {
     offset: usize,
     selected: Option<usize>,
-}
-
-impl Default for ListState {
-    fn default() -> ListState {
-        ListState {
-            offset: 0,
-            selected: None,
-        }
-    }
 }
 
 impl ListState {
@@ -35,7 +26,7 @@ impl ListState {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListItem<'a> {
     content: Text<'a>,
     style: Style,
@@ -60,6 +51,10 @@ impl<'a> ListItem<'a> {
     pub fn height(&self) -> usize {
         self.content.height()
     }
+
+    pub fn width(&self) -> usize {
+        self.content.width()
+    }
 }
 
 /// A widget to display several items among which one can be selected (optional)
@@ -67,8 +62,8 @@ impl<'a> ListItem<'a> {
 /// # Examples
 ///
 /// ```
-/// # use tui::widgets::{Block, Borders, List, ListItem};
-/// # use tui::style::{Style, Color, Modifier};
+/// # use ratatui::widgets::{Block, Borders, List, ListItem};
+/// # use ratatui::style::{Style, Color, Modifier};
 /// let items = [ListItem::new("Item 1"), ListItem::new("Item 2"), ListItem::new("Item 3")];
 /// List::new(items)
 ///     .block(Block::default().title("List").borders(Borders::ALL))
@@ -236,7 +231,7 @@ impl<'a> StatefulWidget for List<'a> {
 
             let is_selected = state.selected.map(|s| s == i).unwrap_or(false);
             for (j, line) in item.content.lines.iter().enumerate() {
-                // if the item is selected, we need to display the hightlight symbol:
+                // if the item is selected, we need to display the highlight symbol:
                 // - either for the first line of the item only,
                 // - or for each line of the item if the appropriate option is set
                 let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
@@ -252,11 +247,11 @@ impl<'a> StatefulWidget for List<'a> {
                         list_area.width as usize,
                         item_style,
                     );
-                    (elem_x, (list_area.width - (elem_x - x)) as u16)
+                    (elem_x, (list_area.width - (elem_x - x)))
                 } else {
                     (x, list_area.width)
                 };
-                buf.set_spans(elem_x, y + j as u16, line, max_element_width as u16);
+                buf.set_spans(elem_x, y + j as u16, line, max_element_width);
             }
             if is_selected {
                 buf.set_style(area, self.highlight_style);

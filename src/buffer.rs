@@ -8,7 +8,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 /// A buffer cell
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Cell {
     pub symbol: String,
     pub fg: Color,
@@ -88,9 +88,9 @@ impl Default for Cell {
 /// # Examples:
 ///
 /// ```
-/// use tui::buffer::{Buffer, Cell};
-/// use tui::layout::Rect;
-/// use tui::style::{Color, Style, Modifier};
+/// use ratatui::buffer::{Buffer, Cell};
+/// use ratatui::layout::Rect;
+/// use ratatui::style::{Color, Style, Modifier};
 ///
 /// let mut buf = Buffer::empty(Rect{x: 0, y: 0, width: 10, height: 5});
 /// buf.get_mut(0, 2).set_symbol("x");
@@ -105,22 +105,13 @@ impl Default for Cell {
 /// buf.get_mut(5, 0).set_char('x');
 /// assert_eq!(buf.get(5, 0).symbol, "x");
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Buffer {
     /// The area represented by this buffer
     pub area: Rect,
     /// The content of the buffer. The length of this Vec should always be equal to area.width *
     /// area.height
     pub content: Vec<Cell>,
-}
-
-impl Default for Buffer {
-    fn default() -> Buffer {
-        Buffer {
-            area: Default::default(),
-            content: Vec::new(),
-        }
-    }
 }
 
 impl Buffer {
@@ -185,15 +176,15 @@ impl Buffer {
         &mut self.content[i]
     }
 
-    /// Returns the index in the Vec<Cell> for the given global (x, y) coordinates.
+    /// Returns the index in the `Vec<Cell>` for the given global (x, y) coordinates.
     ///
     /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
     ///
     /// # Examples
     ///
     /// ```
-    /// # use tui::buffer::Buffer;
-    /// # use tui::layout::Rect;
+    /// # use ratatui::buffer::Buffer;
+    /// # use ratatui::layout::Rect;
     /// let rect = Rect::new(200, 100, 10, 10);
     /// let buffer = Buffer::empty(rect);
     /// // Global coordinates to the top corner of this buffer's area
@@ -205,8 +196,8 @@ impl Buffer {
     /// Panics when given an coordinate that is outside of this Buffer's area.
     ///
     /// ```should_panic
-    /// # use tui::buffer::Buffer;
-    /// # use tui::layout::Rect;
+    /// # use ratatui::buffer::Buffer;
+    /// # use ratatui::layout::Rect;
     /// let rect = Rect::new(200, 100, 10, 10);
     /// let buffer = Buffer::empty(rect);
     /// // Top coordinate is outside of the buffer in global coordinate space, as the Buffer's area
@@ -234,8 +225,8 @@ impl Buffer {
     /// # Examples
     ///
     /// ```
-    /// # use tui::buffer::Buffer;
-    /// # use tui::layout::Rect;
+    /// # use ratatui::buffer::Buffer;
+    /// # use ratatui::layout::Rect;
     /// let rect = Rect::new(200, 100, 10, 10);
     /// let buffer = Buffer::empty(rect);
     /// assert_eq!(buffer.pos_of(0), (200, 100));
@@ -247,8 +238,8 @@ impl Buffer {
     /// Panics when given an index that is outside the Buffer's content.
     ///
     /// ```should_panic
-    /// # use tui::buffer::Buffer;
-    /// # use tui::layout::Rect;
+    /// # use ratatui::buffer::Buffer;
+    /// # use ratatui::layout::Rect;
     /// let rect = Rect::new(0, 0, 10, 10); // 100 cells in total
     /// let buffer = Buffer::empty(rect);
     /// // Index 100 is the 101th cell, which lies outside of the area of this Buffer.
@@ -298,7 +289,7 @@ impl Buffer {
                 continue;
             }
             // `x_offset + width > max_offset` could be integer overflow on 32-bit machines if we
-            // change dimenstions to usize or u32 and someone resizes the terminal to 1x2^32.
+            // change dimensions to usize or u32 and someone resizes the terminal to 1x2^32.
             if width > max_offset.saturating_sub(x_offset) {
                 break;
             }
@@ -315,7 +306,7 @@ impl Buffer {
         (x_offset as u16, y)
     }
 
-    pub fn set_spans<'a>(&mut self, x: u16, y: u16, spans: &Spans<'a>, width: u16) -> (u16, u16) {
+    pub fn set_spans(&mut self, x: u16, y: u16, spans: &Spans<'_>, width: u16) -> (u16, u16) {
         let mut remaining_width = width;
         let mut x = x;
         for span in &spans.0 {
@@ -336,7 +327,7 @@ impl Buffer {
         (x, y)
     }
 
-    pub fn set_span<'a>(&mut self, x: u16, y: u16, span: &Span<'a>, width: u16) -> (u16, u16) {
+    pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, width: u16) -> (u16, u16) {
         self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
     }
 
@@ -440,18 +431,16 @@ impl Buffer {
     pub fn diff<'a>(&self, other: &'a Buffer) -> Vec<(u16, u16, &'a Cell)> {
         let previous_buffer = &self.content;
         let next_buffer = &other.content;
-        let width = self.area.width;
 
         let mut updates: Vec<(u16, u16, &Cell)> = vec![];
-        // Cells invalidated by drawing/replacing preceeding multi-width characters:
+        // Cells invalidated by drawing/replacing preceding multi-width characters:
         let mut invalidated: usize = 0;
-        // Cells from the current buffer to skip due to preceeding multi-width characters taking their
+        // Cells from the current buffer to skip due to preceding multi-width characters taking their
         // place (the skipped cells should be blank anyway):
         let mut to_skip: usize = 0;
         for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
             if (current != previous || invalidated > 0) && to_skip == 0 {
-                let x = i as u16 % width;
-                let y = i as u16 / width;
+                let (x, y) = self.pos_of(i);
                 updates.push((x, y, &next_buffer[i]));
             }
 

@@ -1,4 +1,4 @@
-use tui::{
+use ratatui::{
     backend::TestBackend, buffer::Buffer, layout::Rect, symbols, text::Spans, widgets::Tabs,
     Terminal,
 };
