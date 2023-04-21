@@ -28,43 +28,55 @@ impl BorderType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Padding {
-    pub vertical: u16,
-    pub horizontal: u16,
+    pub left: u16,
+    pub right: u16,
+    pub top: u16,
+    pub bottom: u16,
 }
 
 impl Padding {
-    pub fn new(vertical: u16, horizontal: u16) -> Self {
+    pub fn new(left: u16, right: u16, top: u16, bottom: u16) -> Self {
         Padding {
-            horizontal,
-            vertical,
+            left,
+            right,
+            top,
+            bottom
         }
     }
 
     pub fn zero() -> Self {
         Padding {
-            horizontal: 0,
-            vertical: 0,
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0
         }
     }
 
     pub fn horizontal(value: u16) -> Self {
         Padding {
-            horizontal: value,
-            vertical: 0,
+            left: value,
+            right: value,
+            top: 0,
+            bottom: 0
         }
     }
 
     pub fn vertical(value: u16) -> Self {
         Padding {
-            horizontal: 0,
-            vertical: value,
+            left: 0,
+            right: 0,
+            top: value,
+            bottom: value
         }
     }
 
     pub fn uniform(value: u16) -> Self {
         Padding {
-            horizontal: value,
-            vertical: value,
+            left: value,
+            right: value,
+            top: value,
+            bottom: value
         }
     }
 }
@@ -190,11 +202,11 @@ impl<'a> Block<'a> {
             inner.height = inner.height.saturating_sub(1);
         }
 
-        inner.x = inner.x.saturating_add(self.padding.horizontal);
-        inner.y = inner.y.saturating_add(self.padding.vertical);
+        inner.x = inner.x.saturating_add(self.padding.left);
+        inner.y = inner.y.saturating_add(self.padding.top);
 
-        inner.width = inner.width.saturating_sub(self.padding.horizontal * 2);
-        inner.height = inner.height.saturating_sub(self.padding.vertical * 2);
+        inner.width = inner.width.saturating_sub(self.padding.left + self.padding.right);
+        inner.height = inner.height.saturating_sub(self.padding.top + self.padding.bottom);
 
         inner
     }

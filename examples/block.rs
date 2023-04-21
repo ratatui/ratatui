@@ -110,8 +110,10 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
         .title("With borders")
         .borders(Borders::ALL)
         .padding(Padding {
-            vertical: 2,
-            horizontal: 4,
+            left: 4,
+            right: 4,
+            top: 2,
+            bottom: 2
         });
 
     let text = Paragraph::new("text inside padded block").block(block);
