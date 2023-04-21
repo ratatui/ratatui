@@ -8,7 +8,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, BorderType, Borders, Paragraph},
+    widgets::{Block, BorderType, Borders, Padding, Paragraph},
     Frame, Terminal,
 };
 use std::{error::Error, io};
@@ -109,8 +109,10 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
     let block = Block::default()
         .title("With borders")
         .borders(Borders::ALL)
-        .vertical_padding(2)
-        .horizontal_padding(4);
+        .padding(Padding {
+            vertical: 2,
+            horizontal: 4,
+        });
 
     let text = Paragraph::new("text inside padded block").block(block);
     f.render_widget(text, bottom_chunks[0]);
@@ -121,7 +123,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
         .border_style(Style::default().fg(Color::Cyan))
         .borders(Borders::LEFT | Borders::RIGHT)
         .border_type(BorderType::Double)
-        .padding(1);
+        .padding(Padding::uniform(1));
 
     let inner_block = Block::default()
         .title("Block inside padded block")

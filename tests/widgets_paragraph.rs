@@ -3,7 +3,7 @@ use ratatui::{
     buffer::Buffer,
     layout::Alignment,
     text::{Span, Spans, Text},
-    widgets::{Block, Borders, Paragraph, Wrap},
+    widgets::{Block, Borders, Padding, Paragraph, Wrap},
     Terminal,
 };
 
@@ -23,7 +23,11 @@ fn widgets_paragraph_can_wrap_its_content() {
                 let size = f.size();
                 let text = vec![Spans::from(SAMPLE_STRING)];
                 let paragraph = Paragraph::new(text)
-                    .block(Block::default().borders(Borders::ALL).padding(1))
+                    .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .padding(Padding::uniform(1)),
+                    )
                     .alignment(alignment)
                     .wrap(Wrap { trim: true });
                 f.render_widget(paragraph, size);

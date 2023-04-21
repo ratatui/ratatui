@@ -33,10 +33,38 @@ pub struct Padding {
 }
 
 impl Padding {
-    pub fn zero() -> Padding {
+    pub fn new(vertical: u16, horizontal: u16) -> Self {
+        Padding {
+            horizontal,
+            vertical,
+        }
+    }
+
+    pub fn zero() -> Self {
         Padding {
             horizontal: 0,
             vertical: 0,
+        }
+    }
+
+    pub fn horizontal(value: u16) -> Self {
+        Padding {
+            horizontal: value,
+            vertical: 0,
+        }
+    }
+
+    pub fn vertical(value: u16) -> Self {
+        Padding {
+            horizontal: 0,
+            vertical: value,
+        }
+    }
+
+    pub fn uniform(value: u16) -> Self {
+        Padding {
+            horizontal: value,
+            vertical: value,
         }
     }
 }
@@ -171,21 +199,8 @@ impl<'a> Block<'a> {
         inner
     }
 
-    pub fn padding(mut self, padding: u16) -> Block<'a> {
-        self.padding = Padding {
-            horizontal: padding,
-            vertical: padding,
-        };
-        self
-    }
-
-    pub fn horizontal_padding(mut self, horizontal: u16) -> Block<'a> {
-        self.padding.horizontal = horizontal;
-        self
-    }
-
-    pub fn vertical_padding(mut self, vertical: u16) -> Block<'a> {
-        self.padding.vertical = vertical;
+    pub fn padding(mut self, padding: Padding) -> Block<'a> {
+        self.padding = padding;
         self
     }
 }
