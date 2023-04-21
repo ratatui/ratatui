@@ -80,12 +80,11 @@
 //! use std::{io, thread, time::Duration};
 //! use ratatui::{
 //!     backend::CrosstermBackend,
-//!     widgets::{Widget, Block, Borders},
-//!     layout::{Layout, Constraint, Direction},
+//!     widgets::{Block, Borders},
 //!     Terminal
 //! };
 //! use crossterm::{
-//!     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+//!     event::{self, DisableMouseCapture, EnableMouseCapture},
 //!     execute,
 //!     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 //! };
@@ -105,6 +104,12 @@
 //!             .borders(Borders::ALL);
 //!         f.render_widget(block, size);
 //!     })?;
+//!
+//!     // Start a thread to discard any input events. Without handling events, the
+//!     // stdin buffer will fill up, and be read into the shell when the program exits.
+//!     thread::spawn(|| loop {
+//!         event::read();
+//!     });
 //!
 //!     thread::sleep(Duration::from_millis(5000));
 //!
