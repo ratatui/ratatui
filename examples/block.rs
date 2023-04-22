@@ -113,7 +113,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
             left: 4,
             right: 4,
             top: 2,
-            bottom: 2
+            bottom: 2,
         });
 
     let text = Paragraph::new("text inside padded block").block(block);

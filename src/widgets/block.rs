@@ -40,7 +40,7 @@ impl Padding {
             left,
             right,
             top,
-            bottom
+            bottom,
         }
     }
 
@@ -49,7 +49,7 @@ impl Padding {
             left: 0,
             right: 0,
             top: 0,
-            bottom: 0
+            bottom: 0,
         }
     }
 
@@ -58,7 +58,7 @@ impl Padding {
             left: value,
             right: value,
             top: 0,
-            bottom: 0
+            bottom: 0,
         }
     }
 
@@ -67,7 +67,7 @@ impl Padding {
             left: 0,
             right: 0,
             top: value,
-            bottom: value
+            bottom: value,
         }
     }
 
@@ -76,7 +76,7 @@ impl Padding {
             left: value,
             right: value,
             top: value,
-            bottom: value
+            bottom: value,
         }
     }
 }
@@ -205,8 +205,12 @@ impl<'a> Block<'a> {
         inner.x = inner.x.saturating_add(self.padding.left);
         inner.y = inner.y.saturating_add(self.padding.top);
 
-        inner.width = inner.width.saturating_sub(self.padding.left + self.padding.right);
-        inner.height = inner.height.saturating_sub(self.padding.top + self.padding.bottom);
+        inner.width = inner
+            .width
+            .saturating_sub(self.padding.left + self.padding.right);
+        inner.height = inner
+            .height
+            .saturating_sub(self.padding.top + self.padding.bottom);
 
         inner
     }
