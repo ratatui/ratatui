@@ -211,3 +211,35 @@ impl Default for CalendarEventStore {
         Self(HashMap::with_capacity(4))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::style::Color;
+    use time::Month;
+
+    #[test]
+    fn event_store() {
+        let a = (
+            Date::from_calendar_date(2023, Month::January, 1).unwrap(),
+            Style::default(),
+        );
+        let b = (
+            Date::from_calendar_date(2023, Month::January, 2).unwrap(),
+            Style::default().bg(Color::Red).fg(Color::Blue),
+        );
+        let mut s = CalendarEventStore::default();
+        s.add(b.0, b.1);
+
+        assert_eq!(
+            s.get_style(a.0),
+            a.1,
+            "Date not added to the styler should look up as Style::default()"
+        );
+        assert_eq!(
+            s.get_style(b.0),
+            b.1,
+            "Date added to styler should return the provided style"
+        );
+    }
+}

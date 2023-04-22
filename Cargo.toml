@@ -19,6 +19,7 @@ rust-version = "1.59.0"
 
 [features]
 default = ["crossterm"]
+all-widgets = ["widget-calendar"]
 widget-calendar = ["time"]
 
 [package.metadata.docs.rs]
