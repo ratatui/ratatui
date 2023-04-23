@@ -244,7 +244,7 @@ impl<'a> Spans<'a> {
     }
 
     /// Resets the style of each Span in the Spans.
-    /// Equivalent to calling `patch_style(Style::default())`.
+    /// Equivalent to calling `patch_style(Style::reset())`.
     /// 
     /// ## Examples
     /// 
@@ -262,7 +262,7 @@ impl<'a> Spans<'a> {
     /// ```
     pub fn reset_style(&mut self) {
         for span in &mut self.0 {
-            span.style = Style::default();
+            span.style = Style::reset();
         }
     }
 }
