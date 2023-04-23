@@ -183,7 +183,7 @@ impl<'a> Span<'a> {
     /// Applies a new style to an existing Span.
     ///
     /// ## Examples
-    /// 
+    ///
     /// ```rust
     /// # use ratatui::text::Span;
     /// # use ratatui::style::{Color, Style, Modifier};
@@ -238,7 +238,7 @@ impl<'a> Spans<'a> {
     /// Applies a new style to each Span in an existing Spans.
     ///
     /// ## Examples
-    /// 
+    ///
     /// ```rust
     /// # use ratatui::text::{Span, Spans};
     /// # use ratatui::style::{Color, Style, Modifier};
@@ -265,9 +265,9 @@ impl<'a> Spans<'a> {
 
     /// Resets the style of each Span in the Spans.
     /// Equivalent to calling `patch_style(Style::reset())`.
-    /// 
+    ///
     /// ## Examples
-    /// 
+    ///
     /// ```rust
     /// # use ratatui::text::{Span, Spans};
     /// # use ratatui::style::{Color, Style, Modifier};
@@ -275,7 +275,7 @@ impl<'a> Spans<'a> {
     ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::styled(" text", Style::default().add_modifier(Modifier::BOLD)),
     /// ]);
-    /// 
+    ///
     /// spans.reset_style();
     /// assert_eq!(Style::reset(), spans.0[0].style);
     /// assert_eq!(Style::reset(), spans.0[1].style);
