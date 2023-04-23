@@ -179,6 +179,26 @@ impl<'a> Span<'a> {
             })
             .filter(|s| s.symbol != "\n")
     }
+
+    /// Applies a new style to an existing Span.
+    ///
+    /// ## Examples
+    /// 
+    /// ```rust
+    /// # use ratatui::text::Span;
+    /// # use ratatui::style::{Color, Style, Modifier};
+    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+    /// let mut raw_span = Span::raw("My text");
+    /// let mut styled_span = Span::styled("My text", style);
+    ///
+    /// assert_ne!(raw_span, styled_span);
+    ///
+    /// raw_span.patch_style(style);
+    /// assert_eq!(raw_span, styled_span);
+    /// ```
+    pub fn patch_style(&mut self, style: Style) {
+        self.style = self.style.patch(style);
+    }
 }
 
 impl<'a> From<String> for Span<'a> {
@@ -215,7 +235,7 @@ impl<'a> Spans<'a> {
         self.0.iter().map(Span::width).sum()
     }
 
-    /// Apply a new style to each Span in an existing Spans.
+    /// Applies a new style to each Span in an existing Spans.
     ///
     /// ## Examples
     /// 
@@ -239,7 +259,7 @@ impl<'a> Spans<'a> {
     /// ```
     pub fn patch_style(&mut self, style: Style) {
         for span in &mut self.0 {
-            span.style = span.style.patch(style);
+            span.patch_style(style);
         }
     }
 
@@ -257,12 +277,12 @@ impl<'a> Spans<'a> {
     /// ]);
     /// 
     /// spans.reset_style();
-    /// assert_eq!(Style::default(), spans.0[0].style);
-    /// assert_eq!(Style::default(), spans.0[1].style);
+    /// assert_eq!(Style::reset(), spans.0[0].style);
+    /// assert_eq!(Style::reset(), spans.0[1].style);
     /// ```
     pub fn reset_style(&mut self) {
         for span in &mut self.0 {
-            span.style = Style::reset();
+            span.patch_style(Style::reset());
         }
     }
 }
