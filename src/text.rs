@@ -46,7 +46,7 @@
 //!     Span::raw(" title"),
 //! ]);
 //! ```
-use crate::style::Style;
+use crate::style::{Style, Color, Modifier};
 use std::borrow::Cow;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -213,6 +213,116 @@ impl<'a> Spans<'a> {
     /// ```
     pub fn width(&self) -> usize {
         self.0.iter().map(Span::width).sum()
+    }
+
+    /// Resets the style of each Span in the Spans.
+    /// 
+    /// ## Examples
+    /// 
+    /// ```rust
+    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::style::{Color, Style, Modifier};
+    /// let mut spans = Spans::from(vec![
+    ///     Span::styled("My", Style::default().fg(Color::Yellow)),
+    ///     Span::styled(" text", Style::default().add_modifier(Modifier::BOLD)),
+    /// ]);
+    /// 
+    /// spans.reset_style();
+    /// assert_eq!(Style::default(), spans.0[0].style);
+    /// assert_eq!(Style::default(), spans.0[1].style);
+    /// ```
+    pub fn reset_style(&mut self) {
+        for span in &mut self.0 {
+            span.style = Style::default();
+        }
+    }
+
+    /// Sets the foreground color of each Span in the Spans.
+    /// 
+    /// ## Examples
+    /// 
+    /// ```rust
+    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::style::{Color, Style};
+    /// let mut spans = Spans::from(vec![
+    ///     Span::styled("My", Style::default().fg(Color::Yellow)),
+    ///     Span::styled(" text", Style::default().fg(Color::Green)),
+    /// ]);
+    /// 
+    /// spans.set_fg(Color::Red);
+    /// assert_eq!(Color::Red, spans.0[0].style.fg.unwrap());
+    /// assert_eq!(Color::Red, spans.0[1].style.fg.unwrap());
+    /// ```
+    pub fn set_fg(&mut self, color: Color) {
+        for span in &mut self.0 {
+            span.style.fg = Some(color);
+        }
+    }
+
+    /// Sets the background color of each Span in the Spans.
+    /// 
+    /// ## Examples
+    /// 
+    /// ```rust
+    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::style::{Color, Style};
+    /// let mut spans = Spans::from(vec![
+    ///     Span::styled("My", Style::default().bg(Color::Yellow)),
+    ///     Span::styled(" text", Style::default().bg(Color::Green)),
+    /// ]);
+    /// 
+    /// spans.set_bg(Color::Red);
+    /// assert_eq!(Color::Red, spans.0[0].style.bg.unwrap());
+    /// assert_eq!(Color::Red, spans.0[1].style.bg.unwrap());
+    /// ```
+    pub fn set_bg(&mut self, color: Color) {
+        for span in &mut self.0 {
+            span.style.bg = Some(color);
+        }
+    }
+
+    /// Adds a style modifier to each Span in the Spans.
+    /// 
+    /// ## Examples
+    /// 
+    /// ```rust
+    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::style::{Style, Modifier};
+    /// let mut spans = Spans::from(vec![
+    ///     Span::styled("My", Style::default().add_modifier(Modifier::BOLD)),
+    ///     Span::styled(" text", Style::default().add_modifier(Modifier::ITALIC)),
+    /// ]);
+    /// 
+    /// spans.add_modifier(Modifier::UNDERLINED);
+    /// assert_eq!(Modifier::BOLD | Modifier::UNDERLINED, spans.0[0].style.add_modifier);
+    /// assert_eq!(Modifier::ITALIC | Modifier::UNDERLINED, spans.0[1].style.add_modifier);
+    /// ```
+    pub fn add_modifier(&mut self, modifier: Modifier) {
+        for span in &mut self.0 {
+            span.style = span.style.add_modifier(modifier);
+        }
+    }
+
+    /// Removes a style modifier from each Span in the Spans.
+    /// 
+    /// ## Examples
+    /// 
+    /// ```rust
+    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::style::{Style, Modifier};
+    /// let mut spans = Spans::from(vec![
+    ///     Span::styled("My", Style::default().add_modifier(Modifier::BOLD | Modifier::UNDERLINED)),
+    ///     Span::styled(" text", Style::default().add_modifier(Modifier::ITALIC | Modifier::UNDERLINED)),
+    /// ]);
+    /// 
+    /// spans.sub_modifier(Modifier::UNDERLINED);
+    /// assert_eq!(Modifier::BOLD, spans.0[0].style.add_modifier);
+    /// assert_eq!(Modifier::ITALIC, spans.0[1].style.add_modifier);
+    /// ```
+    pub fn sub_modifier(&mut self, modifier: Modifier) {
+        for span in &mut self.0 {
+            span.style = span.style.remove_modifier(modifier);
+        }
     }
 }
 
