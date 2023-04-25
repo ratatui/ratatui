@@ -1,3 +1,5 @@
+use unicode_width::UnicodeWidthStr;
+
 use crate::{
     buffer::Buffer,
     layout::{Alignment, Rect},
@@ -8,8 +10,6 @@ use crate::{
         Block, Widget,
     },
 };
-use std::iter;
-use unicode_width::UnicodeWidthStr;
 
 fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
     match alignment {
@@ -149,31 +149,29 @@ impl<'a> Widget for Paragraph<'a> {
         }
 
         let style = self.style;
-        let mut styled = self.text.lines.iter().flat_map(|line| {
-            line.spans
-                .iter()
-                .flat_map(|span| span.styled_graphemes(style))
-                // Required given the way composers work but might be refactored out if we change
-                // composers to operate on lines instead of a stream of graphemes.
-                .chain(iter::once(StyledGrapheme {
-                    symbol: "\n",
-                    style: self.style,
-                }))
+        let styled = self.text.lines.iter().map(|line| {
+            (
+                line.spans
+                    .iter()
+                    .flat_map(|span| span.styled_graphemes(style)),
+                line.alignment.unwrap_or(self.alignment),
+            )
         });
 
         let mut line_composer: Box<dyn LineComposer> = if let Some(Wrap { trim }) = self.wrap {
-            Box::new(WordWrapper::new(&mut styled, text_area.width, trim))
+            Box::new(WordWrapper::new(styled, text_area.width, trim))
         } else {
-            let mut line_composer = Box::new(LineTruncator::new(&mut styled, text_area.width));
-            if let Alignment::Left = self.alignment {
-                line_composer.set_horizontal_offset(self.scroll.1);
-            }
+            let mut line_composer = Box::new(LineTruncator::new(styled, text_area.width));
+            line_composer.set_horizontal_offset(self.scroll.1);
             line_composer
         };
         let mut y = 0;
-        while let Some((current_line, current_line_width)) = line_composer.next_line() {
+        while let Some((current_line, current_line_width, current_line_alignment)) =
+            line_composer.next_line()
+        {
             if y >= self.scroll.0 {
-                let mut x = get_line_offset(current_line_width, text_area.width, self.alignment);
+                let mut x =
+                    get_line_offset(current_line_width, text_area.width, current_line_alignment);
                 for StyledGrapheme { symbol, style } in current_line {
                     let width = symbol.width();
                     if width == 0 {

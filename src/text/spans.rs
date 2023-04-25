@@ -1,5 +1,8 @@
 #![allow(deprecated)]
+
 use super::{Span, Style};
+use crate::layout::Alignment;
+use crate::text::Line;
 
 /// A string composed of clusters of graphemes, each with their own style.
 ///
@@ -78,6 +81,24 @@ impl<'a> Spans<'a> {
         for span in &mut self.0 {
             span.reset_style();
         }
+    }
+
+    /// Sets the target alignment for this line of text.
+    /// Defaults to: [`None`], meaning the alignment is determined by the rendering widget.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use std::borrow::Cow;
+    /// # use ratatui::layout::Alignment;
+    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::style::{Color, Style, Modifier};
+    /// let mut line = Spans::from("Hi, what's up?").alignment(Alignment::Right);
+    /// assert_eq!(Some(Alignment::Right), line.alignment)
+    /// ```
+    pub fn alignment(self, alignment: Alignment) -> Line<'a> {
+        let line = Line::from(self);
+        line.alignment(alignment)
     }
 }
 
