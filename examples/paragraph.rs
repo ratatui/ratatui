@@ -170,11 +170,11 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     f.render_widget(paragraph, chunks[2]);
     let paragraph = Paragraph::new(text)
         .style(Style::default().bg(Color::White).fg(Color::Black))
-        .block(create_block("Right, wrap"))
+        .block(create_block("Right, wrap (break words)"))
         .alignment(Alignment::Right)
         .wrap(Wrap {
             trim: true,
-            break_words: false,
+            break_words: true,
         });
     f.render_widget(paragraph, chunks[3]);
 }
