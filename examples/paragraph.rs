@@ -100,7 +100,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .margin(5)
+        .margin(2)
         .constraints(
             [
                 Constraint::Percentage(25),
