@@ -225,3 +225,31 @@ fn widget_list_should_not_ignore_empty_string_items() {
 
     terminal.backend().assert_buffer(&expected);
 }
+
+#[test]
+fn widget_list_should_render_padding() {
+    let backend = TestBackend::new(6, 5);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            let items = vec![
+                ListItem::new("Item 1"),
+                ListItem::new("Item 2"),
+                ListItem::new("Item 3"),
+                ListItem::new("Item 4"),
+            ];
+
+            let list = List::new(items)
+                .padding(1)
+                .style(Style::default())
+                .highlight_style(Style::default());
+
+            f.render_widget(list, f.size());
+        })
+        .unwrap();
+
+    let expected = Buffer::with_lines(vec!["Item 1", "", "Item 2", "", "Item 3"]);
+
+    terminal.backend().assert_buffer(&expected);
+}

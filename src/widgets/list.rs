@@ -84,6 +84,8 @@ pub struct List<'a> {
     highlight_symbol: Option<&'a str>,
     /// Whether to repeat the highlight symbol for each line of the selected item
     repeat_highlight_symbol: bool,
+    /// Padding between each item
+    padding: usize,
 }
 
 impl<'a> List<'a> {
@@ -99,6 +101,7 @@ impl<'a> List<'a> {
             highlight_style: Style::default(),
             highlight_symbol: None,
             repeat_highlight_symbol: false,
+            padding: 0,
         }
     }
 
@@ -132,6 +135,15 @@ impl<'a> List<'a> {
         self
     }
 
+    pub fn padding(mut self, padding: usize) -> List<'a> {
+        self.padding = padding;
+        self
+    }
+
+    /// Returns the bounds of the items that will be rendered
+    ///
+    /// Ensures that the selected item is always visible, and that the items
+    /// are not rendered outside the available space.
     fn get_items_bounds(
         &self,
         selected: Option<usize>,
@@ -142,29 +154,43 @@ impl<'a> List<'a> {
         let mut start = offset;
         let mut end = offset;
         let mut height = 0;
+        // calculate which items will be showing starting from offset and
+        // filling only the items that fit in the available space
         for item in self.items.iter().skip(offset) {
+            // don't include the padding in the max height calculation
+            // as we don't need to render the last item's padding
             if height + item.height() > max_height {
                 break;
             }
-            height += item.height();
+            height += item.height() + self.padding;
             end += 1;
         }
 
+        // if the selected item is after the range of items that will be
+        // showing, then we need to adjust the start and end bounds to
+        // reflect this. We add one item at the end, and remove 0 or more
+        // items from the start to ensure that the height is less than or
+        // equal to the max height.
         let selected = selected.unwrap_or(0).min(self.items.len() - 1);
         while selected >= end {
-            height = height.saturating_add(self.items[end].height());
+            height = height.saturating_add(self.items[end].height() + self.padding);
             end += 1;
             while height > max_height {
-                height = height.saturating_sub(self.items[start].height());
+                height = height.saturating_sub(self.items[start].height() + self.padding);
                 start += 1;
             }
         }
+
+        // here we do the same thing as above, but in the opposite direction
+        // to ensure that the start and end bounds are correct. We remove one
+        // item from the start, and add 0 or more items to the end to ensure
+        // that the height is less than or equal to the max height.
         while selected < start {
             start -= 1;
-            height = height.saturating_add(self.items[start].height());
+            height = height.saturating_add(self.items[start].height() + self.padding);
             while height > max_height {
                 end -= 1;
-                height = height.saturating_sub(self.items[end].height());
+                height = height.saturating_sub(self.items[end].height() + self.padding);
             }
         }
         (start, end)
@@ -211,12 +237,12 @@ impl<'a> StatefulWidget for List<'a> {
         {
             let (x, y) = match self.start_corner {
                 Corner::BottomLeft => {
-                    current_height += item.height() as u16;
+                    current_height += item.height() as u16 + self.padding as u16;
                     (list_area.left(), list_area.bottom() - current_height)
                 }
                 _ => {
                     let pos = (list_area.left(), list_area.top() + current_height);
-                    current_height += item.height() as u16;
+                    current_height += item.height() as u16 + self.padding as u16;
                     pos
                 }
             };
