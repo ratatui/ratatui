@@ -95,12 +95,12 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let mut long_line = s.repeat(usize::from(size.width) / s.len() + 4);
     long_line.push('\n');
 
-    let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
+    let block = Block::default().style(Style::default().fg(Color::Black));
     f.render_widget(block, size);
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .margin(5)
+        .margin(2)
         .constraints(
             [
                 Constraint::Percentage(25),
@@ -138,34 +138,36 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let create_block = |title| {
         Block::default()
             .borders(Borders::ALL)
-            .style(Style::default().bg(Color::White).fg(Color::Black))
+            .style(Style::default().fg(Color::Gray))
             .title(Span::styled(
                 title,
                 Style::default().add_modifier(Modifier::BOLD),
             ))
     };
+
     let paragraph = Paragraph::new(text.clone())
-        .style(Style::default().bg(Color::White).fg(Color::Black))
-        .block(create_block("Left, no wrap"))
-        .alignment(Alignment::Left);
+        .style(Style::default().fg(Color::Gray))
+        .block(create_block("Default alignment (Left), no wrap"));
     f.render_widget(paragraph, chunks[0]);
+
     let paragraph = Paragraph::new(text.clone())
-        .style(Style::default().bg(Color::White).fg(Color::Black))
-        .block(create_block("Left, wrap"))
-        .alignment(Alignment::Left)
+        .style(Style::default().fg(Color::Gray))
+        .block(create_block("Default alignment (Left), with wrap"))
         .wrap(Wrap { trim: true });
     f.render_widget(paragraph, chunks[1]);
+
     let paragraph = Paragraph::new(text.clone())
-        .style(Style::default().bg(Color::White).fg(Color::Black))
-        .block(create_block("Center, wrap"))
+        .style(Style::default().fg(Color::Gray))
+        .block(create_block("Right alignment, with wrap"))
+        .alignment(Alignment::Right)
+        .wrap(Wrap { trim: true });
+    f.render_widget(paragraph, chunks[2]);
+
+    let paragraph = Paragraph::new(text)
+        .style(Style::default().fg(Color::Gray))
+        .block(create_block("Center alignment, with wrap, with scroll"))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
         .scroll((app.scroll, 0));
-    f.render_widget(paragraph, chunks[2]);
-    let paragraph = Paragraph::new(text)
-        .style(Style::default().bg(Color::White).fg(Color::Black))
-        .block(create_block("Right, wrap"))
-        .alignment(Alignment::Right)
-        .wrap(Wrap { trim: true });
     f.render_widget(paragraph, chunks[3]);
 }
