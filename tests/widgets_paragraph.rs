@@ -23,11 +23,12 @@ fn widgets_paragraph_can_wrap_its_content() {
                 let size = f.size();
                 let text = vec![Spans::from(SAMPLE_STRING)];
                 let paragraph = Paragraph::new(text)
-                    .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                            .padding(Padding::uniform(1)),
-                    )
+                    .block(Block::default().borders(Borders::ALL).padding(Padding {
+                        left: 2,
+                        right: 2,
+                        top: 1,
+                        bottom: 1,
+                    }))
                     .alignment(alignment)
                     .wrap(Wrap { trim: true });
                 f.render_widget(paragraph, size);
@@ -41,14 +42,14 @@ fn widgets_paragraph_can_wrap_its_content() {
         Buffer::with_lines(vec![
             "┌────────────────────┐",
             "│                    │",
-            "│ The library is     │",
-            "│ based on the       │",
-            "│ principle of       │",
-            "│ immediate          │",
-            "│ rendering with     │",
-            "│ intermediate       │",
-            "│ buffers. This      │",
-            "│ means that at each │",
+            "│  The library is    │",
+            "│  based on the      │",
+            "│  principle of      │",
+            "│  immediate         │",
+            "│  rendering with    │",
+            "│  intermediate      │",
+            "│  buffers. This     │",
+            "│  means that at     │",
             "│                    │",
             "└────────────────────┘",
         ]),
@@ -58,14 +59,14 @@ fn widgets_paragraph_can_wrap_its_content() {
         Buffer::with_lines(vec![
             "┌────────────────────┐",
             "│                    │",
-            "│     The library is │",
-            "│       based on the │",
-            "│       principle of │",
-            "│          immediate │",
-            "│     rendering with │",
-            "│       intermediate │",
-            "│      buffers. This │",
-            "│ means that at each │",
+            "│    The library is  │",
+            "│      based on the  │",
+            "│      principle of  │",
+            "│         immediate  │",
+            "│    rendering with  │",
+            "│      intermediate  │",
+            "│     buffers. This  │",
+            "│     means that at  │",
             "│                    │",
             "└────────────────────┘",
         ]),
@@ -82,7 +83,7 @@ fn widgets_paragraph_can_wrap_its_content() {
             "│   rendering with   │",
             "│    intermediate    │",
             "│    buffers. This   │",
-            "│ means that at each │",
+            "│    means that at   │",
             "│                    │",
             "└────────────────────┘",
         ]),
