@@ -26,6 +26,61 @@ impl BorderType {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Padding {
+    pub left: u16,
+    pub right: u16,
+    pub top: u16,
+    pub bottom: u16,
+}
+
+impl Padding {
+    pub fn new(left: u16, right: u16, top: u16, bottom: u16) -> Self {
+        Padding {
+            left,
+            right,
+            top,
+            bottom,
+        }
+    }
+
+    pub fn zero() -> Self {
+        Padding {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+        }
+    }
+
+    pub fn horizontal(value: u16) -> Self {
+        Padding {
+            left: value,
+            right: value,
+            top: 0,
+            bottom: 0,
+        }
+    }
+
+    pub fn vertical(value: u16) -> Self {
+        Padding {
+            left: 0,
+            right: 0,
+            top: value,
+            bottom: value,
+        }
+    }
+
+    pub fn uniform(value: u16) -> Self {
+        Padding {
+            left: value,
+            right: value,
+            top: value,
+            bottom: value,
+        }
+    }
+}
+
 /// Base widget to be used with all upper level ones. It may be used to display a box border around
 /// the widget and/or add a title.
 ///
@@ -59,6 +114,8 @@ pub struct Block<'a> {
     border_type: BorderType,
     /// Widget style
     style: Style,
+    /// Block padding
+    padding: Padding,
 }
 
 impl<'a> Default for Block<'a> {
@@ -71,6 +128,7 @@ impl<'a> Default for Block<'a> {
             border_style: Default::default(),
             border_type: BorderType::Plain,
             style: Default::default(),
+            padding: Padding::zero(),
         }
     }
 }
@@ -143,7 +201,23 @@ impl<'a> Block<'a> {
         if self.borders.intersects(Borders::BOTTOM) {
             inner.height = inner.height.saturating_sub(1);
         }
+
+        inner.x = inner.x.saturating_add(self.padding.left);
+        inner.y = inner.y.saturating_add(self.padding.top);
+
+        inner.width = inner
+            .width
+            .saturating_sub(self.padding.left + self.padding.right);
+        inner.height = inner
+            .height
+            .saturating_sub(self.padding.top + self.padding.bottom);
+
         inner
+    }
+
+    pub fn padding(mut self, padding: Padding) -> Block<'a> {
+        self.padding = padding;
+        self
     }
 }
 
