@@ -201,6 +201,12 @@ impl<'a> Widget for Paragraph<'a> {
 
 #[cfg(test)]
 mod test {
+    use crate::{
+        style::Color,
+        text::{Span, Spans},
+        widgets::Borders,
+    };
+
     use super::*;
     use crate::{
         style::Color,
