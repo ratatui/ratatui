@@ -185,6 +185,34 @@ impl<'a> Block<'a> {
     }
 
     /// Compute the inner area of a block based on its border visibility rules.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Draw a block nested within another block
+    /// use ratatui::{backend::TestBackend, buffer::Buffer, terminal::Terminal, widgets::{Block, Borders}};
+    /// let backend = TestBackend::new(15, 5);
+    /// let mut terminal = Terminal::new(backend).unwrap();
+    /// let outer_block = Block::default()
+    ///     .title("Outer Block")
+    ///     .borders(Borders::ALL);
+    /// let inner_block = Block::default()
+    ///     .title("Inner Block")
+    ///     .borders(Borders::ALL);
+    /// terminal.draw(|f| {
+    ///     let inner_area = outer_block.inner(f.size());
+    ///     f.render_widget(outer_block, f.size());
+    ///     f.render_widget(inner_block, inner_area);
+    /// });
+    /// let expected = Buffer::with_lines(vec![
+    ///     "┌Outer Block──┐",
+    ///     "│┌Inner Block┐│",
+    ///     "││           ││",
+    ///     "│└───────────┘│",
+    ///     "└─────────────┘",
+    /// ]);
+    /// terminal.backend().assert_buffer(&expected);
+    /// ```
     pub fn inner(&self, area: Rect) -> Rect {
         let mut inner = area;
         if self.borders.intersects(Borders::LEFT) {
