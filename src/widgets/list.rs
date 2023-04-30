@@ -1,11 +1,13 @@
 use crate::{
     buffer::Buffer,
-    layout::{Corner, Rect},
+    layout::{Corner, Rect, Size},
     style::Style,
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
 };
 use unicode_width::UnicodeWidthStr;
+
+use super::SizeHint;
 
 #[derive(Debug, Clone, Default)]
 pub struct ListState {
@@ -72,6 +74,26 @@ impl<'a> ListItem<'a> {
 
     pub fn width(&self) -> usize {
         self.content.width()
+    }
+}
+
+impl<'a> SizeHint for ListItem<'a> {
+    fn size_hint(&self, area: &Rect) -> Size {
+        Size::new(
+            area.width.min(self.content.width() as u16),
+            self.content.height() as u16,
+        )
+    }
+}
+
+impl<'a> Widget for ListItem<'a> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let item_style = self.style.patch(self.style);
+        buf.set_style(area, item_style);
+
+        for (j, line) in self.content.lines.iter().enumerate() {
+            buf.set_line(area.x, area.y + j as u16, line, area.width);
+        }
     }
 }
 
