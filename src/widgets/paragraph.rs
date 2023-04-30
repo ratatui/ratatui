@@ -2,7 +2,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     buffer::Buffer,
-    layout::{Alignment, Rect},
+    layout::{Alignment, Rect, Size},
     style::Style,
     text::{StyledGrapheme, Text},
     widgets::{
@@ -10,6 +10,8 @@ use crate::{
         Block, Widget,
     },
 };
+
+use super::SizeHint;
 
 fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
     match alignment {
@@ -130,6 +132,37 @@ impl<'a> Paragraph<'a> {
         self.alignment = alignment;
         self
     }
+
+    fn text_size_hint(&self, area: &Rect) -> Size {
+        let style = self.style;
+        let lines = self.text.lines.clone();
+        let styled = lines.iter().map(|line| {
+            (
+                line.spans
+                    .iter()
+                    .flat_map(|span| span.styled_graphemes(style)),
+                line.alignment.unwrap_or(self.alignment),
+            )
+        });
+
+        let mut line_composer: Box<dyn LineComposer> = if let Some(Wrap { trim }) = self.wrap {
+            Box::new(WordWrapper::new(styled, area.width, trim))
+        } else {
+            let mut line_composer = Box::new(LineTruncator::new(styled, area.width));
+            if let Alignment::Left = self.alignment {
+                line_composer.set_horizontal_offset(self.scroll.1);
+            }
+            line_composer
+        };
+
+        let mut height = 0u16;
+        let mut max_width = 0u16;
+        while let Some((_, current_line_width, _)) = line_composer.next_line() {
+            height += 1;
+            max_width = max_width.max(current_line_width);
+        }
+        Size::new(area.width.min(max_width), area.height.min(height))
+    }
 }
 
 impl<'a> Widget for Paragraph<'a> {
@@ -193,6 +226,27 @@ impl<'a> Widget for Paragraph<'a> {
             if y >= text_area.height + self.scroll.0 {
                 break;
             }
+        }
+    }
+}
+
+impl<'a> SizeHint for Paragraph<'a> {
+    fn size_hint(&self, area: &Rect) -> Size {
+        match &self.block {
+            Some(b) => {
+                let block_size = b.size_hint(&Rect::default());
+
+                let area = Rect {
+                    width: area.width.saturating_sub(block_size.width),
+                    height: area.height.saturating_sub(block_size.height),
+                    ..*area
+                };
+                let mut size = self.text_size_hint(&area);
+                size.width += block_size.width;
+                size.height += block_size.height;
+                size
+            }
+            None => self.text_size_hint(area),
         }
     }
 }
