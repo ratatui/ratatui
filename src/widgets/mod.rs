@@ -44,7 +44,10 @@ pub use self::sparkline::{RenderDirection, Sparkline};
 pub use self::table::{Cell, Row, Table, TableState};
 pub use self::tabs::Tabs;
 
-use crate::{buffer::Buffer, layout::Rect};
+use crate::{
+    buffer::Buffer,
+    layout::{Rect, Size},
+};
 use bitflags::bitflags;
 
 bitflags! {
@@ -101,6 +104,10 @@ pub trait Widget {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.
     fn render(self, area: Rect, buf: &mut Buffer);
+}
+
+pub trait SizeHint {
+    fn size_hint(&self, area: &Rect) -> Size;
 }
 
 /// A `StatefulWidget` is a widget that can take advantage of some local state to remember things

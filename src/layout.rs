@@ -379,6 +379,18 @@ impl Element {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct Size {
+    pub width: u16,
+    pub height: u16,
+}
+
+impl Size {
+    pub fn new(width: u16, height: u16) -> Self {
+        Self { width, height }
+    }
+}
+
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
 /// area they are supposed to render to.
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
