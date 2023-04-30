@@ -30,6 +30,7 @@ mod reflow;
 mod sparkline;
 mod table;
 mod tabs;
+mod widget_list;
 
 use std::fmt::{self, Debug};
 
@@ -43,6 +44,7 @@ pub use self::paragraph::{Paragraph, Wrap};
 pub use self::sparkline::{RenderDirection, Sparkline};
 pub use self::table::{Cell, Row, Table, TableState};
 pub use self::tabs::Tabs;
+pub use self::widget_list::{WidgetList, WidgetListState};
 
 use crate::{
     buffer::Buffer,
