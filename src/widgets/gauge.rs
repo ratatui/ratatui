@@ -1,11 +1,13 @@
 use crate::{
     buffer::Buffer,
-    layout::Rect,
+    layout::{Rect, Size},
     style::{Color, Style},
     symbols,
     text::{Line, Span},
     widgets::{Block, Widget},
 };
+
+use super::SizeHint;
 
 /// A widget to display a task progress.
 ///
@@ -140,6 +142,21 @@ impl<'a> Widget for Gauge<'a> {
         }
         // set the line
         buf.set_span(label_col, label_row, &label, clamped_label_width);
+    }
+}
+
+impl<'a> SizeHint for Gauge<'a> {
+    fn size_hint(&self, area: &Rect) -> Size {
+        match &self.block {
+            Some(b) => {
+                let block_area = b.size_hint(&Rect::default());
+                Size::new(
+                    area.width.max(block_area.width),
+                    area.height.max(block_area.height + 1),
+                )
+            }
+            None => Size::new(area.width, area.height),
+        }
     }
 }
 
