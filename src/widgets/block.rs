@@ -1,11 +1,13 @@
 use crate::{
     buffer::Buffer,
-    layout::{Alignment, Rect},
+    layout::{Alignment, Rect, Size},
     style::Style,
     symbols::line,
     text::{Line, Span},
     widgets::{Borders, Widget},
 };
+
+use super::SizeHint;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BorderType {
@@ -339,6 +341,38 @@ impl<'a> Widget for Block<'a> {
 
             buf.set_line(title_x, title_y, &title, title_area_width);
         }
+    }
+}
+
+impl<'a> SizeHint for Block<'a> {
+    fn size_hint(&self, area: &Rect) -> Size {
+        let mut size = Size::default();
+
+        if self.borders.intersects(Borders::LEFT) {
+            size.width += 1;
+        }
+        if self.borders.intersects(Borders::TOP) || self.title.is_some() {
+            size.height += 1;
+        }
+        if self.borders.intersects(Borders::RIGHT) {
+            size.width += 1;
+        }
+        if self.borders.intersects(Borders::BOTTOM) {
+            size.height += 1;
+        }
+
+        size.width = size
+            .width
+            .saturating_add(self.padding.left)
+            .saturating_add(self.padding.right);
+        size.height = size
+            .height
+            .saturating_add(self.padding.top)
+            .saturating_add(self.padding.bottom);
+        size.width = size.width.max(area.width);
+        size.height = size.height.max(area.height);
+
+        size
     }
 }
 
