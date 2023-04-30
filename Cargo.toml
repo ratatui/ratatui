@@ -140,3 +140,7 @@ doc-scrape-examples = true
 name = "inline"
 required-features = ["crossterm"]
 doc-scrape-examples = true
+
+[[example]]
+name = "widget_list"
+required-features = ["crossterm"]
