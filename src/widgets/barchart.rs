@@ -1,12 +1,14 @@
 use crate::{
     buffer::Buffer,
-    layout::Rect,
+    layout::{Rect, Size},
     style::Style,
     symbols,
     widgets::{Block, Widget},
 };
 use std::cmp::min;
 use unicode_width::UnicodeWidthStr;
+
+use super::SizeHint;
 
 /// Display multiple bars in a single widgets
 ///
@@ -214,6 +216,21 @@ impl<'a> Widget for BarChart<'a> {
                 self.bar_width as usize,
                 self.label_style,
             );
+        }
+    }
+}
+
+impl<'a> SizeHint for BarChart<'a> {
+    fn size_hint(&self, area: &Rect) -> Size {
+        match &self.block {
+            Some(b) => {
+                let block_area = b.size_hint(&Rect::default());
+                Size::new(
+                    area.width.max(block_area.width),
+                    area.height.max(block_area.height + 1),
+                )
+            }
+            None => Size::new(area.width, area.height),
         }
     }
 }
