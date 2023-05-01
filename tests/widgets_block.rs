@@ -1,4 +1,5 @@
 use ratatui::{
+    assert_buffer_eq,
     backend::TestBackend,
     buffer::Buffer,
     layout::{Alignment, Rect},
@@ -237,6 +238,8 @@ fn widgets_block_title_alignment() {
             .unwrap();
 
         terminal.backend().assert_buffer(&expected);
+        let area = Rect::new(1, 0, 13, 2);
+        assert_buffer_eq!(Buffer::empty(area), Buffer::empty(area));
     };
 
     // title top-left with all borders
