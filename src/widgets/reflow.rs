@@ -372,12 +372,13 @@ mod test {
     #[test]
     fn line_composer_max_line_width_of_1_double_width_characters() {
         let width = 1;
-        let text = "コンピュータ上で文字を扱う場合、典型的には文字\naaaによる通信を行う場合にその\
+        let text =
+            "コンピュータ上で文字を扱う場合、典型的には文字\naaa\naによる通信を行う場合にその\
                     両端点では、";
         let (word_wrapper, _) = run_composer(Composer::WordWrapper { trim: true }, text, width);
         let (line_truncator, _) = run_composer(Composer::LineTruncator, text, width);
-        assert_eq!(word_wrapper, vec!["", "a", "a", "a"]);
-        assert_eq!(line_truncator, vec!["", "a"]);
+        assert_eq!(word_wrapper, vec!["", "a", "a", "a", "a"]);
+        assert_eq!(line_truncator, vec!["", "a", "a"]);
     }
 
     /// Tests `WordWrapper` with words some of which exceed line length and some not.
@@ -531,5 +532,15 @@ mod test {
                 "wrap!"
             ]
         );
+    }
+
+    #[test]
+    fn line_composer_zero_width_at_end() {
+        let width = 3;
+        let line = "foo\0";
+        let (word_wrapper, _) = run_composer(Composer::WordWrapper { trim: true }, line, width);
+        let (line_truncator, _) = run_composer(Composer::LineTruncator, line, width);
+        assert_eq!(word_wrapper, vec!["foo\0"]);
+        assert_eq!(line_truncator, vec!["foo\0"]);
     }
 }
