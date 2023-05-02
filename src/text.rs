@@ -180,7 +180,7 @@ impl<'a> Span<'a> {
             .filter(|s| s.symbol != "\n")
     }
 
-    /// Applies a new style to an existing Span.
+    /// Patches the style an existing Span, adding modifiers from the given style.
     ///
     /// ## Examples
     ///
@@ -198,6 +198,23 @@ impl<'a> Span<'a> {
     /// ```
     pub fn patch_style(&mut self, style: Style) {
         self.style = self.style.patch(style);
+    }
+
+    /// Resets the style of the Span.
+    /// Equivalent to calling `patch_style(Style::reset())`.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use ratatui::text::Span;
+    /// # use ratatui::style::{Color, Style, Modifier};
+    /// let mut span = Span::styled("My text", Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC));
+    ///
+    /// span.reset_style();
+    /// assert_eq!(Style::reset(), span.style);
+    /// ```
+    pub fn reset_style(&mut self) {
+        self.patch_style(Style::reset());
     }
 }
 
@@ -235,7 +252,7 @@ impl<'a> Spans<'a> {
         self.0.iter().map(Span::width).sum()
     }
 
-    /// Applies a new style to each Span in an existing Spans.
+    /// Patches the style of each Span in an existing Spans, adding modifiers from the given style.
     ///
     /// ## Examples
     ///
@@ -282,7 +299,7 @@ impl<'a> Spans<'a> {
     /// ```
     pub fn reset_style(&mut self) {
         for span in &mut self.0 {
-            span.patch_style(Style::reset());
+            span.reset_style();
         }
     }
 }
@@ -423,7 +440,7 @@ impl<'a> Text<'a> {
         self.lines.len()
     }
 
-    /// Apply a new style to existing text.
+    /// Patches the style of each line in an existing Text, adding modifiers from the given style.
     ///
     /// # Examples
     ///
@@ -441,6 +458,30 @@ impl<'a> Text<'a> {
     pub fn patch_style(&mut self, style: Style) {
         for line in &mut self.lines {
             line.patch_style(style);
+        }
+    }
+
+    /// Resets the style of the Text.
+    /// Equivalent to calling `patch_style(Style::reset())`.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use ratatui::text::{Span, Spans, Text};
+    /// # use ratatui::style::{Color, Style, Modifier};
+    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+    /// let mut text = Text::styled("The first line\nThe second line", style);
+    ///
+    /// text.reset_style();
+    /// for line in &text.lines {
+    ///     for span in &line.0 {
+    ///         assert_eq!(Style::reset(), span.style);
+    ///     }
+    /// }
+    /// ```
+    pub fn reset_style(&mut self) {
+        for line in &mut self.lines {
+            line.reset_style();
         }
     }
 }
