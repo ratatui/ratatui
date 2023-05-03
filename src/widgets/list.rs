@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use crate::{
     buffer::Buffer,
     layout::{Corner, Rect},
@@ -6,6 +8,8 @@ use crate::{
     widgets::{Block, StatefulWidget, Widget},
 };
 use unicode_width::UnicodeWidthStr;
+
+use super::Paragraph;
 
 #[derive(Debug, Clone, Default)]
 pub struct ListState {
@@ -44,16 +48,16 @@ impl ListState {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct ListItem<'a> {
-    content: Text<'a>,
+    content: WidgetWrapper<'a>,
     style: Style,
 }
 
 impl<'a> ListItem<'a> {
     pub fn new<T>(content: T) -> ListItem<'a>
     where
-        T: Into<Text<'a>>,
+        T: Into<WidgetWrapper<'a>>,
     {
         ListItem {
             content: content.into(),
@@ -73,6 +77,64 @@ impl<'a> ListItem<'a> {
     pub fn width(&self) -> usize {
         self.content.width()
     }
+
+    pub fn render(&self, area: Rect, buffer: &mut Buffer) {
+        self.content.render(area, buffer);
+    }
+}
+
+pub struct WidgetWrapper<'a> {
+    widget: Box<dyn Widget + 'a>,
+    height: usize,
+    width: usize,
+}
+
+impl<'a> WidgetWrapper<'a> {
+    pub fn new(widget: impl Widget + 'a, height: usize, width: usize) -> Self {
+        Self {
+            widget: Box::new(widget),
+            height,
+            width,
+        }
+    }
+
+    fn height(&self) -> usize {
+        self.height
+    }
+
+    fn width(&self) -> usize {
+        self.width
+    }
+
+    fn render(&self, area: Rect, buffer: &mut Buffer) {
+        self.widget.render(area, buffer);
+    }
+}
+
+impl Debug for WidgetWrapper<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WidgetWrapper")
+            .field("height", &self.height)
+            .field("width", &self.width)
+            .finish()
+    }
+}
+
+/// Create a new WidgetWrapper that uses a Paragraph to display the given Text.
+///
+/// Previously the `ListItem` took `Into<Text<'a>>` as a parameter, but now
+/// adds the ability to render Widgets. This exists to ensure backwards
+/// compatability with previous List versions.
+impl<'a, T> From<T> for WidgetWrapper<'a>
+where
+    T: Into<Text<'a>>,
+{
+    fn from(value: T) -> Self {
+        let text = value.into();
+        let height = text.height();
+        let width = text.width();
+        Self::new(Paragraph::new(text), height, width)
+    }
 }
 
 /// A widget to display several items among which one can be selected (optional)
@@ -89,7 +151,7 @@ impl<'a> ListItem<'a> {
 ///     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
 ///     .highlight_symbol(">>");
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct List<'a> {
     block: Option<Block<'a>>,
     items: Vec<ListItem<'a>>,
@@ -224,7 +286,6 @@ impl<'a> StatefulWidget for List<'a> {
         state.offset = start;
 
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
-        let blank_symbol = " ".repeat(highlight_symbol.width());
 
         let mut current_height = 0;
         let has_selection = state.selected.is_some();
@@ -253,29 +314,27 @@ impl<'a> StatefulWidget for List<'a> {
             buf.set_style(area, item_style);
 
             let is_selected = state.selected.map_or(false, |s| s == i);
-            for (j, line) in item.content.lines.iter().enumerate() {
-                // if the item is selected, we need to display the highlight symbol:
-                // - either for the first line of the item only,
-                // - or for each line of the item if the appropriate option is set
-                let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
-                    highlight_symbol
+            if is_selected {
+                let count = if self.repeat_highlight_symbol {
+                    item.height()
                 } else {
-                    &blank_symbol
+                    1
                 };
-                let (elem_x, max_element_width) = if has_selection {
-                    let (elem_x, _) = buf.set_stringn(
-                        x,
-                        y + j as u16,
-                        symbol,
-                        list_area.width as usize,
-                        item_style,
-                    );
-                    (elem_x, (list_area.width - (elem_x - x)))
-                } else {
-                    (x, list_area.width)
-                };
-                buf.set_line(elem_x, y + j as u16, line, max_element_width);
+                for n in 0..count as u16 {
+                    buf.set_string(x, y + n, highlight_symbol, item_style);
+                }
             }
+            let symbol_width = if has_selection {
+                self.highlight_symbol.map_or(0, |s| s.width()) as u16
+            } else {
+                0
+            };
+            let item_area = Rect {
+                x: area.x + symbol_width,
+                width: area.width - symbol_width,
+                ..area
+            };
+            item.render(item_area, buf);
             if is_selected {
                 buf.set_style(area, self.highlight_style);
             }
@@ -296,6 +355,7 @@ mod tests {
 
     use crate::{
         assert_buffer_eq,
+        layout::Alignment,
         style::Color,
         text::{Line, Span},
         widgets::{Borders, StatefulWidget, Widget},
@@ -333,30 +393,38 @@ mod tests {
     #[test]
     fn test_list_item_new_from_str() {
         let item = ListItem::new("Test item");
-        assert_eq!(item.content, Text::from("Test item"));
-        assert_eq!(item.style, Style::default());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        item.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["Test item "]));
     }
 
     #[test]
     fn test_list_item_new_from_string() {
         let item = ListItem::new("Test item".to_string());
-        assert_eq!(item.content, Text::from("Test item"));
-        assert_eq!(item.style, Style::default());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        item.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["Test item "]));
     }
 
     #[test]
     fn test_list_item_new_from_cow_str() {
         let item = ListItem::new(Cow::Borrowed("Test item"));
-        assert_eq!(item.content, Text::from("Test item"));
-        assert_eq!(item.style, Style::default());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        item.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["Test item "]));
     }
 
     #[test]
     fn test_list_item_new_from_span() {
         let span = Span::styled("Test item", Style::default().fg(Color::Blue));
         let item = ListItem::new(span.clone());
-        assert_eq!(item.content, Text::from(span));
-        assert_eq!(item.style, Style::default());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+
+        item.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(vec!["Test item "]);
+        expected.set_style(Rect::new(0, 0, 9, 1), Style::default().fg(Color::Blue));
+        assert_buffer_eq!(buffer, expected);
     }
 
     #[test]
@@ -366,8 +434,14 @@ mod tests {
             Span::styled("item", Style::default().fg(Color::Red)),
         ]);
         let item = ListItem::new(spans.clone());
-        assert_eq!(item.content, Text::from(spans));
-        assert_eq!(item.style, Style::default());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+
+        item.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(vec!["Test item "]);
+        expected.set_style(Rect::new(0, 0, 5, 1), Style::default().fg(Color::Blue));
+        expected.set_style(Rect::new(5, 0, 4, 1), Style::default().fg(Color::Red));
+        assert_buffer_eq!(buffer, expected);
     }
 
     #[test]
@@ -383,15 +457,24 @@ mod tests {
             ]),
         ];
         let item = ListItem::new(lines.clone());
-        assert_eq!(item.content, Text::from(lines));
-        assert_eq!(item.style, Style::default());
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 2));
+
+        item.render(buffer.area, &mut buffer);
+
+        let mut expected = Buffer::with_lines(vec!["Test item ", "Second line"]);
+        expected.set_style(Rect::new(0, 0, 5, 1), Style::default().fg(Color::Blue));
+        expected.set_style(Rect::new(5, 0, 4, 1), Style::default().fg(Color::Red));
+        expected.set_style(Rect::new(0, 1, 7, 1), Style::default().fg(Color::Green));
+        expected.set_style(Rect::new(7, 1, 4, 1), Style::default().fg(Color::Yellow));
+        assert_buffer_eq!(buffer, expected);
     }
 
     #[test]
     fn test_list_item_style() {
         let item = ListItem::new("Test item").style(Style::default().bg(Color::Red));
-        assert_eq!(item.content, Text::from("Test item"));
-        assert_eq!(item.style, Style::default().bg(Color::Red));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        item.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["Test item "]));
     }
 
     #[test]
@@ -423,31 +506,32 @@ mod tests {
 
     /// helper method to render a widget to an empty buffer with a given state
     fn render_stateful_widget(
-        widget: List<'_>,
+        widget: &List<'_>,
         state: &mut ListState,
         width: u16,
         height: u16,
     ) -> Buffer {
         let mut buffer = Buffer::empty(Rect::new(0, 0, width, height));
-        StatefulWidget::render(&widget, buffer.area, &mut buffer, state);
+        StatefulWidget::render(widget, buffer.area, &mut buffer, state);
         buffer
     }
 
     #[test]
     fn test_list_does_not_render_in_small_space() {
-        let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
-        let list = List::new(items.clone()).highlight_symbol(">>");
+        let items = vec!["Item 0", "Item 1", "Item 2"];
+        let items = list_items(items);
+        let list = List::new(items).highlight_symbol(">>");
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
 
         // attempt to render into an area of the buffer with 0 width
-        Widget::render(&list.clone(), Rect::new(0, 0, 0, 3), &mut buffer);
+        Widget::render(&list, Rect::new(0, 0, 0, 3), &mut buffer);
         assert_buffer_eq!(buffer, Buffer::empty(buffer.area));
 
         // attempt to render into an area of the buffer with 0 height
-        Widget::render(&list.clone(), Rect::new(0, 0, 15, 0), &mut buffer);
+        Widget::render(&list, Rect::new(0, 0, 15, 0), &mut buffer);
         assert_buffer_eq!(buffer, Buffer::empty(buffer.area));
 
-        let list = List::new(items)
+        let list = list
             .highlight_symbol(">>")
             .block(Block::default().borders(Borders::all()));
         // attempt to render into an area of the buffer with zero height after
@@ -465,34 +549,34 @@ mod tests {
 
     #[test]
     fn test_list_combinations() {
-        fn test_case_render(items: &[ListItem], expected_lines: Vec<&str>) {
-            let list = List::new(items.to_owned()).highlight_symbol(">>");
+        fn test_case_render(list: &List, expected_lines: Vec<&str>) {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
 
-            Widget::render(&list, buffer.area, &mut buffer);
+            Widget::render(list, buffer.area, &mut buffer);
 
             let expected = Buffer::with_lines(expected_lines);
             assert_buffer_eq!(buffer, expected);
         }
         fn test_case_render_stateful(
-            items: &[ListItem],
+            list: &List,
             selected: Option<usize>,
             expected_lines: Vec<&str>,
         ) {
-            let list = List::new(items.to_owned()).highlight_symbol(">>");
             let mut state = ListState::default().with_selected(selected);
             let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
 
-            StatefulWidget::render(&list, buffer.area, &mut buffer, &mut state);
+            StatefulWidget::render(list, buffer.area, &mut buffer, &mut state);
 
             let expected = Buffer::with_lines(expected_lines);
             assert_buffer_eq!(buffer, expected);
         }
 
-        let empty_items: Vec<ListItem> = Vec::new();
-        let single_item = list_items(vec!["Item 0"]);
-        let multiple_items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
-        let multi_line_items = list_items(vec!["Item 0\nLine 2", "Item 1", "Item 2"]);
+        let empty_items = List::new(vec![]).highlight_symbol(">>");
+        let single_item = List::new(list_items(vec!["Item 0"])).highlight_symbol(">>");
+        let multiple_items =
+            List::new(list_items(vec!["Item 0", "Item 1", "Item 2"])).highlight_symbol(">>");
+        let multi_line_items = List::new(list_items(vec!["Item 0\nLine 2", "Item 1", "Item 2"]))
+            .highlight_symbol(">>");
 
         // empty list
         test_case_render(
@@ -737,7 +821,7 @@ mod tests {
         let mut state = ListState::default();
         state.select(Some(1));
 
-        let buffer = render_stateful_widget(list, &mut state, 10, 5);
+        let buffer = render_stateful_widget(&list, &mut state, 10, 5);
 
         let mut expected = Buffer::with_lines(vec![
             "  Item 0  ",
@@ -760,7 +844,7 @@ mod tests {
         let mut state = ListState::default();
         state.select(Some(0));
 
-        let buffer = render_stateful_widget(list, &mut state, 10, 5);
+        let buffer = render_stateful_widget(&list, &mut state, 10, 5);
 
         let mut expected = Buffer::with_lines(vec![
             ">>Item 0  ",
@@ -821,21 +905,21 @@ mod tests {
         ]);
         let list = List::new(items).highlight_symbol(">>");
 
-        fn test_case(list: List, selected: Option<usize>, expected_lines: Vec<&str>) {
+        fn test_case(list: &List, selected: Option<usize>, expected_lines: Vec<&str>) {
             let mut state = ListState::default();
             state.select(selected);
-            let buffer = render_stateful_widget(list.clone(), &mut state, 15, 3);
+            let buffer = render_stateful_widget(list, &mut state, 15, 3);
             let expected = Buffer::with_lines(expected_lines);
             assert_buffer_eq!(buffer, expected);
         }
 
         test_case(
-            list.clone(),
+            &list,
             None,
             vec!["Item 0 with a v", "Item 1         ", "Item 2         "],
         );
         test_case(
-            list,
+            &list,
             Some(0),
             vec![">>Item 0 with a", "  Item 1       ", "  Item 2       "],
         );
@@ -850,7 +934,7 @@ mod tests {
         let list = List::new(items).highlight_symbol(">>");
         // Set the initial visible range to items 3, 4, and 5
         let mut state = ListState::default().with_selected(Some(1)).with_offset(3);
-        let buffer = render_stateful_widget(list, &mut state, 10, 3);
+        let buffer = render_stateful_widget(&list, &mut state, 10, 3);
 
         let expected = Buffer::with_lines(vec![">>Item 1  ", "  Item 2  ", "  Item 3  "]);
         assert_buffer_eq!(buffer, expected);
@@ -870,7 +954,7 @@ mod tests {
         let list = List::new(items).highlight_symbol(">>");
         // Set the initial visible range to items 3, 4, and 5
         let mut state = ListState::default().with_selected(Some(6)).with_offset(3);
-        let buffer = render_stateful_widget(list, &mut state, 10, 3);
+        let buffer = render_stateful_widget(&list, &mut state, 10, 3);
 
         let expected = Buffer::with_lines(vec!["  Item 4  ", "  Item 5  ", ">>Item 6  "]);
         assert_buffer_eq!(buffer, expected);
@@ -878,6 +962,73 @@ mod tests {
         assert_eq!(
             state.offset, 4,
             "did not scroll the selected item into view"
+        );
+    }
+
+    #[test]
+    fn test_render_text_using_str() {
+        let list = List::new(vec![
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2"),
+            ListItem::new("Item 3"),
+        ]);
+        let mut buf = Buffer::empty(Rect::new(0, 0, 6, 3));
+        Widget::render(&list, buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(vec!["Item 1", "Item 2", "Item 3"]));
+    }
+
+    #[test]
+    fn test_render_text_using_paragraphs() {
+        let paragraphs = vec![
+            Paragraph::new("Item 1"),
+            Paragraph::new("Item 2"),
+            Paragraph::new("Item 3"),
+        ];
+        let items = paragraphs
+            .iter()
+            .map(|p| WidgetWrapper::new(p.clone(), 1, 15))
+            .map(ListItem::new)
+            .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let mut buf = Buffer::empty(Rect::new(0, 0, 6, 3));
+        Widget::render(&list, buf.area, &mut buf);
+        assert_buffer_eq!(buf, Buffer::with_lines(vec!["Item 1", "Item 2", "Item 3"]));
+    }
+
+    #[test]
+    fn test_render_blocks() {
+        let blocks = vec![
+            Block::default().title("Item 1").borders(Borders::ALL),
+            Block::default()
+                .title("Item 2")
+                .borders(Borders::ALL)
+                .title_alignment(Alignment::Center),
+            Block::default()
+                .title("Item 3")
+                .borders(Borders::ALL)
+                .title_alignment(Alignment::Right),
+        ];
+        let items = blocks
+            .iter()
+            .map(|b| WidgetWrapper::new(b.clone(), 3, 15))
+            .map(ListItem::new)
+            .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let mut buf = Buffer::empty(Rect::new(0, 0, 15, 9));
+        Widget::render(&list, buf.area, &mut buf);
+        assert_buffer_eq!(
+            buf,
+            Buffer::with_lines(vec![
+                "┌Item 1───────┐",
+                "│             │",
+                "└─────────────┘",
+                "┌───Item 2────┐",
+                "│             │",
+                "└─────────────┘",
+                "┌───────Item 3┐",
+                "│             │",
+                "└─────────────┘",
+            ])
         );
     }
 }

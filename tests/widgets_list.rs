@@ -96,7 +96,7 @@ fn widgets_list_should_truncate_items() {
         state.select(case.selected);
         terminal
             .draw(|f| {
-                let list = List::new(case.items.clone())
+                let list = List::new(case.items)
                     .block(Block::default().borders(Borders::RIGHT))
                     .highlight_symbol(">> ");
                 f.render_stateful_widget(list, Rect::new(0, 0, 8, 2), &mut state);

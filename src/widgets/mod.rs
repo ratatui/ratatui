@@ -38,7 +38,7 @@ pub use self::block::{Block, BorderType, Padding};
 pub use self::chart::{Axis, Chart, Dataset, GraphType};
 pub use self::clear::Clear;
 pub use self::gauge::{Gauge, LineGauge};
-pub use self::list::{List, ListItem, ListState};
+pub use self::list::{List, ListItem, ListState, WidgetWrapper};
 pub use self::paragraph::{Paragraph, Wrap};
 pub use self::sparkline::{RenderDirection, Sparkline};
 pub use self::table::{Cell, Row, Table, TableState};
