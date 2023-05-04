@@ -203,12 +203,218 @@ impl<'a> Widget for Paragraph<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::{
+        style::Color,
+        text::{Span, Spans},
+        widgets::Borders,
+    };
 
     #[test]
     fn zero_width_char_at_end_of_line() {
         let line = "foo\0";
-        let paragraph = Paragraph::new(line);
-        let mut buf = Buffer::with_lines(vec![line]);
-        paragraph.render(*buf.area(), &mut buf);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 1));
+
+        Paragraph::new(line).render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec!["foo"]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_empty_paragraph() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
+
+        Paragraph::new("").render(Rect::new(0, 0, 10, 5), &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec!["          "; 5]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_single_line_paragraph() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 1));
+
+        Paragraph::new("Hello, world!").render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec!["Hello, world!  "]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_multi_line_paragraph() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+
+        Paragraph::new("This is a\nmultiline\nparagraph.").render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec![
+            "This is a      ",
+            "multiline      ",
+            "paragraph.     ",
+        ]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_block() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+
+        Paragraph::new("Hello, world!")
+            .block(Block::default().title("Title").borders(Borders::ALL))
+            .render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec![
+            "┌Title────────┐",
+            "│Hello, world!│",
+            "└─────────────┘",
+        ]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_without_block() {
+        let area = Rect::new(0, 0, 15, 1);
+        let mut buffer = Buffer::empty(area);
+
+        Paragraph::new("Hello, world!").render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec!["Hello, world!  "]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_word_wrap() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 4));
+
+        Paragraph::new("This is a long line of text that should wrap.")
+            .wrap(Wrap { trim: true })
+            .render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec![
+            "This is a long ",
+            "line of text   ",
+            "that should    ",
+            "wrap.          ",
+        ]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_line_truncation() {
+        let paragraph = Paragraph::new("This is a long line of text that should be truncated.");
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        paragraph.render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec!["This is a "]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_left_alignment() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 1));
+
+        Paragraph::new("Hello, world!")
+            .alignment(Alignment::Left)
+            .render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec!["Hello, world!  "]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_center_alignment() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 1));
+
+        Paragraph::new("Hello, world!")
+            .alignment(Alignment::Center)
+            .render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec![" Hello, world! "]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_right_alignment() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 1));
+
+        Paragraph::new("Hello, world!")
+            .alignment(Alignment::Right)
+            .render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec!["  Hello, world!"]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_scroll_offset() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+
+        Paragraph::new("This is a\nmultiline\nparagraph.")
+            .scroll((1, 0))
+            .render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec![
+            "multiline      ",
+            "paragraph.     ",
+            "               ",
+        ]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_zero_width_area() {
+        let area = Rect::new(0, 0, 0, 3);
+        let mut buffer = Buffer::empty(area);
+
+        Paragraph::new("Hello, world!").render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::empty(area);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_zero_height_area() {
+        let area = Rect::new(0, 0, 10, 0);
+        let mut buffer = Buffer::empty(area);
+
+        Paragraph::new("Hello, world!").render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::empty(area);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_styled_text() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 13, 1));
+
+        Paragraph::new(Spans::from(vec![
+            Span::styled("Hello, ", Style::default().fg(Color::Red)),
+            Span::styled("world!", Style::default().fg(Color::Blue)),
+        ]))
+        .render(buffer.area, &mut buffer);
+
+        let mut expected_buffer = Buffer::with_lines(vec!["Hello, world!"]);
+        expected_buffer.set_style(Rect::new(0, 0, 7, 1), Style::default().fg(Color::Red));
+        expected_buffer.set_style(Rect::new(7, 0, 6, 1), Style::default().fg(Color::Blue));
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_special_characters() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 1));
+
+        Paragraph::new("Hello, <world>!").render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec!["Hello, <world>!"]);
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[test]
+    fn test_render_paragraph_with_unicode_characters() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 1));
+
+        Paragraph::new("こんにちは, 世界! 😃").render(buffer.area, &mut buffer);
+
+        let expected_buffer = Buffer::with_lines(vec!["こんにちは, 世界! 😃"]);
+        assert_eq!(buffer, expected_buffer);
     }
 }
