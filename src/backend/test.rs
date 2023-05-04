@@ -3,7 +3,10 @@ use crate::{
     buffer::{Buffer, Cell},
     layout::Rect,
 };
-use std::{fmt::Write, io};
+use std::{
+    fmt::{Display, Write},
+    io,
+};
 use unicode_width::UnicodeWidthStr;
 
 /// A backend used for the integration tests.
@@ -102,6 +105,12 @@ impl TestBackend {
             .join("\n");
         debug_info.push_str(&nice_diff);
         panic!("{}", debug_info);
+    }
+}
+
+impl Display for TestBackend {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", buffer_view(&self.buffer))
     }
 }
 
