@@ -14,3 +14,5 @@ subject_not_punctuated = true
 line_length = 0
 # disable subject length
 subject_length = 0
+# default allowed_types [ "chore", "docs", "feat", "fix", "perf", "refactor", "style", "test" ]
+allowed_types = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test" ]
