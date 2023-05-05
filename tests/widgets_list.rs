@@ -1,7 +1,7 @@
 use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
-    layout::Rect,
+    layout::{Corner, Rect},
     style::{Color, Style},
     symbols,
     text::Spans,
@@ -222,6 +222,120 @@ fn widget_list_should_not_ignore_empty_string_items() {
         .unwrap();
 
     let expected = Buffer::with_lines(vec!["Item 1", "", "", "Item 4"]);
+
+    terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widget_list_should_render_padding() {
+    let backend = TestBackend::new(6, 5);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            let items = vec![
+                ListItem::new("Item 1"),
+                ListItem::new("Item 2"),
+                ListItem::new("Item 3"),
+                ListItem::new("Item 4"),
+            ];
+
+            let list = List::new(items)
+                .padding(1)
+                .style(Style::default())
+                .highlight_style(Style::default());
+
+            f.render_widget(list, f.size());
+        })
+        .unwrap();
+
+    let expected = Buffer::with_lines(vec!["Item 1", "", "Item 2", "", "Item 3"]);
+
+    terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widget_list_should_not_truncate_last_item_when_truncate_last_item_is_false() {
+    let backend = TestBackend::new(7, 5);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            let items = vec![
+                ListItem::new("Item 1\nItem 1a"),
+                ListItem::new("Item 2\nItem 2b"),
+                ListItem::new("Item 3\nItem 3c"),
+                ListItem::new("Item 4\nItem 4d"),
+            ];
+
+            let list = List::new(items)
+                .truncate_last_item(false)
+                .style(Style::default())
+                .highlight_style(Style::default());
+
+            f.render_widget(list, f.size());
+        })
+        .unwrap();
+
+    let expected = Buffer::with_lines(vec!["Item 1", "Item 1a", "Item 2", "Item 2b", "Item 3"]);
+
+    terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widget_list_should_not_truncate_last_item_when_start_corner_is_bottom_left_and_truncate_last_item_is_false(
+) {
+    let backend = TestBackend::new(7, 5);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            let items = vec![
+                ListItem::new("Item 1\nItem 1a"),
+                ListItem::new("Item 2\nItem 2b"),
+                ListItem::new("Item 3\nItem 3c"),
+                ListItem::new("Item 4\nItem 4d"),
+            ];
+
+            let list = List::new(items)
+                .start_corner(Corner::BottomLeft)
+                .truncate_last_item(false)
+                .style(Style::default())
+                .highlight_style(Style::default());
+
+            f.render_widget(list, f.size());
+        })
+        .unwrap();
+
+    let expected = Buffer::with_lines(vec!["Item 3c", "Item 2", "Item 2b", "Item 1", "Item 1a"]);
+
+    terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widget_list_should_truncate_last_item_when_start_corner_is_bottom_left() {
+    let backend = TestBackend::new(7, 5);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            let items = vec![
+                ListItem::new("Item 1\nItem 1a"),
+                ListItem::new("Item 2\nItem 2b"),
+                ListItem::new("Item 3\nItem 3c"),
+                ListItem::new("Item 4\nItem 4d"),
+            ];
+
+            let list = List::new(items)
+                .start_corner(Corner::BottomLeft)
+                .style(Style::default())
+                .highlight_style(Style::default());
+
+            f.render_widget(list, f.size());
+        })
+        .unwrap();
+
+    let expected = Buffer::with_lines(vec!["", "Item 2", "Item 2b", "Item 1", "Item 1a"]);
 
     terminal.backend().assert_buffer(&expected);
 }

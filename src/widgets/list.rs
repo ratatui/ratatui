@@ -84,6 +84,9 @@ pub struct List<'a> {
     highlight_symbol: Option<&'a str>,
     /// Whether to repeat the highlight symbol for each line of the selected item
     repeat_highlight_symbol: bool,
+    /// Padding between each item
+    padding: usize,
+    truncate_last_item: bool,
 }
 
 impl<'a> List<'a> {
@@ -99,6 +102,8 @@ impl<'a> List<'a> {
             highlight_style: Style::default(),
             highlight_symbol: None,
             repeat_highlight_symbol: false,
+            padding: 0,
+            truncate_last_item: true,
         }
     }
 
@@ -132,6 +137,24 @@ impl<'a> List<'a> {
         self
     }
 
+    /// indicates the amount of padding between each item in the list
+    pub fn padding(mut self, padding: usize) -> List<'a> {
+        self.padding = padding;
+        self
+    }
+
+    /// indicates that the last item should be truncated if it is too long
+    /// This defaults to true as this is the historical behaviour of the
+    /// list widget.
+    pub fn truncate_last_item(mut self, truncate: bool) -> List<'a> {
+        self.truncate_last_item = truncate;
+        self
+    }
+
+    /// Returns the bounds of the items that will be rendered
+    ///
+    /// Ensures that the selected item is always visible, and that the items
+    /// are not rendered outside the available space.
     fn get_items_bounds(
         &self,
         selected: Option<usize>,
@@ -142,31 +165,52 @@ impl<'a> List<'a> {
         let mut start = offset;
         let mut end = offset;
         let mut height = 0;
+        // calculate which items will be showing starting from offset and
+        // filling only the items that fit in the available space
         for item in self.items.iter().skip(offset) {
+            // don't include the padding in the max height calculation
+            // as we don't need to render the last item's padding
             if height + item.height() > max_height {
                 break;
             }
-            height += item.height();
+            height += item.height() + self.padding;
             end += 1;
         }
 
+        // if the selected item is after the range of items that will be
+        // showing, then we need to adjust the start and end bounds to
+        // reflect this. We add one item at the end, and remove 0 or more
+        // items from the start to ensure that the height is less than or
+        // equal to the max height.
         let selected = selected.unwrap_or(0).min(self.items.len() - 1);
         while selected >= end {
-            height = height.saturating_add(self.items[end].height());
+            height = height.saturating_add(self.items[end].height() + self.padding);
             end += 1;
             while height > max_height {
-                height = height.saturating_sub(self.items[start].height());
+                height = height.saturating_sub(self.items[start].height() + self.padding);
                 start += 1;
             }
         }
+
+        // here we do the same thing as above, but in the opposite direction
+        // to ensure that the start and end bounds are correct. We remove one
+        // item from the start, and add 0 or more items to the end to ensure
+        // that the height is less than or equal to the max height.
         while selected < start {
             start -= 1;
-            height = height.saturating_add(self.items[start].height());
+            height = height.saturating_add(self.items[start].height() + self.padding);
             while height > max_height {
                 end -= 1;
-                height = height.saturating_sub(self.items[end].height());
+                height = height.saturating_sub(self.items[end].height() + self.padding);
             }
         }
+
+        if !self.truncate_last_item && height < max_height {
+            // if the height is less than the max height, then we need to
+            // adjust the end bound to include the last item.
+            end += 1;
+        }
+
         (start, end)
     }
 }
@@ -211,47 +255,73 @@ impl<'a> StatefulWidget for List<'a> {
         {
             let (x, y) = match self.start_corner {
                 Corner::BottomLeft => {
-                    current_height += item.height() as u16;
-                    (list_area.left(), list_area.bottom() - current_height)
+                    current_height += item.height() as u16 + self.padding as u16;
+                    (
+                        list_area.left(),
+                        list_area.bottom().saturating_sub(current_height),
+                    )
                 }
                 _ => {
                     let pos = (list_area.left(), list_area.top() + current_height);
-                    current_height += item.height() as u16;
+                    current_height += item.height() as u16 + self.padding as u16;
                     pos
                 }
+            };
+            let height = if current_height < list_height as u16 {
+                // the item fits in the available height so we can render it in full
+                item.height() as u16
+            } else {
+                // the last item in the list overflows the available height
+                // so we need to truncate it to fit in the space available
+                list_height as u16 - (current_height - item.height() as u16 - self.padding as u16)
             };
             let area = Rect {
                 x,
                 y,
                 width: list_area.width,
-                height: item.height() as u16,
+                height,
             };
             let item_style = self.style.patch(item.style);
             buf.set_style(area, item_style);
 
             let is_selected = state.selected.map(|s| s == i).unwrap_or(false);
-            for (j, line) in item.content.lines.iter().enumerate() {
+            for (line_index, line) in item.content.lines.iter().enumerate() {
+                // the number of lines to truncate from the item
+                let truncated_height = item.height() - area.height as usize;
+                if self.start_corner == Corner::BottomLeft {
+                    if line_index < truncated_height {
+                        // don't render the first part of a widget when it is truncated
+                        continue;
+                    }
+                } else if line_index >= area.height as usize {
+                    // don't render the last part of a widget when it is truncated
+                    break;
+                }
+
                 // if the item is selected, we need to display the highlight symbol:
                 // - either for the first line of the item only,
                 // - or for each line of the item if the appropriate option is set
-                let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
+                let symbol = if is_selected && (line_index == 0 || self.repeat_highlight_symbol) {
                     highlight_symbol
                 } else {
                     &blank_symbol
                 };
+
+                let y = if self.start_corner == Corner::BottomLeft && truncated_height > 0 {
+                    // truncate the first item, by shifting everything up by the difference
+                    y + line_index as u16 - truncated_height as u16
+                } else {
+                    y + line_index as u16
+                };
+
                 let (elem_x, max_element_width) = if has_selection {
-                    let (elem_x, _) = buf.set_stringn(
-                        x,
-                        y + j as u16,
-                        symbol,
-                        list_area.width as usize,
-                        item_style,
-                    );
+                    let (elem_x, _) =
+                        buf.set_stringn(x, y, symbol, list_area.width as usize, item_style);
                     (elem_x, (list_area.width - (elem_x - x)))
                 } else {
                     (x, list_area.width)
                 };
-                buf.set_spans(elem_x, y + j as u16, line, max_element_width);
+                buf.set_spans(elem_x, y, line, max_element_width);
             }
             if is_selected {
                 buf.set_style(area, self.highlight_style);
