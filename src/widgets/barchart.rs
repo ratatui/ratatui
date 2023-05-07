@@ -75,7 +75,7 @@ impl<'a> BarChart<'a> {
         self.data = data;
         self.values = Vec::with_capacity(self.data.len());
         for &(_, v) in self.data {
-            self.values.push(format!("{}", v));
+            self.values.push(format!("{v}"));
         }
         self
     }

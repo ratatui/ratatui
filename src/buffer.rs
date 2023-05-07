@@ -545,8 +545,7 @@ impl Debug for Buffer {
             }
             if !overwritten.is_empty() {
                 f.write_fmt(format_args!(
-                    "// hidden by multi-width symbols: {:?}",
-                    overwritten
+                    "// hidden by multi-width symbols: {overwritten:?}"
                 ))?;
             }
             f.write_str("\",\n")?;
@@ -587,7 +586,7 @@ mod tests {
                 .add_modifier(Modifier::BOLD),
         );
         assert_eq!(
-            format!("{:?}", buf),
+            format!("{buf:?}"),
             indoc::indoc!(
                 "
                 Buffer {

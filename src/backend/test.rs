@@ -36,12 +36,7 @@ fn buffer_view(buffer: &Buffer) -> String {
         }
         view.push('"');
         if !overwritten.is_empty() {
-            write!(
-                &mut view,
-                " Hidden by multi-width symbols: {:?}",
-                overwritten
-            )
-            .unwrap();
+            write!(&mut view, " Hidden by multi-width symbols: {overwritten:?}").unwrap();
         }
         view.push('\n');
     }
@@ -96,10 +91,7 @@ impl TestBackend {
             .enumerate()
             .map(|(i, (x, y, cell))| {
                 let expected_cell = expected.get(*x, *y);
-                format!(
-                    "{}: at ({}, {}) expected {:?} got {:?}",
-                    i, x, y, expected_cell, cell
-                )
+                format!("{i}: at ({x}, {y}) expected {expected_cell:?} got {cell:?}")
             })
             .collect::<Vec<String>>()
             .join("\n");
