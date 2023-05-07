@@ -155,7 +155,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let help_message = Paragraph::new(text);
     f.render_widget(help_message, chunks[0]);
 
-    let input = Paragraph::new(app.input.as_ref())
+    let input = Paragraph::new(app.input.as_str())
         .style(match app.input_mode {
             InputMode::Normal => Style::default(),
             InputMode::Editing => Style::default().fg(Color::Yellow),
