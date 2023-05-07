@@ -4,3 +4,4 @@ Cargo.lock
 *.rs.rustfmt
 .gdb_history
 .idea/
+tarpaulin-report.html
