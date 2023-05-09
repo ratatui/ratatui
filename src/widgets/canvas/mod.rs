@@ -1,9 +1,11 @@
+mod circle;
 mod line;
 mod map;
 mod points;
 mod rectangle;
 mod world;
 
+pub use self::circle::Circle;
 pub use self::line::Line;
 pub use self::map::{Map, MapResolution};
 pub use self::points::Points;
