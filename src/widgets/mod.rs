@@ -169,7 +169,7 @@ pub trait Widget {
 ///     terminal.draw(|f| {
 ///         // The items managed by the application are transformed to something
 ///         // that is understood by ratatui.
-///         let items: Vec<ListItem>= events.items.iter().map(|i| ListItem::new(i.as_ref())).collect();
+///         let items: Vec<ListItem>= events.items.iter().map(|i| ListItem::new(i.as_str())).collect();
 ///         // The `List` widget is then built with those items.
 ///         let list = List::new(items);
 ///         // Finally the widget is rendered using the associated state. `events.state` is
