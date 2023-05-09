@@ -1,7 +1,7 @@
 use crate::{
     layout::Rect,
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Span, Line},
 };
 use std::cmp::min;
 use unicode_segmentation::UnicodeSegmentation;
@@ -306,10 +306,10 @@ impl Buffer {
         (x_offset as u16, y)
     }
 
-    pub fn set_spans(&mut self, x: u16, y: u16, spans: &Spans<'_>, width: u16) -> (u16, u16) {
+    pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, width: u16) -> (u16, u16) {
         let mut remaining_width = width;
         let mut x = x;
-        for span in &spans.0 {
+        for span in &line.0 {
             if remaining_width == 0 {
                 break;
             }

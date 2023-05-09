@@ -3,7 +3,7 @@ use crate::{
     layout::{Alignment, Rect},
     style::Style,
     symbols::line,
-    text::{Span, Spans},
+    text::{Span, Line},
     widgets::{Borders, Widget},
 };
 
@@ -44,7 +44,7 @@ impl BorderType {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Block<'a> {
     /// Optional title place on the upper left of the block
-    title: Option<Spans<'a>>,
+    title: Option<Line<'a>>,
     /// Title alignment. The default is top left of the block, but one can choose to place
     /// title in the top middle, or top right of the block
     title_alignment: Alignment,
@@ -78,7 +78,7 @@ impl<'a> Default for Block<'a> {
 impl<'a> Block<'a> {
     pub fn title<T>(mut self, title: T) -> Block<'a>
     where
-        T: Into<Spans<'a>>,
+        T: Into<Line<'a>>,
     {
         self.title = Some(title.into());
         self
@@ -86,12 +86,12 @@ impl<'a> Block<'a> {
 
     #[deprecated(
         since = "0.10.0",
-        note = "You should use styling capabilities of `text::Spans` given as argument of the `title` method to apply styling to the title."
+        note = "You should use styling capabilities of `text::Line` given as argument of the `title` method to apply styling to the title."
     )]
     pub fn title_style(mut self, style: Style) -> Block<'a> {
         if let Some(t) = self.title {
             let title = String::from(t);
-            self.title = Some(Spans::from(Span::styled(title, style)));
+            self.title = Some(Line::from(Span::styled(title, style)));
         }
         self
     }
@@ -244,7 +244,7 @@ impl<'a> Widget for Block<'a> {
                 area.top()
             };
 
-            buf.set_spans(title_x, title_y, &title, title_area_width);
+            buf.set_line(title_x, title_y, &title, title_area_width);
         }
     }
 }

@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
-    text::{Span, Spans},
+    text::{Span, Line as TextLine},
     widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle},
     widgets::{
         Axis, BarChart, Block, Borders, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem,
@@ -21,7 +21,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .tabs
         .titles
         .iter()
-        .map(|t| Spans::from(Span::styled(*t, Style::default().fg(Color::Green))))
+        .map(|t| TextLine::from(Span::styled(*t, Style::default().fg(Color::Green))))
         .collect();
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title(app.title))
@@ -137,7 +137,7 @@ where
                 .tasks
                 .items
                 .iter()
-                .map(|i| ListItem::new(vec![Spans::from(Span::raw(*i))]))
+                .map(|i| ListItem::new(vec![TextLine::from(Span::raw(*i))]))
                 .collect();
             let tasks = List::new(tasks)
                 .block(Block::default().borders(Borders::ALL).title("List"))
@@ -161,7 +161,7 @@ where
                         "WARNING" => warning_style,
                         _ => info_style,
                     };
-                    let content = vec![Spans::from(vec![
+                    let content = vec![TextLine::from(vec![
                         Span::styled(format!("{:<9}", level), s),
                         Span::raw(evt),
                     ])];
@@ -261,9 +261,9 @@ where
     B: Backend,
 {
     let text = vec![
-        Spans::from("This is a paragraph with several lines. You can change style your text the way you want"),
-        Spans::from(""),
-        Spans::from(vec![
+        TextLine::from("This is a paragraph with several lines. You can change style your text the way you want"),
+        TextLine::from(""),
+        TextLine::from(vec![
             Span::from("For example: "),
             Span::styled("under", Style::default().fg(Color::Red)),
             Span::raw(" "),
@@ -272,7 +272,7 @@ where
             Span::styled("rainbow", Style::default().fg(Color::Blue)),
             Span::raw("."),
         ]),
-        Spans::from(vec![
+        TextLine::from(vec![
             Span::raw("Oh and if you didn't "),
             Span::styled("notice", Style::default().add_modifier(Modifier::ITALIC)),
             Span::raw(" you can "),
@@ -283,7 +283,7 @@ where
             Span::styled("text", Style::default().add_modifier(Modifier::UNDERLINED)),
             Span::raw(".")
         ]),
-        Spans::from(
+        TextLine::from(
             "One more thing is that it should display unicode characters: 10€"
         ),
     ];

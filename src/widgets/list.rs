@@ -251,7 +251,7 @@ impl<'a> StatefulWidget for List<'a> {
                 } else {
                     (x, list_area.width)
                 };
-                buf.set_spans(elem_x, y + j as u16, line, max_element_width);
+                buf.set_line(elem_x, y + j as u16, line, max_element_width);
             }
             if is_selected {
                 buf.set_style(area, self.highlight_style);

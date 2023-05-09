@@ -157,7 +157,7 @@ If you are using one of them, you can import their last implementation in your o
 
 #### Canvas labels (#543)
 
-* Labels of the `Canvas` widget are now `text::Spans`.
+* Labels of the `Canvas` widget are now `text::Line`.
 The signature of `widgets::canvas::Context::print` has thus been updated:
 ```diff
 - ctx.print(x, y, "Some text", Color::Yellow);
@@ -335,8 +335,8 @@ now used by a majority of widgets to provide flexible text styling.
 
 `Text` is replaced by the following types:
 - `Span`: a string with a unique style.
-- `Spans`: a string with multiple styles.
-- `Text`: a multi-lines string with multiple styles.
+- `Line`: a single-line string with multiple styles.
+- `Text`: a multi-line string with multiple styles.
 
 However, you do not always need this complexity so the crate provides `From` implementations to
 let you use simple strings as a default and switch to the previous primitives when you need
@@ -356,13 +356,13 @@ Block::default().title(vec![
 ]);
 ```
 
-- `Buffer::set_spans` and `Buffer::set_span` were added.
+- `Buffer::set_line` and `Buffer::set_span` were added.
 - `Paragraph::new` expects an input that can be converted to a `Text`.
 - `Block::title_style` is deprecated.
-- `Block::title` expects a `Spans`.
-- `Tabs` expects a list of `Spans`.
+- `Block::title` expects a `Line`.
+- `Tabs` expects a list of `Line`.
 - `Gauge` custom label is now a `Span`.
-- `Axis` title and labels are `Spans` (as a consequence `Chart` no longer has generic bounds).
+- `Axis` title and labels are `Line` (as a consequence `Chart` no longer has generic bounds).
 
 #### Incremental styling
 

@@ -3,7 +3,7 @@ use crate::{
     layout::Rect,
     style::Style,
     symbols,
-    text::{Span, Spans},
+    text::{Span, Line},
     widgets::{Block, Widget},
 };
 
@@ -14,9 +14,9 @@ use crate::{
 /// ```
 /// # use ratatui::widgets::{Block, Borders, Tabs};
 /// # use ratatui::style::{Style, Color};
-/// # use ratatui::text::{Spans};
+/// # use ratatui::text::Line;
 /// # use ratatui::symbols::{DOT};
-/// let titles = ["Tab1", "Tab2", "Tab3", "Tab4"].iter().cloned().map(Spans::from).collect();
+/// let titles = ["Tab1", "Tab2", "Tab3", "Tab4"].iter().cloned().map(Line::from).collect();
 /// Tabs::new(titles)
 ///     .block(Block::default().title("Tabs").borders(Borders::ALL))
 ///     .style(Style::default().fg(Color::White))
@@ -28,7 +28,7 @@ pub struct Tabs<'a> {
     /// A block to wrap this widget in if necessary
     block: Option<Block<'a>>,
     /// One title for each tab
-    titles: Vec<Spans<'a>>,
+    titles: Vec<Line<'a>>,
     /// The index of the selected tabs
     selected: usize,
     /// The style used to draw the text
@@ -40,7 +40,7 @@ pub struct Tabs<'a> {
 }
 
 impl<'a> Tabs<'a> {
-    pub fn new(titles: Vec<Spans<'a>>) -> Tabs<'a> {
+    pub fn new(titles: Vec<Line<'a>>) -> Tabs<'a> {
         Tabs {
             block: None,
             titles,
@@ -105,7 +105,7 @@ impl<'a> Widget for Tabs<'a> {
             if remaining_width == 0 {
                 break;
             }
-            let pos = buf.set_spans(x, tabs_area.top(), &title, remaining_width);
+            let pos = buf.set_line(x, tabs_area.top(), &title, remaining_width);
             if i == self.selected {
                 buf.set_style(
                     Rect {

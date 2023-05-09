@@ -24,17 +24,17 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 /// # Examples
 ///
 /// ```
-/// # use ratatui::text::{Text, Spans, Span};
+/// # use ratatui::text::{Text, Line, Span};
 /// # use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 /// # use ratatui::style::{Style, Color, Modifier};
 /// # use ratatui::layout::{Alignment};
 /// let text = vec![
-///     Spans::from(vec![
+///     Line::from(vec![
 ///         Span::raw("First"),
 ///         Span::styled("line",Style::default().add_modifier(Modifier::ITALIC)),
 ///         Span::raw("."),
 ///     ]),
-///     Spans::from(Span::styled("Second line", Style::default().fg(Color::Red))),
+///     Line::from(Span::styled("Second line", Style::default().fg(Color::Red))),
 /// ];
 /// Paragraph::new(text)
 ///     .block(Block::default().title("Paragraph").borders(Borders::ALL))
@@ -149,8 +149,8 @@ impl<'a> Widget for Paragraph<'a> {
         }
 
         let style = self.style;
-        let mut styled = self.text.lines.iter().flat_map(|spans| {
-            spans
+        let mut styled = self.text.lines.iter().flat_map(|line| {
+            line
                 .0
                 .iter()
                 .flat_map(|span| span.styled_graphemes(style))
