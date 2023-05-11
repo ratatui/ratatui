@@ -3,12 +3,12 @@
 //! A terminal UI is at its root a lot of strings. In order to make it accessible and stylish,
 //! those strings may be associated to a set of styles. `ratatui` has three ways to represent them:
 //! - A single line string where all graphemes have the same style is represented by a [`Span`].
-//! - A single line string where each grapheme may have its own style is represented by [`Spans`].
+//! - A single line string where each grapheme may have its own style is represented by [`Line`].
 //! - A multiple line string where each grapheme may have its own style is represented by a
 //! [`Text`].
 //!
-//! These types form a hierarchy: [`Spans`] is a collection of [`Span`] and each line of [`Text`]
-//! is a [`Spans`].
+//! These types form a hierarchy: [`Line`] is a collection of [`Span`] and each line of [`Text`]
+//! is a [`Line`].
 //!
 //! Keep it mind that a lot of widgets will use those types to advertise what kind of string is
 //! supported for their properties. Moreover, `ratatui` provides convenient `From` implementations so
@@ -16,20 +16,20 @@
 //! primitives when you need additional styling capabilities.
 //!
 //! For example, for the [`crate::widgets::Block`] widget, all the following calls are valid to set
-//! its `title` property (which is a [`Spans`] under the hood):
+//! its `title` property (which is a [`Line`] under the hood):
 //!
 //! ```rust
 //! # use ratatui::widgets::Block;
-//! # use ratatui::text::{Span, Spans};
+//! # use ratatui::text::{Span, Line};
 //! # use ratatui::style::{Color, Style};
 //! // A simple string with no styling.
-//! // Converted to Spans(vec![
+//! // Converted to Line(vec![
 //! //   Span { content: Cow::Borrowed("My title"), style: Style { .. } }
 //! // ])
 //! let block = Block::default().title("My title");
 //!
 //! // A simple string with a unique style.
-//! // Converted to Spans(vec![
+//! // Converted to Line(vec![
 //! //   Span { content: Cow::Borrowed("My title"), style: Style { fg: Some(Color::Yellow), .. }
 //! // ])
 //! let block = Block::default().title(
@@ -37,7 +37,7 @@
 //! );
 //!
 //! // A string with multiple styles.
-//! // Converted to Spans(vec![
+//! // Converted to Line(vec![
 //! //   Span { content: Cow::Borrowed("My"), style: Style { fg: Some(Color::Yellow), .. } },
 //! //   Span { content: Cow::Borrowed(" title"), .. }
 //! // ])
@@ -233,47 +233,47 @@ impl<'a> From<&'a str> for Span<'a> {
 
 /// A string composed of clusters of graphemes, each with their own style.
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
-pub struct Spans<'a>(pub Vec<Span<'a>>);
+pub struct Line<'a>(pub Vec<Span<'a>>);
 
-impl<'a> Spans<'a> {
+impl<'a> Line<'a> {
     /// Returns the width of the underlying string.
     ///
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::text::{Span, Line};
     /// # use ratatui::style::{Color, Style};
-    /// let spans = Spans::from(vec![
+    /// let line = Line::from(vec![
     ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::raw(" text"),
     /// ]);
-    /// assert_eq!(7, spans.width());
+    /// assert_eq!(7, line.width());
     /// ```
     pub fn width(&self) -> usize {
         self.0.iter().map(Span::width).sum()
     }
 
-    /// Patches the style of each Span in an existing Spans, adding modifiers from the given style.
+    /// Patches the style of each Span in an existing Line, adding modifiers from the given style.
     ///
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::text::{Span, Line};
     /// # use ratatui::style::{Color, Style, Modifier};
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
-    /// let mut raw_spans = Spans::from(vec![
+    /// let mut raw_line = Line::from(vec![
     ///     Span::raw("My"),
     ///     Span::raw(" text"),
     /// ]);
-    /// let mut styled_spans = Spans::from(vec![
+    /// let mut styled_line = Line::from(vec![
     ///     Span::styled("My", style),
     ///     Span::styled(" text", style),
     /// ]);
     ///
-    /// assert_ne!(raw_spans, styled_spans);
+    /// assert_ne!(raw_line, styled_line);
     ///
-    /// raw_spans.patch_style(style);
-    /// assert_eq!(raw_spans, styled_spans);
+    /// raw_line.patch_style(style);
+    /// assert_eq!(raw_line, styled_line);
     /// ```
     pub fn patch_style(&mut self, style: Style) {
         for span in &mut self.0 {
@@ -281,22 +281,22 @@ impl<'a> Spans<'a> {
         }
     }
 
-    /// Resets the style of each Span in the Spans.
+    /// Resets the style of each Span in the Line.
     /// Equivalent to calling `patch_style(Style::reset())`.
     ///
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::text::{Span, Line};
     /// # use ratatui::style::{Color, Style, Modifier};
-    /// let mut spans = Spans::from(vec![
+    /// let mut line = Line::from(vec![
     ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::styled(" text", Style::default().add_modifier(Modifier::BOLD)),
     /// ]);
     ///
-    /// spans.reset_style();
-    /// assert_eq!(Style::reset(), spans.0[0].style);
-    /// assert_eq!(Style::reset(), spans.0[1].style);
+    /// line.reset_style();
+    /// assert_eq!(Style::reset(), line.0[0].style);
+    /// assert_eq!(Style::reset(), line.0[1].style);
     /// ```
     pub fn reset_style(&mut self) {
         for span in &mut self.0 {
@@ -305,32 +305,32 @@ impl<'a> Spans<'a> {
     }
 }
 
-impl<'a> From<String> for Spans<'a> {
-    fn from(s: String) -> Spans<'a> {
-        Spans(vec![Span::from(s)])
+impl<'a> From<String> for Line<'a> {
+    fn from(s: String) -> Line<'a> {
+        Line(vec![Span::from(s)])
     }
 }
 
-impl<'a> From<&'a str> for Spans<'a> {
-    fn from(s: &'a str) -> Spans<'a> {
-        Spans(vec![Span::from(s)])
+impl<'a> From<&'a str> for Line<'a> {
+    fn from(s: &'a str) -> Line<'a> {
+        Line(vec![Span::from(s)])
     }
 }
 
-impl<'a> From<Vec<Span<'a>>> for Spans<'a> {
-    fn from(spans: Vec<Span<'a>>) -> Spans<'a> {
-        Spans(spans)
+impl<'a> From<Vec<Span<'a>>> for Line<'a> {
+    fn from(line: Vec<Span<'a>>) -> Line<'a> {
+        Line(line)
     }
 }
 
-impl<'a> From<Span<'a>> for Spans<'a> {
-    fn from(span: Span<'a>) -> Spans<'a> {
-        Spans(vec![span])
+impl<'a> From<Span<'a>> for Line<'a> {
+    fn from(span: Span<'a>) -> Line<'a> {
+        Line(vec![span])
     }
 }
 
-impl<'a> From<Spans<'a>> for String {
-    fn from(line: Spans<'a>) -> String {
+impl<'a> From<Line<'a>> for String {
+    fn from(line: Line<'a>) -> String {
         line.0.iter().fold(String::new(), |mut acc, s| {
             acc.push_str(s.content.as_ref());
             acc
@@ -364,7 +364,7 @@ impl<'a> From<Spans<'a>> for String {
 /// ```
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct Text<'a> {
-    pub lines: Vec<Spans<'a>>,
+    pub lines: Vec<Line<'a>>,
 }
 
 impl<'a> Text<'a> {
@@ -382,10 +382,10 @@ impl<'a> Text<'a> {
         T: Into<Cow<'a, str>>,
     {
         let lines: Vec<_> = match content.into() {
-            Cow::Borrowed("") => vec![Spans::from("")],
-            Cow::Borrowed(s) => s.lines().map(Spans::from).collect(),
-            Cow::Owned(s) if s.is_empty() => vec![Spans::from("")],
-            Cow::Owned(s) => s.lines().map(|l| Spans::from(l.to_owned())).collect(),
+            Cow::Borrowed("") => vec![Line::from("")],
+            Cow::Borrowed(s) => s.lines().map(Line::from).collect(),
+            Cow::Owned(s) if s.is_empty() => vec![Line::from("")],
+            Cow::Owned(s) => s.lines().map(|l| Line::from(l.to_owned())).collect(),
         };
 
         Text { lines }
@@ -423,7 +423,7 @@ impl<'a> Text<'a> {
     pub fn width(&self) -> usize {
         self.lines
             .iter()
-            .map(Spans::width)
+            .map(Line::width)
             .max()
             .unwrap_or_default()
     }
@@ -468,7 +468,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Spans, Text};
+    /// # use ratatui::text::{Span, Line, Text};
     /// # use ratatui::style::{Color, Style, Modifier};
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// let mut text = Text::styled("The first line\nThe second line", style);
@@ -508,25 +508,25 @@ impl<'a> From<Cow<'a, str>> for Text<'a> {
 impl<'a> From<Span<'a>> for Text<'a> {
     fn from(span: Span<'a>) -> Text<'a> {
         Text {
-            lines: vec![Spans::from(span)],
+            lines: vec![Line::from(span)],
         }
     }
 }
 
-impl<'a> From<Spans<'a>> for Text<'a> {
-    fn from(spans: Spans<'a>) -> Text<'a> {
-        Text { lines: vec![spans] }
+impl<'a> From<Line<'a>> for Text<'a> {
+    fn from(line: Line<'a>) -> Text<'a> {
+        Text { lines: vec![line] }
     }
 }
 
-impl<'a> From<Vec<Spans<'a>>> for Text<'a> {
-    fn from(lines: Vec<Spans<'a>>) -> Text<'a> {
+impl<'a> From<Vec<Line<'a>>> for Text<'a> {
+    fn from(lines: Vec<Line<'a>>) -> Text<'a> {
         Text { lines }
     }
 }
 
 impl<'a> IntoIterator for Text<'a> {
-    type Item = Spans<'a>;
+    type Item = Line<'a>;
     type IntoIter = std::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -534,8 +534,8 @@ impl<'a> IntoIterator for Text<'a> {
     }
 }
 
-impl<'a> Extend<Spans<'a>> for Text<'a> {
-    fn extend<T: IntoIterator<Item = Spans<'a>>>(&mut self, iter: T) {
+impl<'a> Extend<Line<'a>> for Text<'a> {
+    fn extend<T: IntoIterator<Item = Line<'a>>>(&mut self, iter: T) {
         self.lines.extend(iter);
     }
 }
@@ -648,10 +648,10 @@ mod tests {
         let masked = Masked::new("12345", 'x');
 
         let text: Text = masked.borrow().into();
-        assert_eq!(text.lines, vec![Spans::from("xxxxx")]);
+        assert_eq!(text.lines, vec![Line::from("xxxxx")]);
 
         let text: Text = masked.to_owned().into();
-        assert_eq!(text.lines, vec![Spans::from("xxxxx")]);
+        assert_eq!(text.lines, vec![Line::from("xxxxx")]);
 
         let cow: Cow<str> = masked.borrow().into();
         assert_eq!(cow, "xxxxx");
