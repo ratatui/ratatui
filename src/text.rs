@@ -235,6 +235,9 @@ impl<'a> From<&'a str> for Span<'a> {
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct Line<'a>(pub Vec<Span<'a>>);
 
+#[deprecated(since = "0.21.0", note = "`Spans` is renamed to `Line` and will be removed in a future release. Use `Line` instead")]
+pub type Spans<'a> = Line<'a>;
+
 impl<'a> Line<'a> {
     /// Returns the width of the underlying string.
     ///

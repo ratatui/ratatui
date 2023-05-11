@@ -330,6 +330,11 @@ impl Buffer {
         (x, y)
     }
 
+    #[deprecated(since = "0.21.0", note = "`Spans` renamed to `Line`. use set_line instead")]
+    pub fn set_spans(&mut self, x: u16, y: u16, spans: &Line<'_>, width: u16) -> (u16, u16) {
+        self.set_line(x, y, spans, width)
+    }
+
     pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, width: u16) -> (u16, u16) {
         self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
     }
