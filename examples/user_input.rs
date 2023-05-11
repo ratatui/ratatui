@@ -18,7 +18,7 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    text::{Span, Spans, Text},
+    text::{Span, Line, Text},
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame, Terminal,
 };
@@ -150,7 +150,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             Style::default(),
         ),
     };
-    let mut text = Text::from(Spans::from(msg));
+    let mut text = Text::from(Line::from(msg));
     text.patch_style(style);
     let help_message = Paragraph::new(text);
     f.render_widget(help_message, chunks[0]);
@@ -183,7 +183,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .iter()
         .enumerate()
         .map(|(i, m)| {
-            let content = Spans::from(Span::raw(format!("{}: {}", i, m)));
+            let content = Line::from(Span::raw(format!("{}: {}", i, m)));
             ListItem::new(content)
         })
         .collect();

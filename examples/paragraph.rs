@@ -7,7 +7,7 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    text::{Masked, Span, Spans},
+    text::{Masked, Span, Line},
     widgets::{Block, Borders, Paragraph, Wrap},
     Frame, Terminal,
 };
@@ -113,27 +113,27 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .split(size);
 
     let text = vec![
-        Spans::from("This is a line "),
-        Spans::from(Span::styled(
+        Line::from("This is a line "),
+        Line::from(Span::styled(
             "This is a line   ",
             Style::default().fg(Color::Red),
         )),
-        Spans::from(Span::styled(
+        Line::from(Span::styled(
             "This is a line",
             Style::default().bg(Color::Blue),
         )),
-        Spans::from(Span::styled(
+        Line::from(Span::styled(
             "This is a longer line",
             Style::default().add_modifier(Modifier::CROSSED_OUT),
         )),
-        Spans::from(Span::styled(&long_line, Style::default().bg(Color::Green))),
-        Spans::from(Span::styled(
+        Line::from(Span::styled(&long_line, Style::default().bg(Color::Green))),
+        Line::from(Span::styled(
             "This is a line",
             Style::default()
                 .fg(Color::Green)
                 .add_modifier(Modifier::ITALIC),
         )),
-        Spans::from(vec![
+        Line::from(vec![
             Span::raw("Masked text: "),
             Span::styled(
                 Masked::new("password", '*'),

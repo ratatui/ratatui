@@ -1,5 +1,5 @@
 use ratatui::{
-    backend::TestBackend, buffer::Buffer, layout::Rect, symbols, text::Spans, widgets::Tabs,
+    backend::TestBackend, buffer::Buffer, layout::Rect, symbols, text::Line, widgets::Tabs,
     Terminal,
 };
 
@@ -9,7 +9,7 @@ fn widgets_tabs_should_not_panic_on_narrow_areas() {
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Spans::from).collect());
+            let tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Line::from).collect());
             f.render_widget(
                 tabs,
                 Rect {
@@ -31,7 +31,7 @@ fn widgets_tabs_should_truncate_the_last_item() {
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Spans::from).collect());
+            let tabs = Tabs::new(["Tab1", "Tab2"].iter().cloned().map(Line::from).collect());
             f.render_widget(
                 tabs,
                 Rect {

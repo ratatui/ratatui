@@ -2,7 +2,7 @@ use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Alignment,
-    text::{Span, Spans, Text},
+    text::{Span, Line, Text},
     widgets::{Block, Borders, Padding, Paragraph, Wrap},
     Terminal,
 };
@@ -21,7 +21,7 @@ fn widgets_paragraph_can_wrap_its_content() {
         terminal
             .draw(|f| {
                 let size = f.size();
-                let text = vec![Spans::from(SAMPLE_STRING)];
+                let text = vec![Line::from(SAMPLE_STRING)];
                 let paragraph = Paragraph::new(text)
                     .block(Block::default().borders(Borders::ALL).padding(Padding {
                         left: 2,
@@ -99,7 +99,7 @@ fn widgets_paragraph_renders_double_width_graphemes() {
     terminal
         .draw(|f| {
             let size = f.size();
-            let text = vec![Spans::from(s)];
+            let text = vec![Line::from(s)];
             let paragraph = Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL))
                 .wrap(Wrap { trim: true });
@@ -131,7 +131,7 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
     terminal
         .draw(|f| {
             let size = f.size();
-            let text = vec![Spans::from(s)];
+            let text = vec![Line::from(s)];
             let paragraph = Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL))
                 .wrap(Wrap { trim: true });
@@ -155,7 +155,7 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
 #[test]
 fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
     let nbsp: &str = "\u{00a0}";
-    let line = Spans::from(vec![Span::raw("NBSP"), Span::raw(nbsp)]);
+    let line = Line::from(vec![Span::raw("NBSP"), Span::raw(nbsp)]);
     let backend = TestBackend::new(20, 3);
     let mut terminal = Terminal::new(backend).unwrap();
     let expected = Buffer::with_lines(vec![

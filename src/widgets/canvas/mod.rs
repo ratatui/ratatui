@@ -16,7 +16,7 @@ use crate::{
     layout::Rect,
     style::{Color, Style},
     symbols,
-    text::Spans,
+    text::Line as TextLine,
     widgets::{Block, Widget},
 };
 use std::fmt::Debug;
@@ -31,7 +31,7 @@ pub trait Shape {
 pub struct Label<'a> {
     x: f64,
     y: f64,
-    spans: Spans<'a>,
+    line: TextLine<'a>,
 }
 
 #[derive(Debug, Clone)]
@@ -299,14 +299,14 @@ impl<'a> Context<'a> {
     }
 
     /// Print a string on the canvas at the given position
-    pub fn print<T>(&mut self, x: f64, y: f64, spans: T)
+    pub fn print<T>(&mut self, x: f64, y: f64, line: T)
     where
-        T: Into<Spans<'a>>,
+        T: Into<TextLine<'a>>,
     {
         self.labels.push(Label {
             x,
             y,
-            spans: spans.into(),
+            line: line.into(),
         });
     }
 
@@ -510,7 +510,7 @@ where
         {
             let x = ((label.x - left) * resolution.0 / width) as u16 + canvas_area.left();
             let y = ((top - label.y) * resolution.1 / height) as u16 + canvas_area.top();
-            buf.set_spans(x, y, &label.spans, canvas_area.right() - x);
+            buf.set_line(x, y, &label.line, canvas_area.right() - x);
         }
     }
 }

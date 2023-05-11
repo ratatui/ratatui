@@ -26,7 +26,7 @@ use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 
 use ratatui::backend::{Backend, CrosstermBackend};
 use ratatui::layout::Alignment;
-use ratatui::text::Spans;
+use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders, Paragraph};
 use ratatui::{Frame, Terminal};
 
@@ -113,23 +113,23 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
 fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let text = vec![
         if app.hook_enabled {
-            Spans::from("HOOK IS CURRENTLY **ENABLED**")
+            Line::from("HOOK IS CURRENTLY **ENABLED**")
         } else {
-            Spans::from("HOOK IS CURRENTLY **DISABLED**")
+            Line::from("HOOK IS CURRENTLY **DISABLED**")
         },
-        Spans::from(""),
-        Spans::from("press `p` to panic"),
-        Spans::from("press `e` to enable the terminal-resetting panic hook"),
-        Spans::from("press any other key to quit without panic"),
-        Spans::from(""),
-        Spans::from("when you panic without the chained hook,"),
-        Spans::from("you will likely have to reset your terminal afterwards"),
-        Spans::from("with the `reset` command"),
-        Spans::from(""),
-        Spans::from("with the chained panic hook enabled,"),
-        Spans::from("you should see the panic report as you would without ratatui"),
-        Spans::from(""),
-        Spans::from("try first without the panic handler to see the difference"),
+        Line::from(""),
+        Line::from("press `p` to panic"),
+        Line::from("press `e` to enable the terminal-resetting panic hook"),
+        Line::from("press any other key to quit without panic"),
+        Line::from(""),
+        Line::from("when you panic without the chained hook,"),
+        Line::from("you will likely have to reset your terminal afterwards"),
+        Line::from("with the `reset` command"),
+        Line::from(""),
+        Line::from("with the chained panic hook enabled,"),
+        Line::from("you should see the panic report as you would without ratatui"),
+        Line::from(""),
+        Line::from("try first without the panic handler to see the difference"),
     ];
 
     let b = Block::default()

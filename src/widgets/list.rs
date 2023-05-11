@@ -269,7 +269,7 @@ impl<'a> StatefulWidget for List<'a> {
                 } else {
                     (x, list_area.width)
                 };
-                buf.set_spans(elem_x, y + j as u16, line, max_element_width);
+                buf.set_line(elem_x, y + j as u16, line, max_element_width);
             }
             if is_selected {
                 buf.set_style(area, self.highlight_style);
@@ -292,7 +292,7 @@ mod tests {
     use crate::{
         assert_buffer_eq,
         style::Color,
-        text::{Span, Spans},
+        text::{Span, Line},
         widgets::{Borders, StatefulWidget, Widget},
     };
 
@@ -355,24 +355,24 @@ mod tests {
     }
 
     #[test]
-    fn test_list_item_new_from_spans() {
-        let spans = Spans::from(vec![
+    fn test_list_item_new_from_line() {
+        let line = Line::from(vec![
             Span::styled("Test ", Style::default().fg(Color::Blue)),
             Span::styled("item", Style::default().fg(Color::Red)),
         ]);
-        let item = ListItem::new(spans.clone());
-        assert_eq!(item.content, Text::from(spans));
+        let item = ListItem::new(line.clone());
+        assert_eq!(item.content, Text::from(line));
         assert_eq!(item.style, Style::default());
     }
 
     #[test]
-    fn test_list_item_new_from_vec_spans() {
+    fn test_list_item_new_from_vec_line() {
         let lines = vec![
-            Spans::from(vec![
+            Line::from(vec![
                 Span::styled("Test ", Style::default().fg(Color::Blue)),
                 Span::styled("item", Style::default().fg(Color::Red)),
             ]),
-            Spans::from(vec![
+            Line::from(vec![
                 Span::styled("Second ", Style::default().fg(Color::Green)),
                 Span::styled("line", Style::default().fg(Color::Yellow)),
             ]),

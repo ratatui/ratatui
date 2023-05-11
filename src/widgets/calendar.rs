@@ -14,7 +14,7 @@ use crate::{
     buffer::Buffer,
     layout::Rect,
     style::Style,
-    text::{Span, Spans},
+    text::{Span, Line},
     widgets::{Block, Widget},
 };
 
@@ -128,7 +128,7 @@ impl<'a, S: DateStyler> Widget for Monthly<'a, S> {
             );
             // cal is 21 cells wide, so hard code the 11
             let x_off = 11_u16.saturating_sub(line.width() as u16 / 2);
-            buf.set_spans(area.x + x_off, area.y, &line.into(), area.width);
+            buf.set_line(area.x + x_off, area.y, &line.into(), area.width);
             area.y += 1
         }
 
@@ -146,7 +146,7 @@ impl<'a, S: DateStyler> Widget for Monthly<'a, S> {
 
         // go through all the weeks containing a day in the target month.
         while curr_day.month() as u8 != self.display_date.month().next() as u8 {
-            let mut line = Spans(Vec::with_capacity(14));
+            let mut line = Line(Vec::with_capacity(14));
             for i in 0..7 {
                 // Draw the gutter. Do it here so we can avoid worrying about
                 // styling the ' ' in the format_date method
@@ -158,7 +158,7 @@ impl<'a, S: DateStyler> Widget for Monthly<'a, S> {
                 line.0.push(self.format_date(curr_day));
                 curr_day += Duration::DAY;
             }
-            buf.set_spans(area.x, area.y, &line, area.width);
+            buf.set_line(area.x, area.y, &line, area.width);
             area.y += 1;
         }
     }
