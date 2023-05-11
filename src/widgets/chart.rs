@@ -8,7 +8,7 @@ use crate::{
     layout::{Constraint, Rect},
     style::{Color, Style},
     symbols,
-    text::{Span, Line},
+    text::{Line, Span},
     widgets::{
         canvas::{Canvas, Line as ShapeLine, Points},
         Block, Borders, Widget,

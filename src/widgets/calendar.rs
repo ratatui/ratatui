@@ -14,7 +14,7 @@ use crate::{
     buffer::Buffer,
     layout::Rect,
     style::Style,
-    text::{Span, Line},
+    text::{Line, Span},
     widgets::{Block, Widget},
 };
 

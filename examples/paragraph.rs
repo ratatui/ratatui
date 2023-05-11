@@ -7,7 +7,7 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    text::{Masked, Span, Line},
+    text::{Line, Masked, Span},
     widgets::{Block, Borders, Paragraph, Wrap},
     Frame, Terminal,
 };

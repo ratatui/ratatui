@@ -3,7 +3,7 @@ use crate::{
     layout::Rect,
     style::Style,
     symbols,
-    text::{Span, Line},
+    text::{Line, Span},
     widgets::{Block, Widget},
 };
 

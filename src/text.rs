@@ -235,7 +235,10 @@ impl<'a> From<&'a str> for Span<'a> {
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct Line<'a>(pub Vec<Span<'a>>);
 
-#[deprecated(since = "0.21.0", note = "`Spans` is renamed to `Line` and will be removed in a future release. Use `Line` instead")]
+#[deprecated(
+    since = "0.21.0",
+    note = "`Spans` is renamed to `Line` and will be removed in a future release. Use `Line` instead"
+)]
 pub type Spans<'a> = Line<'a>;
 
 impl<'a> Line<'a> {
@@ -424,11 +427,7 @@ impl<'a> Text<'a> {
     /// assert_eq!(15, text.width());
     /// ```
     pub fn width(&self) -> usize {
-        self.lines
-            .iter()
-            .map(Line::width)
-            .max()
-            .unwrap_or_default()
+        self.lines.iter().map(Line::width).max().unwrap_or_default()
     }
 
     /// Returns the height.

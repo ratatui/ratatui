@@ -292,7 +292,7 @@ mod tests {
     use crate::{
         assert_buffer_eq,
         style::Color,
-        text::{Span, Line},
+        text::{Line, Span},
         widgets::{Borders, StatefulWidget, Widget},
     };
 

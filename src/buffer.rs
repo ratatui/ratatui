@@ -1,7 +1,7 @@
 use crate::{
     layout::Rect,
     style::{Color, Modifier, Style},
-    text::{Span, Line},
+    text::{Line, Span},
 };
 use std::{
     cmp::min,
@@ -330,7 +330,10 @@ impl Buffer {
         (x, y)
     }
 
-    #[deprecated(since = "0.21.0", note = "`Spans` renamed to `Line`. use set_line instead")]
+    #[deprecated(
+        since = "0.21.0",
+        note = "`Spans` renamed to `Line`. use set_line instead"
+    )]
     pub fn set_spans(&mut self, x: u16, y: u16, spans: &Line<'_>, width: u16) -> (u16, u16) {
         self.set_line(x, y, spans, width)
     }

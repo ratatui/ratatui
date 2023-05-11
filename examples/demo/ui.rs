@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
-    text::{Span, Line},
+    text::{Line, Span},
     widgets::canvas::{Canvas, Circle, Line as ShapeLine, Map, MapResolution, Rectangle},
     widgets::{
         Axis, BarChart, Block, Borders, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem,

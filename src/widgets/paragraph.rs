@@ -150,8 +150,7 @@ impl<'a> Widget for Paragraph<'a> {
 
         let style = self.style;
         let mut styled = self.text.lines.iter().flat_map(|line| {
-            line
-                .0
+            line.0
                 .iter()
                 .flat_map(|span| span.styled_graphemes(style))
                 // Required given the way composers work but might be refactored out if we change
@@ -205,7 +204,7 @@ mod test {
     use super::*;
     use crate::{
         style::Color,
-        text::{Span, Line},
+        text::{Line, Span},
         widgets::Borders,
     };
 

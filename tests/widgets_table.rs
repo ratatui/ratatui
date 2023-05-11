@@ -3,7 +3,7 @@ use ratatui::{
     buffer::Buffer,
     layout::Constraint,
     style::{Color, Modifier, Style},
-    text::{Span, Line},
+    text::{Line, Span},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
     Terminal,
 };
