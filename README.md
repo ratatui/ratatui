@@ -51,7 +51,7 @@ you may rely on the previously cited libraries to achieve such features.
 
 ## Rust version requirements
 
-Since version 0.17.0, `ratatui` requires **rustc version 1.59.0 or greater**.
+Since version 0.21.0, `ratatui` requires **rustc version 1.65.0 or greater**.
 
 # Documentation
 
