@@ -7,7 +7,7 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Masked, Span, Spans},
     widgets::{Block, Borders, Paragraph, Wrap},
     Frame, Terminal,
 };
@@ -133,6 +133,13 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 .fg(Color::Green)
                 .add_modifier(Modifier::ITALIC),
         )),
+        Spans::from(vec![
+            Span::raw("Masked text: "),
+            Span::styled(
+                Masked::new("password", '*'),
+                Style::default().fg(Color::Red),
+            ),
+        ]),
     ];
 
     let create_block = |title| {

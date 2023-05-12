@@ -313,17 +313,8 @@ impl<'a> Widget for Block<'a> {
 
         // Title
         if let Some(title) = self.title {
-            let left_border_dx = if self.borders.intersects(Borders::LEFT) {
-                1
-            } else {
-                0
-            };
-
-            let right_border_dx = if self.borders.intersects(Borders::RIGHT) {
-                1
-            } else {
-                0
-            };
+            let left_border_dx = self.borders.intersects(Borders::LEFT) as u16;
+            let right_border_dx = self.borders.intersects(Borders::RIGHT) as u16;
 
             let title_area_width = area
                 .width

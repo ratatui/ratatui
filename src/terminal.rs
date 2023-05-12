@@ -6,14 +6,14 @@ use crate::{
 };
 use std::io;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Viewport {
     Fullscreen,
     Inline(u16),
     Fixed(Rect),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// Options to pass to [`Terminal::with_options`]
 pub struct TerminalOptions {
     /// Viewport used to draw to the terminal
