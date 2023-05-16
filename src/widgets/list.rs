@@ -24,6 +24,13 @@ impl ListState {
         self
     }
 
+    /// Returns a copy of the receiver's scroll offset.
+    ///
+    /// This is useful, for example, if you need to "synchronize" the scrolling of a `List` and a `Paragraph`.
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
+
     pub fn selected(&self) -> Option<usize> {
         self.selected
     }
