@@ -477,11 +477,11 @@ impl<'a> StatefulWidget for Table<'a> {
 
 fn render_cell(buf: &mut Buffer, cell: &Cell, area: Rect) {
     buf.set_style(area, cell.style);
-    for (i, spans) in cell.content.lines.iter().enumerate() {
+    for (i, line) in cell.content.lines.iter().enumerate() {
         if i as u16 >= area.height {
             break;
         }
-        buf.set_spans(area.x, area.y + i as u16, spans, area.width);
+        buf.set_line(area.x, area.y + i as u16, line, area.width);
     }
 }
 

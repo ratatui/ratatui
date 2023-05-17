@@ -3,7 +3,7 @@ use crate::{
     layout::Rect,
     style::Style,
     symbols,
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, Widget},
 };
 
@@ -28,7 +28,7 @@ pub struct Tabs<'a> {
     /// A block to wrap this widget in if necessary
     block: Option<Block<'a>>,
     /// One title for each tab
-    titles: Vec<Spans<'a>>,
+    titles: Vec<Line<'a>>,
     /// The index of the selected tabs
     selected: usize,
     /// The style used to draw the text
@@ -40,10 +40,13 @@ pub struct Tabs<'a> {
 }
 
 impl<'a> Tabs<'a> {
-    pub fn new(titles: Vec<Spans<'a>>) -> Tabs<'a> {
+    pub fn new<T>(titles: Vec<T>) -> Tabs<'a>
+    where
+        T: Into<Line<'a>>,
+    {
         Tabs {
             block: None,
-            titles,
+            titles: titles.into_iter().map(Into::into).collect(),
             selected: 0,
             style: Default::default(),
             highlight_style: Default::default(),
@@ -105,7 +108,7 @@ impl<'a> Widget for Tabs<'a> {
             if remaining_width == 0 {
                 break;
             }
-            let pos = buf.set_spans(x, tabs_area.top(), &title, remaining_width);
+            let pos = buf.set_line(x, tabs_area.top(), &title, remaining_width);
             if i == self.selected {
                 buf.set_style(
                     Rect {
