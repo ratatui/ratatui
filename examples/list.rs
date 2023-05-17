@@ -7,7 +7,7 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Corner, Direction, Layout},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState},
     Frame, Terminal,
 };
@@ -217,9 +217,9 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .items
         .iter()
         .map(|i| {
-            let mut lines = vec![Spans::from(i.0)];
+            let mut lines = vec![Line::from(i.0)];
             for _ in 0..i.1 {
-                lines.push(Spans::from(Span::styled(
+                lines.push(Line::from(Span::styled(
                     "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
                     Style::default().add_modifier(Modifier::ITALIC),
                 )));
@@ -257,7 +257,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
                 _ => Style::default(),
             };
             // Add a example datetime and apply proper spacing between them
-            let header = Spans::from(vec![
+            let header = Line::from(vec![
                 Span::styled(format!("{:<9}", level), s),
                 Span::raw(" "),
                 Span::styled(
@@ -266,7 +266,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
                 ),
             ]);
             // The event gets its own line
-            let log = Spans::from(vec![Span::raw(event)]);
+            let log = Line::from(vec![Span::raw(event)]);
 
             // Here several things happen:
             // 1. Add a `---` spacing line above the final list entry
@@ -274,9 +274,9 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             // 3. Add a spacer line
             // 4. Add the actual event
             ListItem::new(vec![
-                Spans::from("-".repeat(chunks[1].width as usize)),
+                Line::from("-".repeat(chunks[1].width as usize)),
                 header,
-                Spans::from(""),
+                Line::from(""),
                 log,
             ])
         })

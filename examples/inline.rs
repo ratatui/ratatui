@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
     Frame, Terminal, TerminalOptions, Viewport,
 };
@@ -193,7 +193,7 @@ fn run_app<B: Backend>(
             Event::DownloadDone(worker_id, download_id) => {
                 let download = downloads.in_progress.remove(&worker_id).unwrap();
                 terminal.insert_before(1, |buf| {
-                    Paragraph::new(Spans::from(vec![
+                    Paragraph::new(Line::from(vec![
                         Span::from("Finished "),
                         Span::styled(
                             format!("download {}", download_id),
@@ -254,7 +254,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, downloads: &Downloads) {
         .in_progress
         .values()
         .map(|download| {
-            ListItem::new(Spans::from(vec![
+            ListItem::new(Line::from(vec![
                 Span::raw(symbols::DOT),
                 Span::styled(
                     format!(" download {:>2}", download.id),

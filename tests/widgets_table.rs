@@ -5,7 +5,7 @@ use ratatui::{
     buffer::Buffer,
     layout::Constraint,
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
     Terminal,
 };
@@ -625,7 +625,7 @@ fn widgets_table_can_have_elements_styled_individually() {
                 Row::new(vec![
                     Cell::from("Row21"),
                     Cell::from("Row22").style(Style::default().fg(Color::Yellow)),
-                    Cell::from(Spans::from(vec![
+                    Cell::from(Line::from(vec![
                         Span::raw("Row"),
                         Span::styled("23", Style::default().fg(Color::Blue)),
                     ]))

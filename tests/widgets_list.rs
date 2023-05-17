@@ -6,7 +6,7 @@ use ratatui::{
     layout::Rect,
     style::{Color, Style},
     symbols,
-    text::Spans,
+    text::Line,
     widgets::{Block, Borders, List, ListItem, ListState},
     Terminal,
 };
@@ -156,9 +156,9 @@ fn widgets_list_should_display_multiline_items() {
         .draw(|f| {
             let size = f.size();
             let items = vec![
-                ListItem::new(vec![Spans::from("Item 1"), Spans::from("Item 1a")]),
-                ListItem::new(vec![Spans::from("Item 2"), Spans::from("Item 2b")]),
-                ListItem::new(vec![Spans::from("Item 3"), Spans::from("Item 3c")]),
+                ListItem::new(vec![Line::from("Item 1"), Line::from("Item 1a")]),
+                ListItem::new(vec![Line::from("Item 2"), Line::from("Item 2b")]),
+                ListItem::new(vec![Line::from("Item 3"), Line::from("Item 3c")]),
             ];
             let list = List::new(items)
                 .highlight_style(Style::default().bg(Color::Yellow))
@@ -191,9 +191,9 @@ fn widgets_list_should_repeat_highlight_symbol() {
         .draw(|f| {
             let size = f.size();
             let items = vec![
-                ListItem::new(vec![Spans::from("Item 1"), Spans::from("Item 1a")]),
-                ListItem::new(vec![Spans::from("Item 2"), Spans::from("Item 2b")]),
-                ListItem::new(vec![Spans::from("Item 3"), Spans::from("Item 3c")]),
+                ListItem::new(vec![Line::from("Item 1"), Line::from("Item 1a")]),
+                ListItem::new(vec![Line::from("Item 2"), Line::from("Item 2b")]),
+                ListItem::new(vec![Line::from("Item 3"), Line::from("Item 3c")]),
             ];
             let list = List::new(items)
                 .highlight_style(Style::default().bg(Color::Yellow))

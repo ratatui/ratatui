@@ -386,14 +386,14 @@ where
     ///
     /// ```rust
     /// # use ratatui::widgets::{Paragraph, Widget};
-    /// # use ratatui::text::{Spans, Span};
+    /// # use ratatui::text::{Line, Span};
     /// # use ratatui::style::{Color, Style};
     /// # use ratatui::{Terminal};
     /// # use ratatui::backend::TestBackend;
     /// # let backend = TestBackend::new(10, 10);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// terminal.insert_before(1, |buf| {
-    ///     Paragraph::new(Spans::from(vec![
+    ///     Paragraph::new(Line::from(vec![
     ///         Span::raw("This line will be added "),
     ///         Span::styled("before", Style::default().fg(Color::Blue)),
     ///         Span::raw(" the current viewport")

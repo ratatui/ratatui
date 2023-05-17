@@ -144,7 +144,7 @@ impl<'a> Block<'a> {
 
     #[deprecated(
         since = "0.10.0",
-        note = "You should use styling capabilities of `text::Spans` given as argument of the `title` method to apply styling to the title."
+        note = "You should use styling capabilities of `text::Line` given as argument of the `title` method to apply styling to the title."
     )]
     pub fn title_style(mut self, style: Style) -> Block<'a> {
         if let Some(t) = self.title {
