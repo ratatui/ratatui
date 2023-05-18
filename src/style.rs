@@ -1,6 +1,8 @@
 //! `style` contains the primitives used to control how your user interface will look.
 
 use bitflags::bitflags;
+use colorsys::Rgb;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -310,5 +312,51 @@ mod tests {
             assert!(style.add_modifier.contains(*m));
             assert!(!style.sub_modifier.contains(*m));
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct ParsedColor;
+
+impl std::fmt::Display for ParsedColor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Failed to parse Colors")
+    }
+}
+
+impl std::error::Error for ParsedColor {}
+
+impl FromStr for Color {
+    type Err = ParsedColor;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.to_lowercase().as_ref() {
+            "reset" => Self::Reset,
+            "black" => Self::Black,
+            "red" => Self::Red,
+            "green" => Self::Green,
+            "yellow" => Self::Yellow,
+            "blue" => Self::Blue,
+            "magenta" => Self::Magenta,
+            "cyan" => Self::Cyan,
+            "gray" => Self::Gray,
+            "darkgray" | "dark gray" => Self::DarkGray,
+            "lightred" | "light red" => Self::LightRed,
+            "lightgreen" | "light green" => Self::LightGreen,
+            "lightyellow" | "light yellow" => Self::LightYellow,
+            "lightblue" | "light blue" => Self::LightBlue,
+            "lightmagenta" | "light magenta" => Self::LightMagenta,
+            "lightcyan" | "light cyan" => Self::LightCyan,
+            "white" => Self::White,
+            _ => {
+                if let Ok(rgb) = Rgb::from_hex_str(&format!("#{s}")) {
+                    Self::Rgb(rgb.red() as u8, rgb.green() as u8, rgb.blue() as u8)
+                } else if let Ok(index) = s.parse::<u8>() {
+                    Self::Indexed(index)
+                } else {
+                    return Err(ParsedColor);
+                }
+            }
+        })
     }
 }
