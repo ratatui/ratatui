@@ -3,13 +3,13 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{error::Error, io};
-use tui::{
+use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     widgets::{Block, Borders},
     Frame, Terminal,
 };
+use std::{error::Error, io};
 
 fn main() -> Result<(), Box<dyn Error>> {
     // setup terminal

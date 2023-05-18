@@ -3,7 +3,10 @@ use crate::{
     buffer::{Buffer, Cell},
     layout::Rect,
 };
-use std::{fmt::Write, io};
+use std::{
+    fmt::{Display, Write},
+    io,
+};
 use unicode_width::UnicodeWidthStr;
 
 /// A backend used for the integration tests.
@@ -33,12 +36,7 @@ fn buffer_view(buffer: &Buffer) -> String {
         }
         view.push('"');
         if !overwritten.is_empty() {
-            write!(
-                &mut view,
-                " Hidden by multi-width symbols: {:?}",
-                overwritten
-            )
-            .unwrap();
+            write!(&mut view, " Hidden by multi-width symbols: {overwritten:?}").unwrap();
         }
         view.push('\n');
     }
@@ -93,15 +91,18 @@ impl TestBackend {
             .enumerate()
             .map(|(i, (x, y, cell))| {
                 let expected_cell = expected.get(*x, *y);
-                format!(
-                    "{}: at ({}, {}) expected {:?} got {:?}",
-                    i, x, y, expected_cell, cell
-                )
+                format!("{i}: at ({x}, {y}) expected {expected_cell:?} got {cell:?}")
             })
             .collect::<Vec<String>>()
             .join("\n");
         debug_info.push_str(&nice_diff);
         panic!("{}", debug_info);
+    }
+}
+
+impl Display for TestBackend {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", buffer_view(&self.buffer))
     }
 }
 

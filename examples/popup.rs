@@ -1,5 +1,4 @@
-use std::{error::Error, io};
-use tui::{
+use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -7,9 +6,10 @@ use tui::{
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Frame, Terminal,
 };
+use std::{error::Error, io};
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -57,10 +57,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
         terminal.draw(|f| ui(f, &app))?;
 
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => return Ok(()),
-                KeyCode::Char('p') => app.show_popup = !app.show_popup,
-                _ => {}
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Char('p') => app.show_popup = !app.show_popup,
+                    _ => {}
+                }
             }
         }
     }

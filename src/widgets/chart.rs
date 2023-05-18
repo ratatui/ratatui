@@ -181,10 +181,10 @@ struct ChartLayout {
 /// # Examples
 ///
 /// ```
-/// # use tui::symbols;
-/// # use tui::widgets::{Block, Borders, Chart, Axis, Dataset, GraphType};
-/// # use tui::style::{Style, Color};
-/// # use tui::text::Span;
+/// # use ratatui::symbols;
+/// # use ratatui::widgets::{Block, Borders, Chart, Axis, Dataset, GraphType};
+/// # use ratatui::style::{Style, Color};
+/// # use ratatui::text::Span;
 /// let datasets = vec![
 ///     Dataset::default()
 ///         .name("data1")
@@ -265,8 +265,8 @@ impl<'a> Chart<'a> {
     /// # Examples
     ///
     /// ```
-    /// # use tui::widgets::Chart;
-    /// # use tui::layout::Constraint;
+    /// # use ratatui::widgets::Chart;
+    /// # use ratatui::layout::Constraint;
     /// let constraints = (
     ///     Constraint::Ratio(1, 3),
     ///     Constraint::Ratio(1, 4)
@@ -366,7 +366,7 @@ impl<'a> Chart<'a> {
             let width_left_of_y_axis = match self.x_axis.labels_alignment {
                 Alignment::Left => {
                     // The last character of the label should be below the Y-Axis when it exists, not on its left
-                    let y_axis_offset = if has_y_axis { 1 } else { 0 };
+                    let y_axis_offset = has_y_axis as u16;
                     first_label_width.saturating_sub(y_axis_offset)
                 }
                 Alignment::Center => first_label_width / 2,
@@ -645,7 +645,7 @@ mod tests {
         for case in &cases {
             let datasets = (0..10)
                 .map(|i| {
-                    let name = format!("Dataset #{}", i);
+                    let name = format!("Dataset #{i}");
                     Dataset::default().name(name).data(&data)
                 })
                 .collect::<Vec<_>>();

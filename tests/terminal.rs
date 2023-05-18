@@ -1,10 +1,10 @@
-use std::error::Error;
-use tui::{
+use ratatui::{
     backend::{Backend, TestBackend},
     layout::Rect,
     widgets::Paragraph,
     Terminal,
 };
+use std::error::Error;
 
 #[test]
 fn terminal_buffer_size_should_be_limited() {
@@ -20,15 +20,15 @@ fn terminal_draw_returns_the_completed_frame() -> Result<(), Box<dyn Error>> {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend)?;
     let frame = terminal.draw(|f| {
-        let paragrah = Paragraph::new("Test");
-        f.render_widget(paragrah, f.size());
+        let paragraph = Paragraph::new("Test");
+        f.render_widget(paragraph, f.size());
     })?;
     assert_eq!(frame.buffer.get(0, 0).symbol, "T");
     assert_eq!(frame.area, Rect::new(0, 0, 10, 10));
     terminal.backend_mut().resize(8, 8);
     let frame = terminal.draw(|f| {
-        let paragrah = Paragraph::new("test");
-        f.render_widget(paragrah, f.size());
+        let paragraph = Paragraph::new("test");
+        f.render_widget(paragraph, f.size());
     })?;
     assert_eq!(frame.buffer.get(0, 0).symbol, "t");
     assert_eq!(frame.area, Rect::new(0, 0, 8, 8));

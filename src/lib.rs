@@ -1,16 +1,17 @@
-//! [tui](https://github.com/fdehau/tui-rs) is a library used to build rich
+//! [ratatui](https://github.com/tui-rs-revival/ratatui) is a library used to build rich
 //! terminal users interfaces and dashboards.
 //!
-//! ![](https://raw.githubusercontent.com/fdehau/tui-rs/master/assets/demo.gif)
+//! ![](https://raw.githubusercontent.com/tui-rs-revival/ratatui/master/assets/demo.gif)
 //!
 //! # Get started
 //!
-//! ## Adding `tui` as a dependency
+//! ## Adding `ratatui` as a dependency
 //!
+//! Add the following to your `Cargo.toml`:
 //! ```toml
 //! [dependencies]
-//! tui = "0.19"
-//! crossterm = "0.25"
+//! crossterm = "0.26"
+//! ratatui = "0.20"
 //! ```
 //!
 //! The crate is using the `crossterm` backend by default that works on most platforms. But if for
@@ -20,21 +21,29 @@
 //! ```toml
 //! [dependencies]
 //! termion = "1.5"
-//! tui = { version = "0.19", default-features = false, features = ['termion'] }
+//! ratatui = { version = "0.20", default-features = false, features = ['termion'] }
 //!
 //! ```
 //!
 //! The same logic applies for all other available backends.
 //!
+//! ### Features
+//!
+//! Widgets which add dependencies are gated behind feature flags to prevent unused transitive
+//! dependencies. The available features are:
+//!
+//! * `widget-calendar` - enables [`widgets::calendar`] and adds a dependency on the [time
+//! crate](https://crates.io/crates/time).
+//!
 //! ## Creating a `Terminal`
 //!
-//! Every application using `tui` should start by instantiating a `Terminal`. It is a light
+//! Every application using `ratatui` should start by instantiating a `Terminal`. It is a light
 //! abstraction over available backends that provides basic functionalities such as clearing the
 //! screen, hiding the cursor, etc.
 //!
 //! ```rust,no_run
 //! use std::io;
-//! use tui::{backend::CrosstermBackend, Terminal};
+//! use ratatui::{backend::CrosstermBackend, Terminal};
 //!
 //! fn main() -> Result<(), io::Error> {
 //!     let stdout = io::stdout();
@@ -49,7 +58,7 @@
 //!
 //! ```rust,ignore
 //! use std::io;
-//! use tui::{backend::TermionBackend, Terminal};
+//! use ratatui::{backend::TermionBackend, Terminal};
 //! use termion::raw::IntoRawMode;
 //!
 //! fn main() -> Result<(), io::Error> {
@@ -77,14 +86,13 @@
 //!
 //! ```rust,no_run
 //! use std::{io, thread, time::Duration};
-//! use tui::{
+//! use ratatui::{
 //!     backend::CrosstermBackend,
-//!     widgets::{Widget, Block, Borders},
-//!     layout::{Layout, Constraint, Direction},
+//!     widgets::{Block, Borders},
 //!     Terminal
 //! };
 //! use crossterm::{
-//!     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+//!     event::{self, DisableMouseCapture, EnableMouseCapture},
 //!     execute,
 //!     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 //! };
@@ -104,6 +112,12 @@
 //!             .borders(Borders::ALL);
 //!         f.render_widget(block, size);
 //!     })?;
+//!
+//!     // Start a thread to discard any input events. Without handling events, the
+//!     // stdin buffer will fill up, and be read into the shell when the program exits.
+//!     thread::spawn(|| loop {
+//!         event::read();
+//!     });
 //!
 //!     thread::sleep(Duration::from_millis(5000));
 //!
@@ -127,7 +141,7 @@
 //! full customization. And `Layout` is no exception:
 //!
 //! ```rust,no_run
-//! use tui::{
+//! use ratatui::{
 //!     backend::Backend,
 //!     layout::{Constraint, Direction, Layout},
 //!     widgets::{Block, Borders},

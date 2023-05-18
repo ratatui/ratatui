@@ -3,15 +3,15 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{error::Error, io};
-use tui::{
+use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, BorderType, Borders},
+    widgets::{Block, BorderType, Borders, Padding, Paragraph},
     Frame, Terminal,
 };
+use std::{error::Error, io};
 
 fn main() -> Result<(), Box<dyn Error>> {
     // setup terminal
@@ -106,14 +106,32 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
         .split(chunks[1]);
 
     // Bottom left block with all default borders
-    let block = Block::default().title("With borders").borders(Borders::ALL);
-    f.render_widget(block, bottom_chunks[0]);
+    let block = Block::default()
+        .title("With borders")
+        .borders(Borders::ALL)
+        .padding(Padding {
+            left: 4,
+            right: 4,
+            top: 2,
+            bottom: 2,
+        });
+
+    let text = Paragraph::new("text inside padded block").block(block);
+    f.render_widget(text, bottom_chunks[0]);
 
     // Bottom right block with styled left and right border
     let block = Block::default()
         .title("With styled borders and doubled borders")
         .border_style(Style::default().fg(Color::Cyan))
         .borders(Borders::LEFT | Borders::RIGHT)
-        .border_type(BorderType::Double);
+        .border_type(BorderType::Double)
+        .padding(Padding::uniform(1));
+
+    let inner_block = Block::default()
+        .title("Block inside padded block")
+        .borders(Borders::ALL);
+
+    let inner_area = block.inner(bottom_chunks[1]);
     f.render_widget(block, bottom_chunks[1]);
+    f.render_widget(inner_block, inner_area);
 }

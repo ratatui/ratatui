@@ -11,9 +11,9 @@ use unicode_width::UnicodeWidthStr;
 ///
 /// It can be created from anything that can be converted to a [`Text`].
 /// ```rust
-/// # use tui::widgets::Cell;
-/// # use tui::style::{Style, Modifier};
-/// # use tui::text::{Span, Spans, Text};
+/// # use ratatui::widgets::Cell;
+/// # use ratatui::style::{Style, Modifier};
+/// # use ratatui::text::{Span, Spans, Text};
 /// # use std::borrow::Cow;
 /// Cell::from("simple string");
 ///
@@ -61,14 +61,14 @@ where
 ///
 /// A [`Row`] is a collection of cells. It can be created from simple strings:
 /// ```rust
-/// # use tui::widgets::Row;
+/// # use ratatui::widgets::Row;
 /// Row::new(vec!["Cell1", "Cell2", "Cell3"]);
 /// ```
 ///
-/// But if you need a bit more control over individual cells, you can explicity create [`Cell`]s:
+/// But if you need a bit more control over individual cells, you can explicitly create [`Cell`]s:
 /// ```rust
-/// # use tui::widgets::{Row, Cell};
-/// # use tui::style::{Style, Color};
+/// # use ratatui::widgets::{Row, Cell};
+/// # use ratatui::style::{Style, Color};
 /// Row::new(vec![
 ///     Cell::from("Cell1"),
 ///     Cell::from("Cell2").style(Style::default().fg(Color::Yellow)),
@@ -78,7 +78,7 @@ where
 /// You can also construct a row from any type that can be converted into [`Text`]:
 /// ```rust
 /// # use std::borrow::Cow;
-/// # use tui::widgets::Row;
+/// # use ratatui::widgets::Row;
 /// Row::new(vec![
 ///     Cow::Borrowed("hello"),
 ///     Cow::Owned("world".to_uppercase()),
@@ -116,7 +116,7 @@ impl<'a> Row<'a> {
         self
     }
 
-    /// Set the [`Style`] of the entire row. This [`Style`] can be overriden by the [`Style`] of a
+    /// Set the [`Style`] of the entire row. This [`Style`] can be overridden by the [`Style`] of a
     /// any individual [`Cell`] or event by their [`Text`] content.
     pub fn style(mut self, style: Style) -> Self {
         self.style = style;
@@ -139,10 +139,10 @@ impl<'a> Row<'a> {
 ///
 /// It is a collection of [`Row`]s, themselves composed of [`Cell`]s:
 /// ```rust
-/// # use tui::widgets::{Block, Borders, Table, Row, Cell};
-/// # use tui::layout::Constraint;
-/// # use tui::style::{Style, Color, Modifier};
-/// # use tui::text::{Text, Spans, Span};
+/// # use ratatui::widgets::{Block, Borders, Table, Row, Cell};
+/// # use ratatui::layout::Constraint;
+/// # use ratatui::style::{Style, Color, Modifier};
+/// # use ratatui::text::{Text, Spans, Span};
 /// Table::new(vec![
 ///     // Row can be created from simple strings.
 ///     Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -280,7 +280,7 @@ impl<'a> Table<'a> {
         if !self.widths.is_empty() {
             constraints.pop();
         }
-        let mut chunks = Layout::default()
+        let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(constraints)
             .expand_to_fill(false)
@@ -290,8 +290,9 @@ impl<'a> Table<'a> {
                 width: max_width,
                 height: 1,
             });
+        let mut chunks = &chunks[..];
         if has_selection {
-            chunks.remove(0);
+            chunks = &chunks[1..];
         }
         chunks.iter().step_by(2).map(|c| c.width).collect()
     }
@@ -342,16 +343,6 @@ pub struct TableState {
 }
 
 impl TableState {
-    /// Returns the offset.
-    pub fn offset(&self) -> usize {
-        self.offset
-    }
-
-    /// Mutably returns the offset.
-    pub fn offset_mut(&mut self) -> &mut usize {
-        &mut self.offset
-    }
-
     pub fn selected(&self) -> Option<usize> {
         self.selected
     }
@@ -361,6 +352,17 @@ impl TableState {
         if index.is_none() {
             self.offset = 0;
         }
+    }
+
+    /// Returns a copy of the receiver's scroll offset.
+    ///
+    /// This is useful, for example, if you need to "synchronize" the scrolling of a `Table` and a `Paragraph`.
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
+
+    pub fn offset_mut(&mut self) -> &mut usize {
+        &mut self.offset
     }
 }
 

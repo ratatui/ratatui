@@ -3,12 +3,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
-};
-use tui::{
+use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -16,6 +11,11 @@ use tui::{
     text::Span,
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType},
     Frame, Terminal,
+};
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
 };
 
 const DATA: [(f64, f64); 5] = [(0.0, 0.0), (1.0, 1.0), (2.0, 2.0), (3.0, 3.0), (4.0, 4.0)];

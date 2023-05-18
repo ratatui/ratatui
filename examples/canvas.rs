@@ -3,21 +3,22 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
-};
-use tui::{
+use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
+    symbols::Marker,
     text::Span,
     widgets::{
         canvas::{Canvas, Map, MapResolution, Rectangle},
         Block, Borders,
     },
     Frame, Terminal,
+};
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
 };
 
 struct App {
@@ -29,6 +30,8 @@ struct App {
     vy: f64,
     dir_x: bool,
     dir_y: bool,
+    tick_count: u64,
+    marker: Marker,
 }
 
 impl App {
@@ -48,10 +51,22 @@ impl App {
             vy: 1.0,
             dir_x: true,
             dir_y: true,
+            tick_count: 0,
+            marker: Marker::Dot,
         }
     }
 
     fn on_tick(&mut self) {
+        self.tick_count += 1;
+        // only change marker every 4 ticks (1s) to avoid stroboscopic effect
+        if (self.tick_count % 4) == 0 {
+            self.marker = match self.marker {
+                Marker::Dot => Marker::Block,
+                Marker::Block => Marker::Bar,
+                Marker::Bar => Marker::Braille,
+                Marker::Braille => Marker::Dot,
+            };
+        }
         if self.ball.x < self.playground.left() as f64
             || self.ball.x + self.ball.width > self.playground.right() as f64
         {
@@ -155,6 +170,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .split(f.size());
     let canvas = Canvas::default()
         .block(Block::default().borders(Borders::ALL).title("World"))
+        .marker(app.marker)
         .paint(|ctx| {
             ctx.draw(&Map {
                 color: Color::White,
@@ -171,6 +187,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     f.render_widget(canvas, chunks[0]);
     let canvas = Canvas::default()
         .block(Block::default().borders(Borders::ALL).title("Pong"))
+        .marker(app.marker)
         .paint(|ctx| {
             ctx.draw(&app.ball);
         })

@@ -34,7 +34,7 @@ bitflags! {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::style::Modifier;
+    /// # use ratatui::style::Modifier;
     ///
     /// let m = Modifier::BOLD | Modifier::ITALIC;
     /// ```
@@ -55,7 +55,7 @@ bitflags! {
 /// Style let you control the main characteristics of the displayed elements.
 ///
 /// ```rust
-/// # use tui::style::{Color, Modifier, Style};
+/// # use ratatui::style::{Color, Modifier, Style};
 /// Style::default()
 ///     .fg(Color::Black)
 ///     .bg(Color::Green)
@@ -67,9 +67,9 @@ bitflags! {
 /// just S3.
 ///
 /// ```rust
-/// # use tui::style::{Color, Modifier, Style};
-/// # use tui::buffer::Buffer;
-/// # use tui::layout::Rect;
+/// # use ratatui::style::{Color, Modifier, Style};
+/// # use ratatui::buffer::Buffer;
+/// # use ratatui::layout::Rect;
 /// let styles = [
 ///     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD | Modifier::ITALIC),
 ///     Style::default().bg(Color::Red),
@@ -94,9 +94,9 @@ bitflags! {
 /// reset all properties until that point use [`Style::reset`].
 ///
 /// ```
-/// # use tui::style::{Color, Modifier, Style};
-/// # use tui::buffer::Buffer;
-/// # use tui::layout::Rect;
+/// # use ratatui::style::{Color, Modifier, Style};
+/// # use ratatui::buffer::Buffer;
+/// # use ratatui::layout::Rect;
 /// let styles = [
 ///     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD | Modifier::ITALIC),
 ///     Style::reset().fg(Color::Yellow),
@@ -126,6 +126,12 @@ pub struct Style {
 
 impl Default for Style {
     fn default() -> Style {
+        Style::new()
+    }
+}
+
+impl Style {
+    pub const fn new() -> Style {
         Style {
             fg: None,
             bg: None,
@@ -133,11 +139,9 @@ impl Default for Style {
             sub_modifier: Modifier::empty(),
         }
     }
-}
 
-impl Style {
     /// Returns a `Style` resetting all properties.
-    pub fn reset() -> Style {
+    pub const fn reset() -> Style {
         Style {
             fg: Some(Color::Reset),
             bg: Some(Color::Reset),
@@ -151,12 +155,12 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::style::{Color, Style};
+    /// # use ratatui::style::{Color, Style};
     /// let style = Style::default().fg(Color::Blue);
     /// let diff = Style::default().fg(Color::Red);
     /// assert_eq!(style.patch(diff), Style::default().fg(Color::Red));
     /// ```
-    pub fn fg(mut self, color: Color) -> Style {
+    pub const fn fg(mut self, color: Color) -> Style {
         self.fg = Some(color);
         self
     }
@@ -166,12 +170,12 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::style::{Color, Style};
+    /// # use ratatui::style::{Color, Style};
     /// let style = Style::default().bg(Color::Blue);
     /// let diff = Style::default().bg(Color::Red);
     /// assert_eq!(style.patch(diff), Style::default().bg(Color::Red));
     /// ```
-    pub fn bg(mut self, color: Color) -> Style {
+    pub const fn bg(mut self, color: Color) -> Style {
         self.bg = Some(color);
         self
     }
@@ -183,7 +187,7 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::style::{Color, Modifier, Style};
+    /// # use ratatui::style::{Color, Modifier, Style};
     /// let style = Style::default().add_modifier(Modifier::BOLD);
     /// let diff = Style::default().add_modifier(Modifier::ITALIC);
     /// let patched = style.patch(diff);
@@ -203,7 +207,7 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::style::{Color, Modifier, Style};
+    /// # use ratatui::style::{Color, Modifier, Style};
     /// let style = Style::default().add_modifier(Modifier::BOLD | Modifier::ITALIC);
     /// let diff = Style::default().remove_modifier(Modifier::ITALIC);
     /// let patched = style.patch(diff);
@@ -221,7 +225,7 @@ impl Style {
     ///
     /// ## Examples
     /// ```
-    /// # use tui::style::{Color, Modifier, Style};
+    /// # use ratatui::style::{Color, Modifier, Style};
     /// let style_1 = Style::default().fg(Color::Yellow);
     /// let style_2 = Style::default().bg(Color::Red);
     /// let combined = style_1.patch(style_2);
@@ -276,6 +280,35 @@ mod tests {
                     }
                 }
             }
+        }
+    }
+
+    #[test]
+    fn combine_individual_modifiers() {
+        use crate::{buffer::Buffer, layout::Rect};
+
+        let mods = vec![
+            Modifier::BOLD,
+            Modifier::DIM,
+            Modifier::ITALIC,
+            Modifier::UNDERLINED,
+            Modifier::SLOW_BLINK,
+            Modifier::RAPID_BLINK,
+            Modifier::REVERSED,
+            Modifier::HIDDEN,
+            Modifier::CROSSED_OUT,
+        ];
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+
+        for m in &mods {
+            buffer.get_mut(0, 0).set_style(Style::reset());
+            buffer
+                .get_mut(0, 0)
+                .set_style(Style::default().add_modifier(*m));
+            let style = buffer.get(0, 0).style();
+            assert!(style.add_modifier.contains(*m));
+            assert!(!style.sub_modifier.contains(*m));
         }
     }
 }

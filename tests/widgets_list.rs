@@ -1,4 +1,4 @@
-use tui::{
+use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Rect,
@@ -8,6 +8,22 @@ use tui::{
     widgets::{Block, Borders, List, ListItem, ListState},
     Terminal,
 };
+
+#[test]
+fn list_should_shows_the_length() {
+    let items = vec![
+        ListItem::new("Item 1"),
+        ListItem::new("Item 2"),
+        ListItem::new("Item 3"),
+    ];
+    let list = List::new(items);
+    assert_eq!(list.len(), 3);
+    assert!(!list.is_empty());
+
+    let empty_list = List::new(vec![]);
+    assert_eq!(empty_list.len(), 0);
+    assert!(empty_list.is_empty());
+}
 
 #[test]
 fn widgets_list_should_highlight_the_selected_item() {
@@ -196,5 +212,32 @@ fn widgets_list_should_repeat_highlight_symbol() {
         expected.get_mut(x, 2).set_bg(Color::Yellow);
         expected.get_mut(x, 3).set_bg(Color::Yellow);
     }
+    terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widget_list_should_not_ignore_empty_string_items() {
+    let backend = TestBackend::new(6, 4);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            let items = vec![
+                ListItem::new("Item 1"),
+                ListItem::new(""),
+                ListItem::new(""),
+                ListItem::new("Item 4"),
+            ];
+
+            let list = List::new(items)
+                .style(Style::default())
+                .highlight_style(Style::default());
+
+            f.render_widget(list, f.size());
+        })
+        .unwrap();
+
+    let expected = Buffer::with_lines(vec!["Item 1", "", "", "Item 4"]);
+
     terminal.backend().assert_buffer(&expected);
 }

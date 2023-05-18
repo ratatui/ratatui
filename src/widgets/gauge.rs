@@ -12,8 +12,8 @@ use crate::{
 /// # Examples:
 ///
 /// ```
-/// # use tui::widgets::{Widget, Gauge, Block, Borders};
-/// # use tui::style::{Style, Color, Modifier};
+/// # use ratatui::widgets::{Widget, Gauge, Block, Borders};
+/// # use ratatui::style::{Style, Color, Modifier};
 /// Gauge::default()
 ///     .block(Block::default().borders(Borders::ALL).title("Progress"))
 ///     .gauge_style(Style::default().fg(Color::White).bg(Color::Black).add_modifier(Modifier::ITALIC))
@@ -111,8 +111,7 @@ impl<'a> Widget for Gauge<'a> {
         // label is put at the center of the gauge_area
         let label = {
             let pct = f64::round(self.ratio * 100.0);
-            self.label
-                .unwrap_or_else(|| Span::from(format!("{}%", pct)))
+            self.label.unwrap_or_else(|| Span::from(format!("{pct}%")))
         };
         let clamped_label_width = gauge_area.width.min(label.width() as u16);
         let label_col = gauge_area.left() + (gauge_area.width - clamped_label_width) / 2;
@@ -163,9 +162,9 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 /// # Examples:
 ///
 /// ```
-/// # use tui::widgets::{Widget, LineGauge, Block, Borders};
-/// # use tui::style::{Style, Color, Modifier};
-/// # use tui::symbols;
+/// # use ratatui::widgets::{Widget, LineGauge, Block, Borders};
+/// # use ratatui::style::{Style, Color, Modifier};
+/// # use ratatui::symbols;
 /// LineGauge::default()
 ///     .block(Block::default().borders(Borders::ALL).title("Progress"))
 ///     .gauge_style(Style::default().fg(Color::White).bg(Color::Black).add_modifier(Modifier::BOLD))

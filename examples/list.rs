@@ -1,20 +1,20 @@
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
-};
-use tui::{
+use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Corner, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, List, ListItem, ListState},
     Frame, Terminal,
+};
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
 };
 
 struct StatefulList<T> {
@@ -186,12 +186,14 @@ fn run_app<B: Backend>(
             .unwrap_or_else(|| Duration::from_secs(0));
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Left => app.items.unselect(),
-                    KeyCode::Down => app.items.next(),
-                    KeyCode::Up => app.items.previous(),
-                    _ => {}
+                if key.kind == KeyEventKind::Press {
+                    match key.code {
+                        KeyCode::Char('q') => return Ok(()),
+                        KeyCode::Left => app.items.unselect(),
+                        KeyCode::Down => app.items.next(),
+                        KeyCode::Up => app.items.previous(),
+                        _ => {}
+                    }
                 }
             }
         }

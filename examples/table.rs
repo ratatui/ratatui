@@ -1,16 +1,16 @@
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{error::Error, io};
-use tui::{
+use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
     Frame, Terminal,
 };
+use std::{error::Error, io};
 
 struct App<'a> {
     state: TableState,
@@ -106,11 +106,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
         terminal.draw(|f| ui(f, &mut app))?;
 
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => return Ok(()),
-                KeyCode::Down => app.next(),
-                KeyCode::Up => app.previous(),
-                _ => {}
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Down => app.next(),
+                    KeyCode::Up => app.previous(),
+                    _ => {}
+                }
             }
         }
     }

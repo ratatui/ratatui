@@ -10,12 +10,11 @@
 ///   * Pressing Enter pushes the current input in the history of previous
 ///   messages
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{error::Error, io};
-use tui::{
+use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -23,6 +22,7 @@ use tui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame, Terminal,
 };
+use std::{error::Error, io};
 use unicode_width::UnicodeWidthStr;
 
 enum InputMode {
@@ -93,7 +93,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     }
                     _ => {}
                 },
-                InputMode::Editing => match key.code {
+                InputMode::Editing if key.kind == KeyEventKind::Press => match key.code {
                     KeyCode::Enter => {
                         app.messages.push(app.input.drain(..).collect());
                     }
@@ -108,6 +108,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     }
                     _ => {}
                 },
+                _ => {}
             }
         }
     }
@@ -154,7 +155,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let help_message = Paragraph::new(text);
     f.render_widget(help_message, chunks[0]);
 
-    let input = Paragraph::new(app.input.as_ref())
+    let input = Paragraph::new(app.input.as_str())
         .style(match app.input_mode {
             InputMode::Normal => Style::default(),
             InputMode::Editing => Style::default().fg(Color::Yellow),
@@ -167,7 +168,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             {}
 
         InputMode::Editing => {
-            // Make the cursor visible and ask tui-rs to put it at the specified coordinates after rendering
+            // Make the cursor visible and ask ratatui to put it at the specified coordinates after rendering
             f.set_cursor(
                 // Put cursor past the end of the input text
                 chunks[1].x + app.input.width() as u16 + 1,
@@ -182,7 +183,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .iter()
         .enumerate()
         .map(|(i, m)| {
-            let content = vec![Spans::from(Span::raw(format!("{}: {}", i, m)))];
+            let content = Spans::from(Span::raw(format!("{}: {}", i, m)));
             ListItem::new(content)
         })
         .collect();

@@ -13,10 +13,13 @@ dependencies = [
     "fmt",
     "check-crossterm",
     "check-termion",
+    "check-termwiz",
     "test-crossterm",
     "test-termion",
+    "test-termwiz",
     "clippy-crossterm",
     "clippy-termion",
+    "clippy-termwiz",
     "test-doc",
 ]
 
@@ -25,8 +28,11 @@ private = true
 dependencies = [
     "fmt",
     "check-crossterm",
+    "check-termwiz",
     "test-crossterm",
+    "test-termwiz",
     "clippy-crossterm",
+    "clippy-termwiz",
     "test-doc",
 ]
 
@@ -45,6 +51,10 @@ run_task = "check"
 
 [tasks.check-termion]
 env = { TUI_FEATURES = "serde,termion" }
+run_task = "check"
+
+[tasks.check-termwiz]
+env = { TUI_FEATURES = "serde,termwiz" }
 run_task = "check"
 
 [tasks.check]
@@ -66,6 +76,10 @@ run_task = "build"
 env = { TUI_FEATURES = "serde,termion" }
 run_task = "build"
 
+[tasks.build-termwiz]
+env = { TUI_FEATURES = "serde,termwiz" }
+run_task = "build"
+
 [tasks.build]
 command = "cargo"
 condition = { env_set = ["TUI_FEATURES"] }
@@ -85,6 +99,10 @@ run_task = "clippy"
 env = { TUI_FEATURES = "serde,termion" }
 run_task = "clippy"
 
+[tasks.clippy-termwiz]
+env = { TUI_FEATURES = "serde,termwiz" }
+run_task = "clippy"
+
 [tasks.clippy]
 command = "cargo"
 condition = { env_set = ["TUI_FEATURES"] }
@@ -100,11 +118,15 @@ args = [
 ]
 
 [tasks.test-crossterm]
-env = { TUI_FEATURES = "serde,crossterm" }
+env = { TUI_FEATURES = "serde,crossterm,all-widgets" }
 run_task = "test"
 
 [tasks.test-termion]
-env = { TUI_FEATURES = "serde,termion" }
+env = { TUI_FEATURES = "serde,termion,all-widgets" }
+run_task = "test"
+
+[tasks.test-termwiz]
+env = { TUI_FEATURES = "serde,termwiz,all-widgets" }
 run_task = "test"
 
 [tasks.test]

@@ -1,9 +1,9 @@
-use tui::{
+use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Alignment,
     text::{Span, Spans, Text},
-    widgets::{Block, Borders, Paragraph, Wrap},
+    widgets::{Block, Borders, Padding, Paragraph, Wrap},
     Terminal,
 };
 
@@ -15,7 +15,7 @@ const SAMPLE_STRING: &str = "The library is based on the principle of immediate 
 #[test]
 fn widgets_paragraph_can_wrap_its_content() {
     let test_case = |alignment, expected| {
-        let backend = TestBackend::new(20, 10);
+        let backend = TestBackend::new(22, 12);
         let mut terminal = Terminal::new(backend).unwrap();
 
         terminal
@@ -23,7 +23,12 @@ fn widgets_paragraph_can_wrap_its_content() {
                 let size = f.size();
                 let text = vec![Spans::from(SAMPLE_STRING)];
                 let paragraph = Paragraph::new(text)
-                    .block(Block::default().borders(Borders::ALL))
+                    .block(Block::default().borders(Borders::ALL).padding(Padding {
+                        left: 2,
+                        right: 2,
+                        top: 1,
+                        bottom: 1,
+                    }))
                     .alignment(alignment)
                     .wrap(Wrap { trim: true });
                 f.render_widget(paragraph, size);
@@ -35,46 +40,52 @@ fn widgets_paragraph_can_wrap_its_content() {
     test_case(
         Alignment::Left,
         Buffer::with_lines(vec![
-            "┌──────────────────┐",
-            "│The library is    │",
-            "│based on the      │",
-            "│principle of      │",
-            "│immediate         │",
-            "│rendering with    │",
-            "│intermediate      │",
-            "│buffers. This     │",
-            "│means that at each│",
-            "└──────────────────┘",
+            "┌────────────────────┐",
+            "│                    │",
+            "│  The library is    │",
+            "│  based on the      │",
+            "│  principle of      │",
+            "│  immediate         │",
+            "│  rendering with    │",
+            "│  intermediate      │",
+            "│  buffers. This     │",
+            "│  means that at     │",
+            "│                    │",
+            "└────────────────────┘",
         ]),
     );
     test_case(
         Alignment::Right,
         Buffer::with_lines(vec![
-            "┌──────────────────┐",
-            "│    The library is│",
-            "│      based on the│",
-            "│      principle of│",
-            "│         immediate│",
-            "│    rendering with│",
-            "│      intermediate│",
-            "│     buffers. This│",
-            "│means that at each│",
-            "└──────────────────┘",
+            "┌────────────────────┐",
+            "│                    │",
+            "│    The library is  │",
+            "│      based on the  │",
+            "│      principle of  │",
+            "│         immediate  │",
+            "│    rendering with  │",
+            "│      intermediate  │",
+            "│     buffers. This  │",
+            "│     means that at  │",
+            "│                    │",
+            "└────────────────────┘",
         ]),
     );
     test_case(
         Alignment::Center,
         Buffer::with_lines(vec![
-            "┌──────────────────┐",
-            "│  The library is  │",
-            "│   based on the   │",
-            "│   principle of   │",
-            "│     immediate    │",
-            "│  rendering with  │",
-            "│   intermediate   │",
-            "│   buffers. This  │",
-            "│means that at each│",
-            "└──────────────────┘",
+            "┌────────────────────┐",
+            "│                    │",
+            "│   The library is   │",
+            "│    based on the    │",
+            "│    principle of    │",
+            "│      immediate     │",
+            "│   rendering with   │",
+            "│    intermediate    │",
+            "│    buffers. This   │",
+            "│    means that at   │",
+            "│                    │",
+            "└────────────────────┘",
         ]),
     );
 }

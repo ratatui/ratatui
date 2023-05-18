@@ -1,5 +1,5 @@
-use tui::layout::Alignment;
-use tui::{
+use ratatui::layout::Alignment;
+use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Rect,
@@ -469,7 +469,7 @@ fn widgets_chart_can_have_a_legend() {
         "└──────────────────────────────────────────────────────────┘",
     ]);
 
-    // Set expected backgound color
+    // Set expected background color
     for row in 0..30 {
         for col in 0..60 {
             expected.get_mut(col, row).set_bg(Color::White);

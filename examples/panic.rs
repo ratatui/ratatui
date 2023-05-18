@@ -24,11 +24,11 @@ use crossterm::event::{self, Event, KeyCode};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 
-use tui::backend::{Backend, CrosstermBackend};
-use tui::layout::Alignment;
-use tui::text::Spans;
-use tui::widgets::{Block, Borders, Paragraph};
-use tui::{Frame, Terminal};
+use ratatui::backend::{Backend, CrosstermBackend};
+use ratatui::layout::Alignment;
+use ratatui::text::Spans;
+use ratatui::widgets::{Block, Borders, Paragraph};
+use ratatui::{Frame, Terminal};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -59,7 +59,7 @@ fn main() -> Result<()> {
     reset_terminal()?;
 
     if let Err(err) = res {
-        println!("{:?}", err);
+        println!("{err:?}");
     }
 
     Ok(())
@@ -127,7 +127,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         Spans::from("with the `reset` command"),
         Spans::from(""),
         Spans::from("with the chained panic hook enabled,"),
-        Spans::from("you should see the panic report as you would without tui"),
+        Spans::from("you should see the panic report as you would without ratatui"),
         Spans::from(""),
         Spans::from("try first without the panic handler to see the difference"),
     ];

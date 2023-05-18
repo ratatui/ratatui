@@ -1,11 +1,11 @@
 use crate::app::App;
-use tui::{
+use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
     text::{Span, Spans},
-    widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle},
+    widgets::canvas::{Canvas, Circle, Line, Map, MapResolution, Rectangle},
     widgets::{
         Axis, BarChart, Block, Borders, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem,
         Paragraph, Row, Sparkline, Table, Tabs, Wrap,
@@ -345,6 +345,12 @@ where
                 width: 10.0,
                 height: 10.0,
                 color: Color::Yellow,
+            });
+            ctx.draw(&Circle {
+                x: app.servers[2].coords.1,
+                y: app.servers[2].coords.0,
+                radius: 10.0,
+                color: Color::Green,
             });
             for (i, s1) in app.servers.iter().enumerate() {
                 for s2 in &app.servers[i + 1..] {
