@@ -3,12 +3,12 @@
 //! A terminal UI is at its root a lot of strings. In order to make it accessible and stylish,
 //! those strings may be associated to a set of styles. `ratatui` has three ways to represent them:
 //! - A single line string where all graphemes have the same style is represented by a [`Span`].
-//! - A single line string where each grapheme may have its own style is represented by [`Spans`].
+//! - A single line string where each grapheme may have its own style is represented by [`Line`].
 //! - A multiple line string where each grapheme may have its own style is represented by a
 //! [`Text`].
 //!
-//! These types form a hierarchy: [`Spans`] is a collection of [`Span`] and each line of [`Text`]
-//! is a [`Spans`].
+//! These types form a hierarchy: [`Line`] is a collection of [`Span`] and each line of [`Text`]
+//! is a [`Line`].
 //!
 //! Keep it mind that a lot of widgets will use those types to advertise what kind of string is
 //! supported for their properties. Moreover, `ratatui` provides convenient `From` implementations so
@@ -16,20 +16,20 @@
 //! primitives when you need additional styling capabilities.
 //!
 //! For example, for the [`crate::widgets::Block`] widget, all the following calls are valid to set
-//! its `title` property (which is a [`Spans`] under the hood):
+//! its `title` property (which is a [`Line`] under the hood):
 //!
 //! ```rust
 //! # use ratatui::widgets::Block;
-//! # use ratatui::text::{Span, Spans};
+//! # use ratatui::text::{Span, Line};
 //! # use ratatui::style::{Color, Style};
 //! // A simple string with no styling.
-//! // Converted to Spans(vec![
+//! // Converted to Line(vec![
 //! //   Span { content: Cow::Borrowed("My title"), style: Style { .. } }
 //! // ])
 //! let block = Block::default().title("My title");
 //!
 //! // A simple string with a unique style.
-//! // Converted to Spans(vec![
+//! // Converted to Line(vec![
 //! //   Span { content: Cow::Borrowed("My title"), style: Style { fg: Some(Color::Yellow), .. }
 //! // ])
 //! let block = Block::default().title(
@@ -37,7 +37,7 @@
 //! );
 //!
 //! // A string with multiple styles.
-//! // Converted to Spans(vec![
+//! // Converted to Line(vec![
 //! //   Span { content: Cow::Borrowed("My"), style: Style { fg: Some(Color::Yellow), .. } },
 //! //   Span { content: Cow::Borrowed(" title"), .. }
 //! // ])
@@ -47,10 +47,15 @@
 //! ]);
 //! ```
 use crate::style::Style;
-use std::borrow::Cow;
-use std::fmt::{self, Debug, Display};
+use std::{borrow::Cow, fmt::Debug};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
+
+mod line;
+mod masked;
+mod spans;
+#[allow(deprecated)]
+pub use {line::Line, masked::Masked, spans::Spans};
 
 /// A grapheme associated to a style.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -231,113 +236,6 @@ impl<'a> From<&'a str> for Span<'a> {
     }
 }
 
-/// A string composed of clusters of graphemes, each with their own style.
-#[derive(Debug, Clone, PartialEq, Default, Eq)]
-pub struct Spans<'a>(pub Vec<Span<'a>>);
-
-impl<'a> Spans<'a> {
-    /// Returns the width of the underlying string.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::text::{Span, Spans};
-    /// # use ratatui::style::{Color, Style};
-    /// let spans = Spans::from(vec![
-    ///     Span::styled("My", Style::default().fg(Color::Yellow)),
-    ///     Span::raw(" text"),
-    /// ]);
-    /// assert_eq!(7, spans.width());
-    /// ```
-    pub fn width(&self) -> usize {
-        self.0.iter().map(Span::width).sum()
-    }
-
-    /// Patches the style of each Span in an existing Spans, adding modifiers from the given style.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::text::{Span, Spans};
-    /// # use ratatui::style::{Color, Style, Modifier};
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
-    /// let mut raw_spans = Spans::from(vec![
-    ///     Span::raw("My"),
-    ///     Span::raw(" text"),
-    /// ]);
-    /// let mut styled_spans = Spans::from(vec![
-    ///     Span::styled("My", style),
-    ///     Span::styled(" text", style),
-    /// ]);
-    ///
-    /// assert_ne!(raw_spans, styled_spans);
-    ///
-    /// raw_spans.patch_style(style);
-    /// assert_eq!(raw_spans, styled_spans);
-    /// ```
-    pub fn patch_style(&mut self, style: Style) {
-        for span in &mut self.0 {
-            span.patch_style(style);
-        }
-    }
-
-    /// Resets the style of each Span in the Spans.
-    /// Equivalent to calling `patch_style(Style::reset())`.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::text::{Span, Spans};
-    /// # use ratatui::style::{Color, Style, Modifier};
-    /// let mut spans = Spans::from(vec![
-    ///     Span::styled("My", Style::default().fg(Color::Yellow)),
-    ///     Span::styled(" text", Style::default().add_modifier(Modifier::BOLD)),
-    /// ]);
-    ///
-    /// spans.reset_style();
-    /// assert_eq!(Style::reset(), spans.0[0].style);
-    /// assert_eq!(Style::reset(), spans.0[1].style);
-    /// ```
-    pub fn reset_style(&mut self) {
-        for span in &mut self.0 {
-            span.reset_style();
-        }
-    }
-}
-
-impl<'a> From<String> for Spans<'a> {
-    fn from(s: String) -> Spans<'a> {
-        Spans(vec![Span::from(s)])
-    }
-}
-
-impl<'a> From<&'a str> for Spans<'a> {
-    fn from(s: &'a str) -> Spans<'a> {
-        Spans(vec![Span::from(s)])
-    }
-}
-
-impl<'a> From<Vec<Span<'a>>> for Spans<'a> {
-    fn from(spans: Vec<Span<'a>>) -> Spans<'a> {
-        Spans(spans)
-    }
-}
-
-impl<'a> From<Span<'a>> for Spans<'a> {
-    fn from(span: Span<'a>) -> Spans<'a> {
-        Spans(vec![span])
-    }
-}
-
-impl<'a> From<Spans<'a>> for String {
-    fn from(line: Spans<'a>) -> String {
-        line.0.iter().fold(String::new(), |mut acc, s| {
-            acc.push_str(s.content.as_ref());
-            acc
-        })
-    }
-}
-
 /// A string split over multiple lines where each line is composed of several clusters, each with
 /// their own style.
 ///
@@ -364,7 +262,7 @@ impl<'a> From<Spans<'a>> for String {
 /// ```
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct Text<'a> {
-    pub lines: Vec<Spans<'a>>,
+    pub lines: Vec<Line<'a>>,
 }
 
 impl<'a> Text<'a> {
@@ -382,13 +280,13 @@ impl<'a> Text<'a> {
         T: Into<Cow<'a, str>>,
     {
         let lines: Vec<_> = match content.into() {
-            Cow::Borrowed("") => vec![Spans::from("")],
-            Cow::Borrowed(s) => s.lines().map(Spans::from).collect(),
-            Cow::Owned(s) if s.is_empty() => vec![Spans::from("")],
-            Cow::Owned(s) => s.lines().map(|l| Spans::from(l.to_owned())).collect(),
+            Cow::Borrowed("") => vec![Line::from("")],
+            Cow::Borrowed(s) => s.lines().map(Line::from).collect(),
+            Cow::Owned(s) if s.is_empty() => vec![Line::from("")],
+            Cow::Owned(s) => s.lines().map(|l| Line::from(l.to_owned())).collect(),
         };
 
-        Text { lines }
+        Text::from(lines)
     }
 
     /// Create some text (potentially multiple lines) with a style.
@@ -421,11 +319,7 @@ impl<'a> Text<'a> {
     /// assert_eq!(15, text.width());
     /// ```
     pub fn width(&self) -> usize {
-        self.lines
-            .iter()
-            .map(Spans::width)
-            .max()
-            .unwrap_or_default()
+        self.lines.iter().map(Line::width).max().unwrap_or_default()
     }
 
     /// Returns the height.
@@ -468,14 +362,14 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Spans, Text};
+    /// # use ratatui::text::{Span, Line, Text};
     /// # use ratatui::style::{Color, Style, Modifier};
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// let mut text = Text::styled("The first line\nThe second line", style);
     ///
     /// text.reset_style();
     /// for line in &text.lines {
-    ///     for span in &line.0 {
+    ///     for span in &line.spans {
     ///         assert_eq!(Style::reset(), span.style);
     ///     }
     /// }
@@ -508,25 +402,43 @@ impl<'a> From<Cow<'a, str>> for Text<'a> {
 impl<'a> From<Span<'a>> for Text<'a> {
     fn from(span: Span<'a>) -> Text<'a> {
         Text {
-            lines: vec![Spans::from(span)],
+            lines: vec![Line::from(span)],
         }
     }
 }
 
+#[allow(deprecated)]
 impl<'a> From<Spans<'a>> for Text<'a> {
     fn from(spans: Spans<'a>) -> Text<'a> {
-        Text { lines: vec![spans] }
+        Text {
+            lines: vec![spans.into()],
+        }
     }
 }
 
+impl<'a> From<Line<'a>> for Text<'a> {
+    fn from(line: Line<'a>) -> Text<'a> {
+        Text { lines: vec![line] }
+    }
+}
+
+#[allow(deprecated)]
 impl<'a> From<Vec<Spans<'a>>> for Text<'a> {
     fn from(lines: Vec<Spans<'a>>) -> Text<'a> {
+        Text {
+            lines: lines.into_iter().map(|l| l.0.into()).collect(),
+        }
+    }
+}
+
+impl<'a> From<Vec<Line<'a>>> for Text<'a> {
+    fn from(lines: Vec<Line<'a>>) -> Text<'a> {
         Text { lines }
     }
 }
 
 impl<'a> IntoIterator for Text<'a> {
-    type Item = Spans<'a>;
+    type Item = Line<'a>;
     type IntoIter = std::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -534,129 +446,12 @@ impl<'a> IntoIterator for Text<'a> {
     }
 }
 
-impl<'a> Extend<Spans<'a>> for Text<'a> {
-    fn extend<T: IntoIterator<Item = Spans<'a>>>(&mut self, iter: T) {
-        self.lines.extend(iter);
-    }
-}
-
-/// A wrapper around a string that is masked when displayed.
-///
-/// The masked string is displayed as a series of the same character.
-/// This might be used to display a password field or similar secure data.
-///
-/// # Examples
-///
-/// ```rust
-/// use ratatui::{buffer::Buffer, layout::Rect, text::Masked, widgets::{Paragraph, Widget}};
-///
-/// let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
-/// let password = Masked::new("12345", 'x');
-///
-/// Paragraph::new(password).render(buffer.area, &mut buffer);
-/// assert_eq!(buffer, Buffer::with_lines(vec!["xxxxx"]));
-/// ```
-#[derive(Clone)]
-pub struct Masked<'a> {
-    inner: Cow<'a, str>,
-    mask_char: char,
-}
-
-impl<'a> Masked<'a> {
-    pub fn new(s: impl Into<Cow<'a, str>>, mask_char: char) -> Self {
-        Self {
-            inner: s.into(),
-            mask_char,
-        }
-    }
-
-    /// The character to use for masking.
-    pub fn mask_char(&self) -> char {
-        self.mask_char
-    }
-
-    /// The underlying string, with all characters masked.
-    pub fn value(&self) -> Cow<'a, str> {
-        self.inner.chars().map(|_| self.mask_char).collect()
-    }
-}
-
-impl Debug for Masked<'_> {
-    /// Debug representation of a masked string is the underlying string
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.inner).map_err(|_| fmt::Error)
-    }
-}
-
-impl Display for Masked<'_> {
-    /// Display representation of a masked string is the masked string
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.value()).map_err(|_| fmt::Error)
-    }
-}
-
-impl<'a> From<&'a Masked<'a>> for Cow<'a, str> {
-    fn from(masked: &'a Masked) -> Cow<'a, str> {
-        masked.value()
-    }
-}
-
-impl<'a> From<Masked<'a>> for Cow<'a, str> {
-    fn from(masked: Masked<'a>) -> Cow<'a, str> {
-        masked.value()
-    }
-}
-
-impl<'a> From<&'a Masked<'_>> for Text<'a> {
-    fn from(masked: &'a Masked) -> Text<'a> {
-        Text::raw(masked.value())
-    }
-}
-
-impl<'a> From<Masked<'a>> for Text<'a> {
-    fn from(masked: Masked<'a>) -> Text<'a> {
-        Text::raw(masked.value())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::borrow::Borrow;
-
-    use super::*;
-
-    #[test]
-    fn test_masked_value() {
-        let masked = Masked::new("12345", 'x');
-        assert_eq!(masked.value(), "xxxxx");
-    }
-
-    #[test]
-    fn test_masked_debug() {
-        let masked = Masked::new("12345", 'x');
-        assert_eq!(format!("{masked:?}"), "12345");
-    }
-
-    #[test]
-    fn test_masked_display() {
-        let masked = Masked::new("12345", 'x');
-        assert_eq!(format!("{masked}"), "xxxxx");
-    }
-
-    #[test]
-    fn test_masked_conversions() {
-        let masked = Masked::new("12345", 'x');
-
-        let text: Text = masked.borrow().into();
-        assert_eq!(text.lines, vec![Spans::from("xxxxx")]);
-
-        let text: Text = masked.to_owned().into();
-        assert_eq!(text.lines, vec![Spans::from("xxxxx")]);
-
-        let cow: Cow<str> = masked.borrow().into();
-        assert_eq!(cow, "xxxxx");
-
-        let cow: Cow<str> = masked.to_owned().into();
-        assert_eq!(cow, "xxxxx");
+impl<'a, T> Extend<T> for Text<'a>
+where
+    T: Into<Line<'a>>,
+{
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        let lines = iter.into_iter().map(|s| s.into());
+        self.lines.extend(lines);
     }
 }

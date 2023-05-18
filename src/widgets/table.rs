@@ -13,13 +13,13 @@ use unicode_width::UnicodeWidthStr;
 /// ```rust
 /// # use ratatui::widgets::Cell;
 /// # use ratatui::style::{Style, Modifier};
-/// # use ratatui::text::{Span, Spans, Text};
+/// # use ratatui::text::{Span, Line, Text};
 /// # use std::borrow::Cow;
 /// Cell::from("simple string");
 ///
 /// Cell::from(Span::from("span"));
 ///
-/// Cell::from(Spans::from(vec![
+/// Cell::from(Line::from(vec![
 ///     Span::raw("a vec of "),
 ///     Span::styled("spans", Style::default().add_modifier(Modifier::BOLD))
 /// ]));
@@ -142,7 +142,7 @@ impl<'a> Row<'a> {
 /// # use ratatui::widgets::{Block, Borders, Table, Row, Cell};
 /// # use ratatui::layout::Constraint;
 /// # use ratatui::style::{Style, Color, Modifier};
-/// # use ratatui::text::{Text, Spans, Span};
+/// # use ratatui::text::{Text, Line, Span};
 /// Table::new(vec![
 ///     // Row can be created from simple strings.
 ///     Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -152,7 +152,7 @@ impl<'a> Row<'a> {
 ///     Row::new(vec![
 ///         Cell::from("Row31"),
 ///         Cell::from("Row32").style(Style::default().fg(Color::Yellow)),
-///         Cell::from(Spans::from(vec![
+///         Cell::from(Line::from(vec![
 ///             Span::raw("Row"),
 ///             Span::styled("33", Style::default().fg(Color::Green))
 ///         ])),
@@ -477,11 +477,11 @@ impl<'a> StatefulWidget for Table<'a> {
 
 fn render_cell(buf: &mut Buffer, cell: &Cell, area: Rect) {
     buf.set_style(area, cell.style);
-    for (i, spans) in cell.content.lines.iter().enumerate() {
+    for (i, line) in cell.content.lines.iter().enumerate() {
         if i as u16 >= area.height {
             break;
         }
-        buf.set_spans(area.x, area.y + i as u16, spans, area.width);
+        buf.set_line(area.x, area.y + i as u16, line, area.width);
     }
 }
 

@@ -8,7 +8,7 @@ use crate::{
     layout::{Constraint, Rect},
     style::{Color, Style},
     symbols,
-    text::{Span, Spans},
+    text::{Line as TextLine, Span},
     widgets::{
         canvas::{Canvas, Line, Points},
         Block, Borders, Widget,
@@ -19,7 +19,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct Axis<'a> {
     /// Title displayed next to axis end
-    title: Option<Spans<'a>>,
+    title: Option<TextLine<'a>>,
     /// Bounds for the axis (all data points outside these limits will not be represented)
     bounds: [f64; 2],
     /// A list of labels to put to the left or below the axis
@@ -45,7 +45,7 @@ impl<'a> Default for Axis<'a> {
 impl<'a> Axis<'a> {
     pub fn title<T>(mut self, title: T) -> Axis<'a>
     where
-        T: Into<Spans<'a>>,
+        T: Into<TextLine<'a>>,
     {
         self.title = Some(title.into());
         self
@@ -53,12 +53,12 @@ impl<'a> Axis<'a> {
 
     #[deprecated(
         since = "0.10.0",
-        note = "You should use styling capabilities of `text::Spans` given as argument of the `title` method to apply styling to the title."
+        note = "You should use styling capabilities of `text::Line` given as argument of the `title` method to apply styling to the title."
     )]
     pub fn title_style(mut self, style: Style) -> Axis<'a> {
         if let Some(t) = self.title {
             let title = String::from(t);
-            self.title = Some(Spans::from(Span::styled(title, style)));
+            self.title = Some(TextLine::from(Span::styled(title, style)));
         }
         self
     }
@@ -597,7 +597,7 @@ impl<'a> Widget for Chart<'a> {
                 },
                 original_style,
             );
-            buf.set_spans(x, y, &title, width);
+            buf.set_line(x, y, &title, width);
         }
 
         if let Some((x, y)) = layout.title_y {
@@ -612,7 +612,7 @@ impl<'a> Widget for Chart<'a> {
                 },
                 original_style,
             );
-            buf.set_spans(x, y, &title, width);
+            buf.set_line(x, y, &title, width);
         }
     }
 }

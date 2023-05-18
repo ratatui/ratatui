@@ -3,7 +3,7 @@ use crate::{
     layout::Rect,
     style::{Color, Style},
     symbols,
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, Widget},
 };
 
@@ -138,7 +138,7 @@ impl<'a> Widget for Gauge<'a> {
                     .set_symbol(get_unicode_block(filled_width % 1.0));
             }
         }
-        // set the span
+        // set the line
         buf.set_span(label_col, label_row, &label, clamped_label_width);
     }
 }
@@ -174,7 +174,7 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 pub struct LineGauge<'a> {
     block: Option<Block<'a>>,
     ratio: f64,
-    label: Option<Spans<'a>>,
+    label: Option<Line<'a>>,
     line_set: symbols::line::Set,
     style: Style,
     gauge_style: Style,
@@ -215,7 +215,7 @@ impl<'a> LineGauge<'a> {
 
     pub fn label<T>(mut self, label: T) -> Self
     where
-        T: Into<Spans<'a>>,
+        T: Into<Line<'a>>,
     {
         self.label = Some(label.into());
         self
@@ -251,8 +251,8 @@ impl<'a> Widget for LineGauge<'a> {
         let ratio = self.ratio;
         let label = self
             .label
-            .unwrap_or_else(move || Spans::from(format!("{:.0}%", ratio * 100.0)));
-        let (col, row) = buf.set_spans(
+            .unwrap_or_else(move || Line::from(format!("{:.0}%", ratio * 100.0)));
+        let (col, row) = buf.set_line(
             gauge_area.left(),
             gauge_area.top(),
             &label,

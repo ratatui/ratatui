@@ -24,17 +24,17 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 /// # Examples
 ///
 /// ```
-/// # use ratatui::text::{Text, Spans, Span};
+/// # use ratatui::text::{Text, Line, Span};
 /// # use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 /// # use ratatui::style::{Style, Color, Modifier};
 /// # use ratatui::layout::{Alignment};
 /// let text = vec![
-///     Spans::from(vec![
+///     Line::from(vec![
 ///         Span::raw("First"),
 ///         Span::styled("line",Style::default().add_modifier(Modifier::ITALIC)),
 ///         Span::raw("."),
 ///     ]),
-///     Spans::from(Span::styled("Second line", Style::default().fg(Color::Red))),
+///     Line::from(Span::styled("Second line", Style::default().fg(Color::Red))),
 /// ];
 /// Paragraph::new(text)
 ///     .block(Block::default().title("Paragraph").borders(Borders::ALL))
@@ -149,9 +149,8 @@ impl<'a> Widget for Paragraph<'a> {
         }
 
         let style = self.style;
-        let mut styled = self.text.lines.iter().flat_map(|spans| {
-            spans
-                .0
+        let mut styled = self.text.lines.iter().flat_map(|line| {
+            line.spans
                 .iter()
                 .flat_map(|span| span.styled_graphemes(style))
                 // Required given the way composers work but might be refactored out if we change
@@ -205,7 +204,7 @@ mod test {
     use super::*;
     use crate::{
         style::Color,
-        text::{Span, Spans},
+        text::{Line, Span},
         widgets::Borders,
     };
 
@@ -386,7 +385,7 @@ mod test {
     fn test_render_paragraph_with_styled_text() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 13, 1));
 
-        Paragraph::new(Spans::from(vec![
+        Paragraph::new(Line::from(vec![
             Span::styled("Hello, ", Style::default().fg(Color::Red)),
             Span::styled("world!", Style::default().fg(Color::Blue)),
         ]))

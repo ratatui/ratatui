@@ -7,7 +7,7 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, Borders, Tabs},
     Frame, Terminal,
 };
@@ -99,7 +99,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .iter()
         .map(|t| {
             let (first, rest) = t.split_at(1);
-            Spans::from(vec![
+            Line::from(vec![
                 Span::styled(first, Style::default().fg(Color::Yellow)),
                 Span::styled(rest, Style::default().fg(Color::Green)),
             ])
