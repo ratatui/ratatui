@@ -73,7 +73,7 @@
 | [ytop](https://github.com/cjbassi/ytop)                  | TUI system monitor for Linux                                                                 | [cjbassi](https://github.com/cjbassi)           |
 | [zenith](https://github.com/bvaisvil/zenith)             | Cross-platform monitoring tool for system stats                                              | [bvaisvil](https://github.com/bvaisvil)         |
 
-#### 🌌 Other Categories:
+#### 🌌 Other:
 
 | Project                                           | Description                                                          | Author                                        |
 | ------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------- |
