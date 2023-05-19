@@ -1,7 +1,6 @@
 //! `style` contains the primitives used to control how your user interface will look.
 
 use bitflags::bitflags;
-use colorsys::Rgb;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -316,18 +315,18 @@ mod tests {
 }
 
 #[derive(Debug)]
-pub struct ParsedColor;
+pub struct ParseColorError;
 
-impl std::fmt::Display for ParsedColor {
+impl std::fmt::Display for ParseColorError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Failed to parse Colors")
     }
 }
 
-impl std::error::Error for ParsedColor {}
+impl std::error::Error for ParseColorError {}
 
 impl FromStr for Color {
-    type Err = ParsedColor;
+    type Err = ParseColorError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s.to_lowercase().as_ref() {
@@ -349,12 +348,16 @@ impl FromStr for Color {
             "lightcyan" | "light cyan" => Self::LightCyan,
             "white" => Self::White,
             _ => {
-                if let Ok(rgb) = Rgb::from_hex_str(&format!("#{s}")) {
-                    Self::Rgb(rgb.red() as u8, rgb.green() as u8, rgb.blue() as u8)
+                if let (Ok(r), Ok(g), Ok(b)) = (
+                    u8::from_str_radix(&s[1..3], 16),
+                    u8::from_str_radix(&s[3..5], 16),
+                    u8::from_str_radix(&s[5..7], 16),
+                ) {
+                    Self::Rgb(r as u8, g as u8, b as u8)
                 } else if let Ok(index) = s.parse::<u8>() {
                     Self::Indexed(index)
                 } else {
-                    return Err(ParsedColor);
+                    return Err(ParseColorError);
                 }
             }
         })
