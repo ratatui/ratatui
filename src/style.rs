@@ -247,73 +247,6 @@ impl Style {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn styles() -> Vec<Style> {
-        vec![
-            Style::default(),
-            Style::default().fg(Color::Yellow),
-            Style::default().bg(Color::Yellow),
-            Style::default().add_modifier(Modifier::BOLD),
-            Style::default().remove_modifier(Modifier::BOLD),
-            Style::default().add_modifier(Modifier::ITALIC),
-            Style::default().remove_modifier(Modifier::ITALIC),
-            Style::default().add_modifier(Modifier::ITALIC | Modifier::BOLD),
-            Style::default().remove_modifier(Modifier::ITALIC | Modifier::BOLD),
-        ]
-    }
-
-    #[test]
-    fn combined_patch_gives_same_result_as_individual_patch() {
-        let styles = styles();
-        for &a in &styles {
-            for &b in &styles {
-                for &c in &styles {
-                    for &d in &styles {
-                        let combined = a.patch(b.patch(c.patch(d)));
-
-                        assert_eq!(
-                            Style::default().patch(a).patch(b).patch(c).patch(d),
-                            Style::default().patch(combined)
-                        );
-                    }
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn combine_individual_modifiers() {
-        use crate::{buffer::Buffer, layout::Rect};
-
-        let mods = vec![
-            Modifier::BOLD,
-            Modifier::DIM,
-            Modifier::ITALIC,
-            Modifier::UNDERLINED,
-            Modifier::SLOW_BLINK,
-            Modifier::RAPID_BLINK,
-            Modifier::REVERSED,
-            Modifier::HIDDEN,
-            Modifier::CROSSED_OUT,
-        ];
-
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
-
-        for m in &mods {
-            buffer.get_mut(0, 0).set_style(Style::reset());
-            buffer
-                .get_mut(0, 0)
-                .set_style(Style::default().add_modifier(*m));
-            let style = buffer.get(0, 0).style();
-            assert!(style.add_modifier.contains(*m));
-            assert!(!style.sub_modifier.contains(*m));
-        }
-    }
-}
-
 /// Error type indicating a failure to parse a color string.
 #[derive(Debug)]
 pub struct ParseColorError;
@@ -385,5 +318,96 @@ impl FromStr for Color {
                 }
             }
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn styles() -> Vec<Style> {
+        vec![
+            Style::default(),
+            Style::default().fg(Color::Yellow),
+            Style::default().bg(Color::Yellow),
+            Style::default().add_modifier(Modifier::BOLD),
+            Style::default().remove_modifier(Modifier::BOLD),
+            Style::default().add_modifier(Modifier::ITALIC),
+            Style::default().remove_modifier(Modifier::ITALIC),
+            Style::default().add_modifier(Modifier::ITALIC | Modifier::BOLD),
+            Style::default().remove_modifier(Modifier::ITALIC | Modifier::BOLD),
+        ]
+    }
+
+    #[test]
+    fn combined_patch_gives_same_result_as_individual_patch() {
+        let styles = styles();
+        for &a in &styles {
+            for &b in &styles {
+                for &c in &styles {
+                    for &d in &styles {
+                        let combined = a.patch(b.patch(c.patch(d)));
+
+                        assert_eq!(
+                            Style::default().patch(a).patch(b).patch(c).patch(d),
+                            Style::default().patch(combined)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn combine_individual_modifiers() {
+        use crate::{buffer::Buffer, layout::Rect};
+
+        let mods = vec![
+            Modifier::BOLD,
+            Modifier::DIM,
+            Modifier::ITALIC,
+            Modifier::UNDERLINED,
+            Modifier::SLOW_BLINK,
+            Modifier::RAPID_BLINK,
+            Modifier::REVERSED,
+            Modifier::HIDDEN,
+            Modifier::CROSSED_OUT,
+        ];
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
+
+        for m in &mods {
+            buffer.get_mut(0, 0).set_style(Style::reset());
+            buffer
+                .get_mut(0, 0)
+                .set_style(Style::default().add_modifier(*m));
+            let style = buffer.get(0, 0).style();
+            assert!(style.add_modifier.contains(*m));
+            assert!(!style.sub_modifier.contains(*m));
+        }
+    }
+
+    #[test]
+    fn test_rgb_color() {
+        let color: Color = Color::from_str("#FF0000").unwrap();
+        assert_eq!(color, Color::Rgb(255, 0, 0));
+    }
+
+    #[test]
+    fn test_indexed_color() {
+        let color: Color = Color::from_str("10").unwrap();
+        assert_eq!(color, Color::Indexed(10));
+    }
+
+    #[test]
+    fn test_custom_color() {
+        let color: Color = Color::from_str("lightblue").unwrap();
+        assert_eq!(color, Color::LightBlue);
+    }
+
+    #[test]
+    fn test_invalid_color() {
+        let color: Result<Color, _> = Color::from_str("invalid_color");
+        assert!(color.is_err());
     }
 }
