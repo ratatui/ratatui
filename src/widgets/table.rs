@@ -5,6 +5,8 @@ use crate::{
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
 };
+#[cfg(feature = "crossterm")]
+use crossterm::event::{self, Event, MouseEventKind};
 use unicode_width::UnicodeWidthStr;
 
 /// A [`Cell`] contains the [`Text`] to be displayed in a [`Row`] of a [`Table`].
@@ -186,6 +188,34 @@ impl<'a> Row<'a> {
 /// // ...and potentially show a symbol in front of the selection.
 /// .highlight_symbol(">>");
 /// ```
+#[cfg(feature = "crossterm")]
+struct Scroll;
+#[cfg(feature = "crossterm")]
+impl Scroll {
+    fn scroll(table: &Table, state: &mut TableState) {
+        if let Ok(Event::Mouse(event)) = event::read() {
+            if event.kind == MouseEventKind::ScrollDown {
+                if let Some(selected) = state.selected() {
+                    if selected != table.rows.len() - 1 {
+                        state.select(Some(selected + 1))
+                    }
+                } else {
+                    state.select(Some(0))
+                }
+            }
+            if event.kind == MouseEventKind::ScrollUp {
+                if let Some(selected) = state.selected() {
+                    if selected > 0 {
+                        state.select(Some(selected - 1));
+                    }
+                } else {
+                    state.select(Some(0))
+                }
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Table<'a> {
     /// A block to wrap the widget in
@@ -374,6 +404,8 @@ impl<'a> StatefulWidget for Table<'a> {
             Some(b) => {
                 let inner_area = b.inner(area);
                 b.render(area, buf);
+                #[cfg(feature = "crossterm")]
+                Scroll::scroll(&self, state);
                 inner_area
             }
             None => area,
