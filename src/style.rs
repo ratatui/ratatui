@@ -372,14 +372,14 @@ impl FromStr for Color {
             "lightcyan" | "light cyan" => Self::LightCyan,
             "white" => Self::White,
             _ => {
-                if let (Ok(r), Ok(g), Ok(b)) = (
+                if let Ok(index) = s.parse::<u8>() {
+                    Self::Indexed(index)
+                } else if let (Ok(r), Ok(g), Ok(b)) = (
                     u8::from_str_radix(&s[1..3], 16),
                     u8::from_str_radix(&s[3..5], 16),
                     u8::from_str_radix(&s[5..7], 16),
                 ) {
                     Self::Rgb(r, g, b)
-                } else if let Ok(index) = s.parse::<u8>() {
-                    Self::Indexed(index)
                 } else {
                     return Err(ParseColorError);
                 }
