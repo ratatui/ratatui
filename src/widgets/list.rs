@@ -14,6 +14,14 @@ pub struct ListState {
 }
 
 impl ListState {
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
+
+    pub fn offset_mut(&mut self) -> &mut usize {
+        &mut self.offset
+    }
+
     pub fn with_selected(mut self, selected: Option<usize>) -> Self {
         self.selected = selected;
         self
