@@ -1,6 +1,7 @@
 //! `style` contains the primitives used to control how your user interface will look.
 
 use bitflags::bitflags;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -246,6 +247,85 @@ impl Style {
     }
 }
 
+/// Error type indicating a failure to parse a color string.
+#[derive(Debug)]
+pub struct ParseColorError;
+
+impl std::fmt::Display for ParseColorError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Failed to parse Colors")
+    }
+}
+
+impl std::error::Error for ParseColorError {}
+
+/// Converts a string representation to a `Color` instance.
+///
+/// The `from_str` function attempts to parse the given string and convert it
+/// to the corresponding `Color` variant. It supports named colors, RGB values,
+/// and indexed colors. If the string cannot be parsed, a `ParseColorError` is returned.
+///
+/// # Examples
+///
+/// ```
+/// # use std::str::FromStr;
+/// # use ratatui::style::Color;
+/// let color: Color = Color::from_str("blue").unwrap();
+/// assert_eq!(color, Color::Blue);
+///
+/// let color: Color = Color::from_str("#FF0000").unwrap();
+/// assert_eq!(color, Color::Rgb(255, 0, 0));
+///
+/// let color: Color = Color::from_str("10").unwrap();
+/// assert_eq!(color, Color::Indexed(10));
+///
+/// let color: Result<Color, _> = Color::from_str("invalid_color");
+/// assert!(color.is_err());
+/// ```
+impl FromStr for Color {
+    type Err = ParseColorError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.to_lowercase().as_ref() {
+            "reset" => Self::Reset,
+            "black" => Self::Black,
+            "red" => Self::Red,
+            "green" => Self::Green,
+            "yellow" => Self::Yellow,
+            "blue" => Self::Blue,
+            "magenta" => Self::Magenta,
+            "cyan" => Self::Cyan,
+            "gray" => Self::Gray,
+            "darkgray" | "dark gray" => Self::DarkGray,
+            "lightred" | "light red" => Self::LightRed,
+            "lightgreen" | "light green" => Self::LightGreen,
+            "lightyellow" | "light yellow" => Self::LightYellow,
+            "lightblue" | "light blue" => Self::LightBlue,
+            "lightmagenta" | "light magenta" => Self::LightMagenta,
+            "lightcyan" | "light cyan" => Self::LightCyan,
+            "white" => Self::White,
+            _ => {
+                if let Ok(index) = s.parse::<u8>() {
+                    Self::Indexed(index)
+                } else if let (Ok(r), Ok(g), Ok(b)) = {
+                    if !s.starts_with('#') || s.len() != 7 {
+                        return Err(ParseColorError);
+                    }
+                    (
+                        u8::from_str_radix(&s[1..3], 16),
+                        u8::from_str_radix(&s[3..5], 16),
+                        u8::from_str_radix(&s[5..7], 16),
+                    )
+                } {
+                    Self::Rgb(r, g, b)
+                } else {
+                    return Err(ParseColorError);
+                }
+            }
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -309,6 +389,44 @@ mod tests {
             let style = buffer.get(0, 0).style();
             assert!(style.add_modifier.contains(*m));
             assert!(!style.sub_modifier.contains(*m));
+        }
+    }
+
+    #[test]
+    fn test_rgb_color() {
+        let color: Color = Color::from_str("#FF0000").unwrap();
+        assert_eq!(color, Color::Rgb(255, 0, 0));
+    }
+
+    #[test]
+    fn test_indexed_color() {
+        let color: Color = Color::from_str("10").unwrap();
+        assert_eq!(color, Color::Indexed(10));
+    }
+
+    #[test]
+    fn test_custom_color() {
+        let color: Color = Color::from_str("lightblue").unwrap();
+        assert_eq!(color, Color::LightBlue);
+    }
+
+    #[test]
+    fn test_invalid_colors() {
+        let bad_colors = [
+            "invalid_color", // not a color string
+            "abcdef0",       // 7 chars is not a color
+            " bcdefa",       // doesn't start with a '#'
+            "blue ",         // has space at end
+            " blue",         // has space at start
+            "#abcdef00",     // too many chars
+        ];
+
+        for bad_color in bad_colors {
+            assert!(
+                Color::from_str(bad_color).is_err(),
+                "bad color: '{}'",
+                bad_color
+            );
         }
     }
 }
