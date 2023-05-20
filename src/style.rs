@@ -307,11 +307,16 @@ impl FromStr for Color {
             _ => {
                 if let Ok(index) = s.parse::<u8>() {
                     Self::Indexed(index)
-                } else if let (Ok(r), Ok(g), Ok(b)) = (
-                    u8::from_str_radix(&s[1..3], 16),
-                    u8::from_str_radix(&s[3..5], 16),
-                    u8::from_str_radix(&s[5..7], 16),
-                ) {
+                } else if let (Ok(r), Ok(g), Ok(b)) = {
+                    if !s.starts_with('#') || s.len() != 7 {
+                        return Err(ParseColorError);
+                    }
+                    (
+                        u8::from_str_radix(&s[1..3], 16),
+                        u8::from_str_radix(&s[3..5], 16),
+                        u8::from_str_radix(&s[5..7], 16),
+                    )
+                } {
                     Self::Rgb(r, g, b)
                 } else {
                     return Err(ParseColorError);
@@ -406,8 +411,22 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_color() {
-        let color: Result<Color, _> = Color::from_str("invalid_color");
-        assert!(color.is_err());
+    fn test_invalid_colors() {
+        let bad_colors = [
+            "invalid_color", // not a color string
+            "abcdef0",       // 7 chars is not a color
+            " bcdefa",       // doesn't start with a '#'
+            "blue ",         // has space at end
+            " blue",         // has space at start
+            "#abcdef00",     // too many chars
+        ];
+
+        for bad_color in bad_colors {
+            assert!(
+                Color::from_str(bad_color).is_err(),
+                "bad color: '{}'",
+                bad_color
+            );
+        }
     }
 }
