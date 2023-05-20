@@ -343,6 +343,24 @@ pub struct TableState {
 }
 
 impl TableState {
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
+
+    pub fn offset_mut(&mut self) -> &mut usize {
+        &mut self.offset
+    }
+
+    pub fn with_selected(mut self, selected: Option<usize>) -> Self {
+        self.selected = selected;
+        self
+    }
+
+    pub fn with_offset(mut self, offset: usize) -> Self {
+        self.offset = offset;
+        self
+    }
+
     pub fn selected(&self) -> Option<usize> {
         self.selected
     }
@@ -352,17 +370,6 @@ impl TableState {
         if index.is_none() {
             self.offset = 0;
         }
-    }
-
-    /// Returns a copy of the receiver's scroll offset.
-    ///
-    /// This is useful, for example, if you need to "synchronize" the scrolling of a `Table` and a `Paragraph`.
-    pub fn offset(&self) -> usize {
-        self.offset
-    }
-
-    pub fn offset_mut(&mut self) -> &mut usize {
-        &mut self.offset
     }
 }
 
