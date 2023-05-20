@@ -80,4 +80,4 @@ Here you will find a list of TUI applications that are made using `ratatui`.
 - [hg-tui](https://github.com/kaixinbaba/hg-tui): TUI for viewing the hellogithub.com website
 - [hwatch](https://github.com/blacknon/hwatch): Alternative watch command with command history and diffs
 - [poketex](https://github.com/ckaznable/poketex): Simple Pokedex based on TUI
-- [termchat](https://github.com/lemunozm/termchat):
+- [termchat](https://github.com/lemunozm/termchat): Terminal chat through the LAN with video streaming and file transfer
