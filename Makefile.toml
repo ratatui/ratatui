@@ -118,15 +118,15 @@ args = [
 ]
 
 [tasks.test-crossterm]
-env = { TUI_FEATURES = "serde,crossterm,all-widgets" }
+env = { TUI_FEATURES = "serde,crossterm,all-widgets,macros" }
 run_task = "test"
 
 [tasks.test-termion]
-env = { TUI_FEATURES = "serde,termion,all-widgets" }
+env = { TUI_FEATURES = "serde,termion,all-widgets,macros" }
 run_task = "test"
 
 [tasks.test-termwiz]
-env = { TUI_FEATURES = "serde,termwiz,all-widgets" }
+env = { TUI_FEATURES = "serde,termwiz,all-widgets,macros" }
 run_task = "test"
 
 [tasks.test]

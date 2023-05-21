@@ -21,6 +21,7 @@ rust-version = "1.65.0"
 default = ["crossterm"]
 all-widgets = ["widget-calendar"]
 widget-calendar = ["time"]
+macros = []
 
 [package.metadata.docs.rs]
 all-features = true
