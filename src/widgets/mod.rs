@@ -209,8 +209,8 @@ pub trait StatefulWidget {
 /// let none = border!(NONE);
 ///
 ///```
-#[macro_export]
 #[cfg(feature = "macros")]
+#[macro_export]
 macro_rules! border {
     ( $($b:tt), +) => {{
             let mut border = Borders::empty();

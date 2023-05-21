@@ -1,5 +1,5 @@
 #![cfg(feature = "macros")]
-use tui::{border, widgets::Borders};
+use ratatui::{border, widgets::Borders};
 
 #[test]
 fn border_empty_test() {
