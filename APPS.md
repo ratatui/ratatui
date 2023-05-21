@@ -38,6 +38,7 @@ Here you will find a list of TUI applications that are made using `ratatui`.
 - [rusty-krab-manager](https://github.com/aryakaul/rusty-krab-manager): time management tui in rust
 - [taskwarrior-tui](https://github.com/kdheepak/taskwarrior-tui): TUI for the Taskwarrior command-line task manager
 - [tickrs](https://github.com/tarkah/tickrs): Stock market ticker in the terminal
+- [tts-tui](https://github.com/lesleyrs/tts-tui): Text to speech app that reads from clipboard
 
 #### 🎼 Music and Media
 
