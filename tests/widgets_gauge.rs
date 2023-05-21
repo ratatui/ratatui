@@ -1,9 +1,10 @@
-use tui::{
+use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     symbols,
+    text::Span,
     widgets::{Block, Borders, Gauge, LineGauge},
     Terminal,
 };
@@ -113,6 +114,89 @@ fn widgets_gauge_renders_no_unicode() {
         "                                        ",
         "                                        ",
     ]);
+    terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widgets_gauge_applies_styles() {
+    let backend = TestBackend::new(12, 5);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            let gauge = Gauge::default()
+                .block(
+                    Block::default()
+                        .title(Span::styled("Test", Style::default().fg(Color::Red)))
+                        .borders(Borders::ALL),
+                )
+                .gauge_style(Style::default().fg(Color::Blue).bg(Color::Red))
+                .percent(43)
+                .label(Span::styled(
+                    "43%",
+                    Style::default()
+                        .fg(Color::Green)
+                        .add_modifier(Modifier::BOLD),
+                ));
+            f.render_widget(gauge, f.size());
+        })
+        .unwrap();
+    let mut expected = Buffer::with_lines(vec![
+        "┌Test──────┐",
+        "│          │",
+        "│   43%    │",
+        "│          │",
+        "└──────────┘",
+    ]);
+    // title
+    expected.set_style(Rect::new(1, 0, 4, 1), Style::default().fg(Color::Red));
+    // gauge area
+    expected.set_style(
+        Rect::new(1, 1, 10, 3),
+        Style::default().fg(Color::Blue).bg(Color::Red),
+    );
+    // filled area
+    for y in 1..4 {
+        expected.set_style(
+            Rect::new(1, y, 4, 1),
+            // filled style is invert of gauge_style
+            Style::default().fg(Color::Red).bg(Color::Blue),
+        );
+    }
+    // label (foreground and modifier from label style)
+    expected.set_style(
+        Rect::new(4, 2, 1, 1),
+        Style::default()
+            .fg(Color::Green)
+            // "4" is in the filled area so background is gauge_style foreground
+            .bg(Color::Blue)
+            .add_modifier(Modifier::BOLD),
+    );
+    expected.set_style(
+        Rect::new(5, 2, 2, 1),
+        Style::default()
+            .fg(Color::Green)
+            // "3%" is not in the filled area so background is gauge_style background
+            .bg(Color::Red)
+            .add_modifier(Modifier::BOLD),
+    );
+    terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widgets_gauge_supports_large_labels() {
+    let backend = TestBackend::new(10, 1);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            let gauge = Gauge::default()
+                .percent(43)
+                .label("43333333333333333333333333333%");
+            f.render_widget(gauge, f.size());
+        })
+        .unwrap();
+    let expected = Buffer::with_lines(vec!["4333333333"]);
     terminal.backend().assert_buffer(&expected);
 }
 

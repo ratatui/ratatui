@@ -13,10 +13,13 @@
 //! - [`BarChart`]
 //! - [`Gauge`]
 //! - [`Sparkline`]
+//! - [`calendar::Monthly`]
 //! - [`Clear`]
 
 mod barchart;
 mod block;
+#[cfg(feature = "widget-calendar")]
+pub mod calendar;
 pub mod canvas;
 mod chart;
 mod clear;
@@ -29,13 +32,13 @@ mod table;
 mod tabs;
 
 pub use self::barchart::BarChart;
-pub use self::block::{Block, BorderType};
+pub use self::block::{Block, BorderType, Padding};
 pub use self::chart::{Axis, Chart, Dataset, GraphType};
 pub use self::clear::Clear;
 pub use self::gauge::{Gauge, LineGauge};
 pub use self::list::{List, ListItem, ListState};
 pub use self::paragraph::{Paragraph, Wrap};
-pub use self::sparkline::Sparkline;
+pub use self::sparkline::{RenderDirection, Sparkline};
 pub use self::table::{Cell, Row, Table, TableState};
 pub use self::tabs::Tabs;
 
@@ -44,17 +47,17 @@ use bitflags::bitflags;
 
 bitflags! {
     /// Bitflags that can be composed to set the visible borders essentially on the block widget.
-    pub struct Borders: u32 {
+    pub struct Borders: u8 {
         /// Show no border (default)
-        const NONE  = 0b0000_0001;
+        const NONE   = 0b0000;
         /// Show the top border
-        const TOP   = 0b0000_0010;
+        const TOP    = 0b0001;
         /// Show the right border
-        const RIGHT = 0b0000_0100;
+        const RIGHT  = 0b0010;
         /// Show the bottom border
-        const BOTTOM = 0b000_1000;
+        const BOTTOM = 0b0100;
         /// Show the left border
-        const LEFT = 0b0001_0000;
+        const LEFT   = 0b1000;
         /// Show all borders
         const ALL = Self::TOP.bits | Self::RIGHT.bits | Self::BOTTOM.bits | Self::LEFT.bits;
     }
@@ -99,8 +102,8 @@ macro_rules! border {
 
 /// Base requirements for a Widget
 pub trait Widget {
-    /// Draws the current state of the widget in the given buffer. That the only method required to
-    /// implement a custom widget.
+    /// Draws the current state of the widget in the given buffer. That is the only method required
+    /// to implement a custom widget.
     fn render(self, area: Rect, buf: &mut Buffer);
 }
 
@@ -123,9 +126,9 @@ pub trait Widget {
 ///
 /// ```rust,no_run
 /// # use std::io;
-/// # use tui::Terminal;
-/// # use tui::backend::{Backend, TermionBackend};
-/// # use tui::widgets::{Widget, List, ListItem, ListState};
+/// # use ratatui::Terminal;
+/// # use ratatui::backend::{Backend, TestBackend};
+/// # use ratatui::widgets::{Widget, List, ListItem, ListState};
 ///
 /// // Let's say we have some events to display.
 /// struct Events {
@@ -191,9 +194,8 @@ pub trait Widget {
 ///     }
 /// }
 ///
-/// let stdout = io::stdout();
-/// let backend = TermionBackend::new(stdout);
-/// let mut terminal = Terminal::new(backend).unwrap();
+/// # let backend = TestBackend::new(5, 5);
+/// # let mut terminal = Terminal::new(backend).unwrap();
 ///
 /// let mut events = Events::new(vec![
 ///     String::from("Item 1"),
@@ -203,8 +205,8 @@ pub trait Widget {
 /// loop {
 ///     terminal.draw(|f| {
 ///         // The items managed by the application are transformed to something
-///         // that is understood by tui.
-///         let items: Vec<ListItem>= events.items.iter().map(|i| ListItem::new(i.as_ref())).collect();
+///         // that is understood by ratatui.
+///         let items: Vec<ListItem>= events.items.iter().map(|i| ListItem::new(i.as_str())).collect();
 ///         // The `List` widget is then built with those items.
 ///         let list = List::new(items);
 ///         // Finally the widget is rendered using the associated state. `events.state` is

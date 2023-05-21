@@ -1,11 +1,11 @@
-use crate::demo::App;
-use tui::{
+use crate::app::App;
+use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
     text::{Span, Spans},
-    widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle},
+    widgets::canvas::{Canvas, Circle, Line, Map, MapResolution, Rectangle},
     widgets::{
         Axis, BarChart, Block, Borders, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem,
         Paragraph, Row, Sparkline, Table, Tabs, Wrap,
@@ -346,6 +346,12 @@ where
                 height: 10.0,
                 color: Color::Yellow,
             });
+            ctx.draw(&Circle {
+                x: app.servers[2].coords.1,
+                y: app.servers[2].coords.0,
+                radius: 10.0,
+                color: Color::Green,
+            });
             for (i, s1) in app.servers.iter().enumerate() {
                 for s2 in &app.servers[i + 1..] {
                     ctx.draw(&Line {
@@ -363,7 +369,11 @@ where
                 } else {
                     Color::Red
                 };
-                ctx.print(server.coords.1, server.coords.0, "X", color);
+                ctx.print(
+                    server.coords.1,
+                    server.coords.0,
+                    Span::styled("X", Style::default().fg(color)),
+                );
             }
         })
         .marker(if app.enhanced_graphics {

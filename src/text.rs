@@ -1,7 +1,7 @@
 //! Primitives for styled text.
 //!
 //! A terminal UI is at its root a lot of strings. In order to make it accessible and stylish,
-//! those strings may be associated to a set of styles. `tui` has three ways to represent them:
+//! those strings may be associated to a set of styles. `ratatui` has three ways to represent them:
 //! - A single line string where all graphemes have the same style is represented by a [`Span`].
 //! - A single line string where each grapheme may have its own style is represented by [`Spans`].
 //! - A multiple line string where each grapheme may have its own style is represented by a
@@ -11,7 +11,7 @@
 //! is a [`Spans`].
 //!
 //! Keep it mind that a lot of widgets will use those types to advertise what kind of string is
-//! supported for their properties. Moreover, `tui` provides convenient `From` implementations so
+//! supported for their properties. Moreover, `ratatui` provides convenient `From` implementations so
 //! that you can start by using simple `String` or `&str` and then promote them to the previous
 //! primitives when you need additional styling capabilities.
 //!
@@ -19,9 +19,9 @@
 //! its `title` property (which is a [`Spans`] under the hood):
 //!
 //! ```rust
-//! # use tui::widgets::Block;
-//! # use tui::text::{Span, Spans};
-//! # use tui::style::{Color, Style};
+//! # use ratatui::widgets::Block;
+//! # use ratatui::text::{Span, Spans};
+//! # use ratatui::style::{Color, Style};
 //! // A simple string with no styling.
 //! // Converted to Spans(vec![
 //! //   Span { content: Cow::Borrowed("My title"), style: Style { .. } }
@@ -48,18 +48,19 @@
 //! ```
 use crate::style::Style;
 use std::borrow::Cow;
+use std::fmt::{self, Debug, Display};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 /// A grapheme associated to a style.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StyledGrapheme<'a> {
     pub symbol: &'a str,
     pub style: Style,
 }
 
 /// A string where all graphemes have the same style.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Span<'a> {
     pub content: Cow<'a, str>,
     pub style: Style,
@@ -71,7 +72,7 @@ impl<'a> Span<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::text::Span;
+    /// # use ratatui::text::Span;
     /// Span::raw("My text");
     /// Span::raw(String::from("My text"));
     /// ```
@@ -90,8 +91,8 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use tui::text::Span;
-    /// # use tui::style::{Color, Modifier, Style};
+    /// # use ratatui::text::Span;
+    /// # use ratatui::style::{Color, Modifier, Style};
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// Span::styled("My text", style);
     /// Span::styled(String::from("My text"), style);
@@ -119,8 +120,8 @@ impl<'a> Span<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::text::{Span, StyledGrapheme};
-    /// # use tui::style::{Color, Modifier, Style};
+    /// # use ratatui::text::{Span, StyledGrapheme};
+    /// # use ratatui::style::{Color, Modifier, Style};
     /// # use std::iter::Iterator;
     /// let style = Style::default().fg(Color::Yellow);
     /// let span = Span::styled("Text", style);
@@ -179,6 +180,43 @@ impl<'a> Span<'a> {
             })
             .filter(|s| s.symbol != "\n")
     }
+
+    /// Patches the style an existing Span, adding modifiers from the given style.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use ratatui::text::Span;
+    /// # use ratatui::style::{Color, Style, Modifier};
+    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+    /// let mut raw_span = Span::raw("My text");
+    /// let mut styled_span = Span::styled("My text", style);
+    ///
+    /// assert_ne!(raw_span, styled_span);
+    ///
+    /// raw_span.patch_style(style);
+    /// assert_eq!(raw_span, styled_span);
+    /// ```
+    pub fn patch_style(&mut self, style: Style) {
+        self.style = self.style.patch(style);
+    }
+
+    /// Resets the style of the Span.
+    /// Equivalent to calling `patch_style(Style::reset())`.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use ratatui::text::Span;
+    /// # use ratatui::style::{Color, Style, Modifier};
+    /// let mut span = Span::styled("My text", Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC));
+    ///
+    /// span.reset_style();
+    /// assert_eq!(Style::reset(), span.style);
+    /// ```
+    pub fn reset_style(&mut self) {
+        self.patch_style(Style::reset());
+    }
 }
 
 impl<'a> From<String> for Span<'a> {
@@ -194,14 +232,8 @@ impl<'a> From<&'a str> for Span<'a> {
 }
 
 /// A string composed of clusters of graphemes, each with their own style.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct Spans<'a>(pub Vec<Span<'a>>);
-
-impl<'a> Default for Spans<'a> {
-    fn default() -> Spans<'a> {
-        Spans(Vec::new())
-    }
-}
 
 impl<'a> Spans<'a> {
     /// Returns the width of the underlying string.
@@ -209,8 +241,8 @@ impl<'a> Spans<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::text::{Span, Spans};
-    /// # use tui::style::{Color, Style};
+    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::style::{Color, Style};
     /// let spans = Spans::from(vec![
     ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::raw(" text"),
@@ -219,6 +251,57 @@ impl<'a> Spans<'a> {
     /// ```
     pub fn width(&self) -> usize {
         self.0.iter().map(Span::width).sum()
+    }
+
+    /// Patches the style of each Span in an existing Spans, adding modifiers from the given style.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::style::{Color, Style, Modifier};
+    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+    /// let mut raw_spans = Spans::from(vec![
+    ///     Span::raw("My"),
+    ///     Span::raw(" text"),
+    /// ]);
+    /// let mut styled_spans = Spans::from(vec![
+    ///     Span::styled("My", style),
+    ///     Span::styled(" text", style),
+    /// ]);
+    ///
+    /// assert_ne!(raw_spans, styled_spans);
+    ///
+    /// raw_spans.patch_style(style);
+    /// assert_eq!(raw_spans, styled_spans);
+    /// ```
+    pub fn patch_style(&mut self, style: Style) {
+        for span in &mut self.0 {
+            span.patch_style(style);
+        }
+    }
+
+    /// Resets the style of each Span in the Spans.
+    /// Equivalent to calling `patch_style(Style::reset())`.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use ratatui::text::{Span, Spans};
+    /// # use ratatui::style::{Color, Style, Modifier};
+    /// let mut spans = Spans::from(vec![
+    ///     Span::styled("My", Style::default().fg(Color::Yellow)),
+    ///     Span::styled(" text", Style::default().add_modifier(Modifier::BOLD)),
+    /// ]);
+    ///
+    /// spans.reset_style();
+    /// assert_eq!(Style::reset(), spans.0[0].style);
+    /// assert_eq!(Style::reset(), spans.0[1].style);
+    /// ```
+    pub fn reset_style(&mut self) {
+        for span in &mut self.0 {
+            span.reset_style();
+        }
     }
 }
 
@@ -263,8 +346,8 @@ impl<'a> From<Spans<'a>> for String {
 /// [`core::iter::Extend`] which enables the concatenation of several [`Text`] blocks.
 ///
 /// ```rust
-/// # use tui::text::Text;
-/// # use tui::style::{Color, Modifier, Style};
+/// # use ratatui::text::Text;
+/// # use ratatui::style::{Color, Modifier, Style};
 /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
 ///
 /// // An initial two lines of `Text` built from a `&str`
@@ -279,15 +362,9 @@ impl<'a> From<Spans<'a>> for String {
 /// text.extend(Text::styled("Some more lines\nnow with more style!", style));
 /// assert_eq!(6, text.height());
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct Text<'a> {
     pub lines: Vec<Spans<'a>>,
-}
-
-impl<'a> Default for Text<'a> {
-    fn default() -> Text<'a> {
-        Text { lines: Vec::new() }
-    }
 }
 
 impl<'a> Text<'a> {
@@ -296,7 +373,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use tui::text::Text;
+    /// # use ratatui::text::Text;
     /// Text::raw("The first line\nThe second line");
     /// Text::raw(String::from("The first line\nThe second line"));
     /// ```
@@ -304,12 +381,14 @@ impl<'a> Text<'a> {
     where
         T: Into<Cow<'a, str>>,
     {
-        Text {
-            lines: match content.into() {
-                Cow::Borrowed(s) => s.lines().map(Spans::from).collect(),
-                Cow::Owned(s) => s.lines().map(|l| Spans::from(l.to_owned())).collect(),
-            },
-        }
+        let lines: Vec<_> = match content.into() {
+            Cow::Borrowed("") => vec![Spans::from("")],
+            Cow::Borrowed(s) => s.lines().map(Spans::from).collect(),
+            Cow::Owned(s) if s.is_empty() => vec![Spans::from("")],
+            Cow::Owned(s) => s.lines().map(|l| Spans::from(l.to_owned())).collect(),
+        };
+
+        Text { lines }
     }
 
     /// Create some text (potentially multiple lines) with a style.
@@ -317,8 +396,8 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use tui::text::Text;
-    /// # use tui::style::{Color, Modifier, Style};
+    /// # use ratatui::text::Text;
+    /// # use ratatui::style::{Color, Modifier, Style};
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// Text::styled("The first line\nThe second line", style);
     /// Text::styled(String::from("The first line\nThe second line"), style);
@@ -337,7 +416,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// use tui::text::Text;
+    /// use ratatui::text::Text;
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(15, text.width());
     /// ```
@@ -354,7 +433,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// use tui::text::Text;
+    /// use ratatui::text::Text;
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(2, text.height());
     /// ```
@@ -362,13 +441,13 @@ impl<'a> Text<'a> {
         self.lines.len()
     }
 
-    /// Apply a new style to existing text.
+    /// Patches the style of each line in an existing Text, adding modifiers from the given style.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// # use tui::text::Text;
-    /// # use tui::style::{Color, Modifier, Style};
+    /// # use ratatui::text::Text;
+    /// # use ratatui::style::{Color, Modifier, Style};
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// let mut raw_text = Text::raw("The first line\nThe second line");
     /// let styled_text = Text::styled(String::from("The first line\nThe second line"), style);
@@ -379,9 +458,31 @@ impl<'a> Text<'a> {
     /// ```
     pub fn patch_style(&mut self, style: Style) {
         for line in &mut self.lines {
-            for span in &mut line.0 {
-                span.style = span.style.patch(style);
-            }
+            line.patch_style(style);
+        }
+    }
+
+    /// Resets the style of the Text.
+    /// Equivalent to calling `patch_style(Style::reset())`.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use ratatui::text::{Span, Spans, Text};
+    /// # use ratatui::style::{Color, Style, Modifier};
+    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+    /// let mut text = Text::styled("The first line\nThe second line", style);
+    ///
+    /// text.reset_style();
+    /// for line in &text.lines {
+    ///     for span in &line.0 {
+    ///         assert_eq!(Style::reset(), span.style);
+    ///     }
+    /// }
+    /// ```
+    pub fn reset_style(&mut self) {
+        for line in &mut self.lines {
+            line.reset_style();
         }
     }
 }
@@ -394,6 +495,12 @@ impl<'a> From<String> for Text<'a> {
 
 impl<'a> From<&'a str> for Text<'a> {
     fn from(s: &'a str) -> Text<'a> {
+        Text::raw(s)
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for Text<'a> {
+    fn from(s: Cow<'a, str>) -> Text<'a> {
         Text::raw(s)
     }
 }
@@ -430,5 +537,126 @@ impl<'a> IntoIterator for Text<'a> {
 impl<'a> Extend<Spans<'a>> for Text<'a> {
     fn extend<T: IntoIterator<Item = Spans<'a>>>(&mut self, iter: T) {
         self.lines.extend(iter);
+    }
+}
+
+/// A wrapper around a string that is masked when displayed.
+///
+/// The masked string is displayed as a series of the same character.
+/// This might be used to display a password field or similar secure data.
+///
+/// # Examples
+///
+/// ```rust
+/// use ratatui::{buffer::Buffer, layout::Rect, text::Masked, widgets::{Paragraph, Widget}};
+///
+/// let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
+/// let password = Masked::new("12345", 'x');
+///
+/// Paragraph::new(password).render(buffer.area, &mut buffer);
+/// assert_eq!(buffer, Buffer::with_lines(vec!["xxxxx"]));
+/// ```
+#[derive(Clone)]
+pub struct Masked<'a> {
+    inner: Cow<'a, str>,
+    mask_char: char,
+}
+
+impl<'a> Masked<'a> {
+    pub fn new(s: impl Into<Cow<'a, str>>, mask_char: char) -> Self {
+        Self {
+            inner: s.into(),
+            mask_char,
+        }
+    }
+
+    /// The character to use for masking.
+    pub fn mask_char(&self) -> char {
+        self.mask_char
+    }
+
+    /// The underlying string, with all characters masked.
+    pub fn value(&self) -> Cow<'a, str> {
+        self.inner.chars().map(|_| self.mask_char).collect()
+    }
+}
+
+impl Debug for Masked<'_> {
+    /// Debug representation of a masked string is the underlying string
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.inner).map_err(|_| fmt::Error)
+    }
+}
+
+impl Display for Masked<'_> {
+    /// Display representation of a masked string is the masked string
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.value()).map_err(|_| fmt::Error)
+    }
+}
+
+impl<'a> From<&'a Masked<'a>> for Cow<'a, str> {
+    fn from(masked: &'a Masked) -> Cow<'a, str> {
+        masked.value()
+    }
+}
+
+impl<'a> From<Masked<'a>> for Cow<'a, str> {
+    fn from(masked: Masked<'a>) -> Cow<'a, str> {
+        masked.value()
+    }
+}
+
+impl<'a> From<&'a Masked<'_>> for Text<'a> {
+    fn from(masked: &'a Masked) -> Text<'a> {
+        Text::raw(masked.value())
+    }
+}
+
+impl<'a> From<Masked<'a>> for Text<'a> {
+    fn from(masked: Masked<'a>) -> Text<'a> {
+        Text::raw(masked.value())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::borrow::Borrow;
+
+    use super::*;
+
+    #[test]
+    fn test_masked_value() {
+        let masked = Masked::new("12345", 'x');
+        assert_eq!(masked.value(), "xxxxx");
+    }
+
+    #[test]
+    fn test_masked_debug() {
+        let masked = Masked::new("12345", 'x');
+        assert_eq!(format!("{masked:?}"), "12345");
+    }
+
+    #[test]
+    fn test_masked_display() {
+        let masked = Masked::new("12345", 'x');
+        assert_eq!(format!("{masked}"), "xxxxx");
+    }
+
+    #[test]
+    fn test_masked_conversions() {
+        let masked = Masked::new("12345", 'x');
+
+        let text: Text = masked.borrow().into();
+        assert_eq!(text.lines, vec![Spans::from("xxxxx")]);
+
+        let text: Text = masked.to_owned().into();
+        assert_eq!(text.lines, vec![Spans::from("xxxxx")]);
+
+        let cow: Cow<str> = masked.borrow().into();
+        assert_eq!(cow, "xxxxx");
+
+        let cow: Cow<str> = masked.to_owned().into();
+        assert_eq!(cow, "xxxxx");
     }
 }

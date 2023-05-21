@@ -1,18 +1,24 @@
-#[allow(dead_code)]
-mod util;
-
-use crate::util::event::{Config, Event, Events};
-use std::{error::Error, io, time::Duration};
-use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
-use tui::{
-    backend::TermionBackend,
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout, Rect},
-    style::Color,
+    style::{Color, Style},
+    symbols::Marker,
+    text::Span,
     widgets::{
         canvas::{Canvas, Map, MapResolution, Rectangle},
         Block, Borders,
     },
-    Terminal,
+    Frame, Terminal,
+};
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
 };
 
 struct App {
@@ -24,6 +30,8 @@ struct App {
     vy: f64,
     dir_x: bool,
     dir_y: bool,
+    tick_count: u64,
+    marker: Marker,
 }
 
 impl App {
@@ -43,10 +51,22 @@ impl App {
             vy: 1.0,
             dir_x: true,
             dir_y: true,
+            tick_count: 0,
+            marker: Marker::Dot,
         }
     }
 
-    fn update(&mut self) {
+    fn on_tick(&mut self) {
+        self.tick_count += 1;
+        // only change marker every 4 ticks (1s) to avoid stroboscopic effect
+        if (self.tick_count % 4) == 0 {
+            self.marker = match self.marker {
+                Marker::Dot => Marker::Block,
+                Marker::Block => Marker::Bar,
+                Marker::Bar => Marker::Braille,
+                Marker::Braille => Marker::Dot,
+            };
+        }
         if self.ball.x < self.playground.left() as f64
             || self.ball.x + self.ball.width > self.playground.right() as f64
         {
@@ -73,76 +93,105 @@ impl App {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    // Terminal initialization
-    let stdout = io::stdout().into_raw_mode()?;
-    let stdout = MouseTerminal::from(stdout);
-    let stdout = AlternateScreen::from(stdout);
-    let backend = TermionBackend::new(stdout);
+    // setup terminal
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // Setup event handlers
-    let config = Config {
-        tick_rate: Duration::from_millis(250),
-        ..Default::default()
-    };
-    let events = Events::with_config(config);
+    // create app and run it
+    let tick_rate = Duration::from_millis(250);
+    let app = App::new();
+    let res = run_app(&mut terminal, app, tick_rate);
 
-    // App
-    let mut app = App::new();
+    // restore terminal
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
 
-    loop {
-        terminal.draw(|f| {
-            let chunks = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-                .split(f.size());
-            let canvas = Canvas::default()
-                .block(Block::default().borders(Borders::ALL).title("World"))
-                .paint(|ctx| {
-                    ctx.draw(&Map {
-                        color: Color::White,
-                        resolution: MapResolution::High,
-                    });
-                    ctx.print(app.x, -app.y, "You are here", Color::Yellow);
-                })
-                .x_bounds([-180.0, 180.0])
-                .y_bounds([-90.0, 90.0]);
-            f.render_widget(canvas, chunks[0]);
-            let canvas = Canvas::default()
-                .block(Block::default().borders(Borders::ALL).title("Pong"))
-                .paint(|ctx| {
-                    ctx.draw(&app.ball);
-                })
-                .x_bounds([10.0, 110.0])
-                .y_bounds([10.0, 110.0]);
-            f.render_widget(canvas, chunks[1]);
-        })?;
-
-        match events.next()? {
-            Event::Input(input) => match input {
-                Key::Char('q') => {
-                    break;
-                }
-                Key::Down => {
-                    app.y += 1.0;
-                }
-                Key::Up => {
-                    app.y -= 1.0;
-                }
-                Key::Right => {
-                    app.x += 1.0;
-                }
-                Key::Left => {
-                    app.x -= 1.0;
-                }
-
-                _ => {}
-            },
-            Event::Tick => {
-                app.update();
-            }
-        }
+    if let Err(err) = res {
+        println!("{:?}", err)
     }
 
     Ok(())
+}
+
+fn run_app<B: Backend>(
+    terminal: &mut Terminal<B>,
+    mut app: App,
+    tick_rate: Duration,
+) -> io::Result<()> {
+    let mut last_tick = Instant::now();
+    loop {
+        terminal.draw(|f| ui(f, &app))?;
+
+        let timeout = tick_rate
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or_else(|| Duration::from_secs(0));
+        if event::poll(timeout)? {
+            if let Event::Key(key) = event::read()? {
+                match key.code {
+                    KeyCode::Char('q') => {
+                        return Ok(());
+                    }
+                    KeyCode::Down => {
+                        app.y += 1.0;
+                    }
+                    KeyCode::Up => {
+                        app.y -= 1.0;
+                    }
+                    KeyCode::Right => {
+                        app.x += 1.0;
+                    }
+                    KeyCode::Left => {
+                        app.x -= 1.0;
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        if last_tick.elapsed() >= tick_rate {
+            app.on_tick();
+            last_tick = Instant::now();
+        }
+    }
+}
+
+fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .split(f.size());
+    let canvas = Canvas::default()
+        .block(Block::default().borders(Borders::ALL).title("World"))
+        .marker(app.marker)
+        .paint(|ctx| {
+            ctx.draw(&Map {
+                color: Color::White,
+                resolution: MapResolution::High,
+            });
+            ctx.print(
+                app.x,
+                -app.y,
+                Span::styled("You are here", Style::default().fg(Color::Yellow)),
+            );
+        })
+        .x_bounds([-180.0, 180.0])
+        .y_bounds([-90.0, 90.0]);
+    f.render_widget(canvas, chunks[0]);
+    let canvas = Canvas::default()
+        .block(Block::default().borders(Borders::ALL).title("Pong"))
+        .marker(app.marker)
+        .paint(|ctx| {
+            ctx.draw(&app.ball);
+        })
+        .x_bounds([10.0, 110.0])
+        .y_bounds([10.0, 110.0]);
+    f.render_widget(canvas, chunks[1]);
 }

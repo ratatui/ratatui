@@ -1,4 +1,4 @@
-use tui::{
+use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Constraint,
@@ -354,12 +354,12 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
         ],
         Buffer::with_lines(vec![
             "┌────────────────────────────┐",
-            "│Hea Head2                Hea│",
+            "│Hea Head2                He │",
             "│                            │",
-            "│Row Row12                Row│",
-            "│Row Row22                Row│",
-            "│Row Row32                Row│",
-            "│Row Row42                Row│",
+            "│Row Row12                Ro │",
+            "│Row Row22                Ro │",
+            "│Row Row32                Ro │",
+            "│Row Row42                Ro │",
             "│                            │",
             "│                            │",
             "└────────────────────────────┘",
@@ -713,5 +713,111 @@ fn widgets_table_should_render_even_if_empty() {
         "│                            │",
     ]);
 
+    terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widgets_table_columns_dont_panic() {
+    let test_case = |state: &mut TableState, table: Table, width: u16| {
+        let backend = TestBackend::new(width, 8);
+        let mut terminal = Terminal::new(backend).unwrap();
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                f.render_stateful_widget(table, size, state);
+            })
+            .unwrap();
+    };
+
+    // based on https://github.com/fdehau/tui-rs/issues/470#issuecomment-852562848
+    let table1_width = 98;
+    let table1 = Table::new(vec![Row::new(vec!["r1", "r2", "r3", "r4"])])
+        .header(Row::new(vec!["h1", "h2", "h3", "h4"]))
+        .block(Block::default().borders(Borders::ALL))
+        .highlight_symbol(">> ")
+        .column_spacing(1)
+        .widths(&[
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(25),
+            Constraint::Percentage(45),
+        ]);
+
+    let mut state = TableState::default();
+
+    // select first, which would cause a panic before fix
+    state.select(Some(0));
+    test_case(&mut state, table1.clone(), table1_width);
+}
+
+#[test]
+fn widgets_table_should_clamp_offset_if_rows_are_removed() {
+    let backend = TestBackend::new(30, 8);
+    let mut terminal = Terminal::new(backend).unwrap();
+    let mut state = TableState::default();
+
+    // render with 6 items => offset will be at 2
+    state.select(Some(5));
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(vec![
+                Row::new(vec!["Row01", "Row02", "Row03"]),
+                Row::new(vec!["Row11", "Row12", "Row13"]),
+                Row::new(vec!["Row21", "Row22", "Row23"]),
+                Row::new(vec!["Row31", "Row32", "Row33"]),
+                Row::new(vec!["Row41", "Row42", "Row43"]),
+                Row::new(vec!["Row51", "Row52", "Row53"]),
+            ])
+            .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+            .block(Block::default().borders(Borders::ALL))
+            .widths(&[
+                Constraint::Length(5),
+                Constraint::Length(5),
+                Constraint::Length(5),
+            ])
+            .column_spacing(1);
+            f.render_stateful_widget(table, size, &mut state);
+        })
+        .unwrap();
+    let expected = Buffer::with_lines(vec![
+        "┌────────────────────────────┐",
+        "│Head1 Head2 Head3           │",
+        "│                            │",
+        "│Row21 Row22 Row23           │",
+        "│Row31 Row32 Row33           │",
+        "│Row41 Row42 Row43           │",
+        "│Row51 Row52 Row53           │",
+        "└────────────────────────────┘",
+    ]);
+    terminal.backend().assert_buffer(&expected);
+
+    // render with 1 item => offset will be at 1
+    state.select(Some(1));
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(vec![Row::new(vec!["Row31", "Row32", "Row33"])])
+                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+                .block(Block::default().borders(Borders::ALL))
+                .widths(&[
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                ])
+                .column_spacing(1);
+            f.render_stateful_widget(table, size, &mut state);
+        })
+        .unwrap();
+    let expected = Buffer::with_lines(vec![
+        "┌────────────────────────────┐",
+        "│Head1 Head2 Head3           │",
+        "│                            │",
+        "│Row31 Row32 Row33           │",
+        "│                            │",
+        "│                            │",
+        "│                            │",
+        "└────────────────────────────┘",
+    ]);
     terminal.backend().assert_buffer(&expected);
 }

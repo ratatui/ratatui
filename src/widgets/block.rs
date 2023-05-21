@@ -1,13 +1,13 @@
 use crate::{
     buffer::Buffer,
-    layout::Rect,
+    layout::{Alignment, Rect},
     style::Style,
     symbols::line,
     text::{Span, Spans},
     widgets::{Borders, Widget},
 };
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BorderType {
     Plain,
     Rounded,
@@ -26,14 +26,69 @@ impl BorderType {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Padding {
+    pub left: u16,
+    pub right: u16,
+    pub top: u16,
+    pub bottom: u16,
+}
+
+impl Padding {
+    pub fn new(left: u16, right: u16, top: u16, bottom: u16) -> Self {
+        Padding {
+            left,
+            right,
+            top,
+            bottom,
+        }
+    }
+
+    pub fn zero() -> Self {
+        Padding {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+        }
+    }
+
+    pub fn horizontal(value: u16) -> Self {
+        Padding {
+            left: value,
+            right: value,
+            top: 0,
+            bottom: 0,
+        }
+    }
+
+    pub fn vertical(value: u16) -> Self {
+        Padding {
+            left: 0,
+            right: 0,
+            top: value,
+            bottom: value,
+        }
+    }
+
+    pub fn uniform(value: u16) -> Self {
+        Padding {
+            left: value,
+            right: value,
+            top: value,
+            bottom: value,
+        }
+    }
+}
+
 /// Base widget to be used with all upper level ones. It may be used to display a box border around
 /// the widget and/or add a title.
 ///
 /// # Examples
 ///
 /// ```
-/// # use tui::widgets::{Block, BorderType, Borders};
-/// # use tui::style::{Style, Color};
+/// # use ratatui::widgets::{Block, BorderType, Borders};
+/// # use ratatui::style::{Style, Color};
 /// Block::default()
 ///     .title("Block")
 ///     .borders(Borders::LEFT | Borders::RIGHT)
@@ -41,10 +96,15 @@ impl BorderType {
 ///     .border_type(BorderType::Rounded)
 ///     .style(Style::default().bg(Color::Black));
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Block<'a> {
     /// Optional title place on the upper left of the block
     title: Option<Spans<'a>>,
+    /// Title alignment. The default is top left of the block, but one can choose to place
+    /// title in the top middle, or top right of the block
+    title_alignment: Alignment,
+    /// Whether or not title goes on top or bottom row of the block
+    title_on_bottom: bool,
     /// Visible borders
     borders: Borders,
     /// Border style
@@ -54,16 +114,21 @@ pub struct Block<'a> {
     border_type: BorderType,
     /// Widget style
     style: Style,
+    /// Block padding
+    padding: Padding,
 }
 
 impl<'a> Default for Block<'a> {
     fn default() -> Block<'a> {
         Block {
             title: None,
+            title_alignment: Alignment::Left,
+            title_on_bottom: false,
             borders: Borders::NONE,
             border_style: Default::default(),
             border_type: BorderType::Plain,
             style: Default::default(),
+            padding: Padding::zero(),
         }
     }
 }
@@ -89,6 +154,16 @@ impl<'a> Block<'a> {
         self
     }
 
+    pub fn title_alignment(mut self, alignment: Alignment) -> Block<'a> {
+        self.title_alignment = alignment;
+        self
+    }
+
+    pub fn title_on_bottom(mut self) -> Block<'a> {
+        self.title_on_bottom = true;
+        self
+    }
+
     pub fn border_style(mut self, style: Style) -> Block<'a> {
         self.border_style = style;
         self
@@ -110,6 +185,34 @@ impl<'a> Block<'a> {
     }
 
     /// Compute the inner area of a block based on its border visibility rules.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Draw a block nested within another block
+    /// use ratatui::{backend::TestBackend, buffer::Buffer, terminal::Terminal, widgets::{Block, Borders}};
+    /// let backend = TestBackend::new(15, 5);
+    /// let mut terminal = Terminal::new(backend).unwrap();
+    /// let outer_block = Block::default()
+    ///     .title("Outer Block")
+    ///     .borders(Borders::ALL);
+    /// let inner_block = Block::default()
+    ///     .title("Inner Block")
+    ///     .borders(Borders::ALL);
+    /// terminal.draw(|f| {
+    ///     let inner_area = outer_block.inner(f.size());
+    ///     f.render_widget(outer_block, f.size());
+    ///     f.render_widget(inner_block, inner_area);
+    /// });
+    /// let expected = Buffer::with_lines(vec![
+    ///     "┌Outer Block──┐",
+    ///     "│┌Inner Block┐│",
+    ///     "││           ││",
+    ///     "│└───────────┘│",
+    ///     "└─────────────┘",
+    /// ]);
+    /// terminal.backend().assert_buffer(&expected);
+    /// ```
     pub fn inner(&self, area: Rect) -> Rect {
         let mut inner = area;
         if self.borders.intersects(Borders::LEFT) {
@@ -126,7 +229,23 @@ impl<'a> Block<'a> {
         if self.borders.intersects(Borders::BOTTOM) {
             inner.height = inner.height.saturating_sub(1);
         }
+
+        inner.x = inner.x.saturating_add(self.padding.left);
+        inner.y = inner.y.saturating_add(self.padding.top);
+
+        inner.width = inner
+            .width
+            .saturating_sub(self.padding.left + self.padding.right);
+        inner.height = inner
+            .height
+            .saturating_sub(self.padding.top + self.padding.bottom);
+
         inner
+    }
+
+    pub fn padding(mut self, padding: Padding) -> Block<'a> {
+        self.padding = padding;
+        self
     }
 }
 
@@ -192,19 +311,33 @@ impl<'a> Widget for Block<'a> {
                 .set_style(self.border_style);
         }
 
+        // Title
         if let Some(title) = self.title {
-            let lx = if self.borders.intersects(Borders::LEFT) {
-                1
-            } else {
-                0
+            let left_border_dx = self.borders.intersects(Borders::LEFT) as u16;
+            let right_border_dx = self.borders.intersects(Borders::RIGHT) as u16;
+
+            let title_area_width = area
+                .width
+                .saturating_sub(left_border_dx)
+                .saturating_sub(right_border_dx);
+
+            let title_dx = match self.title_alignment {
+                Alignment::Left => left_border_dx,
+                Alignment::Center => area.width.saturating_sub(title.width() as u16) / 2,
+                Alignment::Right => area
+                    .width
+                    .saturating_sub(title.width() as u16)
+                    .saturating_sub(right_border_dx),
             };
-            let rx = if self.borders.intersects(Borders::RIGHT) {
-                1
+
+            let title_x = area.left() + title_dx;
+            let title_y = if self.title_on_bottom {
+                area.bottom() - 1
             } else {
-                0
+                area.top()
             };
-            let width = area.width.saturating_sub(lx).saturating_sub(rx);
-            buf.set_spans(area.left() + lx, area.top(), &title, width);
+
+            buf.set_spans(title_x, title_y, &title, title_area_width);
         }
     }
 }
@@ -500,6 +633,40 @@ mod tests {
                 width: 0,
                 height: 1,
             }),
+            Rect {
+                x: 0,
+                y: 1,
+                width: 0,
+                height: 0,
+            },
+        );
+        assert_eq!(
+            Block::default()
+                .title("Test")
+                .title_alignment(Alignment::Center)
+                .inner(Rect {
+                    x: 0,
+                    y: 0,
+                    width: 0,
+                    height: 1,
+                }),
+            Rect {
+                x: 0,
+                y: 1,
+                width: 0,
+                height: 0,
+            },
+        );
+        assert_eq!(
+            Block::default()
+                .title("Test")
+                .title_alignment(Alignment::Right)
+                .inner(Rect {
+                    x: 0,
+                    y: 0,
+                    width: 0,
+                    height: 1,
+                }),
             Rect {
                 x: 0,
                 y: 1,

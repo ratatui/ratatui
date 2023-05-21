@@ -1,6 +1,184 @@
 # Changelog
 
-## To be released
+## v0.20.1 - 2023-03-19
+
+### Bug Fixes
+
+- *(style)* Bold needs a bit ([#104](https://github.com/tui-rs-revival/ratatui/issues/104))
+
+### Documentation
+
+- *(apps)* Add "logss" to apps ([#105](https://github.com/tui-rs-revival/ratatui/issues/105))
+- *(uncategorized)* Fixup remaining tui references ([#106](https://github.com/tui-rs-revival/ratatui/issues/106))
+
+### Contributors
+
+Thank you so much to everyone that contributed to this release!
+
+- [@joshka](https://github.com/joshka)
+- [@todoesverso](https://github.com/todoesverso)
+- [@UncleScientist](https://github.com/UncleScientist)
+
+## v0.20.0 - 2023-03-19
+
+This marks the first release of `ratatui`, a community-maintained fork of [tui](https://github.com/fdehau/tui-rs).
+
+The purpose of this release is to include **bug fixes** and **small changes** into the repository thus **no new features** are added. We have transferred all the pull requests from the original repository and worked on the low hanging ones to incorporate them in this "maintenance" release.
+
+Here is a list of changes:
+
+### Features
+
+- *(cd)* Add continuous deployment workflow ([#93](https://github.com/tui-rs-revival/ratatui/issues/93))
+- *(ci)* Add MacOS to CI ([#60](https://github.com/tui-rs-revival/ratatui/issues/60))
+- *(widget)* Add `offset()` to `TableState` ([#10](https://github.com/tui-rs-revival/ratatui/issues/10))
+- *(widget)* Add `width()` to ListItem ([#17](https://github.com/tui-rs-revival/ratatui/issues/17))
+
+### Bug Fixes
+
+- *(ci)* Test MSRV compatibility on CI ([#85](https://github.com/tui-rs-revival/ratatui/issues/85))
+- *(ci)* Bump Rust version to 1.63.0 ([#80](https://github.com/tui-rs-revival/ratatui/issues/80))
+- *(ci)* Use env for the cargo-make version ([#76](https://github.com/tui-rs-revival/ratatui/issues/76))
+- *(ci)* Fix deprecation warnings on CI ([#58](https://github.com/tui-rs-revival/ratatui/issues/58))
+- *(doc)* Add 3rd party libraries accidentally removed at #21 ([#61](https://github.com/tui-rs-revival/ratatui/issues/61))
+- *(widget)* List should not ignore empty string items ([#42](https://github.com/tui-rs-revival/ratatui/issues/42)) [**breaking**]
+- *(uncategorized)* Cassowary/layouts: add extra constraints for fixing Min(v)/Max(v) combination. ([#31](https://github.com/tui-rs-revival/ratatui/issues/31))
+- *(uncategorized)* Fix user_input example double key press registered on windows
+- *(uncategorized)* Ignore zero-width symbol on rendering `Paragraph`
+- *(uncategorized)* Fix typos ([#45](https://github.com/tui-rs-revival/ratatui/issues/45))
+- *(uncategorized)* Fix typos ([#47](https://github.com/tui-rs-revival/ratatui/issues/47))
+
+### Refactor
+
+- *(style)* Make bitflags smaller ([#13](https://github.com/tui-rs-revival/ratatui/issues/13))
+
+### Documentation
+
+- *(apps)* Move 'apps using ratatui' to dedicated file ([#98](https://github.com/tui-rs-revival/ratatui/issues/98)) ([#99](https://github.com/tui-rs-revival/ratatui/issues/99))
+- *(canvas)* Add documentation for x_bounds, y_bounds ([#35](https://github.com/tui-rs-revival/ratatui/issues/35))
+- *(contributing)* Specify the use of unsafe for optimization ([#67](https://github.com/tui-rs-revival/ratatui/issues/67))
+- *(github)* Remove pull request template ([#68](https://github.com/tui-rs-revival/ratatui/issues/68))
+- *(readme)* Update crate status badge ([#102](https://github.com/tui-rs-revival/ratatui/issues/102))
+- *(readme)* Small edits before first release ([#101](https://github.com/tui-rs-revival/ratatui/issues/101))
+- *(readme)* Add install instruction and update title ([#100](https://github.com/tui-rs-revival/ratatui/issues/100))
+- *(readme)* Add systeroid to application list ([#92](https://github.com/tui-rs-revival/ratatui/issues/92))
+- *(readme)* Add glicol-cli to showcase list ([#95](https://github.com/tui-rs-revival/ratatui/issues/95))
+- *(readme)* Add oxker to application list ([#74](https://github.com/tui-rs-revival/ratatui/issues/74))
+- *(readme)* Add app kubectl-watch which uses tui ([#73](https://github.com/tui-rs-revival/ratatui/issues/73))
+- *(readme)* Add poketex to 'apps using tui' in README ([#64](https://github.com/tui-rs-revival/ratatui/issues/64))
+- *(readme)* Update README.md ([#39](https://github.com/tui-rs-revival/ratatui/issues/39))
+- *(readme)* Update README.md ([#40](https://github.com/tui-rs-revival/ratatui/issues/40))
+- *(readme)* Clarify README.md fork status update
+- *(uncategorized)* Fix: fix typos ([#90](https://github.com/tui-rs-revival/ratatui/issues/90))
+- *(uncategorized)* Update to build more backends ([#81](https://github.com/tui-rs-revival/ratatui/issues/81))
+- *(uncategorized)* Expand "Apps" and "Third-party" sections ([#21](https://github.com/tui-rs-revival/ratatui/issues/21))
+- *(uncategorized)* Add tui-input and update xplr in README.md
+- *(uncategorized)* Add hncli to list of applications made with tui-rs ([#41](https://github.com/tui-rs-revival/ratatui/issues/41))
+- *(uncategorized)* Updated readme and contributing guide with updates about the fork ([#46](https://github.com/tui-rs-revival/ratatui/issues/46))
+
+### Performance
+
+- *(layout)* Better safe shared layout cache ([#62](https://github.com/tui-rs-revival/ratatui/issues/62))
+
+### Miscellaneous Tasks
+
+- *(cargo)* Update project metadata ([#94](https://github.com/tui-rs-revival/ratatui/issues/94))
+- *(ci)* Integrate `typos` for checking typos ([#91](https://github.com/tui-rs-revival/ratatui/issues/91))
+- *(ci)* Change the target branch to main ([#79](https://github.com/tui-rs-revival/ratatui/issues/79))
+- *(ci)* Re-enable clippy on CI ([#59](https://github.com/tui-rs-revival/ratatui/issues/59))
+- *(uncategorized)* Integrate `committed` for checking conventional commits ([#77](https://github.com/tui-rs-revival/ratatui/issues/77))
+- *(uncategorized)* Update `rust-version` to 1.59 in Cargo.toml ([#57](https://github.com/tui-rs-revival/ratatui/issues/57))
+- *(uncategorized)* Update deps ([#51](https://github.com/tui-rs-revival/ratatui/issues/51))
+- *(uncategorized)* Fix typo in layout.rs ([#619](https://github.com/tui-rs-revival/ratatui/issues/619))
+- *(uncategorized)* Add apps using `tui`
+
+### Contributors
+
+Thank you so much to everyone that contributed to this release!
+
+- [@orhun](https://github.com/orhun)
+- [@mindoodoo](https://github.com/mindoodoo)
+- [@sayanarijit](https://github.com/sayanarijit)
+- [@Owletti](https://github.com/Owletti)
+- [@UncleScientist](https://github.com/UncleScientist)
+- [@rhysd](https://github.com/rhysd)
+- [@ckaznable](https://github.com/ckaznable)
+- [@imuxin](https://github.com/imuxin)
+- [@mrjackwills](https://github.com/mrjackwills)
+- [@conradludgate](https://github.com/conradludgate)
+- [@kianmeng](https://github.com/kianmeng)
+- [@chaosprint](https://github.com/chaosprint)
+
+And most importantly, special thanks to [Florian Dehau](https://github.com/fdehau) for creating this awesome library 💖 We look forward to building on the strong foundations that the original crate laid out.
+
+## v0.19.0 - 2022-08-14
+
+### Features
+
+* Bump `crossterm` to `0.25`
+
+## v0.18.0 - 2022-04-24
+
+### Features
+
+* Update `crossterm` to `0.23`
+
+## v0.17.0 - 2022-01-22
+
+### Features
+
+* Add option to `widgets::List` to repeat the highlight symbol for each line of multi-line items (#533).
+* Add option to control the alignment of `Axis` labels in the `Chart` widget (#568).
+
+### Breaking changes
+
+* The minimum supported rust version is now `1.56.1`.
+
+#### New default backend and consolidated backend options (#553)
+
+* `crossterm` is now the default backend.
+If you are already using the `crossterm` backend, you can simplify your dependency specification in `Cargo.toml`:
+```diff
+- tui = { version = "0.16", default-features = false, features = ["crossterm"] }
++ tui = "0.17"
+```
+If you are using the `termion` backend, your `Cargo` is now a bit more verbose:
+```diff
+- tui = "0.16"
++ tui = { version = "0.17", default-features = false, features = ["termion"] }
+```
+
+`crossterm` has also been bumped to version `0.22`.
+
+Because of their apparent low usage, `curses` and `rustbox` backends have been removed.
+If you are using one of them, you can import their last implementation in your own project:
+* [curses](https://github.com/fdehau/tui-rs/blob/v0.16.0/src/backend/curses.rs)
+* [rustbox](https://github.com/fdehau/tui-rs/blob/v0.16.0/src/backend/rustbox.rs)
+
+#### Canvas labels (#543)
+
+* Labels of the `Canvas` widget are now `text::Spans`.
+The signature of `widgets::canvas::Context::print` has thus been updated:
+```diff
+- ctx.print(x, y, "Some text", Color::Yellow);
++ ctx.print(x, y, Span::styled("Some text", Style::default().fg(Color::Yellow)))
+```
+
+## v0.16.0 - 2021-08-01
+
+### Features
+
+* Update `crossterm` to `0.20`.
+* Add `From<Cow<str>>` implementation for `text::Text` (#471).
+* Add option to right or center align the title of a `widgets::Block` (#462).
+
+### Fixes
+
+* Apply label style in `widgets::Gauge` and avoid panics because of overflows with long labels (#494).
+* Avoid panics because of overflows with long axis labels in `widgets::Chart` (#512).
+* Fix computation of column widths in `widgets::Table` (#514).
+* Fix panics because of invalid offset when input changes between two frames in `widgets::List` and
+  `widgets::Chart` (#516).
 
 ## v0.15.0 - 2021-05-02
 
@@ -207,7 +385,7 @@ In this new release, you may now write this as:
 ```rust
 Block::default()
     .style(Style::default().bg(Color::Green))
-    // The style is not overidden anymore, we simply add new style rule for the title.
+    // The style is not overridden anymore, we simply add new style rule for the title.
     .title(Span::styled("My title", Style::default().add_modifier(Modifier::BOLD)))
 ```
 
@@ -215,9 +393,9 @@ In addition, the crate now provides a method `patch` to combine two styles into 
 rules:
 
 ```rust
-let style = Style::default().modifer(Modifier::BOLD);
+let style = Style::default().modifier(Modifier::BOLD);
 let style = style.patch(Style::default().add_modifier(Modifier::ITALIC));
-// style.modifer == Modifier::BOLD | Modifier::ITALIC, the modifier has been enriched not overidden
+// style.modifier == Modifier::BOLD | Modifier::ITALIC, the modifier has been enriched not overridden
 ```
 
 - `Style::modifier` has been removed in favor of `Style::add_modifier` and `Style::remove_modifier`.
@@ -535,7 +713,7 @@ let style = Style::default().add_modifier(Modifier::ITALIC | Modifier::BOLD);
 
 ### Bug Fixes
 
-* Ensure correct behavoir of the alternate screens with the `Crossterm` backend.
+* Ensure correct behavior of the alternate screens with the `Crossterm` backend.
 * Fix out of bounds panic when two `Buffer` are merged.
 
 ## v0.4.0 - 2019-02-03
@@ -604,7 +782,7 @@ additional `termion` features.
 
 * Replace `Item` by a generic and flexible `Text` that can be used in both
 `Paragraph` and `List` widgets.
-* Remove unecessary borrows on `Style`.
+* Remove unnecessary borrows on `Style`.
 
 ## v0.3.0-beta.0 - 2018-09-04
 
@@ -627,7 +805,7 @@ widgets on the given `Frame`
 * All widgets use the consumable builder pattern
 * `SelectableList` can have no selected item and the highlight symbol is hidden
 in this case
-* Remove markup langage inside `Paragraph`. `Paragraph` now expects an iterator
+* Remove markup language inside `Paragraph`. `Paragraph` now expects an iterator
 of `Text` items
 
 ## v0.2.3 - 2018-06-09
@@ -635,7 +813,7 @@ of `Text` items
 ### Features
 
 * Add `start_corner` option for `List`
-* Add more text aligment options for `Paragraph`
+* Add more text alignment options for `Paragraph`
 
 ## v0.2.2 - 2018-05-06
 

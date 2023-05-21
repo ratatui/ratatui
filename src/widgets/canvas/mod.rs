@@ -1,9 +1,11 @@
+mod circle;
 mod line;
 mod map;
 mod points;
 mod rectangle;
 mod world;
 
+pub use self::circle::Circle;
 pub use self::line::Line;
 pub use self::map::{Map, MapResolution};
 pub use self::points::Points;
@@ -14,6 +16,7 @@ use crate::{
     layout::Rect,
     style::{Color, Style},
     symbols,
+    text::Spans,
     widgets::{Block, Widget},
 };
 use std::fmt::Debug;
@@ -26,10 +29,9 @@ pub trait Shape {
 /// Label to draw some text on the canvas
 #[derive(Debug, Clone)]
 pub struct Label<'a> {
-    pub x: f64,
-    pub y: f64,
-    pub text: &'a str,
-    pub color: Color,
+    x: f64,
+    y: f64,
+    spans: Spans<'a>,
 }
 
 #[derive(Debug, Clone)]
@@ -183,7 +185,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     ///
     /// # Examples:
     /// ```
-    /// use tui::{symbols, widgets::canvas::{Painter, Context}};
+    /// use ratatui::{symbols, widgets::canvas::{Painter, Context}};
     ///
     /// let mut ctx = Context::new(2, 2, [1.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
@@ -220,7 +222,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     ///
     /// # Examples:
     /// ```
-    /// use tui::{style::Color, symbols, widgets::canvas::{Painter, Context}};
+    /// use ratatui::{style::Color, symbols, widgets::canvas::{Painter, Context}};
     ///
     /// let mut ctx = Context::new(1, 1, [0.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
@@ -260,9 +262,13 @@ impl<'a> Context<'a> {
         y_bounds: [f64; 2],
         marker: symbols::Marker,
     ) -> Context<'a> {
+        let dot = symbols::DOT.chars().next().unwrap();
+        let block = symbols::block::FULL.chars().next().unwrap();
+        let bar = symbols::bar::HALF.chars().next().unwrap();
         let grid: Box<dyn Grid> = match marker {
-            symbols::Marker::Dot => Box::new(CharGrid::new(width, height, '•')),
-            symbols::Marker::Block => Box::new(CharGrid::new(width, height, '▄')),
+            symbols::Marker::Dot => Box::new(CharGrid::new(width, height, dot)),
+            symbols::Marker::Block => Box::new(CharGrid::new(width, height, block)),
+            symbols::Marker::Bar => Box::new(CharGrid::new(width, height, bar)),
             symbols::Marker::Braille => Box::new(BrailleGrid::new(width, height)),
         };
         Context {
@@ -293,8 +299,15 @@ impl<'a> Context<'a> {
     }
 
     /// Print a string on the canvas at the given position
-    pub fn print(&mut self, x: f64, y: f64, text: &'a str, color: Color) {
-        self.labels.push(Label { x, y, text, color });
+    pub fn print<T>(&mut self, x: f64, y: f64, spans: T)
+    where
+        T: Into<Spans<'a>>,
+    {
+        self.labels.push(Label {
+            x,
+            y,
+            spans: spans.into(),
+        });
     }
 
     /// Push the last layer if necessary
@@ -310,10 +323,10 @@ impl<'a> Context<'a> {
 /// # Examples
 ///
 /// ```
-/// # use tui::widgets::{Block, Borders};
-/// # use tui::layout::Rect;
-/// # use tui::widgets::canvas::{Canvas, Shape, Line, Rectangle, Map, MapResolution};
-/// # use tui::style::Color;
+/// # use ratatui::widgets::{Block, Borders};
+/// # use ratatui::layout::Rect;
+/// # use ratatui::widgets::canvas::{Canvas, Shape, Line, Rectangle, Map, MapResolution};
+/// # use ratatui::style::Color;
 /// Canvas::default()
 ///     .block(Block::default().title("Canvas").borders(Borders::ALL))
 ///     .x_bounds([-180.0, 180.0])
@@ -377,11 +390,18 @@ where
         self
     }
 
+    /// Define the viewport of the canvas.
+    /// If you were to "zoom" to a certain part of the world you may want to choose different
+    /// bounds.
     pub fn x_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
         self.x_bounds = bounds;
         self
     }
 
+    /// Define the viewport of the canvas.
+    ///
+    /// If you were to "zoom" to a certain part of the world you may want to choose different
+    /// bounds.
     pub fn y_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
         self.y_bounds = bounds;
         self
@@ -405,8 +425,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use tui::widgets::canvas::Canvas;
-    /// # use tui::symbols;
+    /// # use ratatui::widgets::canvas::Canvas;
+    /// # use ratatui::symbols;
     /// Canvas::default().marker(symbols::Marker::Braille).paint(|ctx| {});
     ///
     /// Canvas::default().marker(symbols::Marker::Dot).paint(|ctx| {});
@@ -433,6 +453,8 @@ where
             None => area,
         };
 
+        buf.set_style(canvas_area, Style::default().bg(self.background_color));
+
         let width = canvas_area.width as usize;
 
         let painter = match self.painter {
@@ -452,7 +474,7 @@ where
         painter(&mut ctx);
         ctx.finish();
 
-        // Retreive painted points for each layer
+        // Retrieve painted points for each layer
         for layer in ctx.layers {
             for (i, (ch, color)) in layer
                 .string
@@ -464,14 +486,12 @@ where
                     let (x, y) = (i % width, i / width);
                     buf.get_mut(x as u16 + canvas_area.left(), y as u16 + canvas_area.top())
                         .set_char(ch)
-                        .set_fg(color)
-                        .set_bg(self.background_color);
+                        .set_fg(color);
                 }
             }
         }
 
         // Finally draw the labels
-        let style = Style::default().bg(self.background_color);
         let left = self.x_bounds[0];
         let right = self.x_bounds[1];
         let top = self.y_bounds[1];
@@ -490,13 +510,107 @@ where
         {
             let x = ((label.x - left) * resolution.0 / width) as u16 + canvas_area.left();
             let y = ((top - label.y) * resolution.1 / height) as u16 + canvas_area.top();
-            buf.set_stringn(
-                x,
-                y,
-                label.text,
-                (canvas_area.right() - x) as usize,
-                style.fg(label.color),
-            );
+            buf.set_spans(x, y, &label.spans, canvas_area.right() - x);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{buffer::Cell, symbols::Marker};
+    use indoc::indoc;
+
+    // helper to test the canvas checks that drawing a vertical and horizontal line
+    // results in the expected output
+    fn test_marker(marker: Marker, expected: &str) {
+        let area = Rect::new(0, 0, 5, 5);
+        let mut cell = Cell::default();
+        cell.set_char('x');
+        let mut buf = Buffer::filled(area, &cell);
+        let horizontal_line = Line {
+            x1: 0.0,
+            y1: 0.0,
+            x2: 10.0,
+            y2: 0.0,
+            color: Color::Reset,
+        };
+        let vertical_line = Line {
+            x1: 0.0,
+            y1: 0.0,
+            x2: 0.0,
+            y2: 10.0,
+            color: Color::Reset,
+        };
+        Canvas::default()
+            .marker(marker)
+            .paint(|ctx| {
+                ctx.draw(&vertical_line);
+                ctx.draw(&horizontal_line);
+            })
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .render(area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(expected.lines().collect()));
+    }
+
+    #[test]
+    fn test_bar_marker() {
+        test_marker(
+            Marker::Bar,
+            indoc!(
+                "
+                ▄xxxx
+                ▄xxxx
+                ▄xxxx
+                ▄xxxx
+                ▄▄▄▄▄"
+            ),
+        );
+    }
+
+    #[test]
+    fn test_block_marker() {
+        test_marker(
+            Marker::Block,
+            indoc!(
+                "
+                █xxxx
+                █xxxx
+                █xxxx
+                █xxxx
+                █████"
+            ),
+        );
+    }
+
+    #[test]
+    fn test_braille_marker() {
+        test_marker(
+            Marker::Braille,
+            indoc!(
+                "
+                ⡇xxxx
+                ⡇xxxx
+                ⡇xxxx
+                ⡇xxxx
+                ⣇⣀⣀⣀⣀"
+            ),
+        );
+    }
+
+    #[test]
+    fn test_dot_marker() {
+        test_marker(
+            Marker::Dot,
+            indoc!(
+                "
+                •xxxx
+                •xxxx
+                •xxxx
+                •xxxx
+                •••••"
+            ),
+        );
     }
 }

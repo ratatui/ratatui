@@ -1,18 +1,9 @@
 use crate::{
     buffer::Buffer,
-    layout::{Constraint, Rect},
+    layout::{Constraint, Direction, Layout, Rect},
     style::Style,
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
-};
-use cassowary::{
-    strength::{MEDIUM, REQUIRED, WEAK},
-    WeightedRelation::*,
-    {Expression, Solver},
-};
-use std::{
-    collections::HashMap,
-    iter::{self, Iterator},
 };
 use unicode_width::UnicodeWidthStr;
 
@@ -20,9 +11,10 @@ use unicode_width::UnicodeWidthStr;
 ///
 /// It can be created from anything that can be converted to a [`Text`].
 /// ```rust
-/// # use tui::widgets::Cell;
-/// # use tui::style::{Style, Modifier};
-/// # use tui::text::{Span, Spans, Text};
+/// # use ratatui::widgets::Cell;
+/// # use ratatui::style::{Style, Modifier};
+/// # use ratatui::text::{Span, Spans, Text};
+/// # use std::borrow::Cow;
 /// Cell::from("simple string");
 ///
 /// Cell::from(Span::from("span"));
@@ -33,11 +25,13 @@ use unicode_width::UnicodeWidthStr;
 /// ]));
 ///
 /// Cell::from(Text::from("a text"));
+///
+/// Cell::from(Text::from(Cow::Borrowed("hello")));
 /// ```
 ///
 /// You can apply a [`Style`] on the entire [`Cell`] using [`Cell::style`] or rely on the styling
 /// capabilities of [`Text`].
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Cell<'a> {
     content: Text<'a>,
     style: Style,
@@ -67,22 +61,32 @@ where
 ///
 /// A [`Row`] is a collection of cells. It can be created from simple strings:
 /// ```rust
-/// # use tui::widgets::Row;
+/// # use ratatui::widgets::Row;
 /// Row::new(vec!["Cell1", "Cell2", "Cell3"]);
 /// ```
 ///
-/// But if you need a bit more control over individual cells, you can explicity create [`Cell`]s:
+/// But if you need a bit more control over individual cells, you can explicitly create [`Cell`]s:
 /// ```rust
-/// # use tui::widgets::{Row, Cell};
-/// # use tui::style::{Style, Color};
+/// # use ratatui::widgets::{Row, Cell};
+/// # use ratatui::style::{Style, Color};
 /// Row::new(vec![
 ///     Cell::from("Cell1"),
 ///     Cell::from("Cell2").style(Style::default().fg(Color::Yellow)),
 /// ]);
 /// ```
 ///
+/// You can also construct a row from any type that can be converted into [`Text`]:
+/// ```rust
+/// # use std::borrow::Cow;
+/// # use ratatui::widgets::Row;
+/// Row::new(vec![
+///     Cow::Borrowed("hello"),
+///     Cow::Owned("world".to_uppercase()),
+/// ]);
+/// ```
+///
 /// By default, a row has a height of 1 but you can change this using [`Row::height`].
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Row<'a> {
     cells: Vec<Cell<'a>>,
     height: u16,
@@ -112,7 +116,7 @@ impl<'a> Row<'a> {
         self
     }
 
-    /// Set the [`Style`] of the entire row. This [`Style`] can be overriden by the [`Style`] of a
+    /// Set the [`Style`] of the entire row. This [`Style`] can be overridden by the [`Style`] of a
     /// any individual [`Cell`] or event by their [`Text`] content.
     pub fn style(mut self, style: Style) -> Self {
         self.style = style;
@@ -135,10 +139,10 @@ impl<'a> Row<'a> {
 ///
 /// It is a collection of [`Row`]s, themselves composed of [`Cell`]s:
 /// ```rust
-/// # use tui::widgets::{Block, Borders, Table, Row, Cell};
-/// # use tui::layout::Constraint;
-/// # use tui::style::{Style, Color, Modifier};
-/// # use tui::text::{Text, Spans, Span};
+/// # use ratatui::widgets::{Block, Borders, Table, Row, Cell};
+/// # use ratatui::layout::Constraint;
+/// # use ratatui::style::{Style, Color, Modifier};
+/// # use ratatui::text::{Text, Spans, Span};
 /// Table::new(vec![
 ///     // Row can be created from simple strings.
 ///     Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -182,7 +186,7 @@ impl<'a> Row<'a> {
 /// // ...and potentially show a symbol in front of the selection.
 /// .highlight_symbol(">>");
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Table<'a> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,
@@ -263,69 +267,34 @@ impl<'a> Table<'a> {
     }
 
     fn get_columns_widths(&self, max_width: u16, has_selection: bool) -> Vec<u16> {
-        let mut solver = Solver::new();
-        let mut var_indices = HashMap::new();
-        let mut ccs = Vec::new();
-        let mut variables = Vec::new();
-        for i in 0..self.widths.len() {
-            let var = cassowary::Variable::new();
-            variables.push(var);
-            var_indices.insert(var, i);
-        }
-        let spacing_width = (variables.len() as u16).saturating_sub(1) * self.column_spacing;
-        let mut available_width = max_width.saturating_sub(spacing_width);
+        let mut constraints = Vec::with_capacity(self.widths.len() * 2 + 1);
         if has_selection {
             let highlight_symbol_width =
                 self.highlight_symbol.map(|s| s.width() as u16).unwrap_or(0);
-            available_width = available_width.saturating_sub(highlight_symbol_width);
+            constraints.push(Constraint::Length(highlight_symbol_width));
         }
-        for (i, constraint) in self.widths.iter().enumerate() {
-            ccs.push(variables[i] | GE(WEAK) | 0.);
-            ccs.push(match *constraint {
-                Constraint::Length(v) => variables[i] | EQ(MEDIUM) | f64::from(v),
-                Constraint::Percentage(v) => {
-                    variables[i] | EQ(WEAK) | (f64::from(v * available_width) / 100.0)
-                }
-                Constraint::Ratio(n, d) => {
-                    variables[i]
-                        | EQ(WEAK)
-                        | (f64::from(available_width) * f64::from(n) / f64::from(d))
-                }
-                Constraint::Min(v) => variables[i] | GE(WEAK) | f64::from(v),
-                Constraint::Max(v) => variables[i] | LE(WEAK) | f64::from(v),
-            })
+        for constraint in self.widths {
+            constraints.push(*constraint);
+            constraints.push(Constraint::Length(self.column_spacing));
         }
-        solver
-            .add_constraint(
-                variables
-                    .iter()
-                    .fold(Expression::from_constant(0.), |acc, v| acc + *v)
-                    | LE(REQUIRED)
-                    | f64::from(available_width),
-            )
-            .unwrap();
-        solver.add_constraints(&ccs).unwrap();
-        let mut widths = vec![0; variables.len()];
-        for &(var, value) in solver.fetch_changes() {
-            let index = var_indices[&var];
-            let value = if value.is_sign_negative() {
-                0
-            } else {
-                value.round() as u16
-            };
-            widths[index] = value;
+        if !self.widths.is_empty() {
+            constraints.pop();
         }
-        // Cassowary could still return columns widths greater than the max width when there are
-        // fixed length constraints that cannot be satisfied. Therefore, we clamp the widths from
-        // left to right.
-        let mut available_width = max_width;
-        for w in &mut widths {
-            *w = available_width.min(*w);
-            available_width = available_width
-                .saturating_sub(*w)
-                .saturating_sub(self.column_spacing);
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(constraints)
+            .expand_to_fill(false)
+            .split(Rect {
+                x: 0,
+                y: 0,
+                width: max_width,
+                height: 1,
+            });
+        let mut chunks = &chunks[..];
+        if has_selection {
+            chunks = &chunks[1..];
         }
-        widths
+        chunks.iter().step_by(2).map(|c| c.width).collect()
     }
 
     fn get_row_bounds(
@@ -334,6 +303,7 @@ impl<'a> Table<'a> {
         offset: usize,
         max_height: u16,
     ) -> (usize, usize) {
+        let offset = offset.min(self.rows.len().saturating_sub(1));
         let mut start = offset;
         let mut end = offset;
         let mut height = 0;
@@ -366,19 +336,10 @@ impl<'a> Table<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct TableState {
     offset: usize,
     selected: Option<usize>,
-}
-
-impl Default for TableState {
-    fn default() -> TableState {
-        TableState {
-            offset: 0,
-            selected: None,
-        }
-    }
 }
 
 impl TableState {
@@ -391,6 +352,13 @@ impl TableState {
         if index.is_none() {
             self.offset = 0;
         }
+    }
+
+    /// Returns a copy of the receiver's scroll offset.
+    ///
+    /// This is useful, for example, if you need to "synchronize" the scrolling of a `Table` and a `Paragraph`.
+    pub fn offset(&self) -> usize {
+        self.offset
     }
 }
 
@@ -414,9 +382,7 @@ impl<'a> StatefulWidget for Table<'a> {
         let has_selection = state.selected.is_some();
         let columns_widths = self.get_columns_widths(table_area.width, has_selection);
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
-        let blank_symbol = iter::repeat(" ")
-            .take(highlight_symbol.width())
-            .collect::<String>();
+        let blank_symbol = " ".repeat(highlight_symbol.width());
         let mut current_height = 0;
         let mut rows_height = table_area.height;
 
