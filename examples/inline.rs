@@ -196,7 +196,7 @@ fn run_app<B: Backend>(
                     Paragraph::new(Line::from(vec![
                         Span::from("Finished "),
                         Span::styled(
-                            format!("download {}", download_id),
+                            format!("download {download_id}"),
                             Style::default().add_modifier(Modifier::BOLD),
                         ),
                         Span::from(format!(
@@ -240,7 +240,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, downloads: &Downloads) {
     let done = NUM_DOWNLOADS - downloads.pending.len() - downloads.in_progress.len();
     let progress = LineGauge::default()
         .gauge_style(Style::default().fg(Color::Blue))
-        .label(format!("{}/{}", done, NUM_DOWNLOADS))
+        .label(format!("{done}/{NUM_DOWNLOADS}"))
         .ratio(done as f64 / NUM_DOWNLOADS as f64);
     f.render_widget(progress, chunks[0]);
 

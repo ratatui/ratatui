@@ -214,9 +214,7 @@ impl Buffer {
                 && x < self.area.right()
                 && y >= self.area.top()
                 && y < self.area.bottom(),
-            "Trying to access position outside the buffer: x={}, y={}, area={:?}",
-            x,
-            y,
+            "Trying to access position outside the buffer: x={x}, y={y}, area={:?}",
             self.area
         );
         ((y - self.area.y) * self.area.width + (x - self.area.x)) as usize
@@ -252,8 +250,7 @@ impl Buffer {
     pub fn pos_of(&self, i: usize) -> (u16, u16) {
         debug_assert!(
             i < self.content.len(),
-            "Trying to get the coords of a cell outside the buffer: i={} len={}",
-            i,
+            "Trying to get the coords of a cell outside the buffer: i={i} len={}",
             self.content.len()
         );
         (
@@ -506,10 +503,7 @@ macro_rules! assert_buffer_eq {
                         .enumerate()
                         .map(|(i, (x, y, cell))| {
                             let expected_cell = expected.get(*x, *y);
-                            format!(
-                                "{}: at ({}, {})\n  expected: {:?}\n  actual:   {:?}",
-                                i, x, y, expected_cell, cell
-                            )
+                            format!("{i}: at ({x}, {y})\n  expected: {expected_cell:?}\n  actual:   {cell:?}")
                         })
                         .collect::<Vec<String>>()
                         .join("\n");

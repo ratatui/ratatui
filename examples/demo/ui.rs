@@ -162,7 +162,7 @@ where
                         _ => info_style,
                     };
                     let content = vec![Line::from(vec![
-                        Span::styled(format!("{:<9}", level), s),
+                        Span::styled(format!("{level:<9}"), s),
                         Span::raw(evt),
                     ])];
                     ListItem::new(content)
@@ -417,7 +417,7 @@ where
         .iter()
         .map(|c| {
             let cells = vec![
-                Cell::from(Span::raw(format!("{:?}: ", c))),
+                Cell::from(Span::raw(format!("{c:?}: "))),
                 Cell::from(Span::styled("Foreground", Style::default().fg(*c))),
                 Cell::from(Span::styled("Background", Style::default().bg(*c))),
             ];

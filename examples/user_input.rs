@@ -72,7 +72,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     terminal.show_cursor()?;
 
     if let Err(err) = res {
-        println!("{:?}", err)
+        println!("{err:?}");
     }
 
     Ok(())
@@ -183,7 +183,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .iter()
         .enumerate()
         .map(|(i, m)| {
-            let content = Line::from(Span::raw(format!("{}: {}", i, m)));
+            let content = Line::from(Span::raw(format!("{i}: {m}")));
             ListItem::new(content)
         })
         .collect();

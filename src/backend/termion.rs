@@ -128,8 +128,7 @@ where
         }
         write!(
             self.stdout,
-            "{}{}{}{}",
-            string,
+            "{string}{}{}{}",
             Fg(Color::Reset),
             Bg(Color::Reset),
             termion::style::Reset,

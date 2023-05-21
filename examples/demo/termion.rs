@@ -67,14 +67,14 @@ fn events(tick_rate: Duration) -> mpsc::Receiver<Event> {
         let stdin = io::stdin();
         for key in stdin.keys().flatten() {
             if let Err(err) = keys_tx.send(Event::Input(key)) {
-                eprintln!("{}", err);
+                eprintln!("{err}");
                 return;
             }
         }
     });
     thread::spawn(move || loop {
         if let Err(err) = tx.send(Event::Tick) {
-            eprintln!("{}", err);
+            eprintln!("{err}");
             break;
         }
         thread::sleep(tick_rate);
