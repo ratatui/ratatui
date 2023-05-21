@@ -28,6 +28,7 @@ Here you will find a list of TUI applications that are made using `ratatui`.
 - [oxycards](https://github.com/BrookJeynes/oxycards): Quiz card application built within the terminal
 - [minesweep](https://github.com/cpcloud/minesweep-rs): Terminal-based Minesweeper game
 - [rust-sadari-cli](https://github.com/24seconds/rust-sadari-cli): rust sadari game based on terminal! (Ghost leg or Amidakuji in another words)
+- [tic-tac-toe](https://github.com/thomas-mauran/tic-tac-toe): Terminal-based Tic Tac Toe game
 
 #### 🚀 Productivity and Utilities
 
