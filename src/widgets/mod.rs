@@ -63,43 +63,6 @@ bitflags! {
     }
 }
 
-/// Macro that constructs and returns a [`Borders`] object from TOP, BOTTOM, LEFT, RIGHT, NONE, and ALL.
-/// Internally it creates an empty `Borders` object and then inserts each bit flag specified
-/// into it using `Borders::insert()`.
-///
-/// ## Examples
-///
-///```
-/// # use tui::widgets::{Block, Borders};
-/// # use tui::style::{Style, Color};
-/// # use tui::border;
-///
-/// Block::default()
-///     //Construct a `Borders` object and use it in place
-///     .borders(border!(TOP, BOTTOM));
-///
-/// //`border!` can be called with any order of individual sides
-/// let bottom_first = border!(BOTTOM, LEFT, TOP);
-/// //with the ALL keyword which works as expected
-/// let all = border!(ALL);
-/// //or with nothing to return a `Borders::NONE' bitflag.
-/// let none = border!(NONE);
-///
-///```
-#[macro_export]
-macro_rules! border {
-    ( $($b:tt), +) => {{
-            let mut border = Borders::empty();
-            $(
-               border.insert(Borders::$b);
-            )*
-            border
-    }};
-    () =>{
-        Borders::NONE
-    }
-}
-
 /// Base requirements for a Widget
 pub trait Widget {
     /// Draws the current state of the widget in the given buffer. That is the only method required
@@ -221,4 +184,42 @@ pub trait Widget {
 pub trait StatefulWidget {
     type State;
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
+}
+
+/// Macro that constructs and returns a [`Borders`] object from TOP, BOTTOM, LEFT, RIGHT, NONE, and ALL.
+/// Internally it creates an empty `Borders` object and then inserts each bit flag specified
+/// into it using `Borders::insert()`.
+///
+/// ## Examples
+///
+///```
+/// # use tui::widgets::{Block, Borders};
+/// # use tui::style::{Style, Color};
+/// # use tui::border;
+///
+/// Block::default()
+///     //Construct a `Borders` object and use it in place
+///     .borders(border!(TOP, BOTTOM));
+///
+/// //`border!` can be called with any order of individual sides
+/// let bottom_first = border!(BOTTOM, LEFT, TOP);
+/// //with the ALL keyword which works as expected
+/// let all = border!(ALL);
+/// //or with nothing to return a `Borders::NONE' bitflag.
+/// let none = border!(NONE);
+///
+///```
+#[macro_export]
+#[cfg(feature = "macros")]
+macro_rules! border {
+    ( $($b:tt), +) => {{
+            let mut border = Borders::empty();
+            $(
+               border.insert(Borders::$b);
+            )*
+            border
+    }};
+    () =>{
+        Borders::NONE
+    }
 }

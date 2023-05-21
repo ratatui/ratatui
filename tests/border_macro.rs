@@ -1,3 +1,4 @@
+#![cfg(feature = "macros")]
 use tui::{border, widgets::Borders};
 
 #[test]
