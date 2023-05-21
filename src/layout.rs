@@ -522,7 +522,7 @@ mod tests {
                         - f64::from(width) / f64::from(height))
                     .abs()
                         < 1.0
-                )
+                );
             }
         }
 
