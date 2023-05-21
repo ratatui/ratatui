@@ -235,16 +235,13 @@ impl<'a> StatefulWidget for List<'a> {
             .skip(state.offset)
             .take(end - start)
         {
-            let (x, y) = match self.start_corner {
-                Corner::BottomLeft => {
-                    current_height += item.height() as u16;
-                    (list_area.left(), list_area.bottom() - current_height)
-                }
-                _ => {
-                    let pos = (list_area.left(), list_area.top() + current_height);
-                    current_height += item.height() as u16;
-                    pos
-                }
+            let (x, y) = if self.start_corner == Corner::BottomLeft {
+                current_height += item.height() as u16;
+                (list_area.left(), list_area.bottom() - current_height)
+            } else {
+                let pos = (list_area.left(), list_area.top() + current_height);
+                current_height += item.height() as u16;
+                pos
             };
             let area = Rect {
                 x,
@@ -255,7 +252,7 @@ impl<'a> StatefulWidget for List<'a> {
             let item_style = self.style.patch(item.style);
             buf.set_style(area, item_style);
 
-            let is_selected = state.selected.map(|s| s == i).unwrap_or(false);
+            let is_selected = state.selected.map_or(false, |s| s == i);
             for (j, line) in item.content.lines.iter().enumerate() {
                 // if the item is selected, we need to display the highlight symbol:
                 // - either for the first line of the item only,

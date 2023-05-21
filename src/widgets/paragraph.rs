@@ -98,7 +98,7 @@ impl<'a> Paragraph<'a> {
     {
         Paragraph {
             block: None,
-            style: Default::default(),
+            style: Style::default(),
             wrap: None,
             text: text.into(),
             scroll: (0, 0),

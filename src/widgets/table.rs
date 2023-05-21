@@ -103,7 +103,7 @@ impl<'a> Row<'a> {
     {
         Self {
             height: 1,
-            cells: cells.into_iter().map(|c| c.into()).collect(),
+            cells: cells.into_iter().map(Into::into).collect(),
             style: Style::default(),
             bottom_margin: 0,
         }
@@ -269,8 +269,7 @@ impl<'a> Table<'a> {
     fn get_columns_widths(&self, max_width: u16, has_selection: bool) -> Vec<u16> {
         let mut constraints = Vec::with_capacity(self.widths.len() * 2 + 1);
         if has_selection {
-            let highlight_symbol_width =
-                self.highlight_symbol.map(|s| s.width() as u16).unwrap_or(0);
+            let highlight_symbol_width = self.highlight_symbol.map_or(0, |s| s.width() as u16);
             constraints.push(Constraint::Length(highlight_symbol_width));
         }
         for constraint in self.widths {
@@ -452,7 +451,7 @@ impl<'a> StatefulWidget for Table<'a> {
                 height: table_row.height,
             };
             buf.set_style(table_row_area, table_row.style);
-            let is_selected = state.selected.map(|s| s == i).unwrap_or(false);
+            let is_selected = state.selected.map_or(false, |s| s == i);
             let table_row_start_col = if has_selection {
                 let symbol = if is_selected {
                     highlight_symbol

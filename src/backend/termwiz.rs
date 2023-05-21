@@ -7,9 +7,9 @@ use crate::{
 use std::{error::Error, io};
 use termwiz::{
     caps::Capabilities,
-    cell::*,
-    color::*,
-    surface::*,
+    cell::{AttributeChange, Blink, Intensity, Underline},
+    color::{AnsiColor, ColorAttribute, SrgbaTuple},
+    surface::{Change, CursorVisibility, Position},
     terminal::{buffered::BufferedTerminal, SystemTerminal, Terminal},
 };
 

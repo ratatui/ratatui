@@ -87,10 +87,10 @@ impl<'a, 'b> LineComposer<'a> for WordWrapper<'a, 'b> {
 
             if current_line_width > self.max_line_width {
                 // If there was no word break in the text, wrap at the end of the line.
-                let (truncate_at, truncated_width) = if symbols_to_last_word_end != 0 {
-                    (symbols_to_last_word_end, width_to_last_word_end)
-                } else {
+                let (truncate_at, truncated_width) = if symbols_to_last_word_end == 0 {
                     (self.current_line.len() - 1, self.max_line_width)
+                } else {
+                    (symbols_to_last_word_end, width_to_last_word_end)
                 };
 
                 // Push the remainder to the next line but strip leading whitespace:
@@ -232,6 +232,7 @@ fn trim_offset(src: &str, mut offset: usize) -> &str {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::style::Style;
     use unicode_segmentation::UnicodeSegmentation;
 
     enum Composer {
@@ -240,7 +241,7 @@ mod test {
     }
 
     fn run_composer(which: Composer, text: &str, text_area_width: u16) -> (Vec<String>, Vec<u16>) {
-        let style = Default::default();
+        let style = Style::default();
         let mut styled =
             UnicodeSegmentation::graphemes(text, true).map(|g| StyledGrapheme { symbol: g, style });
         let mut composer: Box<dyn LineComposer> = match which {
@@ -379,7 +380,7 @@ mod test {
         assert_eq!(line_truncator, vec!["", "a"]);
     }
 
-    /// Tests WordWrapper with words some of which exceed line length and some not.
+    /// Tests `WordWrapper` with words some of which exceed line length and some not.
     #[test]
     fn line_composer_word_wrapper_mixed_length() {
         let width = 20;

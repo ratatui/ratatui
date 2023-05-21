@@ -313,7 +313,7 @@ impl<'a> Context<'a> {
     /// Push the last layer if necessary
     fn finish(&mut self) {
         if self.dirty {
-            self.layer()
+            self.layer();
         }
     }
 }
@@ -457,10 +457,7 @@ where
 
         let width = canvas_area.width as usize;
 
-        let painter = match self.painter {
-            Some(ref p) => p,
-            None => return,
-        };
+        let Some(ref painter) = self.painter else { return };
 
         // Create a blank context that match the size of the canvas
         let mut ctx = Context::new(

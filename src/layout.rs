@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use cassowary::strength::{MEDIUM, REQUIRED, WEAK};
-use cassowary::WeightedRelation::*;
+use cassowary::WeightedRelation::{EQ, GE, LE};
 use cassowary::{Constraint as CassowaryConstraint, Expression, Solver, Variable};
 
 #[derive(Debug, Hash, Clone, Copy, PartialEq, Eq)]
@@ -266,10 +266,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
                 });
 
                 match *size {
-                    Constraint::Min(v) => {
-                        ccs.push(elements[i].width | EQ(WEAK) | f64::from(v));
-                    }
-                    Constraint::Max(v) => {
+                    Constraint::Min(v) | Constraint::Max(v) => {
                         ccs.push(elements[i].width | EQ(WEAK) | f64::from(v));
                     }
                     _ => {}
@@ -298,10 +295,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
                 });
 
                 match *size {
-                    Constraint::Min(v) => {
-                        ccs.push(elements[i].height | EQ(WEAK) | f64::from(v));
-                    }
-                    Constraint::Max(v) => {
+                    Constraint::Min(v) | Constraint::Max(v) => {
                         ccs.push(elements[i].height | EQ(WEAK) | f64::from(v));
                     }
                     _ => {}
