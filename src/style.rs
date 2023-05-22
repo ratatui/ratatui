@@ -424,8 +424,7 @@ mod tests {
         for bad_color in bad_colors {
             assert!(
                 Color::from_str(bad_color).is_err(),
-                "bad color: '{}'",
-                bad_color
+                "bad color: '{bad_color}'"
             );
         }
     }

@@ -166,7 +166,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     terminal.show_cursor()?;
 
     if let Err(err) = res {
-        println!("{:?}", err)
+        println!("{err:?}");
     }
 
     Ok(())
@@ -258,7 +258,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             };
             // Add a example datetime and apply proper spacing between them
             let header = Line::from(vec![
-                Span::styled(format!("{:<9}", level), s),
+                Span::styled(format!("{level:<9}"), s),
                 Span::raw(" "),
                 Span::styled(
                     "2020-01-01 10:00:00",
