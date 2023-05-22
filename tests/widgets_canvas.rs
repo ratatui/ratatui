@@ -38,5 +38,5 @@ fn widgets_canvas_draw_labels() {
     for col in 0..4 {
         expected.get_mut(col, 4).set_fg(Color::Blue);
     }
-    terminal.backend().assert_buffer(&expected)
+    terminal.backend().assert_buffer(&expected);
 }

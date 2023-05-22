@@ -63,9 +63,9 @@ impl<'a> Default for BarChart<'a> {
             bar_width: 1,
             bar_gap: 1,
             bar_set: symbols::bar::NINE_LEVELS,
-            value_style: Default::default(),
-            label_style: Default::default(),
-            style: Default::default(),
+            value_style: Style::default(),
+            label_style: Style::default(),
+            style: Style::default(),
         }
     }
 }

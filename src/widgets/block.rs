@@ -125,9 +125,9 @@ impl<'a> Default for Block<'a> {
             title_alignment: Alignment::Left,
             title_on_bottom: false,
             borders: Borders::NONE,
-            border_style: Default::default(),
+            border_style: Style::default(),
             border_type: BorderType::Plain,
-            style: Default::default(),
+            style: Style::default(),
             padding: Padding::zero(),
         }
     }
@@ -313,8 +313,8 @@ impl<'a> Widget for Block<'a> {
 
         // Title
         if let Some(title) = self.title {
-            let left_border_dx = self.borders.intersects(Borders::LEFT) as u16;
-            let right_border_dx = self.borders.intersects(Borders::RIGHT) as u16;
+            let left_border_dx = u16::from(self.borders.intersects(Borders::LEFT));
+            let right_border_dx = u16::from(self.borders.intersects(Borders::RIGHT));
 
             let title_area_width = area
                 .width

@@ -30,7 +30,7 @@ fn buffer_view(buffer: &Buffer) -> String {
             if skip == 0 {
                 view.push_str(&c.symbol);
             } else {
-                overwritten.push((x, &c.symbol))
+                overwritten.push((x, &c.symbol));
             }
             skip = std::cmp::max(skip, c.symbol.width()).saturating_sub(1);
         }

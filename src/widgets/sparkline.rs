@@ -47,7 +47,7 @@ impl<'a> Default for Sparkline<'a> {
     fn default() -> Sparkline<'a> {
         Sparkline {
             block: None,
-            style: Default::default(),
+            style: Style::default(),
             data: &[],
             max: None,
             bar_set: symbols::bar::NINE_LEVELS,
@@ -113,10 +113,10 @@ impl<'a> Widget for Sparkline<'a> {
             .iter()
             .take(max_index)
             .map(|e| {
-                if max != 0 {
-                    e * u64::from(spark_area.height) * 8 / max
-                } else {
+                if max == 0 {
                     0
+                } else {
+                    e * u64::from(spark_area.height) * 8 / max
                 }
             })
             .collect::<Vec<u64>>();

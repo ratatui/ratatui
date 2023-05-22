@@ -121,7 +121,7 @@ pub struct Buffer {
 impl Buffer {
     /// Returns a Buffer with all cells set to the default one
     pub fn empty(area: Rect) -> Buffer {
-        let cell: Cell = Default::default();
+        let cell = Cell::default();
         Buffer::filled(area, &cell)
     }
 
@@ -257,8 +257,8 @@ impl Buffer {
             self.content.len()
         );
         (
-            self.area.x + i as u16 % self.area.width,
-            self.area.y + i as u16 / self.area.width,
+            self.area.x + (i as u16) % self.area.width,
+            self.area.y + (i as u16) / self.area.width,
         )
     }
 
@@ -385,7 +385,7 @@ impl Buffer {
         if self.content.len() > length {
             self.content.truncate(length);
         } else {
-            self.content.resize(length, Default::default());
+            self.content.resize(length, Cell::default());
         }
         self.area = area;
     }
@@ -400,7 +400,7 @@ impl Buffer {
     /// Merge an other buffer into this one
     pub fn merge(&mut self, other: &Buffer) {
         let area = self.area.union(other.area);
-        let cell: Cell = Default::default();
+        let cell = Cell::default();
         self.content.resize(area.area() as usize, cell.clone());
 
         // Move original content to the appropriate space
@@ -558,7 +558,7 @@ impl Debug for Buffer {
                 if skip == 0 {
                     f.write_str(&c.symbol)?;
                 } else {
-                    overwritten.push((x, &c.symbol))
+                    overwritten.push((x, &c.symbol));
                 }
                 skip = std::cmp::max(skip, c.symbol.width()).saturating_sub(1);
                 let style = (c.fg, c.bg, c.modifier);

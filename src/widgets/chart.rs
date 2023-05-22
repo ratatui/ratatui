@@ -36,7 +36,7 @@ impl<'a> Default for Axis<'a> {
             title: None,
             bounds: [0.0, 0.0],
             labels: None,
-            style: Default::default(),
+            style: Style::default(),
             labels_alignment: Alignment::Left,
         }
     }
@@ -234,7 +234,7 @@ impl<'a> Chart<'a> {
             block: None,
             x_axis: Axis::default(),
             y_axis: Axis::default(),
-            style: Default::default(),
+            style: Style::default(),
             datasets,
             hidden_legend_constraints: (Constraint::Ratio(1, 4), Constraint::Ratio(1, 4)),
         }
@@ -366,7 +366,7 @@ impl<'a> Chart<'a> {
             let width_left_of_y_axis = match self.x_axis.labels_alignment {
                 Alignment::Left => {
                     // The last character of the label should be below the Y-Axis when it exists, not on its left
-                    let y_axis_offset = has_y_axis as u16;
+                    let y_axis_offset = u16::from(has_y_axis);
                     first_label_width.saturating_sub(y_axis_offset)
                 }
                 Alignment::Center => first_label_width / 2,
@@ -385,10 +385,7 @@ impl<'a> Chart<'a> {
         chart_area: Rect,
         graph_area: Rect,
     ) {
-        let y = match layout.label_x {
-            Some(y) => y,
-            None => return,
-        };
+        let Some(y) = layout.label_x else { return };
         let labels = self.x_axis.labels.as_ref().unwrap();
         let labels_len = labels.len() as u16;
         if labels_len < 2 {
@@ -470,10 +467,7 @@ impl<'a> Chart<'a> {
         chart_area: Rect,
         graph_area: Rect,
     ) {
-        let x = match layout.label_y {
-            Some(x) => x,
-            None => return,
-        };
+        let Some(x) = layout.label_y else { return };
         let labels = self.y_axis.labels.as_ref().unwrap();
         let labels_len = labels.len() as u16;
         for (i, label) in labels.iter().enumerate() {
@@ -563,7 +557,7 @@ impl<'a> Widget for Chart<'a> {
                                 x2: data[1].0,
                                 y2: data[1].1,
                                 color: dataset.style.fg.unwrap_or(Color::Reset),
-                            })
+                            });
                         }
                     }
                 })

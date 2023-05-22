@@ -171,7 +171,7 @@ pub trait DateStyler {
     fn get_style(&self, date: Date) -> Style;
 }
 
-/// A simple DateStyler based on a [HashMap]
+/// A simple `DateStyler` based on a [`HashMap`]
 pub struct CalendarEventStore(pub HashMap<Date, Style>);
 
 impl CalendarEventStore {

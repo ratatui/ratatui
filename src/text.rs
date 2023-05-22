@@ -451,7 +451,7 @@ where
     T: Into<Line<'a>>,
 {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
-        let lines = iter.into_iter().map(|s| s.into());
+        let lines = iter.into_iter().map(Into::into);
         self.lines.extend(lines);
     }
 }

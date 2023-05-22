@@ -48,8 +48,8 @@ impl<'a> Tabs<'a> {
             block: None,
             titles: titles.into_iter().map(Into::into).collect(),
             selected: 0,
-            style: Default::default(),
-            highlight_style: Default::default(),
+            style: Style::default(),
+            highlight_style: Style::default(),
             divider: Span::raw(symbols::line::VERTICAL),
         }
     }
