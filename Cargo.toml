@@ -25,6 +25,8 @@ macros = []
 
 [package.metadata.docs.rs]
 all-features = true
+# see https://doc.rust-lang.org/nightly/rustdoc/scraped-examples.html
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [dependencies]
 bitflags = "1.3"
@@ -45,67 +47,89 @@ indoc = "2.0"
 [[example]]
 name = "barchart"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "block"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "canvas"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "calendar"
 required-features = ["crossterm", "widget-calendar"]
+doc-scrape-examples = true
 
 [[example]]
 name = "chart"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "custom_widget"
 required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "demo"
+# this runs for all of the terminal backends, so it can't be built using --all-features or scraped
+doc-scrape-examples = false
 
 [[example]]
 name = "gauge"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "layout"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "list"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "panic"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "paragraph"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "popup"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "sparkline"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "table"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "tabs"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "user_input"
 required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "inline"
 required-features = ["crossterm"]
+doc-scrape-examples = true
