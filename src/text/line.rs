@@ -1,9 +1,11 @@
 #![allow(deprecated)]
 use super::{Span, Spans, Style};
+use crate::layout::Alignment;
 
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct Line<'a> {
     pub spans: Vec<Span<'a>>,
+    pub alignment: Option<Alignment>,
 }
 
 impl<'a> Line<'a> {
@@ -74,6 +76,27 @@ impl<'a> Line<'a> {
             span.reset_style();
         }
     }
+
+    /// Sets the target alignment for this line of text.
+    /// Defaults to: [`None`], meaning the alignment is determined by the rendering widget.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use std::borrow::Cow;
+    /// # use ratatui::layout::Alignment;
+    /// # use ratatui::text::{Span, Line};
+    /// # use ratatui::style::{Color, Style, Modifier};
+    /// let mut line = Line::from("Hi, what's up?");
+    /// assert_eq!(None, line.alignment);
+    /// assert_eq!(Some(Alignment::Right), line.alignment(Alignment::Right).alignment)
+    /// ```
+    pub fn alignment(self, alignment: Alignment) -> Self {
+        Self {
+            alignment: Some(alignment),
+            ..self
+        }
+    }
 }
 
 impl<'a> From<String> for Line<'a> {
@@ -90,7 +113,10 @@ impl<'a> From<&'a str> for Line<'a> {
 
 impl<'a> From<Vec<Span<'a>>> for Line<'a> {
     fn from(spans: Vec<Span<'a>>) -> Self {
-        Self { spans }
+        Self {
+            spans,
+            ..Default::default()
+        }
     }
 }
 
@@ -117,6 +143,7 @@ impl<'a> From<Spans<'a>> for Line<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::layout::Alignment;
     use crate::style::{Color, Modifier, Style};
     use crate::text::{Line, Span, Spans};
 
@@ -209,5 +236,14 @@ mod tests {
         ]);
         let s: String = line.into();
         assert_eq!("Hello, world!", s);
+    }
+
+    #[test]
+    fn test_alignment() {
+        let line = Line::from("This is left").alignment(Alignment::Left);
+        assert_eq!(Some(Alignment::Left), line.alignment);
+
+        let line = Line::from("This is default");
+        assert_eq!(None, line.alignment);
     }
 }
