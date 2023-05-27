@@ -1,6 +1,6 @@
 [package]
 name = "ratatui"
-version = "0.20.1"
+version = "0.21.0"
 authors = ["Florian Dehau <work@fdehau.com>"]
 description = """
 A library to build rich terminal user interfaces or dashboards
