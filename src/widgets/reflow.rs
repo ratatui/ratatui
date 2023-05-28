@@ -182,7 +182,6 @@ where
                         // Append empty line if there was nothing to wrap in the first place
                         wrapped_lines.push(vec![]);
                     }
-                    dbg!(&wrapped_lines);
 
                     self.wrapped_lines = Some(wrapped_lines.into_iter());
                 } else {
