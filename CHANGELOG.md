@@ -25,6 +25,7 @@
 - *(canvas)* Use full block for Marker::Block ([#133](https://github.com/tui-rs-revival/ratatui/issues/133)) [**breaking**]
 - *(example)* Update input in examples to only use press events ([#129](https://github.com/tui-rs-revival/ratatui/issues/129))
 - *(uncategorized)* Cleanup doc example ([#145](https://github.com/tui-rs-revival/ratatui/issues/145))
+- *(reflow)* Remove debug macro call ([#198](https://github.com/tui-rs-revival/ratatui/issues/198))
 
 ### Refactor
 
