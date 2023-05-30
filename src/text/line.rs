@@ -100,14 +100,22 @@ impl<'a> Line<'a> {
 }
 
 impl<'a> From<String> for Line<'a> {
+    #[inline]
     fn from(s: String) -> Self {
-        Self::from(vec![Span::from(s)])
+        Self::from(match s.as_str() {
+            "" => vec![],
+            _ => vec![Span::from(s)],
+        })
     }
 }
 
 impl<'a> From<&'a str> for Line<'a> {
+    #[inline]
     fn from(s: &'a str) -> Self {
-        Self::from(vec![Span::from(s)])
+        Self::from(match s {
+            "" => vec![],
+            _ => vec![Span::from(s)],
+        })
     }
 }
 

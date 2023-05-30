@@ -8,6 +8,7 @@ use ratatui::{
     widgets::{Block, Borders, Padding, Paragraph, Wrap},
     Terminal,
 };
+use std::fmt::Write;
 
 /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal area
 /// and comparing the rendered and expected content.
@@ -362,6 +363,31 @@ fn widgets_paragraph_can_align_spans() {
             "│in order to effect│",
             "│truncation.       │",
             "│                  │",
+            "└──────────────────┘",
+        ]),
+    );
+}
+
+#[test]
+fn text_format() {
+    let mut text = Text::from("\nThis is a test.\n");
+    write!(text, "To be precise, a test is what this is. ").unwrap();
+    writeln!(text, "Indeed.\nYes.\nClearly.").unwrap();
+
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+    test_case(
+        paragraph.alignment(Alignment::Left),
+        Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│                  │",
+            "│This is a test.   │",
+            "│To be precise, a  │",
+            "│test is what this │",
+            "│is. Indeed.       │",
+            "│Yes.              │",
+            "│Clearly.          │",
             "└──────────────────┘",
         ]),
     );

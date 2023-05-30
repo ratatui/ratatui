@@ -47,7 +47,10 @@
 //! ]);
 //! ```
 use crate::style::Style;
-use std::{borrow::Cow, fmt::Debug};
+use std::{
+    borrow::Cow,
+    fmt::{self, Debug},
+};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
@@ -281,9 +284,15 @@ impl<'a> Text<'a> {
     {
         let lines: Vec<_> = match content.into() {
             Cow::Borrowed("") => vec![Line::from("")],
-            Cow::Borrowed(s) => s.lines().map(Line::from).collect(),
             Cow::Owned(s) if s.is_empty() => vec![Line::from("")],
-            Cow::Owned(s) => s.lines().map(|l| Line::from(l.to_owned())).collect(),
+            Cow::Borrowed(s) => s
+                .split('\n')
+                .map(|s| Line::from(s.strip_suffix('\r').unwrap_or(s)))
+                .collect(),
+            Cow::Owned(s) => s
+                .split('\n')
+                .map(|s| Line::from(s.strip_suffix('\r').unwrap_or(s).to_owned()))
+                .collect(),
         };
 
         Text::from(lines)
@@ -453,5 +462,31 @@ where
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let lines = iter.into_iter().map(Into::into);
         self.lines.extend(lines);
+    }
+}
+
+impl fmt::Write for Text<'_> {
+    #[inline]
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        fn write_str_inner(text: &mut Text<'_>, s: &str) {
+            let mut lines = s.split('\n').map(|s| s.strip_suffix('\r').unwrap_or(s));
+            if let Some(prev_end) = text.lines.last_mut() {
+                if let Some(first) = lines.next() {
+                    if !first.is_empty() {
+                        prev_end.spans.push(Span::from(first.to_owned()));
+                    }
+                } else {
+                    return;
+                }
+            }
+
+            for line in lines {
+                text.lines.push(line.to_owned().into());
+            }
+        }
+
+        write_str_inner(self, s);
+
+        Ok(())
     }
 }
