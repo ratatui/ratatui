@@ -1,7 +1,10 @@
 //! `style` contains the primitives used to control how your user interface will look.
 
 use bitflags::bitflags;
-use std::str::FromStr;
+use std::{
+    fmt::{self, Debug},
+    str::FromStr,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -40,6 +43,7 @@ bitflags! {
     /// let m = Modifier::BOLD | Modifier::ITALIC;
     /// ```
     #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+    #[derive(Clone, Copy, PartialEq, Eq)]
     pub struct Modifier: u16 {
         const BOLD              = 0b0000_0000_0001;
         const DIM               = 0b0000_0000_0010;
@@ -50,6 +54,20 @@ bitflags! {
         const REVERSED          = 0b0000_0100_0000;
         const HIDDEN            = 0b0000_1000_0000;
         const CROSSED_OUT       = 0b0001_0000_0000;
+    }
+}
+
+/// Implement the `Debug` trait for `Modifier` manually.
+///
+/// This will avoid printing the empty modifier as 'Borders(0x0)' and instead print it as 'NONE'.
+impl fmt::Debug for Modifier {
+    /// Format the modifier as `NONE` if the modifier is empty or as a list of flags separated by
+    /// `|` otherwise.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.is_empty() {
+            return write!(f, "NONE");
+        }
+        fmt::Debug::fmt(&self.0, f)
     }
 }
 
@@ -390,6 +408,28 @@ mod tests {
             assert!(style.add_modifier.contains(*m));
             assert!(!style.sub_modifier.contains(*m));
         }
+    }
+
+    #[test]
+    fn test_modifier_debug() {
+        assert_eq!(format!("{:?}", Modifier::empty()), "NONE");
+        assert_eq!(format!("{:?}", Modifier::BOLD), "BOLD");
+        assert_eq!(format!("{:?}", Modifier::DIM), "DIM");
+        assert_eq!(format!("{:?}", Modifier::ITALIC), "ITALIC");
+        assert_eq!(format!("{:?}", Modifier::UNDERLINED), "UNDERLINED");
+        assert_eq!(format!("{:?}", Modifier::SLOW_BLINK), "SLOW_BLINK");
+        assert_eq!(format!("{:?}", Modifier::RAPID_BLINK), "RAPID_BLINK");
+        assert_eq!(format!("{:?}", Modifier::REVERSED), "REVERSED");
+        assert_eq!(format!("{:?}", Modifier::HIDDEN), "HIDDEN");
+        assert_eq!(format!("{:?}", Modifier::CROSSED_OUT), "CROSSED_OUT");
+        assert_eq!(
+            format!("{:?}", Modifier::BOLD | Modifier::DIM),
+            "BOLD | DIM"
+        );
+        assert_eq!(
+            format!("{:?}", Modifier::all()),
+            "BOLD | DIM | ITALIC | UNDERLINED | SLOW_BLINK | RAPID_BLINK | REVERSED | HIDDEN | CROSSED_OUT"
+        );
     }
 
     #[test]
