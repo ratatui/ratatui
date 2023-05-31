@@ -144,7 +144,63 @@ const SAMPLE_STRING: &str = "The library is based on the principle of immediate 
      interactive UI, this may introduce overhead for highly dynamic content.";
 
 #[test]
-fn widgets_paragraph_can_wrap_its_content() {
+fn widgets_paragraph_can_char_wrap_its_content() {
+    let text = vec![Line::from(SAMPLE_STRING)];
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::ALL))
+        .wrap(Wrap::CharBoundary)
+        .trim(true);
+
+    // If char wrapping is used, all alignments should be the same except on the last line.
+    test_case(
+        paragraph.clone().alignment(Alignment::Left),
+        Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│The library is bas│",
+            "│ed on the principl│",
+            "│e of immediate ren│",
+            "│dering with interm│",
+            "│ediate buffers. Th│",
+            "│is means that at e│",
+            "│ach new frame you │",
+            "│should build all w│",
+            "└──────────────────┘",
+        ]),
+    );
+    test_case(
+        paragraph.clone().alignment(Alignment::Center),
+        Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│The library is bas│",
+            "│ed on the principl│",
+            "│e of immediate ren│",
+            "│dering with interm│",
+            "│ediate buffers. Th│",
+            "│is means that at e│",
+            "│ach new frame you │",
+            "│should build all w│",
+            "└──────────────────┘",
+        ]),
+    );
+    test_case(
+        paragraph.clone().alignment(Alignment::Right),
+        Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│The library is bas│",
+            "│ed on the principl│",
+            "│e of immediate ren│",
+            "│dering with interm│",
+            "│ediate buffers. Th│",
+            "│is means that at e│",
+            "│ach new frame you │",
+            "│should build all w│",
+            "└──────────────────┘",
+        ]),
+    );
+}
+
+#[test]
+fn widgets_paragraph_can_word_wrap_its_content() {
     let text = vec![Line::from(SAMPLE_STRING)];
     let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL))
@@ -193,6 +249,41 @@ fn widgets_paragraph_can_wrap_its_content() {
             "│      intermediate│",
             "│     buffers. This│",
             "│means that at each│",
+            "└──────────────────┘",
+        ]),
+    );
+}
+
+#[test]
+fn widgets_paragraph_can_trim_its_content() {
+    let space_text = "This is some         text with an excessive       amount of whitespace                  between words.";
+    let text = vec![Line::from(space_text)];
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::ALL))
+        .wrap(Wrap::CharBoundary);
+
+    test_case(
+        paragraph.clone().alignment(Alignment::Left).trim(true),
+        Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│This is some      │",
+            "│text with an exces│",
+            "│sive       amount │",
+            "│of whitespace     │",
+            "│between words.    │",
+            "└──────────────────┘",
+        ]),
+    );
+    test_case(
+        paragraph.clone().alignment(Alignment::Left).trim(false),
+        Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│This is some      │",
+            "│   text with an ex│",
+            "│cessive       amou│",
+            "│nt of whitespace  │",
+            "│                be│",
+            "│tween words.      │",
             "└──────────────────┘",
         ]),
     );

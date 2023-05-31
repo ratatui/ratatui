@@ -7,7 +7,13 @@ use unicode_width::UnicodeWidthStr;
 use crate::layout::Alignment;
 use crate::text::StyledGrapheme;
 
+// NBSP is a non-breaking space which is essentially a whitespace character that is treated
+// the same as non-whitespace characters in wrapping algorithms
 const NBSP: &str = "\u{00a0}";
+
+fn is_whitespace(symbol: &str) -> bool {
+    symbol.chars().all(&char::is_whitespace) && symbol != NBSP
+}
 
 /// A state machine to pack styled symbols into lines.
 /// Cannot implement it as Iterator since it yields slices of the internal buffer (need streaming
@@ -59,6 +65,8 @@ where
         let mut current_line = vec![];
         let mut current_line_width = 0;
 
+        let mut has_encountered_non_whitespace_this_line = false;
+
         // Iterate over all characters in the line
         for StyledGrapheme { symbol, style } in line {
             let symbol_width = symbol.width() as u16;
@@ -67,8 +75,20 @@ where
                 continue;
             }
 
-            // If the current line is not empty, we need to check if the current character fits
-            // into the current line
+            let symbol_whitespace = is_whitespace(symbol);
+
+            // If the current character is whitespace and no non-whitespace character has been
+            // encountered yet on this line, skip it
+            if self.trim && !has_encountered_non_whitespace_this_line {
+                if symbol_whitespace {
+                    continue;
+                } else {
+                    has_encountered_non_whitespace_this_line = true;
+                }
+            }
+
+            // If the current line is not empty, we need to check if the current character
+            // fits into the current line
             if current_line_width + symbol_width <= self.max_line_width {
                 // If it fits, add it to the current line
                 current_line.push(StyledGrapheme { symbol, style });
@@ -76,7 +96,16 @@ where
             } else {
                 // If it doesn't fit, wrap the current line and start a new one
                 wrapped_lines.push(current_line);
-                current_line = vec![StyledGrapheme { symbol, style }];
+                current_line = vec![];
+
+                // If the wrapped symbol is whitespace, start trimming whitespace
+                if self.trim && symbol_whitespace {
+                    has_encountered_non_whitespace_this_line = false;
+                    current_line_width = 0;
+                    continue;
+                }
+
+                current_line.push(StyledGrapheme { symbol, style });
                 current_line_width = symbol_width;
             }
         }
@@ -236,8 +265,7 @@ where
 
                     let mut has_seen_non_whitespace = false;
                     for StyledGrapheme { symbol, style } in line_symbols {
-                        let symbol_whitespace =
-                            symbol.chars().all(&char::is_whitespace) && symbol != NBSP;
+                        let symbol_whitespace = is_whitespace(symbol);
                         let symbol_width = symbol.width() as u16;
                         // Ignore characters wider than the total max width
                         if symbol_width > self.max_line_width {

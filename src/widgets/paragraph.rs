@@ -340,7 +340,7 @@ mod test {
             Paragraph::new(text).block(Block::default().title("Title").borders(Borders::ALL));
         let char_wrapped_paragraph = truncated_paragraph
             .clone()
-            .wrap(Wrap::WordBoundary)
+            .wrap(Wrap::CharBoundary)
             .trim(false);
         let word_wrapped_paragraph = truncated_paragraph
             .clone()
@@ -391,6 +391,15 @@ mod test {
                 "┌Title──────┐",
                 "│Hello, worl│",
                 "│           │",
+                "└───────────┘",
+            ]),
+        );
+        test_case(
+            &char_wrapped_paragraph,
+            Buffer::with_lines(vec![
+                "┌Title──────┐",
+                "│Hello, worl│",
+                "│d!         │",
                 "└───────────┘",
             ]),
         );
