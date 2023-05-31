@@ -43,6 +43,8 @@ time = { version = "0.3.11", optional = true, features = ["local-offset"]}
 rand = "0.8"
 argh = "0.1"
 indoc = "2.0"
+log = "0.4.18"
+once_cell = "1.17.2"
 
 [[example]]
 name = "barchart"
@@ -91,6 +93,11 @@ doc-scrape-examples = true
 
 [[example]]
 name = "list"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "log"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
