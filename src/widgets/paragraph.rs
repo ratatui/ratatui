@@ -2,7 +2,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     buffer::Buffer,
-    layout::{Alignment, Rect},
+    layout::{Alignment, Rect, VerticalAlignment},
     style::Style,
     text::{StyledGrapheme, Text},
     widgets::{
@@ -10,6 +10,8 @@ use crate::{
         Block, Widget,
     },
 };
+
+use super::reflow::DoubleEndedLineComposer;
 
 fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
     match alignment {
@@ -56,6 +58,8 @@ pub struct Paragraph<'a> {
     scroll: (u16, u16),
     /// Alignment of the text
     alignment: Alignment,
+    /// Vertical alignment of the text
+    vertical_alignment: VerticalAlignment,
 }
 
 /// Describes how to wrap text across lines.
@@ -103,6 +107,7 @@ impl<'a> Paragraph<'a> {
             text: text.into(),
             scroll: (0, 0),
             alignment: Alignment::Left,
+            vertical_alignment: VerticalAlignment::Top,
         }
     }
 
@@ -128,6 +133,11 @@ impl<'a> Paragraph<'a> {
 
     pub fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {
         self.alignment = alignment;
+        self
+    }
+
+    pub fn vertical_alignment(mut self, vertical_alignment: VerticalAlignment) -> Paragraph<'a> {
+        self.vertical_alignment = vertical_alignment;
         self
     }
 }
@@ -159,40 +169,55 @@ impl<'a> Widget for Paragraph<'a> {
         });
 
         let mut line_composer: Box<dyn LineComposer> = if let Some(Wrap { trim }) = self.wrap {
-            Box::new(WordWrapper::new(styled, text_area.width, trim))
+            let word_wrapper = WordWrapper::new(styled, text_area.width, trim);
+            match self.vertical_alignment {
+                VerticalAlignment::Top => Box::new(word_wrapper),
+                VerticalAlignment::Bottom => Box::new(word_wrapper.rev()),
+            }
         } else {
-            let mut line_composer = Box::new(LineTruncator::new(styled, text_area.width));
-            line_composer.set_horizontal_offset(self.scroll.1);
-            line_composer
+            let mut line_truncator = LineTruncator::new(styled, text_area.width);
+            line_truncator.set_horizontal_offset(self.scroll.1);
+            match self.vertical_alignment {
+                VerticalAlignment::Top => Box::new(line_truncator),
+                VerticalAlignment::Bottom => Box::new(line_truncator.rev()),
+            }
         };
-        let mut y = 0;
+
+        if line_composer.advance_by(self.scroll.0.into()).is_err() {
+            return;
+        };
+
+        let mut i = 0;
         while let Some((current_line, current_line_width, current_line_alignment)) =
             line_composer.next_line()
         {
-            if y >= self.scroll.0 {
-                let mut x =
-                    get_line_offset(current_line_width, text_area.width, current_line_alignment);
-                for StyledGrapheme { symbol, style } in current_line {
-                    let width = symbol.width();
-                    if width == 0 {
-                        continue;
-                    }
-                    buf.get_mut(text_area.left() + x, text_area.top() + y - self.scroll.0)
-                        .set_symbol(if symbol.is_empty() {
-                            // If the symbol is empty, the last char which rendered last time will
-                            // leave on the line. It's a quick fix.
-                            " "
-                        } else {
-                            symbol
-                        })
-                        .set_style(*style);
-                    x += width as u16;
-                }
-            }
-            y += 1;
-            if y >= text_area.height + self.scroll.0 {
+            if i >= text_area.height {
                 break;
             }
+            let mut x =
+                get_line_offset(current_line_width, text_area.width, current_line_alignment);
+            for StyledGrapheme { symbol, style } in current_line {
+                let width = symbol.width();
+                if width == 0 {
+                    continue;
+                }
+                let y = match self.vertical_alignment {
+                    VerticalAlignment::Top => i,
+                    VerticalAlignment::Bottom => text_area.height - 1 - i,
+                };
+                buf.get_mut(text_area.left() + x, text_area.top() + y)
+                    .set_symbol(if symbol.is_empty() {
+                        // If the symbol is empty, the last char which rendered last time will
+                        // leave on the line. It's a quick fix.
+                        " "
+                    } else {
+                        symbol
+                    })
+                    .set_style(*style);
+                x += width as u16;
+            }
+
+            i += 1;
         }
     }
 }

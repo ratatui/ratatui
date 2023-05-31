@@ -3,7 +3,7 @@
 use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
-    layout::Alignment,
+    layout::{Alignment, VerticalAlignment},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Padding, Paragraph, Wrap},
     Terminal,
@@ -362,6 +362,53 @@ fn widgets_paragraph_can_align_spans() {
             "│in order to effect│",
             "│truncation.       │",
             "│                  │",
+            "└──────────────────┘",
+        ]),
+    );
+}
+
+#[test]
+fn widgets_paragraph_vertical_align() {
+    let text = "Top line.\nBottom line.";
+    let paragraph = Paragraph::new(text)
+        .vertical_alignment(VerticalAlignment::Bottom)
+        .block(Block::default().borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+
+    test_case(
+        paragraph,
+        Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│                  │",
+            "│                  │",
+            "│                  │",
+            "│                  │",
+            "│                  │",
+            "│                  │",
+            "│Top line.         │",
+            "│Bottom line.      │",
+            "└──────────────────┘",
+        ]),
+    );
+
+    let text = "Top line, very long wraps.\nn-6.\nn-5.\nn-4.\nn-3.\nn-2.\nn-1.\nBottom line.";
+    let paragraph = Paragraph::new(text)
+        .vertical_alignment(VerticalAlignment::Bottom)
+        .block(Block::default().borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+
+    test_case(
+        paragraph,
+        Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│long wraps.       │",
+            "│n-6.              │",
+            "│n-5.              │",
+            "│n-4.              │",
+            "│n-3.              │",
+            "│n-2.              │",
+            "│n-1.              │",
+            "│Bottom line.      │",
             "└──────────────────┘",
         ]),
     );

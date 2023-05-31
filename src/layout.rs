@@ -59,6 +59,13 @@ pub enum Alignment {
     Right,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum VerticalAlignment {
+    Top,
+    Bottom,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Layout {
     direction: Direction,
