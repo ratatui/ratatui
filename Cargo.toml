@@ -40,6 +40,7 @@ serde = { version = "1", optional = true, features = ["derive"]}
 time = { version = "0.3.11", optional = true, features = ["local-offset"]}
 
 [dev-dependencies]
+anyhow = "1.0.71"
 rand = "0.8"
 argh = "0.1"
 indoc = "2.0"
@@ -81,6 +82,11 @@ doc-scrape-examples = false
 
 [[example]]
 name = "gauge"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "hello_world"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
