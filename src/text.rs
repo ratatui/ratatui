@@ -285,6 +285,7 @@ impl<'a> Text<'a> {
         let lines: Vec<_> = match content.into() {
             Cow::Borrowed("") => vec![Line::from("")],
             Cow::Owned(s) if s.is_empty() => vec![Line::from("")],
+            // `.lines()` eats trailing newlines, which we don't want - hence this custom solution.
             Cow::Borrowed(s) => s
                 .split('\n')
                 .map(|s| Line::from(s.strip_suffix('\r').unwrap_or(s)))
@@ -468,8 +469,19 @@ where
 impl fmt::Write for Text<'_> {
     #[inline]
     fn write_str(&mut self, s: &str) -> fmt::Result {
+        /// We would like the compiler to inline the return line,
+        /// and therefore see that the result is always `Ok(())`,
+        /// allowing it to turn `unwrap()` calls into a no-op.
+        /// However, we don't want to inline
+        /// the entire `write_str` function. Hence this split.
+        #[inline(never)]
         fn write_str_inner(text: &mut Text<'_>, s: &str) {
+            // Split on newlines.
             let mut lines = s.split('\n').map(|s| s.strip_suffix('\r').unwrap_or(s));
+
+            // Append the start of the to-be-written text
+            // (before the first newline) to the end of the previous line,
+            // if there is one.
             if let Some(prev_end) = text.lines.last_mut() {
                 if let Some(first) = lines.next() {
                     if !first.is_empty() {
@@ -480,6 +492,8 @@ impl fmt::Write for Text<'_> {
                 }
             }
 
+            // Append the rest of the lines to the `Text`,
+            // one-by-one.
             for line in lines {
                 text.lines.push(line.to_owned().into());
             }
