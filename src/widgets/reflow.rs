@@ -16,6 +16,152 @@ pub trait LineComposer<'a> {
     fn next_line(&mut self) -> Option<(&[StyledGrapheme<'a>], u16, Alignment)>;
 }
 
+/// A state machine that wraps lines on char boundaries.
+pub struct CharWrapper<'a, O, I>
+where
+    O: Iterator<Item = (I, Alignment)>, // Outer iterator providing the individual lines
+    I: Iterator<Item = StyledGrapheme<'a>>, // Inner iterator providing the styled symbols of a line
+                                        // Each line consists of an alignment and a series of symbols
+{
+    /// The given, unprocessed lines
+    input_lines: O,
+    max_line_width: u16,
+    wrapped_lines_buffer: Option<IntoIter<Vec<StyledGrapheme<'a>>>>,
+    current_alignment: Alignment,
+    current_line: Vec<StyledGrapheme<'a>>,
+    /// Removes the leading whitespace from lines
+    trim: bool,
+}
+
+impl<'a, O, I> CharWrapper<'a, O, I>
+where
+    O: Iterator<Item = (I, Alignment)>,
+    I: Iterator<Item = StyledGrapheme<'a>>,
+{
+    pub fn new(lines: O, max_line_width: u16, trim: bool) -> CharWrapper<'a, O, I> {
+        CharWrapper {
+            input_lines: lines,
+            max_line_width,
+            wrapped_lines_buffer: None,
+            current_alignment: Alignment::Left,
+            current_line: vec![],
+            trim,
+        }
+    }
+
+    /// Wraps a given line (which is represented as an iterator over characters) into multiple
+    /// parts according to this `CharWrapper`'s configuration.
+    ///
+    /// The parts are represented as a list.
+    ///
+    fn wrap_line(&self, line: &mut I) -> Vec<Vec<StyledGrapheme<'a>>> {
+        let mut wrapped_lines = vec![];
+        let mut current_line = vec![];
+        let mut current_line_width = 0;
+
+        // Iterate over all characters in the line
+        for StyledGrapheme { symbol, style } in line {
+            let symbol_width = symbol.width() as u16;
+            // Ignore characters wider than the total max width
+            if symbol_width > self.max_line_width {
+                continue;
+            }
+
+            // If the current line is not empty, we need to check if the current character fits
+            // into the current line
+            if current_line_width + symbol_width <= self.max_line_width {
+                // If it fits, add it to the current line
+                current_line.push(StyledGrapheme { symbol, style });
+                current_line_width += symbol_width;
+            } else {
+                // If it doesn't fit, wrap the current line and start a new one
+                wrapped_lines.push(current_line);
+                current_line = vec![StyledGrapheme { symbol, style }];
+                current_line_width = symbol_width;
+            }
+        }
+
+        if !current_line.is_empty() {
+            // Append the rest of current line to the wrapped lines
+            wrapped_lines.push(current_line);
+        }
+
+        if wrapped_lines.is_empty() {
+            // Append empty line if there was nothing to wrap in the first place
+            wrapped_lines.push(vec![]);
+        }
+
+        wrapped_lines
+    }
+
+    /// Returns the next wrapped line and its length currently in the wrapped lines buffer
+    fn next_wrapped_line(&mut self) -> Option<(Vec<StyledGrapheme<'a>>, u16)> {
+        if let Some(line_iterator) = &mut self.wrapped_lines_buffer {
+            if let Some(line) = line_iterator.next() {
+                let line_width = line
+                    .iter()
+                    .map(|grapheme| grapheme.symbol.width())
+                    .sum::<usize>() as u16;
+                return Some((line, line_width));
+            }
+        }
+        None
+    }
+}
+
+impl<'a, O, I> LineComposer<'a> for CharWrapper<'a, O, I>
+where
+    O: Iterator<Item = (I, Alignment)>,
+    I: Iterator<Item = StyledGrapheme<'a>>,
+{
+    /// This function returns the next line based on its input lines by wrapping them so that
+    /// words get wrapped at the point where they intersect with the border of the widget.
+    ///
+    /// ### Implementation details:
+    /// The `CharWrapper` uses an internal buffer (`wrapped_lines_buffer`) that holds all the
+    /// wrapped parts of a single line from the input (`input_lines`). The individual parts are
+    /// returned by invoking this method.
+    ///
+    /// Once the buffer is empty, the next line from the input is split into wrapped parts and
+    /// stored in the buffer. Rinse and repeat until all lines from the input are exhausted and have
+    /// already been processed.
+    ///
+    fn next_line(&mut self) -> Option<(&[StyledGrapheme<'a>], u16, Alignment)> {
+        if self.max_line_width == 0 {
+            return None;
+        }
+
+        // If `next_line` has already been invoked, try to retrieve the next line from the buffer containing the wrapped parts
+        let mut next_buffered_wrapped_line = self.next_wrapped_line();
+
+        // If there is non/the buffer is exhausted
+        if next_buffered_wrapped_line.is_none() {
+            // Get the next pending input line
+            if let Some((line_symbols, line_alignment)) = &mut self.input_lines.next() {
+                // Wrap it, save the result to a buffer
+                self.current_alignment = *line_alignment;
+                let wrapped_lines = self.wrap_line(line_symbols);
+                self.wrapped_lines_buffer = Some(wrapped_lines.into_iter());
+
+                // Get the first newly wrapped line from the buffer
+                next_buffered_wrapped_line = self.next_wrapped_line();
+            }
+        }
+
+        // Return the next wrapped line if nothing has been fully exhausted
+        if let Some((wrapped_line, wrapped_line_width)) = next_buffered_wrapped_line {
+            self.current_line = wrapped_line;
+            Some((
+                &self.current_line[..],
+                wrapped_line_width,
+                self.current_alignment,
+            ))
+        } else {
+            None
+        }
+    }
+}
+
 /// A state machine that wraps lines on word boundaries.
 pub struct WordWrapper<'a, O, I>
 where

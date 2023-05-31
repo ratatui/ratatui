@@ -32,7 +32,8 @@ fn widgets_paragraph_renders_double_width_graphemes() {
     let text = vec![Line::from(s)];
     let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL))
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap::WordBoundary)
+        .trim(true);
 
     test_case(
         paragraph,
@@ -63,7 +64,8 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
             let text = vec![Line::from(s)];
             let paragraph = Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL))
-                .wrap(Wrap { trim: true });
+                .wrap(Wrap::WordBoundary)
+                .trim(true);
             f.render_widget(paragraph, size);
         })
         .unwrap();
@@ -146,7 +148,8 @@ fn widgets_paragraph_can_wrap_its_content() {
     let text = vec![Line::from(SAMPLE_STRING)];
     let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL))
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap::WordBoundary)
+        .trim(true);
 
     test_case(
         paragraph.clone().alignment(Alignment::Left),
@@ -205,7 +208,8 @@ fn widgets_paragraph_works_with_padding() {
             top: 1,
             bottom: 1,
         }))
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap::WordBoundary)
+        .trim(true);
 
     test_case(
         paragraph.clone().alignment(Alignment::Left),
@@ -251,7 +255,8 @@ fn widgets_paragraph_works_with_padding() {
             top: 1,
             bottom: 1,
         }))
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap::WordBoundary)
+        .trim(true);
 
     test_case(
         paragraph.alignment(Alignment::Right),
@@ -285,7 +290,8 @@ fn widgets_paragraph_can_align_spans() {
     ];
     let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL))
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap::WordBoundary)
+        .trim(true);
 
     test_case(
         paragraph.clone().alignment(Alignment::Left),

@@ -85,7 +85,8 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         Style::default().add_modifier(Modifier::SLOW_BLINK),
     ))
     .alignment(Alignment::Center)
-    .wrap(Wrap { trim: true });
+    .wrap(Wrap::WordBoundary)
+    .trim(true);
     f.render_widget(paragraph, chunks[0]);
 
     let block = Block::default()

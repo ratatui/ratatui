@@ -6,7 +6,7 @@ use crate::{
     style::Style,
     text::{StyledGrapheme, Text},
     widgets::{
-        reflow::{LineComposer, LineTruncator, WordWrapper},
+        reflow::{CharWrapper, LineComposer, LineTruncator, WordWrapper},
         Block, Widget,
     },
 };
@@ -40,7 +40,7 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 ///     .block(Block::default().title("Paragraph").borders(Borders::ALL))
 ///     .style(Style::default().fg(Color::White).bg(Color::Black))
 ///     .alignment(Alignment::Center)
-///     .wrap(Wrap { trim: true });
+///     .wrap(Wrap::WordBoundary).trim(true);
 /// ```
 #[derive(Debug, Clone)]
 pub struct Paragraph<'a> {
@@ -50,6 +50,8 @@ pub struct Paragraph<'a> {
     style: Style,
     /// How to wrap the text
     wrap: Option<Wrap>,
+    /// Whether leading whitespace should be trimmed
+    trim: bool,
     /// The text to display
     text: Text<'a>,
     /// Scroll
@@ -69,16 +71,16 @@ pub struct Paragraph<'a> {
 ///     - First thing goes here and is long so that it wraps
 ///     - Here is another point that is long enough to wrap"#);
 ///
-/// // With leading spaces trimmed (window width of 30 chars):
-/// Paragraph::new(bullet_points.clone()).wrap(Wrap { trim: true });
+/// // Wrapping on char boundaries (window width of 30 chars):
+/// Paragraph::new(bullet_points.clone()).wrap(Wrap::CharBoundary);
 /// // Some indented points:
-/// // - First thing goes here and is
-/// // long so that it wraps
-/// // - Here is another point that
-/// // is long enough to wrap
+/// //     - First thing goes here an
+/// // d is long so that it wraps
+/// //     - Here is another point th
+/// // at is long enough to wrap
 ///
-/// // But without trimming, indentation is preserved:
-/// Paragraph::new(bullet_points).wrap(Wrap { trim: false });
+/// // Wrapping on word boundaries
+/// Paragraph::new(bullet_points).wrap(Wrap::WordBoundary);
 /// // Some indented points:
 /// //     - First thing goes here
 /// // and is long so that it wraps
@@ -86,9 +88,9 @@ pub struct Paragraph<'a> {
 /// // that is long enough to wrap
 /// ```
 #[derive(Debug, Clone, Copy)]
-pub struct Wrap {
-    /// Should leading whitespace be trimmed
-    pub trim: bool,
+pub enum Wrap {
+    WordBoundary,
+    CharBoundary,
 }
 
 impl<'a> Paragraph<'a> {
@@ -100,6 +102,7 @@ impl<'a> Paragraph<'a> {
             block: None,
             style: Style::default(),
             wrap: None,
+            trim: false,
             text: text.into(),
             scroll: (0, 0),
             alignment: Alignment::Left,
@@ -118,6 +121,11 @@ impl<'a> Paragraph<'a> {
 
     pub fn wrap(mut self, wrap: Wrap) -> Paragraph<'a> {
         self.wrap = Some(wrap);
+        self
+    }
+
+    pub fn trim(mut self, trim: bool) -> Paragraph<'a> {
+        self.trim = trim;
         self
     }
 
@@ -158,8 +166,15 @@ impl<'a> Widget for Paragraph<'a> {
             )
         });
 
-        let mut line_composer: Box<dyn LineComposer> = if let Some(Wrap { trim }) = self.wrap {
-            Box::new(WordWrapper::new(styled, text_area.width, trim))
+        let mut line_composer: Box<dyn LineComposer> = if let Some(wrap_mode) = self.wrap {
+            match wrap_mode {
+                Wrap::CharBoundary => {
+                    Box::new(CharWrapper::new(styled, text_area.width, self.trim))
+                }
+                Wrap::WordBoundary => {
+                    Box::new(WordWrapper::new(styled, text_area.width, self.trim))
+                }
+            }
         } else {
             let mut line_composer = Box::new(LineTruncator::new(styled, text_area.width));
             line_composer.set_horizontal_offset(self.scroll.1);
@@ -231,8 +246,8 @@ mod test {
         let line = "foo\0";
         let paragraphs = vec![
             Paragraph::new(line),
-            Paragraph::new(line).wrap(Wrap { trim: false }),
-            Paragraph::new(line).wrap(Wrap { trim: true }),
+            Paragraph::new(line).wrap(Wrap::WordBoundary).trim(false),
+            Paragraph::new(line).wrap(Wrap::WordBoundary).trim(true),
         ];
 
         for paragraph in paragraphs {
@@ -247,8 +262,8 @@ mod test {
     fn test_render_empty_paragraph() {
         let paragraphs = vec![
             Paragraph::new(""),
-            Paragraph::new("").wrap(Wrap { trim: false }),
-            Paragraph::new("").wrap(Wrap { trim: true }),
+            Paragraph::new("").wrap(Wrap::WordBoundary).trim(false),
+            Paragraph::new("").wrap(Wrap::WordBoundary).trim(true),
         ];
 
         for paragraph in paragraphs {
@@ -263,8 +278,8 @@ mod test {
     fn test_render_single_line_paragraph() {
         let text = "Hello, world!";
         let truncated_paragraph = Paragraph::new(text);
-        let wrapped_paragraph = Paragraph::new(text).wrap(Wrap { trim: false });
-        let trimmed_paragraph = Paragraph::new(text).wrap(Wrap { trim: true });
+        let wrapped_paragraph = Paragraph::new(text).wrap(Wrap::WordBoundary).trim(false);
+        let trimmed_paragraph = Paragraph::new(text).wrap(Wrap::WordBoundary).trim(true);
 
         let paragraphs = vec![&truncated_paragraph, &wrapped_paragraph, &trimmed_paragraph];
 
@@ -288,8 +303,8 @@ mod test {
 
         let paragraphs = vec![
             Paragraph::new(text),
-            Paragraph::new(text).wrap(Wrap { trim: false }),
-            Paragraph::new(text).wrap(Wrap { trim: true }),
+            Paragraph::new(text).wrap(Wrap::WordBoundary).trim(false),
+            Paragraph::new(text).wrap(Wrap::WordBoundary).trim(true),
         ];
 
         for paragraph in paragraphs {
@@ -323,10 +338,24 @@ mod test {
         let text = "Hello, world!";
         let truncated_paragraph =
             Paragraph::new(text).block(Block::default().title("Title").borders(Borders::ALL));
-        let wrapped_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: false });
-        let trimmed_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: true });
+        let char_wrapped_paragraph = truncated_paragraph
+            .clone()
+            .wrap(Wrap::WordBoundary)
+            .trim(false);
+        let word_wrapped_paragraph = truncated_paragraph
+            .clone()
+            .wrap(Wrap::WordBoundary)
+            .trim(false);
+        let trimmed_paragraph = truncated_paragraph
+            .clone()
+            .wrap(Wrap::WordBoundary)
+            .trim(true);
 
-        let paragraphs = vec![&truncated_paragraph, &wrapped_paragraph, &trimmed_paragraph];
+        let paragraphs = vec![
+            &truncated_paragraph,
+            &word_wrapped_paragraph,
+            &trimmed_paragraph,
+        ];
 
         for paragraph in paragraphs {
             test_case(
@@ -366,7 +395,7 @@ mod test {
             ]),
         );
         test_case(
-            &wrapped_paragraph,
+            &word_wrapped_paragraph,
             Buffer::with_lines(vec![
                 "┌Title──────┐",
                 "│Hello,     │",
@@ -388,8 +417,8 @@ mod test {
     #[test]
     fn test_render_paragraph_with_word_wrap() {
         let text = "This is a long line of text that should wrap      and contains a superultramegagigalong word.";
-        let wrapped_paragraph = Paragraph::new(text).wrap(Wrap { trim: false });
-        let trimmed_paragraph = Paragraph::new(text).wrap(Wrap { trim: true });
+        let wrapped_paragraph = Paragraph::new(text).wrap(Wrap::WordBoundary).trim(false);
+        let trimmed_paragraph = Paragraph::new(text).wrap(Wrap::WordBoundary).trim(true);
 
         test_case(
             &wrapped_paragraph,
@@ -471,8 +500,14 @@ mod test {
     fn test_render_paragraph_with_left_alignment() {
         let text = "Hello, world!";
         let truncated_paragraph = Paragraph::new(text).alignment(Alignment::Left);
-        let wrapped_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: false });
-        let trimmed_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: true });
+        let wrapped_paragraph = truncated_paragraph
+            .clone()
+            .wrap(Wrap::WordBoundary)
+            .trim(false);
+        let trimmed_paragraph = truncated_paragraph
+            .clone()
+            .wrap(Wrap::WordBoundary)
+            .trim(true);
 
         let paragraphs = vec![&truncated_paragraph, &wrapped_paragraph, &trimmed_paragraph];
 
@@ -496,8 +531,14 @@ mod test {
     fn test_render_paragraph_with_center_alignment() {
         let text = "Hello, world!";
         let truncated_paragraph = Paragraph::new(text).alignment(Alignment::Center);
-        let wrapped_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: false });
-        let trimmed_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: true });
+        let wrapped_paragraph = truncated_paragraph
+            .clone()
+            .wrap(Wrap::WordBoundary)
+            .trim(false);
+        let trimmed_paragraph = truncated_paragraph
+            .clone()
+            .wrap(Wrap::WordBoundary)
+            .trim(true);
 
         let paragraphs = vec![&truncated_paragraph, &wrapped_paragraph, &trimmed_paragraph];
 
@@ -523,8 +564,14 @@ mod test {
     fn test_render_paragraph_with_right_alignment() {
         let text = "Hello, world!";
         let truncated_paragraph = Paragraph::new(text).alignment(Alignment::Right);
-        let wrapped_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: false });
-        let trimmed_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: true });
+        let wrapped_paragraph = truncated_paragraph
+            .clone()
+            .wrap(Wrap::WordBoundary)
+            .trim(false);
+        let trimmed_paragraph = truncated_paragraph
+            .clone()
+            .wrap(Wrap::WordBoundary)
+            .trim(true);
 
         let paragraphs = vec![&truncated_paragraph, &wrapped_paragraph, &trimmed_paragraph];
 
@@ -548,8 +595,14 @@ mod test {
     fn test_render_paragraph_with_scroll_offset() {
         let text = "This is a\ncool\nmultiline\nparagraph.";
         let truncated_paragraph = Paragraph::new(text).scroll((2, 0));
-        let wrapped_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: false });
-        let trimmed_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: true });
+        let wrapped_paragraph = truncated_paragraph
+            .clone()
+            .wrap(Wrap::WordBoundary)
+            .trim(false);
+        let trimmed_paragraph = truncated_paragraph
+            .clone()
+            .wrap(Wrap::WordBoundary)
+            .trim(true);
 
         let paragraphs = vec![&truncated_paragraph, &wrapped_paragraph, &trimmed_paragraph];
 
@@ -577,8 +630,8 @@ mod test {
 
         let paragraphs = vec![
             Paragraph::new(text),
-            Paragraph::new(text).wrap(Wrap { trim: false }),
-            Paragraph::new(text).wrap(Wrap { trim: true }),
+            Paragraph::new(text).wrap(Wrap::WordBoundary).trim(false),
+            Paragraph::new(text).wrap(Wrap::WordBoundary).trim(true),
         ];
 
         let area = Rect::new(0, 0, 0, 3);
@@ -594,8 +647,8 @@ mod test {
 
         let paragraphs = vec![
             Paragraph::new(text),
-            Paragraph::new(text).wrap(Wrap { trim: false }),
-            Paragraph::new(text).wrap(Wrap { trim: true }),
+            Paragraph::new(text).wrap(Wrap::WordBoundary).trim(false),
+            Paragraph::new(text).wrap(Wrap::WordBoundary).trim(true),
         ];
 
         let area = Rect::new(0, 0, 10, 0);
@@ -614,8 +667,12 @@ mod test {
 
         let paragraphs = vec![
             Paragraph::new(text.clone()),
-            Paragraph::new(text.clone()).wrap(Wrap { trim: false }),
-            Paragraph::new(text.clone()).wrap(Wrap { trim: true }),
+            Paragraph::new(text.clone())
+                .wrap(Wrap::WordBoundary)
+                .trim(false),
+            Paragraph::new(text.clone())
+                .wrap(Wrap::WordBoundary)
+                .trim(true),
         ];
 
         let mut expected_buffer = Buffer::with_lines(vec!["Hello, world!"]);
@@ -640,8 +697,8 @@ mod test {
         let text = "Hello, <world>!";
         let paragraphs = vec![
             Paragraph::new(text),
-            Paragraph::new(text).wrap(Wrap { trim: false }),
-            Paragraph::new(text).wrap(Wrap { trim: true }),
+            Paragraph::new(text).wrap(Wrap::WordBoundary).trim(false),
+            Paragraph::new(text).wrap(Wrap::WordBoundary).trim(true),
         ];
 
         for paragraph in paragraphs {
@@ -662,8 +719,8 @@ mod test {
     fn test_render_paragraph_with_unicode_characters() {
         let text = "こんにちは, 世界! 😃";
         let truncated_paragraph = Paragraph::new(text);
-        let wrapped_paragraph = Paragraph::new(text).wrap(Wrap { trim: false });
-        let trimmed_paragraph = Paragraph::new(text).wrap(Wrap { trim: true });
+        let wrapped_paragraph = Paragraph::new(text).wrap(Wrap::WordBoundary).trim(false);
+        let trimmed_paragraph = Paragraph::new(text).wrap(Wrap::WordBoundary).trim(true);
 
         let paragraphs = vec![&truncated_paragraph, &wrapped_paragraph, &trimmed_paragraph];
 
