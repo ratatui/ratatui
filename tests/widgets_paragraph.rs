@@ -258,12 +258,12 @@ fn widgets_paragraph_can_word_wrap_its_content() {
 fn widgets_paragraph_can_trim_its_content() {
     let space_text = "This is some         text with an excessive       amount of whitespace                  between words.";
     let text = vec![Line::from(space_text)];
-    let paragraph = Paragraph::new(text)
+    let paragraph = Paragraph::new(text.clone())
         .block(Block::default().borders(Borders::ALL))
-        .wrap(Wrap::CharBoundary);
+        .alignment(Alignment::Left);
 
     test_case(
-        paragraph.clone().alignment(Alignment::Left).trim(true),
+        paragraph.clone().wrap(Wrap::CharBoundary).trim(true),
         Buffer::with_lines(vec![
             "┌──────────────────┐",
             "│This is some      │",
@@ -275,7 +275,7 @@ fn widgets_paragraph_can_trim_its_content() {
         ]),
     );
     test_case(
-        paragraph.clone().alignment(Alignment::Left).trim(false),
+        paragraph.clone().wrap(Wrap::CharBoundary).trim(false),
         Buffer::with_lines(vec![
             "┌──────────────────┐",
             "│This is some      │",
@@ -287,11 +287,41 @@ fn widgets_paragraph_can_trim_its_content() {
             "└──────────────────┘",
         ]),
     );
+
+    test_case(
+        paragraph.clone().wrap(Wrap::WordBoundary).trim(true),
+        Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│This is some      │",
+            "│text with an      │",
+            "│excessive         │",
+            "│amount of         │",
+            "│whitespace        │",
+            "│between words.    │",
+            "└──────────────────┘",
+        ]),
+    );
+    // TODO: This test case is currently failing, will be reenabled upon being fixed.
+    // test_case(
+    //     paragraph.clone().wrap(Wrap::WordBoundary).trim(false),
+    //     Buffer::with_lines(vec![
+    //         "┌──────────────────┐",
+    //         "│This is some      │",
+    //         "│   text with an   │",
+    //         "│excessive         │",
+    //         "│amount of         │",
+    //         "│whitespace        │",
+    //         "│          between │",
+    //         "│words.            │",
+    //         "└──────────────────┘",
+    //     ]),
+    // );
 }
 
 #[test]
 fn widgets_paragraph_works_with_padding() {
-    let text = vec![Line::from(SAMPLE_STRING)];
+    let mut text = vec![Line::from("This is always centered.").alignment(Alignment::Center)];
+    text.push(Line::from(SAMPLE_STRING));
     let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL).padding(Padding {
             left: 2,
@@ -299,14 +329,40 @@ fn widgets_paragraph_works_with_padding() {
             top: 1,
             bottom: 1,
         }))
-        .wrap(Wrap::WordBoundary)
         .trim(true);
 
     test_case(
-        paragraph.clone().alignment(Alignment::Left),
+        paragraph
+            .clone()
+            .alignment(Alignment::Left)
+            .wrap(Wrap::CharBoundary),
         Buffer::with_lines(vec![
             "┌────────────────────┐",
             "│                    │",
+            "│  This is always c  │",
+            "│      entered.      │",
+            "│  The library is b  │",
+            "│  ased on the prin  │",
+            "│  ciple of immedia  │",
+            "│  te rendering wit  │",
+            "│  h intermediate b  │",
+            "│  uffers. This mea  │",
+            "│  ns that at each   │",
+            "│  new frame you sh  │",
+            "│                    │",
+            "└────────────────────┘",
+        ]),
+    );
+    test_case(
+        paragraph
+            .clone()
+            .alignment(Alignment::Left)
+            .wrap(Wrap::WordBoundary),
+        Buffer::with_lines(vec![
+            "┌────────────────────┐",
+            "│                    │",
+            "│   This is always   │",
+            "│      centered.     │",
             "│  The library is    │",
             "│  based on the      │",
             "│  principle of      │",
@@ -319,38 +375,35 @@ fn widgets_paragraph_works_with_padding() {
             "└────────────────────┘",
         ]),
     );
+
     test_case(
-        paragraph.clone().alignment(Alignment::Right),
+        paragraph
+            .clone()
+            .alignment(Alignment::Right)
+            .wrap(Wrap::CharBoundary),
         Buffer::with_lines(vec![
             "┌────────────────────┐",
             "│                    │",
-            "│    The library is  │",
-            "│      based on the  │",
-            "│      principle of  │",
-            "│         immediate  │",
-            "│    rendering with  │",
-            "│      intermediate  │",
-            "│     buffers. This  │",
-            "│     means that at  │",
+            "│  This is always c  │",
+            "│      entered.      │",
+            "│  The library is b  │",
+            "│  ased on the prin  │",
+            "│  ciple of immedia  │",
+            "│  te rendering wit  │",
+            "│  h intermediate b  │",
+            "│  uffers. This mea  │",
+            "│  ns that at each   │",
+            "│  new frame you sh  │",
             "│                    │",
             "└────────────────────┘",
         ]),
     );
 
-    let mut text = vec![Line::from("This is always centered.").alignment(Alignment::Center)];
-    text.push(Line::from(SAMPLE_STRING));
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).padding(Padding {
-            left: 2,
-            right: 2,
-            top: 1,
-            bottom: 1,
-        }))
-        .wrap(Wrap::WordBoundary)
-        .trim(true);
-
     test_case(
-        paragraph.alignment(Alignment::Right),
+        paragraph
+            .clone()
+            .alignment(Alignment::Right)
+            .wrap(Wrap::WordBoundary),
         Buffer::with_lines(vec![
             "┌────────────────────┐",
             "│                    │",
