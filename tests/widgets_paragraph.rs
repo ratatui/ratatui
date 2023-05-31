@@ -367,28 +367,3 @@ fn widgets_paragraph_can_align_spans() {
         ]),
     );
 }
-
-#[test]
-fn text_format() {
-    let mut text = Text::from("\nThis is a test.\n");
-    write!(text, "To be precise, a test is what this is. ").unwrap();
-    writeln!(text, "Indeed.\nYes.\nClearly.").unwrap();
-
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL))
-        .wrap(Wrap { trim: true });
-    test_case(
-        paragraph.alignment(Alignment::Left),
-        Buffer::with_lines(vec![
-            "┌──────────────────┐",
-            "│                  │",
-            "│This is a test.   │",
-            "│To be precise, a  │",
-            "│test is what this │",
-            "│is. Indeed.       │",
-            "│Yes.              │",
-            "│Clearly.          │",
-            "└──────────────────┘",
-        ]),
-    );
-}

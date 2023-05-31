@@ -485,7 +485,14 @@ impl fmt::Write for Text<'_> {
             if let Some(prev_end) = text.lines.last_mut() {
                 if let Some(first) = lines.next() {
                     if !first.is_empty() {
-                        prev_end.spans.push(Span::from(first.to_owned()));
+                        // Only make a new `String` if the trailing one is not suitable to push onto.
+                        match prev_end.spans.last_mut() {
+                            Some(Span {
+                                content: Cow::Owned(content),
+                                style,
+                            }) if *style == Style::default() => content.push_str(first),
+                            _ => prev_end.spans.push(Span::from(first.to_owned())),
+                        }
                     }
                 } else {
                     return;
@@ -502,5 +509,24 @@ impl fmt::Write for Text<'_> {
         write_str_inner(self, s);
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use fmt::Write;
+
+    #[test]
+    fn text_format() {
+        let mut text = Text::from("\nThis is a test.\n");
+        write!(text, "To be precise, a test is what this is. ").unwrap();
+        writeln!(text, "Indeed.\nYes.\nClearly.").unwrap();
+
+        let text_2 = Text::raw(
+            "\nThis is a test.\nTo be precise, a test is what this is. Indeed.\nYes.\nClearly.\n",
+        );
+
+        assert_eq!(text, text_2);
     }
 }
