@@ -614,7 +614,7 @@ mod tests {
                         \"G'day World!\",
                     ],
                     styles: [
-                        x: 0, y: 0, fg: Reset, bg: Reset, modifier: (empty),
+                        x: 0, y: 0, fg: Reset, bg: Reset, modifier: NONE,
                         x: 0, y: 1, fg: Green, bg: Yellow, modifier: BOLD,
                     ]
                 }"

@@ -31,6 +31,8 @@ mod sparkline;
 mod table;
 mod tabs;
 
+use std::fmt::{self, Debug};
+
 pub use self::barchart::BarChart;
 pub use self::block::{Block, BorderType, Padding};
 pub use self::chart::{Axis, Chart, Dataset, GraphType};
@@ -47,6 +49,7 @@ use bitflags::bitflags;
 
 bitflags! {
     /// Bitflags that can be composed to set the visible borders essentially on the block widget.
+    #[derive(Clone, Copy, Default, PartialEq, Eq)]
     pub struct Borders: u8 {
         /// Show no border (default)
         const NONE   = 0b0000;
@@ -59,7 +62,37 @@ bitflags! {
         /// Show the left border
         const LEFT   = 0b1000;
         /// Show all borders
-        const ALL = Self::TOP.bits | Self::RIGHT.bits | Self::BOTTOM.bits | Self::LEFT.bits;
+        const ALL = Self::TOP.bits() | Self::RIGHT.bits() | Self::BOTTOM.bits() | Self::LEFT.bits();
+    }
+}
+
+/// Implement the `Debug` trait for the `Borders` bitflags. This is a manual implementation to
+/// display the flags in a more readable way. The default implementation would display the
+/// flags as 'Border(0x0)' for `Borders::NONE` for example.
+impl Debug for Borders {
+    /// Display the Borders bitflags as a list of names. For example, `Borders::NONE` will be
+    /// displayed as `NONE` and `Borders::ALL` will be displayed as `ALL`. If multiple flags are
+    /// set, they will be displayed separated by a pipe character.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_empty() {
+            return write!(f, "NONE");
+        }
+        if self.is_all() {
+            return write!(f, "ALL");
+        }
+        let mut first = true;
+        for (name, border) in self.iter_names() {
+            if border == Borders::NONE {
+                continue;
+            }
+            if first {
+                write!(f, "{}", name)?;
+                first = false;
+            } else {
+                write!(f, " | {}", name)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -221,5 +254,27 @@ macro_rules! border {
     }};
     () =>{
         Borders::NONE
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_borders_debug() {
+        assert_eq!(format!("{:?}", Borders::empty()), "NONE");
+        assert_eq!(format!("{:?}", Borders::NONE), "NONE");
+        assert_eq!(format!("{:?}", Borders::TOP), "TOP");
+        assert_eq!(format!("{:?}", Borders::BOTTOM), "BOTTOM");
+        assert_eq!(format!("{:?}", Borders::LEFT), "LEFT");
+        assert_eq!(format!("{:?}", Borders::RIGHT), "RIGHT");
+        assert_eq!(format!("{:?}", Borders::ALL), "ALL");
+        assert_eq!(format!("{:?}", Borders::all()), "ALL");
+
+        assert_eq!(
+            format!("{:?}", Borders::TOP | Borders::BOTTOM),
+            "TOP | BOTTOM"
+        );
     }
 }
