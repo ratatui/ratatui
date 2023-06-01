@@ -74,3 +74,23 @@ jobs:
           commits: "HEAD"
       - name: "Check typos"
         uses: crate-ci/typos@master
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools
+      - name: cargo install cargo-llvm-cov
+        # Cargo subcommand to easily use LLVM source-based code coverage.
+        # see https://github.com/taiki-e/cargo-llvm-cov
+        # and https://github.com/taiki-e/install-action
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: cargo llvm-cov
+        run: cargo llvm-cov --all-features --lcov --output-path lcov.info
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: true
