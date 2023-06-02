@@ -1,3 +1,6 @@
+//! This module provides the `TestBackend` implementation for the [`Backend`] trait.
+//! It is used in the integration tests to verify the correctness of the library.
+
 use crate::{
     backend::Backend,
     buffer::{Buffer, Cell},
@@ -10,6 +13,19 @@ use std::{
 use unicode_width::UnicodeWidthStr;
 
 /// A backend used for the integration tests.
+///
+/// # Example
+///
+/// ```rust
+/// use ratatui::{backend::{Backend, TestBackend}, buffer::Buffer};
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let mut backend = TestBackend::new(10, 2);
+/// backend.clear()?;
+/// backend.assert_buffer(&Buffer::with_lines(vec!["          "; 2]));
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug)]
 pub struct TestBackend {
     width: u16,
@@ -20,6 +36,11 @@ pub struct TestBackend {
 }
 
 /// Returns a string representation of the given buffer for debugging purpose.
+///
+/// This function is used to visualize the buffer content in a human-readable format.
+/// It iterates through the buffer content and appends each cell's symbol to the view string.
+/// If a cell is hidden by a multi-width symbol, it is added to the overwritten vector and
+/// displayed at the end of the line.
 fn buffer_view(buffer: &Buffer) -> String {
     let mut view = String::with_capacity(buffer.content.len() + buffer.area.height as usize * 3);
     for cells in buffer.content.chunks(buffer.area.width as usize) {
@@ -44,6 +65,7 @@ fn buffer_view(buffer: &Buffer) -> String {
 }
 
 impl TestBackend {
+    /// Creates a new TestBackend with the specified width and height.
     pub fn new(width: u16, height: u16) -> TestBackend {
         TestBackend {
             width,
@@ -54,16 +76,21 @@ impl TestBackend {
         }
     }
 
+    /// Returns a reference to the internal buffer of the TestBackend.
     pub fn buffer(&self) -> &Buffer {
         &self.buffer
     }
 
+    /// Resizes the TestBackend to the specified width and height.
     pub fn resize(&mut self, width: u16, height: u16) {
         self.buffer.resize(Rect::new(0, 0, width, height));
         self.width = width;
         self.height = height;
     }
 
+    /// Asserts that the TestBackend's buffer is equal to the expected buffer.
+    /// If the buffers are not equal, a panic occurs with a detailed error message
+    /// showing the differences between the expected and actual buffers.
     pub fn assert_buffer(&self, expected: &Buffer) {
         assert_eq!(expected.area, self.buffer.area);
         let diff = expected.diff(&self.buffer);
@@ -101,6 +128,8 @@ impl TestBackend {
 }
 
 impl Display for TestBackend {
+    /// Formats the TestBackend for display by calling the buffer_view function
+    /// on its internal buffer.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", buffer_view(&self.buffer))
     }

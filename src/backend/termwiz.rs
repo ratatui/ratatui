@@ -1,3 +1,9 @@
+//! This module provides the `TermwizBackend` implementation for the [`Backend`] trait.
+//! It uses the `termwiz` crate to interact with the terminal.
+//!
+//! [`Backend`]: trait.Backend.html
+//! [`TermwizBackend`]: crate::backend::TermionBackend
+
 use crate::{
     backend::Backend,
     buffer::Cell,
@@ -13,11 +19,24 @@ use termwiz::{
     terminal::{buffered::BufferedTerminal, SystemTerminal, Terminal},
 };
 
+/// Termwiz backend implementation for the [`Backend`] trait.
+/// # Example
+///
+/// ```rust
+/// use ratatui::backend::{Backend, TermwizBackend};
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let mut backend = TermwizBackend::new()?;
+/// backend.clear()?;
+/// # Ok(())
+/// # }
+/// ```
 pub struct TermwizBackend {
     buffered_terminal: BufferedTerminal<SystemTerminal>,
 }
 
 impl TermwizBackend {
+    /// Creates a new Termwiz backend instance.
     pub fn new() -> Result<TermwizBackend, Box<dyn Error>> {
         let mut buffered_terminal =
             BufferedTerminal::new(SystemTerminal::new(Capabilities::new_from_env()?)?)?;
@@ -26,16 +45,19 @@ impl TermwizBackend {
         Ok(TermwizBackend { buffered_terminal })
     }
 
+    /// Creates a new Termwiz backend instance with the given buffered terminal.
     pub fn with_buffered_terminal(instance: BufferedTerminal<SystemTerminal>) -> TermwizBackend {
         TermwizBackend {
             buffered_terminal: instance,
         }
     }
 
+    /// Returns a reference to the buffered terminal used by the backend.
     pub fn buffered_terminal(&self) -> &BufferedTerminal<SystemTerminal> {
         &self.buffered_terminal
     }
 
+    /// Returns a mutable reference to the buffered terminal used by the backend.
     pub fn buffered_terminal_mut(&mut self) -> &mut BufferedTerminal<SystemTerminal> {
         &mut self.buffered_terminal
     }
