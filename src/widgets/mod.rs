@@ -226,9 +226,9 @@ pub trait StatefulWidget {
 /// ## Examples
 ///
 ///```
-/// # use tui::widgets::{Block, Borders};
-/// # use tui::style::{Style, Color};
-/// # use tui::border;
+/// # use ratatui::widgets::{Block, Borders};
+/// # use ratatui::style::{Style, Color};
+/// # use ratatui::border;
 ///
 /// Block::default()
 ///     //Construct a `Borders` object and use it in place
