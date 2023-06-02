@@ -37,7 +37,6 @@ pub trait Backend {
 
     /// Insert `n` line breaks to the terminal screen
     fn append_lines(&mut self, _n: u16) -> io::Result<()> {
-        // to get around the unused warning
         Ok(())
     }
 
