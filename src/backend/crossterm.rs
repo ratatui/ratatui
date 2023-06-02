@@ -1,3 +1,10 @@
+//! This module provides the `CrosstermBackend` implementation for the `Backend` trait.
+//! It uses the `crossterm` crate to interact with the terminal.
+//!
+//!
+//! [`Backend`]: trait.Backend.html
+//! [`CrosstermBackend`]: struct.CrosstermBackend.html
+
 use crate::{
     backend::{Backend, ClearType},
     buffer::Cell,
@@ -15,6 +22,24 @@ use crossterm::{
 };
 use std::io::{self, Write};
 
+/// A backend implementation using the `crossterm` crate.
+///
+/// The `CrosstermBackend` struct is a wrapper around a type implementing `Write`, which
+/// is used to send commands to the terminal. It provides methods for drawing content,
+/// manipulating the cursor, and clearing the terminal screen.
+///
+/// # Example
+///
+/// ```rust
+/// use ratatui::backend::{Backend, CrosstermBackend};
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let buffer = std::io::stdout();
+/// let mut backend = CrosstermBackend::new(buffer);
+/// backend.clear()?;
+/// # Ok(())
+/// # }
+/// ```
 pub struct CrosstermBackend<W: Write> {
     buffer: W,
 }
@@ -23,6 +48,7 @@ impl<W> CrosstermBackend<W>
 where
     W: Write,
 {
+    /// Creates a new `CrosstermBackend` with the given buffer.
     pub fn new(buffer: W) -> CrosstermBackend<W> {
         CrosstermBackend { buffer }
     }
@@ -32,10 +58,12 @@ impl<W> Write for CrosstermBackend<W>
 where
     W: Write,
 {
+    /// Writes a buffer of bytes to the underlying buffer.
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.buffer.write(buf)
     }
 
+    /// Flushes the underlying buffer.
     fn flush(&mut self) -> io::Result<()> {
         self.buffer.flush()
     }
@@ -172,6 +200,9 @@ impl From<Color> for CColor {
     }
 }
 
+/// The `ModifierDiff` struct is used to calculate the difference between two `Modifier`
+/// values. This is useful when updating the terminal display, as it allows for more
+/// efficient updates by only sending the necessary changes.
 #[derive(Debug)]
 struct ModifierDiff {
     pub from: Modifier,
