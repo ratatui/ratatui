@@ -503,7 +503,11 @@ macro_rules! assert_buffer_eq {
                         .enumerate()
                         .map(|(i, (x, y, cell))| {
                             let expected_cell = expected.get(*x, *y);
-                            format!("{i}: at ({x}, {y})\n  expected: {expected_cell:?}\n  actual:   {cell:?}")
+                            indoc::formatdoc! {"
+                                {i}: at ({x}, {y})
+                                  expected: {expected_cell:?}
+                                  actual:   {cell:?}
+                            "}
                         })
                         .collect::<Vec<String>>()
                         .join("\n");
@@ -531,12 +535,10 @@ impl Debug for Buffer {
     /// Writes a debug representation of the buffer to the given formatter.
     ///
     /// The format is like a pretty printed struct, with the following fields:
-    /// area: displayed as Rect { x: 1, y: 2, width: 3, height: 4 }
-    /// content: displayed as a list of strings representing the content of the
-    ///     buffer
-    /// styles: displayed as a list of
-    ///     { x: 1, y: 2, fg: Color::Red, bg: Color::Blue, modifier: Modifier::BOLD }
-    /// only showing a value when there is a change in style.
+    /// * `area`: displayed as `Rect { x: 1, y: 2, width: 3, height: 4 }`
+    /// * `content`: displayed as a list of strings representing the content of the buffer
+    /// * `styles`: displayed as a list of: `{ x: 1, y: 2, fg: Color::Red, bg: Color::Blue,
+    ///     modifier: Modifier::BOLD }` only showing a value when there is a change in style.
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.write_fmt(format_args!(
             "Buffer {{\n    area: {:?},\n    content: [\n",

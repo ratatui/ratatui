@@ -496,7 +496,7 @@ mod test {
                 "mnopab cdefghi j",
                 "klmno",
             ]
-        )
+        );
     }
 
     #[test]

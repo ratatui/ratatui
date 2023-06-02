@@ -36,9 +36,7 @@ pub trait Backend {
         I: Iterator<Item = (u16, u16, &'a Cell)>;
 
     /// Insert `n` line breaks to the terminal screen
-    fn append_lines(&mut self, n: u16) -> io::Result<()> {
-        // to get around the unused warning
-        let _n = n;
+    fn append_lines(&mut self, _n: u16) -> io::Result<()> {
         Ok(())
     }
 
