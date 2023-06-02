@@ -22,6 +22,7 @@ pub struct Cell {
     #[cfg(feature = "crossterm")]
     pub underline_color: Color,
     pub modifier: Modifier,
+    pub skip: bool,
 }
 
 impl Cell {
@@ -80,6 +81,15 @@ impl Cell {
             .add_modifier(self.modifier)
     }
 
+    /// Sets the cell to be skipped when copying (diffing) the buffer to the screen.
+    ///
+    /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
+    /// covered by an image from some terminal graphics protocol (Sixel / iTerm / Kitty ...).
+    pub fn set_skip(&mut self, skip: bool) -> &mut Cell {
+        self.skip = skip;
+        self
+    }
+
     pub fn reset(&mut self) {
         self.symbol.clear();
         self.symbol.push(' ');
@@ -90,6 +100,7 @@ impl Cell {
             self.underline_color = Color::Reset;
         }
         self.modifier = Modifier::empty();
+        self.skip = false;
     }
 }
 
@@ -102,6 +113,7 @@ impl Default for Cell {
             #[cfg(feature = "crossterm")]
             underline_color: Color::Reset,
             modifier: Modifier::empty(),
+            skip: false,
         }
     }
 }
@@ -130,7 +142,8 @@ impl Default for Cell {
 ///     bg: Color::White,
 ///     #[cfg(feature = "crossterm")]
 ///     underline_color: Color::Reset,
-///     modifier: Modifier::empty()
+///     modifier: Modifier::empty(),
+///     skip: false
 /// });
 /// buf.get_mut(5, 0).set_char('x');
 /// assert_eq!(buf.get(5, 0).symbol, "x");
@@ -486,10 +499,10 @@ impl Buffer {
         // Cells invalidated by drawing/replacing preceding multi-width characters:
         let mut invalidated: usize = 0;
         // Cells from the current buffer to skip due to preceding multi-width characters taking
-        // their place (the skipped cells should be blank anyway):
+        // their place (the skipped cells should be blank anyway), or due to per-cell-skipping:
         let mut to_skip: usize = 0;
         for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
-            if (current != previous || invalidated > 0) && to_skip == 0 {
+            if !current.skip && (current != previous || invalidated > 0) && to_skip == 0 {
                 let (x, y) = self.pos_of(i);
                 updates.push((x, y, &next_buffer[i]));
             }
@@ -915,6 +928,18 @@ mod tests {
     }
 
     #[test]
+    fn buffer_diffing_skip() {
+        let prev = Buffer::with_lines(vec!["123"]);
+        let mut next = Buffer::with_lines(vec!["456"]);
+        for i in 1..3 {
+            next.content[i].set_skip(true);
+        }
+
+        let diff = prev.diff(&next);
+        assert_eq!(diff, vec![(0, 0, &cell("4"))],);
+    }
+
+    #[test]
     fn buffer_merge() {
         let mut one = Buffer::filled(
             Rect {
@@ -994,5 +1019,55 @@ mod tests {
             height: 4,
         };
         assert_buffer_eq!(one, merged);
+    }
+
+    #[test]
+    fn buffer_merge_skip() {
+        let mut one = Buffer::filled(
+            Rect {
+                x: 0,
+                y: 0,
+                width: 2,
+                height: 2,
+            },
+            Cell::default().set_symbol("1"),
+        );
+        let two = Buffer::filled(
+            Rect {
+                x: 0,
+                y: 1,
+                width: 2,
+                height: 2,
+            },
+            Cell::default().set_symbol("2").set_skip(true),
+        );
+        one.merge(&two);
+        let skipped: Vec<bool> = one.content().iter().map(|c| c.skip).collect();
+        assert_eq!(skipped, vec![false, false, true, true, true, true]);
+    }
+
+    #[test]
+    fn buffer_merge_skip2() {
+        let mut one = Buffer::filled(
+            Rect {
+                x: 0,
+                y: 0,
+                width: 2,
+                height: 2,
+            },
+            Cell::default().set_symbol("1").set_skip(true),
+        );
+        let two = Buffer::filled(
+            Rect {
+                x: 0,
+                y: 1,
+                width: 2,
+                height: 2,
+            },
+            Cell::default().set_symbol("2"),
+        );
+        one.merge(&two);
+        let skipped: Vec<bool> = one.content().iter().map(|c| c.skip).collect();
+        assert_eq!(skipped, vec![true, true, false, false, false, false]);
     }
 }
