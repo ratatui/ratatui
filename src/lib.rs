@@ -22,7 +22,6 @@
 //! [dependencies]
 //! termion = "1.5"
 //! ratatui = { version = "0.20", default-features = false, features = ['termion'] }
-//!
 //! ```
 //!
 //! The same logic applies for all other available backends.

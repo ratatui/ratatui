@@ -168,7 +168,8 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             {}
 
         InputMode::Editing => {
-            // Make the cursor visible and ask ratatui to put it at the specified coordinates after rendering
+            // Make the cursor visible and ask ratatui to put it at the specified coordinates after
+            // rendering
             f.set_cursor(
                 // Put cursor past the end of the input text
                 chunks[1].x + app.input.width() as u16 + 1,

@@ -11,8 +11,8 @@
 //! is a [`Line`].
 //!
 //! Keep it mind that a lot of widgets will use those types to advertise what kind of string is
-//! supported for their properties. Moreover, `ratatui` provides convenient `From` implementations so
-//! that you can start by using simple `String` or `&str` and then promote them to the previous
+//! supported for their properties. Moreover, `ratatui` provides convenient `From` implementations
+//! so that you can start by using simple `String` or `&str` and then promote them to the previous
 //! primitives when you need additional styling capabilities.
 //!
 //! For example, for the [`crate::widgets::Block`] widget, all the following calls are valid to set

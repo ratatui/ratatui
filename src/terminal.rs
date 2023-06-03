@@ -356,8 +356,8 @@ where
     /// Insert some content before the current inline viewport. This has no effect when the
     /// viewport is fullscreen.
     ///
-    /// This function scrolls down the current viewport by the given height. The newly freed space is
-    /// then made available to the `draw_fn` closure through a writable `Buffer`.
+    /// This function scrolls down the current viewport by the given height. The newly freed space
+    /// is then made available to the `draw_fn` closure through a writable `Buffer`.
     ///
     /// Before:
     /// ```ignore

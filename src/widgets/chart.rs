@@ -365,7 +365,8 @@ impl<'a> Chart<'a> {
             let first_label_width = first_x_label.content.width() as u16;
             let width_left_of_y_axis = match self.x_axis.labels_alignment {
                 Alignment::Left => {
-                    // The last character of the label should be below the Y-Axis when it exists, not on its left
+                    // The last character of the label should be below the Y-Axis when it exists,
+                    // not on its left
                     let y_axis_offset = u16::from(has_y_axis);
                     first_label_width.saturating_sub(y_axis_offset)
                 }
@@ -411,7 +412,8 @@ impl<'a> Chart<'a> {
         Self::render_label(buf, labels.first().unwrap(), label_area, label_alignment);
 
         for (i, label) in labels[1..labels.len() - 1].iter().enumerate() {
-            // We add 1 to x (and width-1 below) to leave at least one space before each intermediate labels
+            // We add 1 to x (and width-1 below) to leave at least one space before each
+            // intermediate labels
             let x = graph_area.left() + (i + 1) as u16 * width_between_ticks + 1;
             let label_area = Rect::new(x, y, width_between_ticks.saturating_sub(1), 1);
 
