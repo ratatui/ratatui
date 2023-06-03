@@ -44,7 +44,10 @@ pub use self::paragraph::{Paragraph, Wrap};
 pub use self::sparkline::{RenderDirection, Sparkline};
 pub use self::table::{Cell, Row, Table, TableState};
 pub use self::tabs::Tabs;
-pub use self::widget_list::{WidgetList, WidgetListState};
+pub use self::widget_list::{
+    widget_list_item::{WidgetListItem, WidgetListItem3, WidgetListItem4, WidgetListItem5},
+    WidgetList, WidgetListState,
+};
 
 use crate::{
     buffer::Buffer,

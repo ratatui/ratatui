@@ -10,6 +10,7 @@ use self::layout::Layout;
 use super::SizeHint;
 
 mod layout;
+pub mod widget_list_item;
 
 #[derive(Debug, Clone, Default)]
 pub struct WidgetListState {
