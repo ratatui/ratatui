@@ -71,7 +71,13 @@ pub struct WidgetList<'a, E: Widget + SizeHint> {
     items: Vec<E>,
     style: Style,
     start_corner: Corner,
-    /// Padding between each item
+    /// Style used to render selected item
+    highlight_style: Style,
+    /// Symbol in front of the selected item (Shift all items to the right)
+    highlight_symbol: Option<&'a str>,
+    /// Whether to repeat the highlight symbol for each line of the selected item
+    repeat_highlight_symbol: bool,
+    /// Spacing between each item
     spacing: u16,
     item_heights: Vec<Option<Constraint>>,
 }
@@ -92,6 +98,9 @@ where
             start_corner: Corner::TopLeft,
             spacing: 0,
             item_heights: vec![],
+            highlight_symbol: None,
+            highlight_style: Style::default(),
+            repeat_highlight_symbol: false,
         }
     }
 
@@ -109,6 +118,21 @@ where
     /// if the given vector is smaller than the item count, then the missing constraint will be set to None
     pub fn item_heights(mut self, item_heights: Vec<Option<Constraint>>) -> WidgetList<'a, E> {
         self.item_heights = item_heights;
+        self
+    }
+
+    pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> WidgetList<'a, E> {
+        self.highlight_symbol = Some(highlight_symbol);
+        self
+    }
+
+    pub fn highlight_style(mut self, style: Style) -> WidgetList<'a, E> {
+        self.highlight_style = style;
+        self
+    }
+
+    pub fn repeat_highlight_symbol(mut self, repeat: bool) -> WidgetList<'a, E> {
+        self.repeat_highlight_symbol = repeat;
         self
     }
 
@@ -140,7 +164,7 @@ where
 
     fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
-        let list_area = match self.block.take() {
+        let mut list_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
                 b.render(area, buf);
@@ -157,6 +181,16 @@ where
             return;
         }
 
+        let highlight_symbol = self.highlight_symbol.unwrap_or("");
+        let symbol_x = list_area.x;
+
+        if state.selected.is_some() && !highlight_symbol.is_empty() {
+            list_area.width = list_area
+                .width
+                .saturating_sub(highlight_symbol.len() as u16);
+            list_area.x += highlight_symbol.len() as u16;
+        }
+
         let layout = Layout::new(
             &list_area,
             self.spacing,
@@ -168,16 +202,45 @@ where
 
         state.offset = layout.offset;
 
-        for (item, mut area) in self
+        for (i, (item, mut area)) in self
             .items
             .into_iter()
             .skip(state.offset)
             .zip(layout.item_areas)
+            .enumerate()
         {
             if let Corner::BottomLeft = self.start_corner {
                 area.y = list_area.bottom() - area.bottom() + list_area.y;
             }
+
+            let is_selected = state
+                .selected
+                .map(|s| s == i + state.offset)
+                .unwrap_or(false);
+
+            if is_selected && !highlight_symbol.is_empty() {
+                let selected_y = area.y + ((area.height - 1) >> 1);
+                let blank_symbol = " ".repeat(highlight_symbol.len());
+                for y in area.y..(area.y + area.height) {
+                    buf.set_stringn(
+                        symbol_x,
+                        y,
+                        if self.repeat_highlight_symbol || selected_y == y {
+                            highlight_symbol
+                        } else {
+                            &blank_symbol
+                        },
+                        highlight_symbol.len(),
+                        self.highlight_style,
+                    );
+                }
+            }
+
             item.render(area, buf);
+
+            if is_selected {
+                buf.set_style(area, self.highlight_style);
+            }
         }
     }
 }

@@ -22,26 +22,24 @@ impl Layout {
             start = start.min(*selected);
         }
 
-        let iter = items
-            .iter()
-            .enumerate()
-            .map(|(index, item)| {
-                (
-                    item,
-                    item_lengths.get(index).map_or(&None::<Constraint>, |e| e),
-                )
-            })
-            .skip(start);
+        let iter = items.iter().skip(start).enumerate().map(|(index, item)| {
+            (
+                item,
+                item_lengths.get(index).map_or(&None::<Constraint>, |e| e),
+            )
+        });
 
         let mut layout = create_layout(iter, *area, spacing);
         let end = start + layout.item_areas.len();
         layout.offset = start;
 
         if let Some(selected) = selected {
-            if *selected > 0 && *selected >= end.saturating_sub(1) {
+            let selected = (items.len() - 1).min(*selected);
+            if selected > 0 && selected >= end.saturating_sub(1) {
                 layout = create_layout(
                     items
                         .iter()
+                        .take(selected + 1)
                         .enumerate()
                         .map(|(index, item)| {
                             (
@@ -49,7 +47,6 @@ impl Layout {
                                 item_lengths.get(index).map_or(&None::<Constraint>, |e| e),
                             )
                         })
-                        .take(selected + 1)
                         .rev(),
                     *area,
                     spacing,
