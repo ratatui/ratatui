@@ -1,3 +1,12 @@
+use std::{
+    collections::{BTreeMap, VecDeque},
+    error::Error,
+    io,
+    sync::mpsc,
+    thread,
+    time::{Duration, Instant},
+};
+
 use rand::distributions::{Distribution, Uniform};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
@@ -7,14 +16,6 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
     Frame, Terminal, TerminalOptions, Viewport,
-};
-use std::{
-    collections::{BTreeMap, VecDeque},
-    error::Error,
-    io,
-    sync::mpsc,
-    thread,
-    time::{Duration, Instant},
 };
 
 const NUM_DOWNLOADS: usize = 10;

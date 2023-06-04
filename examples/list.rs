@@ -1,3 +1,9 @@
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
+};
+
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
@@ -10,11 +16,6 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState},
     Frame, Terminal,
-};
-use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
 };
 
 struct StatefulList<T> {

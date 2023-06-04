@@ -1,4 +1,9 @@
-use crate::{app::App, ui};
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
+};
+
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
@@ -8,11 +13,8 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     Terminal,
 };
-use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
-};
+
+use crate::{app::App, ui};
 
 pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
     // setup terminal

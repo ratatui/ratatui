@@ -1,11 +1,15 @@
-use std::cell::RefCell;
-use std::cmp::{max, min};
-use std::collections::HashMap;
-use std::rc::Rc;
+use std::{
+    cell::RefCell,
+    cmp::{max, min},
+    collections::HashMap,
+    rc::Rc,
+};
 
-use cassowary::strength::{MEDIUM, REQUIRED, WEAK};
-use cassowary::WeightedRelation::{EQ, GE, LE};
-use cassowary::{Constraint as CassowaryConstraint, Expression, Solver, Variable};
+use cassowary::{
+    strength::{MEDIUM, REQUIRED, WEAK},
+    Constraint as CassowaryConstraint, Expression, Solver, Variable,
+    WeightedRelation::{EQ, GE, LE},
+};
 
 #[derive(Debug, Hash, Clone, Copy, PartialEq, Eq)]
 pub enum Corner {

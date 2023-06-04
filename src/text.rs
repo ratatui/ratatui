@@ -46,10 +46,12 @@
 //!     Span::raw(" title"),
 //! ]);
 //! ```
-use crate::style::Style;
 use std::{borrow::Cow, fmt::Debug};
+
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
+
+use crate::style::Style;
 
 mod line;
 mod masked;

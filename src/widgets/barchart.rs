@@ -1,3 +1,7 @@
+use std::cmp::min;
+
+use unicode_width::UnicodeWidthStr;
+
 use crate::{
     buffer::Buffer,
     layout::Rect,
@@ -5,8 +9,6 @@ use crate::{
     symbols,
     widgets::{Block, Widget},
 };
-use std::cmp::min;
-use unicode_width::UnicodeWidthStr;
 
 /// Display multiple bars in a single widgets
 ///

@@ -5,12 +5,15 @@ mod points;
 mod rectangle;
 mod world;
 
-pub use self::circle::Circle;
-pub use self::line::Line;
-pub use self::map::{Map, MapResolution};
-pub use self::points::Points;
-pub use self::rectangle::Rectangle;
+use std::fmt::Debug;
 
+pub use self::{
+    circle::Circle,
+    line::Line,
+    map::{Map, MapResolution},
+    points::Points,
+    rectangle::Rectangle,
+};
 use crate::{
     buffer::Buffer,
     layout::Rect,
@@ -19,7 +22,6 @@ use crate::{
     text::Line as TextLine,
     widgets::{Block, Widget},
 };
-use std::fmt::Debug;
 
 /// Interface for all shapes that may be drawn on a Canvas widget.
 pub trait Shape {
@@ -514,9 +516,10 @@ where
 
 #[cfg(test)]
 mod tests {
+    use indoc::indoc;
+
     use super::*;
     use crate::{buffer::Cell, symbols::Marker};
-    use indoc::indoc;
 
     // helper to test the canvas checks that drawing a vertical and horizontal line
     // results in the expected output

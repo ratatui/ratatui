@@ -1,16 +1,18 @@
 //! This module provides the `TestBackend` implementation for the [`Backend`] trait.
 //! It is used in the integration tests to verify the correctness of the library.
 
+use std::{
+    fmt::{Display, Write},
+    io,
+};
+
+use unicode_width::UnicodeWidthStr;
+
 use crate::{
     backend::Backend,
     buffer::{Buffer, Cell},
     layout::Rect,
 };
-use std::{
-    fmt::{Display, Write},
-    io,
-};
-use unicode_width::UnicodeWidthStr;
 
 /// A backend used for the integration tests.
 ///
