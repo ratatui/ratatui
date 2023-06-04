@@ -208,8 +208,8 @@ mod test {
         Terminal,
     };
 
-    /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal area
-    /// and comparing the rendered and expected content.
+    /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
+    /// area and comparing the rendered and expected content.
     /// This can be used for easy testing of varying configured paragraphs with the same expected
     /// buffer or any other test case really.
     fn test_case(paragraph: &Paragraph, expected: Buffer) {
