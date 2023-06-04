@@ -74,6 +74,8 @@ jobs:
           commits: "HEAD"
       - name: "Check typos"
         uses: crate-ci/typos@master
+      - name: "Lint dependencies"
+        uses: EmbarkStudios/cargo-deny-action@v1
 
   coverage:
     runs-on: ubuntu-latest
