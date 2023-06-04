@@ -43,6 +43,12 @@ Please include as many details as possible in your PR description to help the re
 Make sure to highlight changes which may need additional attention or you are uncertain about.
 Any idea with a large scale impact on the crate or its users should ideally be discussed in a "Feature Request" issue beforehand.
 
+## Committing
+
+To avoid any issues that may arrise with the CI/CD by not following the [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) syntax, we recommend to install [Commitizen](https://commitizen-tools.github.io/commitizen/).\
+By using this tool you automatically follow the configuration defined in [.cz.toml](.cz.toml).
+
+
 ## Continuous Integration
 
 We use Github Actions for the CI where we perform the following checks:
