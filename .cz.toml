@@ -68,6 +68,7 @@ message = "Provide additional contextual information about the code changes: (pr
 type = "confirm"
 name = "is_breaking_change"
 message = "Is this a BREAKING CHANGE?"
+default = false
 
 # Reference closing issues and share other
 [[tool.commitizen.customize.questions]]
