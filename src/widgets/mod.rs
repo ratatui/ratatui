@@ -27,6 +27,7 @@ mod gauge;
 mod list;
 mod paragraph;
 mod reflow;
+pub mod scrollbar;
 mod sparkline;
 mod table;
 mod tabs;
@@ -43,6 +44,7 @@ pub use self::{
     gauge::{Gauge, LineGauge},
     list::{List, ListItem, ListState},
     paragraph::{Paragraph, Wrap},
+    scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
     sparkline::{RenderDirection, Sparkline},
     table::{Cell, Row, Table, TableState},
     tabs::Tabs,
