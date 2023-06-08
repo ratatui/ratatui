@@ -14,7 +14,8 @@ project.
 [![Codecov](https://img.shields.io/codecov/c/github/tui-rs-revival/ratatui?logo=codecov&style=for-the-badge&token=BAQ8SOKEST)](https://app.codecov.io/gh/tui-rs-revival/ratatui)
 [![Discord](https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=for-the-badge)](https://discord.gg/pMCEU9hNEj)
 
-![Demo of ratatui](./assets/demo.gif)
+<!-- See RELEASE.md for instructions on creating the demo gif --->
+![Demo of Ratatui](https://vhs.charm.sh/vhs-IZKj0x97pI2LAJwxCpu1Y.gif)
 
 <details>
 <summary>Table of Contents</summary>
