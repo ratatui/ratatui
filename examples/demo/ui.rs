@@ -82,6 +82,7 @@ where
                 .bg(Color::Black)
                 .add_modifier(Modifier::ITALIC | Modifier::BOLD),
         )
+        .use_unicode(app.enhanced_graphics)
         .label(label)
         .ratio(app.progress);
     f.render_widget(gauge, chunks[0]);
