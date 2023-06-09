@@ -166,20 +166,20 @@ impl<'a> Widget for Paragraph<'a> {
             )
         });
 
-        let mut line_composer: Box<dyn LineComposer> = if let Some(wrap_mode) = self.wrap {
-            match wrap_mode {
-                Wrap::CharBoundary => {
-                    Box::new(CharWrapper::new(styled, text_area.width, self.trim))
-                }
-                Wrap::WordBoundary => {
-                    Box::new(WordWrapper::new(styled, text_area.width, self.trim))
-                }
+        let mut line_composer: Box<dyn LineComposer> = match self.wrap {
+            Some(Wrap::CharBoundary) => {
+                Box::new(CharWrapper::new(styled, text_area.width, self.trim))
             }
-        } else {
-            let mut line_composer = Box::new(LineTruncator::new(styled, text_area.width));
-            line_composer.set_horizontal_offset(self.scroll.1);
-            line_composer
+            Some(Wrap::WordBoundary) => {
+                Box::new(WordWrapper::new(styled, text_area.width, self.trim))
+            }
+            None => {
+                let mut line_composer = Box::new(LineTruncator::new(styled, text_area.width));
+                line_composer.set_horizontal_offset(self.scroll.1);
+                line_composer
+            }
         };
+
         let mut y = 0;
         while let Some((current_line, current_line_width, current_line_alignment)) =
             line_composer.next_line()
