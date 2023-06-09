@@ -10,7 +10,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, BorderType, Borders, Padding, Paragraph},
+    widgets::{block::title::Title, Block, BorderType, Borders, Padding, Paragraph},
     Frame, Terminal,
 };
 
@@ -62,8 +62,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
     // Surrounding block
     let block = Block::default()
         .borders(Borders::ALL)
-        .title("Main block with round corners")
-        .title_alignment(Alignment::Center)
+        .title(Title::from("Main block with round corners").alignment(Alignment::Center))
         .border_type(BorderType::Rounded);
     f.render_widget(block, size);
 
@@ -89,15 +88,16 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
     f.render_widget(block, top_chunks[0]);
 
     // Top right inner block with styled title aligned to the right
-    let block = Block::default()
-        .title(Span::styled(
+    let block = Block::default().title(
+        Title::from(Span::styled(
             "Styled title",
             Style::default()
                 .fg(Color::White)
                 .bg(Color::Red)
                 .add_modifier(Modifier::BOLD),
         ))
-        .title_alignment(Alignment::Right);
+        .alignment(Alignment::Right),
+    );
     f.render_widget(block, top_chunks[1]);
 
     // Bottom two inner blocks

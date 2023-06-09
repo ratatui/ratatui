@@ -62,7 +62,7 @@ pub struct Margin {
     pub horizontal: u16,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Alignment {
     Left,
     Center,

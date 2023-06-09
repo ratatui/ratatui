@@ -14,7 +14,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     symbols,
     text::{Line, Span},
-    widgets::{Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
+    widgets::{block::title::Title, Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
     Frame, Terminal, TerminalOptions, Viewport,
 };
 
@@ -227,9 +227,7 @@ fn run_app<B: Backend>(
 fn ui<B: Backend>(f: &mut Frame<B>, downloads: &Downloads) {
     let size = f.size();
 
-    let block = Block::default()
-        .title("Progress")
-        .title_alignment(Alignment::Center);
+    let block = Block::default().title(Title::from("Progress").alignment(Alignment::Center));
     f.render_widget(block, size);
 
     let chunks = Layout::default()
