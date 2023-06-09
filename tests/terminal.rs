@@ -16,6 +16,18 @@ fn terminal_buffer_size_should_be_limited() {
 }
 
 #[test]
+fn swap_buffer_clears_prev_buffer() {
+    let backend = TestBackend::new(100, 50);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .current_buffer_mut()
+        .set_string(0, 0, "Hello", ratatui::style::Style::reset());
+    assert_eq!(terminal.current_buffer_mut().content()[0].symbol, "H");
+    terminal.swap_buffers();
+    assert_eq!(terminal.current_buffer_mut().content()[0].symbol, " ");
+}
+
+#[test]
 fn terminal_draw_returns_the_completed_frame() -> Result<(), Box<dyn Error>> {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend)?;
