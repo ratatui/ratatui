@@ -2,15 +2,20 @@
 name = "ratatui"
 version = "0.21.0"
 authors = ["Florian Dehau <work@fdehau.com>"]
-description = """
-A library to build rich terminal user interfaces or dashboards
-"""
+description = "A library to build rich terminal user interfaces or dashboards"
 documentation = "https://docs.rs/ratatui/latest/ratatui/"
 keywords = ["tui", "terminal", "dashboard"]
 repository = "https://github.com/tui-rs-revival/ratatui"
 readme = "README.md"
 license = "MIT"
-exclude = ["assets/*", ".github", "Makefile.toml", "CONTRIBUTING.md", "*.log", "tags"]
+exclude = [
+  "assets/*",
+  ".github",
+  "Makefile.toml",
+  "CONTRIBUTING.md",
+  "*.log",
+  "tags",
+]
 autoexamples = true
 edition = "2021"
 rust-version = "1.65.0"
@@ -34,10 +39,10 @@ bitflags = "2.3"
 cassowary = "0.3"
 crossterm = { version = "0.26", optional = true }
 indoc = "2.0"
-serde = { version = "1", optional = true, features = ["derive"]}
+serde = { version = "1", optional = true, features = ["derive"] }
 termion = { version = "2.0", optional = true }
 termwiz = { version = "0.20.0", optional = true }
-time = { version = "0.3.11", optional = true, features = ["local-offset"]}
+time = { version = "0.3.11", optional = true, features = ["local-offset"] }
 unicode-segmentation = "1.10"
 unicode-width = "0.1"
 
