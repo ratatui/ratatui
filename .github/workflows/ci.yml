@@ -5,6 +5,8 @@ on:
   pull_request:
     branches:
       - main
+  merge_group:
+
 
 name: CI
 
@@ -15,8 +17,8 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: ["1.65.0", "stable"]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        rust: [ "1.65.0", "stable" ]
         include:
           - os: ubuntu-latest
             triple: x86_64-unknown-linux-musl
