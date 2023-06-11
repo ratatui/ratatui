@@ -1,3 +1,5 @@
+# configuration for https://github.com/commitizen/cz-cli
+
 [tool.commitizen]
 name = "cz_customize"
 tag_format = "$version"
@@ -6,7 +8,6 @@ version_provider = "cargo"
 update_changelog_on_bump = true
 major_version_zero = true
 use_shortcuts = true
-
 
 [tool.commitizen.customize]
 message_template = """{{change_type}}({{scope}}): {{subject}}
@@ -32,7 +33,7 @@ type = "list"
 name = "change_type"
 choices = [
     { value = "build", name = "build: Changes that affect the build system or external dependencies (example scopes: pip, docker, npm)", key = "b" },
-    { value = "chore", name = "chore: A modification that generally does not fall into any other category", key = "c"},
+    { value = "chore", name = "chore: A modification that generally does not fall into any other category", key = "c" },
     { value = "ci", name = "ci: Changes to our CI configuration files and scripts (example scopes: GitLabCI)", key = "i" },
     { value = "docs", name = "docs: Documentation only changes", key = "d" },
     { value = "feat", name = "feat: A new feature.", key = "f" },
@@ -41,7 +42,7 @@ choices = [
     { value = "refactor", name = "refactor: A code change that neither fixes a bug nor adds a feature", key = "r" },
     { value = "revert", name = "revert: Revert previous commits", key = "v" },
     { value = "style", name = "style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)", key = "s" },
-    { value = "test", name = "test: Adding missing or correcting existing tests", key = "t" }
+    { value = "test", name = "test: Adding missing or correcting existing tests", key = "t" },
 ]
 message = "Select the type of change you are committing"
 
@@ -75,4 +76,3 @@ default = false
 type = "input"
 name = "footer"
 message = "Footer. Information about Breaking Changes and reference issues that this commit closes: (press [enter] to skip)"
-

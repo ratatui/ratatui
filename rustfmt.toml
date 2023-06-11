@@ -1,3 +1,4 @@
+# configuration for https://rust-lang.github.io/rustfmt/
 group_imports = "StdExternalCrate"
 imports_granularity = "Crate"
 wrap_comments = true

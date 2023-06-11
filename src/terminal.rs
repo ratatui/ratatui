@@ -293,9 +293,7 @@ where
             }
         }
 
-        // Swap buffers
-        self.buffers[1 - self.current].reset();
-        self.current = 1 - self.current;
+        self.swap_buffers();
 
         // Flush
         self.backend.flush()?;
@@ -347,6 +345,12 @@ where
         // Reset the back buffer to make sure the next update will redraw everything.
         self.buffers[1 - self.current].reset();
         Ok(())
+    }
+
+    /// Clears the inactive buffer and swaps it with the current buffer
+    pub fn swap_buffers(&mut self) {
+        self.buffers[1 - self.current].reset();
+        self.current = 1 - self.current;
     }
 
     /// Queries the real size of the backend.

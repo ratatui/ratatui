@@ -320,7 +320,9 @@ mod test {
 
     #[test]
     fn test_render_paragraph_with_block() {
-        let text = "Hello, world!";
+        // We use the slightly unconventional "worlds" instead of "world" here to make sure when we
+        // can truncate this without triggering the typos linter.
+        let text = "Hello, worlds!";
         let truncated_paragraph =
             Paragraph::new(text).block(Block::default().title("Title").borders(Borders::ALL));
         let wrapped_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: false });
@@ -332,16 +334,16 @@ mod test {
             test_case(
                 paragraph,
                 Buffer::with_lines(vec![
-                    "┌Title────────┐",
-                    "│Hello, world!│",
-                    "└─────────────┘",
+                    "┌Title─────────┐",
+                    "│Hello, worlds!│",
+                    "└──────────────┘",
                 ]),
             );
             test_case(
                 paragraph,
                 Buffer::with_lines(vec![
                     "┌Title───────────┐",
-                    "│Hello, world!   │",
+                    "│Hello, worlds!  │",
                     "└────────────────┘",
                 ]),
             );
@@ -349,7 +351,7 @@ mod test {
                 paragraph,
                 Buffer::with_lines(vec![
                     "┌Title────────────┐",
-                    "│Hello, world!    │",
+                    "│Hello, worlds!   │",
                     "│                 │",
                     "└─────────────────┘",
                 ]),
@@ -359,10 +361,10 @@ mod test {
         test_case(
             &truncated_paragraph,
             Buffer::with_lines(vec![
-                "┌Title──────┐",
-                "│Hello, worl│",
-                "│           │",
-                "└───────────┘",
+                "┌Title───────┐",
+                "│Hello, world│",
+                "│            │",
+                "└────────────┘",
             ]),
         );
         test_case(
@@ -370,7 +372,7 @@ mod test {
             Buffer::with_lines(vec![
                 "┌Title──────┐",
                 "│Hello,     │",
-                "│world!     │",
+                "│worlds!    │",
                 "└───────────┘",
             ]),
         );
@@ -379,7 +381,7 @@ mod test {
             Buffer::with_lines(vec![
                 "┌Title──────┐",
                 "│Hello,     │",
-                "│world!     │",
+                "│worlds!    │",
                 "└───────────┘",
             ]),
         );

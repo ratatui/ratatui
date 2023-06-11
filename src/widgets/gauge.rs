@@ -127,18 +127,26 @@ impl<'a> Widget for Gauge<'a> {
         for y in gauge_area.top()..gauge_area.bottom() {
             // render the filled area (left to end)
             for x in gauge_area.left()..end {
-                // spaces are needed to apply the background styling
-                buf.get_mut(x, y)
-                    .set_symbol(" ")
-                    .set_fg(self.gauge_style.bg.unwrap_or(Color::Reset))
-                    .set_bg(self.gauge_style.fg.unwrap_or(Color::Reset));
+                let cell = buf.get_mut(x, y);
+                if self.use_unicode {
+                    cell.set_symbol(symbols::block::FULL)
+                        .set_fg(self.gauge_style.fg.unwrap_or(Color::Reset))
+                        .set_bg(self.gauge_style.bg.unwrap_or(Color::Reset));
+                } else {
+                    // spaces are needed to apply the background styling.
+                    // note that the background and foreground colors are swapped
+                    // otherwise the gauge will be inverted
+                    cell.set_symbol(" ")
+                        .set_fg(self.gauge_style.bg.unwrap_or(Color::Reset))
+                        .set_bg(self.gauge_style.fg.unwrap_or(Color::Reset));
+                }
             }
             if self.use_unicode && self.ratio < 1.0 {
                 buf.get_mut(end, y)
                     .set_symbol(get_unicode_block(filled_width % 1.0));
             }
         }
-        // set the line
+        // render the label
         buf.set_span(label_col, label_row, &label, clamped_label_width);
     }
 }
