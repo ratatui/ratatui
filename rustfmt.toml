@@ -1,2 +1,4 @@
+# configuration for https://rust-lang.github.io/rustfmt/
+
 wrap_comments = true
 comment_width = 100
