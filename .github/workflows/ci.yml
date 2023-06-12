@@ -22,6 +22,7 @@ jobs:
           - os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v3
       - uses: hecrj/setup-rust-action@50a120e4d34903c2c1383dec0e9b1d349a9cc2b1
         with:
           rust-version: ${{ matrix.rust }}
