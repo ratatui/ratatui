@@ -16,10 +16,6 @@ jobs:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         rust: [ "1.65.0", "stable" ]
-        include:
-          - os: ubuntu-latest
-          - os: windows-latest
-          - os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
