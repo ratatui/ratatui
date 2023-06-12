@@ -15,13 +15,14 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        rust: [ "1.65.0", "stable" ]
+        toolchain: [ "1.65.0", "stable" ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - uses: hecrj/setup-rust-action@50a120e4d34903c2c1383dec0e9b1d349a9cc2b1
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
         with:
-          rust-version: ${{ matrix.rust }}
+          toolchain: ${{ matrix.toolchain }}
           components: rustfmt,clippy
       - name: Install cargo-binstall
         uses: taiki-e/install-action@cargo-binstall
@@ -60,14 +61,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install stable
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools
       - name: cargo install cargo-llvm-cov
-        # Cargo subcommand to easily use LLVM source-based code coverage.
-        # see https://github.com/taiki-e/cargo-llvm-cov
-        # and https://github.com/taiki-e/install-action
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: cargo llvm-cov
         run: cargo llvm-cov --all-features --lcov --output-path lcov.info
