@@ -1,10 +1,11 @@
+use std::io;
+
 use crate::{
     backend::{Backend, ClearType},
     buffer::Buffer,
     layout::Rect,
     widgets::{StatefulWidget, Widget},
 };
-use std::io;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Viewport {

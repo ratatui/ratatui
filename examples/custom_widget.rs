@@ -1,3 +1,5 @@
+use std::{error::Error, io};
+
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -11,7 +13,6 @@ use ratatui::{
     widgets::Widget,
     Frame, Terminal,
 };
-use std::{error::Error, io};
 
 #[derive(Default)]
 struct Label<'a> {

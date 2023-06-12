@@ -5,12 +5,8 @@
 //! [`Backend`]: trait.Backend.html
 //! [`CrosstermBackend`]: struct.CrosstermBackend.html
 
-use crate::{
-    backend::{Backend, ClearType},
-    buffer::Cell,
-    layout::Rect,
-    style::{Color, Modifier},
-};
+use std::io::{self, Write};
+
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
     execute, queue,
@@ -20,7 +16,13 @@ use crossterm::{
     },
     terminal::{self, Clear},
 };
-use std::io::{self, Write};
+
+use crate::{
+    backend::{Backend, ClearType},
+    buffer::Cell,
+    layout::Rect,
+    style::{Color, Modifier},
+};
 
 /// A backend implementation using the `crossterm` crate.
 ///

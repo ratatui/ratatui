@@ -200,8 +200,8 @@ impl<'a> Widget for Paragraph<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::backend::TestBackend;
     use crate::{
+        backend::TestBackend,
         style::Color,
         text::{Line, Span},
         widgets::Borders,

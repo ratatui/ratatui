@@ -17,18 +17,19 @@
 #![deny(clippy::all)]
 #![warn(clippy::pedantic, clippy::nursery)]
 
-use std::error::Error;
-use std::io;
+use std::{error::Error, io};
 
-use crossterm::event::{self, Event, KeyCode};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
-
-use ratatui::backend::{Backend, CrosstermBackend};
-use ratatui::layout::Alignment;
-use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, Paragraph};
-use ratatui::{Frame, Terminal};
+use crossterm::{
+    event::{self, Event, KeyCode},
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    layout::Alignment,
+    text::Line,
+    widgets::{Block, Borders, Paragraph},
+    Frame, Terminal,
+};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 

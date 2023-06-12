@@ -1,3 +1,9 @@
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
+};
+
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -9,11 +15,6 @@ use ratatui::{
     style::{Color, Modifier, Style},
     widgets::{BarChart, Block, Borders},
     Frame, Terminal,
-};
-use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
 };
 
 struct App<'a> {

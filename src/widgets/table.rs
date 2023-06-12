@@ -1,3 +1,5 @@
+use unicode_width::UnicodeWidthStr;
+
 use crate::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
@@ -5,7 +7,6 @@ use crate::{
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
 };
-use unicode_width::UnicodeWidthStr;
 
 /// A [`Cell`] contains the [`Text`] to be displayed in a [`Row`] of a [`Table`].
 ///

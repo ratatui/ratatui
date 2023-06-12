@@ -4,15 +4,16 @@
 //! [`Backend`]: crate::backend::Backend
 //! [`TermionBackend`]: crate::backend::TermionBackend
 
+use std::{
+    fmt,
+    io::{self, Write},
+};
+
 use crate::{
     backend::{Backend, ClearType},
     buffer::Cell,
     layout::Rect,
     style::{Color, Modifier},
-};
-use std::{
-    fmt,
-    io::{self, Write},
 };
 
 /// A backend that uses the Termion library to draw content, manipulate the cursor,

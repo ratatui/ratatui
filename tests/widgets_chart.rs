@@ -1,8 +1,7 @@
-use ratatui::layout::Alignment;
 use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
-    layout::Rect,
+    layout::{Alignment, Rect},
     style::{Color, Style},
     symbols,
     text::Span,

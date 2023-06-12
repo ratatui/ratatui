@@ -4,19 +4,21 @@
 //! [`Backend`]: trait.Backend.html
 //! [`TermwizBackend`]: crate::backend::TermionBackend
 
-use crate::{
-    backend::Backend,
-    buffer::Cell,
-    layout::Rect,
-    style::{Color, Modifier},
-};
 use std::{error::Error, io};
+
 use termwiz::{
     caps::Capabilities,
     cell::{AttributeChange, Blink, Intensity, Underline},
     color::{AnsiColor, ColorAttribute, SrgbaTuple},
     surface::{Change, CursorVisibility, Position},
     terminal::{buffered::BufferedTerminal, SystemTerminal, Terminal},
+};
+
+use crate::{
+    backend::Backend,
+    buffer::Cell,
+    layout::Rect,
+    style::{Color, Modifier},
 };
 
 /// Termwiz backend implementation for the [`Backend`] trait.

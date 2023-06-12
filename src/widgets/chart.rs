@@ -2,10 +2,9 @@ use std::{borrow::Cow, cmp::max};
 
 use unicode_width::UnicodeWidthStr;
 
-use crate::layout::Alignment;
 use crate::{
     buffer::Buffer,
-    layout::{Constraint, Rect},
+    layout::{Alignment, Constraint, Rect},
     style::{Color, Style},
     symbols,
     text::{Line as TextLine, Span},

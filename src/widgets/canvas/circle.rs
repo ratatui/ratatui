@@ -27,12 +27,16 @@ impl Shape for Circle {
 
 #[cfg(test)]
 mod tests {
-    use crate::buffer::Buffer;
-    use crate::layout::Rect;
-    use crate::style::Color;
-    use crate::symbols::Marker;
-    use crate::widgets::canvas::{Canvas, Circle};
-    use crate::widgets::Widget;
+    use crate::{
+        buffer::Buffer,
+        layout::Rect,
+        style::Color,
+        symbols::Marker,
+        widgets::{
+            canvas::{Canvas, Circle},
+            Widget,
+        },
+    };
 
     #[test]
     fn test_it_draws_a_circle() {
