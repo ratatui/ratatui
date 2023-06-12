@@ -18,11 +18,8 @@ jobs:
         rust: [ "1.65.0", "stable" ]
         include:
           - os: ubuntu-latest
-            triple: x86_64-unknown-linux-musl
           - os: windows-latest
-            triple: x86_64-pc-windows-msvc
           - os: macos-latest
-            triple: x86_64-apple-darwin
     runs-on: ${{ matrix.os }}
     steps:
       - uses: hecrj/setup-rust-action@50a120e4d34903c2c1383dec0e9b1d349a9cc2b1
