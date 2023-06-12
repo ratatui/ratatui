@@ -10,9 +10,6 @@ on:
 
 name: CI
 
-env:
-  CI_CARGO_MAKE_VERSION: 0.36.10
-
 jobs:
   test:
     strategy:
@@ -36,7 +33,7 @@ jobs:
         uses: taiki-e/install-action@cargo-binstall
       - name: Install cargo-make
         run: |
-          cargo binstall -y "cargo-make@${{ env.CI_CARGO_MAKE_VERSION }}"
+          cargo binstall -y cargo-make
           cargo make --version
       - name: "Format / Build / Test"
         run: cargo make ci
