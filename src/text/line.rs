@@ -143,9 +143,11 @@ impl<'a> From<Spans<'a>> for Line<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::layout::Alignment;
-    use crate::style::{Color, Modifier, Style};
-    use crate::text::{Line, Span, Spans};
+    use crate::{
+        layout::Alignment,
+        style::{Color, Modifier, Style},
+        text::{Line, Span, Spans},
+    };
 
     #[test]
     fn test_width() {

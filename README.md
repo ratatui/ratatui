@@ -16,7 +16,7 @@ Status](https://deps.rs/repo/github/tui-rs-revival/ratatui/status.svg?style=for-
 [![Discord](https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=for-the-badge)](https://discord.gg/pMCEU9hNEj)
 
 <!-- See RELEASE.md for instructions on creating the demo gif --->
-![Demo of Ratatui](https://vhs.charm.sh/vhs-IZKj0x97pI2LAJwxCpu1Y.gif)
+![Demo of Ratatui](https://github.com/tui-rs-revival/ratatui/assets/24392180/93ab0e38-93e0-4ae0-a31b-91ae6c393185)
 
 <details>
 <summary>Table of Contents</summary>

@@ -1,3 +1,5 @@
+use std::{error::Error, io};
+
 /// A simple example demonstrating how to handle user input. This is
 /// a bit out of the scope of the library as it does not provide any
 /// input handling out of the box. However, it may helps some to get
@@ -22,7 +24,6 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame, Terminal,
 };
-use std::{error::Error, io};
 use unicode_width::UnicodeWidthStr;
 
 enum InputMode {

@@ -1,3 +1,8 @@
+use std::{
+    io::{self, Stdout},
+    time::Duration,
+};
+
 use anyhow::{Context, Result};
 use crossterm::{
     event::{self, Event, KeyCode},
@@ -5,10 +10,6 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};
-use std::{
-    io::{self, Stdout},
-    time::Duration,
-};
 
 /// This is a bare minimum example. There are many approaches to running an application loop, so
 /// this is not meant to be prescriptive. It is only meant to demonstrate the basic setup and

@@ -1,15 +1,17 @@
+use std::{
+    cmp::min,
+    fmt::{Debug, Formatter, Result},
+};
+
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
+
 #[allow(deprecated)]
 use crate::{
     layout::Rect,
     style::{Color, Modifier, Style},
     text::{Line, Span, Spans},
 };
-use std::{
-    cmp::min,
-    fmt::{Debug, Formatter, Result},
-};
-use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
 /// A buffer cell
 #[derive(Debug, Clone, PartialEq, Eq)]

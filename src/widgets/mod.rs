@@ -33,19 +33,21 @@ mod tabs;
 
 use std::fmt::{self, Debug};
 
-pub use self::barchart::BarChart;
-pub use self::block::{Block, BorderType, Padding};
-pub use self::chart::{Axis, Chart, Dataset, GraphType};
-pub use self::clear::Clear;
-pub use self::gauge::{Gauge, LineGauge};
-pub use self::list::{List, ListItem, ListState};
-pub use self::paragraph::{Paragraph, Wrap};
-pub use self::sparkline::{RenderDirection, Sparkline};
-pub use self::table::{Cell, Row, Table, TableState};
-pub use self::tabs::Tabs;
-
-use crate::{buffer::Buffer, layout::Rect};
 use bitflags::bitflags;
+
+pub use self::{
+    barchart::BarChart,
+    block::{Block, BorderType, Padding},
+    chart::{Axis, Chart, Dataset, GraphType},
+    clear::Clear,
+    gauge::{Gauge, LineGauge},
+    list::{List, ListItem, ListState},
+    paragraph::{Paragraph, Wrap},
+    sparkline::{RenderDirection, Sparkline},
+    table::{Cell, Row, Table, TableState},
+    tabs::Tabs,
+};
+use crate::{buffer::Buffer, layout::Rect};
 
 bitflags! {
     /// Bitflags that can be composed to set the visible borders essentially on the block widget.

@@ -1,3 +1,5 @@
+# configuration for https://github.com/DavidAnson/markdownlint
+
 no-inline-html:
   allowed_elements:
     - img

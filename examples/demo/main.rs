@@ -8,15 +8,16 @@ mod termwiz;
 
 mod ui;
 
+use std::{error::Error, time::Duration};
+
+use argh::FromArgs;
+
 #[cfg(feature = "crossterm")]
 use crate::crossterm::run;
 #[cfg(feature = "termion")]
 use crate::termion::run;
 #[cfg(feature = "termwiz")]
 use crate::termwiz::run;
-
-use argh::FromArgs;
-use std::{error::Error, time::Duration};
 
 /// Demo
 #[derive(Debug, FromArgs)]

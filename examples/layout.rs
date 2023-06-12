@@ -1,3 +1,5 @@
+use std::{error::Error, io};
+
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -9,7 +11,6 @@ use ratatui::{
     widgets::{Block, Borders},
     Frame, Terminal,
 };
-use std::{error::Error, io};
 
 fn main() -> Result<(), Box<dyn Error>> {
     // setup terminal

@@ -1,11 +1,9 @@
-use std::collections::VecDeque;
-use std::vec::IntoIter;
+use std::{collections::VecDeque, vec::IntoIter};
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::layout::Alignment;
-use crate::text::StyledGrapheme;
+use crate::{layout::Alignment, text::StyledGrapheme};
 
 const NBSP: &str = "\u{00a0}";
 
@@ -323,10 +321,13 @@ fn trim_offset(src: &str, mut offset: usize) -> &str {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::style::Style;
-    use crate::text::{Line, Text};
     use unicode_segmentation::UnicodeSegmentation;
+
+    use super::*;
+    use crate::{
+        style::Style,
+        text::{Line, Text},
+    };
 
     enum Composer {
         WordWrapper { trim: bool },
