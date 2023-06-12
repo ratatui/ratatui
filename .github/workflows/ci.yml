@@ -32,6 +32,7 @@ jobs:
         run: |
           cargo binstall -y cargo-make
           cargo make --version
+          cargo make --list-all-steps
       - name: "Format / Build / Test"
         run: cargo make ci
         env:
