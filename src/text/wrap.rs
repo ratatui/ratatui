@@ -21,12 +21,14 @@ pub trait Wrappable<'a> {
         max_width: usize,
         base_style: Style,
         base_alignment: Alignment,
+        trim: bool,
     ) -> Vec<Line>;
     fn wrap_word_boundary(
         &self,
         max_width: usize,
         base_style: Style,
         base_alignment: Alignment,
+        trim: bool,
     ) -> Vec<Line>;
 }
 
@@ -91,6 +93,7 @@ impl<'a> Wrappable<'a> for Line<'_> {
         max_width: usize,
         base_style: Style,
         base_alignment: Alignment,
+        trim: bool,
     ) -> Vec<Line> {
         todo!()
     }
@@ -100,6 +103,7 @@ impl<'a> Wrappable<'a> for Line<'_> {
         max_width: usize,
         base_style: Style,
         base_alignment: Alignment,
+        trim: bool,
     ) -> Vec<Line> {
         todo!()
     }
@@ -154,4 +158,25 @@ fn adjust_symbol_for_horizontal_scroll<'a>(
     }
 
     scrolled_symbol
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn truncate_without_horizontal_scroll() {
+        let line = Line::from("Hello, world!");
+        let truncated = line.wrap_truncate(5, Style::default(), Alignment::Left, 0);
+        assert_eq!(truncated.len(), 1);
+        assert_eq!(truncated[0], Line::from("Hello"));
+    }
+
+    #[test]
+    fn truncate_with_horizontal_scroll() {
+        let line = Line::from("Hello, world!");
+        let truncated = line.wrap_truncate(5, Style::default(), Alignment::Left, 7);
+        assert_eq!(truncated.len(), 1);
+        assert_eq!(truncated[0], Line::from("world"));
+    }
 }
