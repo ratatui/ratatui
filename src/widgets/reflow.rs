@@ -439,16 +439,26 @@ where
                     break;
                 }
 
-                let symbol = if horizontal_offset == 0 || Alignment::Left != *alignment {
+                let line_alignment = *alignment;
+
+                let symbol = if horizontal_offset == 0 || line_alignment != Alignment::Left {
+                    // Use the symbol as is if there is no horizontal offset or the
+                    // line is not left-aligned
                     symbol
                 } else {
-                    let w = symbol.width();
-                    if w > horizontal_offset {
-                        let t = trim_offset(symbol, horizontal_offset);
+                    let symbol_width = symbol.width();
+                    if symbol_width > horizontal_offset {
+                        // Trim the symbol based on the horizontal offset
+                        let trimmed_symbol = trim_offset(symbol, horizontal_offset);
+                        // Reset the horizontal offset since all scrolling has been applied
                         horizontal_offset = 0;
-                        t
+                        // Use the trimmed symbol
+                        trimmed_symbol
                     } else {
-                        horizontal_offset -= w;
+                        // Reduce the horizontal offset by the symbol width since the entire
+                        // symbol can be scrolled out of view
+                        horizontal_offset -= symbol_width;
+                        // An empty string indicates that the symbol will not be visible
                         ""
                     }
                 };
