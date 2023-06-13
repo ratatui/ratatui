@@ -54,6 +54,7 @@ use unicode_width::UnicodeWidthStr;
 mod line;
 mod masked;
 mod spans;
+mod wrap;
 #[allow(deprecated)]
 pub use {line::Line, masked::Masked, spans::Spans};
 
