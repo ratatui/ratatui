@@ -192,6 +192,16 @@ impl<'a> FromIterator<StyledGrapheme<'a>> for Line<'a> {
     {
         let mut spans = Vec::new();
         for styled_grapheme in iter {
+            if let Some(Span {
+                content: last_span_content,
+                style: last_span_style,
+            }) = spans.last_mut()
+            {
+                if last_span_style == &styled_grapheme.style {
+                    last_span_content.to_mut().push_str(styled_grapheme.symbol);
+                    continue;
+                }
+            }
             spans.push(Span::styled(styled_grapheme.symbol, styled_grapheme.style));
         }
 
