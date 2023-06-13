@@ -18,9 +18,10 @@ use crossterm::{
 };
 
 use crate::{
-    backend::{Backend, ClearType},
+    backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
-    layout::Rect,
+    layout::Size,
+    prelude::Rect,
     style::{Color, Modifier},
 };
 
@@ -169,10 +170,24 @@ where
     }
 
     fn size(&self) -> io::Result<Rect> {
-        let (width, height) =
-            terminal::size().map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-
+        let (width, height) = terminal::size()?;
         Ok(Rect::new(0, 0, width, height))
+    }
+
+    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+        let crossterm::terminal::WindowSize {
+            columns,
+            rows,
+            width,
+            height,
+        } = terminal::window_size()?;
+        Ok(WindowSize {
+            columns_rows: Size {
+                width: columns,
+                height: rows,
+            },
+            pixels: Size { width, height },
+        })
     }
 
     fn flush(&mut self) -> io::Result<()> {
