@@ -309,20 +309,14 @@ impl Buffer {
 
     #[allow(deprecated)]
     #[deprecated(note = "Use `Buffer::set_line` instead")]
-    pub fn set_spans(&mut self, x: u16, y: u16, spans: &Spans<'_>, width: u16) -> (u16, u16) {
+    pub fn set_spans(&mut self, x: u16, y: u16, spans: &Spans, width: u16) -> (u16, u16) {
         let mut remaining_width = width;
         let mut x = x;
         for span in &spans.0 {
             if remaining_width == 0 {
                 break;
             }
-            let pos = self.set_stringn(
-                x,
-                y,
-                span.content.as_ref(),
-                remaining_width as usize,
-                span.style,
-            );
+            let pos = self.set_stringn(x, y, &span.content, remaining_width as usize, span.style);
             let w = pos.0.saturating_sub(x);
             x = pos.0;
             remaining_width = remaining_width.saturating_sub(w);
@@ -330,20 +324,14 @@ impl Buffer {
         (x, y)
     }
 
-    pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, width: u16) -> (u16, u16) {
+    pub fn set_line(&mut self, x: u16, y: u16, line: &Line, width: u16) -> (u16, u16) {
         let mut remaining_width = width;
         let mut x = x;
         for span in &line.spans {
             if remaining_width == 0 {
                 break;
             }
-            let pos = self.set_stringn(
-                x,
-                y,
-                span.content.as_ref(),
-                remaining_width as usize,
-                span.style,
-            );
+            let pos = self.set_stringn(x, y, &span.content, remaining_width as usize, span.style);
             let w = pos.0.saturating_sub(x);
             x = pos.0;
             remaining_width = remaining_width.saturating_sub(w);
@@ -351,8 +339,8 @@ impl Buffer {
         (x, y)
     }
 
-    pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, width: u16) -> (u16, u16) {
-        self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
+    pub fn set_span(&mut self, x: u16, y: u16, span: &Span, width: u16) -> (u16, u16) {
+        self.set_stringn(x, y, &span.content, width as usize, span.style)
     }
 
     #[deprecated(

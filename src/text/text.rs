@@ -28,11 +28,11 @@ use std::borrow::Cow;
 /// assert_eq!(6, text.height());
 /// ```
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
-pub struct Text<'a> {
-    pub lines: Vec<Line<'a>>,
+pub struct Text {
+    pub lines: Vec<Line>,
 }
 
-impl<'a> Text<'a> {
+impl Text {
     /// Create some text (potentially multiple lines) with no style.
     ///
     /// ## Examples
@@ -42,15 +42,17 @@ impl<'a> Text<'a> {
     /// Text::raw("The first line\nThe second line");
     /// Text::raw(String::from("The first line\nThe second line"));
     /// ```
-    pub fn raw<T>(content: T) -> Text<'a>
+    pub fn raw<T>(content: T) -> Text
     where
-        T: Into<Cow<'a, str>>,
+        T: Into<String>,
     {
-        let lines: Vec<_> = match content.into() {
-            Cow::Borrowed("") => vec![Line::from("")],
-            Cow::Borrowed(s) => s.lines().map(Line::from).collect(),
-            Cow::Owned(s) if s.is_empty() => vec![Line::from("")],
-            Cow::Owned(s) => s.lines().map(|l| Line::from(l.to_owned())).collect(),
+        let lines: Vec<_> = {
+            let s = content.into();
+            if s.is_empty() {
+                vec![Line::from("")]
+            } else {
+                s.lines().map(Line::from).collect()
+            }
         };
 
         Text::from(lines)
@@ -67,9 +69,9 @@ impl<'a> Text<'a> {
     /// Text::styled("The first line\nThe second line", style);
     /// Text::styled(String::from("The first line\nThe second line"), style);
     /// ```
-    pub fn styled<T>(content: T, style: Style) -> Text<'a>
+    pub fn styled<T>(content: T, style: Style) -> Text
     where
-        T: Into<Cow<'a, str>>,
+        T: Into<String>,
     {
         let mut text = Text::raw(content);
         text.patch_style(style);
@@ -148,26 +150,26 @@ impl<'a> Text<'a> {
     }
 }
 
-impl<'a> From<String> for Text<'a> {
-    fn from(s: String) -> Text<'a> {
+impl From<String> for Text {
+    fn from(s: String) -> Text {
         Text::raw(s)
     }
 }
 
-impl<'a> From<&'a str> for Text<'a> {
-    fn from(s: &'a str) -> Text<'a> {
+impl From<&str> for Text {
+    fn from(s: &str) -> Text {
         Text::raw(s)
     }
 }
 
-impl<'a> From<Cow<'a, str>> for Text<'a> {
-    fn from(s: Cow<'a, str>) -> Text<'a> {
+impl<'a> From<Cow<'a, str>> for Text {
+    fn from(s: Cow<'a, str>) -> Text {
         Text::raw(s)
     }
 }
 
-impl<'a> From<Span<'a>> for Text<'a> {
-    fn from(span: Span<'a>) -> Text<'a> {
+impl From<Span> for Text {
+    fn from(span: Span) -> Text {
         Text {
             lines: vec![Line::from(span)],
         }
@@ -175,37 +177,37 @@ impl<'a> From<Span<'a>> for Text<'a> {
 }
 
 #[allow(deprecated)]
-impl<'a> From<Spans<'a>> for Text<'a> {
-    fn from(spans: Spans<'a>) -> Text<'a> {
+impl From<Spans> for Text {
+    fn from(spans: Spans) -> Text {
         Text {
             lines: vec![spans.into()],
         }
     }
 }
 
-impl<'a> From<Line<'a>> for Text<'a> {
-    fn from(line: Line<'a>) -> Text<'a> {
+impl From<Line> for Text {
+    fn from(line: Line) -> Text {
         Text { lines: vec![line] }
     }
 }
 
 #[allow(deprecated)]
-impl<'a> From<Vec<Spans<'a>>> for Text<'a> {
-    fn from(lines: Vec<Spans<'a>>) -> Text<'a> {
+impl From<Vec<Spans>> for Text {
+    fn from(lines: Vec<Spans>) -> Text {
         Text {
             lines: lines.into_iter().map(|l| l.0.into()).collect(),
         }
     }
 }
 
-impl<'a> From<Vec<Line<'a>>> for Text<'a> {
-    fn from(lines: Vec<Line<'a>>) -> Text<'a> {
+impl From<Vec<Line>> for Text {
+    fn from(lines: Vec<Line>) -> Text {
         Text { lines }
     }
 }
 
-impl<'a> IntoIterator for Text<'a> {
-    type Item = Line<'a>;
+impl IntoIterator for Text {
+    type Item = Line;
     type IntoIter = std::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -213,9 +215,9 @@ impl<'a> IntoIterator for Text<'a> {
     }
 }
 
-impl<'a, T> Extend<T> for Text<'a>
+impl<T> Extend<T> for Text
 where
-    T: Into<Line<'a>>,
+    T: Into<Line>,
 {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let lines = iter.into_iter().map(Into::into);

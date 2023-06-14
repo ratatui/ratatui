@@ -20,17 +20,17 @@ use crate::{
 ///     .percent(20);
 /// ```
 #[derive(Debug, Clone)]
-pub struct Gauge<'a> {
-    block: Option<Block<'a>>,
+pub struct Gauge {
+    block: Option<Block>,
     ratio: f64,
-    label: Option<Span<'a>>,
+    label: Option<Span>,
     use_unicode: bool,
     style: Style,
     gauge_style: Style,
 }
 
-impl<'a> Default for Gauge<'a> {
-    fn default() -> Gauge<'a> {
+impl Default for Gauge {
+    fn default() -> Gauge {
         Gauge {
             block: None,
             ratio: 0.0,
@@ -42,13 +42,13 @@ impl<'a> Default for Gauge<'a> {
     }
 }
 
-impl<'a> Gauge<'a> {
-    pub fn block(mut self, block: Block<'a>) -> Gauge<'a> {
+impl Gauge {
+    pub fn block(mut self, block: Block) -> Gauge {
         self.block = Some(block);
         self
     }
 
-    pub fn percent(mut self, percent: u16) -> Gauge<'a> {
+    pub fn percent(mut self, percent: u16) -> Gauge {
         assert!(
             percent <= 100,
             "Percentage should be between 0 and 100 inclusively."
@@ -58,7 +58,7 @@ impl<'a> Gauge<'a> {
     }
 
     /// Sets ratio ([0.0, 1.0]) directly.
-    pub fn ratio(mut self, ratio: f64) -> Gauge<'a> {
+    pub fn ratio(mut self, ratio: f64) -> Gauge {
         assert!(
             (0.0..=1.0).contains(&ratio),
             "Ratio should be between 0 and 1 inclusively."
@@ -67,31 +67,31 @@ impl<'a> Gauge<'a> {
         self
     }
 
-    pub fn label<T>(mut self, label: T) -> Gauge<'a>
+    pub fn label<T>(mut self, label: T) -> Gauge
     where
-        T: Into<Span<'a>>,
+        T: Into<Span>,
     {
         self.label = Some(label.into());
         self
     }
 
-    pub fn style(mut self, style: Style) -> Gauge<'a> {
+    pub fn style(mut self, style: Style) -> Gauge {
         self.style = style;
         self
     }
 
-    pub fn gauge_style(mut self, style: Style) -> Gauge<'a> {
+    pub fn gauge_style(mut self, style: Style) -> Gauge {
         self.gauge_style = style;
         self
     }
 
-    pub fn use_unicode(mut self, unicode: bool) -> Gauge<'a> {
+    pub fn use_unicode(mut self, unicode: bool) -> Gauge {
         self.use_unicode = unicode;
         self
     }
 }
 
-impl<'a> Widget for Gauge<'a> {
+impl Widget for Gauge {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
         let gauge_area = match self.block.take() {
@@ -171,16 +171,16 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 ///     .line_set(symbols::line::THICK)
 ///     .ratio(0.4);
 /// ```
-pub struct LineGauge<'a> {
-    block: Option<Block<'a>>,
+pub struct LineGauge {
+    block: Option<Block>,
     ratio: f64,
-    label: Option<Line<'a>>,
+    label: Option<Line>,
     line_set: symbols::line::Set,
     style: Style,
     gauge_style: Style,
 }
 
-impl<'a> Default for LineGauge<'a> {
+impl Default for LineGauge {
     fn default() -> Self {
         Self {
             block: None,
@@ -193,8 +193,8 @@ impl<'a> Default for LineGauge<'a> {
     }
 }
 
-impl<'a> LineGauge<'a> {
-    pub fn block(mut self, block: Block<'a>) -> Self {
+impl LineGauge {
+    pub fn block(mut self, block: Block) -> Self {
         self.block = Some(block);
         self
     }
@@ -215,7 +215,7 @@ impl<'a> LineGauge<'a> {
 
     pub fn label<T>(mut self, label: T) -> Self
     where
-        T: Into<Line<'a>>,
+        T: Into<Line>,
     {
         self.label = Some(label.into());
         self
@@ -232,7 +232,7 @@ impl<'a> LineGauge<'a> {
     }
 }
 
-impl<'a> Widget for LineGauge<'a> {
+impl Widget for LineGauge {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
         let gauge_area = match self.block.take() {

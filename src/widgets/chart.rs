@@ -1,4 +1,4 @@
-use std::{borrow::Cow, cmp::max};
+use std::cmp::max;
 
 use unicode_width::UnicodeWidthStr;
 
@@ -17,21 +17,21 @@ use crate::{
 
 /// An X or Y axis for the chart widget
 #[derive(Debug, Clone)]
-pub struct Axis<'a> {
+pub struct Axis {
     /// Title displayed next to axis end
-    title: Option<TextLine<'a>>,
+    title: Option<TextLine>,
     /// Bounds for the axis (all data points outside these limits will not be represented)
     bounds: [f64; 2],
     /// A list of labels to put to the left or below the axis
-    labels: Option<Vec<Span<'a>>>,
+    labels: Option<Vec<Span>>,
     /// The style used to draw the axis itself
     style: Style,
     /// The alignment of the labels of the Axis
     labels_alignment: Alignment,
 }
 
-impl<'a> Default for Axis<'a> {
-    fn default() -> Axis<'a> {
+impl Default for Axis {
+    fn default() -> Axis {
         Axis {
             title: None,
             bounds: [0.0, 0.0],
@@ -42,10 +42,10 @@ impl<'a> Default for Axis<'a> {
     }
 }
 
-impl<'a> Axis<'a> {
-    pub fn title<T>(mut self, title: T) -> Axis<'a>
+impl Axis {
+    pub fn title<T>(mut self, title: T) -> Axis
     where
-        T: Into<TextLine<'a>>,
+        T: Into<TextLine>,
     {
         self.title = Some(title.into());
         self
@@ -55,7 +55,7 @@ impl<'a> Axis<'a> {
         since = "0.10.0",
         note = "You should use styling capabilities of `text::Line` given as argument of the `title` method to apply styling to the title."
     )]
-    pub fn title_style(mut self, style: Style) -> Axis<'a> {
+    pub fn title_style(mut self, style: Style) -> Axis {
         if let Some(t) = self.title {
             let title = String::from(t);
             self.title = Some(TextLine::from(Span::styled(title, style)));
@@ -63,17 +63,17 @@ impl<'a> Axis<'a> {
         self
     }
 
-    pub fn bounds(mut self, bounds: [f64; 2]) -> Axis<'a> {
+    pub fn bounds(mut self, bounds: [f64; 2]) -> Axis {
         self.bounds = bounds;
         self
     }
 
-    pub fn labels(mut self, labels: Vec<Span<'a>>) -> Axis<'a> {
+    pub fn labels(mut self, labels: Vec<Span>) -> Axis {
         self.labels = Some(labels);
         self
     }
 
-    pub fn style(mut self, style: Style) -> Axis<'a> {
+    pub fn style(mut self, style: Style) -> Axis {
         self.style = style;
         self
     }
@@ -82,7 +82,7 @@ impl<'a> Axis<'a> {
     /// The alignment behaves differently based on the axis:
     /// - Y-Axis: The labels are aligned within the area on the left of the axis
     /// - X-Axis: The first X-axis label is aligned relative to the Y-axis
-    pub fn labels_alignment(mut self, alignment: Alignment) -> Axis<'a> {
+    pub fn labels_alignment(mut self, alignment: Alignment) -> Axis {
         self.labels_alignment = alignment;
         self
     }
@@ -101,7 +101,7 @@ pub enum GraphType {
 #[derive(Debug, Clone)]
 pub struct Dataset<'a> {
     /// Name of the dataset (used in the legend if shown)
-    name: Cow<'a, str>,
+    name: String,
     /// A reference to the actual data
     data: &'a [(f64, f64)],
     /// Symbol used for each points of this dataset
@@ -115,7 +115,7 @@ pub struct Dataset<'a> {
 impl<'a> Default for Dataset<'a> {
     fn default() -> Dataset<'a> {
         Dataset {
-            name: Cow::from(""),
+            name: String::new(),
             data: &[],
             marker: symbols::Marker::Dot,
             graph_type: GraphType::Scatter,
@@ -127,7 +127,7 @@ impl<'a> Default for Dataset<'a> {
 impl<'a> Dataset<'a> {
     pub fn name<S>(mut self, name: S) -> Dataset<'a>
     where
-        S: Into<Cow<'a, str>>,
+        S: Into<String>,
     {
         self.name = name.into();
         self
@@ -215,11 +215,11 @@ struct ChartLayout {
 #[derive(Debug, Clone)]
 pub struct Chart<'a> {
     /// A block to display around the widget eventually
-    block: Option<Block<'a>>,
+    block: Option<Block>,
     /// The horizontal axis
-    x_axis: Axis<'a>,
+    x_axis: Axis,
     /// The vertical axis
-    y_axis: Axis<'a>,
+    y_axis: Axis,
     /// A reference to the datasets
     datasets: Vec<Dataset<'a>>,
     /// The widget base style
@@ -229,7 +229,7 @@ pub struct Chart<'a> {
 }
 
 impl<'a> Chart<'a> {
-    pub fn new(datasets: Vec<Dataset<'a>>) -> Chart<'a> {
+    pub fn new(datasets: Vec<Dataset>) -> Chart {
         Chart {
             block: None,
             x_axis: Axis::default(),
@@ -240,7 +240,7 @@ impl<'a> Chart<'a> {
         }
     }
 
-    pub fn block(mut self, block: Block<'a>) -> Chart<'a> {
+    pub fn block(mut self, block: Block) -> Chart<'a> {
         self.block = Some(block);
         self
     }
@@ -250,12 +250,12 @@ impl<'a> Chart<'a> {
         self
     }
 
-    pub fn x_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
+    pub fn x_axis(mut self, axis: Axis) -> Chart<'a> {
         self.x_axis = axis;
         self
     }
 
-    pub fn y_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
+    pub fn y_axis(mut self, axis: Axis) -> Chart<'a> {
         self.y_axis = axis;
         self
     }

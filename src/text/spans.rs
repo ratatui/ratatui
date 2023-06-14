@@ -8,13 +8,13 @@ use crate::text::Line;
 ///
 /// `Spans` has been deprecated in favor of `Line`, and will be removed in the
 /// future. All methods that accept Spans have been replaced with methods that
-/// accept Into<Line<'a>> (which is implemented on `Spans`) to allow users of
+/// accept Into<Line> (which is implemented on `Spans`) to allow users of
 /// this crate to gradually transition to Line.
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
 #[deprecated(note = "Use `ratatui::text::Line` instead")]
-pub struct Spans<'a>(pub Vec<Span<'a>>);
+pub struct Spans(pub Vec<Span>);
 
-impl<'a> Spans<'a> {
+impl Spans {
     /// Returns the width of the underlying string.
     ///
     /// ## Examples
@@ -96,38 +96,38 @@ impl<'a> Spans<'a> {
     /// let mut line = Spans::from("Hi, what's up?").alignment(Alignment::Right);
     /// assert_eq!(Some(Alignment::Right), line.alignment)
     /// ```
-    pub fn alignment(self, alignment: Alignment) -> Line<'a> {
+    pub fn alignment(self, alignment: Alignment) -> Line {
         let line = Line::from(self);
         line.alignment(alignment)
     }
 }
 
-impl<'a> From<String> for Spans<'a> {
-    fn from(s: String) -> Spans<'a> {
+impl From<String> for Spans {
+    fn from(s: String) -> Spans {
         Spans(vec![Span::from(s)])
     }
 }
 
-impl<'a> From<&'a str> for Spans<'a> {
-    fn from(s: &'a str) -> Spans<'a> {
+impl From<&str> for Spans {
+    fn from(s: &str) -> Spans {
         Spans(vec![Span::from(s)])
     }
 }
 
-impl<'a> From<Vec<Span<'a>>> for Spans<'a> {
-    fn from(spans: Vec<Span<'a>>) -> Spans<'a> {
+impl From<Vec<Span>> for Spans {
+    fn from(spans: Vec<Span>) -> Spans {
         Spans(spans)
     }
 }
 
-impl<'a> From<Span<'a>> for Spans<'a> {
-    fn from(span: Span<'a>) -> Spans<'a> {
+impl From<Span> for Spans {
+    fn from(span: Span) -> Spans {
         Spans(vec![span])
     }
 }
 
-impl<'a> From<Spans<'a>> for String {
-    fn from(line: Spans<'a>) -> String {
+impl From<Spans> for String {
+    fn from(line: Spans) -> String {
         line.0.iter().fold(String::new(), |mut acc, s| {
             acc.push_str(s.content.as_ref());
             acc

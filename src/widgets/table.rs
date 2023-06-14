@@ -32,12 +32,12 @@ use unicode_width::UnicodeWidthStr;
 /// You can apply a [`Style`] on the entire [`Cell`] using [`Cell::style`] or rely on the styling
 /// capabilities of [`Text`].
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Cell<'a> {
-    content: Text<'a>,
+pub struct Cell {
+    content: Text,
     style: Style,
 }
 
-impl<'a> Cell<'a> {
+impl Cell {
     /// Set the `Style` of this cell.
     pub fn style(mut self, style: Style) -> Self {
         self.style = style;
@@ -45,11 +45,11 @@ impl<'a> Cell<'a> {
     }
 }
 
-impl<'a, T> From<T> for Cell<'a>
+impl<T> From<T> for Cell
 where
-    T: Into<Text<'a>>,
+    T: Into<Text>,
 {
-    fn from(content: T) -> Cell<'a> {
+    fn from(content: T) -> Cell {
         Cell {
             content: content.into(),
             style: Style::default(),
@@ -87,19 +87,19 @@ where
 ///
 /// By default, a row has a height of 1 but you can change this using [`Row::height`].
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Row<'a> {
-    cells: Vec<Cell<'a>>,
+pub struct Row {
+    cells: Vec<Cell>,
     height: u16,
     style: Style,
     bottom_margin: u16,
 }
 
-impl<'a> Row<'a> {
+impl Row {
     /// Creates a new [`Row`] from an iterator where items can be converted to a [`Cell`].
     pub fn new<T>(cells: T) -> Self
     where
         T: IntoIterator,
-        T::Item: Into<Cell<'a>>,
+        T::Item: Into<Cell>,
     {
         Self {
             height: 1,
@@ -189,7 +189,7 @@ impl<'a> Row<'a> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Table<'a> {
     /// A block to wrap the widget in
-    block: Option<Block<'a>>,
+    block: Option<Block>,
     /// Base style for the widget
     style: Style,
     /// Width constraints for each column
@@ -201,15 +201,15 @@ pub struct Table<'a> {
     /// Symbol in front of the selected rom
     highlight_symbol: Option<&'a str>,
     /// Optional header
-    header: Option<Row<'a>>,
+    header: Option<Row>,
     /// Data to display in each row
-    rows: Vec<Row<'a>>,
+    rows: Vec<Row>,
 }
 
 impl<'a> Table<'a> {
     pub fn new<T>(rows: T) -> Self
     where
-        T: IntoIterator<Item = Row<'a>>,
+        T: IntoIterator<Item = Row>,
     {
         Self {
             block: None,
@@ -223,12 +223,12 @@ impl<'a> Table<'a> {
         }
     }
 
-    pub fn block(mut self, block: Block<'a>) -> Self {
+    pub fn block(mut self, block: Block) -> Self {
         self.block = Some(block);
         self
     }
 
-    pub fn header(mut self, header: Row<'a>) -> Self {
+    pub fn header(mut self, header: Row) -> Self {
         self.header = Some(header);
         self
     }

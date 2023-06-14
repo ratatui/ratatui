@@ -28,7 +28,7 @@ use unicode_width::UnicodeWidthStr;
 #[derive(Debug, Clone)]
 pub struct BarChart<'a> {
     /// Block to wrap the widget in
-    block: Option<Block<'a>>,
+    block: Option<Block>,
     /// The width of each bar
     bar_width: u16,
     /// The gap between each bar
@@ -80,7 +80,7 @@ impl<'a> BarChart<'a> {
         self
     }
 
-    pub fn block(mut self, block: Block<'a>) -> BarChart<'a> {
+    pub fn block(mut self, block: Block) -> BarChart<'a> {
         self.block = Some(block);
         self
     }

@@ -1,17 +1,16 @@
 use super::StyledGrapheme;
 use crate::style::Style;
-use std::borrow::Cow;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 /// A string where all graphemes have the same style.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Span<'a> {
-    pub content: Cow<'a, str>,
+pub struct Span {
+    pub content: String,
     pub style: Style,
 }
 
-impl<'a> Span<'a> {
+impl Span {
     /// Create a span with no style.
     ///
     /// ## Examples
@@ -21,9 +20,9 @@ impl<'a> Span<'a> {
     /// Span::raw("My text");
     /// Span::raw(String::from("My text"));
     /// ```
-    pub fn raw<T>(content: T) -> Span<'a>
+    pub fn raw<T>(content: T) -> Span
     where
-        T: Into<Cow<'a, str>>,
+        T: Into<String>,
     {
         Span {
             content: content.into(),
@@ -42,9 +41,9 @@ impl<'a> Span<'a> {
     /// Span::styled("My text", style);
     /// Span::styled(String::from("My text"), style);
     /// ```
-    pub fn styled<T>(content: T, style: Style) -> Span<'a>
+    pub fn styled<T>(content: T, style: Style) -> Span
     where
-        T: Into<Cow<'a, str>>,
+        T: Into<String>,
     {
         Span {
             content: content.into(),
@@ -114,13 +113,11 @@ impl<'a> Span<'a> {
     ///     styled_graphemes.collect::<Vec<StyledGrapheme>>()
     /// );
     /// ```
-    pub fn styled_graphemes(
-        &'a self,
-        base_style: Style,
-    ) -> impl Iterator<Item = StyledGrapheme<'a>> {
-        UnicodeSegmentation::graphemes(self.content.as_ref(), true)
+    pub fn styled_graphemes(&self, base_style: Style) -> impl Iterator<Item = StyledGrapheme> + '_ {
+        self.content
+            .graphemes(true)
             .map(move |g| StyledGrapheme {
-                symbol: g,
+                symbol: g.to_owned(),
                 style: base_style.patch(self.style),
             })
             .filter(|s| s.symbol != "\n")
@@ -164,14 +161,14 @@ impl<'a> Span<'a> {
     }
 }
 
-impl<'a> From<String> for Span<'a> {
-    fn from(s: String) -> Span<'a> {
+impl From<String> for Span {
+    fn from(s: String) -> Span {
         Span::raw(s)
     }
 }
 
-impl<'a> From<&'a str> for Span<'a> {
-    fn from(s: &'a str) -> Span<'a> {
+impl From<&str> for Span {
+    fn from(s: &str) -> Span {
         Span::raw(s)
     }
 }

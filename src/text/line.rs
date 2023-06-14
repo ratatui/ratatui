@@ -1,16 +1,15 @@
 #![allow(deprecated)]
-use std::borrow::Cow;
 
 use super::{Span, Spans, Style, StyledGrapheme};
 use crate::layout::Alignment;
 
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
-pub struct Line<'a> {
-    pub spans: Vec<Span<'a>>,
+pub struct Line {
+    pub spans: Vec<Span>,
     pub alignment: Option<Alignment>,
 }
 
-impl<'a> Line<'a> {
+impl Line {
     /// Create a line with a style.
     ///
     /// # Examples
@@ -22,9 +21,9 @@ impl<'a> Line<'a> {
     /// Line::styled("My text", style);
     /// Line::styled(String::from("My text"), style);
     /// ```
-    pub fn styled<T>(content: T, style: Style) -> Line<'a>
+    pub fn styled<T>(content: T, style: Style) -> Line
     where
-        T: Into<Cow<'a, str>>,
+        T: Into<String>,
     {
         Line::from(Span::styled(content, style))
     }
@@ -103,10 +102,7 @@ impl<'a> Line<'a> {
     ///     styled_graphemes.collect::<Vec<StyledGrapheme>>()
     /// );
     /// ```
-    pub fn styled_graphemes(
-        &'a self,
-        base_style: Style,
-    ) -> impl Iterator<Item = StyledGrapheme<'a>> {
+    pub fn styled_graphemes(&self, base_style: Style) -> impl Iterator<Item = StyledGrapheme> + '_ {
         self.spans
             .iter()
             .flat_map(move |span| span.styled_graphemes(base_style))
@@ -185,10 +181,10 @@ impl<'a> Line<'a> {
     }
 }
 
-impl<'a> FromIterator<StyledGrapheme<'a>> for Line<'a> {
+impl FromIterator<StyledGrapheme> for Line {
     fn from_iter<I>(iter: I) -> Self
     where
-        I: IntoIterator<Item = StyledGrapheme<'a>>,
+        I: IntoIterator<Item = StyledGrapheme>,
     {
         let mut spans = Vec::new();
         for styled_grapheme in iter {
@@ -198,7 +194,7 @@ impl<'a> FromIterator<StyledGrapheme<'a>> for Line<'a> {
             }) = spans.last_mut()
             {
                 if last_span_style == &styled_grapheme.style {
-                    last_span_content.to_mut().push_str(styled_grapheme.symbol);
+                    last_span_content.push_str(&styled_grapheme.symbol);
                     continue;
                 }
             }
@@ -209,20 +205,20 @@ impl<'a> FromIterator<StyledGrapheme<'a>> for Line<'a> {
     }
 }
 
-impl<'a> From<String> for Line<'a> {
+impl From<String> for Line {
     fn from(s: String) -> Self {
         Self::from(vec![Span::from(s)])
     }
 }
 
-impl<'a> From<&'a str> for Line<'a> {
-    fn from(s: &'a str) -> Self {
+impl From<&str> for Line {
+    fn from(s: &str) -> Self {
         Self::from(vec![Span::from(s)])
     }
 }
 
-impl<'a> From<Vec<Span<'a>>> for Line<'a> {
-    fn from(spans: Vec<Span<'a>>) -> Self {
+impl From<Vec<Span>> for Line {
+    fn from(spans: Vec<Span>) -> Self {
         Self {
             spans,
             ..Default::default()
@@ -230,14 +226,14 @@ impl<'a> From<Vec<Span<'a>>> for Line<'a> {
     }
 }
 
-impl<'a> From<Span<'a>> for Line<'a> {
-    fn from(span: Span<'a>) -> Self {
+impl From<Span> for Line {
+    fn from(span: Span) -> Self {
         Self::from(vec![span])
     }
 }
 
-impl<'a> From<Line<'a>> for String {
-    fn from(line: Line<'a>) -> String {
+impl From<Line> for String {
+    fn from(line: Line) -> String {
         line.spans.iter().fold(String::new(), |mut acc, s| {
             acc.push_str(s.content.as_ref());
             acc
@@ -245,8 +241,8 @@ impl<'a> From<Line<'a>> for String {
     }
 }
 
-impl<'a> From<Spans<'a>> for Line<'a> {
-    fn from(value: Spans<'a>) -> Self {
+impl From<Spans> for Line {
+    fn from(value: Spans) -> Self {
         Self::from(value.0)
     }
 }

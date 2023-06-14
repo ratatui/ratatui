@@ -23,7 +23,7 @@ use std::cmp::min;
 #[derive(Debug, Clone)]
 pub struct Sparkline<'a> {
     /// A block to wrap the widget in
-    block: Option<Block<'a>>,
+    block: Option<Block>,
     /// Widget style
     style: Style,
     /// A slice of the data to display
@@ -57,7 +57,7 @@ impl<'a> Default for Sparkline<'a> {
 }
 
 impl<'a> Sparkline<'a> {
-    pub fn block(mut self, block: Block<'a>) -> Sparkline<'a> {
+    pub fn block(mut self, block: Block) -> Sparkline<'a> {
         self.block = Some(block);
         self
     }

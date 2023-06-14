@@ -45,15 +45,15 @@ impl ListState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ListItem<'a> {
-    content: Text<'a>,
+pub struct ListItem {
+    content: Text,
     style: Style,
 }
 
-impl<'a> ListItem<'a> {
-    pub fn new<T>(content: T) -> ListItem<'a>
+impl ListItem {
+    pub fn new<T>(content: T) -> ListItem
     where
-        T: Into<Text<'a>>,
+        T: Into<Text>,
     {
         ListItem {
             content: content.into(),
@@ -61,7 +61,7 @@ impl<'a> ListItem<'a> {
         }
     }
 
-    pub fn style(mut self, style: Style) -> ListItem<'a> {
+    pub fn style(mut self, style: Style) -> ListItem {
         self.style = style;
         self
     }
@@ -91,8 +91,8 @@ impl<'a> ListItem<'a> {
 /// ```
 #[derive(Debug, Clone)]
 pub struct List<'a> {
-    block: Option<Block<'a>>,
-    items: Vec<ListItem<'a>>,
+    block: Option<Block>,
+    items: Vec<ListItem>,
     /// Style used as a base style for the widget
     style: Style,
     start_corner: Corner,
@@ -107,7 +107,7 @@ pub struct List<'a> {
 impl<'a> List<'a> {
     pub fn new<T>(items: T) -> List<'a>
     where
-        T: Into<Vec<ListItem<'a>>>,
+        T: Into<Vec<ListItem>>,
     {
         List {
             block: None,
@@ -120,7 +120,7 @@ impl<'a> List<'a> {
         }
     }
 
-    pub fn block(mut self, block: Block<'a>) -> List<'a> {
+    pub fn block(mut self, block: Block) -> List<'a> {
         self.block = Some(block);
         self
     }

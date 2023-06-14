@@ -28,10 +28,10 @@ pub trait Shape {
 
 /// Label to draw some text on the canvas
 #[derive(Debug, Clone)]
-pub struct Label<'a> {
+pub struct Label {
     x: f64,
     y: f64,
-    line: TextLine<'a>,
+    line: TextLine,
 }
 
 #[derive(Debug, Clone)]
@@ -175,12 +175,12 @@ impl Grid for CharGrid {
 }
 
 #[derive(Debug)]
-pub struct Painter<'a, 'b> {
-    context: &'a mut Context<'b>,
+pub struct Painter<'a> {
+    context: &'a mut Context,
     resolution: (f64, f64),
 }
 
-impl<'a, 'b> Painter<'a, 'b> {
+impl<'a> Painter<'a> {
     /// Convert the (x, y) coordinates to location of a point on the grid
     ///
     /// # Examples:
@@ -233,8 +233,8 @@ impl<'a, 'b> Painter<'a, 'b> {
     }
 }
 
-impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
-    fn from(context: &'a mut Context<'b>) -> Painter<'a, 'b> {
+impl<'a> From<&'a mut Context> for Painter<'a> {
+    fn from(context: &'a mut Context) -> Painter<'a> {
         let resolution = context.grid.resolution();
         Painter {
             context,
@@ -245,23 +245,23 @@ impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
 
 /// Holds the state of the Canvas when painting to it.
 #[derive(Debug)]
-pub struct Context<'a> {
+pub struct Context {
     x_bounds: [f64; 2],
     y_bounds: [f64; 2],
     grid: Box<dyn Grid>,
     dirty: bool,
     layers: Vec<Layer>,
-    labels: Vec<Label<'a>>,
+    labels: Vec<Label>,
 }
 
-impl<'a> Context<'a> {
+impl Context {
     pub fn new(
         width: u16,
         height: u16,
         x_bounds: [f64; 2],
         y_bounds: [f64; 2],
         marker: symbols::Marker,
-    ) -> Context<'a> {
+    ) -> Context {
         let dot = symbols::DOT.chars().next().unwrap();
         let block = symbols::block::FULL.chars().next().unwrap();
         let bar = symbols::bar::HALF.chars().next().unwrap();
@@ -301,7 +301,7 @@ impl<'a> Context<'a> {
     /// Print a string on the canvas at the given position
     pub fn print<T>(&mut self, x: f64, y: f64, line: T)
     where
-        T: Into<TextLine<'a>>,
+        T: Into<TextLine>,
     {
         self.labels.push(Label {
             x,
@@ -353,11 +353,11 @@ impl<'a> Context<'a> {
 ///         });
 ///     });
 /// ```
-pub struct Canvas<'a, F>
+pub struct Canvas<F>
 where
     F: Fn(&mut Context),
 {
-    block: Option<Block<'a>>,
+    block: Option<Block>,
     x_bounds: [f64; 2],
     y_bounds: [f64; 2],
     painter: Option<F>,
@@ -365,11 +365,11 @@ where
     marker: symbols::Marker,
 }
 
-impl<'a, F> Default for Canvas<'a, F>
+impl<F> Default for Canvas<F>
 where
     F: Fn(&mut Context),
 {
-    fn default() -> Canvas<'a, F> {
+    fn default() -> Canvas<F> {
         Canvas {
             block: None,
             x_bounds: [0.0, 0.0],
@@ -381,11 +381,11 @@ where
     }
 }
 
-impl<'a, F> Canvas<'a, F>
+impl<F> Canvas<F>
 where
     F: Fn(&mut Context),
 {
-    pub fn block(mut self, block: Block<'a>) -> Canvas<'a, F> {
+    pub fn block(mut self, block: Block) -> Canvas<F> {
         self.block = Some(block);
         self
     }
@@ -393,7 +393,7 @@ where
     /// Define the viewport of the canvas.
     /// If you were to "zoom" to a certain part of the world you may want to choose different
     /// bounds.
-    pub fn x_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
+    pub fn x_bounds(mut self, bounds: [f64; 2]) -> Canvas<F> {
         self.x_bounds = bounds;
         self
     }
@@ -402,18 +402,18 @@ where
     ///
     /// If you were to "zoom" to a certain part of the world you may want to choose different
     /// bounds.
-    pub fn y_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
+    pub fn y_bounds(mut self, bounds: [f64; 2]) -> Canvas<F> {
         self.y_bounds = bounds;
         self
     }
 
     /// Store the closure that will be used to draw to the Canvas
-    pub fn paint(mut self, f: F) -> Canvas<'a, F> {
+    pub fn paint(mut self, f: F) -> Canvas<F> {
         self.painter = Some(f);
         self
     }
 
-    pub fn background_color(mut self, color: Color) -> Canvas<'a, F> {
+    pub fn background_color(mut self, color: Color) -> Canvas<F> {
         self.background_color = color;
         self
     }
@@ -433,13 +433,13 @@ where
     ///
     /// Canvas::default().marker(symbols::Marker::Block).paint(|ctx| {});
     /// ```
-    pub fn marker(mut self, marker: symbols::Marker) -> Canvas<'a, F> {
+    pub fn marker(mut self, marker: symbols::Marker) -> Canvas<F> {
         self.marker = marker;
         self
     }
 }
 
-impl<'a, F> Widget for Canvas<'a, F>
+impl<F> Widget for Canvas<F>
 where
     F: Fn(&mut Context),
 {

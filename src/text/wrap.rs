@@ -7,7 +7,7 @@ use super::{Line, StyledGrapheme};
 use crate::{layout::Alignment, style::Style};
 
 // Interface for all text types that may be wrapped before rendering.
-pub trait Wrappable<'a> {
+pub trait Wrappable {
     // TODO: This actually does not need to return multiple lines because it truncates, maybe change return type?
     fn wrap_truncate(
         &self,
@@ -32,7 +32,7 @@ pub trait Wrappable<'a> {
     ) -> Vec<Line>;
 }
 
-impl<'a> Wrappable<'a> for Line<'_> {
+impl Wrappable for Line {
     fn wrap_truncate(
         &self,
         max_width: usize,
@@ -71,7 +71,7 @@ impl<'a> Wrappable<'a> for Line<'_> {
             // This means that the symbol may or may not be truncated based on its position in the
             // line and whether it would be rendered outside (to the left) of the widget border.
             let scrolled_symbol = adjust_symbol_for_horizontal_scroll(
-                symbol,
+                &symbol,
                 style,
                 &mut remaining_scroll,
                 alignment,
@@ -79,7 +79,7 @@ impl<'a> Wrappable<'a> for Line<'_> {
 
             working_line_width += scrolled_symbol.width();
             working_line.push(StyledGrapheme {
-                symbol: scrolled_symbol,
+                symbol: scrolled_symbol.to_owned(),
                 style,
             });
         }

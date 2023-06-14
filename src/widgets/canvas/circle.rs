@@ -13,7 +13,7 @@ pub struct Circle {
 }
 
 impl Shape for Circle {
-    fn draw(&self, painter: &mut Painter<'_, '_>) {
+    fn draw(&self, painter: &mut Painter<'_>) {
         for angle in 0..360 {
             let radians = f64::from(angle).to_radians();
             let circle_x = self.radius.mul_add(radians.cos(), self.x);

@@ -43,9 +43,9 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 ///     .wrap(Wrap::WordBoundary).trim(true);
 /// ```
 #[derive(Debug, Clone)]
-pub struct Paragraph<'a> {
+pub struct Paragraph {
     /// A block to wrap the widget in
-    block: Option<Block<'a>>,
+    block: Option<Block>,
     /// Widget style
     style: Style,
     /// How to wrap the text
@@ -53,7 +53,7 @@ pub struct Paragraph<'a> {
     /// Whether leading whitespace should be trimmed
     trim: bool,
     /// The text to display
-    text: Text<'a>,
+    text: Text,
     /// Scroll
     scroll: (u16, u16),
     /// Alignment of the text
@@ -93,10 +93,10 @@ pub enum Wrap {
     CharBoundary,
 }
 
-impl<'a> Paragraph<'a> {
-    pub fn new<T>(text: T) -> Paragraph<'a>
+impl Paragraph {
+    pub fn new<T>(text: T) -> Paragraph
     where
-        T: Into<Text<'a>>,
+        T: Into<Text>,
     {
         Paragraph {
             block: None,
@@ -109,38 +109,38 @@ impl<'a> Paragraph<'a> {
         }
     }
 
-    pub fn block(mut self, block: Block<'a>) -> Paragraph<'a> {
+    pub fn block(mut self, block: Block) -> Paragraph {
         self.block = Some(block);
         self
     }
 
-    pub fn style(mut self, style: Style) -> Paragraph<'a> {
+    pub fn style(mut self, style: Style) -> Paragraph {
         self.style = style;
         self
     }
 
-    pub fn wrap(mut self, wrap: Wrap) -> Paragraph<'a> {
+    pub fn wrap(mut self, wrap: Wrap) -> Paragraph {
         self.wrap = Some(wrap);
         self
     }
 
-    pub fn trim(mut self, trim: bool) -> Paragraph<'a> {
+    pub fn trim(mut self, trim: bool) -> Paragraph {
         self.trim = trim;
         self
     }
 
-    pub fn scroll(mut self, offset: (u16, u16)) -> Paragraph<'a> {
+    pub fn scroll(mut self, offset: (u16, u16)) -> Paragraph {
         self.scroll = offset;
         self
     }
 
-    pub fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {
+    pub fn alignment(mut self, alignment: Alignment) -> Paragraph {
         self.alignment = alignment;
         self
     }
 }
 
-impl<'a> Widget for Paragraph<'a> {
+impl Widget for Paragraph {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
         let text_area = match self.block.take() {
@@ -500,7 +500,7 @@ mod test {
             Buffer::with_lines(vec!["This is a long line of "]),
         );
         test_case(
-            &truncated_paragraph.clone().scroll((0, 2)),
+            &truncated_paragraph.scroll((0, 2)),
             Buffer::with_lines(vec!["is is a long line of te"]),
         );
     }
@@ -624,7 +624,7 @@ mod test {
         }
 
         test_case(
-            &truncated_paragraph.clone().scroll((2, 4)),
+            &truncated_paragraph.scroll((2, 4)),
             Buffer::with_lines(vec!["iline   ", "graph.  "]),
         );
         test_case(
@@ -679,9 +679,7 @@ mod test {
             Paragraph::new(text.clone())
                 .wrap(Wrap::WordBoundary)
                 .trim(false),
-            Paragraph::new(text.clone())
-                .wrap(Wrap::WordBoundary)
-                .trim(true),
+            Paragraph::new(text).wrap(Wrap::WordBoundary).trim(true),
         ];
 
         let mut expected_buffer = Buffer::with_lines(vec!["Hello, world!"]);

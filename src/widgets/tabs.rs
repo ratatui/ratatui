@@ -24,11 +24,11 @@ use crate::{
 ///     .divider(DOT);
 /// ```
 #[derive(Debug, Clone)]
-pub struct Tabs<'a> {
+pub struct Tabs {
     /// A block to wrap this widget in if necessary
-    block: Option<Block<'a>>,
+    block: Option<Block>,
     /// One title for each tab
-    titles: Vec<Line<'a>>,
+    titles: Vec<Line>,
     /// The index of the selected tabs
     selected: usize,
     /// The style used to draw the text
@@ -36,13 +36,13 @@ pub struct Tabs<'a> {
     /// Style to apply to the selected item
     highlight_style: Style,
     /// Tab divider
-    divider: Span<'a>,
+    divider: Span,
 }
 
-impl<'a> Tabs<'a> {
-    pub fn new<T>(titles: Vec<T>) -> Tabs<'a>
+impl Tabs {
+    pub fn new<T>(titles: Vec<T>) -> Tabs
     where
-        T: Into<Line<'a>>,
+        T: Into<Line>,
     {
         Tabs {
             block: None,
@@ -54,36 +54,36 @@ impl<'a> Tabs<'a> {
         }
     }
 
-    pub fn block(mut self, block: Block<'a>) -> Tabs<'a> {
+    pub fn block(mut self, block: Block) -> Tabs {
         self.block = Some(block);
         self
     }
 
-    pub fn select(mut self, selected: usize) -> Tabs<'a> {
+    pub fn select(mut self, selected: usize) -> Tabs {
         self.selected = selected;
         self
     }
 
-    pub fn style(mut self, style: Style) -> Tabs<'a> {
+    pub fn style(mut self, style: Style) -> Tabs {
         self.style = style;
         self
     }
 
-    pub fn highlight_style(mut self, style: Style) -> Tabs<'a> {
+    pub fn highlight_style(mut self, style: Style) -> Tabs {
         self.highlight_style = style;
         self
     }
 
-    pub fn divider<T>(mut self, divider: T) -> Tabs<'a>
+    pub fn divider<T>(mut self, divider: T) -> Tabs
     where
-        T: Into<Span<'a>>,
+        T: Into<Span>,
     {
         self.divider = divider.into();
         self
     }
 }
 
-impl<'a> Widget for Tabs<'a> {
+impl Widget for Tabs {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
         let tabs_area = match self.block.take() {

@@ -1,7 +1,4 @@
-use std::{
-    borrow::Cow,
-    fmt::{self, Debug, Display},
-};
+use std::fmt::{self, Debug, Display};
 
 use super::Text;
 
@@ -22,13 +19,13 @@ use super::Text;
 /// assert_eq!(buffer, Buffer::with_lines(vec!["xxxxx"]));
 /// ```
 #[derive(Clone)]
-pub struct Masked<'a> {
-    inner: Cow<'a, str>,
+pub struct Masked {
+    inner: String,
     mask_char: char,
 }
 
-impl<'a> Masked<'a> {
-    pub fn new(s: impl Into<Cow<'a, str>>, mask_char: char) -> Self {
+impl Masked {
+    pub fn new(s: impl Into<String>, mask_char: char) -> Self {
         Self {
             inner: s.into(),
             mask_char,
@@ -41,45 +38,45 @@ impl<'a> Masked<'a> {
     }
 
     /// The underlying string, with all characters masked.
-    pub fn value(&self) -> Cow<'a, str> {
+    pub fn value(&self) -> String {
         self.inner.chars().map(|_| self.mask_char).collect()
     }
 }
 
-impl Debug for Masked<'_> {
+impl Debug for Masked {
     /// Debug representation of a masked string is the underlying string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.inner).map_err(|_| fmt::Error)
     }
 }
 
-impl Display for Masked<'_> {
+impl Display for Masked {
     /// Display representation of a masked string is the masked string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.value()).map_err(|_| fmt::Error)
     }
 }
 
-impl<'a> From<&'a Masked<'a>> for Cow<'a, str> {
-    fn from(masked: &'a Masked) -> Cow<'a, str> {
+impl From<&Masked> for String {
+    fn from(masked: &Masked) -> String {
         masked.value()
     }
 }
 
-impl<'a> From<Masked<'a>> for Cow<'a, str> {
-    fn from(masked: Masked<'a>) -> Cow<'a, str> {
+impl From<Masked> for String {
+    fn from(masked: Masked) -> String {
         masked.value()
     }
 }
 
-impl<'a> From<&'a Masked<'_>> for Text<'a> {
-    fn from(masked: &'a Masked) -> Text<'a> {
+impl From<&Masked> for Text {
+    fn from(masked: &Masked) -> Text {
         Text::raw(masked.value())
     }
 }
 
-impl<'a> From<Masked<'a>> for Text<'a> {
-    fn from(masked: Masked<'a>) -> Text<'a> {
+impl From<Masked> for Text {
+    fn from(masked: Masked) -> Text {
         Text::raw(masked.value())
     }
 }
@@ -118,10 +115,10 @@ mod tests {
         let text: Text = masked.to_owned().into();
         assert_eq!(text.lines, vec![Line::from("xxxxx")]);
 
-        let cow: Cow<str> = masked.borrow().into();
-        assert_eq!(cow, "xxxxx");
+        let string: String = masked.borrow().into();
+        assert_eq!(string, "xxxxx");
 
-        let cow: Cow<str> = masked.to_owned().into();
-        assert_eq!(cow, "xxxxx");
+        let string: String = masked.into();
+        assert_eq!(string, "xxxxx");
     }
 }

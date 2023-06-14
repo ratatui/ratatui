@@ -18,33 +18,33 @@ fn is_whitespace(symbol: &str) -> bool {
 /// A state machine to pack styled symbols into lines.
 /// Cannot implement it as Iterator since it yields slices of the internal buffer (need streaming
 /// iterators for that).
-pub trait LineComposer<'a> {
-    fn next_line(&mut self) -> Option<(&[StyledGrapheme<'a>], u16, Alignment)>;
+pub trait LineComposer {
+    fn next_line(&mut self) -> Option<(&[StyledGrapheme], u16, Alignment)>;
 }
 
 /// A state machine that wraps lines on char boundaries.
-pub struct CharWrapper<'a, O, I>
+pub struct CharWrapper<O, I>
 where
     O: Iterator<Item = (I, Alignment)>, // Outer iterator providing the individual lines
-    I: Iterator<Item = StyledGrapheme<'a>>, // Inner iterator providing the styled symbols of a line
+    I: Iterator<Item = StyledGrapheme>, // Inner iterator providing the styled symbols of a line
                                         // Each line consists of an alignment and a series of symbols
 {
     /// The given, unprocessed lines
     input_lines: O,
     max_line_width: u16,
-    wrapped_lines_buffer: Option<IntoIter<Vec<StyledGrapheme<'a>>>>,
+    wrapped_lines_buffer: Option<IntoIter<Vec<StyledGrapheme>>>,
     current_alignment: Alignment,
-    current_line: Vec<StyledGrapheme<'a>>,
+    current_line: Vec<StyledGrapheme>,
     /// Removes the leading whitespace from lines
     trim: bool,
 }
 
-impl<'a, O, I> CharWrapper<'a, O, I>
+impl<O, I> CharWrapper<O, I>
 where
     O: Iterator<Item = (I, Alignment)>,
-    I: Iterator<Item = StyledGrapheme<'a>>,
+    I: Iterator<Item = StyledGrapheme>,
 {
-    pub fn new(lines: O, max_line_width: u16, trim: bool) -> CharWrapper<'a, O, I> {
+    pub fn new(lines: O, max_line_width: u16, trim: bool) -> CharWrapper<O, I> {
         CharWrapper {
             input_lines: lines,
             max_line_width,
@@ -60,7 +60,7 @@ where
     ///
     /// The parts are represented as a list.
     ///
-    fn wrap_line(&self, line: &mut I) -> Vec<Vec<StyledGrapheme<'a>>> {
+    fn wrap_line(&self, line: &mut I) -> Vec<Vec<StyledGrapheme>> {
         let mut wrapped_lines = vec![];
         let mut current_line = vec![];
         let mut current_line_width = 0;
@@ -75,7 +75,7 @@ where
                 continue;
             }
 
-            let symbol_whitespace = is_whitespace(symbol);
+            let symbol_whitespace = is_whitespace(&symbol);
 
             // If the current character is whitespace and no non-whitespace character has been
             // encountered yet on this line, skip it
@@ -124,7 +124,7 @@ where
     }
 
     /// Returns the next wrapped line and its length currently in the wrapped lines buffer
-    fn next_wrapped_line(&mut self) -> Option<(Vec<StyledGrapheme<'a>>, u16)> {
+    fn next_wrapped_line(&mut self) -> Option<(Vec<StyledGrapheme>, u16)> {
         if let Some(line_iterator) = &mut self.wrapped_lines_buffer {
             if let Some(line) = line_iterator.next() {
                 let line_width = line
@@ -138,10 +138,10 @@ where
     }
 }
 
-impl<'a, O, I> LineComposer<'a> for CharWrapper<'a, O, I>
+impl<O, I> LineComposer for CharWrapper<O, I>
 where
     O: Iterator<Item = (I, Alignment)>,
-    I: Iterator<Item = StyledGrapheme<'a>>,
+    I: Iterator<Item = StyledGrapheme>,
 {
     /// This function returns the next line based on its input lines by wrapping them so that
     /// words get wrapped at the point where they intersect with the border of the widget.
@@ -155,7 +155,7 @@ where
     /// stored in the buffer. Rinse and repeat until all lines from the input are exhausted and have
     /// already been processed.
     ///
-    fn next_line(&mut self) -> Option<(&[StyledGrapheme<'a>], u16, Alignment)> {
+    fn next_line(&mut self) -> Option<(&[StyledGrapheme], u16, Alignment)> {
         if self.max_line_width == 0 {
             return None;
         }
@@ -192,28 +192,28 @@ where
 }
 
 /// A state machine that wraps lines on word boundaries.
-pub struct WordWrapper<'a, O, I>
+pub struct WordWrapper<O, I>
 where
     O: Iterator<Item = (I, Alignment)>, // Outer iterator providing the individual lines
-    I: Iterator<Item = StyledGrapheme<'a>>, // Inner iterator providing the styled symbols of a line
+    I: Iterator<Item = StyledGrapheme>, // Inner iterator providing the styled symbols of a line
                                         // Each line consists of an alignment and a series of symbols
 {
     /// The given, unprocessed lines
     input_lines: O,
     max_line_width: u16,
-    wrapped_lines: Option<IntoIter<Vec<StyledGrapheme<'a>>>>,
+    wrapped_lines: Option<IntoIter<Vec<StyledGrapheme>>>,
     current_alignment: Alignment,
-    current_line: Vec<StyledGrapheme<'a>>,
+    current_line: Vec<StyledGrapheme>,
     /// Removes the leading whitespace from lines
     trim: bool,
 }
 
-impl<'a, O, I> WordWrapper<'a, O, I>
+impl<O, I> WordWrapper<O, I>
 where
     O: Iterator<Item = (I, Alignment)>,
-    I: Iterator<Item = StyledGrapheme<'a>>,
+    I: Iterator<Item = StyledGrapheme>,
 {
-    pub fn new(lines: O, max_line_width: u16, trim: bool) -> WordWrapper<'a, O, I> {
+    pub fn new(lines: O, max_line_width: u16, trim: bool) -> WordWrapper<O, I> {
         WordWrapper {
             input_lines: lines,
             max_line_width,
@@ -225,17 +225,17 @@ where
     }
 }
 
-impl<'a, O, I> LineComposer<'a> for WordWrapper<'a, O, I>
+impl<O, I> LineComposer for WordWrapper<O, I>
 where
     O: Iterator<Item = (I, Alignment)>,
-    I: Iterator<Item = StyledGrapheme<'a>>,
+    I: Iterator<Item = StyledGrapheme>,
 {
-    fn next_line(&mut self) -> Option<(&[StyledGrapheme<'a>], u16, Alignment)> {
+    fn next_line(&mut self) -> Option<(&[StyledGrapheme], u16, Alignment)> {
         if self.max_line_width == 0 {
             return None;
         }
 
-        let mut current_line: Option<Vec<StyledGrapheme<'a>>> = None;
+        let mut current_line: Option<Vec<StyledGrapheme>> = None;
         let mut line_width: u16 = 0;
 
         // Try to repeatedly retrieve next line
@@ -265,7 +265,7 @@ where
 
                     let mut has_seen_non_whitespace = false;
                     for StyledGrapheme { symbol, style } in line_symbols {
-                        let symbol_whitespace = is_whitespace(symbol);
+                        let symbol_whitespace = is_whitespace(&symbol);
                         let symbol_width = symbol.width() as u16;
                         // Ignore characters wider than the total max width
                         if symbol_width > self.max_line_width {
@@ -375,26 +375,26 @@ where
 }
 
 /// A state machine that truncates overhanging lines.
-pub struct LineTruncator<'a, O, I>
+pub struct LineTruncator<O, I>
 where
     O: Iterator<Item = (I, Alignment)>, // Outer iterator providing the individual lines
-    I: Iterator<Item = StyledGrapheme<'a>>, // Inner iterator providing the styled symbols of a line
+    I: Iterator<Item = StyledGrapheme>, // Inner iterator providing the styled symbols of a line
                                         // Each line consists of an alignment and a series of symbols
 {
     /// The given, unprocessed lines
     input_lines: O,
     max_line_width: u16,
-    current_line: Vec<StyledGrapheme<'a>>,
+    current_line: Vec<StyledGrapheme>,
     /// Record the offset to skip render
     horizontal_offset: u16,
 }
 
-impl<'a, O, I> LineTruncator<'a, O, I>
+impl<O, I> LineTruncator<O, I>
 where
     O: Iterator<Item = (I, Alignment)>,
-    I: Iterator<Item = StyledGrapheme<'a>>,
+    I: Iterator<Item = StyledGrapheme>,
 {
-    pub fn new(lines: O, max_line_width: u16) -> LineTruncator<'a, O, I> {
+    pub fn new(lines: O, max_line_width: u16) -> LineTruncator<O, I> {
         LineTruncator {
             input_lines: lines,
             max_line_width,
@@ -408,12 +408,12 @@ where
     }
 }
 
-impl<'a, O, I> LineComposer<'a> for LineTruncator<'a, O, I>
+impl<O, I> LineComposer for LineTruncator<O, I>
 where
     O: Iterator<Item = (I, Alignment)>,
-    I: Iterator<Item = StyledGrapheme<'a>>,
+    I: Iterator<Item = StyledGrapheme>,
 {
-    fn next_line(&mut self) -> Option<(&[StyledGrapheme<'a>], u16, Alignment)> {
+    fn next_line(&mut self) -> Option<(&[StyledGrapheme], u16, Alignment)> {
         if self.max_line_width == 0 {
             return None;
         }
@@ -449,7 +449,7 @@ where
                     let symbol_width = symbol.width();
                     if symbol_width > horizontal_offset {
                         // Trim the symbol based on the horizontal offset
-                        let trimmed_symbol = trim_offset(symbol, horizontal_offset);
+                        let trimmed_symbol = trim_offset(&symbol, horizontal_offset).to_owned();
                         // Reset the horizontal offset since all scrolling has been applied
                         horizontal_offset = 0;
                         // Use the trimmed symbol
@@ -459,7 +459,7 @@ where
                         // symbol can be scrolled out of view
                         horizontal_offset -= symbol_width;
                         // An empty string indicates that the symbol will not be visible
-                        ""
+                        String::new()
                     }
                 };
                 current_line_width += symbol.width() as u16;
@@ -508,9 +508,9 @@ mod test {
         LineTruncator,
     }
 
-    fn run_composer<'a>(
+    fn run_composer(
         which: Composer,
-        text: impl Into<Text<'a>>,
+        text: impl Into<Text>,
         text_area_width: u16,
     ) -> (Vec<String>, Vec<u16>, Vec<Alignment>) {
         let text = text.into();
@@ -538,7 +538,7 @@ mod test {
         while let Some((styled, width, alignment)) = composer.next_line() {
             let line = styled
                 .iter()
-                .map(|StyledGrapheme { symbol, .. }| *symbol)
+                .map(|StyledGrapheme { symbol, .. }| symbol.clone())
                 .collect::<String>();
             assert!(width <= text_area_width);
             lines.push(line);

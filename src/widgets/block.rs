@@ -97,9 +97,9 @@ impl Padding {
 ///     .style(Style::default().bg(Color::Black));
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Block<'a> {
+pub struct Block {
     /// Optional title place on the upper left of the block
-    title: Option<Line<'a>>,
+    title: Option<Line>,
     /// Title alignment. The default is top left of the block, but one can choose to place
     /// title in the top middle, or top right of the block
     title_alignment: Alignment,
@@ -118,8 +118,8 @@ pub struct Block<'a> {
     padding: Padding,
 }
 
-impl<'a> Default for Block<'a> {
-    fn default() -> Block<'a> {
+impl Default for Block {
+    fn default() -> Block {
         Block {
             title: None,
             title_alignment: Alignment::Left,
@@ -133,10 +133,10 @@ impl<'a> Default for Block<'a> {
     }
 }
 
-impl<'a> Block<'a> {
-    pub fn title<T>(mut self, title: T) -> Block<'a>
+impl Block {
+    pub fn title<T>(mut self, title: T) -> Block
     where
-        T: Into<Line<'a>>,
+        T: Into<Line>,
     {
         self.title = Some(title.into());
         self
@@ -146,7 +146,7 @@ impl<'a> Block<'a> {
         since = "0.10.0",
         note = "You should use styling capabilities of `text::Line` given as argument of the `title` method to apply styling to the title."
     )]
-    pub fn title_style(mut self, style: Style) -> Block<'a> {
+    pub fn title_style(mut self, style: Style) -> Block {
         if let Some(t) = self.title {
             let title = String::from(t);
             self.title = Some(Line::from(Span::styled(title, style)));
@@ -154,32 +154,32 @@ impl<'a> Block<'a> {
         self
     }
 
-    pub fn title_alignment(mut self, alignment: Alignment) -> Block<'a> {
+    pub fn title_alignment(mut self, alignment: Alignment) -> Block {
         self.title_alignment = alignment;
         self
     }
 
-    pub fn title_on_bottom(mut self) -> Block<'a> {
+    pub fn title_on_bottom(mut self) -> Block {
         self.title_on_bottom = true;
         self
     }
 
-    pub fn border_style(mut self, style: Style) -> Block<'a> {
+    pub fn border_style(mut self, style: Style) -> Block {
         self.border_style = style;
         self
     }
 
-    pub fn style(mut self, style: Style) -> Block<'a> {
+    pub fn style(mut self, style: Style) -> Block {
         self.style = style;
         self
     }
 
-    pub fn borders(mut self, flag: Borders) -> Block<'a> {
+    pub fn borders(mut self, flag: Borders) -> Block {
         self.borders = flag;
         self
     }
 
-    pub fn border_type(mut self, border_type: BorderType) -> Block<'a> {
+    pub fn border_type(mut self, border_type: BorderType) -> Block {
         self.border_type = border_type;
         self
     }
@@ -243,13 +243,13 @@ impl<'a> Block<'a> {
         inner
     }
 
-    pub fn padding(mut self, padding: Padding) -> Block<'a> {
+    pub fn padding(mut self, padding: Padding) -> Block {
         self.padding = padding;
         self
     }
 }
 
-impl<'a> Widget for Block<'a> {
+impl Widget for Block {
     fn render(self, area: Rect, buf: &mut Buffer) {
         if area.area() == 0 {
             return;
