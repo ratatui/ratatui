@@ -10,7 +10,7 @@ use ratatui::{
     Terminal,
 };
 
-fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {
+fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span> {
     labels.iter().map(|l| Span::from(*l)).collect()
 }
 

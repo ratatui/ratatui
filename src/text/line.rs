@@ -63,7 +63,7 @@ impl Line {
     /// assert_eq!(
     ///     vec![
     ///         StyledGrapheme {
-    ///             symbol: "T",
+    ///             symbol: "T".to_owned(),
     ///             style: Style {
     ///                 fg: Some(Color::Yellow),
     ///                 bg: Some(Color::Black),
@@ -72,7 +72,7 @@ impl Line {
     ///             },
     ///         },
     ///         StyledGrapheme {
-    ///             symbol: "e",
+    ///             symbol: "e".to_owned(),
     ///             style: Style {
     ///                 fg: Some(Color::Yellow),
     ///                 bg: Some(Color::Black),
@@ -81,7 +81,7 @@ impl Line {
     ///             },
     ///         },
     ///         StyledGrapheme {
-    ///             symbol: "x",
+    ///             symbol: "x".to_owned(),
     ///             style: Style {
     ///                 fg: Some(Color::Yellow),
     ///                 bg: Some(Color::Black),
@@ -90,7 +90,7 @@ impl Line {
     ///             },
     ///         },
     ///         StyledGrapheme {
-    ///             symbol: "t",
+    ///             symbol: "t".to_owned(),
     ///             style: Style {
     ///                 fg: Some(Color::Yellow),
     ///                 bg: Some(Color::Black),

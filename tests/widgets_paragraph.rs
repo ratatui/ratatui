@@ -122,7 +122,7 @@ fn widgets_paragraph_can_scroll_horizontally() {
     );
     // only support Alignment::Left
     test_case(
-        paragraph.clone().alignment(Alignment::Right).scroll((0, 7)),
+        paragraph.alignment(Alignment::Right).scroll((0, 7)),
         Buffer::with_lines(vec![
             "┌──────────────────┐",
             "│段落现在可以水平滚│",
@@ -183,7 +183,7 @@ fn widgets_paragraph_can_char_wrap_its_content() {
         ]),
     );
     test_case(
-        paragraph.clone().alignment(Alignment::Right),
+        paragraph.alignment(Alignment::Right),
         Buffer::with_lines(vec![
             "┌──────────────────┐",
             "│The library is bas│",
@@ -238,7 +238,7 @@ fn widgets_paragraph_can_word_wrap_its_content() {
         ]),
     );
     test_case(
-        paragraph.clone().alignment(Alignment::Right),
+        paragraph.alignment(Alignment::Right),
         Buffer::with_lines(vec![
             "┌──────────────────┐",
             "│    The library is│",
@@ -258,7 +258,7 @@ fn widgets_paragraph_can_word_wrap_its_content() {
 fn widgets_paragraph_can_trim_its_content() {
     let space_text = "This is some         text with an excessive       amount of whitespace                  between words.";
     let text = vec![Line::from(space_text)];
-    let paragraph = Paragraph::new(text.clone())
+    let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL))
         .alignment(Alignment::Left);
 
@@ -289,7 +289,7 @@ fn widgets_paragraph_can_trim_its_content() {
     );
 
     test_case(
-        paragraph.clone().wrap(Wrap::WordBoundary).trim(true),
+        paragraph.wrap(Wrap::WordBoundary).trim(true),
         Buffer::with_lines(vec![
             "┌──────────────────┐",
             "│This is some      │",
@@ -401,7 +401,6 @@ fn widgets_paragraph_works_with_padding() {
 
     test_case(
         paragraph
-            .clone()
             .alignment(Alignment::Right)
             .wrap(Wrap::WordBoundary),
         Buffer::with_lines(vec![
@@ -482,7 +481,7 @@ fn widgets_paragraph_can_align_spans() {
     .map(Line::from)
     .collect::<Vec<_>>();
 
-    let mut text = left_lines.clone();
+    let mut text = left_lines;
     text.append(&mut lines);
     let paragraph = Paragraph::new(text).block(Block::default().borders(Borders::ALL));
 

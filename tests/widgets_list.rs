@@ -59,9 +59,9 @@ fn widgets_list_should_truncate_items() {
     let backend = TestBackend::new(10, 2);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    struct TruncateTestCase<'a> {
+    struct TruncateTestCase {
         selected: Option<usize>,
-        items: Vec<ListItem<'a>>,
+        items: Vec<ListItem>,
         expected: Buffer,
     }
 
