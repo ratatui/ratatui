@@ -153,7 +153,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .use_unicode(true);
     f.render_widget(gauge, chunks[2]);
 
-    let label = format!("{}/100", app.progress2);
+    let label = format!("{}/100", app.progress4);
     let gauge = Gauge::default()
         .block(Block::default().title("Gauge4"))
         .gauge_style(
