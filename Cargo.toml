@@ -50,6 +50,12 @@ unicode-width = "0.1"
 anyhow = "1.0.71"
 rand = "0.8"
 argh = "0.1"
+criterion = { version = "0.5", features = ["html_reports"] }
+fakeit = "1.1"
+
+[[bench]]
+name = "paragraph"
+harness = false
 
 [[example]]
 name = "barchart"

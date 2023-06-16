@@ -5,7 +5,14 @@ default = "deny"
 unlicensed = "deny"
 copyleft = "deny"
 confidence-threshold = 0.8
-allow = ["Apache-2.0", "BSD-3-Clause", "MIT", "Unicode-DFS-2016", "WTFPL"]
+allow = [
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MIT",
+    "Unicode-DFS-2016",
+]
 
 [advisories]
 unmaintained = "deny"
