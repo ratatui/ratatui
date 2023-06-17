@@ -12,6 +12,7 @@ allow = [
     "ISC",
     "MIT",
     "Unicode-DFS-2016",
+    "WTFPL",
 ]
 
 [advisories]
