@@ -252,7 +252,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         &mut app.horizontal_scroll_state,
     );
 
-    let paragraph = Paragraph::new(text.clone())
+    let paragraph = Paragraph::new(text)
         .style(Style::default().fg(Color::Gray))
         .block(create_block(
             "Horizontal scrollbar without arrows & custom thumb and track symbol",
