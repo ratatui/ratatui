@@ -9,16 +9,19 @@ repository = "https://github.com/tui-rs-revival/ratatui"
 readme = "README.md"
 license = "MIT"
 exclude = [
-  "assets/*",
-  ".github",
-  "Makefile.toml",
-  "CONTRIBUTING.md",
-  "*.log",
-  "tags",
+    "assets/*",
+    ".github",
+    "Makefile.toml",
+    "CONTRIBUTING.md",
+    "*.log",
+    "tags",
 ]
 autoexamples = true
 edition = "2021"
 rust-version = "1.65.0"
+
+[lib]
+bench = false
 
 [badges]
 
