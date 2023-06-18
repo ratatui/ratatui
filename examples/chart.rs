@@ -1,3 +1,9 @@
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
+};
+
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -11,11 +17,6 @@ use ratatui::{
     text::Span,
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType},
     Frame, Terminal,
-};
-use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
 };
 
 const DATA: [(f64, f64); 5] = [(0.0, 0.0), (1.0, 1.0), (2.0, 2.0), (3.0, 3.0), (4.0, 4.0)];

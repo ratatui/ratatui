@@ -1,11 +1,15 @@
-use std::cell::RefCell;
-use std::cmp::{max, min};
-use std::collections::HashMap;
-use std::rc::Rc;
+use std::{
+    cell::RefCell,
+    cmp::{max, min},
+    collections::HashMap,
+    rc::Rc,
+};
 
-use cassowary::strength::{MEDIUM, REQUIRED, WEAK};
-use cassowary::WeightedRelation::{EQ, GE, LE};
-use cassowary::{Constraint as CassowaryConstraint, Expression, Solver, Variable};
+use cassowary::{
+    strength::{MEDIUM, REQUIRED, WEAK},
+    Constraint as CassowaryConstraint, Expression, Solver, Variable,
+    WeightedRelation::{EQ, GE, LE},
+};
 
 #[derive(Debug, Hash, Clone, Copy, PartialEq, Eq)]
 pub enum Corner {
@@ -23,7 +27,6 @@ pub enum Direction {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Constraint {
-    // TODO: enforce range 0 - 100
     Percentage(u16),
     Ratio(u32, u32),
     Length(u16),
@@ -34,10 +37,17 @@ pub enum Constraint {
 impl Constraint {
     pub fn apply(&self, length: u16) -> u16 {
         match *self {
-            Constraint::Percentage(p) => length * p / 100,
-            Constraint::Ratio(num, den) => {
-                let r = num * u32::from(length) / den;
-                r as u16
+            Constraint::Percentage(p) => {
+                let p = p as f32 / 100.0;
+                let length = length as f32;
+                (p * length).min(length) as u16
+            }
+            Constraint::Ratio(numerator, denominator) => {
+                // avoid division by zero by using 1 when denominator is 0
+                // this results in 0/0 -> 0 and x/0 -> x for x != 0
+                let percentage = numerator as f32 / denominator.max(1) as f32;
+                let length = length as f32;
+                (percentage * length).min(length) as u16
             }
             Constraint::Length(l) => length.min(l),
             Constraint::Max(m) => length.min(m),
@@ -522,7 +532,7 @@ mod tests {
                         - f64::from(width) / f64::from(height))
                     .abs()
                         < 1.0
-                )
+                );
             }
         }
 
@@ -550,5 +560,42 @@ mod tests {
         let rect = Rect::new(0, 0, 300, 100);
         assert_eq!(rect.width, 300);
         assert_eq!(rect.height, 100);
+    }
+
+    #[test]
+    fn test_constraint_apply() {
+        assert_eq!(Constraint::Percentage(0).apply(100), 0);
+        assert_eq!(Constraint::Percentage(50).apply(100), 50);
+        assert_eq!(Constraint::Percentage(100).apply(100), 100);
+        assert_eq!(Constraint::Percentage(200).apply(100), 100);
+        assert_eq!(Constraint::Percentage(u16::MAX).apply(100), 100);
+
+        // 0/0 intentionally avoids a panic by returning 0.
+        assert_eq!(Constraint::Ratio(0, 0).apply(100), 0);
+        // 1/0 intentionally avoids a panic by returning 100% of the length.
+        assert_eq!(Constraint::Ratio(1, 0).apply(100), 100);
+        assert_eq!(Constraint::Ratio(0, 1).apply(100), 0);
+        assert_eq!(Constraint::Ratio(1, 2).apply(100), 50);
+        assert_eq!(Constraint::Ratio(2, 2).apply(100), 100);
+        assert_eq!(Constraint::Ratio(3, 2).apply(100), 100);
+        assert_eq!(Constraint::Ratio(u32::MAX, 2).apply(100), 100);
+
+        assert_eq!(Constraint::Length(0).apply(100), 0);
+        assert_eq!(Constraint::Length(50).apply(100), 50);
+        assert_eq!(Constraint::Length(100).apply(100), 100);
+        assert_eq!(Constraint::Length(200).apply(100), 100);
+        assert_eq!(Constraint::Length(u16::MAX).apply(100), 100);
+
+        assert_eq!(Constraint::Max(0).apply(100), 0);
+        assert_eq!(Constraint::Max(50).apply(100), 50);
+        assert_eq!(Constraint::Max(100).apply(100), 100);
+        assert_eq!(Constraint::Max(200).apply(100), 100);
+        assert_eq!(Constraint::Max(u16::MAX).apply(100), 100);
+
+        assert_eq!(Constraint::Min(0).apply(100), 100);
+        assert_eq!(Constraint::Min(50).apply(100), 100);
+        assert_eq!(Constraint::Min(100).apply(100), 100);
+        assert_eq!(Constraint::Min(200).apply(100), 200);
+        assert_eq!(Constraint::Min(u16::MAX).apply(100), u16::MAX);
     }
 }

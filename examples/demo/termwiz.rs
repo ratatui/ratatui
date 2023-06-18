@@ -1,9 +1,10 @@
-use ratatui::{backend::TermwizBackend, Terminal};
 use std::{
     error::Error,
     io,
     time::{Duration, Instant},
 };
+
+use ratatui::{backend::TermwizBackend, Terminal};
 use termwiz::{input::*, terminal::Terminal as TermwizTerminal};
 
 use crate::{app::App, ui};

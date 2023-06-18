@@ -1,15 +1,17 @@
+use std::{
+    cmp::min,
+    fmt::{Debug, Formatter, Result},
+};
+
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
+
 #[allow(deprecated)]
 use crate::{
     layout::Rect,
     style::{Color, Modifier, Style},
     text::{Line, Span, Spans},
 };
-use std::{
-    cmp::min,
-    fmt::{Debug, Formatter, Result},
-};
-use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
 /// A buffer cell
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -447,8 +449,8 @@ impl Buffer {
         let mut updates: Vec<(u16, u16, &Cell)> = vec![];
         // Cells invalidated by drawing/replacing preceding multi-width characters:
         let mut invalidated: usize = 0;
-        // Cells from the current buffer to skip due to preceding multi-width characters taking their
-        // place (the skipped cells should be blank anyway):
+        // Cells from the current buffer to skip due to preceding multi-width characters taking
+        // their place (the skipped cells should be blank anyway):
         let mut to_skip: usize = 0;
         for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
             if (current != previous || invalidated > 0) && to_skip == 0 {
@@ -491,7 +493,11 @@ macro_rules! assert_buffer_eq {
                         .enumerate()
                         .map(|(i, (x, y, cell))| {
                             let expected_cell = expected.get(*x, *y);
-                            format!("{i}: at ({x}, {y})\n  expected: {expected_cell:?}\n  actual:   {cell:?}")
+                            indoc::formatdoc! {"
+                                {i}: at ({x}, {y})
+                                  expected: {expected_cell:?}
+                                  actual:   {cell:?}
+                            "}
                         })
                         .collect::<Vec<String>>()
                         .join("\n");
@@ -519,12 +525,10 @@ impl Debug for Buffer {
     /// Writes a debug representation of the buffer to the given formatter.
     ///
     /// The format is like a pretty printed struct, with the following fields:
-    /// area: displayed as Rect { x: 1, y: 2, width: 3, height: 4 }
-    /// content: displayed as a list of strings representing the content of the
-    ///     buffer
-    /// styles: displayed as a list of
-    ///     { x: 1, y: 2, fg: Color::Red, bg: Color::Blue, modifier: Modifier::BOLD }
-    /// only showing a value when there is a change in style.
+    /// * `area`: displayed as `Rect { x: 1, y: 2, width: 3, height: 4 }`
+    /// * `content`: displayed as a list of strings representing the content of the buffer
+    /// * `styles`: displayed as a list of: `{ x: 1, y: 2, fg: Color::Red, bg: Color::Blue,
+    ///   modifier: Modifier::BOLD }` only showing a value when there is a change in style.
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.write_fmt(format_args!(
             "Buffer {{\n    area: {:?},\n    content: [\n",
@@ -602,7 +606,7 @@ mod tests {
                         \"G'day World!\",
                     ],
                     styles: [
-                        x: 0, y: 0, fg: Reset, bg: Reset, modifier: (empty),
+                        x: 0, y: 0, fg: Reset, bg: Reset, modifier: NONE,
                         x: 0, y: 1, fg: Green, bg: Yellow, modifier: BOLD,
                     ]
                 }"

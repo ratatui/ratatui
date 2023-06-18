@@ -1,14 +1,36 @@
+//! This module provides the `TermionBackend` implementation for the [`Backend`] trait.
+//! It uses the Termion crate to interact with the terminal.
+//!
+//! [`Backend`]: crate::backend::Backend
+//! [`TermionBackend`]: crate::backend::TermionBackend
+
+use std::{
+    fmt,
+    io::{self, Write},
+};
+
 use crate::{
     backend::{Backend, ClearType},
     buffer::Cell,
     layout::Rect,
     style::{Color, Modifier},
 };
-use std::{
-    fmt,
-    io::{self, Write},
-};
 
+/// A backend that uses the Termion library to draw content, manipulate the cursor,
+/// and clear the terminal screen.
+///
+/// # Example
+///
+/// ```rust
+/// use ratatui::backend::{Backend, TermionBackend};
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let stdout = std::io::stdout();
+/// let mut backend = TermionBackend::new(stdout);
+/// backend.clear()?;
+/// # Ok(())
+/// # }
+/// ```
 pub struct TermionBackend<W>
 where
     W: Write,
@@ -20,6 +42,7 @@ impl<W> TermionBackend<W>
 where
     W: Write,
 {
+    /// Creates a new Termion backend with the given output.
     pub fn new(stdout: W) -> TermionBackend<W> {
         TermionBackend { stdout }
     }
@@ -64,24 +87,20 @@ where
         self.stdout.flush()
     }
 
-    /// Hides cursor
     fn hide_cursor(&mut self) -> io::Result<()> {
         write!(self.stdout, "{}", termion::cursor::Hide)?;
         self.stdout.flush()
     }
 
-    /// Shows cursor
     fn show_cursor(&mut self) -> io::Result<()> {
         write!(self.stdout, "{}", termion::cursor::Show)?;
         self.stdout.flush()
     }
 
-    /// Gets cursor position (0-based index)
     fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
         termion::cursor::DetectCursorPos::cursor_pos(&mut self.stdout).map(|(x, y)| (x - 1, y - 1))
     }
 
-    /// Sets cursor position (0-based index)
     fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
         write!(self.stdout, "{}", termion::cursor::Goto(x + 1, y + 1))?;
         self.stdout.flush()
@@ -135,7 +154,6 @@ where
         )
     }
 
-    /// Return the size of the terminal
     fn size(&self) -> io::Result<Rect> {
         let terminal = termion::terminal_size()?;
         Ok(Rect::new(0, 0, terminal.0, terminal.1))
@@ -150,6 +168,9 @@ struct Fg(Color);
 
 struct Bg(Color);
 
+/// The `ModifierDiff` struct is used to calculate the difference between two `Modifier`
+/// values. This is useful when updating the terminal display, as it allows for more
+/// efficient updates by only sending the necessary changes.
 struct ModifierDiff {
     from: Modifier,
     to: Modifier,

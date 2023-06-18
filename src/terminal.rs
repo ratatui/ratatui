@@ -1,10 +1,11 @@
+use std::io;
+
 use crate::{
     backend::{Backend, ClearType},
     buffer::Buffer,
     layout::Rect,
     widgets::{StatefulWidget, Widget},
 };
-use std::io;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Viewport {
@@ -133,7 +134,7 @@ where
     }
 }
 
-/// CompletedFrame represents the state of the terminal after all changes performed in the last
+/// `CompletedFrame` represents the state of the terminal after all changes performed in the last
 /// [`Terminal::draw`] call have been applied. Therefore, it is only valid until the next call to
 /// [`Terminal::draw`].
 pub struct CompletedFrame<'a> {
@@ -292,9 +293,7 @@ where
             }
         }
 
-        // Swap buffers
-        self.buffers[1 - self.current].reset();
-        self.current = 1 - self.current;
+        self.swap_buffers();
 
         // Flush
         self.backend.flush()?;
@@ -348,6 +347,12 @@ where
         Ok(())
     }
 
+    /// Clears the inactive buffer and swaps it with the current buffer
+    pub fn swap_buffers(&mut self) {
+        self.buffers[1 - self.current].reset();
+        self.current = 1 - self.current;
+    }
+
     /// Queries the real size of the backend.
     pub fn size(&self) -> io::Result<Rect> {
         self.backend.size()
@@ -356,8 +361,8 @@ where
     /// Insert some content before the current inline viewport. This has no effect when the
     /// viewport is fullscreen.
     ///
-    /// This function scrolls down the current viewport by the given height. The newly freed space is
-    /// then made available to the `draw_fn` closure through a writable `Buffer`.
+    /// This function scrolls down the current viewport by the given height. The newly freed space
+    /// is then made available to the `draw_fn` closure through a writable `Buffer`.
     ///
     /// Before:
     /// ```ignore

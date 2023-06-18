@@ -10,6 +10,8 @@
 //! [`Monthly`] has several controls for what should be displayed
 use std::collections::HashMap;
 
+use time::{Date, Duration, OffsetDateTime};
+
 use crate::{
     buffer::Buffer,
     layout::Rect,
@@ -17,8 +19,6 @@ use crate::{
     text::Span,
     widgets::{Block, Widget},
 };
-
-use time::{Date, Duration, OffsetDateTime};
 
 /// Display a month calendar for the month containing `display_date`
 pub struct Monthly<'a, S: DateStyler> {
@@ -214,9 +214,10 @@ impl Default for CalendarEventStore {
 
 #[cfg(test)]
 mod tests {
+    use time::Month;
+
     use super::*;
     use crate::style::Color;
-    use time::Month;
 
     #[test]
     fn event_store() {

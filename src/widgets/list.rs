@@ -1,3 +1,5 @@
+use unicode_width::UnicodeWidthStr;
+
 use crate::{
     buffer::Buffer,
     layout::{Corner, Rect},
@@ -5,7 +7,6 @@ use crate::{
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
 };
-use unicode_width::UnicodeWidthStr;
 
 #[derive(Debug, Clone, Default)]
 pub struct ListState {
@@ -294,14 +295,13 @@ impl<'a> Widget for List<'a> {
 mod tests {
     use std::borrow::Cow;
 
+    use super::*;
     use crate::{
         assert_buffer_eq,
         style::Color,
         text::{Line, Span},
         widgets::{Borders, StatefulWidget, Widget},
     };
-
-    use super::*;
 
     #[test]
     fn test_list_state_selected() {

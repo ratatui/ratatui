@@ -1,3 +1,9 @@
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
+};
+
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
@@ -10,11 +16,6 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState},
     Frame, Terminal,
-};
-use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
 };
 
 struct StatefulList<T> {
@@ -63,9 +64,9 @@ impl<T> StatefulList<T> {
     }
 }
 
-/// This struct holds the current state of the app. In particular, it has the `items` field which is a wrapper
-/// around `ListState`. Keeping track of the items state let us render the associated widget with its state
-/// and have access to features such as natural scrolling.
+/// This struct holds the current state of the app. In particular, it has the `items` field which is
+/// a wrapper around `ListState`. Keeping track of the items state let us render the associated
+/// widget with its state and have access to features such as natural scrolling.
 ///
 /// Check the event handling at the bottom to see how to change the state on incoming events.
 /// Check the drawing logic for items on how to specify the highlighting style for selected items.

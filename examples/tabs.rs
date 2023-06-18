@@ -1,3 +1,5 @@
+use std::{error::Error, io};
+
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
@@ -11,7 +13,6 @@ use ratatui::{
     widgets::{Block, Borders, Tabs},
     Frame, Terminal,
 };
-use std::{error::Error, io};
 
 struct App<'a> {
     pub titles: Vec<&'a str>,

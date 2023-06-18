@@ -1,0 +1,28 @@
+# configuration for https://github.com/EmbarkStudios/cargo-deny
+
+[licenses]
+default = "deny"
+unlicensed = "deny"
+copyleft = "deny"
+confidence-threshold = 0.8
+allow = [
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MIT",
+    "Unicode-DFS-2016",
+    "WTFPL",
+]
+
+[advisories]
+unmaintained = "deny"
+yanked = "deny"
+
+[bans]
+multiple-versions = "allow"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "warn"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

@@ -39,10 +39,10 @@ fn widgets_gauge_renders() {
         "                                        ",
         "                                        ",
         "  ┌Percentage────────────────────────┐  ",
-        "  │              ▋43%                │  ",
+        "  │██████████████▋43%                │  ",
         "  └──────────────────────────────────┘  ",
         "  ┌Ratio─────────────────────────────┐  ",
-        "  │               51%                │  ",
+        "  │███████████████51%                │  ",
         "  └──────────────────────────────────┘  ",
         "                                        ",
         "                                        ",
@@ -51,8 +51,8 @@ fn widgets_gauge_renders() {
     for i in 3..17 {
         expected
             .get_mut(i, 3)
-            .set_bg(Color::Red)
-            .set_fg(Color::Blue);
+            .set_bg(Color::Blue)
+            .set_fg(Color::Red);
     }
     for i in 17..37 {
         expected
@@ -64,8 +64,8 @@ fn widgets_gauge_renders() {
     for i in 3..20 {
         expected
             .get_mut(i, 6)
-            .set_bg(Color::Red)
-            .set_fg(Color::Blue);
+            .set_bg(Color::Blue)
+            .set_fg(Color::Red);
     }
     for i in 20..37 {
         expected

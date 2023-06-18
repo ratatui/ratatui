@@ -1,49 +1,51 @@
+# configuration for https://github.com/sagiegurari/cargo-make
+
 [config]
 skip_core_tasks = true
 
 [tasks.ci]
 run_task = [
-    { name = "ci-unix", condition = { platforms = ["linux", "mac"] } },
-    { name = "ci-windows", condition = { platforms = ["windows"] } },
+  { name = "ci-unix", condition = { platforms = [
+    "linux",
+    "mac",
+  ] } },
+  { name = "ci-windows", condition = { platforms = [
+    "windows",
+  ] } },
 ]
 
 [tasks.ci-unix]
 private = true
 dependencies = [
-    "fmt",
-    "check-crossterm",
-    "check-termion",
-    "check-termwiz",
-    "test-crossterm",
-    "test-termion",
-    "test-termwiz",
-    "clippy-crossterm",
-    "clippy-termion",
-    "clippy-termwiz",
-    "test-doc",
+  "fmt",
+  "check-crossterm",
+  "check-termion",
+  "check-termwiz",
+  "test-crossterm",
+  "test-termion",
+  "test-termwiz",
+  "clippy-crossterm",
+  "clippy-termion",
+  "clippy-termwiz",
+  "test-doc",
 ]
 
 [tasks.ci-windows]
 private = true
 dependencies = [
-    "fmt",
-    "check-crossterm",
-    "check-termwiz",
-    "test-crossterm",
-    "test-termwiz",
-    "clippy-crossterm",
-    "clippy-termwiz",
-    "test-doc",
+  "fmt",
+  "check-crossterm",
+  "check-termwiz",
+  "test-crossterm",
+  "test-termwiz",
+  "clippy-crossterm",
+  "clippy-termwiz",
+  "test-doc",
 ]
 
 [tasks.fmt]
 command = "cargo"
-args = [
-  "fmt",
-  "--all",
-  "--",
-  "--check",
-]
+args = ["fmt", "--all", "--", "--check"]
 
 [tasks.check-crossterm]
 env = { TUI_FEATURES = "serde,crossterm" }
@@ -144,29 +146,17 @@ args = [
 
 [tasks.test-doc]
 command = "cargo"
-args = [
-  "test",
-  "--doc",
-]
+args = ["test", "--doc"]
 
 [tasks.run-example]
 private = true
 condition = { env_set = ["TUI_EXAMPLE_NAME"] }
 command = "cargo"
-args = [
-    "run",
-    "--release",
-    "--example",
-    "${TUI_EXAMPLE_NAME}"
-]
+args = ["run", "--release", "--example", "${TUI_EXAMPLE_NAME}"]
 
 [tasks.build-examples]
 command = "cargo"
-args = [
-    "build",
-    "--examples",
-    "--release"
-]
+args = ["build", "--examples", "--release"]
 
 [tasks.run-examples]
 dependencies = ["build-examples"]

@@ -1,11 +1,9 @@
-use std::collections::VecDeque;
-use std::vec::IntoIter;
+use std::{collections::VecDeque, vec::IntoIter};
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::layout::Alignment;
-use crate::text::StyledGrapheme;
+use crate::{layout::Alignment, text::StyledGrapheme};
 
 // NBSP is a non-breaking space which is essentially a whitespace character that is treated
 // the same as non-whitespace characters in wrapping algorithms
@@ -194,9 +192,11 @@ where
 /// A state machine that wraps lines on word boundaries.
 pub struct WordWrapper<O, I>
 where
-    O: Iterator<Item = (I, Alignment)>, // Outer iterator providing the individual lines
-    I: Iterator<Item = StyledGrapheme>, // Inner iterator providing the styled symbols of a line
-                                        // Each line consists of an alignment and a series of symbols
+    // Outer iterator providing the individual lines
+    O: Iterator<Item = (I, Alignment)>,
+    // Inner iterator providing the styled symbols of a line Each line consists of an alignment and
+    // a series of symbols
+    I: Iterator<Item = StyledGrapheme<'a>>,
 {
     /// The given, unprocessed lines
     input_lines: O,
@@ -258,10 +258,13 @@ where
                     // Save the whole line's alignment
                     self.current_alignment = *line_alignment;
                     let mut wrapped_lines = vec![]; // Saves the wrapped lines
-                    let (mut current_line, mut current_line_width) = (vec![], 0); // Saves the unfinished wrapped line
-                    let (mut unfinished_word, mut word_width) = (vec![], 0); // Saves the partially processed word
+                                                    // Saves the unfinished wrapped line
+                    let (mut current_line, mut current_line_width) = (vec![], 0);
+                    // Saves the partially processed word
+                    let (mut unfinished_word, mut word_width) = (vec![], 0);
+                    // Saves the whitespaces of the partially unfinished word
                     let (mut unfinished_whitespaces, mut whitespace_width) =
-                        (VecDeque::<StyledGrapheme>::new(), 0); // Saves the whitespaces of the partially unfinished word
+                        (VecDeque::<StyledGrapheme>::new(), 0);
 
                     let mut has_seen_non_whitespace = false;
                     for StyledGrapheme { symbol, style } in line_symbols {
@@ -282,7 +285,8 @@ where
                             || word_width + whitespace_width + symbol_width > self.max_line_width && current_line.is_empty() && !self.trim
                         {
                             if !current_line.is_empty() || !self.trim {
-                                // Also append whitespaces if not trimming or current line is not empty
+                                // Also append whitespaces if not trimming or current line is not
+                                // empty
                                 current_line.extend(
                                     std::mem::take(&mut unfinished_whitespaces).into_iter(),
                                 );
@@ -298,7 +302,8 @@ where
                             word_width = 0;
                         }
 
-                        // Append the unfinished wrapped line to wrapped lines if it is as wide as max line width
+                        // Append the unfinished wrapped line to wrapped lines if it is as wide as
+                        // max line width
                         if current_line_width >= self.max_line_width
                             // or if it would be too long with the current partially processed word added
                             || current_line_width + whitespace_width + word_width >= self.max_line_width && symbol_width > 0
@@ -309,7 +314,8 @@ where
                             wrapped_lines.push(std::mem::take(&mut current_line));
                             current_line_width = 0;
 
-                            // Remove all whitespaces till end of just appended wrapped line + next whitespace
+                            // Remove all whitespaces till end of just appended wrapped line + next
+                            // whitespace
                             let mut first_whitespace = unfinished_whitespaces.pop_front();
                             while let Some(grapheme) = first_whitespace.as_ref() {
                                 let symbol_width = grapheme.symbol.width() as u16;
@@ -377,9 +383,11 @@ where
 /// A state machine that truncates overhanging lines.
 pub struct LineTruncator<O, I>
 where
-    O: Iterator<Item = (I, Alignment)>, // Outer iterator providing the individual lines
-    I: Iterator<Item = StyledGrapheme>, // Inner iterator providing the styled symbols of a line
-                                        // Each line consists of an alignment and a series of symbols
+    // Outer iterator providing the individual lines
+    O: Iterator<Item = (I, Alignment)>,
+    // Inner iterator providing the styled symbols of a line Each line consists of an alignment and
+    // a series of symbols
+    I: Iterator<Item = StyledGrapheme<'a>>,
 {
     /// The given, unprocessed lines
     input_lines: O,
@@ -497,10 +505,13 @@ fn trim_offset(src: &str, mut offset: usize) -> &str {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::style::Style;
-    use crate::text::{Line, Text};
     use unicode_segmentation::UnicodeSegmentation;
+
+    use super::*;
+    use crate::{
+        style::Style,
+        text::{Line, Text},
+    };
 
     enum Composer {
         CharWrapper { trim: bool },
@@ -745,7 +756,7 @@ mod test {
                 "mnopab cdefghi j",
                 "klmno",
             ]
-        )
+        );
     }
 
     #[test]
@@ -822,7 +833,8 @@ mod test {
         // to test double-width chars.
         // You are more than welcome to add word boundary detection based of alterations of
         // hiragana and katakana...
-        // This happens to also be a test case for mixed width because regular spaces are single width.
+        // This happens to also be a test case for mixed width because regular spaces are single
+        // width.
         let text = "コンピュ ータ上で文字を扱う場合、 典型的には文 字による 通信を行 う場合にその両端点では、";
         let (char_wrapper, char_wrapper_width, _) =
             run_composer(Composer::CharWrapper { trim: true }, text, width);

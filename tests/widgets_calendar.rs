@@ -9,7 +9,6 @@ use ratatui::{
     },
     Terminal,
 };
-
 use time::{Date, Month};
 
 fn test_render<W: Widget>(widget: W, expected: Buffer, size: (u16, u16)) {

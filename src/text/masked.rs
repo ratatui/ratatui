@@ -83,9 +83,10 @@ impl From<Masked> for Text {
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Borrow;
+
     use super::*;
     use crate::text::Line;
-    use std::borrow::Borrow;
 
     #[test]
     fn test_masked_value() {

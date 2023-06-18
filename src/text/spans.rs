@@ -1,8 +1,7 @@
 #![allow(deprecated)]
 
 use super::{Span, Style};
-use crate::layout::Alignment;
-use crate::text::Line;
+use crate::{layout::Alignment, text::Line};
 
 /// A string composed of clusters of graphemes, each with their own style.
 ///
@@ -137,8 +136,10 @@ impl From<Spans> for String {
 
 #[cfg(test)]
 mod tests {
-    use crate::style::{Color, Modifier, Style};
-    use crate::text::{Span, Spans};
+    use crate::{
+        style::{Color, Modifier, Style},
+        text::{Span, Spans},
+    };
 
     #[test]
     fn test_width() {

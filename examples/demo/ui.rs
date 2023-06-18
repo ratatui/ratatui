@@ -1,17 +1,18 @@
-use crate::app::App;
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
     text::{Line, Span},
-    widgets::canvas::{Canvas, Circle, Line as CanvasLine, Map, MapResolution, Rectangle},
     widgets::{
+        canvas::{Canvas, Circle, Line as CanvasLine, Map, MapResolution, Rectangle},
         Axis, BarChart, Block, Borders, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem,
         Paragraph, Row, Sparkline, Table, Tabs, Wrap,
     },
     Frame,
 };
+
+use crate::app::App;
 
 pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let chunks = Layout::default()
@@ -82,6 +83,7 @@ where
                 .bg(Color::Black)
                 .add_modifier(Modifier::ITALIC | Modifier::BOLD),
         )
+        .use_unicode(app.enhanced_graphics)
         .label(label)
         .ratio(app.progress);
     f.render_widget(gauge, chunks[0]);

@@ -215,16 +215,16 @@ impl Widget for Paragraph {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::backend::TestBackend;
     use crate::{
+        backend::TestBackend,
         style::Color,
         text::{Line, Span},
         widgets::Borders,
         Terminal,
     };
 
-    /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal area
-    /// and comparing the rendered and expected content.
+    /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
+    /// area and comparing the rendered and expected content.
     /// This can be used for easy testing of varying configured paragraphs with the same expected
     /// buffer or any other test case really.
     fn test_case(paragraph: &Paragraph, expected: Buffer) {
@@ -335,7 +335,9 @@ mod test {
 
     #[test]
     fn test_render_paragraph_with_block() {
-        let text = "Hello, world!";
+        // We use the slightly unconventional "worlds" instead of "world" here to make sure when we
+        // can truncate this without triggering the typos linter.
+        let text = "Hello, worlds!";
         let truncated_paragraph =
             Paragraph::new(text).block(Block::default().title("Title").borders(Borders::ALL));
         let char_wrapped_paragraph = truncated_paragraph
@@ -361,16 +363,16 @@ mod test {
             test_case(
                 paragraph,
                 Buffer::with_lines(vec![
-                    "┌Title────────┐",
-                    "│Hello, world!│",
-                    "└─────────────┘",
+                    "┌Title─────────┐",
+                    "│Hello, worlds!│",
+                    "└──────────────┘",
                 ]),
             );
             test_case(
                 paragraph,
                 Buffer::with_lines(vec![
                     "┌Title───────────┐",
-                    "│Hello, world!   │",
+                    "│Hello, worlds!  │",
                     "└────────────────┘",
                 ]),
             );
@@ -378,7 +380,7 @@ mod test {
                 paragraph,
                 Buffer::with_lines(vec![
                     "┌Title────────────┐",
-                    "│Hello, world!    │",
+                    "│Hello, worlds!   │",
                     "│                 │",
                     "└─────────────────┘",
                 ]),
@@ -388,10 +390,10 @@ mod test {
         test_case(
             &truncated_paragraph,
             Buffer::with_lines(vec![
-                "┌Title──────┐",
-                "│Hello, worl│",
-                "│           │",
-                "└───────────┘",
+                "┌Title───────┐",
+                "│Hello, world│",
+                "│            │",
+                "└────────────┘",
             ]),
         );
         test_case(
@@ -408,7 +410,7 @@ mod test {
             Buffer::with_lines(vec![
                 "┌Title──────┐",
                 "│Hello,     │",
-                "│world!     │",
+                "│worlds!    │",
                 "└───────────┘",
             ]),
         );
@@ -417,7 +419,7 @@ mod test {
             Buffer::with_lines(vec![
                 "┌Title──────┐",
                 "│Hello,     │",
-                "│world!     │",
+                "│worlds!    │",
                 "└───────────┘",
             ]),
         );
