@@ -196,7 +196,7 @@ where
     O: Iterator<Item = (I, Alignment)>,
     // Inner iterator providing the styled symbols of a line Each line consists of an alignment and
     // a series of symbols
-    I: Iterator<Item = StyledGrapheme<'a>>,
+    I: Iterator<Item = StyledGrapheme>,
 {
     /// The given, unprocessed lines
     input_lines: O,
@@ -387,7 +387,7 @@ where
     O: Iterator<Item = (I, Alignment)>,
     // Inner iterator providing the styled symbols of a line Each line consists of an alignment and
     // a series of symbols
-    I: Iterator<Item = StyledGrapheme<'a>>,
+    I: Iterator<Item = StyledGrapheme>,
 {
     /// The given, unprocessed lines
     input_lines: O,

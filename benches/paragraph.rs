@@ -128,10 +128,12 @@ fn bench_paragraph_render_wrap(
 fn bench_paragraph_render_wrap_no_trim(width: u16) -> impl Fn(&mut Bencher<'_>, &str) {
     move |b, lines| {
         let mut buffer = Buffer::empty(Rect::new(0, 0, width, 50));
-        let wrap = Wrap { trim: false };
+        let wrap = Wrap::WordBoundary;
+        let trim = false;
         b.iter(|| {
             Paragraph::new(black_box(lines))
                 .wrap(black_box(wrap))
+                .trim(black_box(trim))
                 .render(buffer.area, &mut buffer)
         })
     }
@@ -141,10 +143,12 @@ fn bench_paragraph_render_wrap_no_trim(width: u16) -> impl Fn(&mut Bencher<'_>, 
 fn bench_paragraph_render_wrap_trim(width: u16) -> impl Fn(&mut Bencher<'_>, &str) {
     move |b, lines| {
         let mut buffer = Buffer::empty(Rect::new(0, 0, width, 50));
-        let wrap = Wrap { trim: true };
+        let wrap = Wrap::WordBoundary;
+        let trim = true;
         b.iter(|| {
             Paragraph::new(black_box(lines))
                 .wrap(black_box(wrap))
+                .trim(black_box(trim))
                 .render(buffer.area, &mut buffer)
         })
     }
