@@ -17,7 +17,7 @@
 //! - [`Clear`]
 
 mod barchart;
-mod block;
+pub mod block;
 #[cfg(feature = "widget-calendar")]
 pub mod calendar;
 pub mod canvas;
