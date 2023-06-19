@@ -1,10 +1,12 @@
 on:
   push:
     branches:
+      - feat-wrapping
       - main
   pull_request:
     branches:
       - main
+      - feat-wrapping
   merge_group:
 
 
