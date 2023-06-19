@@ -235,6 +235,8 @@ be installed with `cargo install cargo-make`).
   widget supporting several key shortcuts, undo/redo, text search, etc.
 * [tui-input](https://github.com/sayanarijit/tui-input): TUI input library supporting multiple
   backends and tui-rs.
+* [tui-term](https://github.com/a-kenji/tui-term): A pseudoterminal widget library
+  that enables the rendering of terminal applications as ratatui widgets.
 
 ## Apps
 
