@@ -7,12 +7,14 @@ use crate::{
 };
 
 /// Scrollbar Set
+/// ```text
 /// <--▮------->
 /// ^  ^   ^   ^
 /// │  │   │   └ end
 /// │  │   └──── track
 /// │  └──────── thumb
 /// └─────────── begin
+/// ```
 #[derive(Debug, Clone)]
 pub struct Set {
     pub track: &'static str,
@@ -67,12 +69,14 @@ pub enum ScrollDirection {
 /// - the `content_length` is 4
 /// - the `viewport_content_length` is 2
 ///
+/// ```text
 /// ┌───────────────┐
 /// │1. this is a   █
 /// │   single item █
 /// │2. this is a   ║
 /// │   second item ║
 /// └───────────────┘
+/// ```
 ///
 /// If you don't have multi-line content, you can leave the `viewport_content_length` set to the
 /// default of 0 and it'll use the track size as a `viewport_content_length`.
@@ -156,12 +160,14 @@ pub enum ScrollbarOrientation {
 /// This widget can be used to display a scrollbar in a terminal user interface.
 /// The following components of the scrollbar are customizable in symbol and style.
 ///
+/// ```text
 /// <--▮------->
 /// ^  ^   ^   ^
 /// │  │   │   └ end
 /// │  │   └──── track
 /// │  └──────── thumb
 /// └─────────── begin
+/// ```
 #[derive(Debug, Clone)]
 pub struct Scrollbar<'a> {
     orientation: ScrollbarOrientation,
@@ -264,12 +270,14 @@ impl<'a> Scrollbar<'a> {
 
     /// Sets the symbols used for the various parts of the scrollbar from a [`Set`].
     ///
+    /// ```text
     /// <--▮------->
     /// ^  ^   ^   ^
     /// │  │   │   └ end
     /// │  │   └──── track
     /// │  └──────── thumb
     /// └─────────── begin
+    /// ```
     ///
     /// Only sets begin_symbol and end_symbol if they already contain a value.
     /// If begin_symbol and/or end_symbol were set to `None` explicitly, this function will respect
@@ -287,12 +295,14 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the style used for the various parts of the scrollbar from a [`Style`].
+    /// ```text
     /// <--▮------->
     /// ^  ^   ^   ^
     /// │  │   │   └ end
     /// │  │   └──── track
     /// │  └──────── thumb
     /// └─────────── begin
+    /// ```
     pub fn style(mut self, style: Style) -> Self {
         self.track_style = style;
         self.thumb_style = style;
