@@ -71,7 +71,7 @@ impl<'a, S: DateStyler> Monthly<'a, S> {
         self
     }
 
-    /// Render the calendar within a [Block](ratatui::widgets::Block)
+    /// Render the calendar within a [Block](crate::widgets::Block)
     pub fn block(mut self, b: Block<'a>) -> Self {
         self.block = Some(b);
         self
@@ -164,7 +164,7 @@ impl<'a, S: DateStyler> Widget for Monthly<'a, S> {
     }
 }
 
-/// Provides a method for styling a given date. [Month] is generic on this trait, so any type
+/// Provides a method for styling a given date. [Monthly] is generic on this trait, so any type
 /// that implements this trait can be used.
 pub trait DateStyler {
     /// Given a date, return a style for that date

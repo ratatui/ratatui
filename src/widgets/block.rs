@@ -1,6 +1,7 @@
 #[path = "../title.rs"]
 pub mod title;
 
+use self::title::{Position, Title};
 use crate::{
     buffer::Buffer,
     layout::{Alignment, Rect},
@@ -8,8 +9,6 @@ use crate::{
     symbols::line,
     widgets::{Borders, Widget},
 };
-
-use self::title::{Position, Title};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BorderType {
@@ -113,7 +112,6 @@ impl Padding {
 ///     .border_type(BorderType::Rounded)
 ///     .style(Style::default().bg(Color::Black));
 /// ```
-///
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Block<'a> {
     /// List of titles
@@ -129,7 +127,8 @@ pub struct Block<'a> {
     borders: Borders,
     /// Border style
     border_style: Style,
-    /// Type of the border. The default is plain lines but one can choose to have rounded or doubled lines instead.
+    /// Type of the border. The default is plain lines but one can choose to have rounded or
+    /// doubled lines instead.
     border_type: BorderType,
 
     /// Widget style
@@ -166,18 +165,24 @@ impl<'a> Block<'a> {
     ///        Title::from("Center")
     ///            .alignment(Alignment::Center),
     ///    );
-    ///```
+    /// ```
     /// Adds a title to the block.
     ///
-    /// The `title` function allows you to add a title to the block. You can call this function multiple times to add multiple titles.
+    /// The `title` function allows you to add a title to the block. You can call this function
+    /// multiple times to add multiple titles.
     ///
-    /// Each title will be rendered with a single space separating titles that are in the same position or alignment. When both centered and non-centered titles are rendered, the centered space is calculated based on the full width of the block, rather than the leftover width.
+    /// Each title will be rendered with a single space separating titles that are in the same
+    /// position or alignment. When both centered and non-centered titles are rendered, the centered
+    /// space is calculated based on the full width of the block, rather than the leftover width.
     ///
-    /// You can provide various types as the title, including strings, string slices, borrowed strings (`Cow<str>`), spans, or vectors of spans (`Vec<Span>`).
+    /// You can provide various types as the title, including strings, string slices, borrowed
+    /// strings (`Cow<str>`), spans, or vectors of spans (`Vec<Span>`).
     ///
-    /// By default, the titles will avoid being rendered in the corners of the block but will align against the left or right edge of the block if there is no border on that edge.
+    /// By default, the titles will avoid being rendered in the corners of the block but will align
+    /// against the left or right edge of the block if there is no border on that edge.
     ///
-    /// Note: If the block is too small and multiple titles overlap, the border might get cut off at a corner.
+    /// Note: If the block is too small and multiple titles overlap, the border might get cut off at
+    /// a corner.
     pub fn title<T>(mut self, title: T) -> Block<'a>
     where
         T: Into<Title<'a>>,
