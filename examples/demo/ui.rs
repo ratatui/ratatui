@@ -74,7 +74,6 @@ where
                 .bg(Color::Black)
                 .add_modifier(Modifier::ITALIC | Modifier::BOLD),
         )
-        .use_unicode(app.enhanced_graphics)
         .label(label)
         .ratio(app.progress);
     f.render_widget(gauge, chunks[0]);
@@ -286,7 +285,10 @@ where
             .fg(Color::Magenta)
             .add_modifier(Modifier::BOLD),
     ));
-    let paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: true });
+    let paragraph = Paragraph::new(text)
+        .block(block)
+        .wrap(Wrap::WordBoundary)
+        .trim(true);
     f.render_widget(paragraph, area);
 }
 

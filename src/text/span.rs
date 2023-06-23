@@ -132,6 +132,12 @@ impl<'a> Span<'a> {
     }
 }
 
+impl ToString for Span<'_> {
+    fn to_string(&self) -> String {
+        self.content.to_string()
+    }
+}
+
 impl<'a> From<String> for Span<'a> {
     fn from(s: String) -> Span<'a> {
         Span::raw(s)
@@ -153,5 +159,11 @@ impl<'a> Styled for Span<'a> {
     fn set_style(mut self, style: Style) -> Self {
         self.style = style;
         self
+    }
+}
+
+impl PartialEq<&str> for Span<'_> {
+    fn eq(&self, other: &&str) -> bool {
+        self.content == *other
     }
 }

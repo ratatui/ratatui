@@ -149,6 +149,16 @@ impl<'a> Text<'a> {
     }
 }
 
+impl ToString for Text<'_> {
+    fn to_string(&self) -> String {
+        self.lines
+            .iter()
+            .map(Line::to_string)
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+}
+
 impl<'a> From<String> for Text<'a> {
     fn from(s: String) -> Text<'a> {
         Text::raw(s)

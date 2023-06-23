@@ -1,5 +1,5 @@
 #![allow(deprecated)]
-use std::borrow::Cow;
+use std::{borrow::Cow, cmp::PartialEq};
 
 use super::{Span, Spans, Style, StyledGrapheme};
 use crate::layout::Alignment;
@@ -151,6 +151,36 @@ impl<'a> Line<'a> {
     }
 }
 
+impl<'a> FromIterator<StyledGrapheme<'a>> for Line<'a> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = StyledGrapheme<'a>>,
+    {
+        let mut spans = Vec::new();
+        for styled_grapheme in iter {
+            if let Some(Span {
+                content: last_span_content,
+                style: last_span_style,
+            }) = spans.last_mut()
+            {
+                if last_span_style == &styled_grapheme.style {
+                    last_span_content.to_mut().push_str(styled_grapheme.symbol);
+                    continue;
+                }
+            }
+            spans.push(Span::styled(styled_grapheme.symbol, styled_grapheme.style));
+        }
+
+        spans.into()
+    }
+}
+
+impl ToString for Line<'_> {
+    fn to_string(&self) -> String {
+        self.spans.iter().map(|span| span.content.clone()).collect()
+    }
+}
+
 impl<'a> From<String> for Line<'a> {
     fn from(s: String) -> Self {
         Self::from(vec![Span::from(s)])
@@ -190,6 +220,13 @@ impl<'a> From<Line<'a>> for String {
 impl<'a> From<Spans<'a>> for Line<'a> {
     fn from(value: Spans<'a>) -> Self {
         Self::from(value.0)
+    }
+}
+
+impl PartialEq<&str> for Line<'_> {
+    fn eq(&self, other: &&str) -> bool {
+        let line = Line::from(*other);
+        self.spans.is_empty() && other.is_empty() || self.spans == line.spans
     }
 }
 

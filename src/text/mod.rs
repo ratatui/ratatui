@@ -50,22 +50,21 @@
 use crate::style::Style;
 
 mod grapheme;
-pub use grapheme::StyledGrapheme;
 
 mod line;
-pub use line::Line;
-
 mod masked;
-pub use masked::Masked;
-
 mod span;
-pub use span::Span;
-
-/// We keep this for backward compatibility.
 mod spans;
-#[allow(deprecated)]
-pub use spans::Spans;
-
 #[allow(clippy::module_inception)]
 mod text;
+mod wrap;
+
+pub use grapheme::StyledGrapheme;
+pub use line::Line;
+pub use masked::Masked;
+pub use span::Span;
+/// We keep this for backward compatibility.
+#[allow(deprecated)]
+pub use spans::Spans;
 pub use text::Text;
+pub use wrap::Wrap;

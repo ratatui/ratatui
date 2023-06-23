@@ -43,7 +43,7 @@ pub use self::{
     clear::Clear,
     gauge::{Gauge, LineGauge},
     list::{List, ListItem, ListState},
-    paragraph::{Paragraph, Wrap},
+    paragraph::Paragraph,
     scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
     sparkline::{RenderDirection, Sparkline},
     table::{Cell, Row, Table, TableState},

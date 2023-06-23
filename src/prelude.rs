@@ -31,5 +31,5 @@ pub use crate::{
     style::{self, Color, Modifier, Style, Styled, Stylize},
     symbols::{self, Marker},
     terminal::{self, Frame, Terminal, TerminalOptions, Viewport},
-    text::{self, Line, Masked, Span, Text},
+    text::{self, Line, Masked, Span, Text, Wrap},
 };

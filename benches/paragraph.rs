@@ -1,9 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Bencher, BenchmarkId, Criterion};
-use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    widgets::{Paragraph, Widget, Wrap},
-};
+use ratatui::prelude::*;
 
 /// because the scroll offset is a u16, the maximum number of lines that can be scrolled is 65535.
 /// This is a limitation of the current implementation and may be fixed by changing the type of the
@@ -50,7 +46,7 @@ pub fn paragraph(c: &mut Criterion) {
         // render the paragraph wrapped to 100 characters
         group.bench_with_input(
             BenchmarkId::new("render_wrap", line_count),
-            &Paragraph::new(lines).wrap(Wrap { trim: false }),
+            &Paragraph::new(lines).wrap(Wrap::WordBoundary),
             |bencher, paragraph| render(bencher, paragraph, WRAP_WIDTH),
         );
 
@@ -58,7 +54,7 @@ pub fn paragraph(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("render_wrap_scroll_full", line_count),
             &Paragraph::new(lines)
-                .wrap(Wrap { trim: false })
+                .wrap(Wrap::WordBoundary)
                 .scroll((0u16, line_count)),
             |bencher, paragraph| render(bencher, paragraph, WRAP_WIDTH),
         );

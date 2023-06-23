@@ -73,9 +73,11 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     } else {
         "Press p to show the popup"
     };
-    let paragraph = Paragraph::new(text.slow_blink())
+    let paragraph = Paragraph::new(text)
+        .slow_blink()
         .alignment(Alignment::Center)
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap::WordBoundary)
+        .trim(true);
     f.render_widget(paragraph, chunks[0]);
 
     let block = Block::default()
