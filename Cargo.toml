@@ -48,10 +48,11 @@ unicode-width = "0.1"
 
 [dev-dependencies]
 anyhow = "1.0.71"
-rand = "0.8"
 argh = "0.1"
+cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
 criterion = { version = "0.5", features = ["html_reports"] }
 fakeit = "1.1"
+rand = "0.8"
 
 [[bench]]
 name = "paragraph"

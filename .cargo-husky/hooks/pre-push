@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+if !(command cargo-make >/dev/null 2>&1); then # Check if cargo-make is installed
+    echo Attempting to run cargo-make as part of the pre-push hook but it\'s not installed.
+    echo Please install it by running the following command:
+    echo
+    echo "    cargo install --force cargo-make"
+    echo
+    echo If you don\'t want to run cargo-make as part of the pre-push hook, you can run
+    echo the following command instead of git push:
+    echo
+    echo "    git push --no-verify"
+    exit 1
+fi
+
+cargo make ci
