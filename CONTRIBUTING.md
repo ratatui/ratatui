@@ -48,6 +48,8 @@ Any idea with a large scale impact on the crate or its users should ideally be d
 To avoid any issues that may arrise with the CI/CD by not following the [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) syntax, we recommend to install [Commitizen](https://commitizen-tools.github.io/commitizen/).\
 By using this tool you automatically follow the configuration defined in [.cz.toml](.cz.toml).
 
+Additionally, we're using [cargo-husky](https://github.com/rhysd/cargo-husky) to automatically load pre-push hook, which will run `cargo make ci` before each push. It will load the hook automatically when you run `cargo test`. If `cargo-make` is not installed, it will install it for you.\
+This will ensure that your code is formatted, compiles and passes all tests before you push. If you want to skip this check, you can use `git push --no-verify`.
 
 ## Continuous Integration
 

@@ -37,6 +37,7 @@ jobs:
         run: cargo make ci
         env:
           RUST_BACKTRACE: full
+          CARGO_HUSKY_DONT_INSTALL_HOOKS: true
 
   lint:
     runs-on: ubuntu-latest
@@ -71,6 +72,8 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: cargo llvm-cov
         run: cargo llvm-cov --all-features --lcov --output-path lcov.info
+        env:
+          CARGO_HUSKY_DONT_INSTALL_HOOKS: true
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
