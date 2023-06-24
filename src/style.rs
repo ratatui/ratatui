@@ -469,4 +469,9 @@ mod tests {
             );
         }
     }
+    #[test]
+    fn style_can_be_const() {
+        const _DEFAULT_STYLE: Style = Style::new().fg(Color::Red).bg(Color::Black);
+        const _RESET: Style = Style::reset();
+    }
 }
