@@ -90,10 +90,10 @@ impl Debug for Borders {
                 continue;
             }
             if first {
-                write!(f, "{}", name)?;
+                write!(f, "{name}")?;
                 first = false;
             } else {
-                write!(f, " | {}", name)?;
+                write!(f, " | {name}")?;
             }
         }
         Ok(())
