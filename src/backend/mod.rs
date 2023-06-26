@@ -1,30 +1,77 @@
-//! This module provides the backend implementations for different terminal libraries.
-//! It defines the [`Backend`] trait which is used to abstract over the specific
-//! terminal library being used.
+//! Provides [`Backend`] implementations for different terminal libraries.
 //!
-//! The following terminal libraries are supported:
-//! - Crossterm (with the `crossterm` feature)
-//! - Termion (with the `termion` feature)
-//! - Termwiz (with the `termwiz` feature)
+//! This module defines the [`Backend`] trait which is used to abstract over the specific terminal
+//! library being used.
+//!
+//! Supported terminal backends:
+//! - [Crossterm]: enable the `crossterm` feature (enabled by default) and use [`CrosstermBackend`]
+//! - [Termion]: enable the `termion` feature and use [`TermionBackend`]
+//! - [Termwiz]: enable the `termwiz` feature and use [`TermwizBackend`]
 //!
 //! Additionally, a [`TestBackend`] is provided for testing purposes.
 //!
 //! # Example
 //!
-//! ```rust
+//! ```rust,no_run
 //! use ratatui::backend::{Backend, CrosstermBackend};
 //!
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let buffer = std::io::stdout();
-//! let mut backend = CrosstermBackend::new(buffer);
+//! let mut backend = CrosstermBackend::on_stdout()?;
 //! backend.clear()?;
-//! # Ok(())
-//! # }
+//! # std::io::Result::Ok(())
 //! ```
 //!
-//! [`Backend`]: trait.Backend.html
-//! [`TestBackend`]: struct.TestBackend.html
-
+//! # Raw Mode
+//!
+//! Raw mode is a mode where the terminal does not perform any processing or handling of the input
+//! and output. This means that features such as echoing input characters, line buffering, and
+//! special character processing (e.g., CTRL-C for SIGINT) are disabled. This is useful for
+//! applications that want to have complete control over the terminal input and output, processing
+//! each keystroke themselves.
+//!
+//! For example, in raw mode, the terminal will not perform line buffering on the input, so the
+//! application will receive each key press as it is typed, instead of waiting for the user to press
+//! enter. This makes it suitable for real-time applications like text editors, terminal-based
+//! games, and more.
+//!
+//! Each backend handles raw mode differently, so the behavior may vary depending on the backend
+//! being used. Be sure to consult the backend's specific documentation for exact details on how it
+//! implements raw mode.
+//! # Alternate Screen
+//!
+//! The alternate screen is a separate buffer that some terminals provide, distinct from the main
+//! screen. When activated, the terminal will display the alternate screen, hiding the current
+//! content of the main screen. Applications can write to this screen as if it were the regular
+//! terminal display, but when the application exits, the terminal will switch back to the main
+//! screen, and the contents of the alternate screen will be cleared. This is useful for
+//! applications like text editors or terminal games that want to use the full terminal window
+//! without disrupting the command line or other terminal content.
+//!
+//! This creates a seamless transition between the application and the regular terminal session, as
+//! the content displayed before launching the application will reappear after the application
+//! exits.
+//!
+//! Note that not all terminal emulators support the alternate screen, and even those that do may
+//! handle it differently. As a result, the behavior may vary depending on the backend being used.
+//! Always consult the specific backend's documentation to understand how it implements the
+//! alternate screen.
+//!
+//! # Mouse Capture
+//!
+//! Mouse capture is a mode where the terminal captures mouse events such as clicks, scrolls, and
+//! movement, and sends them to the application as special sequences or events. This enables the
+//! application to handle and respond to mouse actions, providing a more interactive and graphical
+//! user experience within the terminal. It's particularly useful for applications like
+//! terminal-based games, text editors, or other programs that require more direct interaction from
+//! the user.
+//!
+//! Each backend handles mouse capture differently, with variations in the types of events that can
+//! be captured and how they are represented. As such, the behavior may vary depending on the
+//! backend being used, and developers should consult the specific backend's documentation to
+//! understand how it implements mouse capture.
+//!
+//! [Crossterm]: https://crates.io/crates/crossterm
+//! [Termion]: https://crates.io/crates/termion
+//! [Termwiz]: https://crates.io/crates/termwiz
 use std::io;
 
 use strum::{Display, EnumString};
@@ -63,13 +110,18 @@ pub enum ClearType {
 /// The `Backend` trait provides an abstraction over different terminal libraries.
 /// It defines the methods required to draw content, manipulate the cursor, and
 /// clear the terminal screen.
+///
+/// Most applications should not need to interact with the `Backend` trait directly as the
+/// [`Terminal`] struct provides a higher level interface for interacting with the terminal.
+///
+/// [`Terminal`]: crate::Terminal
 pub trait Backend {
     /// Draw the given content to the terminal screen.
     ///
     /// The content is provided as an iterator over `(u16, u16, &Cell)` tuples,
     /// where the first two elements represent the x and y coordinates, and the
     /// third element is a reference to the [`Cell`] to be drawn.
-    fn draw<'a, I>(&mut self, content: I) -> Result<(), io::Error>
+    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>;
 
@@ -81,24 +133,115 @@ pub trait Backend {
     }
 
     /// Hide the cursor on the terminal screen.
-    fn hide_cursor(&mut self) -> Result<(), io::Error>;
+    ///
+    /// See also [`show_cursor`].
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::backend::{Backend, TestBackend};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let mut backend = TestBackend::new(80, 25);
+    /// backend.hide_cursor()?;
+    /// // do something with hidden cursor
+    /// backend.show_cursor()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if the cursor could not be hidden.
+    ///
+    /// [`show_cursor`]: Backend::show_cursor
+    fn hide_cursor(&mut self) -> io::Result<()>;
 
     /// Show the cursor on the terminal screen.
-    fn show_cursor(&mut self) -> Result<(), io::Error>;
+    ///
+    /// See [`hide_cursor`] for an example.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if the cursor could not be shown.
+    ///
+    /// [`hide_cursor`]: Backend::hide_cursor
+    fn show_cursor(&mut self) -> io::Result<()>;
 
     /// Get the current cursor position on the terminal screen.
+    ///
+    /// The returned tuple contains the x and y coordinates of the cursor. The origin
+    /// (0, 0) is at the top left corner of the screen.
+    ///
+    /// See [`set_cursor`] for an example.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if the cursor position could not be retrieved.
+    ///
+    /// [`set_cursor`]: Backend::set_cursor
     fn get_cursor(&mut self) -> Result<(u16, u16), io::Error>;
 
     /// Set the cursor position on the terminal screen to the given x and y coordinates.
-    fn set_cursor(&mut self, x: u16, y: u16) -> Result<(), io::Error>;
+    ///
+    /// The origin (0, 0) is at the top left corner of the screen.
+    ///
+    /// See [`get_cursor`] for an example.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::backend::{Backend, TestBackend};
+    /// # let mut backend = TestBackend::new(80, 25);
+    /// backend.set_cursor(10, 20)?;
+    /// assert_eq!(backend.get_cursor()?, (10, 20));
+    /// # std::io::Result::Ok(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if the cursor position could not be set.
+    ///
+    /// [`get_cursor`]: Backend::get_cursor
+    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()>;
 
     /// Clears the whole terminal screen
-    fn clear(&mut self) -> Result<(), io::Error>;
-
-    /// Clears a specific region of the terminal specified by the [`ClearType`] parameter
     ///
-    /// This method is optional and may not be implemented by all backends.
-    fn clear_region(&mut self, clear_type: ClearType) -> Result<(), io::Error> {
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use ratatui::backend::{Backend, CrosstermBackend};
+    /// let mut backend = CrosstermBackend::on_stdout()?;
+    /// backend.clear()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if the terminal screen could not be cleared.
+    fn clear(&mut self) -> io::Result<()>;
+
+    /// Clears a specific region of the terminal specified by the `clear_type` parameter
+    ///
+    /// This method is optional and may not be implemented by all backends. The default
+    /// implementation calls [`clear`] if the `clear_type` is [`ClearType::All`] and returns an
+    /// error otherwise.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use ratatui::backend::{Backend, CrosstermBackend, ClearType};
+    ///
+    /// let mut backend = CrosstermBackend::on_stdout()?;
+    /// backend.clear_region(ClearType::All)?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if the terminal screen could not be cleared. It will also
+    /// return an error if the `clear_type` is not supported by the backend.
+    ///
+    /// [`clear`]: Backend::clear
+    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
         match clear_type {
             ClearType::All => self.clear(),
             ClearType::AfterCursor
@@ -112,10 +255,25 @@ pub trait Backend {
     }
 
     /// Get the size of the terminal screen as a [`Rect`].
-    fn size(&self) -> Result<Rect, io::Error>;
+    ///
+    /// The returned [`Rect`] contains the width and height of the terminal screen.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use ratatui::backend::{Backend, CrosstermBackend};
+    /// let mut backend = CrosstermBackend::on_stdout()?;
+    /// let size = backend.size()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if the size of the terminal screen could not be retrieved.
+    fn size(&self) -> io::Result<Rect>;
 
     /// Flush any buffered content to the terminal screen.
-    fn flush(&mut self) -> Result<(), io::Error>;
+    fn flush(&mut self) -> io::Result<()>;
 }
 
 #[cfg(test)]

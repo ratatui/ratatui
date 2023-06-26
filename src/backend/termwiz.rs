@@ -1,9 +1,8 @@
-//! This module provides the `TermwizBackend` implementation for the [`Backend`] trait.
-//! It uses the `termwiz` crate to interact with the terminal.
+//! This module provides the `TermwizBackend` implementation for the [`Backend`] trait. It uses the
+//! [Termwiz] crate to interact with the terminal.
 //!
 //! [`Backend`]: trait.Backend.html
-//! [`TermwizBackend`]: crate::backend::TermionBackend
-
+/// [Termwiz]: https://docs.rs/termwiz
 use std::{error::Error, io};
 
 use termwiz::{
@@ -21,7 +20,12 @@ use crate::{
     style::{Color, Modifier},
 };
 
-/// Termwiz backend implementation for the [`Backend`] trait.
+/// A [`Backend`] implementation that uses [Termwiz] to render to the terminal.
+///
+/// The `TermwizBackend` struct is a wrapper around a [`BufferedTerminal`], which is used to send
+/// commands to the terminal. It provides methods for drawing content, manipulating the cursor, and
+/// clearing the terminal screen.
+///
 /// # Example
 ///
 /// ```rust,no_run
@@ -33,17 +37,68 @@ use crate::{
 /// # Ok(())
 /// # }
 /// ```
+/// [Termwiz]: https://docs.rs/termwiz
 pub struct TermwizBackend {
     buffered_terminal: BufferedTerminal<SystemTerminal>,
 }
 
+impl Default for TermwizBackend {
+    /// Creates a new Termwiz backend instance with the default configuration.
+    ///
+    /// Note that this function will panic if it is unable to query the terminal capabilities, or
+    /// if it is unable to create the system or buffered terminal.
+    ///
+    /// See [`TermwizBackend::new`] for a version of this function that returns an error instead of
+    /// panicking.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use ratatui::backend::{Backend, TermwizBackend};
+    /// let backend = TermwizBackend::default();
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if it is unable to query the terminal capabilities, or if it is
+    /// unable to create the system or buffered terminal.
+    fn default() -> Self {
+        let caps = Capabilities::new_from_env().expect("unable to query capabilities");
+        let terminal = SystemTerminal::new(caps).expect("unable to create terminal");
+        let terminal = BufferedTerminal::new(terminal).expect("failed to create buffered terminal");
+        Self {
+            buffered_terminal: terminal,
+        }
+    }
+}
+
 impl TermwizBackend {
     /// Creates a new Termwiz backend instance.
+    ///
+    /// The backend will automatically enable raw mode and enter the alternate screen.
+    ///
+    /// # Errors
+    ///
+    /// - This function will return an error if it is unable to query the terminal capabilities.
+    /// - This function will return an error if it is unable to enter raw mode.
+    /// - This function will return an error if it is unable to enter the alternate screen.
+    /// - This function will return an error if it is unable to create the system or buffered
+    ///   terminal.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use ratatui::backend::{Backend, TermwizBackend};
+    /// let backend = TermwizBackend::new()?;
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
     pub fn new() -> Result<TermwizBackend, Box<dyn Error>> {
-        let mut buffered_terminal =
-            BufferedTerminal::new(SystemTerminal::new(Capabilities::new_from_env()?)?)?;
-        buffered_terminal.terminal().set_raw_mode()?;
-        buffered_terminal.terminal().enter_alternate_screen()?;
+        let caps = Capabilities::new_from_env()?;
+        let mut terminal = SystemTerminal::new(caps)?;
+        terminal.set_raw_mode()?;
+        terminal.enter_alternate_screen()?;
+        let buffered_terminal = BufferedTerminal::new(terminal)?;
         Ok(TermwizBackend { buffered_terminal })
     }
 
@@ -62,6 +117,100 @@ impl TermwizBackend {
     /// Returns a mutable reference to the buffered terminal used by the backend.
     pub fn buffered_terminal_mut(&mut self) -> &mut BufferedTerminal<SystemTerminal> {
         &mut self.buffered_terminal
+    }
+
+    /// Enables raw mode for the terminal.
+    ///
+    /// The backend will automatically disable raw mode when it is dropped.
+    ///
+    /// See [`crate::backend#raw-mode`] for more information.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use ratatui::backend::{Backend, TermwizBackend};
+    /// let mut backend = TermwizBackend::new()?;
+    /// backend.disable_raw_mode()?;
+    /// // do stuff
+    /// backend.enable_raw_mode()?;
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    pub fn enable_raw_mode(&mut self) -> io::Result<()> {
+        self.buffered_terminal
+            .terminal()
+            .set_raw_mode()
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+    }
+
+    /// Disables raw mode for the terminal.
+    ///
+    /// See [`crate::backend#raw-mode`] for more information.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use ratatui::backend::{Backend, TermwizBackend};
+    /// let mut backend = TermwizBackend::new()?;
+    /// backend.disable_raw_mode()?;
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    pub fn disable_raw_mode(&mut self) -> io::Result<()> {
+        self.buffered_terminal
+            .terminal()
+            .set_cooked_mode()
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+    }
+
+    /// Enters the alternate screen.
+    ///
+    /// The backend will automatically exit the alternate screen when it is dropped.
+    ///
+    /// See [`crate::backend#alternate-screen`] for more information.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use ratatui::backend::{Backend, TermwizBackend};
+    /// let mut backend = TermwizBackend::new()?;
+    /// backend.leave_alternate_screen()?;
+    /// // do stuff
+    /// backend.enter_alternate_screen()?;
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    pub fn enter_alternate_screen(&mut self) -> io::Result<()> {
+        self.buffered_terminal
+            .terminal()
+            .enter_alternate_screen()
+            .map_err(|e| {
+                io::Error::new(
+                    io::ErrorKind::Other,
+                    format!("failed to enter alternate screen: {}", e),
+                )
+            })
+    }
+
+    /// Leaves the alternate screen.
+    ///
+    /// See [`crate::backend#alternate-screen`] for more information.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use ratatui::backend::{Backend, TermwizBackend};
+    /// let mut backend = TermwizBackend::new()?;
+    /// backend.leave_alternate_screen()?;
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    pub fn leave_alternate_screen(&mut self) -> io::Result<()> {
+        self.buffered_terminal
+            .terminal()
+            .exit_alternate_screen()
+            .map_err(|e| {
+                io::Error::new(
+                    io::ErrorKind::Other,
+                    format!("failed to exit alternate screen: {}", e),
+                )
+            })
     }
 }
 
@@ -190,8 +339,7 @@ impl Backend for TermwizBackend {
     fn flush(&mut self) -> Result<(), io::Error> {
         self.buffered_terminal
             .flush()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-        Ok(())
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
     }
 }
 

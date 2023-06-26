@@ -7,63 +7,84 @@
 //!
 //! # Get started
 //!
-//! ## Adding `ratatui` as a dependency
+//! ## Add `ratatui` as a dependency using `crossterm`
 //!
-//! Add the following to your `Cargo.toml`:
-//! ```toml
-//! [dependencies]
-//! crossterm = "0.27"
-//! ratatui = "0.22"
+//! By default, `ratatui` uses [Crossterm] via the [`CrosstermBackend`] as this is supported on most
+//! platforms. This means that you can start using it right away by adding the `ratatui` and
+//! `crossterm` crates as dependencies to your project:
+//!
+//! ```bash
+//! cargo add ratatui crossterm
 //! ```
 //!
-//! The crate is using the `crossterm` backend by default that works on most platforms. But if for
-//! example you want to use the `termion` backend instead. This can be done by changing your
-//! dependencies specification to the following:
+//! <details>
+//! <summary>Cargo.toml</summary>
+//!
+//! ```toml
+//! [dependencies]
+//! crossterm = "0.27.0"
+//! ratatui = "0.22.0"
+//! ```
+//! </details>
+//!
+//! <details>
+//! <summary>Other backends (Termion, Termwiz)</summary>
+//!
+//! ## Termion
+//! To use [Termion] via the [`TermionBackend`]:
+//!
+//! ```bash
+//! cargo add ratatui --no-default-features --features termion
+//! cargo add termion
+//! ````
+//! <details>
+//! <summary>Cargo.toml</summary>
 //!
 //! ```toml
 //! [dependencies]
 //! termion = "2.0.1"
-//! ratatui = { version = "0.22", default-features = false, features = ['termion'] }
+//! ratatui = { version = "0.22.0", default-features = false, features = ['termion'] }
 //! ```
+//! </details>
 //!
-//! The same logic applies for all other available backends.
+//! ## Termwiz
+//!
+//! To use [Termwiz] via the [`TermwizBackend`], change your dependencies to the following:
+//!
+//! ```bash
+//! cargo add ratatui --no-default-features --features termwiz
+//! cargo add termwiz
+//! ```
+//! <details>
+//! <summary>Cargo.toml</summary>
+//!
+//! ```toml
+//! [dependencies]
+//! termwiz = "0.20.0"
+//! ratatui = { version = "0.22.0", default-features = false, features = ['termwiz'] }
+//! ```
+//! </details>
+//! </details>
 //!
 //! ## Creating a `Terminal`
 //!
-//! Every application using `ratatui` should start by instantiating a `Terminal`. It is a light
-//! abstraction over available backends that provides basic functionalities such as clearing the
-//! screen, hiding the cursor, etc.
+//! Every application using `ratatui` starts by instantiating a [`Backend`] and a [`Terminal`]. The
+//! `Terminal` is a light abstraction over available backends that provides basic functionalities
+//! such as clearing the screen, hiding the cursor, etc.
 //!
 //! ```rust,no_run
-//! use std::io;
 //! use ratatui::{backend::CrosstermBackend, Terminal};
 //!
-//! fn main() -> Result<(), io::Error> {
-//!     let stdout = io::stdout();
-//!     let backend = CrosstermBackend::new(stdout);
+//! fn main() -> std::io::Result<()> {
+//!     let backend = CrosstermBackend::on_stdout()?;
 //!     let mut terminal = Terminal::new(backend)?;
 //!     Ok(())
 //! }
 //! ```
 //!
-//! If you had previously chosen `termion` as a backend, the terminal can be created in a similar
-//! way:
-//!
-//! ```rust,ignore
-//! use std::io;
-//! use ratatui::{backend::TermionBackend, Terminal};
-//! use termion::raw::IntoRawMode;
-//!
-//! fn main() -> Result<(), io::Error> {
-//!     let stdout = io::stdout().into_raw_mode()?;
-//!     let backend = TermionBackend::new(stdout);
-//!     let mut terminal = Terminal::new(backend)?;
-//!     Ok(())
-//! }
-//! ```
-//!
-//! You may also refer to the examples to find out how to create a `Terminal` for each available
-//! backend.
+//! For more information on how to configure the backend for the Terminal, please refer to the
+//! [`backend`] and [`terminal`] module documentation. Most of the examples are written using the
+//! [`CrosstermBackend`], but the [Demo Example] has code to show how to use the other backends.
 //!
 //! ## Building a User Interface (UI)
 //!
@@ -79,31 +100,22 @@
 //!
 //! ```rust,no_run
 //! use std::{io, thread, time::Duration};
+//! use crossterm::event;
 //! use ratatui::{
-//!     backend::CrosstermBackend,
+//!     prelude::*, // This is a prelude that re-exports most of the types you need
 //!     widgets::{Block, Borders},
-//!     Terminal
-//! };
-//! use crossterm::{
-//!     event::{self, DisableMouseCapture, EnableMouseCapture},
-//!     execute,
-//!     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 //! };
 //!
-//! fn main() -> Result<(), io::Error> {
-//!     // setup terminal
-//!     enable_raw_mode()?;
-//!     let mut stdout = io::stdout();
-//!     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-//!     let backend = CrosstermBackend::new(stdout);
+//! fn main() -> io::Result<()> {
+//!     let backend = CrosstermBackend::on_stdout()?;
 //!     let mut terminal = Terminal::new(backend)?;
 //!
-//!     terminal.draw(|f| {
-//!         let size = f.size();
+//!     terminal.draw(|frame| {
+//!         let size = frame.size();
 //!         let block = Block::default()
 //!             .title("Block")
 //!             .borders(Borders::ALL);
-//!         f.render_widget(block, size);
+//!         frame.render_widget(block, size);
 //!     })?;
 //!
 //!     // Start a thread to discard any input events. Without handling events, the
@@ -114,52 +126,34 @@
 //!
 //!     thread::sleep(Duration::from_millis(5000));
 //!
-//!     // restore terminal
-//!     disable_raw_mode()?;
-//!     execute!(
-//!         terminal.backend_mut(),
-//!         LeaveAlternateScreen,
-//!         DisableMouseCapture
-//!     )?;
-//!     terminal.show_cursor()?;
-//!
 //!     Ok(())
 //! }
 //! ```
 //!
 //! ## Layout
 //!
-//! The library comes with a basic yet useful layout management object called `Layout`. As you may
+//! The library comes with a basic yet useful layout management object called [`Layout`]. As you may
 //! see below and in the examples, the library makes heavy use of the builder pattern to provide
-//! full customization. And `Layout` is no exception:
+//! full customization and `Layout` is no exception:
 //!
 //! ```rust,no_run
-//! use ratatui::{
-//!     backend::Backend,
-//!     layout::{Constraint, Direction, Layout},
-//!     widgets::{Block, Borders},
-//!     Frame,
-//! };
-//! fn ui<B: Backend>(f: &mut Frame<B>) {
-//!    let chunks = Layout::default()
+//! use ratatui::prelude::*;
+//! use ratatui::widgets::{Block, Borders};
+//!
+//! fn ui<B: Backend>(frame: &mut Frame<B>) {
+//!    let areas = Layout::default()
 //!         .direction(Direction::Vertical)
 //!         .margin(1)
-//!         .constraints(
-//!             [
-//!                 Constraint::Percentage(10),
-//!                 Constraint::Percentage(80),
-//!                 Constraint::Percentage(10)
-//!             ].as_ref()
-//!         )
-//!         .split(f.size());
-//!     let block = Block::default()
-//!          .title("Block")
-//!          .borders(Borders::ALL);
-//!     f.render_widget(block, chunks[0]);
-//!     let block = Block::default()
-//!          .title("Block 2")
-//!          .borders(Borders::ALL);
-//!     f.render_widget(block, chunks[1]);
+//!         .constraints(vec![Constraint::Percentage(10), Constraint::Percentage(90)])
+//!         .split(frame.size());
+//!     frame.render_widget(
+//!         Block::new().title("Block 1").borders(Borders::all()),
+//!         areas[0],
+//!     );
+//!     frame.render_widget(
+//!         Block::new().title("Block 2").borders(Borders::all()),
+//!         areas[1],
+//!    );
 //! }
 //! ```
 //!
@@ -170,45 +164,43 @@
 //!
 //! # Features
 //!
-//! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
+//! The crate provides a set of optional features that can be enabled to get additional
+//! functionalities. Generally an application will only use one backend, so you should only enable
+//! one of the following features:
 //!
-//! Generally an application will only use one backend, so you should only enable one of the
-//! following features:
+//! * `crossterm` - enables the [`CrosstermBackend`] backend and adds a dependency on the
+//! [crossterm](https://crates.io/crates/crossterm) crate. Enabled by default.
+//! * `termion` - enables the [`TermionBackend`] backend and adds a dependency on the
+//! [termion](https://crates.io/crates/termion) crate.
+//! * `termwiz` - enables the [`TermwizBackend`] backend and adds a dependency on the
+//! [termwiz](https://crates.io/crates/termwiz) crate.
 //!
-//! - `crossterm` - enables the [`CrosstermBackend`] backend and adds a dependency on the [Crossterm
-//! crate]. Enabled by default.
-//! - `termion` - enables the [`TermionBackend`] backend and adds a dependency on the [Termion
-//!   crate].
-//! - `termwiz` - enables the [`TermwizBackend`] backend and adds a dependency on the [Termwiz
-//!   crate].
+//! The following features are available for all backends:
 //!
-//! The following optional features are available for all backends:
+//! * `serde` - enables serialization and deserialization of style and color types. This is useful
+//! if you want to save themes to a file.
+//! * `macros` - enables the [`border!`] macro.
+//! * `all-widgets` - enables all widgets.
 //!
-//! - `serde` - enables serialization and deserialization of style and color types using the [Serde
-//! crate]. This is useful if you want to save themes to a file.
-//! - `macros` - enables the [`border!`] macro.
-//! - `all-widgets` - enables all widgets.
-//!
-//! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
+//! Widgets which add dependencies are gated behind feature flags to prevent unused transitive
 //! dependencies. The available features are:
 //!
-//! - `widget-calendar` - enables the [`calendar`] widget module and adds a dependency on the [Time
-//!   crate].
+//! * `widget-calendar` - enables [`widgets::calendar`] and adds a dependency on the [time
+//! crate](https://crates.io/crates/time).
 //!
 //! [`Layout`]: layout::Layout
 //! [`backend`]: backend
-//! [`calendar`]: widgets::calendar
 //! [`CrosstermBackend`]: backend::CrosstermBackend
 //! [`TermionBackend`]: backend::TermionBackend
 //! [`TermwizBackend`]: backend::TermwizBackend
-//! [Crossterm crate]: https://crates.io/crates/crossterm
-//! [Serde crate]: https://crates.io/crates/serde
-//! [Termion crate]: https://crates.io/crates/termion
-//! [Termwiz crate]: https://crates.io/crates/termwiz
-//! [Time crate]: https://crates.io/crates/time
+//! [Crossterm]: https://crates.io/crates/crossterm
+//! [Termion]: https://crates.io/crates/termion
+//! [Termwiz]: https://crates.io/crates/termwiz
+//! [Demo Example]: https://github.com/ratatui-org/ratatui/tree/main/examples/demo
 
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![forbid(unsafe_code)]
 
 pub mod backend;
 pub mod buffer;
@@ -219,6 +211,7 @@ pub mod terminal;
 pub mod text;
 pub mod widgets;
 
-pub use self::terminal::{Frame, Terminal, TerminalOptions, Viewport};
-
 pub mod prelude;
+
+#[doc(inline)]
+pub use self::terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};

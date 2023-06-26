@@ -1,12 +1,18 @@
-//! This module provides the `TermionBackend` implementation for the [`Backend`] trait.
-//! It uses the Termion crate to interact with the terminal.
+//! This module provides the [`TermionBackend`] implementation for the [`Backend`] trait. It uses
+//! the [Termion] crate to interact with the terminal.
 //!
 //! [`Backend`]: crate::backend::Backend
 //! [`TermionBackend`]: crate::backend::TermionBackend
-
+/// [Termion]: https://docs.rs/termion
 use std::{
     fmt,
-    io::{self, Write},
+    io::{self, stdout, Stderr, Stdout, Write},
+};
+
+use termion::{
+    input::MouseTerminal,
+    raw::{IntoRawMode, RawTerminal},
+    screen::{AlternateScreen, IntoAlternateScreen},
 };
 
 use crate::{
@@ -15,23 +21,44 @@ use crate::{
     layout::Rect,
     style::{Color, Modifier},
 };
-
-/// A backend that uses the Termion library to draw content, manipulate the cursor,
-/// and clear the terminal screen.
+/// A [`Backend`] implementation that uses [Termion] to render to the terminal.
 ///
-/// # Example
+/// The `TermionBackend` struct is a wrapper around a type implementing [`std::io::Write`], which
+/// is used to send commands to the terminal. It provides methods for drawing content, manipulating
+/// the cursor, and clearing the terminal screen.
 ///
-/// ```rust
-/// use ratatui::backend::{Backend, TermionBackend};
+/// # Examples
 ///
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let stdout = std::io::stdout();
-/// let mut backend = TermionBackend::new(stdout);
-/// backend.clear()?;
-/// # Ok(())
-/// # }
+/// Generally apps should [`TermionBackend::on_stderr()`] or [`TermionBackend::on_stdout()`]
+/// methods, which both enable raw mode and enter the alternate screen. Choosing `stderr` over
+/// `stdout` ensures your app displays on the terminal even if the standard output stream is
+/// redirected and makes it easy to write apps that can be piped to other programs.
+///
+/// ```no_run termion cannot set the terminal to raw mode in the doc tests
+/// use ratatui::backend::TermionBackend;
+///
+/// let mut backend = TermionBackend::on_stdout()?;
+/// // alternatively
+/// let mut backend = TermionBackend::on_stderr()?;
+/// # std::io::Result::Ok(())
 /// ```
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+///
+/// For more control over raw mode, mouse capture or the alternate screen, use
+/// [`TermionBackend::new()`].
+///
+/// ```no_run termion cannot set the terminal to raw mode in the doc tests
+/// use std::io::stdout;
+/// use ratatui::backend::TermionBackend;
+///
+/// let mut backend = TermionBackend::new(stdout())
+///     .with_raw_mode()?
+///     .with_alternate_screen()?
+///     .with_mouse_capture()?;
+/// # std::io::Result::Ok(())
+/// ```
+///
+/// [Termion]: https://docs.rs/termion
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct TermionBackend<W>
 where
     W: Write,
@@ -43,9 +70,277 @@ impl<W> TermionBackend<W>
 where
     W: Write,
 {
-    /// Creates a new Termion backend with the given output.
+    /// Creates a new Termion backend with the given buffer.
+    ///
+    /// # Example
+    ///
+    /// ```no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use std::io::stdout;
+    /// # use ratatui::backend::TermionBackend;
+    /// let mut backend = TermionBackend::new(stdout());
+    /// # std::io::Result::Ok(())
+    /// ```
     pub fn new(stdout: W) -> TermionBackend<W> {
         TermionBackend { stdout }
+    }
+
+    /// Builder pattern method to enable raw mode.
+    ///
+    /// See [`crate::backend#raw-mode`] for more information.
+    ///
+    /// # Example
+    ///
+    /// ```no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use std::io::stdout;
+    /// # use ratatui::backend::TermionBackend;
+    /// let mut backend = TermionBackend::new(stdout()).with_raw_mode()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn with_raw_mode(self) -> io::Result<TermionBackend<RawTerminal<W>>> {
+        let stdout = self.stdout.into_raw_mode()?;
+        Ok(TermionBackend { stdout })
+    }
+
+    /// Builder pattern method to enter alternate screen.
+    ///
+    /// See [`crate::backend#alternate-screen`] for more information.
+    ///
+    /// # Example
+    ///
+    /// ```no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use std::io::stdout;
+    /// # use ratatui::backend::TermionBackend;
+    /// let mut backend = TermionBackend::new(stdout()).with_alternate_screen()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn with_alternate_screen(self) -> io::Result<TermionBackend<AlternateScreen<W>>> {
+        let stdout = self.stdout.into_alternate_screen()?;
+        Ok(TermionBackend { stdout })
+    }
+
+    /// Builder pattern method to enable mouse capture.
+    ///
+    /// See [`crate::backend#mouse-capture`] for more information.
+    ///
+    /// The backend will disable mouse capture when dropped.
+    ///
+    /// # Example
+    ///
+    /// ```no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use std::io::stdout;
+    /// # use ratatui::backend::TermionBackend;
+    /// let mut backend = TermionBackend::new(stdout()).with_mouse_capture()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn with_mouse_capture(self) -> io::Result<TermionBackend<MouseTerminal<W>>> {
+        let stdout = MouseTerminal::from(self.stdout);
+        Ok(TermionBackend { stdout })
+    }
+
+    /// Enters the alternate screen.
+    ///
+    /// Note that this does not get reverted when the backend is dropped unless the backend is one
+    /// which wraps stdout or stderr with AlternateScreen. If you want to ensure the alternate
+    /// screen is left when the backend is dropped, use [`TermionBackend::with_alternate_screen()`]
+    /// instead.
+    ///
+    /// See [`crate::backend#alternate-screen`] for more information.
+    ///
+    /// # Example
+    ///
+    /// ```no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use std::io::stdout;
+    /// # use ratatui::backend::TermionBackend;
+    /// let mut backend = TermionBackend::new(stdout());
+    /// backend.enter_alternate_screen()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn enter_alternate_screen(&mut self) -> io::Result<()> {
+        write!(self.stdout, "{}", termion::screen::ToAlternateScreen)
+    }
+
+    /// Leaves the alternate screen.
+    ///
+    /// This is necessary if you are using [`TermionBackend::enter_alternate_screen()`] and want
+    /// to leave the alternate screen before the backend is dropped.
+    ///
+    /// See [`crate::backend#alternate-screen`] for more information.
+    ///
+    /// # Example
+    ///
+    /// ```no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use std::io::stdout;
+    /// # use ratatui::backend::TermionBackend;
+    /// let mut backend = TermionBackend::new(stdout());
+    /// backend.enter_alternate_screen()?;
+    /// backend.leave_alternate_screen()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn leave_alternate_screen(&mut self) -> io::Result<()> {
+        write!(self.stdout, "{}", termion::screen::ToMainScreen)
+    }
+}
+
+impl TermionBackend<AlternateScreen<RawTerminal<Stdout>>> {
+    /// Creates a new Termion backend on stdout.
+    ///
+    /// The backend is created with [raw mode] enabled and the [alternate screen] active.
+    /// The backend will disable raw mode and leave the alternate screen when dropped.
+    ///
+    /// # Example
+    ///
+    /// ```no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use ratatui::backend::TermionBackend;
+    /// let mut backend = TermionBackend::on_stdout()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    ///
+    /// [raw mode]: crate::backend#raw-mode
+    /// [alternate screen]: crate::backend#alternate-screen
+    pub fn on_stdout() -> io::Result<TermionBackend<AlternateScreen<RawTerminal<Stdout>>>> {
+        let stdout = stdout().into_raw_mode()?.into_alternate_screen()?;
+        Ok(TermionBackend::new(stdout))
+    }
+}
+
+impl TermionBackend<AlternateScreen<RawTerminal<Stderr>>> {
+    /// Creates a new Termion backend on stderr.
+    ///
+    /// The backend is created with [raw mode] enabled and the [alternate screen] active.
+    /// The backend will disable raw mode and leave the alternate screen when dropped.
+    ///
+    /// # Example
+    ///
+    /// ```no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use ratatui::backend::TermionBackend;
+    /// let mut backend = TermionBackend::on_stderr()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    ///
+    /// [raw mode]: crate::backend#raw-mode
+    /// [alternate screen]: crate::backend#alternate-screen
+    pub fn on_stderr() -> io::Result<TermionBackend<AlternateScreen<RawTerminal<Stderr>>>> {
+        let stderr = io::stderr().into_raw_mode()?.into_alternate_screen()?;
+        Ok(TermionBackend::new(stderr))
+    }
+}
+
+impl<W> TermionBackend<AlternateScreen<RawTerminal<W>>>
+where
+    W: Write,
+{
+    /// Enable raw mode on the terminal.
+    ///
+    /// See [`crate::backend#raw-mode`] for more information.
+    ///
+    /// The backend will disable raw mode when it is dropped.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use ratatui::backend::{Backend, TermionBackend};
+    /// let mut backend = TermionBackend::on_stdout()?;
+    /// backend.disable_raw_mode()?;
+    /// // do stuff outside of raw mode
+    /// backend.enable_raw_mode()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn enable_raw_mode(&mut self) -> io::Result<()> {
+        self.stdout.suspend_raw_mode()
+    }
+
+    /// Disable raw mode on the terminal.
+    ///
+    /// See [`crate::backend#raw-mode`] for more information.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use std::io::stdout;
+    /// # use ratatui::backend::{Backend, TermionBackend};
+    /// let mut backend = TermionBackend::on_stdout()?;
+    /// backend.disable_raw_mode()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn disable_raw_mode(&mut self) -> io::Result<()> {
+        self.stdout.activate_raw_mode()
+    }
+}
+
+impl<W> TermionBackend<RawTerminal<W>>
+where
+    W: Write,
+{
+    /// Enables raw mode on the backend.
+    ///
+    /// See [`crate::backend#raw-mode`] for more information.
+    ///
+    /// The backend will disable raw mode when it is dropped.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use ratatui::backend::{Backend, TermionBackend};
+    /// let mut backend = TermionBackend::new(std::io::stdout()).with_raw_mode()?;
+    /// backend.disable_raw_mode()?;
+    /// // do stuff outside of raw mode
+    /// backend.enable_raw_mode()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn enable_raw_mode(&mut self) -> io::Result<()> {
+        self.stdout.suspend_raw_mode()
+    }
+
+    /// Disables raw mode on the backend.
+    ///
+    /// See [`crate::backend#raw-mode`] for more information.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use ratatui::backend::{Backend, TermionBackend};
+    /// let mut backend = TermionBackend::new(std::io::stdout()).with_raw_mode()?;
+    /// backend.disable_raw_mode()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn disable_raw_mode(&mut self) -> io::Result<()> {
+        self.stdout.activate_raw_mode()
+    }
+}
+
+impl Default for TermionBackend<Stdout> {
+    /// Creates a new Termion backend on stdout.
+    ///
+    /// It will usually be more convenient to use [`TermionBackend::on_stdout()`], which enables
+    /// raw mode and enters the alternate screen.
+    ///
+    /// # Example
+    ///
+    /// ```no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use std::io::Stdout;
+    /// # use ratatui::backend::TermionBackend;
+    /// let mut backend = TermionBackend::<Stdout>::default();
+    /// ```
+    fn default() -> TermionBackend<Stdout> {
+        TermionBackend::new(stdout())
+    }
+}
+
+impl Default for TermionBackend<Stderr> {
+    /// Creates a new Termion backend on stderr.
+    ///
+    /// It will usually be more convenient to use [`TermionBackend::on_stderr()`], which enables
+    /// raw mode and enters the alternate screen.
+    ///
+    /// # Example
+    ///
+    /// ```no_run termion cannot set the terminal to raw mode in the doc tests
+    /// # use std::io::Stderr;
+    /// # use ratatui::backend::TermionBackend;
+    /// let mut backend = TermionBackend::<Stderr>::default();
+    /// ```
+    fn default() -> TermionBackend<Stderr> {
+        TermionBackend::new(io::stderr())
     }
 }
 
@@ -164,6 +459,7 @@ where
         self.stdout.flush()
     }
 }
+
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 struct Fg(Color);
 

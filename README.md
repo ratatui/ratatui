@@ -9,7 +9,7 @@ project.
 [![Crates.io](https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square)](https://crates.io/crates/ratatui)
 [![License](https://img.shields.io/crates/l/ratatui?style=flat-square)](./LICENSE) [![GitHub CI
 Status](https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github)](https://github.com/ratatui-org/ratatui/actions?query=workflow%3ACI+)
-[![Docs.rs](https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square)](https://docs.rs/crate/ratatui/)  
+[![Docs.rs](https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square)](https://docs.rs/crate/ratatui/)\
 [![Dependency
 Status](https://deps.rs/repo/github/ratatui-org/ratatui/status.svg?style=flat-square)](https://deps.rs/repo/github/ratatui-org/ratatui)
 [![Codecov](https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST)](https://app.codecov.io/gh/ratatui-org/ratatui)
@@ -94,30 +94,16 @@ the [Docs](https://docs.rs/ratatui) and [Examples](#examples). There is also a s
 available at [rust-tui-template](https://github.com/ratatui-org/rust-tui-template).
 
 ```rust
-fn main() -> Result<(), Box<dyn Error>> {
-    let mut terminal = setup_terminal()?;
-    run(&mut terminal)?;
-    restore_terminal(&mut terminal)?;
-    Ok(())
-}
+use std::time::Duration;
 
-fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
-    let mut stdout = io::stdout();
-    enable_raw_mode()?;
-    execute!(stdout, EnterAlternateScreen)?;
-    Ok(Terminal::new(CrosstermBackend::new(stdout))?)
-}
+use anyhow::Result;
+use crossterm::event::{self, Event, KeyCode};
+use ratatui::{prelude::*, widgets::Paragraph};
 
-fn restore_terminal(
-    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-) -> Result<(), Box<dyn Error>> {
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen,)?;
-    Ok(terminal.show_cursor()?)
-}
-
-fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<(), Box<dyn Error>> {
-    Ok(loop {
+fn main() -> Result<()> {
+    let backend = CrosstermBackend::on_stdout()?;
+    let mut terminal = Terminal::new(backend)?;
+    loop {
         terminal.draw(|frame| {
             let greeting = Paragraph::new("Hello World!");
             frame.render_widget(greeting, frame.size());
@@ -125,11 +111,11 @@ fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<(), Box<dyn 
         if event::poll(Duration::from_millis(250))? {
             if let Event::Key(key) = event::read()? {
                 if KeyCode::Char('q') == key.code {
-                    break;
+                    return Ok(());
                 }
             }
         }
-    })
+    }
 }
 ```
 
@@ -220,8 +206,8 @@ be installed with `cargo install cargo-make`).
   `tui::text::Text`
 * [color-to-tui](https://github.com/uttarayan21/color-to-tui) — Parse hex colors to
   `tui::style::Color`
-* [rust-tui-template](https://github.com/ratatui-org/rust-tui-template) — A template for bootstrapping a
-  Rust TUI application with Tui-rs & crossterm
+* [rust-tui-template](https://github.com/ratatui-org/rust-tui-template) — A template for
+  bootstrapping a Rust TUI application with Tui-rs & crossterm
 * [simple-tui-rs](https://github.com/pmsanford/simple-tui-rs) — A simple example tui-rs app
 * [tui-builder](https://github.com/jkelleyrtp/tui-builder) — Batteries-included MVC framework for
   Tui-rs + Crossterm apps

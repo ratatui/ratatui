@@ -1,4 +1,53 @@
-use std::{fmt, io};
+//! Terminal interface
+//!
+//! The [`Terminal`] is the main interface of the library. It is responsible for drawing and
+//! maintaining the state of the different widgets that compose your application.
+//!
+//! The [`Terminal`] is generic over a [`Backend`] which is used to interface with the underlying
+//! terminal library. The [`Backend`] trait is implemented for the most common terminal libraries
+//! such as [Crossterm](https://crates.io/crates/crossterm),
+//! [Termion](https://crates.io/crates/termion) and [Termwiz](https://crates.io/crates/termwiz). See
+//! the [`backend`][crate::backend] module for more information.
+//!
+//! # Examples
+//!
+//! ```no_run
+//! use ratatui::{Terminal, backend::CrosstermBackend};
+//! # use crossterm::event::{read, Event, KeyCode};
+//!
+//! let backend = CrosstermBackend::on_stdout()?;
+//! let mut terminal = Terminal::new(backend)?;
+//!
+//! terminal.draw(|frame| {
+//!    // Draw things here
+//! })?;
+//!
+//! loop {
+//!     if let Event::Key(key) = read()? {
+//!         if key.code == KeyCode::Char('q') {
+//!             break;
+//!         }
+//!     }
+//! }
+//! # std::io::Result::Ok(())
+//! ```
+//!
+//! The [`Frame`] type is used to draw to the terminal. It is passed to the closure given to
+//! [`Terminal::draw`]. It is a wrapper around a [`Buffer`] and provides methods to draw to it. The
+//! [`Buffer`] is then compared to the previous one to find the necessary updates to the terminal
+//! screen.
+//!
+//! [`Backend`]: crate::backend::Backend
+//! [`TestBackend`]: crate::backend::TestBackend
+//! [`CrosstermBackend`]: crate::backend::CrosstermBackend
+//! [`TermionBackend`]: crate::backend::TermionBackend
+//! [`TermwizBackend`]: crate::backend::TermwizBackend
+//! [`Terminal::draw`]: crate::terminal::Terminal::draw
+//! [`Buffer`]: crate::buffer::Buffer
+use std::{
+    fmt, io,
+    ops::{Deref, DerefMut},
+};
 
 use crate::{
     backend::{Backend, ClearType},
@@ -7,11 +56,27 @@ use crate::{
     widgets::{StatefulWidget, Widget},
 };
 
+/// Represents the viewport of the terminal. The viewport is the area of the terminal that is
+/// currently visible to the user. It can be either fullscreen, inline or fixed.
+///
+/// When the viewport is fullscreen, the whole terminal is used to draw the application.
+///
+/// When the viewport is inline, it is drawn inline with the rest of the terminal. The height of
+/// the viewport is fixed, but the width is the same as the terminal width.
+///
+/// When the viewport is fixed, it is drawn in a fixed area of the terminal. The area is specified
+/// by a [`Rect`].
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub enum Viewport {
+    /// The viewport is fullscreen
     #[default]
     Fullscreen,
+    /// The viewport is inline with the rest of the terminal. The height is fixed, but the width is
+    /// the same as the terminal width.
+    /// The height is specified in number of lines.
+    /// The viewport is drawn below the cursor position.
     Inline(u16),
+    /// The viewport is drawn in a fixed area of the terminal. The area is specified by a [`Rect`].
     Fixed(Rect),
 }
 
@@ -32,7 +97,25 @@ pub struct TerminalOptions {
     pub viewport: Viewport,
 }
 
-/// Interface to the terminal backed by Termion
+/// Interface to the terminal. It is generic over a [`Backend`] which is used to interface with the
+/// underlying terminal library.
+///
+/// This is the main interface of the library. It is responsible for drawing and maintaining the
+/// state of the buffers, cursor and viewport.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use ratatui::{Terminal, backend::CrosstermBackend, widgets::Paragraph};
+///
+/// let backend = CrosstermBackend::on_stdout()?;
+/// let mut terminal = Terminal::new(backend)?;
+///
+/// terminal.draw(|frame| {
+///     frame.render_widget(Paragraph::new("Hello World!"), frame.size());
+/// })?;
+/// # std::io::Result::Ok(())
+/// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Terminal<B>
 where
@@ -155,6 +238,20 @@ pub struct CompletedFrame<'a> {
     pub area: Rect,
 }
 
+impl<B: Backend> Deref for Terminal<B> {
+    type Target = B;
+
+    fn deref(&self) -> &Self::Target {
+        &self.backend
+    }
+}
+
+impl<B: Backend> DerefMut for Terminal<B> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.backend
+    }
+}
+
 impl<B> Drop for Terminal<B>
 where
     B: Backend,
@@ -173,8 +270,17 @@ impl<B> Terminal<B>
 where
     B: Backend,
 {
-    /// Wrapper around Terminal initialization. Each buffer is initialized with a blank string and
-    /// default colors for the foreground and the background
+    /// Creates a new [`Terminal`] with the given [`Backend`] with a full screen viewport.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui::{Terminal, backend::TestBackend};
+    ///
+    /// let backend = TestBackend::new(10, 10);
+    /// let mut terminal = Terminal::new(backend)?;
+    /// # std::io::Result::Ok(())
+    /// ```
     pub fn new(backend: B) -> io::Result<Terminal<B>> {
         Terminal::with_options(
             backend,
@@ -184,6 +290,22 @@ where
         )
     }
 
+    /// Creates a new [`Terminal`] with the given [`Backend`] and [`TerminalOptions`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use ratatui::{prelude::*, backend::TestBackend};
+    ///
+    /// let backend = TestBackend::new(10, 10);
+    /// let mut terminal = Terminal::with_options(
+    ///     backend,
+    ///     TerminalOptions {
+    ///         viewport: Viewport::Fixed(Rect::new(0, 0, 10, 10)),
+    ///     },
+    /// )?;
+    /// # std::io::Result::Ok(())
+    /// ```
     pub fn with_options(mut backend: B, options: TerminalOptions) -> io::Result<Terminal<B>> {
         let size = match options.viewport {
             Viewport::Fullscreen | Viewport::Inline(_) => backend.size()?,
@@ -500,7 +622,10 @@ fn compute_inline_size<B: Backend>(
 
 #[cfg(test)]
 mod tests {
+    use std::io::Stdout;
+
     use super::*;
+    use crate::prelude::*;
 
     #[test]
     fn viewport_to_string() {
@@ -510,5 +635,17 @@ mod tests {
             Viewport::Fixed(Rect::new(0, 0, 5, 5)).to_string(),
             "Fixed(5x5+0+0)"
         );
+    }
+
+    #[test]
+    #[cfg(feature = "crossterm")]
+    fn crossterm_default() {
+        let _terminal = Terminal::<CrosstermBackend<Stdout>>::default();
+    }
+
+    #[test]
+    #[cfg(feature = "termion")]
+    fn termion_default() {
+        let _terminal = Terminal::<TermionBackend<Stdout>>::default();
     }
 }

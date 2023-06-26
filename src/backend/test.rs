@@ -14,7 +14,8 @@ use crate::{
     layout::Rect,
 };
 
-/// A backend used for the integration tests.
+/// A [`Backend`] implementation used for integration testing that that renders to an in memory
+/// buffer.
 ///
 /// # Example
 ///

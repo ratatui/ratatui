@@ -264,7 +264,7 @@ impl<'a> Block<'a> {
     ///
     /// ```
     /// // Draw a block nested within another block
-    /// use ratatui::{backend::TestBackend, buffer::Buffer, terminal::Terminal, widgets::{Block, Borders}};
+    /// use ratatui::{backend::TestBackend, buffer::Buffer, Terminal, widgets::{Block, Borders}};
     /// let backend = TestBackend::new(15, 5);
     /// let mut terminal = Terminal::new(backend).unwrap();
     /// let outer_block = Block::default()
