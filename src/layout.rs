@@ -86,6 +86,12 @@ thread_local! {
 
 impl Default for Layout {
     fn default() -> Layout {
+        Layout::new()
+    }
+}
+
+impl Layout {
+    pub const fn new() -> Layout {
         Layout {
             direction: Direction::Vertical,
             margin: Margin {
@@ -96,9 +102,7 @@ impl Default for Layout {
             expand_to_fill: true,
         }
     }
-}
 
-impl Layout {
     pub fn constraints<C>(mut self, constraints: C) -> Layout
     where
         C: Into<Vec<Constraint>>,
@@ -107,7 +111,7 @@ impl Layout {
         self
     }
 
-    pub fn margin(mut self, margin: u16) -> Layout {
+    pub const fn margin(mut self, margin: u16) -> Layout {
         self.margin = Margin {
             horizontal: margin,
             vertical: margin,
@@ -115,22 +119,22 @@ impl Layout {
         self
     }
 
-    pub fn horizontal_margin(mut self, horizontal: u16) -> Layout {
+    pub const fn horizontal_margin(mut self, horizontal: u16) -> Layout {
         self.margin.horizontal = horizontal;
         self
     }
 
-    pub fn vertical_margin(mut self, vertical: u16) -> Layout {
+    pub const fn vertical_margin(mut self, vertical: u16) -> Layout {
         self.margin.vertical = vertical;
         self
     }
 
-    pub fn direction(mut self, direction: Direction) -> Layout {
+    pub const fn direction(mut self, direction: Direction) -> Layout {
         self.direction = direction;
         self
     }
 
-    pub(crate) fn expand_to_fill(mut self, expand_to_fill: bool) -> Layout {
+    pub(crate) const fn expand_to_fill(mut self, expand_to_fill: bool) -> Layout {
         self.expand_to_fill = expand_to_fill;
         self
     }
@@ -422,23 +426,23 @@ impl Rect {
         }
     }
 
-    pub fn area(self) -> u16 {
+    pub const fn area(self) -> u16 {
         self.width * self.height
     }
 
-    pub fn left(self) -> u16 {
+    pub const fn left(self) -> u16 {
         self.x
     }
 
-    pub fn right(self) -> u16 {
+    pub const fn right(self) -> u16 {
         self.x.saturating_add(self.width)
     }
 
-    pub fn top(self) -> u16 {
+    pub const fn top(self) -> u16 {
         self.y
     }
 
-    pub fn bottom(self) -> u16 {
+    pub const fn bottom(self) -> u16 {
         self.y.saturating_add(self.height)
     }
 
@@ -481,7 +485,7 @@ impl Rect {
         }
     }
 
-    pub fn intersects(self, other: Rect) -> bool {
+    pub const fn intersects(self, other: Rect) -> bool {
         self.x < other.x + other.width
             && self.x + self.width > other.x
             && self.y < other.y + other.height
@@ -597,5 +601,32 @@ mod tests {
         assert_eq!(Constraint::Min(100).apply(100), 100);
         assert_eq!(Constraint::Min(200).apply(100), 200);
         assert_eq!(Constraint::Min(u16::MAX).apply(100), u16::MAX);
+    }
+
+    #[test]
+    fn rect_can_be_const() {
+        const RECT: Rect = Rect {
+            x: 0,
+            y: 0,
+            width: 10,
+            height: 10,
+        };
+        const _AREA: u16 = RECT.area();
+        const _LEFT: u16 = RECT.left();
+        const _RIGHT: u16 = RECT.right();
+        const _TOP: u16 = RECT.top();
+        const _BOTTOM: u16 = RECT.bottom();
+        assert!(RECT.intersects(RECT));
+    }
+
+    #[test]
+    fn layout_can_be_const() {
+        const _LAYOUT: Layout = Layout::new();
+        const _DEFAULT_LAYOUT: Layout = Layout::new()
+            .direction(Direction::Horizontal)
+            .margin(1)
+            .expand_to_fill(false);
+        const _HORIZONTAL_LAYOUT: Layout = Layout::new().horizontal_margin(1);
+        const _VERTICAL_LAYOUT: Layout = Layout::new().vertical_margin(1);
     }
 }

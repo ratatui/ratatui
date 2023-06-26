@@ -19,7 +19,7 @@ pub enum BorderType {
 }
 
 impl BorderType {
-    pub fn line_symbols(border_type: BorderType) -> line::Set {
+    pub const fn line_symbols(border_type: BorderType) -> line::Set {
         match border_type {
             BorderType::Plain => line::NORMAL,
             BorderType::Rounded => line::ROUNDED,
@@ -38,7 +38,7 @@ pub struct Padding {
 }
 
 impl Padding {
-    pub fn new(left: u16, right: u16, top: u16, bottom: u16) -> Self {
+    pub const fn new(left: u16, right: u16, top: u16, bottom: u16) -> Self {
         Padding {
             left,
             right,
@@ -47,7 +47,7 @@ impl Padding {
         }
     }
 
-    pub fn zero() -> Self {
+    pub const fn zero() -> Self {
         Padding {
             left: 0,
             right: 0,
@@ -56,7 +56,7 @@ impl Padding {
         }
     }
 
-    pub fn horizontal(value: u16) -> Self {
+    pub const fn horizontal(value: u16) -> Self {
         Padding {
             left: value,
             right: value,
@@ -65,7 +65,7 @@ impl Padding {
         }
     }
 
-    pub fn vertical(value: u16) -> Self {
+    pub const fn vertical(value: u16) -> Self {
         Padding {
             left: 0,
             right: 0,
@@ -74,7 +74,7 @@ impl Padding {
         }
     }
 
-    pub fn uniform(value: u16) -> Self {
+    pub const fn uniform(value: u16) -> Self {
         Padding {
             left: value,
             right: value,
@@ -139,21 +139,24 @@ pub struct Block<'a> {
 
 impl<'a> Default for Block<'a> {
     fn default() -> Block<'a> {
-        Block {
-            titles: Vec::new(),
-            titles_style: Style::default(),
-            titles_alignment: Alignment::Left,
-            titles_position: Position::default(),
-            borders: Borders::NONE,
-            border_style: Style::default(),
-            border_type: BorderType::Plain,
-            style: Style::default(),
-            padding: Padding::zero(),
-        }
+        Block::new()
     }
 }
 
 impl<'a> Block<'a> {
+    pub const fn new() -> Self {
+        Self {
+            titles: Vec::new(),
+            titles_style: Style::new(),
+            titles_alignment: Alignment::Left,
+            titles_position: Position::Top,
+            borders: Borders::NONE,
+            border_style: Style::new(),
+            border_type: BorderType::Plain,
+            style: Style::new(),
+            padding: Padding::zero(),
+        }
+    }
     /// # Example
     /// ```
     /// # use ratatui::widgets::{Block, block::title::Title};
@@ -192,7 +195,7 @@ impl<'a> Block<'a> {
     }
 
     /// Applies the style to all titles. If a title already has a style, it will add on top of it.
-    pub fn title_style(mut self, style: Style) -> Block<'a> {
+    pub const fn title_style(mut self, style: Style) -> Block<'a> {
         self.titles_style = style;
         self
     }
@@ -210,7 +213,7 @@ impl<'a> Block<'a> {
     ///   .title("bar")
     ///   .title_alignment(Alignment::Center);
     /// ```
-    pub fn title_alignment(mut self, alignment: Alignment) -> Block<'a> {
+    pub const fn title_alignment(mut self, alignment: Alignment) -> Block<'a> {
         self.titles_alignment = alignment;
         self
     }
@@ -233,27 +236,27 @@ impl<'a> Block<'a> {
     ///   .title("bar")
     ///   .title_position(Position::Bottom);
     /// ```
-    pub fn title_position(mut self, position: Position) -> Block<'a> {
+    pub const fn title_position(mut self, position: Position) -> Block<'a> {
         self.titles_position = position;
         self
     }
 
-    pub fn border_style(mut self, style: Style) -> Block<'a> {
+    pub const fn border_style(mut self, style: Style) -> Block<'a> {
         self.border_style = style;
         self
     }
 
-    pub fn style(mut self, style: Style) -> Block<'a> {
+    pub const fn style(mut self, style: Style) -> Block<'a> {
         self.style = style;
         self
     }
 
-    pub fn borders(mut self, flag: Borders) -> Block<'a> {
+    pub const fn borders(mut self, flag: Borders) -> Block<'a> {
         self.borders = flag;
         self
     }
 
-    pub fn border_type(mut self, border_type: BorderType) -> Block<'a> {
+    pub const fn border_type(mut self, border_type: BorderType) -> Block<'a> {
         self.border_type = border_type;
         self
     }
@@ -317,7 +320,7 @@ impl<'a> Block<'a> {
         inner
     }
 
-    pub fn padding(mut self, padding: Padding) -> Block<'a> {
+    pub const fn padding(mut self, padding: Padding) -> Block<'a> {
         self.padding = padding;
         self
     }
@@ -826,5 +829,35 @@ mod tests {
                 height: 0,
             },
         );
+    }
+
+    #[test]
+    fn border_type_can_be_const() {
+        const _PLAIN: line::Set = BorderType::line_symbols(BorderType::Plain);
+    }
+
+    #[test]
+    fn padding_can_be_const() {
+        const PADDING: Padding = Padding::new(1, 1, 1, 1);
+        const UNI_PADDING: Padding = Padding::uniform(1);
+        assert_eq!(PADDING, UNI_PADDING);
+
+        const _NO_PADDING: Padding = Padding::zero();
+        const _HORIZONTAL: Padding = Padding::horizontal(1);
+        const _VERTICAL: Padding = Padding::vertical(1);
+    }
+
+    #[test]
+    fn block_can_be_const() {
+        const _DEFAULT_STYLE: Style = Style::new();
+        const _DEFAULT_PADDING: Padding = Padding::uniform(1);
+        const _DEFAULT_BLOCK: Block = Block::new()
+            .title_style(_DEFAULT_STYLE)
+            .title_alignment(Alignment::Left)
+            .title_position(Position::Top)
+            .borders(Borders::ALL)
+            .border_style(_DEFAULT_STYLE)
+            .style(_DEFAULT_STYLE)
+            .padding(_DEFAULT_PADDING);
     }
 }
