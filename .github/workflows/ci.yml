@@ -13,28 +13,62 @@ on:
 name: CI
 
 jobs:
-  test:
+  build:
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         toolchain: [ "1.65.0", "stable" ]
     runs-on: ${{ matrix.os }}
+    needs: lint
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-          components: rustfmt,clippy
-      - name: Install cargo-binstall
-        uses: taiki-e/install-action@cargo-binstall
       - name: Install cargo-make
-        run: |
-          cargo binstall -y cargo-make
-          cargo make --version
-          cargo make --list-all-steps
-      - name: "Format / Build / Test"
-        run: cargo make ci
+        uses: taiki-e/install-action@cargo-make
+      - name: "Check"
+        run: cargo make check
+        env:
+          RUST_BACKTRACE: full
+          CARGO_HUSKY_DONT_INSTALL_HOOKS: true
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: "Clippy"
+        run: cargo make clippy
+        env:
+          RUST_BACKTRACE: full
+          CARGO_HUSKY_DONT_INSTALL_HOOKS: true
+
+  test:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        toolchain: [ "1.65.0", "stable" ]
+    runs-on: ${{ matrix.os }}
+    needs: lint
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: "Test"
+        run: cargo make test
         env:
           RUST_BACKTRACE: full
           CARGO_HUSKY_DONT_INSTALL_HOOKS: true
@@ -59,9 +93,16 @@ jobs:
         uses: crate-ci/typos@master
       - name: "Lint dependencies"
         uses: EmbarkStudios/cargo-deny-action@v1
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - name: "Formatting"
+        run: cargo fmt --all --check
 
   coverage:
     runs-on: ubuntu-latest
+    needs: lint
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust

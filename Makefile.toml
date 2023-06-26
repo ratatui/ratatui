@@ -17,49 +17,72 @@ run_task = [
 [tasks.ci-unix]
 private = true
 dependencies = [
-  "fmt",
-  "check-crossterm",
-  "check-termion",
-  "check-termwiz",
-  "test-crossterm",
-  "test-termion",
-  "test-termwiz",
-  "clippy-crossterm",
-  "clippy-termion",
-  "clippy-termwiz",
-  "test-doc",
+  "style-check",
+  "check-unix",
+  "test-unix",
+  "clippy-unix",
 ]
 
 [tasks.ci-windows]
 private = true
 dependencies = [
-  "fmt",
-  "check-crossterm",
-  "check-termwiz",
-  "test-crossterm",
-  "test-termwiz",
-  "clippy-crossterm",
-  "clippy-termwiz",
-  "test-doc",
+  "style-check",
+  "check-windows",
+  "test-windows",
+  "clippy-windows",
 ]
 
+[tasks.style-check]
+dependencies = ["fmt", "typos"]
+
 [tasks.fmt]
+toolchain = "nightly"
 command = "cargo"
-args = ["fmt", "--all", "--", "--check"]
+args = ["fmt", "--all", "--check"]
+
+[tasks.typos]
+install_crate = { crate_name = "typos-cli", binary = "typos", test_arg = "--version" }
+command = "typos"
+
+[tasks.check]
+run_task = [
+  { name = "check-unix", condition = { platforms = [
+    "linux",
+    "mac",
+  ] } },
+  { name = "check-windows", condition = { platforms = [
+    "windows",
+  ] } },
+]
+
+[tasks.check-unix]
+private = true
+dependencies = [
+  "check-crossterm",
+  "check-termion",
+  "check-termwiz",
+]
+
+[tasks.check-windows]
+private = true
+dependencies = [
+  "check-crossterm",
+  "check-termwiz",
+]
 
 [tasks.check-crossterm]
 env = { TUI_FEATURES = "serde,crossterm" }
-run_task = "check"
+run_task = "check-backend"
 
 [tasks.check-termion]
 env = { TUI_FEATURES = "serde,termion" }
-run_task = "check"
+run_task = "check-backend"
 
 [tasks.check-termwiz]
 env = { TUI_FEATURES = "serde,termwiz" }
-run_task = "check"
+run_task = "check-backend"
 
-[tasks.check]
+[tasks.check-backend]
 command = "cargo"
 condition = { env_set = ["TUI_FEATURES"] }
 args = [
@@ -70,19 +93,45 @@ args = [
   "--all-targets",
 ]
 
+[tasks.build]
+run_task = [
+  { name = "build-unix", condition = { platforms = [
+    "linux",
+    "mac",
+  ] } },
+  { name = "build-windows", condition = { platforms = [
+    "windows",
+  ] } },
+]
+
+[tasks.build-unix]
+private = true
+dependencies = [
+  "build-crossterm",
+  "build-termion",
+  "build-termwiz",
+]
+
+[tasks.build-windows]
+private = true
+dependencies = [
+  "build-crossterm",
+  "build-termwiz",
+]
+
 [tasks.build-crossterm]
 env = { TUI_FEATURES = "serde,crossterm" }
-run_task = "build"
+run_task = "build-backend"
 
 [tasks.build-termion]
 env = { TUI_FEATURES = "serde,termion" }
-run_task = "build"
+run_task = "build-backend"
 
 [tasks.build-termwiz]
 env = { TUI_FEATURES = "serde,termwiz" }
-run_task = "build"
+run_task = "build-backend"
 
-[tasks.build]
+[tasks.build-backend]
 command = "cargo"
 condition = { env_set = ["TUI_FEATURES"] }
 args = [
@@ -93,25 +142,53 @@ args = [
   "--all-targets",
 ]
 
+[tasks.clippy]
+run_task = [
+  { name = "clippy-unix", condition = { platforms = [
+    "linux",
+    "mac",
+  ] } },
+  { name = "clippy-windows", condition = { platforms = [
+    "windows",
+  ] } },
+]
+
+[tasks.clippy-unix]
+private = true
+dependencies = [
+  "clippy-crossterm",
+  "clippy-termion",
+  "clippy-termwiz",
+]
+
+[tasks.clippy-windows]
+private = true
+dependencies = [
+  "clippy-crossterm",
+  "clippy-termwiz",
+]
+
 [tasks.clippy-crossterm]
 env = { TUI_FEATURES = "serde,crossterm" }
-run_task = "clippy"
+run_task = "clippy-backend"
 
 [tasks.clippy-termion]
 env = { TUI_FEATURES = "serde,termion" }
-run_task = "clippy"
+run_task = "clippy-backend"
 
 [tasks.clippy-termwiz]
 env = { TUI_FEATURES = "serde,termwiz" }
-run_task = "clippy"
+run_task = "clippy-backend"
 
-[tasks.clippy]
+[tasks.clippy-backend]
 command = "cargo"
 condition = { env_set = ["TUI_FEATURES"] }
 args = [
   "clippy",
   "--all-targets",
   "--no-default-features",
+  "--tests",
+  "--benches",
   "--features",
   "${TUI_FEATURES}",
   "--",
@@ -119,19 +196,47 @@ args = [
   "warnings",
 ]
 
+[tasks.test]
+run_task = [
+  { name = "test-unix", condition = { platforms = [
+    "linux",
+    "mac",
+  ] } },
+  { name = "test-windows", condition = { platforms = [
+    "windows",
+  ] } },
+]
+
+[tasks.test-unix]
+private = true
+dependencies = [
+  "test-crossterm",
+  "test-termion",
+  "test-termwiz",
+  "test-doc",
+]
+
+[tasks.test-windows]
+private = true
+dependencies = [
+  "test-crossterm",
+  "test-termwiz",
+  "test-doc",
+]
+
 [tasks.test-crossterm]
 env = { TUI_FEATURES = "serde,crossterm,all-widgets,macros" }
-run_task = "test"
+run_task = "test-backend"
 
 [tasks.test-termion]
 env = { TUI_FEATURES = "serde,termion,all-widgets,macros" }
-run_task = "test"
+run_task = "test-backend"
 
 [tasks.test-termwiz]
 env = { TUI_FEATURES = "serde,termwiz,all-widgets,macros" }
-run_task = "test"
+run_task = "test-backend"
 
-[tasks.test]
+[tasks.test-backend]
 command = "cargo"
 condition = { env_set = ["TUI_FEATURES"] }
 args = [
@@ -139,9 +244,7 @@ args = [
   "--no-default-features",
   "--features",
   "${TUI_FEATURES}",
-  "--lib",
-  "--tests",
-  "--examples",
+  "--all-targets",
 ]
 
 [tasks.test-doc]
