@@ -1,7 +1,4 @@
-use criterion::{
-    black_box, criterion_group, criterion_main, measurement::WallTime, Bencher, BenchmarkGroup,
-    BenchmarkId, Criterion,
-};
+use criterion::{black_box, criterion_group, criterion_main, Bencher, BenchmarkId, Criterion};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -12,142 +9,69 @@ use ratatui::{
 /// This is a limitation of the current implementation and may be fixed by changing the type of the
 /// scroll offset to a u32.
 const MAX_SCROLL_OFFSET: u16 = u16::MAX;
+const NO_WRAP_WIDTH: u16 = 200;
+const WRAP_WIDTH: u16 = 100;
 
 /// Benchmark for rendering a paragraph with a given number of lines. The design of this benchmark
 /// allows comparison of the performance of rendering a paragraph with different numbers of lines.
 /// as well as comparing with the various settings on the scroll and wrap features.
 pub fn paragraph(c: &mut Criterion) {
     let mut group = c.benchmark_group("paragraph");
-    for &line_count in [10, 100, 1000, 10000, MAX_SCROLL_OFFSET].iter() {
+    for &line_count in [64, 2048, MAX_SCROLL_OFFSET].iter() {
         let lines = random_lines(line_count);
         let lines = lines.as_str();
 
-        bench_paragraph_new(&mut group, line_count, lines);
-        bench_paragraph_render(&mut group, line_count, lines);
-        bench_paragraph_render_scroll(&mut group, line_count, lines);
-        bench_paragraph_render_wrap(&mut group, line_count, lines);
+        // benchmark that measures the overhead of creating a paragraph separately from rendering
+        group.bench_with_input(BenchmarkId::new("new", line_count), lines, |b, lines| {
+            b.iter(|| Paragraph::new(black_box(lines)))
+        });
+
+        // render the paragraph with no scroll
+        group.bench_with_input(
+            BenchmarkId::new("render", line_count),
+            &Paragraph::new(lines),
+            |bencher, paragraph| render(bencher, paragraph, NO_WRAP_WIDTH),
+        );
+
+        // scroll the paragraph by half the number of lines and render
+        group.bench_with_input(
+            BenchmarkId::new("render_scroll_half", line_count),
+            &Paragraph::new(lines).scroll((0u16, line_count / 2)),
+            |bencher, paragraph| render(bencher, paragraph, NO_WRAP_WIDTH),
+        );
+
+        // scroll the paragraph by the full number of lines and render
+        group.bench_with_input(
+            BenchmarkId::new("render_scroll_full", line_count),
+            &Paragraph::new(lines).scroll((0u16, line_count)),
+            |bencher, paragraph| render(bencher, paragraph, NO_WRAP_WIDTH),
+        );
+
+        // render the paragraph wrapped to 100 characters
+        group.bench_with_input(
+            BenchmarkId::new("render_wrap", line_count),
+            &Paragraph::new(lines).wrap(Wrap { trim: false }),
+            |bencher, paragraph| render(bencher, paragraph, WRAP_WIDTH),
+        );
+
+        // scroll the paragraph by the full number of lines and render wrapped to 100 characters
+        group.bench_with_input(
+            BenchmarkId::new("render_wrap_scroll_full", line_count),
+            &Paragraph::new(lines)
+                .wrap(Wrap { trim: false })
+                .scroll((0u16, line_count)),
+            |bencher, paragraph| render(bencher, paragraph, WRAP_WIDTH),
+        );
     }
     group.finish();
 }
 
-/// baseline benchmark that helps measure the overhead of creating a paragraph
-fn bench_paragraph_new(group: &mut BenchmarkGroup<'_, WallTime>, line_count: u16, lines: &str) {
-    group.bench_with_input(BenchmarkId::new("new", line_count), lines, |b, lines| {
-        b.iter(|| Paragraph::new(black_box(lines)))
-    });
-}
-
-/// benchmark for rendering a paragraph without any scrolling or wrapping
-fn bench_paragraph_render(group: &mut BenchmarkGroup<'_, WallTime>, line_count: u16, lines: &str) {
-    let mut buffer = Buffer::empty(Rect::new(0, 0, 200, 50));
-
-    group.bench_with_input(BenchmarkId::new("render", line_count), lines, |b, lines| {
-        b.iter(|| {
-            let paragraph = Paragraph::new(lines);
-            paragraph.render(buffer.area, &mut buffer);
-        })
-    });
-}
-
-fn bench_paragraph_render_scroll(
-    group: &mut BenchmarkGroup<'_, WallTime>,
-    line_count: u16,
-    lines: &str,
-) {
-    group.bench_with_input(
-        BenchmarkId::new("scroll_0", line_count),
-        lines,
-        bench_paragraph_render_scroll_offset(0),
-    );
-    group.bench_with_input(
-        BenchmarkId::new("scroll_1", line_count),
-        lines,
-        bench_paragraph_render_scroll_offset(0),
-    );
-    group.bench_with_input(
-        BenchmarkId::new("scroll_half", line_count),
-        lines,
-        bench_paragraph_render_scroll_offset(line_count / 2),
-    );
-    group.bench_with_input(
-        BenchmarkId::new("scroll_full", line_count),
-        lines,
-        bench_paragraph_render_scroll_offset(line_count),
-    );
-}
-
-fn bench_paragraph_render_scroll_offset(offset: u16) -> impl Fn(&mut Bencher<'_>, &str) {
-    move |b, lines| {
-        let offset = (0u16, offset);
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 200, 50));
-        b.iter(|| {
-            let paragraph = Paragraph::new(lines).scroll(offset);
-            paragraph.render(buffer.area, &mut buffer);
-        })
-    }
-}
-
-fn bench_paragraph_render_wrap(
-    group: &mut BenchmarkGroup<'_, WallTime>,
-    line_count: u16,
-    lines: &str,
-) {
-    group.bench_with_input(
-        BenchmarkId::new("wrap_no_trim_100", line_count),
-        lines,
-        bench_paragraph_render_wrap_no_trim(100),
-    );
-    group.bench_with_input(
-        BenchmarkId::new("wrap_no_trim_200", line_count),
-        lines,
-        bench_paragraph_render_wrap_no_trim(200),
-    );
-    group.bench_with_input(
-        BenchmarkId::new("wrap_no_trim_300", line_count),
-        lines,
-        bench_paragraph_render_wrap_no_trim(300),
-    );
-    group.bench_with_input(
-        BenchmarkId::new("wrap_trim_100", line_count),
-        lines,
-        bench_paragraph_render_wrap_trim(100),
-    );
-    group.bench_with_input(
-        BenchmarkId::new("wrap_trim_200", line_count),
-        lines,
-        bench_paragraph_render_wrap_trim(200),
-    );
-    group.bench_with_input(
-        BenchmarkId::new("wrap_trim_300", line_count),
-        lines,
-        bench_paragraph_render_wrap_trim(300),
-    );
-}
-
-/// benchmark for rendering a paragraph with a given wrap width
-fn bench_paragraph_render_wrap_no_trim(width: u16) -> impl Fn(&mut Bencher<'_>, &str) {
-    move |b, lines| {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, width, 50));
-        let wrap = Wrap { trim: false };
-        b.iter(|| {
-            Paragraph::new(black_box(lines))
-                .wrap(black_box(wrap))
-                .render(buffer.area, &mut buffer)
-        })
-    }
-}
-
-/// benchmark for rendering a paragraph with a given wrap width
-fn bench_paragraph_render_wrap_trim(width: u16) -> impl Fn(&mut Bencher<'_>, &str) {
-    move |b, lines| {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, width, 50));
-        let wrap = Wrap { trim: true };
-        b.iter(|| {
-            Paragraph::new(black_box(lines))
-                .wrap(black_box(wrap))
-                .render(buffer.area, &mut buffer)
-        })
-    }
+/// render the paragraph into a buffer with the given width
+fn render(bencher: &mut Bencher, paragraph: &Paragraph, width: u16) {
+    let mut buffer = Buffer::empty(Rect::new(0, 0, width, 50));
+    bencher.iter(|| {
+        paragraph.clone().render(buffer.area, &mut buffer);
+    })
 }
 
 /// Create a string with the given number of lines filled with nonsense words
