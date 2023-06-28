@@ -458,22 +458,19 @@ impl Buffer {
         let previous_buffer = &self.content;
         let next_buffer = &other.content;
 
-        let mut updates: Vec<(u16, u16, &Cell)> = vec![];
-        // Cells invalidated by drawing/replacing preceding multi-width characters:
-        let mut invalidated: usize = 0;
-        // Cells from the current buffer to skip due to preceding multi-width characters taking
-        // their place (the skipped cells should be blank anyway):
-        let mut to_skip: usize = 0;
+        let mut updates = Vec::with_capacity(other.area().area().max(self.area().area()).into());
+        let mut skipping = 0;
         for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
-            if (current != previous || invalidated > 0) && to_skip == 0 {
+            if skipping > 0 {
+                skipping -= 1;
+                continue;
+            }
+            let chars_impacted = current.symbol.width();
+            if current != previous {
                 let (x, y) = self.pos_of(i);
                 updates.push((x, y, &next_buffer[i]));
             }
-
-            to_skip = current.symbol.width().saturating_sub(1);
-
-            let affected_width = std::cmp::max(current.symbol.width(), previous.symbol.width());
-            invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
+            skipping = chars_impacted.max(skipping).saturating_sub(1);
         }
         updates
     }
