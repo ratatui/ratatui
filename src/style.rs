@@ -1,4 +1,34 @@
 //! `style` contains the primitives used to control how your user interface will look.
+//!
+//! # Using the `Style` struct
+//!
+//! This is useful when creating style variables.
+//! ## Example
+//! ```
+//! use ratatui::style::{Color, Modifier, Style};
+//!
+//! Style::default()
+//!    .fg(Color::Black)
+//!    .bg(Color::Green)
+//!    .add_modifier(Modifier::ITALIC | Modifier::BOLD);
+//! ```
+//!
+//! # Using style shorthands
+//!
+//! This is best for consise styling.
+//! ## Example
+//! ```
+//! use ratatui::{
+//!     style::{Color, Modifier, Style, Styled, Stylize},
+//!     text::Span,
+//! };
+//!
+//! assert_eq!(
+//!    "hello".red().on_blue().bold(),
+//!     Span::styled("hello", Style::default().fg(Color::Red).bg(Color::Blue).add_modifier(Modifier::BOLD))
+//! )
+//! ```
+mod stylized;
 
 use std::{
     fmt::{self, Debug},
@@ -6,6 +36,7 @@ use std::{
 };
 
 use bitflags::bitflags;
+pub use stylized::{Styled, Stylize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

@@ -51,7 +51,7 @@ use std::{borrow::Cow, fmt::Debug};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::style::Style;
+use crate::style::{Style, Styled};
 
 mod line;
 mod masked;
@@ -235,6 +235,17 @@ impl<'a> From<String> for Span<'a> {
 impl<'a> From<&'a str> for Span<'a> {
     fn from(s: &'a str) -> Span<'a> {
         Span::raw(s)
+    }
+}
+
+impl<'a> Styled for Span<'a> {
+    type Item = Span<'a>;
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self {
+        Self::styled(self.content, style)
     }
 }
 

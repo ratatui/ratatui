@@ -8,8 +8,7 @@ use crossterm::{
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::Span,
+    style::{Color, Style, Stylize},
     widgets::{block::title::Title, Block, BorderType, Borders, Padding, Paragraph},
     Frame, Terminal,
 };
@@ -80,24 +79,13 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
 
     // Top left inner block with green background
     let block = Block::default()
-        .title(vec![
-            Span::styled("With", Style::default().fg(Color::Yellow)),
-            Span::from(" background"),
-        ])
-        .style(Style::default().bg(Color::Green));
+        .title(vec!["With".yellow(), " background".into()])
+        .on_green();
     f.render_widget(block, top_chunks[0]);
 
     // Top right inner block with styled title aligned to the right
-    let block = Block::default().title(
-        Title::from(Span::styled(
-            "Styled title",
-            Style::default()
-                .fg(Color::White)
-                .bg(Color::Red)
-                .add_modifier(Modifier::BOLD),
-        ))
-        .alignment(Alignment::Right),
-    );
+    let block = Block::default()
+        .title(Title::from("Styled title".white().on_red().bold()).alignment(Alignment::Right));
     f.render_widget(block, top_chunks[1]);
 
     // Bottom two inner blocks

@@ -12,9 +12,8 @@ use crossterm::{
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Stylize},
     symbols::Marker,
-    text::Span,
     widgets::{
         canvas::{Canvas, Map, MapResolution, Rectangle},
         Block, Borders,
@@ -177,11 +176,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 color: Color::White,
                 resolution: MapResolution::High,
             });
-            ctx.print(
-                app.x,
-                -app.y,
-                Span::styled("You are here", Style::default().fg(Color::Yellow)),
-            );
+            ctx.print(app.x, -app.y, "You are here".yellow());
         })
         .x_bounds([-180.0, 180.0])
         .y_bounds([-90.0, 90.0]);

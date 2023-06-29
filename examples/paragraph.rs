@@ -12,7 +12,7 @@ use crossterm::{
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Masked, Span},
     widgets::{Block, Borders, Paragraph, Wrap},
     Frame, Terminal,
@@ -96,7 +96,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let mut long_line = s.repeat(usize::from(size.width) / s.len() + 4);
     long_line.push('\n');
 
-    let block = Block::default().style(Style::default().fg(Color::Black));
+    let block = Block::default().black();
     f.render_widget(block, size);
 
     let chunks = Layout::default()
@@ -115,27 +115,13 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
 
     let text = vec![
         Line::from("This is a line "),
-        Line::from(Span::styled(
-            "This is a line   ",
-            Style::default().fg(Color::Red),
-        )),
-        Line::from(Span::styled(
-            "This is a line",
-            Style::default().bg(Color::Blue),
-        )),
-        Line::from(Span::styled(
-            "This is a longer line",
-            Style::default().add_modifier(Modifier::CROSSED_OUT),
-        )),
-        Line::from(Span::styled(&long_line, Style::default().bg(Color::Green))),
-        Line::from(Span::styled(
-            "This is a line",
-            Style::default()
-                .fg(Color::Green)
-                .add_modifier(Modifier::ITALIC),
-        )),
+        Line::from("This is a line   ".red()),
+        Line::from("This is a line".on_blue()),
+        Line::from("This is a longer line".crossed_out()),
+        Line::from(long_line.on_green()),
+        Line::from("This is a line".green().italic()),
         Line::from(vec![
-            Span::raw("Masked text: "),
+            "Masked text: ".into(),
             Span::styled(
                 Masked::new("password", '*'),
                 Style::default().fg(Color::Red),

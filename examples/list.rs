@@ -12,7 +12,7 @@ use crossterm::{
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Corner, Direction, Layout},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState},
     Frame, Terminal,
@@ -220,10 +220,11 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .map(|i| {
             let mut lines = vec![Line::from(i.0)];
             for _ in 0..i.1 {
-                lines.push(Line::from(Span::styled(
-                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-                    Style::default().add_modifier(Modifier::ITALIC),
-                )));
+                lines.push(
+                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+                        .italic()
+                        .into(),
+                );
             }
             ListItem::new(lines).style(Style::default().fg(Color::Black).bg(Color::White))
         })
@@ -260,14 +261,11 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             // Add a example datetime and apply proper spacing between them
             let header = Line::from(vec![
                 Span::styled(format!("{level:<9}"), s),
-                Span::raw(" "),
-                Span::styled(
-                    "2020-01-01 10:00:00",
-                    Style::default().add_modifier(Modifier::ITALIC),
-                ),
+                " ".into(),
+                "2020-01-01 10:00:00".italic(),
             ]);
             // The event gets its own line
-            let log = Line::from(vec![Span::raw(event)]);
+            let log = Line::from(vec![event.into()]);
 
             // Here several things happen:
             // 1. Add a `---` spacing line above the final list entry

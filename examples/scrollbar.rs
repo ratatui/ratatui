@@ -12,7 +12,7 @@ use crossterm::{
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout, Margin},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Masked, Span},
     widgets::{
         scrollbar, Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
@@ -115,7 +115,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let mut long_line = s.repeat(usize::from(size.width) / s.len() + 4);
     long_line.push('\n');
 
-    let block = Block::default().style(Style::default().fg(Color::Black));
+    let block = Block::default().black();
     f.render_widget(block, size);
 
     let chunks = Layout::default()
@@ -135,20 +135,11 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     let text = vec![
         Line::from("This is a line "),
-        Line::from(Span::styled(
-            "This is a line   ",
-            Style::default().fg(Color::Red),
-        )),
-        Line::from(Span::styled(
-            "This is a line",
-            Style::default().bg(Color::DarkGray),
-        )),
-        Line::from(Span::styled(
-            "This is a longer line",
-            Style::default().add_modifier(Modifier::CROSSED_OUT),
-        )),
-        Line::from(Span::styled(&long_line, Style::default())),
-        Line::from(Span::styled("This is a line", Style::default())),
+        Line::from("This is a line   ".red()),
+        Line::from("This is a line".on_dark_gray()),
+        Line::from("This is a longer line".crossed_out()),
+        Line::from(long_line.reset()),
+        Line::from("This is a line".reset()),
         Line::from(vec![
             Span::raw("Masked text: "),
             Span::styled(
@@ -157,20 +148,11 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             ),
         ]),
         Line::from("This is a line "),
-        Line::from(Span::styled(
-            "This is a line   ",
-            Style::default().fg(Color::Red),
-        )),
-        Line::from(Span::styled(
-            "This is a line",
-            Style::default().bg(Color::DarkGray),
-        )),
-        Line::from(Span::styled(
-            "This is a longer line",
-            Style::default().add_modifier(Modifier::CROSSED_OUT),
-        )),
-        Line::from(Span::styled(&long_line, Style::default())),
-        Line::from(Span::styled("This is a line", Style::default())),
+        Line::from("This is a line   ".red()),
+        Line::from("This is a line".on_dark_gray()),
+        Line::from("This is a longer line".crossed_out()),
+        Line::from(long_line.reset()),
+        Line::from("This is a line".reset()),
         Line::from(vec![
             Span::raw("Masked text: "),
             Span::styled(
@@ -187,7 +169,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let create_block = |title| {
         Block::default()
             .borders(Borders::ALL)
-            .style(Style::default().fg(Color::Gray))
+            .gray()
             .title(Span::styled(
                 title,
                 Style::default().add_modifier(Modifier::BOLD),
@@ -200,7 +182,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     f.render_widget(title, chunks[0]);
 
     let paragraph = Paragraph::new(text.clone())
-        .style(Style::default().fg(Color::Gray))
+        .gray()
         .block(create_block("Vertical scrollbar with arrows"))
         .scroll((app.vertical_scroll as u16, 0));
     f.render_widget(paragraph, chunks[1]);
@@ -214,7 +196,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     );
 
     let paragraph = Paragraph::new(text.clone())
-        .style(Style::default().fg(Color::Gray))
+        .gray()
         .block(create_block(
             "Vertical scrollbar without arrows and mirrored",
         ))
@@ -234,7 +216,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     );
 
     let paragraph = Paragraph::new(text.clone())
-        .style(Style::default().fg(Color::Gray))
+        .gray()
         .block(create_block(
             "Horizontal scrollbar with only begin arrow & custom thumb symbol",
         ))
@@ -253,7 +235,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     );
 
     let paragraph = Paragraph::new(text.clone())
-        .style(Style::default().fg(Color::Gray))
+        .gray()
         .block(create_block(
             "Horizontal scrollbar without arrows & custom thumb and track symbol",
         ))

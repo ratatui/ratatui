@@ -5,7 +5,7 @@ use self::title::{Position, Title};
 use crate::{
     buffer::Buffer,
     layout::{Alignment, Rect},
-    style::Style,
+    style::{Style, Styled},
     symbols::line,
     widgets::{Borders, Widget},
 };
@@ -496,6 +496,18 @@ impl<'a> Widget for Block<'a> {
         }
         self.render_borders(area, buf);
         self.render_titles(area, buf);
+    }
+}
+
+impl<'a> Styled for Block<'a> {
+    type Item = Block<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
     }
 }
 

@@ -8,8 +8,7 @@ use crossterm::{
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
-    text::Span,
+    style::Stylize,
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Frame, Terminal,
 };
@@ -80,18 +79,15 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     } else {
         "Press p to show the popup"
     };
-    let paragraph = Paragraph::new(Span::styled(
-        text,
-        Style::default().add_modifier(Modifier::SLOW_BLINK),
-    ))
-    .alignment(Alignment::Center)
-    .wrap(Wrap { trim: true });
+    let paragraph = Paragraph::new(text.slow_blink())
+        .alignment(Alignment::Center)
+        .wrap(Wrap { trim: true });
     f.render_widget(paragraph, chunks[0]);
 
     let block = Block::default()
         .title("Content")
         .borders(Borders::ALL)
-        .style(Style::default().bg(Color::Blue));
+        .on_blue();
     f.render_widget(block, chunks[1]);
 
     if app.show_popup {
