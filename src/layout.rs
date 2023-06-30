@@ -224,7 +224,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         .map(|_| Rect::default())
         .collect::<Rc<[Rect]>>();
 
-    let mut results = Rc::get_mut(&mut res).expect("newly created Rc should have no shared refs");
+    let results = Rc::get_mut(&mut res).expect("newly created Rc should have no shared refs");
 
     let dest_area = area.inner(&layout.margin);
     for (i, e) in elements.iter().enumerate() {
