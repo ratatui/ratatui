@@ -1,3 +1,7 @@
+use std::{error::Error, time::Duration};
+
+use argh::FromArgs;
+
 mod app;
 #[cfg(feature = "crossterm")]
 mod crossterm;
@@ -7,17 +11,6 @@ mod termion;
 mod termwiz;
 
 mod ui;
-
-use std::{error::Error, time::Duration};
-
-use argh::FromArgs;
-
-#[cfg(feature = "crossterm")]
-use crate::crossterm::run;
-#[cfg(feature = "termion")]
-use crate::termion::run;
-#[cfg(feature = "termwiz")]
-use crate::termwiz::run;
 
 /// Demo
 #[derive(Debug, FromArgs)]
@@ -33,6 +26,11 @@ struct Cli {
 fn main() -> Result<(), Box<dyn Error>> {
     let cli: Cli = argh::from_env();
     let tick_rate = Duration::from_millis(cli.tick_rate);
-    run(tick_rate, cli.enhanced_graphics)?;
+    #[cfg(feature = "crossterm")]
+    crate::crossterm::run(tick_rate, cli.enhanced_graphics)?;
+    #[cfg(feature = "termion")]
+    crate::termion::run(tick_rate, cli.enhanced_graphics)?;
+    #[cfg(feature = "termwiz")]
+    crate::termwiz::run(tick_rate, cli.enhanced_graphics)?;
     Ok(())
 }

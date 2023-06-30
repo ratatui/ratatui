@@ -33,6 +33,7 @@ serde = ["dep:serde", "bitflags/serde"]
 all-features = true
 # see https://doc.rust-lang.org/nightly/rustdoc/scraped-examples.html
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 bitflags = "2.3"

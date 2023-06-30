@@ -174,6 +174,9 @@
 //! you might need a blank space somewhere, try to pass an additional constraint and don't use the
 //! corresponding area.
 
+// show the feature flags in the generated documentation
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+
 pub mod backend;
 pub mod buffer;
 pub mod layout;
