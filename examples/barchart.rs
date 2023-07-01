@@ -11,9 +11,19 @@ use crossterm::{
 };
 use ratatui::prelude::*;
 
+struct Company<'a> {
+    revenue: [u64; 4],
+    label: &'a str,
+    bar_style: Style,
+}
+
 struct App<'a> {
     data: Vec<(&'a str, u64)>,
+    months: [&'a str; 4],
+    companies: [Company<'a>; 3],
 }
+
+const TOTAL_REVENUE: &str = "Total Revenue";
 
 impl<'a> App<'a> {
     fn new() -> App<'a> {
@@ -44,6 +54,24 @@ impl<'a> App<'a> {
                 ("B23", 3),
                 ("B24", 5),
             ],
+            companies: [
+                Company {
+                    label: "Comp.A",
+                    revenue: [9, 12, 5, 8],
+                    bar_style: Style::default().fg(Color::Green),
+                },
+                Company {
+                    label: "Comp.B",
+                    revenue: [1, 2, 3, 4],
+                    bar_style: Style::default().fg(Color::Yellow),
+                },
+                Company {
+                    label: "Comp.C",
+                    revenue: [10, 10, 9, 4],
+                    bar_style: Style::default().fg(Color::White),
+                },
+            ],
+            months: ["Mars", "Apr", "May", "Jun"],
         }
     }
 
@@ -112,8 +140,16 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .constraints(
+            [
+                Constraint::Ratio(1, 3),
+                Constraint::Ratio(1, 3),
+                Constraint::Ratio(1, 3),
+            ]
+            .as_ref(),
+        )
         .split(f.size());
+
     let barchart = BarChart::default()
         .block(Block::default().title("Data1").borders(Borders::ALL))
         .data(&app.data)
@@ -122,35 +158,92 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .value_style(Style::default().fg(Color::Black).bg(Color::Yellow));
     f.render_widget(barchart, chunks[0]);
 
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(chunks[1]);
+    draw_bar_with_group_labels(f, app, chunks[1], false);
+    draw_bar_with_group_labels(f, app, chunks[2], true);
+}
 
-    let barchart = BarChart::default()
-        .block(Block::default().title("Data2").borders(Borders::ALL))
-        .data(&app.data)
-        .bar_width(5)
-        .bar_gap(3)
-        .bar_style(Style::default().fg(Color::Green))
-        .value_style(
-            Style::default()
-                .bg(Color::Green)
-                .add_modifier(Modifier::BOLD),
-        );
-    f.render_widget(barchart, chunks[0]);
+fn draw_bar_with_group_labels<B>(f: &mut Frame<B>, app: &App, area: Rect, bar_labels: bool)
+where
+    B: Backend,
+{
+    let groups: Vec<BarGroup> = app
+        .months
+        .iter()
+        .enumerate()
+        .map(|(i, &month)| {
+            let bars: Vec<Bar> = app
+                .companies
+                .iter()
+                .map(|c| {
+                    let mut bar = Bar::default()
+                        .value(c.revenue[i])
+                        .style(c.bar_style)
+                        .value_style(
+                            Style::default()
+                                .bg(c.bar_style.fg.unwrap())
+                                .fg(Color::Black),
+                        );
+                    if bar_labels {
+                        bar = bar.label(c.label.into());
+                    }
+                    bar
+                })
+                .collect();
+            BarGroup::default().label(month.into()).bars(&bars)
+        })
+        .collect();
 
-    let barchart = BarChart::default()
-        .block(Block::default().title("Data3").borders(Borders::ALL))
-        .data(&app.data)
-        .bar_style(Style::default().fg(Color::Red))
+    let mut barchart = BarChart::default()
+        .block(Block::default().title("Data1").borders(Borders::ALL))
         .bar_width(7)
-        .bar_gap(0)
-        .value_style(Style::default().bg(Color::Red))
-        .label_style(
+        .group_gap(3);
+
+    for group in groups {
+        barchart = barchart.data(group)
+    }
+
+    f.render_widget(barchart, area);
+
+    const LEGEND_HEIGHT: u16 = 6;
+    if area.height >= LEGEND_HEIGHT && area.width >= TOTAL_REVENUE.len() as u16 + 2 {
+        let legend_area = Rect {
+            height: LEGEND_HEIGHT,
+            width: TOTAL_REVENUE.len() as u16 + 2,
+            y: area.y,
+            x: area.x,
+        };
+        draw_legend(f, legend_area);
+    }
+}
+
+fn draw_legend<B>(f: &mut Frame<B>, area: Rect)
+where
+    B: Backend,
+{
+    let text = vec![
+        Line::from(Span::styled(
+            TOTAL_REVENUE,
             Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::ITALIC),
-        );
-    f.render_widget(barchart, chunks[1]);
+                .add_modifier(Modifier::BOLD)
+                .fg(Color::White),
+        )),
+        Line::from(Span::styled(
+            "- Company A",
+            Style::default().fg(Color::Green),
+        )),
+        Line::from(Span::styled(
+            "- Company B",
+            Style::default().fg(Color::Yellow),
+        )),
+        Line::from(vec![Span::styled(
+            "- Company C",
+            Style::default().fg(Color::White),
+        )]),
+    ];
+
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::White));
+    let paragraph = Paragraph::new(text).block(block);
+    f.render_widget(paragraph, area);
 }
