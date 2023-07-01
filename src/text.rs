@@ -244,8 +244,9 @@ impl<'a> Styled for Span<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self {
-        Self::styled(self.content, style)
+    fn set_style(mut self, style: Style) -> Self {
+        self.style = style;
+        self
     }
 }
 

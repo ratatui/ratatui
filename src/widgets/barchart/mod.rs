@@ -1,10 +1,4 @@
-use crate::{
-    buffer::Buffer,
-    layout::Rect,
-    style::Style,
-    symbols,
-    widgets::{Block, Widget},
-};
+use crate::prelude::*;
 
 mod bar;
 mod bar_group;
@@ -25,9 +19,9 @@ pub use bar_group::BarGroup;
 ///     .bar_width(3)
 ///     .bar_gap(1)
 ///     .group_gap(3)
-///     .bar_style(Style::default().fg(Color::Yellow).bg(Color::Red))
-///     .value_style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))
-///     .label_style(Style::default().fg(Color::White))
+///     .bar_style(Style::new().yellow().on_red())
+///     .value_style(Style::new().red().bold())
+///     .label_style(Style::new().white())
 ///     .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
 ///     .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]))
 ///     .max(4);
@@ -329,16 +323,23 @@ impl<'a> Widget for BarChart<'a> {
     }
 }
 
+impl<'a> Styled for BarChart<'a> {
+    type Item = BarChart<'a>;
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self {
+        self.style(style)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use itertools::iproduct;
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        style::Color,
-        widgets::{BorderType, Borders},
-    };
+    use crate::assert_buffer_eq;
 
     #[test]
     fn default() {
@@ -418,7 +419,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
-            .bar_style(Style::default().fg(Color::Red));
+            .bar_style(Style::new().red());
         widget.render(buffer.area, &mut buffer);
         let mut expected = Buffer::with_lines(vec![
             "  █            ",
@@ -515,7 +516,7 @@ mod tests {
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
             .bar_width(3)
-            .value_style(Style::default().fg(Color::Red));
+            .value_style(Style::new().red());
         widget.render(buffer.area, &mut buffer);
         let mut expected = Buffer::with_lines(vec![
             "    ███        ",
@@ -532,7 +533,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
-            .label_style(Style::default().fg(Color::Red));
+            .label_style(Style::new().red());
         widget.render(buffer.area, &mut buffer);
         let mut expected = Buffer::with_lines(vec![
             "  █            ",
@@ -549,7 +550,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
-            .style(Style::default().fg(Color::Red));
+            .style(Style::new().red());
         widget.render(buffer.area, &mut buffer);
         let mut expected = Buffer::with_lines(vec![
             "  █            ",
@@ -720,5 +721,16 @@ mod tests {
                 BarChart::default().data(BarGroup::default().bars(&[Bar::default().value(2)]));
             assert_eq!(barchart.label_height(), 0);
         }
+    }
+
+    #[test]
+    fn can_be_stylized() {
+        assert_eq!(
+            BarChart::default().black().on_white().bold().style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+        )
     }
 }

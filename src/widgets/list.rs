@@ -3,7 +3,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::{
     buffer::Buffer,
     layout::{Corner, Rect},
-    style::Style,
+    style::{Style, Styled},
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
 };
@@ -291,6 +291,30 @@ impl<'a> Widget for List<'a> {
     }
 }
 
+impl<'a> Styled for List<'a> {
+    type Item = List<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
+    }
+}
+
+impl<'a> Styled for ListItem<'a> {
+    type Item = ListItem<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::borrow::Cow;
@@ -298,7 +322,7 @@ mod tests {
     use super::*;
     use crate::{
         assert_buffer_eq,
-        style::Color,
+        style::{Color, Modifier, Stylize},
         text::{Line, Span},
         widgets::{Borders, StatefulWidget, Widget},
     };
@@ -879,5 +903,29 @@ mod tests {
             state.offset, 4,
             "did not scroll the selected item into view"
         );
+    }
+
+    #[test]
+    fn list_can_be_stylized() {
+        assert_eq!(
+            List::new(vec![]).black().on_white().bold().not_dim().style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::DIM)
+        )
+    }
+
+    #[test]
+    fn list_item_can_be_stylized() {
+        assert_eq!(
+            ListItem::new("").black().on_white().bold().not_dim().style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::DIM)
+        )
     }
 }

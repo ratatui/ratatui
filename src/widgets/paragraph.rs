@@ -214,7 +214,7 @@ mod test {
     use super::*;
     use crate::{
         backend::TestBackend,
-        style::Color,
+        style::{Color, Modifier, Stylize},
         text::{Line, Span},
         widgets::Borders,
         Terminal,
@@ -701,5 +701,17 @@ mod test {
             &trimmed_paragraph,
             Buffer::with_lines(vec!["こんにちは,    ", "世界! 😃      "]),
         );
+    }
+
+    #[test]
+    fn can_be_stylized() {
+        assert_eq!(
+            Paragraph::new("").black().on_white().bold().not_dim().style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::DIM)
+        )
     }
 }

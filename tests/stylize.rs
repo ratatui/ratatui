@@ -1,88 +1,114 @@
+use std::io;
+
 use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Stylize},
-    widgets::{Block, Borders, Paragraph},
+    style::{Color, Style, Stylize},
+    widgets::{BarChart, Block, Borders, Paragraph},
     Terminal,
 };
 
 #[test]
-fn paragraph_block_styles() {
-    let backend = TestBackend::new(10, 1);
-    let mut terminal = Terminal::new(backend).unwrap();
+fn barchart_can_be_stylized() {
+    let barchart = BarChart::default()
+        .on_white()
+        .bar_style(Style::new().red())
+        .bar_width(2)
+        .value_style(Style::new().green())
+        .label_style(Style::new().blue())
+        .data(&[("A", 1), ("B", 2), ("C", 3)])
+        .max(3);
 
+    let area = Rect::new(0, 0, 9, 5);
+    let mut terminal = Terminal::new(TestBackend::new(9, 6)).unwrap();
     terminal
         .draw(|f| {
-            let paragraph = Paragraph::new("Text".cyan());
-            f.render_widget(
-                paragraph,
-                Rect {
-                    x: 0,
-                    y: 0,
-                    width: 10,
-                    height: 1,
-                },
-            );
+            f.render_widget(barchart, area);
         })
         .unwrap();
 
-    let mut expected = Buffer::with_lines(vec!["Text      "]);
-    for x in 0..4 {
-        expected.get_mut(x, 0).set_fg(Color::Cyan);
+    let mut expected = Buffer::with_lines(vec![
+        "      ██ ",
+        "   ▅▅ ██ ",
+        "▂▂ ██ ██ ",
+        "1█ 2█ 3█ ",
+        "A  B  C  ",
+        "         ",
+    ]);
+    for y in area.y..area.height {
+        // background
+        for x in area.x..area.width {
+            expected.get_mut(x, y).set_bg(Color::White);
+        }
+        // bars
+        for x in [0, 1, 3, 4, 6, 7].iter() {
+            expected.get_mut(*x, y).set_fg(Color::Red);
+        }
+    }
+    // values
+    for x in 0..3 {
+        expected.get_mut(x * 3, 3).set_fg(Color::Green);
+    }
+    // labels
+    for x in 0..3 {
+        expected.get_mut(x * 3, 4).set_fg(Color::Blue);
+        expected.get_mut(x * 3 + 1, 4).set_fg(Color::Reset);
     }
 
     terminal.backend().assert_buffer(&expected);
 }
 
 #[test]
-fn block_styles() {
-    let backend = TestBackend::new(10, 10);
-    let mut terminal = Terminal::new(backend).unwrap();
+fn block_can_be_stylized() -> io::Result<()> {
+    let block = Block::default()
+        .title("Title".light_blue())
+        .on_cyan()
+        .cyan()
+        .borders(Borders::ALL);
 
-    terminal
-        .draw(|f| {
-            let block = Block::default()
-                .title("Title".light_blue())
-                .on_cyan()
-                .cyan()
-                .borders(Borders::ALL);
-            f.render_widget(
-                block,
-                Rect {
-                    x: 0,
-                    y: 0,
-                    width: 8,
-                    height: 8,
-                },
-            );
-        })
-        .unwrap();
+    let area = Rect::new(0, 0, 8, 3);
+    let mut terminal = Terminal::new(TestBackend::new(11, 4))?;
+    terminal.draw(|f| {
+        f.render_widget(block, area);
+    })?;
 
     let mut expected = Buffer::with_lines(vec![
-        "┌Title─┐  ",
-        "│      │  ",
-        "│      │  ",
-        "│      │  ",
-        "│      │  ",
-        "│      │  ",
-        "│      │  ",
-        "└──────┘  ",
-        "          ",
-        "          ",
+        "┌Title─┐   ",
+        "│      │   ",
+        "└──────┘   ",
+        "           ",
     ]);
-    for x in 0..8 {
-        for y in 0..8 {
+    for x in area.x..area.width {
+        for y in area.y..area.height {
             expected
                 .get_mut(x, y)
                 .set_fg(Color::Cyan)
                 .set_bg(Color::Cyan);
         }
     }
-
     for x in 1..=5 {
         expected.get_mut(x, 0).set_fg(Color::LightBlue);
     }
 
     terminal.backend().assert_buffer(&expected);
+    Ok(())
+}
+
+#[test]
+fn paragraph_can_be_stylized() -> io::Result<()> {
+    let paragraph = Paragraph::new("Text".cyan());
+
+    let area = Rect::new(0, 0, 10, 1);
+    let mut terminal = Terminal::new(TestBackend::new(10, 1))?;
+    terminal.draw(|f| {
+        f.render_widget(paragraph, area);
+    })?;
+
+    let mut expected = Buffer::with_lines(vec!["Text      "]);
+    for x in 0..4 {
+        expected.get_mut(x, 0).set_fg(Color::Cyan);
+    }
+    terminal.backend().assert_buffer(&expected);
+    Ok(())
 }

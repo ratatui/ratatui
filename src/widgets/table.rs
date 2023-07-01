@@ -3,7 +3,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
-    style::Style,
+    style::{Style, Styled},
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
 };
@@ -55,6 +55,18 @@ where
             content: content.into(),
             style: Style::default(),
         }
+    }
+}
+
+impl<'a> Styled for Cell<'a> {
+    type Item = Cell<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
     }
 }
 
@@ -133,6 +145,18 @@ impl<'a> Row<'a> {
     /// Returns the total height of the row.
     fn total_height(&self) -> u16 {
         self.height.saturating_add(self.bottom_margin)
+    }
+}
+
+impl<'a> Styled for Row<'a> {
+    type Item = Row<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
     }
 }
 
@@ -336,6 +360,18 @@ impl<'a> Table<'a> {
     }
 }
 
+impl<'a> Styled for Table<'a> {
+    type Item = Table<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct TableState {
     offset: usize,
@@ -505,11 +541,59 @@ impl<'a> Widget for Table<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::vec;
 
+    use super::*;
+    use crate::style::{Color, Modifier, Style, Stylize};
     #[test]
     #[should_panic]
     fn table_invalid_percentages() {
         Table::new(vec![]).widths(&[Constraint::Percentage(110)]);
+    }
+
+    #[test]
+    fn cell_can_be_stylized() {
+        assert_eq!(
+            Cell::from("").black().on_white().bold().not_dim().style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::DIM)
+        )
+    }
+
+    #[test]
+    fn row_can_be_stylized() {
+        assert_eq!(
+            Row::new(vec![Cell::from("")])
+                .black()
+                .on_white()
+                .bold()
+                .not_italic()
+                .style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::ITALIC)
+        )
+    }
+
+    #[test]
+    fn table_can_be_stylized() {
+        assert_eq!(
+            Table::new(vec![Row::new(vec![Cell::from("")])])
+                .black()
+                .on_white()
+                .bold()
+                .not_crossed_out()
+                .style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::CROSSED_OUT)
+        )
     }
 }

@@ -514,7 +514,10 @@ impl<'a> Styled for Block<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::layout::Rect;
+    use crate::{
+        layout::Rect,
+        style::{Color, Modifier, Stylize},
+    };
 
     #[test]
     fn inner_takes_into_account_the_borders() {
@@ -871,5 +874,17 @@ mod tests {
             .border_style(_DEFAULT_STYLE)
             .style(_DEFAULT_STYLE)
             .padding(_DEFAULT_PADDING);
+    }
+
+    #[test]
+    fn can_be_stylized() {
+        assert_eq!(
+            Block::default().black().on_white().bold().not_dim().style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::DIM)
+        )
     }
 }
