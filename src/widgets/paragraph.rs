@@ -3,7 +3,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::{
     buffer::Buffer,
     layout::{Alignment, Rect},
-    style::Style,
+    style::{Style, Styled},
     text::{StyledGrapheme, Text},
     widgets::{
         reflow::{LineComposer, LineTruncator, WordWrapper},
@@ -194,6 +194,18 @@ impl<'a> Widget for Paragraph<'a> {
                 break;
             }
         }
+    }
+}
+
+impl<'a> Styled for Paragraph<'a> {
+    type Item = Paragraph<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
     }
 }
 

@@ -12,7 +12,7 @@ use crossterm::{
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     symbols,
     text::Span,
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType},
@@ -190,12 +190,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let chart = Chart::new(datasets)
         .block(
             Block::default()
-                .title(Span::styled(
-                    "Chart 1",
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD),
-                ))
+                .title("Chart 1".cyan().bold())
                 .borders(Borders::ALL),
         )
         .x_axis(
@@ -209,11 +204,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             Axis::default()
                 .title("Y Axis")
                 .style(Style::default().fg(Color::Gray))
-                .labels(vec![
-                    Span::styled("-20", Style::default().add_modifier(Modifier::BOLD)),
-                    Span::raw("0"),
-                    Span::styled("20", Style::default().add_modifier(Modifier::BOLD)),
-                ])
+                .labels(vec!["-20".bold(), "0".into(), "20".bold()])
                 .bounds([-20.0, 20.0]),
         );
     f.render_widget(chart, chunks[0]);
@@ -227,12 +218,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let chart = Chart::new(datasets)
         .block(
             Block::default()
-                .title(Span::styled(
-                    "Chart 2",
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD),
-                ))
+                .title("Chart 2".cyan().bold())
                 .borders(Borders::ALL),
         )
         .x_axis(
@@ -240,22 +226,14 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 .title("X Axis")
                 .style(Style::default().fg(Color::Gray))
                 .bounds([0.0, 5.0])
-                .labels(vec![
-                    Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
-                    Span::raw("2.5"),
-                    Span::styled("5.0", Style::default().add_modifier(Modifier::BOLD)),
-                ]),
+                .labels(vec!["0".bold(), "2.5".into(), "5.0".bold()]),
         )
         .y_axis(
             Axis::default()
                 .title("Y Axis")
                 .style(Style::default().fg(Color::Gray))
                 .bounds([0.0, 5.0])
-                .labels(vec![
-                    Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
-                    Span::raw("2.5"),
-                    Span::styled("5.0", Style::default().add_modifier(Modifier::BOLD)),
-                ]),
+                .labels(vec!["0".bold(), "2.5".into(), "5.0".bold()]),
         );
     f.render_widget(chart, chunks[1]);
 
@@ -268,12 +246,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let chart = Chart::new(datasets)
         .block(
             Block::default()
-                .title(Span::styled(
-                    "Chart 3",
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD),
-                ))
+                .title("Chart 3".cyan().bold())
                 .borders(Borders::ALL),
         )
         .x_axis(
@@ -281,22 +254,14 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 .title("X Axis")
                 .style(Style::default().fg(Color::Gray))
                 .bounds([0.0, 50.0])
-                .labels(vec![
-                    Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
-                    Span::raw("25"),
-                    Span::styled("50", Style::default().add_modifier(Modifier::BOLD)),
-                ]),
+                .labels(vec!["0".bold(), "25".into(), "50".bold()]),
         )
         .y_axis(
             Axis::default()
                 .title("Y Axis")
                 .style(Style::default().fg(Color::Gray))
                 .bounds([0.0, 5.0])
-                .labels(vec![
-                    Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
-                    Span::raw("2.5"),
-                    Span::styled("5", Style::default().add_modifier(Modifier::BOLD)),
-                ]),
+                .labels(vec!["0".bold(), "2.5".into(), "5".bold()]),
         );
     f.render_widget(chart, chunks[2]);
 }

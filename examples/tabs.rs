@@ -8,8 +8,8 @@ use crossterm::{
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
+    style::{Color, Modifier, Style, Stylize},
+    text::Line,
     widgets::{Block, Borders, Tabs},
     Frame, Terminal,
 };
@@ -93,17 +93,14 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
         .split(size);
 
-    let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
+    let block = Block::default().on_white().black();
     f.render_widget(block, size);
     let titles = app
         .titles
         .iter()
         .map(|t| {
             let (first, rest) = t.split_at(1);
-            Line::from(vec![
-                Span::styled(first, Style::default().fg(Color::Yellow)),
-                Span::styled(rest, Style::default().fg(Color::Green)),
-            ])
+            Line::from(vec![first.yellow(), rest.green()])
         })
         .collect();
     let tabs = Tabs::new(titles)

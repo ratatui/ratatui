@@ -19,7 +19,7 @@ use crossterm::{
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span, Text},
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame, Terminal,
@@ -132,21 +132,21 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let (msg, style) = match app.input_mode {
         InputMode::Normal => (
             vec![
-                Span::raw("Press "),
-                Span::styled("q", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw(" to exit, "),
-                Span::styled("e", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw(" to start editing."),
+                "Press ".into(),
+                "q".bold(),
+                " to exist, ".into(),
+                "e".bold(),
+                " to start editing.".bold(),
             ],
             Style::default().add_modifier(Modifier::RAPID_BLINK),
         ),
         InputMode::Editing => (
             vec![
-                Span::raw("Press "),
-                Span::styled("Esc", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw(" to stop editing, "),
-                Span::styled("Enter", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw(" to record the message"),
+                "Press ".into(),
+                "Esc".bold(),
+                " to stop editing, ".into(),
+                "Enter".bold(),
+                " to record the message".into(),
             ],
             Style::default(),
         ),
