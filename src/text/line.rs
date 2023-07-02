@@ -1,5 +1,7 @@
 #![allow(deprecated)]
-use super::{Span, Spans, Style};
+use std::borrow::Cow;
+
+use super::{Span, Spans, Style, StyledGrapheme};
 use crate::layout::Alignment;
 
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
@@ -9,6 +11,24 @@ pub struct Line<'a> {
 }
 
 impl<'a> Line<'a> {
+    /// Create a line with a style.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::text::Line;
+    /// # use ratatui::style::{Color, Modifier, Style};
+    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+    /// Line::styled("My text", style);
+    /// Line::styled(String::from("My text"), style);
+    /// ```
+    pub fn styled<T>(content: T, style: Style) -> Line<'a>
+    where
+        T: Into<Cow<'a, str>>,
+    {
+        Line::from(Span::styled(content, style))
+    }
+
     /// Returns the width of the underlying string.
     ///
     /// ## Examples
@@ -24,6 +44,38 @@ impl<'a> Line<'a> {
     /// ```
     pub fn width(&self) -> usize {
         self.spans.iter().map(Span::width).sum()
+    }
+
+    /// Returns an iterator over the graphemes held by this line.
+    ///
+    /// `base_style` is the [`Style`] that will be patched with each grapheme [`Style`] to get
+    /// the resulting [`Style`].
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use ratatui::text::{Line, StyledGrapheme};
+    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use std::iter::Iterator;
+    /// let line = Line::styled("Text", Style::default().fg(Color::Yellow));
+    /// let style = Style::default().fg(Color::Green).bg(Color::Black);
+    /// assert_eq!(
+    ///     line.styled_graphemes(style).collect::<Vec<StyledGrapheme>>(),
+    ///     vec![
+    ///         StyledGrapheme::new("T", Style::default().fg(Color::Yellow).bg(Color::Black)),
+    ///         StyledGrapheme::new("e", Style::default().fg(Color::Yellow).bg(Color::Black)),
+    ///         StyledGrapheme::new("x", Style::default().fg(Color::Yellow).bg(Color::Black)),
+    ///         StyledGrapheme::new("t", Style::default().fg(Color::Yellow).bg(Color::Black)),
+    ///     ]
+    /// );
+    /// ```
+    pub fn styled_graphemes(
+        &'a self,
+        base_style: Style,
+    ) -> impl Iterator<Item = StyledGrapheme<'a>> {
+        self.spans
+            .iter()
+            .flat_map(move |span| span.styled_graphemes(base_style))
     }
 
     /// Patches the style of each Span in an existing Line, adding modifiers from the given style.
@@ -146,7 +198,7 @@ mod tests {
     use crate::{
         layout::Alignment,
         style::{Color, Modifier, Style},
-        text::{Line, Span, Spans},
+        text::{Line, Span, Spans, StyledGrapheme},
     };
 
     #[test]
@@ -247,5 +299,35 @@ mod tests {
 
         let line = Line::from("This is default");
         assert_eq!(None, line.alignment);
+    }
+
+    #[test]
+    fn styled_graphemes() {
+        const RED: Style = Style::new().fg(Color::Red);
+        const GREEN: Style = Style::new().fg(Color::Green);
+        const BLUE: Style = Style::new().fg(Color::Blue);
+        const RED_ON_WHITE: Style = Style::new().fg(Color::Red).bg(Color::White);
+        const GREEN_ON_WHITE: Style = Style::new().fg(Color::Green).bg(Color::White);
+        const BLUE_ON_WHITE: Style = Style::new().fg(Color::Blue).bg(Color::White);
+
+        let line = Line::from(vec![
+            Span::styled("He", RED),
+            Span::styled("ll", GREEN),
+            Span::styled("o!", BLUE),
+        ]);
+        let styled_graphemes = line
+            .styled_graphemes(Style::new().bg(Color::White))
+            .collect::<Vec<StyledGrapheme>>();
+        assert_eq!(
+            styled_graphemes,
+            vec![
+                StyledGrapheme::new("H", RED_ON_WHITE),
+                StyledGrapheme::new("e", RED_ON_WHITE),
+                StyledGrapheme::new("l", GREEN_ON_WHITE),
+                StyledGrapheme::new("l", GREEN_ON_WHITE),
+                StyledGrapheme::new("o", BLUE_ON_WHITE),
+                StyledGrapheme::new("!", BLUE_ON_WHITE),
+            ],
+        );
     }
 }
