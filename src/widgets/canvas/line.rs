@@ -15,8 +15,12 @@ pub struct Line {
 
 impl Shape for Line {
     fn draw(&self, painter: &mut Painter) {
-        let Some((x1, y1)) =  painter.get_point(self.x1, self.y1) else { return };
-        let Some((x2, y2)) = painter.get_point(self.x2, self.y2) else { return };
+        let Some((x1, y1)) = painter.get_point(self.x1, self.y1) else {
+            return;
+        };
+        let Some((x2, y2)) = painter.get_point(self.x2, self.y2) else {
+            return;
+        };
         let (dx, x_range) = if x2 >= x1 {
             (x2 - x1, x1..=x2)
         } else {

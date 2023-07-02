@@ -459,7 +459,9 @@ where
 
         let width = canvas_area.width as usize;
 
-        let Some(ref painter) = self.painter else { return };
+        let Some(ref painter) = self.painter else {
+            return;
+        };
 
         // Create a blank context that match the size of the canvas
         let mut ctx = Context::new(
