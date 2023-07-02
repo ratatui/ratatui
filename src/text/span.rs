@@ -70,50 +70,16 @@ impl<'a> Span<'a> {
     /// # use ratatui::text::{Span, StyledGrapheme};
     /// # use ratatui::style::{Color, Modifier, Style};
     /// # use std::iter::Iterator;
-    /// let style = Style::default().fg(Color::Yellow);
-    /// let span = Span::styled("Text", style);
+    /// let span = Span::styled("Text", Style::default().fg(Color::Yellow));
     /// let style = Style::default().fg(Color::Green).bg(Color::Black);
-    /// let styled_graphemes = span.styled_graphemes(style);
     /// assert_eq!(
+    ///     span.styled_graphemes(style).collect::<Vec<StyledGrapheme>>(),
     ///     vec![
-    ///         StyledGrapheme {
-    ///             symbol: "T",
-    ///             style: Style {
-    ///                 fg: Some(Color::Yellow),
-    ///                 bg: Some(Color::Black),
-    ///                 add_modifier: Modifier::empty(),
-    ///                 sub_modifier: Modifier::empty(),
-    ///             },
-    ///         },
-    ///         StyledGrapheme {
-    ///             symbol: "e",
-    ///             style: Style {
-    ///                 fg: Some(Color::Yellow),
-    ///                 bg: Some(Color::Black),
-    ///                 add_modifier: Modifier::empty(),
-    ///                 sub_modifier: Modifier::empty(),
-    ///             },
-    ///         },
-    ///         StyledGrapheme {
-    ///             symbol: "x",
-    ///             style: Style {
-    ///                 fg: Some(Color::Yellow),
-    ///                 bg: Some(Color::Black),
-    ///                 add_modifier: Modifier::empty(),
-    ///                 sub_modifier: Modifier::empty(),
-    ///             },
-    ///         },
-    ///         StyledGrapheme {
-    ///             symbol: "t",
-    ///             style: Style {
-    ///                 fg: Some(Color::Yellow),
-    ///                 bg: Some(Color::Black),
-    ///                 add_modifier: Modifier::empty(),
-    ///                 sub_modifier: Modifier::empty(),
-    ///             },
-    ///         },
+    ///         StyledGrapheme::new("T", Style::default().fg(Color::Yellow).bg(Color::Black)),
+    ///         StyledGrapheme::new("e", Style::default().fg(Color::Yellow).bg(Color::Black)),
+    ///         StyledGrapheme::new("x", Style::default().fg(Color::Yellow).bg(Color::Black)),
+    ///         StyledGrapheme::new("t", Style::default().fg(Color::Yellow).bg(Color::Black)),
     ///     ],
-    ///     styled_graphemes.collect::<Vec<StyledGrapheme>>()
     /// );
     /// ```
     pub fn styled_graphemes(
