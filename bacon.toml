@@ -1,0 +1,91 @@
+# This is a configuration file for the bacon tool
+#
+# Bacon repository: https://github.com/Canop/bacon
+# Complete help on configuration: https://dystroy.org/bacon/config/
+# You can also check bacon's own bacon.toml file
+#  as an example: https://github.com/Canop/bacon/blob/main/bacon.toml
+
+default_job = "check"
+
+[jobs.check]
+command = ["cargo", "check", "--all-features", "--color", "always"]
+need_stdout = false
+
+[jobs.check-all]
+command = ["cargo", "check", "--all-targets", "--all-features", "--color", "always"]
+need_stdout = false
+
+[jobs.clippy]
+command = [
+    "cargo", "clippy",
+    "--all-targets",
+    "--color", "always",
+]
+need_stdout = false
+
+[jobs.test]
+command = [
+    "cargo", "test",
+    "--all-features",
+    "--color", "always",
+    "--", "--color", "always", # see https://github.com/Canop/bacon/issues/124
+]
+need_stdout = true
+
+[jobs.doc]
+command = [
+    "cargo", "+nightly", "doc",
+    "-Zunstable-options", "-Zrustdoc-scrape-examples",
+    "--all-features",
+    "--color", "always",
+    "--no-deps",
+]
+env.RUSTDOCFLAGS = "--cfg docsrs"
+need_stdout = false
+
+# If the doc compiles, then it opens in your browser and bacon switches
+# to the previous job
+[jobs.doc-open]
+command = [
+    "cargo", "+nightly", "doc",
+    "-Zunstable-options", "-Zrustdoc-scrape-examples",
+    "--all-features",
+    "--color", "always",
+    "--no-deps",
+    "--open",
+]
+env.RUSTDOCFLAGS = "--cfg docsrs"
+need_stdout = false
+on_success = "job:doc" # so that we don't open the browser at each change
+
+# You can run your application and have the result displayed in bacon,
+# *if* it makes sense for this crate. You can run an example the same
+# way. Don't forget the `--color always` part or the errors won't be
+# properly parsed.
+[jobs.run]
+command = [
+    "cargo", "run",
+    "--color", "always",
+    # put launch parameters for your program behind a `--` separator
+]
+need_stdout = true
+allow_warnings = true
+
+[jobs.check-crossterm]
+command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "crossterm"]
+
+[jobs.check-termion]
+command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "termion"]
+
+[jobs.check-termwiz]
+command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "termwiz"]
+
+# You may define here keybindings that would be specific to
+# a project, for example a shortcut to launch a specific job.
+# Shortcuts to internal functions (scrolling, toggling, etc.)
+# should go in your personal global prefs.toml file instead.
+[keybindings]
+# alt-m = "job:my-job"
+ctrl-c = "job:check-crossterm"
+ctrl-t = "job:check-termion"
+ctrl-w = "job:check-termwiz"
