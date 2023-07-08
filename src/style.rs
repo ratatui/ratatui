@@ -245,9 +245,9 @@ impl Style {
     /// assert_eq!(patched.add_modifier, Modifier::BOLD | Modifier::ITALIC);
     /// assert_eq!(patched.sub_modifier, Modifier::empty());
     /// ```
-    pub fn add_modifier(mut self, modifier: Modifier) -> Style {
-        self.sub_modifier.remove(modifier);
-        self.add_modifier.insert(modifier);
+    pub const fn add_modifier(mut self, modifier: Modifier) -> Style {
+        self.sub_modifier = self.sub_modifier.difference(modifier);
+        self.add_modifier = self.add_modifier.union(modifier);
         self
     }
 
@@ -265,9 +265,9 @@ impl Style {
     /// assert_eq!(patched.add_modifier, Modifier::BOLD);
     /// assert_eq!(patched.sub_modifier, Modifier::ITALIC);
     /// ```
-    pub fn remove_modifier(mut self, modifier: Modifier) -> Style {
-        self.add_modifier.remove(modifier);
-        self.sub_modifier.insert(modifier);
+    pub const fn remove_modifier(mut self, modifier: Modifier) -> Style {
+        self.add_modifier = self.add_modifier.difference(modifier);
+        self.sub_modifier = self.sub_modifier.union(modifier);
         self
     }
 
@@ -500,9 +500,31 @@ mod tests {
             );
         }
     }
+
     #[test]
     fn style_can_be_const() {
-        const _DEFAULT_STYLE: Style = Style::new().fg(Color::Red).bg(Color::Black);
+        const RED: Color = Color::Red;
+        const BLACK: Color = Color::Black;
+        const BOLD: Modifier = Modifier::BOLD;
+        const ITALIC: Modifier = Modifier::ITALIC;
+
         const _RESET: Style = Style::reset();
+        const _RED_FG: Style = Style::new().fg(RED);
+        const _BLACK_BG: Style = Style::new().bg(BLACK);
+        const _ADD_BOLD: Style = Style::new().add_modifier(BOLD);
+        const _REMOVE_ITALIC: Style = Style::new().remove_modifier(ITALIC);
+        const ALL: Style = Style::new()
+            .fg(RED)
+            .bg(BLACK)
+            .add_modifier(BOLD)
+            .remove_modifier(ITALIC);
+        assert_eq!(
+            ALL,
+            Style::new()
+                .fg(Color::Red)
+                .bg(Color::Black)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::ITALIC)
+        )
     }
 }
