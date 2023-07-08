@@ -219,3 +219,245 @@ impl<'a> Widget for BarChart<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use itertools::iproduct;
+
+    use super::*;
+    use crate::{
+        assert_buffer_eq,
+        style::Color,
+        widgets::{BorderType, Borders},
+    };
+
+    #[test]
+    fn default() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        let widget = BarChart::default();
+        widget.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["          "; 3]));
+    }
+
+    #[test]
+    fn data() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let widget = BarChart::default().data(&[("foo", 1), ("bar", 2)]);
+        widget.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "  █            ",
+                "█ █            ",
+                "f b            ",
+            ])
+        );
+    }
+
+    #[test]
+    fn block() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 5));
+        let block = Block::default()
+            .title("Block")
+            .border_type(BorderType::Double)
+            .borders(Borders::ALL);
+        let widget = BarChart::default()
+            .data(&[("foo", 1), ("bar", 2)])
+            .block(block);
+        widget.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "╔Block════════╗",
+                "║  █          ║",
+                "║█ █          ║",
+                "║f b          ║",
+                "╚═════════════╝",
+            ])
+        );
+    }
+
+    #[test]
+    fn max() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let without_max = BarChart::default().data(&[("foo", 1), ("bar", 2), ("baz", 100)]);
+        without_max.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "    █          ",
+                "    █          ",
+                "f b b          ",
+            ])
+        );
+        let with_max = BarChart::default()
+            .data(&[("foo", 1), ("bar", 2), ("baz", 100)])
+            .max(2);
+        with_max.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "  █ █          ",
+                "█ █ █          ",
+                "f b b          ",
+            ])
+        );
+    }
+
+    #[test]
+    fn bar_style() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let widget = BarChart::default()
+            .data(&[("foo", 1), ("bar", 2)])
+            .bar_style(Style::default().fg(Color::Red));
+        widget.render(buffer.area, &mut buffer);
+        let mut expected = Buffer::with_lines(vec![
+            "  █            ",
+            "█ █            ",
+            "f b            ",
+        ]);
+        for (x, y) in iproduct!([0, 2], [0, 1]) {
+            expected.get_mut(x, y).set_fg(Color::Red);
+        }
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn bar_width() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let widget = BarChart::default()
+            .data(&[("foo", 1), ("bar", 2)])
+            .bar_width(3);
+        widget.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "    ███        ",
+                "█1█ █2█        ",
+                "foo bar        ",
+            ])
+        );
+    }
+
+    #[test]
+    fn bar_gap() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let widget = BarChart::default()
+            .data(&[("foo", 1), ("bar", 2)])
+            .bar_gap(2);
+        widget.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "   █           ",
+                "█  █           ",
+                "f  b           ",
+            ])
+        );
+    }
+
+    #[test]
+    fn bar_set() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let widget = BarChart::default()
+            .data(&[("foo", 0), ("bar", 1), ("baz", 3)])
+            .bar_set(symbols::bar::THREE_LEVELS);
+        widget.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "    █          ",
+                "  ▄ █          ",
+                "f b b          ",
+            ])
+        );
+    }
+
+    #[test]
+    fn bar_set_nine_levels() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 18, 3));
+        let widget = BarChart::default()
+            .data(&[
+                ("a", 0),
+                ("b", 1),
+                ("c", 2),
+                ("d", 3),
+                ("e", 4),
+                ("f", 5),
+                ("g", 6),
+                ("h", 7),
+                ("i", 8),
+            ])
+            .bar_set(symbols::bar::NINE_LEVELS);
+        widget.render(Rect::new(0, 1, 18, 2), &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "                  ",
+                "  ▁ ▂ ▃ ▄ ▅ ▆ ▇ █ ",
+                "a b c d e f g h i ",
+            ])
+        );
+    }
+
+    #[test]
+    fn value_style() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let widget = BarChart::default()
+            .data(&[("foo", 1), ("bar", 2)])
+            .bar_width(3)
+            .value_style(Style::default().fg(Color::Red));
+        widget.render(buffer.area, &mut buffer);
+        let mut expected = Buffer::with_lines(vec![
+            "    ███        ",
+            "█1█ █2█        ",
+            "foo bar        ",
+        ]);
+        expected.get_mut(1, 1).set_fg(Color::Red);
+        expected.get_mut(5, 1).set_fg(Color::Red);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn label_style() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let widget = BarChart::default()
+            .data(&[("foo", 1), ("bar", 2)])
+            .label_style(Style::default().fg(Color::Red));
+        widget.render(buffer.area, &mut buffer);
+        let mut expected = Buffer::with_lines(vec![
+            "  █            ",
+            "█ █            ",
+            "f b            ",
+        ]);
+        expected.get_mut(0, 2).set_fg(Color::Red);
+        expected.get_mut(2, 2).set_fg(Color::Red);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn style() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let widget = BarChart::default()
+            .data(&[("foo", 1), ("bar", 2)])
+            .style(Style::default().fg(Color::Red));
+        widget.render(buffer.area, &mut buffer);
+        let mut expected = Buffer::with_lines(vec![
+            "  █            ",
+            "█ █            ",
+            "f b            ",
+        ]);
+        for (x, y) in iproduct!(0..15, 0..3) {
+            expected.get_mut(x, y).set_fg(Color::Red);
+        }
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn does_not_render_less_than_two_rows() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 1));
+        let widget = BarChart::default().data(&[("foo", 1), ("bar", 2)]);
+        widget.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(buffer, Buffer::empty(Rect::new(0, 0, 15, 1)));
+    }
+}
