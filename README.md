@@ -6,14 +6,14 @@
 dashboards. It is a community fork of the original [tui-rs](https://github.com/fdehau/tui-rs)
 project.
 
-[![Crates.io](https://img.shields.io/crates/v/ratatui?logo=rust&style=for-the-badge)](https://crates.io/crates/ratatui)
-[![License](https://img.shields.io/crates/l/ratatui?style=for-the-badge)](./LICENSE) [![GitHub CI
-Status](https://img.shields.io/github/actions/workflow/status/tui-rs-revival/ratatui/ci.yml?style=for-the-badge&logo=github)](https://github.com/tui-rs-revival/ratatui/actions?query=workflow%3ACI+)
-[![Docs.rs](https://img.shields.io/docsrs/ratatui?logo=rust&style=for-the-badge)](https://docs.rs/crate/ratatui/)
+[![Crates.io](https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square)](https://crates.io/crates/ratatui)
+[![License](https://img.shields.io/crates/l/ratatui?style=flat-square)](./LICENSE) [![GitHub CI
+Status](https://img.shields.io/github/actions/workflow/status/tui-rs-revival/ratatui/ci.yml?style=flat-square&logo=github)](https://github.com/tui-rs-revival/ratatui/actions?query=workflow%3ACI+)
+[![Docs.rs](https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square)](https://docs.rs/crate/ratatui/)  
 [![Dependency
-Status](https://deps.rs/repo/github/tui-rs-revival/ratatui/status.svg?style=for-the-badge)](https://deps.rs/repo/github/tui-rs-revival/ratatui)
-[![Codecov](https://img.shields.io/codecov/c/github/tui-rs-revival/ratatui?logo=codecov&style=for-the-badge&token=BAQ8SOKEST)](https://app.codecov.io/gh/tui-rs-revival/ratatui)
-[![Discord](https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=for-the-badge)](https://discord.gg/pMCEU9hNEj)
+Status](https://deps.rs/repo/github/tui-rs-revival/ratatui/status.svg?style=flat-square)](https://deps.rs/repo/github/tui-rs-revival/ratatui)
+[![Codecov](https://img.shields.io/codecov/c/github/tui-rs-revival/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST)](https://app.codecov.io/gh/tui-rs-revival/ratatui)
+[![Discord](https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square)](https://discord.gg/pMCEU9hNEj)
 
 <!-- See RELEASE.md for instructions on creating the demo gif --->
 ![Demo of Ratatui](https://github.com/tui-rs-revival/ratatui/assets/24392180/93ab0e38-93e0-4ae0-a31b-91ae6c393185)
