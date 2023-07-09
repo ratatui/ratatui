@@ -1,9 +1,6 @@
 use std::{error::Error, io, sync::mpsc, thread, time::Duration};
 
-use ratatui::{
-    backend::{Backend, TermionBackend},
-    Terminal,
-};
+use ratatui::prelude::*;
 use termion::{
     event::Key,
     input::{MouseTerminal, TermRead},

@@ -5,14 +5,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    buffer::Buffer,
-    layout::Rect,
-    style::Style,
-    widgets::Widget,
-    Frame, Terminal,
-};
+use ratatui::prelude::*;
 
 #[derive(Default)]
 struct Label<'a> {

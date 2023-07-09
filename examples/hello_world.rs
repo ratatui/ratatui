@@ -9,7 +9,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{backend::CrosstermBackend, widgets::Paragraph, Terminal};
+use ratatui::prelude::*;
 
 /// This is a bare minimum example. There are many approaches to running an application loop, so
 /// this is not meant to be prescriptive. It is only meant to demonstrate the basic setup and

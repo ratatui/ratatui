@@ -23,13 +23,7 @@ use crossterm::{
     event::{self, Event, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    layout::Alignment,
-    text::Line,
-    widgets::{Block, Borders, Paragraph},
-    Frame, Terminal,
-};
+use ratatui::prelude::*;
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 

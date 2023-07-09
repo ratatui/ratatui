@@ -9,10 +9,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    Terminal,
-};
+use ratatui::prelude::*;
 
 use crate::{app::App, ui};
 

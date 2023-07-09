@@ -187,3 +187,36 @@ pub mod text;
 pub mod widgets;
 
 pub use self::terminal::{Frame, Terminal, TerminalOptions, Viewport};
+
+/// A prelude for conveniently writing applications using this library.
+///
+/// ```rust,no_run
+/// use ratatui::prelude::*;
+/// ```
+pub mod prelude {
+    #[cfg(feature = "crossterm")]
+    pub use crate::backend::CrosstermBackend;
+    #[cfg(feature = "termion")]
+    pub use crate::backend::TermionBackend;
+    #[cfg(feature = "termwiz")]
+    pub use crate::backend::TermwizBackend;
+    #[cfg(feature = "widget-calendar")]
+    pub use crate::widgets::calendar::{CalendarEventStore, DateStyler, Monthly};
+    pub use crate::{
+        backend::Backend,
+        buffer::Buffer,
+        layout::{Alignment, Constraint, Corner, Direction, Layout, Margin, Rect},
+        style::{Color, Modifier, Style, Stylize},
+        symbols::{self, Marker},
+        terminal::{Frame, Terminal, TerminalOptions, Viewport},
+        text::{Line, Masked, Span, Text},
+        widgets::{
+            block::{Block, Position as BlockTitlePosition, Title as BlockTitle},
+            canvas::{Canvas, Circle, Line as CanvasLine, Map, MapResolution, Rectangle},
+            Axis, BarChart, BorderType, Borders, Cell, Chart, Clear, Dataset, Gauge, GraphType,
+            LineGauge, List, ListItem, ListState, Padding, Paragraph, RenderDirection, Row,
+            ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState, Sparkline,
+            StatefulWidget, Table, TableState, Tabs, Widget, Wrap,
+        },
+    };
+}
