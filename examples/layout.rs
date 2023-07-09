@@ -46,21 +46,51 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>) {
-    let chunks = Layout::default()
+fn ui<B: Backend>(frame: &mut Frame<B>) {
+    let [top, mid, bottom] = *Layout::default()
         .direction(Direction::Vertical)
         .constraints(
             [
-                Constraint::Percentage(10),
-                Constraint::Percentage(80),
-                Constraint::Percentage(10),
+                Constraint::Length(4),
+                Constraint::Percentage(50),
+                Constraint::Min(4),
             ]
             .as_ref(),
         )
-        .split(f.size());
+        .split(frame.size())
+    else {
+        return;
+    };
+    let [left, right] = *Layout::default()
+        .direction(Direction::Horizontal)
+        .horizontal_margin(5)
+        .vertical_margin(2)
+        .constraints([Constraint::Ratio(2, 5), Constraint::Ratio(3, 5)].as_ref())
+        .split(mid)
+    else {
+        return;
+    };
+    frame.render_widget(
+        Paragraph::new("Constraint::Length(4)").block(Block::default().borders(Borders::ALL)),
+        top,
+    );
 
-    let block = Block::default().title("Block").borders(Borders::ALL);
-    f.render_widget(block, chunks[0]);
-    let block = Block::default().title("Block 2").borders(Borders::ALL);
-    f.render_widget(block, chunks[2]);
+    frame.render_widget(
+        Paragraph::new("Constraint::Percentage(50)").block(Block::default().borders(Borders::ALL)),
+        mid,
+    );
+
+    frame.render_widget(
+        Paragraph::new("Constraint::Ratio(2, 5)\nhorizontal_margin(5)\nvertical_margin(2)")
+            .block(Block::default().borders(Borders::ALL)),
+        left,
+    );
+    frame.render_widget(
+        Paragraph::new("Constraint::Ratio(3, 5)").block(Block::default().borders(Borders::ALL)),
+        right,
+    );
+    frame.render_widget(
+        Paragraph::new("Constraint::Min(4)").block(Block::default().borders(Borders::ALL)),
+        bottom,
+    );
 }

@@ -111,7 +111,6 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .margin(2)
         .constraints(
             [
                 Constraint::Min(1),
