@@ -53,6 +53,7 @@ argh = "0.1"
 cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
 criterion = { version = "0.5", features = ["html_reports"] }
 fakeit = "1.1"
+itertools = "0.10"
 rand = "0.8"
 
 [[bench]]
