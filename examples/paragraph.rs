@@ -9,14 +9,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Modifier, Style, Stylize},
-    text::{Line, Masked, Span},
-    widgets::{Block, Borders, Paragraph, Wrap},
-    Frame, Terminal,
-};
+use ratatui::prelude::*;
 
 struct App {
     scroll: u16,

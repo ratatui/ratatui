@@ -9,13 +9,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    widgets::{BarChart, Block, Borders},
-    Frame, Terminal,
-};
+use ratatui::prelude::*;
 
 struct App<'a> {
     data: Vec<(&'a str, u64)>,

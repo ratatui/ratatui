@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use ratatui::{backend::TermwizBackend, Terminal};
+use ratatui::prelude::*;
 use termwiz::{input::*, terminal::Terminal as TermwizTerminal};
 
 use crate::{app::App, ui};

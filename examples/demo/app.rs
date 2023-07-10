@@ -2,7 +2,7 @@ use rand::{
     distributions::{Distribution, Uniform},
     rngs::ThreadRng,
 };
-use ratatui::widgets::ListState;
+use ratatui::prelude::*;
 
 const TASKS: [&str; 24] = [
     "Item1", "Item2", "Item3", "Item4", "Item5", "Item6", "Item7", "Item8", "Item9", "Item10",

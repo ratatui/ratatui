@@ -5,13 +5,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Style, Stylize},
-    widgets::{block::title::Title, Block, BorderType, Borders, Padding, Paragraph},
-    Frame, Terminal,
-};
+use ratatui::prelude::*;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // setup terminal
@@ -61,7 +55,7 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
     // Surrounding block
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(Title::from("Main block with round corners").alignment(Alignment::Center))
+        .title(BlockTitle::from("Main block with round corners").alignment(Alignment::Center))
         .border_type(BorderType::Rounded);
     f.render_widget(block, size);
 
@@ -84,8 +78,9 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
     f.render_widget(block, top_chunks[0]);
 
     // Top right inner block with styled title aligned to the right
-    let block = Block::default()
-        .title(Title::from("Styled title".white().on_red().bold()).alignment(Alignment::Right));
+    let block = Block::default().title(
+        BlockTitle::from("Styled title".white().on_red().bold()).alignment(Alignment::Right),
+    );
     f.render_widget(block, top_chunks[1]);
 
     // Bottom two inner blocks

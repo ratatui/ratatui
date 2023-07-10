@@ -5,14 +5,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style, Stylize},
-    text::Line,
-    widgets::{Block, Borders, Tabs},
-    Frame, Terminal,
-};
+use ratatui::prelude::*;
 
 struct App<'a> {
     pub titles: Vec<&'a str>,

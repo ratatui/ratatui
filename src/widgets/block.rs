@@ -1,7 +1,7 @@
 #[path = "../title.rs"]
 pub mod title;
 
-use self::title::{Position, Title};
+pub use self::title::{Position, Title};
 use crate::{
     buffer::Buffer,
     layout::{Alignment, Rect},

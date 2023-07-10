@@ -5,13 +5,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::Stylize,
-    widgets::{Block, Borders, Clear, Paragraph, Wrap},
-    Frame, Terminal,
-};
+use ratatui::prelude::*;
 
 struct App {
     show_popup: bool,
