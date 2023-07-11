@@ -37,7 +37,7 @@ fn widgets_barchart_not_full_below_max_value() {
         "│       █████████████████████│",
         "│       █████████████████████│",
         "│       ██50█████99█████100██│",
-        "│empty  half   almost full   │",
+        "│ empty  half  almost  full  │",
         "└────────────────────────────┘",
     ]));
 }

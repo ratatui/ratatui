@@ -82,7 +82,7 @@ impl<'a> Bar<'a> {
         if let Some(mut label) = self.label {
             label.patch_style(default_style);
             buf.set_line(
-                x,
+                x + (max_width.saturating_sub(label.width() as u16) >> 1),
                 y,
                 &label,
                 max_width,
