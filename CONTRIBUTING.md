@@ -105,6 +105,14 @@ If an area that you're making a change in is not tested, write tests to characte
 behavior before changing it. This helps ensure that we don't introduce bugs to existing software
 using Ratatui (and helps make it easy to migrate apps still using `tui-rs`).
 
+For coverage, we have two [bacon](https://dystroy.org/bacon/) jobs (one for all tests, and one for
+unit tests, keyboard shortcuts `v` and `u` respectively) that run
+[cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov) to report the coverage. Several plugins
+exist to show coverage directly in your editor. E.g.:
+
+- <https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters>
+- <https://github.com/alepez/vim-llvmcov>
+
 ### Use of unsafe for optimization purposes
 
 We don't currently use any unsafe code in Ratatui, and would like to keep it that way. However there
