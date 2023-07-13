@@ -213,9 +213,9 @@ pub mod prelude {
         widgets::{
             block::{Block, Position as BlockTitlePosition, Title as BlockTitle},
             canvas::{Canvas, Circle, Line as CanvasLine, Map, MapResolution, Rectangle},
-            Axis, BarChart, BorderType, Borders, Cell, Chart, Clear, Dataset, Gauge, GraphType,
-            LineGauge, List, ListItem, ListState, Padding, Paragraph, RenderDirection, Row,
-            ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState, Sparkline,
+            Axis, Bar, BarChart, BarGroup, BorderType, Borders, Cell, Chart, Clear, Dataset, Gauge,
+            GraphType, LineGauge, List, ListItem, ListState, Padding, Paragraph, RenderDirection,
+            Row, ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState, Sparkline,
             StatefulWidget, Table, TableState, Tabs, Widget, Wrap,
         },
     };

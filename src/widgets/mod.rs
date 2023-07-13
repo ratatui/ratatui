@@ -37,7 +37,7 @@ use std::fmt::{self, Debug};
 use bitflags::bitflags;
 
 pub use self::{
-    barchart::BarChart,
+    barchart::{Bar, BarChart, BarGroup},
     block::{Block, BorderType, Padding},
     chart::{Axis, Chart, Dataset, GraphType},
     clear::Clear,
