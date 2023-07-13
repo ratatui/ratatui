@@ -279,6 +279,8 @@ impl<'a> Widget for LineGauge<'a> {
                 .set_style(Style {
                     fg: self.gauge_style.fg,
                     bg: None,
+                    #[cfg(feature = "crossterm")]
+                    underline_color: self.gauge_style.underline_color,
                     add_modifier: self.gauge_style.add_modifier,
                     sub_modifier: self.gauge_style.sub_modifier,
                 });
@@ -289,6 +291,8 @@ impl<'a> Widget for LineGauge<'a> {
                 .set_style(Style {
                     fg: self.gauge_style.bg,
                     bg: None,
+                    #[cfg(feature = "crossterm")]
+                    underline_color: self.gauge_style.underline_color,
                     add_modifier: self.gauge_style.add_modifier,
                     sub_modifier: self.gauge_style.sub_modifier,
                 });
