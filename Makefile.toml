@@ -18,18 +18,18 @@ run_task = [
 private = true
 dependencies = [
   "style-check",
+  "clippy-unix",
   "check-unix",
   "test-unix",
-  "clippy-unix",
 ]
 
 [tasks.ci-windows]
 private = true
 dependencies = [
   "style-check",
+  "clippy-windows",
   "check-windows",
   "test-windows",
-  "clippy-windows",
 ]
 
 [tasks.style-check]
