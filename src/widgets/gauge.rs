@@ -1,7 +1,7 @@
 use crate::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Style},
+    style::{Color, Style, Styled},
     symbols,
     text::{Line, Span},
     widgets::{Block, Widget},
@@ -296,9 +296,34 @@ impl<'a> Widget for LineGauge<'a> {
     }
 }
 
+impl<'a> Styled for Gauge<'a> {
+    type Item = Gauge<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
+    }
+}
+
+impl<'a> Styled for LineGauge<'a> {
+    type Item = LineGauge<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::style::{Modifier, Stylize};
 
     #[test]
     #[should_panic]
@@ -316,5 +341,34 @@ mod tests {
     #[should_panic]
     fn gauge_invalid_ratio_lower_bound() {
         Gauge::default().ratio(-0.5);
+    }
+
+    #[test]
+    fn gauge_can_be_stylized() {
+        assert_eq!(
+            Gauge::default().black().on_white().bold().not_dim().style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::DIM)
+        )
+    }
+
+    #[test]
+    fn line_gauge_can_be_stylized() {
+        assert_eq!(
+            LineGauge::default()
+                .black()
+                .on_white()
+                .bold()
+                .not_dim()
+                .style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::DIM)
+        )
     }
 }

@@ -206,7 +206,7 @@ pub mod prelude {
         backend::Backend,
         buffer::Buffer,
         layout::{Alignment, Constraint, Corner, Direction, Layout, Margin, Rect},
-        style::{Color, Modifier, Style, Stylize},
+        style::{Color, Modifier, Style, Styled, Stylize},
         symbols::{self, Marker},
         terminal::{Frame, Terminal, TerminalOptions, Viewport},
         text::{Line, Masked, Span, Text},

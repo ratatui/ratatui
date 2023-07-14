@@ -1,7 +1,7 @@
 use crate::{
     buffer::Buffer,
     layout::Rect,
-    style::Style,
+    style::{Style, Styled},
     symbols,
     text::{Line, Span},
     widgets::{Block, Widget},
@@ -83,6 +83,18 @@ impl<'a> Tabs<'a> {
     }
 }
 
+impl<'a> Styled for Tabs<'a> {
+    type Item = Tabs<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
+    }
+}
+
 impl<'a> Widget for Tabs<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
@@ -128,5 +140,28 @@ impl<'a> Widget for Tabs<'a> {
             let pos = buf.set_span(x, tabs_area.top(), &self.divider, remaining_width);
             x = pos.0;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::style::{Color, Modifier, Stylize};
+
+    #[test]
+    fn can_be_stylized() {
+        assert_eq!(
+            Tabs::new(vec![""])
+                .black()
+                .on_white()
+                .bold()
+                .not_italic()
+                .style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::ITALIC)
+        )
     }
 }

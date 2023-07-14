@@ -3,7 +3,7 @@ use std::cmp::min;
 use crate::{
     buffer::Buffer,
     layout::Rect,
-    style::Style,
+    style::{Style, Styled},
     symbols,
     widgets::{Block, Widget},
 };
@@ -89,6 +89,18 @@ impl<'a> Sparkline<'a> {
     }
 }
 
+impl<'a> Styled for Sparkline<'a> {
+    type Item = Sparkline<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
+    }
+}
+
 impl<'a> Widget for Sparkline<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
         let spark_area = match self.block.take() {
@@ -155,7 +167,11 @@ impl<'a> Widget for Sparkline<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{assert_buffer_eq, buffer::Cell};
+    use crate::{
+        assert_buffer_eq,
+        buffer::Cell,
+        style::{Color, Modifier, Stylize},
+    };
 
     // Helper function to render a sparkline to a buffer with a given width
     // filled with x symbols to make it easier to assert on the result
@@ -205,5 +221,22 @@ mod tests {
             .direction(RenderDirection::RightToLeft);
         let buffer = render(widget, 12);
         assert_buffer_eq!(buffer, Buffer::with_lines(vec!["xxx█▇▆▅▄▃▂▁ "]));
+    }
+
+    #[test]
+    fn can_be_stylized() {
+        assert_eq!(
+            Sparkline::default()
+                .black()
+                .on_white()
+                .bold()
+                .not_dim()
+                .style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::DIM)
+        )
     }
 }

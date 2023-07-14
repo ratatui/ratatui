@@ -5,7 +5,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Rect},
-    style::{Color, Style},
+    style::{Color, Style, Styled},
     symbols,
     text::{Line as TextLine, Span},
     widgets::{
@@ -612,9 +612,46 @@ impl<'a> Widget for Chart<'a> {
     }
 }
 
+impl<'a> Styled for Axis<'a> {
+    type Item = Axis<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
+    }
+}
+
+impl<'a> Styled for Dataset<'a> {
+    type Item = Dataset<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
+    }
+}
+
+impl<'a> Styled for Chart<'a> {
+    type Item = Chart<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style(self, style: Style) -> Self::Item {
+        self.style(style)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::style::{Modifier, Stylize};
 
     struct LegendTestCase {
         chart_area: Rect,
@@ -651,5 +688,41 @@ mod tests {
             let layout = chart.layout(case.chart_area);
             assert_eq!(layout.legend_area, case.legend_area);
         }
+    }
+
+    #[test]
+    fn axis_can_be_stylized() {
+        assert_eq!(
+            Axis::default().black().on_white().bold().not_dim().style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::DIM)
+        )
+    }
+
+    #[test]
+    fn dataset_can_be_stylized() {
+        assert_eq!(
+            Dataset::default().black().on_white().bold().not_dim().style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::DIM)
+        )
+    }
+
+    #[test]
+    fn chart_can_be_stylized() {
+        assert_eq!(
+            Chart::new(vec![]).black().on_white().bold().not_dim().style,
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD)
+                .remove_modifier(Modifier::DIM)
+        )
     }
 }
