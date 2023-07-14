@@ -57,17 +57,17 @@ impl<'a> App<'a> {
             companies: [
                 Company {
                     label: "Comp.A",
-                    revenue: [9, 12, 5, 8],
+                    revenue: [9500, 12500, 5300, 8500],
                     bar_style: Style::default().fg(Color::Green),
                 },
                 Company {
                     label: "Comp.B",
-                    revenue: [1, 2, 3, 4],
+                    revenue: [1500, 2500, 3000, 4100],
                     bar_style: Style::default().fg(Color::Yellow),
                 },
                 Company {
                     label: "Comp.C",
-                    revenue: [10, 10, 9, 4],
+                    revenue: [10500, 10600, 9000, 4200],
                     bar_style: Style::default().fg(Color::White),
                 },
             ],
@@ -182,7 +182,8 @@ where
                             Style::default()
                                 .bg(c.bar_style.fg.unwrap())
                                 .fg(Color::Black),
-                        );
+                        )
+                        .text_value(format!("{:.1}", (c.revenue[i] as f64) / 1000.));
                     if bar_labels {
                         bar = bar.label(c.label.into());
                     }

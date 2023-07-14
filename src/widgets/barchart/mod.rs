@@ -264,7 +264,7 @@ impl<'a> BarChart<'a> {
     fn render_labels_and_values(self, area: Rect, buf: &mut Buffer, label_height: u16) {
         // print labels and values in one go
         let mut bar_x = area.left();
-        let y_value_offset = area.bottom() - label_height - 1;
+        let bar_y = area.bottom() - label_height - 1;
         for group in self.data.into_iter() {
             // print group labels under the bars or the previous labels
             if let Some(mut label) = group.label {
@@ -282,13 +282,12 @@ impl<'a> BarChart<'a> {
 
             // print the bar values and numbers
             for bar in group.bars.into_iter() {
-                bar.render_value(buf, self.bar_width, bar_x, y_value_offset, self.value_style);
-
-                bar.render_label(
+                bar.render_label_and_value(
                     buf,
                     self.bar_width,
                     bar_x,
-                    y_value_offset + 1,
+                    bar_y,
+                    self.value_style,
                     self.label_style,
                 );
 

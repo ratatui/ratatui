@@ -63,7 +63,8 @@ fn widgets_barchart_group() {
                                 .value_style(Style::default().fg(Color::Blue)),
                             Bar::default()
                                 .value(20)
-                                .style(Style::default().fg(Color::Green)),
+                                .style(Style::default().fg(Color::Green))
+                                .text_value("20M".to_string()),
                         ]),
                     )
                     .data(&vec![("C1", 50u64), ("C2", 40u64)])
@@ -86,7 +87,7 @@ fn widgets_barchart_group() {
         "│            ▇▇▇▇        ████ ████│",
         "│            ████ ████   ████ ████│",
         "│     ▄▄▄▄   ████ ████   ████ ████│",
-        "│▆10▆ █20█   █50█ █40█   █60█ █90█│",
+        "│▆10▆ 20M█   █50█ █40█   █60█ █90█│",
         "│ C1          C1   C2     C1   C2 │",
         "│   Mar                           │",
         "└─────────────────────────────────┘",
