@@ -21,7 +21,7 @@ use super::Text;
 /// Paragraph::new(password).render(buffer.area, &mut buffer);
 /// assert_eq!(buffer, Buffer::with_lines(vec!["xxxxx"]));
 /// ```
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Masked<'a> {
     inner: Cow<'a, str>,
     mask_char: char,
@@ -86,43 +86,58 @@ impl<'a> From<Masked<'a>> for Text<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Borrow;
-
     use super::*;
     use crate::text::Line;
 
     #[test]
-    fn test_masked_value() {
+    fn new() {
+        let masked = Masked::new("12345", 'x');
+        assert_eq!(masked.inner, "12345");
+        assert_eq!(masked.mask_char, 'x');
+    }
+
+    #[test]
+    fn value() {
         let masked = Masked::new("12345", 'x');
         assert_eq!(masked.value(), "xxxxx");
     }
 
     #[test]
-    fn test_masked_debug() {
+    fn mask_char() {
+        let masked = Masked::new("12345", 'x');
+        assert_eq!(masked.mask_char(), 'x');
+    }
+
+    #[test]
+    fn debug() {
         let masked = Masked::new("12345", 'x');
         assert_eq!(format!("{masked:?}"), "12345");
     }
 
     #[test]
-    fn test_masked_display() {
+    fn display() {
         let masked = Masked::new("12345", 'x');
         assert_eq!(format!("{masked}"), "xxxxx");
     }
 
     #[test]
-    fn test_masked_conversions() {
+    fn into_text() {
         let masked = Masked::new("12345", 'x');
 
-        let text: Text = masked.borrow().into();
+        let text: Text = (&masked).into();
         assert_eq!(text.lines, vec![Line::from("xxxxx")]);
 
-        let text: Text = masked.to_owned().into();
+        let text: Text = masked.into();
         assert_eq!(text.lines, vec![Line::from("xxxxx")]);
+    }
 
-        let cow: Cow<str> = masked.borrow().into();
+    #[test]
+    fn into_cow() {
+        let masked = Masked::new("12345", 'x');
+        let cow: Cow<str> = (&masked).into();
         assert_eq!(cow, "xxxxx");
 
-        let cow: Cow<str> = masked.to_owned().into();
+        let cow: Cow<str> = masked.into();
         assert_eq!(cow, "xxxxx");
     }
 }
