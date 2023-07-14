@@ -15,6 +15,18 @@ need_stdout = false
 command = ["cargo", "check", "--all-targets", "--all-features", "--color", "always"]
 need_stdout = false
 
+[jobs.check-crossterm]
+command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "crossterm"]
+need_stdout = false
+
+[jobs.check-termion]
+command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "termion"]
+need_stdout = false
+
+[jobs.check-termwiz]
+command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "termwiz"]
+need_stdout = false
+
 [jobs.clippy]
 command = [
     "cargo", "clippy",
@@ -58,27 +70,22 @@ env.RUSTDOCFLAGS = "--cfg docsrs"
 need_stdout = false
 on_success = "job:doc" # so that we don't open the browser at each change
 
-# You can run your application and have the result displayed in bacon,
-# *if* it makes sense for this crate. You can run an example the same
-# way. Don't forget the `--color always` part or the errors won't be
-# properly parsed.
-[jobs.run]
+[jobs.coverage]
 command = [
-    "cargo", "run",
+    "cargo", "llvm-cov",
+    "--lcov", "--output-path", "target/lcov.info",
+    "--all-features", 
     "--color", "always",
-    # put launch parameters for your program behind a `--` separator
 ]
-need_stdout = true
-allow_warnings = true
 
-[jobs.check-crossterm]
-command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "crossterm"]
-
-[jobs.check-termion]
-command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "termion"]
-
-[jobs.check-termwiz]
-command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default-features", "--features", "termwiz"]
+[jobs.coverage-unit-tests-only]
+command = [
+    "cargo", "llvm-cov",
+    "--lcov", "--output-path", "target/lcov.info",
+    "--lib",
+    "--all-features",
+    "--color", "always",
+]
 
 # You may define here keybindings that would be specific to
 # a project, for example a shortcut to launch a specific job.
@@ -89,3 +96,5 @@ command = ["cargo", "check", "--color", "always", "--all-targets", "--no-default
 ctrl-c = "job:check-crossterm"
 ctrl-t = "job:check-termion"
 ctrl-w = "job:check-termwiz"
+v = "job:coverage"
+u = "job:coverage-unit-tests-only"
