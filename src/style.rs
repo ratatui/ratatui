@@ -198,7 +198,9 @@ impl fmt::Debug for Modifier {
 /// # use ratatui::layout::Rect;
 /// let styles = [
 ///     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD | Modifier::ITALIC),
-///     Style::default().bg(Color::Red),
+///     Style::default().bg(Color::Red).add_modifier(Modifier::UNDERLINED),
+///     #[cfg(feature = "crossterm")]
+///     Style::default().underline_color(Color::Green),
 ///     Style::default().fg(Color::Yellow).remove_modifier(Modifier::ITALIC),
 /// ];
 /// let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
@@ -209,7 +211,9 @@ impl fmt::Debug for Modifier {
 ///     Style {
 ///         fg: Some(Color::Yellow),
 ///         bg: Some(Color::Red),
-///         add_modifier: Modifier::BOLD,
+///         #[cfg(feature = "crossterm")]
+///         underline_color: Some(Color::Green),
+///         add_modifier: Modifier::BOLD | Modifier::UNDERLINED,
 ///         sub_modifier: Modifier::empty(),
 ///     },
 ///     buffer.get(0, 0).style(),
@@ -235,6 +239,8 @@ impl fmt::Debug for Modifier {
 ///     Style {
 ///         fg: Some(Color::Yellow),
 ///         bg: Some(Color::Reset),
+///         #[cfg(feature = "crossterm")]
+///         underline_color: Some(Color::Reset),
 ///         add_modifier: Modifier::empty(),
 ///         sub_modifier: Modifier::empty(),
 ///     },
@@ -246,6 +252,8 @@ impl fmt::Debug for Modifier {
 pub struct Style {
     pub fg: Option<Color>,
     pub bg: Option<Color>,
+    #[cfg(feature = "crossterm")]
+    pub underline_color: Option<Color>,
     pub add_modifier: Modifier,
     pub sub_modifier: Modifier,
 }
@@ -272,6 +280,8 @@ impl Style {
         Style {
             fg: None,
             bg: None,
+            #[cfg(feature = "crossterm")]
+            underline_color: None,
             add_modifier: Modifier::empty(),
             sub_modifier: Modifier::empty(),
         }
@@ -282,6 +292,8 @@ impl Style {
         Style {
             fg: Some(Color::Reset),
             bg: Some(Color::Reset),
+            #[cfg(feature = "crossterm")]
+            underline_color: Some(Color::Reset),
             add_modifier: Modifier::empty(),
             sub_modifier: Modifier::all(),
         }
@@ -314,6 +326,27 @@ impl Style {
     /// ```
     pub const fn bg(mut self, color: Color) -> Style {
         self.bg = Some(color);
+        self
+    }
+
+    /// Changes the underline color. The text must be underlined with a modifier for this to work.
+    ///
+    /// This uses a non-standard ANSI escape sequence. It is supported by most terminal emulators,
+    /// but is only implemented in the crossterm backend.
+    ///
+    /// See [Wikipedia](https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters) code `58` and `59` for more information.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// # use ratatui::style::{Color, Modifier, Style};
+    /// let style = Style::default().underline_color(Color::Blue).add_modifier(Modifier::UNDERLINED);
+    /// let diff = Style::default().underline_color(Color::Red).add_modifier(Modifier::UNDERLINED);
+    /// assert_eq!(style.patch(diff), Style::default().underline_color(Color::Red).add_modifier(Modifier::UNDERLINED));
+    /// ```
+    #[cfg(feature = "crossterm")]
+    pub const fn underline_color(mut self, color: Color) -> Style {
+        self.underline_color = Some(color);
         self
     }
 
@@ -373,6 +406,11 @@ impl Style {
     pub fn patch(mut self, other: Style) -> Style {
         self.fg = other.fg.or(self.fg);
         self.bg = other.bg.or(self.bg);
+
+        #[cfg(feature = "crossterm")]
+        {
+            self.underline_color = other.underline_color.or(self.underline_color);
+        }
 
         self.add_modifier.remove(other.sub_modifier);
         self.add_modifier.insert(other.add_modifier);

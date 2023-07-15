@@ -141,6 +141,8 @@ impl<'a> Span<'a> {
     ///             style: Style {
     ///                 fg: Some(Color::Yellow),
     ///                 bg: Some(Color::Black),
+    ///                 #[cfg(feature = "crossterm")]
+    ///                 underline_color: None,
     ///                 add_modifier: Modifier::empty(),
     ///                 sub_modifier: Modifier::empty(),
     ///             },
@@ -150,6 +152,8 @@ impl<'a> Span<'a> {
     ///             style: Style {
     ///                 fg: Some(Color::Yellow),
     ///                 bg: Some(Color::Black),
+    ///                 #[cfg(feature = "crossterm")]
+    ///                 underline_color: None,
     ///                 add_modifier: Modifier::empty(),
     ///                 sub_modifier: Modifier::empty(),
     ///             },
@@ -159,6 +163,8 @@ impl<'a> Span<'a> {
     ///             style: Style {
     ///                 fg: Some(Color::Yellow),
     ///                 bg: Some(Color::Black),
+    ///                 #[cfg(feature = "crossterm")]
+    ///                 underline_color: None,
     ///                 add_modifier: Modifier::empty(),
     ///                 sub_modifier: Modifier::empty(),
     ///             },
@@ -168,6 +174,8 @@ impl<'a> Span<'a> {
     ///             style: Style {
     ///                 fg: Some(Color::Yellow),
     ///                 bg: Some(Color::Black),
+    ///                 #[cfg(feature = "crossterm")]
+    ///                 underline_color: None,
     ///                 add_modifier: Modifier::empty(),
     ///                 sub_modifier: Modifier::empty(),
     ///             },
