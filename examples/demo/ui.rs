@@ -1,4 +1,7 @@
-use ratatui::prelude::*;
+use ratatui::{
+    prelude::*,
+    widgets::{canvas::*, *},
+};
 
 use crate::app::App;
 
@@ -10,7 +13,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .tabs
         .titles
         .iter()
-        .map(|t| Line::from(Span::styled(*t, Style::default().fg(Color::Green))))
+        .map(|t| text::Line::from(Span::styled(*t, Style::default().fg(Color::Green))))
         .collect();
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title(app.title))
@@ -127,7 +130,7 @@ where
                 .tasks
                 .items
                 .iter()
-                .map(|i| ListItem::new(vec![Line::from(Span::raw(*i))]))
+                .map(|i| ListItem::new(vec![text::Line::from(Span::raw(*i))]))
                 .collect();
             let tasks = List::new(tasks)
                 .block(Block::default().borders(Borders::ALL).title("List"))
@@ -151,7 +154,7 @@ where
                         "WARNING" => warning_style,
                         _ => info_style,
                     };
-                    let content = vec![Line::from(vec![
+                    let content = vec![text::Line::from(vec![
                         Span::styled(format!("{level:<9}"), s),
                         Span::raw(evt),
                     ])];
@@ -251,9 +254,9 @@ where
     B: Backend,
 {
     let text = vec![
-        Line::from("This is a paragraph with several lines. You can change style your text the way you want"),
-        Line::from(""),
-        Line::from(vec![
+        text::Line::from("This is a paragraph with several lines. You can change style your text the way you want"),
+        text::Line::from(""),
+        text::Line::from(vec![
             Span::from("For example: "),
             Span::styled("under", Style::default().fg(Color::Red)),
             Span::raw(" "),
@@ -262,7 +265,7 @@ where
             Span::styled("rainbow", Style::default().fg(Color::Blue)),
             Span::raw("."),
         ]),
-        Line::from(vec![
+        text::Line::from(vec![
             Span::raw("Oh and if you didn't "),
             Span::styled("notice", Style::default().add_modifier(Modifier::ITALIC)),
             Span::raw(" you can "),
@@ -273,7 +276,7 @@ where
             Span::styled("text", Style::default().add_modifier(Modifier::UNDERLINED)),
             Span::raw(".")
         ]),
-        Line::from(
+        text::Line::from(
             "One more thing is that it should display unicode characters: 10€"
         ),
     ];
@@ -344,7 +347,7 @@ where
             });
             for (i, s1) in app.servers.iter().enumerate() {
                 for s2 in &app.servers[i + 1..] {
-                    ctx.draw(&CanvasLine {
+                    ctx.draw(&canvas::Line {
                         x1: s1.coords.1,
                         y1: s1.coords.0,
                         y2: s2.coords.0,

@@ -14,16 +14,13 @@
 //! That's why this example is set up to show both situations, with and without
 //! the chained panic hook, to see the difference.
 
-#![deny(clippy::all)]
-#![warn(clippy::pedantic, clippy::nursery)]
-
 use std::{error::Error, io};
 
 use crossterm::{
     event::{self, Event, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::prelude::*;
+use ratatui::{prelude::*, widgets::*};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 

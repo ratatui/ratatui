@@ -8,7 +8,7 @@ use std::{
 };
 
 use rand::distributions::{Distribution, Uniform};
-use ratatui::prelude::*;
+use ratatui::{prelude::*, widgets::*};
 
 const NUM_DOWNLOADS: usize = 10;
 
@@ -219,7 +219,7 @@ fn run_app<B: Backend>(
 fn ui<B: Backend>(f: &mut Frame<B>, downloads: &Downloads) {
     let size = f.size();
 
-    let block = Block::default().title(BlockTitle::from("Progress").alignment(Alignment::Center));
+    let block = Block::default().title(block::Title::from("Progress").alignment(Alignment::Center));
     f.render_widget(block, size);
 
     let chunks = Layout::default()
