@@ -24,7 +24,7 @@ use crate::{
 /// Termwiz backend implementation for the [`Backend`] trait.
 /// # Example
 ///
-/// ```rust
+/// ```rust,no_run
 /// use ratatui::backend::{Backend, TermwizBackend};
 ///
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
