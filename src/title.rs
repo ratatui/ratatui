@@ -50,8 +50,8 @@ impl<'a> Default for Title<'a> {
     fn default() -> Self {
         Self {
             content: Line::from(""),
-            alignment: Some(Alignment::Left),
-            position: Some(Position::Top),
+            alignment: None,
+            position: None,
         }
     }
 }
