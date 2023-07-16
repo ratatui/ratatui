@@ -57,32 +57,16 @@ run_task = [
 
 [tasks.check-unix]
 private = true
-dependencies = [
-  "check-crossterm",
-  "check-termion",
-  "check-termwiz",
-]
+env = { TUI_FEATURES = "serde,crossterm,termion,termwiz" }
+run_task = "check-backend"
 
 [tasks.check-windows]
 private = true
-dependencies = [
-  "check-crossterm",
-  "check-termwiz",
-]
-
-[tasks.check-crossterm]
-env = { TUI_FEATURES = "serde,crossterm" }
-run_task = "check-backend"
-
-[tasks.check-termion]
-env = { TUI_FEATURES = "serde,termion" }
-run_task = "check-backend"
-
-[tasks.check-termwiz]
-env = { TUI_FEATURES = "serde,termwiz" }
+env = { TUI_FEATURES = "serde,crossterm,termwiz" }
 run_task = "check-backend"
 
 [tasks.check-backend]
+private = true
 command = "cargo"
 condition = { env_set = ["TUI_FEATURES"] }
 args = [
@@ -196,6 +180,19 @@ args = [
   "warnings",
 ]
 
+[tasks.clippy-all]
+command = "cargo"
+args = [
+  "clippy",
+  "--all-targets",
+  "--all-features",
+  "--tests",
+  "--benches",
+  "--",
+  "-D",
+  "warnings",
+]
+
 [tasks.test]
 run_task = [
   { name = "test-unix", condition = { platforms = [
@@ -273,3 +270,13 @@ for file in ${files}
   cm_run_task run-example
 end
 '''
+
+[tasks.coverage]
+command = "cargo"
+args = [
+  "llvm-cov",
+  "--all-features",
+  "--lcov",
+  "--output-path",
+  "lcov.info",
+]
