@@ -1,4 +1,4 @@
-use crate::{buffer::Buffer, style::Style, text::Line};
+use crate::{buffer::Buffer, prelude::Rect, style::Style, text::Line};
 
 /// represent a bar to be shown by the Barchart
 ///
@@ -56,6 +56,45 @@ impl<'a> Bar<'a> {
         self
     }
 
+    /// Render the value of the bar. value_text is used if set, otherwise the value is converted to
+    /// string. The value is rendered using value_style. If the value width is greater than the
+    /// bar width, then the value is split into 2 parts. the first part is rendered in the bar
+    /// using value_style. The second part is rendered outside the bar using bar_style
+    pub(super) fn render_value_with_different_styles(
+        self,
+        buf: &mut Buffer,
+        area: Rect,
+        bar_length: usize,
+        default_value_style: Style,
+        bar_style: Style,
+    ) {
+        let text = if let Some(text) = self.text_value {
+            text
+        } else {
+            self.value.to_string()
+        };
+
+        if !text.is_empty() {
+            let style = default_value_style.patch(self.value_style);
+            // Since the value may be longer than the bar itself, we need to use 2 different styles
+            // while rendering. Render the first part with the default value style
+            buf.set_stringn(area.x, area.y, &text, bar_length, style);
+            // render the second part with the bar_style
+            if text.len() > bar_length {
+                let (first, second) = text.split_at(bar_length);
+
+                let style = bar_style.patch(self.style);
+                buf.set_stringn(
+                    area.x + first.len() as u16,
+                    area.y,
+                    second,
+                    area.width as usize - first.len(),
+                    style,
+                );
+            }
+        }
+    }
+
     pub(super) fn render_label_and_value(
         self,
         buf: &mut Buffer,
@@ -79,14 +118,18 @@ impl<'a> Bar<'a> {
                     x + (max_width.saturating_sub(value_label.len() as u16) >> 1),
                     y,
                     value_label,
-                    self.value_style.patch(default_value_style),
+                    default_value_style.patch(self.value_style),
                 );
             }
         }
 
         // render the label
         if let Some(mut label) = self.label {
-            label.patch_style(default_label_style);
+            // patch label styles
+            for span in &mut label.spans {
+                span.style = default_label_style.patch(span.style);
+            }
+
             buf.set_line(
                 x + (max_width.saturating_sub(label.width() as u16) >> 1),
                 y + 1,

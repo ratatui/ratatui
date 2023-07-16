@@ -1,5 +1,9 @@
 use super::Bar;
-use crate::text::Line;
+use crate::{
+    prelude::{Buffer, Rect},
+    style::Style,
+    text::Line,
+};
 
 /// represent a group of bars to be shown by the Barchart
 ///
@@ -34,6 +38,18 @@ impl<'a> BarGroup<'a> {
     /// return the maximum bar value of this group
     pub(super) fn max(&self) -> Option<u64> {
         self.bars.iter().max_by_key(|v| v.value).map(|v| v.value)
+    }
+
+    pub(super) fn render_label(self, buf: &mut Buffer, area: Rect, default_label_style: Style) {
+        if let Some(mut label) = self.label {
+            // patch label styles
+            for span in &mut label.spans {
+                span.style = default_label_style.patch(span.style);
+            }
+
+            let center_offset = area.width.saturating_sub(label.width() as u16) >> 1;
+            buf.set_line(area.x + center_offset, area.y, &label, area.width);
+        }
     }
 }
 

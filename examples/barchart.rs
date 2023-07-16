@@ -62,7 +62,7 @@ impl<'a> App<'a> {
                 },
                 Company {
                     label: "Comp.B",
-                    revenue: [1500, 2500, 3000, 4100],
+                    revenue: [1500, 2500, 3000, 500],
                     bar_style: Style::default().fg(Color::Yellow),
                 },
                 Company {
@@ -140,14 +140,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints(
-            [
-                Constraint::Ratio(1, 3),
-                Constraint::Ratio(1, 3),
-                Constraint::Ratio(1, 3),
-            ]
-            .as_ref(),
-        )
+        .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
         .split(f.size());
 
     let barchart = BarChart::default()
@@ -158,16 +151,17 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .value_style(Style::default().fg(Color::Black).bg(Color::Yellow));
     f.render_widget(barchart, chunks[0]);
 
-    draw_bar_with_group_labels(f, app, chunks[1], false);
-    draw_bar_with_group_labels(f, app, chunks[2], true);
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .split(chunks[1]);
+
+    draw_bar_with_group_labels(f, app, chunks[0]);
+    draw_horizontal_bars(f, app, chunks[1]);
 }
 
-fn draw_bar_with_group_labels<B>(f: &mut Frame<B>, app: &App, area: Rect, bar_labels: bool)
-where
-    B: Backend,
-{
-    let groups: Vec<BarGroup> = app
-        .months
+fn create_groups<'a>(app: &'a App, combine_values_and_labels: bool) -> Vec<BarGroup<'a>> {
+    app.months
         .iter()
         .enumerate()
         .map(|(i, &month)| {
@@ -182,17 +176,32 @@ where
                             Style::default()
                                 .bg(c.bar_style.fg.unwrap())
                                 .fg(Color::Black),
-                        )
-                        .text_value(format!("{:.1}", (c.revenue[i] as f64) / 1000.));
-                    if bar_labels {
-                        bar = bar.label(c.label.into());
+                        );
+
+                    if combine_values_and_labels {
+                        bar = bar.text_value(format!(
+                            "{} ({:.1} M)",
+                            c.label,
+                            (c.revenue[i] as f64) / 1000.
+                        ));
+                    } else {
+                        bar = bar
+                            .text_value(format!("{:.1}", (c.revenue[i] as f64) / 1000.))
+                            .label(c.label.into());
                     }
                     bar
                 })
                 .collect();
             BarGroup::default().label(month.into()).bars(&bars)
         })
-        .collect();
+        .collect()
+}
+
+fn draw_bar_with_group_labels<B>(f: &mut Frame<B>, app: &App, area: Rect)
+where
+    B: Backend,
+{
+    let groups = create_groups(app, false);
 
     let mut barchart = BarChart::default()
         .block(Block::default().title("Data1").borders(Borders::ALL))
@@ -207,11 +216,44 @@ where
 
     const LEGEND_HEIGHT: u16 = 6;
     if area.height >= LEGEND_HEIGHT && area.width >= TOTAL_REVENUE.len() as u16 + 2 {
+        let legend_width = TOTAL_REVENUE.len() as u16 + 2;
         let legend_area = Rect {
             height: LEGEND_HEIGHT,
-            width: TOTAL_REVENUE.len() as u16 + 2,
+            width: legend_width,
             y: area.y,
-            x: area.x,
+            x: area.right() - legend_width,
+        };
+        draw_legend(f, legend_area);
+    }
+}
+
+fn draw_horizontal_bars<B>(f: &mut Frame<B>, app: &App, area: Rect)
+where
+    B: Backend,
+{
+    let groups = create_groups(app, true);
+
+    let mut barchart = BarChart::default()
+        .block(Block::default().title("Data1").borders(Borders::ALL))
+        .bar_width(1)
+        .group_gap(1)
+        .bar_gap(0)
+        .direction(Direction::Horizontal);
+
+    for group in groups {
+        barchart = barchart.data(group)
+    }
+
+    f.render_widget(barchart, area);
+
+    const LEGEND_HEIGHT: u16 = 6;
+    if area.height >= LEGEND_HEIGHT && area.width >= TOTAL_REVENUE.len() as u16 + 2 {
+        let legend_width = TOTAL_REVENUE.len() as u16 + 2;
+        let legend_area = Rect {
+            height: LEGEND_HEIGHT,
+            width: legend_width,
+            y: area.y,
+            x: area.right() - legend_width,
         };
         draw_legend(f, legend_area);
     }
