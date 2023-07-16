@@ -6,14 +6,16 @@ mod bar_group;
 pub use bar::Bar;
 pub use bar_group::BarGroup;
 
+use super::{Block, Widget};
+
 /// Display multiple bars in a single widgets
 ///
 /// # Examples
 /// The following example creates a BarChart with two groups of bars.
 /// The first group is added by an array slice (&[(&str, u64)]).
-/// The second group is added by a slice of Groups (&[Group]).
+/// The second group is added by a slice of Groups (&[BarGroup]).
 /// ```
-/// # use ratatui::prelude::*;
+/// # use ratatui::{prelude::*, widgets::*};
 /// BarChart::default()
 ///     .block(Block::default().title("BarChart").borders(Borders::ALL))
 ///     .bar_width(3)
@@ -78,7 +80,7 @@ impl<'a> BarChart<'a> {
     /// The first group is added by an array slice (&[(&str, u64)]).
     /// The second group is added by a BarGroup instance.
     /// ```
-    /// # use ratatui::prelude::*;
+    /// # use ratatui::{prelude::*, widgets::*};
     ///
     /// BarChart::default()
     ///        .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
@@ -338,7 +340,10 @@ mod tests {
     use itertools::iproduct;
 
     use super::*;
-    use crate::assert_buffer_eq;
+    use crate::{
+        assert_buffer_eq,
+        widgets::{BorderType, Borders},
+    };
 
     #[test]
     fn default() {

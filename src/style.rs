@@ -133,7 +133,7 @@ pub enum Color {
     White,
     /// An RGB color
     Rgb(u8, u8, u8),
-    /// An 8-bit 256 color. See https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
+    /// An 8-bit 256 color. See <https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit>
     Indexed(u8),
 }
 

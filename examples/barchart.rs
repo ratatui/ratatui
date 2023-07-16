@@ -9,7 +9,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::prelude::*;
+use ratatui::{prelude::*, widgets::*};
 
 struct Company<'a> {
     revenue: [u64; 4],

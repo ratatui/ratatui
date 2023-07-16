@@ -13,7 +13,7 @@ use rand::{
     distributions::{Distribution, Uniform},
     rngs::ThreadRng,
 };
-use ratatui::prelude::*;
+use ratatui::{prelude::*, widgets::*};
 
 #[derive(Clone)]
 pub struct RandomSignal {

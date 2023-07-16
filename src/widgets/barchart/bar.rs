@@ -7,7 +7,7 @@ use crate::{buffer::Buffer, style::Style, text::Line};
 /// red background and a white value foreground
 ///
 /// ```
-/// # use ratatui::prelude::*;
+/// # use ratatui::{prelude::*, widgets::*};
 /// Bar::default()
 ///     .label("Bar 1".into())
 ///     .value(10)

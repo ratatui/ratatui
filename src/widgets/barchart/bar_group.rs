@@ -5,7 +5,7 @@ use crate::text::Line;
 ///
 /// # Examples
 /// ```
-/// # use ratatui::prelude::*;
+/// # use ratatui::{prelude::*, widgets::*};
 /// BarGroup::default()
 ///     .label("Group 1".into())
 ///     .bars(&[Bar::default().value(200), Bar::default().value(150)]);

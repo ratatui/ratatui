@@ -5,7 +5,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::prelude::*;
+use ratatui::{prelude::*, widgets::*};
 
 fn main() -> Result<(), Box<dyn Error>> {
     // setup terminal
