@@ -295,8 +295,13 @@ fn widgets_block_title_alignment() {
         let backend = TestBackend::new(15, 2);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let block = Block::default()
+        let block1 = Block::default()
             .title(Title::from(Span::styled("Title", Style::default())).alignment(alignment))
+            .borders(borders);
+
+        let block2 = Block::default()
+            .title("Title")
+            .title_alignment(alignment)
             .borders(borders);
 
         let area = Rect {
@@ -306,13 +311,15 @@ fn widgets_block_title_alignment() {
             height: 2,
         };
 
-        terminal
-            .draw(|f| {
-                f.render_widget(block, area);
-            })
-            .unwrap();
+        for block in [block1, block2] {
+            terminal
+                .draw(|f| {
+                    f.render_widget(block, area);
+                })
+                .unwrap();
 
-        terminal.backend().assert_buffer(&expected);
+            terminal.backend().assert_buffer(&expected);
+        }
     };
 
     // title top-left with all borders

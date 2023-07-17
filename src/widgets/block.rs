@@ -887,4 +887,15 @@ mod tests {
                 .remove_modifier(Modifier::DIM)
         )
     }
+
+    #[test]
+    fn title_is_aligned_on_center() {
+        assert_eq!(
+            Block::default()
+                .title("test")
+                .title_alignment(Alignment::Center)
+                .titles_alignment,
+            Alignment::Center
+        );
+    }
 }
