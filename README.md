@@ -169,7 +169,7 @@ cargo run --example demo --no-default-features --features=termion
 cargo run --example demo --no-default-features --features=termwiz
 ```
 
-The UI code for the is in [examples/demo/ui.rs](./examples/demo/ui.rs) while the application state
+The UI code for this is in [examples/demo/ui.rs](./examples/demo/ui.rs) while the application state
 is in [examples/demo/app.rs](./examples/demo/app.rs).
 
 If the user interface contains glyphs that are not displayed correctly by your terminal, you may
@@ -202,7 +202,7 @@ The library comes with the following
 * [Table](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Table.html)
 * [Tabs](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Tabs.html)
 
-Each wiget has an associated example which can be found in the [examples](./examples/) folder. Run
+Each widget has an associated example which can be found in the [examples](./examples/) folder. Run
 each examples with cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by
 pressing `q`.
 
