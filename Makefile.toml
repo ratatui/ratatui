@@ -73,7 +73,7 @@ args = [
   "warnings",
 ]
 
-[tasks.clippy.window]
+[tasks.clippy.windows]
 args = [
   "clippy",
   "--all-targets",
@@ -153,11 +153,11 @@ args = [
 private = true
 condition = { env_set = ["TUI_EXAMPLE_NAME"] }
 command = "cargo"
-args = ["run", "--release", "--example", "${TUI_EXAMPLE_NAME}"]
+args = ["run", "--release", "--example", "${TUI_EXAMPLE_NAME}", "--features", "all-widgets"]
 
 [tasks.build-examples]
 command = "cargo"
-args = ["build", "--examples", "--release"]
+args = ["build", "--examples", "--release", "--features", "all-widgets"]
 
 [tasks.run-examples]
 dependencies = ["build-examples"]
