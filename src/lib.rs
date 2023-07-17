@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 //! [ratatui](https://github.com/tui-rs-revival/ratatui) is a library used to build rich
 //! terminal users interfaces and dashboards.
 //!
