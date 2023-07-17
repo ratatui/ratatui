@@ -160,3 +160,8 @@ doc-scrape-examples = true
 name = "inline"
 required-features = ["crossterm"]
 doc-scrape-examples = true
+
+[[example]]
+name = "tree"
+required-features = ["crossterm"]
+doc-scrape-examples = true

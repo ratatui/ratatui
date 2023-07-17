@@ -31,6 +31,7 @@ pub mod scrollbar;
 mod sparkline;
 mod table;
 mod tabs;
+pub mod tree;
 
 use std::fmt::{self, Debug};
 

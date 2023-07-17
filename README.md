@@ -198,9 +198,11 @@ The library comes with the following
 * [Gauge](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Gauge.html)
 * [List](https://docs.rs/ratatui/latest/ratatui/widgets/struct.List.html)
 * [Paragraph](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Paragraph.html)
+* [ScrollBar](https://docs.rs/ratatui/latest/ratatui/widgets/struct.ScrollBar.html)
 * [Sparkline](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Sparkline.html)
 * [Table](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Table.html)
 * [Tabs](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Tabs.html)
+* [Tree](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Tree.html)
 
 Each wiget has an associated example which can be found in the [examples](./examples/) folder. Run
 each examples with cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by
@@ -227,8 +229,6 @@ be installed with `cargo install cargo-make`).
   with a React/Elm inspired approach
 * [tui-realm-treeview](https://github.com/veeso/tui-realm-treeview) — Treeview component for
   Tui-realm
-* [tui-rs-tree-widgets](https://github.com/EdJoPaTo/tui-rs-tree-widget): Widget for tree data
-  structures.
 * [tui-windows](https://github.com/markatk/tui-windows-rs) — Tui-rs abstraction to handle multiple
   windows and their rendering
 * [tui-textarea](https://github.com/rhysd/tui-textarea): Simple yet powerful multi-line text editor
