@@ -515,6 +515,7 @@ impl<'a> Styled for Block<'a> {
 mod tests {
     use super::*;
     use crate::{
+        assert_buffer_eq,
         layout::Rect,
         style::{Color, Modifier, Stylize},
     };
@@ -889,13 +890,36 @@ mod tests {
     }
 
     #[test]
-    fn title_is_aligned_on_center() {
-        assert_eq!(
+    fn title_alignment() {
+        let tests = vec![
+            (Alignment::Left, "test    "),
+            (Alignment::Center, "  test  "),
+            (Alignment::Right, "    test"),
+        ];
+        for (alignment, expected) in tests {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 1));
             Block::default()
                 .title("test")
-                .title_alignment(Alignment::Center)
-                .titles_alignment,
-            Alignment::Center
-        );
+                .title_alignment(alignment)
+                .render(buffer.area, &mut buffer);
+            assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+        }
+    }
+
+    #[test]
+    fn title_alignment_overrides_block_title_alignment() {
+        let tests = vec![
+            (Alignment::Right, Alignment::Left, "test    "),
+            (Alignment::Left, Alignment::Center, "  test  "),
+            (Alignment::Center, Alignment::Right, "    test"),
+        ];
+        for (block_title_alignment, alignment, expected) in tests {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 1));
+            Block::default()
+                .title(Title::from("test").alignment(alignment))
+                .title_alignment(block_title_alignment)
+                .render(buffer.area, &mut buffer);
+            assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+        }
     }
 }
