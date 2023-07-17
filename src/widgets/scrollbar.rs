@@ -3,52 +3,7 @@ use crate::{
     buffer::Buffer,
     layout::Rect,
     style::Style,
-    symbols::{block::FULL, line},
-};
-
-/// Scrollbar Set
-/// ```text
-/// <--▮------->
-/// ^  ^   ^   ^
-/// │  │   │   └ end
-/// │  │   └──── track
-/// │  └──────── thumb
-/// └─────────── begin
-/// ```
-#[derive(Debug, Clone)]
-pub struct Set {
-    pub track: &'static str,
-    pub thumb: &'static str,
-    pub begin: &'static str,
-    pub end: &'static str,
-}
-
-pub const DOUBLE_VERTICAL: Set = Set {
-    track: line::DOUBLE_VERTICAL,
-    thumb: FULL,
-    begin: "▲",
-    end: "▼",
-};
-
-pub const DOUBLE_HORIZONTAL: Set = Set {
-    track: line::DOUBLE_HORIZONTAL,
-    thumb: FULL,
-    begin: "◄",
-    end: "►",
-};
-
-pub const VERTICAL: Set = Set {
-    track: line::VERTICAL,
-    thumb: FULL,
-    begin: "↑",
-    end: "↓",
-};
-
-pub const HORIZONTAL: Set = Set {
-    track: line::HORIZONTAL,
-    thumb: FULL,
-    begin: "←",
-    end: "→",
+    symbols::scrollbar::{Set, DOUBLE_HORIZONTAL, DOUBLE_VERTICAL},
 };
 
 /// An enum representing the direction of scrolling in a Scrollbar widget.
@@ -502,7 +457,10 @@ impl<'a> StatefulWidget for Scrollbar<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assert_buffer_eq;
+    use crate::{
+        assert_buffer_eq,
+        symbols::scrollbar::{HORIZONTAL, VERTICAL},
+    };
 
     #[test]
     fn test_no_render_when_area_zero() {
