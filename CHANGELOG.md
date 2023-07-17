@@ -1,5 +1,115 @@
 # Changelog
 
+## v0.22.0 - 2023-07-17
+
+### Features
+
+- *(barchart)* Set custom text value in the bar ([#309](https://github.com/tui-rs-revival/ratatui/issues/309))
+- *(barchart)* Enable barchart groups ([#288](https://github.com/tui-rs-revival/ratatui/issues/288))
+- *(block)* Support for having more than one title ([#232](https://github.com/tui-rs-revival/ratatui/issues/232))
+- *(examples)* User_input example cursor movement ([#302](https://github.com/tui-rs-revival/ratatui/issues/302))
+- *(misc)* Make builder fn const ([#275](https://github.com/tui-rs-revival/ratatui/issues/275)) ([#275](https://github.com/tui-rs-revival/ratatui/issues/275))
+- *(prelude)* Add a prelude ([#304](https://github.com/tui-rs-revival/ratatui/issues/304))
+- *(style)* Enable setting the underline color for crossterm ([#308](https://github.com/tui-rs-revival/ratatui/issues/308)) ([#310](https://github.com/tui-rs-revival/ratatui/issues/310))
+- *(style)* Allow Modifiers add/remove in const ([#287](https://github.com/tui-rs-revival/ratatui/issues/287))
+- *(stylize)* Allow all widgets to be styled ([#289](https://github.com/tui-rs-revival/ratatui/issues/289))
+- *(terminal)* Expose 'swap_buffers' method
+- *(uncategorized)* Stylization shorthands ([#283](https://github.com/tui-rs-revival/ratatui/issues/283))
+- *(uncategorized)* Add scrollbar widget ([#228](https://github.com/tui-rs-revival/ratatui/issues/228))
+
+### Bug Fixes
+
+- *(clippy)* Unused_mut lint for layout ([#285](https://github.com/tui-rs-revival/ratatui/issues/285))
+- *(examples)* Correct progress label in gague example ([#263](https://github.com/tui-rs-revival/ratatui/issues/263))
+- *(layout)* Cap Constraint::apply to 100% length ([#264](https://github.com/tui-rs-revival/ratatui/issues/264))
+- *(lint)* Suspicious_double_ref_op is new in 1.71 ([#311](https://github.com/tui-rs-revival/ratatui/issues/311))
+- *(prelude)* Remove widgets module from prelude ([#317](https://github.com/tui-rs-revival/ratatui/issues/317))
+- *(title)* Remove default alignment and position ([#323](https://github.com/tui-rs-revival/ratatui/issues/323))
+- *(typos)* Configure typos linter ([#233](https://github.com/tui-rs-revival/ratatui/issues/233))
+- *(uncategorized)* Rust-tui-template became a revival project ([#320](https://github.com/tui-rs-revival/ratatui/issues/320))
+- *(uncategorized)* Revert removal of WTFPL from deny.toml ([#266](https://github.com/tui-rs-revival/ratatui/issues/266))
+
+### Refactor
+
+- *(ci)* Simplify cargo-make installation ([#240](https://github.com/tui-rs-revival/ratatui/issues/240))
+- *(text)* Simplify reflow implementation ([#290](https://github.com/tui-rs-revival/ratatui/issues/290))
+
+### Documentation
+
+- *(color)* Parse more color formats and add docs ([#306](https://github.com/tui-rs-revival/ratatui/issues/306))
+- *(lib)* Add `tui-term` a pseudoterminal library ([#268](https://github.com/tui-rs-revival/ratatui/issues/268))
+- *(lib)* Fixup tui refs in widgets/mod.rs ([#216](https://github.com/tui-rs-revival/ratatui/issues/216))
+- *(lib)* Add backend docs ([#213](https://github.com/tui-rs-revival/ratatui/issues/213))
+- *(readme)* Remove duplicated mention of tui-rs-tree-widgets ([#223](https://github.com/tui-rs-revival/ratatui/issues/223))
+- *(uncategorized)* Improve CONTRIBUTING.md ([#277](https://github.com/tui-rs-revival/ratatui/issues/277))
+- *(uncategorized)* Fix scrollbar ascii illustrations and calendar doc paths ([#272](https://github.com/tui-rs-revival/ratatui/issues/272))
+- *(uncategorized)* README tweaks ([#225](https://github.com/tui-rs-revival/ratatui/issues/225))
+- *(uncategorized)* Add CODEOWNERS file ([#212](https://github.com/tui-rs-revival/ratatui/issues/212))
+- *(uncategorized)* Update README.md and add hello_world example ([#204](https://github.com/tui-rs-revival/ratatui/issues/204))
+
+### Styling
+
+- *(comments)* Set comment length to wrap at 100 chars ([#218](https://github.com/tui-rs-revival/ratatui/issues/218))
+- *(config)* Apply formatting to config files ([#238](https://github.com/tui-rs-revival/ratatui/issues/238))
+- *(manifest)* Apply formatting to Cargo.toml ([#237](https://github.com/tui-rs-revival/ratatui/issues/237))
+- *(readme)* Update the style of badges in README.md ([#299](https://github.com/tui-rs-revival/ratatui/issues/299))
+- *(widget)* Inline format arguments ([#279](https://github.com/tui-rs-revival/ratatui/issues/279))
+- *(uncategorized)* Fix formatting ([#292](https://github.com/tui-rs-revival/ratatui/issues/292))
+- *(uncategorized)* Reformat imports ([#219](https://github.com/tui-rs-revival/ratatui/issues/219))
+
+### Testing
+
+- *(barchart)* Add unit tests ([#301](https://github.com/tui-rs-revival/ratatui/issues/301))
+- *(paragraph)* Simplify paragraph benchmarks ([#282](https://github.com/tui-rs-revival/ratatui/issues/282))
+- *(uncategorized)* Add benchmarks for paragraph ([#262](https://github.com/tui-rs-revival/ratatui/issues/262))
+
+### Miscellaneous Tasks
+
+- *(ci)* Bump cargo-make version ([#239](https://github.com/tui-rs-revival/ratatui/issues/239))
+- *(ci)* Enable merge queue for builds ([#235](https://github.com/tui-rs-revival/ratatui/issues/235))
+- *(ci)* Integrate cargo-deny for linting dependencies ([#221](https://github.com/tui-rs-revival/ratatui/issues/221))
+- *(commitizen)* Add commitizen config ([#222](https://github.com/tui-rs-revival/ratatui/issues/222))
+- *(demo)* Update demo gif ([#234](https://github.com/tui-rs-revival/ratatui/issues/234))
+- *(demo)* Update demo gif with a fixed unicode gauge ([#227](https://github.com/tui-rs-revival/ratatui/issues/227))
+- *(features)* Enable building with all-features ([#286](https://github.com/tui-rs-revival/ratatui/issues/286))
+- *(github)* Add EditorConfig config ([#300](https://github.com/tui-rs-revival/ratatui/issues/300))
+- *(github)* Simplify the CODEOWNERS file ([#271](https://github.com/tui-rs-revival/ratatui/issues/271))
+- *(github)* Add pull request template ([#269](https://github.com/tui-rs-revival/ratatui/issues/269))
+- *(github)* Fix the syntax in CODEOWNERS file ([#236](https://github.com/tui-rs-revival/ratatui/issues/236))
+- *(license)* Add Ratatui developers to license ([#297](https://github.com/tui-rs-revival/ratatui/issues/297))
+- *(tests)* Add coverage job to bacon ([#312](https://github.com/tui-rs-revival/ratatui/issues/312))
+- *(uncategorized)* Lint and doc cleanup ([#191](https://github.com/tui-rs-revival/ratatui/issues/191))
+
+### Build
+
+- *(deps)* Upgrade bitflags to 2.3 ([#205](https://github.com/tui-rs-revival/ratatui/issues/205)) [**breaking**]
+- *(uncategorized)* Add git pre-push hooks using cargo-husky ([#274](https://github.com/tui-rs-revival/ratatui/issues/274))
+
+### Continuous Integration
+
+- *(makefile)* Split CI jobs ([#278](https://github.com/tui-rs-revival/ratatui/issues/278))
+- *(uncategorized)* Parallelize CI jobs ([#318](https://github.com/tui-rs-revival/ratatui/issues/318))
+- *(uncategorized)* Add feat-wrapping on push and on pull request ci triggers ([#267](https://github.com/tui-rs-revival/ratatui/issues/267))
+- *(uncategorized)* Add code coverage action ([#209](https://github.com/tui-rs-revival/ratatui/issues/209))
+
+### Contributors
+
+Thank you so much to everyone that contributed to this release!
+
+Here is the list of contributors who have contributed to `ratatui` for the first time!
+
+- [@Nydragon](https://github.com/Nydragon)
+- [@snpefk](https://github.com/snpefk)
+- [@Philipp-M](https://github.com/Philipp-M)
+- [@mrbcmorris](https://github.com/mrbcmorris)
+- [@endepointe](https://github.com/endepointe)
+- [@kdheepak](https://github.com/kdheepak)
+- [@samyosm](https://github.com/samyosm)
+- [@SLASHLogin](https://github.com/SLASHLogin)
+- [@karthago1](https://github.com/karthago1)
+- [@BoolPurist](https://github.com/BoolPurist)
+- [@Nogesma](https://github.com/Nogesma)
+
 ## v0.21.0 - 2023-05-28
 
 ### Features
@@ -78,7 +188,7 @@
 
 Thank you so much to everyone that contributed to this release!
 
-Here is the list of contributors who has contributed to `ratatui` for the first time!
+Here is the list of contributors who have contributed to `ratatui` for the first time!
 
 - [@kpcyrd](https://github.com/kpcyrd)
 - [@fujiapple852](https://github.com/fujiapple852)
