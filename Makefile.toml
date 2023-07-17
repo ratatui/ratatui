@@ -3,33 +3,19 @@
 [config]
 skip_core_tasks = true
 
+[env]
+# all features except the backend ones
+ALL_FEATURES = "all-widgets,macros,serde"
+
+[tasks.default]
+alias = "ci"
+
 [tasks.ci]
-run_task = [
-  { name = "ci-unix", condition = { platforms = [
-    "linux",
-    "mac",
-  ] } },
-  { name = "ci-windows", condition = { platforms = [
-    "windows",
-  ] } },
-]
-
-[tasks.ci-unix]
-private = true
 dependencies = [
   "style-check",
-  "clippy-unix",
-  "check-unix",
-  "test-unix",
-]
-
-[tasks.ci-windows]
-private = true
-dependencies = [
-  "style-check",
-  "clippy-windows",
-  "check-windows",
-  "test-windows",
+  "clippy",
+  "check",
+  "test",
 ]
 
 [tasks.style-check]
@@ -45,211 +31,123 @@ install_crate = { crate_name = "typos-cli", binary = "typos", test_arg = "--vers
 command = "typos"
 
 [tasks.check]
-run_task = [
-  { name = "check-unix", condition = { platforms = [
-    "linux",
-    "mac",
-  ] } },
-  { name = "check-windows", condition = { platforms = [
-    "windows",
-  ] } },
-]
-
-[tasks.check-unix]
-private = true
-dependencies = [
-  "check-crossterm",
-  "check-termion",
-  "check-termwiz",
-]
-
-[tasks.check-windows]
-private = true
-dependencies = [
-  "check-crossterm",
-  "check-termwiz",
-]
-
-[tasks.check-crossterm]
-env = { TUI_FEATURES = "serde,crossterm" }
-run_task = "check-backend"
-
-[tasks.check-termion]
-env = { TUI_FEATURES = "serde,termion" }
-run_task = "check-backend"
-
-[tasks.check-termwiz]
-env = { TUI_FEATURES = "serde,termwiz" }
-run_task = "check-backend"
-
-[tasks.check-backend]
 command = "cargo"
-condition = { env_set = ["TUI_FEATURES"] }
 args = [
   "check",
-  "--no-default-features",
-  "--features",
-  "${TUI_FEATURES}",
   "--all-targets",
+  "--all-features"
+]
+
+[tasks.check.windows]
+args = [
+  "check",
+  "--all-targets",
+  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
 ]
 
 [tasks.build]
-run_task = [
-  { name = "build-unix", condition = { platforms = [
-    "linux",
-    "mac",
-  ] } },
-  { name = "build-windows", condition = { platforms = [
-    "windows",
-  ] } },
-]
-
-[tasks.build-unix]
-private = true
-dependencies = [
-  "build-crossterm",
-  "build-termion",
-  "build-termwiz",
-]
-
-[tasks.build-windows]
-private = true
-dependencies = [
-  "build-crossterm",
-  "build-termwiz",
-]
-
-[tasks.build-crossterm]
-env = { TUI_FEATURES = "serde,crossterm" }
-run_task = "build-backend"
-
-[tasks.build-termion]
-env = { TUI_FEATURES = "serde,termion" }
-run_task = "build-backend"
-
-[tasks.build-termwiz]
-env = { TUI_FEATURES = "serde,termwiz" }
-run_task = "build-backend"
-
-[tasks.build-backend]
 command = "cargo"
-condition = { env_set = ["TUI_FEATURES"] }
 args = [
   "build",
-  "--no-default-features",
-  "--features",
-  "${TUI_FEATURES}",
   "--all-targets",
+  "--all-features",
+]
+
+[tasks.build.windows]
+args = [
+  "build",
+  "--all-targets",
+  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
 ]
 
 [tasks.clippy]
-run_task = [
-  { name = "clippy-unix", condition = { platforms = [
-    "linux",
-    "mac",
-  ] } },
-  { name = "clippy-windows", condition = { platforms = [
-    "windows",
-  ] } },
-]
-
-[tasks.clippy-unix]
-private = true
-dependencies = [
-  "clippy-crossterm",
-  "clippy-termion",
-  "clippy-termwiz",
-]
-
-[tasks.clippy-windows]
-private = true
-dependencies = [
-  "clippy-crossterm",
-  "clippy-termwiz",
-]
-
-[tasks.clippy-crossterm]
-env = { TUI_FEATURES = "serde,crossterm" }
-run_task = "clippy-backend"
-
-[tasks.clippy-termion]
-env = { TUI_FEATURES = "serde,termion" }
-run_task = "clippy-backend"
-
-[tasks.clippy-termwiz]
-env = { TUI_FEATURES = "serde,termwiz" }
-run_task = "clippy-backend"
-
-[tasks.clippy-backend]
 command = "cargo"
-condition = { env_set = ["TUI_FEATURES"] }
 args = [
   "clippy",
   "--all-targets",
-  "--no-default-features",
   "--tests",
   "--benches",
-  "--features",
-  "${TUI_FEATURES}",
+  "--all-features",
+  "--",
+  "-D",
+  "warnings",
+]
+
+[tasks.clippy.window]
+args = [
+  "clippy",
+  "--all-targets",
+  "--tests",
+  "--benches",
+  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz",
   "--",
   "-D",
   "warnings",
 ]
 
 [tasks.test]
-run_task = [
-  { name = "test-unix", condition = { platforms = [
-    "linux",
-    "mac",
-  ] } },
-  { name = "test-windows", condition = { platforms = [
-    "windows",
-  ] } },
-]
-
-[tasks.test-unix]
-private = true
 dependencies = [
-  "test-crossterm",
-  "test-termion",
-  "test-termwiz",
   "test-doc",
 ]
-
-[tasks.test-windows]
-private = true
-dependencies = [
-  "test-crossterm",
-  "test-termwiz",
-  "test-doc",
-]
-
-[tasks.test-crossterm]
-env = { TUI_FEATURES = "serde,crossterm,all-widgets,macros" }
-run_task = "test-backend"
-
-[tasks.test-termion]
-env = { TUI_FEATURES = "serde,termion,all-widgets,macros" }
-run_task = "test-backend"
-
-[tasks.test-termwiz]
-env = { TUI_FEATURES = "serde,termwiz,all-widgets,macros" }
-run_task = "test-backend"
-
-[tasks.test-backend]
 command = "cargo"
-condition = { env_set = ["TUI_FEATURES"] }
 args = [
   "test",
-  "--no-default-features",
-  "--features",
-  "${TUI_FEATURES}",
   "--all-targets",
+  "--all-features",
+]
+
+
+[tasks.test-windows]
+dependencies = [
+  "test-doc",
+]
+args = [
+  "test",
+  "--all-targets",
+  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
 ]
 
 [tasks.test-doc]
 command = "cargo"
-args = ["test", "--doc"]
+args = [
+  "test", "--doc",
+  "--all-features",
+]
+
+[tasks.test-doc.windows]
+args = [
+  "test", "--doc",
+  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
+]
+
+[tasks.test-backend]
+# takes a command line parameter to specify the backend to test (e.g. "crossterm")
+command = "cargo"
+args = [
+  "test",
+  "--all-targets",
+  "--no-default-features", "--features", "${ALL_FEATURES},${@}"
+]
+
+
+[tasks.coverage]
+command = "cargo"
+args = [
+  "llvm-cov",
+  "--lcov",
+  "--output-path", "target/lcov.info",
+  "--all-features",
+]
+
+[tasks.coverage.windows]
+command = "cargo"
+args = [
+  "llvm-cov",
+  "--lcov",
+  "--output-path", "target/lcov.info",
+  "--no-default-features",
+  "--features", "${ALL_FEATURES},crossterm,termwiz",
+]
 
 [tasks.run-example]
 private = true

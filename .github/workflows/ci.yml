@@ -1,78 +1,30 @@
+name: CI
+
 on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
   push:
     branches:
-      - feat-wrapping
       - main
   pull_request:
     branches:
       - main
-      - feat-wrapping
   merge_group:
 
+# ensure that the workflow is only triggered once per PR,  subsequent pushes to the PR will cancel
+# and restart the workflow. See https://docs.github.com/en/actions/using-jobs/using-concurrency
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
-name: CI
+env:
+  # don't install husky hooks during CI as they are only needed for for pre-push
+  CARGO_HUSKY_DONT_INSTALL_HOOKS: true
 
+# lint, clippy and coveraget jobs are intentionally early in the workflow to catch simple
+# formatting, typos, and missing tests as early as possible. This allows us to fix these and
+# resubmit the PR without having to wait for the comprehensive matrix of tests to complete.
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
-        toolchain: [ "1.65.0", "stable" ]
-    runs-on: ${{ matrix.os }}
-    needs: lint
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.toolchain }}
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
-      - name: "Check"
-        run: cargo make check
-        env:
-          RUST_BACKTRACE: full
-          CARGO_HUSKY_DONT_INSTALL_HOOKS: true
-
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
-      - name: "Clippy"
-        run: cargo make clippy
-        env:
-          RUST_BACKTRACE: full
-          CARGO_HUSKY_DONT_INSTALL_HOOKS: true
-
-  test:
-    strategy:
-      matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
-        toolchain: [ "1.65.0", "stable" ]
-    runs-on: ${{ matrix.os }}
-    needs: lint
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.toolchain }}
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
-      - name: "Test"
-        run: cargo make test
-        env:
-          RUST_BACKTRACE: full
-          CARGO_HUSKY_DONT_INSTALL_HOOKS: true
-
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -84,38 +36,116 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: "Check conventional commits"
+      - name: Check conventional commits
         uses: crate-ci/committed@master
         with:
           args: "-vv"
-          commits: "HEAD"
-      - name: "Check typos"
+          commits: HEAD
+      - name: Check typos
         uses: crate-ci/typos@master
-      - name: "Lint dependencies"
+      - name: Lint dependencies
         uses: EmbarkStudios/cargo-deny-action@v1
-      - name: Install Rust
+      - name: Install Rust nightly
         uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
-      - name: "Formatting"
-        run: cargo fmt --all --check
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: Check formatting
+        run: cargo make fmt
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: Run cargo make clippy-all
+        run: cargo make clippy
 
   coverage:
     runs-on: ubuntu-latest
-    needs: lint
     steps:
-      - uses: actions/checkout@v3
-      - name: Install Rust
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools
-      - name: cargo install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-      - name: cargo llvm-cov
-        run: cargo llvm-cov --all-features --lcov --output-path lcov.info
-        env:
-          CARGO_HUSKY_DONT_INSTALL_HOOKS: true
+      - name: Install cargo-llvm-cov and cargo-make
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov,cargo-make
+      - name: Generate coverage
+        run: cargo make coverage
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
+
+  check:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        toolchain: [ "1.65.0", "stable" ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install Rust {{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: Run cargo make check
+        run: cargo make check
+        env:
+          RUST_BACKTRACE: full
+
+  test-doc:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: Test docs
+        run: cargo make test-doc
+        env:
+          RUST_BACKTRACE: full
+
+  test:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        toolchain: [ "1.65.0", "stable" ]
+        backend: [ crossterm, termion, termwiz ]
+        exclude:
+          # termion is not supported on windows
+          - os: windows-latest
+            backend: termion
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install Rust ${{ matrix.toolchain }}}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: Test ${{ matrix.backend }}
+        run: cargo make test-backend ${{ matrix.backend }}
+        env:
+          RUST_BACKTRACE: full
