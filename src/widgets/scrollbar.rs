@@ -155,9 +155,8 @@ pub enum ScrollbarOrientation {
     HorizontalTop,
 }
 
-/// Scrollbar widget for tui-rs library.
+/// A widget to display a scrollbar
 ///
-/// This widget can be used to display a scrollbar in a terminal user interface.
 /// The following components of the scrollbar are customizable in symbol and style.
 ///
 /// ```text
