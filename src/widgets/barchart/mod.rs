@@ -87,7 +87,10 @@ impl<'a> BarChart<'a> {
     ///        .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]));
     /// ```
     pub fn data(mut self, data: impl Into<BarGroup<'a>>) -> BarChart<'a> {
-        self.data.push(data.into());
+        let group: BarGroup = data.into();
+        if !group.bars.is_empty() {
+            self.data.push(group);
+        }
         self
     }
 
@@ -736,5 +739,21 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
         )
+    }
+
+    #[test]
+    fn test_empty_group() {
+        let chart = BarChart::default()
+            .data(BarGroup::default().label("invisible".into()))
+            .data(
+                BarGroup::default()
+                    .label("G".into())
+                    .bars(&[Bar::default().value(1), Bar::default().value(2)]),
+            );
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+        chart.render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines(vec!["  █", "█ █", " G "]);
+        assert_buffer_eq!(buffer, expected);
     }
 }
