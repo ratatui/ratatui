@@ -51,7 +51,7 @@ Or modify your `Cargo.toml`
 
 ```toml
 [dependencies]
-ratatui = { version = "0.21.0", features = ["all-widgets"]}
+ratatui = { version = "0.22.0", features = ["all-widgets"]}
 ```
 
 Ratatui is mostly backwards compatible with `tui-rs`. To migrate an existing project, it may be
@@ -60,7 +60,7 @@ E.g.:
 
 ```toml
 [dependencies]
-tui = { package = "ratatui", version = "0.21.0", features = ["all-widgets"]}
+tui = { package = "ratatuiw, version = "0.22.0", features = ["all-widgets"]}
 ```
 
 ## Introduction
