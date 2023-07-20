@@ -190,7 +190,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             vec![
                 "Press ".into(),
                 "q".bold(),
-                " to exist, ".into(),
+                " to exit, ".into(),
                 "e".bold(),
                 " to start editing.".bold(),
             ],
