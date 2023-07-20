@@ -60,7 +60,7 @@ E.g.:
 
 ```toml
 [dependencies]
-tui = { package = "ratatuiw, version = "0.22.0", features = ["all-widgets"]}
+tui = { package = "ratatui", version = "0.22.0", features = ["all-widgets"]}
 ```
 
 ## Introduction
