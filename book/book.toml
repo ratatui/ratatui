@@ -1,0 +1,37 @@
+[book]
+authors = ["The Ratatui developers"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Ratatui"
+
+[rust]
+edition = "2021"
+
+[output.html]
+edit-url-template = "https://github.com/tui-rs-revival/ratatui/edit/main/book/{path}"
+git-repository-url = "https://github.com/tui-rs-revival/ratatui/tree/main/book"
+mathjax-support = true
+site-url = "/tu-rs-revival/"
+
+[output.html.playground]
+editable = true
+runnable = false
+line-numbers = true
+
+[output.html.search]
+boost-hierarchy = 2
+boost-paragraph = 1
+boost-title = 2
+expand = true
+heading-split-level = 2
+limit-results = 20
+use-boolean-and = true
+
+[output.html.fold]
+enable = true
+
+[preprocessor.toc]
+command = "mdbook-toc"
+renderer = ["html"]
+max-level = 3

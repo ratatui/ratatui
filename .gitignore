@@ -4,3 +4,5 @@ Cargo.lock
 *.rs.rustfmt
 .gdb_history
 .idea/
+book/book
+book/Makefile
