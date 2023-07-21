@@ -26,5 +26,5 @@ actions](.github/workflows/cd.yml) and triggered by pushing a tag.
 1. Commit and push the changes.
 1. Create a new tag: `git tag -a v[X.Y.Z]`
 1. Push the tag: `git push --tags`
-1. Wait for [Continuous Deployment](https://github.com/tui-rs-revival/ratatui/actions) workflow to
+1. Wait for [Continuous Deployment](https://github.com/ratatui-org/ratatui/actions) workflow to
    finish.

@@ -46,7 +46,7 @@ filter_unconventional = true
 split_commits = false
 # regex for preprocessing the commit messages
 commit_preprocessors = [
-    { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/tui-rs-revival/ratatui/issues/${2}))" },
+    { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/ratatui-org/ratatui/issues/${2}))" },
     { pattern = '(better safe shared layout cache)', replace = "perf(layout): ${1}" },
     { pattern = '(Clarify README.md)', replace = "docs(readme): ${1}" },
     { pattern = '(Update README.md)', replace = "docs(readme): ${1}" },
