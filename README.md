@@ -8,15 +8,15 @@ project.
 
 [![Crates.io](https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square)](https://crates.io/crates/ratatui)
 [![License](https://img.shields.io/crates/l/ratatui?style=flat-square)](./LICENSE) [![GitHub CI
-Status](https://img.shields.io/github/actions/workflow/status/tui-rs-revival/ratatui/ci.yml?style=flat-square&logo=github)](https://github.com/tui-rs-revival/ratatui/actions?query=workflow%3ACI+)
+Status](https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github)](https://github.com/ratatui-org/ratatui/actions?query=workflow%3ACI+)
 [![Docs.rs](https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square)](https://docs.rs/crate/ratatui/)  
 [![Dependency
-Status](https://deps.rs/repo/github/tui-rs-revival/ratatui/status.svg?style=flat-square)](https://deps.rs/repo/github/tui-rs-revival/ratatui)
-[![Codecov](https://img.shields.io/codecov/c/github/tui-rs-revival/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST)](https://app.codecov.io/gh/tui-rs-revival/ratatui)
+Status](https://deps.rs/repo/github/ratatui-org/ratatui/status.svg?style=flat-square)](https://deps.rs/repo/github/ratatui-org/ratatui)
+[![Codecov](https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST)](https://app.codecov.io/gh/ratatui-org/ratatui)
 [![Discord](https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square)](https://discord.gg/pMCEU9hNEj)
 
 <!-- See RELEASE.md for instructions on creating the demo gif --->
-![Demo of Ratatui](https://github.com/tui-rs-revival/ratatui/assets/24392180/93ab0e38-93e0-4ae0-a31b-91ae6c393185)
+![Demo of Ratatui](https://github.com/ratatui-org/ratatui/assets/24392180/93ab0e38-93e0-4ae0-a31b-91ae6c393185)
 
 <details>
 <summary>Table of Contents</summary>
@@ -90,7 +90,7 @@ The following example demonstrates the minimal amount of code necessary to setup
 render "Hello World!". The full code for this example which contains a little more detail is in
 [hello_world.rs](./examples/hello_world.rs). For more guidance on how to create Ratatui apps, see
 the [Docs](https://docs.rs/ratatui) and [Examples](#examples). There is also a starter template
-available at [rust-tui-template](https://github.com/tui-rs-revival/rust-tui-template).
+available at [rust-tui-template](https://github.com/ratatui-org/rust-tui-template).
 
 ```rust
 fn main() -> Result<(), Box<dyn Error>> {
@@ -215,7 +215,7 @@ be installed with `cargo install cargo-make`).
   `tui::text::Text`
 * [color-to-tui](https://github.com/uttarayan21/color-to-tui) — Parse hex colors to
   `tui::style::Color`
-* [rust-tui-template](https://github.com/tui-rs-revival/rust-tui-template) — A template for bootstrapping a
+* [rust-tui-template](https://github.com/ratatui-org/rust-tui-template) — A template for bootstrapping a
   Rust TUI application with Tui-rs & crossterm
 * [simple-tui-rs](https://github.com/pmsanford/simple-tui-rs) — A simple example tui-rs app
 * [tui-builder](https://github.com/jkelleyrtp/tui-builder) — Batteries-included MVC framework for
@@ -241,7 +241,7 @@ be installed with `cargo install cargo-make`).
 ## Apps
 
 Check out the list of more than 50 [Apps using
-`Ratatui`](https://github.com/tui-rs-revival/ratatui/wiki/Apps-using-Ratatui)!
+`Ratatui`](https://github.com/ratatui-org/ratatui/wiki/Apps-using-Ratatui)!
 
 ## Alternatives
 
@@ -251,12 +251,12 @@ to build text user interfaces in Rust.
 ## Contributors
 
 [![GitHub
-Contributors](https://contrib.rocks/image?repo=tui-rs-revival/ratatui)](https://github.com/tui-rs-revival/ratatui/graphs/contributors)
+Contributors](https://contrib.rocks/image?repo=ratatui-org/ratatui)](https://github.com/ratatui-org/ratatui/graphs/contributors)
 
 ## Acknowledgments
 
 Special thanks to [**Pavel Fomchenkov**](https://github.com/nawok) for his work in designing **an
-awesome logo** for the ratatui project and tui-rs-revival organization.
+awesome logo** for the ratatui project and ratatui-org organization.
 
 ## License
 

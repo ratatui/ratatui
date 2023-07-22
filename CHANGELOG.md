@@ -4,93 +4,93 @@
 
 ### Features
 
-- *(barchart)* Set custom text value in the bar ([#309](https://github.com/tui-rs-revival/ratatui/issues/309))
-- *(barchart)* Enable barchart groups ([#288](https://github.com/tui-rs-revival/ratatui/issues/288))
-- *(block)* Support for having more than one title ([#232](https://github.com/tui-rs-revival/ratatui/issues/232))
-- *(examples)* User_input example cursor movement ([#302](https://github.com/tui-rs-revival/ratatui/issues/302))
-- *(misc)* Make builder fn const ([#275](https://github.com/tui-rs-revival/ratatui/issues/275)) ([#275](https://github.com/tui-rs-revival/ratatui/issues/275))
-- *(prelude)* Add a prelude ([#304](https://github.com/tui-rs-revival/ratatui/issues/304))
-- *(style)* Enable setting the underline color for crossterm ([#308](https://github.com/tui-rs-revival/ratatui/issues/308)) ([#310](https://github.com/tui-rs-revival/ratatui/issues/310))
-- *(style)* Allow Modifiers add/remove in const ([#287](https://github.com/tui-rs-revival/ratatui/issues/287))
-- *(stylize)* Allow all widgets to be styled ([#289](https://github.com/tui-rs-revival/ratatui/issues/289))
+- *(barchart)* Set custom text value in the bar ([#309](https://github.com/ratatui-org/ratatui/issues/309))
+- *(barchart)* Enable barchart groups ([#288](https://github.com/ratatui-org/ratatui/issues/288))
+- *(block)* Support for having more than one title ([#232](https://github.com/ratatui-org/ratatui/issues/232))
+- *(examples)* User_input example cursor movement ([#302](https://github.com/ratatui-org/ratatui/issues/302))
+- *(misc)* Make builder fn const ([#275](https://github.com/ratatui-org/ratatui/issues/275)) ([#275](https://github.com/ratatui-org/ratatui/issues/275))
+- *(prelude)* Add a prelude ([#304](https://github.com/ratatui-org/ratatui/issues/304))
+- *(style)* Enable setting the underline color for crossterm ([#308](https://github.com/ratatui-org/ratatui/issues/308)) ([#310](https://github.com/ratatui-org/ratatui/issues/310))
+- *(style)* Allow Modifiers add/remove in const ([#287](https://github.com/ratatui-org/ratatui/issues/287))
+- *(stylize)* Allow all widgets to be styled ([#289](https://github.com/ratatui-org/ratatui/issues/289))
 - *(terminal)* Expose 'swap_buffers' method
-- *(uncategorized)* Stylization shorthands ([#283](https://github.com/tui-rs-revival/ratatui/issues/283))
-- *(uncategorized)* Add scrollbar widget ([#228](https://github.com/tui-rs-revival/ratatui/issues/228))
+- *(uncategorized)* Stylization shorthands ([#283](https://github.com/ratatui-org/ratatui/issues/283))
+- *(uncategorized)* Add scrollbar widget ([#228](https://github.com/ratatui-org/ratatui/issues/228))
 
 ### Bug Fixes
 
-- *(clippy)* Unused_mut lint for layout ([#285](https://github.com/tui-rs-revival/ratatui/issues/285))
-- *(examples)* Correct progress label in gague example ([#263](https://github.com/tui-rs-revival/ratatui/issues/263))
-- *(layout)* Cap Constraint::apply to 100% length ([#264](https://github.com/tui-rs-revival/ratatui/issues/264))
-- *(lint)* Suspicious_double_ref_op is new in 1.71 ([#311](https://github.com/tui-rs-revival/ratatui/issues/311))
-- *(prelude)* Remove widgets module from prelude ([#317](https://github.com/tui-rs-revival/ratatui/issues/317))
-- *(title)* Remove default alignment and position ([#323](https://github.com/tui-rs-revival/ratatui/issues/323))
-- *(typos)* Configure typos linter ([#233](https://github.com/tui-rs-revival/ratatui/issues/233))
-- *(uncategorized)* Rust-tui-template became a revival project ([#320](https://github.com/tui-rs-revival/ratatui/issues/320))
-- *(uncategorized)* Revert removal of WTFPL from deny.toml ([#266](https://github.com/tui-rs-revival/ratatui/issues/266))
+- *(clippy)* Unused_mut lint for layout ([#285](https://github.com/ratatui-org/ratatui/issues/285))
+- *(examples)* Correct progress label in gague example ([#263](https://github.com/ratatui-org/ratatui/issues/263))
+- *(layout)* Cap Constraint::apply to 100% length ([#264](https://github.com/ratatui-org/ratatui/issues/264))
+- *(lint)* Suspicious_double_ref_op is new in 1.71 ([#311](https://github.com/ratatui-org/ratatui/issues/311))
+- *(prelude)* Remove widgets module from prelude ([#317](https://github.com/ratatui-org/ratatui/issues/317))
+- *(title)* Remove default alignment and position ([#323](https://github.com/ratatui-org/ratatui/issues/323))
+- *(typos)* Configure typos linter ([#233](https://github.com/ratatui-org/ratatui/issues/233))
+- *(uncategorized)* Rust-tui-template became a revival project ([#320](https://github.com/ratatui-org/ratatui/issues/320))
+- *(uncategorized)* Revert removal of WTFPL from deny.toml ([#266](https://github.com/ratatui-org/ratatui/issues/266))
 
 ### Refactor
 
-- *(ci)* Simplify cargo-make installation ([#240](https://github.com/tui-rs-revival/ratatui/issues/240))
-- *(text)* Simplify reflow implementation ([#290](https://github.com/tui-rs-revival/ratatui/issues/290))
+- *(ci)* Simplify cargo-make installation ([#240](https://github.com/ratatui-org/ratatui/issues/240))
+- *(text)* Simplify reflow implementation ([#290](https://github.com/ratatui-org/ratatui/issues/290))
 
 ### Documentation
 
-- *(color)* Parse more color formats and add docs ([#306](https://github.com/tui-rs-revival/ratatui/issues/306))
-- *(lib)* Add `tui-term` a pseudoterminal library ([#268](https://github.com/tui-rs-revival/ratatui/issues/268))
-- *(lib)* Fixup tui refs in widgets/mod.rs ([#216](https://github.com/tui-rs-revival/ratatui/issues/216))
-- *(lib)* Add backend docs ([#213](https://github.com/tui-rs-revival/ratatui/issues/213))
-- *(readme)* Remove duplicated mention of tui-rs-tree-widgets ([#223](https://github.com/tui-rs-revival/ratatui/issues/223))
-- *(uncategorized)* Improve CONTRIBUTING.md ([#277](https://github.com/tui-rs-revival/ratatui/issues/277))
-- *(uncategorized)* Fix scrollbar ascii illustrations and calendar doc paths ([#272](https://github.com/tui-rs-revival/ratatui/issues/272))
-- *(uncategorized)* README tweaks ([#225](https://github.com/tui-rs-revival/ratatui/issues/225))
-- *(uncategorized)* Add CODEOWNERS file ([#212](https://github.com/tui-rs-revival/ratatui/issues/212))
-- *(uncategorized)* Update README.md and add hello_world example ([#204](https://github.com/tui-rs-revival/ratatui/issues/204))
+- *(color)* Parse more color formats and add docs ([#306](https://github.com/ratatui-org/ratatui/issues/306))
+- *(lib)* Add `tui-term` a pseudoterminal library ([#268](https://github.com/ratatui-org/ratatui/issues/268))
+- *(lib)* Fixup tui refs in widgets/mod.rs ([#216](https://github.com/ratatui-org/ratatui/issues/216))
+- *(lib)* Add backend docs ([#213](https://github.com/ratatui-org/ratatui/issues/213))
+- *(readme)* Remove duplicated mention of tui-rs-tree-widgets ([#223](https://github.com/ratatui-org/ratatui/issues/223))
+- *(uncategorized)* Improve CONTRIBUTING.md ([#277](https://github.com/ratatui-org/ratatui/issues/277))
+- *(uncategorized)* Fix scrollbar ascii illustrations and calendar doc paths ([#272](https://github.com/ratatui-org/ratatui/issues/272))
+- *(uncategorized)* README tweaks ([#225](https://github.com/ratatui-org/ratatui/issues/225))
+- *(uncategorized)* Add CODEOWNERS file ([#212](https://github.com/ratatui-org/ratatui/issues/212))
+- *(uncategorized)* Update README.md and add hello_world example ([#204](https://github.com/ratatui-org/ratatui/issues/204))
 
 ### Styling
 
-- *(comments)* Set comment length to wrap at 100 chars ([#218](https://github.com/tui-rs-revival/ratatui/issues/218))
-- *(config)* Apply formatting to config files ([#238](https://github.com/tui-rs-revival/ratatui/issues/238))
-- *(manifest)* Apply formatting to Cargo.toml ([#237](https://github.com/tui-rs-revival/ratatui/issues/237))
-- *(readme)* Update the style of badges in README.md ([#299](https://github.com/tui-rs-revival/ratatui/issues/299))
-- *(widget)* Inline format arguments ([#279](https://github.com/tui-rs-revival/ratatui/issues/279))
-- *(uncategorized)* Fix formatting ([#292](https://github.com/tui-rs-revival/ratatui/issues/292))
-- *(uncategorized)* Reformat imports ([#219](https://github.com/tui-rs-revival/ratatui/issues/219))
+- *(comments)* Set comment length to wrap at 100 chars ([#218](https://github.com/ratatui-org/ratatui/issues/218))
+- *(config)* Apply formatting to config files ([#238](https://github.com/ratatui-org/ratatui/issues/238))
+- *(manifest)* Apply formatting to Cargo.toml ([#237](https://github.com/ratatui-org/ratatui/issues/237))
+- *(readme)* Update the style of badges in README.md ([#299](https://github.com/ratatui-org/ratatui/issues/299))
+- *(widget)* Inline format arguments ([#279](https://github.com/ratatui-org/ratatui/issues/279))
+- *(uncategorized)* Fix formatting ([#292](https://github.com/ratatui-org/ratatui/issues/292))
+- *(uncategorized)* Reformat imports ([#219](https://github.com/ratatui-org/ratatui/issues/219))
 
 ### Testing
 
-- *(barchart)* Add unit tests ([#301](https://github.com/tui-rs-revival/ratatui/issues/301))
-- *(paragraph)* Simplify paragraph benchmarks ([#282](https://github.com/tui-rs-revival/ratatui/issues/282))
-- *(uncategorized)* Add benchmarks for paragraph ([#262](https://github.com/tui-rs-revival/ratatui/issues/262))
+- *(barchart)* Add unit tests ([#301](https://github.com/ratatui-org/ratatui/issues/301))
+- *(paragraph)* Simplify paragraph benchmarks ([#282](https://github.com/ratatui-org/ratatui/issues/282))
+- *(uncategorized)* Add benchmarks for paragraph ([#262](https://github.com/ratatui-org/ratatui/issues/262))
 
 ### Miscellaneous Tasks
 
-- *(ci)* Bump cargo-make version ([#239](https://github.com/tui-rs-revival/ratatui/issues/239))
-- *(ci)* Enable merge queue for builds ([#235](https://github.com/tui-rs-revival/ratatui/issues/235))
-- *(ci)* Integrate cargo-deny for linting dependencies ([#221](https://github.com/tui-rs-revival/ratatui/issues/221))
-- *(commitizen)* Add commitizen config ([#222](https://github.com/tui-rs-revival/ratatui/issues/222))
-- *(demo)* Update demo gif ([#234](https://github.com/tui-rs-revival/ratatui/issues/234))
-- *(demo)* Update demo gif with a fixed unicode gauge ([#227](https://github.com/tui-rs-revival/ratatui/issues/227))
-- *(features)* Enable building with all-features ([#286](https://github.com/tui-rs-revival/ratatui/issues/286))
-- *(github)* Add EditorConfig config ([#300](https://github.com/tui-rs-revival/ratatui/issues/300))
-- *(github)* Simplify the CODEOWNERS file ([#271](https://github.com/tui-rs-revival/ratatui/issues/271))
-- *(github)* Add pull request template ([#269](https://github.com/tui-rs-revival/ratatui/issues/269))
-- *(github)* Fix the syntax in CODEOWNERS file ([#236](https://github.com/tui-rs-revival/ratatui/issues/236))
-- *(license)* Add Ratatui developers to license ([#297](https://github.com/tui-rs-revival/ratatui/issues/297))
-- *(tests)* Add coverage job to bacon ([#312](https://github.com/tui-rs-revival/ratatui/issues/312))
-- *(uncategorized)* Lint and doc cleanup ([#191](https://github.com/tui-rs-revival/ratatui/issues/191))
+- *(ci)* Bump cargo-make version ([#239](https://github.com/ratatui-org/ratatui/issues/239))
+- *(ci)* Enable merge queue for builds ([#235](https://github.com/ratatui-org/ratatui/issues/235))
+- *(ci)* Integrate cargo-deny for linting dependencies ([#221](https://github.com/ratatui-org/ratatui/issues/221))
+- *(commitizen)* Add commitizen config ([#222](https://github.com/ratatui-org/ratatui/issues/222))
+- *(demo)* Update demo gif ([#234](https://github.com/ratatui-org/ratatui/issues/234))
+- *(demo)* Update demo gif with a fixed unicode gauge ([#227](https://github.com/ratatui-org/ratatui/issues/227))
+- *(features)* Enable building with all-features ([#286](https://github.com/ratatui-org/ratatui/issues/286))
+- *(github)* Add EditorConfig config ([#300](https://github.com/ratatui-org/ratatui/issues/300))
+- *(github)* Simplify the CODEOWNERS file ([#271](https://github.com/ratatui-org/ratatui/issues/271))
+- *(github)* Add pull request template ([#269](https://github.com/ratatui-org/ratatui/issues/269))
+- *(github)* Fix the syntax in CODEOWNERS file ([#236](https://github.com/ratatui-org/ratatui/issues/236))
+- *(license)* Add Ratatui developers to license ([#297](https://github.com/ratatui-org/ratatui/issues/297))
+- *(tests)* Add coverage job to bacon ([#312](https://github.com/ratatui-org/ratatui/issues/312))
+- *(uncategorized)* Lint and doc cleanup ([#191](https://github.com/ratatui-org/ratatui/issues/191))
 
 ### Build
 
-- *(deps)* Upgrade bitflags to 2.3 ([#205](https://github.com/tui-rs-revival/ratatui/issues/205)) [**breaking**]
-- *(uncategorized)* Add git pre-push hooks using cargo-husky ([#274](https://github.com/tui-rs-revival/ratatui/issues/274))
+- *(deps)* Upgrade bitflags to 2.3 ([#205](https://github.com/ratatui-org/ratatui/issues/205)) [**breaking**]
+- *(uncategorized)* Add git pre-push hooks using cargo-husky ([#274](https://github.com/ratatui-org/ratatui/issues/274))
 
 ### Continuous Integration
 
-- *(makefile)* Split CI jobs ([#278](https://github.com/tui-rs-revival/ratatui/issues/278))
-- *(uncategorized)* Parallelize CI jobs ([#318](https://github.com/tui-rs-revival/ratatui/issues/318))
-- *(uncategorized)* Add feat-wrapping on push and on pull request ci triggers ([#267](https://github.com/tui-rs-revival/ratatui/issues/267))
-- *(uncategorized)* Add code coverage action ([#209](https://github.com/tui-rs-revival/ratatui/issues/209))
+- *(makefile)* Split CI jobs ([#278](https://github.com/ratatui-org/ratatui/issues/278))
+- *(uncategorized)* Parallelize CI jobs ([#318](https://github.com/ratatui-org/ratatui/issues/318))
+- *(uncategorized)* Add feat-wrapping on push and on pull request ci triggers ([#267](https://github.com/ratatui-org/ratatui/issues/267))
+- *(uncategorized)* Add code coverage action ([#209](https://github.com/ratatui-org/ratatui/issues/209))
 
 ### Contributors
 
@@ -114,71 +114,71 @@ Here is the list of contributors who have contributed to `ratatui` for the first
 
 ### Features
 
-- *(backend)* Add termwiz backend and example ([#5](https://github.com/tui-rs-revival/ratatui/issues/5))
-- *(block)* Support placing the title on bottom ([#36](https://github.com/tui-rs-revival/ratatui/issues/36))
-- *(border)* Add border! macro for easy bitflag manipulation ([#11](https://github.com/tui-rs-revival/ratatui/issues/11))
-- *(calendar)* Add calendar widget ([#138](https://github.com/tui-rs-revival/ratatui/issues/138))
-- *(color)* Add `FromStr` implementation for `Color` ([#180](https://github.com/tui-rs-revival/ratatui/issues/180))
-- *(list)* Add len() to List ([#24](https://github.com/tui-rs-revival/ratatui/pull/24))
-- *(paragraph)* Allow Lines to be individually aligned ([#149](https://github.com/tui-rs-revival/ratatui/issues/149))
-- *(sparkline)* Finish #1 Sparkline directions PR ([#134](https://github.com/tui-rs-revival/ratatui/issues/134))
-- *(terminal)* Add inline viewport ([#114](https://github.com/tui-rs-revival/ratatui/issues/114)) [**breaking**]
-- *(test)* Expose test buffer ([#160](https://github.com/tui-rs-revival/ratatui/issues/160))
-- *(text)* Add `Masked` to display secure data ([#168](https://github.com/tui-rs-revival/ratatui/issues/168)) [**breaking**]
-- *(widget)* Add circle widget ([#159](https://github.com/tui-rs-revival/ratatui/issues/159))
-- *(widget)* Add style methods to Span, Spans, Text ([#148](https://github.com/tui-rs-revival/ratatui/issues/148))
-- *(widget)* Support adding padding to Block ([#20](https://github.com/tui-rs-revival/ratatui/issues/20))
-- *(widget)* Add offset() and offset_mut() for table and list state ([#12](https://github.com/tui-rs-revival/ratatui/issues/12))
+- *(backend)* Add termwiz backend and example ([#5](https://github.com/ratatui-org/ratatui/issues/5))
+- *(block)* Support placing the title on bottom ([#36](https://github.com/ratatui-org/ratatui/issues/36))
+- *(border)* Add border! macro for easy bitflag manipulation ([#11](https://github.com/ratatui-org/ratatui/issues/11))
+- *(calendar)* Add calendar widget ([#138](https://github.com/ratatui-org/ratatui/issues/138))
+- *(color)* Add `FromStr` implementation for `Color` ([#180](https://github.com/ratatui-org/ratatui/issues/180))
+- *(list)* Add len() to List ([#24](https://github.com/ratatui-org/ratatui/pull/24))
+- *(paragraph)* Allow Lines to be individually aligned ([#149](https://github.com/ratatui-org/ratatui/issues/149))
+- *(sparkline)* Finish #1 Sparkline directions PR ([#134](https://github.com/ratatui-org/ratatui/issues/134))
+- *(terminal)* Add inline viewport ([#114](https://github.com/ratatui-org/ratatui/issues/114)) [**breaking**]
+- *(test)* Expose test buffer ([#160](https://github.com/ratatui-org/ratatui/issues/160))
+- *(text)* Add `Masked` to display secure data ([#168](https://github.com/ratatui-org/ratatui/issues/168)) [**breaking**]
+- *(widget)* Add circle widget ([#159](https://github.com/ratatui-org/ratatui/issues/159))
+- *(widget)* Add style methods to Span, Spans, Text ([#148](https://github.com/ratatui-org/ratatui/issues/148))
+- *(widget)* Support adding padding to Block ([#20](https://github.com/ratatui-org/ratatui/issues/20))
+- *(widget)* Add offset() and offset_mut() for table and list state ([#12](https://github.com/ratatui-org/ratatui/issues/12))
 
 ### Bug Fixes
 
-- *(canvas)* Use full block for Marker::Block ([#133](https://github.com/tui-rs-revival/ratatui/issues/133)) [**breaking**]
-- *(example)* Update input in examples to only use press events ([#129](https://github.com/tui-rs-revival/ratatui/issues/129))
-- *(uncategorized)* Cleanup doc example ([#145](https://github.com/tui-rs-revival/ratatui/issues/145))
-- *(reflow)* Remove debug macro call ([#198](https://github.com/tui-rs-revival/ratatui/issues/198))
+- *(canvas)* Use full block for Marker::Block ([#133](https://github.com/ratatui-org/ratatui/issues/133)) [**breaking**]
+- *(example)* Update input in examples to only use press events ([#129](https://github.com/ratatui-org/ratatui/issues/129))
+- *(uncategorized)* Cleanup doc example ([#145](https://github.com/ratatui-org/ratatui/issues/145))
+- *(reflow)* Remove debug macro call ([#198](https://github.com/ratatui-org/ratatui/issues/198))
 
 ### Refactor
 
-- *(example)* Remove redundant `vec![]` in `user_input` example ([#26](https://github.com/tui-rs-revival/ratatui/issues/26))
-- *(example)* Refactor paragraph example ([#152](https://github.com/tui-rs-revival/ratatui/issues/152))
-- *(style)* Mark some Style fns const so they can be defined globally ([#115](https://github.com/tui-rs-revival/ratatui/issues/115))
-- *(text)* Replace `Spans` with `Line` ([#178](https://github.com/tui-rs-revival/ratatui/issues/178))
+- *(example)* Remove redundant `vec![]` in `user_input` example ([#26](https://github.com/ratatui-org/ratatui/issues/26))
+- *(example)* Refactor paragraph example ([#152](https://github.com/ratatui-org/ratatui/issues/152))
+- *(style)* Mark some Style fns const so they can be defined globally ([#115](https://github.com/ratatui-org/ratatui/issues/115))
+- *(text)* Replace `Spans` with `Line` ([#178](https://github.com/ratatui-org/ratatui/issues/178))
 
 ### Documentation
 
-- *(apps)* Fix rsadsb/adsb_deku radar link ([#140](https://github.com/tui-rs-revival/ratatui/issues/140))
-- *(apps)* Add tenere ([#141](https://github.com/tui-rs-revival/ratatui/issues/141))
-- *(apps)* Add twitch-tui ([#124](https://github.com/tui-rs-revival/ratatui/issues/124))
-- *(apps)* Add oxycards ([#113](https://github.com/tui-rs-revival/ratatui/issues/113))
-- *(apps)* Re-add trippy to APPS.md ([#117](https://github.com/tui-rs-revival/ratatui/issues/117))
-- *(block)* Add example for block.inner ([#158](https://github.com/tui-rs-revival/ratatui/issues/158))
-- *(changelog)* Update the empty profile link in contributors ([#112](https://github.com/tui-rs-revival/ratatui/issues/112))
-- *(readme)* Fix small typo in readme ([#186](https://github.com/tui-rs-revival/ratatui/issues/186))
-- *(readme)* Add termwiz demo to examples ([#183](https://github.com/tui-rs-revival/ratatui/issues/183))
-- *(readme)* Add acknowledgement section ([#154](https://github.com/tui-rs-revival/ratatui/issues/154))
-- *(readme)* Update project description ([#127](https://github.com/tui-rs-revival/ratatui/issues/127))
-- *(uncategorized)* Scrape example code from examples/* ([#195](https://github.com/tui-rs-revival/ratatui/issues/195))
+- *(apps)* Fix rsadsb/adsb_deku radar link ([#140](https://github.com/ratatui-org/ratatui/issues/140))
+- *(apps)* Add tenere ([#141](https://github.com/ratatui-org/ratatui/issues/141))
+- *(apps)* Add twitch-tui ([#124](https://github.com/ratatui-org/ratatui/issues/124))
+- *(apps)* Add oxycards ([#113](https://github.com/ratatui-org/ratatui/issues/113))
+- *(apps)* Re-add trippy to APPS.md ([#117](https://github.com/ratatui-org/ratatui/issues/117))
+- *(block)* Add example for block.inner ([#158](https://github.com/ratatui-org/ratatui/issues/158))
+- *(changelog)* Update the empty profile link in contributors ([#112](https://github.com/ratatui-org/ratatui/issues/112))
+- *(readme)* Fix small typo in readme ([#186](https://github.com/ratatui-org/ratatui/issues/186))
+- *(readme)* Add termwiz demo to examples ([#183](https://github.com/ratatui-org/ratatui/issues/183))
+- *(readme)* Add acknowledgement section ([#154](https://github.com/ratatui-org/ratatui/issues/154))
+- *(readme)* Update project description ([#127](https://github.com/ratatui-org/ratatui/issues/127))
+- *(uncategorized)* Scrape example code from examples/* ([#195](https://github.com/ratatui-org/ratatui/issues/195))
 
 ### Styling
 
-- *(apps)* Update the style of application list ([#184](https://github.com/tui-rs-revival/ratatui/issues/184))
-- *(readme)* Update project introduction in README.md ([#153](https://github.com/tui-rs-revival/ratatui/issues/153))
+- *(apps)* Update the style of application list ([#184](https://github.com/ratatui-org/ratatui/issues/184))
+- *(readme)* Update project introduction in README.md ([#153](https://github.com/ratatui-org/ratatui/issues/153))
 - *(uncategorized)* Clippy's variable inlining in format macros
 
 ### Testing
 
-- *(buffer)* Add `assert_buffer_eq!` and Debug implementation ([#161](https://github.com/tui-rs-revival/ratatui/issues/161))
-- *(list)* Add characterization tests for list ([#167](https://github.com/tui-rs-revival/ratatui/issues/167))
-- *(widget)* Add unit tests for Paragraph ([#156](https://github.com/tui-rs-revival/ratatui/issues/156))
+- *(buffer)* Add `assert_buffer_eq!` and Debug implementation ([#161](https://github.com/ratatui-org/ratatui/issues/161))
+- *(list)* Add characterization tests for list ([#167](https://github.com/ratatui-org/ratatui/issues/167))
+- *(widget)* Add unit tests for Paragraph ([#156](https://github.com/ratatui-org/ratatui/issues/156))
 
 ### Miscellaneous Tasks
 
-- *(uncategorized)* Inline format args ([#190](https://github.com/tui-rs-revival/ratatui/issues/190))
-- *(uncategorized)* Minor lints, making Clippy happier ([#189](https://github.com/tui-rs-revival/ratatui/issues/189))
+- *(uncategorized)* Inline format args ([#190](https://github.com/ratatui-org/ratatui/issues/190))
+- *(uncategorized)* Minor lints, making Clippy happier ([#189](https://github.com/ratatui-org/ratatui/issues/189))
 
 ### Build
 
-- *(uncategorized)* Bump MSRV to 1.65.0 ([#171](https://github.com/tui-rs-revival/ratatui/issues/171))
+- *(uncategorized)* Bump MSRV to 1.65.0 ([#171](https://github.com/ratatui-org/ratatui/issues/171))
 
 ### Continuous Integration
 
@@ -210,12 +210,12 @@ Here is the list of contributors who have contributed to `ratatui` for the first
 
 ### Bug Fixes
 
-- *(style)* Bold needs a bit ([#104](https://github.com/tui-rs-revival/ratatui/issues/104))
+- *(style)* Bold needs a bit ([#104](https://github.com/ratatui-org/ratatui/issues/104))
 
 ### Documentation
 
-- *(apps)* Add "logss" to apps ([#105](https://github.com/tui-rs-revival/ratatui/issues/105))
-- *(uncategorized)* Fixup remaining tui references ([#106](https://github.com/tui-rs-revival/ratatui/issues/106))
+- *(apps)* Add "logss" to apps ([#105](https://github.com/ratatui-org/ratatui/issues/105))
+- *(uncategorized)* Fixup remaining tui references ([#106](https://github.com/ratatui-org/ratatui/issues/106))
 
 ### Contributors
 
@@ -235,67 +235,67 @@ Here is a list of changes:
 
 ### Features
 
-- *(cd)* Add continuous deployment workflow ([#93](https://github.com/tui-rs-revival/ratatui/issues/93))
-- *(ci)* Add MacOS to CI ([#60](https://github.com/tui-rs-revival/ratatui/issues/60))
-- *(widget)* Add `offset()` to `TableState` ([#10](https://github.com/tui-rs-revival/ratatui/issues/10))
-- *(widget)* Add `width()` to ListItem ([#17](https://github.com/tui-rs-revival/ratatui/issues/17))
+- *(cd)* Add continuous deployment workflow ([#93](https://github.com/ratatui-org/ratatui/issues/93))
+- *(ci)* Add MacOS to CI ([#60](https://github.com/ratatui-org/ratatui/issues/60))
+- *(widget)* Add `offset()` to `TableState` ([#10](https://github.com/ratatui-org/ratatui/issues/10))
+- *(widget)* Add `width()` to ListItem ([#17](https://github.com/ratatui-org/ratatui/issues/17))
 
 ### Bug Fixes
 
-- *(ci)* Test MSRV compatibility on CI ([#85](https://github.com/tui-rs-revival/ratatui/issues/85))
-- *(ci)* Bump Rust version to 1.63.0 ([#80](https://github.com/tui-rs-revival/ratatui/issues/80))
-- *(ci)* Use env for the cargo-make version ([#76](https://github.com/tui-rs-revival/ratatui/issues/76))
-- *(ci)* Fix deprecation warnings on CI ([#58](https://github.com/tui-rs-revival/ratatui/issues/58))
-- *(doc)* Add 3rd party libraries accidentally removed at #21 ([#61](https://github.com/tui-rs-revival/ratatui/issues/61))
-- *(widget)* List should not ignore empty string items ([#42](https://github.com/tui-rs-revival/ratatui/issues/42)) [**breaking**]
-- *(uncategorized)* Cassowary/layouts: add extra constraints for fixing Min(v)/Max(v) combination. ([#31](https://github.com/tui-rs-revival/ratatui/issues/31))
+- *(ci)* Test MSRV compatibility on CI ([#85](https://github.com/ratatui-org/ratatui/issues/85))
+- *(ci)* Bump Rust version to 1.63.0 ([#80](https://github.com/ratatui-org/ratatui/issues/80))
+- *(ci)* Use env for the cargo-make version ([#76](https://github.com/ratatui-org/ratatui/issues/76))
+- *(ci)* Fix deprecation warnings on CI ([#58](https://github.com/ratatui-org/ratatui/issues/58))
+- *(doc)* Add 3rd party libraries accidentally removed at #21 ([#61](https://github.com/ratatui-org/ratatui/issues/61))
+- *(widget)* List should not ignore empty string items ([#42](https://github.com/ratatui-org/ratatui/issues/42)) [**breaking**]
+- *(uncategorized)* Cassowary/layouts: add extra constraints for fixing Min(v)/Max(v) combination. ([#31](https://github.com/ratatui-org/ratatui/issues/31))
 - *(uncategorized)* Fix user_input example double key press registered on windows
 - *(uncategorized)* Ignore zero-width symbol on rendering `Paragraph`
-- *(uncategorized)* Fix typos ([#45](https://github.com/tui-rs-revival/ratatui/issues/45))
-- *(uncategorized)* Fix typos ([#47](https://github.com/tui-rs-revival/ratatui/issues/47))
+- *(uncategorized)* Fix typos ([#45](https://github.com/ratatui-org/ratatui/issues/45))
+- *(uncategorized)* Fix typos ([#47](https://github.com/ratatui-org/ratatui/issues/47))
 
 ### Refactor
 
-- *(style)* Make bitflags smaller ([#13](https://github.com/tui-rs-revival/ratatui/issues/13))
+- *(style)* Make bitflags smaller ([#13](https://github.com/ratatui-org/ratatui/issues/13))
 
 ### Documentation
 
-- *(apps)* Move 'apps using ratatui' to dedicated file ([#98](https://github.com/tui-rs-revival/ratatui/issues/98)) ([#99](https://github.com/tui-rs-revival/ratatui/issues/99))
-- *(canvas)* Add documentation for x_bounds, y_bounds ([#35](https://github.com/tui-rs-revival/ratatui/issues/35))
-- *(contributing)* Specify the use of unsafe for optimization ([#67](https://github.com/tui-rs-revival/ratatui/issues/67))
-- *(github)* Remove pull request template ([#68](https://github.com/tui-rs-revival/ratatui/issues/68))
-- *(readme)* Update crate status badge ([#102](https://github.com/tui-rs-revival/ratatui/issues/102))
-- *(readme)* Small edits before first release ([#101](https://github.com/tui-rs-revival/ratatui/issues/101))
-- *(readme)* Add install instruction and update title ([#100](https://github.com/tui-rs-revival/ratatui/issues/100))
-- *(readme)* Add systeroid to application list ([#92](https://github.com/tui-rs-revival/ratatui/issues/92))
-- *(readme)* Add glicol-cli to showcase list ([#95](https://github.com/tui-rs-revival/ratatui/issues/95))
-- *(readme)* Add oxker to application list ([#74](https://github.com/tui-rs-revival/ratatui/issues/74))
-- *(readme)* Add app kubectl-watch which uses tui ([#73](https://github.com/tui-rs-revival/ratatui/issues/73))
-- *(readme)* Add poketex to 'apps using tui' in README ([#64](https://github.com/tui-rs-revival/ratatui/issues/64))
-- *(readme)* Update README.md ([#39](https://github.com/tui-rs-revival/ratatui/issues/39))
-- *(readme)* Update README.md ([#40](https://github.com/tui-rs-revival/ratatui/issues/40))
+- *(apps)* Move 'apps using ratatui' to dedicated file ([#98](https://github.com/ratatui-org/ratatui/issues/98)) ([#99](https://github.com/ratatui-org/ratatui/issues/99))
+- *(canvas)* Add documentation for x_bounds, y_bounds ([#35](https://github.com/ratatui-org/ratatui/issues/35))
+- *(contributing)* Specify the use of unsafe for optimization ([#67](https://github.com/ratatui-org/ratatui/issues/67))
+- *(github)* Remove pull request template ([#68](https://github.com/ratatui-org/ratatui/issues/68))
+- *(readme)* Update crate status badge ([#102](https://github.com/ratatui-org/ratatui/issues/102))
+- *(readme)* Small edits before first release ([#101](https://github.com/ratatui-org/ratatui/issues/101))
+- *(readme)* Add install instruction and update title ([#100](https://github.com/ratatui-org/ratatui/issues/100))
+- *(readme)* Add systeroid to application list ([#92](https://github.com/ratatui-org/ratatui/issues/92))
+- *(readme)* Add glicol-cli to showcase list ([#95](https://github.com/ratatui-org/ratatui/issues/95))
+- *(readme)* Add oxker to application list ([#74](https://github.com/ratatui-org/ratatui/issues/74))
+- *(readme)* Add app kubectl-watch which uses tui ([#73](https://github.com/ratatui-org/ratatui/issues/73))
+- *(readme)* Add poketex to 'apps using tui' in README ([#64](https://github.com/ratatui-org/ratatui/issues/64))
+- *(readme)* Update README.md ([#39](https://github.com/ratatui-org/ratatui/issues/39))
+- *(readme)* Update README.md ([#40](https://github.com/ratatui-org/ratatui/issues/40))
 - *(readme)* Clarify README.md fork status update
-- *(uncategorized)* Fix: fix typos ([#90](https://github.com/tui-rs-revival/ratatui/issues/90))
-- *(uncategorized)* Update to build more backends ([#81](https://github.com/tui-rs-revival/ratatui/issues/81))
-- *(uncategorized)* Expand "Apps" and "Third-party" sections ([#21](https://github.com/tui-rs-revival/ratatui/issues/21))
+- *(uncategorized)* Fix: fix typos ([#90](https://github.com/ratatui-org/ratatui/issues/90))
+- *(uncategorized)* Update to build more backends ([#81](https://github.com/ratatui-org/ratatui/issues/81))
+- *(uncategorized)* Expand "Apps" and "Third-party" sections ([#21](https://github.com/ratatui-org/ratatui/issues/21))
 - *(uncategorized)* Add tui-input and update xplr in README.md
-- *(uncategorized)* Add hncli to list of applications made with tui-rs ([#41](https://github.com/tui-rs-revival/ratatui/issues/41))
-- *(uncategorized)* Updated readme and contributing guide with updates about the fork ([#46](https://github.com/tui-rs-revival/ratatui/issues/46))
+- *(uncategorized)* Add hncli to list of applications made with tui-rs ([#41](https://github.com/ratatui-org/ratatui/issues/41))
+- *(uncategorized)* Updated readme and contributing guide with updates about the fork ([#46](https://github.com/ratatui-org/ratatui/issues/46))
 
 ### Performance
 
-- *(layout)* Better safe shared layout cache ([#62](https://github.com/tui-rs-revival/ratatui/issues/62))
+- *(layout)* Better safe shared layout cache ([#62](https://github.com/ratatui-org/ratatui/issues/62))
 
 ### Miscellaneous Tasks
 
-- *(cargo)* Update project metadata ([#94](https://github.com/tui-rs-revival/ratatui/issues/94))
-- *(ci)* Integrate `typos` for checking typos ([#91](https://github.com/tui-rs-revival/ratatui/issues/91))
-- *(ci)* Change the target branch to main ([#79](https://github.com/tui-rs-revival/ratatui/issues/79))
-- *(ci)* Re-enable clippy on CI ([#59](https://github.com/tui-rs-revival/ratatui/issues/59))
-- *(uncategorized)* Integrate `committed` for checking conventional commits ([#77](https://github.com/tui-rs-revival/ratatui/issues/77))
-- *(uncategorized)* Update `rust-version` to 1.59 in Cargo.toml ([#57](https://github.com/tui-rs-revival/ratatui/issues/57))
-- *(uncategorized)* Update deps ([#51](https://github.com/tui-rs-revival/ratatui/issues/51))
-- *(uncategorized)* Fix typo in layout.rs ([#619](https://github.com/tui-rs-revival/ratatui/issues/619))
+- *(cargo)* Update project metadata ([#94](https://github.com/ratatui-org/ratatui/issues/94))
+- *(ci)* Integrate `typos` for checking typos ([#91](https://github.com/ratatui-org/ratatui/issues/91))
+- *(ci)* Change the target branch to main ([#79](https://github.com/ratatui-org/ratatui/issues/79))
+- *(ci)* Re-enable clippy on CI ([#59](https://github.com/ratatui-org/ratatui/issues/59))
+- *(uncategorized)* Integrate `committed` for checking conventional commits ([#77](https://github.com/ratatui-org/ratatui/issues/77))
+- *(uncategorized)* Update `rust-version` to 1.59 in Cargo.toml ([#57](https://github.com/ratatui-org/ratatui/issues/57))
+- *(uncategorized)* Update deps ([#51](https://github.com/ratatui-org/ratatui/issues/51))
+- *(uncategorized)* Fix typo in layout.rs ([#619](https://github.com/ratatui-org/ratatui/issues/619))
 - *(uncategorized)* Add apps using `tui`
 
 ### Contributors

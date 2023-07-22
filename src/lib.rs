@@ -1,9 +1,9 @@
 #![forbid(unsafe_code)]
 
-//! [ratatui](https://github.com/tui-rs-revival/ratatui) is a library used to build rich
+//! [ratatui](https://github.com/ratatui-org/ratatui) is a library used to build rich
 //! terminal users interfaces and dashboards.
 //!
-//! ![](https://raw.githubusercontent.com/tui-rs-revival/ratatui/master/assets/demo.gif)
+//! ![](https://raw.githubusercontent.com/ratatui-org/ratatui/master/assets/demo.gif)
 //!
 //! # Get started
 //!
