@@ -27,7 +27,7 @@
 //! ```
 
 use std::{
-    fmt::{self, Debug},
+    fmt::{self, Debug, Display},
     str::FromStr,
 };
 
@@ -517,6 +517,32 @@ impl FromStr for Color {
     }
 }
 
+impl Display for Color {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Color::Reset => write!(f, "Reset"),
+            Color::Black => write!(f, "Black"),
+            Color::Red => write!(f, "Red"),
+            Color::Green => write!(f, "Green"),
+            Color::Yellow => write!(f, "Yellow"),
+            Color::Blue => write!(f, "Blue"),
+            Color::Magenta => write!(f, "Magenta"),
+            Color::Cyan => write!(f, "Cyan"),
+            Color::Gray => write!(f, "Gray"),
+            Color::DarkGray => write!(f, "DarkGray"),
+            Color::LightRed => write!(f, "LightRed"),
+            Color::LightGreen => write!(f, "LightGreen"),
+            Color::LightYellow => write!(f, "LightYellow"),
+            Color::LightBlue => write!(f, "LightBlue"),
+            Color::LightMagenta => write!(f, "LightMagenta"),
+            Color::LightCyan => write!(f, "LightCyan"),
+            Color::White => write!(f, "White"),
+            Color::Rgb(r, g, b) => write!(f, "#{:02X}{:02X}{:02X}", r, g, b),
+            Color::Indexed(i) => write!(f, "{}", i),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::error::Error;
@@ -691,6 +717,29 @@ mod tests {
                 "bad color: '{bad_color}'"
             );
         }
+    }
+
+    #[test]
+    fn display() {
+        assert_eq!(format!("{}", Color::Black), "Black");
+        assert_eq!(format!("{}", Color::Red), "Red");
+        assert_eq!(format!("{}", Color::Green), "Green");
+        assert_eq!(format!("{}", Color::Yellow), "Yellow");
+        assert_eq!(format!("{}", Color::Blue), "Blue");
+        assert_eq!(format!("{}", Color::Magenta), "Magenta");
+        assert_eq!(format!("{}", Color::Cyan), "Cyan");
+        assert_eq!(format!("{}", Color::Gray), "Gray");
+        assert_eq!(format!("{}", Color::DarkGray), "DarkGray");
+        assert_eq!(format!("{}", Color::LightRed), "LightRed");
+        assert_eq!(format!("{}", Color::LightGreen), "LightGreen");
+        assert_eq!(format!("{}", Color::LightYellow), "LightYellow");
+        assert_eq!(format!("{}", Color::LightBlue), "LightBlue");
+        assert_eq!(format!("{}", Color::LightMagenta), "LightMagenta");
+        assert_eq!(format!("{}", Color::LightCyan), "LightCyan");
+        assert_eq!(format!("{}", Color::White), "White");
+        assert_eq!(format!("{}", Color::Indexed(10)), "10");
+        assert_eq!(format!("{}", Color::Rgb(255, 0, 0)), "#FF0000");
+        assert_eq!(format!("{}", Color::Reset), "Reset");
     }
 
     #[test]
