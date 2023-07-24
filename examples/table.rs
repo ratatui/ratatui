@@ -116,7 +116,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let rects = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
-        .margin(5)
         .split(f.size());
 
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
@@ -145,7 +144,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .highlight_symbol(">> ")
         .widths(&[
             Constraint::Percentage(50),
-            Constraint::Length(30),
+            Constraint::Max(30),
             Constraint::Min(10),
         ]);
     f.render_stateful_widget(t, rects[0], &mut app.state);

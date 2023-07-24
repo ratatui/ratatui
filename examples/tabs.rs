@@ -82,7 +82,6 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let size = f.size();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .margin(5)
         .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
         .split(size);
 

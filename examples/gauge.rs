@@ -106,7 +106,6 @@ fn run_app<B: Backend>(
 fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .margin(2)
         .constraints(
             [
                 Constraint::Percentage(25),
@@ -148,7 +147,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
 
     let label = format!("{}/100", app.progress4);
     let gauge = Gauge::default()
-        .block(Block::default().title("Gauge4"))
+        .block(Block::default().title("Gauge4").borders(Borders::ALL))
         .gauge_style(
             Style::default()
                 .fg(Color::Cyan)
