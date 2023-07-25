@@ -179,6 +179,7 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 ///     .line_set(symbols::line::THICK)
 ///     .ratio(0.4);
 /// ```
+#[derive(Debug, Default)]
 pub struct LineGauge<'a> {
     block: Option<Block<'a>>,
     ratio: f64,
@@ -186,19 +187,6 @@ pub struct LineGauge<'a> {
     line_set: symbols::line::Set,
     style: Style,
     gauge_style: Style,
-}
-
-impl<'a> Default for LineGauge<'a> {
-    fn default() -> Self {
-        Self {
-            block: None,
-            ratio: 0.0,
-            label: None,
-            style: Style::default(),
-            line_set: symbols::line::NORMAL,
-            gauge_style: Style::default(),
-        }
-    }
 }
 
 impl<'a> LineGauge<'a> {
@@ -374,5 +362,26 @@ mod tests {
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
         )
+    }
+
+    #[test]
+    fn line_gauge_default() {
+        // TODO: replace to `assert_eq!(LineGauge::default(), LineGauge::default())`
+        // when `Eq` or `PartialEq` is implemented for `LineGauge`.
+        assert_eq!(
+            format!("{:?}", LineGauge::default()),
+            format!(
+                "{:?}",
+                LineGauge {
+                    block: None,
+                    ratio: 0.0,
+                    label: None,
+                    style: Style::default(),
+                    line_set: symbols::line::NORMAL,
+                    gauge_style: Style::default(),
+                }
+            ),
+            "LineGauge::default() should have correct default values."
+        );
     }
 }

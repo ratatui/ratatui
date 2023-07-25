@@ -89,10 +89,11 @@ pub use stylize::{Styled, Stylize};
 /// assert_eq!("white".parse(), Ok(Color::White));
 /// assert_eq!("bright white".parse(), Ok(Color::White));
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Color {
     /// Resets the foreground or background color
+    #[default]
     Reset,
     /// ANSI Color: Black. Foreground: 30, Background: 40
     Black,
@@ -150,7 +151,7 @@ bitflags! {
     /// let m = Modifier::BOLD | Modifier::ITALIC;
     /// ```
     #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-    #[derive(Clone, Copy, PartialEq, Eq)]
+    #[derive(Default, Clone, Copy, PartialEq, Eq)]
     pub struct Modifier: u16 {
         const BOLD              = 0b0000_0000_0001;
         const DIM               = 0b0000_0000_0010;
@@ -247,7 +248,7 @@ impl fmt::Debug for Modifier {
 ///     buffer.get(0, 0).style(),
 /// );
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Style {
     pub fg: Option<Color>,

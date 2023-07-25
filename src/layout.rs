@@ -11,27 +11,35 @@ use cassowary::{
     WeightedRelation::{EQ, GE, LE},
 };
 
-#[derive(Debug, Hash, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Hash, Clone, Copy, PartialEq, Eq)]
 pub enum Corner {
+    #[default]
     TopLeft,
     TopRight,
     BottomRight,
     BottomLeft,
 }
 
-#[derive(Debug, Hash, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Hash, Clone, Eq, PartialEq)]
 pub enum Direction {
     Horizontal,
+    #[default]
     Vertical,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Constraint {
     Percentage(u16),
     Ratio(u32, u32),
     Length(u16),
     Max(u16),
     Min(u16),
+}
+
+impl Default for Constraint {
+    fn default() -> Self {
+        Constraint::Percentage(100)
+    }
 }
 
 impl Constraint {
@@ -56,14 +64,15 @@ impl Constraint {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Margin {
     pub vertical: u16,
     pub horizontal: u16,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Alignment {
+    #[default]
     Left,
     Center,
     Right,
@@ -359,6 +368,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
 }
 
 /// A container used by the solver inside split
+#[derive(Debug)]
 struct Element {
     x: Variable,
     y: Variable,
@@ -395,7 +405,7 @@ impl Element {
 
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
 /// area they are supposed to render to.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Rect {
     pub x: u16,
     pub y: u16,

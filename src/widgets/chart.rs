@@ -15,7 +15,7 @@ use crate::{
 };
 
 /// An X or Y axis for the chart widget
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Axis<'a> {
     /// Title displayed next to axis end
     title: Option<TextLine<'a>>,
@@ -27,18 +27,6 @@ pub struct Axis<'a> {
     style: Style,
     /// The alignment of the labels of the Axis
     labels_alignment: Alignment,
-}
-
-impl<'a> Default for Axis<'a> {
-    fn default() -> Axis<'a> {
-        Axis {
-            title: None,
-            bounds: [0.0, 0.0],
-            labels: None,
-            style: Style::default(),
-            labels_alignment: Alignment::Left,
-        }
-    }
 }
 
 impl<'a> Axis<'a> {
@@ -88,16 +76,17 @@ impl<'a> Axis<'a> {
 }
 
 /// Used to determine which style of graphing to use
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub enum GraphType {
     /// Draw each point
+    #[default]
     Scatter,
     /// Draw each point and lines between each point using the same marker
     Line,
 }
 
 /// A group of data points
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Dataset<'a> {
     /// Name of the dataset (used in the legend if shown)
     name: Cow<'a, str>,
@@ -109,18 +98,6 @@ pub struct Dataset<'a> {
     graph_type: GraphType,
     /// Style used to plot this dataset
     style: Style,
-}
-
-impl<'a> Default for Dataset<'a> {
-    fn default() -> Dataset<'a> {
-        Dataset {
-            name: Cow::from(""),
-            data: &[],
-            marker: symbols::Marker::Dot,
-            graph_type: GraphType::Scatter,
-            style: Style::default(),
-        }
-    }
 }
 
 impl<'a> Dataset<'a> {
@@ -155,7 +132,7 @@ impl<'a> Dataset<'a> {
 
 /// A container that holds all the infos about where to display each elements of the chart (axis,
 /// labels, legend, ...).
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Default, Clone, PartialEq)]
 struct ChartLayout {
     /// Location of the title of the x axis
     title_x: Option<(u16, u16)>,
@@ -211,7 +188,7 @@ struct ChartLayout {
 ///         .bounds([0.0, 10.0])
 ///         .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()));
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Chart<'a> {
     /// A block to display around the widget eventually
     block: Option<Block<'a>>,

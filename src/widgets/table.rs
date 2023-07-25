@@ -32,7 +32,7 @@ use crate::{
 ///
 /// You can apply a [`Style`] on the entire [`Cell`] using [`Cell::style`] or rely on the styling
 /// capabilities of [`Text`].
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Cell<'a> {
     content: Text<'a>,
     style: Style,
@@ -99,7 +99,7 @@ impl<'a> Styled for Cell<'a> {
 /// ```
 ///
 /// By default, a row has a height of 1 but you can change this using [`Row::height`].
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Row<'a> {
     cells: Vec<Cell<'a>>,
     height: u16,
@@ -211,7 +211,7 @@ impl<'a> Styled for Row<'a> {
 /// // ...and potentially show a symbol in front of the selection.
 /// .highlight_symbol(">>");
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Table<'a> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,
@@ -372,7 +372,7 @@ impl<'a> Styled for Table<'a> {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct TableState {
     offset: usize,
     selected: Option<usize>,

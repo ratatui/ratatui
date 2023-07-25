@@ -29,14 +29,14 @@ pub trait Shape {
 }
 
 /// Label to draw some text on the canvas
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Label<'a> {
     x: f64,
     y: f64,
     line: TextLine<'a>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 struct Layer {
     string: String,
     colors: Vec<Color>,
@@ -51,7 +51,7 @@ trait Grid: Debug {
     fn reset(&mut self);
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 struct BrailleGrid {
     width: u16,
     height: u16,
@@ -114,7 +114,7 @@ impl Grid for BrailleGrid {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 struct CharGrid {
     width: u16,
     height: u16,
@@ -355,6 +355,7 @@ impl<'a> Context<'a> {
 ///         });
 ///     });
 /// ```
+#[derive(Debug)]
 pub struct Canvas<'a, F>
 where
     F: Fn(&mut Context),

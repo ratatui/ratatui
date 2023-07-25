@@ -6,8 +6,9 @@ use crate::{
     },
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub enum MapResolution {
+    #[default]
     Low,
     High,
 }
@@ -22,19 +23,10 @@ impl MapResolution {
 }
 
 /// Shape to draw a world map with the given resolution and color
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Map {
     pub resolution: MapResolution,
     pub color: Color,
-}
-
-impl Default for Map {
-    fn default() -> Map {
-        Map {
-            resolution: MapResolution::Low,
-            color: Color::Reset,
-        }
-    }
 }
 
 impl Shape for Map {

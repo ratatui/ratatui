@@ -7,22 +7,23 @@ use crate::{
     widgets::{StatefulWidget, Widget},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub enum Viewport {
+    #[default]
     Fullscreen,
     Inline(u16),
     Fixed(Rect),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
 /// Options to pass to [`Terminal::with_options`]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct TerminalOptions {
     /// Viewport used to draw to the terminal
     pub viewport: Viewport,
 }
 
 /// Interface to the terminal backed by Termion
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Terminal<B>
 where
     B: Backend,
@@ -46,6 +47,7 @@ where
 }
 
 /// Represents a consistent terminal interface for rendering.
+#[derive(Debug)]
 pub struct Frame<'a, B: 'a>
 where
     B: Backend,
@@ -137,6 +139,7 @@ where
 /// `CompletedFrame` represents the state of the terminal after all changes performed in the last
 /// [`Terminal::draw`] call have been applied. Therefore, it is only valid until the next call to
 /// [`Terminal::draw`].
+#[derive(Debug)]
 pub struct CompletedFrame<'a> {
     pub buffer: &'a Buffer,
     pub area: Rect,

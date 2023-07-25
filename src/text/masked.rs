@@ -21,7 +21,7 @@ use super::Text;
 /// Paragraph::new(password).render(buffer.area, &mut buffer);
 /// assert_eq!(buffer, Buffer::with_lines(vec!["xxxxx"]));
 /// ```
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Masked<'a> {
     inner: Cow<'a, str>,
     mask_char: char,

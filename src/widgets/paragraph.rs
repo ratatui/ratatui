@@ -42,7 +42,7 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 ///     .alignment(Alignment::Center)
 ///     .wrap(Wrap { trim: true });
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Paragraph<'a> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,
@@ -85,7 +85,7 @@ pub struct Paragraph<'a> {
 /// //     - Here is another point
 /// // that is long enough to wrap
 /// ```
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Wrap {
     /// Should leading whitespace be trimmed
     pub trim: bool,

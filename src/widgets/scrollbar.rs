@@ -35,7 +35,7 @@ pub enum ScrollDirection {
 ///
 /// If you don't have multi-line content, you can leave the `viewport_content_length` set to the
 /// default of 0 and it'll use the track size as a `viewport_content_length`.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct ScrollbarState {
     // The current position within the scrollable content.
     position: u16,
@@ -101,7 +101,7 @@ impl ScrollbarState {
 }
 
 /// Scrollbar Orientation
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub enum ScrollbarOrientation {
     #[default]
     VerticalRight,

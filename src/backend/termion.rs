@@ -31,6 +31,7 @@ use crate::{
 /// # Ok(())
 /// # }
 /// ```
+#[derive(Debug, Default)]
 pub struct TermionBackend<W>
 where
     W: Write,
@@ -163,14 +164,16 @@ where
         self.stdout.flush()
     }
 }
-
+#[derive(Debug, Default)]
 struct Fg(Color);
 
+#[derive(Debug, Default)]
 struct Bg(Color);
 
 /// The `ModifierDiff` struct is used to calculate the difference between two `Modifier`
 /// values. This is useful when updating the terminal display, as it allows for more
 /// efficient updates by only sending the necessary changes.
+#[derive(Debug, Default)]
 struct ModifierDiff {
     from: Modifier,
     to: Modifier,

@@ -15,6 +15,7 @@ pub trait LineComposer<'a> {
 }
 
 /// A state machine that wraps lines on word boundaries.
+#[derive(Debug, Default, Clone)]
 pub struct WordWrapper<'a, O, I>
 where
     // Outer iterator providing the individual lines
@@ -207,6 +208,7 @@ where
 }
 
 /// A state machine that truncates overhanging lines.
+#[derive(Debug, Default)]
 pub struct LineTruncator<'a, O, I>
 where
     // Outer iterator providing the individual lines

@@ -1,6 +1,6 @@
 use crate::{layout::Alignment, text::Line};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Title<'a> {
     pub content: Line<'a>,
     /// Defaults to Left if unset
@@ -43,15 +43,5 @@ where
 {
     fn from(value: T) -> Self {
         Self::default().content(value.into())
-    }
-}
-
-impl<'a> Default for Title<'a> {
-    fn default() -> Self {
-        Self {
-            content: Line::from(""),
-            alignment: None,
-            position: None,
-        }
     }
 }
