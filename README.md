@@ -188,16 +188,18 @@ More examples are available in the [examples](./examples/) folder.
 The library comes with the following
 [widgets](https://docs.rs/ratatui/latest/ratatui/widgets/index.html):
 
+* [BarChart](https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html)
+* [Block](https://docs.rs/ratatui/latest/ratatui/widgets/block/struct.Block.html)
+* [Calendar](https://docs.rs/ratatui/latest/ratatui/widgets/calendar/index.html)
 * [Canvas](https://docs.rs/ratatui/latest/ratatui/widgets/canvas/struct.Canvas.html) which allows
   rendering [points, lines, shapes and a world
   map](https://docs.rs/ratatui/latest/ratatui/widgets/canvas/index.html)
-* [BarChart](https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html)
-* [Block](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Block.html)
-* [Calendar](https://docs.rs/ratatui/latest/ratatui/widgets/calendar/index.html)
 * [Chart](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Chart.html)
+* [Clear](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Clear.html)
 * [Gauge](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Gauge.html)
 * [List](https://docs.rs/ratatui/latest/ratatui/widgets/struct.List.html)
 * [Paragraph](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Paragraph.html)
+* [Scrollbar](https://docs.rs/ratatui/latest/ratatui/widgets/scrollbar/struct.Scrollbar.html)
 * [Sparkline](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Sparkline.html)
 * [Table](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Table.html)
 * [Tabs](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Tabs.html)
