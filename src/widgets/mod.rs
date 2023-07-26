@@ -27,7 +27,7 @@ mod gauge;
 mod list;
 mod paragraph;
 mod reflow;
-pub mod scrollbar;
+mod scrollbar;
 mod sparkline;
 mod table;
 mod tabs;
