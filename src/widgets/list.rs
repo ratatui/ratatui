@@ -8,7 +8,7 @@ use crate::{
     widgets::{Block, StatefulWidget, Widget},
 };
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ListState {
     offset: usize,
     selected: Option<usize>,

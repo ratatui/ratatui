@@ -4,7 +4,7 @@ use std::borrow::Cow;
 use super::{Span, Spans, Style, StyledGrapheme};
 use crate::layout::Alignment;
 
-#[derive(Debug, Clone, PartialEq, Default, Eq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Line<'a> {
     pub spans: Vec<Span<'a>>,
     pub alignment: Option<Alignment>,

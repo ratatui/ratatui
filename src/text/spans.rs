@@ -9,7 +9,7 @@ use crate::{layout::Alignment, text::Line};
 /// future. All methods that accept Spans have been replaced with methods that
 /// accept Into<Line<'a>> (which is implemented on `Spans`) to allow users of
 /// this crate to gradually transition to Line.
-#[derive(Debug, Clone, PartialEq, Default, Eq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 #[deprecated(note = "Use `ratatui::text::Line` instead")]
 pub struct Spans<'a>(pub Vec<Span<'a>>);
 

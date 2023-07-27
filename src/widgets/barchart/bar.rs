@@ -15,7 +15,7 @@ use crate::{buffer::Buffer, style::Style, text::Line};
 ///     .value_style(Style::default().bg(Color::Red).fg(Color::White))
 ///     .text_value("10°C".to_string());
 /// ```
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Bar<'a> {
     /// Value to display on the bar (computed when the data is passed to the widget)
     pub(super) value: u64,

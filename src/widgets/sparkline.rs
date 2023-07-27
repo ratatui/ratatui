@@ -38,8 +38,9 @@ pub struct Sparkline<'a> {
     direction: RenderDirection,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub enum RenderDirection {
+    #[default]
     LeftToRight,
     RightToLeft,
 }

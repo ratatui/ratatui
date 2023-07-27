@@ -21,6 +21,12 @@ pub mod block {
         pub empty: &'static str,
     }
 
+    impl Default for Set {
+        fn default() -> Self {
+            NINE_LEVELS
+        }
+    }
+
     pub const THREE_LEVELS: Set = Set {
         full: FULL,
         seven_eighths: FULL,
@@ -67,6 +73,12 @@ pub mod bar {
         pub one_quarter: &'static str,
         pub one_eighth: &'static str,
         pub empty: &'static str,
+    }
+
+    impl Default for Set {
+        fn default() -> Self {
+            NINE_LEVELS
+        }
     }
 
     pub const THREE_LEVELS: Set = Set {
@@ -158,6 +170,12 @@ pub mod line {
         pub cross: &'static str,
     }
 
+    impl Default for Set {
+        fn default() -> Self {
+            NORMAL
+        }
+    }
+
     pub const NORMAL: Set = Set {
         vertical: VERTICAL,
         horizontal: HORIZONTAL,
@@ -222,9 +240,10 @@ pub mod braille {
 }
 
 /// Marker to use when plotting data points
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub enum Marker {
     /// One point per cell in shape of dot
+    #[default]
     Dot,
     /// One point per cell in shape of a block
     Block,
@@ -246,7 +265,7 @@ pub mod scrollbar {
     /// │  └──────── thumb
     /// └─────────── begin
     /// ```
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Default, Clone)]
     pub struct Set {
         pub track: &'static str,
         pub thumb: &'static str,
