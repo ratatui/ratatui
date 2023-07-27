@@ -179,7 +179,7 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 ///     .line_set(symbols::line::THICK)
 ///     .ratio(0.4);
 /// ```
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct LineGauge<'a> {
     block: Option<Block<'a>>,
     ratio: f64,

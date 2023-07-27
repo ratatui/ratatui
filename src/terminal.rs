@@ -23,7 +23,7 @@ pub struct TerminalOptions {
 }
 
 /// Interface to the terminal backed by Termion
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Terminal<B>
 where
     B: Backend,
@@ -139,7 +139,7 @@ where
 /// `CompletedFrame` represents the state of the terminal after all changes performed in the last
 /// [`Terminal::draw`] call have been applied. Therefore, it is only valid until the next call to
 /// [`Terminal::draw`].
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CompletedFrame<'a> {
     pub buffer: &'a Buffer,
     pub area: Rect,

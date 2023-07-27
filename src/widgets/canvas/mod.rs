@@ -355,7 +355,7 @@ impl<'a> Context<'a> {
 ///         });
 ///     });
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Canvas<'a, F>
 where
     F: Fn(&mut Context),

@@ -21,7 +21,7 @@ use crate::{
 };
 
 /// Display a month calendar for the month containing `display_date`
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Monthly<'a, S: DateStyler> {
     display_date: Date,
     events: S,
@@ -173,7 +173,7 @@ pub trait DateStyler {
 }
 
 /// A simple `DateStyler` based on a [`HashMap`]
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CalendarEventStore(pub HashMap<Date, Style>);
 
 impl CalendarEventStore {
