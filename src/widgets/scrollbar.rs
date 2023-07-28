@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// An enum representing the direction of scrolling in a Scrollbar widget.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub enum ScrollDirection {
     /// Forward scroll direction, usually corresponds to scrolling downwards or rightwards.
     #[default]

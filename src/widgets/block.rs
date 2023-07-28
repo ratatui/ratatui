@@ -10,7 +10,7 @@ use crate::{
     widgets::{Borders, Widget},
 };
 
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum BorderType {
     #[default]
     Plain,
@@ -30,7 +30,7 @@ impl BorderType {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Padding {
     pub left: u16,
     pub right: u16,

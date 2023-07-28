@@ -20,7 +20,7 @@ pub enum Corner {
     BottomLeft,
 }
 
-#[derive(Debug, Default, Hash, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Direction {
     Horizontal,
     #[default]
@@ -64,7 +64,7 @@ impl Constraint {
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Margin {
     pub vertical: u16,
     pub horizontal: u16,
@@ -368,7 +368,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
 }
 
 /// A container used by the solver inside split
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Element {
     x: Variable,
     y: Variable,

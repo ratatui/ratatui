@@ -28,7 +28,7 @@ use crate::{
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TestBackend {
     width: u16,
     buffer: Buffer,

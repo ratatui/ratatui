@@ -208,7 +208,7 @@ where
 }
 
 /// A state machine that truncates overhanging lines.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct LineTruncator<'a, O, I>
 where
     // Outer iterator providing the individual lines
