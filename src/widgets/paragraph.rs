@@ -91,6 +91,9 @@ pub struct Wrap {
     pub trim: bool,
 }
 
+type Horizontal = u16;
+type Vertical = u16;
+
 impl<'a> Paragraph<'a> {
     pub fn new<T>(text: T) -> Paragraph<'a>
     where
@@ -121,7 +124,8 @@ impl<'a> Paragraph<'a> {
         self
     }
 
-    pub fn scroll(mut self, offset: (u16, u16)) -> Paragraph<'a> {
+    /// Offset values: (Vertical, Horizontal)
+    pub fn scroll(mut self, offset: (Vertical, Horizontal)) -> Paragraph<'a> {
         self.scroll = offset;
         self
     }
