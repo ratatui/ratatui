@@ -1,12 +1,12 @@
 use std::{
     collections::{BTreeMap, VecDeque},
-    error::Error,
-    io,
+    io::stdout,
     sync::mpsc,
     thread,
     time::{Duration, Instant},
 };
 
+use anyhow::Result;
 use rand::distributions::{Distribution, Uniform};
 use ratatui::{prelude::*, widgets::*};
 
@@ -63,10 +63,8 @@ struct Worker {
     tx: mpsc::Sender<Download>,
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    crossterm::terminal::enable_raw_mode()?;
-    let stdout = io::stdout();
-    let backend = CrosstermBackend::new(stdout);
+fn main() -> Result<()> {
+    let backend = CrosstermBackend::new(stdout()).with_raw_mode()?;
     let mut terminal = Terminal::with_options(
         backend,
         TerminalOptions {
@@ -86,9 +84,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     run_app(&mut terminal, workers, downloads, rx)?;
 
-    crossterm::terminal::disable_raw_mode()?;
     terminal.clear()?;
-
     Ok(())
 }
 
@@ -160,7 +156,7 @@ fn run_app<B: Backend>(
     workers: Vec<Worker>,
     mut downloads: Downloads,
     rx: mpsc::Receiver<Event>,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<()> {
     let mut redraw = true;
     loop {
         if redraw {

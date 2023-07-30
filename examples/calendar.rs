@@ -1,18 +1,12 @@
-use std::{error::Error, io, rc::Rc};
+use std::rc::Rc;
 
-use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
+use anyhow::Result;
+use crossterm::event::{self, Event, KeyCode};
 use ratatui::{prelude::*, widgets::calendar::*};
 use time::{Date, Month, OffsetDateTime};
 
-fn main() -> Result<(), Box<dyn Error>> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
+fn main() -> Result<()> {
+    let backend = CrosstermBackend::on_stdout()?;
     let mut terminal = Terminal::new(backend)?;
 
     loop {
@@ -22,17 +16,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             #[allow(clippy::single_match)]
             match key.code {
                 KeyCode::Char(_) => {
-                    break;
+                    return Ok(());
                 }
                 _ => {}
             };
         }
     }
-
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
-    Ok(())
 }
 
 fn draw<B: Backend>(f: &mut Frame<B>) {

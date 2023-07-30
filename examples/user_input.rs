@@ -1,5 +1,3 @@
-use std::{error::Error, io};
-
 /// A simple example demonstrating how to handle user input. This is
 /// a bit out of the scope of the library as it does not provide any
 /// input handling out of the box. However, it may helps some to get
@@ -14,11 +12,8 @@ use std::{error::Error, io};
 ///   messages.
 /// **Note: ** as this is a relatively simple example unicode characters are unsupported and
 /// their use will result in undefined behaviour.
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
+use anyhow::Result;
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::{prelude::*, widgets::*};
 
 enum InputMode {
@@ -103,35 +98,11 @@ impl App {
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
+fn main() -> Result<()> {
+    let backend = CrosstermBackend::on_stdout()?;
     let mut terminal = Terminal::new(backend)?;
+    let mut app = App::default();
 
-    // create app and run it
-    let app = App::default();
-    let res = run_app(&mut terminal, app);
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
-    }
-
-    Ok(())
-}
-
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
         terminal.draw(|f| ui(f, &app))?;
 

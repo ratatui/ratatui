@@ -1,14 +1,7 @@
-use std::{
-    io::{self, Stdout},
-    time::Duration,
-};
+use std::time::Duration;
 
 use anyhow::{Context, Result};
-use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
+use crossterm::event::{self, Event, KeyCode};
 use ratatui::{prelude::*, widgets::*};
 
 /// This is a bare minimum example. There are many approaches to running an application loop, so
@@ -20,36 +13,16 @@ use ratatui::{prelude::*, widgets::*};
 /// events or update the application state. It just draws a greeting and exits when the user
 /// presses 'q'.
 fn main() -> Result<()> {
-    let mut terminal = setup_terminal().context("setup failed")?;
-    run(&mut terminal).context("app loop failed")?;
-    restore_terminal(&mut terminal).context("restore terminal failed")?;
-    Ok(())
-}
-
-/// Setup the terminal. This is where you would enable raw mode, enter the alternate screen, and
-/// hide the cursor. This example does not handle errors. A more robust application would probably
-/// want to handle errors and ensure that the terminal is restored to a sane state before exiting.
-fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
-    let mut stdout = io::stdout();
-    enable_raw_mode().context("failed to enable raw mode")?;
-    execute!(stdout, EnterAlternateScreen).context("unable to enter alternate screen")?;
-    Terminal::new(CrosstermBackend::new(stdout)).context("creating terminal failed")
-}
-
-/// Restore the terminal. This is where you disable raw mode, leave the alternate screen, and show
-/// the cursor.
-fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
-    disable_raw_mode().context("failed to disable raw mode")?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)
-        .context("unable to switch to main screen")?;
-    terminal.show_cursor().context("unable to show cursor")
+    let backend = CrosstermBackend::on_stdout()?;
+    let mut terminal = Terminal::new(backend)?;
+    run(&mut terminal)
 }
 
 /// Run the application loop. This is where you would handle events and update the application
 /// state. This example exits when the user presses 'q'. Other styles of application loops are
 /// possible, for example, you could have multiple application states and switch between them based
 /// on events, or you could have a single application state and update it based on events.
-fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
+fn run<B: Backend>(terminal: &mut Terminal<B>) -> Result<()> {
     loop {
         terminal.draw(crate::render_app)?;
         if should_quit()? {
@@ -61,7 +34,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
 
 /// Render the application. This is where you would draw the application UI. This example just
 /// draws a greeting.
-fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>) {
+fn render_app<B: Backend>(frame: &mut ratatui::Frame<B>) {
     let greeting = Paragraph::new("Hello World! (press 'q' to quit)");
     frame.render_widget(greeting, frame.size());
 }

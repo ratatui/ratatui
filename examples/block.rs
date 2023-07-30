@@ -1,15 +1,7 @@
-use std::{
-    error::Error,
-    io::{stdout, Stdout},
-    ops::ControlFlow,
-    time::Duration,
-};
+use std::{io::Stdout, ops::ControlFlow, time::Duration};
 
-use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
+use anyhow::Result;
+use crossterm::event::{self, Event, KeyCode};
 use itertools::Itertools;
 use ratatui::{
     prelude::*,
@@ -23,35 +15,11 @@ use ratatui::{
 // types. They are not necessary for the functionality of the code.
 type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<Stdout>>;
 type Terminal = ratatui::Terminal<CrosstermBackend<Stdout>>;
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 fn main() -> Result<()> {
-    let mut terminal = setup_terminal()?;
-    let result = run(&mut terminal);
-    restore_terminal(terminal)?;
+    let backend = CrosstermBackend::on_stdout()?;
+    let mut terminal = Terminal::new(backend)?;
 
-    if let Err(err) = result {
-        eprintln!("{err:?}");
-    }
-    Ok(())
-}
-
-fn setup_terminal() -> Result<Terminal> {
-    enable_raw_mode()?;
-    let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let terminal = Terminal::new(backend)?;
-    Ok(terminal)
-}
-
-fn restore_terminal(mut terminal: Terminal) -> Result<()> {
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    Ok(())
-}
-
-fn run(terminal: &mut Terminal) -> Result<()> {
     loop {
         terminal.draw(ui)?;
         if handle_events()?.is_break() {

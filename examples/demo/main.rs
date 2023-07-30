@@ -27,10 +27,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let cli: Cli = argh::from_env();
     let tick_rate = Duration::from_millis(cli.tick_rate);
     #[cfg(feature = "crossterm")]
-    crate::crossterm::run(tick_rate, cli.enhanced_graphics)?;
+    crossterm::run(tick_rate, cli.enhanced_graphics)?;
     #[cfg(feature = "termion")]
-    crate::termion::run(tick_rate, cli.enhanced_graphics)?;
+    termion::run(tick_rate, cli.enhanced_graphics)?;
     #[cfg(feature = "termwiz")]
-    crate::termwiz::run(tick_rate, cli.enhanced_graphics)?;
+    termwiz::run(tick_rate, cli.enhanced_graphics)?;
     Ok(())
 }

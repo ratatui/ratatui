@@ -1,28 +1,17 @@
-//! How to use a panic hook to reset the terminal before printing the panic to
-//! the terminal.
+//! How to use a panic hook to reset the terminal before printing the panic to the terminal.
 //!
-//! When exiting normally or when handling `Result::Err`, we can reset the
-//! terminal manually at the end of `main` just before we print the error.
+//! When a panic occurs in an app using ratatui, the terminal will be left in an inconsistent state.
+//! Generally the backend's `Drop` implementation will reset the terminal, but because the panic
+//! interrupts the normal control flow, the `Drop` impl is called after the panic handler. This
+//! results in the panic being printed to the terminal on the alternate screen, and in raw mode.
 //!
-//! Because a panic interrupts the normal control flow, manually resetting the
-//! terminal at the end of `main` won't do us any good. Instead, we need to
-//! make sure to set up a panic hook that first resets the terminal before
-//! handling the panic. This both reuses the standard panic hook to ensure a
-//! consistent panic handling UX and properly resets the terminal to not
-//! distort the output.
-//!
-//! That's why this example is set up to show both situations, with and without
-//! the chained panic hook, to see the difference.
+//! This can be fixed by setting a panic hook that resets the terminal before printing the panic.
+//! The example shows both situations, with and without the chained panic hook, to see the
+//! difference.
 
-use std::{error::Error, io};
-
-use crossterm::{
-    event::{self, Event, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
+use anyhow::Result;
+use crossterm::event::{self, Event, KeyCode};
 use ratatui::{prelude::*, widgets::*};
-
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[derive(Default)]
 struct App {
@@ -34,7 +23,9 @@ impl App {
         let original_hook = std::panic::take_hook();
 
         std::panic::set_hook(Box::new(move |panic| {
-            reset_terminal().unwrap();
+            let mut backend = CrosstermBackend::on_stdout().unwrap();
+            backend.leave_alternate_screen().unwrap();
+            backend.disable_raw_mode().unwrap();
             original_hook(panic);
         }));
 
@@ -43,43 +34,14 @@ impl App {
 }
 
 fn main() -> Result<()> {
-    let mut terminal = init_terminal()?;
+    let backend = CrosstermBackend::on_stdout()?;
+    let mut terminal = Terminal::new(backend)?;
 
     let mut app = App::default();
-    let res = run_tui(&mut terminal, &mut app);
-
-    reset_terminal()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
-    }
-
-    Ok(())
+    run_tui(&mut terminal, &mut app)
 }
 
-/// Initializes the terminal.
-fn init_terminal() -> Result<Terminal<CrosstermBackend<io::Stdout>>> {
-    crossterm::execute!(io::stdout(), EnterAlternateScreen)?;
-    enable_raw_mode()?;
-
-    let backend = CrosstermBackend::new(io::stdout());
-
-    let mut terminal = Terminal::new(backend)?;
-    terminal.hide_cursor()?;
-
-    Ok(terminal)
-}
-
-/// Resets the terminal.
-fn reset_terminal() -> Result<()> {
-    disable_raw_mode()?;
-    crossterm::execute!(io::stdout(), LeaveAlternateScreen)?;
-
-    Ok(())
-}
-
-/// Runs the TUI loop.
-fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
+fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> {
     loop {
         terminal.draw(|f| ui(f, app))?;
 
@@ -88,11 +50,9 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 KeyCode::Char('p') => {
                     panic!("intentional demo panic");
                 }
-
                 KeyCode::Char('e') => {
                     app.chain_hook();
                 }
-
                 _ => {
                     return Ok(());
                 }
@@ -101,7 +61,6 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
     }
 }
 
-/// Render the TUI.
 fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let text = vec![
         if app.hook_enabled {
@@ -110,18 +69,19 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             Line::from("HOOK IS CURRENTLY **DISABLED**")
         },
         Line::from(""),
-        Line::from("press `p` to panic"),
-        Line::from("press `e` to enable the terminal-resetting panic hook"),
-        Line::from("press any other key to quit without panic"),
+        Line::from("Press `p` to panic"),
+        Line::from("Press `e` to enable the terminal-resetting panic hook"),
+        Line::from("Press any other key to quit without panic"),
         Line::from(""),
-        Line::from("when you panic without the chained hook,"),
-        Line::from("you will likely have to reset your terminal afterwards"),
-        Line::from("with the `reset` command"),
+        Line::from("When you panic without the chained hook, you may not see the panic report as"),
+        Line::from("it is printed to the alternate screen. Some terminal emulators may let you"),
+        Line::from("manually switch to the alternate screen to view this message."),
         Line::from(""),
-        Line::from("with the chained panic hook enabled,"),
-        Line::from("you should see the panic report as you would without ratatui"),
+        Line::from("With the chained panic hook enabled, the terminal will be reset before the"),
+        Line::from("panic is printed. You should see the panic report as you would without "),
+        Line::from("ratatui"),
         Line::from(""),
-        Line::from("try first without the panic handler to see the difference"),
+        Line::from("Try first without the panic handler to see the difference."),
     ];
 
     let b = Block::default()
