@@ -1,19 +1,71 @@
 name: Continuous Deployment
 
 on:
+  workflow_dispatch:
+  schedule:
+    # At 00:00 on Saturday
+    # https://crontab.guru/#0_0_*_*_6
+    - cron: "0 0 * * 6"
   push:
     tags:
       - "v*.*.*"
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  publish:
-    name: Publish on crates.io
+  publish-nightly:
+    name: Create a nightly release
     runs-on: ubuntu-latest
+    if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
-      - name: Publish
+        with:
+          fetch-depth: 0
+
+      - name: Calculate the next release
+        run: |
+          suffix="-alpha"
+          last_tag="$(git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`)"
+          if [[ "${last_tag}" = *"${suffix}"* ]]; then
+            # increment the alpha version
+            alpha=$(echo "${last_tag}" | grep -oE '([0-9]+)$')
+            next_alpha=$((alpha + 1))
+            next_tag=$(echo "${last_tag}" | sed "s/\.[0-9]\+$/\.${next_alpha}/")
+          else
+            # start the alpha version from 0
+            next_tag="${last_tag}${suffix}.0"
+          fi
+          # update the crate version
+          msg="# crate version"
+          sed -E -i "s/^version = .* ${msg}$/version = \"${next_tag#v}\" ${msg}/" Cargo.toml
+          echo "NEXT_TAG=${next_tag}" >> $GITHUB_ENV
+          echo "Next nightly release: ${next_tag} 🐭"
+
+      - name: Publish on crates.io
         uses: actions-rs/cargo@v1
         with:
           command: publish
-          args: --token ${{ secrets.CARGO_TOKEN }}
+          args: --dry-run --allow-dirty
+
+      - name: Publish on GitHub
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.NEXT_TAG }}
+          prerelease: true
+
+  publish-stable:
+    name: Create a stable release
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.event.ref, 'refs/tags/v') }}
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Publish on crates.io
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --dry-run
