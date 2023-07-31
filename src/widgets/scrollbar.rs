@@ -128,7 +128,7 @@ pub struct Scrollbar<'a> {
     thumb_style: Style,
     thumb_symbol: &'a str,
     track_style: Style,
-    track_symbol: &'a str,
+    track_symbol: Option<&'a str>,
     begin_symbol: Option<&'a str>,
     begin_style: Style,
     end_symbol: Option<&'a str>,
@@ -141,7 +141,7 @@ impl<'a> Default for Scrollbar<'a> {
             orientation: ScrollbarOrientation::default(),
             thumb_symbol: DOUBLE_VERTICAL.thumb,
             thumb_style: Style::default(),
-            track_symbol: DOUBLE_VERTICAL.track,
+            track_symbol: Some(DOUBLE_VERTICAL.track),
             track_style: Style::default(),
             begin_symbol: Some(DOUBLE_VERTICAL.begin),
             begin_style: Style::default(),
@@ -187,7 +187,7 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the symbol that represents the track of the scrollbar.
-    pub fn track_symbol(mut self, track_symbol: &'a str) -> Self {
+    pub fn track_symbol(mut self, track_symbol: Option<&'a str>) -> Self {
         self.track_symbol = track_symbol;
         self
     }
@@ -233,12 +233,13 @@ impl<'a> Scrollbar<'a> {
     /// └─────────── begin
     /// ```
     ///
-    /// Only sets begin_symbol and end_symbol if they already contain a value.
-    /// If begin_symbol and/or end_symbol were set to `None` explicitly, this function will respect
-    /// that choice.
+    /// Only sets begin_symbol, end_symbol and track_symbol if they already contain a value.
+    /// If they were set to `None` explicitly, this function will respect that choice.
     pub fn symbols(mut self, symbol: Set) -> Self {
-        self.track_symbol = symbol.track;
         self.thumb_symbol = symbol.thumb;
+        if self.track_symbol.is_some() {
+            self.track_symbol = Some(symbol.track);
+        }
         if self.begin_symbol.is_some() {
             self.begin_symbol = Some(symbol.begin);
         }
@@ -425,8 +426,10 @@ impl<'a> StatefulWidget for Scrollbar<'a> {
         for i in track_start..track_end {
             let (style, symbol) = if i >= thumb_start && i < thumb_end {
                 (self.thumb_style, self.thumb_symbol)
+            } else if let Some(track_symbol) = self.track_symbol {
+                (self.track_style, track_symbol)
             } else {
-                (self.track_style, self.track_symbol)
+                continue;
             };
 
             if self.is_vertical() {
@@ -831,6 +834,30 @@ mod tests {
                 vec!["        ", "◄═══███═"]
             } else {
                 vec!["        ", "◄════███"]
+            };
+            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
+        }
+    }
+
+    #[test]
+    fn test_rendering_without_track_horizontal_bottom() {
+        for i in 0..=16 {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 2));
+            let mut state = ScrollbarState::default().position(i).content_length(16);
+            Scrollbar::default()
+                .orientation(ScrollbarOrientation::HorizontalBottom)
+                .track_symbol(None)
+                .render(buffer.area, &mut buffer, &mut state);
+            let expected = if i <= 1 {
+                vec!["        ", "◄██    ►"]
+            } else if i <= 5 {
+                vec!["        ", "◄ ██   ►"]
+            } else if i <= 9 {
+                vec!["        ", "◄  ██  ►"]
+            } else if i <= 13 {
+                vec!["        ", "◄   ██ ►"]
+            } else {
+                vec!["        ", "◄    ██►"]
             };
             assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
         }

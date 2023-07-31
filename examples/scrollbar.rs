@@ -188,7 +188,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let paragraph = Paragraph::new(text.clone())
         .gray()
         .block(create_block(
-            "Vertical scrollbar without arrows and mirrored",
+            "Vertical scrollbar without arrows, without track symbol and mirrored",
         ))
         .scroll((app.vertical_scroll as u16, 0));
     f.render_widget(paragraph, chunks[2]);
@@ -197,6 +197,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .orientation(ScrollbarOrientation::VerticalLeft)
             .symbols(scrollbar::VERTICAL)
             .begin_symbol(None)
+            .track_symbol(None)
             .end_symbol(None),
         chunks[2].inner(&Margin {
             vertical: 1,
@@ -235,7 +236,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         Scrollbar::default()
             .orientation(ScrollbarOrientation::HorizontalBottom)
             .thumb_symbol("░")
-            .track_symbol("─"),
+            .track_symbol(Some("─")),
         chunks[4].inner(&Margin {
             vertical: 0,
             horizontal: 1,
