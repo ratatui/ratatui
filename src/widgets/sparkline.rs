@@ -21,7 +21,7 @@ use crate::{
 ///     .max(5)
 ///     .style(Style::default().fg(Color::Red).bg(Color::White));
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Sparkline<'a> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,
@@ -38,7 +38,7 @@ pub struct Sparkline<'a> {
     direction: RenderDirection,
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub enum RenderDirection {
     #[default]
     LeftToRight,

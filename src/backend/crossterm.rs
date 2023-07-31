@@ -42,7 +42,7 @@ use crate::{
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct CrosstermBackend<W: Write> {
     buffer: W,
 }
@@ -213,7 +213,7 @@ impl From<Color> for CColor {
 /// The `ModifierDiff` struct is used to calculate the difference between two `Modifier`
 /// values. This is useful when updating the terminal display, as it allows for more
 /// efficient updates by only sending the necessary changes.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 struct ModifierDiff {
     pub from: Modifier,
     pub to: Modifier,

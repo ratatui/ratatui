@@ -23,7 +23,7 @@ use crate::{
 ///     .highlight_style(Style::default().fg(Color::Yellow))
 ///     .divider(DOT);
 /// ```
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Tabs<'a> {
     /// A block to wrap this widget in if necessary
     block: Option<Block<'a>>,

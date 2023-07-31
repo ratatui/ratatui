@@ -10,7 +10,7 @@ use crate::{
     widgets::{Borders, Widget},
 };
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub enum BorderType {
     #[default]
     Plain,

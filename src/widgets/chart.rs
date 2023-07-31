@@ -15,7 +15,7 @@ use crate::{
 };
 
 /// An X or Y axis for the chart widget
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Axis<'a> {
     /// Title displayed next to axis end
     title: Option<TextLine<'a>>,
@@ -76,7 +76,7 @@ impl<'a> Axis<'a> {
 }
 
 /// Used to determine which style of graphing to use
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub enum GraphType {
     /// Draw each point
     #[default]
@@ -86,7 +86,7 @@ pub enum GraphType {
 }
 
 /// A group of data points
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Dataset<'a> {
     /// Name of the dataset (used in the legend if shown)
     name: Cow<'a, str>,
@@ -132,7 +132,7 @@ impl<'a> Dataset<'a> {
 
 /// A container that holds all the infos about where to display each elements of the chart (axis,
 /// labels, legend, ...).
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 struct ChartLayout {
     /// Location of the title of the x axis
     title_x: Option<(u16, u16)>,
@@ -188,7 +188,7 @@ struct ChartLayout {
 ///         .bounds([0.0, 10.0])
 ///         .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()));
 /// ```
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Chart<'a> {
     /// A block to display around the widget eventually
     block: Option<Block<'a>>,

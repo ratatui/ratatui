@@ -32,7 +32,7 @@ use crate::{
 ///
 /// You can apply a [`Style`] on the entire [`Cell`] using [`Cell::style`] or rely on the styling
 /// capabilities of [`Text`].
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Cell<'a> {
     content: Text<'a>,
     style: Style,
@@ -99,7 +99,7 @@ impl<'a> Styled for Cell<'a> {
 /// ```
 ///
 /// By default, a row has a height of 1 but you can change this using [`Row::height`].
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Row<'a> {
     cells: Vec<Cell<'a>>,
     height: u16,
@@ -372,7 +372,7 @@ impl<'a> Styled for Table<'a> {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct TableState {
     offset: usize,
     selected: Option<usize>,
