@@ -50,11 +50,20 @@ jobs:
           command: publish
           args: --dry-run --allow-dirty
 
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v2
+        with:
+          config: cliff.toml
+          args: --unreleased --strip header
+        env:
+          OUTPUT: BODY.md
+
       - name: Publish on GitHub
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.NEXT_TAG }}
           prerelease: true
+          bodyFile: BODY.md
 
   publish-stable:
     name: Create a stable release
