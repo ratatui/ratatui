@@ -91,6 +91,7 @@ jobs:
 
   check:
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         toolchain: [ "1.65.0", "stable" ]
@@ -111,6 +112,7 @@ jobs:
 
   test-doc:
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
     runs-on: ${{ matrix.os }}
@@ -128,6 +130,7 @@ jobs:
 
   test:
     strategy:
+      fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         toolchain: [ "1.65.0", "stable" ]
