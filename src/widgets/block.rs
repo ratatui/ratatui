@@ -415,10 +415,16 @@ impl<'a> Block<'a> {
                 let title_x = current_offset;
                 current_offset += title.content.width() as u16 + 1;
 
+                // Clone the title's content, applying block title style then the title style
+                let mut content = title.content.clone();
+                for span in content.spans.iter_mut() {
+                    span.style = self.titles_style.patch(span.style);
+                }
+
                 buf.set_line(
                     title_x + area.left(),
                     self.get_title_y(position, area),
-                    &title.content,
+                    &content,
                     title_area_width,
                 );
             });
@@ -441,10 +447,16 @@ impl<'a> Block<'a> {
             let title_x = current_offset;
             current_offset += title.content.width() as u16 + 1;
 
+            // Clone the title's content, applying block title style then the title style
+            let mut content = title.content.clone();
+            for span in content.spans.iter_mut() {
+                span.style = self.titles_style.patch(span.style);
+            }
+
             buf.set_line(
                 title_x + area.left(),
                 self.get_title_y(position, area),
-                &title.content,
+                &content,
                 title_area_width,
             );
         });
@@ -462,10 +474,16 @@ impl<'a> Block<'a> {
                 current_offset += title.content.width() as u16 + 1;
                 let title_x = current_offset - 1; // First element isn't spaced
 
+                // Clone the title's content, applying block title style then the title style
+                let mut content = title.content.clone();
+                for span in content.spans.iter_mut() {
+                    span.style = self.titles_style.patch(span.style);
+                }
+
                 buf.set_line(
                     area.width.saturating_sub(title_x) + area.left(),
                     self.get_title_y(position, area),
-                    &title.content,
+                    &content,
                     title_area_width,
                 );
             });
@@ -915,6 +933,56 @@ mod tests {
                 .title_alignment(block_title_alignment)
                 .render(buffer.area, &mut buffer);
             assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+        }
+    }
+
+    #[test]
+    fn render_title_content_style() {
+        for alignment in [Alignment::Left, Alignment::Center, Alignment::Right] {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 1));
+            Block::default()
+                .title("test".yellow())
+                .title_alignment(alignment)
+                .render(buffer.area, &mut buffer);
+
+            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
+            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow());
+
+            assert_buffer_eq!(buffer, expected_buffer);
+        }
+    }
+
+    #[test]
+    fn render_block_title_style() {
+        for alignment in [Alignment::Left, Alignment::Center, Alignment::Right] {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 1));
+            Block::default()
+                .title("test")
+                .title_style(Style::new().yellow())
+                .title_alignment(alignment)
+                .render(buffer.area, &mut buffer);
+
+            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
+            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow());
+
+            assert_buffer_eq!(buffer, expected_buffer);
+        }
+    }
+
+    #[test]
+    fn title_style_overrides_block_title_style() {
+        for alignment in [Alignment::Left, Alignment::Center, Alignment::Right] {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 1));
+            Block::default()
+                .title("test".yellow())
+                .title_style(Style::new().green().on_red())
+                .title_alignment(alignment)
+                .render(buffer.area, &mut buffer);
+
+            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
+            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow().on_red());
+
+            assert_buffer_eq!(buffer, expected_buffer);
         }
     }
 }
