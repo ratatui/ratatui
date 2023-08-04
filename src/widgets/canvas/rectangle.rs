@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Shape to draw a rectangle from a `Rect` with the given color
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Rectangle {
     pub x: f64,
     pub y: f64,

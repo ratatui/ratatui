@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Shape to draw a line from (x1, y1) to (x2, y2) with the given color
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Line {
     pub x1: f64,
     pub y1: f64,

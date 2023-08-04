@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// A shape to draw a group of points with the given color
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Points<'a> {
     pub coords: &'a [(f64, f64)],
     pub color: Color,

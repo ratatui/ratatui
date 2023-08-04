@@ -11,7 +11,7 @@ use cassowary::{
     WeightedRelation::{EQ, GE, LE},
 };
 
-#[derive(Debug, Default, Hash, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Corner {
     #[default]
     TopLeft,
@@ -70,7 +70,7 @@ pub struct Margin {
     pub horizontal: u16,
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Alignment {
     #[default]
     Left,
@@ -78,7 +78,7 @@ pub enum Alignment {
     Right,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,
     margin: Margin,
@@ -368,7 +368,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
 }
 
 /// A container used by the solver inside split
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 struct Element {
     x: Variable,
     y: Variable,

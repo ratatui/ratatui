@@ -21,7 +21,7 @@ use crate::{
 };
 
 /// Display a month calendar for the month containing `display_date`
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Monthly<'a, S: DateStyler> {
     display_date: Date,
     events: S,

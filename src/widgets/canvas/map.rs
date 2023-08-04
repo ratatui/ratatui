@@ -6,7 +6,7 @@ use crate::{
     },
 };
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub enum MapResolution {
     #[default]
     Low,
@@ -23,7 +23,7 @@ impl MapResolution {
 }
 
 /// Shape to draw a world map with the given resolution and color
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Map {
     pub resolution: MapResolution,
     pub color: Color,

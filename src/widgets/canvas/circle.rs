@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Shape to draw a circle with a given center and radius and with the given color
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Circle {
     pub x: f64,
     pub y: f64,
