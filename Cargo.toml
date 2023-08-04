@@ -61,6 +61,11 @@ rand = "0.8"
 name = "paragraph"
 harness = false
 
+[[bench]]
+name = "block"
+harness = false
+
+
 [[example]]
 name = "barchart"
 required-features = ["crossterm"]
