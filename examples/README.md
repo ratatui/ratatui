@@ -189,7 +189,7 @@ done
 ```
 -->
 [barchart.gif]: https://vhs.charm.sh/vhs-6ioxdeRBVkVpyXcjIEVaJU.gif
-[block.gif]: https://vhs.charm.sh/vhs-5X6hpReuDBKjD6hLxmDQ6F.gif
+[block.gif]: https://vhs.charm.sh/vhs-1TyeDa5GN7kewhNjKxJ4Br.gif
 [calendar.gif]: https://vhs.charm.sh/vhs-1dBcpMSSP80WkBgm4lBhNo.gif
 [canvas.gif]: https://vhs.charm.sh/vhs-4zeWEPF6bLEFSHuJrvaHlN.gif
 [chart.gif]: https://vhs.charm.sh/vhs-zRzsE2AwRixQhcWMTAeF1.gif
