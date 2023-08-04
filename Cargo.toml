@@ -18,7 +18,7 @@ exclude = [
 ]
 autoexamples = true
 edition = "2021"
-rust-version = "1.65.0"
+rust-version = "1.67.0"
 
 [badges]
 
