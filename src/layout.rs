@@ -27,12 +27,64 @@ pub enum Direction {
     Vertical,
 }
 
+/// Constraints to apply  
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Constraint {
+    /// Apply a percentage to a given amount  
+    /// Converts the given percentage to a f32, and then converts it back, trimming off the decimal
+    /// point (effectively rounding down)
+    /// ```
+    /// # use ratatui::prelude::Constraint;
+    /// assert_eq!(0, Constraint::Percentage(50).apply(0));
+    /// assert_eq!(2, Constraint::Percentage(50).apply(4));
+    /// assert_eq!(5, Constraint::Percentage(50).apply(10));
+    /// assert_eq!(5, Constraint::Percentage(50).apply(11));
+    /// ```
     Percentage(u16),
+    /// Apply a ratio  
+    /// Converts the given numbers to a f32, and then converts it back, trimming off the decimal
+    /// point (effectively rounding down)
+    /// ```
+    /// # use ratatui::prelude::Constraint;
+    /// assert_eq!(0, Constraint::Ratio(4, 3).apply(0));
+    /// assert_eq!(4, Constraint::Ratio(4, 3).apply(4));
+    /// assert_eq!(10, Constraint::Ratio(4, 3).apply(10));
+    /// assert_eq!(100, Constraint::Ratio(4, 3).apply(100));
+    ///
+    /// assert_eq!(0, Constraint::Ratio(3, 4).apply(0));
+    /// assert_eq!(3, Constraint::Ratio(3, 4).apply(4));
+    /// assert_eq!(7, Constraint::Ratio(3, 4).apply(10));
+    /// assert_eq!(75, Constraint::Ratio(3, 4).apply(100));
+    /// ```
     Ratio(u32, u32),
+    /// Apply no more than the given amount (currently roughly equal to [Constraint::Max], but less
+    /// consistent)
+    /// ```
+    /// # use ratatui::prelude::Constraint;
+    /// assert_eq!(0, Constraint::Length(4).apply(0));
+    /// assert_eq!(4, Constraint::Length(4).apply(4));
+    /// assert_eq!(4, Constraint::Length(4).apply(10));
+    /// ```
     Length(u16),
+    /// Apply at most the given amount
+    ///
+    /// also see [std::cmp::min]
+    /// ```
+    /// # use ratatui::prelude::Constraint;
+    /// assert_eq!(0, Constraint::Max(4).apply(0));
+    /// assert_eq!(4, Constraint::Max(4).apply(4));
+    /// assert_eq!(4, Constraint::Max(4).apply(10));
+    /// ```
     Max(u16),
+    /// Apply at least the given amount
+    ///
+    /// also see [std::cmp::max]
+    /// ```
+    /// # use ratatui::prelude::Constraint;
+    /// assert_eq!(4, Constraint::Min(4).apply(0));
+    /// assert_eq!(4, Constraint::Min(4).apply(4));
+    /// assert_eq!(10, Constraint::Min(4).apply(10));
+    /// ```
     Min(u16),
 }
 
