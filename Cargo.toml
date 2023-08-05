@@ -65,6 +65,10 @@ harness = false
 name = "block"
 harness = false
 
+[[bench]]
+name = "list"
+harness = false
+
 
 [[example]]
 name = "barchart"
