@@ -1,6 +1,6 @@
 [package]
 name = "ratatui"
-version = "0.22.0"
+version = "0.22.0" # crate version
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
 description = "A library to build rich terminal user interfaces or dashboards"
 documentation = "https://docs.rs/ratatui/latest/ratatui/"
