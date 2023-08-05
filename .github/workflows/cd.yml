@@ -15,8 +15,8 @@ defaults:
     shell: bash
 
 jobs:
-  publish-nightly:
-    name: Create a nightly release
+  publish-alpha:
+    name: Create an alpha release
     runs-on: ubuntu-latest
     if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
     steps:
@@ -42,7 +42,7 @@ jobs:
           msg="# crate version"
           sed -E -i "s/^version = .* ${msg}$/version = \"${next_tag#v}\" ${msg}/" Cargo.toml
           echo "NEXT_TAG=${next_tag}" >> $GITHUB_ENV
-          echo "Next nightly release: ${next_tag} 🐭"
+          echo "Next alpha release: ${next_tag} 🐭"
 
       - name: Publish on crates.io
         uses: actions-rs/cargo@v1
