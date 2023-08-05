@@ -27,16 +27,20 @@ jobs:
 
       - name: Calculate the next release
         run: |
-          suffix="-alpha"
+          suffix="alpha"
           last_tag="$(git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`)"
-          if [[ "${last_tag}" = *"${suffix}"* ]]; then
+          if [[ "${last_tag}" = *"-${suffix}"* ]]; then
             # increment the alpha version
-            alpha=$(echo "${last_tag}" | grep -oE '([0-9]+)$')
-            next_alpha=$((alpha + 1))
-            next_tag=$(echo "${last_tag}" | sed "s/\.[0-9]\+$/\.${next_alpha}/")
+            # e.g. v0.22.1-alpha.12 -> v0.22.1-alpha.13
+            alpha="${last_tag##*-${suffix}.}"
+            next_alpha="$((alpha + 1))"
+            next_tag="${last_tag/%${alpha}/${next_alpha}}"
           else
-            # start the alpha version from 0
-            next_tag="${last_tag}${suffix}.0"
+            # increment the patch and start the alpha version from 0
+            # e.g. v0.22.0 -> v0.22.1-alpha.0
+            patch="${last_tag##*.}"
+            next_patch="$((patch + 1))"
+            next_tag="${last_tag/%${patch}/${next_patch}}-${suffix}.0"
           fi
           # update the crate version
           msg="# crate version"
