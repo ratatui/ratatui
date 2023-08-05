@@ -150,7 +150,7 @@ you are interested in working on a PR or issue opened in the previous repository
 
 ## Rust version requirements
 
-Since version 0.21.0, The Minimum Supported Rust Version (MSRV) of `ratatui` is 1.67.0.
+Since version 0.23.0, The Minimum Supported Rust Version (MSRV) of `ratatui` is 1.67.0.
 
 ## Documentation
 
