@@ -6,7 +6,7 @@ use ratatui::{
     layout::Constraint,
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Row, Table, TableState},
+    widgets::{Block, Borders, Cell, HighlightSpacing, Row, Table, TableState},
     Terminal,
 };
 
@@ -606,6 +606,139 @@ fn widgets_table_can_have_rows_with_multi_lines() {
             "│>> Row41 Row42 Row43        │",
             "│                            │",
             "│                            │",
+            "└────────────────────────────┘",
+        ]),
+    );
+}
+
+#[test]
+fn widgets_table_enable_always_highlight_spacing() {
+    let test_case = |state: &mut TableState, space: HighlightSpacing, expected: Buffer| {
+        let backend = TestBackend::new(30, 8);
+        let mut terminal = Terminal::new(backend).unwrap();
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                let table = Table::new(vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]).height(2),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]).height(2),
+                ])
+                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+                .block(Block::default().borders(Borders::ALL))
+                .highlight_symbol(">> ")
+                .highlight_set_selection_space(space)
+                .widths(&[
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                ])
+                .column_spacing(1);
+                f.render_stateful_widget(table, size, state);
+            })
+            .unwrap();
+        terminal.backend().assert_buffer(&expected);
+    };
+
+    assert_eq!(HighlightSpacing::default(), HighlightSpacing::WhenSelected);
+
+    let mut state = TableState::default();
+    // no selection, "WhenSelected" should only allocate if selected
+    test_case(
+        &mut state,
+        HighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│Head1 Head2 Head3           │",
+            "│                            │",
+            "│Row11 Row12 Row13           │",
+            "│Row21 Row22 Row23           │",
+            "│                            │",
+            "│Row31 Row32 Row33           │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // no selection, "Always" should allocate regardless if selected or not
+    test_case(
+        &mut state,
+        HighlightSpacing::Always,
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1 Head2 Head3        │",
+            "│                            │",
+            "│   Row11 Row12 Row13        │",
+            "│   Row21 Row22 Row23        │",
+            "│                            │",
+            "│   Row31 Row32 Row33        │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // no selection, "Never" should never allocate regadless if selected or not
+    test_case(
+        &mut state,
+        HighlightSpacing::Never,
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│Head1 Head2 Head3           │",
+            "│                            │",
+            "│Row11 Row12 Row13           │",
+            "│Row21 Row22 Row23           │",
+            "│                            │",
+            "│Row31 Row32 Row33           │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // select first, "WhenSelected" should only allocate if selected
+    state.select(Some(0));
+    test_case(
+        &mut state,
+        HighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1 Head2 Head3        │",
+            "│                            │",
+            "│>> Row11 Row12 Row13        │",
+            "│   Row21 Row22 Row23        │",
+            "│                            │",
+            "│   Row31 Row32 Row33        │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // select first, "Always" should allocate regardless if selected or not
+    state.select(Some(0));
+    test_case(
+        &mut state,
+        HighlightSpacing::Always,
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1 Head2 Head3        │",
+            "│                            │",
+            "│>> Row11 Row12 Row13        │",
+            "│   Row21 Row22 Row23        │",
+            "│                            │",
+            "│   Row31 Row32 Row33        │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // select first, "Never" should never allocate regadless if selected or not
+    state.select(Some(0));
+    test_case(
+        &mut state,
+        HighlightSpacing::Never,
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│Head1 Head2 Head3           │",
+            "│                            │",
+            "│Row11 Row12 Row13           │",
+            "│Row21 Row22 Row23           │",
+            "│                            │",
+            "│Row31 Row32 Row33           │",
             "└────────────────────────────┘",
         ]),
     );

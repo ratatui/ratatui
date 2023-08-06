@@ -160,6 +160,26 @@ impl<'a> Styled for Row<'a> {
     }
 }
 
+/// This option allows to configure the behavior of the "highlight symbol" column width allocation
+#[derive(Debug, PartialEq, Eq, Clone, Default, Hash)]
+pub enum HighlightSpacing {
+    /// Always add spacing for the row selection symbol
+    ///
+    /// With this variant, the column for the selection symbol will always be allocated, and so the
+    /// table will never change size, regardless of if a row is selected or not
+    Always,
+    /// Only add spacing for the row selection symbol, if a row is selected
+    ///
+    /// With this variant, the column for the selection symbol will only be allocated if there is a
+    /// selection, causing the table to shift if selected / unselected
+    #[default]
+    WhenSelected,
+    /// Never add spacing selection symbol spacing, regardless of if something is selected or not
+    ///
+    /// This effectively changes that the highlight symbol will never be drawn
+    Never,
+}
+
 /// A widget to display data in formatted columns.
 ///
 /// It is a collection of [`Row`]s, themselves composed of [`Cell`]s:
@@ -229,6 +249,8 @@ pub struct Table<'a> {
     header: Option<Row<'a>>,
     /// Data to display in each row
     rows: Vec<Row<'a>>,
+    /// Decides when to allocate spacing for the row selection
+    highlight_spacing: HighlightSpacing,
 }
 
 impl<'a> Table<'a> {
@@ -245,6 +267,7 @@ impl<'a> Table<'a> {
             highlight_symbol: None,
             header: None,
             rows: rows.into_iter().collect(),
+            highlight_spacing: HighlightSpacing::default(),
         }
     }
 
@@ -286,14 +309,20 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Set which style of selection space allocation to use
+    pub fn highlight_set_selection_space(mut self, value: HighlightSpacing) -> Self {
+        self.highlight_spacing = value;
+        self
+    }
+
     pub fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self
     }
 
-    fn get_columns_widths(&self, max_width: u16, has_selection: bool) -> Vec<u16> {
+    fn get_columns_widths(&self, max_width: u16, add_selection_space: bool) -> Vec<u16> {
         let mut constraints = Vec::with_capacity(self.widths.len() * 2 + 1);
-        if has_selection {
+        if add_selection_space {
             let highlight_symbol_width = self.highlight_symbol.map_or(0, |s| s.width() as u16);
             constraints.push(Constraint::Length(highlight_symbol_width));
         }
@@ -315,7 +344,7 @@ impl<'a> Table<'a> {
                 height: 1,
             });
         let mut chunks = &chunks[..];
-        if has_selection {
+        if add_selection_space {
             chunks = &chunks[1..];
         }
         chunks.iter().step_by(2).map(|c| c.width).collect()
@@ -426,8 +455,12 @@ impl<'a> StatefulWidget for Table<'a> {
             None => area,
         };
 
-        let has_selection = state.selected.is_some();
-        let columns_widths = self.get_columns_widths(table_area.width, has_selection);
+        let add_selection_space = match self.highlight_spacing {
+            HighlightSpacing::Always => true,
+            HighlightSpacing::WhenSelected => state.selected.is_some(),
+            HighlightSpacing::Never => false,
+        };
+        let columns_widths = self.get_columns_widths(table_area.width, add_selection_space);
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
         let blank_symbol = " ".repeat(highlight_symbol.width());
         let mut current_height = 0;
@@ -446,7 +479,7 @@ impl<'a> StatefulWidget for Table<'a> {
                 header.style,
             );
             let mut col = table_area.left();
-            if has_selection {
+            if add_selection_space {
                 col += (highlight_symbol.width() as u16).min(table_area.width);
             }
             for (width, cell) in columns_widths.iter().zip(header.cells.iter()) {
@@ -489,7 +522,7 @@ impl<'a> StatefulWidget for Table<'a> {
             };
             buf.set_style(table_row_area, table_row.style);
             let is_selected = state.selected.map_or(false, |s| s == i);
-            let table_row_start_col = if has_selection {
+            let table_row_start_col = if add_selection_space {
                 let symbol = if is_selected {
                     highlight_symbol
                 } else {
