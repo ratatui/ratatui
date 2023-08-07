@@ -76,7 +76,7 @@ impl<'a> Axis<'a> {
 }
 
 /// Used to determine which style of graphing to use
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum GraphType {
     /// Draw each point
     #[default]
@@ -132,7 +132,7 @@ impl<'a> Dataset<'a> {
 
 /// A container that holds all the infos about where to display each elements of the chart (axis,
 /// labels, legend, ...).
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 struct ChartLayout {
     /// Location of the title of the x axis
     title_x: Option<(u16, u16)>,

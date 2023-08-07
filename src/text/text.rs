@@ -28,7 +28,7 @@ use crate::style::Style;
 /// text.extend(Text::styled("Some more lines\nnow with more style!", style));
 /// assert_eq!(6, text.height());
 /// ```
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Text<'a> {
     pub lines: Vec<Line<'a>>,
 }

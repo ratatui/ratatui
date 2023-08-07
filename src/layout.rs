@@ -420,7 +420,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
 }
 
 /// A container used by the solver inside split
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 struct Element {
     x: Variable,
     y: Variable,

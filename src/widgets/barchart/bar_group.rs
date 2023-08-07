@@ -10,7 +10,7 @@ use crate::text::Line;
 ///     .label("Group 1".into())
 ///     .bars(&[Bar::default().value(200), Bar::default().value(150)]);
 /// ```
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct BarGroup<'a> {
     /// label of the group. It will be printed centered under this group of bars
     pub(super) label: Option<Line<'a>>,

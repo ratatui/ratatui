@@ -7,7 +7,7 @@ use super::StyledGrapheme;
 use crate::style::{Style, Styled};
 
 /// A string where all graphemes have the same style.
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Span<'a> {
     pub content: Cow<'a, str>,
     pub style: Style,

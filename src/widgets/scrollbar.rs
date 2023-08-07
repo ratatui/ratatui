@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// An enum representing the direction of scrolling in a Scrollbar widget.
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum ScrollDirection {
     /// Forward scroll direction, usually corresponds to scrolling downwards or rightwards.
     #[default]
@@ -35,7 +35,7 @@ pub enum ScrollDirection {
 ///
 /// If you don't have multi-line content, you can leave the `viewport_content_length` set to the
 /// default of 0 and it'll use the track size as a `viewport_content_length`.
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ScrollbarState {
     // The current position within the scrollable content.
     position: u16,
@@ -101,7 +101,7 @@ impl ScrollbarState {
 }
 
 /// Scrollbar Orientation
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub enum ScrollbarOrientation {
     #[default]
     VerticalRight,
@@ -122,7 +122,7 @@ pub enum ScrollbarOrientation {
 /// │  └──────── thumb
 /// └─────────── begin
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Scrollbar<'a> {
     orientation: ScrollbarOrientation,
     thumb_style: Style,

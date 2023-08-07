@@ -8,7 +8,7 @@ use crate::{
     widgets::{Block, StatefulWidget, Widget},
 };
 
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct ListState {
     offset: usize,
     selected: Option<usize>,
@@ -45,7 +45,7 @@ impl ListState {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ListItem<'a> {
     content: Text<'a>,
     style: Style,
@@ -90,7 +90,7 @@ impl<'a> ListItem<'a> {
 ///     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
 ///     .highlight_symbol(">>");
 /// ```
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct List<'a> {
     block: Option<Block<'a>>,
     items: Vec<ListItem<'a>>,

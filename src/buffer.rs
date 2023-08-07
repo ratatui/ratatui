@@ -14,7 +14,7 @@ use crate::{
 };
 
 /// A buffer cell
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Cell {
     pub symbol: String,
     pub fg: Color,
@@ -135,7 +135,7 @@ impl Default for Cell {
 /// buf.get_mut(5, 0).set_char('x');
 /// assert_eq!(buf.get(5, 0).symbol, "x");
 /// ```
-#[derive(Default, Clone, Eq, PartialEq)]
+#[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Buffer {
     /// The area represented by this buffer
     pub area: Rect,

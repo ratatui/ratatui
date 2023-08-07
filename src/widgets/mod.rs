@@ -53,7 +53,7 @@ use crate::{buffer::Buffer, layout::Rect};
 
 bitflags! {
     /// Bitflags that can be composed to set the visible borders essentially on the block widget.
-    #[derive(Default, Clone, Copy, Eq, PartialEq)]
+    #[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
     pub struct Borders: u8 {
         /// Show no border (default)
         const NONE   = 0b0000;

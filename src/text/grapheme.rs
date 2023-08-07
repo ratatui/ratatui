@@ -5,7 +5,7 @@ use crate::style::{Style, Styled};
 /// it actually is not a member of the text type hierarchy (`Text` -> `Line` -> `Span`).
 /// It is a separate type used mostly for rendering purposes. A `Span` consists of components that
 /// can be split into `StyledGrapheme`s, but it does not contain a collection of `StyledGrapheme`s.
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct StyledGrapheme<'a> {
     pub symbol: &'a str,
     pub style: Style,
