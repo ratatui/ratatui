@@ -12,8 +12,8 @@
 //! Add the following to your `Cargo.toml`:
 //! ```toml
 //! [dependencies]
-//! crossterm = "0.26"
-//! ratatui = "0.20"
+//! crossterm = "0.27"
+//! ratatui = "0.22"
 //! ```
 //!
 //! The crate is using the `crossterm` backend by default that works on most platforms. But if for
@@ -22,8 +22,8 @@
 //!
 //! ```toml
 //! [dependencies]
-//! termion = "1.5"
-//! ratatui = { version = "0.20", default-features = false, features = ['termion'] }
+//! termion = "2.0.1"
+//! ratatui = { version = "0.22", default-features = false, features = ['termion'] }
 //! ```
 //!
 //! The same logic applies for all other available backends.
