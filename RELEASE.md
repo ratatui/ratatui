@@ -21,6 +21,7 @@ actions](.github/workflows/cd.yml) and triggered by pushing a tag.
    repositories.
 
 1. Bump the version in [Cargo.toml](Cargo.toml).
+1. Bump versions in the doc comments of [lib.rs](src/lib.rs).
 1. Ensure [CHANGELOG.md](CHANGELOG.md) is updated. [git-cliff](https://github.com/orhun/git-cliff)
    can be used for generating the entries.
 1. Commit and push the changes.
