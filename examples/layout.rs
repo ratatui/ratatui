@@ -6,8 +6,45 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{prelude::*, widgets::*};
+#[macro_use]
+extern crate log;
 
-fn main() -> Result<(), Box<dyn Error>> {
+pub fn color_log_format(
+    w: &mut dyn std::io::Write,
+    now: &mut flexi_logger::DeferredNow,
+    record: &flexi_logger::Record,
+) -> std::result::Result<(), std::io::Error> {
+    let level = record.level();
+    return write!(
+        w,
+        "[{} {} {}]: {}",
+        now.format_rfc3339(), /* .color(Color::BrightBlack) */
+        // Bright Black = Grey
+        flexi_logger::style(level).paint(format!("{level:5}")), /* pad level to 2 characters,
+                                                                 * cannot be done in the string
+                                                                 * itself, because of the color
+                                                                 * characters */
+        record.module_path().unwrap_or("<unnamed module>"),
+        &record.args() /* dont apply any color to the input, so that the input can dynamically
+                        * set the color */
+    );
+}
+
+fn main() -> Result<()> {
+    let filespec = flexi_logger::FileSpec::try_from("/tmp/ratatui")
+        .expect("Expected logging file to be parsed correctly");
+    let logger = flexi_logger::Logger::try_with_env_or_str("warn")
+        .expect("Expected flexi_logger to be able to parse env or string")
+        .format_for_files(color_log_format)
+        .log_to_file(filespec)
+        .append();
+
+    logger
+        .start()
+        .expect("Expected flexi_logger to be able to start");
+
+    error!("Active");
+
     // setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -35,6 +72,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
+    let original_hook = std::panic::take_hook();
+
+    std::panic::set_hook(Box::new(move |panic| {
+        reset_terminal().unwrap();
+        original_hook(panic);
+    }));
     loop {
         terminal.draw(|f| ui(f))?;
 
@@ -94,3 +137,12 @@ fn ui<B: Backend>(frame: &mut Frame<B>) {
         bottom,
     );
 }
+
+/// Resets the terminal.
+fn reset_terminal() -> Result<()> {
+    disable_raw_mode()?;
+    crossterm::execute!(io::stdout(), LeaveAlternateScreen, DisableMouseCapture)?;
+
+    Ok(())
+}
+type Result<T> = std::result::Result<T, Box<dyn Error>>;

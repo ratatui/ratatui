@@ -145,6 +145,8 @@ impl Default for Layout {
     }
 }
 
+use log::*;
+
 impl Layout {
     pub const fn new() -> Layout {
         Layout {
