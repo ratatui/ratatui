@@ -321,8 +321,10 @@ impl<'a> Table<'a> {
         self
     }
 
-    /// Set which style of selection space allocation to use
-    pub fn highlight_set_selection_space(mut self, value: HighlightSpacing) -> Self {
+    /// Set when to show the highlight spacing
+    ///
+    /// see [HighlightSpacing] about which variant affects spacing in which way
+    pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
     }

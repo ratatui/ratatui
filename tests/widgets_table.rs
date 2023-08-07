@@ -628,7 +628,7 @@ fn widgets_table_enable_always_highlight_spacing() {
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))
                 .highlight_symbol(">> ")
-                .highlight_set_selection_space(space)
+                .highlight_spacing(space)
                 .widths(&[
                     Constraint::Length(5),
                     Constraint::Length(5),
