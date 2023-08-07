@@ -180,6 +180,18 @@ pub enum HighlightSpacing {
     Never,
 }
 
+impl HighlightSpacing {
+    /// Determine if a selection should be done, based on variant
+    /// Input "selection_state" should be similar to `state.selected.is_some()`
+    pub fn should_add(&self, selection_state: bool) -> bool {
+        match self {
+            HighlightSpacing::Always => true,
+            HighlightSpacing::WhenSelected => selection_state,
+            HighlightSpacing::Never => false,
+        }
+    }
+}
+
 /// A widget to display data in formatted columns.
 ///
 /// It is a collection of [`Row`]s, themselves composed of [`Cell`]s:
@@ -322,12 +334,9 @@ impl<'a> Table<'a> {
 
     /// Get all offsets and widths of all user specified columns
     /// Returns (x, width)
-    fn get_columns_widths(&self, max_width: u16, add_selection_space: bool) -> Vec<(u16, u16)> {
+    fn get_columns_widths(&self, max_width: u16, selection_width: u16) -> Vec<(u16, u16)> {
         let mut constraints = Vec::with_capacity(self.widths.len() * 2 + 1);
-        if add_selection_space {
-            let highlight_symbol_width = self.highlight_symbol.map_or(0, |s| s.width() as u16);
-            constraints.push(Constraint::Length(highlight_symbol_width));
-        }
+        constraints.push(Constraint::Length(selection_width));
         for constraint in self.widths {
             constraints.push(*constraint);
             constraints.push(Constraint::Length(self.column_spacing));
@@ -345,11 +354,12 @@ impl<'a> Table<'a> {
                 width: max_width,
                 height: 1,
             });
-        let mut chunks = &chunks[..];
-        if add_selection_space {
-            chunks = &chunks[1..];
-        }
-        chunks.iter().step_by(2).map(|c| (c.x, c.width)).collect()
+        chunks
+            .iter()
+            .skip(1)
+            .step_by(2)
+            .map(|c| (c.x, c.width))
+            .collect()
     }
 
     fn get_row_bounds(
@@ -457,12 +467,12 @@ impl<'a> StatefulWidget for Table<'a> {
             None => area,
         };
 
-        let add_selection_space = match self.highlight_spacing {
-            HighlightSpacing::Always => true,
-            HighlightSpacing::WhenSelected => state.selected.is_some(),
-            HighlightSpacing::Never => false,
+        let selection_width = if self.highlight_spacing.should_add(state.selected.is_some()) {
+            self.highlight_symbol.map_or(0, |s| s.width() as u16)
+        } else {
+            0
         };
-        let columns_widths = self.get_columns_widths(table_area.width, add_selection_space);
+        let columns_widths = self.get_columns_widths(table_area.width, selection_width);
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
         let mut current_height = 0;
         let mut rows_height = table_area.height;
@@ -519,7 +529,7 @@ impl<'a> StatefulWidget for Table<'a> {
             };
             buf.set_style(table_row_area, table_row.style);
             let is_selected = state.selected.map_or(false, |s| s == i);
-            if add_selection_space && is_selected {
+            if selection_width > 0 && is_selected {
                 // this should in normal cases be safe, because "get_columns_widths" allocates
                 // "highlight_symbol.width()" space but "get_columns_widths"
                 // currently does not bind it to max table.width()
