@@ -272,13 +272,6 @@ impl Layout {
 }
 
 fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
-    let mut solver = Solver::new();
-    let mut vars: HashMap<Variable, (usize, usize)> = HashMap::new();
-    let elements = layout
-        .constraints
-        .iter()
-        .map(|_| Element::new())
-        .collect::<Vec<Element>>();
     let mut res = layout
         .constraints
         .iter()
@@ -288,6 +281,152 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
     let results = Rc::get_mut(&mut res).expect("newly created Rc should have no shared refs");
 
     let dest_area = area.inner(&layout.margin);
+    {
+        use taffy::prelude::*;
+        let mut taffy = Taffy::with_capacity(layout.constraints.len());
+        let mut taffy_keys = Vec::with_capacity(layout.constraints.len());
+
+        // disabling rounding, because otherwise the following tests fail:
+        // widgets_table_columns_widths_can_use_mixed_constraints
+        // widgets_table_column_spacing_can_be_changed
+        //
+        // but disabling rounding makes the following tests fail:
+        // layout::tests::test_vertical_split_by_height
+        taffy.disable_rounding();
+
+        for elt in &layout.constraints {
+            // alias for dest_area width or height, depending on layout.direction
+            let dest_area_var = match layout.direction {
+                Direction::Horizontal => dest_area.width,
+                Direction::Vertical => dest_area.height,
+            };
+
+            // value to use for the dimension (special case for percent)
+            let elt_applied = match elt {
+                // special case for percent, because it could be directly supported by taffy
+                // Constraint::Percentage(v) => (*v as f32) / 100.0,
+                _ => elt.apply(dest_area_var) as f32,
+            };
+
+            // minimal size for a constraint
+            let min_size = match elt {
+                Constraint::Length(v) => *v as f32,
+                Constraint::Min(v) => *v as f32,
+                _ => 0 as f32,
+            } as f32;
+            // maximal size for a constraint
+            let max_size = match elt {
+                // need to re-use the same calculation as elt_applied
+                // Constraint::Percentage(v) => (*v as f32) / 100.0,
+                Constraint::Length(v) => *v as f32,
+                Constraint::Max(v) => *v as f32,
+                _ => u16::MAX as f32,
+            } as f32;
+
+            // which dimension type to use
+            let dim = match elt {
+                // see comment on "elt_applied"
+                // Constraint::Percentage(_) => Dimension::Percent,
+                _ => Dimension::Points,
+            };
+
+            match layout.direction {
+                Direction::Horizontal => taffy_keys.push(
+                    taffy
+                        .new_leaf(Style {
+                            // add node only with "width" set, because of layout.direction
+                            size: Size {
+                                width: dim(elt_applied as f32),
+                                height: auto(),
+                            },
+                            min_size: Size {
+                                width: dim(min_size),
+                                height: zero(),
+                            },
+                            max_size: Size {
+                                width: dim(max_size),
+                                height: auto(),
+                            },
+                            ..Default::default()
+                        })
+                        .unwrap(),
+                ),
+                Direction::Vertical => taffy_keys.push(
+                    taffy
+                        .new_leaf(Style {
+                            // add node only with "height" set, because of layout.direction
+                            size: Size {
+                                width: auto(),
+                                height: dim(elt_applied as f32),
+                            },
+                            min_size: Size {
+                                width: zero(),
+                                height: dim(min_size),
+                            },
+                            max_size: Size {
+                                width: auto(),
+                                height: dim(max_size),
+                            },
+                            ..Default::default()
+                        })
+                        .unwrap(),
+                ),
+            };
+        }
+
+        let root_node = taffy
+            .new_with_children(
+                Style {
+                    // setting flex_direction, because otherwise "Column" would be used for
+                    // "Horizontal", which makes it basically render 0 length
+                    flex_direction: match layout.direction {
+                        Direction::Horizontal => FlexDirection::Row,
+                        Direction::Vertical => FlexDirection::Column,
+                    },
+                    // root node needs to take up full space of available_space later, otherwise the
+                    // child elements are all length 0
+                    size: Size {
+                        width: percent(1.0),
+                        height: percent(1.0),
+                    },
+                    ..Default::default()
+                },
+                &taffy_keys,
+            )
+            .unwrap();
+
+        taffy
+            .compute_layout(
+                root_node,
+                Size {
+                    width: AvailableSpace::Definite(dest_area.width as f32),
+                    height: AvailableSpace::Definite(dest_area.height as f32),
+                },
+            )
+            .unwrap();
+
+        // assign computed values back to the result array
+        for (i, key) in taffy_keys.iter().enumerate() {
+            let computed = taffy.layout(*key).unwrap();
+
+            results[i].width = computed.size.width as u16;
+            results[i].height = computed.size.height as u16;
+            results[i].x = computed.location.x as u16 + dest_area.x;
+            results[i].y = computed.location.y as u16 + dest_area.y;
+        }
+    }
+
+    return res;
+
+    let elements = layout
+        .constraints
+        .iter()
+        .map(|_| Element::new())
+        .collect::<Vec<Element>>();
+
+    let mut solver = Solver::new();
+    let mut vars: HashMap<Variable, (usize, usize)> = HashMap::new();
+
     for (i, e) in elements.iter().enumerate() {
         vars.insert(e.x, (i, 0));
         vars.insert(e.y, (i, 1));

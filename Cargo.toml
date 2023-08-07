@@ -38,6 +38,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 bitflags = "2.3"
 cassowary = "0.3"
+taffy = "0.3"
 crossterm = { version = "0.26", optional = true }
 indoc = "2.0"
 paste = "1.0.2"
