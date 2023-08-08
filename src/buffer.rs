@@ -15,6 +15,7 @@ use crate::{
 
 /// A buffer cell
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cell {
     pub symbol: String,
     pub fg: Color,
@@ -136,6 +137,7 @@ impl Default for Cell {
 /// assert_eq!(buf.get(5, 0).symbol, "x");
 /// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Buffer {
     /// The area represented by this buffer
     pub area: Rect,
