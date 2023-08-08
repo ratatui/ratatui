@@ -331,10 +331,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
                     taffy
                         .new_leaf(Style {
                             // add node only with "width" set, because of layout.direction
-                            size: Size {
-                                width: dim(elt_applied as f32),
-                                height: auto(),
-                            },
+                            flex_basis: dim(elt_applied),
                             min_size: Size {
                                 width: dim(min_size),
                                 height: zero(),
@@ -351,10 +348,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
                     taffy
                         .new_leaf(Style {
                             // add node only with "height" set, because of layout.direction
-                            size: Size {
-                                width: auto(),
-                                height: dim(elt_applied as f32),
-                            },
+                            flex_basis: dim(elt_applied),
                             min_size: Size {
                                 width: zero(),
                                 height: dim(min_size),
