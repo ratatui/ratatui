@@ -78,6 +78,127 @@ impl<'a> ListItem<'a> {
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct CommonList<'a> {
+    block: Option<Block<'a>>,
+    /// Style used as a base style for the widget
+    style: Style,
+    start_corner: Corner,
+    /// Style used to render selected item
+    highlight_style: Style,
+    /// Symbol in front of the selected item (Shift all items to the right)
+    highlight_symbol: Option<&'a str>,
+    /// Whether to repeat the highlight symbol for each line of the selected item
+    repeat_highlight_symbol: bool,
+}
+
+fn get_items_bounds<F>(
+    mut get_height: F,
+    items_len: usize,
+    selected: Option<usize>,
+    offset: usize,
+    max_height: usize,
+) -> (usize, usize)
+where
+    F: FnMut(usize) -> usize,
+{
+    let offset = offset.min(items_len.saturating_sub(1));
+    let mut start = offset;
+    let mut end = offset;
+    let mut height = 0;
+
+    for item_id in (0..items_len).skip(offset) {
+        let item_height = get_height(item_id);
+        if height + item_height > max_height {
+            break;
+        }
+        height += item_height;
+        end += 1;
+    }
+
+    let selected = selected.unwrap_or(0).min(items_len - 1);
+    while selected >= end {
+        let item_height = get_height(end);
+        height = height.saturating_add(item_height);
+        end += 1;
+        while height > max_height {
+            let item_height = get_height(start);
+            height = height.saturating_sub(item_height);
+            start += 1;
+        }
+    }
+    while selected < start {
+        start -= 1;
+        let item_height = get_height(start);
+        height = height.saturating_add(item_height);
+        while height > max_height {
+            end -= 1;
+            let item_height = get_height(end);
+            height = height.saturating_sub(item_height);
+        }
+    }
+    (start, end)
+}
+
+fn render_item<'a>(
+    common: &mut CommonList<'a>,
+    state: &mut ListState,
+    list_area: &Rect,
+    buf: &mut Buffer,
+    (id, item): (usize, &ListItem<'a>),
+    current_height: &mut u16,
+    blank_symbol: &str,
+) {
+    let highlight_symbol = common.highlight_symbol.unwrap_or("");
+    let has_selection = state.selected.is_some();
+
+    let (x, y) = if common.start_corner == Corner::BottomLeft {
+        *current_height += item.height() as u16;
+        (list_area.left(), list_area.bottom() - *current_height)
+    } else {
+        let pos = (list_area.left(), list_area.top() + *current_height);
+        *current_height += item.height() as u16;
+        pos
+    };
+    let area = Rect {
+        x,
+        y,
+        width: list_area.width,
+        height: item.height() as u16,
+    };
+    let item_style = common.style.patch(item.style);
+    buf.set_style(area, item_style);
+
+    let is_selected = state.selected.map_or(false, |s| s == id);
+    for (j, line) in item.content.lines.iter().enumerate() {
+        // if the item is selected, we need to display the highlight symbol:
+        // - either for the first line of the item only,
+        // - or for each line of the item if the appropriate option is set
+        let symbol = if is_selected && (j == 0 || common.repeat_highlight_symbol) {
+            highlight_symbol
+        } else {
+            blank_symbol
+        };
+        let (elem_x, max_element_width) = if has_selection {
+            let (elem_x, _) = buf.set_stringn(
+                x,
+                y + j as u16,
+                symbol,
+                list_area.width as usize,
+                item_style,
+            );
+            (elem_x, (list_area.width - (elem_x - x)))
+        } else {
+            (x, list_area.width)
+        };
+        buf.set_line(elem_x, y + j as u16, line, max_element_width);
+    }
+
+    if is_selected {
+        buf.set_style(area, common.highlight_style);
+    }
+}
+
 #[derive(Clone)]
 struct LazyVec<'a> {
     builder: Rc<dyn Fn(usize) -> ListItem<'a> + 'a>,
@@ -138,17 +259,8 @@ impl<'a> LazyVec<'a> {
 /// ```
 #[derive(Clone)]
 pub struct LazyList<'a> {
-    block: Option<Block<'a>>,
+    common: CommonList<'a>,
     items: LazyVec<'a>,
-    /// Style used as a base style for the widget
-    style: Style,
-    start_corner: Corner,
-    /// Style used to render selected item
-    highlight_style: Style,
-    /// Symbol in front of the selected item (Shift all items to the right)
-    highlight_symbol: Option<&'a str>,
-    /// Whether to repeat the highlight symbol for each line of the selected item
-    repeat_highlight_symbol: bool,
 }
 
 impl<'a> LazyList<'a> {
@@ -157,43 +269,45 @@ impl<'a> LazyList<'a> {
         F: Fn(usize) -> ListItem<'a> + 'a,
     {
         Self {
-            block: None,
-            style: Style::default(),
             items: LazyVec::new(len, builder),
-            start_corner: Corner::TopLeft,
-            highlight_style: Style::default(),
-            highlight_symbol: None,
-            repeat_highlight_symbol: false,
+            common: CommonList {
+                block: None,
+                style: Style::default(),
+                start_corner: Corner::TopLeft,
+                highlight_style: Style::default(),
+                highlight_symbol: None,
+                repeat_highlight_symbol: false,
+            },
         }
     }
 
     pub fn block(mut self, block: Block<'a>) -> LazyList<'a> {
-        self.block = Some(block);
+        self.common.block = Some(block);
         self
     }
 
     pub fn style(mut self, style: Style) -> LazyList<'a> {
-        self.style = style;
+        self.common.style = style;
         self
     }
 
     pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> LazyList<'a> {
-        self.highlight_symbol = Some(highlight_symbol);
+        self.common.highlight_symbol = Some(highlight_symbol);
         self
     }
 
     pub fn highlight_style(mut self, style: Style) -> LazyList<'a> {
-        self.highlight_style = style;
+        self.common.highlight_style = style;
         self
     }
 
     pub fn repeat_highlight_symbol(mut self, repeat: bool) -> LazyList<'a> {
-        self.repeat_highlight_symbol = repeat;
+        self.common.repeat_highlight_symbol = repeat;
         self
     }
 
     pub fn start_corner(mut self, corner: Corner) -> LazyList<'a> {
-        self.start_corner = corner;
+        self.common.start_corner = corner;
         self
     }
 
@@ -211,42 +325,15 @@ impl<'a> LazyList<'a> {
         offset: usize,
         max_height: usize,
     ) -> (usize, usize) {
-        let offset = offset.min(self.len().saturating_sub(1));
-        let mut start = offset;
-        let mut end = offset;
-        let mut height = 0;
+        let len = self.items.len();
 
-        for item_id in self.items.iter_ids().skip(offset) {
-            let item = self.items.get_or_init(item_id);
-            if height + item.height() > max_height {
-                break;
-            }
-            height += item.height();
-            end += 1;
-        }
-
-        let selected = selected.unwrap_or(0).min(self.len() - 1);
-        while selected >= end {
-            let item = self.items.get_or_init(end);
-            height = height.saturating_add(item.height());
-            end += 1;
-            while height > max_height {
-                let item = self.items.get_or_init(start);
-                height = height.saturating_sub(item.height());
-                start += 1;
-            }
-        }
-        while selected < start {
-            start -= 1;
-            let item = self.items.get_or_init(start);
-            height = height.saturating_add(item.height());
-            while height > max_height {
-                end -= 1;
-                let item = self.items.get_or_init(end);
-                height = height.saturating_sub(item.height());
-            }
-        }
-        (start, end)
+        get_items_bounds(
+            |id| self.items.get_or_init(id).height(),
+            len,
+            selected,
+            offset,
+            max_height,
+        )
     }
 }
 
@@ -254,8 +341,8 @@ impl<'a> StatefulWidget for LazyList<'a> {
     type State = ListState;
 
     fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        buf.set_style(area, self.style);
-        let list_area = match self.block.take() {
+        buf.set_style(area, self.common.style);
+        let list_area = match self.common.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
                 b.render(area, buf);
@@ -276,59 +363,21 @@ impl<'a> StatefulWidget for LazyList<'a> {
         let (start, end) = self.get_items_bounds(state.selected, state.offset, list_height);
         state.offset = start;
 
-        let highlight_symbol = self.highlight_symbol.unwrap_or("");
+        let highlight_symbol = self.common.highlight_symbol.unwrap_or("");
         let blank_symbol = " ".repeat(highlight_symbol.width());
 
         let mut current_height = 0;
-        let has_selection = state.selected.is_some();
-        for i in self.items.iter_ids().skip(state.offset).take(end - start) {
-            let item = self.items.get_or_init(i);
 
-            let (x, y) = if self.start_corner == Corner::BottomLeft {
-                current_height += item.height() as u16;
-                (list_area.left(), list_area.bottom() - current_height)
-            } else {
-                let pos = (list_area.left(), list_area.top() + current_height);
-                current_height += item.height() as u16;
-                pos
-            };
-            let area = Rect {
-                x,
-                y,
-                width: list_area.width,
-                height: item.height() as u16,
-            };
-            let item_style = self.style.patch(item.style);
-            buf.set_style(area, item_style);
-
-            let is_selected = state.selected.map_or(false, |s| s == i);
-            for (j, line) in item.content.lines.iter().enumerate() {
-                // if the item is selected, we need to display the highlight symbol:
-                // - either for the first line of the item only,
-                // - or for each line of the item if the appropriate option is set
-                let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
-                    highlight_symbol
-                } else {
-                    &blank_symbol
-                };
-                let (elem_x, max_element_width) = if has_selection {
-                    let (elem_x, _) = buf.set_stringn(
-                        x,
-                        y + j as u16,
-                        symbol,
-                        list_area.width as usize,
-                        item_style,
-                    );
-                    (elem_x, (list_area.width - (elem_x - x)))
-                } else {
-                    (x, list_area.width)
-                };
-                buf.set_line(elem_x, y + j as u16, line, max_element_width);
-            }
-
-            if is_selected {
-                buf.set_style(area, self.highlight_style);
-            }
+        for id in self.items.iter_ids().skip(state.offset).take(end - start) {
+            render_item(
+                &mut self.common,
+                state,
+                &list_area,
+                buf,
+                (id, self.items.get_or_init(id)),
+                &mut current_height,
+                &blank_symbol,
+            );
         }
     }
 }
@@ -356,17 +405,8 @@ impl<'a> Widget for LazyList<'a> {
 /// ```
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct List<'a> {
-    block: Option<Block<'a>>,
+    common: CommonList<'a>,
     items: Vec<ListItem<'a>>,
-    /// Style used as a base style for the widget
-    style: Style,
-    start_corner: Corner,
-    /// Style used to render selected item
-    highlight_style: Style,
-    /// Symbol in front of the selected item (Shift all items to the right)
-    highlight_symbol: Option<&'a str>,
-    /// Whether to repeat the highlight symbol for each line of the selected item
-    repeat_highlight_symbol: bool,
 }
 
 impl<'a> List<'a> {
@@ -375,43 +415,45 @@ impl<'a> List<'a> {
         T: Into<Vec<ListItem<'a>>>,
     {
         List {
-            block: None,
-            style: Style::default(),
             items: items.into(),
-            start_corner: Corner::TopLeft,
-            highlight_style: Style::default(),
-            highlight_symbol: None,
-            repeat_highlight_symbol: false,
+            common: CommonList {
+                block: None,
+                style: Style::default(),
+                start_corner: Corner::TopLeft,
+                highlight_style: Style::default(),
+                highlight_symbol: None,
+                repeat_highlight_symbol: false,
+            },
         }
     }
 
     pub fn block(mut self, block: Block<'a>) -> List<'a> {
-        self.block = Some(block);
+        self.common.block = Some(block);
         self
     }
 
     pub fn style(mut self, style: Style) -> List<'a> {
-        self.style = style;
+        self.common.style = style;
         self
     }
 
     pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> List<'a> {
-        self.highlight_symbol = Some(highlight_symbol);
+        self.common.highlight_symbol = Some(highlight_symbol);
         self
     }
 
     pub fn highlight_style(mut self, style: Style) -> List<'a> {
-        self.highlight_style = style;
+        self.common.highlight_style = style;
         self
     }
 
     pub fn repeat_highlight_symbol(mut self, repeat: bool) -> List<'a> {
-        self.repeat_highlight_symbol = repeat;
+        self.common.repeat_highlight_symbol = repeat;
         self
     }
 
     pub fn start_corner(mut self, corner: Corner) -> List<'a> {
-        self.start_corner = corner;
+        self.common.start_corner = corner;
         self
     }
 
@@ -429,36 +471,13 @@ impl<'a> List<'a> {
         offset: usize,
         max_height: usize,
     ) -> (usize, usize) {
-        let offset = offset.min(self.items.len().saturating_sub(1));
-        let mut start = offset;
-        let mut end = offset;
-        let mut height = 0;
-        for item in self.items.iter().skip(offset) {
-            if height + item.height() > max_height {
-                break;
-            }
-            height += item.height();
-            end += 1;
-        }
-
-        let selected = selected.unwrap_or(0).min(self.items.len() - 1);
-        while selected >= end {
-            height = height.saturating_add(self.items[end].height());
-            end += 1;
-            while height > max_height {
-                height = height.saturating_sub(self.items[start].height());
-                start += 1;
-            }
-        }
-        while selected < start {
-            start -= 1;
-            height = height.saturating_add(self.items[start].height());
-            while height > max_height {
-                end -= 1;
-                height = height.saturating_sub(self.items[end].height());
-            }
-        }
-        (start, end)
+        get_items_bounds(
+            |id| self.items[id].height(),
+            self.items.len(),
+            selected,
+            offset,
+            max_height,
+        )
     }
 }
 
@@ -466,8 +485,8 @@ impl<'a> StatefulWidget for List<'a> {
     type State = ListState;
 
     fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        buf.set_style(area, self.style);
-        let list_area = match self.block.take() {
+        buf.set_style(area, self.common.style);
+        let list_area = match self.common.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
                 b.render(area, buf);
@@ -488,62 +507,27 @@ impl<'a> StatefulWidget for List<'a> {
         let (start, end) = self.get_items_bounds(state.selected, state.offset, list_height);
         state.offset = start;
 
-        let highlight_symbol = self.highlight_symbol.unwrap_or("");
+        let highlight_symbol = self.common.highlight_symbol.unwrap_or("");
         let blank_symbol = " ".repeat(highlight_symbol.width());
 
         let mut current_height = 0;
-        let has_selection = state.selected.is_some();
-        for (i, item) in self
+
+        for entry in self
             .items
-            .iter_mut()
+            .iter()
             .enumerate()
             .skip(state.offset)
             .take(end - start)
         {
-            let (x, y) = if self.start_corner == Corner::BottomLeft {
-                current_height += item.height() as u16;
-                (list_area.left(), list_area.bottom() - current_height)
-            } else {
-                let pos = (list_area.left(), list_area.top() + current_height);
-                current_height += item.height() as u16;
-                pos
-            };
-            let area = Rect {
-                x,
-                y,
-                width: list_area.width,
-                height: item.height() as u16,
-            };
-            let item_style = self.style.patch(item.style);
-            buf.set_style(area, item_style);
-
-            let is_selected = state.selected.map_or(false, |s| s == i);
-            for (j, line) in item.content.lines.iter().enumerate() {
-                // if the item is selected, we need to display the highlight symbol:
-                // - either for the first line of the item only,
-                // - or for each line of the item if the appropriate option is set
-                let symbol = if is_selected && (j == 0 || self.repeat_highlight_symbol) {
-                    highlight_symbol
-                } else {
-                    &blank_symbol
-                };
-                let (elem_x, max_element_width) = if has_selection {
-                    let (elem_x, _) = buf.set_stringn(
-                        x,
-                        y + j as u16,
-                        symbol,
-                        list_area.width as usize,
-                        item_style,
-                    );
-                    (elem_x, (list_area.width - (elem_x - x)))
-                } else {
-                    (x, list_area.width)
-                };
-                buf.set_line(elem_x, y + j as u16, line, max_element_width);
-            }
-            if is_selected {
-                buf.set_style(area, self.highlight_style);
-            }
+            render_item(
+                &mut self.common,
+                state,
+                &list_area,
+                buf,
+                entry,
+                &mut current_height,
+                &blank_symbol,
+            );
         }
     }
 }
@@ -559,7 +543,7 @@ impl<'a> Styled for List<'a> {
     type Item = List<'a>;
 
     fn style(&self) -> Style {
-        self.style
+        self.common.style
     }
 
     fn set_style(self, style: Style) -> Self::Item {
@@ -1172,7 +1156,13 @@ mod tests {
     #[test]
     fn list_can_be_stylized() {
         assert_eq!(
-            List::new(vec![]).black().on_white().bold().not_dim().style,
+            List::new(vec![])
+                .black()
+                .on_white()
+                .bold()
+                .not_dim()
+                .common
+                .style,
             Style::default()
                 .fg(Color::Black)
                 .bg(Color::White)
