@@ -268,145 +268,114 @@ impl Layout {
 }
 
 fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
-    let mut res = layout
+    use taffy::prelude::*;
+
+    let inner_area = area.inner(&layout.margin);
+    let mut taffy = Taffy::with_capacity(layout.constraints.len());
+
+    // disabling rounding, because otherwise the following tests fail:
+    // widgets_table_columns_widths_can_use_mixed_constraints
+    // widgets_table_column_spacing_can_be_changed
+    //
+    // but disabling rounding makes the following tests fail:
+    // layout::tests::test_vertical_split_by_height
+    taffy.disable_rounding();
+
+    let nodes = layout
         .constraints
         .iter()
-        .map(|_| Rect::default())
-        .collect::<Rc<[Rect]>>();
+        .map(|con| ConstraintAndDirection(*con, layout.direction).into())
+        .map(|style| taffy.new_leaf(style).unwrap())
+        .collect::<Vec<taffy::node::Node>>();
 
-    let results = Rc::get_mut(&mut res).expect("newly created Rc should have no shared refs");
+    let root_node = taffy
+        .new_with_children(
+            Style {
+                // setting flex_direction, because otherwise "Column" would be used for
+                // "Horizontal", which makes it basically render 0 length
+                flex_direction: match layout.direction {
+                    Direction::Horizontal => FlexDirection::Row,
+                    Direction::Vertical => FlexDirection::Column,
+                },
+                // root node needs to take up full space of available_space later, otherwise the
+                // child elements are all length 0
+                size: Size {
+                    width: percent(1.0),
+                    height: percent(1.0),
+                },
+                ..Default::default()
+            },
+            &nodes,
+        )
+        .unwrap();
 
-    let dest_area = area.inner(&layout.margin);
-    {
+    taffy
+        .compute_layout(
+            root_node,
+            Size {
+                width: AvailableSpace::Definite(inner_area.width as f32),
+                height: AvailableSpace::Definite(inner_area.height as f32),
+            },
+        )
+        .unwrap();
+
+    nodes
+        .iter()
+        .map(|key| taffy.layout(*key).unwrap())
+        .map(|computed| crate::layout::Rect {
+            x: computed.location.x as u16 + inner_area.x,
+            y: computed.location.y as u16 + inner_area.y,
+            width: computed.size.width as u16,
+            height: computed.size.height as u16,
+        })
+        .collect()
+}
+
+/// Wrapper container to translate Constraint and Direction into [taffy::style::Style]
+#[derive(Debug)]
+struct ConstraintAndDirection(Constraint, Direction);
+
+impl From<ConstraintAndDirection> for taffy::style::Style {
+    fn from(value: ConstraintAndDirection) -> Self {
         use taffy::prelude::*;
-        let mut taffy = Taffy::with_capacity(layout.constraints.len());
-        let mut taffy_keys = Vec::with_capacity(layout.constraints.len());
+        let main_axis = match value.0 {
+            Constraint::Percentage(v) => percent(v as f32 / 100.0),
+            Constraint::Ratio(a, b) => percent(a as f32 / b as f32),
+            Constraint::Length(v) => points(v as f32),
+            Constraint::Max(v) => points(v as f32),
+            Constraint::Min(v) => points(v as f32),
+        };
 
-        // disabling rounding, because otherwise the following tests fail:
-        // widgets_table_columns_widths_can_use_mixed_constraints
-        // widgets_table_column_spacing_can_be_changed
-        //
-        // but disabling rounding makes the following tests fail:
-        // layout::tests::test_vertical_split_by_height
-        taffy.disable_rounding();
+        let size = match value.1 {
+            Direction::Horizontal => Size {
+                width: main_axis,
+                height: auto(),
+            },
+            Direction::Vertical => Size {
+                width: auto(),
+                height: main_axis,
+            },
+        };
 
-        for elt in &layout.constraints {
-            // alias for dest_area width or height, depending on layout.direction
-            let dest_area_var = match layout.direction {
-                Direction::Horizontal => dest_area.width,
-                Direction::Vertical => dest_area.height,
-            };
-
-            // value to use for the dimension (special case for percent)
-            let elt_applied = match elt {
-                // special case for percent, because it could be directly supported by taffy
-                // Constraint::Percentage(v) => (*v as f32) / 100.0,
-                _ => elt.apply(dest_area_var) as f32,
-            };
-
-            // minimal size for a constraint
-            let min_size = match elt {
-                Constraint::Length(v) => *v as f32,
-                Constraint::Min(v) => *v as f32,
-                _ => 0 as f32,
-            } as f32;
-            // maximal size for a constraint
-            let max_size = match elt {
-                // need to re-use the same calculation as elt_applied
-                // Constraint::Percentage(v) => (*v as f32) / 100.0,
-                Constraint::Length(v) => *v as f32,
-                Constraint::Max(v) => *v as f32,
-                _ => u16::MAX as f32,
-            } as f32;
-
-            // which dimension type to use
-            let dim = match elt {
-                // see comment on "elt_applied"
-                // Constraint::Percentage(_) => Dimension::Percent,
-                _ => Dimension::Points,
-            };
-
-            match layout.direction {
-                Direction::Horizontal => taffy_keys.push(
-                    taffy
-                        .new_leaf(Style {
-                            // add node only with "width" set, because of layout.direction
-                            flex_basis: dim(elt_applied),
-                            min_size: Size {
-                                width: dim(min_size),
-                                height: zero(),
-                            },
-                            max_size: Size {
-                                width: dim(max_size),
-                                height: auto(),
-                            },
-                            ..Default::default()
-                        })
-                        .unwrap(),
-                ),
-                Direction::Vertical => taffy_keys.push(
-                    taffy
-                        .new_leaf(Style {
-                            // add node only with "height" set, because of layout.direction
-                            flex_basis: dim(elt_applied),
-                            min_size: Size {
-                                width: zero(),
-                                height: dim(min_size),
-                            },
-                            max_size: Size {
-                                width: auto(),
-                                height: dim(max_size),
-                            },
-                            ..Default::default()
-                        })
-                        .unwrap(),
-                ),
-            };
-        }
-
-        let root_node = taffy
-            .new_with_children(
-                Style {
-                    // setting flex_direction, because otherwise "Column" would be used for
-                    // "Horizontal", which makes it basically render 0 length
-                    flex_direction: match layout.direction {
-                        Direction::Horizontal => FlexDirection::Row,
-                        Direction::Vertical => FlexDirection::Column,
-                    },
-                    // root node needs to take up full space of available_space later, otherwise the
-                    // child elements are all length 0
-                    size: Size {
-                        width: percent(1.0),
-                        height: percent(1.0),
-                    },
-                    ..Default::default()
-                },
-                &taffy_keys,
-            )
-            .unwrap();
-
-        taffy
-            .compute_layout(
-                root_node,
-                Size {
-                    width: AvailableSpace::Definite(dest_area.width as f32),
-                    height: AvailableSpace::Definite(dest_area.height as f32),
-                },
-            )
-            .unwrap();
-
-        // assign computed values back to the result array
-        for (i, key) in taffy_keys.iter().enumerate() {
-            let computed = taffy.layout(*key).unwrap();
-
-            results[i].width = computed.size.width as u16;
-            results[i].height = computed.size.height as u16;
-            results[i].x = computed.location.x as u16 + dest_area.x;
-            results[i].y = computed.location.y as u16 + dest_area.y;
+        match value.0 {
+            Constraint::Percentage(_) | Constraint::Ratio(_, _) | Constraint::Length(_) => Style {
+                size,
+                ..Default::default()
+            },
+            Constraint::Max(_) => Style {
+                size: auto(),
+                flex_grow: 1.0,
+                max_size: size,
+                ..Default::default()
+            },
+            Constraint::Min(_) => Style {
+                size: auto(),
+                flex_grow: 1.0,
+                min_size: size,
+                ..Default::default()
+            },
         }
     }
-
-    return res;
 }
 
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
