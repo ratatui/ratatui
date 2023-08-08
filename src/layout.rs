@@ -89,6 +89,7 @@ impl Default for Constraint {
 }
 
 impl Constraint {
+    #[deprecated = "This function has been deprecated, because taffy's calculations will be used instead"]
     pub fn apply(&self, length: u16) -> u16 {
         match *self {
             Constraint::Percentage(p) => {
