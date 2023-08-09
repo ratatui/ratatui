@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
-//! [ratatui](https://github.com/ratatui-org/ratatui) is a library used to build rich
-//! terminal users interfaces and dashboards.
+//! [ratatui](https://github.com/ratatui-org/ratatui) is a library used to build rich terminal user
+//! interfaces (TUIs) and dashboards.
 //!
 //! ![Demo](https://vhs.charm.sh/vhs-tF0QbuPbtHgUeG0sTVgFr.gif)
 //!
@@ -27,14 +27,6 @@
 //! ```
 //!
 //! The same logic applies for all other available backends.
-//!
-//! ### Features
-//!
-//! Widgets which add dependencies are gated behind feature flags to prevent unused transitive
-//! dependencies. The available features are:
-//!
-//! * `widget-calendar` - enables [`widgets::calendar`] and adds a dependency on the [time
-//! crate](https://crates.io/crates/time).
 //!
 //! ## Creating a `Terminal`
 //!
@@ -80,8 +72,8 @@
 //! implement your own.
 //!
 //! Each widget follows a builder pattern API providing a default configuration along with methods
-//! to customize them. The widget is then rendered using [`Frame::render_widget`] which takes
-//! your widget instance and an area to draw to.
+//! to customize them. The widget is then rendered using [`Frame::render_widget`] which takes your
+//! widget instance and an area to draw to.
 //!
 //! The following example renders a block of the size of the terminal:
 //!
@@ -171,10 +163,49 @@
 //! }
 //! ```
 //!
-//! This let you describe responsive terminal UI by nesting layouts. You should note that by
-//! default the computed layout tries to fill the available space completely. So if for any reason
-//! you might need a blank space somewhere, try to pass an additional constraint and don't use the
+//! This let you describe responsive terminal UI by nesting layouts. You should note that by default
+//! the computed layout tries to fill the available space completely. So if for any reason you might
+//! need a blank space somewhere, try to pass an additional constraint and don't use the
 //! corresponding area.
+//!
+//! # Features
+//!
+//! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
+//!
+//! Generally an application will only use one backend, so you should only enable one of the
+//! following features:
+//!
+//! - `crossterm` - enables the [`CrosstermBackend`] backend and adds a dependency on the [Crossterm
+//! crate]. Enabled by default.
+//! - `termion` - enables the [`TermionBackend`] backend and adds a dependency on the [Termion
+//!   crate].
+//! - `termwiz` - enables the [`TermwizBackend`] backend and adds a dependency on the [Termwiz
+//!   crate].
+//!
+//! The following optional features are available for all backends:
+//!
+//! - `serde` - enables serialization and deserialization of style and color types using the [Serde
+//! crate]. This is useful if you want to save themes to a file.
+//! - `macros` - enables the [`border!`] macro.
+//! - `all-widgets` - enables all widgets.
+//!
+//! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
+//! dependencies. The available features are:
+//!
+//! - `widget-calendar` - enables the [`calendar`] widget module and adds a dependency on the [Time
+//!   crate].
+//!
+//! [`Layout`]: layout::Layout
+//! [`backend`]: backend
+//! [`calendar`]: widgets::calendar
+//! [`CrosstermBackend`]: backend::CrosstermBackend
+//! [`TermionBackend`]: backend::TermionBackend
+//! [`TermwizBackend`]: backend::TermwizBackend
+//! [Crossterm crate]: https://crates.io/crates/crossterm
+//! [Serde crate]: https://crates.io/crates/serde
+//! [Termion crate]: https://crates.io/crates/termion
+//! [Termwiz crate]: https://crates.io/crates/termwiz
+//! [Time crate]: https://crates.io/crates/time
 
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
