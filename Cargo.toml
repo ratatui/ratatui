@@ -25,7 +25,7 @@ rust-version = "1.67.0"
 [features]
 default = ["crossterm"]
 all-widgets = ["widget-calendar"]
-widget-calendar = ["time"]
+widget-calendar = ["dep:time"]
 macros = []
 serde = ["dep:serde", "bitflags/serde"]
 
