@@ -2,7 +2,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Style, Styled},
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
@@ -528,7 +528,14 @@ fn render_cell(buf: &mut Buffer, cell: &Cell, area: Rect) {
         if i as u16 >= area.height {
             break;
         }
-        buf.set_line(area.x, area.y + i as u16, line, area.width);
+
+        let x_offset = match line.alignment {
+            Some(Alignment::Center) => (area.width / 2).saturating_sub(line.width() as u16 / 2),
+            Some(Alignment::Right) => area.width.saturating_sub(line.width() as u16),
+            _ => 0,
+        };
+
+        buf.set_line(area.x + x_offset, area.y + i as u16, line, area.width);
     }
 }
 
