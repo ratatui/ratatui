@@ -5,7 +5,7 @@ use crate::{
     layout::{Corner, Rect},
     style::{Style, Styled},
     text::Text,
-    widgets::{Block, StatefulWidget, Widget},
+    widgets::{Block, HighlightSpacing, StatefulWidget, Widget},
 };
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -103,6 +103,8 @@ pub struct List<'a> {
     highlight_symbol: Option<&'a str>,
     /// Whether to repeat the highlight symbol for each line of the selected item
     repeat_highlight_symbol: bool,
+    /// Decides when to allocate spacing for the selection symbol
+    highlight_spacing: HighlightSpacing,
 }
 
 impl<'a> List<'a> {
@@ -118,6 +120,7 @@ impl<'a> List<'a> {
             highlight_style: Style::default(),
             highlight_symbol: None,
             repeat_highlight_symbol: false,
+            highlight_spacing: HighlightSpacing::default(),
         }
     }
 
@@ -143,6 +146,14 @@ impl<'a> List<'a> {
 
     pub fn repeat_highlight_symbol(mut self, repeat: bool) -> List<'a> {
         self.repeat_highlight_symbol = repeat;
+        self
+    }
+
+    /// Set when to show the highlight spacing
+    ///
+    /// See [HighlightSpacing] about which variant affects spacing in which way
+    pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
+        self.highlight_spacing = value;
         self
     }
 
@@ -228,7 +239,7 @@ impl<'a> StatefulWidget for List<'a> {
         let blank_symbol = " ".repeat(highlight_symbol.width());
 
         let mut current_height = 0;
-        let has_selection = state.selected.is_some();
+        let selection_spacing = self.highlight_spacing.should_add(state.selected.is_some());
         for (i, item) in self
             .items
             .iter_mut()
@@ -263,7 +274,7 @@ impl<'a> StatefulWidget for List<'a> {
                 } else {
                     &blank_symbol
                 };
-                let (elem_x, max_element_width) = if has_selection {
+                let (elem_x, max_element_width) = if selection_spacing {
                     let (elem_x, _) = buf.set_stringn(
                         x,
                         y + j as u16,
@@ -772,6 +783,134 @@ mod tests {
         ]);
         expected.set_style(Rect::new(0, 1, 10, 1), Style::default().fg(Color::Yellow));
         assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_list_highlight_spacing_default_whenselected() {
+        // when not selected
+        {
+            let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
+            let list = List::new(items).highlight_symbol(">>");
+            let mut state = ListState::default();
+
+            let buffer = render_stateful_widget(list, &mut state, 10, 5);
+
+            let expected = Buffer::with_lines(vec![
+                "Item 0    ",
+                "Item 1    ",
+                "Item 2    ",
+                "          ",
+                "          ",
+            ]);
+            assert_buffer_eq!(buffer, expected);
+        }
+
+        // when selected
+        {
+            let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
+            let list = List::new(items).highlight_symbol(">>");
+            let mut state = ListState::default();
+            state.select(Some(1));
+
+            let buffer = render_stateful_widget(list, &mut state, 10, 5);
+
+            let expected = Buffer::with_lines(vec![
+                "  Item 0  ",
+                ">>Item 1  ",
+                "  Item 2  ",
+                "          ",
+                "          ",
+            ]);
+            assert_buffer_eq!(buffer, expected);
+        }
+    }
+
+    #[test]
+    fn test_list_highlight_spacing_default_always() {
+        // when not selected
+        {
+            let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
+            let list = List::new(items)
+                .highlight_symbol(">>")
+                .highlight_spacing(HighlightSpacing::Always);
+            let mut state = ListState::default();
+
+            let buffer = render_stateful_widget(list, &mut state, 10, 5);
+
+            let expected = Buffer::with_lines(vec![
+                "  Item 0  ",
+                "  Item 1  ",
+                "  Item 2  ",
+                "          ",
+                "          ",
+            ]);
+            assert_buffer_eq!(buffer, expected);
+        }
+
+        // when selected
+        {
+            let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
+            let list = List::new(items)
+                .highlight_symbol(">>")
+                .highlight_spacing(HighlightSpacing::Always);
+            let mut state = ListState::default();
+            state.select(Some(1));
+
+            let buffer = render_stateful_widget(list, &mut state, 10, 5);
+
+            let expected = Buffer::with_lines(vec![
+                "  Item 0  ",
+                ">>Item 1  ",
+                "  Item 2  ",
+                "          ",
+                "          ",
+            ]);
+            assert_buffer_eq!(buffer, expected);
+        }
+    }
+
+    #[test]
+    fn test_list_highlight_spacing_default_never() {
+        // when not selected
+        {
+            let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
+            let list = List::new(items)
+                .highlight_symbol(">>")
+                .highlight_spacing(HighlightSpacing::Never);
+            let mut state = ListState::default();
+
+            let buffer = render_stateful_widget(list, &mut state, 10, 5);
+
+            let expected = Buffer::with_lines(vec![
+                "Item 0    ",
+                "Item 1    ",
+                "Item 2    ",
+                "          ",
+                "          ",
+            ]);
+            assert_buffer_eq!(buffer, expected);
+        }
+
+        // when selected
+        {
+            let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
+            let list = List::new(items)
+                .highlight_symbol(">>")
+                .highlight_spacing(HighlightSpacing::Never);
+            let mut state = ListState::default();
+            state.select(Some(1));
+
+            let buffer = render_stateful_widget(list, &mut state, 10, 5);
+
+            let expected = Buffer::with_lines(vec![
+                "Item 0    ",
+                "Item 1    ",
+                "Item 2    ",
+                "          ",
+                "          ",
+            ]);
+            assert_buffer_eq!(buffer, expected);
+        }
     }
 
     #[test]

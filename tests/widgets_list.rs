@@ -7,7 +7,7 @@ use ratatui::{
     style::{Color, Style},
     symbols,
     text::Line,
-    widgets::{Block, Borders, List, ListItem, ListState},
+    widgets::{Block, Borders, HighlightSpacing, List, ListItem, ListState},
     Terminal,
 };
 
@@ -242,4 +242,129 @@ fn widget_list_should_not_ignore_empty_string_items() {
     let expected = Buffer::with_lines(vec!["Item 1", "", "", "Item 4"]);
 
     terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widgets_list_enable_always_highlight_spacing() {
+    let test_case = |state: &mut ListState, space: HighlightSpacing, expected: Buffer| {
+        let backend = TestBackend::new(30, 8);
+        let mut terminal = Terminal::new(backend).unwrap();
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                let table = List::new(vec![
+                    ListItem::new(vec![Line::from("Item 1"), Line::from("Item 1a")]),
+                    ListItem::new(vec![Line::from("Item 2"), Line::from("Item 2b")]),
+                    ListItem::new(vec![Line::from("Item 3"), Line::from("Item 3c")]),
+                ])
+                .block(Block::default().borders(Borders::ALL))
+                .highlight_symbol(">> ")
+                .highlight_spacing(space);
+                f.render_stateful_widget(table, size, state);
+            })
+            .unwrap();
+        terminal.backend().assert_buffer(&expected);
+    };
+
+    assert_eq!(HighlightSpacing::default(), HighlightSpacing::WhenSelected);
+
+    let mut state = ListState::default();
+    // no selection, "WhenSelected" should only allocate if selected
+    test_case(
+        &mut state,
+        HighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│Item 1                      │",
+            "│Item 1a                     │",
+            "│Item 2                      │",
+            "│Item 2b                     │",
+            "│Item 3                      │",
+            "│Item 3c                     │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // no selection, "Always" should allocate regardless if selected or not
+    test_case(
+        &mut state,
+        HighlightSpacing::Always,
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Item 1                   │",
+            "│   Item 1a                  │",
+            "│   Item 2                   │",
+            "│   Item 2b                  │",
+            "│   Item 3                   │",
+            "│   Item 3c                  │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // no selection, "Never" should never allocate regadless if selected or not
+    test_case(
+        &mut state,
+        HighlightSpacing::Never,
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│Item 1                      │",
+            "│Item 1a                     │",
+            "│Item 2                      │",
+            "│Item 2b                     │",
+            "│Item 3                      │",
+            "│Item 3c                     │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // select first, "WhenSelected" should only allocate if selected
+    state.select(Some(0));
+    test_case(
+        &mut state,
+        HighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│>> Item 1                   │",
+            "│   Item 1a                  │",
+            "│   Item 2                   │",
+            "│   Item 2b                  │",
+            "│   Item 3                   │",
+            "│   Item 3c                  │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // select first, "Always" should allocate regardless if selected or not
+    state.select(Some(0));
+    test_case(
+        &mut state,
+        HighlightSpacing::Always,
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│>> Item 1                   │",
+            "│   Item 1a                  │",
+            "│   Item 2                   │",
+            "│   Item 2b                  │",
+            "│   Item 3                   │",
+            "│   Item 3c                  │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    // select first, "Never" should never allocate regadless if selected or not
+    state.select(Some(0));
+    test_case(
+        &mut state,
+        HighlightSpacing::Never,
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│Item 1                      │",
+            "│Item 1a                     │",
+            "│Item 2                      │",
+            "│Item 2b                     │",
+            "│Item 3                      │",
+            "│Item 3c                     │",
+            "└────────────────────────────┘",
+        ]),
+    );
 }
