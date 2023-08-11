@@ -160,6 +160,39 @@ impl<'a> Styled for Row<'a> {
     }
 }
 
+/// This option allows the user to configure the "highlight symbol" column width spacing
+#[derive(Debug, PartialEq, Eq, Clone, Default, Hash)]
+pub enum HighlightSpacing {
+    /// Always add spacing for the selection symbol column
+    ///
+    /// With this variant, the column for the selection symbol will always be allocated, and so the
+    /// table will never change size, regardless of if a row is selected or not
+    Always,
+    /// Only add spacing for the selection symbol column if a row is selected
+    ///
+    /// With this variant, the column for the selection symbol will only be allocated if there is a
+    /// selection, causing the table to shift if selected / unselected
+    #[default]
+    WhenSelected,
+    /// Never add spacing to the selection symbol column, regardless of whether something is
+    /// selected or not
+    ///
+    /// This means that the highlight symbol will never be drawn
+    Never,
+}
+
+impl HighlightSpacing {
+    /// Determine if a selection should be done, based on variant
+    /// Input "selection_state" should be similar to `state.selected.is_some()`
+    pub fn should_add(&self, selection_state: bool) -> bool {
+        match self {
+            HighlightSpacing::Always => true,
+            HighlightSpacing::WhenSelected => selection_state,
+            HighlightSpacing::Never => false,
+        }
+    }
+}
+
 /// A widget to display data in formatted columns.
 ///
 /// It is a collection of [`Row`]s, themselves composed of [`Cell`]s:
@@ -229,6 +262,8 @@ pub struct Table<'a> {
     header: Option<Row<'a>>,
     /// Data to display in each row
     rows: Vec<Row<'a>>,
+    /// Decides when to allocate spacing for the row selection
+    highlight_spacing: HighlightSpacing,
 }
 
 impl<'a> Table<'a> {
@@ -245,6 +280,7 @@ impl<'a> Table<'a> {
             highlight_symbol: None,
             header: None,
             rows: rows.into_iter().collect(),
+            highlight_spacing: HighlightSpacing::default(),
         }
     }
 
@@ -286,17 +322,24 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Set when to show the highlight spacing
+    ///
+    /// See [HighlightSpacing] about which variant affects spacing in which way
+    pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
+        self.highlight_spacing = value;
+        self
+    }
+
     pub fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self
     }
 
-    fn get_columns_widths(&self, max_width: u16, has_selection: bool) -> Vec<u16> {
+    /// Get all offsets and widths of all user specified columns
+    /// Returns (x, width)
+    fn get_columns_widths(&self, max_width: u16, selection_width: u16) -> Vec<(u16, u16)> {
         let mut constraints = Vec::with_capacity(self.widths.len() * 2 + 1);
-        if has_selection {
-            let highlight_symbol_width = self.highlight_symbol.map_or(0, |s| s.width() as u16);
-            constraints.push(Constraint::Length(highlight_symbol_width));
-        }
+        constraints.push(Constraint::Length(selection_width));
         for constraint in self.widths {
             constraints.push(*constraint);
             constraints.push(Constraint::Length(self.column_spacing));
@@ -314,11 +357,12 @@ impl<'a> Table<'a> {
                 width: max_width,
                 height: 1,
             });
-        let mut chunks = &chunks[..];
-        if has_selection {
-            chunks = &chunks[1..];
-        }
-        chunks.iter().step_by(2).map(|c| c.width).collect()
+        chunks
+            .iter()
+            .skip(1)
+            .step_by(2)
+            .map(|c| (c.x, c.width))
+            .collect()
     }
 
     fn get_row_bounds(
@@ -426,10 +470,13 @@ impl<'a> StatefulWidget for Table<'a> {
             None => area,
         };
 
-        let has_selection = state.selected.is_some();
-        let columns_widths = self.get_columns_widths(table_area.width, has_selection);
+        let selection_width = if self.highlight_spacing.should_add(state.selected.is_some()) {
+            self.highlight_symbol.map_or(0, |s| s.width() as u16)
+        } else {
+            0
+        };
+        let columns_widths = self.get_columns_widths(table_area.width, selection_width);
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
-        let blank_symbol = " ".repeat(highlight_symbol.width());
         let mut current_height = 0;
         let mut rows_height = table_area.height;
 
@@ -445,22 +492,18 @@ impl<'a> StatefulWidget for Table<'a> {
                 },
                 header.style,
             );
-            let mut col = table_area.left();
-            if has_selection {
-                col += (highlight_symbol.width() as u16).min(table_area.width);
-            }
-            for (width, cell) in columns_widths.iter().zip(header.cells.iter()) {
+            let inner_offset = table_area.left();
+            for ((x, width), cell) in columns_widths.iter().zip(header.cells.iter()) {
                 render_cell(
                     buf,
                     cell,
                     Rect {
-                        x: col,
+                        x: inner_offset + x,
                         y: table_area.top(),
                         width: *width,
                         height: max_header_height,
                     },
                 );
-                col += *width + self.column_spacing;
             }
             current_height += max_header_height;
             rows_height = rows_height.saturating_sub(max_header_height);
@@ -479,41 +522,39 @@ impl<'a> StatefulWidget for Table<'a> {
             .skip(state.offset)
             .take(end - start)
         {
-            let (row, col) = (table_area.top() + current_height, table_area.left());
+            let (row, inner_offset) = (table_area.top() + current_height, table_area.left());
             current_height += table_row.total_height();
             let table_row_area = Rect {
-                x: col,
+                x: inner_offset,
                 y: row,
                 width: table_area.width,
                 height: table_row.height,
             };
             buf.set_style(table_row_area, table_row.style);
             let is_selected = state.selected.map_or(false, |s| s == i);
-            let table_row_start_col = if has_selection {
-                let symbol = if is_selected {
-                    highlight_symbol
-                } else {
-                    &blank_symbol
-                };
-                let (col, _) =
-                    buf.set_stringn(col, row, symbol, table_area.width as usize, table_row.style);
-                col
-            } else {
-                col
+            if selection_width > 0 && is_selected {
+                // this should in normal cases be safe, because "get_columns_widths" allocates
+                // "highlight_symbol.width()" space but "get_columns_widths"
+                // currently does not bind it to max table.width()
+                buf.set_stringn(
+                    inner_offset,
+                    row,
+                    highlight_symbol,
+                    table_area.width as usize,
+                    table_row.style,
+                );
             };
-            let mut col = table_row_start_col;
-            for (width, cell) in columns_widths.iter().zip(table_row.cells.iter()) {
+            for ((x, width), cell) in columns_widths.iter().zip(table_row.cells.iter()) {
                 render_cell(
                     buf,
                     cell,
                     Rect {
-                        x: col,
+                        x: inner_offset + x,
                         y: row,
                         width: *width,
                         height: table_row.height,
                     },
                 );
-                col += *width + self.column_spacing;
             }
             if is_selected {
                 buf.set_style(table_row_area, self.highlight_style);

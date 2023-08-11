@@ -46,7 +46,7 @@ pub use self::{
     paragraph::{Paragraph, Wrap},
     scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
     sparkline::{RenderDirection, Sparkline},
-    table::{Cell, Row, Table, TableState},
+    table::{Cell, HighlightSpacing, Row, Table, TableState},
     tabs::Tabs,
 };
 use crate::{buffer::Buffer, layout::Rect};
