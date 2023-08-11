@@ -1,6 +1,6 @@
 use crate::{layout::Alignment, text::Line};
 
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Title<'a> {
     pub content: Line<'a>,
     /// Defaults to Left if unset

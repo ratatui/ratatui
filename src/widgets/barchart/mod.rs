@@ -28,7 +28,7 @@ use super::{Block, Widget};
 ///     .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]))
 ///     .max(4);
 /// ```
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct BarChart<'a> {
     /// Block to wrap the widget in
     block: Option<Block<'a>>,

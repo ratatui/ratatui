@@ -49,7 +49,7 @@ pub use self::test::TestBackend;
 
 /// Enum representing the different types of clearing operations that can be performed
 /// on the terminal screen.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum ClearType {
     All,
     AfterCursor,

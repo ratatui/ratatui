@@ -36,7 +36,7 @@ pub struct Label<'a> {
     line: TextLine<'a>,
 }
 
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 struct Layer {
     string: String,
     colors: Vec<Color>,
@@ -51,7 +51,7 @@ trait Grid: Debug {
     fn reset(&mut self);
 }
 
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 struct BrailleGrid {
     width: u16,
     height: u16,
@@ -114,7 +114,7 @@ impl Grid for BrailleGrid {
     }
 }
 
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 struct CharGrid {
     width: u16,
     height: u16,

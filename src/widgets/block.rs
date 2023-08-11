@@ -10,7 +10,7 @@ use crate::{
     widgets::{Borders, Widget},
 };
 
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum BorderType {
     #[default]
     Plain,
@@ -113,7 +113,7 @@ impl Padding {
 ///     .border_type(BorderType::Rounded)
 ///     .style(Style::default().bg(Color::Black));
 /// ```
-#[derive(Debug, Default, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
     /// List of titles
     titles: Vec<Title<'a>>,
