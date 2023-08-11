@@ -46,6 +46,14 @@ cargo run --example=chart --features=crossterm
 
 ![Chart][chart.gif]
 
+## Colors ([colors.rs](./colors.rs))
+
+```shell
+cargo run --example=colors --features=crossterm
+```
+
+![Colors][colors.gif]
+
 ## Custom Widget ([custom_widget.rs](./custom_widget.rs))
 
 ```shell
@@ -102,6 +110,14 @@ cargo run --example=list --features=crossterm
 ```
 
 ![List][list.gif]
+
+## Modifiers ([modifiers.rs](./modifiers.rs))
+
+```shell
+cargo run --example=modifiers --features=crossterm
+```
+
+![Modifiers][modifiers.gif]
 
 ## Panic ([panic.rs](./panic.rs))
 
@@ -193,12 +209,14 @@ done
 [calendar.gif]: https://vhs.charm.sh/vhs-1dBcpMSSP80WkBgm4lBhNo.gif
 [canvas.gif]: https://vhs.charm.sh/vhs-4zeWEPF6bLEFSHuJrvaHlN.gif
 [chart.gif]: https://vhs.charm.sh/vhs-zRzsE2AwRixQhcWMTAeF1.gif
+[colors.gif]: https://vhs.charm.sh/vhs-2ZCqYbTbXAaASncUeWkt1z.gif
 [custom_widget.gif]: https://vhs.charm.sh/vhs-32mW1TpkrovTcm79QXmBSu.gif
 [gauge.gif]: https://vhs.charm.sh/vhs-2rvSeP5r4lRkGTzNCKpm9a.gif
 [hello_world.gif]: https://vhs.charm.sh/vhs-3CKUwxFuQi8oKQMS5zkPfQ.gif
 [inline.gif]: https://vhs.charm.sh/vhs-miRl1mosKFoJV7LjjvF4T.gif
 [layout.gif]: https://vhs.charm.sh/vhs-5R8O3LQGQ5pQVWwlPVrdbQ.gif
 [list.gif]: https://vhs.charm.sh/vhs-4goo9reeUM9r0nYb54R7SP.gif
+[modifiers.gif]: https://vhs.charm.sh/vhs-2ovGBz5l3tfRGdZ7FCw0am.gif
 [panic.gif]: https://vhs.charm.sh/vhs-HrvKCHV4yeN69fb1EadTH.gif
 [paragraph.gif]: https://vhs.charm.sh/vhs-2qIPDi79DUmtmeNDEeHVEF.gif
 [popup.gif]: https://vhs.charm.sh/vhs-2QnC682AUeNYNXcjNlKTyp.gif

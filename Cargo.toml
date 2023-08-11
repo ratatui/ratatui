@@ -51,7 +51,9 @@ unicode-width = "0.1"
 [dev-dependencies]
 anyhow = "1.0.71"
 argh = "0.1"
-cargo-husky = { version = "1.5.0", default-features = false, features = ["user-hooks"] }
+cargo-husky = { version = "1.5.0", default-features = false, features = [
+  "user-hooks",
+] }
 criterion = { version = "0.5", features = ["html_reports"] }
 fakeit = "1.1"
 itertools = "0.10"
@@ -92,6 +94,12 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
+name = "colors"
+required-features = ["crossterm"]
+# this example is a bit verbose, so we don't want to include it in the docs
+doc-scrape-examples = false
+
+[[example]]
 name = "custom_widget"
 required-features = ["crossterm"]
 doc-scrape-examples = true
@@ -120,6 +128,12 @@ doc-scrape-examples = true
 name = "list"
 required-features = ["crossterm"]
 doc-scrape-examples = true
+
+[[example]]
+name = "modifiers"
+required-features = ["crossterm"]
+# this example is a bit verbose, so we don't want to include it in the docs
+doc-scrape-examples = false
 
 [[example]]
 name = "panic"
