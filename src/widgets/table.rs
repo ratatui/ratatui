@@ -160,23 +160,24 @@ impl<'a> Styled for Row<'a> {
     }
 }
 
-/// This option allows to configure the behavior of the "highlight symbol" column width allocation
+/// This option allows the user to configure the "highlight symbol" column width spacing
 #[derive(Debug, PartialEq, Eq, Clone, Default, Hash)]
 pub enum HighlightSpacing {
-    /// Always add spacing for the row selection symbol
+    /// Always add spacing for the selection symbol column
     ///
     /// With this variant, the column for the selection symbol will always be allocated, and so the
     /// table will never change size, regardless of if a row is selected or not
     Always,
-    /// Only add spacing for the row selection symbol, if a row is selected
+    /// Only add spacing for the selection symbol column if a row is selected
     ///
     /// With this variant, the column for the selection symbol will only be allocated if there is a
     /// selection, causing the table to shift if selected / unselected
     #[default]
     WhenSelected,
-    /// Never add spacing selection symbol spacing, regardless of if something is selected or not
+    /// Never add spacing to the selection symbol column, regardless of whether something is
+    /// selected or not
     ///
-    /// This effectively changes that the highlight symbol will never be drawn
+    /// This means that the highlight symbol will never be drawn
     Never,
 }
 
@@ -323,7 +324,7 @@ impl<'a> Table<'a> {
 
     /// Set when to show the highlight spacing
     ///
-    /// see [HighlightSpacing] about which variant affects spacing in which way
+    /// See [HighlightSpacing] about which variant affects spacing in which way
     pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
