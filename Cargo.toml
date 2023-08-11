@@ -60,11 +60,15 @@ itertools = "0.10"
 rand = "0.8"
 
 [[bench]]
+name = "block"
+harness = false
+
+[[bench]]
 name = "paragraph"
 harness = false
 
 [[bench]]
-name = "block"
+name = "sparkline"
 harness = false
 
 [[bench]]
