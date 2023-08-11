@@ -1,4 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, Bencher, BenchmarkId, Criterion};
+use criterion::{
+    black_box, criterion_group, criterion_main, BatchSize, Bencher, BenchmarkId, Criterion,
+};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -69,9 +71,15 @@ pub fn paragraph(c: &mut Criterion) {
 /// render the paragraph into a buffer with the given width
 fn render(bencher: &mut Bencher, paragraph: &Paragraph, width: u16) {
     let mut buffer = Buffer::empty(Rect::new(0, 0, width, 50));
-    bencher.iter(|| {
-        paragraph.clone().render(buffer.area, &mut buffer);
-    })
+    // We use `iter_batched` to clone the value in the setup function.
+    // See https://github.com/ratatui-org/ratatui/pull/377.
+    bencher.iter_batched(
+        || paragraph.to_owned(),
+        |bench_paragraph| {
+            bench_paragraph.render(buffer.area, &mut buffer);
+        },
+        BatchSize::LargeInput,
+    )
 }
 
 /// Create a string with the given number of lines filled with nonsense words
