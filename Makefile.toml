@@ -11,6 +11,7 @@ ALL_FEATURES = "all-widgets,macros,serde"
 alias = "ci"
 
 [tasks.ci]
+description = "Run continuous integration tasks"
 dependencies = [
   "style-check",
   "clippy",
@@ -19,18 +20,22 @@ dependencies = [
 ]
 
 [tasks.style-check]
+description = "Check code style"
 dependencies = ["fmt", "typos"]
 
 [tasks.fmt]
+description = "Format source code"
 toolchain = "nightly"
 command = "cargo"
 args = ["fmt", "--all", "--check"]
 
 [tasks.typos]
+description = "Run typo checks"
 install_crate = { crate_name = "typos-cli", binary = "typos", test_arg = "--version" }
 command = "typos"
 
 [tasks.check]
+description = "Check code for errors and warnings"
 command = "cargo"
 args = [
   "check",
@@ -46,6 +51,7 @@ args = [
 ]
 
 [tasks.build]
+description = "Compile the project"
 command = "cargo"
 args = [
   "build",
@@ -61,6 +67,7 @@ args = [
 ]
 
 [tasks.clippy]
+description = "Run Clippy for linting"
 command = "cargo"
 args = [
   "clippy",
@@ -86,6 +93,7 @@ args = [
 ]
 
 [tasks.test]
+description = "Run tests"
 dependencies = [
   "test-doc",
 ]
@@ -98,6 +106,7 @@ args = [
 
 
 [tasks.test-windows]
+description = "Run tests on Windows"
 dependencies = [
   "test-doc",
 ]
@@ -108,6 +117,7 @@ args = [
 ]
 
 [tasks.test-doc]
+description = "Run documentation tests"
 command = "cargo"
 args = [
   "test", "--doc",
@@ -122,6 +132,7 @@ args = [
 
 [tasks.test-backend]
 # takes a command line parameter to specify the backend to test (e.g. "crossterm")
+description = "Run backend-specific tests"
 command = "cargo"
 args = [
   "test",
@@ -131,6 +142,7 @@ args = [
 
 
 [tasks.coverage]
+description = "Generate code coverage report"
 command = "cargo"
 args = [
   "llvm-cov",
@@ -156,10 +168,12 @@ command = "cargo"
 args = ["run", "--release", "--example", "${TUI_EXAMPLE_NAME}", "--features", "all-widgets"]
 
 [tasks.build-examples]
+description = "Compile project examples"
 command = "cargo"
 args = ["build", "--examples", "--release", "--features", "all-widgets"]
 
 [tasks.run-examples]
+description = "Run project examples"
 dependencies = ["build-examples"]
 script = '''
 #!@duckscript
