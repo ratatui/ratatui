@@ -18,6 +18,8 @@ jobs:
   publish-alpha:
     name: Create an alpha release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
     steps:
       - name: Checkout the repository
