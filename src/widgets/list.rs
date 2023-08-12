@@ -151,7 +151,7 @@ impl<'a> List<'a> {
 
     /// Set when to show the highlight spacing
     ///
-    /// See [HighlightSpacing] about which variant affects spacing in which way
+    /// See [`HighlightSpacing`] about which variant affects spacing in which way
     pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
