@@ -323,7 +323,6 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
             for pair in elements.windows(2) {
                 ccs.push((pair[0].x + pair[0].width) | EQ(REQUIRED) | pair[1].x);
             }
-            
         }
         Direction::Vertical => {
             for pair in elements.windows(2) {
@@ -391,7 +390,13 @@ struct Helper {
 
 /// Helper function to apply [`cassowary::Constraint`]s for a given [`Constraint`]
 #[inline]
-fn add_constraints_for_constraint(ccs: &mut Vec<cassowary::Constraint>, element: &Element, area: &Rect, direction: Direction, constraint: Constraint) {
+fn add_constraints_for_constraint(
+    ccs: &mut Vec<cassowary::Constraint>,
+    element: &Element,
+    area: &Rect,
+    direction: Direction,
+    constraint: Constraint,
+) {
     let helper = match direction {
         Direction::Horizontal => Helper {
             // area_main_axis: dest_area.x,
