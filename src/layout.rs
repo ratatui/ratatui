@@ -324,28 +324,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
                 ccs.push((pair[0].x + pair[0].width) | EQ(REQUIRED) | pair[1].x);
             }
             for (i, size) in layout.constraints.iter().enumerate() {
-                ccs.push(elements[i].y | EQ(REQUIRED) | f64::from(dest_area.y));
-                ccs.push(elements[i].height | EQ(REQUIRED) | f64::from(dest_area.height));
-                ccs.push(match *size {
-                    Constraint::Length(v) => elements[i].width | EQ(MEDIUM) | f64::from(v),
-                    Constraint::Percentage(v) => {
-                        elements[i].width | EQ(MEDIUM) | (f64::from(v * dest_area.width) / 100.0)
-                    }
-                    Constraint::Ratio(n, d) => {
-                        elements[i].width
-                            | EQ(MEDIUM)
-                            | (f64::from(dest_area.width) * f64::from(n) / f64::from(d))
-                    }
-                    Constraint::Min(v) => elements[i].width | GE(MEDIUM) | f64::from(v),
-                    Constraint::Max(v) => elements[i].width | LE(MEDIUM) | f64::from(v),
-                });
-
-                match *size {
-                    Constraint::Min(v) | Constraint::Max(v) => {
-                        ccs.push(elements[i].width | EQ(WEAK) | f64::from(v));
-                    }
-                    _ => {}
-                }
+                add_constraints_for_constraint(&mut ccs, &elements[i], &dest_area, layout.direction, *size);
             }
         }
         Direction::Vertical => {
@@ -353,28 +332,7 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
                 ccs.push((pair[0].y + pair[0].height) | EQ(REQUIRED) | pair[1].y);
             }
             for (i, size) in layout.constraints.iter().enumerate() {
-                ccs.push(elements[i].x | EQ(REQUIRED) | f64::from(dest_area.x));
-                ccs.push(elements[i].width | EQ(REQUIRED) | f64::from(dest_area.width));
-                ccs.push(match *size {
-                    Constraint::Length(v) => elements[i].height | EQ(MEDIUM) | f64::from(v),
-                    Constraint::Percentage(v) => {
-                        elements[i].height | EQ(MEDIUM) | (f64::from(v * dest_area.height) / 100.0)
-                    }
-                    Constraint::Ratio(n, d) => {
-                        elements[i].height
-                            | EQ(MEDIUM)
-                            | (f64::from(dest_area.height) * f64::from(n) / f64::from(d))
-                    }
-                    Constraint::Min(v) => elements[i].height | GE(MEDIUM) | f64::from(v),
-                    Constraint::Max(v) => elements[i].height | LE(MEDIUM) | f64::from(v),
-                });
-
-                match *size {
-                    Constraint::Min(v) | Constraint::Max(v) => {
-                        ccs.push(elements[i].height | EQ(WEAK) | f64::from(v));
-                    }
-                    _ => {}
-                }
+                add_constraints_for_constraint(&mut ccs, &elements[i], &dest_area, layout.direction, *size);
             }
         }
     }
@@ -417,6 +375,69 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         }
     }
     res
+}
+
+/// Helper struct to map variables to, to eliminate multiple match statements or multiple code paths
+#[derive(Debug)]
+struct Helper {
+    // area_main_axis: u16,
+    area_other_axis: u16,
+    area_length: u16,
+    area_other_length: u16,
+
+    // elem_axis: Variable,
+    elem_other_axis: Variable,
+    elem_length: Variable,
+    elem_other_length: Variable,
+}
+
+/// Helper function to apply [`cassowary::Constraint`]s for a given [`Constraint`]
+#[inline]
+fn add_constraints_for_constraint(ccs: &mut Vec<cassowary::Constraint>, element: &Element, area: &Rect, direction: Direction, constraint: Constraint) {
+    let helper = match direction {
+        Direction::Horizontal => Helper {
+            // area_main_axis: dest_area.x,
+            area_other_axis: area.y,
+            area_length: area.width,
+            area_other_length: area.height,
+            // elem_axis: element.x,
+            elem_other_axis: element.y,
+            elem_length: element.width,
+            elem_other_length: element.height,
+        },
+        Direction::Vertical => Helper {
+            // area_main_axis: dest_area.y,
+            area_other_axis: area.x,
+            area_length: area.height,
+            area_other_length: area.width,
+            // elem_axis: element.y,
+            elem_other_axis: element.x,
+            elem_length: element.height,
+            elem_other_length: element.width,
+        },
+    };
+    ccs.push(helper.elem_other_axis | EQ(REQUIRED) | f64::from(helper.area_other_axis));
+    ccs.push(helper.elem_other_length | EQ(REQUIRED) | f64::from(helper.area_other_length));
+    ccs.push(match constraint {
+        Constraint::Length(v) => helper.elem_length | EQ(MEDIUM) | f64::from(v),
+        Constraint::Percentage(v) => {
+            helper.elem_length | EQ(MEDIUM) | (f64::from(v * helper.area_length) / 100.0)
+        }
+        Constraint::Ratio(n, d) => {
+            helper.elem_length
+                | EQ(MEDIUM)
+                | (f64::from(helper.area_length) * f64::from(n) / f64::from(d))
+        }
+        Constraint::Min(v) => helper.elem_length | GE(MEDIUM) | f64::from(v),
+        Constraint::Max(v) => helper.elem_length | LE(MEDIUM) | f64::from(v),
+    });
+
+    match constraint {
+        Constraint::Min(v) | Constraint::Max(v) => {
+            ccs.push(helper.elem_length | EQ(WEAK) | f64::from(v));
+        }
+        _ => {}
+    }
 }
 
 /// A container used by the solver inside split
