@@ -323,18 +323,16 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
             for pair in elements.windows(2) {
                 ccs.push((pair[0].x + pair[0].width) | EQ(REQUIRED) | pair[1].x);
             }
-            for (i, size) in layout.constraints.iter().enumerate() {
-                add_constraints_for_constraint(&mut ccs, &elements[i], &dest_area, layout.direction, *size);
-            }
+            
         }
         Direction::Vertical => {
             for pair in elements.windows(2) {
                 ccs.push((pair[0].y + pair[0].height) | EQ(REQUIRED) | pair[1].y);
             }
-            for (i, size) in layout.constraints.iter().enumerate() {
-                add_constraints_for_constraint(&mut ccs, &elements[i], &dest_area, layout.direction, *size);
-            }
         }
+    }
+    for (i, size) in layout.constraints.iter().enumerate() {
+        add_constraints_for_constraint(&mut ccs, &elements[i], &dest_area, layout.direction, *size);
     }
     solver.add_constraints(&ccs).unwrap();
     for &(var, value) in solver.fetch_changes() {
