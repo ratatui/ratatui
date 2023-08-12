@@ -273,27 +273,13 @@ impl Layout {
 
 fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
     let mut solver = Solver::new();
-    let mut vars: HashMap<Variable, (usize, usize)> = HashMap::new();
     let elements = layout
         .constraints
         .iter()
         .map(|_| Element::new())
         .collect::<Vec<Element>>();
-    let mut res = layout
-        .constraints
-        .iter()
-        .map(|_| Rect::default())
-        .collect::<Rc<[Rect]>>();
-
-    let results = Rc::get_mut(&mut res).expect("newly created Rc should have no shared refs");
 
     let dest_area = area.inner(&layout.margin);
-    for (i, e) in elements.iter().enumerate() {
-        vars.insert(e.x, (i, 0));
-        vars.insert(e.y, (i, 1));
-        vars.insert(e.width, (i, 2));
-        vars.insert(e.height, (i, 3));
-    }
     let mut ccs: Vec<CassowaryConstraint> =
         Vec::with_capacity(elements.len() * 4 + layout.constraints.len() * 6);
     for elt in &elements {
@@ -379,33 +365,21 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
         }
     }
     solver.add_constraints(&ccs).unwrap();
-    for &(var, value) in solver.fetch_changes() {
-        let (index, attr) = vars[&var];
-        let value = if value.is_sign_negative() {
-            0
-        } else {
-            value as u16
-        };
-        match attr {
-            0 => {
-                results[index].x = value;
-            }
-            1 => {
-                results[index].y = value;
-            }
-            2 => {
-                results[index].width = value;
-            }
-            3 => {
-                results[index].height = value;
-            }
-            _ => {}
-        }
-    }
+    let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
+    let mut results = elements
+        .iter()
+        .map(|element| Rect {
+            x: changes.get(&element.x).map(|&v| v as u16).unwrap_or(0),
+            y: changes.get(&element.y).map(|&v| v as u16).unwrap_or(0),
+            width: changes.get(&element.width).map(|&v| v as u16).unwrap_or(0),
+            height: changes.get(&element.height).map(|&v| v as u16).unwrap_or(0),
+        })
+        .collect::<Rc<[Rect]>>();
 
     if layout.expand_to_fill {
         // Fix imprecision by extending the last item a bit if necessary
-        if let Some(last) = results.last_mut() {
+        // "unwrap" is safe, because the Rc at this point has no shared references
+        if let Some(last) = Rc::get_mut(&mut results).unwrap().last_mut() {
             match layout.direction {
                 Direction::Vertical => {
                     last.height = dest_area.bottom() - last.y;
@@ -416,7 +390,8 @@ fn split(area: Rect, layout: &Layout) -> Rc<[Rect]> {
             }
         }
     }
-    res
+
+    results
 }
 
 /// A container used by the solver inside split
