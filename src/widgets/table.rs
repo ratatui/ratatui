@@ -2,7 +2,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Style, Styled},
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
@@ -569,7 +569,14 @@ fn render_cell(buf: &mut Buffer, cell: &Cell, area: Rect) {
         if i as u16 >= area.height {
             break;
         }
-        buf.set_line(area.x, area.y + i as u16, line, area.width);
+
+        let x_offset = match line.alignment {
+            Some(Alignment::Center) => (area.width / 2).saturating_sub(line.width() as u16 / 2),
+            Some(Alignment::Right) => area.width.saturating_sub(line.width() as u16),
+            _ => 0,
+        };
+
+        buf.set_line(area.x + x_offset, area.y + i as u16, line, area.width);
     }
 }
 
@@ -585,11 +592,35 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::style::{Color, Modifier, Style, Stylize};
+    use crate::{
+        style::{Color, Modifier, Style, Stylize},
+        text::Line,
+    };
     #[test]
     #[should_panic]
     fn table_invalid_percentages() {
         Table::new(vec![]).widths(&[Constraint::Percentage(110)]);
+    }
+
+    #[test]
+    fn test_render_table_with_alignment() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
+        let table = Table::new(vec![
+            Row::new(vec![Line::from("Left").alignment(Alignment::Left)]),
+            Row::new(vec![Line::from("Center").alignment(Alignment::Center)]),
+            Row::new(vec![Line::from("Right").alignment(Alignment::Right)]),
+        ])
+        .widths(&[Constraint::Percentage(100)]);
+
+        Widget::render(table, Rect::new(0, 0, 20, 3), &mut buf);
+
+        let expected = Buffer::with_lines(vec![
+            "Left                ",
+            "       Center       ",
+            "               Right",
+        ]);
+
+        assert_eq!(buf, expected);
     }
 
     #[test]
