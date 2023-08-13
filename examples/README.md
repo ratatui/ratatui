@@ -214,7 +214,7 @@ done
 [gauge.gif]: https://vhs.charm.sh/vhs-2rvSeP5r4lRkGTzNCKpm9a.gif
 [hello_world.gif]: https://vhs.charm.sh/vhs-3CKUwxFuQi8oKQMS5zkPfQ.gif
 [inline.gif]: https://vhs.charm.sh/vhs-miRl1mosKFoJV7LjjvF4T.gif
-[layout.gif]: https://vhs.charm.sh/vhs-5R8O3LQGQ5pQVWwlPVrdbQ.gif
+[layout.gif]: https://vhs.charm.sh/vhs-1ZNoNLNlLtkJXpgg9nCV5e.gif
 [list.gif]: https://vhs.charm.sh/vhs-4goo9reeUM9r0nYb54R7SP.gif
 [modifiers.gif]: https://vhs.charm.sh/vhs-2ovGBz5l3tfRGdZ7FCw0am.gif
 [panic.gif]: https://vhs.charm.sh/vhs-HrvKCHV4yeN69fb1EadTH.gif
