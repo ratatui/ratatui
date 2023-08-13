@@ -6,6 +6,18 @@ VHS has a problem rendering some background color transitions, which shows up in
 below. See <https://github.com/charmbracelet/vhs/issues/344> for more info. These problems don't
 occur in a terminal.
 
+## Demo ([demo.rs](./demo/))
+
+This is the demo example from the main README. It is available for each of the backends.
+
+```shell
+cargo run --example=demo --features=crossterm
+cargo run --example=demo --no-default-features --features=termion
+cargo run --example=demo --no-default-features --features=termwiz
+```
+
+![Demo][demo.gif]
+
 ## Barchart ([barchart.rs](./barchart.rs)
 
 ```shell
@@ -211,6 +223,7 @@ done
 [chart.gif]: https://vhs.charm.sh/vhs-zRzsE2AwRixQhcWMTAeF1.gif
 [colors.gif]: https://vhs.charm.sh/vhs-2ZCqYbTbXAaASncUeWkt1z.gif
 [custom_widget.gif]: https://vhs.charm.sh/vhs-32mW1TpkrovTcm79QXmBSu.gif
+[demo.gif]: https://vhs.charm.sh/vhs-tF0QbuPbtHgUeG0sTVgFr.gif
 [gauge.gif]: https://vhs.charm.sh/vhs-2rvSeP5r4lRkGTzNCKpm9a.gif
 [hello_world.gif]: https://vhs.charm.sh/vhs-3CKUwxFuQi8oKQMS5zkPfQ.gif
 [inline.gif]: https://vhs.charm.sh/vhs-miRl1mosKFoJV7LjjvF4T.gif

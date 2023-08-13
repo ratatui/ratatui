@@ -3,22 +3,16 @@
 [crates.io](https://crates.io/crates/ratatui) releases are automated via [GitHub
 actions](.github/workflows/cd.yml) and triggered by pushing a tag.
 
-1. Record a new demo gif. The preferred tool for this is [ttyrec](http://0xcc.net/ttyrec/) and
-   [ttygif](https://github.com/icholy/ttygif). [Asciinema](https://asciinema.org/) handles block
-   character height poorly, [termanilizer](https://www.terminalizer.com/) takes forever to render,
-   [vhs](https://github.com/charmbracelet/vhs) handles braille
-   characters poorly (though if <https://github.com/charmbracelet/vhs/issues/322> is fixed, then
-   it's probably the best option).
+1. Record a new demo gif if necessary. The preferred tool for this is
+[vhs](https://github.com/charmbracelet/vhs) (installation instructions in README).
 
    ```shell
    cargo build --example demo
-   ttyrec -e 'cargo --quiet run --release --example demo -- --tick-rate 100' demo.rec
-   ttygif demo.rec
+   vhs examples/demo.tape --publish --quiet
    ```
 
-   Then upload it somewhere (e.g. use `vhs publish tty.gif` to publish it or upload it to a GitHub
-   wiki page as an attachment). Avoid adding the gif to the git repo as binary files tend to bloat
-   repositories.
+   Then update the link in the [examples README](./examples/README) and the main README. Avoid
+   adding the gif to the git repo as binary files tend to bloat repositories.
 
 1. Bump the version in [Cargo.toml](Cargo.toml).
 1. Bump versions in the doc comments of [lib.rs](src/lib.rs).

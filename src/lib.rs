@@ -3,7 +3,7 @@
 //! [ratatui](https://github.com/ratatui-org/ratatui) is a library used to build rich
 //! terminal users interfaces and dashboards.
 //!
-//! ![](https://raw.githubusercontent.com/ratatui-org/ratatui/master/assets/demo.gif)
+//! ![Demo](https://vhs.charm.sh/vhs-tF0QbuPbtHgUeG0sTVgFr.gif)
 //!
 //! # Get started
 //!
