@@ -155,3 +155,58 @@ impl<'a> Styled for Span<'a> {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn from_ref_str_borrowed_cow() {
+        let content = "some string";
+        let span = Span::from(content);
+        assert_eq!(span.content, Cow::Borrowed(content));
+    }
+
+    #[test]
+    fn from_string_ref_str_borrowed_cow() {
+        let content = String::from("some string");
+        let span = Span::from(content.as_str());
+        assert_eq!(span.content, Cow::Borrowed(content.as_str()));
+    }
+
+    #[test]
+    fn from_string_owned_cow() {
+        let content = String::from("some string");
+        let content_clone = content.clone();
+        let span = Span::from(content);
+        assert_eq!(span.content, Cow::Owned::<str>(content_clone));
+    }
+
+    #[test]
+    fn reset_should_set_style_reset() {
+        let mut span = Span::styled("test", Style::default().fg(crate::style::Color::Green));
+
+        assert_eq!(span.style, Style::default().fg(crate::style::Color::Green));
+
+        span.reset_style();
+
+        assert_eq!(span.style, Style::reset());
+        assert_ne!(span.style, Style::default());
+    }
+
+    #[test]
+    fn patch_style() {
+        let mut span = Span::styled("test", Style::default().bg(crate::style::Color::Cyan));
+
+        assert_eq!(span.style, Style::default().bg(crate::style::Color::Cyan));
+
+        span.patch_style(Style::default().fg(crate::style::Color::Green));
+
+        assert_eq!(
+            span.style,
+            Style::default()
+                .bg(crate::style::Color::Cyan)
+                .fg(crate::style::Color::Green)
+        );
+    }
+}
