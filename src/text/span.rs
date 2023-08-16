@@ -132,15 +132,12 @@ impl<'a> Span<'a> {
     }
 }
 
-impl<'a> From<String> for Span<'a> {
-    fn from(s: String) -> Span<'a> {
-        Span::raw(s)
-    }
-}
-
-impl<'a> From<&'a str> for Span<'a> {
-    fn from(s: &'a str) -> Span<'a> {
-        Span::raw(s)
+impl<'a, T> From<T> for Span<'a>
+where
+    T: Into<Cow<'a, str>>,
+{
+    fn from(s: T) -> Self {
+        Span::raw(s.into())
     }
 }
 
@@ -180,6 +177,13 @@ mod tests {
         let content_clone = content.clone();
         let span = Span::from(content);
         assert_eq!(span.content, Cow::Owned::<str>(content_clone));
+    }
+
+    #[test]
+    fn from_ref_string_borrowed_cow() {
+        let content = String::from("some string");
+        let span = Span::from(&content);
+        assert_eq!(span.content, Cow::Borrowed(content.as_str()));
     }
 
     #[test]
