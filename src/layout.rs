@@ -27,10 +27,11 @@ pub enum Direction {
     Vertical,
 }
 
-/// Constraints to apply  
+/// Constraints to apply
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Constraint {
-    /// Apply a percentage to a given amount  
+    /// Apply a percentage to a given amount
+    ///
     /// Converts the given percentage to a f32, and then converts it back, trimming off the decimal
     /// point (effectively rounding down)
     /// ```
@@ -41,7 +42,8 @@ pub enum Constraint {
     /// assert_eq!(5, Constraint::Percentage(50).apply(11));
     /// ```
     Percentage(u16),
-    /// Apply a ratio  
+    /// Apply a ratio
+    ///
     /// Converts the given numbers to a f32, and then converts it back, trimming off the decimal
     /// point (effectively rounding down)
     /// ```
@@ -130,6 +132,50 @@ pub enum Alignment {
     Right,
 }
 
+/// A layout is a set of constraints that can be applied to a given area to split it into smaller
+/// ones.
+///
+/// A layout is composed of:
+/// - a direction (horizontal or vertical)
+/// - a set of constraints (length, ratio, percentage, min, max)
+/// - a margin (horizontal and vertical), the space between the edge of the main area and the split
+///   areas
+///
+/// The algorithm used to compute the layout is based on the [`cassowary-rs`] solver. It is a simple
+/// linear solver that can be used to solve linear equations and inequalities. In our case, we
+/// define a set of constraints that are applied to split the provided area into Rects aligned in a
+/// single direction, and the solver computes the values of the position and sizes that satisfy as
+/// many of the constraints as possible.
+///
+/// By default, the last chunk of the computed layout is expanded to fill the remaining space. To
+/// avoid this behavior, add an unused `Constraint::Min(0)` as the last constraint.
+///
+/// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
+/// calls with the same parameters are faster. The cache is a simple HashMap, and grows
+/// indefinitely. (See <https://github.com/ratatui-org/ratatui/issues/402> for more information)
+///
+/// # Example
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// # use ratatui::widgets::Paragraph;
+/// fn render<B: Backend>(frame: &mut Frame<B>, area: Rect) {
+///     let layout = Layout::default()
+///         .direction(Direction::Vertical)
+///         .constraints(vec![Constraint::Length(5), Constraint::Min(0)])
+///         .split(Rect::new(0, 0, 10, 10));
+///     frame.render_widget(Paragraph::new("foo"), layout[0]);
+///     frame.render_widget(Paragraph::new("bar"), layout[1]);
+/// }
+/// ```
+///
+/// The [`layout.rs` example](https://github.com/ratatui-org/ratatui/blob/main/examples/layout.rs)
+/// shows the effect of combining constraints:
+///
+/// ![layout
+/// example](https://camo.githubusercontent.com/77d22f3313b782a81e5e033ef82814bb48d786d2598699c27f8e757ccee62021/68747470733a2f2f7668732e636861726d2e73682f7668732d315a4e6f4e4c4e6c4c746b4a58706767396e435635652e676966)
+///
+/// [`cassowary-rs`]: https://crates.io/crates/cassowary
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,
@@ -142,6 +188,7 @@ pub struct Layout {
 
 type Cache = HashMap<(Rect, Layout), Rc<[Rect]>>;
 thread_local! {
+    // TODO: Maybe use a fixed size cache https://github.com/ratatui-org/ratatui/issues/402
     static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(HashMap::new());
 }
 
@@ -152,6 +199,12 @@ impl Default for Layout {
 }
 
 impl Layout {
+    /// Creates a new layout with default values.
+    ///
+    /// - direction: [Direction::Vertical]
+    /// - margin: 0, 0
+    /// - constraints: empty
+    /// - expand_to_fill: true
     pub const fn new() -> Layout {
         Layout {
             direction: Direction::Vertical,
@@ -164,6 +217,29 @@ impl Layout {
         }
     }
 
+    /// Builder method to set the constraints of the layout.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let layout = Layout::default()
+    ///     .constraints(vec![
+    ///         Constraint::Percentage(20),
+    ///         Constraint::Ratio(1, 5),
+    ///         Constraint::Length(2),
+    ///         Constraint::Min(2),
+    ///         Constraint::Max(2),
+    ///     ])
+    ///     .split(Rect::new(0, 0, 10, 10));
+    /// assert_eq!(layout[..], [
+    ///     Rect::new(0, 0, 10, 2),
+    ///     Rect::new(0, 2, 10, 2),
+    ///     Rect::new(0, 4, 10, 2),
+    ///     Rect::new(0, 6, 10, 2),
+    ///     Rect::new(0, 8, 10, 2),
+    /// ]);
+    /// ```
     pub fn constraints<C>(mut self, constraints: C) -> Layout
     where
         C: Into<Vec<Constraint>>,
@@ -172,6 +248,18 @@ impl Layout {
         self
     }
 
+    /// Builder method to set the margin of the layout.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let layout = Layout::default()
+    ///     .constraints(vec![Constraint::Min(0)])
+    ///     .margin(2)
+    ///     .split(Rect::new(0, 0, 10, 10));
+    /// assert_eq!(layout[..], [Rect::new(2, 2, 6, 6)]);
+    /// ```
     pub const fn margin(mut self, margin: u16) -> Layout {
         self.margin = Margin {
             horizontal: margin,
@@ -180,88 +268,94 @@ impl Layout {
         self
     }
 
+    /// Builder method to set the horizontal margin of the layout.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let layout = Layout::default()
+    ///     .constraints(vec![Constraint::Min(0)])
+    ///     .horizontal_margin(2)
+    ///     .split(Rect::new(0, 0, 10, 10));
+    /// assert_eq!(layout[..], [Rect::new(2, 0, 6, 10)]);
+    /// ```
     pub const fn horizontal_margin(mut self, horizontal: u16) -> Layout {
         self.margin.horizontal = horizontal;
         self
     }
 
+    /// Builder method to set the vertical margin of the layout.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let layout = Layout::default()
+    ///     .constraints(vec![Constraint::Min(0)])
+    ///     .vertical_margin(2)
+    ///     .split(Rect::new(0, 0, 10, 10));
+    /// assert_eq!(layout[..], [Rect::new(0, 2, 10, 6)]);
+    /// ```
     pub const fn vertical_margin(mut self, vertical: u16) -> Layout {
         self.margin.vertical = vertical;
         self
     }
 
+    /// Builder method to set the direction of the layout.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let layout = Layout::default()
+    ///     .direction(Direction::Horizontal)
+    ///     .constraints(vec![Constraint::Length(5), Constraint::Min(0)])
+    ///     .split(Rect::new(0, 0, 10, 10));
+    /// assert_eq!(layout[..], [Rect::new(0, 0, 5, 10), Rect::new(5, 0, 5, 10)]);
+    ///
+    /// let layout = Layout::default()
+    ///     .direction(Direction::Vertical)
+    ///     .constraints(vec![Constraint::Length(5), Constraint::Min(0)])
+    ///     .split(Rect::new(0, 0, 10, 10));
+    /// assert_eq!(layout[..], [Rect::new(0, 0, 10, 5), Rect::new(0, 5, 10, 5)]);
+    /// ```
     pub const fn direction(mut self, direction: Direction) -> Layout {
         self.direction = direction;
         self
     }
 
+    /// Builder method to set whether the last chunk of the computed layout should be expanded to
+    /// fill the available space.
     pub(crate) const fn expand_to_fill(mut self, expand_to_fill: bool) -> Layout {
         self.expand_to_fill = expand_to_fill;
         self
     }
 
-    /// Wrapper function around the cassowary-rs solver to be able to split a given
-    /// area into smaller ones based on the preferred widths or heights and the direction.
+    /// Wrapper function around the cassowary-rs solver to be able to split a given area into
+    /// smaller ones based on the preferred widths or heights and the direction.
+    ///
+    /// This method stores the result of the computation in a thread-local cache keyed on the layout
+    /// and area, so that subsequent calls with the same parameters are faster. The cache is a
+    /// simple HashMap, and grows indefinitely (<https://github.com/ratatui-org/ratatui/issues/402>).
     ///
     /// # Examples
-    /// ```
-    /// # use ratatui::layout::{Rect, Constraint, Direction, Layout};
-    /// let chunks = Layout::default()
-    ///     .direction(Direction::Vertical)
-    ///     .constraints([Constraint::Length(5), Constraint::Min(0)].as_ref())
-    ///     .split(Rect {
-    ///         x: 2,
-    ///         y: 2,
-    ///         width: 10,
-    ///         height: 10,
-    ///     });
-    /// assert_eq!(
-    ///     chunks[..],
-    ///     [
-    ///         Rect {
-    ///             x: 2,
-    ///             y: 2,
-    ///             width: 10,
-    ///             height: 5
-    ///         },
-    ///         Rect {
-    ///             x: 2,
-    ///             y: 7,
-    ///             width: 10,
-    ///             height: 5
-    ///         }
-    ///     ]
-    /// );
     ///
-    /// let chunks = Layout::default()
+    /// ```
+    /// # use ratatui::prelude::*;
+    /// let layout = Layout::default()
+    ///     .direction(Direction::Vertical)
+    ///     .constraints(vec![Constraint::Length(5), Constraint::Min(0)])
+    ///     .split(Rect::new(2, 2, 10, 10));
+    /// assert_eq!(layout[..], [Rect::new(2, 2, 10, 5), Rect::new(2, 7, 10, 5)]);
+    ///
+    /// let layout = Layout::default()
     ///     .direction(Direction::Horizontal)
-    ///     .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
-    ///     .split(Rect {
-    ///         x: 0,
-    ///         y: 0,
-    ///         width: 9,
-    ///         height: 2,
-    ///     });
-    /// assert_eq!(
-    ///     chunks[..],
-    ///     [
-    ///         Rect {
-    ///             x: 0,
-    ///             y: 0,
-    ///             width: 3,
-    ///             height: 2
-    ///         },
-    ///         Rect {
-    ///             x: 3,
-    ///             y: 0,
-    ///             width: 6,
-    ///             height: 2
-    ///         }
-    ///     ]
-    /// );
+    ///     .constraints(vec![Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
+    ///     .split(Rect::new(0, 0, 9, 2));
+    /// assert_eq!(layout[..], [Rect::new(0, 0, 3, 2), Rect::new(3, 0, 6, 2)]);
     /// ```
     pub fn split(&self, area: Rect) -> Rc<[Rect]> {
-        // TODO: Maybe use a fixed size cache ?
         LAYOUT_CACHE.with(|c| {
             c.borrow_mut()
                 .entry((area, self.clone()))
