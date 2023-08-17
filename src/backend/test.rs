@@ -93,6 +93,7 @@ impl TestBackend {
     /// Asserts that the TestBackend's buffer is equal to the expected buffer.
     /// If the buffers are not equal, a panic occurs with a detailed error message
     /// showing the differences between the expected and actual buffers.
+    #[track_caller]
     pub fn assert_buffer(&self, expected: &Buffer) {
         assert_eq!(expected.area, self.buffer.area);
         let diff = expected.diff(&self.buffer);
