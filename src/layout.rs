@@ -518,6 +518,7 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
         solver.add_constraints(&[
             element.start | GE(REQUIRED) | area.start,
             element.end | LE(REQUIRED) | area.end,
+            element.start | LE(REQUIRED) | element.end,
         ])?;
     }
     // ensure there are no gaps between the elements
@@ -572,18 +573,19 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
         .map(|element| {
             let start = *changes.get(&element.start).unwrap_or(&0.0);
             let end = *changes.get(&element.end).unwrap_or(&0.0);
+            let size = end - start;
             match layout.direction {
                 Direction::Horizontal => Rect {
                     x: start as u16,
                     y: inner.y,
-                    width: (end - start) as u16,
+                    width: size as u16,
                     height: inner.height,
                 },
                 Direction::Vertical => Rect {
                     x: inner.x,
                     y: start as u16,
                     width: inner.width,
-                    height: (end - start) as u16,
+                    height: size as u16,
                 },
             }
         })
@@ -1105,19 +1107,22 @@ mod tests {
         // these are a few tests that document existing bugs in the layout algorithm
         #[test]
         fn edge_cases() {
-            let layout = Layout::default().constraints(vec![
-                Constraint::Percentage(50),
-                Constraint::Percentage(50),
-                Constraint::Min(0),
-            ]);
+            let layout = Layout::default()
+                .constraints(vec![
+                    Constraint::Percentage(50),
+                    Constraint::Percentage(50),
+                    Constraint::Min(0),
+                ])
+                .split(Rect::new(0, 0, 1, 1));
             assert_eq!(
-                layout.split(Rect::new(0, 0, 1, 1))[..],
+                layout[..],
                 [
                     Rect::new(0, 0, 1, 0),
                     Rect::new(0, 0, 1, 0),
                     Rect::new(0, 1, 1, 0)
                 ]
             );
+
             let layout = Layout::default()
                 .constraints(vec![
                     Constraint::Max(1),
@@ -1131,6 +1136,35 @@ mod tests {
                     Rect::new(0, 0, 1, 0),
                     Rect::new(0, 0, 1, 0),
                     Rect::new(0, 1, 1, 0)
+                ]
+            );
+
+            // minimal bug from
+            // https://github.com/ratatui-org/ratatui/pull/404#issuecomment-1681850644
+            let layout = Layout::default()
+                .constraints(vec![Min(1), Length(0), Min(1)])
+                .direction(Direction::Horizontal)
+                .split(Rect::new(0, 0, 1, 1));
+            assert_eq!(
+                layout[..],
+                [
+                    Rect::new(0, 0, 1, 1),
+                    Rect::new(1, 0, 0, 1),
+                    Rect::new(1, 0, 0, 1),
+                ]
+            );
+
+            let layout = Layout::default()
+                .constraints(vec![Length(3), Min(4), Length(1), Min(4)])
+                .direction(Direction::Horizontal)
+                .split(Rect::new(0, 0, 7, 1));
+            assert_eq!(
+                layout[..],
+                [
+                    Rect::new(0, 0, 0, 1),
+                    Rect::new(0, 0, 4, 1),
+                    Rect::new(4, 0, 0, 1),
+                    Rect::new(4, 0, 3, 1),
                 ]
             );
         }
