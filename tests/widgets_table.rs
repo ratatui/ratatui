@@ -304,7 +304,8 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
 
 #[test]
 fn widgets_table_columns_widths_can_use_mixed_constraints() {
-    let test_case = |widths, expected| {
+    #[track_caller]
+    fn test_case(widths: &[Constraint], expected: Buffer) {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
@@ -324,7 +325,7 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
             })
             .unwrap();
         terminal.backend().assert_buffer(&expected);
-    };
+    }
 
     // columns of zero width show nothing
     test_case(
@@ -356,12 +357,12 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
         ],
         Buffer::with_lines(vec![
             "┌────────────────────────────┐",
-            "│Hea Head2                He │",
+            "│Hea Head2                Hea│",
             "│                            │",
-            "│Row Row12                Ro │",
-            "│Row Row22                Ro │",
-            "│Row Row32                Ro │",
-            "│Row Row42                Ro │",
+            "│Row Row12                Row│",
+            "│Row Row22                Row│",
+            "│Row Row32                Row│",
+            "│Row Row42                Row│",
             "│                            │",
             "│                            │",
             "└────────────────────────────┘",
@@ -398,12 +399,12 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
         ],
         Buffer::with_lines(vec![
             "┌────────────────────────────┐",
-            "│Head1            Head2      │",
+            "│Head1             Head2     │",
             "│                            │",
-            "│Row11            Row12      │",
-            "│Row21            Row22      │",
-            "│Row31            Row32      │",
-            "│Row41            Row42      │",
+            "│Row11             Row12     │",
+            "│Row21             Row22     │",
+            "│Row31             Row32     │",
+            "│Row41             Row42     │",
             "│                            │",
             "│                            │",
             "└────────────────────────────┘",
@@ -413,7 +414,8 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
 
 #[test]
 fn widgets_table_columns_widths_can_use_ratio_constraints() {
-    let test_case = |widths, expected| {
+    #[track_caller]
+    fn test_case(widths: &[Constraint], expected: Buffer) {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
@@ -434,7 +436,7 @@ fn widgets_table_columns_widths_can_use_ratio_constraints() {
             })
             .unwrap();
         terminal.backend().assert_buffer(&expected);
-    };
+    }
 
     // columns of zero width show nothing
     test_case(
@@ -487,12 +489,12 @@ fn widgets_table_columns_widths_can_use_ratio_constraints() {
         ],
         Buffer::with_lines(vec![
             "┌────────────────────────────┐",
-            "│Head1    Head2    Head3     │",
+            "│Head1    Head2     Head3    │",
             "│                            │",
-            "│Row11    Row12    Row13     │",
-            "│Row21    Row22    Row23     │",
-            "│Row31    Row32    Row33     │",
-            "│Row41    Row42    Row43     │",
+            "│Row11    Row12     Row13    │",
+            "│Row21    Row22     Row23    │",
+            "│Row31    Row32     Row33    │",
+            "│Row41    Row42     Row43    │",
             "│                            │",
             "│                            │",
             "└────────────────────────────┘",

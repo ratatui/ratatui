@@ -107,7 +107,7 @@ fn render_fg_named_colors<B: Backend>(frame: &mut Frame<B>, bg: Color, area: Rec
         .flat_map(|area| {
             Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(vec![Constraint::Percentage(13); 8])
+                .constraints(vec![Constraint::Ratio(1, 8); 8])
                 .split(*area)
                 .to_vec()
         })
@@ -132,7 +132,7 @@ fn render_bg_named_colors<B: Backend>(frame: &mut Frame<B>, fg: Color, area: Rec
         .flat_map(|area| {
             Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(vec![Constraint::Percentage(13); 8])
+                .constraints(vec![Constraint::Ratio(1, 8); 8])
                 .split(*area)
                 .to_vec()
         })
