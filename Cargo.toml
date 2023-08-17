@@ -58,6 +58,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 fakeit = "1.1"
 itertools = "0.10"
 rand = "0.8"
+pretty_assertions = "1.4.0"
 
 [[bench]]
 name = "block"
