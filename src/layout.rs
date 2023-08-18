@@ -568,47 +568,28 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
     let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
 
     // convert to Rects
-    let mut results = elements
+    let results = elements
         .iter()
         .map(|element| {
-            let start = *changes.get(&element.start).unwrap_or(&0.0);
-            let end = *changes.get(&element.end).unwrap_or(&0.0);
+            let start = changes.get(&element.start).unwrap_or(&0.0).round() as u16;
+            let end = changes.get(&element.end).unwrap_or(&0.0).round() as u16;
             let size = end - start;
             match layout.direction {
                 Direction::Horizontal => Rect {
-                    x: start as u16,
+                    x: start,
                     y: inner.y,
-                    width: size as u16,
+                    width: size,
                     height: inner.height,
                 },
                 Direction::Vertical => Rect {
                     x: inner.x,
-                    y: start as u16,
+                    y: start,
                     width: inner.width,
-                    height: size as u16,
+                    height: size,
                 },
             }
         })
         .collect::<Rc<[Rect]>>();
-
-    if layout.expand_to_fill {
-        // Because it's not always possible to satisfy all constraints, the last item might be
-        // slightly smaller than the available space. E.g. when the available space is 10, and the
-        // constraints are [Length(5), Max(4)], the last item will be 4 wide instead of 5. Fix this
-        // by extending the last item a bit if necessary. (`unwrap()` is safe here, because results
-        // has no shared references right now).
-        if let Some(last) = Rc::get_mut(&mut results).unwrap().last_mut() {
-            match layout.direction {
-                Direction::Horizontal => {
-                    last.width = inner.right() - last.x;
-                }
-                Direction::Vertical => {
-                    last.height = inner.bottom() - last.y;
-                }
-            }
-        }
-    }
-
     Ok(results)
 }
 
@@ -930,15 +911,15 @@ mod tests {
             test(Rect::new(0, 0, 1, 1), &[TEN, FULL], "b");
             test(Rect::new(0, 0, 1, 1), &[TEN, DOUBLE], "b");
 
-            test(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "b");
-            test(Rect::new(0, 0, 1, 1), &[HALF, HALF], "b");
-            test(Rect::new(0, 0, 1, 1), &[HALF, FULL], "b");
-            test(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "b");
+            test(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a");
+            test(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a");
+            test(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a");
+            test(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a");
 
-            test(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "b");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "b");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "b");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "b");
+            test(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a");
+            test(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a");
+            test(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a");
+            test(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a");
 
             test(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a");
             test(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a");
@@ -957,18 +938,17 @@ mod tests {
             test(Rect::new(0, 0, 2, 1), &[TEN, FULL], "bb");
             test(Rect::new(0, 0, 2, 1), &[TEN, DOUBLE], "bb");
 
-            // should probably be "ab" but this is the current behavior
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "bb");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "bb");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "bb");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "bb");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab");
 
-            test(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "bb");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "bb");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "bb");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "bb");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab");
 
             test(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab");
             test(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab");
@@ -977,9 +957,8 @@ mod tests {
             test(Rect::new(0, 0, 2, 1), &[FULL, HALF], "aa");
             test(Rect::new(0, 0, 2, 1), &[FULL, FULL], "aa");
 
-            // should probably be "abb" but this is what the current algorithm produces
-            test(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "bbb");
-            test(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "bbb");
+            test(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "abb");
+            test(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "abb");
         }
 
         #[test]
@@ -1027,15 +1006,15 @@ mod tests {
             test(Rect::new(0, 0, 1, 1), &[TEN, FULL], "b");
             test(Rect::new(0, 0, 1, 1), &[TEN, DOUBLE], "b");
 
-            test(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "b"); // bug?
-            test(Rect::new(0, 0, 1, 1), &[HALF, HALF], "b"); // bug?
-            test(Rect::new(0, 0, 1, 1), &[HALF, FULL], "b"); // bug?
-            test(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "b"); // bug?
+            test(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a");
+            test(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a");
+            test(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a");
+            test(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a");
 
-            test(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "b"); // bug?
-            test(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "b"); // bug?
-            test(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "b"); // bug?
-            test(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "b"); // bug?
+            test(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a");
+            test(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a");
+            test(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a");
+            test(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a");
 
             test(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a");
             test(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a");
@@ -1054,19 +1033,17 @@ mod tests {
             test(Rect::new(0, 0, 2, 1), &[TEN, FULL], "bb");
             test(Rect::new(0, 0, 2, 1), &[TEN, DOUBLE], "bb");
 
-            // should probably be "ab" but this is what the current algorithm produces
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "bb");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "bb");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "bb");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "bb");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab");
 
-            // should probably be "ab" but this is what the current algorithm produces
-            test(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "bb");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "bb");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "bb");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "bb");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab");
 
             test(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab");
             test(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab");
@@ -1117,8 +1094,8 @@ mod tests {
             assert_eq!(
                 layout[..],
                 [
-                    Rect::new(0, 0, 1, 0),
-                    Rect::new(0, 0, 1, 0),
+                    Rect::new(0, 0, 1, 1),
+                    Rect::new(0, 1, 1, 0),
                     Rect::new(0, 1, 1, 0)
                 ]
             );
@@ -1134,7 +1111,7 @@ mod tests {
                 layout[..],
                 [
                     Rect::new(0, 0, 1, 0),
-                    Rect::new(0, 0, 1, 0),
+                    Rect::new(0, 0, 1, 1),
                     Rect::new(0, 1, 1, 0)
                 ]
             );
