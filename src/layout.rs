@@ -493,17 +493,11 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
     let mut solver = Solver::new();
     let inner = area.inner(&layout.margin);
 
-    let (start, end) = match layout.direction {
-        Direction::Horizontal => (inner.x, inner.right()),
-        Direction::Vertical => (inner.y, inner.bottom()),
+    let (area_start, area_end) = match layout.direction {
+        Direction::Horizontal => (f64::from(inner.x), f64::from(inner.right())),
+        Direction::Vertical => (f64::from(inner.y), f64::from(inner.bottom())),
     };
-
-    // setup the bounds of the area
-    let area = Element::new();
-    solver.add_constraints(&[
-        area.start | EQ(REQUIRED) | f64::from(start),
-        area.end | EQ(REQUIRED) | f64::from(end),
-    ])?;
+    let area_size = area_end - area_start;
 
     // create an element for each constraint that needs to be applied. Each element defines the
     // variables that will be used to compute the layout.
@@ -516,8 +510,8 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
     // ensure that all the elements are inside the area
     for element in &elements {
         solver.add_constraints(&[
-            element.start | GE(REQUIRED) | area.start,
-            element.end | LE(REQUIRED) | area.end,
+            element.start | GE(REQUIRED) | area_start,
+            element.end | LE(REQUIRED) | area_end,
             element.start | LE(REQUIRED) | element.end,
         ])?;
     }
@@ -527,12 +521,12 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
     }
     // ensure the first element touches the left/top edge of the area
     if let Some(first) = elements.first() {
-        solver.add_constraint(first.start | EQ(REQUIRED) | area.start)?;
+        solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
     }
     // ensure the last element touches the right/bottom edge of the area
     if layout.expand_to_fill {
         if let Some(last) = elements.last() {
-            solver.add_constraint(last.end | EQ(REQUIRED) | area.end)?;
+            solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
         }
     }
     // apply the constraints
@@ -540,12 +534,12 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
         match constraint {
             Constraint::Percentage(p) => {
                 let percent = f64::from(p) / 100.00;
-                solver.add_constraint(element.size() | EQ(STRONG) | (area.size() * percent))?;
+                solver.add_constraint(element.size() | EQ(STRONG) | (area_size * percent))?;
             }
             Constraint::Ratio(n, d) => {
                 // avoid division by zero by using 1 when denominator is 0
                 let ratio = f64::from(n) / f64::from(d.max(1));
-                solver.add_constraint(element.size() | EQ(STRONG) | (area.size() * ratio))?;
+                solver.add_constraint(element.size() | EQ(STRONG) | (area_size * ratio))?;
             }
             Constraint::Length(l) => {
                 solver.add_constraint(element.size() | EQ(STRONG) | f64::from(l))?
