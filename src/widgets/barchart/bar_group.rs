@@ -1,6 +1,6 @@
 use super::Bar;
 use crate::{
-    prelude::{Buffer, Rect},
+    prelude::{Alignment, Buffer, Rect},
     style::Style,
     text::Line,
 };
@@ -47,8 +47,13 @@ impl<'a> BarGroup<'a> {
                 span.style = default_label_style.patch(span.style);
             }
 
-            let center_offset = area.width.saturating_sub(label.width() as u16) >> 1;
-            buf.set_line(area.x + center_offset, area.y, &label, area.width);
+            let x_offset = match label.alignment {
+                Some(Alignment::Center) => area.width.saturating_sub(label.width() as u16) >> 1,
+                Some(Alignment::Right) => area.width.saturating_sub(label.width() as u16),
+                _ => 0,
+            };
+
+            buf.set_line(area.x + x_offset, area.y, &label, area.width);
         }
     }
 }

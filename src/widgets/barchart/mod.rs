@@ -705,7 +705,7 @@ mod tests {
         let expected = Buffer::with_lines(vec![
             "█   █     █       █  ",
             "█ █ █   █ █ █   █ █ █",
-            " G1      G2      G3  ",
+            "G1      G2      G3   ",
         ]);
 
         assert_buffer_eq!(buffer, expected);
@@ -728,7 +728,7 @@ mod tests {
         let expected = Buffer::with_lines(vec![
             "█   █     █      ",
             "█ █ █   █ █ █   █",
-            " G1      G2     G",
+            "G1      G2      G",
         ]);
         assert_buffer_eq!(buffer, expected);
     }
@@ -750,7 +750,7 @@ mod tests {
         let expected = Buffer::with_lines(vec![
             "█   █     █     ",
             "█ █ █   █ █ █   ",
-            " G1      G2     ",
+            "G1      G2      ",
         ]);
         assert_buffer_eq!(buffer, expected);
     }
@@ -844,7 +844,7 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
         chart.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec!["  █", "█ █", " G "]);
+        let expected = Buffer::with_lines(vec!["  █", "█ █", "G  "]);
         assert_buffer_eq!(buffer, expected);
     }
 
@@ -875,11 +875,11 @@ mod tests {
             "2█   ",
             "3██  ",
             "4███ ",
-            " G1  ",
+            "G1   ",
             "3██  ",
             "4███ ",
             "5████",
-            " G2  ",
+            "G2   ",
         ]);
 
         assert_buffer_eq!(buffer, expected);
@@ -895,7 +895,7 @@ mod tests {
             "2█   ",
             "3██  ",
             "4███ ",
-            " G1  ",
+            "G1   ",
             "3██  ",
             "4███ ",
             "5████",
@@ -910,7 +910,7 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 5));
         chart.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec!["2█   ", "3██  ", "4███ ", " G1  ", "3██  "]);
+        let expected = Buffer::with_lines(vec!["2█   ", "3██  ", "4███ ", "G1   ", "3██  "]);
 
         assert_buffer_eq!(buffer, expected);
     }
@@ -991,12 +991,42 @@ mod tests {
         // G1 should have the bold red style
         // bold: because of BarChart::label_style
         // red: is included with the label itself
-        let mut expected = Buffer::with_lines(vec!["2████", " G1  "]);
+        let mut expected = Buffer::with_lines(vec!["2████", "G1   "]);
         let cell = expected.get_mut(0, 1).set_fg(Color::Red);
         cell.modifier.insert(Modifier::BOLD);
         let cell = expected.get_mut(1, 1).set_fg(Color::Red);
         cell.modifier.insert(Modifier::BOLD);
 
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_group_label_center() {
+        let chart: BarChart<'_> = BarChart::default().data(
+            BarGroup::default()
+                .label(Line::from(Span::from("G")).alignment(Alignment::Center))
+                .bars(&[Bar::default().value(2), Bar::default().value(5)]),
+        );
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+        chart.render(buffer.area, &mut buffer);
+
+        let expected = Buffer::with_lines(vec!["  █", "▆ █", " G "]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_group_label_right() {
+        let chart: BarChart<'_> = BarChart::default().data(
+            BarGroup::default()
+                .label(Line::from(Span::from("G")).alignment(Alignment::Right))
+                .bars(&[Bar::default().value(2), Bar::default().value(5)]),
+        );
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
+        chart.render(buffer.area, &mut buffer);
+
+        let expected = Buffer::with_lines(vec!["  █", "▆ █", "  G"]);
         assert_buffer_eq!(buffer, expected);
     }
 }
