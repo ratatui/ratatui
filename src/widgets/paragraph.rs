@@ -124,7 +124,12 @@ impl<'a> Paragraph<'a> {
         self
     }
 
-    /// Offset values: (Vertical, Horizontal)
+    /// Set the scroll offset for the given paragraph
+    ///
+    /// Scroll works by starting to render at the given offset, which unlike other scroll function
+    /// is (y, x)
+    ///
+    /// There is a RFC for scroll refactoring and unification, see https://github.com/ratatui-org/ratatui/issues/174
     pub fn scroll(mut self, offset: (Vertical, Horizontal)) -> Paragraph<'a> {
         self.scroll = offset;
         self
