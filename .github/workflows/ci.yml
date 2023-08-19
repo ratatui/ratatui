@@ -1,4 +1,4 @@
-name: CI
+name: Continuous Integration
 
 on:
   # Allows you to run this workflow manually from the Actions tab
