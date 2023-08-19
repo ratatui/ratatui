@@ -91,6 +91,9 @@ pub struct Wrap {
     pub trim: bool,
 }
 
+type Horizontal = u16;
+type Vertical = u16;
+
 impl<'a> Paragraph<'a> {
     pub fn new<T>(text: T) -> Paragraph<'a>
     where
@@ -121,7 +124,13 @@ impl<'a> Paragraph<'a> {
         self
     }
 
-    pub fn scroll(mut self, offset: (u16, u16)) -> Paragraph<'a> {
+    /// Set the scroll offset for the given paragraph
+    ///
+    /// Scroll works by starting to render at the given offset, which unlike other scroll function
+    /// is (y, x)
+    ///
+    /// There is a RFC for scroll refactoring and unification, see https://github.com/ratatui-org/ratatui/issues/174
+    pub fn scroll(mut self, offset: (Vertical, Horizontal)) -> Paragraph<'a> {
         self.scroll = offset;
         self
     }
