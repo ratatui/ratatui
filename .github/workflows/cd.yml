@@ -30,7 +30,7 @@ jobs:
       - name: Calculate the next release
         run: |
           suffix="alpha"
-          last_tag="$(git describe --abbrev=0 --tags `git rev-list --tags --max-count=1`)"
+          last_tag="$(git tag --sort=committerdate | tail -1)"
           if [[ "${last_tag}" = *"-${suffix}"* ]]; then
             # increment the alpha version
             # e.g. v0.22.1-alpha.12 -> v0.22.1-alpha.13
