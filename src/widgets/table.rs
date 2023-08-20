@@ -593,6 +593,7 @@ mod tests {
 
     use super::*;
     use crate::{
+        layout::Constraint::*,
         style::{Color, Modifier, Style, Stylize},
         text::Line,
     };
@@ -606,70 +607,49 @@ mod tests {
     mod table_column_widths {
         use super::*;
 
-        /// Construct a a new table with the given constraints and the available widths
-        /// Returns (x, width) for each defined `widths` constraint
-        fn get_test(
-            widths: &[Constraint],
+        /// Construct a a new table with the given constraints, available and selection widths and
+        /// tests that the widths match the expected list of (x, width) tuples.
+        #[track_caller]
+        fn test(
+            constraints: &[Constraint],
             available_width: u16,
             selection_width: u16,
-        ) -> Vec<(u16, u16)> {
-            let table = Table::new(vec![]).widths(widths);
+            expected: &[(u16, u16)],
+        ) {
+            let table = Table::new(vec![]).widths(constraints);
 
-            table.get_columns_widths(available_width, selection_width)
+            let widths = table.get_columns_widths(available_width, selection_width);
+            assert_eq!(widths, expected);
         }
 
         #[test]
         fn length_constraint() {
             // without selection, more than needed width
-            assert_eq!(
-                get_test(&[Constraint::Length(4), Constraint::Length(4)], 20, 0),
-                &[(0, 4), (5, 4)]
-            );
+            test(&[Length(4), Length(4)], 20, 0, &[(0, 4), (5, 4)]);
 
             // with selection, more than needed width
-            assert_eq!(
-                get_test(&[Constraint::Length(4), Constraint::Length(4)], 20, 3),
-                &[(3, 4), (8, 4)]
-            );
+            test(&[Length(4), Length(4)], 20, 3, &[(3, 4), (8, 4)]);
 
             // without selection, less than needed width
-            assert_eq!(
-                get_test(&[Constraint::Length(4), Constraint::Length(4)], 7, 0),
-                &[(0, 4), (5, 2)]
-            );
+            test(&[Length(4), Length(4)], 7, 0, &[(0, 4), (5, 2)]);
 
             // with selection, less than needed width
-            assert_eq!(
-                get_test(&[Constraint::Length(4), Constraint::Length(4)], 7, 3),
-                &[(3, 4), (7, 0)]
-            );
+            test(&[Length(4), Length(4)], 7, 3, &[(3, 4), (7, 0)]);
         }
 
         #[test]
         fn max_constraint() {
             // without selection, more than needed width
-            assert_eq!(
-                get_test(&[Constraint::Max(4), Constraint::Max(4)], 20, 0),
-                &[(0, 4), (5, 4)]
-            );
+            test(&[Max(4), Max(4)], 20, 0, &[(0, 4), (5, 4)]);
 
             // with selection, more than needed width
-            assert_eq!(
-                get_test(&[Constraint::Max(4), Constraint::Max(4)], 20, 3),
-                &[(3, 4), (8, 4)]
-            );
+            test(&[Max(4), Max(4)], 20, 3, &[(3, 4), (8, 4)]);
 
             // without selection, less than needed width
-            assert_eq!(
-                get_test(&[Constraint::Max(4), Constraint::Max(4)], 7, 0),
-                &[(0, 4), (5, 2)]
-            );
+            test(&[Max(4), Max(4)], 7, 0, &[(0, 4), (5, 2)]);
 
             // with selection, less than needed width
-            assert_eq!(
-                get_test(&[Constraint::Max(4), Constraint::Max(4)], 7, 3),
-                &[(3, 3), (7, 0)]
-            );
+            test(&[Max(4), Max(4)], 7, 3, &[(3, 3), (7, 0)]);
         }
 
         #[test]
@@ -679,98 +659,54 @@ mod tests {
             // constraint and not split it with all available constraints
 
             // without selection, more than needed width
-            assert_eq!(
-                get_test(&[Constraint::Min(4), Constraint::Min(4)], 20, 0),
-                &[(0, 4), (5, 4)]
-            );
+            test(&[Min(4), Min(4)], 20, 0, &[(0, 4), (5, 4)]);
 
             // with selection, more than needed width
-            assert_eq!(
-                get_test(&[Constraint::Min(4), Constraint::Min(4)], 20, 3),
-                &[(3, 4), (8, 4)]
-            );
+            test(&[Min(4), Min(4)], 20, 3, &[(3, 4), (8, 4)]);
 
             // without selection, less than needed width
-            assert_eq!(
-                get_test(&[Constraint::Min(4), Constraint::Min(4)], 7, 0),
-                &[(0, 4), (4, 3)] // allocates no spacer
-            );
+            // allocates no spacer
+            test(&[Min(4), Min(4)], 7, 0, &[(0, 4), (4, 3)]);
 
             // with selection, less than needed width
-            assert_eq!(
-                get_test(&[Constraint::Min(4), Constraint::Min(4)], 7, 3),
-                &[(0, 4), (4, 3)] // allocates no selection and no spacer
-            );
+            // allocates no selection and no spacer
+            test(&[Min(4), Min(4)], 7, 3, &[(0, 4), (4, 3)]);
         }
 
         #[test]
         fn percentage_constraint() {
             // without selection, more than needed width
-            assert_eq!(
-                get_test(
-                    &[Constraint::Percentage(30), Constraint::Percentage(30)],
-                    20,
-                    0
-                ),
-                &[(0, 6), (7, 6)]
-            );
+            test(&[Percentage(30), Percentage(30)], 20, 0, &[(0, 6), (7, 6)]);
 
             // with selection, more than needed width
-            assert_eq!(
-                get_test(
-                    &[Constraint::Percentage(30), Constraint::Percentage(30)],
-                    20,
-                    3
-                ),
-                &[(3, 6), (10, 6)]
-            );
+            test(&[Percentage(30), Percentage(30)], 20, 3, &[(3, 6), (10, 6)]);
 
             // without selection, less than needed width
-            assert_eq!(
-                get_test(
-                    &[Constraint::Percentage(30), Constraint::Percentage(30)],
-                    7,
-                    0
-                ),
-                &[(0, 2), (3, 2)]
-            );
+            // rounds from positions: [0.0, 0.0, 2.1, 3.1, 5.2, 7.0]
+            test(&[Percentage(30), Percentage(30)], 7, 0, &[(0, 2), (3, 2)]);
 
             // with selection, less than needed width
-            assert_eq!(
-                get_test(
-                    &[Constraint::Percentage(30), Constraint::Percentage(30)],
-                    7,
-                    3
-                ),
-                &[(3, 2), (6, 0)]
-            );
+            // rounds from positions: [0.0, 3.0, 5.1, 6.1, 7.0, 7.0]
+            test(&[Percentage(30), Percentage(30)], 7, 3, &[(3, 2), (6, 1)]);
         }
 
         #[test]
         fn ratio_constraint() {
             // without selection, more than needed width
-            assert_eq!(
-                get_test(&[Constraint::Ratio(1, 3), Constraint::Ratio(1, 3)], 20, 0),
-                &[(0, 6), (7, 6)]
-            );
+            // rounds from positions: [0.00, 0.00, 6.67, 7.67, 14.33]
+            test(&[Ratio(1, 3), Ratio(1, 3)], 20, 0, &[(0, 7), (8, 6)]);
 
             // with selection, more than needed width
-            assert_eq!(
-                get_test(&[Constraint::Ratio(1, 3), Constraint::Ratio(1, 3)], 20, 3),
-                &[(3, 6), (10, 6)]
-            );
+            // rounds from positions: [0.00, 3.00, 10.67, 17.33, 20.00]
+            test(&[Ratio(1, 3), Ratio(1, 3)], 20, 3, &[(3, 7), (11, 6)]);
 
             // without selection, less than needed width
-            assert_eq!(
-                get_test(&[Constraint::Ratio(1, 3), Constraint::Ratio(1, 3)], 7, 0),
-                &[(0, 2), (3, 2)]
-            );
+            // rounds from positions: [0.00, 2.33, 3.33, 5.66, 7.00]
+            test(&[Ratio(1, 3), Ratio(1, 3)], 7, 0, &[(0, 2), (3, 3)]);
 
             // with selection, less than needed width
-            assert_eq!(
-                get_test(&[Constraint::Ratio(1, 3), Constraint::Ratio(1, 3)], 7, 3),
-                &[(3, 2), (6, 0)]
-            );
+            // rounds from positions: [0.00, 3.00, 5.33, 6.33, 7.00, 7.00]
+            test(&[Ratio(1, 3), Ratio(1, 3)], 7, 3, &[(3, 2), (6, 1)]);
         }
     }
 
@@ -782,7 +718,7 @@ mod tests {
             Row::new(vec![Line::from("Center").alignment(Alignment::Center)]),
             Row::new(vec![Line::from("Right").alignment(Alignment::Right)]),
         ])
-        .widths(&[Constraint::Percentage(100)]);
+        .widths(&[Percentage(100)]);
 
         Widget::render(table, Rect::new(0, 0, 20, 3), &mut buf);
 
