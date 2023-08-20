@@ -2,7 +2,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     buffer::Buffer,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect, SegmentSize},
     style::{Style, Styled},
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
@@ -350,7 +350,7 @@ impl<'a> Table<'a> {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(constraints)
-            .expand_to_fill(false)
+            .segment_size(SegmentSize::None)
             .split(Rect {
                 x: 0,
                 y: 0,

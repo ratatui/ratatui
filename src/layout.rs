@@ -6,10 +6,11 @@ use std::{
 };
 
 use cassowary::{
-    strength::{REQUIRED, STRONG, WEAK},
+    strength::{MEDIUM, REQUIRED, STRONG, WEAK},
     AddConstraintError, Expression, Solver, Variable,
     WeightedRelation::{EQ, GE, LE},
 };
+use itertools::Itertools;
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Corner {
@@ -232,6 +233,14 @@ impl Rect {
     }
 }
 
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+pub enum SegmentSize {
+    EvenDistribution,
+    #[default]
+    LastTakesRemainder,
+    None,
+}
+
 /// A layout is a set of constraints that can be applied to a given area to split it into smaller
 /// ones.
 ///
@@ -281,9 +290,8 @@ pub struct Layout {
     direction: Direction,
     margin: Margin,
     constraints: Vec<Constraint>,
-    /// Whether the last chunk of the computed layout should be expanded to fill the available
-    /// space.
-    expand_to_fill: bool,
+    /// option for segment size preferences
+    segment_size: SegmentSize,
 }
 
 impl Default for Layout {
@@ -298,7 +306,7 @@ impl Layout {
     /// - direction: [Direction::Vertical]
     /// - margin: 0, 0
     /// - constraints: empty
-    /// - expand_to_fill: true
+    /// - segment_size: SegmentSize::LastTakesRemainder
     pub const fn new() -> Layout {
         Layout {
             direction: Direction::Vertical,
@@ -307,7 +315,7 @@ impl Layout {
                 vertical: 0,
             },
             constraints: Vec::new(),
-            expand_to_fill: true,
+            segment_size: SegmentSize::LastTakesRemainder,
         }
     }
 
@@ -419,10 +427,9 @@ impl Layout {
         self
     }
 
-    /// Builder method to set whether the last chunk of the computed layout should be expanded to
-    /// fill the available space.
-    pub(crate) const fn expand_to_fill(mut self, expand_to_fill: bool) -> Layout {
-        self.expand_to_fill = expand_to_fill;
+    /// Builder method to set whether chunks should be of equal size.
+    pub(crate) const fn segment_size(mut self, segment_size: SegmentSize) -> Layout {
+        self.segment_size = segment_size;
         self
     }
 
@@ -524,7 +531,7 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
         solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
     }
     // ensure the last element touches the right/bottom edge of the area
-    if layout.expand_to_fill {
+    if layout.segment_size != SegmentSize::None {
         if let Some(last) = elements.last() {
             solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
         }
@@ -547,15 +554,21 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
             Constraint::Max(m) => {
                 solver.add_constraints(&[
                     element.size() | LE(STRONG) | f64::from(m),
-                    element.size() | EQ(WEAK) | f64::from(m),
+                    element.size() | EQ(MEDIUM) | f64::from(m),
                 ])?;
             }
             Constraint::Min(m) => {
                 solver.add_constraints(&[
                     element.size() | GE(STRONG) | f64::from(m),
-                    element.size() | EQ(WEAK) | f64::from(m),
+                    element.size() | EQ(MEDIUM) | f64::from(m),
                 ])?;
             }
+        }
+    }
+    // prefer equal chunks if other constraints are all satisfied
+    if layout.segment_size == SegmentSize::EvenDistribution {
+        for (left, right) in elements.iter().tuple_combinations() {
+            solver.add_constraint(left.size() | EQ(WEAK) | right.size())?;
         }
     }
 
@@ -600,7 +613,97 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{SegmentSize::*, *};
+    use crate::prelude::Constraint::*;
+
+    fn get_x_width_with_segment_size(
+        segment_size: SegmentSize,
+        constraints: Vec<Constraint>,
+        target: Rect,
+    ) -> Vec<(u16, u16)> {
+        let layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(constraints)
+            .segment_size(segment_size);
+        let chunks = layout.split(target);
+        chunks.iter().map(|r| (r.x, r.width)).collect()
+    }
+
+    #[test]
+    fn test_split_equally_in_underspecified_case() {
+        let target = Rect::new(100, 200, 10, 10);
+        assert_eq!(
+            get_x_width_with_segment_size(LastTakesRemainder, vec![Min(2), Min(2), Min(0)], target),
+            [(100, 2), (102, 2), (104, 6)]
+        );
+        assert_eq!(
+            get_x_width_with_segment_size(EvenDistribution, vec![Min(2), Min(2), Min(0)], target),
+            [(100, 3), (103, 4), (107, 3)]
+        );
+    }
+
+    #[test]
+    fn test_split_equally_in_overconstrained_case_for_min() {
+        let target = Rect::new(100, 200, 100, 10);
+        assert_eq!(
+            get_x_width_with_segment_size(
+                LastTakesRemainder,
+                vec![Percentage(50), Min(10), Percentage(50)],
+                target
+            ),
+            [(100, 50), (150, 10), (160, 40)]
+        );
+        assert_eq!(
+            get_x_width_with_segment_size(
+                EvenDistribution,
+                vec![Percentage(50), Min(10), Percentage(50)],
+                target
+            ),
+            [(100, 45), (145, 10), (155, 45)]
+        );
+    }
+
+    #[test]
+    fn test_split_equally_in_overconstrained_case_for_max() {
+        let target = Rect::new(100, 200, 100, 10);
+        assert_eq!(
+            get_x_width_with_segment_size(
+                LastTakesRemainder,
+                vec![Percentage(30), Max(10), Percentage(30)],
+                target
+            ),
+            [(100, 30), (130, 10), (140, 60)]
+        );
+        assert_eq!(
+            get_x_width_with_segment_size(
+                EvenDistribution,
+                vec![Percentage(30), Max(10), Percentage(30)],
+                target
+            ),
+            [(100, 45), (145, 10), (155, 45)]
+        );
+    }
+
+    #[test]
+    fn test_split_equally_in_overconstrained_case_for_length() {
+        let target = Rect::new(100, 200, 100, 10);
+        assert_eq!(
+            get_x_width_with_segment_size(
+                LastTakesRemainder,
+                vec![Percentage(50), Length(10), Percentage(50)],
+                target
+            ),
+            [(100, 50), (150, 10), (160, 40)]
+        );
+        assert_eq!(
+            get_x_width_with_segment_size(
+                EvenDistribution,
+                vec![Percentage(50), Length(10), Percentage(50)],
+                target
+            ),
+            [(100, 45), (145, 10), (155, 45)]
+        );
+    }
 
     #[test]
     fn test_rect_size_truncation() {
@@ -705,7 +808,7 @@ mod tests {
         const _DEFAULT_LAYOUT: Layout = Layout::new()
             .direction(Direction::Horizontal)
             .margin(1)
-            .expand_to_fill(false);
+            .segment_size(SegmentSize::LastTakesRemainder);
         const _HORIZONTAL_LAYOUT: Layout = Layout::new().horizontal_margin(1);
         const _VERTICAL_LAYOUT: Layout = Layout::new().vertical_margin(1);
     }
