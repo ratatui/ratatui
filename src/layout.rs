@@ -561,6 +561,17 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
 
     let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
 
+    // please leave this comment here as it's useful for debugging unit tests when we make any
+    // changes to layout code - we should replace this with tracing in the future.
+    // let ends = format!(
+    //     "{:?}",
+    //     elements
+    //         .iter()
+    //         .map(|e| changes.get(&e.end).unwrap_or(&0.0))
+    //         .collect::<Vec<&f64>>()
+    // );
+    // dbg!(ends);
+
     // convert to Rects
     let results = elements
         .iter()
