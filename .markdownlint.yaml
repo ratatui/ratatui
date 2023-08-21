@@ -7,3 +7,6 @@ no-inline-html:
     - summary
 line-length:
   line_length: 100
+
+# to support repeated headers in the changelog
+no-duplicate-heading: false
