@@ -136,6 +136,7 @@ pub enum Alignment {
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
 /// area they are supposed to render to.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rect {
     pub x: u16,
     pub y: u16,
