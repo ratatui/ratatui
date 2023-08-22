@@ -2,6 +2,7 @@ use std::{
     cell::RefCell,
     cmp::{max, min},
     collections::HashMap,
+    fmt,
     rc::Rc,
 };
 
@@ -11,8 +12,9 @@ use cassowary::{
     WeightedRelation::{EQ, GE, LE},
 };
 use itertools::Itertools;
+use strum::{Display, EnumString};
 
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Corner {
     #[default]
     TopLeft,
@@ -21,7 +23,7 @@ pub enum Corner {
     BottomLeft,
 }
 
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Direction {
     Horizontal,
     #[default]
@@ -97,6 +99,18 @@ impl Default for Constraint {
     }
 }
 
+impl fmt::Display for Constraint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Constraint::Percentage(p) => write!(f, "Percentage({})", p),
+            Constraint::Ratio(n, d) => write!(f, "Ratio({}, {})", n, d),
+            Constraint::Length(l) => write!(f, "Length({})", l),
+            Constraint::Max(m) => write!(f, "Max({})", m),
+            Constraint::Min(m) => write!(f, "Min({})", m),
+        }
+    }
+}
+
 impl Constraint {
     pub fn apply(&self, length: u16) -> u16 {
         match *self {
@@ -121,11 +135,26 @@ impl Constraint {
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Margin {
-    pub vertical: u16,
     pub horizontal: u16,
+    pub vertical: u16,
 }
 
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+impl Margin {
+    pub const fn new(horizontal: u16, vertical: u16) -> Margin {
+        Margin {
+            horizontal,
+            vertical,
+        }
+    }
+}
+
+impl fmt::Display for Margin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}x{}", self.horizontal, self.vertical)
+    }
+}
+
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Alignment {
     #[default]
     Left,
@@ -141,6 +170,12 @@ pub struct Rect {
     pub y: u16,
     pub width: u16,
     pub height: u16,
+}
+
+impl fmt::Display for Rect {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}x{}+{}+{}", self.width, self.height, self.x, self.y)
+    }
 }
 
 impl Rect {
@@ -233,8 +268,8 @@ impl Rect {
     }
 }
 
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
-pub enum SegmentSize {
+#[derive(Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
+pub(crate) enum SegmentSize {
     EvenDistribution,
     #[default]
     LastTakesRemainder,
@@ -613,8 +648,180 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
 
 #[cfg(test)]
 mod tests {
+    use strum::ParseError;
+
     use super::{SegmentSize::*, *};
     use crate::prelude::Constraint::*;
+
+    #[test]
+    fn corner_to_string() {
+        assert_eq!(Corner::BottomLeft.to_string(), "BottomLeft");
+        assert_eq!(Corner::BottomRight.to_string(), "BottomRight");
+        assert_eq!(Corner::TopLeft.to_string(), "TopLeft");
+        assert_eq!(Corner::TopRight.to_string(), "TopRight");
+    }
+
+    #[test]
+    fn corner_from_str() {
+        assert_eq!("BottomLeft".parse::<Corner>(), Ok(Corner::BottomLeft));
+        assert_eq!("BottomRight".parse::<Corner>(), Ok(Corner::BottomRight));
+        assert_eq!("TopLeft".parse::<Corner>(), Ok(Corner::TopLeft));
+        assert_eq!("TopRight".parse::<Corner>(), Ok(Corner::TopRight));
+        assert_eq!("".parse::<Corner>(), Err(ParseError::VariantNotFound));
+    }
+
+    #[test]
+    fn direction_to_string() {
+        assert_eq!(Direction::Horizontal.to_string(), "Horizontal");
+        assert_eq!(Direction::Vertical.to_string(), "Vertical");
+    }
+
+    #[test]
+    fn direction_from_str() {
+        assert_eq!("Horizontal".parse::<Direction>(), Ok(Direction::Horizontal));
+        assert_eq!("Vertical".parse::<Direction>(), Ok(Direction::Vertical));
+        assert_eq!("".parse::<Direction>(), Err(ParseError::VariantNotFound));
+    }
+
+    #[test]
+    fn constraint_to_string() {
+        assert_eq!(Constraint::Percentage(50).to_string(), "Percentage(50)");
+        assert_eq!(Constraint::Ratio(1, 2).to_string(), "Ratio(1, 2)");
+        assert_eq!(Constraint::Length(10).to_string(), "Length(10)");
+        assert_eq!(Constraint::Max(10).to_string(), "Max(10)");
+        assert_eq!(Constraint::Min(10).to_string(), "Min(10)");
+    }
+
+    #[test]
+    fn margin_to_string() {
+        assert_eq!(Margin::new(1, 2).to_string(), "1x2");
+    }
+
+    #[test]
+    fn margin_new() {
+        assert_eq!(
+            Margin::new(1, 2),
+            Margin {
+                horizontal: 1,
+                vertical: 2
+            }
+        );
+    }
+
+    #[test]
+    fn alignment_to_string() {
+        assert_eq!(Alignment::Left.to_string(), "Left");
+        assert_eq!(Alignment::Center.to_string(), "Center");
+        assert_eq!(Alignment::Right.to_string(), "Right");
+    }
+
+    #[test]
+    fn alignment_from_str() {
+        assert_eq!("Left".parse::<Alignment>(), Ok(Alignment::Left));
+        assert_eq!("Center".parse::<Alignment>(), Ok(Alignment::Center));
+        assert_eq!("Right".parse::<Alignment>(), Ok(Alignment::Right));
+        assert_eq!("".parse::<Alignment>(), Err(ParseError::VariantNotFound));
+    }
+
+    #[test]
+    fn rect_to_string() {
+        assert_eq!(Rect::new(1, 2, 3, 4).to_string(), "3x4+1+2");
+    }
+
+    #[test]
+    fn rect_new() {
+        assert_eq!(
+            Rect::new(1, 2, 3, 4),
+            Rect {
+                x: 1,
+                y: 2,
+                width: 3,
+                height: 4
+            }
+        );
+    }
+
+    #[test]
+    fn rect_area() {
+        assert_eq!(Rect::new(1, 2, 3, 4).area(), 12);
+    }
+
+    #[test]
+    fn rect_left() {
+        assert_eq!(Rect::new(1, 2, 3, 4).left(), 1);
+    }
+
+    #[test]
+    fn rect_right() {
+        assert_eq!(Rect::new(1, 2, 3, 4).right(), 4);
+    }
+
+    #[test]
+    fn rect_top() {
+        assert_eq!(Rect::new(1, 2, 3, 4).top(), 2);
+    }
+
+    #[test]
+    fn rect_bottom() {
+        assert_eq!(Rect::new(1, 2, 3, 4).bottom(), 6);
+    }
+
+    #[test]
+    fn rect_inner() {
+        assert_eq!(
+            Rect::new(1, 2, 3, 4).inner(&Margin::new(1, 2)),
+            Rect::new(2, 4, 1, 0)
+        );
+    }
+
+    #[test]
+    fn rect_union() {
+        assert_eq!(
+            Rect::new(1, 2, 3, 4).union(Rect::new(2, 3, 4, 5)),
+            Rect::new(1, 2, 5, 6)
+        );
+    }
+
+    #[test]
+    fn rect_intersection() {
+        assert_eq!(
+            Rect::new(1, 2, 3, 4).intersection(Rect::new(2, 3, 4, 5)),
+            Rect::new(2, 3, 2, 3)
+        );
+    }
+
+    #[test]
+    fn rect_intersects() {
+        assert!(Rect::new(1, 2, 3, 4).intersects(Rect::new(2, 3, 4, 5)));
+        assert!(!Rect::new(1, 2, 3, 4).intersects(Rect::new(5, 6, 7, 8)));
+    }
+
+    #[test]
+    fn segment_size_to_string() {
+        assert_eq!(
+            SegmentSize::EvenDistribution.to_string(),
+            "EvenDistribution"
+        );
+        assert_eq!(
+            SegmentSize::LastTakesRemainder.to_string(),
+            "LastTakesRemainder"
+        );
+        assert_eq!(SegmentSize::None.to_string(), "None");
+    }
+
+    #[test]
+    fn segment_size_from_string() {
+        assert_eq!(
+            "EvenDistribution".parse::<SegmentSize>(),
+            Ok(EvenDistribution)
+        );
+        assert_eq!(
+            "LastTakesRemainder".parse::<SegmentSize>(),
+            Ok(LastTakesRemainder)
+        );
+        assert_eq!("None".parse::<SegmentSize>(), Ok(None));
+        assert_eq!("".parse::<SegmentSize>(), Err(ParseError::VariantNotFound));
+    }
 
     fn get_x_width_with_segment_size(
         segment_size: SegmentSize,

@@ -1,3 +1,5 @@
+use strum::{Display, EnumString};
+
 use super::StatefulWidget;
 use crate::{
     buffer::Buffer,
@@ -7,7 +9,7 @@ use crate::{
 };
 
 /// An enum representing the direction of scrolling in a Scrollbar widget.
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum ScrollDirection {
     /// Forward scroll direction, usually corresponds to scrolling downwards or rightwards.
     #[default]
@@ -101,7 +103,7 @@ impl ScrollbarState {
 }
 
 /// Scrollbar Orientation
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
 pub enum ScrollbarOrientation {
     #[default]
     VerticalRight,
@@ -458,11 +460,79 @@ impl<'a> StatefulWidget for Scrollbar<'a> {
 
 #[cfg(test)]
 mod tests {
+    use strum::ParseError;
+
     use super::*;
     use crate::{
         assert_buffer_eq,
         symbols::scrollbar::{HORIZONTAL, VERTICAL},
     };
+
+    #[test]
+    fn scroll_direction_to_string() {
+        assert_eq!(ScrollDirection::Forward.to_string(), "Forward");
+        assert_eq!(ScrollDirection::Backward.to_string(), "Backward");
+    }
+
+    #[test]
+    fn scroll_direction_from_str() {
+        assert_eq!(
+            "Forward".parse::<ScrollDirection>(),
+            Ok(ScrollDirection::Forward)
+        );
+        assert_eq!(
+            "Backward".parse::<ScrollDirection>(),
+            Ok(ScrollDirection::Backward)
+        );
+        assert_eq!(
+            "".parse::<ScrollDirection>(),
+            Err(ParseError::VariantNotFound)
+        );
+    }
+
+    #[test]
+    fn scrollbar_orientation_to_string() {
+        assert_eq!(
+            ScrollbarOrientation::VerticalRight.to_string(),
+            "VerticalRight"
+        );
+        assert_eq!(
+            ScrollbarOrientation::VerticalLeft.to_string(),
+            "VerticalLeft"
+        );
+        assert_eq!(
+            ScrollbarOrientation::HorizontalBottom.to_string(),
+            "HorizontalBottom"
+        );
+        assert_eq!(
+            ScrollbarOrientation::HorizontalTop.to_string(),
+            "HorizontalTop"
+        );
+    }
+
+    #[test]
+    fn scrollbar_orientation_from_str() {
+        assert_eq!(
+            "VerticalRight".parse::<ScrollbarOrientation>(),
+            Ok(ScrollbarOrientation::VerticalRight)
+        );
+        assert_eq!(
+            "VerticalLeft".parse::<ScrollbarOrientation>(),
+            Ok(ScrollbarOrientation::VerticalLeft)
+        );
+        assert_eq!(
+            "HorizontalBottom".parse::<ScrollbarOrientation>(),
+            Ok(ScrollbarOrientation::HorizontalBottom)
+        );
+        assert_eq!(
+            "HorizontalTop".parse::<ScrollbarOrientation>(),
+            Ok(ScrollbarOrientation::HorizontalTop)
+        );
+        assert_eq!(
+            "".parse::<ScrollbarOrientation>(),
+            Err(ParseError::VariantNotFound)
+        );
+    }
 
     #[test]
     fn test_no_render_when_area_zero() {

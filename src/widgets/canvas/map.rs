@@ -1,3 +1,5 @@
+use strum::{Display, EnumString};
+
 use crate::{
     style::Color,
     widgets::canvas::{
@@ -6,7 +8,7 @@ use crate::{
     },
 };
 
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum MapResolution {
     #[default]
     Low,
@@ -36,5 +38,28 @@ impl Shape for Map {
                 painter.paint(x, y, self.color);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use strum::ParseError;
+
+    use super::*;
+
+    #[test]
+    fn map_resolution_to_string() {
+        assert_eq!(MapResolution::Low.to_string(), "Low");
+        assert_eq!(MapResolution::High.to_string(), "High");
+    }
+
+    #[test]
+    fn map_resolution_from_str() {
+        assert_eq!("Low".parse(), Ok(MapResolution::Low));
+        assert_eq!("High".parse(), Ok(MapResolution::High));
+        assert_eq!(
+            "".parse::<MapResolution>(),
+            Err(ParseError::VariantNotFound)
+        );
     }
 }

@@ -1,3 +1,5 @@
+use strum::{Display, EnumString};
+
 pub mod block {
     pub const FULL: &str = "█";
     pub const SEVEN_EIGHTHS: &str = "▉";
@@ -240,7 +242,7 @@ pub mod braille {
 }
 
 /// Marker to use when plotting data points
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Marker {
     /// One point per cell in shape of dot
     #[default]
@@ -300,4 +302,28 @@ pub mod scrollbar {
         begin: "←",
         end: "→",
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use strum::ParseError;
+
+    use super::*;
+
+    #[test]
+    fn marker_tostring() {
+        assert_eq!(Marker::Dot.to_string(), "Dot");
+        assert_eq!(Marker::Block.to_string(), "Block");
+        assert_eq!(Marker::Bar.to_string(), "Bar");
+        assert_eq!(Marker::Braille.to_string(), "Braille");
+    }
+
+    #[test]
+    fn marker_from_str() {
+        assert_eq!("Dot".parse::<Marker>(), Ok(Marker::Dot));
+        assert_eq!("Block".parse::<Marker>(), Ok(Marker::Block));
+        assert_eq!("Bar".parse::<Marker>(), Ok(Marker::Bar));
+        assert_eq!("Braille".parse::<Marker>(), Ok(Marker::Braille));
+        assert_eq!("".parse::<Marker>(), Err(ParseError::VariantNotFound));
+    }
 }

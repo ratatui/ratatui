@@ -1,4 +1,4 @@
-use std::io;
+use std::{fmt, io};
 
 use crate::{
     backend::{Backend, ClearType},
@@ -13,6 +13,16 @@ pub enum Viewport {
     Fullscreen,
     Inline(u16),
     Fixed(Rect),
+}
+
+impl fmt::Display for Viewport {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Viewport::Fullscreen => write!(f, "Fullscreen"),
+            Viewport::Inline(height) => write!(f, "Inline({})", height),
+            Viewport::Fixed(area) => write!(f, "Fixed({})", area),
+        }
+    }
 }
 
 /// Options to pass to [`Terminal::with_options`]
@@ -486,4 +496,19 @@ fn compute_inline_size<B: Backend>(
         },
         pos,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn viewport_to_string() {
+        assert_eq!(Viewport::Fullscreen.to_string(), "Fullscreen");
+        assert_eq!(Viewport::Inline(5).to_string(), "Inline(5)");
+        assert_eq!(
+            Viewport::Fixed(Rect::new(0, 0, 5, 5)).to_string(),
+            "Fixed(5x5+0+0)"
+        );
+    }
 }

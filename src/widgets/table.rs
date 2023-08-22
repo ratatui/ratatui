@@ -1,3 +1,4 @@
+use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
@@ -161,7 +162,7 @@ impl<'a> Styled for Row<'a> {
 }
 
 /// This option allows the user to configure the "highlight symbol" column width spacing
-#[derive(Debug, PartialEq, Eq, Clone, Default, Hash)]
+#[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Default, Hash)]
 pub enum HighlightSpacing {
     /// Always add spacing for the selection symbol column
     ///
@@ -775,5 +776,35 @@ mod tests {
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::CROSSED_OUT)
         )
+    }
+
+    #[test]
+    fn highlight_spacing_to_string() {
+        assert_eq!(HighlightSpacing::Always.to_string(), "Always".to_string());
+        assert_eq!(
+            HighlightSpacing::WhenSelected.to_string(),
+            "WhenSelected".to_string()
+        );
+        assert_eq!(HighlightSpacing::Never.to_string(), "Never".to_string());
+    }
+
+    #[test]
+    fn highlight_spacing_from_str() {
+        assert_eq!(
+            "Always".parse::<HighlightSpacing>(),
+            Ok(HighlightSpacing::Always)
+        );
+        assert_eq!(
+            "WhenSelected".parse::<HighlightSpacing>(),
+            Ok(HighlightSpacing::WhenSelected)
+        );
+        assert_eq!(
+            "Never".parse::<HighlightSpacing>(),
+            Ok(HighlightSpacing::Never)
+        );
+        assert_eq!(
+            "".parse::<HighlightSpacing>(),
+            Err(strum::ParseError::VariantNotFound)
+        );
     }
 }
