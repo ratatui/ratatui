@@ -144,9 +144,9 @@ In order to organize ourselves, we currently use a [Discord server](https://disc
 feel free to join and come chat! There is also a [Matrix](https://matrix.org/) bridge available at
 [#ratatui:matrix.org](https://matrix.to/#/#ratatui:matrix.org).
 
-**Discord is not a MUST to contribute**. We follow a pretty standard github centered open source
-workflow keeping the most important conversations on GitHub, open an issue or PR and it will be
-addressed. 😄
+While we do utilize Discord for coordinating, it's not essential for contributing.
+Our primary open-source workflow is centered around GitHub.
+For significant discussions, we rely on GitHub — please open an issue, a discussion or a PR.
 
 Please make sure you read the updated [contributing](./CONTRIBUTING.md) guidelines, especially if
 you are interested in working on a PR or issue opened in the previous repository.
