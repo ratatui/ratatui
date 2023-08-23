@@ -14,6 +14,7 @@ Status](https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatu
 Status](https://deps.rs/repo/github/ratatui-org/ratatui/status.svg?style=flat-square)](https://deps.rs/repo/github/ratatui-org/ratatui)
 [![Codecov](https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST)](https://app.codecov.io/gh/ratatui-org/ratatui)
 [![Discord](https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square)](https://discord.gg/pMCEU9hNEj)
+[![Matrix](https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix)](https://matrix.to/#/#ratatui:matrix.org)
 
 <!-- See RELEASE.md for instructions on creating the demo gif --->
 ![Demo of Ratatui](https://vhs.charm.sh/vhs-tF0QbuPbtHgUeG0sTVgFr.gif)
@@ -140,10 +141,12 @@ the community forked the project and created this crate. We look forward to cont
 started by Florian 🚀
 
 In order to organize ourselves, we currently use a [Discord server](https://discord.gg/pMCEU9hNEj),
-feel free to join and come chat! There are also plans to implement a [Matrix](https://matrix.org/)
-bridge in the near future. **Discord is not a MUST to contribute**. We follow a pretty standard
-github centered open source workflow keeping the most important conversations on GitHub, open an
-issue or PR and it will be addressed. 😄
+feel free to join and come chat! There is also a [Matrix](https://matrix.org/) bridge available at
+[#ratatui:matrix.org](https://matrix.to/#/#ratatui:matrix.org).
+
+While we do utilize Discord for coordinating, it's not essential for contributing.
+Our primary open-source workflow is centered around GitHub.
+For significant discussions, we rely on GitHub — please open an issue, a discussion or a PR.
 
 Please make sure you read the updated [contributing](./CONTRIBUTING.md) guidelines, especially if
 you are interested in working on a PR or issue opened in the previous repository.
