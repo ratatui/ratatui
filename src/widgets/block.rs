@@ -1,6 +1,8 @@
 #[path = "../title.rs"]
 pub mod title;
 
+use strum::{Display, EnumString};
+
 pub use self::title::{Position, Title};
 use crate::{
     buffer::Buffer,
@@ -10,7 +12,7 @@ use crate::{
     widgets::{Borders, Widget},
 };
 
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum BorderType {
     #[default]
     Plain,
@@ -526,6 +528,8 @@ impl<'a> Styled for Block<'a> {
 
 #[cfg(test)]
 mod tests {
+    use strum::ParseError;
+
     use super::*;
     use crate::{
         assert_buffer_eq,
@@ -984,5 +988,20 @@ mod tests {
 
             assert_buffer_eq!(buffer, expected_buffer);
         }
+    }
+
+    #[test]
+    fn border_type_to_string() {
+        assert_eq!(format!("{}", BorderType::Plain), "Plain");
+        assert_eq!(format!("{}", BorderType::Rounded), "Rounded");
+        assert_eq!(format!("{}", BorderType::Double), "Double");
+    }
+
+    #[test]
+    fn border_type_from_str() {
+        assert_eq!("Plain".parse(), Ok(BorderType::Plain));
+        assert_eq!("Rounded".parse(), Ok(BorderType::Rounded));
+        assert_eq!("Double".parse(), Ok(BorderType::Double));
+        assert_eq!("".parse::<BorderType>(), Err(ParseError::VariantNotFound));
     }
 }

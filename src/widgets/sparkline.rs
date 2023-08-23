@@ -1,5 +1,7 @@
 use std::cmp::min;
 
+use strum::{Display, EnumString};
+
 use crate::{
     buffer::Buffer,
     layout::Rect,
@@ -38,7 +40,7 @@ pub struct Sparkline<'a> {
     direction: RenderDirection,
 }
 
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum RenderDirection {
     #[default]
     LeftToRight,
@@ -167,12 +169,36 @@ impl<'a> Widget for Sparkline<'a> {
 
 #[cfg(test)]
 mod tests {
+    use strum::ParseError;
+
     use super::*;
     use crate::{
         assert_buffer_eq,
         buffer::Cell,
         style::{Color, Modifier, Stylize},
     };
+
+    #[test]
+    fn render_direction_to_string() {
+        assert_eq!(RenderDirection::LeftToRight.to_string(), "LeftToRight");
+        assert_eq!(RenderDirection::RightToLeft.to_string(), "RightToLeft");
+    }
+
+    #[test]
+    fn render_direction_from_str() {
+        assert_eq!(
+            "LeftToRight".parse::<RenderDirection>(),
+            Ok(RenderDirection::LeftToRight)
+        );
+        assert_eq!(
+            "RightToLeft".parse::<RenderDirection>(),
+            Ok(RenderDirection::RightToLeft)
+        );
+        assert_eq!(
+            "".parse::<RenderDirection>(),
+            Err(ParseError::VariantNotFound)
+        );
+    }
 
     // Helper function to render a sparkline to a buffer with a given width
     // filled with x symbols to make it easier to assert on the result

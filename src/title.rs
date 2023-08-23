@@ -1,3 +1,5 @@
+use strum::{Display, EnumString};
+
 use crate::{layout::Alignment, text::Line};
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -10,7 +12,7 @@ pub struct Title<'a> {
     pub position: Option<Position>,
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Position {
     #[default]
     Top,
@@ -43,5 +45,25 @@ where
 {
     fn from(value: T) -> Self {
         Self::default().content(value.into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use strum::ParseError;
+
+    use super::*;
+
+    #[test]
+    fn position_tostring() {
+        assert_eq!(Position::Top.to_string(), "Top");
+        assert_eq!(Position::Bottom.to_string(), "Bottom");
+    }
+
+    #[test]
+    fn position_from_str() {
+        assert_eq!("Top".parse::<Position>(), Ok(Position::Top));
+        assert_eq!("Bottom".parse::<Position>(), Ok(Position::Bottom));
+        assert_eq!("".parse::<Position>(), Err(ParseError::VariantNotFound));
     }
 }

@@ -1,5 +1,6 @@
 use std::{borrow::Cow, cmp::max};
 
+use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
@@ -76,7 +77,7 @@ impl<'a> Axis<'a> {
 }
 
 /// Used to determine which style of graphing to use
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum GraphType {
     /// Draw each point
     #[default]
@@ -627,6 +628,8 @@ impl<'a> Styled for Chart<'a> {
 
 #[cfg(test)]
 mod tests {
+    use strum::ParseError;
+
     use super::*;
     use crate::style::{Modifier, Stylize};
 
@@ -701,5 +704,18 @@ mod tests {
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
         )
+    }
+
+    #[test]
+    fn graph_type_to_string() {
+        assert_eq!(GraphType::Scatter.to_string(), "Scatter");
+        assert_eq!(GraphType::Line.to_string(), "Line");
+    }
+
+    #[test]
+    fn graph_type_from_str() {
+        assert_eq!("Scatter".parse::<GraphType>(), Ok(GraphType::Scatter));
+        assert_eq!("Line".parse::<GraphType>(), Ok(GraphType::Line));
+        assert_eq!("".parse::<GraphType>(), Err(ParseError::VariantNotFound));
     }
 }

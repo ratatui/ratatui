@@ -27,6 +27,8 @@
 
 use std::io;
 
+use strum::{Display, EnumString};
+
 use crate::{buffer::Cell, layout::Rect};
 
 #[cfg(feature = "termion")]
@@ -49,7 +51,7 @@ pub use self::test::TestBackend;
 
 /// Enum representing the different types of clearing operations that can be performed
 /// on the terminal screen.
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum ClearType {
     All,
     AfterCursor,
@@ -114,4 +116,42 @@ pub trait Backend {
 
     /// Flush any buffered content to the terminal screen.
     fn flush(&mut self) -> Result<(), io::Error>;
+}
+
+#[cfg(test)]
+mod tests {
+    use strum::ParseError;
+
+    use super::*;
+
+    #[test]
+    fn clear_type_tostring() {
+        assert_eq!(ClearType::All.to_string(), "All");
+        assert_eq!(ClearType::AfterCursor.to_string(), "AfterCursor");
+        assert_eq!(ClearType::BeforeCursor.to_string(), "BeforeCursor");
+        assert_eq!(ClearType::CurrentLine.to_string(), "CurrentLine");
+        assert_eq!(ClearType::UntilNewLine.to_string(), "UntilNewLine");
+    }
+
+    #[test]
+    fn clear_type_from_str() {
+        assert_eq!("All".parse::<ClearType>(), Ok(ClearType::All));
+        assert_eq!(
+            "AfterCursor".parse::<ClearType>(),
+            Ok(ClearType::AfterCursor)
+        );
+        assert_eq!(
+            "BeforeCursor".parse::<ClearType>(),
+            Ok(ClearType::BeforeCursor)
+        );
+        assert_eq!(
+            "CurrentLine".parse::<ClearType>(),
+            Ok(ClearType::CurrentLine)
+        );
+        assert_eq!(
+            "UntilNewLine".parse::<ClearType>(),
+            Ok(ClearType::UntilNewLine)
+        );
+        assert_eq!("".parse::<ClearType>(), Err(ParseError::VariantNotFound));
+    }
 }
