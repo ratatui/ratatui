@@ -21,24 +21,25 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 
 /// A widget to display some text.
 ///
-/// # Examples
+/// # Example
 ///
 /// ```
-/// # use ratatui::text::{Text, Line, Span};
-/// # use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
-/// # use ratatui::style::{Style, Color, Modifier};
-/// # use ratatui::layout::{Alignment};
+/// # use ratatui::prelude::*;
+/// # use ratatui::widgets::*;
 /// let text = vec![
 ///     Line::from(vec![
 ///         Span::raw("First"),
-///         Span::styled("line",Style::default().add_modifier(Modifier::ITALIC)),
-///         Span::raw("."),
+///         Span::styled("line",Style::new().green().italic()),
+///         ".".into(),
 ///     ]),
-///     Line::from(Span::styled("Second line", Style::default().fg(Color::Red))),
+///     Line::from("Second line".red()),
+///     "Third line".into(),
 /// ];
 /// Paragraph::new(text)
-///     .block(Block::default().title("Paragraph").borders(Borders::ALL))
-///     .style(Style::default().fg(Color::White).bg(Color::Black))
+///     .block(Block::new()
+///         .title("Paragraph")
+///         .borders(Borders::ALL))
+///     .style(Style::new().white().on_black())
 ///     .alignment(Alignment::Center)
 ///     .wrap(Wrap { trim: true });
 /// ```
@@ -95,6 +96,24 @@ type Horizontal = u16;
 type Vertical = u16;
 
 impl<'a> Paragraph<'a> {
+    /// Creates a new [`Paragraph`] widget with the given text.
+    ///
+    /// The `text` parameter can be a [`Text`] or any type that can be converted into a [`Text`]. By
+    /// default, the text is styled with [`Style::default()`], not wrapped, and aligned to the left.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # use ratatui::widgets::Paragraph;
+    /// let paragraph = Paragraph::new("Hello, world!");
+    /// let paragraph = Paragraph::new(String::from("Hello, world!"));
+    /// let paragraph = Paragraph::new(Text::raw("Hello, world!"));
+    /// let paragraph = Paragraph::new(
+    ///     Text::styled("Hello, world!", Style::default()));
+    /// let paragraph = Paragraph::new(
+    ///     Line::from(vec!["Hello, ".into(), "world!".red()]));
+    /// ```
     pub fn new<T>(text: T) -> Paragraph<'a>
     where
         T: Into<Text<'a>>,
@@ -109,16 +128,53 @@ impl<'a> Paragraph<'a> {
         }
     }
 
+    /// Surrounds the [`Paragraph`] widget with a [`Block`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # use ratatui::widgets::{Block, Borders, Paragraph};
+    /// let paragraph = Paragraph::new("Hello, world!")
+    ///    .block(Block::default()
+    ///         .title("Paragraph")
+    ///         .borders(Borders::ALL));
+    /// ```
     pub fn block(mut self, block: Block<'a>) -> Paragraph<'a> {
         self.block = Some(block);
         self
     }
 
+    /// Sets the style of the entire widget.
+    ///
+    /// This applies to the entire widget, including the block if one is present. Any style set on
+    /// the block or text will be added to this style.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # use ratatui::widgets::Paragraph;
+    /// let paragraph = Paragraph::new("Hello, world!")
+    ///    .style(Style::new().red().on_white());
+    /// ```
     pub fn style(mut self, style: Style) -> Paragraph<'a> {
         self.style = style;
         self
     }
 
+    /// Sets the wrapping configuration for the widget.
+    ///
+    /// See [`Wrap`] for more information on the different options.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # use ratatui::widgets::{Paragraph, Wrap};
+    /// let paragraph = Paragraph::new("Hello, world!")
+    ///   .wrap(Wrap { trim: true });
+    /// ```
     pub fn wrap(mut self, wrap: Wrap) -> Paragraph<'a> {
         self.wrap = Some(wrap);
         self
@@ -126,10 +182,15 @@ impl<'a> Paragraph<'a> {
 
     /// Set the scroll offset for the given paragraph
     ///
-    /// Scroll works by starting to render at the given offset, which unlike other scroll function
-    /// is (y, x)
+    /// The scroll offset is a tuple of (y, x) offset. The y offset is the number of lines to
+    /// scroll, and the x offset is the number of characters to scroll. The scroll offset is applied
+    /// after the text is wrapped and aligned.
     ///
-    /// There is a RFC for scroll refactoring and unification, see https://github.com/ratatui-org/ratatui/issues/174
+    /// Note: the order of the tuple is (y, x) instead of (x, y), which is different from general
+    /// convention across the crate.
+    ///
+    /// For more information about future scrolling design and concerns, see [RFC: Design of
+    /// Scrollable Widgets](https://github.com/ratatui-org/ratatui/issues/174) on GitHub.
     pub fn scroll(mut self, offset: (Vertical, Horizontal)) -> Paragraph<'a> {
         self.scroll = offset;
         self
