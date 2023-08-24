@@ -1,5 +1,473 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+## [unreleased]
+
+### Features
+
+- *(uncategorized)* Add weak constraints to make rects closer to each other in size ✨ ([#395](https://github.com/ratatui-org/ratatui/issues/395))
+([6153371](https://github.com/ratatui-org/ratatui/commit/61533712be57f3921217a905618b319975f90330))
+
+  ````text
+  Also make `Max` and `Min` constraints MEDIUM strength for higher priority over equal chunks
+  ````
+
+### Bug Fixes
+
+- *(table)* Fix unit tests broken due to rounding ([#419](https://github.com/ratatui-org/ratatui/issues/419))
+([dc55211](https://github.com/ratatui-org/ratatui/commit/dc552116cf5e83c7ffcc2f5299c00d2315490c1d))
+
+  ````text
+  The merge of the table unit tests after the rounding layout fix was not
+  rebased correctly, this addresses the broken tests, makes them more
+  concise while adding comments to help clarify that the rounding behavior
+  is working as expected.
+  ````
+
+### Styling
+
+- *(paragraph)* Add documentation for "scroll"'s "offset" ([#355](https://github.com/ratatui-org/ratatui/issues/355))
+([ab5e616](https://github.com/ratatui-org/ratatui/commit/ab5e6166358b2e6f0e9601a1ec5480760b91ca8e))
+
+  ````text
+  * style(paragraph): add documentation for "scroll"'s "offset"
+
+  * style(paragraph): add more text to the scroll doc-comment
+  ````
+
+## [v0.22.1-alpha.2](https://github.com/ratatui-org/ratatui/releases/tag/v0.22.1-alpha.2) - 2023-08-19
+
+### Features
+
+- *(list)* Add option to always allocate the "selection" column width ([#394](https://github.com/ratatui-org/ratatui/issues/394))
+([4d70169](https://github.com/ratatui-org/ratatui/commit/4d70169bef86898d331f46013ff72ef6d1c275ed))
+
+  ````text
+  * feat(list): add option to always allocate the "selection" column width
+
+  Before this option was available, selecting a item in a list when nothing was selected
+  previously made the row layout change (the same applies to unselecting) by adding the width
+  of the "highlight symbol" in the front of the list, this option allows to configure this
+  behavior.
+
+  * style: change "highlight_spacing" doc comment to use inline code-block for reference
+  ````
+
+- *(table)* Add support for line alignment in the table widget ([#392](https://github.com/ratatui-org/ratatui/issues/392))
+([7748720](https://github.com/ratatui-org/ratatui/commit/77487209634f26da32bc59d9280769d80cc7c25c))
+
+  ````text
+  * feat(table): enforce line alignment in table render
+
+  * test(table): add table alignment render test
+  ````
+
+- *(uncategorized)* Simplify split function ✨ ([#411](https://github.com/ratatui-org/ratatui/issues/411))
+([b090101](https://github.com/ratatui-org/ratatui/commit/b090101b231a467628c910f05a73715809cb8d73))
+
+### Bug Fixes
+
+- *(layout)* Don't leave gaps between chunks ([#408](https://github.com/ratatui-org/ratatui/issues/408))
+([56455e0](https://github.com/ratatui-org/ratatui/commit/56455e0fee57616f87ea43872fb7d5d9bb14aff5))
+
+  ````text
+  Previously the layout used the floor of the calculated start and width
+  as the value to use for the split Rects. This resulted in gaps between
+  the split rects.
+
+  This change modifies the layout to round to the nearest column instead
+  of taking the floor of the start and width. This results in the start
+  and end of each rect being rounded the same way and being strictly
+  adjacent without gaps.
+
+  Because there is a required constraint that ensures that the last end is
+  equal to the area end, there is no longer the need to fixup the last
+  item width when the fill (as e.g. width = x.99 now rounds to x+1 not x).
+
+  The colors example has been updated to use Ratio(1, 8) instead of
+  Percentage(13), as this now renders without gaps for all possible sizes,
+  whereas previously it would have left odd gaps between columns.
+  ````
+
+- *(layout)* Ensure left <= right ([#410](https://github.com/ratatui-org/ratatui/issues/410))
+([f4ed3b7](https://github.com/ratatui-org/ratatui/commit/f4ed3b758450ef9c257705f3a1ea937329a968b4))
+
+  ````text
+  The recent refactor missed the positive width constraint
+  ````
+
+- *(release)* Fix the last tag retrieval for alpha releases ([#416](https://github.com/ratatui-org/ratatui/issues/416))
+([b6b2da5](https://github.com/ratatui-org/ratatui/commit/b6b2da5eb761ac5894cc7a2ee67f422312b63cfc))
+
+### Refactor
+
+- *(layout)* Simplify and doc split() ([#405](https://github.com/ratatui-org/ratatui/issues/405))
+([de25de0](https://github.com/ratatui-org/ratatui/commit/de25de0a9506e53df1378929251594bccf63d932))
+
+  ````text
+  * test(layout): add tests for split()
+
+  * refactor(layout): simplify and doc split()
+
+  This is mainly a reduction in density of the code with a goal of
+  improving mainatainability so that the algorithm is clear.
+  ````
+
+- *(layout)* Simplify split() function ([#396](https://github.com/ratatui-org/ratatui/issues/396))
+([5195099](https://github.com/ratatui-org/ratatui/commit/519509945be866c3b2f6a4230ee317262266f894))
+
+  ````text
+  Removes some unnecessary code and makes the function more readable.
+  Instead of creating a temporary result and mutating it, we just create
+  the result directly from the list of changes.
+  ````
+
+### Documentation
+
+- *(examples)* Show layout constraints ([#393](https://github.com/ratatui-org/ratatui/issues/393))
+([10dbd6f](https://github.com/ratatui-org/ratatui/commit/10dbd6f2075285473ef47c4c898ef2f643180cd1))
+
+  ````text
+  Shows the way that layout constraints interact visually
+
+  ![example](https://vhs.charm.sh/vhs-1ZNoNLNlLtkJXpgg9nCV5e.gif)
+  ````
+
+- *(layout)* Add doc comments ([#403](https://github.com/ratatui-org/ratatui/issues/403))
+([418ed20](https://github.com/ratatui-org/ratatui/commit/418ed20479e060c1bd2f430ae127eae19a013afc))
+
+### Testing
+
+- *(table)* Add test for consistent table-column-width ([#404](https://github.com/ratatui-org/ratatui/issues/404))
+([4cd843e](https://github.com/ratatui-org/ratatui/commit/4cd843eda97abbc8fa7af85a03c2fffafce3c676))
+
+### Miscellaneous Tasks
+
+- *(ci)* Update the name of the CI workflow ([#417](https://github.com/ratatui-org/ratatui/issues/417))
+([89ef0e2](https://github.com/ratatui-org/ratatui/commit/89ef0e29f56078ed0629f2dce89656c1131ebda1))
+
+- *(codecov)* Fix yaml syntax ([#407](https://github.com/ratatui-org/ratatui/issues/407))
+([ea48af1](https://github.com/ratatui-org/ratatui/commit/ea48af1c9abac7012e3bf79e78c6179f889a6321))
+
+  ````text
+  a yaml file cannot contain tabs outside of strings
+  ````
+
+- *(uncategorized)* Create rust-toolchain.toml ([#415](https://github.com/ratatui-org/ratatui/issues/415))
+([d2429bc](https://github.com/ratatui-org/ratatui/commit/d2429bc3e44a34197511192dbd215dd32fdf2d9c))
+
+- *(uncategorized)* Use vhs to create demo.gif ([#390](https://github.com/ratatui-org/ratatui/issues/390))
+([8c55158](https://github.com/ratatui-org/ratatui/commit/8c551588224ca97ee07948b445aa2ac9d05f997d))
+
+  ````text
+  The bug that prevented braille rendering is fixed, so switch to VHS for
+  rendering the demo gif
+
+  ![Demo of Ratatui](https://vhs.charm.sh/vhs-tF0QbuPbtHgUeG0sTVgFr.gif)
+  ````
+
+## [v0.22.1-alpha.1](https://github.com/ratatui-org/ratatui/releases/tag/v0.22.1-alpha.1) - 2023-08-12
+
+### Features
+
+- *(release)* Add automated nightly releases ([#359](https://github.com/ratatui-org/ratatui/issues/359))
+([aad164a](https://github.com/ratatui-org/ratatui/commit/aad164a5311b0a6d6d3f752a87ed385d5f0c1962))
+
+  ````text
+  * feat(release): add automated nightly releases
+
+  * refactor(release): rename the alpha workflow
+
+  * refactor(release): simplify the release calculation
+  ````
+
+- *(scrollbar)* Add optional track symbol ([#360](https://github.com/ratatui-org/ratatui/issues/360))
+([1727fa5](https://github.com/ratatui-org/ratatui/commit/1727fa5120fa4bfcddd57484e532b2d5da88bc73)) [**breaking**]
+
+  ````text
+  The track symbol is now optional, simplifying composition with other
+  widgets.
+  ````
+
+- *(widgets::table)* Add option to always allocate the "selection" constraint ([#375](https://github.com/ratatui-org/ratatui/issues/375))
+([f63ac72](https://github.com/ratatui-org/ratatui/commit/f63ac72305f80062727d81996f9bdb523e666099))
+
+  ````text
+  * feat(table): add option to configure selection layout changes
+
+  Before this option was available, selecting a row in the table when no row was selected
+  previously made the tables layout change (the same applies to unselecting) by adding the width
+  of the "highlight symbol" in the front of the first column, this option allows to configure this
+  behavior.
+
+  * refactor(table): refactor "get_columns_widths" to return (x, width)
+
+  and "render" to make use of that
+
+  * refactor(table): refactor "get_columns_widths" to take in a selection_width instead of a boolean
+
+  also refactor "render" to make use of this change
+
+  * fix(table): rename "highlight_set_selection_space" to "highlight_spacing"
+
+  * style(table): apply doc-comment suggestions from code review
+  ````
+
+### Bug Fixes
+
+- *(barchart)* Empty groups causes panic ([#333](https://github.com/ratatui-org/ratatui/issues/333))
+([9c95673](https://github.com/ratatui-org/ratatui/commit/9c956733f740b18616974e2c7d786ca761666f79))
+
+  ````text
+  This unlikely to happen, since nobody wants to add an empty group.
+  Even we fix the panic, things will not render correctly.
+  So it is better to just not add them to the BarChart.
+  ````
+
+- *(block)* Fixed title_style not rendered ([#349](https://github.com/ratatui-org/ratatui/issues/349)) ([#363](https://github.com/ratatui-org/ratatui/issues/363))
+([49a82e0](https://github.com/ratatui-org/ratatui/commit/49a82e062f2c46dc3060cdfdb230b65d9dbfb2d9))
+
+- *(cargo)* Adjust minimum paste version ([#348](https://github.com/ratatui-org/ratatui/issues/348))
+([8db9fb4](https://github.com/ratatui-org/ratatui/commit/8db9fb4aebd01e5ddc4edd68482361928f7e9c97))
+
+  ````text
+  ratatui is using features that are currently only available in paste 1.0.2; specifying the minimum version to be 1.0 will consequently cause a compilation error if cargo is only able to use a version less than 1.0.2.
+  ````
+
+- *(example)* Fix typo ([#337](https://github.com/ratatui-org/ratatui/issues/337))
+([daf5890](https://github.com/ratatui-org/ratatui/commit/daf589015290ac8b379389d29ef90a1af15e3f75))
+
+  ````text
+  the existential feels
+  ````
+
+- *(readme)* Fix typo in readme ([#344](https://github.com/ratatui-org/ratatui/issues/344))
+([d05ab6f](https://github.com/ratatui-org/ratatui/commit/d05ab6fb700527f0e062f334c7a5319c07099b04))
+
+- *(readme)* Fix incorrect template link ([#338](https://github.com/ratatui-org/ratatui/issues/338))
+([b9290b3](https://github.com/ratatui-org/ratatui/commit/b9290b35d13df57726d65a16d3c8bb18ce43e8c2))
+
+- *(readme)* Fix typo in readme ([#336](https://github.com/ratatui-org/ratatui/issues/336))
+([7e37a96](https://github.com/ratatui-org/ratatui/commit/7e37a96678440bc62cce52de840fef82eed58dd8))
+
+- *(release)* Set the correct permissions for creating alpha releases ([#400](https://github.com/ratatui-org/ratatui/issues/400))
+([778c320](https://github.com/ratatui-org/ratatui/commit/778c32000815b9abb0246c73997b1800256aade2))
+
+- *(scrollbar)* Move symbols to symbols module ([#330](https://github.com/ratatui-org/ratatui/issues/330))
+([7539f77](https://github.com/ratatui-org/ratatui/commit/7539f775fef4d816495e1e06732f6500cf08c126)) [**breaking**]
+
+  ````text
+  The symbols and sets are moved from `widgets::scrollbar` to
+  `symbols::scrollbar`. This makes it consistent with the other symbol
+  sets and allows us to make the scrollbar module private rather than
+  re-exporting it.
+  ````
+
+- *(uncategorized)* Correct minor typos in documentation ([#331](https://github.com/ratatui-org/ratatui/issues/331))
+([13fb11a](https://github.com/ratatui-org/ratatui/commit/13fb11a62c826da412045d498a03673d130ec057))
+
+### Documentation
+
+- *(examples)* Add color and modifiers examples ([#345](https://github.com/ratatui-org/ratatui/issues/345))
+([6ad4bd4](https://github.com/ratatui-org/ratatui/commit/6ad4bd4cf2e7ea7548e49e64f92114c30d61ebb2))
+
+  ````text
+  The intent of these examples is to show the available colors and
+  modifiers.
+
+  - added impl Display for Color
+
+  ![colors](https://vhs.charm.sh/vhs-2ZCqYbTbXAaASncUeWkt1z.gif)
+  ![modifiers](https://vhs.charm.sh/vhs-2ovGBz5l3tfRGdZ7FCw0am.gif)
+  ````
+
+- *(examples)* Regen block.gif in readme ([#365](https://github.com/ratatui-org/ratatui/issues/365))
+([e82521e](https://github.com/ratatui-org/ratatui/commit/e82521ea798d1385f671e1849c48de42857bf87a))
+
+- *(examples)* Update block example ([#351](https://github.com/ratatui-org/ratatui/issues/351))
+([554805d](https://github.com/ratatui-org/ratatui/commit/554805d6cbbf140c6da474daa891e9e754a5d281))
+
+  ````text
+  ![Block example](https://vhs.charm.sh/vhs-5X6hpReuDBKjD6hLxmDQ6F.gif)
+  ````
+
+- *(examples)* Add examples readme with gifs ([#303](https://github.com/ratatui-org/ratatui/issues/303))
+([add578a](https://github.com/ratatui-org/ratatui/commit/add578a7d6d342e3ebaa26e69452a2ab5b08b0c7))
+
+  ````text
+  This commit adds a readme to the examples directory with gifs of each
+  example. This should make it easier to see what each example does
+  without having to run it.
+
+  I modified the examples to fit better in the gifs. Mostly this was just
+  removing the margins, but for the block example I cleaned up the code a
+  bit to make it more readable and changed it so the background bug is not
+  triggered.
+
+  For the table example, the combination of Min, Length, and Percent
+  constraints was causing the table to panic when the terminal was too
+  small. I changed the example to use the Max constraint instead of the
+  Length constraint.
+
+  The layout example now shows information about how the layout is
+  constrained on each block (which is now a paragraph with a block).
+  ````
+
+- *(layout::Constraint)* Add doc-comments for all variants ([#371](https://github.com/ratatui-org/ratatui/issues/371))
+([c8ddc16](https://github.com/ratatui-org/ratatui/commit/c8ddc164c7941c31b1b5fa82345e452923ec56e7))
+
+- *(readme)* Use the correct version for MSRV ([#369](https://github.com/ratatui-org/ratatui/issues/369))
+([3a37d2f](https://github.com/ratatui-org/ratatui/commit/3a37d2f6ede02fdde9ddffbb996059d6b95f98e7))
+
+- *(readme)* Fix widget docs links ([#346](https://github.com/ratatui-org/ratatui/issues/346))
+([2920e04](https://github.com/ratatui-org/ratatui/commit/2920e045ba23aa2eb3a4049625cd256ff37076c9))
+
+  ````text
+  Add scrollbar, clear. Fix Block link. Sort
+  ````
+
+- *(uncategorized)* Improve scrollbar doc comment ([#329](https://github.com/ratatui-org/ratatui/issues/329))
+([c3f87f2](https://github.com/ratatui-org/ratatui/commit/c3f87f245a5a2fc180d4c8f64557bcff716d09a9))
+
+### Performance
+
+- *(bench)* Used `iter_batched` to clone widgets in setup function ([#383](https://github.com/ratatui-org/ratatui/issues/383))
+([149d489](https://github.com/ratatui-org/ratatui/commit/149d48919d870e29a7f104664db11eb77fb951a8))
+
+  ````text
+  Replaced `Bencher::iter` by `Bencher::iter_batched` to clone the widget in the setup function instead of in the benchmark timing.
+  ````
+
+### Testing
+
+- *(block)* Add benchmarks ([#368](https://github.com/ratatui-org/ratatui/issues/368))
+([e18393d](https://github.com/ratatui-org/ratatui/commit/e18393dbc6781a8b1266906e8ba7da019a0a5d82))
+
+  ````text
+  Added benchmarks to the block widget to uncover eventual performance issues
+  ````
+
+- *(list)* Added benchmarks ([#377](https://github.com/ratatui-org/ratatui/issues/377))
+([664fb4c](https://github.com/ratatui-org/ratatui/commit/664fb4cffd71c85da87545cb4258165c1a44afa6))
+
+  ````text
+  Added benchmarks for the list widget (render and render half scrolled)
+  ````
+
+- *(sparkline)* Added benchmark ([#384](https://github.com/ratatui-org/ratatui/issues/384))
+([3293c6b](https://github.com/ratatui-org/ratatui/commit/3293c6b80b0505f9ed031fc8d9678e3db627b7ad))
+
+  ````text
+  Added benchmark for the `sparkline` widget testing a basic render with different amount of data
+  ````
+
+### Miscellaneous Tasks
+
+- *(docs)* Add doc comment bump to release documentation ([#382](https://github.com/ratatui-org/ratatui/issues/382))
+([8b28672](https://github.com/ratatui-org/ratatui/commit/8b286721314142dc7078354015db909e6938068c))
+
+- *(github)* Add kdheepak as a maintainer ([#343](https://github.com/ratatui-org/ratatui/issues/343))
+([60a4131](https://github.com/ratatui-org/ratatui/commit/60a4131384e6c0b38b6a6e933e62646b5265ca60))
+
+- *(github)* Rename `tui-rs-revival` references to `ratatui-org` ([#340](https://github.com/ratatui-org/ratatui/issues/340))
+([964190a](https://github.com/ratatui-org/ratatui/commit/964190a859e6479f22c6ccae8305192f548fbcc3))
+
+- *(make)* Add task descriptions to Makefile.toml ([#398](https://github.com/ratatui-org/ratatui/issues/398))
+([268bbed](https://github.com/ratatui-org/ratatui/commit/268bbed17e0ebc18b39f3253c9beb92c21946c80))
+
+- *(toolchain)* Bump msrv to 1.67 ([#361](https://github.com/ratatui-org/ratatui/issues/361))
+([8cd3205](https://github.com/ratatui-org/ratatui/commit/8cd3205d70a1395d2c60fc26d76c300a2a463c9e)) [**breaking**]
+
+  ````text
+  * chore(toolchain)!: bump msrv to 1.67
+  ````
+
+- *(uncategorized)* Implement `Hash` common traits ([#381](https://github.com/ratatui-org/ratatui/issues/381))
+([8c4a2e0](https://github.com/ratatui-org/ratatui/commit/8c4a2e0fbfd021f1e087bb7256d9c6457742ea39))
+
+  ````text
+  Reorder the derive fields to be more consistent:
+
+      Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash
+
+  Hash trait won't be impl in this PR due to rust std design.
+  If we need hash trait for f64 related structs in the future,
+  we should consider wrap f64 into a new type.
+  ````
+
+- *(uncategorized)* Implement `Eq & PartialEq` common traits ([#357](https://github.com/ratatui-org/ratatui/issues/357))
+([181706c](https://github.com/ratatui-org/ratatui/commit/181706c564d86e02991f89ec674b1af1d7f393fe))
+
+  ````text
+  Reorder the derive fields to be more consistent:
+
+      Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash
+  ````
+
+### Build
+
+- *(deps)* Upgrade crossterm to 0.27 ([#380](https://github.com/ratatui-org/ratatui/issues/380))
+([37fa6ab](https://github.com/ratatui-org/ratatui/commit/37fa6abe9d5dc459dc9855ea10f06afa72717c98))
+
+- *(examples)* Fix cargo make run-examples ([#327](https://github.com/ratatui-org/ratatui/issues/327))
+([e2cb11c](https://github.com/ratatui-org/ratatui/commit/e2cb11cc30072d90b20e04270c1fa97c18ab6f3f))
+
+  ````text
+  Enables the all-widgets feature so that the calendar example runs correctly
+  ````
+
+- *(uncategorized)* Forbid unsafe code ([#332](https://github.com/ratatui-org/ratatui/issues/332))
+([0fb1ed8](https://github.com/ratatui-org/ratatui/commit/0fb1ed85c6232966ab25c8b3cab0fc277e9b69a6))
+
+  ````text
+  This indicates good (high level) code and is used by tools like cargo-geiger.
+  ````
+
+### Continuous Integration
+
+- *(coverage)* Exclude examples directory from coverage ([#373](https://github.com/ratatui-org/ratatui/issues/373))
+([de9f52f](https://github.com/ratatui-org/ratatui/commit/de9f52ff2cc606e1bf6b6bd8b97907afd73860fe))
+
+- *(uncategorized)* Don't fail fast ([#364](https://github.com/ratatui-org/ratatui/issues/364))
+([9191ad6](https://github.com/ratatui-org/ratatui/commit/9191ad60fd4fc3ddf8650a8f5eed87216a0e5c6f))
+
+  ````text
+  Run all the tests rather than canceling when one test fails. This allows
+  us to see all the failures, rather than just the first one if there are
+  multiple. Specifically this is useful when we have an issue in one
+  toolchain or backend.
+  ````
+
+- *(uncategorized)* Add coverage token ([#352](https://github.com/ratatui-org/ratatui/issues/352))
+([6f659cf](https://github.com/ratatui-org/ratatui/commit/6f659cfb07aad5ad2524f32fe46c45b84c8e9e34))
+
+### Chore
+
+- *(uncategorized)* Implement `Clone & Copy` common traits ([#350](https://github.com/ratatui-org/ratatui/issues/350))
+([440f62f](https://github.com/ratatui-org/ratatui/commit/440f62ff5435af9536c55d17707a9bc48dae92cc))
+
+  ````text
+  Implement `Clone & Copy` common traits for most structs in src.
+
+  Only implement `Copy` for structs that are simple and trivial to copy.
+
+  Reorder the derive fields to be more consistent:
+
+      Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash
+  ````
+
+- *(uncategorized)* Implement `Debug & Default` common traits ([#339](https://github.com/ratatui-org/ratatui/issues/339))
+([bf49446](https://github.com/ratatui-org/ratatui/commit/bf4944683d6afb6f42bec80a1bd308ecdac50cbc))
+
+  ````text
+  Implement `Debug & Default` common traits for most structs in src.
+
+  Reorder the derive fields to be more consistent:
+
+      Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash
+  ````
+
 ## v0.22.0 - 2023-07-17
 
 ### Features
@@ -321,34 +789,37 @@ And most importantly, special thanks to [Florian Dehau](https://github.com/fdeha
 
 ### Features
 
-* Bump `crossterm` to `0.25`
+- Bump `crossterm` to `0.25`
 
 ## v0.18.0 - 2022-04-24
 
 ### Features
 
-* Update `crossterm` to `0.23`
+- Update `crossterm` to `0.23`
 
 ## v0.17.0 - 2022-01-22
 
 ### Features
 
-* Add option to `widgets::List` to repeat the highlight symbol for each line of multi-line items (#533).
-* Add option to control the alignment of `Axis` labels in the `Chart` widget (#568).
+- Add option to `widgets::List` to repeat the highlight symbol for each line of multi-line items (#533).
+- Add option to control the alignment of `Axis` labels in the `Chart` widget (#568).
 
 ### Breaking changes
 
-* The minimum supported rust version is now `1.56.1`.
+- The minimum supported rust version is now `1.56.1`.
 
 #### New default backend and consolidated backend options (#553)
 
-* `crossterm` is now the default backend.
+- `crossterm` is now the default backend.
 If you are already using the `crossterm` backend, you can simplify your dependency specification in `Cargo.toml`:
+
 ```diff
 - tui = { version = "0.16", default-features = false, features = ["crossterm"] }
 + tui = "0.17"
 ```
+
 If you are using the `termion` backend, your `Cargo` is now a bit more verbose:
+
 ```diff
 - tui = "0.16"
 + tui = { version = "0.17", default-features = false, features = ["termion"] }
@@ -358,13 +829,15 @@ If you are using the `termion` backend, your `Cargo` is now a bit more verbose:
 
 Because of their apparent low usage, `curses` and `rustbox` backends have been removed.
 If you are using one of them, you can import their last implementation in your own project:
-* [curses](https://github.com/fdehau/tui-rs/blob/v0.16.0/src/backend/curses.rs)
-* [rustbox](https://github.com/fdehau/tui-rs/blob/v0.16.0/src/backend/rustbox.rs)
+
+- [curses](https://github.com/fdehau/tui-rs/blob/v0.16.0/src/backend/curses.rs)
+- [rustbox](https://github.com/fdehau/tui-rs/blob/v0.16.0/src/backend/rustbox.rs)
 
 #### Canvas labels (#543)
 
-* Labels of the `Canvas` widget are now `text::Spans`.
+- Labels of the `Canvas` widget are now `text::Spans`.
 The signature of `widgets::canvas::Context::print` has thus been updated:
+
 ```diff
 - ctx.print(x, y, "Some text", Color::Yellow);
 + ctx.print(x, y, Span::styled("Some text", Style::default().fg(Color::Yellow)))
@@ -374,29 +847,29 @@ The signature of `widgets::canvas::Context::print` has thus been updated:
 
 ### Features
 
-* Update `crossterm` to `0.20`.
-* Add `From<Cow<str>>` implementation for `text::Text` (#471).
-* Add option to right or center align the title of a `widgets::Block` (#462).
+- Update `crossterm` to `0.20`.
+- Add `From<Cow<str>>` implementation for `text::Text` (#471).
+- Add option to right or center align the title of a `widgets::Block` (#462).
 
 ### Fixes
 
-* Apply label style in `widgets::Gauge` and avoid panics because of overflows with long labels (#494).
-* Avoid panics because of overflows with long axis labels in `widgets::Chart` (#512).
-* Fix computation of column widths in `widgets::Table` (#514).
-* Fix panics because of invalid offset when input changes between two frames in `widgets::List` and
+- Apply label style in `widgets::Gauge` and avoid panics because of overflows with long labels (#494).
+- Avoid panics because of overflows with long axis labels in `widgets::Chart` (#512).
+- Fix computation of column widths in `widgets::Table` (#514).
+- Fix panics because of invalid offset when input changes between two frames in `widgets::List` and
   `widgets::Chart` (#516).
 
 ## v0.15.0 - 2021-05-02
 
 ### Features
 
-* Update `crossterm` to `0.19`.
-* Update `rand` to `0.8`.
-* Add a read-only view of the terminal state after the draw call (#440).
+- Update `crossterm` to `0.19`.
+- Update `rand` to `0.8`.
+- Add a read-only view of the terminal state after the draw call (#440).
 
 ### Fixes
 
-* Remove compile warning in `TestBackend::assert_buffer` (#466).
+- Remove compile warning in `TestBackend::assert_buffer` (#466).
 
 ## v0.14.0 - 2021-01-01
 
@@ -405,16 +878,18 @@ The signature of `widgets::canvas::Context::print` has thus been updated:
 #### New API for the Table widget
 
 The `Table` widget got a lot of improvements that should make it easier to work with:
-* It should not longer panic when rendered on small areas.
-* `Row`s are now a collection of `Cell`s, themselves wrapping a `Text`. This means you can style
+
+- It should not longer panic when rendered on small areas.
+- `Row`s are now a collection of `Cell`s, themselves wrapping a `Text`. This means you can style
 the entire `Table`, an entire `Row`, an entire `Cell` and rely on the styling capabilities of
 `Text` to get full control over the look of your `Table`.
-* `Row`s can have multiple lines.
-* The header is now optional and is just another `Row` always visible at the top.
-* `Row`s can have a bottom margin.
-* The header alignment is no longer off when an item is selected.
+- `Row`s can have multiple lines.
+- The header is now optional and is just another `Row` always visible at the top.
+- `Row`s can have a bottom margin.
+- The header alignment is no longer off when an item is selected.
 
 Taking the example of the code in `examples/demo/ui.rs`, this is what you may have to change:
+
 ```diff
      let failure_style = Style::default()
          .fg(Color::Red)
@@ -442,7 +917,9 @@ Taking the example of the code in `examples/demo/ui.rs`, this is what you may ha
              Constraint::Length(15),
              Constraint::Length(15),
 ```
+
 Here, we had to:
+
 - Change the way we construct [`Row`](https://docs.rs/tui/*/tui/widgets/struct.Row.html) which is no
 longer an `enum` but a `struct`. It accepts anything that can be converted to an iterator of things
 that can be converted to a [`Cell`](https://docs.rs/tui/*/tui/widgets/struct.Cell.html)
@@ -455,6 +932,7 @@ the header using
 [`Row::bottom_margin`](https://docs.rs/tui/*/tui/widgets/struct.Row.html#method.bottom_margin).
 
 You may want to look at the documentation of the different types to get a better understanding:
+
 - [`Table`](https://docs.rs/tui/*/tui/widgets/struct.Table.html)
 - [`Row`](https://docs.rs/tui/*/tui/widgets/struct.Row.html)
 - [`Cell`](https://docs.rs/tui/*/tui/widgets/struct.Cell.html)
@@ -473,38 +951,38 @@ You may want to look at the documentation of the different types to get a better
 
 ### Features
 
-* Add `LineGauge` widget which is a more compact variant of the existing `Gauge`.
-* Bump `crossterm` to 0.18
+- Add `LineGauge` widget which is a more compact variant of the existing `Gauge`.
+- Bump `crossterm` to 0.18
 
 ### Fixes
 
-* Take into account the borders of the `Table` widget when the widths of columns is controlled by
+- Take into account the borders of the `Table` widget when the widths of columns is controlled by
 `Percentage` and `Ratio` constraints.
 
 ## v0.12.0 - 2020-09-27
 
 ### Features
 
-* Make it easier to work with string with multiple lines in `Text` (#361).
+- Make it easier to work with string with multiple lines in `Text` (#361).
 
 ### Fixes
 
-* Fix a style leak in `Graph` so components drawn on top of the plotted data (i.e legend and axis
+- Fix a style leak in `Graph` so components drawn on top of the plotted data (i.e legend and axis
 titles) are not affected by the style of the `Dataset`s (#388).
-* Make sure `BarChart` shows bars with the max height only when the plotted data is actually equal
+- Make sure `BarChart` shows bars with the max height only when the plotted data is actually equal
 to the max (#383).
 
 ## v0.11.0 - 2020-09-20
 
 ### Features
 
-* Add the dot character as a new type of canvas marker (#350).
-* Support more style modifiers on Windows (#368).
+- Add the dot character as a new type of canvas marker (#350).
+- Support more style modifiers on Windows (#368).
 
 ### Fixes
 
-* Clearing the terminal through `Terminal::clear` will cause the whole UI to be redrawn (#380).
-* Fix incorrect output when the first diff to draw is on the second cell of the terminal (#347).
+- Clearing the terminal through `Terminal::clear` will cause the whole UI to be redrawn (#380).
+- Fix incorrect output when the first diff to draw is on the second cell of the terminal (#347).
 
 ## v0.10.0 - 2020-07-17
 
@@ -540,6 +1018,7 @@ places of the crate. To solve the issue, this release includes a new set of text
 now used by a majority of widgets to provide flexible text styling.
 
 `Text` is replaced by the following types:
+
 - `Span`: a string with a unique style.
 - `Spans`: a string with multiple styles.
 - `Text`: a multi-lines string with multiple styles.
@@ -667,32 +1146,32 @@ You can now serialize and de-serialize `Style` using the optional `serde` featur
 
 ### Bug Fixes
 
-* Fix out of bounds panic in `widgets::Tabs` when the widget is rendered on
+- Fix out of bounds panic in `widgets::Tabs` when the widget is rendered on
 small areas.
 
 ## v0.9.4 - 2020-05-12
 
 ### Bug Fixes
 
-* Ignore zero-width graphemes in `Buffer::set_stringn`.
+- Ignore zero-width graphemes in `Buffer::set_stringn`.
 
 ## v0.9.3 - 2020-05-11
 
 ### Bug Fixes
 
-* Fix usize overflows in `widgets::Chart` when a dataset is empty.
+- Fix usize overflows in `widgets::Chart` when a dataset is empty.
 
 ## v0.9.2 - 2020-05-10
 
 ### Bug Fixes
 
-* Fix usize overflows in `widgets::canvas::Line` drawing algorithm.
+- Fix usize overflows in `widgets::canvas::Line` drawing algorithm.
 
 ## v0.9.1 - 2020-04-16
 
 ### Bug Fixes
 
-* The `List` widget now takes into account the width of the `highlight_symbol`
+- The `List` widget now takes into account the width of the `highlight_symbol`
 when calculating the total width of its items. It prevents items to overflow
 outside of the widget area.
 
@@ -700,10 +1179,11 @@ outside of the widget area.
 
 ### Features
 
-* Introduce stateful widgets, i.e widgets that can take advantage of keeping
+- Introduce stateful widgets, i.e widgets that can take advantage of keeping
 some state around between two draw calls (#210 goes a bit more into the
 details).
-* Allow a `Table` row to be selected.
+- Allow a `Table` row to be selected.
+
 ```rust
 // State initialization
 let mut state = TableState::default();
@@ -719,30 +1199,33 @@ f.render_stateful_widget(table, area, &mut state);
 // In response to some event:
 state.select(Some(1));
 ```
-* Add a way to choose the type of border used to draw a block. You can now
+
+- Add a way to choose the type of border used to draw a block. You can now
 choose from plain, rounded, double and thick lines.
-* Add a `graph_type` property on the `Dataset` of a `Chart` widget. By
+
+- Add a `graph_type` property on the `Dataset` of a `Chart` widget. By
 default it will be `Scatter` where the points are drawn as is. An other
 option is `Line` where a line will be draw between each consecutive points
 of the dataset.
-* Style methods are now const, allowing you to initialize const `Style`
+- Style methods are now const, allowing you to initialize const `Style`
 objects.
-* Improve control over whether the legend in the `Chart` widget is shown or
+- Improve control over whether the legend in the `Chart` widget is shown or
 not. You can now set custom constraints using
 `Chart::hidden_legend_constraints`.
-* Add `Table::header_gap` to add some space between the header and the first
+- Add `Table::header_gap` to add some space between the header and the first
 row.
-* Remove `log` from the dependencies
-* Add a way to use a restricted set of unicode symbols in several widgets to
+- Remove `log` from the dependencies
+- Add a way to use a restricted set of unicode symbols in several widgets to
 improve portability in exchange of a degraded output. (see `BarChart::bar_set`,
 `Sparkline::bar_set` and `Canvas::marker`). You can check how the
 `--enhanced-graphics` flag is used in the demos.
 
 ### Breaking Changes
 
-* `Widget::render` has been deleted. You should now use `Frame::render_widget`
+- `Widget::render` has been deleted. You should now use `Frame::render_widget`
 to render a widget on the corresponding `Frame`. This makes the `Widget`
 implementation totally decoupled from the `Frame`.
+
 ```rust
 // Before
 Block::default().render(&mut f, size);
@@ -751,9 +1234,11 @@ Block::default().render(&mut f, size);
 let block = Block::default();
 f.render_widget(block, size);
 ```
-* `Widget::draw` has been renamed to `Widget::render` and the signature has
+
+- `Widget::draw` has been renamed to `Widget::render` and the signature has
 been updated to reflect that widgets are consumable objects. Thus the method
 takes `self` instead of `&mut self`.
+
 ```rust
 // Before
 impl Widget for MyWidget {
@@ -767,7 +1252,9 @@ impl Widget for MyWidget {
   }
 }
 ```
-* `Widget::background` has been replaced by `Buffer::set_background`
+
+- `Widget::background` has been replaced by `Buffer::set_background`
+
 ```rust
 // Before
 impl Widget for MyWidget {
@@ -783,14 +1270,17 @@ impl Widget for MyWidget {
   }
 }
 ```
-* Update the `Shape` trait for objects that can be draw on a `Canvas` widgets.
+
+- Update the `Shape` trait for objects that can be draw on a `Canvas` widgets.
 Instead of returning an iterator over its points, a `Shape` is given a
 `Painter` object that provides a `paint` as well as a `get_point` method. This
 gives the `Shape` more information about the surface it will be drawn to. In
 particular, this change allows the `Line` shape to use a more precise and
 efficient drawing algorithm (Bresenham's line algorithm).
-* `SelectableList` has been deleted. You can now take advantage of the
+
+- `SelectableList` has been deleted. You can now take advantage of the
 associated `ListState` of the `List` widget to select an item.
+
 ```rust
 // Before
 List::new(&["Item1", "Item2", "Item3"])
@@ -809,24 +1299,25 @@ f.render_stateful_widget(list, area, &mut state);
 // In response to some events
 state.select(Some(1));
 ```
-* `widgets::Marker` has been moved to `symbols::Marker`
+
+- `widgets::Marker` has been moved to `symbols::Marker`
 
 ## v0.8.0 - 2019-12-15
 
 ### Breaking Changes
 
-* Bump crossterm to 0.14.
-* Add cross symbol to the symbols list.
+- Bump crossterm to 0.14.
+- Add cross symbol to the symbols list.
 
 ### Bug Fixes
 
-* Use the value of `title_style` to style the title of `Axis`.
+- Use the value of `title_style` to style the title of `Axis`.
 
 ## v0.7.0 - 2019-11-29
 
 ### Breaking Changes
 
-* Use `Constraint` instead of integers to specify the widths of the `Table`
+- Use `Constraint` instead of integers to specify the widths of the `Table`
 widget's columns. This will allow more responsive tables.
 
 ```rust
@@ -847,60 +1338,60 @@ Table::new(header, row)
   .render(f, chunk);
 ```
 
-* Bump crossterm to 0.13.
-* Use Github Actions for CI (Travis and Azure Pipelines integrations have been deleted).
+- Bump crossterm to 0.13.
+- Use Github Actions for CI (Travis and Azure Pipelines integrations have been deleted).
 
 ### Features
 
-* Add support for horizontal and vertical margins in `Layout`.
+- Add support for horizontal and vertical margins in `Layout`.
 
 ## v0.6.2 - 2019-07-16
 
 ### Features
 
-* `Text` implements PartialEq
+- `Text` implements PartialEq
 
 ### Bug Fixes
 
-* Avoid overflow errors in canvas
+- Avoid overflow errors in canvas
 
 ## v0.6.1 - 2019-06-16
 
 ### Bug Fixes
 
-* Avoid a division by zero when all values in a barchart are equal to 0.
-* Fix the inverted cursor position in the curses backend.
-* Ensure that the correct terminal size is returned when using the crossterm
+- Avoid a division by zero when all values in a barchart are equal to 0.
+- Fix the inverted cursor position in the curses backend.
+- Ensure that the correct terminal size is returned when using the crossterm
 backend.
-* Avoid highlighting the separator after the selected item in the Tabs widget.
+- Avoid highlighting the separator after the selected item in the Tabs widget.
 
 ## v0.6.0 - 2019-05-18
 
 ### Breaking Changes
 
-* Update crossterm backend
+- Update crossterm backend
 
 ## v0.5.1 - 2019-04-14
 
 ### Bug Fixes
 
-* Fix a panic in the Sparkline widget
+- Fix a panic in the Sparkline widget
 
 ## v0.5.0 - 2019-03-10
 
 ### Features
 
-* Add a new curses backend (with Windows support thanks to `pancurses`).
-* Add `Backend::get_cursor` and `Backend::set_cursor` methods to query and
+- Add a new curses backend (with Windows support thanks to `pancurses`).
+- Add `Backend::get_cursor` and `Backend::set_cursor` methods to query and
 set the position of the cursor.
-* Add more constructors to the `Crossterm` backend.
-* Add a demo for all backends using a shared UI and application state.
-* Add `Ratio` as a new variant of layout `Constraint`. It can be used to define
+- Add more constructors to the `Crossterm` backend.
+- Add a demo for all backends using a shared UI and application state.
+- Add `Ratio` as a new variant of layout `Constraint`. It can be used to define
 exact ratios constraints.
 
 ### Breaking Changes
 
-* Add support for multiple modifiers on the same `Style` by changing `Modifier`
+- Add support for multiple modifiers on the same `Style` by changing `Modifier`
 from an enum to a bitflags struct.
 
 So instead of writing:
@@ -919,48 +1410,48 @@ let style = Style::default().add_modifier(Modifier::ITALIC | Modifier::BOLD);
 
 ### Bug Fixes
 
-* Ensure correct behavior of the alternate screens with the `Crossterm` backend.
-* Fix out of bounds panic when two `Buffer` are merged.
+- Ensure correct behavior of the alternate screens with the `Crossterm` backend.
+- Fix out of bounds panic when two `Buffer` are merged.
 
 ## v0.4.0 - 2019-02-03
 
 ### Features
 
-* Add a new canvas shape: `Rectangle`.
-* Official support of `Crossterm` backend.
-* Make it possible to choose the divider between `Tabs`.
-* Add word wrapping on Paragraph.
-* The gauge widget accepts a ratio (f64 between 0 and 1) in addition of a
+- Add a new canvas shape: `Rectangle`.
+- Official support of `Crossterm` backend.
+- Make it possible to choose the divider between `Tabs`.
+- Add word wrapping on Paragraph.
+- The gauge widget accepts a ratio (f64 between 0 and 1) in addition of a
 percentage.
 
 ### Breaking Changes
 
-* Upgrade to Rust 2018 edition.
+- Upgrade to Rust 2018 edition.
 
 ### Bug Fixes
 
-* Fix rendering of double-width characters.
-* Fix race condition on the size of the terminal and expose a size that is
+- Fix rendering of double-width characters.
+- Fix race condition on the size of the terminal and expose a size that is
 safe to use when drawing through `Frame::size`.
-* Prevent unsigned int overflow on large screens.
+- Prevent unsigned int overflow on large screens.
 
 ## v0.3.0 - 2018-11-04
 
 ### Features
 
-* Add experimental test backend
+- Add experimental test backend
 
 ## v0.3.0-beta.3 - 2018-09-24
 
 ### Features
 
-* `show_cursor` is called when `Terminal` is dropped if the cursor is hidden.
+- `show_cursor` is called when `Terminal` is dropped if the cursor is hidden.
 
 ## v0.3.0-beta.2 - 2018-09-23
 
 ### Breaking Changes
 
-* Remove custom `termion` backends. This is motivated by the fact that
+- Remove custom `termion` backends. This is motivated by the fact that
 `termion` structs are meant to be combined/wrapped to provide additional
 functionalities to the terminal (e.g AlternateScreen, Mouse support, ...).
 Thus providing exclusive types do not make a lot of sense and give a false
@@ -986,80 +1477,80 @@ additional `termion` features.
 
 ### Breaking Changes
 
-* Replace `Item` by a generic and flexible `Text` that can be used in both
+- Replace `Item` by a generic and flexible `Text` that can be used in both
 `Paragraph` and `List` widgets.
-* Remove unnecessary borrows on `Style`.
+- Remove unnecessary borrows on `Style`.
 
 ## v0.3.0-beta.0 - 2018-09-04
 
 ### Features
 
-* Add a basic `Crossterm` backend
+- Add a basic `Crossterm` backend
 
 ### Breaking Changes
 
-* Remove `Group` and introduce `Layout` in its place
+- Remove `Group` and introduce `Layout` in its place
   - `Terminal` is no longer required to compute a layout
   - `Size` has been renamed `Constraint`
-* Widgets are rendered on a `Frame` instead of a `Terminal` in order to
+- Widgets are rendered on a `Frame` instead of a `Terminal` in order to
 avoid mixing `draw` and `render` calls
-* `draw` on `Terminal` expects a closure where the UI is built by rendering
+- `draw` on `Terminal` expects a closure where the UI is built by rendering
 widgets on the given `Frame`
-* Update `Widget` trait
+- Update `Widget` trait
   - `draw` takes area by value
   - `render` takes a `Frame` instead of a `Terminal`
-* All widgets use the consumable builder pattern
-* `SelectableList` can have no selected item and the highlight symbol is hidden
+- All widgets use the consumable builder pattern
+- `SelectableList` can have no selected item and the highlight symbol is hidden
 in this case
-* Remove markup language inside `Paragraph`. `Paragraph` now expects an iterator
+- Remove markup language inside `Paragraph`. `Paragraph` now expects an iterator
 of `Text` items
 
 ## v0.2.3 - 2018-06-09
 
 ### Features
 
-* Add `start_corner` option for `List`
-* Add more text alignment options for `Paragraph`
+- Add `start_corner` option for `List`
+- Add more text alignment options for `Paragraph`
 
 ## v0.2.2 - 2018-05-06
 
 ### Features
 
-* `Terminal` implements `Debug`
+- `Terminal` implements `Debug`
 
 ### Breaking Changes
 
-* Use `FnOnce` instead of `FnMut` in Group::render
+- Use `FnOnce` instead of `FnMut` in Group::render
 
 ## v0.2.1 - 2018-04-01
 
 ### Features
 
-* Add `AlternateScreenBackend` in `termion` backend
-* Add `TermionBackend::with_stdout` in order to let an user of the library
+- Add `AlternateScreenBackend` in `termion` backend
+- Add `TermionBackend::with_stdout` in order to let an user of the library
 provides its own termion struct
-* Add tests and documentation for `Buffer::pos_of`
-* Remove leading whitespaces when wrapping text
+- Add tests and documentation for `Buffer::pos_of`
+- Remove leading whitespaces when wrapping text
 
 ### Bug Fixes
 
-* Fix `debug_assert` in `Buffer::pos_of`
-* Pass the style of `SelectableList` to the underlying `List`
-* Fix missing character when wrapping text
-* Fix panic when specifying layout constraints
+- Fix `debug_assert` in `Buffer::pos_of`
+- Pass the style of `SelectableList` to the underlying `List`
+- Fix missing character when wrapping text
+- Fix panic when specifying layout constraints
 
 ## v0.2.0 - 2017-12-26
 
 ### Features
 
-* Add `MouseBackend` in `termion` backend to handle scroll and mouse events
-* Add generic `Item` for items in a `List`
-* Drop `log4rs` as a dev-dependencies in favor of `stderrlog`
+- Add `MouseBackend` in `termion` backend to handle scroll and mouse events
+- Add generic `Item` for items in a `List`
+- Drop `log4rs` as a dev-dependencies in favor of `stderrlog`
 
 ### Breaking Changes
 
-* Rename `TermionBackend` to `RawBackend` (to distinguish it from the `MouseBackend`)
-* Generic parameters for `List` to allow passing iterators as items
-* Generic parameters for `Table` to allow using iterators as rows and header
-* Generic parameters for `Tabs`
-* Rename `border` bitflags to `Borders`
+- Rename `TermionBackend` to `RawBackend` (to distinguish it from the `MouseBackend`)
+- Generic parameters for `List` to allow passing iterators as items
+- Generic parameters for `Table` to allow using iterators as rows and header
+- Generic parameters for `Tabs`
+- Rename `border` bitflags to `Borders`
