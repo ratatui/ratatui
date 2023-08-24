@@ -13,8 +13,7 @@ use ratatui::{prelude::*, widgets::*};
 /// events or update the application state. It just draws a greeting and exits when the user
 /// presses 'q'.
 fn main() -> Result<()> {
-    let backend = CrosstermBackend::on_stdout()?;
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
     run(&mut terminal)
 }
 

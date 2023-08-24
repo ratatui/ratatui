@@ -20,8 +20,7 @@ impl<'a> Label<'a> {
 }
 
 fn main() -> anyhow::Result<()> {
-    let backend = CrosstermBackend::on_stdout()?;
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
 
     loop {
         terminal.draw(ui)?;

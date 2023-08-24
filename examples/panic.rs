@@ -20,10 +20,11 @@ struct App {
 
 impl App {
     fn chain_hook(&mut self) {
+        better_panic::install();
         let original_hook = std::panic::take_hook();
 
         std::panic::set_hook(Box::new(move |panic| {
-            let mut backend = CrosstermBackend::on_stdout().unwrap();
+            let mut backend = CrosstermBackend::on_stdout();
             backend.leave_alternate_screen().unwrap();
             backend.disable_raw_mode().unwrap();
             original_hook(panic);
@@ -34,8 +35,7 @@ impl App {
 }
 
 fn main() -> Result<()> {
-    let backend = CrosstermBackend::on_stdout()?;
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
 
     let mut app = App::default();
     run_tui(&mut terminal, &mut app)

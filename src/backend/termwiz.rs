@@ -42,37 +42,6 @@ pub struct TermwizBackend {
     buffered_terminal: BufferedTerminal<SystemTerminal>,
 }
 
-impl Default for TermwizBackend {
-    /// Creates a new Termwiz backend instance with the default configuration.
-    ///
-    /// Note that this function will panic if it is unable to query the terminal capabilities, or
-    /// if it is unable to create the system or buffered terminal.
-    ///
-    /// See [`TermwizBackend::new`] for a version of this function that returns an error instead of
-    /// panicking.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use ratatui::backend::{Backend, TermwizBackend};
-    /// let backend = TermwizBackend::default();
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// This function will panic if it is unable to query the terminal capabilities, or if it is
-    /// unable to create the system or buffered terminal.
-    fn default() -> Self {
-        let caps = Capabilities::new_from_env().expect("unable to query capabilities");
-        let terminal = SystemTerminal::new(caps).expect("unable to create terminal");
-        let terminal = BufferedTerminal::new(terminal).expect("failed to create buffered terminal");
-        Self {
-            buffered_terminal: terminal,
-        }
-    }
-}
-
 impl TermwizBackend {
     /// Creates a new Termwiz backend instance.
     ///

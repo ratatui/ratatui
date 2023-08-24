@@ -12,11 +12,10 @@
 //! # Examples
 //!
 //! ```no_run
-//! use ratatui::{Terminal, backend::CrosstermBackend};
+//! use ratatui::TerminalBuilder;
 //! # use crossterm::event::{read, Event, KeyCode};
 //!
-//! let backend = CrosstermBackend::on_stdout()?;
-//! let mut terminal = Terminal::new(backend)?;
+//! let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
 //!
 //! terminal.draw(|frame| {
 //!    // Draw things here
@@ -106,17 +105,16 @@ pub struct TerminalOptions {
 /// # Examples
 ///
 /// ```rust,no_run
-/// use ratatui::{Terminal, backend::CrosstermBackend, widgets::Paragraph};
+/// use ratatui::{TerminalBuilder, widgets::Paragraph};
 ///
-/// let backend = CrosstermBackend::on_stdout()?;
-/// let mut terminal = Terminal::new(backend)?;
+/// let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
 ///
 /// terminal.draw(|frame| {
 ///     frame.render_widget(Paragraph::new("Hello World!"), frame.size());
 /// })?;
 /// # std::io::Result::Ok(())
 /// ```
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Terminal<B>
 where
     B: Backend,
@@ -622,10 +620,7 @@ fn compute_inline_size<B: Backend>(
 
 #[cfg(test)]
 mod tests {
-    use std::io::Stdout;
-
     use super::*;
-    use crate::prelude::*;
 
     #[test]
     fn viewport_to_string() {
@@ -635,17 +630,5 @@ mod tests {
             Viewport::Fixed(Rect::new(0, 0, 5, 5)).to_string(),
             "Fixed(5x5+0+0)"
         );
-    }
-
-    #[test]
-    #[cfg(feature = "crossterm")]
-    fn crossterm_default() {
-        let _terminal = Terminal::<CrosstermBackend<Stdout>>::default();
-    }
-
-    #[test]
-    #[cfg(feature = "termion")]
-    fn termion_default() {
-        let _terminal = Terminal::<TermionBackend<Stdout>>::default();
     }
 }

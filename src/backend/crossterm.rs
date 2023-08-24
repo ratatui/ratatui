@@ -31,29 +31,32 @@ use crate::{
 ///
 /// # Examples
 ///
-/// Generally, apps should use [`CrosstermBackend::on_stderr()`] or
-/// [`CrosstermBackend::on_stdout()`] methods, which both enable raw mode and enter the alternate
-/// screen. Choosing `stderr` over `stdout` ensures your app displays on the terminal even if the
-/// standard output stream is redirected and makes it easy to write apps that can be piped to other
-/// programs.
+/// Generally, apps should use [`TerminalBuilder`] to create a `Terminal` with a `CrosstermBackend`
+/// instead of using `CrosstermBackend` directly. This will enable raw mode, enter the alternate
+/// screen, and disable mouse capture. See [`TerminalBuilder`] for more information.
 ///
 /// ```rust,no_run
-/// use ratatui::backend::CrosstermBackend;
-///
-/// let mut backend = CrosstermBackend::on_stdout()?;
-/// // alternatively
-/// let mut backend = CrosstermBackend::on_stderr()?;
+/// use ratatui::TerminalBuilder;
+/// let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
 /// # std::io::Result::Ok(())
 /// ```
 ///
-/// For more control over raw mode, the alternate screen, or mouse capture use
-/// [`CrosstermBackend::new()`].
+/// Alternatively, you can use [`CrosstermBackend::on_stdout()`] or
+/// [`CrosstermBackend::on_stderr()`] to create a `CrosstermBackend` with [`std::io::stdout()`] or
+/// [`std::io::stderr()`] as the writer.
+///
 ///
 /// ```rust,no_run
-/// use std::io::stdout;
 /// use ratatui::backend::CrosstermBackend;
 ///
-/// let mut backend = CrosstermBackend::new(stdout())
+/// let mut backend = CrosstermBackend::on_stdout()
+///     .with_raw_mode()?
+///     .with_alternate_screen()?
+///     .with_mouse_capture()?;
+///
+/// // alternatively
+///
+/// let mut backend = CrosstermBackend::on_stderr()
 ///     .with_raw_mode()?
 ///     .with_alternate_screen()?
 ///     .with_mouse_capture()?;
@@ -64,7 +67,7 @@ use crate::{
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct CrosstermBackend<W: Write> {
     /// The buffer being written to.
-    buffer: W,
+    writer: W,
     /// Whether raw mode is enabled. This is used to determine whether to disable raw mode when
     /// dropping the backend.
     raw_mode_enabled: bool,
@@ -90,9 +93,9 @@ where
     /// let mut backend = CrosstermBackend::new(stdout());
     /// # std::io::Result::Ok(())
     /// ```
-    pub fn new(buffer: W) -> CrosstermBackend<W> {
+    pub fn new(writer: W) -> CrosstermBackend<W> {
         CrosstermBackend {
-            buffer,
+            writer,
             raw_mode_enabled: false,
             alternate_screen_entered: false,
             mouse_capture_enabled: false,
@@ -178,7 +181,7 @@ where
     ///
     /// See [`crate::backend#alternate-screen`] for more information.
     pub fn enter_alternate_screen(&mut self) -> io::Result<()> {
-        execute!(self.buffer, EnterAlternateScreen)?;
+        execute!(self.writer, EnterAlternateScreen)?;
         self.alternate_screen_entered = true;
         Ok(())
     }
@@ -189,7 +192,7 @@ where
     ///
     /// See [`crate::backend#alternate-screen`] for more information.
     pub fn leave_alternate_screen(&mut self) -> io::Result<()> {
-        execute!(self.buffer, LeaveAlternateScreen)?;
+        execute!(self.writer, LeaveAlternateScreen)?;
         self.alternate_screen_entered = false;
         Ok(())
     }
@@ -200,7 +203,7 @@ where
     ///
     /// See [`crate::backend#mouse-capture`] for more information.
     pub fn enable_mouse_capture(&mut self) -> io::Result<()> {
-        execute!(self.buffer, EnableMouseCapture)?;
+        execute!(self.writer, EnableMouseCapture)?;
         self.mouse_capture_enabled = true;
         Ok(())
     }
@@ -211,7 +214,7 @@ where
     ///
     /// See [`crate::backend#mouse-capture`] for more information.
     pub fn disable_mouse_capture(&mut self) -> io::Result<()> {
-        execute!(self.buffer, DisableMouseCapture)?;
+        execute!(self.writer, DisableMouseCapture)?;
         self.mouse_capture_enabled = false;
         Ok(())
     }
@@ -220,88 +223,28 @@ where
 impl CrosstermBackend<Stderr> {
     /// Creates a new `CrosstermBackend` using [`std::io::stderr()`] as the buffer.
     ///
-    /// This method also enables [raw mode] and enters the [alternate screen].
-    ///
     /// # Example
     ///
     /// ```rust,no_run
     /// # use ratatui::backend::{Backend, CrosstermBackend};
-    /// let mut backend = CrosstermBackend::on_stderr()?;
-    /// # std::io::Result::Ok(())
+    /// let mut backend = CrosstermBackend::on_stderr();
     /// ```
-    ///
-    /// [raw mode]: crate::backend#raw-mode
-    /// [alternate screen]: crate::backend#alternate-screen
-    pub fn on_stderr() -> Result<CrosstermBackend<Stderr>, io::Error> {
+    pub fn on_stderr() -> CrosstermBackend<Stderr> {
         CrosstermBackend::new(io::stderr())
-            .with_raw_mode()?
-            .with_alternate_screen()
     }
 }
 
 impl CrosstermBackend<Stdout> {
     /// Creates a new `CrosstermBackend` using [`std::io::stdout()`] as the buffer.
     ///
-    /// This method also enables [raw mode] and enters the [alternate screen].
-    ///
     /// # Example
     ///
     /// ```rust,no_run
     /// # use ratatui::backend::{Backend, CrosstermBackend};
-    /// let mut backend = CrosstermBackend::on_stdout()?;
-    /// # std::io::Result::Ok(())
+    /// let mut backend = CrosstermBackend::on_stdout();
     /// ```
-    ///
-    /// [raw mode]: crate::backend#raw-mode
-    /// [alternate screen]: crate::backend#alternate-screen
-    pub fn on_stdout() -> Result<CrosstermBackend<Stdout>, io::Error> {
+    pub fn on_stdout() -> CrosstermBackend<Stdout> {
         CrosstermBackend::new(io::stdout())
-            .with_raw_mode()?
-            .with_alternate_screen()
-    }
-}
-
-impl Default for CrosstermBackend<Stderr> {
-    // impl Default for CrosstermBackend {
-    /// Creates a new `CrosstermBackend` using [`std::io::stderr()`] as the buffer.
-    ///
-    /// It will usually be more convenient to use [`CrosstermBackend::on_stderr()`], which enables
-    /// raw mode and enters the alternate screen.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use std::io::Stderr;
-    /// # use ratatui::backend::CrosstermBackend;
-    /// let mut backend = CrosstermBackend::<Stderr>::default()
-    ///     .with_raw_mode()?
-    ///     .with_alternate_screen()?;
-    /// # std::io::Result::Ok(())
-    /// ```
-    fn default() -> Self {
-        Self::new(io::stderr())
-    }
-}
-
-impl Default for CrosstermBackend<Stdout> {
-    // impl Default for CrosstermBackend {
-    /// Creates a new `CrosstermBackend` using [`std::io::stdout()`] as the buffer.
-    ///
-    /// It will usually be more convenient to use [`CrosstermBackend::on_stdout()`], which enables
-    /// raw mode and enters the alternate screen.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use std::io::Stdout;
-    /// # use ratatui::backend::{Backend, CrosstermBackend};
-    /// let mut backend = CrosstermBackend::<Stdout>::default()
-    ///     .with_raw_mode()?
-    ///     .with_alternate_screen()?;
-    /// # std::io::Result::Ok(())
-    /// ```
-    fn default() -> Self {
-        Self::new(io::stdout())
     }
 }
 
@@ -341,12 +284,12 @@ where
 {
     /// Writes a buffer of bytes to the underlying buffer.
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.buffer.write(buf)
+        self.writer.write(buf)
     }
 
     /// Flushes the underlying buffer.
     fn flush(&mut self) -> io::Result<()> {
-        self.buffer.flush()
+        self.writer.flush()
     }
 }
 
@@ -366,7 +309,7 @@ where
         for (x, y, cell) in content {
             // Move the cursor if the previous location was not (x - 1, y)
             if !matches!(last_pos, Some(p) if x == p.0 + 1 && y == p.1) {
-                queue!(self.buffer, MoveTo(x, y))?;
+                queue!(self.writer, MoveTo(x, y))?;
             }
             last_pos = Some((x, y));
             if cell.modifier != modifier {
@@ -374,30 +317,30 @@ where
                     from: modifier,
                     to: cell.modifier,
                 };
-                diff.queue(&mut self.buffer)?;
+                diff.queue(&mut self.writer)?;
                 modifier = cell.modifier;
             }
             if cell.fg != fg {
                 let color = CColor::from(cell.fg);
-                queue!(self.buffer, SetForegroundColor(color))?;
+                queue!(self.writer, SetForegroundColor(color))?;
                 fg = cell.fg;
             }
             if cell.bg != bg {
                 let color = CColor::from(cell.bg);
-                queue!(self.buffer, SetBackgroundColor(color))?;
+                queue!(self.writer, SetBackgroundColor(color))?;
                 bg = cell.bg;
             }
             if cell.underline_color != underline_color {
                 let color = CColor::from(cell.underline_color);
-                queue!(self.buffer, SetUnderlineColor(color))?;
+                queue!(self.writer, SetUnderlineColor(color))?;
                 underline_color = cell.underline_color;
             }
 
-            queue!(self.buffer, Print(&cell.symbol))?;
+            queue!(self.writer, Print(&cell.symbol))?;
         }
 
         queue!(
-            self.buffer,
+            self.writer,
             SetForegroundColor(CColor::Reset),
             SetBackgroundColor(CColor::Reset),
             SetUnderlineColor(CColor::Reset),
@@ -406,11 +349,11 @@ where
     }
 
     fn hide_cursor(&mut self) -> io::Result<()> {
-        execute!(self.buffer, Hide)
+        execute!(self.writer, Hide)
     }
 
     fn show_cursor(&mut self) -> io::Result<()> {
-        execute!(self.buffer, Show)
+        execute!(self.writer, Show)
     }
 
     fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
@@ -419,7 +362,7 @@ where
     }
 
     fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
-        execute!(self.buffer, MoveTo(x, y))
+        execute!(self.writer, MoveTo(x, y))
     }
 
     fn clear(&mut self) -> io::Result<()> {
@@ -428,7 +371,7 @@ where
 
     fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
         execute!(
-            self.buffer,
+            self.writer,
             Clear(match clear_type {
                 ClearType::All => crossterm::terminal::ClearType::All,
                 ClearType::AfterCursor => crossterm::terminal::ClearType::FromCursorDown,
@@ -441,9 +384,9 @@ where
 
     fn append_lines(&mut self, n: u16) -> io::Result<()> {
         for _ in 0..n {
-            queue!(self.buffer, Print("\n"))?;
+            queue!(self.writer, Print("\n"))?;
         }
-        self.buffer.flush()
+        self.writer.flush()
     }
 
     fn size(&self) -> io::Result<Rect> {
@@ -454,7 +397,7 @@ where
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.buffer.flush()
+        self.writer.flush()
     }
 }
 

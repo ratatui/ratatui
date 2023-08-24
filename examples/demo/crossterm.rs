@@ -6,8 +6,8 @@ use ratatui::prelude::*;
 use crate::{app::App, ui};
 
 pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> anyhow::Result<()> {
-    let backend = CrosstermBackend::on_stdout()?;
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
+
     let mut app = App::new("Crossterm Demo", enhanced_graphics);
 
     let mut last_tick = Instant::now();

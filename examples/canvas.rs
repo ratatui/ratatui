@@ -79,9 +79,7 @@ impl App {
 }
 
 fn main() -> Result<()> {
-    // setup terminal
-    let backend = CrosstermBackend::on_stdout()?;
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
 
     let tick_rate = Duration::from_millis(250);
     let mut app = App::new();

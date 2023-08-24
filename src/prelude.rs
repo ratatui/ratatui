@@ -32,4 +32,5 @@ pub use crate::{
     symbols::{self, Marker},
     terminal::{self, Frame, Terminal, TerminalOptions, Viewport},
     text::{self, Line, Masked, Span, Text},
+    AlternateScreenMode, MouseCapture, RawMode, TerminalBuilder,
 };

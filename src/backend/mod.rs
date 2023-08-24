@@ -15,7 +15,7 @@
 //! ```rust,no_run
 //! use ratatui::backend::{Backend, CrosstermBackend};
 //!
-//! let mut backend = CrosstermBackend::on_stdout()?;
+//! let mut backend = CrosstermBackend::on_stdout();
 //! backend.clear()?;
 //! # std::io::Result::Ok(())
 //! ```
@@ -209,7 +209,7 @@ pub trait Backend {
     ///
     /// ```rust,no_run
     /// # use ratatui::backend::{Backend, CrosstermBackend};
-    /// let mut backend = CrosstermBackend::on_stdout()?;
+    /// let mut backend = CrosstermBackend::on_stdout();
     /// backend.clear()?;
     /// # std::io::Result::Ok(())
     /// ```
@@ -230,7 +230,7 @@ pub trait Backend {
     /// ```rust,no_run
     /// use ratatui::backend::{Backend, CrosstermBackend, ClearType};
     ///
-    /// let mut backend = CrosstermBackend::on_stdout()?;
+    /// let mut backend = CrosstermBackend::on_stdout();
     /// backend.clear_region(ClearType::All)?;
     /// # std::io::Result::Ok(())
     /// ```
@@ -262,7 +262,7 @@ pub trait Backend {
     ///
     /// ```rust,no_run
     /// # use ratatui::backend::{Backend, CrosstermBackend};
-    /// let mut backend = CrosstermBackend::on_stdout()?;
+    /// let mut backend = CrosstermBackend::on_stdout();
     /// let size = backend.size()?;
     /// # std::io::Result::Ok(())
     /// ```

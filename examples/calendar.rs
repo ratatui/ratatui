@@ -6,8 +6,7 @@ use ratatui::{prelude::*, widgets::calendar::*};
 use time::{Date, Month, OffsetDateTime};
 
 fn main() -> Result<()> {
-    let backend = CrosstermBackend::on_stdout()?;
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
 
     loop {
         let _ = terminal.draw(|f| draw(f));

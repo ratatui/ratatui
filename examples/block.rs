@@ -14,11 +14,9 @@ use ratatui::{
 // These type aliases are used to make the code more readable by reducing repetition of the generic
 // types. They are not necessary for the functionality of the code.
 type Frame<'a> = ratatui::Frame<'a, CrosstermBackend<Stdout>>;
-type Terminal = ratatui::Terminal<CrosstermBackend<Stdout>>;
 
 fn main() -> Result<()> {
-    let backend = CrosstermBackend::on_stdout()?;
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
 
     loop {
         terminal.draw(ui)?;

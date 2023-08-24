@@ -73,11 +73,10 @@
 //! such as clearing the screen, hiding the cursor, etc.
 //!
 //! ```rust,no_run
-//! use ratatui::{backend::CrosstermBackend, Terminal};
+//! use ratatui::TerminalBuilder;
 //!
 //! fn main() -> std::io::Result<()> {
-//!     let backend = CrosstermBackend::on_stdout()?;
-//!     let mut terminal = Terminal::new(backend)?;
+//!     let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
 //!     Ok(())
 //! }
 //! ```
@@ -107,8 +106,7 @@
 //! };
 //!
 //! fn main() -> io::Result<()> {
-//!     let backend = CrosstermBackend::on_stdout()?;
-//!     let mut terminal = Terminal::new(backend)?;
+//!     let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
 //!
 //!     terminal.draw(|frame| {
 //!         let size = frame.size();
@@ -208,6 +206,7 @@ pub mod layout;
 pub mod style;
 pub mod symbols;
 pub mod terminal;
+mod terminal_builder;
 pub mod text;
 pub mod widgets;
 
@@ -215,3 +214,5 @@ pub mod prelude;
 
 #[doc(inline)]
 pub use self::terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
+#[doc(inline)]
+pub use self::terminal_builder::{AlternateScreenMode, MouseCapture, RawMode, TerminalBuilder};

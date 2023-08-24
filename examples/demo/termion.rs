@@ -7,8 +7,7 @@ use termion::{event::Key, input::TermRead};
 use crate::{app::App, ui};
 
 pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<()> {
-    let backend = TermionBackend::on_stdout()?;
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalBuilder::termion_on_stdout().build()?;
     let mut app = App::new("Termion demo", enhanced_graphics);
     let events = events(tick_rate);
 

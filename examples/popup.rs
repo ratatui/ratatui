@@ -13,8 +13,7 @@ impl App {
 }
 
 fn main() -> Result<()> {
-    let backend = CrosstermBackend::on_stdout()?;
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
 
     // create app and run it
     let mut app = App::new();

@@ -1,13 +1,11 @@
-use std::{error::Error, io};
-
 use anyhow::Result;
 use crossterm::event::{self, Event, KeyCode};
 use itertools::Itertools;
 use ratatui::{layout::Constraint::*, prelude::*, widgets::*};
 
 fn main() -> Result<()> {
-    let backend = CrosstermBackend::on_stdout()?;
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalBuilder::crossterm_on_stdout().build()?;
+
     loop {
         terminal.draw(|f| ui(f))?;
         if let Event::Key(key) = event::read()? {

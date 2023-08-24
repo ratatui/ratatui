@@ -101,8 +101,7 @@ use crossterm::event::{self, Event, KeyCode};
 use ratatui::{prelude::*, widgets::Paragraph};
 
 fn main() -> Result<()> {
-    let backend = CrosstermBackend::on_stdout()?;
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = TerminalBuilder::crossterm_on_stdout();
     loop {
         terminal.draw(|frame| {
             let greeting = Paragraph::new("Hello World!");
