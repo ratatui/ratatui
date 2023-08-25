@@ -183,3 +183,135 @@ impl Backend for TestBackend {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new() {
+        assert_eq!(
+            TestBackend::new(10, 2),
+            TestBackend {
+                width: 10,
+                height: 2,
+                buffer: Buffer::with_lines(vec!["          "; 2]),
+                cursor: false,
+                pos: (0, 0),
+            }
+        );
+    }
+    #[test]
+    fn test_buffer_view() {
+        let buffer = Buffer::with_lines(vec!["aaaa"; 2]);
+        assert_eq!(buffer_view(&buffer), "\"aaaa\"\n\"aaaa\"\n");
+    }
+
+    #[test]
+    fn buffer_view_with_overwrites() {
+        let multi_byte_char = "👨‍👩‍👧‍👦"; // renders 8 wide
+        let buffer = Buffer::with_lines(vec![multi_byte_char]);
+        assert_eq!(
+            buffer_view(&buffer),
+            format!(
+                r#""{multi_byte_char}" Hidden by multi-width symbols: [(1, " "), (2, " "), (3, " "), (4, " "), (5, " "), (6, " "), (7, " ")]
+"#,
+                multi_byte_char = multi_byte_char
+            )
+        );
+    }
+
+    #[test]
+    fn buffer() {
+        let backend = TestBackend::new(10, 2);
+        assert_eq!(backend.buffer(), &Buffer::with_lines(vec!["          "; 2]));
+    }
+
+    #[test]
+    fn resize() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.resize(5, 5);
+        assert_eq!(backend.buffer(), &Buffer::with_lines(vec!["     "; 5]));
+    }
+
+    #[test]
+    fn assert_buffer() {
+        let backend = TestBackend::new(10, 2);
+        let buffer = Buffer::with_lines(vec!["          "; 2]);
+        backend.assert_buffer(&buffer);
+    }
+
+    #[test]
+    #[should_panic]
+    fn assert_buffer_panics() {
+        let backend = TestBackend::new(10, 2);
+        let buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
+        backend.assert_buffer(&buffer);
+    }
+
+    #[test]
+    fn display() {
+        let backend = TestBackend::new(10, 2);
+        assert_eq!(format!("{}", backend), "\"          \"\n\"          \"\n");
+    }
+
+    #[test]
+    fn draw() {
+        let mut backend = TestBackend::new(10, 2);
+        let mut cell = Cell::default();
+        cell.set_symbol("a");
+        backend.draw([(0, 0, &cell)].into_iter()).unwrap();
+        backend.draw([(0, 1, &cell)].into_iter()).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec!["a         "; 2]));
+    }
+
+    #[test]
+    fn hide_cursor() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.hide_cursor().unwrap();
+        assert!(!backend.cursor);
+    }
+
+    #[test]
+    fn show_cursor() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.show_cursor().unwrap();
+        assert!(backend.cursor);
+    }
+
+    #[test]
+    fn get_cursor() {
+        let mut backend = TestBackend::new(10, 2);
+        assert_eq!(backend.get_cursor().unwrap(), (0, 0));
+    }
+
+    #[test]
+    fn set_cursor() {
+        let mut backend = TestBackend::new(10, 10);
+        backend.set_cursor(5, 5).unwrap();
+        assert_eq!(backend.pos, (5, 5));
+    }
+
+    #[test]
+    fn clear() {
+        let mut backend = TestBackend::new(10, 2);
+        let mut cell = Cell::default();
+        cell.set_symbol("a");
+        backend.draw([(0, 0, &cell)].into_iter()).unwrap();
+        backend.draw([(0, 1, &cell)].into_iter()).unwrap();
+        backend.clear().unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec!["          "; 2]));
+    }
+
+    #[test]
+    fn size() {
+        let backend = TestBackend::new(10, 2);
+        assert_eq!(backend.size().unwrap(), Rect::new(0, 0, 10, 2));
+    }
+
+    #[test]
+    fn flush() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.flush().unwrap();
+    }
+}
