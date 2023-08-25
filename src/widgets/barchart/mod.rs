@@ -156,7 +156,7 @@ impl<'a> BarChart<'a> {
         self
     }
 
-    /// set the direction ob the bars
+    /// Set the direction of the bars
     pub fn direction(mut self, direction: Direction) -> BarChart<'a> {
         self.direction = direction;
         self
@@ -228,33 +228,23 @@ impl<'a> BarChart<'a> {
             })
             .collect();
 
-        // print all visible bars (without labels and values)
+        // print all visible bars
         let mut bar_y = bars_area.top();
         for (group_data, mut group) in groups.into_iter().zip(self.data) {
             let bars = std::mem::take(&mut group.bars);
-
-            let label_offset = bars.len() as u16 * (self.bar_width + self.bar_gap) - self.bar_gap;
-            // if group_gap is zero, then there is no place to print the group label
-            // check also if the group label is still inside the visible area
-            if self.group_gap > 0 && bar_y < bars_area.bottom() - label_offset {
-                let label_rect = Rect {
-                    y: bar_y + label_offset,
-                    ..bars_area
-                };
-                group.render_label(buf, label_rect, self.label_style);
-            }
 
             for (bar_length, bar) in group_data.into_iter().zip(bars) {
                 let bar_style = self.bar_style.patch(bar.style);
 
                 for y in 0..self.bar_width {
+                    let bar_y = bar_y + y;
                     for x in 0..bars_area.width {
                         let symbol = if x < bar_length {
                             self.bar_set.full
                         } else {
                             self.bar_set.empty
                         };
-                        buf.get_mut(bars_area.left() + x, bar_y + y)
+                        buf.get_mut(bars_area.left() + x, bar_y)
                             .set_symbol(symbol)
                             .set_style(bar_style);
                     }
@@ -275,7 +265,17 @@ impl<'a> BarChart<'a> {
                 bar_y += self.bar_gap + self.bar_width;
             }
 
-            bar_y += self.group_gap;
+            // if group_gap is zero, then there is no place to print the group label
+            // check also if the group label is still inside the visible area
+            let label_y = bar_y - self.bar_gap;
+            if self.group_gap > 0 && label_y < bars_area.bottom() {
+                let label_rect = Rect {
+                    y: label_y,
+                    ..bars_area
+                };
+                group.render_label(buf, label_rect, self.label_style);
+                bar_y += self.group_gap;
+            }
         }
     }
 
