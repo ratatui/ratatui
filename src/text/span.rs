@@ -6,22 +6,66 @@ use unicode_width::UnicodeWidthStr;
 use super::StyledGrapheme;
 use crate::style::{Style, Styled};
 
-/// A string where all graphemes have the same style.
+/// Represents a part of a line that is contiguous and where all characters share the same style.
+///
+/// A `Span` is the smallest unit of text that can be styled. It is usually combined in the [`Line`]
+/// type to represent a line of text where each `Span` may have a different style.
+///
+/// # Examples
+///
+/// A `Span` with `style` set to [`Style::default()`] can be created from a `&str`, a `String`, or
+/// any type convertible to [`Cow<str>`].
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// let span = Span::raw("test content");
+/// let span = Span::raw(String::from("test content"));
+/// let span = Span::from("test content");
+/// let span = Span::from(String::from("test content"));
+/// let span: Span = "test content".into();
+/// let span: Span = String::from("test content").into();
+/// ```
+///
+/// Styled spans can be created using [`Span::styled`] or by converting strings using methods from
+/// the [`Stylize`] trait.
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// let span = Span::styled("test content", Style::new().green());
+/// let span = Span::styled(String::from("test content"), Style::new().green());
+/// let span = "test content".green();
+/// let span = String::from("test content").green();
+/// ```
+///
+/// `Span` implements [`Stylize`], which allows it to be styled using the shortcut methods. Styles
+/// applied are additive.
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// let span = Span::raw("test content").green().on_yellow().italic();
+/// let span = Span::raw(String::from("test content")).green().on_yellow().italic();
+/// ```
+///
+/// [`Line`]: crate::text::Line
+/// [`Stylize`]: crate::style::Stylize
+/// [`Cow<str>`]: std::borrow::Cow
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Span<'a> {
+    /// The content of the span as a Clone-on-write string.
     pub content: Cow<'a, str>,
+    /// The style of the span.
     pub style: Style,
 }
 
 impl<'a> Span<'a> {
-    /// Create a span with no style.
+    /// Create a span with the default style.
     ///
-    /// ## Examples
+    /// # Examples
     ///
     /// ```rust
     /// # use ratatui::text::Span;
-    /// Span::raw("My text");
-    /// Span::raw(String::from("My text"));
+    /// Span::raw("test content");
+    /// Span::raw(String::from("test content"));
     /// ```
     pub fn raw<T>(content: T) -> Span<'a>
     where
@@ -33,16 +77,15 @@ impl<'a> Span<'a> {
         }
     }
 
-    /// Create a span with a style.
+    /// Create a span with the specified style.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::text::Span;
-    /// # use ratatui::style::{Color, Modifier, Style};
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
-    /// Span::styled("My text", style);
-    /// Span::styled(String::from("My text"), style);
+    /// # use ratatui::prelude::*;
+    /// let style = Style::new().yellow().on_green().italic();
+    /// Span::styled("test content", style);
+    /// Span::styled(String::from("test content"), style);
     /// ```
     pub fn styled<T>(content: T, style: Style) -> Span<'a>
     where
@@ -54,31 +97,30 @@ impl<'a> Span<'a> {
         }
     }
 
-    /// Returns the width of the content held by this span.
+    /// Returns the unicode width of the content held by this span.
     pub fn width(&self) -> usize {
         self.content.width()
     }
 
     /// Returns an iterator over the graphemes held by this span.
     ///
-    /// `base_style` is the [`Style`] that will be patched with each grapheme [`Style`] to get
-    /// the resulting [`Style`].
+    /// `base_style` is the [`Style`] that will be patched with the `Span`'s `style` to get the
+    /// resulting [`Style`].
     ///
-    /// ## Examples
+    /// # Example
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, StyledGrapheme};
-    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use ratatui::{prelude::*, text::StyledGrapheme};
     /// # use std::iter::Iterator;
-    /// let span = Span::styled("Text", Style::default().fg(Color::Yellow));
-    /// let style = Style::default().fg(Color::Green).bg(Color::Black);
+    /// let span = Span::styled("Test", Style::new().green().italic());
+    /// let style = Style::new().red().on_yellow();
     /// assert_eq!(
     ///     span.styled_graphemes(style).collect::<Vec<StyledGrapheme>>(),
     ///     vec![
-    ///         StyledGrapheme::new("T", Style::default().fg(Color::Yellow).bg(Color::Black)),
-    ///         StyledGrapheme::new("e", Style::default().fg(Color::Yellow).bg(Color::Black)),
-    ///         StyledGrapheme::new("x", Style::default().fg(Color::Yellow).bg(Color::Black)),
-    ///         StyledGrapheme::new("t", Style::default().fg(Color::Yellow).bg(Color::Black)),
+    ///         StyledGrapheme::new("T", Style::new().green().on_yellow().italic()),
+    ///         StyledGrapheme::new("e", Style::new().green().on_yellow().italic()),
+    ///         StyledGrapheme::new("s", Style::new().green().on_yellow().italic()),
+    ///         StyledGrapheme::new("t", Style::new().green().on_yellow().italic()),
     ///     ],
     /// );
     /// ```
@@ -86,46 +128,41 @@ impl<'a> Span<'a> {
         &'a self,
         base_style: Style,
     ) -> impl Iterator<Item = StyledGrapheme<'a>> {
-        UnicodeSegmentation::graphemes(self.content.as_ref(), true)
+        self.content
+            .as_ref()
+            .graphemes(true)
+            .filter(|g| *g != "\n")
             .map(move |g| StyledGrapheme {
                 symbol: g,
                 style: base_style.patch(self.style),
             })
-            .filter(|s| s.symbol != "\n")
     }
 
-    /// Patches the style an existing Span, adding modifiers from the given style.
+    /// Patches the style of the Span, adding modifiers from the given style.
     ///
-    /// ## Examples
+    /// # Example
     ///
     /// ```rust
-    /// # use ratatui::text::Span;
-    /// # use ratatui::style::{Color, Style, Modifier};
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
-    /// let mut raw_span = Span::raw("My text");
-    /// let mut styled_span = Span::styled("My text", style);
-    ///
-    /// assert_ne!(raw_span, styled_span);
-    ///
-    /// raw_span.patch_style(style);
-    /// assert_eq!(raw_span, styled_span);
+    /// # use ratatui::prelude::*;
+    /// let mut span = Span::styled("test content", Style::new().green().italic());
+    /// span.patch_style(Style::new().red().on_yellow().bold());
+    /// assert_eq!(span.style, Style::new().red().on_yellow().italic().bold());
     /// ```
     pub fn patch_style(&mut self, style: Style) {
         self.style = self.style.patch(style);
     }
 
     /// Resets the style of the Span.
-    /// Equivalent to calling `patch_style(Style::reset())`.
     ///
-    /// ## Examples
+    /// This is Equivalent to calling `patch_style(Style::reset())`.
+    ///
+    /// # Example
     ///
     /// ```rust
-    /// # use ratatui::text::Span;
-    /// # use ratatui::style::{Color, Style, Modifier};
-    /// let mut span = Span::styled("My text", Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC));
-    ///
+    /// # use ratatui::prelude::*;
+    /// let mut span = Span::styled("Test Content", Style::new().green().on_yellow().italic());
     /// span.reset_style();
-    /// assert_eq!(Style::reset(), span.style);
+    /// assert_eq!(span.style, Style::reset());
     /// ```
     pub fn reset_style(&mut self) {
         self.patch_style(Style::reset());
@@ -143,6 +180,7 @@ where
 
 impl<'a> Styled for Span<'a> {
     type Item = Span<'a>;
+
     fn style(&self) -> Style {
         self.style
     }
@@ -156,61 +194,109 @@ impl<'a> Styled for Span<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::style::Stylize;
+
+    #[test]
+    fn default() {
+        let span = Span::default();
+        assert_eq!(span.content, Cow::Borrowed(""));
+        assert_eq!(span.style, Style::default());
+    }
+
+    #[test]
+    fn raw_str() {
+        let span = Span::raw("test content");
+        assert_eq!(span.content, Cow::Borrowed("test content"));
+        assert_eq!(span.style, Style::default());
+    }
+
+    #[test]
+    fn raw_string() {
+        let content = String::from("test content");
+        let span = Span::raw(content.clone());
+        assert_eq!(span.content, Cow::Owned::<str>(content));
+        assert_eq!(span.style, Style::default());
+    }
+
+    #[test]
+    fn styled_str() {
+        let style = Style::new().red();
+        let span = Span::styled("test content", style);
+        assert_eq!(span.content, Cow::Borrowed("test content"));
+        assert_eq!(span.style, Style::new().red());
+    }
+
+    #[test]
+    fn styled_string() {
+        let content = String::from("test content");
+        let style = Style::new().green();
+        let span = Span::styled(content.clone(), style);
+        assert_eq!(span.content, Cow::Owned::<str>(content));
+        assert_eq!(span.style, style);
+    }
 
     #[test]
     fn from_ref_str_borrowed_cow() {
-        let content = "some string";
+        let content = "test content";
         let span = Span::from(content);
         assert_eq!(span.content, Cow::Borrowed(content));
+        assert_eq!(span.style, Style::default());
     }
 
     #[test]
     fn from_string_ref_str_borrowed_cow() {
-        let content = String::from("some string");
+        let content = String::from("test content");
         let span = Span::from(content.as_str());
         assert_eq!(span.content, Cow::Borrowed(content.as_str()));
+        assert_eq!(span.style, Style::default());
     }
 
     #[test]
     fn from_string_owned_cow() {
-        let content = String::from("some string");
-        let content_clone = content.clone();
-        let span = Span::from(content);
-        assert_eq!(span.content, Cow::Owned::<str>(content_clone));
+        let content = String::from("test content");
+        let span = Span::from(content.clone());
+        assert_eq!(span.content, Cow::Owned::<str>(content));
+        assert_eq!(span.style, Style::default());
     }
 
     #[test]
     fn from_ref_string_borrowed_cow() {
-        let content = String::from("some string");
+        let content = String::from("test content");
         let span = Span::from(&content);
         assert_eq!(span.content, Cow::Borrowed(content.as_str()));
+        assert_eq!(span.style, Style::default());
     }
 
     #[test]
-    fn reset_should_set_style_reset() {
-        let mut span = Span::styled("test", Style::default().fg(crate::style::Color::Green));
-
-        assert_eq!(span.style, Style::default().fg(crate::style::Color::Green));
-
+    fn reset_style() {
+        let mut span = Span::styled("test content", Style::new().green());
         span.reset_style();
-
         assert_eq!(span.style, Style::reset());
-        assert_ne!(span.style, Style::default());
     }
 
     #[test]
     fn patch_style() {
-        let mut span = Span::styled("test", Style::default().bg(crate::style::Color::Cyan));
+        let mut span = Span::styled("test content", Style::new().green().on_yellow());
+        span.patch_style(Style::new().red().bold());
+        assert_eq!(span.style, Style::new().red().on_yellow().bold());
+    }
 
-        assert_eq!(span.style, Style::default().bg(crate::style::Color::Cyan));
+    #[test]
+    fn width() {
+        assert_eq!(Span::raw("").width(), 0);
+        assert_eq!(Span::raw("test").width(), 4);
+        assert_eq!(Span::raw("test content").width(), 12);
+    }
 
-        span.patch_style(Style::default().fg(crate::style::Color::Green));
+    #[test]
+    fn stylize() {
+        let span = Span::raw("test content").green();
+        assert_eq!(span.content, Cow::Borrowed("test content"));
+        assert_eq!(span.style, Style::new().green());
 
-        assert_eq!(
-            span.style,
-            Style::default()
-                .bg(crate::style::Color::Cyan)
-                .fg(crate::style::Color::Green)
-        );
+        let span = Span::styled("test content", Style::new().green());
+        let stylized = span.on_yellow().bold();
+        assert_eq!(stylized.content, Cow::Borrowed("test content"));
+        assert_eq!(stylized.style, Style::new().green().on_yellow().bold());
     }
 }
