@@ -169,7 +169,7 @@
 //! corresponding area.
 //!
 //! # Features
-#![doc = document_features::document_features!()]
+#![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 //!
 //! [`Layout`]: layout::Layout
 //! [`backend`]: backend

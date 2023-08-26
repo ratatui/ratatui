@@ -47,7 +47,7 @@ strum = { version = "0.25", features = ["derive"] }
 time = { version = "0.3.11", optional = true, features = ["local-offset"] }
 unicode-segmentation = "1.10"
 unicode-width = "0.1"
-document-features = "0.2.7"
+document-features = { version = "0.2.7", optional = true }
 
 [dev-dependencies]
 anyhow = "1.0.71"
