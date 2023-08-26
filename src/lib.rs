@@ -169,31 +169,7 @@
 //! corresponding area.
 //!
 //! # Features
-//!
-//! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
-//!
-//! Generally an application will only use one backend, so you should only enable one of the
-//! following features:
-//!
-//! - `crossterm` - enables the [`CrosstermBackend`] backend and adds a dependency on the [Crossterm
-//! crate]. Enabled by default.
-//! - `termion` - enables the [`TermionBackend`] backend and adds a dependency on the [Termion
-//!   crate].
-//! - `termwiz` - enables the [`TermwizBackend`] backend and adds a dependency on the [Termwiz
-//!   crate].
-//!
-//! The following optional features are available for all backends:
-//!
-//! - `serde` - enables serialization and deserialization of style and color types using the [Serde
-//! crate]. This is useful if you want to save themes to a file.
-//! - `macros` - enables the [`border!`] macro.
-//! - `all-widgets` - enables all widgets.
-//!
-//! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
-//! dependencies. The available features are:
-//!
-//! - `widget-calendar` - enables the [`calendar`] widget module and adds a dependency on the [Time
-//!   crate].
+#![doc = document_features::document_features!()]
 //!
 //! [`Layout`]: layout::Layout
 //! [`backend`]: backend
@@ -206,7 +182,6 @@
 //! [Termion crate]: https://crates.io/crates/termion
 //! [Termwiz crate]: https://crates.io/crates/termwiz
 //! [Time crate]: https://crates.io/crates/time
-
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
