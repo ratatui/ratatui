@@ -146,7 +146,125 @@ impl<'a> Widget for Tabs<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::style::{Color, Modifier, Stylize};
+    use crate::{assert_buffer_eq, prelude::*, widgets::Borders};
+
+    #[test]
+    fn new() {
+        let titles = vec!["Tab1", "Tab2", "Tab3", "Tab4"];
+        let tabs = Tabs::new(titles.clone());
+        assert_eq!(
+            tabs,
+            Tabs {
+                block: None,
+                titles: vec![
+                    Line::from("Tab1"),
+                    Line::from("Tab2"),
+                    Line::from("Tab3"),
+                    Line::from("Tab4"),
+                ],
+                selected: 0,
+                style: Style::default(),
+                highlight_style: Style::default(),
+                divider: Span::raw(symbols::line::VERTICAL),
+            }
+        );
+    }
+
+    fn render(tabs: Tabs, area: Rect) -> Buffer {
+        let mut buffer = Buffer::empty(area);
+        tabs.render(area, &mut buffer);
+        buffer
+    }
+
+    #[test]
+    fn render_default() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]);
+        assert_buffer_eq!(
+            render(tabs, Rect::new(0, 0, 30, 1)),
+            Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    ",])
+        );
+    }
+
+    #[test]
+    fn render_with_block() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
+            .block(Block::default().title("Tabs").borders(Borders::ALL));
+        assert_buffer_eq!(
+            render(tabs, Rect::new(0, 0, 30, 3)),
+            Buffer::with_lines(vec![
+                "┌Tabs────────────────────────┐",
+                "│ Tab1 │ Tab2 │ Tab3 │ Tab4  │",
+                "└────────────────────────────┘",
+            ])
+        );
+    }
+
+    #[test]
+    fn render_style() {
+        let tabs =
+            Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).style(Style::default().fg(Color::Red));
+        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
+        expected.set_style(Rect::new(0, 0, 30, 1), Style::default().fg(Color::Red));
+        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
+    }
+
+    #[test]
+    fn render_select() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
+            .highlight_style(Style::new().reversed());
+
+        // first tab selected
+        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
+        expected.set_style(Rect::new(1, 0, 4, 1), Style::new().reversed());
+        assert_buffer_eq!(
+            render(tabs.clone().select(0), Rect::new(0, 0, 30, 1)),
+            expected
+        );
+
+        // second tab selected
+        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
+        expected.set_style(Rect::new(8, 0, 4, 1), Style::new().reversed());
+        assert_buffer_eq!(
+            render(tabs.clone().select(1), Rect::new(0, 0, 30, 1)),
+            expected
+        );
+
+        // last tab selected
+        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
+        expected.set_style(Rect::new(22, 0, 4, 1), Style::new().reversed());
+        assert_buffer_eq!(
+            render(tabs.clone().select(3), Rect::new(0, 0, 30, 1)),
+            expected
+        );
+
+        // out of bounds selects no tab
+        let expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
+        assert_buffer_eq!(
+            render(tabs.clone().select(4), Rect::new(0, 0, 30, 1)),
+            expected
+        );
+    }
+
+    #[test]
+    fn render_style_and_selected() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
+            .style(Style::new().red())
+            .highlight_style(Style::new().reversed())
+            .select(0);
+        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
+        expected.set_style(Rect::new(0, 0, 30, 1), Style::new().red());
+        expected.set_style(Rect::new(1, 0, 4, 1), Style::new().reversed());
+        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
+    }
+
+    #[test]
+    fn render_divider() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).divider("--");
+        assert_buffer_eq!(
+            render(tabs, Rect::new(0, 0, 30, 1)),
+            Buffer::with_lines(vec![" Tab1 -- Tab2 -- Tab3 -- Tab4 ",])
+        );
+    }
 
     #[test]
     fn can_be_stylized() {
