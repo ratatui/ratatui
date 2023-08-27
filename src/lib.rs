@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
-//! [ratatui](https://github.com/ratatui-org/ratatui) is a library used to build rich terminal user
-//! interfaces (TUIs) and dashboards.
+//! [ratatui](https://github.com/ratatui-org/ratatui) is a library that is all about cooking up terminal user
+//! interfaces (TUIs).
 //!
 //! ![Demo](https://vhs.charm.sh/vhs-tF0QbuPbtHgUeG0sTVgFr.gif)
 //!

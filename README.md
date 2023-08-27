@@ -2,8 +2,8 @@
 
 <img align="left" src="https://avatars.githubusercontent.com/u/125200832?s=128&v=4">
 
-`ratatui` is a [Rust](https://www.rust-lang.org) library to build rich terminal user interfaces and
-dashboards. It is a community fork of the original [tui-rs](https://github.com/fdehau/tui-rs)
+`ratatui` is a [Rust](https://www.rust-lang.org) library that is all about cooking up terminal user interfaces.
+It is a community fork of the original [tui-rs](https://github.com/fdehau/tui-rs)
 project.
 
 [![Crates.io](https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square)](https://crates.io/crates/ratatui)

@@ -2,7 +2,7 @@
 name = "ratatui"
 version = "0.22.0" # crate version
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
-description = "A library to build rich terminal user interfaces or dashboards"
+description = "A library that's all about cooking up terminal user interfaces"
 documentation = "https://docs.rs/ratatui/latest/ratatui/"
 keywords = ["tui", "terminal", "dashboard"]
 repository = "https://github.com/ratatui-org/ratatui"
