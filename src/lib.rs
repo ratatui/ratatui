@@ -13,7 +13,7 @@
 //! ```toml
 //! [dependencies]
 //! crossterm = "0.27"
-//! ratatui = "0.22"
+//! ratatui = "0.23"
 //! ```
 //!
 //! The crate is using the `crossterm` backend by default that works on most platforms. But if for
@@ -23,7 +23,7 @@
 //! ```toml
 //! [dependencies]
 //! termion = "2.0.1"
-//! ratatui = { version = "0.22", default-features = false, features = ['termion'] }
+//! ratatui = { version = "0.23", default-features = false, features = ['termion'] }
 //! ```
 //!
 //! The same logic applies for all other available backends.
