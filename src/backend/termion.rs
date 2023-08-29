@@ -10,9 +10,9 @@ use std::{
 };
 
 use crate::{
-    backend::{Backend, ClearType},
+    backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
-    layout::Rect,
+    prelude::Rect,
     style::{Color, Modifier},
 };
 
@@ -158,6 +158,13 @@ where
     fn size(&self) -> io::Result<Rect> {
         let terminal = termion::terminal_size()?;
         Ok(Rect::new(0, 0, terminal.0, terminal.1))
+    }
+
+    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+        Ok(WindowSize {
+            columns_rows: termion::terminal_size()?.into(),
+            pixels: termion::terminal_size_pixels()?.into(),
+        })
     }
 
     fn flush(&mut self) -> io::Result<()> {

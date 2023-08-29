@@ -11,13 +11,14 @@ use termwiz::{
     cell::{AttributeChange, Blink, Intensity, Underline},
     color::{AnsiColor, ColorAttribute, SrgbaTuple},
     surface::{Change, CursorVisibility, Position},
-    terminal::{buffered::BufferedTerminal, SystemTerminal, Terminal},
+    terminal::{buffered::BufferedTerminal, ScreenSize, SystemTerminal, Terminal},
 };
 
 use crate::{
-    backend::Backend,
+    backend::{Backend, WindowSize},
     buffer::Cell,
-    layout::Rect,
+    layout::Size,
+    prelude::Rect,
     style::{Color, Modifier},
 };
 
@@ -169,22 +170,31 @@ impl Backend for TermwizBackend {
     }
 
     fn size(&self) -> Result<Rect, io::Error> {
-        let (term_width, term_height) = self.buffered_terminal.dimensions();
-        let max = u16::max_value();
-        Ok(Rect::new(
-            0,
-            0,
-            if term_width > usize::from(max) {
-                max
-            } else {
-                term_width as u16
+        let (cols, rows) = self.buffered_terminal.dimensions();
+        Ok(Rect::new(0, 0, u16_max(cols), u16_max(rows)))
+    }
+
+    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+        let ScreenSize {
+            cols,
+            rows,
+            xpixel,
+            ypixel,
+        } = self
+            .buffered_terminal
+            .terminal()
+            .get_screen_size()
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        Ok(WindowSize {
+            columns_rows: Size {
+                width: u16_max(cols),
+                height: u16_max(rows),
             },
-            if term_height > usize::from(max) {
-                max
-            } else {
-                term_height as u16
+            pixels: Size {
+                width: u16_max(xpixel),
+                height: u16_max(ypixel),
             },
-        ))
+        })
     }
 
     fn flush(&mut self) -> Result<(), io::Error> {
@@ -220,4 +230,9 @@ impl From<Color> for ColorAttribute {
             }
         }
     }
+}
+
+#[inline]
+fn u16_max(i: usize) -> u16 {
+    u16::try_from(i).unwrap_or(u16::MAX)
 }

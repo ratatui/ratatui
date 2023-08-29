@@ -29,7 +29,7 @@ use std::io;
 
 use strum::{Display, EnumString};
 
-use crate::{buffer::Cell, layout::Rect};
+use crate::{buffer::Cell, layout::Size, prelude::Rect};
 
 #[cfg(feature = "termion")]
 mod termion;
@@ -58,6 +58,18 @@ pub enum ClearType {
     BeforeCursor,
     CurrentLine,
     UntilNewLine,
+}
+
+/// The window sizes in columns,rows and optionally pixel width,height.
+pub struct WindowSize {
+    /// Size in character/cell columents,rows.
+    pub columns_rows: Size,
+    /// Size in pixel width,height.
+    ///
+    /// The `pixels` fields may not be implemented by all terminals and return `0,0`.
+    /// See https://man7.org/linux/man-pages/man4/tty_ioctl.4.html under section
+    /// "Get and set window size" / TIOCGWINSZ where the fields are commented as "unused".
+    pub pixels: Size,
 }
 
 /// The `Backend` trait provides an abstraction over different terminal libraries.
@@ -111,8 +123,15 @@ pub trait Backend {
         }
     }
 
-    /// Get the size of the terminal screen as a [`Rect`].
+    /// Get the size of the terminal screen in columns/rows as a [`Rect`].
     fn size(&self) -> Result<Rect, io::Error>;
+
+    /// Get the size of the terminal screen in columns/rows and pixels as [`WindowSize`].
+    ///
+    /// The reason for this not returning only the pixel size, given the redundancy with the
+    /// `size()` method, is that the underlying backends most likely get both values with one
+    /// syscall, and the user is also most likely to need columns,rows together with pixel size.
+    fn window_size(&mut self) -> Result<WindowSize, io::Error>;
 
     /// Flush any buffered content to the terminal screen.
     fn flush(&mut self) -> Result<(), io::Error>;

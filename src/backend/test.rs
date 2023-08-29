@@ -9,9 +9,9 @@ use std::{
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    backend::Backend,
+    backend::{Backend, WindowSize},
     buffer::{Buffer, Cell},
-    layout::Rect,
+    layout::{Rect, Size},
 };
 
 /// A backend used for the integration tests.
@@ -177,6 +177,18 @@ impl Backend for TestBackend {
 
     fn size(&self) -> Result<Rect, io::Error> {
         Ok(Rect::new(0, 0, self.width, self.height))
+    }
+
+    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+        // Some arbitrary window pixel size, probably doesn't need much testing.
+        static WINDOW_PIXEL_SIZE: Size = Size {
+            width: 640,
+            height: 480,
+        };
+        Ok(WindowSize {
+            columns_rows: (self.width, self.height).into(),
+            pixels: WINDOW_PIXEL_SIZE,
+        })
     }
 
     fn flush(&mut self) -> Result<(), io::Error> {
