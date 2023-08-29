@@ -55,15 +55,6 @@ Or modify your `Cargo.toml`
 ratatui = { version = "0.23.0", features = ["all-widgets"]}
 ```
 
-Ratatui is mostly backwards compatible with `tui-rs`. To migrate an existing project, it may be
-easier to rename the ratatui dependency to `tui` rather than updating every usage of the crate.
-E.g.:
-
-```toml
-[dependencies]
-tui = { package = "ratatui", version = "0.23.0", features = ["all-widgets"]}
-```
-
 ## Introduction
 
 `ratatui` is a terminal UI library that supports multiple backends:
@@ -217,9 +208,9 @@ be installed with `cargo install cargo-make`).
 ### Third-party libraries, bootstrapping templates and widgets
 
 * [ansi-to-tui](https://github.com/uttarayan21/ansi-to-tui) — Convert ansi colored text to
-  `tui::text::Text`
+  `ratatui::text::Text`
 * [color-to-tui](https://github.com/uttarayan21/color-to-tui) — Parse hex colors to
-  `tui::style::Color`
+  `ratatui::style::Color`
 * [rust-tui-template](https://github.com/ratatui-org/rust-tui-template) — A template for bootstrapping a
   Rust TUI application with Tui-rs & crossterm
 * [simple-tui-rs](https://github.com/pmsanford/simple-tui-rs) — A simple example tui-rs app
