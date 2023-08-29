@@ -74,6 +74,9 @@ all-widgets = ["widget-calendar"]
 ## enables the [`calendar`] widget module and adds a dependency on the [Time crate].
 widget-calendar = ["dep:time"]
 
+## Adds a unstable API for unit testing ratatui. THIS MAY BREAK AT ANY TIME!
+unstable-testing-mode = []
+
 [package.metadata.docs.rs]
 all-features = true
 # see https://doc.rust-lang.org/nightly/rustdoc/scraped-examples.html
