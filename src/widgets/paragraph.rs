@@ -201,7 +201,7 @@ impl<'a> Paragraph<'a> {
         self
     }
 
-    #[cfg(test)]
+    #[cfg(feature = "unstable-testing-mode")]
     pub fn get_block(&self) -> &Option<Block> {
         &self.block
     }
