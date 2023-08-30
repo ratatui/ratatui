@@ -81,7 +81,15 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [[bench]]
+name = "barchart"
+harness = false
+
+[[bench]]
 name = "block"
+harness = false
+
+[[bench]]
+name = "list"
 harness = false
 
 [[bench]]
@@ -90,10 +98,6 @@ harness = false
 
 [[bench]]
 name = "sparkline"
-harness = false
-
-[[bench]]
-name = "list"
 harness = false
 
 
