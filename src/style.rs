@@ -440,7 +440,7 @@ impl std::error::Error for ParseColorError {}
 /// `Color` variant. It supports named colors, RGB values, and indexed colors. If the string cannot
 /// be parsed, a `ParseColorError` is returned.
 ///
-/// See the [`Color`](Color) documentation for more information on the supported color names.
+/// See the [`Color`] documentation for more information on the supported color names.
 ///
 /// # Examples
 ///

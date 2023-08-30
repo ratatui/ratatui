@@ -67,7 +67,7 @@ pub struct WindowSize {
     /// Size in pixel width,height.
     ///
     /// The `pixels` fields may not be implemented by all terminals and return `0,0`.
-    /// See https://man7.org/linux/man-pages/man4/tty_ioctl.4.html under section
+    /// See <https://man7.org/linux/man-pages/man4/tty_ioctl.4.html> under section
     /// "Get and set window size" / TIOCGWINSZ where the fields are commented as "unused".
     pub pixels: Size,
 }
