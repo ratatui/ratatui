@@ -72,7 +72,7 @@ impl<'a, S: DateStyler> Monthly<'a, S> {
         self
     }
 
-    /// Render the calendar within a [Block](crate::widgets::Block)
+    /// Render the calendar within a [Block]
     pub fn block(mut self, b: Block<'a>) -> Self {
         self.block = Some(b);
         self
