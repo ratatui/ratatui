@@ -154,12 +154,9 @@ impl<'a> Text<'a> {
 #[cfg(feature = "unstable-testing-mode")]
 impl<'a> ToString for Text<'a> {
     fn to_string(&self) -> String{
-        self.lines.iter().flat_map(|line: &Line| {
-            let lines: Vec<String> = line.get_spans().iter().map(|span: &Span| {
-                span.get_content()
-            }).collect();
-            lines
-        }).collect()
+        self.lines.iter().fold("".to_string(), |acc: String, line: &Line| {
+            acc + &line.to_string()
+        })
     }
 }
 

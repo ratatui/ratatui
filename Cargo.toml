@@ -57,7 +57,7 @@ rand = "0.8"
 pretty_assertions = "1.4.0"
 
 [features]
-default = ["crossterm"]
+default = ["crossterm", "unstable-testing-mode"]
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [Serde crate].
 ## This is useful if you want to save themes to a file.
