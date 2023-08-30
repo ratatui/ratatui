@@ -209,16 +209,16 @@ impl<'a> List<'a> {
     }
 
     #[cfg(feature = "unstable-testing-mode")]
-    pub fn get_block(&self) -> &Option<Block> {
-        &self.block
+    pub fn get_block(&self) -> Option<Block> {
+        self.block.clone()
     }
     #[cfg(feature = "unstable-testing-mode")]
     pub fn get_style(&self) -> Style {
         self.style
     }
     #[cfg(feature = "unstable-testing-mode")]
-    pub fn get_items(&self) -> &Vec<ListItem<'a>> {
-        return &self.items;
+    pub fn get_items(&self) -> Vec<ListItem> {
+        self.items.clone()
     }
 
     #[cfg(feature = "unstable-testing-mode")]
@@ -242,8 +242,8 @@ impl<'a> List<'a> {
     }
 
     #[cfg(feature = "unstable-testing-mode")]
-    pub fn get_highlight_spacing(&self) -> &HighlightSpacing {
-        &self.highlight_spacing
+    pub fn get_highlight_spacing(&self) -> HighlightSpacing {
+        self.highlight_spacing.clone()
     }
 }
 

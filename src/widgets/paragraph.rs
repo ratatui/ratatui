@@ -202,8 +202,8 @@ impl<'a> Paragraph<'a> {
     }
 
     #[cfg(feature = "unstable-testing-mode")]
-    pub fn get_block(&self) -> &Option<Block> {
-        &self.block
+    pub fn get_block(&self) -> Option<Block> {
+        self.block.clone()
     }
 
     #[cfg(feature = "unstable-testing-mode")]
@@ -217,8 +217,8 @@ impl<'a> Paragraph<'a> {
     }
 
     #[cfg(feature = "unstable-testing-mode")]
-    pub fn get_text(&self) -> &Text {
-        &self.text
+    pub fn get_text(&self) -> Text {
+        self.text.clone()
     } 
 
     #[cfg(feature = "unstable-testing-mode")]
