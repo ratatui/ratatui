@@ -32,7 +32,7 @@ pub struct TerminalOptions {
     pub viewport: Viewport,
 }
 
-/// Interface to the terminal backed by Termion
+/// Interface to the terminal backed by a [`Backend`].
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Terminal<B>
 where
