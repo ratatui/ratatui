@@ -81,6 +81,36 @@ impl<'a> Tabs<'a> {
         self.divider = divider.into();
         self
     }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_block(&self) -> Option<Block> {
+        self.block.clone()
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_titles(&self) -> Vec<Line> {
+        self.titles.clone()
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_selected(&self) -> usize  {
+        self.selected
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_style(&self) -> Style{
+        self.style
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_highlight_style(&self) -> Style{
+        self.highlight_style
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_divider(&self) -> Span{
+        self.divider.clone()
+    }
 }
 
 impl<'a> Styled for Tabs<'a> {
