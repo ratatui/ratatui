@@ -167,6 +167,12 @@ impl<'a> Span<'a> {
     pub fn reset_style(&mut self) {
         self.patch_style(Style::reset());
     }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_content(&self) -> String{
+        self.content.to_string()
+    }
+
 }
 
 impl<'a, T> From<T> for Span<'a>

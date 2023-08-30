@@ -149,6 +149,11 @@ impl<'a> Line<'a> {
             ..self
         }
     }
+    
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_spans(&self) -> Vec<Span>{
+        self.spans.clone()
+    }
 }
 
 impl<'a> From<String> for Line<'a> {

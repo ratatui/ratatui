@@ -147,6 +147,15 @@ impl<'a> Text<'a> {
             line.reset_style();
         }
     }
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_text_content(&self) -> String{
+        self.lines.iter().flat_map(|line: &Line| {
+            let lines: Vec<String> = line.get_spans().iter().map(|span: &Span| {
+                span.get_content()
+            }).collect();
+            lines
+        }).collect()
+    }
 }
 
 impl<'a> From<String> for Text<'a> {
