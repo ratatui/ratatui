@@ -20,10 +20,16 @@ pub enum ScrollDirection {
 
 /// A struct representing the state of a Scrollbar widget.
 ///
+/// # Important
+///
+/// It's essential to set the `content_length` field when using this struct. This field
+/// represents the total length of the scrollable content. The default value is zero
+/// which will result in the Scrollbar not rendering.
+///
 /// For example, in the following list, assume there are 4 bullet points:
 ///
-/// - the `position` is 0
 /// - the `content_length` is 4
+/// - the `position` is 0
 /// - the `viewport_content_length` is 2
 ///
 /// ```text
@@ -39,15 +45,22 @@ pub enum ScrollDirection {
 /// default of 0 and it'll use the track size as a `viewport_content_length`.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ScrollbarState {
-    // The current position within the scrollable content.
-    position: u16,
     // The total length of the scrollable content.
     content_length: u16,
+    // The current position within the scrollable content.
+    position: u16,
     // The length of content in current viewport.
     viewport_content_length: u16,
 }
 
 impl ScrollbarState {
+    /// Constructs a new ScrollbarState with the specified content length.
+    pub fn new(content_length: u16) -> Self {
+        Self {
+            content_length,
+            ..Default::default()
+        }
+    }
     /// Sets the scroll position of the scrollbar and returns the modified ScrollbarState.
     pub fn position(mut self, position: u16) -> Self {
         self.position = position;
@@ -123,6 +136,37 @@ pub enum ScrollbarOrientation {
 /// │  │   └──── track
 /// │  └──────── thumb
 /// └─────────── begin
+/// ```
+///
+/// # Examples
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// # use ratatui::widgets::*;
+/// # fn render_paragraph_with_scrollbar<B: Backend>(frame: &mut Frame<B>, area: Rect) {
+///
+/// let vertical_scroll = 0; // from app state
+///
+/// let items = vec![Line::from("Item 1"), Line::from("Item 2"), Line::from("Item 3")];
+/// let paragraph = Paragraph::new(items.clone())
+///     .scroll((vertical_scroll, 0))
+///     .block(Block::new().borders(Borders::RIGHT)); // to show a background for the scrollbar
+///
+/// let scrollbar = Scrollbar::default()
+///     .orientation(ScrollbarOrientation::VerticalRight)
+///     .begin_symbol(Some("↑"))
+///     .end_symbol(Some("↓"));
+/// let mut scrollbar_state = ScrollbarState::new(items.iter().len() as u16).position(vertical_scroll);
+///
+/// let area = frame.size();
+/// frame.render_widget(paragraph, area);
+/// frame.render_stateful_widget(scrollbar,
+///     area.inner(&Margin {
+///         vertical: 1,
+///         horizontal: 0,
+///     }), // using a inner vertical margin of 1 unit makes the scrollbar inside the block
+///    &mut scrollbar_state);
+/// # }
 /// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Scrollbar<'a> {
@@ -531,6 +575,31 @@ mod tests {
         assert_eq!(
             "".parse::<ScrollbarOrientation>(),
             Err(ParseError::VariantNotFound)
+        );
+    }
+
+    #[test]
+    fn test_renders_empty_with_content_length_is_zero() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 8));
+        let mut state = ScrollbarState::default().position(0);
+        Scrollbar::default()
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec!["  ", "  ", "  ", "  ", "  ", "  ", "  ", "  "])
+        );
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 8));
+        let mut state = ScrollbarState::new(8).position(0);
+        Scrollbar::default()
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![" █", " █", " █", " █", " █", " █", " █", " █"])
         );
     }
 
