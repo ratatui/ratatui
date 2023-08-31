@@ -76,6 +76,12 @@ impl<'a> ListItem<'a> {
     }
 }
 
+impl ToString for ListItem<'_> {
+    fn to_string(&self) -> String {
+        self.content.to_string()
+    }
+}
+
 /// A widget to display several items among which one can be selected (optional)
 ///
 /// # Examples
