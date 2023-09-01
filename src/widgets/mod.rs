@@ -13,6 +13,7 @@
 //! - [`BarChart`]
 //! - [`Gauge`]
 //! - [`Sparkline`]
+//! - [`Scrollbar`]
 //! - [`calendar::Monthly`]
 //! - [`Clear`]
 
