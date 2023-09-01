@@ -249,6 +249,7 @@ fn ui(f: &mut Frame, app: &App) {
                 .style(Style::default().fg(Color::Gray))
                 .bounds([0.0, 5.0])
                 .labels(vec!["0".bold(), "2.5".into(), "5".bold()]),
-        );
+        )
+        .legend_position(Some(LegendPosition::TopLeft));
     f.render_widget(chart, chunks[2]);
 }

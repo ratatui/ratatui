@@ -43,7 +43,7 @@ use bitflags::bitflags;
 pub use self::{
     barchart::{Bar, BarChart, BarGroup},
     block::{Block, BorderType, Padding},
-    chart::{Axis, Chart, Dataset, GraphType},
+    chart::{Axis, Chart, Dataset, GraphType, LegendPosition},
     clear::Clear,
     gauge::{Gauge, LineGauge},
     list::{List, ListDirection, ListItem, ListState},

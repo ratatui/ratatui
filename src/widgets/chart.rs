@@ -91,6 +91,113 @@ pub enum GraphType {
     Line,
 }
 
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
+pub enum LegendPosition {
+    Top,
+    #[default]
+    TopRight,
+    TopLeft,
+    Left,
+    Right,
+    Bottom,
+    BottomRight,
+    BottomLeft,
+}
+
+impl LegendPosition {
+    fn layout(
+        &self,
+        area: Rect,
+        legend_width: u16,
+        legend_height: u16,
+        x_title_width: u16,
+        y_title_width: u16,
+    ) -> Option<Rect> {
+        let mut height_margin = (area.height - legend_height) as i32;
+        if x_title_width != 0 {
+            height_margin -= 1;
+        }
+        if y_title_width != 0 {
+            height_margin -= 1;
+        }
+        if height_margin < 0 {
+            return None;
+        };
+
+        let (x, y) = match self {
+            Self::TopRight => {
+                if legend_width + y_title_width > area.width {
+                    (area.right() - legend_width, area.top() + 1)
+                } else {
+                    (area.right() - legend_width, area.top())
+                }
+            }
+            Self::TopLeft => {
+                if y_title_width != 0 {
+                    (area.left(), area.top() + 1)
+                } else {
+                    (area.left(), area.top())
+                }
+            }
+            Self::Top => {
+                let x = (area.width - legend_width) / 2;
+                if area.left() + y_title_width > x {
+                    (area.left() + x, area.top() + 1)
+                } else {
+                    (area.left() + x, area.top())
+                }
+            }
+            Self::Left => {
+                let mut y = (area.height - legend_height) / 2;
+                if y_title_width != 0 {
+                    y += 1;
+                }
+                if x_title_width != 0 {
+                    y = y.saturating_sub(1);
+                }
+                (area.left(), area.top() + y)
+            }
+            Self::Right => {
+                let mut y = (area.height - legend_height) / 2;
+                if y_title_width != 0 {
+                    y += 1;
+                }
+                if x_title_width != 0 {
+                    y = y.saturating_sub(1);
+                }
+                (area.right() - legend_width, area.top() + y)
+            }
+            Self::BottomLeft => {
+                if x_title_width + legend_width > area.width {
+                    (area.left(), area.bottom() - legend_height - 1)
+                } else {
+                    (area.left(), area.bottom() - legend_height)
+                }
+            }
+            Self::BottomRight => {
+                if x_title_width != 0 {
+                    (
+                        area.right() - legend_width,
+                        area.bottom() - legend_height - 1,
+                    )
+                } else {
+                    (area.right() - legend_width, area.bottom() - legend_height)
+                }
+            }
+            Self::Bottom => {
+                let x = area.left() + (area.width - legend_width) / 2;
+                if x + legend_width > area.right() - x_title_width {
+                    (x, area.bottom() - legend_height - 1)
+                } else {
+                    (x, area.bottom() - legend_height)
+                }
+            }
+        };
+
+        Some(Rect::new(x, y, legend_width, legend_height))
+    }
+}
+
 /// A group of data points
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Dataset<'a> {
@@ -210,6 +317,8 @@ pub struct Chart<'a> {
     style: Style,
     /// Constraints used to determine whether the legend should be shown or not
     hidden_legend_constraints: (Constraint, Constraint),
+    /// The position of a legend
+    legend_position: Option<LegendPosition>,
 }
 
 impl<'a> Chart<'a> {
@@ -221,6 +330,7 @@ impl<'a> Chart<'a> {
             style: Style::default(),
             datasets,
             hidden_legend_constraints: (Constraint::Ratio(1, 4), Constraint::Ratio(1, 4)),
+            legend_position: Some(LegendPosition::TopRight),
         }
     }
 
@@ -266,6 +376,20 @@ impl<'a> Chart<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn hidden_legend_constraints(mut self, constraints: (Constraint, Constraint)) -> Chart<'a> {
         self.hidden_legend_constraints = constraints;
+        self
+    }
+
+    /// Set the position of a legend.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::widgets::{Chart, LegendPosition};
+    /// let _chart: Chart = Chart::new(vec![])
+    ///     .legend_position(Some(LegendPosition::TopLeft));
+    /// ```
+    pub fn legend_position(mut self, position: Option<LegendPosition>) -> Chart<'a> {
+        self.legend_position = position;
         self
     }
 
@@ -315,27 +439,38 @@ impl<'a> Chart<'a> {
             }
         }
 
-        if let Some(inner_width) = self.datasets.iter().map(|d| d.name.width() as u16).max() {
-            let legend_width = inner_width + 2;
-            let legend_height = self.datasets.len() as u16 + 2;
-            let max_legend_width = self
-                .hidden_legend_constraints
-                .0
-                .apply(layout.graph_area.width);
-            let max_legend_height = self
-                .hidden_legend_constraints
-                .1
-                .apply(layout.graph_area.height);
-            if inner_width > 0
-                && legend_width < max_legend_width
-                && legend_height < max_legend_height
-            {
-                layout.legend_area = Some(Rect::new(
-                    layout.graph_area.right() - legend_width,
-                    layout.graph_area.top(),
-                    legend_width,
-                    legend_height,
-                ));
+        if let Some(legend_position) = self.legend_position {
+            if let Some(inner_width) = self.datasets.iter().map(|d| d.name.width() as u16).max() {
+                let legend_width = inner_width + 2;
+                let legend_height = self.datasets.len() as u16 + 2;
+                let max_legend_width = self
+                    .hidden_legend_constraints
+                    .0
+                    .apply(layout.graph_area.width);
+                let max_legend_height = self
+                    .hidden_legend_constraints
+                    .1
+                    .apply(layout.graph_area.height);
+                if inner_width > 0
+                    && legend_width <= max_legend_width
+                    && legend_height <= max_legend_height
+                {
+                    layout.legend_area = legend_position.layout(
+                        layout.graph_area,
+                        legend_width,
+                        legend_height,
+                        layout
+                            .title_x
+                            .and(self.x_axis.title.as_ref())
+                            .map(|t| t.width() as u16)
+                            .unwrap_or_default(),
+                        layout
+                            .title_y
+                            .and(self.y_axis.title.as_ref())
+                            .map(|t| t.width() as u16)
+                            .unwrap_or_default(),
+                    );
+                }
             }
         }
         layout
@@ -559,24 +694,12 @@ impl<'a> Widget for Chart<'a> {
                 .render(graph_area, buf);
         }
 
-        if let Some(legend_area) = layout.legend_area {
-            buf.set_style(legend_area, original_style);
-            Block::default()
-                .borders(Borders::ALL)
-                .render(legend_area, buf);
-            for (i, dataset) in self.datasets.iter().enumerate() {
-                buf.set_string(
-                    legend_area.x + 1,
-                    legend_area.y + 1 + i as u16,
-                    &dataset.name,
-                    dataset.style,
-                );
-            }
-        }
-
         if let Some((x, y)) = layout.title_x {
             let title = self.x_axis.title.unwrap();
-            let width = title.width() as u16;
+            let width = graph_area
+                .right()
+                .saturating_sub(x)
+                .min(title.width() as u16);
             buf.set_style(
                 Rect {
                     x,
@@ -591,7 +714,10 @@ impl<'a> Widget for Chart<'a> {
 
         if let Some((x, y)) = layout.title_y {
             let title = self.y_axis.title.unwrap();
-            let width = title.width() as u16;
+            let width = graph_area
+                .right()
+                .saturating_sub(x)
+                .min(title.width() as u16);
             buf.set_style(
                 Rect {
                     x,
@@ -602,6 +728,21 @@ impl<'a> Widget for Chart<'a> {
                 original_style,
             );
             buf.set_line(x, y, &title, width);
+        }
+
+        if let Some(legend_area) = layout.legend_area {
+            buf.set_style(legend_area, original_style);
+            Block::default()
+                .borders(Borders::ALL)
+                .render(legend_area, buf);
+            for (i, dataset) in self.datasets.iter().enumerate() {
+                buf.set_string(
+                    legend_area.x + 1,
+                    legend_area.y + 1 + i as u16,
+                    &dataset.name,
+                    dataset.style,
+                );
+            }
         }
     }
 }
@@ -744,5 +885,296 @@ mod tests {
         widget.render(buffer.area, &mut buffer);
 
         assert_eq!(buffer, Buffer::with_lines(vec![" ".repeat(8); 4]))
+    }
+
+    #[test]
+    fn test_chart_have_a_topleft_legend() {
+        let chart = Chart::new(vec![Dataset::default().name("Ds1")])
+            .legend_position(Some(LegendPosition::TopLeft));
+
+        let area = Rect::new(0, 0, 30, 20);
+        let mut buffer = Buffer::empty(area);
+
+        chart.render(buffer.area, &mut buffer);
+
+        let expected = Buffer::with_lines(vec![
+            "┌───┐                         ",
+            "│Ds1│                         ",
+            "└───┘                         ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+        ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_chart_have_a_long_y_axis_title_overlapping_legend() {
+        let chart = Chart::new(vec![Dataset::default().name("Ds1")])
+            .y_axis(Axis::default().title("The title overlap a legend."));
+
+        let area = Rect::new(0, 0, 30, 20);
+        let mut buffer = Buffer::empty(area);
+
+        chart.render(buffer.area, &mut buffer);
+
+        let expected = Buffer::with_lines(vec![
+            "The title overlap a legend.   ",
+            "                         ┌───┐",
+            "                         │Ds1│",
+            "                         └───┘",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+            "                              ",
+        ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_chart_have_overflowed_y_axis() {
+        let chart = Chart::new(vec![Dataset::default().name("Ds1")])
+            .y_axis(Axis::default().title("The title overlap a legend."));
+
+        let area = Rect::new(0, 0, 10, 10);
+        let mut buffer = Buffer::empty(area);
+
+        chart.render(buffer.area, &mut buffer);
+
+        let expected = Buffer::with_lines(vec![
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]);
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_legend_area_can_fit_same_chart_area() {
+        let name = "Data";
+        let chart = Chart::new(vec![Dataset::default().name(name)])
+            .hidden_legend_constraints((Constraint::Percentage(100), Constraint::Percentage(100)));
+
+        let area = Rect::new(0, 0, name.len() as u16 + 2, 3);
+        let mut buffer = Buffer::empty(area);
+
+        let expected = Buffer::with_lines(vec!["┌────┐", "│Data│", "└────┘"]);
+
+        [
+            LegendPosition::TopLeft,
+            LegendPosition::Top,
+            LegendPosition::TopRight,
+            LegendPosition::Left,
+            LegendPosition::Right,
+            LegendPosition::Bottom,
+            LegendPosition::BottomLeft,
+            LegendPosition::BottomRight,
+        ]
+        .iter()
+        .for_each(|&position| {
+            let chart = chart.clone().legend_position(Some(position));
+            buffer.reset();
+            chart.render(buffer.area, &mut buffer);
+            assert_eq!(buffer, expected);
+        });
+    }
+
+    #[test]
+    fn test_legend_of_chart_have_odd_margin_size() {
+        let name = "Data";
+        let base_chart = Chart::new(vec![Dataset::default().name(name)])
+            .hidden_legend_constraints((Constraint::Percentage(100), Constraint::Percentage(100)));
+
+        let area = Rect::new(0, 0, name.len() as u16 + 2 + 3, 3 + 3);
+        let mut buffer = Buffer::empty(area);
+
+        let chart = base_chart
+            .clone()
+            .legend_position(Some(LegendPosition::TopLeft));
+        buffer.reset();
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "┌────┐   ",
+                "│Data│   ",
+                "└────┘   ",
+                "         ",
+                "         ",
+                "         ",
+            ])
+        );
+        buffer.reset();
+
+        let chart = base_chart
+            .clone()
+            .legend_position(Some(LegendPosition::Top));
+        buffer.reset();
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                " ┌────┐  ",
+                " │Data│  ",
+                " └────┘  ",
+                "         ",
+                "         ",
+                "         ",
+            ])
+        );
+
+        let chart = base_chart
+            .clone()
+            .legend_position(Some(LegendPosition::TopRight));
+        buffer.reset();
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "   ┌────┐",
+                "   │Data│",
+                "   └────┘",
+                "         ",
+                "         ",
+                "         ",
+            ])
+        );
+
+        let chart = base_chart
+            .clone()
+            .legend_position(Some(LegendPosition::Left));
+        buffer.reset();
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "         ",
+                "┌────┐   ",
+                "│Data│   ",
+                "└────┘   ",
+                "         ",
+                "         ",
+            ])
+        );
+        buffer.reset();
+
+        let chart = base_chart
+            .clone()
+            .legend_position(Some(LegendPosition::Right));
+        buffer.reset();
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "         ",
+                "   ┌────┐",
+                "   │Data│",
+                "   └────┘",
+                "         ",
+                "         ",
+            ])
+        );
+
+        let chart = base_chart
+            .clone()
+            .legend_position(Some(LegendPosition::BottomLeft));
+        buffer.reset();
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "         ",
+                "         ",
+                "         ",
+                "┌────┐   ",
+                "│Data│   ",
+                "└────┘   ",
+            ])
+        );
+
+        let chart = base_chart
+            .clone()
+            .legend_position(Some(LegendPosition::Bottom));
+        buffer.reset();
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "         ",
+                "         ",
+                "         ",
+                " ┌────┐  ",
+                " │Data│  ",
+                " └────┘  ",
+            ])
+        );
+
+        let chart = base_chart
+            .clone()
+            .legend_position(Some(LegendPosition::BottomRight));
+        buffer.reset();
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "         ",
+                "         ",
+                "         ",
+                "   ┌────┐",
+                "   │Data│",
+                "   └────┘",
+            ])
+        );
+
+        let chart = base_chart.clone().legend_position(None);
+        buffer.reset();
+        chart.render(buffer.area, &mut buffer);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "         ",
+                "         ",
+                "         ",
+                "         ",
+                "         ",
+                "         ",
+            ])
+        );
     }
 }
