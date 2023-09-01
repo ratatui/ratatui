@@ -46,35 +46,35 @@ pub enum ScrollDirection {
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ScrollbarState {
     // The total length of the scrollable content.
-    content_length: u16,
+    content_length: usize,
     // The current position within the scrollable content.
-    position: u16,
+    position: usize,
     // The length of content in current viewport.
-    viewport_content_length: u16,
+    viewport_content_length: usize,
 }
 
 impl ScrollbarState {
     /// Constructs a new ScrollbarState with the specified content length.
-    pub fn new(content_length: u16) -> Self {
+    pub fn new(content_length: usize) -> Self {
         Self {
             content_length,
             ..Default::default()
         }
     }
     /// Sets the scroll position of the scrollbar and returns the modified ScrollbarState.
-    pub fn position(mut self, position: u16) -> Self {
+    pub fn position(mut self, position: usize) -> Self {
         self.position = position;
         self
     }
 
     /// Sets the length of the scrollable content and returns the modified ScrollbarState.
-    pub fn content_length(mut self, content_length: u16) -> Self {
+    pub fn content_length(mut self, content_length: usize) -> Self {
         self.content_length = content_length;
         self
     }
 
     /// Sets the length of the viewport content and returns the modified ScrollbarState.
-    pub fn viewport_content_length(mut self, viewport_content_length: u16) -> Self {
+    pub fn viewport_content_length(mut self, viewport_content_length: usize) -> Self {
         self.viewport_content_length = viewport_content_length;
         self
     }
@@ -149,14 +149,14 @@ pub enum ScrollbarOrientation {
 ///
 /// let items = vec![Line::from("Item 1"), Line::from("Item 2"), Line::from("Item 3")];
 /// let paragraph = Paragraph::new(items.clone())
-///     .scroll((vertical_scroll, 0))
+///     .scroll((vertical_scroll as u16, 0))
 ///     .block(Block::new().borders(Borders::RIGHT)); // to show a background for the scrollbar
 ///
 /// let scrollbar = Scrollbar::default()
 ///     .orientation(ScrollbarOrientation::VerticalRight)
 ///     .begin_symbol(Some("↑"))
 ///     .end_symbol(Some("↓"));
-/// let mut scrollbar_state = ScrollbarState::new(items.iter().len() as u16).position(vertical_scroll);
+/// let mut scrollbar_state = ScrollbarState::new(items.iter().len()).position(vertical_scroll);
 ///
 /// let area = frame.size();
 /// frame.render_widget(paragraph, area);
@@ -356,7 +356,7 @@ impl<'a> Scrollbar<'a> {
         }
     }
 
-    fn should_not_render(&self, track_start: u16, track_end: u16, content_length: u16) -> bool {
+    fn should_not_render(&self, track_start: u16, track_end: u16, content_length: usize) -> bool {
         if track_end - track_start == 0 || content_length == 0 {
             return true;
         }
@@ -407,7 +407,7 @@ impl<'a> Scrollbar<'a> {
         let (track_start, track_end) = track_start_end;
 
         let viewport_content_length = if state.viewport_content_length == 0 {
-            track_end - track_start
+            (track_end - track_start) as usize
         } else {
             state.viewport_content_length
         };

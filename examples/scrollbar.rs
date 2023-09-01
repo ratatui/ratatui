@@ -66,27 +66,23 @@ fn run_app<B: Backend>(
                     KeyCode::Char('q') => return Ok(()),
                     KeyCode::Char('j') => {
                         app.vertical_scroll = app.vertical_scroll.saturating_add(1);
-                        app.vertical_scroll_state = app
-                            .vertical_scroll_state
-                            .position(app.vertical_scroll as u16);
+                        app.vertical_scroll_state =
+                            app.vertical_scroll_state.position(app.vertical_scroll);
                     }
                     KeyCode::Char('k') => {
                         app.vertical_scroll = app.vertical_scroll.saturating_sub(1);
-                        app.vertical_scroll_state = app
-                            .vertical_scroll_state
-                            .position(app.vertical_scroll as u16);
+                        app.vertical_scroll_state =
+                            app.vertical_scroll_state.position(app.vertical_scroll);
                     }
                     KeyCode::Char('h') => {
                         app.horizontal_scroll = app.horizontal_scroll.saturating_sub(1);
-                        app.horizontal_scroll_state = app
-                            .horizontal_scroll_state
-                            .position(app.horizontal_scroll as u16);
+                        app.horizontal_scroll_state =
+                            app.horizontal_scroll_state.position(app.horizontal_scroll);
                     }
                     KeyCode::Char('l') => {
                         app.horizontal_scroll = app.horizontal_scroll.saturating_add(1);
-                        app.horizontal_scroll_state = app
-                            .horizontal_scroll_state
-                            .position(app.horizontal_scroll as u16);
+                        app.horizontal_scroll_state =
+                            app.horizontal_scroll_state.position(app.horizontal_scroll);
                     }
                     _ => {}
                 }
@@ -151,10 +147,8 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             ),
         ]),
     ];
-    app.vertical_scroll_state = app.vertical_scroll_state.content_length(text.len() as u16);
-    app.horizontal_scroll_state = app
-        .horizontal_scroll_state
-        .content_length(long_line.len() as u16);
+    app.vertical_scroll_state = app.vertical_scroll_state.content_length(text.len());
+    app.horizontal_scroll_state = app.horizontal_scroll_state.content_length(long_line.len());
 
     let create_block = |title| {
         Block::default()
