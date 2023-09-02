@@ -36,15 +36,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Check conventional commits
-        uses: crate-ci/committed@master
-        with:
-          args: "-vv"
-          commits: HEAD
-      - name: Check typos
-        uses: crate-ci/typos@master
-      - name: Lint dependencies
-        uses: EmbarkStudios/cargo-deny-action@v1
       - name: Install Rust nightly
         uses: dtolnay/rust-toolchain@nightly
         with:
@@ -55,6 +46,15 @@ jobs:
         run: cargo make fmt
       - name: Check documentation
         run: cargo make check-doc
+      - name: Check conventional commits
+        uses: crate-ci/committed@master
+        with:
+          args: "-vv"
+          commits: HEAD
+      - name: Check typos
+        uses: crate-ci/typos@master
+      - name: Lint dependencies
+        uses: EmbarkStudios/cargo-deny-action@v1
 
   clippy:
     runs-on: ubuntu-latest
