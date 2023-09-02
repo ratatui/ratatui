@@ -6,9 +6,10 @@ VHS has a problem rendering some background color transitions, which shows up in
 below. See <https://github.com/charmbracelet/vhs/issues/344> for more info. These problems don't
 occur in a terminal.
 
-## Demo ([demo.rs](./demo/))
+## Demo
 
-This is the demo example from the main README. It is available for each of the backends.
+This is the demo example from the main README. It is available for each of the backends. Source:
+[demo.rs](./demo/).
 
 ```shell
 cargo run --example=demo --features=crossterm
@@ -18,7 +19,21 @@ cargo run --example=demo --no-default-features --features=termwiz
 
 ![Demo][demo.gif]
 
-## Barchart ([barchart.rs](./barchart.rs)
+## Hello World
+
+This is a pretty boring example, but it contains some good documentation
+on writing tui apps. Source: [hello_world.rs](./hello_world.rs).
+
+```shell
+cargo run --example=hello_world --features=crossterm
+```
+
+![Hello World][hello_world.gif]
+
+## Barchart
+
+Demonstrates the [`BarChart`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html)
+widget. Source: [barchart.rs](./barchart.rs).
 
 ```shell
 cargo run --example=barchart --features=crossterm
@@ -26,7 +41,10 @@ cargo run --example=barchart --features=crossterm
 
 ![Barchart][barchart.gif]
 
-## Block ([block.rs](./block.rs))
+## Block
+
+Demonstrates the [`Block`](https://docs.rs/ratatui/latest/ratatui/widgets/block/struct.Block.html)
+widget. Source: [block.rs](./block.rs).
 
 ```shell
 cargo run --example=block --features=crossterm
@@ -34,7 +52,10 @@ cargo run --example=block --features=crossterm
 
 ![Block][block.gif]
 
-## Calendar ([calendar.rs](./calendar.rs))
+## Calendar
+
+Demonstrates the [`Calendar`](https://docs.rs/ratatui/latest/ratatui/widgets/calendar/index.html)
+widget. Source: [calendar.rs](./calendar.rs).
 
 ```shell
 cargo run --example=calendar --features=crossterm widget-calendar
@@ -42,7 +63,12 @@ cargo run --example=calendar --features=crossterm widget-calendar
 
 ![Calendar][calendar.gif]
 
-## Canvas ([canvas.rs](./canvas.rs))
+## Canvas
+
+Demonstrates the [`Canvas`](https://docs.rs/ratatui/latest/ratatui/widgets/canvas/index.html) widget
+and related shapes in the
+[`canvas`](https://docs.rs/ratatui/latest/ratatui/widgets/canvas/index.html) module. Source:
+[canvas.rs](./canvas.rs).
 
 ```shell
 cargo run --example=canvas --features=crossterm
@@ -50,7 +76,10 @@ cargo run --example=canvas --features=crossterm
 
 ![Canvas][canvas.gif]
 
-## Chart ([chart.rs](./chart.rs))
+## Chart
+
+Demonstrates the [`Chart`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Chart.html) widget.
+Source: [chart.rs](./chart.rs).
 
 ```shell
 cargo run --example=chart --features=crossterm
@@ -58,7 +87,10 @@ cargo run --example=chart --features=crossterm
 
 ![Chart][chart.gif]
 
-## Colors ([colors.rs](./colors.rs))
+## Colors
+
+Demonstrates the available [`Color`](https://docs.rs/ratatui/latest/ratatui/style/enum.Color.html)
+options. These can be used in any style field. Source: [colors.rs](./colors.rs).
 
 ```shell
 cargo run --example=colors --features=crossterm
@@ -66,21 +98,26 @@ cargo run --example=colors --features=crossterm
 
 ![Colors][colors.gif]
 
-## Custom Widget ([custom_widget.rs](./custom_widget.rs))
+## Custom Widget
+
+Demonstrates how to implement the
+[`Widget`](https://docs.rs/ratatui/latest/ratatui/widgets/trait.Widget.html) trait. Source:
+[custom_widget.rs](./custom_widget.rs).
 
 ```shell
 cargo run --example=custom_widget --features=crossterm
 ```
 
-This is not a particularly exciting example visually, but it demonstrates how to implement your own widget.
-
 ![Custom Widget][custom_widget.gif]
 
-## Gauge ([gauge.rs](./gauge.rs))
+## Gauge
 
-Please note: the background renders poorly when we generate this example using VHS.
-This problem doesn't generally happen during normal rendering in a terminal.
-See <https://github.com/charmbracelet/vhs/issues/344> for more details
+Demonstrates the [`Gauge`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Gauge.html) widget.
+Source: [gauge.rs](./gauge.rs).
+
+> [!NOTE] The backgrounds render poorly when we generate this example using VHS. This problem
+> doesn't generally happen during normal rendering in a terminal. See
+> [vhs#344](https://github.com/charmbracelet/vhs/issues/344) for more details.
 
 ```shell
 cargo run --example=gauge --features=crossterm
@@ -88,18 +125,11 @@ cargo run --example=gauge --features=crossterm
 
 ![Gauge][gauge.gif]
 
-## Hello World ([hello_world.rs](./hello_world.rs))
+## Inline
 
-```shell
-cargo run --example=hello_world --features=crossterm
-```
-
-This is a pretty boring example, but it contains some good comments of documentation on some of the
-standard approaches to writing tui apps.
-
-![Hello World][hello_world.gif]
-
-## Inline ([inline.rs](./inline.rs))
+Demonstrates the
+[`Inline`](https://docs.rs/ratatui/latest/ratatui/terminal/enum.Viewport.html#variant.Inline)
+Viewport mode for ratatui apps. Source: [inline.rs](./inline.rs).
 
 ```shell
 cargo run --example=inline --features=crossterm
@@ -107,7 +137,10 @@ cargo run --example=inline --features=crossterm
 
 ![Inline][inline.gif]
 
-## Layout ([layout.rs](./layout.rs))
+## Layout
+
+Demonstrates the [`Layout`](https://docs.rs/ratatui/latest/ratatui/layout/struct.Layout.html) and
+interaction between each constraint. Source:  [layout.rs](./layout.rs).
 
 ```shell
 cargo run --example=layout --features=crossterm
@@ -115,7 +148,10 @@ cargo run --example=layout --features=crossterm
 
 ![Layout][layout.gif]
 
-## List ([list.rs](./list.rs))
+## List
+
+Demonstrates the [`List`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.List.html) widget.
+Source: [list.rs](./list.rs).
 
 ```shell
 cargo run --example=list --features=crossterm
@@ -123,7 +159,11 @@ cargo run --example=list --features=crossterm
 
 ![List][list.gif]
 
-## Modifiers ([modifiers.rs](./modifiers.rs))
+## Modifiers
+
+Demonstrates the style
+[`Modifiers`](https://docs.rs/ratatui/latest/ratatui/style/struct.Modifier.html). Source:
+[modifiers.rs](./modifiers.rs).
 
 ```shell
 cargo run --example=modifiers --features=crossterm
@@ -131,7 +171,10 @@ cargo run --example=modifiers --features=crossterm
 
 ![Modifiers][modifiers.gif]
 
-## Panic ([panic.rs](./panic.rs))
+## Panic
+
+Demonstrates how to handle panics by ensuring that panic messages are written correctly to the
+screen. Source: [panic.rs](./panic.rs).
 
 ```shell
 cargo run --example=panic --features=crossterm
@@ -139,7 +182,10 @@ cargo run --example=panic --features=crossterm
 
 ![Panic][panic.gif]
 
-## Paragraph ([paragraph.rs](./paragraph.rs))
+## Paragraph
+
+Demonstrates the [`Paragraph`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Paragraph.html)
+widget. Source: [paragraph.rs](./paragraph.rs)
 
 ```shell
 cargo run --example=paragraph --features=crossterm
@@ -147,19 +193,27 @@ cargo run --example=paragraph --features=crossterm
 
 ![Paragraph][paragraph.gif]
 
-## Popup ([popup.rs](./popup.rs))
+## Popup
 
+Demonstrates how to render a widget over the top of previously rendered widgets using the
+[`Clear`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Clear.html) widget. Source:
+[popup.rs](./popup.rs).
+
+>
 ```shell
 cargo run --example=popup --features=crossterm
 ```
 
-Please note: the background renders poorly when we generate this example using VHS.
-This problem doesn't generally happen during normal rendering in a terminal.
-See <https://github.com/charmbracelet/vhs/issues/344> for more details
+> [!NOTE] The background renders poorly after the popup when we generate this example using VHS.
+> This problem doesn't generally happen during normal rendering in a terminal. See
+> [vhs#344](https://github.com/charmbracelet/vhs/issues/344) for more details.
 
 ![Popup][popup.gif]
 
-## Scrollbar ([scrollbar.rs](./scrollbar.rs))
+## Scrollbar
+
+Demonstrates the [`Scrollbar`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Scrollbar.html)
+widget. Source: [scrollbar.rs](./scrollbar.rs).
 
 ```shell
 cargo run --example=scrollbar --features=crossterm
@@ -167,7 +221,14 @@ cargo run --example=scrollbar --features=crossterm
 
 ![Scrollbar][scrollbar.gif]
 
-## Sparkline ([sparkline.rs](./sparkline.rs))
+## Sparkline
+
+Demonstrates the [`Sparkline`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Sparkline.html)
+widget. Source: [sparkline.rs](./sparkline.rs).
+
+> [!NOTE] The background renders poorly in the second sparkline when we generate this example using
+> VHS. This problem doesn't generally happen during normal rendering in a terminal. See
+> [vhs#344](https://github.com/charmbracelet/vhs/issues/344) for more details.
 
 ```shell
 cargo run --example=sparkline --features=crossterm
@@ -175,7 +236,10 @@ cargo run --example=sparkline --features=crossterm
 
 ![Sparkline][sparkline.gif]
 
-## Table ([table.rs](./table.rs))
+## Table
+
+Demonstrates the [`Table`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Table.html) widget.
+Source: [table.rs](./table.rs).
 
 ```shell
 cargo run --example=table --features=crossterm
@@ -183,7 +247,10 @@ cargo run --example=table --features=crossterm
 
 ![Table][table.gif]
 
-## Tabs ([tabs.rs](./tabs.rs))
+## Tabs
+
+Demonstrates the [`Tabs`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Tabs.html) widget.
+Source: [tabs.rs](./tabs.rs).
 
 ```shell
 cargo run --example=tabs --features=crossterm
@@ -191,7 +258,12 @@ cargo run --example=tabs --features=crossterm
 
 ![Tabs][tabs.gif]
 
-## User Input ([user_input.rs](./user_input.rs))
+## User Input
+
+Demonstrates one approach to accepting user input. Source [user_input.rs](./user_input.rs).
+
+> [!NOTE] Consider using [`tui-textarea`](https://crates.io/crates/tui-textarea) or
+> [`tui-input`](https://crates.io/crates/tui-input) crates for more functional text entry UIs.
 
 ```shell
 cargo run --example=user_input --features=crossterm
@@ -216,25 +288,25 @@ do
 done
 ```
 -->
-[barchart.gif]: https://vhs.charm.sh/vhs-6ioxdeRBVkVpyXcjIEVaJU.gif
-[block.gif]: https://vhs.charm.sh/vhs-1TyeDa5GN7kewhNjKxJ4Br.gif
-[calendar.gif]: https://vhs.charm.sh/vhs-1dBcpMSSP80WkBgm4lBhNo.gif
-[canvas.gif]: https://vhs.charm.sh/vhs-4zeWEPF6bLEFSHuJrvaHlN.gif
-[chart.gif]: https://vhs.charm.sh/vhs-zRzsE2AwRixQhcWMTAeF1.gif
-[colors.gif]: https://vhs.charm.sh/vhs-2ZCqYbTbXAaASncUeWkt1z.gif
-[custom_widget.gif]: https://vhs.charm.sh/vhs-32mW1TpkrovTcm79QXmBSu.gif
-[demo.gif]: https://vhs.charm.sh/vhs-tF0QbuPbtHgUeG0sTVgFr.gif
-[gauge.gif]: https://vhs.charm.sh/vhs-2rvSeP5r4lRkGTzNCKpm9a.gif
-[hello_world.gif]: https://vhs.charm.sh/vhs-3CKUwxFuQi8oKQMS5zkPfQ.gif
-[inline.gif]: https://vhs.charm.sh/vhs-miRl1mosKFoJV7LjjvF4T.gif
-[layout.gif]: https://vhs.charm.sh/vhs-1ZNoNLNlLtkJXpgg9nCV5e.gif
-[list.gif]: https://vhs.charm.sh/vhs-4goo9reeUM9r0nYb54R7SP.gif
-[modifiers.gif]: https://vhs.charm.sh/vhs-2ovGBz5l3tfRGdZ7FCw0am.gif
-[panic.gif]: https://vhs.charm.sh/vhs-HrvKCHV4yeN69fb1EadTH.gif
-[paragraph.gif]: https://vhs.charm.sh/vhs-2qIPDi79DUmtmeNDEeHVEF.gif
-[popup.gif]: https://vhs.charm.sh/vhs-2QnC682AUeNYNXcjNlKTyp.gif
-[scrollbar.gif]: https://vhs.charm.sh/vhs-2p13MMFreW7Gwt1xIonIWu.gif
-[sparkline.gif]: https://vhs.charm.sh/vhs-4t59Vxw5Za33Rtvt9QrftA.gif
-[table.gif]: https://vhs.charm.sh/vhs-6IrGHgT385DqA6xnwGF9oD.gif
-[tabs.gif]: https://vhs.charm.sh/vhs-61WkbfhyDk0kbkjncErdHT.gif
-[user_input.gif]: https://vhs.charm.sh/vhs-4fxUgkpEWcVyBRXuyYKODY.gif
+[barchart.gif]: https://vhs.charm.sh/vhs-6przhDzUmjMVb0wH4RdPa9.gif
+[block.gif]: https://vhs.charm.sh/vhs-1NBeg0ChTWTVrCV7D1tLPe.gif
+[calendar.gif]: https://vhs.charm.sh/vhs-c5xBWMM5tnf3m8IV3gE2d.gif
+[canvas.gif]: https://vhs.charm.sh/vhs-44kPYDX7PM0jxUFt6Q6EYL.gif
+[chart.gif]: https://vhs.charm.sh/vhs-7aCL8RiYpokkxsPKsNIaPb.gif
+[colors.gif]: https://vhs.charm.sh/vhs-7r0yKjxlxUfpdLIhBwgUxA.gif
+[custom_widget.gif]: https://vhs.charm.sh/vhs-216pwM49VNpd66jGKXW66h.gif
+[demo.gif]: https://vhs.charm.sh/vhs-6xQ9Z8WBH3YPXyEdE0BKEq.gif
+[gauge.gif]: https://vhs.charm.sh/vhs-3CcCQ6yFlw0Xz5een5up3C.gif
+[hello_world.gif]: https://vhs.charm.sh/vhs-5rnQv0HMJzSV2aIADDbA0b.gif
+[inline.gif]: https://vhs.charm.sh/vhs-2nNMIZ3gp84Akf3wd7lKQK.gif
+[layout.gif]: https://vhs.charm.sh/vhs-27Ama8v8HtB1dmMBabT86v.gif
+[list.gif]: https://vhs.charm.sh/vhs-3u1sL2KG7mTPtCN6Rrbfzq.gif
+[modifiers.gif]: https://vhs.charm.sh/vhs-4W9MyKaRzC4Q4YSBzhnkti.gif
+[panic.gif]: https://vhs.charm.sh/vhs-1iwBb1mttYAeN8BS8AlE7A.gif
+[paragraph.gif]: https://vhs.charm.sh/vhs-2dCG3AJ3thIgtn446NIts8.gif
+[popup.gif]: https://vhs.charm.sh/vhs-7LBrgNore6e71V0tPzq8WX.gif
+[scrollbar.gif]: https://vhs.charm.sh/vhs-5ow9scHcnDKwVB0IzFH9JD.gif
+[sparkline.gif]: https://vhs.charm.sh/vhs-1DABKSnfu1Qg7i1t68UZ4C.gif
+[table.gif]: https://vhs.charm.sh/vhs-287MZTovoqTc7VZyLpNieQ.gif
+[tabs.gif]: https://vhs.charm.sh/vhs-2KqXTLF1hxi1xokPOJ9hlC.gif
+[user_input.gif]: https://vhs.charm.sh/vhs-1WJfxWDKUsOzGp2prUhIvT.gif
