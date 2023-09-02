@@ -560,7 +560,7 @@ impl<'a> Widget for Chart<'a> {
 
         if let Some((x, y)) = layout.title_x {
             let title = self.x_axis.title.unwrap();
-            let width = graph_area.right().saturating_sub(x);
+            let width = title.width() as u16;
             buf.set_style(
                 Rect {
                     x,
@@ -575,7 +575,7 @@ impl<'a> Widget for Chart<'a> {
 
         if let Some((x, y)) = layout.title_y {
             let title = self.y_axis.title.unwrap();
-            let width = graph_area.right().saturating_sub(x);
+            let width = title.width() as u16;
             buf.set_style(
                 Rect {
                     x,
@@ -717,5 +717,16 @@ mod tests {
         assert_eq!("Scatter".parse::<GraphType>(), Ok(GraphType::Scatter));
         assert_eq!("Line".parse::<GraphType>(), Ok(GraphType::Line));
         assert_eq!("".parse::<GraphType>(), Err(ParseError::VariantNotFound));
+    }
+
+    #[test]
+    fn it_does_not_panic_if_title_is_wider_than_buffer() {
+        let widget = Chart::default()
+            .y_axis(Axis::default().title("xxxxxxxxxxxxxxxx"))
+            .x_axis(Axis::default().title("xxxxxxxxxxxxxxxx"));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 4));
+        widget.render(buffer.area, &mut buffer);
+
+        assert_eq!(buffer, Buffer::with_lines(vec![" ".repeat(8); 4]))
     }
 }
