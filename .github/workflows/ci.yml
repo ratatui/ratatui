@@ -53,6 +53,8 @@ jobs:
         uses: taiki-e/install-action@cargo-make
       - name: Check formatting
         run: cargo make fmt
+      - name: Check documentation
+        run: cargo make check-doc
 
   clippy:
     runs-on: ubuntu-latest

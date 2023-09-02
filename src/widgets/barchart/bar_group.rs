@@ -5,9 +5,10 @@ use crate::{
     text::Line,
 };
 
-/// represent a group of bars to be shown by the Barchart
+/// A group of bars to be shown by the Barchart.
 ///
 /// # Examples
+///
 /// ```
 /// # use ratatui::{prelude::*, widgets::*};
 /// BarGroup::default()
@@ -35,7 +36,7 @@ impl<'a> BarGroup<'a> {
         self
     }
 
-    /// return the maximum bar value of this group
+    /// The maximum bar value of this group
     pub(super) fn max(&self) -> Option<u64> {
         self.bars.iter().max_by_key(|v| v.value).map(|v| v.value)
     }

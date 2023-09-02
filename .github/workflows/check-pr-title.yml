@@ -1,0 +1,23 @@
+name: Check Pull Requests
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+  merge_group:
+
+
+permissions:
+  pull-requests: read
+
+jobs:
+  check-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        if: github.event_name == 'pull_request_target'
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

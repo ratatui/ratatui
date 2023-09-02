@@ -1,11 +1,19 @@
 use crate::{buffer::Buffer, prelude::Rect, style::Style, text::Line};
 
-/// represent a bar to be shown by the Barchart
+/// A bar to be shown by the [`BarChart`](crate::widgets::BarChart) widget.
 ///
-/// # Examples
-/// the following example creates a bar with the label "Bar 1", a value "10",
-/// red background and a white value foreground
+/// Here is an explanation of a `Bar`'s components.
+/// ```plain
+/// ███                          ┐
+/// █2█  <- text_value or value  │ bar
+/// foo  <- label                ┘
+/// ```
+/// Note that every element can be styled individually.
 ///
+/// # Example
+///
+/// The following example creates a bar with the label "Bar 1", a value "10",
+/// red background and a white value foreground.
 /// ```
 /// # use ratatui::{prelude::*, widgets::*};
 /// Bar::default()
@@ -30,34 +38,67 @@ pub struct Bar<'a> {
 }
 
 impl<'a> Bar<'a> {
+    /// Set the value of this bar.
+    ///
+    /// The value will be displayed inside the bar.
+    ///
+    /// # See also
+    ///
+    /// [`Bar::value_style`] to style the value.  
+    /// [`Bar::text_value`] to set the displayed value.
     pub fn value(mut self, value: u64) -> Bar<'a> {
         self.value = value;
         self
     }
 
+    /// Set the label of the bar.
+    ///
+    /// For [`Vertical`](crate::layout::Direction::Vertical) bars,
+    /// display the label **under** the bar.  
+    /// For [`Horizontal`](crate::layout::Direction::Horizontal) bars,
+    /// display the label **in** the bar.  
+    /// See [`BarChart::direction`](crate::widgets::BarChart::direction) to set the direction.
     pub fn label(mut self, label: Line<'a>) -> Bar<'a> {
         self.label = Some(label);
         self
     }
 
+    /// Set the style of the bar.
+    ///
+    /// This will apply to every non-styled element.
+    /// It can be seen and used as a default value.
     pub fn style(mut self, style: Style) -> Bar<'a> {
         self.style = style;
         self
     }
 
+    /// Set the style of the value.
+    ///
+    /// # See also
+    ///
+    /// [`Bar::value`] to set the value.
     pub fn value_style(mut self, style: Style) -> Bar<'a> {
         self.value_style = style;
         self
     }
 
-    /// set the text value printed in the bar. (By default self.value is printed)
+    /// Set the text value printed in the bar.
+    ///
+    /// If `text_value` is not set, then the [ToString] representation of `value` will be shown on
+    /// the bar.
+    ///
+    /// # See also
+    ///
+    /// [`Bar::value`] to set the value.
     pub fn text_value(mut self, text_value: String) -> Bar<'a> {
         self.text_value = Some(text_value);
         self
     }
 
-    /// Render the value of the bar. value_text is used if set, otherwise the value is converted to
-    /// string. The value is rendered using value_style. If the value width is greater than the
+    /// Render the value of the bar.
+    ///
+    /// [`text_value`](Bar::text_value) is used if set, otherwise the value is converted to string.
+    /// The value is rendered using value_style. If the value width is greater than the
     /// bar width, then the value is split into 2 parts. the first part is rendered in the bar
     /// using value_style. The second part is rendered outside the bar using bar_style
     pub(super) fn render_value_with_different_styles(
