@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 use crate::prelude::*;
 
 mod bar;
@@ -8,14 +9,41 @@ pub use bar_group::BarGroup;
 
 use super::{Block, Widget};
 
-/// Display multiple bars in a single widgets
+/// A chart showing values as [bars](Bar).
+///
+/// Here is a possible `BarChart` output.
+/// ```plain
+/// ┌─────────────────────────────────┐
+/// │                             ████│
+/// │                        ▅▅▅▅ ████│
+/// │            ▇▇▇▇        ████ ████│
+/// │     ▄▄▄▄   ████ ████   ████ ████│
+/// │▆10▆ █20█   █50█ █40█   █60█ █90█│
+/// │ B1   B2     B1   B2     B1   B2 │
+/// │ Group1      Group2      Group3  │
+/// └─────────────────────────────────┘
+/// ```
+///
+/// A `BarChart` is composed of a set of [`Bar`] which can be set via [`BarChart::data`].
+/// Bars can be styled globally ([`BarChart::bar_style`]) or individually ([`Bar::style`]).
+/// There are other methods available to style even more precisely. See [`Bar`] to find out about
+/// each bar component.
+///
+/// The `BarChart` widget can also show groups of bars via [`BarGroup`].
+/// A [`BarGroup`] is a set of [`Bar`], multiple can be added to a `BarChart` using
+/// [`BarChart::data`] multiple time as demonstrated in the example below.
+///
+/// The chart can have a [`Direction`] (by default the bars are [`Vertical`](Direction::Vertical)).
+/// This is set using [`BarChart::direction`].
 ///
 /// # Examples
-/// The following example creates a BarChart with two groups of bars.
-/// The first group is added by an array slice (&[(&str, u64)]).
-/// The second group is added by a slice of Groups (&[BarGroup]).
+///
+/// The following example creates a `BarChart` with two groups of bars.  
+/// The first group is added by an array slice (`&[(&str, u64)]`).  
+/// The second group is added by a [`BarGroup`] instance.
 /// ```
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// BarChart::default()
 ///     .block(Block::default().title("BarChart").borders(Borders::ALL))
 ///     .bar_width(3)
@@ -78,16 +106,18 @@ impl<'a> Default for BarChart<'a> {
 
 impl<'a> BarChart<'a> {
     /// Add group of bars to the BarChart
+    ///
     /// # Examples
-    /// The following example creates a BarChart with two groups of bars.
-    /// The first group is added by an array slice (&[(&str, u64)]).
-    /// The second group is added by a BarGroup instance.
+    ///
+    /// The following example creates a BarChart with two groups of bars.  
+    /// The first group is added by an array slice (`&[(&str, u64)]`).
+    /// The second group is added by a [`BarGroup`] instance.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
+    /// use ratatui::{prelude::*, widgets::*};
     ///
     /// BarChart::default()
-    ///        .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
-    ///        .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]));
+    ///     .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
+    ///     .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]));
     /// ```
     pub fn data(mut self, data: impl Into<BarGroup<'a>>) -> BarChart<'a> {
         let group: BarGroup = data.into();
@@ -97,66 +127,157 @@ impl<'a> BarChart<'a> {
         self
     }
 
+    /// Surround the [`BarChart`] with a [`Block`].
     pub fn block(mut self, block: Block<'a>) -> BarChart<'a> {
         self.block = Some(block);
         self
     }
 
+    /// Set the value necessary for a [`Bar`] to reach the maximum height.
+    ///
+    /// If not set, the maximum value in the data is taken as reference.
+    ///
+    /// # Examples
+    ///
+    /// This example shows the default behavior when `max` is not set.
+    /// The maximum value in the dataset is taken (here, `100`).
+    /// ```
+    /// # use ratatui::widgets::BarChart;
+    /// BarChart::default().data(&[("foo", 1), ("bar", 2), ("baz", 100)]);
+    /// // Renders
+    /// //     █
+    /// //     █
+    /// // f b b
+    /// ```
+    ///
+    /// This example shows a custom max value.
+    /// The maximum height being `2`, `bar` & `baz` render as the max.
+    /// ```
+    /// # use ratatui::widgets::BarChart;
+    /// BarChart::default()
+    ///     .data(&[("foo", 1), ("bar", 2), ("baz", 100)])
+    ///     .max(2);
+    /// // Renders
+    /// //   █ █
+    /// // █ █ █
+    /// // f b b
+    /// ```
     pub fn max(mut self, max: u64) -> BarChart<'a> {
         self.max = Some(max);
         self
     }
 
     /// Set the default style of the bar.
-    /// It is also possible to set individually the style of each Bar.
+    ///
+    /// It is also possible to set individually the style of each [`Bar`].
     /// In this case the default style will be patched by the individual style
     pub fn bar_style(mut self, style: Style) -> BarChart<'a> {
         self.bar_style = style;
         self
     }
 
+    /// Set the width of the displayed bars.
+    ///
+    /// For [`Horizontal`](crate::layout::Direction::Horizontal) bars this becomes the height of
+    /// the bar.
+    ///
+    /// If not set, this defaults to `1`.  
+    /// The bar label also uses this value as its width.
     pub fn bar_width(mut self, width: u16) -> BarChart<'a> {
         self.bar_width = width;
         self
     }
 
+    /// Set the gap between each bar.
+    ///
+    /// If not set, this defaults to `1`.  
+    /// The bar label will never be larger than the bar itself, even if the gap is sufficient.
+    ///
+    /// # Example
+    ///
+    /// This shows two bars with a gap of `3`. Notice the labels will always stay under the bar.
+    /// ```
+    /// # use ratatui::widgets::BarChart;
+    /// BarChart::default()
+    ///     .data(&[("foo", 1), ("bar", 2)])
+    ///     .bar_gap(3);
+    /// // Renders
+    /// //     █
+    /// // █   █
+    /// // f   b
+    /// ```
     pub fn bar_gap(mut self, gap: u16) -> BarChart<'a> {
         self.bar_gap = gap;
         self
     }
 
+    /// The [`bar::Set`](crate::symbols::bar::Set) to use for displaying the bars.
+    ///
+    /// If not set, the default is [`bar::NINE_LEVELS`](crate::symbols::bar::NINE_LEVELS).
     pub fn bar_set(mut self, bar_set: symbols::bar::Set) -> BarChart<'a> {
         self.bar_set = bar_set;
         self
     }
 
     /// Set the default value style of the bar.
-    /// It is also possible to set individually the value style of each Bar.
+    ///
+    /// It is also possible to set individually the value style of each [`Bar`].
     /// In this case the default value style will be patched by the individual value style
+    ///
+    /// # See also
+    ///
+    /// [Bar::value_style] to set the value style individually.
     pub fn value_style(mut self, style: Style) -> BarChart<'a> {
         self.value_style = style;
         self
     }
 
     /// Set the default label style of the groups and bars.
-    /// It is also possible to set individually the label style of each Bar or Group.
+    ///
+    /// It is also possible to set individually the label style of each [`Bar`] or [`BarGroup`].
     /// In this case the default label style will be patched by the individual label style
+    ///
+    /// # See also
+    ///
+    /// [Bar::label] to set the label style individually.
     pub fn label_style(mut self, style: Style) -> BarChart<'a> {
         self.label_style = style;
         self
     }
 
+    /// Set the gap between [`BarGroup`].
     pub fn group_gap(mut self, gap: u16) -> BarChart<'a> {
         self.group_gap = gap;
         self
     }
 
+    /// Set the style of the entire chart.
+    ///
+    /// The style will be applied to everything that isn't styled (borders, bars, labels, ...).
     pub fn style(mut self, style: Style) -> BarChart<'a> {
         self.style = style;
         self
     }
 
-    /// Set the direction of the bars
+    /// Set the direction of the bars.
+    ///
+    /// [`Vertical`](crate::layout::Direction::Vertical) bars are the default.
+    ///
+    /// # Examples
+    ///
+    /// Vertical bars
+    /// ```plain
+    ///   █
+    /// █ █
+    /// f b
+    /// ```
+    ///
+    /// Horizontal bars
+    /// ```plain
+    /// █foo██
+    ///
+    /// █bar██
+    /// ```
     pub fn direction(mut self, direction: Direction) -> BarChart<'a> {
         self.direction = direction;
         self
