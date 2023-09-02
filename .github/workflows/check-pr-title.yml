@@ -1,21 +1,23 @@
-name: Check PR Title
+name: Check Pull Requests
 
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
-      - synchronize
-      - reopened
       - edited
+      - synchronize
+  merge_group:
+
+
+permissions:
+  pull-requests: read
 
 jobs:
   check-title:
     runs-on: ubuntu-latest
     steps:
-    - name: Check PR title
-      run: |
-        title="${{ github.event.pull_request.title }}"
-        if ! echo "$title" | grep -qE '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\(\w+\))?!?: '; then
-          echo "error: PR title does not follow the Conventional Commits guidelines"
-          exit 1
-        fi
+      - name: Check PR title
+        if: github.event_name == 'pull_request_target'
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
