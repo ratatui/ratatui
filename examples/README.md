@@ -277,36 +277,28 @@ These are generated with `vhs publish examples/xxx.gif`
 
 To update these examples in bulk:
 ```shell
-# build to ensure that running the examples doesn't have to wait so long
-cargo build --examples --features=crossterm,all-widgets
-for i in examples/*.tape
-do
-    echo -n "[${i:s:examples/:::s:.tape:.gif:}]: "
-    vhs $i --publish --quiet
-    # may need to adjust this depending on if you see rate limiting from VHS
-    sleep 1
-done
+examples/generate.bash
 ```
 -->
-[barchart.gif]: https://vhs.charm.sh/vhs-6przhDzUmjMVb0wH4RdPa9.gif
-[block.gif]: https://vhs.charm.sh/vhs-1NBeg0ChTWTVrCV7D1tLPe.gif
-[calendar.gif]: https://vhs.charm.sh/vhs-c5xBWMM5tnf3m8IV3gE2d.gif
-[canvas.gif]: https://vhs.charm.sh/vhs-44kPYDX7PM0jxUFt6Q6EYL.gif
-[chart.gif]: https://vhs.charm.sh/vhs-7aCL8RiYpokkxsPKsNIaPb.gif
-[colors.gif]: https://vhs.charm.sh/vhs-7r0yKjxlxUfpdLIhBwgUxA.gif
-[custom_widget.gif]: https://vhs.charm.sh/vhs-216pwM49VNpd66jGKXW66h.gif
-[demo.gif]: https://vhs.charm.sh/vhs-6xQ9Z8WBH3YPXyEdE0BKEq.gif
-[gauge.gif]: https://vhs.charm.sh/vhs-3CcCQ6yFlw0Xz5een5up3C.gif
-[hello_world.gif]: https://vhs.charm.sh/vhs-5rnQv0HMJzSV2aIADDbA0b.gif
-[inline.gif]: https://vhs.charm.sh/vhs-2nNMIZ3gp84Akf3wd7lKQK.gif
-[layout.gif]: https://vhs.charm.sh/vhs-27Ama8v8HtB1dmMBabT86v.gif
-[list.gif]: https://vhs.charm.sh/vhs-3u1sL2KG7mTPtCN6Rrbfzq.gif
-[modifiers.gif]: https://vhs.charm.sh/vhs-4W9MyKaRzC4Q4YSBzhnkti.gif
-[panic.gif]: https://vhs.charm.sh/vhs-1iwBb1mttYAeN8BS8AlE7A.gif
-[paragraph.gif]: https://vhs.charm.sh/vhs-2dCG3AJ3thIgtn446NIts8.gif
-[popup.gif]: https://vhs.charm.sh/vhs-7LBrgNore6e71V0tPzq8WX.gif
-[scrollbar.gif]: https://vhs.charm.sh/vhs-5ow9scHcnDKwVB0IzFH9JD.gif
-[sparkline.gif]: https://vhs.charm.sh/vhs-1DABKSnfu1Qg7i1t68UZ4C.gif
-[table.gif]: https://vhs.charm.sh/vhs-287MZTovoqTc7VZyLpNieQ.gif
-[tabs.gif]: https://vhs.charm.sh/vhs-2KqXTLF1hxi1xokPOJ9hlC.gif
-[user_input.gif]: https://vhs.charm.sh/vhs-1WJfxWDKUsOzGp2prUhIvT.gif
+[barchart.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/barchart.gif?raw=true
+[block.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/block.gif?raw=true
+[calendar.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/calendar.gif?raw=true
+[canvas.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/canvas.gif?raw=true
+[chart.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/chart.gif?raw=true
+[colors.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/colors.gif?raw=true
+[custom_widget.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/custom_widget.gif?raw=true
+[demo.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/demo.gif?raw=true
+[gauge.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/gauge.gif?raw=true
+[hello_world.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/hello_world.gif?raw=true
+[inline.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/inline.gif?raw=true
+[layout.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/layout.gif?raw=true
+[list.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/list.gif?raw=true
+[modifiers.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/modifiers.gif?raw=true
+[panic.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/panic.gif?raw=true
+[paragraph.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/paragraph.gif?raw=true
+[popup.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/popup.gif?raw=true
+[scrollbar.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/scrollbar.gif?raw=true
+[sparkline.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/sparkline.gif?raw=true
+[table.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/table.gif?raw=true
+[tabs.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/tabs.gif?raw=true
+[user_input.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/user_input.gif?raw=true
