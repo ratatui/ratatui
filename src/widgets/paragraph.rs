@@ -196,6 +196,20 @@ impl<'a> Paragraph<'a> {
         self
     }
 
+    /// Set the text alignment for the given paragraph
+    ///
+    /// The alignment is a variant of the [`Alignment`] enum which can be one of Left, Right, or
+    /// Center.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # use ratatui::widgets::{Paragraph, Wrap};
+    /// # use ratatui::layout::Alignment;
+    /// let paragraph = Paragraph::new("Hello World")
+    ///     .alignment(Alignment::Center);
+    /// ```
     pub fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {
         self.alignment = alignment;
         self
