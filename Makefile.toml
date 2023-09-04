@@ -12,29 +12,30 @@ alias = "ci"
 
 [tasks.ci]
 description = "Run continuous integration tasks"
-dependencies = [
-  "style-check",
-  "clippy",
-  "check",
-  "test",
-]
+dependencies = ["lint-style", "clippy", "check", "test"]
 
-[tasks.style-check]
-description = "Check code style"
-dependencies = ["fmt", "typos", "check-doc"]
+[tasks.lint-style]
+description = "Lint code style (formatting, typos, docs)"
+dependencies = ["lint-format", "lint-typos", "lint-docs"]
 
-[tasks.fmt]
-description = "Format source code"
+[tasks.lint-format]
+description = "Lint code formatting"
 toolchain = "nightly"
 command = "cargo"
 args = ["fmt", "--all", "--check"]
 
-[tasks.typos]
+[tasks.format]
+description = "Fix code formatting"
+toolchain = "nightly"
+command = "cargo"
+args = ["fmt", "--all"]
+
+[tasks.lint-typos]
 description = "Run typo checks"
 install_crate = { crate_name = "typos-cli", binary = "typos", test_arg = "--version" }
 command = "typos"
 
-[tasks.check-doc]
+[tasks.lint-docs]
 description = "Check documentation for errors and warnings"
 toolchain = "nightly"
 command = "cargo"
@@ -44,39 +45,35 @@ args = [
   "--",
   "-Zunstable-options",
   "--check",
-  "-Dwarnings"
+  "-Dwarnings",
 ]
 
 [tasks.check]
 description = "Check code for errors and warnings"
 command = "cargo"
-args = [
-  "check",
-  "--all-targets",
-  "--all-features"
-]
+args = ["check", "--all-targets", "--all-features"]
 
 [tasks.check.windows]
 args = [
   "check",
   "--all-targets",
-  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
+  "--no-default-features",
+  "--features",
+  "${ALL_FEATURES},crossterm,termwiz",
 ]
 
 [tasks.build]
 description = "Compile the project"
 command = "cargo"
-args = [
-  "build",
-  "--all-targets",
-  "--all-features",
-]
+args = ["build", "--all-targets", "--all-features"]
 
 [tasks.build.windows]
 args = [
   "build",
   "--all-targets",
-  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
+  "--no-default-features",
+  "--features",
+  "${ALL_FEATURES},crossterm,termwiz",
 ]
 
 [tasks.clippy]
@@ -99,7 +96,9 @@ args = [
   "--all-targets",
   "--tests",
   "--benches",
-  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz",
+  "--no-default-features",
+  "--features",
+  "${ALL_FEATURES},crossterm,termwiz",
   "--",
   "-D",
   "warnings",
@@ -107,40 +106,34 @@ args = [
 
 [tasks.test]
 description = "Run tests"
-dependencies = [
-  "test-doc",
-]
+dependencies = ["test-doc"]
 command = "cargo"
-args = [
-  "test",
-  "--all-targets",
-  "--all-features",
-]
+args = ["test", "--all-targets", "--all-features"]
 
 
 [tasks.test-windows]
 description = "Run tests on Windows"
-dependencies = [
-  "test-doc",
-]
+dependencies = ["test-doc"]
 args = [
   "test",
   "--all-targets",
-  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
+  "--no-default-features",
+  "--features",
+  "${ALL_FEATURES},crossterm,termwiz",
 ]
 
 [tasks.test-doc]
 description = "Run documentation tests"
 command = "cargo"
-args = [
-  "test", "--doc",
-  "--all-features",
-]
+args = ["test", "--doc", "--all-features"]
 
 [tasks.test-doc.windows]
 args = [
-  "test", "--doc",
-  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
+  "test",
+  "--doc",
+  "--no-default-features",
+  "--features",
+  "${ALL_FEATURES},crossterm,termwiz",
 ]
 
 [tasks.test-backend]
@@ -150,7 +143,9 @@ command = "cargo"
 args = [
   "test",
   "--all-targets",
-  "--no-default-features", "--features", "${ALL_FEATURES},${@}"
+  "--no-default-features",
+  "--features",
+  "${ALL_FEATURES},${@}",
 ]
 
 
@@ -160,7 +155,8 @@ command = "cargo"
 args = [
   "llvm-cov",
   "--lcov",
-  "--output-path", "target/lcov.info",
+  "--output-path",
+  "target/lcov.info",
   "--all-features",
 ]
 
@@ -169,16 +165,25 @@ command = "cargo"
 args = [
   "llvm-cov",
   "--lcov",
-  "--output-path", "target/lcov.info",
+  "--output-path",
+  "target/lcov.info",
   "--no-default-features",
-  "--features", "${ALL_FEATURES},crossterm,termwiz",
+  "--features",
+  "${ALL_FEATURES},crossterm,termwiz",
 ]
 
 [tasks.run-example]
 private = true
 condition = { env_set = ["TUI_EXAMPLE_NAME"] }
 command = "cargo"
-args = ["run", "--release", "--example", "${TUI_EXAMPLE_NAME}", "--features", "all-widgets"]
+args = [
+  "run",
+  "--release",
+  "--example",
+  "${TUI_EXAMPLE_NAME}",
+  "--features",
+  "all-widgets",
+]
 
 [tasks.build-examples]
 description = "Compile project examples"

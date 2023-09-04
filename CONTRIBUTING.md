@@ -29,6 +29,11 @@ change becomes a place where a bug may have been introduced. Consider splitting 
 reformatting changes into a separate PR from those that make a behavioral change, as the tests help
 guarantee that the behavior is unchanged.
 
+### Code formatting
+
+Run `cargo make format` before committing to ensure that code is consistently formatted with
+rustfmt. Configuration is in [rustfmt.toml](./rustfmt.toml).
+
 ### Search `tui-rs` for similar work
 
 The original fork of Ratatui, [`tui-rs`](https://github.com/fdehau/tui-rs/), has a large amount of
@@ -142,6 +147,7 @@ let style = Style::default().fg(Color::Red).add_modifier(Modifiers::BOLD);
 #### Format
 
 - First line is summary, second is blank, third onward is more detail  
+
 ```rust
 /// Summary
 ///
@@ -155,6 +161,7 @@ See [vscode rewrap extension](https://marketplace.visualstudio.com/items?itemNam
 
 - Doc comments are above macros  
 i.e.
+
 ```rust
 /// doc comment
 #[derive(Debug)]
