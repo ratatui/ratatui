@@ -268,6 +268,27 @@ pub struct Table<'a> {
 }
 
 impl<'a> Table<'a> {
+    /// Creates a new [`Table`] widget with the given rows.
+    ///
+    /// The `rows` parameter is a Vector of [`Row`], this holds the data to be displayed by the 
+    /// table
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # use ratatui::widgets::{Table, Row, Cell};
+    /// let table = Table::new(vec![
+    ///     Row::new(vec![
+    ///         Cell::from("Cell1"),
+    ///         Cell::from("Cell2").style(Style::default().fg(Color::Yellow)),
+    ///     ]),
+    ///     Row::new(vec![
+    ///         Cell::from("Cell3"),
+    ///         Cell::from("Cell4").style(Style::default().fg(Color::Yellow)),
+    ///     ]),
+    /// ]);
+    /// ```
     pub fn new<T>(rows: T) -> Self
     where
         T: IntoIterator<Item = Row<'a>>,
