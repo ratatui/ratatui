@@ -43,9 +43,9 @@ jobs:
       - name: Install cargo-make
         uses: taiki-e/install-action@cargo-make
       - name: Check formatting
-        run: cargo make fmt
+        run: cargo make lint-format
       - name: Check documentation
-        run: cargo make check-doc
+        run: cargo make lint-docs
       - name: Check conventional commits
         uses: crate-ci/committed@master
         with:
