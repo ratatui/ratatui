@@ -270,7 +270,7 @@ pub struct Table<'a> {
 impl<'a> Table<'a> {
     /// Creates a new [`Table`] widget with the given rows.
     ///
-    /// The `rows` parameter is a Vector of [`Row`], this holds the data to be displayed by the 
+    /// The `rows` parameter is a Vector of [`Row`], this holds the data to be displayed by the
     /// table
     ///
     /// # Examples
@@ -281,11 +281,11 @@ impl<'a> Table<'a> {
     /// let table = Table::new(vec![
     ///     Row::new(vec![
     ///         Cell::from("Cell1"),
-    ///         Cell::from("Cell2").style(Style::default().fg(Color::Yellow)),
+    ///         Cell::from("Cell2")
     ///     ]),
     ///     Row::new(vec![
     ///         Cell::from("Cell3"),
-    ///         Cell::from("Cell4").style(Style::default().fg(Color::Yellow)),
+    ///         Cell::from("Cell4")
     ///     ]),
     /// ]);
     /// ```
