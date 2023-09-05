@@ -21,8 +21,8 @@ body = """
 {% endif -%}
 
 {% macro commit(commit) -%}
-- *({{commit.scope | default(value = "uncategorized")}})* {{ commit.message | upper_first }}
-([{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui-org/ratatui/commit/" ~ commit.id }}))
+- [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui-org/ratatui/commit/" ~ commit.id }})
+  *({{commit.scope | default(value = "uncategorized")}})* {{ commit.message | upper_first }}
 {%- if commit.breaking %} [**breaking**]{% endif %}
 {%- if commit.body %}
 
