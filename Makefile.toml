@@ -7,6 +7,12 @@ skip_core_tasks = true
 # all features except the backend ones
 ALL_FEATURES = "all-widgets,macros,serde"
 
+# Windows does not support building termion, so this avoids the build failure by providing two
+# sets of flags, one for Windows and one for other platforms.
+# Windows: --features=all-widgets,macros,serde,crossterm,termwiz
+# Other: --all-features
+ALL_FEATURES_FLAG = { source = "${CARGO_MAKE_RUST_TARGET_OS}", default_value = "--all-features", mapping = { "windows" = "--features=all-widgets,macros,serde,crossterm,termwiz" } }
+
 [tasks.default]
 alias = "ci"
 
@@ -41,7 +47,8 @@ toolchain = "nightly"
 command = "cargo"
 args = [
   "rustdoc",
-  "--all-features",
+  "--no-default-features",
+  "${ALL_FEATURES_FLAG}",
   "--",
   "-Zunstable-options",
   "--check",
@@ -51,29 +58,21 @@ args = [
 [tasks.check]
 description = "Check code for errors and warnings"
 command = "cargo"
-args = ["check", "--all-targets", "--all-features"]
-
-[tasks.check.windows]
 args = [
   "check",
   "--all-targets",
   "--no-default-features",
-  "--features",
-  "${ALL_FEATURES},crossterm,termwiz",
+  "${ALL_FEATURES_FLAG}",
 ]
 
 [tasks.build]
 description = "Compile the project"
 command = "cargo"
-args = ["build", "--all-targets", "--all-features"]
-
-[tasks.build.windows]
 args = [
   "build",
   "--all-targets",
   "--no-default-features",
-  "--features",
-  "${ALL_FEATURES},crossterm,termwiz",
+  "${ALL_FEATURES_FLAG}",
 ]
 
 [tasks.clippy]
@@ -84,21 +83,8 @@ args = [
   "--all-targets",
   "--tests",
   "--benches",
-  "--all-features",
-  "--",
-  "-D",
-  "warnings",
-]
-
-[tasks.clippy.windows]
-args = [
-  "clippy",
-  "--all-targets",
-  "--tests",
-  "--benches",
   "--no-default-features",
-  "--features",
-  "${ALL_FEATURES},crossterm,termwiz",
+  "${ALL_FEATURES_FLAG}",
   "--",
   "-D",
   "warnings",
@@ -108,33 +94,17 @@ args = [
 description = "Run tests"
 dependencies = ["test-doc"]
 command = "cargo"
-args = ["test", "--all-targets", "--all-features"]
-
-
-[tasks.test-windows]
-description = "Run tests on Windows"
-dependencies = ["test-doc"]
 args = [
   "test",
   "--all-targets",
   "--no-default-features",
-  "--features",
-  "${ALL_FEATURES},crossterm,termwiz",
+  "${ALL_FEATURES_FLAG}",
 ]
 
 [tasks.test-doc]
 description = "Run documentation tests"
 command = "cargo"
-args = ["test", "--doc", "--all-features"]
-
-[tasks.test-doc.windows]
-args = [
-  "test",
-  "--doc",
-  "--no-default-features",
-  "--features",
-  "${ALL_FEATURES},crossterm,termwiz",
-]
+args = ["test", "--doc", "--no-default-features", "${ALL_FEATURES_FLAG}"]
 
 [tasks.test-backend]
 # takes a command line parameter to specify the backend to test (e.g. "crossterm")
@@ -148,7 +118,6 @@ args = [
   "${ALL_FEATURES},${@}",
 ]
 
-
 [tasks.coverage]
 description = "Generate code coverage report"
 command = "cargo"
@@ -157,19 +126,8 @@ args = [
   "--lcov",
   "--output-path",
   "target/lcov.info",
-  "--all-features",
-]
-
-[tasks.coverage.windows]
-command = "cargo"
-args = [
-  "llvm-cov",
-  "--lcov",
-  "--output-path",
-  "target/lcov.info",
   "--no-default-features",
-  "--features",
-  "${ALL_FEATURES},crossterm,termwiz",
+  "${ALL_FEATURES_FLAG}",
 ]
 
 [tasks.run-example]
