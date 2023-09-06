@@ -1,3 +1,11 @@
+#![warn(missing_docs)]
+//! Elements related to the `Block` base widget.
+//!
+//! This holds everything needed to display and configure a [`Block`].
+//!
+//! In its simplest form, a `Block` is a [border](Borders) around another widget. It can have a
+//! [title](Block::title) and [padding](Block::padding).
+
 #[path = "../title.rs"]
 pub mod title;
 
@@ -12,16 +20,60 @@ use crate::{
     widgets::{Borders, Widget},
 };
 
+/// The type of border of a [`Block`].
+///
+/// See the [`borders`](Block::borders) method of `Block` to configure its borders.
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum BorderType {
+    /// A plain, simple border.
+    ///
+    /// This is the default
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ┌───────┐
+    /// │       │
+    /// └───────┘
+    /// ```
     #[default]
     Plain,
+    /// A plain border with rounded corners.
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ╭───────╮
+    /// │       │
+    /// ╰───────╯
+    /// ```
     Rounded,
+    /// A doubled border.
+    ///
+    /// Note this uses one character that draws two lines.
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ╔═══════╗
+    /// ║       ║
+    /// ╚═══════╝
+    /// ```
     Double,
+    /// A thick border.
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ┏━━━━━━━┓
+    /// ┃       ┃
+    /// ┗━━━━━━━┛
+    /// ```
     Thick,
 }
 
 impl BorderType {
+    /// Convert this `BorderType` into the corresponding [`Set`](line::Set) of lines.
     pub const fn line_symbols(border_type: BorderType) -> line::Set {
         match border_type {
             BorderType::Plain => line::NORMAL,
@@ -32,15 +84,36 @@ impl BorderType {
     }
 }
 
+/// Defines the padding of a [`Block`].
+///
+/// See the [`padding`](Block::padding) method of [`Block`] to configure its padding.
+///
+/// This concept is similar to [CSS padding](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_box_model/Introduction_to_the_CSS_box_model#padding_area).
+///
+/// **NOTE**: Terminal cells are often taller than they are wide, so to make horizontal and vertical
+/// padding seem equal, doubling the horizontal padding is usually pretty good.
+///
+/// # Example
+///
+/// ```
+/// use ratatui::widgets::block::Padding;
+/// Padding::uniform(1);
+/// Padding::horizontal(2);
+/// ```
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Padding {
+    /// Left padding
     pub left: u16,
+    /// Right padding
     pub right: u16,
+    /// Top padding
     pub top: u16,
+    /// Bottom padding
     pub bottom: u16,
 }
 
 impl Padding {
+    /// Creates a new `Padding` by specifying every field individually.
     pub const fn new(left: u16, right: u16, top: u16, bottom: u16) -> Self {
         Padding {
             left,
@@ -50,6 +123,9 @@ impl Padding {
         }
     }
 
+    /// Creates a `Padding` of 0.
+    ///
+    /// This is also the default.
     pub const fn zero() -> Self {
         Padding {
             left: 0,
@@ -59,6 +135,9 @@ impl Padding {
         }
     }
 
+    /// Defines the [`left`](Padding::left) and [`right`](Padding::right) padding.
+    ///
+    /// This leaves [`top`](Padding::top) and [`bottom`](Padding::bottom) to `0`.
     pub const fn horizontal(value: u16) -> Self {
         Padding {
             left: value,
@@ -68,6 +147,9 @@ impl Padding {
         }
     }
 
+    /// Defines the [`top`](Padding::top) and [`bottom`](Padding::bottom) padding.
+    ///
+    /// This leaves [`left`](Padding::left) and [`right`](Padding::right) at `0`.
     pub const fn vertical(value: u16) -> Self {
         Padding {
             left: 0,
@@ -77,6 +159,7 @@ impl Padding {
         }
     }
 
+    /// Applies the same value to every `Padding` field.
     pub const fn uniform(value: u16) -> Self {
         Padding {
             left: value,
@@ -87,14 +170,20 @@ impl Padding {
     }
 }
 
-/// Base widget to be used with all upper level ones. It may be used to display a box border around
-/// the widget and/or add a title.
+/// Base widget to be used to display a box border around all [upper level ones](crate::widgets).
+///
+/// The borders can be configured with [`Block::borders`] and others. A block can have multiple
+/// [`Title`] using [`Block::title`]. It can also be [styled](Block::style) and
+/// [padded](Block::padding).
 ///
 /// # Examples
 ///
 /// ```
-/// # use ratatui::widgets::{Block, BorderType, Borders};
-/// # use ratatui::style::{Style, Color};
+/// use ratatui::{
+///     style::{Color, Style},
+///     widgets::{Block, BorderType, Borders},
+/// };
+///
 /// Block::default()
 ///     .title("Block")
 ///     .borders(Borders::LEFT | Borders::RIGHT)
@@ -105,15 +194,17 @@ impl Padding {
 ///
 /// You may also use multiple titles like in the following:
 /// ```
-/// # use ratatui::widgets::{Block, BorderType, Borders, block::title::{Position, Title}};
-/// # use ratatui::style::{Style, Color};
+/// use ratatui::{
+///     style::{Color, Style},
+///     widgets::{
+///         block::title::{Position, Title},
+///         Block, BorderType, Borders,
+///     },
+/// };
+///
 /// Block::default()
 ///     .title("Title 1")
-///     .title(Title::from("Title 2").position(Position::Bottom))
-///     .borders(Borders::LEFT | Borders::RIGHT)
-///     .border_style(Style::default().fg(Color::White))
-///     .border_type(BorderType::Rounded)
-///     .style(Style::default().bg(Color::Black));
+///     .title(Title::from("Title 2").position(Position::Bottom));
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
@@ -141,6 +232,7 @@ pub struct Block<'a> {
 }
 
 impl<'a> Block<'a> {
+    /// Creates a new block with no [`Borders`] or [`Padding`].
     pub const fn new() -> Self {
         Self {
             titles: Vec::new(),
@@ -154,18 +246,7 @@ impl<'a> Block<'a> {
             padding: Padding::zero(),
         }
     }
-    /// # Example
-    /// ```
-    /// # use ratatui::widgets::{Block, block::title::Title};
-    /// # use ratatui::layout::Alignment;
-    /// Block::default()
-    ///    .title("Title") // By default in the top right corner
-    ///    .title(Title::from("Left").alignment(Alignment::Left))
-    ///    .title(
-    ///        Title::from("Center")
-    ///            .alignment(Alignment::Center),
-    ///    );
-    /// ```
+
     /// Adds a title to the block.
     ///
     /// The `title` function allows you to add a title to the block. You can call this function
@@ -175,14 +256,49 @@ impl<'a> Block<'a> {
     /// position or alignment. When both centered and non-centered titles are rendered, the centered
     /// space is calculated based on the full width of the block, rather than the leftover width.
     ///
-    /// You can provide various types as the title, including strings, string slices, borrowed
-    /// strings (`Cow<str>`), spans, or vectors of spans (`Vec<Span>`).
+    /// You can provide any type that can be converted into [`Title`] including: strings, string
+    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](crate::text::Span), or vectors of
+    /// [spans](crate::text::Span) (`Vec<Span>`).
     ///
     /// By default, the titles will avoid being rendered in the corners of the block but will align
-    /// against the left or right edge of the block if there is no border on that edge.
+    /// against the left or right edge of the block if there is no border on that edge.  
+    /// The following demonstrates this behavior, notice the second title is one character off to
+    /// the left.
+    ///
+    /// ```plain
+    /// ┌With at least a left border───
+    ///
+    /// Without left border───
+    /// ```
     ///
     /// Note: If the block is too small and multiple titles overlap, the border might get cut off at
     /// a corner.
+    ///
+    /// # Example
+    ///
+    /// The following example demonstrates:
+    /// - Default title alignment
+    /// - Multiple titles (notice "Center" is centered according to the full with of the block, not
+    /// the leftover space)
+    /// - Two titles with the same alignment (notice the left titles are separated)
+    /// ```
+    /// # use ratatui::widgets::{Block, block::title::Title};
+    /// # use ratatui::layout::Alignment;
+    /// Block::default()
+    ///     .title("Title") // By default in the top left corner
+    ///     .title(Title::from("Left").alignment(Alignment::Left)) // also on the left
+    ///     .title(Title::from("Right").alignment(Alignment::Right))
+    ///     .title(Title::from("Center").alignment(Alignment::Center));
+    /// // Renders
+    /// // ┌Title─Left────Center─────────Right┐
+    /// ```
+    ///
+    /// # See also
+    ///
+    /// Titles attached to a block can have default behaviors. See
+    /// - [`Block::title_style`]
+    /// - [`Block::title_alignment`]
+    /// - [`Block::title_position`]
     pub fn title<T>(mut self, title: T) -> Block<'a>
     where
         T: Into<Title<'a>>,
@@ -191,24 +307,31 @@ impl<'a> Block<'a> {
         self
     }
 
-    /// Applies the style to all titles. If a title already has a style, it will add on top of it.
+    /// Applies the style to all titles.
+    ///
+    /// If a [`Title`] already has a style, the title's style will add on top of this one.
     pub const fn title_style(mut self, style: Style) -> Block<'a> {
         self.titles_style = style;
         self
     }
 
-    /// Aligns all elements that don't have an alignment
+    /// Sets the default [`Alignment`] for all block titles.
+    ///
+    /// Titles that explicitly set an [`Alignment`] will ignore this.
+    ///
     /// # Example
-    /// This example aligns all titles in the center except "right" title
+    ///
+    /// This example aligns all titles in the center except the "right" title which explicitly sets
+    /// [`Alignment::Right`].
     /// ```
     /// # use ratatui::widgets::{Block, block::title::Title};
     /// # use ratatui::layout::Alignment;
     /// Block::default()
-    ///   // This title won't be aligned in the center
-    ///   .title(Title::from("right").alignment(Alignment::Right))
-    ///   .title("foo")
-    ///   .title("bar")
-    ///   .title_alignment(Alignment::Center);
+    ///     // This title won't be aligned in the center
+    ///     .title(Title::from("right").alignment(Alignment::Right))
+    ///     .title("foo")
+    ///     .title("bar")
+    ///     .title_alignment(Alignment::Center);
     /// ```
     pub const fn title_alignment(mut self, alignment: Alignment) -> Block<'a> {
         self.titles_alignment = alignment;
@@ -221,38 +344,85 @@ impl<'a> Block<'a> {
         self.title_position(Position::Bottom)
     }
 
-    /// Positions all titles that don't have a position
+    /// Sets the default [`Position`] for all block [titles](Title).
+    ///
+    /// Titles that explicitly set a [`Position`] will ignore this.
+    ///
     /// # Example
-    /// This example position all titles on the bottom except "top" title
+    ///
+    /// This example positions all titles on the bottom except the "top" title which explicitly sets
+    /// [`Position::Top`].
     /// ```
     /// # use ratatui::widgets::{Block, BorderType, Borders, block::title::{Position, Title}};
     /// Block::default()
-    ///   // This title won't be aligned in the center
-    ///   .title(Title::from("top").position(Position::Top))
-    ///   .title("foo")
-    ///   .title("bar")
-    ///   .title_position(Position::Bottom);
+    ///     // This title won't be aligned in the center
+    ///     .title(Title::from("top").position(Position::Top))
+    ///     .title("foo")
+    ///     .title("bar")
+    ///     .title_position(Position::Bottom);
     /// ```
     pub const fn title_position(mut self, position: Position) -> Block<'a> {
         self.titles_position = position;
         self
     }
 
+    /// Defines the style of the borders.
+    ///
+    /// If a [`Block::style`] is defined, `border_style` will be applied on top of it.
+    ///
+    /// # Example
+    ///
+    /// This example shows a `Block` with blue borders.
+    /// ```
+    /// # use ratatui::prelude::*;
+    /// # use ratatui::widgets::{Block, Borders};
+    /// Block::default()
+    ///     .borders(Borders::ALL)
+    ///     .border_style(Style::new().blue());
+    /// ```
     pub const fn border_style(mut self, style: Style) -> Block<'a> {
         self.border_style = style;
         self
     }
 
+    /// Defines the block style.
+    ///
+    /// This is the most generic [`Style`] a block can receive, it will be merged with any other
+    /// more specific style. Elements can be styled further with [`Block::title_style`] and
+    /// [`Block::border_style`].
+    ///
+    /// This will also apply to the widget inside that block, unless the inner widget is styled.
     pub const fn style(mut self, style: Style) -> Block<'a> {
         self.style = style;
         self
     }
 
+    /// Defines which borders to display.
+    ///
+    /// [`Borders`] can also be styled with [`Block::border_style`] and [`Block::border_type`].
+    ///
+    /// # Examples
+    ///
+    /// Simply show all borders.
+    /// ```
+    /// # use ratatui::widgets::{Borders, Block};
+    /// Block::default().borders(Borders::ALL);
+    /// ```
+    ///
+    /// Display left and right borders.
+    /// ```
+    /// # use ratatui::widgets::{Borders, Block};
+    /// Block::default().borders(Borders::LEFT | Borders::RIGHT);
+    /// ```
     pub const fn borders(mut self, flag: Borders) -> Block<'a> {
         self.borders = flag;
         self
     }
 
+    /// Sets the symbols used to display the border (e.g. single line, double line, thick or
+    /// rounded borders).
+    ///
+    /// See [`BorderType`] for the full list of available symbols.
     pub const fn border_type(mut self, border_type: BorderType) -> Block<'a> {
         self.border_type = border_type;
         self
@@ -262,30 +432,25 @@ impl<'a> Block<'a> {
     ///
     /// # Examples
     ///
+    /// Draw a block nested within another block
     /// ```
-    /// // Draw a block nested within another block
-    /// use ratatui::{backend::TestBackend, buffer::Buffer, terminal::Terminal, widgets::{Block, Borders}};
-    /// let backend = TestBackend::new(15, 5);
-    /// let mut terminal = Terminal::new(backend).unwrap();
-    /// let outer_block = Block::default()
-    ///     .title("Outer Block")
-    ///     .borders(Borders::ALL);
-    /// let inner_block = Block::default()
-    ///     .title("Inner Block")
-    ///     .borders(Borders::ALL);
-    /// terminal.draw(|f| {
-    ///     let inner_area = outer_block.inner(f.size());
-    ///     f.render_widget(outer_block, f.size());
-    ///     f.render_widget(inner_block, inner_area);
-    /// });
-    /// let expected = Buffer::with_lines(vec![
-    ///     "┌Outer Block──┐",
-    ///     "│┌Inner Block┐│",
-    ///     "││           ││",
-    ///     "│└───────────┘│",
-    ///     "└─────────────┘",
-    /// ]);
-    /// terminal.backend().assert_buffer(&expected);
+    /// # use ratatui::{prelude::*, widgets::{Block, Borders}};
+    /// # fn render_nested_block<B: Backend>(frame: &mut Frame<B>) {
+    /// let outer_block = Block::default().title("Outer").borders(Borders::ALL);
+    /// let inner_block = Block::default().title("Inner").borders(Borders::ALL);
+    ///
+    /// let outer_area = frame.size();
+    /// let inner_area = outer_block.inner(outer_area);
+    ///
+    /// frame.render_widget(outer_block, outer_area);
+    /// frame.render_widget(inner_block, inner_area);
+    /// # }
+    /// // Renders
+    /// // ┌Outer────────┐
+    /// // │┌Inner──────┐│
+    /// // ││           ││
+    /// // │└───────────┘│
+    /// // └─────────────┘
     /// ```
     pub fn inner(&self, area: Rect) -> Rect {
         let mut inner = area;
@@ -317,6 +482,36 @@ impl<'a> Block<'a> {
         inner
     }
 
+    /// Defines the padding inside a `Block`.
+    ///
+    /// See [`Padding`] for more information.
+    ///
+    /// # Examples
+    ///
+    /// This renders a `Block` with no padding (the default).
+    /// ```
+    /// # use ratatui::widgets::{Block, Borders, Padding};
+    /// Block::default()
+    ///     .borders(Borders::ALL)
+    ///     .padding(Padding::zero());
+    /// // Renders
+    /// // ┌───────┐
+    /// // │content│
+    /// // └───────┘
+    /// ```
+    ///
+    /// This example shows a `Block` with padding left and right ([`Padding::horizontal`]).
+    /// Notice the two spaces before and after the content.
+    /// ```
+    /// # use ratatui::widgets::{Block, Borders, Padding};
+    /// Block::default()
+    ///     .borders(Borders::ALL)
+    ///     .padding(Padding::horizontal(2));
+    /// // Renders
+    /// // ┌───────────┐
+    /// // │  content  │
+    /// // └───────────┘
+    /// ```
     pub const fn padding(mut self, padding: Padding) -> Block<'a> {
         self.padding = padding;
         self

@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 //! This module holds the [`Title`] element and its related configuration types.
 //! A title is a piece of [`Block`](crate::widgets::Block) configuration.
 
