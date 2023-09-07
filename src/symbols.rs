@@ -244,14 +244,21 @@ pub mod braille {
 /// Marker to use when plotting data points
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Marker {
-    /// One point per cell in shape of dot
+    /// One point per cell in shape of dot ("•")
     #[default]
     Dot,
-    /// One point per cell in shape of a block
+    /// One point per cell in shape of a block ("█")
     Block,
-    /// One point per cell in the shape of a bar
+    /// One point per cell in the shape of a bar ("▄")
     Bar,
-    /// Up to 8 points per cell
+    /// Use the [Unicode Braille Patterns](https://en.wikipedia.org/wiki/Braille_Patterns) block to
+    /// represent data points.
+    ///
+    /// This is a 2x4 grid of dots, where each dot can be either on or off.
+    ///
+    /// Note: Support for this marker is limited to terminals and fonts that support Unicode
+    /// Braille Patterns. If your terminal does not support this, you will see unicode replacement
+    /// characters (�) instead of Braille dots.
     Braille,
 }
 
