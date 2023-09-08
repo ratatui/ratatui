@@ -182,8 +182,13 @@
 //! [Termion crate]: https://crates.io/crates/termion
 //! [Termwiz crate]: https://crates.io/crates/termwiz
 //! [Time crate]: https://crates.io/crates/time
+
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/ratatui-org/ratatui/main/assets/logo.png",
+    html_favicon_url = "https://raw.githubusercontent.com/ratatui-org/ratatui/main/assets/favicon.ico"
+)]
 
 pub mod backend;
 pub mod buffer;
