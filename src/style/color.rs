@@ -5,8 +5,8 @@ use std::{
 
 /// ANSI Color
 ///
-/// All colors from the [ANSI color table](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors)
-/// are supported (though some names are not exactly the same).
+/// All colors from the [ANSI color table] are supported (though some names are not exactly the
+/// same).
 ///
 /// | Color Name     | Color                   | Foreground | Background |
 /// |----------------|-------------------------|------------|------------|
@@ -56,6 +56,8 @@ use std::{
 /// assert_eq!("white".parse(), Ok(Color::White));
 /// assert_eq!("bright white".parse(), Ok(Color::White));
 /// ```
+///
+/// [ANSI color table]: https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Color {
@@ -99,9 +101,24 @@ pub enum Color {
     /// ANSI Color: Bright White. Foreground: 97, Background: 107
     /// Sometimes called `bright white` or `light white` in some terminals
     White,
-    /// An RGB color
+    /// An RGB color.
+    ///
+    /// Note that only terminals that support 24-bit true color will display this correctly.
+    /// Notably versions of Windows Terminal prior to Windows 10 and macOS Terminal.app do not
+    /// support this.
+    ///
+    /// If the terminal does not support true color, code using the  [`TermwizBackend`] will
+    /// fallback to the default text color. Crossterm and Termion do not have this capability and
+    /// the display will be unpredictable (e.g. Terminal.app may display glitched blinking text).
+    /// See <https://github.com/ratatui-org/ratatui/issues/475> for an example of this problem.
+    ///
+    /// See also: <https://en.wikipedia.org/wiki/ANSI_escape_code#24-bit>
+    ///
+    /// [`TermwizBackend`]: crate::backend::TermwizBackend
     Rgb(u8, u8, u8),
-    /// An 8-bit 256 color. See <https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit>
+    /// An 8-bit 256 color.
+    ///
+    /// See also <https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit>
     Indexed(u8),
 }
 
