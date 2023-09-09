@@ -22,7 +22,7 @@ body = """
 
 {% macro commit(commit) -%}
 - [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui-org/ratatui/commit/" ~ commit.id }})
-  *({{commit.scope | default(value = "uncategorized")}})* {{ commit.message | upper_first }}
+  *({{commit.scope | default(value = "uncategorized") | lower }})* {{ commit.message | upper_first }}
 {%- if commit.breaking %} [**breaking**]{% endif %}
 {%- if commit.body %}
 
