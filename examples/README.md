@@ -98,6 +98,18 @@ cargo run --example=colors --features=crossterm
 
 ![Colors][colors.gif]
 
+## Colors (RGB)
+
+Demonstrates the available RGB
+[`Color`](https://docs.rs/ratatui/latest/ratatui/style/enum.Color.html) options. These can be used
+in any style field. Source: [colors_rgb.rs](./colors_rgb.rs).
+
+```shell
+cargo run --example=colors_rgb --features=crossterm
+```
+
+![Colors RGB][colors_rgb.gif]
+
 ## Custom Widget
 
 Demonstrates how to implement the
@@ -286,6 +298,7 @@ examples/generate.bash
 [canvas.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/canvas.gif?raw=true
 [chart.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/chart.gif?raw=true
 [colors.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/colors.gif?raw=true
+[colors_rgb.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/colors_rgb.gif?raw=true
 [custom_widget.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/custom_widget.gif?raw=true
 [demo.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/demo.gif?raw=true
 [gauge.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/gauge.gif?raw=true
