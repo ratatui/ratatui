@@ -1,3 +1,34 @@
+#![deny(missing_docs)]
+//! Provides the [`Terminal`], [`Frame`] and related types.
+//!
+//! The [`Terminal`] is the main interface of this library. It is responsible for drawing and
+//! maintaining the state of the different widgets that compose your application.
+//!
+//! The [`Frame`] is a consistent view into the terminal state for rendering. It is obtained via
+//! the closure argument of [`Terminal::draw`]. It is used to render widgets to the terminal and
+//! control the cursor position.
+//!
+//! # Example
+//!
+//! ```rust,no_run
+//! use std::io::stdout;
+//! use ratatui::{prelude::*, widgets::Paragraph};
+//!
+//! let backend = CrosstermBackend::new(stdout());
+//! let mut terminal = Terminal::new(backend)?;
+//! terminal.draw(|frame| {
+//!     let area = frame.size();
+//!     frame.render_widget(Paragraph::new("Hello world!"), area);
+//! })?;
+//! # std::io::Result::Ok(())
+//! ```
+//!
+//! [Crossterm]: https://crates.io/crates/crossterm
+//! [Termion]: https://crates.io/crates/termion
+//! [Termwiz]: https://crates.io/crates/termwiz
+//! [`backend`]: crate::backend
+//! [`Backend`]: crate::backend::Backend
+//! [`Buffer`]: crate::buffer::Buffer
 use std::{fmt, io};
 
 use crate::{
@@ -7,11 +38,29 @@ use crate::{
     widgets::{StatefulWidget, Widget},
 };
 
+/// Represents the viewport of the terminal. The viewport is the area of the terminal that is
+/// currently visible to the user. It can be either fullscreen, inline or fixed.
+///
+/// When the viewport is fullscreen, the whole terminal is used to draw the application.
+///
+/// When the viewport is inline, it is drawn inline with the rest of the terminal. The height of
+/// the viewport is fixed, but the width is the same as the terminal width.
+///
+/// When the viewport is fixed, it is drawn in a fixed area of the terminal. The area is specified
+/// by a [`Rect`].
+///
+/// See [`Terminal::with_options`] for more information.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub enum Viewport {
+    /// The viewport is fullscreen
     #[default]
     Fullscreen,
+    /// The viewport is inline with the rest of the terminal.
+    ///
+    /// The viewport's height is fixed and specified in number of lines. The width is the same as
+    /// the terminal's width. The viewport is drawn below the cursor position.
     Inline(u16),
+    /// The viewport is drawn in a fixed area of the terminal. The area is specified by a [`Rect`].
     Fixed(Rect),
 }
 
@@ -32,12 +81,55 @@ pub struct TerminalOptions {
     pub viewport: Viewport,
 }
 
-/// Interface to the terminal backed by a [`Backend`].
+/// An interface that Ratatui to interact and draw [`Frame`]s on the user's terminal.
+///
+/// This is the main entry point for Ratatui. It is responsible for drawing and maintaining the
+/// state of the buffers, cursor and viewport.
+///
+/// The [`Terminal`] is generic over a [`Backend`] implementation which is used to interface with
+/// the underlying terminal library. The [`Backend`] trait is implemented for three popular Rust
+/// terminal libraries: [Crossterm], [Termion] and [Termwiz]. See the [`backend`] module for more
+/// information.
+///
+/// The terminal has two buffers that are used to draw the application. The first buffer is the
+/// current buffer and the second buffer is the previous buffer. The two buffers are compared at
+/// the end of each draw pass to output only the changes to the terminal.
+///
+/// The terminal also has a viewport which is the area of the terminal that is currently visible to
+/// the user. It can be either fullscreen, inline or fixed. See [`Viewport`] for more information.
+///
+/// Applications should detect terminal resizes and call [`Terminal::draw`] to redraw the
+/// application with the new size. This will automatically resize the internal buffers to match the
+/// new size for inline and fullscreen viewports. Fixed viewports are not resized automatically.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use std::io::stdout;
+/// use ratatui::{prelude::*, widgets::Paragraph};
+///
+/// let backend = CrosstermBackend::new(stdout());
+/// let mut terminal = Terminal::new(backend)?;
+/// terminal.draw(|frame| {
+///     let area = frame.size();
+///     frame.render_widget(Paragraph::new("Hello World!"), area);
+///     frame.set_cursor(0, 0);
+/// })?;
+/// # std::io::Result::Ok(())
+/// ```
+///
+/// [Crossterm]: https://crates.io/crates/crossterm
+/// [Termion]: https://crates.io/crates/termion
+/// [Termwiz]: https://crates.io/crates/termwiz
+/// [`backend`]: crate::backend
+/// [`Backend`]: crate::backend::Backend
+/// [`Buffer`]: crate::buffer::Buffer
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Terminal<B>
 where
     B: Backend,
 {
+    /// The backend used to interface with the terminal
     backend: B,
     /// Holds the results of the current and previous draw calls. The two are compared at the end
     /// of each draw pass to output the necessary updates to the terminal
@@ -48,105 +140,13 @@ where
     hidden_cursor: bool,
     /// Viewport
     viewport: Viewport,
+    /// Area of the viewport
     viewport_area: Rect,
     /// Last known size of the terminal. Used to detect if the internal buffers have to be resized.
     last_known_size: Rect,
     /// Last known position of the cursor. Used to find the new area when the viewport is inlined
     /// and the terminal resized.
     last_known_cursor_pos: (u16, u16),
-}
-
-/// Represents a consistent terminal interface for rendering.
-#[derive(Debug, Hash)]
-pub struct Frame<'a, B: 'a>
-where
-    B: Backend,
-{
-    terminal: &'a mut Terminal<B>,
-
-    /// Where should the cursor be after drawing this frame?
-    ///
-    /// If `None`, the cursor is hidden and its position is controlled by the backend. If `Some((x,
-    /// y))`, the cursor is shown and placed at `(x, y)` after the call to `Terminal::draw()`.
-    cursor_position: Option<(u16, u16)>,
-}
-
-impl<'a, B> Frame<'a, B>
-where
-    B: Backend,
-{
-    /// Frame size, guaranteed not to change when rendering.
-    pub fn size(&self) -> Rect {
-        self.terminal.viewport_area
-    }
-
-    /// Render a [`Widget`] to the current buffer using [`Widget::render`].
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
-    /// # let backend = TestBackend::new(5, 5);
-    /// # let mut terminal = Terminal::new(backend).unwrap();
-    /// let block = Block::default();
-    /// let area = Rect::new(0, 0, 5, 5);
-    /// let mut frame = terminal.get_frame();
-    /// frame.render_widget(block, area);
-    /// ```
-    pub fn render_widget<W>(&mut self, widget: W, area: Rect)
-    where
-        W: Widget,
-    {
-        widget.render(area, self.terminal.current_buffer_mut());
-    }
-
-    /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
-    ///
-    /// The last argument should be an instance of the [`StatefulWidget::State`] associated to the
-    /// given [`StatefulWidget`].
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
-    /// # let backend = TestBackend::new(5, 5);
-    /// # let mut terminal = Terminal::new(backend).unwrap();
-    /// let mut state = ListState::default();
-    /// state.select(Some(1));
-    /// let items = vec![
-    ///     ListItem::new("Item 1"),
-    ///     ListItem::new("Item 2"),
-    /// ];
-    /// let list = List::new(items);
-    /// let area = Rect::new(0, 0, 5, 5);
-    /// let mut frame = terminal.get_frame();
-    /// frame.render_stateful_widget(list, area, &mut state);
-    /// ```
-    pub fn render_stateful_widget<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
-    where
-        W: StatefulWidget,
-    {
-        widget.render(area, self.terminal.current_buffer_mut(), state);
-    }
-
-    /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
-    /// coordinates. If this method is not called, the cursor will be hidden.
-    ///
-    /// Note that this will interfere with calls to `Terminal::hide_cursor()`,
-    /// `Terminal::show_cursor()`, and `Terminal::set_cursor()`. Pick one of the APIs and stick
-    /// with it.
-    pub fn set_cursor(&mut self, x: u16, y: u16) {
-        self.cursor_position = Some((x, y));
-    }
-}
-
-/// `CompletedFrame` represents the state of the terminal after all changes performed in the last
-/// [`Terminal::draw`] call have been applied. Therefore, it is only valid until the next call to
-/// [`Terminal::draw`].
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct CompletedFrame<'a> {
-    pub buffer: &'a Buffer,
-    pub area: Rect,
 }
 
 impl<B> Drop for Terminal<B>
@@ -167,8 +167,17 @@ impl<B> Terminal<B>
 where
     B: Backend,
 {
-    /// Wrapper around Terminal initialization. Each buffer is initialized with a blank string and
-    /// default colors for the foreground and the background
+    /// Creates a new [`Terminal`] with the given [`Backend`] with a full screen viewport.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use std::io::stdout;
+    /// # use ratatui::prelude::*;
+    /// let backend = CrosstermBackend::new(stdout());
+    /// let terminal = Terminal::new(backend)?;
+    /// # std::io::Result::Ok(())
+    /// ```
     pub fn new(backend: B) -> io::Result<Terminal<B>> {
         Terminal::with_options(
             backend,
@@ -178,6 +187,21 @@ where
         )
     }
 
+    /// Creates a new [`Terminal`] with the given [`Backend`] and [`TerminalOptions`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use std::io::stdout;
+    /// # use ratatui::{prelude::*, backend::TestBackend};
+    /// let backend = CrosstermBackend::new(stdout());
+    /// let viewport = Viewport::Fixed(Rect::new(0, 0, 10, 10));
+    /// let terminal = Terminal::with_options(
+    ///     backend,
+    ///     TerminalOptions { viewport },
+    /// )?;
+    /// # std::io::Result::Ok(())
+    /// ```
     pub fn with_options(mut backend: B, options: TerminalOptions) -> io::Result<Terminal<B>> {
         let size = match options.viewport {
             Viewport::Fullscreen | Viewport::Inline(_) => backend.size()?,
@@ -208,14 +232,17 @@ where
         }
     }
 
+    /// Gets the current buffer as a mutable reference.
     pub fn current_buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffers[self.current]
     }
 
+    /// Gets the backend
     pub fn backend(&self) -> &B {
         &self.backend
     }
 
+    /// Gets the backend as a mutable reference
     pub fn backend_mut(&mut self) -> &mut B {
         &mut self.backend
     }
@@ -232,9 +259,10 @@ where
         self.backend.draw(updates.into_iter())
     }
 
-    /// Updates the Terminal so that internal buffers match the requested size. Requested size will
-    /// be saved so the size can remain consistent when rendering.
-    /// This leads to a full clear of the screen.
+    /// Updates the Terminal so that internal buffers match the requested size.
+    ///
+    /// Requested size will be saved so the size can remain consistent when rendering. This leads
+    /// to a full clear of the screen.
     pub fn resize(&mut self, size: Rect) -> io::Result<()> {
         let next_area = match self.viewport {
             Viewport::Fullscreen => size,
@@ -274,6 +302,23 @@ where
 
     /// Synchronizes terminal size, calls the rendering closure, flushes the current internal state
     /// and prepares for the next draw call.
+    ///
+    /// This is the main entry point for drawing to the terminal.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use std::io::stdout;
+    /// # use ratatui::{prelude::*, widgets::Paragraph};
+    /// let backend = CrosstermBackend::new(stdout());
+    /// let mut terminal = Terminal::new(backend)?;
+    /// terminal.draw(|frame| {
+    ///     let area = frame.size();
+    ///     frame.render_widget(Paragraph::new("Hello World!"), area);
+    ///     frame.set_cursor(0, 0);
+    /// })?;
+    /// # std::io::Result::Ok(())
+    /// ```
     pub fn draw<F>(&mut self, f: F) -> io::Result<CompletedFrame>
     where
         F: FnOnce(&mut Frame<B>),
@@ -311,22 +356,29 @@ where
         })
     }
 
+    /// Hides the cursor.
     pub fn hide_cursor(&mut self) -> io::Result<()> {
         self.backend.hide_cursor()?;
         self.hidden_cursor = true;
         Ok(())
     }
 
+    /// Shows the cursor.
     pub fn show_cursor(&mut self) -> io::Result<()> {
         self.backend.show_cursor()?;
         self.hidden_cursor = false;
         Ok(())
     }
 
+    /// Gets the current cursor position.
+    ///
+    /// This is the position of the cursor after the last draw call and is returned as a tuple of
+    /// `(x, y)` coordinates.
     pub fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
         self.backend.get_cursor()
     }
 
+    /// Sets the cursor position.
     pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
         self.backend.set_cursor(x, y)?;
         self.last_known_cursor_pos = (x, y);
@@ -486,6 +538,132 @@ fn compute_inline_size<B: Backend>(
         },
         pos,
     ))
+}
+
+/// A consistent view into the terminal state for rendering a single frame.
+///
+/// This is obtained via the closure argument of [`Terminal::draw`]. It is used to render widgets
+/// to the terminal and control the cursor position.
+///
+/// The changes drawn to the frame are not immediately applied to the terminal. They are only
+/// applied after the closure returns. This allows for widgets to be drawn in any order. The
+/// changes are then compared to the previous frame and only the necessary updates are applied to
+/// the terminal.
+///
+/// The [`Frame`] is generic over a [`Backend`] implementation which is used to interface with the
+/// underlying terminal library. The [`Backend`] trait is implemented for three popular Rust
+/// terminal libraries: [Crossterm], [Termion] and [Termwiz]. See the [`backend`] module for more
+/// information.
+///
+/// [Crossterm]: https://crates.io/crates/crossterm
+/// [Termion]: https://crates.io/crates/termion
+/// [Termwiz]: https://crates.io/crates/termwiz
+/// [`backend`]: crate::backend
+/// [`Backend`]: crate::backend::Backend
+/// [`Buffer`]: crate::buffer::Buffer
+#[derive(Debug, Hash)]
+pub struct Frame<'a, B: 'a>
+where
+    B: Backend,
+{
+    /// The terminal that this frame is associated with.
+    terminal: &'a mut Terminal<B>,
+
+    /// Where should the cursor be after drawing this frame?
+    ///
+    /// If `None`, the cursor is hidden and its position is controlled by the backend. If `Some((x,
+    /// y))`, the cursor is shown and placed at `(x, y)` after the call to `Terminal::draw()`.
+    cursor_position: Option<(u16, u16)>,
+}
+
+impl<'a, B> Frame<'a, B>
+where
+    B: Backend,
+{
+    /// The size of the current frame
+    ///
+    /// This is guaranteed not to change when rendering.
+    pub fn size(&self) -> Rect {
+        self.terminal.viewport_area
+    }
+
+    /// Render a [`Widget`] to the current buffer using [`Widget::render`].
+    ///
+    /// Usually the area argument is the size of the current frame or a sub-area of the current
+    /// frame (which can be obtained using [`Layout`] to split the total area).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::Block};
+    /// # let backend = TestBackend::new(5, 5);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
+    /// # let mut frame = terminal.get_frame();
+    /// let block = Block::default();
+    /// let area = Rect::new(0, 0, 5, 5);
+    /// frame.render_widget(block, area);
+    /// ```
+    ///
+    /// [`Layout`]: crate::layout::Layout
+    pub fn render_widget<W>(&mut self, widget: W, area: Rect)
+    where
+        W: Widget,
+    {
+        widget.render(area, self.terminal.current_buffer_mut());
+    }
+
+    /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
+    ///
+    /// Usually the area argument is the size of the current frame or a sub-area of the current
+    /// frame (which can be obtained using [`Layout`] to split the total area).
+    ///
+    /// The last argument should be an instance of the [`StatefulWidget::State`] associated to the
+    /// given [`StatefulWidget`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+    /// # let backend = TestBackend::new(5, 5);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
+    /// # let mut frame = terminal.get_frame();
+    /// let mut state = ListState::default().with_selected(Some(1));
+    /// let list = List::new(vec![
+    ///     ListItem::new("Item 1"),
+    ///     ListItem::new("Item 2"),
+    /// ]);
+    /// let area = Rect::new(0, 0, 5, 5);
+    /// frame.render_stateful_widget(list, area, &mut state);
+    /// ```
+    ///
+    /// [`Layout`]: crate::layout::Layout
+    pub fn render_stateful_widget<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
+    where
+        W: StatefulWidget,
+    {
+        widget.render(area, self.terminal.current_buffer_mut(), state);
+    }
+
+    /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
+    /// coordinates. If this method is not called, the cursor will be hidden.
+    ///
+    /// Note that this will interfere with calls to `Terminal::hide_cursor()`,
+    /// `Terminal::show_cursor()`, and `Terminal::set_cursor()`. Pick one of the APIs and stick
+    /// with it.
+    pub fn set_cursor(&mut self, x: u16, y: u16) {
+        self.cursor_position = Some((x, y));
+    }
+}
+
+/// `CompletedFrame` represents the state of the terminal after all changes performed in the last
+/// [`Terminal::draw`] call have been applied. Therefore, it is only valid until the next call to
+/// [`Terminal::draw`].
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct CompletedFrame<'a> {
+    /// The buffer that was used to draw the last frame.
+    pub buffer: &'a Buffer,
+    /// The size of the last frame.
+    pub area: Rect,
 }
 
 #[cfg(test)]
