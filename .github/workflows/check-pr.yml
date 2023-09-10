@@ -7,7 +7,8 @@ on:
       - edited
       - synchronize
   merge_group:
-
+  pull_request:
+    types: [synchronize, opened, reopened, labeled, unlabeled]
 
 permissions:
   pull-requests: write
@@ -49,9 +50,9 @@ jobs:
     - name: Check breaking change label
       id: check_breaking_change
       run: |
-        title="${{ github.event.pull_request.title }}"
         pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\(\w+\))?!:'
-        if echo "$title" | grep -qE "$pattern"; then
+        # Check if pattern matches
+        if echo "${{ github.event.pull_request.title }}" | grep -qE "$pattern"; then
           echo "breaking_change=true" >> $GITHUB_OUTPUT
         else
           echo "breaking_change=false" >> $GITHUB_OUTPUT
@@ -68,3 +69,15 @@ jobs:
             repo: context.repo.repo,
             labels: ['breaking change']
           })
+
+  do-not-merge:
+    if: ${{ contains(github.event.*.labels.*.name, 'do not merge') }}
+    name: Prevent Merging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for label
+        run: |
+          echo "Pull request is labeled as 'do not merge'"
+          echo "This workflow fails so that the pull request cannot be merged"
+          exit 1
+
