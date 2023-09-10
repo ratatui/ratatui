@@ -10,7 +10,7 @@ on:
 
 
 permissions:
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   check-title:
@@ -28,7 +28,7 @@ jobs:
         with:
           header: pr-title-lint-error
           message: |
-            Hey there and thank you for opening this pull request! 👋🏼
+            Thank you for opening this pull request!
 
             We require pull request titles to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and it looks like your proposed title needs to be adjusted.
 
@@ -47,20 +47,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check breaking change label
+      id: check_breaking_change
       run: |
         title="${{ github.event.pull_request.title }}"
-        if ! echo "$title" | grep -qE '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\(\w+\))?!: '; then
-          echo "::set-output name=breaking_change::true"
+        pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\(\w+\))?!:'
+        if echo "$title" | grep -qE "$pattern"; then
+          echo "breaking_change=true" >> $GITHUB_OUTPUT
         else
-          echo "::set-output name=breaking_change::false"
+          echo "breaking_change=false" >> $GITHUB_OUTPUT
         fi
-
     - name: Add label
-      if: steps.check.outputs.breaking_change == 'true'
+      if: steps.check_breaking_change.outputs.breaking_change == 'true'
       uses: actions/github-script@v6
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          github.issues.addLabels({
+          github.rest.issues.addLabels({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
