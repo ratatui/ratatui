@@ -124,7 +124,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         Line::from("This is a line   ".red()),
         Line::from("This is a line".on_dark_gray()),
         Line::from("This is a longer line".crossed_out()),
-        Line::from(long_line.reset()),
+        Line::from(long_line.clone()),
         Line::from("This is a line".reset()),
         Line::from(vec![
             Span::raw("Masked text: "),
@@ -137,7 +137,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         Line::from("This is a line   ".red()),
         Line::from("This is a line".on_dark_gray()),
         Line::from("This is a longer line".crossed_out()),
-        Line::from(long_line.reset()),
+        Line::from(long_line.clone()),
         Line::from("This is a line".reset()),
         Line::from(vec![
             Span::raw("Masked text: "),
