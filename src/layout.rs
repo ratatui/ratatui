@@ -3,7 +3,9 @@ use std::{
     cmp::{max, min},
     collections::HashMap,
     fmt,
+    num::NonZeroUsize,
     rc::Rc,
+    sync::OnceLock,
 };
 
 use cassowary::{
@@ -13,6 +15,8 @@ use cassowary::{
 };
 use itertools::Itertools;
 use strum::{Display, EnumString};
+
+use lru::LruCache;
 
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Corner {
@@ -328,6 +332,8 @@ pub struct Layout {
     constraints: Vec<Constraint>,
     /// option for segment size preferences
     segment_size: SegmentSize,
+    // cache size
+    cache_size: usize,
 }
 
 impl Default for Layout {
@@ -343,6 +349,7 @@ impl Layout {
     /// - margin: 0, 0
     /// - constraints: empty
     /// - segment_size: SegmentSize::LastTakesRemainder
+    /// - cache_size: 16
     pub const fn new() -> Layout {
         Layout {
             direction: Direction::Vertical,
@@ -352,6 +359,7 @@ impl Layout {
             },
             constraints: Vec::new(),
             segment_size: SegmentSize::LastTakesRemainder,
+            cache_size: 16,
         }
     }
 
@@ -474,7 +482,7 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// simple HashMap, and grows indefinitely (<https://github.com/ratatui-org/ratatui/issues/402>).
+    /// LruCache, and grows until cache_size is reached.
     ///
     /// # Examples
     ///
@@ -494,18 +502,19 @@ impl Layout {
     /// ```
     pub fn split(&self, area: Rect) -> Rc<[Rect]> {
         LAYOUT_CACHE.with(|c| {
-            c.borrow_mut()
-                .entry((area, self.clone()))
-                .or_insert_with(|| split(area, self))
-                .clone()
+            c.get_or_init(|| {
+                RefCell::new(LruCache::new(NonZeroUsize::new(self.cache_size).unwrap()))
+            })
+            .borrow_mut()
+            .get_or_insert((area, self.clone()), || split(area, self))
+            .clone()
         })
     }
 }
 
-type Cache = HashMap<(Rect, Layout), Rc<[Rect]>>;
+type Cache = LruCache<(Rect, Layout), Rc<[Rect]>>;
 thread_local! {
-    // TODO: Maybe use a fixed size cache https://github.com/ratatui-org/ratatui/issues/402
-    static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(HashMap::new());
+    static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = OnceLock::new();
 }
 
 /// A container used by the solver inside split
