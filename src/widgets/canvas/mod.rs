@@ -320,8 +320,16 @@ impl<'a> Context<'a> {
     }
 }
 
-/// The Canvas widget may be used to draw more detailed figures using braille patterns (each
-/// cell can have a braille character in 8 different positions).
+/// The Canvas widget provides a means to draw shapes (Lines, Rectangles, Circles, etc.) on a grid.
+///
+/// By default the grid is made of Braille patterns but you may change the marker to use a different
+/// set of symbols. If your terminal or font does not support this unicode block, you will see
+/// unicode replacement characters (�) instead of braille dots. The Braille patterns provide a more
+/// fine grained result (2x4 dots) but you might want to use a simple dot, block, or bar instead by
+/// calling the [`marker`] method if your target environment does not support those symbols,
+///
+/// See [Unicode Braille Patterns](https://en.wikipedia.org/wiki/Braille_Patterns) for more info.
+///
 /// # Examples
 ///
 /// ```
@@ -355,6 +363,8 @@ impl<'a> Context<'a> {
 ///         });
 ///     });
 /// ```
+///
+/// [`marker`]: #method.marker
 #[derive(Debug, Clone, PartialEq)]
 pub struct Canvas<'a, F>
 where
