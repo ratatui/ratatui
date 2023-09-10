@@ -1,23 +1,36 @@
-# Ratatui
+![Demo of
+Ratatui](https://raw.githubusercontent.com/ratatui-org/ratatui/aa09e59dc0058347f68d7c1e0c91f863c6f2b8c9/examples/demo2.gif)
+<!--
+Permalink to https://github.com/ratatui-org/ratatui/blob/images/examples/demo2.gif
+See RELEASE.md for instructions on creating the demo gif
+--->
 
-<img align="left" src="https://avatars.githubusercontent.com/u/125200832?s=128&v=4">
-
-`ratatui` is a [Rust](https://www.rust-lang.org) library that is all about cooking up terminal user interfaces.
-It is a community fork of the original [tui-rs](https://github.com/fdehau/tui-rs)
-project.
+<div align="center">
 
 [![Crates.io](https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square)](https://crates.io/crates/ratatui)
 [![License](https://img.shields.io/crates/l/ratatui?style=flat-square)](./LICENSE) [![GitHub CI
 Status](https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github)](https://github.com/ratatui-org/ratatui/actions?query=workflow%3ACI+)
-[![Docs.rs](https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square)](https://docs.rs/crate/ratatui/)  
+[![Docs.rs](https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square)](https://docs.rs/crate/ratatui/)<br>
 [![Dependency
 Status](https://deps.rs/repo/github/ratatui-org/ratatui/status.svg?style=flat-square)](https://deps.rs/repo/github/ratatui-org/ratatui)
 [![Codecov](https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST)](https://app.codecov.io/gh/ratatui-org/ratatui)
 [![Discord](https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square)](https://discord.gg/pMCEU9hNEj)
-[![Matrix](https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix)](https://matrix.to/#/#ratatui:matrix.org)
+[![Matrix](https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix)](https://matrix.to/#/#ratatui:matrix.org)<br>
+[Documentation](https://docs.rs/ratatui)
+· [Examples](https://github.com/ratatui-org/ratatui/tree/main/examples)
+· [Report a bug](https://github.com/ratatui-org/ratatui/issues/new?labels=bug&projects=&template=bug_report.md)
+· [Request a Feature](https://github.com/ratatui-org/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md)
+· [Send a Pull Request](https://github.com/ratatui-org/ratatui/compare)
 
-<!-- See RELEASE.md for instructions on creating the demo gif --->
-![Demo of Ratatui](https://vhs.charm.sh/vhs-tF0QbuPbtHgUeG0sTVgFr.gif)
+</div>
+
+<img align="left" src="https://avatars.githubusercontent.com/u/125200832?s=128&v=4">
+
+# Ratatui
+
+`ratatui` is a [Rust](https://www.rust-lang.org) library that is all about cooking up terminal user
+interfaces. It is a community fork of the original [tui-rs](https://github.com/fdehau/tui-rs)
+project.
 
 <details>
 <summary>Table of Contents</summary>
