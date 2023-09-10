@@ -6,9 +6,9 @@ on:
       - opened
       - edited
       - synchronize
+      - labeled
+      - unlabeled
   merge_group:
-  pull_request:
-    types: [synchronize, opened, reopened, labeled, unlabeled]
 
 permissions:
   pull-requests: write
