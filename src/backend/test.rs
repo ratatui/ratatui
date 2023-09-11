@@ -14,19 +14,23 @@ use crate::{
     layout::{Rect, Size},
 };
 
-/// A backend used for the integration tests.
+/// A [`Backend`] implementation used for integration testing that that renders to an in memory
+/// buffer.
+///
+/// Note: that although many of the integration and unit tests in ratatui are written using this
+/// backend, it is preferable to write unit tests for widgets directly against the buffer rather
+/// than using this backend. This backend is intended for integration tests that test the entire
+/// terminal UI.
 ///
 /// # Example
 ///
 /// ```rust
-/// use ratatui::{backend::{Backend, TestBackend}, buffer::Buffer};
+/// use ratatui::{prelude::*, backend::TestBackend};
 ///
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut backend = TestBackend::new(10, 2);
 /// backend.clear()?;
 /// backend.assert_buffer(&Buffer::with_lines(vec!["          "; 2]));
-/// # Ok(())
-/// # }
+/// # std::io::Result::Ok(())
 /// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

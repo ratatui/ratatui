@@ -1,8 +1,9 @@
-//! This module provides the `TermwizBackend` implementation for the [`Backend`] trait.
-//! It uses the `termwiz` crate to interact with the terminal.
+//! This module provides the `TermwizBackend` implementation for the [`Backend`] trait. It uses the
+//! [Termwiz] crate to interact with the terminal.
 //!
 //! [`Backend`]: trait.Backend.html
 //! [`TermwizBackend`]: crate::backend::TermionBackend
+//! [Termwiz]: https://crates.io/crates/termwiz
 
 use std::{error::Error, io};
 
@@ -22,24 +23,67 @@ use crate::{
     style::{Color, Modifier},
 };
 
-/// Termwiz backend implementation for the [`Backend`] trait.
+/// A [`Backend`] implementation that uses [Termwiz] to render to the terminal.
+///
+/// The `TermwizBackend` struct is a wrapper around a [`BufferedTerminal`], which is used to send
+/// commands to the terminal. It provides methods for drawing content, manipulating the cursor, and
+/// clearing the terminal screen.
+///
+/// Most applications should not call the methods on `TermwizBackend` directly, but will instead
+/// use the [`Terminal`] struct, which provides a more ergonomic interface.
+///
+/// This backend automatically enables raw mode and switches to the alternate screen when it is
+/// created using the [`TermwizBackend::new`] method (and disables raw mode and returns to the main
+/// screen when dropped). Use the [`TermwizBackend::with_buffered_terminal`] to create a new
+/// instance with a custom [`BufferedTerminal`] if this is not desired.
+///
 /// # Example
 ///
 /// ```rust,no_run
-/// use ratatui::backend::{Backend, TermwizBackend};
+/// use ratatui::prelude::*;
 ///
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let mut backend = TermwizBackend::new()?;
-/// backend.clear()?;
-/// # Ok(())
-/// # }
+/// let backend = TermwizBackend::new()?;
+/// let mut terminal = Terminal::new(backend)?;
+///
+/// terminal.clear()?;
+/// terminal.draw(|frame| {
+///     // -- snip --
+/// })?;
+/// # std::result::Result::Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
+///
+/// See the the [examples] directory for more examples. See the [`backend`] module documentation
+/// for more details on raw mode and alternate screen.
+///
+/// [`backend`]: crate::backend
+/// [`Terminal`]: crate::terminal::Terminal
+/// [`BufferedTerminal`]: termwiz::terminal::buffered::BufferedTerminal
+/// [Termwiz]: https://crates.io/crates/termwiz
+/// [examples]: https://github.com/ratatui-org/ratatui/tree/main/examples#readme
 pub struct TermwizBackend {
     buffered_terminal: BufferedTerminal<SystemTerminal>,
 }
 
 impl TermwizBackend {
     /// Creates a new Termwiz backend instance.
+    ///
+    /// The backend will automatically enable raw mode and enter the alternate screen.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if unable to do any of the following:
+    /// - query the terminal capabilities.
+    /// - enter raw mode.
+    /// - enter the alternate screen.
+    /// - create the system or buffered terminal.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use ratatui::prelude::*;
+    /// let backend = TermwizBackend::new()?;
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
     pub fn new() -> Result<TermwizBackend, Box<dyn Error>> {
         let mut buffered_terminal =
             BufferedTerminal::new(SystemTerminal::new(Capabilities::new_from_env()?)?)?;

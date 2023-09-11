@@ -1,10 +1,7 @@
-//! This module provides the `CrosstermBackend` implementation for the `Backend` trait.
-//! It uses the `crossterm` crate to interact with the terminal.
+//! This module provides the [`CrosstermBackend`] implementation for the [`Backend`] trait. It uses
+//! the [Crossterm] crate to interact with the terminal.
 //!
-//!
-//! [`Backend`]: trait.Backend.html
-//! [`CrosstermBackend`]: struct.CrosstermBackend.html
-
+//! [Crossterm]: https://crates.io/crates/crossterm
 use std::io::{self, Write};
 
 use crossterm::{
@@ -25,36 +22,80 @@ use crate::{
     style::{Color, Modifier},
 };
 
-/// A backend implementation using the `crossterm` crate.
+/// A [`Backend`] implementation that uses [Crossterm] to render to the terminal.
 ///
-/// The `CrosstermBackend` struct is a wrapper around a type implementing `Write`, which
-/// is used to send commands to the terminal. It provides methods for drawing content,
-/// manipulating the cursor, and clearing the terminal screen.
+/// The `CrosstermBackend` struct is a wrapper around a writer implementing [`Write`], which is
+/// used to send commands to the terminal. It provides methods for drawing content, manipulating
+/// the cursor, and clearing the terminal screen.
+///
+/// Most applications should not call the methods on `CrosstermBackend` directly, but will instead
+/// use the [`Terminal`] struct, which provides a more ergonomic interface.
+///
+/// Usually applications will enable raw mode and switch to alternate screen mode after creating
+/// a `CrosstermBackend`. This is done by calling [`crossterm::terminal::enable_raw_mode`] and
+/// [`crossterm::terminal::EnterAlternateScreen`] (and the corresponding disable/leave functions
+/// when the application exits). This is not done automatically by the backend because it is
+/// possible that the application may want to use the terminal for other purposes (like showing
+/// help text) before entering alternate screen mode.
 ///
 /// # Example
 ///
-/// ```rust
-/// use ratatui::backend::{Backend, CrosstermBackend};
+/// ```rust,no_run
+/// use std::io::{stdout, stderr};
+/// use crossterm::{
+///     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+///     ExecutableCommand,
+/// };
+/// use ratatui::prelude::*;
 ///
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let buffer = std::io::stdout();
-/// let mut backend = CrosstermBackend::new(buffer);
-/// backend.clear()?;
-/// # Ok(())
-/// # }
+/// let mut backend = CrosstermBackend::new(stdout());
+/// // or
+/// let backend = CrosstermBackend::new(stderr());
+/// let mut terminal = Terminal::new(backend)?;
+///
+/// enable_raw_mode()?;
+/// stdout().execute(EnterAlternateScreen)?;
+///
+/// terminal.clear()?;
+/// terminal.draw(|frame| {
+///     // -- snip --
+/// })?;
+///
+/// stdout().execute(LeaveAlternateScreen)?;
+/// disable_raw_mode()?;
+///
+/// # std::io::Result::Ok(())
 /// ```
+///
+/// See the the [examples] directory for more examples. See the [`backend`] module documentation
+/// for more details on raw mode and alternate screen.
+///
+/// [`Write`]: std::io::Write
+/// [`Terminal`]: crate::terminal::Terminal
+/// [`backend`]: crate::backend
+/// [Crossterm]: https://crates.io/crates/crossterm
+/// [examples]: https://github.com/ratatui-org/ratatui/tree/main/examples#examples
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct CrosstermBackend<W: Write> {
-    buffer: W,
+    /// The writer used to send commands to the terminal.
+    writer: W,
 }
 
 impl<W> CrosstermBackend<W>
 where
     W: Write,
 {
-    /// Creates a new `CrosstermBackend` with the given buffer.
-    pub fn new(buffer: W) -> CrosstermBackend<W> {
-        CrosstermBackend { buffer }
+    /// Creates a new `CrosstermBackend` with the given writer.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use std::io::stdout;
+    /// # use ratatui::prelude::*;
+    /// let backend = CrosstermBackend::new(stdout());
+    /// ```
+    pub fn new(writer: W) -> CrosstermBackend<W> {
+        CrosstermBackend { writer }
     }
 }
 
@@ -64,12 +105,12 @@ where
 {
     /// Writes a buffer of bytes to the underlying buffer.
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.buffer.write(buf)
+        self.writer.write(buf)
     }
 
     /// Flushes the underlying buffer.
     fn flush(&mut self) -> io::Result<()> {
-        self.buffer.flush()
+        self.writer.flush()
     }
 }
 
@@ -89,7 +130,7 @@ where
         for (x, y, cell) in content {
             // Move the cursor if the previous location was not (x - 1, y)
             if !matches!(last_pos, Some(p) if x == p.0 + 1 && y == p.1) {
-                queue!(self.buffer, MoveTo(x, y))?;
+                queue!(self.writer, MoveTo(x, y))?;
             }
             last_pos = Some((x, y));
             if cell.modifier != modifier {
@@ -97,30 +138,30 @@ where
                     from: modifier,
                     to: cell.modifier,
                 };
-                diff.queue(&mut self.buffer)?;
+                diff.queue(&mut self.writer)?;
                 modifier = cell.modifier;
             }
             if cell.fg != fg {
                 let color = CColor::from(cell.fg);
-                queue!(self.buffer, SetForegroundColor(color))?;
+                queue!(self.writer, SetForegroundColor(color))?;
                 fg = cell.fg;
             }
             if cell.bg != bg {
                 let color = CColor::from(cell.bg);
-                queue!(self.buffer, SetBackgroundColor(color))?;
+                queue!(self.writer, SetBackgroundColor(color))?;
                 bg = cell.bg;
             }
             if cell.underline_color != underline_color {
                 let color = CColor::from(cell.underline_color);
-                queue!(self.buffer, SetUnderlineColor(color))?;
+                queue!(self.writer, SetUnderlineColor(color))?;
                 underline_color = cell.underline_color;
             }
 
-            queue!(self.buffer, Print(&cell.symbol))?;
+            queue!(self.writer, Print(&cell.symbol))?;
         }
 
         queue!(
-            self.buffer,
+            self.writer,
             SetForegroundColor(CColor::Reset),
             SetBackgroundColor(CColor::Reset),
             SetUnderlineColor(CColor::Reset),
@@ -129,11 +170,11 @@ where
     }
 
     fn hide_cursor(&mut self) -> io::Result<()> {
-        execute!(self.buffer, Hide)
+        execute!(self.writer, Hide)
     }
 
     fn show_cursor(&mut self) -> io::Result<()> {
-        execute!(self.buffer, Show)
+        execute!(self.writer, Show)
     }
 
     fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
@@ -142,7 +183,7 @@ where
     }
 
     fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
-        execute!(self.buffer, MoveTo(x, y))
+        execute!(self.writer, MoveTo(x, y))
     }
 
     fn clear(&mut self) -> io::Result<()> {
@@ -151,7 +192,7 @@ where
 
     fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
         execute!(
-            self.buffer,
+            self.writer,
             Clear(match clear_type {
                 ClearType::All => crossterm::terminal::ClearType::All,
                 ClearType::AfterCursor => crossterm::terminal::ClearType::FromCursorDown,
@@ -164,9 +205,9 @@ where
 
     fn append_lines(&mut self, n: u16) -> io::Result<()> {
         for _ in 0..n {
-            queue!(self.buffer, Print("\n"))?;
+            queue!(self.writer, Print("\n"))?;
         }
-        self.buffer.flush()
+        self.writer.flush()
     }
 
     fn size(&self) -> io::Result<Rect> {
@@ -191,7 +232,7 @@ where
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.buffer.flush()
+        self.writer.flush()
     }
 }
 
