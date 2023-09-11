@@ -14,9 +14,8 @@ use cassowary::{
     WeightedRelation::{EQ, GE, LE},
 };
 use itertools::Itertools;
-use strum::{Display, EnumString};
-
 use lru::LruCache;
+use strum::{Display, EnumString};
 
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Corner {
