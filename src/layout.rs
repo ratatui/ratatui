@@ -331,8 +331,6 @@ pub struct Layout {
     constraints: Vec<Constraint>,
     /// option for segment size preferences
     segment_size: SegmentSize,
-    // cache size
-    cache_size: usize,
 }
 
 impl Default for Layout {
@@ -342,13 +340,13 @@ impl Default for Layout {
 }
 
 impl Layout {
+    const DEFAULT_CACHE_SIZE: usize = 16;
     /// Creates a new layout with default values.
     ///
     /// - direction: [Direction::Vertical]
     /// - margin: 0, 0
     /// - constraints: empty
     /// - segment_size: SegmentSize::LastTakesRemainder
-    /// - cache_size: 16
     pub const fn new() -> Layout {
         Layout {
             direction: Direction::Vertical,
@@ -358,8 +356,28 @@ impl Layout {
             },
             constraints: Vec::new(),
             segment_size: SegmentSize::LastTakesRemainder,
-            cache_size: 16,
         }
+    }
+
+    /// Initialize an empty cache with a custom size. The cache is keyed on the layout and area, so
+    /// that subsequent calls with the same parameters are faster. The cache is a LruCache, and
+    /// grows until `cache_size` is reached.
+    ///
+    /// Returns true if the cell's value was set by this call.
+    /// Returns false if the cell's value was not set by this call, this means that another thread
+    /// has set this value or that the cache size is already initialized.
+    ///
+    /// Note that a custom cache size will be set only if this function:
+    /// * is called before [Layout::split()] otherwise, the cache size is `DEFAULT_CACHE_SIZE`.
+    /// * is called for the first time, subsequent calls do not modify the cache size.
+    pub fn init_cache(cache_size: usize) -> bool {
+        LAYOUT_CACHE
+            .with(|c| {
+                c.set(RefCell::new(LruCache::new(
+                    NonZeroUsize::new(cache_size).unwrap(),
+                )))
+            })
+            .is_ok()
     }
 
     /// Builder method to set the constraints of the layout.
@@ -481,7 +499,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// LruCache, and grows until cache_size is reached.
+    /// LruCache, and grows until `DEFAULT_CACHE_SIZE` is reached by default, if the cache is
+    /// initialized with the [Layout::init_cache()] grows until the initialized cache size.
     ///
     /// # Examples
     ///
@@ -502,7 +521,9 @@ impl Layout {
     pub fn split(&self, area: Rect) -> Rc<[Rect]> {
         LAYOUT_CACHE.with(|c| {
             c.get_or_init(|| {
-                RefCell::new(LruCache::new(NonZeroUsize::new(self.cache_size).unwrap()))
+                RefCell::new(LruCache::new(
+                    NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap(),
+                ))
             })
             .borrow_mut()
             .get_or_insert((area, self.clone()), || split(area, self))
@@ -674,6 +695,44 @@ mod tests {
 
     use super::{SegmentSize::*, *};
     use crate::prelude::Constraint::*;
+
+    #[test]
+    fn custom_cache_size() {
+        assert!(Layout::init_cache(10));
+        assert!(!Layout::init_cache(15));
+        LAYOUT_CACHE.with(|c| {
+            assert_eq!(c.get().unwrap().borrow().cap().get(), 10);
+        })
+    }
+
+    #[test]
+    fn default_cache_size() {
+        let target = Rect {
+            x: 2,
+            y: 2,
+            width: 10,
+            height: 10,
+        };
+
+        Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(
+                [
+                    Constraint::Percentage(10),
+                    Constraint::Max(5),
+                    Constraint::Min(1),
+                ]
+                .as_ref(),
+            )
+            .split(target);
+        assert!(!Layout::init_cache(15));
+        LAYOUT_CACHE.with(|c| {
+            assert_eq!(
+                c.get().unwrap().borrow().cap().get(),
+                Layout::DEFAULT_CACHE_SIZE
+            );
+        })
+    }
 
     #[test]
     fn corner_to_string() {
