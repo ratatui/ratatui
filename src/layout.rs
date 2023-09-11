@@ -38,7 +38,7 @@ pub enum Constraint {
     /// Converts the given percentage to a f32, and then converts it back, trimming off the decimal
     /// point (effectively rounding down)
     /// ```
-    /// # use ratatui::prelude::Constraint;
+    /// # use ratatui::prelude::*;
     /// assert_eq!(0, Constraint::Percentage(50).apply(0));
     /// assert_eq!(2, Constraint::Percentage(50).apply(4));
     /// assert_eq!(5, Constraint::Percentage(50).apply(10));
@@ -50,7 +50,7 @@ pub enum Constraint {
     /// Converts the given numbers to a f32, and then converts it back, trimming off the decimal
     /// point (effectively rounding down)
     /// ```
-    /// # use ratatui::prelude::Constraint;
+    /// # use ratatui::prelude::*;
     /// assert_eq!(0, Constraint::Ratio(4, 3).apply(0));
     /// assert_eq!(4, Constraint::Ratio(4, 3).apply(4));
     /// assert_eq!(10, Constraint::Ratio(4, 3).apply(10));
@@ -65,7 +65,7 @@ pub enum Constraint {
     /// Apply no more than the given amount (currently roughly equal to [Constraint::Max], but less
     /// consistent)
     /// ```
-    /// # use ratatui::prelude::Constraint;
+    /// # use ratatui::prelude::*;
     /// assert_eq!(0, Constraint::Length(4).apply(0));
     /// assert_eq!(4, Constraint::Length(4).apply(4));
     /// assert_eq!(4, Constraint::Length(4).apply(10));
@@ -75,7 +75,7 @@ pub enum Constraint {
     ///
     /// also see [std::cmp::min]
     /// ```
-    /// # use ratatui::prelude::Constraint;
+    /// # use ratatui::prelude::*;
     /// assert_eq!(0, Constraint::Max(4).apply(0));
     /// assert_eq!(4, Constraint::Max(4).apply(4));
     /// assert_eq!(4, Constraint::Max(4).apply(10));
@@ -85,7 +85,7 @@ pub enum Constraint {
     ///
     /// also see [std::cmp::max]
     /// ```
-    /// # use ratatui::prelude::Constraint;
+    /// # use ratatui::prelude::*;
     /// assert_eq!(4, Constraint::Min(4).apply(0));
     /// assert_eq!(4, Constraint::Min(4).apply(4));
     /// assert_eq!(10, Constraint::Min(4).apply(10));
@@ -302,8 +302,8 @@ pub(crate) enum SegmentSize {
 /// # Example
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
-/// # use ratatui::widgets::Paragraph;
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// fn render<B: Backend>(frame: &mut Frame<B>, area: Rect) {
 ///     let layout = Layout::default()
 ///         .direction(Direction::Vertical)

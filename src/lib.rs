@@ -36,7 +36,7 @@
 //!
 //! ```rust,no_run
 //! use std::io;
-//! use ratatui::{backend::CrosstermBackend, Terminal};
+//! use ratatui::prelude::*;
 //!
 //! fn main() -> Result<(), io::Error> {
 //!     let stdout = io::stdout();
@@ -51,7 +51,7 @@
 //!
 //! ```rust,ignore
 //! use std::io;
-//! use ratatui::{backend::TermionBackend, Terminal};
+//! use ratatui::prelude::*;
 //! use termion::raw::IntoRawMode;
 //!
 //! fn main() -> Result<(), io::Error> {
@@ -79,11 +79,7 @@
 //!
 //! ```rust,no_run
 //! use std::{io, thread, time::Duration};
-//! use ratatui::{
-//!     backend::CrosstermBackend,
-//!     widgets::{Block, Borders},
-//!     Terminal
-//! };
+//! use ratatui::{prelude::*, widgets::*};
 //! use crossterm::{
 //!     event::{self, DisableMouseCapture, EnableMouseCapture},
 //!     execute,
@@ -134,12 +130,8 @@
 //! full customization. And `Layout` is no exception:
 //!
 //! ```rust,no_run
-//! use ratatui::{
-//!     backend::Backend,
-//!     layout::{Constraint, Direction, Layout},
-//!     widgets::{Block, Borders},
-//!     Frame,
-//! };
+//! use ratatui::{prelude::*, widgets::*};
+//!
 //! fn ui<B: Backend>(f: &mut Frame<B>) {
 //!    let chunks = Layout::default()
 //!         .direction(Direction::Vertical)

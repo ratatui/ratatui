@@ -25,7 +25,7 @@ use crate::{
 /// # Example
 ///
 /// ```rust
-/// use ratatui::{prelude::*, backend::TestBackend};
+/// use ratatui::{backend::TestBackend, prelude::*};
 ///
 /// let mut backend = TestBackend::new(10, 2);
 /// backend.clear()?;

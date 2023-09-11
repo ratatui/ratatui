@@ -12,8 +12,8 @@ use crate::style::Style;
 /// [`core::iter::Extend`] which enables the concatenation of several [`Text`] blocks.
 ///
 /// ```rust
-/// # use ratatui::text::Text;
-/// # use ratatui::style::{Color, Modifier, Style};
+/// use ratatui::prelude::*;
+///
 /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
 ///
 /// // An initial two lines of `Text` built from a `&str`
@@ -39,7 +39,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::Text;
+    /// # use ratatui::prelude::*;
     /// Text::raw("The first line\nThe second line");
     /// Text::raw(String::from("The first line\nThe second line"));
     /// ```
@@ -62,8 +62,7 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::text::Text;
-    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// Text::styled("The first line\nThe second line", style);
     /// Text::styled(String::from("The first line\nThe second line"), style);
@@ -82,7 +81,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// use ratatui::text::Text;
+    /// # use ratatui::prelude::*;
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(15, text.width());
     /// ```
@@ -95,7 +94,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// use ratatui::text::Text;
+    /// # use ratatui::prelude::*;
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(2, text.height());
     /// ```
@@ -108,8 +107,7 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::text::Text;
-    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// let mut raw_text = Text::raw("The first line\nThe second line");
     /// let styled_text = Text::styled(String::from("The first line\nThe second line"), style);
@@ -130,8 +128,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Line, Text};
-    /// # use ratatui::style::{Color, Style, Modifier};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// let mut text = Text::styled("The first line\nThe second line", style);
     ///

@@ -13,22 +13,22 @@ use crate::{layout::Alignment, text::Line};
 ///
 /// Title with no style.
 /// ```
-/// # use ratatui::widgets::block::Title;
+/// use ratatui::widgets::block::Title;
+///
 /// Title::from("Title");
 /// ```
 ///
 /// Blue title on a white background (via [`Stylize`](crate::style::Stylize) trait).
 /// ```
-/// # use ratatui::widgets::block::Title;
-/// # use ratatui::style::Stylize;
+/// use ratatui::{prelude::*, widgets::block::*};
+///
 /// Title::from("Title".blue().on_white());
 /// ```
 ///
 /// Title with multiple styles (see [`Line`] and [`Stylize`](crate::style::Stylize)).
 /// ```
-/// # use ratatui::widgets::block::Title;
-/// # use ratatui::style::Stylize;
-/// # use ratatui::text::Line;
+/// use ratatui::{prelude::*, widgets::block::*};
+///
 /// Title::from(
 ///     Line::from(vec!["Q".white().underlined(), "uit".gray()])
 /// );
@@ -36,8 +36,8 @@ use crate::{layout::Alignment, text::Line};
 ///
 /// Complete example
 /// ```
-/// # use ratatui::widgets::block::{Title, Position};
-/// # use ratatui::layout::Alignment;
+/// use ratatui::{prelude::*, widgets::{*, block::*}};
+///
 /// Title::from("Title")
 ///     .position(Position::Top)
 ///     .alignment(Alignment::Right);
@@ -69,7 +69,8 @@ pub struct Title<'a> {
 /// # Example
 ///
 /// ```
-/// # use ratatui::widgets::{Block, block::{Title, Position}};
+/// use ratatui::widgets::{*, block::*};
+///
 /// Block::new().title(
 ///     Title::from("title").position(Position::Bottom)
 /// );

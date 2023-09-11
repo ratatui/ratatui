@@ -16,8 +16,7 @@ impl<'a> Line<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::text::Line;
-    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// Line::styled("My text", style);
     /// Line::styled(String::from("My text"), style);
@@ -34,8 +33,7 @@ impl<'a> Line<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Line};
-    /// # use ratatui::style::{Color, Style};
+    /// # use ratatui::prelude::*;
     /// let line = Line::from(vec![
     ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::raw(" text"),
@@ -54,9 +52,9 @@ impl<'a> Line<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Line, StyledGrapheme};
-    /// # use ratatui::style::{Color, Modifier, Style};
-    /// # use std::iter::Iterator;
+    /// use std::iter::Iterator;
+    /// use ratatui::{prelude::*, text::StyledGrapheme};
+    ///
     /// let line = Line::styled("Text", Style::default().fg(Color::Yellow));
     /// let style = Style::default().fg(Color::Green).bg(Color::Black);
     /// assert_eq!(
@@ -83,8 +81,7 @@ impl<'a> Line<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Line};
-    /// # use ratatui::style::{Color, Style, Modifier};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// let mut raw_line = Line::from(vec![
     ///     Span::raw("My"),
@@ -112,8 +109,7 @@ impl<'a> Line<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Line};
-    /// # use ratatui::style::{Color, Style, Modifier};
+    /// # use ratatui::prelude::*;
     /// let mut line = Line::from(vec![
     ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::styled(" text", Style::default().add_modifier(Modifier::BOLD)),
@@ -135,10 +131,7 @@ impl<'a> Line<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use std::borrow::Cow;
-    /// # use ratatui::layout::Alignment;
-    /// # use ratatui::text::{Span, Line};
-    /// # use ratatui::style::{Color, Style, Modifier};
+    /// # use ratatui::prelude::*;
     /// let mut line = Line::from("Hi, what's up?");
     /// assert_eq!(None, line.alignment);
     /// assert_eq!(Some(Alignment::Right), line.alignment(Alignment::Right).alignment)

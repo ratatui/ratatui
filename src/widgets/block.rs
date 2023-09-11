@@ -96,7 +96,8 @@ impl BorderType {
 /// # Example
 ///
 /// ```
-/// use ratatui::widgets::block::Padding;
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// Padding::uniform(1);
 /// Padding::horizontal(2);
 /// ```
@@ -179,10 +180,7 @@ impl Padding {
 /// # Examples
 ///
 /// ```
-/// use ratatui::{
-///     style::{Color, Style},
-///     widgets::{Block, BorderType, Borders},
-/// };
+/// use ratatui::{prelude::*, widgets::*};
 ///
 /// Block::default()
 ///     .title("Block")
@@ -194,13 +192,7 @@ impl Padding {
 ///
 /// You may also use multiple titles like in the following:
 /// ```
-/// use ratatui::{
-///     style::{Color, Style},
-///     widgets::{
-///         block::title::{Position, Title},
-///         Block, BorderType, Borders,
-///     },
-/// };
+/// use ratatui::{prelude::*, widgets::{*, block::*}};
 ///
 /// Block::default()
 ///     .title("Title 1")
@@ -282,8 +274,8 @@ impl<'a> Block<'a> {
     /// the leftover space)
     /// - Two titles with the same alignment (notice the left titles are separated)
     /// ```
-    /// # use ratatui::widgets::{Block, block::title::Title};
-    /// # use ratatui::layout::Alignment;
+    /// use ratatui::{prelude::*, widgets::{*, block::*}};
+    ///
     /// Block::default()
     ///     .title("Title") // By default in the top left corner
     ///     .title(Title::from("Left").alignment(Alignment::Left)) // also on the left
@@ -324,8 +316,8 @@ impl<'a> Block<'a> {
     /// This example aligns all titles in the center except the "right" title which explicitly sets
     /// [`Alignment::Right`].
     /// ```
-    /// # use ratatui::widgets::{Block, block::title::Title};
-    /// # use ratatui::layout::Alignment;
+    /// use ratatui::{prelude::*, widgets::{*, block::*}};
+    ///
     /// Block::default()
     ///     // This title won't be aligned in the center
     ///     .title(Title::from("right").alignment(Alignment::Right))
@@ -353,7 +345,8 @@ impl<'a> Block<'a> {
     /// This example positions all titles on the bottom except the "top" title which explicitly sets
     /// [`Position::Top`].
     /// ```
-    /// # use ratatui::widgets::{Block, BorderType, Borders, block::title::{Position, Title}};
+    /// use ratatui::{prelude::*, widgets::{*, block::*}};
+    ///
     /// Block::default()
     ///     // This title won't be aligned in the center
     ///     .title(Title::from("top").position(Position::Top))
@@ -374,8 +367,7 @@ impl<'a> Block<'a> {
     ///
     /// This example shows a `Block` with blue borders.
     /// ```
-    /// # use ratatui::prelude::*;
-    /// # use ratatui::widgets::{Block, Borders};
+    /// # use ratatui::{prelude::*, widgets::*};
     /// Block::default()
     ///     .borders(Borders::ALL)
     ///     .border_style(Style::new().blue());
@@ -405,13 +397,13 @@ impl<'a> Block<'a> {
     ///
     /// Simply show all borders.
     /// ```
-    /// # use ratatui::widgets::{Borders, Block};
+    /// # use ratatui::{prelude::*, widgets::*};
     /// Block::default().borders(Borders::ALL);
     /// ```
     ///
     /// Display left and right borders.
     /// ```
-    /// # use ratatui::widgets::{Borders, Block};
+    /// # use ratatui::{prelude::*, widgets::*};
     /// Block::default().borders(Borders::LEFT | Borders::RIGHT);
     /// ```
     pub const fn borders(mut self, flag: Borders) -> Block<'a> {
@@ -434,7 +426,7 @@ impl<'a> Block<'a> {
     ///
     /// Draw a block nested within another block
     /// ```
-    /// # use ratatui::{prelude::*, widgets::{Block, Borders}};
+    /// # use ratatui::{prelude::*, widgets::*};
     /// # fn render_nested_block<B: Backend>(frame: &mut Frame<B>) {
     /// let outer_block = Block::default().title("Outer").borders(Borders::ALL);
     /// let inner_block = Block::default().title("Inner").borders(Borders::ALL);
@@ -490,7 +482,7 @@ impl<'a> Block<'a> {
     ///
     /// This renders a `Block` with no padding (the default).
     /// ```
-    /// # use ratatui::widgets::{Block, Borders, Padding};
+    /// # use ratatui::{prelude::*, widgets::*};
     /// Block::default()
     ///     .borders(Borders::ALL)
     ///     .padding(Padding::zero());
@@ -503,7 +495,7 @@ impl<'a> Block<'a> {
     /// This example shows a `Block` with padding left and right ([`Padding::horizontal`]).
     /// Notice the two spaces before and after the content.
     /// ```
-    /// # use ratatui::widgets::{Block, Borders, Padding};
+    /// # use ratatui::{prelude::*, widgets::*};
     /// Block::default()
     ///     .borders(Borders::ALL)
     ///     .padding(Padding::horizontal(2));

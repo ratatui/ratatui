@@ -12,16 +12,14 @@ use crate::{
 /// # Examples
 ///
 /// ```
-/// # use ratatui::widgets::{Block, Borders, Tabs};
-/// # use ratatui::style::{Style, Color};
-/// # use ratatui::text::{Line};
-/// # use ratatui::symbols::{DOT};
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// let titles = ["Tab1", "Tab2", "Tab3", "Tab4"].iter().cloned().map(Line::from).collect();
 /// Tabs::new(titles)
 ///     .block(Block::default().title("Tabs").borders(Borders::ALL))
 ///     .style(Style::default().fg(Color::White))
 ///     .highlight_style(Style::default().fg(Color::Yellow))
-///     .divider(DOT);
+///     .divider(symbols::DOT);
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Tabs<'a> {

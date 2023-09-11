@@ -15,8 +15,8 @@ use crate::{
 /// # Examples
 ///
 /// ```
-/// # use ratatui::widgets::{Block, Borders, Sparkline};
-/// # use ratatui::style::{Style, Color};
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// Sparkline::default()
 ///     .block(Block::default().title("Sparkline").borders(Borders::ALL))
 ///     .data(&[0, 2, 3, 4, 1, 4, 10])

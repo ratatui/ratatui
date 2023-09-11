@@ -113,8 +113,7 @@ impl<'a> BarChart<'a> {
     /// The first group is added by an array slice (`&[(&str, u64)]`).
     /// The second group is added by a [`BarGroup`] instance.
     /// ```
-    /// use ratatui::{prelude::*, widgets::*};
-    ///
+    /// # use ratatui::{prelude::*, widgets::*};
     /// BarChart::default()
     ///     .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
     ///     .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]));
@@ -142,7 +141,7 @@ impl<'a> BarChart<'a> {
     /// This example shows the default behavior when `max` is not set.
     /// The maximum value in the dataset is taken (here, `100`).
     /// ```
-    /// # use ratatui::widgets::BarChart;
+    /// # use ratatui::{prelude::*, widgets::*};
     /// BarChart::default().data(&[("foo", 1), ("bar", 2), ("baz", 100)]);
     /// // Renders
     /// //     █
@@ -153,7 +152,7 @@ impl<'a> BarChart<'a> {
     /// This example shows a custom max value.
     /// The maximum height being `2`, `bar` & `baz` render as the max.
     /// ```
-    /// # use ratatui::widgets::BarChart;
+    /// # use ratatui::{prelude::*, widgets::*};
     /// BarChart::default()
     ///     .data(&[("foo", 1), ("bar", 2), ("baz", 100)])
     ///     .max(2);
@@ -197,7 +196,7 @@ impl<'a> BarChart<'a> {
     ///
     /// This shows two bars with a gap of `3`. Notice the labels will always stay under the bar.
     /// ```
-    /// # use ratatui::widgets::BarChart;
+    /// # use ratatui::{prelude::*, widgets::*};
     /// BarChart::default()
     ///     .data(&[("foo", 1), ("bar", 2)])
     ///     .bar_gap(3);

@@ -9,7 +9,6 @@
 //!
 //! ```rust
 //! use ratatui::{prelude::*, widgets::*};
-//! use ratatui::widgets::{Block, Borders};
 //!
 //! #[derive(Debug, Default, PartialEq, Eq)]
 //! struct Line;

@@ -12,8 +12,8 @@ use crate::{
 /// # Examples:
 ///
 /// ```
-/// # use ratatui::widgets::{Widget, Gauge, Block, Borders};
-/// # use ratatui::style::{Style, Color, Modifier};
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// Gauge::default()
 ///     .block(Block::default().borders(Borders::ALL).title("Progress"))
 ///     .gauge_style(Style::default().fg(Color::White).bg(Color::Black).add_modifier(Modifier::ITALIC))
@@ -170,9 +170,8 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 /// # Examples:
 ///
 /// ```
-/// # use ratatui::widgets::{Widget, LineGauge, Block, Borders};
-/// # use ratatui::style::{Style, Color, Modifier};
-/// # use ratatui::symbols;
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// LineGauge::default()
 ///     .block(Block::default().borders(Borders::ALL).title("Progress"))
 ///     .gauge_style(Style::default().fg(Color::White).bg(Color::Black).add_modifier(Modifier::BOLD))

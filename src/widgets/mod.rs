@@ -126,10 +126,8 @@ pub trait Widget {
 /// ## Examples
 ///
 /// ```rust,no_run
-/// # use std::io;
-/// # use ratatui::Terminal;
-/// # use ratatui::backend::{Backend, TestBackend};
-/// # use ratatui::widgets::{Widget, List, ListItem, ListState};
+/// use std::io;
+/// use ratatui::{backend::TestBackend, prelude::*, widgets::*};
 ///
 /// // Let's say we have some events to display.
 /// struct Events {
@@ -231,9 +229,7 @@ pub trait StatefulWidget {
 /// ## Examples
 ///
 ///```
-/// # use ratatui::widgets::{Block, Borders};
-/// # use ratatui::style::{Style, Color};
-/// # use ratatui::border;
+/// use ratatui::{border, prelude::*, widgets::*};
 ///
 /// Block::default()
 ///     //Construct a `Borders` object and use it in place

@@ -24,8 +24,8 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 /// # Example
 ///
 /// ```
-/// # use ratatui::prelude::*;
-/// # use ratatui::widgets::*;
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// let text = vec![
 ///     Line::from(vec![
 ///         Span::raw("First"),
@@ -64,8 +64,8 @@ pub struct Paragraph<'a> {
 /// ## Examples
 ///
 /// ```
-/// # use ratatui::widgets::{Paragraph, Wrap};
-/// # use ratatui::text::Text;
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// let bullet_points = Text::from(r#"Some indented points:
 ///     - First thing goes here and is long so that it wraps
 ///     - Here is another point that is long enough to wrap"#);
@@ -104,8 +104,7 @@ impl<'a> Paragraph<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
-    /// # use ratatui::widgets::Paragraph;
+    /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello, world!");
     /// let paragraph = Paragraph::new(String::from("Hello, world!"));
     /// let paragraph = Paragraph::new(Text::raw("Hello, world!"));
@@ -133,8 +132,7 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
-    /// # use ratatui::widgets::{Block, Borders, Paragraph};
+    /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello, world!")
     ///    .block(Block::default()
     ///         .title("Paragraph")
@@ -153,8 +151,7 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
-    /// # use ratatui::widgets::Paragraph;
+    /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello, world!")
     ///    .style(Style::new().red().on_white());
     /// ```
@@ -170,8 +167,7 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
-    /// # use ratatui::widgets::{Paragraph, Wrap};
+    /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello, world!")
     ///   .wrap(Wrap { trim: true });
     /// ```
@@ -204,9 +200,7 @@ impl<'a> Paragraph<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
-    /// # use ratatui::widgets::{Paragraph, Wrap};
-    /// # use ratatui::layout::Alignment;
+    /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello World")
     ///     .alignment(Alignment::Center);
     /// ```

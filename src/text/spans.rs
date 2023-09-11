@@ -19,8 +19,8 @@ impl<'a> Spans<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Spans};
-    /// # use ratatui::style::{Color, Style};
+    /// use ratatui::{prelude::*, text::Spans};
+    ///
     /// let spans = Spans::from(vec![
     ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::raw(" text"),
@@ -36,8 +36,8 @@ impl<'a> Spans<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Spans};
-    /// # use ratatui::style::{Color, Style, Modifier};
+    /// use ratatui::{prelude::*, text::Spans};
+    ///
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// let mut raw_spans = Spans::from(vec![
     ///     Span::raw("My"),
@@ -65,8 +65,8 @@ impl<'a> Spans<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Spans};
-    /// # use ratatui::style::{Color, Style, Modifier};
+    /// use ratatui::{prelude::*, text::Spans};
+    ///
     /// let mut spans = Spans::from(vec![
     ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::styled(" text", Style::default().add_modifier(Modifier::BOLD)),
@@ -88,10 +88,8 @@ impl<'a> Spans<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use std::borrow::Cow;
-    /// # use ratatui::layout::Alignment;
-    /// # use ratatui::text::{Span, Spans};
-    /// # use ratatui::style::{Color, Style, Modifier};
+    /// use ratatui::{prelude::*, text::Spans};
+    ///
     /// let mut line = Spans::from("Hi, what's up?").alignment(Alignment::Right);
     /// assert_eq!(Some(Alignment::Right), line.alignment)
     /// ```

@@ -11,6 +11,7 @@
 //! readable for most use cases.
 //!
 //! ## Example
+//!
 //! ```
 //! use ratatui::prelude::*;
 //!
@@ -76,7 +77,7 @@ bitflags! {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::style::Modifier;
+    /// use ratatui::{prelude::*};
     ///
     /// let m = Modifier::BOLD | Modifier::ITALIC;
     /// ```
@@ -112,7 +113,8 @@ impl fmt::Debug for Modifier {
 /// Style lets you control the main characteristics of the displayed elements.
 ///
 /// ```rust
-/// # use ratatui::style::{Color, Modifier, Style};
+/// use ratatui::{prelude::*};
+///
 /// Style::default()
 ///     .fg(Color::Black)
 ///     .bg(Color::Green)
@@ -133,9 +135,8 @@ impl fmt::Debug for Modifier {
 /// just S3.
 ///
 /// ```rust
-/// # use ratatui::style::{Color, Modifier, Style};
-/// # use ratatui::buffer::Buffer;
-/// # use ratatui::layout::Rect;
+/// use ratatui::{prelude::*};
+///
 /// let styles = [
 ///     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD | Modifier::ITALIC),
 ///     Style::default().bg(Color::Red).add_modifier(Modifier::UNDERLINED),
@@ -164,9 +165,8 @@ impl fmt::Debug for Modifier {
 /// reset all properties until that point use [`Style::reset`].
 ///
 /// ```
-/// # use ratatui::style::{Color, Modifier, Style};
-/// # use ratatui::buffer::Buffer;
-/// # use ratatui::layout::Rect;
+/// use ratatui::{prelude::*};
+///
 /// let styles = [
 ///     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD | Modifier::ITALIC),
 ///     Style::reset().fg(Color::Yellow),
@@ -244,7 +244,7 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::style::{Color, Style};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().fg(Color::Blue);
     /// let diff = Style::default().fg(Color::Red);
     /// assert_eq!(style.patch(diff), Style::default().fg(Color::Red));
@@ -259,7 +259,7 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::style::{Color, Style};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().bg(Color::Blue);
     /// let diff = Style::default().bg(Color::Red);
     /// assert_eq!(style.patch(diff), Style::default().bg(Color::Red));
@@ -279,7 +279,7 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().underline_color(Color::Blue).add_modifier(Modifier::UNDERLINED);
     /// let diff = Style::default().underline_color(Color::Red).add_modifier(Modifier::UNDERLINED);
     /// assert_eq!(style.patch(diff), Style::default().underline_color(Color::Red).add_modifier(Modifier::UNDERLINED));
@@ -297,7 +297,7 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().add_modifier(Modifier::BOLD);
     /// let diff = Style::default().add_modifier(Modifier::ITALIC);
     /// let patched = style.patch(diff);
@@ -317,7 +317,7 @@ impl Style {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().add_modifier(Modifier::BOLD | Modifier::ITALIC);
     /// let diff = Style::default().remove_modifier(Modifier::ITALIC);
     /// let patched = style.patch(diff);
@@ -335,7 +335,7 @@ impl Style {
     ///
     /// ## Examples
     /// ```
-    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use ratatui::prelude::*;
     /// let style_1 = Style::default().fg(Color::Yellow);
     /// let style_2 = Style::default().bg(Color::Red);
     /// let combined = style_1.patch(style_2);

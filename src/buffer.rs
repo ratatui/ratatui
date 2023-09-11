@@ -129,9 +129,7 @@ impl Default for Cell {
 /// # Examples:
 ///
 /// ```
-/// use ratatui::buffer::{Buffer, Cell};
-/// use ratatui::layout::Rect;
-/// use ratatui::style::{Color, Style, Modifier};
+/// use ratatui::{prelude::*, buffer::Cell};
 ///
 /// let mut buf = Buffer::empty(Rect{x: 0, y: 0, width: 10, height: 5});
 /// buf.get_mut(0, 2).set_symbol("x");
@@ -228,8 +226,7 @@ impl Buffer {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::buffer::Buffer;
-    /// # use ratatui::layout::Rect;
+    /// # use ratatui::prelude::*;
     /// let rect = Rect::new(200, 100, 10, 10);
     /// let buffer = Buffer::empty(rect);
     /// // Global coordinates to the top corner of this buffer's area
@@ -241,8 +238,7 @@ impl Buffer {
     /// Panics when given an coordinate that is outside of this Buffer's area.
     ///
     /// ```should_panic
-    /// # use ratatui::buffer::Buffer;
-    /// # use ratatui::layout::Rect;
+    /// # use ratatui::prelude::*;
     /// let rect = Rect::new(200, 100, 10, 10);
     /// let buffer = Buffer::empty(rect);
     /// // Top coordinate is outside of the buffer in global coordinate space, as the Buffer's area
@@ -268,8 +264,7 @@ impl Buffer {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::buffer::Buffer;
-    /// # use ratatui::layout::Rect;
+    /// # use ratatui::prelude::*;
     /// let rect = Rect::new(200, 100, 10, 10);
     /// let buffer = Buffer::empty(rect);
     /// assert_eq!(buffer.pos_of(0), (200, 100));
@@ -281,8 +276,7 @@ impl Buffer {
     /// Panics when given an index that is outside the Buffer's content.
     ///
     /// ```should_panic
-    /// # use ratatui::buffer::Buffer;
-    /// # use ratatui::layout::Rect;
+    /// # use ratatui::prelude::*;
     /// let rect = Rect::new(0, 0, 10, 10); // 100 cells in total
     /// let buffer = Buffer::empty(rect);
     /// // Index 100 is the 101th cell, which lies outside of the area of this Buffer.
