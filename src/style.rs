@@ -1,30 +1,63 @@
 //! `style` contains the primitives used to control how your user interface will look.
 //!
+//! There are two ways to set styles:
+//! - Creating and using the [`Style`] struct. (e.g. `Style::new().fg(Color::Red)`).
+//! - Using style shorthands. (e.g. `"hello".red()`).
+//!
 //! # Using the `Style` struct
 //!
-//! This is useful when creating style variables.
-//! ## Example
-//! ```
-//! use ratatui::style::{Color, Modifier, Style};
+//! This is the original approach to styling and likely the most common. This is useful when
+//! creating style variables to reuse, however the shorthands are often more convenient and
+//! readable for most use cases.
 //!
-//! Style::default()
-//!    .fg(Color::Black)
-//!    .bg(Color::Green)
-//!    .add_modifier(Modifier::ITALIC | Modifier::BOLD);
-//! ```
-//!
-//! # Using style shorthands
-//!
-//! This is best for concise styling.
 //! ## Example
 //! ```
 //! use ratatui::prelude::*;
 //!
+//! let heading_style = Style::new()
+//!    .fg(Color::Black)
+//!    .bg(Color::Green)
+//!    .add_modifier(Modifier::ITALIC | Modifier::BOLD);
+//! let span = Span::styled("hello", heading_style);
+//! ```
+//!
+//! # Using style shorthands
+//!
+//! Originally Ratatui only had the ability to set styles using the `Style` struct. This is still
+//! supported, but there are now shorthands for all the styles that can be set. These save you from
+//! having to create a `Style` struct every time you want to set a style.
+//!
+//! The shorthands are implemented in the [`Stylize`] trait which is automatically implemented for
+//! many types via the [`Styled`] trait. This means that you can use the shorthands on any type
+//! that implements [`Styled`]. E.g.:
+//! - Strings and string slices when styled return a [`Span`]
+//! - [`Span`]s can be styled again, which will merge the styles.
+//! - Many widget types can be styled directly rather than calling their style() method.
+//!
+//! See the [`Stylize`] and [`Styled`] traits for more information. These traits are re-exported in
+//! the [`prelude`] module for convenience.
+//!
+//! ## Example
+//!
+//! ```
+//! use ratatui::{prelude::*, widgets::*};
+//!
 //! assert_eq!(
 //!    "hello".red().on_blue().bold(),
-//!     Span::styled("hello", Style::default().fg(Color::Red).bg(Color::Blue).add_modifier(Modifier::BOLD))
-//! )
+//!     Span::styled(
+//!         "hello",
+//!         Style::default().fg(Color::Red).bg(Color::Blue).add_modifier(Modifier::BOLD))
+//! );
+//!
+//! assert_eq!(
+//!     Paragraph::new("hello").red().on_blue().bold(),
+//!     Paragraph::new("hello")
+//!         .style(Style::default().fg(Color::Red).bg(Color::Blue).add_modifier(Modifier::BOLD))
+//! );
 //! ```
+//!
+//! [`prelude`]: crate::prelude
+//! [`Span`]: crate::text::Span
 
 use std::fmt::{self, Debug};
 
@@ -76,7 +109,7 @@ impl fmt::Debug for Modifier {
     }
 }
 
-/// Style let you control the main characteristics of the displayed elements.
+/// Style lets you control the main characteristics of the displayed elements.
 ///
 /// ```rust
 /// # use ratatui::style::{Color, Modifier, Style};
@@ -86,7 +119,16 @@ impl fmt::Debug for Modifier {
 ///     .add_modifier(Modifier::ITALIC | Modifier::BOLD);
 /// ```
 ///
-/// It represents an incremental change. If you apply the styles S1, S2, S3 to a cell of the
+/// Styles can also be created with a [shorthand notation](crate::style#using-style-shorthands).
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// Style::new().black().on_green().italic().bold();
+/// ```
+///
+/// For more information about the style shorthands, see the [`Stylize`] trait.
+///
+/// Styles represents an incremental change. If you apply the styles S1, S2, S3 to a cell of the
 /// terminal buffer, the style of this cell will be the result of the merge of S1, S2 and S3, not
 /// just S3.
 ///
