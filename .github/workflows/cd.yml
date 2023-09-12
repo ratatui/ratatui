@@ -28,27 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Calculate the next release
-        run: |
-          suffix="alpha"
-          last_tag="$(git tag --sort=committerdate | tail -1)"
-          if [[ "${last_tag}" = *"-${suffix}"* ]]; then
-            # increment the alpha version
-            # e.g. v0.22.1-alpha.12 -> v0.22.1-alpha.13
-            alpha="${last_tag##*-${suffix}.}"
-            next_alpha="$((alpha + 1))"
-            next_tag="${last_tag/%${alpha}/${next_alpha}}"
-          else
-            # increment the patch and start the alpha version from 0
-            # e.g. v0.22.0 -> v0.22.1-alpha.0
-            patch="${last_tag##*.}"
-            next_patch="$((patch + 1))"
-            next_tag="${last_tag/%${patch}/${next_patch}}-${suffix}.0"
-          fi
-          # update the crate version
-          msg="# crate version"
-          sed -E -i "s/^version = .* ${msg}$/version = \"${next_tag#v}\" ${msg}/" Cargo.toml
-          echo "NEXT_TAG=${next_tag}" >> $GITHUB_ENV
-          echo "Next alpha release: ${next_tag} 🐭"
+        run: .github/workflows/calculate-alpha-release.bash
 
       - name: Publish on crates.io
         uses: actions-rs/cargo@v1
