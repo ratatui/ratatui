@@ -191,6 +191,7 @@ pub mod terminal;
 pub mod text;
 pub mod widgets;
 
-pub use self::terminal::{Frame, Terminal, TerminalOptions, Viewport};
+#[doc(inline)]
+pub use self::terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
 
 pub mod prelude;
