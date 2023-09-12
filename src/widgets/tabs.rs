@@ -179,7 +179,7 @@ mod tests {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]);
         assert_buffer_eq!(
             render(tabs, Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    ",])
+            Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "])
         );
     }
 
@@ -201,9 +201,10 @@ mod tests {
     fn render_style() {
         let tabs =
             Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).style(Style::default().fg(Color::Red));
-        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
-        expected.set_style(Rect::new(0, 0, 30, 1), Style::default().fg(Color::Red));
-        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
+        assert_buffer_eq!(
+            render(tabs, Rect::new(0, 0, 30, 1)),
+            Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    ".red()])
+        );
     }
 
     #[test]
@@ -212,34 +213,39 @@ mod tests {
             .highlight_style(Style::new().reversed());
 
         // first tab selected
-        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
-        expected.set_style(Rect::new(1, 0, 4, 1), Style::new().reversed());
         assert_buffer_eq!(
             render(tabs.clone().select(0), Rect::new(0, 0, 30, 1)),
-            expected
+            Buffer::with_lines(vec![Line::from(vec![
+                " ".into(),
+                "Tab1".reversed(),
+                " │ Tab2 │ Tab3 │ Tab4    ".into(),
+            ])])
         );
 
         // second tab selected
-        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
-        expected.set_style(Rect::new(8, 0, 4, 1), Style::new().reversed());
         assert_buffer_eq!(
             render(tabs.clone().select(1), Rect::new(0, 0, 30, 1)),
-            expected
+            Buffer::with_lines(vec![Line::from(vec![
+                " Tab1 │ ".into(),
+                "Tab2".reversed(),
+                " │ Tab3 │ Tab4    ".into(),
+            ])])
         );
 
         // last tab selected
-        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
-        expected.set_style(Rect::new(22, 0, 4, 1), Style::new().reversed());
         assert_buffer_eq!(
             render(tabs.clone().select(3), Rect::new(0, 0, 30, 1)),
-            expected
+            Buffer::with_lines(vec![Line::from(vec![
+                " Tab1 │ Tab2 │ Tab3 │ ".into(),
+                "Tab4".reversed(),
+                "    ".into(),
+            ])])
         );
 
         // out of bounds selects no tab
-        let expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
         assert_buffer_eq!(
             render(tabs.clone().select(4), Rect::new(0, 0, 30, 1)),
-            expected
+            Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "])
         );
     }
 
@@ -249,10 +255,14 @@ mod tests {
             .style(Style::new().red())
             .highlight_style(Style::new().reversed())
             .select(0);
-        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
-        expected.set_style(Rect::new(0, 0, 30, 1), Style::new().red());
-        expected.set_style(Rect::new(1, 0, 4, 1), Style::new().reversed());
-        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
+        assert_buffer_eq!(
+            render(tabs, Rect::new(0, 0, 30, 1)),
+            Buffer::with_lines(vec![Line::from(vec![
+                " ".red(),
+                "Tab1".red().reversed(),
+                " │ Tab2 │ Tab3 │ Tab4    ".red(),
+            ])])
+        );
     }
 
     #[test]

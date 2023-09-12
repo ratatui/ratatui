@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Alignment, Rect},
     style::{Color, Style},
     symbols,
-    text::Span,
+    text::{self, Span},
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType::Line},
     Terminal,
 };
@@ -13,9 +13,9 @@ fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {
     labels.iter().map(|l| Span::from(*l)).collect()
 }
 
-fn axis_test_case<S>(width: u16, height: u16, x_axis: Axis, y_axis: Axis, lines: Vec<S>)
+fn axis_test_case<'a, S>(width: u16, height: u16, x_axis: Axis, y_axis: Axis, lines: Vec<S>)
 where
-    S: AsRef<str>,
+    S: Into<text::Line<'a>>,
 {
     let backend = TestBackend::new(width, height);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -25,6 +25,7 @@ where
             f.render_widget(chart, f.size());
         })
         .unwrap();
+    let lines = lines.into_iter().map(|l| l.into()).collect();
     let expected = Buffer::with_lines(lines);
     terminal.backend().assert_buffer(&expected);
 }

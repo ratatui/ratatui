@@ -175,24 +175,16 @@ impl Buffer {
     }
 
     /// Returns a Buffer containing the given lines
-    pub fn with_lines<S>(lines: Vec<S>) -> Buffer
+    pub fn with_lines<'a, S>(lines: Vec<S>) -> Buffer
     where
-        S: AsRef<str>,
+        S: Into<Line<'a>>,
     {
+        let lines = lines.into_iter().map(Into::into).collect::<Vec<_>>();
         let height = lines.len() as u16;
-        let width = lines
-            .iter()
-            .map(|i| i.as_ref().width() as u16)
-            .max()
-            .unwrap_or_default();
-        let mut buffer = Buffer::empty(Rect {
-            x: 0,
-            y: 0,
-            width,
-            height,
-        });
+        let width = lines.iter().map(Line::width).max().unwrap_or_default() as u16;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, width, height));
         for (y, line) in lines.iter().enumerate() {
-            buffer.set_string(0, y as u16, line, Style::default());
+            buffer.set_line(0, y as u16, line, width);
         }
         buffer
     }
@@ -1065,5 +1057,14 @@ mod tests {
         one.merge(&two);
         let skipped: Vec<bool> = one.content().iter().map(|c| c.skip).collect();
         assert_eq!(skipped, vec![true, true, false, false, false, false]);
+    }
+
+    #[test]
+    fn with_lines_accepts_into_lines() {
+        use crate::style::Stylize;
+        let mut buf = Buffer::empty(Rect::new(0, 0, 3, 2));
+        buf.set_string(0, 0, "foo", Style::new().red());
+        buf.set_string(0, 1, "bar", Style::new().blue());
+        assert_eq!(buf, Buffer::with_lines(vec!["foo".red(), "bar".blue()]));
     }
 }
