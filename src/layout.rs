@@ -1055,6 +1055,7 @@ mod tests {
         use pretty_assertions::assert_eq;
 
         use crate::{
+            assert_buffer_eq,
             prelude::{Constraint::*, *},
             widgets::{Paragraph, Widget},
         };
@@ -1078,7 +1079,8 @@ mod tests {
                 let s: String = c.to_string().repeat(area.width as usize);
                 Paragraph::new(s).render(layout[i], &mut buffer);
             }
-            assert_eq!(buffer.content, Buffer::with_lines(vec![expected]).content);
+            let expected = Buffer::with_lines(vec![expected]);
+            assert_buffer_eq!(buffer, expected);
         }
 
         #[test]

@@ -750,17 +750,17 @@ mod tests {
     fn test_list_style() {
         let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
         let list = List::new(items).style(Style::default().fg(Color::Red));
-        let buffer = render_widget(list, 10, 5);
 
-        let mut expected = Buffer::with_lines(vec![
-            "Item 0    ",
-            "Item 1    ",
-            "Item 2    ",
-            "          ",
-            "          ",
-        ]);
-        expected.set_style(buffer.area, Style::default().fg(Color::Red));
-        assert_buffer_eq!(buffer, expected);
+        assert_buffer_eq!(
+            render_widget(list, 10, 5),
+            Buffer::with_lines(vec![
+                "Item 0    ".red(),
+                "Item 1    ".red(),
+                "Item 2    ".red(),
+                "          ".red(),
+                "          ".red(),
+            ])
+        );
     }
 
     #[test]
@@ -772,17 +772,16 @@ mod tests {
         let mut state = ListState::default();
         state.select(Some(1));
 
-        let buffer = render_stateful_widget(list, &mut state, 10, 5);
-
-        let mut expected = Buffer::with_lines(vec![
-            "  Item 0  ",
-            ">>Item 1  ",
-            "  Item 2  ",
-            "          ",
-            "          ",
-        ]);
-        expected.set_style(Rect::new(0, 1, 10, 1), Style::default().fg(Color::Yellow));
-        assert_buffer_eq!(buffer, expected);
+        assert_buffer_eq!(
+            render_stateful_widget(list, &mut state, 10, 5),
+            Buffer::with_lines(vec![
+                "  Item 0  ".into(),
+                ">>Item 1  ".yellow(),
+                "  Item 2  ".into(),
+                "          ".into(),
+                "          ".into(),
+            ])
+        );
     }
 
     #[test]
@@ -923,17 +922,16 @@ mod tests {
         let mut state = ListState::default();
         state.select(Some(0));
 
-        let buffer = render_stateful_widget(list, &mut state, 10, 5);
-
-        let mut expected = Buffer::with_lines(vec![
-            ">>Item 0  ",
-            ">>Line 2  ",
-            "  Item 1  ",
-            "  Item 2  ",
-            "          ",
-        ]);
-        expected.set_style(Rect::new(0, 0, 10, 2), Style::default().fg(Color::Yellow));
-        assert_buffer_eq!(buffer, expected);
+        assert_buffer_eq!(
+            render_stateful_widget(list, &mut state, 10, 5),
+            Buffer::with_lines(vec![
+                ">>Item 0  ".yellow(),
+                ">>Line 2  ".yellow(),
+                "  Item 1  ".into(),
+                "  Item 2  ".into(),
+                "          ".into(),
+            ])
+        );
     }
 
     #[test]
