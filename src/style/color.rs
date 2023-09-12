@@ -38,8 +38,9 @@ use std::{
 /// # Example
 ///
 /// ```
-/// use ratatui::style::Color;
 /// use std::str::FromStr;
+/// use ratatui::prelude::*;
+///
 /// assert_eq!(Color::from_str("red"), Ok(Color::Red));
 /// assert_eq!("red".parse(), Ok(Color::Red));
 /// assert_eq!("lightred".parse(), Ok(Color::LightRed));
@@ -145,8 +146,9 @@ impl std::error::Error for ParseColorError {}
 /// # Examples
 ///
 /// ```
-/// # use std::str::FromStr;
-/// # use ratatui::style::Color;
+/// use std::str::FromStr;
+/// use ratatui::prelude::*;
+///
 /// let color: Color = Color::from_str("blue").unwrap();
 /// assert_eq!(color, Color::Blue);
 ///

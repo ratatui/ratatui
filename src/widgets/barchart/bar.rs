@@ -15,7 +15,8 @@ use crate::{buffer::Buffer, prelude::Rect, style::Style, text::Line};
 /// The following example creates a bar with the label "Bar 1", a value "10",
 /// red background and a white value foreground.
 /// ```
-/// # use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// Bar::default()
 ///     .label("Bar 1".into())
 ///     .value(10)

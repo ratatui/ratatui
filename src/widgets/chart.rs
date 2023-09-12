@@ -158,10 +158,8 @@ struct ChartLayout {
 /// # Examples
 ///
 /// ```
-/// # use ratatui::symbols;
-/// # use ratatui::widgets::{Block, Borders, Chart, Axis, Dataset, GraphType};
-/// # use ratatui::style::{Style, Color};
-/// # use ratatui::text::Span;
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// let datasets = vec![
 ///     Dataset::default()
 ///         .name("data1")
@@ -242,8 +240,7 @@ impl<'a> Chart<'a> {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::widgets::Chart;
-    /// # use ratatui::layout::Constraint;
+    /// # use ratatui::{prelude::*, widgets::*};
     /// let constraints = (
     ///     Constraint::Ratio(1, 3),
     ///     Constraint::Ratio(1, 4)

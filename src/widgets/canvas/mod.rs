@@ -187,7 +187,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     ///
     /// # Examples:
     /// ```
-    /// use ratatui::{symbols, widgets::canvas::{Painter, Context}};
+    /// use ratatui::{prelude::*, widgets::canvas::*};
     ///
     /// let mut ctx = Context::new(2, 2, [1.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
@@ -224,7 +224,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     ///
     /// # Examples:
     /// ```
-    /// use ratatui::{style::Color, symbols, widgets::canvas::{Painter, Context}};
+    /// use ratatui::{prelude::*, widgets::canvas::*};
     ///
     /// let mut ctx = Context::new(1, 1, [0.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
     /// let mut painter = Painter::from(&mut ctx);
@@ -333,10 +333,8 @@ impl<'a> Context<'a> {
 /// # Examples
 ///
 /// ```
-/// # use ratatui::widgets::{Block, Borders};
-/// # use ratatui::layout::Rect;
-/// # use ratatui::widgets::canvas::{Canvas, Shape, Line, Rectangle, Map, MapResolution};
-/// # use ratatui::style::Color;
+/// use ratatui::{style::Color, widgets::{*, canvas::*}};
+///
 /// Canvas::default()
 ///     .block(Block::default().title("Canvas").borders(Borders::ALL))
 ///     .x_bounds([-180.0, 180.0])
@@ -438,12 +436,10 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::widgets::canvas::Canvas;
-    /// # use ratatui::symbols;
+    /// use ratatui::{prelude::*, widgets::canvas::*};
+    ///
     /// Canvas::default().marker(symbols::Marker::Braille).paint(|ctx| {});
-    ///
     /// Canvas::default().marker(symbols::Marker::Dot).paint(|ctx| {});
-    ///
     /// Canvas::default().marker(symbols::Marker::Block).paint(|ctx| {});
     /// ```
     pub fn marker(mut self, marker: symbols::Marker) -> Canvas<'a, F> {

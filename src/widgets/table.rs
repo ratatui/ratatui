@@ -13,10 +13,9 @@ use crate::{
 ///
 /// It can be created from anything that can be converted to a [`Text`].
 /// ```rust
-/// # use ratatui::widgets::Cell;
-/// # use ratatui::style::{Style, Modifier};
-/// # use ratatui::text::{Span, Line, Text};
-/// # use std::borrow::Cow;
+/// use std::borrow::Cow;
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// Cell::from("simple string");
 ///
 /// Cell::from(Span::from("span"));
@@ -75,14 +74,15 @@ impl<'a> Styled for Cell<'a> {
 ///
 /// A [`Row`] is a collection of cells. It can be created from simple strings:
 /// ```rust
-/// # use ratatui::widgets::Row;
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// Row::new(vec!["Cell1", "Cell2", "Cell3"]);
 /// ```
 ///
 /// But if you need a bit more control over individual cells, you can explicitly create [`Cell`]s:
 /// ```rust
-/// # use ratatui::widgets::{Row, Cell};
-/// # use ratatui::style::{Style, Color};
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// Row::new(vec![
 ///     Cell::from("Cell1"),
 ///     Cell::from("Cell2").style(Style::default().fg(Color::Yellow)),
@@ -91,8 +91,9 @@ impl<'a> Styled for Cell<'a> {
 ///
 /// You can also construct a row from any type that can be converted into [`Text`]:
 /// ```rust
-/// # use std::borrow::Cow;
-/// # use ratatui::widgets::Row;
+/// use std::borrow::Cow;
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// Row::new(vec![
 ///     Cow::Borrowed("hello"),
 ///     Cow::Owned("world".to_uppercase()),
@@ -198,10 +199,8 @@ impl HighlightSpacing {
 ///
 /// It is a collection of [`Row`]s, themselves composed of [`Cell`]s:
 /// ```rust
-/// # use ratatui::widgets::{Block, Borders, Table, Row, Cell};
-/// # use ratatui::layout::Constraint;
-/// # use ratatui::style::{Style, Color, Modifier};
-/// # use ratatui::text::{Text, Line, Span};
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// Table::new(vec![
 ///     // Row can be created from simple strings.
 ///     Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -276,8 +275,7 @@ impl<'a> Table<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
-    /// # use ratatui::widgets::{Table, Row, Cell};
+    /// # use ratatui::{prelude::*, widgets::*};
     /// let table = Table::new(vec![
     ///     Row::new(vec![
     ///         Cell::from("Cell1"),

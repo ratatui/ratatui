@@ -17,7 +17,8 @@ use crate::style::{Style, Styled};
 /// any type convertible to [`Cow<str>`].
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// use ratatui::prelude::*;
+///
 /// let span = Span::raw("test content");
 /// let span = Span::raw(String::from("test content"));
 /// let span = Span::from("test content");
@@ -30,7 +31,8 @@ use crate::style::{Style, Styled};
 /// the [`Stylize`] trait.
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// use ratatui::prelude::*;
+///
 /// let span = Span::styled("test content", Style::new().green());
 /// let span = Span::styled(String::from("test content"), Style::new().green());
 /// let span = "test content".green();
@@ -41,7 +43,8 @@ use crate::style::{Style, Styled};
 /// applied are additive.
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
+/// use ratatui::prelude::*;
+///
 /// let span = Span::raw("test content").green().on_yellow().italic();
 /// let span = Span::raw(String::from("test content")).green().on_yellow().italic();
 /// ```
@@ -63,7 +66,7 @@ impl<'a> Span<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::text::Span;
+    /// # use ratatui::prelude::*;
     /// Span::raw("test content");
     /// Span::raw(String::from("test content"));
     /// ```
@@ -110,8 +113,9 @@ impl<'a> Span<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, text::StyledGrapheme};
-    /// # use std::iter::Iterator;
+    /// use std::iter::Iterator;
+    /// use ratatui::{prelude::*, text::StyledGrapheme};
+    ///
     /// let span = Span::styled("Test", Style::new().green().italic());
     /// let style = Style::new().red().on_yellow();
     /// assert_eq!(

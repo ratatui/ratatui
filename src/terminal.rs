@@ -85,10 +85,7 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::Terminal;
-    /// # use ratatui::backend::TestBackend;
-    /// # use ratatui::layout::Rect;
-    /// # use ratatui::widgets::Block;
+    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// let block = Block::default();
@@ -111,10 +108,7 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::Terminal;
-    /// # use ratatui::backend::TestBackend;
-    /// # use ratatui::layout::Rect;
-    /// # use ratatui::widgets::{List, ListItem, ListState};
+    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// let mut state = ListState::default();
@@ -403,11 +397,7 @@ where
     /// ## Insert a single line before the current viewport
     ///
     /// ```rust
-    /// # use ratatui::widgets::{Paragraph, Widget};
-    /// # use ratatui::text::{Line, Span};
-    /// # use ratatui::style::{Color, Style};
-    /// # use ratatui::{Terminal};
-    /// # use ratatui::backend::TestBackend;
+    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
     /// # let backend = TestBackend::new(10, 10);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// terminal.insert_before(1, |buf| {
