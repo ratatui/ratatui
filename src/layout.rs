@@ -340,7 +340,7 @@ impl Default for Layout {
 }
 
 impl Layout {
-    const DEFAULT_CACHE_SIZE: usize = 16;
+    pub const DEFAULT_CACHE_SIZE: usize = 16;
     /// Creates a new layout with default values.
     ///
     /// - direction: [Direction::Vertical]
@@ -368,7 +368,8 @@ impl Layout {
     /// has set this value or that the cache size is already initialized.
     ///
     /// Note that a custom cache size will be set only if this function:
-    /// * is called before [Layout::split()] otherwise, the cache size is `DEFAULT_CACHE_SIZE`.
+    /// * is called before [Layout::split()] otherwise, the cache size is
+    ///   [`Self::DEFAULT_CACHE_SIZE`].
     /// * is called for the first time, subsequent calls do not modify the cache size.
     pub fn init_cache(cache_size: usize) -> bool {
         LAYOUT_CACHE
@@ -499,8 +500,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// LruCache, and grows until `DEFAULT_CACHE_SIZE` is reached by default, if the cache is
-    /// initialized with the [Layout::init_cache()] grows until the initialized cache size.
+    /// LruCache, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
+    /// is initialized with the [Layout::init_cache()] grows until the initialized cache size.
     ///
     /// # Examples
     ///
