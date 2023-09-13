@@ -4,19 +4,22 @@
 //! meant to be stored but used as *commands* to draw common figures in the UI.
 //!
 //! The available widgets are:
-//! - [`Block`]
-//! - [`Tabs`]
-//! - [`List`]
-//! - [`Table`]
-//! - [`Paragraph`]
-//! - [`Chart`]
-//! - [`BarChart`]
-//! - [`Gauge`]
-//! - [`Sparkline`]
-//! - [`Scrollbar`]
-//! - [`calendar::Monthly`]
-//! - [`Clear`]
-
+//! - [`Block`]: a basic widget that draws a block with optional borders, titles and styles.
+//! - [`BarChart`]: displays multiple datasets as bars with optional grouping.
+//! - [`calendar::Monthly`]: displays a single month.
+//! - [`Canvas`]: draws arbitrary shapes using drawing characters.
+//! - [`Chart`]: displays multiple datasets as a lines or scatter graph.
+//! - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
+//! - [`Gauge`]: displays progress percentage using block characters.
+//! - [`LineGauge`]: display progress as a line.
+//! - [`List`]: displays a list of items and allows selection.
+//! - [`Paragraph`]: displays a paragraph of optionally styled and wrapped text.
+//! - [`Scrollbar`]: displays a scrollbar.
+//! - [`Sparkline`]: display a single data set as a sparkline.
+//! - [`Table`]: displays multiple rows and columns in a grid and allows selection.
+//! - [`Tabs`]: displays a tab bar and allows selection.
+//!
+//! [`Canvas`]: crate::widgets::canvas::Canvas
 mod barchart;
 pub mod block;
 #[cfg(feature = "widget-calendar")]
