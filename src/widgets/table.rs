@@ -387,7 +387,7 @@ impl<'a> Table<'a> {
 
     fn get_row_bounds(
         &self,
-        selected: Option<usize>,
+        selected: Option<TableSelection>,
         offset: usize,
         max_height: u16,
     ) -> (usize, usize) {
@@ -403,7 +403,10 @@ impl<'a> Table<'a> {
             end += 1;
         }
 
-        let selected = selected.unwrap_or(0).min(self.rows.len() - 1);
+        let selected = selected
+            .unwrap_or(TableSelection::default())
+            .row
+            .min(self.rows.len() - 1);
         while selected >= end {
             height = height.saturating_add(self.rows[end].total_height());
             end += 1;
@@ -436,10 +439,22 @@ impl<'a> Styled for Table<'a> {
     }
 }
 
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash)]
+pub struct TableSelection {
+    pub row: usize,
+    pub col: usize,
+}
+
+impl From<usize> for TableSelection {
+    fn from(row: usize) -> Self {
+        Self { row, col: 0 }
+    }
+}
+
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct TableState {
     offset: usize,
-    selected: Option<usize>,
+    selected: Option<TableSelection>,
 }
 
 impl TableState {
@@ -451,7 +466,7 @@ impl TableState {
         &mut self.offset
     }
 
-    pub fn with_selected(mut self, selected: Option<usize>) -> Self {
+    pub fn with_selected(mut self, selected: Option<TableSelection>) -> Self {
         self.selected = selected;
         self
     }
@@ -461,14 +476,17 @@ impl TableState {
         self
     }
 
-    pub fn selected(&self) -> Option<usize> {
+    pub fn selected(&self) -> Option<TableSelection> {
         self.selected
     }
 
-    pub fn select(&mut self, index: Option<usize>) {
-        self.selected = index;
-        if index.is_none() {
-            self.offset = 0;
+    pub fn select(&mut self, index: Option<impl Into<TableSelection>>) {
+        self.selected = match index {
+            Some(index) => Some(index.into()),
+            None => {
+                self.offset = 0;
+                None
+            }
         }
     }
 }
@@ -535,7 +553,9 @@ impl<'a> StatefulWidget for Table<'a> {
         }
         let (start, end) = self.get_row_bounds(state.selected, state.offset, rows_height);
         state.offset = start;
-        for (i, table_row) in self
+
+        // Loop through each row
+        for (row_num, table_row) in self
             .rows
             .iter_mut()
             .enumerate()
@@ -551,20 +571,29 @@ impl<'a> StatefulWidget for Table<'a> {
                 height: table_row.height,
             };
             buf.set_style(table_row_area, table_row.style);
-            let is_selected = state.selected.map_or(false, |s| s == i);
-            if selection_width > 0 && is_selected {
-                // this should in normal cases be safe, because "get_columns_widths" allocates
-                // "highlight_symbol.width()" space but "get_columns_widths"
-                // currently does not bind it to max table.width()
-                buf.set_stringn(
-                    inner_offset,
-                    row,
-                    highlight_symbol,
-                    table_area.width as usize,
-                    table_row.style,
-                );
-            };
-            for ((x, width), cell) in columns_widths.iter().zip(table_row.cells.iter()) {
+            let selected = state.selected();
+            let is_selected_row = selected.map_or(false, |s| s.row == row_num);
+
+            // Loop trough each column in row (i.e loop through each cell)
+            for ((col_num, (x, width)), cell) in columns_widths
+                .iter()
+                .enumerate()
+                .zip(table_row.cells.iter())
+            {
+                let is_selected_col = selected.map_or(false, |s| s.col == col_num);
+                let is_selected_cell = is_selected_row && is_selected_col;
+                if selection_width > 0 && is_selected_cell {
+                    // this should in normal cases be safe, because "get_columns_widths" allocates
+                    // "highlight_symbol.width()" space but "get_columns_widths"
+                    // currently does not bind it to max table.width()
+                    buf.set_stringn(
+                        inner_offset + x - selection_width,
+                        row,
+                        highlight_symbol,
+                        table_area.width as usize,
+                        table_row.style,
+                    );
+                };
                 render_cell(
                     buf,
                     cell,
@@ -575,9 +604,15 @@ impl<'a> StatefulWidget for Table<'a> {
                         height: table_row.height,
                     },
                 );
-            }
-            if is_selected {
-                buf.set_style(table_row_area, self.highlight_style);
+                if is_selected_cell {
+                    let table_cell_area = Rect {
+                        x: inner_offset + x,
+                        y: row,
+                        width: *width,
+                        height: table_row.height,
+                    };
+                    buf.set_style(table_cell_area, self.highlight_style);
+                }
             }
         }
     }
