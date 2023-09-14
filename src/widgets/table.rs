@@ -195,6 +195,22 @@ impl HighlightSpacing {
     }
 }
 
+/// Sets the area of the table that should be highlighted with a selection.
+#[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Default, Hash)]
+pub enum HighlightArea {
+    /// No highlight
+    None,
+    /// Highlight cell only
+    Cell,
+    /// Highlight entire row
+    #[default]
+    Row,
+    /// Highlight entire column
+    Col,
+    /// Highlight entire row and column
+    RowAndCol,
+}
+
 /// A widget to display data in formatted columns.
 ///
 /// It is a collection of [`Row`]s, themselves composed of [`Cell`]s:
@@ -256,6 +272,8 @@ pub struct Table<'a> {
     column_spacing: u16,
     /// Style used to render the selected row
     highlight_style: Style,
+    /// Whether to highlight the entire row
+    highlight_area: HighlightArea,
     /// Symbol in front of the selected rom
     highlight_symbol: Option<&'a str>,
     /// Optional header
@@ -297,6 +315,7 @@ impl<'a> Table<'a> {
             widths: &[],
             column_spacing: 1,
             highlight_style: Style::default(),
+            highlight_area: HighlightArea::Cell,
             highlight_symbol: None,
             header: None,
             rows: rows.into_iter().collect(),
@@ -339,6 +358,14 @@ impl<'a> Table<'a> {
 
     pub fn highlight_style(mut self, highlight_style: Style) -> Self {
         self.highlight_style = highlight_style;
+        self
+    }
+
+    /// Set the area of the table to highlight with selection
+    ///
+    /// See [`HighlightArea`] about which variant affects highlighting in which way
+    pub fn highlight_area(mut self, highlight_area: HighlightArea) -> Self {
+        self.highlight_area = highlight_area;
         self
     }
 
@@ -594,24 +621,38 @@ impl<'a> StatefulWidget for Table<'a> {
                         table_row.style,
                     );
                 };
-                render_cell(
-                    buf,
-                    cell,
-                    Rect {
-                        x: inner_offset + x,
-                        y: row,
-                        width: *width,
-                        height: table_row.height,
-                    },
-                );
+                let table_cell_area = Rect {
+                    x: inner_offset + x,
+                    y: row,
+                    width: *width,
+                    height: table_row.height,
+                };
+                render_cell(buf, cell, table_cell_area);
                 if is_selected_cell {
-                    let table_cell_area = Rect {
-                        x: inner_offset + x,
-                        y: row,
-                        width: *width,
-                        height: table_row.height,
+                    // Highlight from left to right, with height of row:
+                    match self.highlight_area {
+                        HighlightArea::Row | HighlightArea::RowAndCol => {
+                            buf.set_style(table_row_area, self.highlight_style);
+                        }
+                        HighlightArea::Cell => {
+                            buf.set_style(table_cell_area, self.highlight_style);
+                        }
+                        _ => {}
                     };
-                    buf.set_style(table_cell_area, self.highlight_style);
+
+                    // Highligh from top to bottom, with width of column:
+                    match self.highlight_area {
+                        HighlightArea::Col | HighlightArea::RowAndCol => {
+                            let vertical_rect = Rect {
+                                x: inner_offset + x,
+                                y: table_area.top(),
+                                width: *width,
+                                height: table_area.height,
+                            };
+                            buf.set_style(vertical_rect, self.highlight_style);
+                        }
+                        _ => {}
+                    };
                 }
             }
         }
