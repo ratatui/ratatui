@@ -50,7 +50,10 @@ pub use self::{
     paragraph::{Paragraph, Wrap},
     scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
     sparkline::{RenderDirection, Sparkline},
-    table::{Cell, HighlightArea, HighlightSpacing, Row, Table, TableSelection, TableState},
+    table::{
+        Cell, ColumnHighlightSpacing, HighlightArea, HighlightSpacing, Row, Table, TableSelection,
+        TableState,
+    },
     tabs::Tabs,
 };
 use crate::{buffer::Buffer, layout::Rect};

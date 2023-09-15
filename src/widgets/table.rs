@@ -162,7 +162,7 @@ impl<'a> Styled for Row<'a> {
     }
 }
 
-/// This option allows the user to configure the "highlight symbol" column width spacing
+/// This option allows the user to configure WHEN should the "highlight symbol" be drawn
 #[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Default, Hash)]
 pub enum HighlightSpacing {
     /// Always add spacing for the selection symbol column
@@ -209,6 +209,18 @@ pub enum HighlightArea {
     Col,
     /// Highlight entire row and column
     RowAndCol,
+}
+
+/// This option allows the user to configure WHICH columns should draw the "highlight symbol"
+///
+/// This setting is ignored when [`HighlightSpacing`] is set to [`HighlightSpacing::Never`]
+#[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Default, Hash)]
+pub enum ColumnHighlightSpacing {
+    #[default]
+    FirstColumnOnly,
+    SelectedColumn,
+    SpecificColumns(Vec<usize>),
+    AllColumns,
 }
 
 /// A widget to display data in formatted columns.
@@ -280,8 +292,10 @@ pub struct Table<'a> {
     header: Option<Row<'a>>,
     /// Data to display in each row
     rows: Vec<Row<'a>>,
-    /// Decides when to allocate spacing for the row selection
+    /// Decides when to allocate spacing for the selection
     highlight_spacing: HighlightSpacing,
+    /// Decides which columns to allocate spacing for the selection
+    columns_with_highlight_spacing: ColumnHighlightSpacing,
 }
 
 impl<'a> Table<'a> {
@@ -320,6 +334,7 @@ impl<'a> Table<'a> {
             header: None,
             rows: rows.into_iter().collect(),
             highlight_spacing: HighlightSpacing::default(),
+            columns_with_highlight_spacing: ColumnHighlightSpacing::default(),
         }
     }
 
@@ -377,21 +392,64 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Set which columns should show the highlight spacing
+    ///
+    /// See [`ColumnHighlightSpacing`] about which variant affects spacing in which way
+    pub fn columns_with_highlight_spacing(mut self, value: ColumnHighlightSpacing) -> Self {
+        self.columns_with_highlight_spacing = value;
+        self
+    }
+
     pub fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self
     }
 
+    /// Gets the index of the columns that should have spacing for highlihgting symbol
+    fn get_columns_with_spacing(&self, state: &TableState) -> Vec<usize> {
+        match &self.columns_with_highlight_spacing {
+            ColumnHighlightSpacing::FirstColumnOnly => {
+                vec![0]
+            }
+            ColumnHighlightSpacing::SelectedColumn => vec![state.selected_col().unwrap_or(0)],
+            ColumnHighlightSpacing::SpecificColumns(vec) => vec.clone(),
+            ColumnHighlightSpacing::AllColumns => self
+                .widths
+                .iter()
+                .enumerate()
+                .map(|(i, _)| i)
+                .collect::<Vec<usize>>(),
+        }
+    }
+
     /// Get all offsets and widths of all user specified columns
     /// Returns (x, width)
-    fn get_columns_widths(&self, max_width: u16, selection_width: u16) -> Vec<(u16, u16)> {
-        let mut constraints = Vec::with_capacity(self.widths.len() * 2 + 1);
-        constraints.push(Constraint::Length(selection_width));
-        for constraint in self.widths {
+    fn get_columns_widths(
+        &self,
+        max_width: u16,
+        selection_width: u16,
+        state: &TableState,
+    ) -> Vec<(u16, u16)> {
+        let columns_with_spacing = self.get_columns_with_spacing(state);
+        let mut highlight_symbol_indexes: Vec<usize> = Vec::new(); //track cols with highlight symbol
+
+        let mut constraints =
+            Vec::with_capacity(self.widths.len() * 2 + columns_with_spacing.len());
+
+        let mut curr_index: usize = 0;
+        for (col_num, constraint) in self.widths.iter().enumerate() {
+            // If we have spacing for this column, add it
+            if columns_with_spacing.contains(&col_num) {
+                constraints.push(Constraint::Length(selection_width));
+                highlight_symbol_indexes.push(curr_index);
+                curr_index += 1;
+            }
             constraints.push(*constraint);
             constraints.push(Constraint::Length(self.column_spacing));
+            curr_index += 2;
         }
         if !self.widths.is_empty() {
+            // remove last column spacing
             constraints.pop();
         }
         let chunks = Layout::default()
@@ -404,11 +462,13 @@ impl<'a> Table<'a> {
                 width: max_width,
                 height: 1,
             });
+
         chunks
             .iter()
-            .skip(1)
-            .step_by(2)
-            .map(|c| (c.x, c.width))
+            .enumerate()
+            .filter(|(i, _)| !highlight_symbol_indexes.contains(i)) //skip symbol spacing constraint
+            .map(|(_, c)| (c.x, c.width))
+            .step_by(2) // skip column spacing constraint
             .collect()
     }
 
@@ -540,7 +600,7 @@ impl<'a> StatefulWidget for Table<'a> {
         } else {
             0
         };
-        let columns_widths = self.get_columns_widths(table_area.width, selection_width);
+        let columns_widths = self.get_columns_widths(table_area.width, selection_width, state);
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
         let mut current_height = 0;
         let mut rows_height = table_area.height;
@@ -581,6 +641,7 @@ impl<'a> StatefulWidget for Table<'a> {
         let (start, end) = self.get_row_bounds(state.selected, state.offset, rows_height);
         state.offset = start;
 
+        let cols_with_symbol_spacing = self.get_columns_with_spacing(state);
         // Loop through each row
         for (row_num, table_row) in self
             .rows
@@ -598,6 +659,7 @@ impl<'a> StatefulWidget for Table<'a> {
                 height: table_row.height,
             };
             buf.set_style(table_row_area, table_row.style);
+
             let selected = state.selected();
             let is_selected_row = selected.map_or(false, |s| s.row == row_num);
 
@@ -607,9 +669,12 @@ impl<'a> StatefulWidget for Table<'a> {
                 .enumerate()
                 .zip(table_row.cells.iter())
             {
+                let should_show_symbol_in_col = cols_with_symbol_spacing.contains(&col_num);
                 let is_selected_col = selected.map_or(false, |s| s.col == col_num);
                 let is_selected_cell = is_selected_row && is_selected_col;
-                if selection_width > 0 && is_selected_cell {
+
+                if selection_width > 0 && is_selected_cell && should_show_symbol_in_col {
+                    // if selection_width > 0 && is_selected_cell {
                     // this should in normal cases be safe, because "get_columns_widths" allocates
                     // "highlight_symbol.width()" space but "get_columns_widths"
                     // currently does not bind it to max table.width()
@@ -627,6 +692,7 @@ impl<'a> StatefulWidget for Table<'a> {
                     width: *width,
                     height: table_row.height,
                 };
+
                 render_cell(buf, cell, table_cell_area);
                 if is_selected_cell {
                     // Highlight from left to right, with height of row:
@@ -640,7 +706,7 @@ impl<'a> StatefulWidget for Table<'a> {
                         _ => {}
                     };
 
-                    // Highligh from top to bottom, with width of column:
+                    // Highlight from top to bottom, with width of column:
                     match self.highlight_area {
                         HighlightArea::Col | HighlightArea::RowAndCol => {
                             let vertical_rect = Rect {
@@ -714,7 +780,8 @@ mod tests {
         ) {
             let table = Table::new(vec![]).widths(constraints);
 
-            let widths = table.get_columns_widths(available_width, selection_width);
+            let widths =
+                table.get_columns_widths(available_width, selection_width, &TableState::default());
             assert_eq!(widths, expected);
         }
 
