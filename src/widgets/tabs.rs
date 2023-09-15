@@ -179,7 +179,7 @@ mod tests {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]);
         assert_buffer_eq!(
             render(tabs, Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "])
+            Buffer::with_lines(vec!["Tab1 │ Tab2 │ Tab3 │ Tab4"])
         );
     }
 
@@ -203,7 +203,7 @@ mod tests {
             Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).style(Style::default().fg(Color::Red));
         assert_buffer_eq!(
             render(tabs, Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    ".red()])
+            Buffer::with_lines(vec!["Tab1 │ Tab2 │ Tab3 │ Tab4".red()])
         );
     }
 
@@ -218,7 +218,7 @@ mod tests {
             Buffer::with_lines(vec![Line::from(vec![
                 " ".into(),
                 "Tab1".reversed(),
-                " │ Tab2 │ Tab3 │ Tab4    ".into(),
+                "│ Tab2 │ Tab3 │ Tab4".into(),
             ])])
         );
 
@@ -228,7 +228,7 @@ mod tests {
             Buffer::with_lines(vec![Line::from(vec![
                 " Tab1 │ ".into(),
                 "Tab2".reversed(),
-                " │ Tab3 │ Tab4    ".into(),
+                "│ Tab3 │ Tab4".into(),
             ])])
         );
 
@@ -236,7 +236,7 @@ mod tests {
         assert_buffer_eq!(
             render(tabs.clone().select(3), Rect::new(0, 0, 30, 1)),
             Buffer::with_lines(vec![Line::from(vec![
-                " Tab1 │ Tab2 │ Tab3 │ ".into(),
+                "Tab1 │ Tab2 │ Tab3 │".into(),
                 "Tab4".reversed(),
                 "    ".into(),
             ])])
@@ -245,7 +245,7 @@ mod tests {
         // out of bounds selects no tab
         assert_buffer_eq!(
             render(tabs.clone().select(4), Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "])
+            Buffer::with_lines(vec!["Tab1 │ Tab2 │ Tab3 │ Tab4"])
         );
     }
 
@@ -260,7 +260,7 @@ mod tests {
             Buffer::with_lines(vec![Line::from(vec![
                 " ".red(),
                 "Tab1".red().reversed(),
-                " │ Tab2 │ Tab3 │ Tab4    ".red(),
+                "│ Tab2 │ Tab3 │ Tab4".red(),
             ])])
         );
     }
@@ -270,7 +270,7 @@ mod tests {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).divider("--");
         assert_buffer_eq!(
             render(tabs, Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![" Tab1 -- Tab2 -- Tab3 -- Tab4 ",])
+            Buffer::with_lines(vec!["Tab1 -- Tab2 -- Tab3 -- Tab4",])
         );
     }
 
