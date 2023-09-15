@@ -306,7 +306,7 @@ impl<'a> Table<'a> {
 
     /// Creates a custom block around a [`Table`] widget.
     ///
-    /// The `block` parameter is of type [`Block`]. This holds the specified block to be 
+    /// The `block` parameter is of type [`Block`]. This holds the specified block to be
     /// created around the [`Table`]
     ///
     /// # Examples
