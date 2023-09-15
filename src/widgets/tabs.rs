@@ -267,7 +267,7 @@ mod tests {
 
     #[test]
     fn render_divider() {
-        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).divider("--");
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).divider(" -- ");
         assert_buffer_eq!(
             render(tabs, Rect::new(0, 0, 30, 1)),
             Buffer::with_lines(vec!["Tab1 -- Tab2 -- Tab3 -- Tab4",])
