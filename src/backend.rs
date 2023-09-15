@@ -90,6 +90,7 @@
 //! understand how it implements mouse capture.
 //!
 //! [`Terminal`]: crate::terminal::Terminal
+//! [`TermionBackend`]: termion/struct.TermionBackend.html
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
 //! [Termwiz]: https://crates.io/crates/termwiz
