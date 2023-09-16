@@ -26,6 +26,8 @@ use crate::{
 /// [`Table`] is also a [`StatefulWidget`], which means you can use it with [`TableState`] to allow
 /// the user to scroll through the rows and select one of them.
 ///
+/// Note: if the `widths` field is empty, the table will be rendered with equal widths.
+///
 /// See the [table example] and the recipe and traceroute tabs in the [demo2 example] for a more in
 /// depth example of the various configuration options and for how to handle state.
 ///
@@ -363,6 +365,9 @@ pub enum HighlightSpacing {
 /// frame.render_stateful_widget(table, area, &mut table_state);
 /// # }
 /// ```
+///
+/// Note that if [`Table::widths`] is not called before rendering, the rendered columns will have
+/// equal width.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct TableState {
     offset: usize,
@@ -460,10 +465,12 @@ impl<'a> Table<'a> {
         self
     }
 
-    /// Set the widths of the columns
+    /// Set the widths of the columns.
     ///
     /// The `widths` parameter accepts anything which be converted to an Iterator of Constraints
     /// which can be an array, slice, Vec etc.
+    ///
+    /// If the widths are empty, the table will be rendered with equal widths.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
@@ -1125,12 +1132,30 @@ impl<'a> StatefulWidget for Table<'a> {
 
 // private methods for rendering
 impl Table<'_> {
-    /// Get all offsets and widths of all user specified columns
-    /// Returns (x, width)
+    /// Get all offsets and widths of all user specified columns.
+    ///
+    /// Returns (x, width). When self.widths is empty, it is assumed `.widths()` has not been called
+    /// and a default of equal widths is returned.
     fn get_columns_widths(&self, max_width: u16, selection_width: u16) -> Vec<(u16, u16)> {
+        let widths = if self.widths.is_empty() {
+            let col_count = self
+                .rows
+                .iter()
+                .chain(self.header.iter())
+                .map(|r| r.cells.len())
+                .max()
+                .unwrap_or(0);
+            // There are `col_count - 1` spaces between the columns
+            let total_space =
+                max_width.saturating_sub(self.column_spacing * (col_count as u16 - 1));
+            // Divide the remaining space between each column equally
+            vec![Constraint::Length(total_space / col_count as u16); col_count]
+        } else {
+            self.widths.to_vec()
+        };
         let constraints = iter::once(Constraint::Length(selection_width))
             .chain(Itertools::intersperse(
-                self.widths.iter().cloned(),
+                widths.iter().cloned(),
                 Constraint::Length(self.column_spacing),
             ))
             .collect_vec();
@@ -1570,6 +1595,31 @@ mod tests {
                 0,
                 &[(0, 20), (21, 20), (42, 20)],
             );
+        }
+
+        #[test]
+        fn no_constraint_with_rows() {
+            let table = Table::default()
+                .rows(vec![
+                    Row::new(vec!["a", "b"]),
+                    Row::new(vec!["c", "d", "e"]),
+                ])
+                // rows should get precedence over header
+                .header(Row::new(vec!["f", "g"]))
+                .column_spacing(0);
+            assert_eq!(
+                table.get_columns_widths(30, 0),
+                &[(0, 10), (10, 10), (20, 10)]
+            )
+        }
+
+        #[test]
+        fn no_constraint_with_header() {
+            let table = Table::default()
+                .rows(vec![])
+                .header(Row::new(vec!["f", "g"]))
+                .column_spacing(0);
+            assert_eq!(table.get_columns_widths(10, 0), &[(0, 5), (5, 5)])
         }
     }
 
