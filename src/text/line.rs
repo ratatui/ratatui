@@ -11,6 +11,25 @@ pub struct Line<'a> {
 }
 
 impl<'a> Line<'a> {
+    /// Create a line with the default style.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// Line::raw("test content");
+    /// Line::raw(String::from("test content"));
+    /// ```
+    pub fn raw<T>(content: T) -> Line<'a>
+    where
+        T: Into<Cow<'a, str>>,
+    {
+        Line {
+            spans: vec![Span::raw(content)],
+            alignment: None,
+        }
+    }
+
     /// Create a line with a style.
     ///
     /// # Examples
@@ -322,5 +341,12 @@ mod tests {
                 StyledGrapheme::new("!", BLUE_ON_WHITE),
             ],
         );
+    }
+
+    #[test]
+    fn raw_str() {
+        let line = Line::raw("test content");
+        assert_eq!(line.spans, vec![Span::raw("test content")]);
+        assert_eq!(line.alignment, None);
     }
 }
