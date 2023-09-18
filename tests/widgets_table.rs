@@ -6,7 +6,10 @@ use ratatui::{
     layout::Constraint,
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, HighlightSpacing, Row, Table, TableState},
+    widgets::{
+        Block, Borders, Cell, ColumnHighlightSpacing, HighlightArea, HighlightSpacing, Row, Table,
+        TableSelection, TableState,
+    },
     Terminal,
 };
 
@@ -565,7 +568,7 @@ fn widgets_table_can_have_rows_with_multi_lines() {
     );
 
     // select first
-    state.select(Some(0));
+    state.select(Some(TableSelection::Cell { row: 0, col: 0 }));
     test_case(
         &mut state,
         Buffer::with_lines(vec![
@@ -581,7 +584,7 @@ fn widgets_table_can_have_rows_with_multi_lines() {
     );
 
     // select second (we don't show partially the 4th row)
-    state.select(Some(1));
+    state.select(Some(TableSelection::Cell { row: 1, col: 0 }));
     test_case(
         &mut state,
         Buffer::with_lines(vec![
@@ -597,7 +600,7 @@ fn widgets_table_can_have_rows_with_multi_lines() {
     );
 
     // select 4th (we don't show partially the 1st row)
-    state.select(Some(3));
+    state.select(Some(TableSelection::Cell { row: 3, col: 0 }));
     test_case(
         &mut state,
         Buffer::with_lines(vec![
@@ -695,7 +698,7 @@ fn widgets_table_enable_always_highlight_spacing() {
     );
 
     // select first, "WhenSelected" should only allocate if selected
-    state.select(Some(0));
+    state.select(Some(TableSelection::Cell { row: 0, col: 0 }));
     test_case(
         &mut state,
         HighlightSpacing::default(),
@@ -712,7 +715,7 @@ fn widgets_table_enable_always_highlight_spacing() {
     );
 
     // select first, "Always" should allocate regardless if selected or not
-    state.select(Some(0));
+    state.select(Some(TableSelection::Cell { row: 0, col: 0 }));
     test_case(
         &mut state,
         HighlightSpacing::Always,
@@ -729,7 +732,7 @@ fn widgets_table_enable_always_highlight_spacing() {
     );
 
     // select first, "Never" should never allocate regadless if selected or not
-    state.select(Some(0));
+    state.select(Some(TableSelection::Cell { row: 0, col: 0 }));
     test_case(
         &mut state,
         HighlightSpacing::Never,
@@ -747,11 +750,314 @@ fn widgets_table_enable_always_highlight_spacing() {
 }
 
 #[test]
-fn widgets_table_can_have_elements_styled_individually() {
+fn widgets_table_can_have_spacing_in_all_columns() {
+    let test_case = |state: &mut TableState, expected: Buffer| {
+        let backend = TestBackend::new(30, 8);
+        let mut terminal = Terminal::new(backend).unwrap();
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                let table = Table::new(vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]).height(2),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]).height(2),
+                ])
+                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+                .block(Block::default().borders(Borders::ALL))
+                .highlight_symbol(">> ")
+                .highlight_area(HighlightArea::Row)
+                .highlight_spacing(HighlightSpacing::Always)
+                .columns_with_highlight_spacing(ColumnHighlightSpacing::AllColumns)
+                .widths(&[
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                ])
+                .column_spacing(1);
+                f.render_stateful_widget(table, size, state);
+            })
+            .unwrap();
+        terminal.backend().assert_buffer(&expected);
+    };
+
+    let mut state = TableState::default();
+
+    state.select(Some(TableSelection::Cell { row: 0, col: 0 }));
+    test_case(
+        &mut state,
+        // HighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1    Head2    Head3  │",
+            "│                            │",
+            "│>> Row11    Row12    Row13  │",
+            "│   Row21    Row22    Row23  │",
+            "│                            │",
+            "│   Row31    Row32    Row33  │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    state.select(Some(TableSelection::Cell { row: 1, col: 0 }));
+    test_case(
+        &mut state,
+        // HighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1    Head2    Head3  │",
+            "│                            │",
+            "│   Row11    Row12    Row13  │",
+            "│>> Row21    Row22    Row23  │",
+            "│                            │",
+            "│   Row31    Row32    Row33  │",
+            "└────────────────────────────┘",
+        ]),
+    );
+}
+
+#[test]
+fn widgets_table_can_specify_columns_with_symbol_spacing() {
+    let test_case =
+        |state: &mut TableState, columns_with_spacing: ColumnHighlightSpacing, expected: Buffer| {
+            let backend = TestBackend::new(30, 8);
+            let mut terminal = Terminal::new(backend).unwrap();
+            terminal
+                .draw(|f| {
+                    let size = f.size();
+                    let table = Table::new(vec![
+                        Row::new(vec!["Row11", "Row12", "Row13"]),
+                        Row::new(vec!["Row21", "Row22", "Row23"]).height(2),
+                        Row::new(vec!["Row31", "Row32", "Row33"]),
+                        Row::new(vec!["Row41", "Row42", "Row43"]).height(2),
+                    ])
+                    .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+                    .block(Block::default().borders(Borders::ALL))
+                    .highlight_symbol(">> ")
+                    .highlight_area(HighlightArea::Row)
+                    .highlight_spacing(HighlightSpacing::Always)
+                    .columns_with_highlight_spacing(columns_with_spacing)
+                    .widths(&[
+                        Constraint::Length(5),
+                        Constraint::Length(5),
+                        Constraint::Length(5),
+                    ])
+                    .column_spacing(1);
+                    f.render_stateful_widget(table, size, state);
+                })
+                .unwrap();
+            terminal.backend().assert_buffer(&expected);
+        };
+
+    assert_eq!(
+        ColumnHighlightSpacing::default(),
+        ColumnHighlightSpacing::FirstColumnOnly
+    );
+
+    let mut state = TableState::default();
+    // no selection, "WhenSelected" should only allocate if selected
+    test_case(
+        &mut state,
+        ColumnHighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1 Head2 Head3        │",
+            "│                            │",
+            "│   Row11 Row12 Row13        │",
+            "│   Row21 Row22 Row23        │",
+            "│                            │",
+            "│   Row31 Row32 Row33        │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    test_case(
+        &mut state,
+        ColumnHighlightSpacing::FirstColumnOnly,
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1 Head2 Head3        │",
+            "│                            │",
+            "│   Row11 Row12 Row13        │",
+            "│   Row21 Row22 Row23        │",
+            "│                            │",
+            "│   Row31 Row32 Row33        │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    state.select(Some(TableSelection::Cell { row: 1, col: 0 }));
+    test_case(
+        &mut state,
+        ColumnHighlightSpacing::SelectedColumn,
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1 Head2 Head3        │",
+            "│                            │",
+            "│   Row11 Row12 Row13        │",
+            "│>> Row21 Row22 Row23        │",
+            "│                            │",
+            "│   Row31 Row32 Row33        │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    state.select(Some(TableSelection::Cell { row: 1, col: 2 }));
+    test_case(
+        &mut state,
+        ColumnHighlightSpacing::SelectedColumn,
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│Head1 Head2    Head3        │",
+            "│                            │",
+            "│Row11 Row12    Row13        │",
+            "│Row21 Row22 >> Row23        │",
+            "│                            │",
+            "│Row31 Row32    Row33        │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    state.select(Some(TableSelection::Cell { row: 1, col: 2 }));
+    test_case(
+        &mut state,
+        ColumnHighlightSpacing::SpecificColumns(vec![0, 2]),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1 Head2    Head3     │",
+            "│                            │",
+            "│   Row11 Row12    Row13     │",
+            "│   Row21 Row22 >> Row23     │",
+            "│                            │",
+            "│   Row31 Row32    Row33     │",
+            "└────────────────────────────┘",
+        ]),
+    );
+}
+
+#[test]
+fn widgets_table_can_select_cells_rows_and_cols() {
+    let test_case = |state: &mut TableState, space: HighlightSpacing, expected: Buffer| {
+        let backend = TestBackend::new(30, 8);
+        let mut terminal = Terminal::new(backend).unwrap();
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                let table = Table::new(vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]).height(2),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]).height(2),
+                ])
+                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+                .block(Block::default().borders(Borders::ALL))
+                .highlight_symbol(">> ")
+                // .highlight_area(HighlightArea::Row)
+                .highlight_spacing(HighlightSpacing::Always)
+                .columns_with_highlight_spacing(ColumnHighlightSpacing::AllColumns)
+                .highlight_spacing(space)
+                .widths(&[
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                ])
+                .column_spacing(1);
+                f.render_stateful_widget(table, size, state);
+            })
+            .unwrap();
+        terminal.backend().assert_buffer(&expected);
+    };
+
+    assert_eq!(HighlightSpacing::default(), HighlightSpacing::WhenSelected);
+
+    let mut state = TableState::default();
+    // no selection, "WhenSelected" should only allocate if selected
+    test_case(
+        &mut state,
+        HighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│Head1 Head2 Head3           │",
+            "│                            │",
+            "│Row11 Row12 Row13           │",
+            "│Row21 Row22 Row23           │",
+            "│                            │",
+            "│Row31 Row32 Row33           │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    state.select(Some(TableSelection::Cell { row: 0, col: 0 }));
+    test_case(
+        &mut state,
+        HighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1    Head2    Head3  │",
+            "│                            │",
+            "│>> Row11    Row12    Row13  │",
+            "│   Row21    Row22    Row23  │",
+            "│                            │",
+            "│   Row31    Row32    Row33  │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    state.select(Some(TableSelection::Row(0)));
+    test_case(
+        &mut state,
+        HighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1    Head2    Head3  │",
+            "│                            │",
+            "│>> Row11    Row12    Row13  │",
+            "│   Row21    Row22    Row23  │",
+            "│                            │",
+            "│   Row31    Row32    Row33  │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    state.select(Some(TableSelection::Col(0)));
+    test_case(
+        &mut state,
+        HighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1    Head2    Head3  │",
+            "│                            │",
+            "│>> Row11    Row12    Row13  │",
+            "│   Row21    Row22    Row23  │",
+            "│                            │",
+            "│   Row31    Row32    Row33  │",
+            "└────────────────────────────┘",
+        ]),
+    );
+
+    state.select(Some(TableSelection::Cell { row: 1, col: 1 }));
+    test_case(
+        &mut state,
+        HighlightSpacing::default(),
+        Buffer::with_lines(vec![
+            "┌────────────────────────────┐",
+            "│   Head1    Head2    Head3  │",
+            "│                            │",
+            "│   Row11    Row12    Row13  │",
+            "│   Row21 >> Row22    Row23  │",
+            "│                            │",
+            "│   Row31    Row32    Row33  │",
+            "└────────────────────────────┘",
+        ]),
+    );
+}
+
+#[test]
+fn widgets_table_can_have_row_elements_styled_individually() {
     let backend = TestBackend::new(30, 4);
     let mut terminal = Terminal::new(backend).unwrap();
     let mut state = TableState::default();
-    state.select(Some(0));
+    state.select(Some(TableSelection::Cell { row: 0, col: 0 }));
     terminal
         .draw(|f| {
             let size = f.size();
@@ -771,6 +1077,7 @@ fn widgets_table_can_have_elements_styled_individually() {
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
             .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
             .highlight_symbol(">> ")
+            .highlight_area(ratatui::widgets::HighlightArea::Row)
             .highlight_style(Style::default().add_modifier(Modifier::BOLD))
             .widths(&[
                 Constraint::Length(6),
@@ -883,7 +1190,7 @@ fn widgets_table_columns_dont_panic() {
     let mut state = TableState::default();
 
     // select first, which would cause a panic before fix
-    state.select(Some(0));
+    state.select(Some(TableSelection::Cell { row: 0, col: 0 }));
     test_case(&mut state, table1.clone(), table1_width);
 }
 
@@ -894,7 +1201,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
     let mut state = TableState::default();
 
     // render with 6 items => offset will be at 2
-    state.select(Some(5));
+    state.select(Some(TableSelection::Cell { row: 5, col: 0 }));
     terminal
         .draw(|f| {
             let size = f.size();
@@ -930,7 +1237,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
     terminal.backend().assert_buffer(&expected);
 
     // render with 1 item => offset will be at 1
-    state.select(Some(1));
+    state.select(Some(TableSelection::Cell { row: 1, col: 0 }));
     terminal
         .draw(|f| {
             let size = f.size();
