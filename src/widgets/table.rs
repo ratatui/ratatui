@@ -490,10 +490,12 @@ impl<'a> Table<'a> {
             end += 1;
         }
 
-        let selected = selected
-            .unwrap_or(TableSelection::default())
-            .row
-            .min(self.rows.len() - 1);
+        let selected = match selected.unwrap_or(TableSelection::default()) {
+            TableSelection::Row(row) => row,
+            TableSelection::Col(_) => 0,
+            TableSelection::Cell { row, .. } => row,
+        }
+        .min(self.rows.len() - 1);
         while selected >= end {
             height = height.saturating_add(self.rows[end].total_height());
             end += 1;
@@ -526,15 +528,21 @@ impl<'a> Styled for Table<'a> {
     }
 }
 
-#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct TableSelection {
-    pub row: usize,
-    pub col: usize,
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum TableSelection {
+    Row(usize),
+    Col(usize),
+    Cell { row: usize, col: usize },
+}
+impl Default for TableSelection {
+    fn default() -> Self {
+        Self::Cell { row: 0, col: 0 }
+    }
 }
 
 impl From<usize> for TableSelection {
     fn from(row: usize) -> Self {
-        Self { row, col: 0 }
+        Self::Row(row)
     }
 }
 
@@ -567,6 +575,24 @@ impl TableState {
         self.selected
     }
 
+    /// Returns the current selected row index, if any
+    pub fn selected_row(&self) -> Option<usize> {
+        match self.selected {
+            Some(TableSelection::Row(row)) => Some(row),
+            Some(TableSelection::Cell { row, .. }) => Some(row),
+            _ => None,
+        }
+    }
+
+    /// Returns the current selected col index, if any
+    pub fn selected_col(&self) -> Option<usize> {
+        match self.selected {
+            Some(TableSelection::Col(col)) => Some(col),
+            Some(TableSelection::Cell { col, .. }) => Some(col),
+            _ => None,
+        }
+    }
+
     pub fn select(&mut self, index: Option<impl Into<TableSelection>>) {
         self.selected = match index {
             Some(index) => Some(index.into()),
@@ -574,6 +600,68 @@ impl TableState {
                 self.offset = 0;
                 None
             }
+        };
+    }
+
+    /// Adds, update or removes the row component of the [`TableSelection`]
+    ///
+    /// If current TableSelection is [`None`], it will be set as [`TableSelection::Row`]
+    /// If current is [`TableSelection::Col`], it will be set as [`TableSelection::Cell`],
+    /// If current is [`TableSelection::Cell`] and you set row to [`None`], the selection will be
+    ///     turned into a [`TableSelection::Col`]
+    pub fn select_row(&mut self, row: Option<usize>) {
+        match row {
+            Some(new_row) => match self.selected() {
+                None | Some(TableSelection::Row(_)) => {
+                    self.select(Some(TableSelection::Row(new_row)));
+                }
+                Some(TableSelection::Col(col)) => {
+                    self.select(Some(TableSelection::Cell { row: new_row, col }));
+                }
+                Some(TableSelection::Cell { col, .. }) => {
+                    self.select(Some(TableSelection::Cell { row: new_row, col }));
+                }
+            },
+            None => match self.selected() {
+                Some(TableSelection::Cell { col, .. }) => {
+                    self.select(Some(TableSelection::Col(col)));
+                }
+                Some(TableSelection::Row(_)) => {
+                    self.select(None::<TableSelection>);
+                }
+                _ => {}
+            },
+        }
+    }
+
+    /// Adds, updates or removes the column component of the [`TableSelection`]
+    ///
+    /// If the current [`TableSelection`] is [`None`], it will be set as a [`TableSelection::Col`]
+    /// If  current is [`TableSelection::Row`], it will be set as a [`TableSelection::Cell`]
+    /// If current is [`TableSelection::Cell`] and you set col to [`None`], the selection will be
+    ///     turned into a [`TableSelection::Row`]
+    pub fn select_col(&mut self, col: Option<usize>) {
+        match col {
+            Some(new_col) => match self.selected() {
+                None | Some(TableSelection::Col(_)) => {
+                    self.select(Some(TableSelection::Col(new_col)));
+                }
+                Some(TableSelection::Row(row)) => {
+                    self.select(Some(TableSelection::Cell { row, col: new_col }))
+                }
+                Some(TableSelection::Cell { row, .. }) => {
+                    self.select(Some(TableSelection::Cell { row, col: new_col }))
+                }
+            },
+            None => match self.selected() {
+                Some(TableSelection::Cell { row, .. }) => {
+                    self.select(Some(TableSelection::Row(row)))
+                }
+                Some(TableSelection::Col(_)) => {
+                    self.select(None::<TableSelection>);
+                }
+                _ => {}
+            },
         }
     }
 }
@@ -661,7 +749,11 @@ impl<'a> StatefulWidget for Table<'a> {
             buf.set_style(table_row_area, table_row.style);
 
             let selected = state.selected();
-            let is_selected_row = selected.map_or(false, |s| s.row == row_num);
+            let is_selected_row = match selected {
+                Some(TableSelection::Row(row)) => row == row_num,
+                Some(TableSelection::Cell { row, .. }) => row == row_num,
+                _ => false,
+            };
 
             // Loop trough each column in row (i.e loop through each cell)
             for ((col_num, (x, width)), cell) in columns_widths
@@ -670,8 +762,17 @@ impl<'a> StatefulWidget for Table<'a> {
                 .zip(table_row.cells.iter())
             {
                 let should_show_symbol_in_col = cols_with_symbol_spacing.contains(&col_num);
-                let is_selected_col = selected.map_or(false, |s| s.col == col_num);
-                let is_selected_cell = is_selected_row && is_selected_col;
+                let is_selected_col = match selected {
+                    Some(TableSelection::Col(col)) => col == col_num,
+                    Some(TableSelection::Cell { col, .. }) => col == col_num,
+                    _ => false,
+                };
+                let is_selected_cell = match selected {
+                    None => false,
+                    Some(TableSelection::Row(_)) => is_selected_row && col_num == 0,
+                    Some(TableSelection::Col(_)) => is_selected_col && row_num == 0,
+                    Some(TableSelection::Cell { .. }) => is_selected_row && is_selected_col,
+                };
 
                 if selection_width > 0 && is_selected_cell && should_show_symbol_in_col {
                     // if selection_width > 0 && is_selected_cell {
