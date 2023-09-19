@@ -7,127 +7,138 @@ use crossterm::{
 };
 use ratatui::{prelude::*, widgets::*};
 
-struct App<'a> {
+struct App {
     state: TableState,
-    items: Vec<Vec<&'a str>>,
+    items: Vec<Vec<String>>,
     opts: AppOpts,
 }
 
 #[derive(Debug, Clone, Default)]
 struct AppOpts {
-    // highlight_area: HighlightArea,
-    space_in_all_cols: bool,
+    highlight_area: HighlightArea,
+    columns_with_spacing: ColumnHighlightSpacing,
     highlight_spacing: HighlightSpacing,
 }
 
-impl<'a> App<'a> {
-    fn new() -> App<'a> {
+impl App {
+    fn new() -> App {
+        let items_str: Vec<Vec<&str>> = vec![
+            vec!["Row11", "Row12", "Row13"],
+            vec!["Row21", "Row22", "Row23"],
+            vec!["Row31", "Row32", "Row33"],
+            vec!["Row41", "Row42", "Row43"],
+            vec!["Row51", "Row52", "Row53"],
+            vec!["Row61", "Row62\nTest", "Row63"],
+            vec!["Row71", "Row72", "Row73"],
+            vec!["Row81", "Row82", "Row83"],
+            vec!["Row91", "Row92", "Row93"],
+            vec!["Use Arrows to move selection", "Row142", "Row143"],
+            vec!["Press 'Esc' to remove selection", "", ""],
+            vec![
+                "Press 's' to toggle Cell/Row/Col/RowAndCol highlighting",
+                "Current -->",
+                "Row",
+            ],
+            vec![
+                "Press 'h' to toggle highlight_spacing Never->Always->WhenSelected",
+                "Current -->",
+                "WhenSelected",
+            ],
+            vec![
+                "Press 'a' to toggle space from selected column to all columns",
+                "Current -->",
+                "FirstColumnOnly",
+            ],
+        ];
+        let mut items: Vec<Vec<String>> = vec![];
+        for row in items_str {
+            let mut tmp_vec: Vec<String> = vec![];
+            for item in row {
+                tmp_vec.push(item.to_string());
+            }
+            items.push(tmp_vec);
+        }
         App {
             state: TableState::default(),
-            items: vec![
-                vec!["Row11", "Row12", "Row13"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row31", "Row32", "Row33"],
-                vec!["Row41", "Row42", "Row43"],
-                vec!["Row51", "Row52", "Row53"],
-                vec!["Row61", "Row62\nTest", "Row63"],
-                vec!["Row71", "Row72", "Row73"],
-                vec!["Row81", "Row82", "Row83"],
-                vec!["Row91", "Row92", "Row93"],
-                vec!["Row101", "Row102", "Row103"],
-                vec!["Row111", "Row112", "Row113"],
-                vec!["Row121", "Row122", "Row123"],
-                vec!["Row131", "Row132", "Row133"],
-                vec!["Row141", "Row142", "Row143"],
-                vec!["Row151", "Row152", "Row153"],
-                vec!["Row161", "Row162", "Row163"],
-                vec!["Row171", "Row172", "Row173"],
-                vec!["Row172", "Row182", "Row183"],
-                vec!["Use Arrows to move selection", "Row142", "Row143"],
-                vec!["Press 'Esc' to remove selection", "", ""],
-                vec!["Press 'f' to toggle full row highlighting", "", ""],
-                vec![
-                    "Press 'h' to toggle highlight_spacing Never->Always->WhenSelected",
-                    "",
-                    "",
-                ],
-                vec![
-                    "Press 'a' to toggle space from selected column to all columns",
-                    "",
-                    "",
-                ],
-            ],
+            items,
+
             opts: AppOpts::default(),
         }
     }
     pub fn next_row(&mut self) {
-        let sel = match self.state.selected() {
-            Some(mut new_sel) => {
-                if new_sel.row >= self.items.len() - 1 {
-                    new_sel.row = 0;
-                    new_sel
+        let next_row = match self.state.selected_row() {
+            Some(row) => {
+                if row == self.items.len() - 1 {
+                    0
                 } else {
-                    new_sel.row += 1;
-                    new_sel
+                    row + 1
                 }
             }
-            None => TableSelection::default(),
+
+            None => 0,
         };
-        self.state.select(Some(sel));
+        self.state.select_row(Some(next_row));
     }
 
     pub fn prev_row(&mut self) {
-        let sel = match self.state.selected() {
-            Some(mut new_sel) => {
-                if new_sel.row == 0 {
-                    new_sel.row = self.items.len() - 1;
-                    new_sel
+        let prev_row = match self.state.selected_row() {
+            Some(row) => {
+                if row == 0 {
+                    self.items.len() - 1
                 } else {
-                    new_sel.row -= 1;
-                    new_sel
+                    row - 1
                 }
             }
-            None => TableSelection::default(),
+            None => 0,
         };
-        self.state.select(Some(sel));
+
+        self.state.select_row(Some(prev_row));
     }
 
     pub fn next_col(&mut self) {
-        let sel = match self.state.selected() {
-            Some(mut new_sel) => {
-                if new_sel.col == self.items[new_sel.row].len() - 1 {
-                    new_sel.col = 0;
-                    new_sel
+        let next_col = match self.state.selected_col() {
+            // Arguably you should count the number of columns for the case of rows with different
+            // columns than the first row, but for this example we'll just assume they're the same.
+            Some(col) => {
+                if col == self.items[0].len() - 1 {
+                    0
                 } else {
-                    new_sel.col += 1;
-                    new_sel
+                    col + 1
                 }
             }
-            None => TableSelection::default(),
+            None => 0,
         };
-        self.state.select(Some(sel));
+        self.state.select_col(Some(next_col));
     }
 
     pub fn prev_col(&mut self) {
-        let sel = match self.state.selected() {
-            Some(mut new_sel) => {
-                if new_sel.col == 0 {
-                    new_sel.col = self.items[new_sel.row].len() - 1;
-                    new_sel
+        let prev_col = match self.state.selected_col() {
+            Some(col) => {
+                if col == 0 {
+                    self.items[0].len() - 1
                 } else {
-                    new_sel.col -= 1;
-                    new_sel
+                    col - 1
                 }
             }
-            None => TableSelection::default(),
+            None => 0,
         };
-        self.state.select(Some(sel));
+        self.state.select_col(Some(prev_col));
     }
 
-    pub fn toggle_highlight_spacing_all_cols(&mut self) {
-        self.opts.space_in_all_cols = !self.opts.space_in_all_cols;
+    pub fn toggle_columns_with_spacing(&mut self) {
+        self.items[13][2] = format!("{:?}", self.opts.columns_with_spacing);
+        self.opts.columns_with_spacing = match self.opts.columns_with_spacing {
+            ColumnHighlightSpacing::FirstColumnOnly => ColumnHighlightSpacing::SelectedColumn,
+            ColumnHighlightSpacing::SelectedColumn => ColumnHighlightSpacing::AllColumns,
+            ColumnHighlightSpacing::AllColumns => {
+                ColumnHighlightSpacing::SpecificColumns(vec![0, 2])
+            }
+            ColumnHighlightSpacing::SpecificColumns(_) => ColumnHighlightSpacing::FirstColumnOnly,
+        };
     }
+
     pub fn toggle_highlight_spacing(&mut self) {
+        self.items[12][2] = format!("{:?}", self.opts.highlight_spacing);
         self.opts.highlight_spacing = match self.opts.highlight_spacing {
             HighlightSpacing::Never => HighlightSpacing::Always,
             HighlightSpacing::Always => HighlightSpacing::WhenSelected,
@@ -135,15 +146,20 @@ impl<'a> App<'a> {
         }
     }
 
-    // pub fn toggle_highlight_area(&mut self) {
-    //     self.opts.highlight_area = match self.opts.highlight_area {
-    //         HighlightArea::None => HighlightArea::Cell,
-    //         HighlightArea::Cell => HighlightArea::Row,
-    //         HighlightArea::Row => HighlightArea::Col,
-    //         HighlightArea::Col => HighlightArea::RowAndCol,
-    //         HighlightArea::RowAndCol => HighlightArea::None,
-    //     }
-    // }
+    pub fn toggle_selection_type(&mut self) {
+        self.items[11][2] = format!("{:?}", self.opts.highlight_area);
+        self.opts.highlight_area = match self.opts.highlight_area {
+            HighlightArea::None => HighlightArea::Cell,
+            HighlightArea::Cell => HighlightArea::Row,
+            HighlightArea::Row => HighlightArea::Col,
+            HighlightArea::Col => HighlightArea::RowAndCol,
+            HighlightArea::RowAndCol => HighlightArea::None,
+        }
+    }
+
+    fn test(&mut self) {
+        self.state.select(Some(TableSelection::Row(1)));
+    }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -186,10 +202,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     KeyCode::Up => app.prev_row(),
                     KeyCode::Right => app.next_col(),
                     KeyCode::Left => app.prev_col(),
-                    // KeyCode::Char('f') => app.toggle_highlight_area(),
-                    KeyCode::Char('a') => app.toggle_highlight_spacing_all_cols(),
+                    KeyCode::Char('s') => app.toggle_selection_type(),
+                    KeyCode::Char('a') => app.toggle_columns_with_spacing(),
                     KeyCode::Char('h') => app.toggle_highlight_spacing(),
-                    KeyCode::Esc => app.state.select(None),
+                    KeyCode::Char('t') => app.test(),
+                    KeyCode::Esc => app.state.select(None::<TableSelection>),
                     _ => {}
                 }
             }
@@ -218,7 +235,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .max()
             .unwrap_or(0)
             + 1;
-        let cells = item.iter().map(|c| Cell::from(*c));
+        let cells = item.iter().map(|c| Cell::from(c.clone()));
         Row::new(cells).height(height as u16).bottom_margin(1)
     });
     let t = Table::new(rows)
@@ -226,13 +243,13 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .block(Block::default().borders(Borders::ALL).title("Table"))
         .highlight_style(selected_style)
         .highlight_symbol(">> ")
-        // .highlight_area(app.opts.highlight_area.clone())
-        // .highlight_spacing_all_columns(app.opts.space_in_all_cols)
+        .highlight_area(app.opts.highlight_area.clone())
+        .columns_with_highlight_spacing(app.opts.columns_with_spacing.clone())
         .highlight_spacing(app.opts.highlight_spacing.clone())
         .widths(&[
-            Constraint::Percentage(50),
+            Constraint::Percentage(20),
             Constraint::Max(30),
-            Constraint::Min(10),
+            Constraint::Min(24),
         ]);
     f.render_stateful_widget(t, rects[0], &mut app.state);
 }
