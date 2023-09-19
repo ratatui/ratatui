@@ -3,7 +3,9 @@ use std::{
     cmp::{max, min},
     collections::HashMap,
     fmt,
+    num::NonZeroUsize,
     rc::Rc,
+    sync::OnceLock,
 };
 
 use cassowary::{
@@ -12,6 +14,7 @@ use cassowary::{
     WeightedRelation::{EQ, GE, LE},
 };
 use itertools::Itertools;
+use lru::LruCache;
 use strum::{Display, EnumString};
 
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
@@ -337,6 +340,7 @@ impl Default for Layout {
 }
 
 impl Layout {
+    pub const DEFAULT_CACHE_SIZE: usize = 16;
     /// Creates a new layout with default values.
     ///
     /// - direction: [Direction::Vertical]
@@ -353,6 +357,28 @@ impl Layout {
             constraints: Vec::new(),
             segment_size: SegmentSize::LastTakesRemainder,
         }
+    }
+
+    /// Initialize an empty cache with a custom size. The cache is keyed on the layout and area, so
+    /// that subsequent calls with the same parameters are faster. The cache is a LruCache, and
+    /// grows until `cache_size` is reached.
+    ///
+    /// Returns true if the cell's value was set by this call.
+    /// Returns false if the cell's value was not set by this call, this means that another thread
+    /// has set this value or that the cache size is already initialized.
+    ///
+    /// Note that a custom cache size will be set only if this function:
+    /// * is called before [Layout::split()] otherwise, the cache size is
+    ///   [`Self::DEFAULT_CACHE_SIZE`].
+    /// * is called for the first time, subsequent calls do not modify the cache size.
+    pub fn init_cache(cache_size: usize) -> bool {
+        LAYOUT_CACHE
+            .with(|c| {
+                c.set(RefCell::new(LruCache::new(
+                    NonZeroUsize::new(cache_size).unwrap(),
+                )))
+            })
+            .is_ok()
     }
 
     /// Builder method to set the constraints of the layout.
@@ -474,7 +500,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// simple HashMap, and grows indefinitely (<https://github.com/ratatui-org/ratatui/issues/402>).
+    /// LruCache, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
+    /// is initialized with the [Layout::init_cache()] grows until the initialized cache size.
     ///
     /// # Examples
     ///
@@ -494,18 +521,21 @@ impl Layout {
     /// ```
     pub fn split(&self, area: Rect) -> Rc<[Rect]> {
         LAYOUT_CACHE.with(|c| {
-            c.borrow_mut()
-                .entry((area, self.clone()))
-                .or_insert_with(|| split(area, self))
-                .clone()
+            c.get_or_init(|| {
+                RefCell::new(LruCache::new(
+                    NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap(),
+                ))
+            })
+            .borrow_mut()
+            .get_or_insert((area, self.clone()), || split(area, self))
+            .clone()
         })
     }
 }
 
-type Cache = HashMap<(Rect, Layout), Rc<[Rect]>>;
+type Cache = LruCache<(Rect, Layout), Rc<[Rect]>>;
 thread_local! {
-    // TODO: Maybe use a fixed size cache https://github.com/ratatui-org/ratatui/issues/402
-    static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(HashMap::new());
+    static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = OnceLock::new();
 }
 
 /// A container used by the solver inside split
@@ -666,6 +696,44 @@ mod tests {
 
     use super::{SegmentSize::*, *};
     use crate::prelude::Constraint::*;
+
+    #[test]
+    fn custom_cache_size() {
+        assert!(Layout::init_cache(10));
+        assert!(!Layout::init_cache(15));
+        LAYOUT_CACHE.with(|c| {
+            assert_eq!(c.get().unwrap().borrow().cap().get(), 10);
+        })
+    }
+
+    #[test]
+    fn default_cache_size() {
+        let target = Rect {
+            x: 2,
+            y: 2,
+            width: 10,
+            height: 10,
+        };
+
+        Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(
+                [
+                    Constraint::Percentage(10),
+                    Constraint::Max(5),
+                    Constraint::Min(1),
+                ]
+                .as_ref(),
+            )
+            .split(target);
+        assert!(!Layout::init_cache(15));
+        LAYOUT_CACHE.with(|c| {
+            assert_eq!(
+                c.get().unwrap().borrow().cap().get(),
+                Layout::DEFAULT_CACHE_SIZE
+            );
+        })
+    }
 
     #[test]
     fn corner_to_string() {

@@ -89,7 +89,9 @@
 //! backend being used, and developers should consult the specific backend's documentation to
 //! understand how it implements mouse capture.
 //!
+//! [`TermionBackend`]: termion/struct.TermionBackend.html
 //! [`Terminal`]: crate::terminal::Terminal
+//! [`TermionBackend`]: termion/struct.TermionBackend.html
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
 //! [Termwiz]: https://crates.io/crates/termwiz
