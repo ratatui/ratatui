@@ -1,7 +1,6 @@
-#![allow(deprecated)]
 use std::borrow::Cow;
 
-use super::{Span, Spans, Style, StyledGrapheme};
+use super::{Span, Style, StyledGrapheme};
 use crate::layout::Alignment;
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -180,18 +179,12 @@ impl<'a> From<Line<'a>> for String {
     }
 }
 
-impl<'a> From<Spans<'a>> for Line<'a> {
-    fn from(value: Spans<'a>) -> Self {
-        Self::from(value.0)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{
         layout::Alignment,
         style::{Color, Modifier, Style},
-        text::{Line, Span, Spans, StyledGrapheme},
+        text::{Line, Span, StyledGrapheme},
     };
 
     #[test]
@@ -264,15 +257,6 @@ mod tests {
         let span = Span::styled("Hello, world!", Style::default().fg(Color::Yellow));
         let line = Line::from(span.clone());
         assert_eq!(vec![span], line.spans);
-    }
-
-    #[test]
-    fn test_from_spans() {
-        let spans = vec![
-            Span::styled("Hello,", Style::default().fg(Color::Red)),
-            Span::styled(" world!", Style::default().fg(Color::Green)),
-        ];
-        assert_eq!(Line::from(Spans::from(spans.clone())), Line::from(spans));
     }
 
     #[test]

@@ -60,11 +60,6 @@ pub use masked::Masked;
 mod span;
 pub use span::Span;
 
-/// We keep this for backward compatibility.
-mod spans;
-#[allow(deprecated)]
-pub use spans::Spans;
-
 #[allow(clippy::module_inception)]
 mod text;
 pub use text::Text;
