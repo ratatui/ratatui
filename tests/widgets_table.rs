@@ -969,6 +969,11 @@ fn widgets_table_can_select_cells_rows_and_cols() {
     };
 
     assert_eq!(HighlightSpacing::default(), HighlightSpacing::WhenSelected);
+    assert_eq!(
+        TableSelection::default(),
+        TableSelection::Cell { row: 0, col: 0 }
+    );
+    assert_eq!(TableSelection::from(1), TableSelection::Row(1));
 
     let mut state = TableState::default();
     // no selection, "WhenSelected" should only allocate if selected
@@ -1050,6 +1055,127 @@ fn widgets_table_can_select_cells_rows_and_cols() {
             "└────────────────────────────┘",
         ]),
     );
+}
+
+#[test]
+fn widgets_table_can_select_row_or_columns_independently() {
+    let mut state = TableState::default();
+
+    // Start with None
+    assert_eq!(state.selected(), None);
+
+    // Add a row to None
+    state.select_row(Some(0));
+    assert_eq!(state.selected(), Some(TableSelection::Row(0)));
+    assert_eq!(state.selected_row(), Some(0));
+
+    // Update existing Row
+    state.select_row(Some(1));
+    assert_eq!(state.selected(), Some(TableSelection::Row(1)));
+    assert_eq!(state.selected_row(), Some(1));
+
+    // Add a col to None
+    state.select(None::<TableSelection>);
+    state.select_col(Some(0));
+    assert_eq!(state.selected(), Some(TableSelection::Col(0)));
+    assert_eq!(state.selected_col(), Some(0));
+
+    // Update existing Col
+    state.select_col(Some(1));
+    assert_eq!(state.selected(), Some(TableSelection::Col(1)));
+    assert_eq!(state.selected_col(), Some(1));
+
+    // Add a cell to None
+    state.select(None::<TableSelection>);
+    state.select(Some(TableSelection::Cell { row: 0, col: 0 }));
+    assert_eq!(
+        state.selected(),
+        Some(TableSelection::Cell { row: 0, col: 0 })
+    );
+
+    // Update existing Cell
+    state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
+    assert_eq!(
+        state.selected(),
+        Some(TableSelection::Cell { row: 2, col: 1 })
+    );
+
+    // Add row to a Col
+    state.select(Some(TableSelection::Col(0)));
+    state.select_row(Some(3));
+    assert_eq!(
+        state.selected(),
+        Some(TableSelection::Cell { row: 3, col: 0 })
+    );
+
+    // Add col to a Row
+    state.select(Some(TableSelection::Row(0)));
+    state.select_col(Some(3));
+    assert_eq!(
+        state.selected(),
+        Some(TableSelection::Cell { row: 0, col: 3 })
+    );
+
+    // Update row in Cell
+    state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
+    state.select_row(Some(3));
+    assert_eq!(
+        state.selected(),
+        Some(TableSelection::Cell { row: 3, col: 1 })
+    );
+
+    // Update col in Cell
+    state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
+    state.select_col(Some(3));
+    assert_eq!(
+        state.selected(),
+        Some(TableSelection::Cell { row: 2, col: 3 })
+    );
+
+    // Remove a row from a Row
+    state.select(Some(TableSelection::Row(0)));
+    state.select_row(None);
+    assert_eq!(state.selected(), None);
+
+    // Remove a row from a Cell
+    state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
+    state.select_row(None);
+    assert_eq!(state.selected(), Some(TableSelection::Col(1)));
+
+    // Remove a row from a Col
+    state.select(Some(TableSelection::Col(0)));
+    state.select_row(None);
+    assert_eq!(state.selected(), Some(TableSelection::Col(0)));
+
+    // Remove a col from a Col
+    state.select(Some(TableSelection::Col(0)));
+    state.select_col(None);
+    assert_eq!(state.selected(), None);
+
+    // Remove a col from a Row
+    state.select(Some(TableSelection::Row(0)));
+    state.select_col(None);
+    assert_eq!(state.selected(), Some(TableSelection::Row(0)));
+
+    // Remove a col from a Cell
+    state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
+    state.select_col(None);
+    assert_eq!(state.selected(), Some(TableSelection::Row(2)));
+
+    // Remove a cell from a Row
+    state.select(Some(TableSelection::Row(0)));
+    state.select(None::<TableSelection>);
+    assert_eq!(state.selected(), None);
+
+    // Remove a cell from a Col
+    state.select(Some(TableSelection::Col(0)));
+    state.select(None::<TableSelection>);
+    assert_eq!(state.selected(), None);
+
+    // Remove a cell from a Cell
+    state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
+    state.select(None::<TableSelection>);
+    assert_eq!(state.selected(), None);
 }
 
 #[test]
