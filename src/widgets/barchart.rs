@@ -1149,4 +1149,35 @@ mod tests {
         let expected = Buffer::with_lines(vec!["  █", "▆ █", "  G"]);
         assert_buffer_eq!(buffer, expected);
     }
+
+    #[test]
+    fn test_unicode_as_value() {
+        let group = BarGroup::default().bars(&[
+            Bar::default()
+                .value(123)
+                .label("B1".into())
+                .text_value("写".into()),
+            Bar::default()
+                .value(321)
+                .label("B2".into())
+                .text_value("写".into()),
+            Bar::default()
+                .value(333)
+                .label("B2".into())
+                .text_value("写".into()),
+        ]);
+        let chart = BarChart::default().data(group).bar_width(3).bar_gap(1);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 5));
+        chart.render(buffer.area, &mut buffer);
+
+        let expected = Buffer::with_lines(vec![
+            "    ▆▆▆ ███",
+            "    ███ ███",
+            "▃▃▃ ███ ███",
+            "写█ 写█ 写█",
+            "B1  B2  B2 ",
+        ]);
+        assert_buffer_eq!(buffer, expected);
+    }
 }

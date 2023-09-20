@@ -1,3 +1,5 @@
+use unicode_width::UnicodeWidthStr;
+
 use crate::{buffer::Buffer, prelude::Rect, style::Style, text::Line};
 
 /// A bar to be shown by the [`BarChart`](crate::widgets::BarChart) widget.
@@ -154,7 +156,7 @@ impl<'a> Bar<'a> {
                 self.value.to_string()
             };
 
-            let width = value_label.len() as u16;
+            let width = value_label.width() as u16;
             if width < max_width {
                 buf.set_string(
                     x + (max_width.saturating_sub(value_label.len() as u16) >> 1),
