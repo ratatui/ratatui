@@ -206,7 +206,7 @@ impl Rect {
     }
 
     pub const fn area(self) -> u16 {
-        self.width * self.height
+        self.width.saturating_mul(self.height)
     }
 
     pub const fn left(self) -> u16 {
@@ -226,14 +226,17 @@ impl Rect {
     }
 
     pub fn inner(self, margin: &Margin) -> Rect {
-        if self.width < 2 * margin.horizontal || self.height < 2 * margin.vertical {
+        let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
+        let doubled_margin_vertical = margin.vertical.saturating_mul(2);
+
+        if self.width < doubled_margin_horizontal || self.height < doubled_margin_vertical {
             Rect::default()
         } else {
             Rect {
-                x: self.x + margin.horizontal,
-                y: self.y + margin.vertical,
-                width: self.width - 2 * margin.horizontal,
-                height: self.height - 2 * margin.vertical,
+                x: self.x.saturating_add(margin.horizontal),
+                y: self.y.saturating_add(margin.vertical),
+                width: self.width.saturating_sub(doubled_margin_horizontal),
+                height: self.height.saturating_sub(doubled_margin_vertical),
             }
         }
     }
