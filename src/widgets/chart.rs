@@ -90,7 +90,7 @@ pub enum GraphType {
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Dataset<'a> {
     /// Name of the dataset (used in the legend if shown)
-    name: Cow<'a, str>,
+    name: Option<Cow<'a, str>>,
     /// A reference to the actual data
     data: &'a [(f64, f64)],
     /// Symbol used for each points of this dataset
@@ -106,7 +106,7 @@ impl<'a> Dataset<'a> {
     where
         S: Into<Cow<'a, str>>,
     {
-        self.name = name.into();
+        self.name = Some(name.into());
         self
     }
 
@@ -301,9 +301,15 @@ impl<'a> Chart<'a> {
             }
         }
 
-        if let Some(inner_width) = self.datasets.iter().map(|d| d.name.width() as u16).max() {
+        if let Some(inner_width) = self
+            .datasets
+            .iter()
+            .filter_map(|d| Some(d.name.as_ref()?.width() as u16))
+            .max()
+        {
             let legend_width = inner_width + 2;
-            let legend_height = self.datasets.len() as u16 + 2;
+            let legend_height =
+                self.datasets.iter().filter(|d| d.name.is_some()).count() as u16 + 2;
             let max_legend_width = self
                 .hidden_legend_constraints
                 .0
@@ -545,12 +551,17 @@ impl<'a> Widget for Chart<'a> {
             Block::default()
                 .borders(Borders::ALL)
                 .render(legend_area, buf);
-            for (i, dataset) in self.datasets.iter().enumerate() {
+            for (i, (dataset_name, dataset_style)) in self
+                .datasets
+                .iter()
+                .filter_map(|d| Some((d.name.as_ref()?, d.style)))
+                .enumerate()
+            {
                 buf.set_string(
                     legend_area.x + 1,
                     legend_area.y + 1 + i as u16,
-                    &dataset.name,
-                    dataset.style,
+                    dataset_name,
+                    dataset_style,
                 );
             }
         }
