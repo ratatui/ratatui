@@ -506,8 +506,13 @@ impl<'a> Widget for BarChart<'a> {
         buf.set_style(area, self.style);
 
         self.render_block(&mut area, buf);
-
+        if area.area() == 0 {
+            return;
+        }
         if self.data.is_empty() {
+            return;
+        }
+        if self.bar_width == 0 {
             return;
         }
 
@@ -1179,5 +1184,17 @@ mod tests {
             "B1  B2  B2 ",
         ]);
         assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn handles_zero_width() {
+        // this test is to ensure that a BarChart with zero bar / gap width does not panic
+        let chart = BarChart::default()
+            .data(&[("A", 1)])
+            .bar_width(0)
+            .bar_gap(0);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 10));
+        chart.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(buffer, Buffer::empty(Rect::new(0, 0, 0, 10)));
     }
 }
