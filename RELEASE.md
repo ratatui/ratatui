@@ -7,12 +7,14 @@ actions](.github/workflows/cd.yml) and triggered by pushing a tag.
 [vhs](https://github.com/charmbracelet/vhs) (installation instructions in README).
 
    ```shell
-   cargo build --example demo
-   vhs examples/demo.tape --publish --quiet
+   cargo build --example demo2
+   vhs examples/demo2.tape
    ```
 
-   Then update the link in the [examples README](./examples/README) and the main README. Avoid
-   adding the gif to the git repo as binary files tend to bloat repositories.
+1. Switch branches to the images branch and copy demo2.gif to examples/, commit, and push.
+1. Grab the permalink from <https://github.com/ratatui-org/ratatui/blob/images/examples/demo2.gif> and
+   append `?raw=true` to redirect to the actual image url. Then update the link in the main README.
+   Avoid adding the gif to the git repo as binary files tend to bloat repositories.
 
 1. Bump the version in [Cargo.toml](Cargo.toml).
 1. Bump versions in the doc comments of [lib.rs](src/lib.rs).

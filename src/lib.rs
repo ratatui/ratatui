@@ -3,7 +3,8 @@
 //! [ratatui](https://github.com/ratatui-org/ratatui) is a library that is all about cooking up terminal user
 //! interfaces (TUIs).
 //!
-//! ![Demo](https://vhs.charm.sh/vhs-tF0QbuPbtHgUeG0sTVgFr.gif)
+//! ![Demo](https://raw.githubusercontent.com/ratatui-org/ratatui/aa09e59dc0058347f68d7c1e0c91f863c6f2b8c9/examples/demo2.gif)
+// this is a permalink to https://github.com/ratatui-org/ratatui/blob/images/examples/demo2.gif
 //!
 //! # Get started
 //!
