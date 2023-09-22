@@ -1,3 +1,5 @@
+use unicode_width::UnicodeWidthStr;
+
 use crate::{
     buffer::Buffer,
     layout::Rect,
@@ -5,7 +7,13 @@ use crate::{
     symbols,
     widgets::{Block, Widget},
 };
-use unicode_width::UnicodeWidthStr;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Bucket {
+    low: f64,
+    high: f64,
+    count: usize,
+}
 
 /// A bar chart specialized for showing histograms
 ///
@@ -41,12 +49,12 @@ pub struct Histogram<'a> {
     /// Style for the widget
     style: Style,
     /// Slice of values to plot on the chart
-    data: &'a [u64],
+    data: &'a [f64],
     /// each bucket keeps a count of the data points that fall into it
-    /// buckets[0] counts items where 0 <= x < bucket_size
-    /// buckets[1] counts items where bucket_size <= x < 2*bucket_size
+    /// buckets[0].count counts items where buckets[0].low <= x < buckets[0].high
+    /// buckets[1].count counts items where buckets[1].low <= x < buckets[1].high
     /// etc.
-    buckets: Vec<u64>,
+    buckets: Vec<Bucket>,
     /// Value necessary for a bar to reach the maximum height (if no value is specified,
     /// the maximum value in the data is taken as reference)
     max: Option<u64>,
@@ -73,27 +81,38 @@ impl<'a> Default for Histogram<'a> {
 }
 
 impl<'a> Histogram<'a> {
-    pub fn data(mut self, data: &'a [u64], n_buckets: u64) -> Histogram<'a> {
+    pub fn data(mut self, data: &'a [f64], n_buckets: u64) -> Histogram<'a> {
         self.data = data;
 
-        let min = *self.data.iter().min().unwrap();
-        let max = *self.data.iter().max().unwrap() + 1;
-        let bucket_size: u64 = ((max - min) as f64 / n_buckets as f64).ceil() as u64;
-        self.buckets = vec![0; n_buckets as usize];
+        let min = data.iter().cloned().fold(f64::NAN, f64::min);
+        let max = data.iter().cloned().fold(f64::NAN, f64::max);
+
+        let bucket_size = (max - min) / n_buckets as f64;
+        self.buckets = Vec::with_capacity(n_buckets as usize);
 
         // initialize buckets
         self.values = Vec::with_capacity(n_buckets as usize);
-        for v in 0..n_buckets {
-            self.values.push(format!("{}", v * bucket_size));
+        for i in 0..n_buckets {
+            let start = min + bucket_size * i as f64;
+            let bucket = Bucket {
+                low: start,
+                high: start + bucket_size,
+                count: 0,
+            };
+            self.buckets.push(bucket);
+            self.values
+                .push(format!("[{:.1}, {:.1})", bucket.low, bucket.high));
         }
 
         // bucketize data
         for &x in self.data.iter() {
-            let idx: usize = ((x - min) / bucket_size) as usize;
-            self.buckets[idx] += 1;
+            let idx: usize = ((x - min) / bucket_size).floor() as usize;
+            if idx < self.buckets.len() {
+                self.buckets[idx].count += 1;
+            } else {
+                // TODO: decide what to do with excess
+            }
         }
-
-        self.max = Some(*self.buckets.iter().max().unwrap());
 
         self
     }
@@ -142,87 +161,27 @@ impl<'a> Histogram<'a> {
 impl<'a> Widget for Histogram<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-
-        let chart_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
-
-        if chart_area.height < 2 {
-            return;
-        }
-
-        let n_bars = self.buckets.len() as u16;
-        let bar_width: u16 = (chart_area.width - (n_bars + 1) * self.bar_gap) / n_bars;
-
-        let max = self
-            .max
-            .unwrap_or_else(|| self.buckets.iter().copied().max().unwrap_or_default());
-
-        let mut data = self
-            .buckets
-            .iter()
-            .take(n_bars as usize)
-            .map(|&v| v * u64::from(chart_area.height - 1) * 8 / std::cmp::max(max, 1))
-            .collect::<Vec<u64>>();
-        for j in (0..chart_area.height - 1).rev() {
-            for (i, d) in data.iter_mut().enumerate() {
-                let symbol = match d {
-                    0 => self.bar_set.empty,
-                    1 => self.bar_set.one_eighth,
-                    2 => self.bar_set.one_quarter,
-                    3 => self.bar_set.three_eighths,
-                    4 => self.bar_set.half,
-                    5 => self.bar_set.five_eighths,
-                    6 => self.bar_set.three_quarters,
-                    7 => self.bar_set.seven_eighths,
-                    _ => self.bar_set.full,
-                };
-
-                for x in 0..bar_width {
-                    buf.get_mut(
-                        chart_area.left() + i as u16 * (bar_width + self.bar_gap) + x,
-                        chart_area.top() + j,
-                    )
-                    .set_symbol(symbol)
-                    .set_style(self.bar_style);
-                }
-
-                if *d > 8 {
-                    *d -= 8;
-                } else {
-                    *d = 0;
-                }
-            }
-        }
-
-        for (i, &value) in self.buckets.iter().enumerate() {
-            let label = &self.values[i];
-            if value != 0 {
-                let value_label = format!("{}", &self.buckets[i]);
-                let width = value_label.width() as u16;
-                if width < bar_width {
-                    buf.set_string(
-                        chart_area.left()
-                            + i as u16 * (bar_width + self.bar_gap)
-                            + (bar_width - width) / 2,
-                        chart_area.bottom() - 2,
-                        value_label,
-                        self.value_style,
-                    );
-                }
-            }
-            buf.set_stringn(
-                chart_area.left() + i as u16 * (bar_width + self.bar_gap),
-                chart_area.bottom() - 1,
-                label,
-                bar_width as usize,
-                self.label_style,
-            );
-        }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::{assert_eq, assert_ne};
+
+    use super::*;
+    use crate::assert_buffer_eq;
+
+    #[test]
+    fn test_compute_bins() {
+        let data = [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0];
+        let hist = Histogram::default().data(&data, 3);
+
+        assert_eq!(hist.buckets.len(), 3);
+        assert_eq!(hist.buckets[0].count, 2); // 0.0, 0.5
+        assert_eq!(hist.buckets[1].count, 2); // 1.0, 1.5
+        assert_eq!(hist.buckets[2].count, 2); // 2.0, 2.5
+    }
+
+    #[test]
+    fn test_render_histogram() {}
 }
