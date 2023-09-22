@@ -335,6 +335,26 @@ impl<'a> BarChart<'a> {
     }
 
     fn render_horizontal_bars(self, buf: &mut Buffer, bars_area: Rect, max: u64) {
+        // get the longest label
+        let label_size = self
+            .data
+            .iter()
+            .flat_map(|group| group.bars.iter().map(|bar| &bar.label))
+            .flatten() // bar.label is an Option<Line>
+            .map(|label| label.width())
+            .max()
+            .unwrap_or(0) as u16;
+
+        let label_x = bars_area.x;
+        let bars_area = {
+            let margin = if label_size == 0 { 0 } else { 1 };
+            Rect {
+                x: bars_area.x + label_size + margin,
+                width: bars_area.width - label_size - margin,
+                ..bars_area
+            }
+        };
+
         // convert the bar values to ratatui::symbols::bar::Set
         let groups: Vec<Vec<u16>> = self
             .data
@@ -348,7 +368,7 @@ impl<'a> BarChart<'a> {
             })
             .collect();
 
-        // print all visible bars
+        // print all visible bars, label and values
         let mut bar_y = bars_area.top();
         for (group_data, mut group) in groups.into_iter().zip(self.data) {
             let bars = std::mem::take(&mut group.bars);
@@ -374,6 +394,12 @@ impl<'a> BarChart<'a> {
                     y: bar_y + (self.bar_width >> 1),
                     ..bars_area
                 };
+
+                // label
+                if let Some(label) = &bar.label {
+                    buf.set_line(label_x, bar_value_area.top(), label, label_size);
+                }
+
                 bar.render_value_with_different_styles(
                     buf,
                     bar_value_area,
@@ -506,8 +532,13 @@ impl<'a> Widget for BarChart<'a> {
         buf.set_style(area, self.style);
 
         self.render_block(&mut area, buf);
-
+        if area.area() == 0 {
+            return;
+        }
         if self.data.is_empty() {
+            return;
+        }
+        if self.bar_width == 0 {
             return;
         }
 
@@ -1093,6 +1124,21 @@ mod tests {
         test_horizontal_bars_label_width_greater_than_bar(Some(Color::White))
     }
 
+    /// Tests horizontal bars label are presents
+    #[test]
+    fn test_horizontal_label() {
+        let chart = BarChart::default()
+            .direction(Direction::Horizontal)
+            .bar_gap(0)
+            .data(&[("Jan", 10), ("Feb", 20), ("Mar", 5)]);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        chart.render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines(vec!["Jan 10█   ", "Feb 20████", "Mar 5     "]);
+
+        assert_buffer_eq!(buffer, expected);
+    }
+
     #[test]
     fn test_group_label_style() {
         let chart: BarChart<'_> = BarChart::default()
@@ -1148,5 +1194,48 @@ mod tests {
 
         let expected = Buffer::with_lines(vec!["  █", "▆ █", "  G"]);
         assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_unicode_as_value() {
+        let group = BarGroup::default().bars(&[
+            Bar::default()
+                .value(123)
+                .label("B1".into())
+                .text_value("写".into()),
+            Bar::default()
+                .value(321)
+                .label("B2".into())
+                .text_value("写".into()),
+            Bar::default()
+                .value(333)
+                .label("B2".into())
+                .text_value("写".into()),
+        ]);
+        let chart = BarChart::default().data(group).bar_width(3).bar_gap(1);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 5));
+        chart.render(buffer.area, &mut buffer);
+
+        let expected = Buffer::with_lines(vec![
+            "    ▆▆▆ ███",
+            "    ███ ███",
+            "▃▃▃ ███ ███",
+            "写█ 写█ 写█",
+            "B1  B2  B2 ",
+        ]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn handles_zero_width() {
+        // this test is to ensure that a BarChart with zero bar / gap width does not panic
+        let chart = BarChart::default()
+            .data(&[("A", 1)])
+            .bar_width(0)
+            .bar_gap(0);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 10));
+        chart.render(buffer.area, &mut buffer);
+        assert_buffer_eq!(buffer, Buffer::empty(Rect::new(0, 0, 0, 10)));
     }
 }

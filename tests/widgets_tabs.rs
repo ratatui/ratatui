@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 use ratatui::{
     backend::TestBackend, buffer::Buffer, layout::Rect, symbols, text::Line, widgets::Tabs,
     Terminal,

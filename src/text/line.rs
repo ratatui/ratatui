@@ -1,7 +1,6 @@
-#![allow(deprecated)]
 use std::borrow::Cow;
 
-use super::{Span, Spans, Style, StyledGrapheme};
+use super::{Span, Style, StyledGrapheme};
 use crate::layout::Alignment;
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -11,6 +10,29 @@ pub struct Line<'a> {
 }
 
 impl<'a> Line<'a> {
+    /// Create a line with the default style.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// Line::raw("test content");
+    /// Line::raw(String::from("test content"));
+    /// ```
+    pub fn raw<T>(content: T) -> Line<'a>
+    where
+        T: Into<Cow<'a, str>>,
+    {
+        Line {
+            spans: content
+                .into()
+                .lines()
+                .map(|v| Span::raw(v.to_string()))
+                .collect(),
+            alignment: None,
+        }
+    }
+
     /// Create a line with a style.
     ///
     /// # Examples
@@ -180,18 +202,12 @@ impl<'a> From<Line<'a>> for String {
     }
 }
 
-impl<'a> From<Spans<'a>> for Line<'a> {
-    fn from(value: Spans<'a>) -> Self {
-        Self::from(value.0)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{
         layout::Alignment,
         style::{Color, Modifier, Style},
-        text::{Line, Span, Spans, StyledGrapheme},
+        text::{Line, Span, StyledGrapheme},
     };
 
     #[test]
@@ -267,15 +283,6 @@ mod tests {
     }
 
     #[test]
-    fn test_from_spans() {
-        let spans = vec![
-            Span::styled("Hello,", Style::default().fg(Color::Red)),
-            Span::styled(" world!", Style::default().fg(Color::Green)),
-        ];
-        assert_eq!(Line::from(Spans::from(spans.clone())), Line::from(spans));
-    }
-
-    #[test]
     fn test_into_string() {
         let line = Line::from(vec![
             Span::styled("Hello,", Style::default().fg(Color::Red)),
@@ -322,5 +329,16 @@ mod tests {
                 StyledGrapheme::new("!", BLUE_ON_WHITE),
             ],
         );
+    }
+
+    #[test]
+    fn raw_str() {
+        let line = Line::raw("test content");
+        assert_eq!(line.spans, vec![Span::raw("test content")]);
+        assert_eq!(line.alignment, None);
+
+        let line = Line::raw("a\nb");
+        assert_eq!(line.spans, vec![Span::raw("a"), Span::raw("b")]);
+        assert_eq!(line.alignment, None);
     }
 }

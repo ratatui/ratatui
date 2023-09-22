@@ -8,7 +8,7 @@ occur in a terminal.
 
 ## Demo
 
-This is the demo example from the main README. It is available for each of the backends. Source:
+This is the previous demo example from the main README. It is available for each of the backends. Source:
 [demo.rs](./demo/).
 
 ```shell

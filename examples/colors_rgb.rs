@@ -13,7 +13,10 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use itertools::Itertools;
+use palette::{
+    convert::{FromColorUnclamped, IntoColorUnclamped},
+    Okhsv, Srgb,
+};
 use ratatui::{prelude::*, widgets::*};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
@@ -77,9 +80,8 @@ struct RgbColors;
 impl Widget for RgbColors {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Self::layout(area);
-        let rgb_colors = Self::create_rgb_color_grid(area.width, area.height * 2);
         Self::render_title(layout[0], buf);
-        Self::render_colors(layout[1], buf, rgb_colors);
+        Self::render_colors(layout[1], buf);
     }
 }
 
@@ -99,41 +101,26 @@ impl RgbColors {
     }
 
     /// Render a colored grid of half block characters (`"▀"`) each with a different RGB color.
-    fn render_colors(area: Rect, buf: &mut Buffer, rgb_colors: Vec<Vec<Color>>) {
-        for (x, column) in (area.left()..area.right()).zip(rgb_colors.iter()) {
-            for (y, (fg, bg)) in (area.top()..area.bottom()).zip(column.iter().tuples()) {
-                let cell = buf.get_mut(x, y);
-                cell.fg = *fg;
-                cell.bg = *bg;
-                cell.symbol = "▀".into();
-            }
-        }
-    }
+    fn render_colors(area: Rect, buf: &mut Buffer) {
+        for (xi, x) in (area.left()..area.right()).enumerate() {
+            for (yi, y) in (area.top()..area.bottom()).enumerate() {
+                let hue = xi as f32 * 360.0 / area.width as f32;
 
-    /// Generate a smooth grid of colors
-    ///
-    /// Red ranges from 0 to 255 across the x axis. Green ranges from 0 to 255 across the y axis.
-    /// Blue repeats every 32 pixels in both directions, but flipped every 16 pixels so that it
-    /// doesn't transition sharply from light to dark.
-    ///
-    /// The result stored in a 2d vector of colors with the x axis as the first dimension, and the
-    /// y axis the second dimension.
-    fn create_rgb_color_grid(width: u16, height: u16) -> Vec<Vec<Color>> {
-        let mut result = vec![];
-        for x in 0..width {
-            let mut column = vec![];
-            for y in 0..height {
-                // flip both axes every 16 pixels. E.g. [0, 1, ... 15, 15, ... 1, 0]
-                let yy = if (y % 32) < 16 { y % 32 } else { 31 - y % 32 };
-                let xx = if (x % 32) < 16 { x % 32 } else { 31 - x % 32 };
-                let r = (256 * x / width) as u8;
-                let g = (256 * y / height) as u8;
-                let b = (yy * 16 + xx) as u8;
-                column.push(Color::Rgb(r, g, b))
+                let value_fg = (yi as f32) / (area.height as f32 - 0.5);
+                let fg = Okhsv::<f32>::new(hue, Okhsv::max_saturation(), value_fg);
+                let fg: Srgb = fg.into_color_unclamped();
+                let fg: Srgb<u8> = fg.into_format();
+                let fg = Color::Rgb(fg.red, fg.green, fg.blue);
+
+                let value_bg = (yi as f32 + 0.5) / (area.height as f32 - 0.5);
+                let bg = Okhsv::new(hue, Okhsv::max_saturation(), value_bg);
+                let bg = Srgb::<f32>::from_color_unclamped(bg);
+                let bg: Srgb<u8> = bg.into_format();
+                let bg = Color::Rgb(bg.red, bg.green, bg.blue);
+
+                buf.get_mut(x, y).set_char('▀').set_fg(fg).set_bg(bg);
             }
-            result.push(column);
         }
-        result
     }
 }
 
