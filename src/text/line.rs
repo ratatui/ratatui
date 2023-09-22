@@ -25,7 +25,11 @@ impl<'a> Line<'a> {
         T: Into<Cow<'a, str>>,
     {
         Line {
-            spans: vec![Span::raw(content)],
+            spans: content
+                .into()
+                .lines()
+                .map(|v| Span::raw(v.to_string()))
+                .collect(),
             alignment: None,
         }
     }
@@ -347,6 +351,10 @@ mod tests {
     fn raw_str() {
         let line = Line::raw("test content");
         assert_eq!(line.spans, vec![Span::raw("test content")]);
+        assert_eq!(line.alignment, None);
+
+        let line = Line::raw("a\nb");
+        assert_eq!(line.spans, vec![Span::raw("a"), Span::raw("b")]);
         assert_eq!(line.alignment, None);
     }
 }
