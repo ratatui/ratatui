@@ -602,8 +602,13 @@ impl TableState {
         &mut self.offset
     }
 
-    pub fn with_selected(mut self, selected: Option<TableSelection>) -> Self {
-        self.selected = selected;
+    pub fn with_selected(mut self, selected: Option<impl Into<TableSelection>>) -> Self {
+        match selected {
+            Some(index) => {
+                self.selected = Some(index.into());
+            }
+            None => self.selected = None,
+        }
         self
     }
 
