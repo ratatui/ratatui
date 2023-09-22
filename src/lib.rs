@@ -133,7 +133,7 @@
 //! ```rust,no_run
 //! use ratatui::{prelude::*, widgets::*};
 //!
-//! fn ui<B: Backend>(f: &mut Frame<B>) {
+//! fn ui(f: &mut Frame) {
 //!    let chunks = Layout::default()
 //!         .direction(Direction::Vertical)
 //!         .margin(1)

@@ -41,7 +41,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     }
 }
 
-fn ui<B: Backend>(frame: &mut Frame<B>) {
+fn ui(frame: &mut Frame) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
@@ -75,7 +75,7 @@ const NAMED_COLORS: [Color; 16] = [
     Color::White,
 ];
 
-fn render_named_colors<B: Backend>(frame: &mut Frame<B>, area: Rect) {
+fn render_named_colors(frame: &mut Frame, area: Rect) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Length(3); 10])
@@ -94,7 +94,7 @@ fn render_named_colors<B: Backend>(frame: &mut Frame<B>, area: Rect) {
     render_bg_named_colors(frame, Color::White, layout[9]);
 }
 
-fn render_fg_named_colors<B: Backend>(frame: &mut Frame<B>, bg: Color, area: Rect) {
+fn render_fg_named_colors(frame: &mut Frame, bg: Color, area: Rect) {
     let block = title_block(format!("Foreground colors on {bg} background"));
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -119,7 +119,7 @@ fn render_fg_named_colors<B: Backend>(frame: &mut Frame<B>, bg: Color, area: Rec
     }
 }
 
-fn render_bg_named_colors<B: Backend>(frame: &mut Frame<B>, fg: Color, area: Rect) {
+fn render_bg_named_colors(frame: &mut Frame, fg: Color, area: Rect) {
     let block = title_block(format!("Background colors with {fg} foreground"));
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -144,7 +144,7 @@ fn render_bg_named_colors<B: Backend>(frame: &mut Frame<B>, fg: Color, area: Rec
     }
 }
 
-fn render_indexed_colors<B: Backend>(frame: &mut Frame<B>, area: Rect) {
+fn render_indexed_colors(frame: &mut Frame, area: Rect) {
     let block = title_block("Indexed colors".into());
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -243,7 +243,7 @@ fn title_block(title: String) -> Block<'static> {
         .title_style(Style::new().reset())
 }
 
-fn render_indexed_grayscale<B: Backend>(frame: &mut Frame<B>, area: Rect) {
+fn render_indexed_grayscale(frame: &mut Frame, area: Rect) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![

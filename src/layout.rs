@@ -310,7 +310,7 @@ pub(crate) enum SegmentSize {
 /// ```rust
 /// use ratatui::{prelude::*, widgets::*};
 ///
-/// fn render<B: Backend>(frame: &mut Frame<B>, area: Rect) {
+/// fn render(frame: &mut Frame, area: Rect) {
 ///     let layout = Layout::default()
 ///         .direction(Direction::Vertical)
 ///         .constraints(vec![Constraint::Length(5), Constraint::Min(0)])

@@ -225,10 +225,11 @@ where
     }
 
     /// Get a Frame object which provides a consistent view into the terminal state for rendering.
-    pub fn get_frame(&mut self) -> Frame<B> {
+    pub fn get_frame(&mut self) -> Frame {
         Frame {
-            terminal: self,
             cursor_position: None,
+            viewport_area: self.viewport_area,
+            buffer: self.current_buffer_mut(),
         }
     }
 
@@ -321,7 +322,7 @@ where
     /// ```
     pub fn draw<F>(&mut self, f: F) -> io::Result<CompletedFrame>
     where
-        F: FnOnce(&mut Frame<B>),
+        F: FnOnce(&mut Frame),
     {
         // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
         // and the terminal (if growing), which may OOB.
@@ -562,29 +563,25 @@ fn compute_inline_size<B: Backend>(
 /// [`Backend`]: crate::backend::Backend
 /// [`Buffer`]: crate::buffer::Buffer
 #[derive(Debug, Hash)]
-pub struct Frame<'a, B: 'a>
-where
-    B: Backend,
-{
-    /// The terminal that this frame is associated with.
-    terminal: &'a mut Terminal<B>,
-
+pub struct Frame<'a> {
     /// Where should the cursor be after drawing this frame?
     ///
     /// If `None`, the cursor is hidden and its position is controlled by the backend. If `Some((x,
     /// y))`, the cursor is shown and placed at `(x, y)` after the call to `Terminal::draw()`.
     cursor_position: Option<(u16, u16)>,
+    /// The area of the viewport
+    viewport_area: Rect,
+
+    /// The buffer that is used to draw the current frame
+    buffer: &'a mut Buffer,
 }
 
-impl<'a, B> Frame<'a, B>
-where
-    B: Backend,
-{
+impl Frame<'_> {
     /// The size of the current frame
     ///
     /// This is guaranteed not to change when rendering.
     pub fn size(&self) -> Rect {
-        self.terminal.viewport_area
+        self.viewport_area
     }
 
     /// Render a [`Widget`] to the current buffer using [`Widget::render`].
@@ -609,7 +606,7 @@ where
     where
         W: Widget,
     {
-        widget.render(area, self.terminal.current_buffer_mut());
+        widget.render(area, self.buffer);
     }
 
     /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
@@ -641,7 +638,7 @@ where
     where
         W: StatefulWidget,
     {
-        widget.render(area, self.terminal.current_buffer_mut(), state);
+        widget.render(area, self.buffer, state);
     }
 
     /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
