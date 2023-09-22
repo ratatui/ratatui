@@ -335,6 +335,26 @@ impl<'a> BarChart<'a> {
     }
 
     fn render_horizontal_bars(self, buf: &mut Buffer, bars_area: Rect, max: u64) {
+        // get the longest label
+        let label_size = self
+            .data
+            .iter()
+            .flat_map(|group| group.bars.iter().map(|bar| &bar.label))
+            .flatten() // bar.label is an Option<Line>
+            .map(|label| label.width())
+            .max()
+            .unwrap_or(0) as u16;
+
+        let label_x = bars_area.x;
+        let bars_area = {
+            let margin = if label_size == 0 { 0 } else { 1 };
+            Rect {
+                x: bars_area.x + label_size + margin,
+                width: bars_area.width - label_size - margin,
+                ..bars_area
+            }
+        };
+
         // convert the bar values to ratatui::symbols::bar::Set
         let groups: Vec<Vec<u16>> = self
             .data
@@ -348,7 +368,7 @@ impl<'a> BarChart<'a> {
             })
             .collect();
 
-        // print all visible bars
+        // print all visible bars, label and values
         let mut bar_y = bars_area.top();
         for (group_data, mut group) in groups.into_iter().zip(self.data) {
             let bars = std::mem::take(&mut group.bars);
@@ -374,6 +394,12 @@ impl<'a> BarChart<'a> {
                     y: bar_y + (self.bar_width >> 1),
                     ..bars_area
                 };
+
+                // label
+                if let Some(label) = &bar.label {
+                    buf.set_line(label_x, bar_value_area.top(), label, label_size);
+                }
+
                 bar.render_value_with_different_styles(
                     buf,
                     bar_value_area,
@@ -1096,6 +1122,21 @@ mod tests {
     #[test]
     fn test_horizontal_bars_label_width_greater_than_bar_with_style() {
         test_horizontal_bars_label_width_greater_than_bar(Some(Color::White))
+    }
+
+    /// Tests horizontal bars label are presents
+    #[test]
+    fn test_horizontal_label() {
+        let chart = BarChart::default()
+            .direction(Direction::Horizontal)
+            .bar_gap(0)
+            .data(&[("Jan", 10), ("Feb", 20), ("Mar", 5)]);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        chart.render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines(vec!["Jan 10█   ", "Feb 20████", "Mar 5     "]);
+
+        assert_buffer_eq!(buffer, expected);
     }
 
     #[test]
