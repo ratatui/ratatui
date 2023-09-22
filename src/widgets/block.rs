@@ -1262,4 +1262,30 @@ mod tests {
             ])
         );
     }
+
+    #[test]
+    fn render_custom_border_set() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        Block::default()
+            .borders(Borders::ALL)
+            .border_set(border::Set {
+                top_left: "1",
+                top_right: "2",
+                bottom_left: "3",
+                bottom_right: "4",
+                vertical_left: "L",
+                vertical_right: "R",
+                horizontal_top: "T",
+                horizontal_bottom: "B",
+            })
+            .render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "1TTTTTTTTTTTTT2",
+                "L             R",
+                "3BBBBBBBBBBBBB4",
+            ])
+        );
+    }
 }
