@@ -157,7 +157,7 @@ pub mod line {
     pub const DOUBLE_CROSS: &str = "╬";
     pub const THICK_CROSS: &str = "╋";
 
-    #[derive(Debug, Clone, Eq, PartialEq, Hash)]
+    #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
     pub struct Set {
         pub vertical: &'static str,
         pub horizontal: &'static str,
@@ -226,6 +226,154 @@ pub mod line {
         horizontal_down: THICK_HORIZONTAL_DOWN,
         horizontal_up: THICK_HORIZONTAL_UP,
         cross: THICK_CROSS,
+    };
+}
+
+pub mod border {
+    use super::line;
+
+    #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+    pub struct Set {
+        pub top_left: &'static str,
+        pub top_right: &'static str,
+        pub bottom_left: &'static str,
+        pub bottom_right: &'static str,
+        pub vertical_left: &'static str,
+        pub vertical_right: &'static str,
+        pub horizontal_top: &'static str,
+        pub horizontal_bottom: &'static str,
+    }
+
+    impl Default for Set {
+        fn default() -> Self {
+            PLAIN
+        }
+    }
+
+    /// Border Set with a single line width
+    ///
+    /// ```text
+    /// ┌─────┐
+    /// │xxxxx│
+    /// │xxxxx│
+    /// └─────┘
+    pub const PLAIN: Set = Set {
+        top_left: line::NORMAL.top_left,
+        top_right: line::NORMAL.top_right,
+        bottom_left: line::NORMAL.bottom_left,
+        bottom_right: line::NORMAL.bottom_right,
+        vertical_left: line::NORMAL.vertical,
+        vertical_right: line::NORMAL.vertical,
+        horizontal_top: line::NORMAL.horizontal,
+        horizontal_bottom: line::NORMAL.horizontal,
+    };
+
+    /// Border Set with a single line width and rounded corners
+    ///
+    /// ```text
+    /// ╭─────╮
+    /// │xxxxx│
+    /// │xxxxx│
+    /// ╰─────╯
+    pub const ROUNDED: Set = Set {
+        top_left: line::ROUNDED.top_left,
+        top_right: line::ROUNDED.top_right,
+        bottom_left: line::ROUNDED.bottom_left,
+        bottom_right: line::ROUNDED.bottom_right,
+        vertical_left: line::ROUNDED.vertical,
+        vertical_right: line::ROUNDED.vertical,
+        horizontal_top: line::ROUNDED.horizontal,
+        horizontal_bottom: line::ROUNDED.horizontal,
+    };
+
+    /// Border Set with a double line width
+    ///
+    /// ```text
+    /// ╔═════╗
+    /// ║xxxxx║
+    /// ║xxxxx║
+    /// ╚═════╝
+    pub const DOUBLE: Set = Set {
+        top_left: line::DOUBLE.top_left,
+        top_right: line::DOUBLE.top_right,
+        bottom_left: line::DOUBLE.bottom_left,
+        bottom_right: line::DOUBLE.bottom_right,
+        vertical_left: line::DOUBLE.vertical,
+        vertical_right: line::DOUBLE.vertical,
+        horizontal_top: line::DOUBLE.horizontal,
+        horizontal_bottom: line::DOUBLE.horizontal,
+    };
+
+    /// Border Set with a thick line width
+    ///
+    /// ```text
+    /// ┏━━━━━┓
+    /// ┃xxxxx┃
+    /// ┃xxxxx┃
+    /// ┗━━━━━┛
+    pub const THICK: Set = Set {
+        top_left: line::THICK.top_left,
+        top_right: line::THICK.top_right,
+        bottom_left: line::THICK.bottom_left,
+        bottom_right: line::THICK.bottom_right,
+        vertical_left: line::THICK.vertical,
+        vertical_right: line::THICK.vertical,
+        horizontal_top: line::THICK.horizontal,
+        horizontal_bottom: line::THICK.horizontal,
+    };
+
+    pub const QUADRANT_TOP_LEFT: &str = "▘";
+    pub const QUADRANT_TOP_RIGHT: &str = "▝";
+    pub const QUADRANT_BOTTOM_LEFT: &str = "▖";
+    pub const QUADRANT_BOTTOM_RIGHT: &str = "▗";
+    pub const QUADRANT_TOP_HALF: &str = "▀";
+    pub const QUADRANT_BOTTOM_HALF: &str = "▄";
+    pub const QUADRANT_LEFT_HALF: &str = "▌";
+    pub const QUADRANT_RIGHT_HALF: &str = "▐";
+    pub const QUADRANT_TOP_LEFT_BOTTOM_LEFT_BOTTOM_RIGHT: &str = "▙";
+    pub const QUADRANT_TOP_LEFT_TOP_RIGHT_BOTTOM_LEFT: &str = "▛";
+    pub const QUADRANT_TOP_LEFT_TOP_RIGHT_BOTTOM_RIGHT: &str = "▜";
+    pub const QUADRANT_TOP_RIGHT_BOTTOM_LEFT_BOTTOM_RIGHT: &str = "▟";
+    pub const QUADRANT_TOP_LEFT_BOTTOM_RIGHT: &str = "▚";
+    pub const QUADRANT_TOP_RIGHT_BOTTOM_LEFT: &str = "▞";
+    pub const QUADRANT_BLOCK: &str = "█";
+
+    /// Quadrant used for setting a border outside a block by one half cell "pixel".
+    ///
+    /// ```text
+    /// ▛▀▀▀▀▀▜
+    /// ▌xxxxx▐
+    /// ▌xxxxx▐
+    /// ▙▄▄▄▄▄▟
+    /// ```
+    pub const QUADRANT_OUTSIDE: Set = Set {
+        top_left: QUADRANT_TOP_LEFT_TOP_RIGHT_BOTTOM_LEFT,
+        top_right: QUADRANT_TOP_LEFT_TOP_RIGHT_BOTTOM_RIGHT,
+        bottom_left: QUADRANT_TOP_LEFT_BOTTOM_LEFT_BOTTOM_RIGHT,
+        bottom_right: QUADRANT_TOP_RIGHT_BOTTOM_LEFT_BOTTOM_RIGHT,
+        vertical_left: QUADRANT_LEFT_HALF,
+        vertical_right: QUADRANT_RIGHT_HALF,
+        horizontal_top: QUADRANT_TOP_HALF,
+        horizontal_bottom: QUADRANT_BOTTOM_HALF,
+    };
+
+    /// Quadrant used for setting a border inside a block by one half cell "pixel".
+    ///
+    /// ```text
+    /// ▗▄▄▄▄▄▖
+    /// ▐xxxxx▌
+    /// ▐xxxxx▌
+    /// ▝▀▀▀▀▀▘
+    /// ```
+    pub const QUADRANT_INSIDE: Set = Set {
+        top_right: QUADRANT_BOTTOM_LEFT,
+        top_left: QUADRANT_BOTTOM_RIGHT,
+        bottom_right: QUADRANT_TOP_LEFT,
+        bottom_left: QUADRANT_TOP_RIGHT,
+        vertical_left: QUADRANT_RIGHT_HALF,
+        vertical_right: QUADRANT_LEFT_HALF,
+        horizontal_top: QUADRANT_BOTTOM_HALF,
+        horizontal_bottom: QUADRANT_TOP_HALF,
     };
 }
 
