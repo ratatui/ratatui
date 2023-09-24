@@ -1,8 +1,9 @@
-use crate::prelude::*;
 use std::{
     cmp::{max, min},
     fmt,
 };
+
+use crate::prelude::*;
 
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
 /// area they are supposed to render to.
@@ -46,6 +47,11 @@ impl Rect {
 
     pub const fn area(self) -> u16 {
         self.width.saturating_mul(self.height)
+    }
+
+    /// Returns true if the rect has no area.
+    pub const fn is_empty(self) -> bool {
+        self.width == 0 || self.height == 0
     }
 
     pub const fn left(self) -> u16 {
@@ -139,6 +145,13 @@ mod tests {
     #[test]
     fn area() {
         assert_eq!(Rect::new(1, 2, 3, 4).area(), 12);
+    }
+
+    #[test]
+    fn is_empty() {
+        assert!(!Rect::new(1, 2, 3, 4).is_empty());
+        assert!(Rect::new(1, 2, 0, 4).is_empty());
+        assert!(Rect::new(1, 2, 3, 0).is_empty());
     }
 
     #[test]
