@@ -102,7 +102,7 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
 }
 
 /// Render the TUI.
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+fn ui(f: &mut Frame, app: &App) {
     let text = vec![
         if app.hook_enabled {
             Line::from("HOOK IS CURRENTLY **ENABLED**")

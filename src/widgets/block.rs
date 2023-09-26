@@ -485,7 +485,7 @@ impl<'a> Block<'a> {
     /// Draw a block nested within another block
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// # fn render_nested_block<B: Backend>(frame: &mut Frame<B>) {
+    /// # fn render_nested_block(frame: &mut Frame) {
     /// let outer_block = Block::default().title("Outer").borders(Borders::ALL);
     /// let inner_block = Block::default().title("Inner").borders(Borders::ALL);
     ///

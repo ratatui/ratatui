@@ -143,7 +143,7 @@ pub enum ScrollbarOrientation {
 /// ```rust
 /// use ratatui::{prelude::*, widgets::*};
 ///
-/// # fn render_paragraph_with_scrollbar<B: Backend>(frame: &mut Frame<B>, area: Rect) {
+/// # fn render_paragraph_with_scrollbar(frame: &mut Frame, area: Rect) {
 ///
 /// let vertical_scroll = 0; // from app state
 ///
