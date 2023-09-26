@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 use crate::{
     buffer::Buffer,
     layout::Rect,
@@ -7,18 +8,22 @@ use crate::{
     widgets::{Block, Widget},
 };
 
-/// A widget to display available tabs in a multiple panels context.
+/// A widget that displays a horizontal set of Tabs with a single tab selected.
 ///
-/// # Examples
+/// Each tab title is stored as a [`Line`] which can be individually styled. The selected tab is set
+/// using [`Tabs::select`] and styled using [`Tabs::highlight_style`]. The divider can be customized
+/// with [`Tabs::divider`].
+///
+/// # Example
 ///
 /// ```
 /// use ratatui::{prelude::*, widgets::*};
 ///
-/// let titles = ["Tab1", "Tab2", "Tab3", "Tab4"].iter().cloned().map(Line::from).collect();
-/// Tabs::new(titles)
+/// Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
 ///     .block(Block::default().title("Tabs").borders(Borders::ALL))
-///     .style(Style::default().fg(Color::White))
-///     .highlight_style(Style::default().fg(Color::Yellow))
+///     .style(Style::default().white())
+///     .highlight_style(Style::default().yellow())
+///     .select(2)
 ///     .divider(symbols::DOT);
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -38,6 +43,24 @@ pub struct Tabs<'a> {
 }
 
 impl<'a> Tabs<'a> {
+    /// Creates new `Tabs` from their titles.
+    ///
+    /// `titles` can be a [`Vec`] of [`&str`], [`String`] or anything that can be converted into
+    /// [`Line`]. As such, titles can be styled independently.
+    ///
+    /// # Examples
+    ///
+    /// Basic titles.
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]);
+    /// ```
+    ///
+    /// Styled titles
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
+    /// ```
     pub fn new<T>(titles: Vec<T>) -> Tabs<'a>
     where
         T: Into<Line<'a>>,
@@ -52,26 +75,55 @@ impl<'a> Tabs<'a> {
         }
     }
 
+    /// Surrounds the `Tabs` with a [`Block`].
     pub fn block(mut self, block: Block<'a>) -> Tabs<'a> {
         self.block = Some(block);
         self
     }
 
+    /// Sets the selected tab.
+    ///
+    /// The first tab has index 0 (this is also the default index).  
+    /// The selected tab can have a different style with [`Tabs::highlight_style`].
     pub fn select(mut self, selected: usize) -> Tabs<'a> {
         self.selected = selected;
         self
     }
 
+    /// Sets the style of the tabs.
+    ///
+    /// This will set the given style on the entire render area.
+    /// More precise style can be applied to the titles by styling the ones given to [`Tabs::new`].
+    /// The selected tab can be styled differently using [`Tabs::highlight_style`].
     pub fn style(mut self, style: Style) -> Tabs<'a> {
         self.style = style;
         self
     }
 
+    /// Sets the style for the highlighted tab.
+    ///
+    /// Highlighted tab can be selected with [`Tabs::select`].
     pub fn highlight_style(mut self, style: Style) -> Tabs<'a> {
         self.highlight_style = style;
         self
     }
 
+    /// Sets the string to use as tab divider.
+    ///
+    /// By default, the divider is a pipe (`|`).
+    ///
+    /// # Examples
+    ///
+    /// Use a dot (`•`) as separator.
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::Tabs, symbols};
+    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider(symbols::DOT);
+    /// ```
+    /// Use dash (`-`) as separator.
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::Tabs, symbols};
+    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider("-");
+    /// ```
     pub fn divider<T>(mut self, divider: T) -> Tabs<'a>
     where
         T: Into<Span<'a>>,

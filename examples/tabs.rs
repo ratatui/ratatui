@@ -98,12 +98,8 @@ fn ui(f: &mut Frame, app: &App) {
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title("Tabs"))
         .select(app.index)
-        .style(Style::default().fg(Color::Cyan))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(Color::Black),
-        );
+        .style(Style::default().cyan().on_gray())
+        .highlight_style(Style::default().bold().on_black());
     f.render_widget(tabs, chunks[0]);
     let inner = match app.index {
         0 => Block::default().title("Inner 0").borders(Borders::ALL),
