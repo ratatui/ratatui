@@ -139,16 +139,15 @@ impl<'a> Bar<'a> {
         }
     }
 
-    pub(super) fn render_label_and_value(
+    pub(super) fn render_value(
         self,
         buf: &mut Buffer,
         max_width: u16,
         x: u16,
         y: u16,
         default_value_style: Style,
-        default_label_style: Style,
+        ticks: u64,
     ) {
-        // render the value
         if self.value != 0 {
             let value_label = if let Some(text) = self.text_value {
                 text
@@ -157,7 +156,10 @@ impl<'a> Bar<'a> {
             };
 
             let width = value_label.width() as u16;
-            if width < max_width {
+            const TICKS_PER_LINE: u64 = 8;
+            // if we have enough space or the ticks are greater equal than 1 cell (8)
+            // then print the value
+            if width < max_width || (width == max_width && ticks >= TICKS_PER_LINE) {
                 buf.set_string(
                     x + (max_width.saturating_sub(value_label.len() as u16) >> 1),
                     y,
@@ -166,9 +168,17 @@ impl<'a> Bar<'a> {
                 );
             }
         }
+    }
 
-        // render the label
-        if let Some(mut label) = self.label {
+    pub(super) fn render_label(
+        &mut self,
+        buf: &mut Buffer,
+        max_width: u16,
+        x: u16,
+        y: u16,
+        default_label_style: Style,
+    ) {
+        if let Some(label) = &mut self.label {
             // patch label styles
             for span in &mut label.spans {
                 span.style = default_label_style.patch(span.style);
@@ -176,8 +186,8 @@ impl<'a> Bar<'a> {
 
             buf.set_line(
                 x + (max_width.saturating_sub(label.width() as u16) >> 1),
-                y + 1,
-                &label,
+                y,
+                label,
                 max_width,
             );
         }
