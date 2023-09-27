@@ -2,11 +2,20 @@
 # To run this script, install vhs and run `vhs ./examples/custom_widget.tape`
 Output "target/custom_widget.gif"
 Set Theme "OceanicMaterial"
-Set Width 1200
-Set Height 200
+Set Width 760
+Set Height 260
 Hide
 Type "cargo run --example=custom_widget --features=crossterm"
 Enter
-Sleep 1s
+Sleep 2s
 Show
-Sleep 5s
+Sleep 1s
+Set TypingSpeed 0.7s
+Right
+Right
+Space
+Space
+Left
+Space
+Left
+Space
