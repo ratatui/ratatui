@@ -156,6 +156,11 @@ required-features = ["crossterm", "widget-calendar"]
 doc-scrape-examples = true
 
 [[example]]
+name = "docsrs"
+required-features = ["crossterm"]
+doc-scrape-examples = false
+
+[[example]]
 name = "gauge"
 required-features = ["crossterm"]
 doc-scrape-examples = true
