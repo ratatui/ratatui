@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 use std::{
     cmp::{max, min},
     fmt,
@@ -10,9 +11,13 @@ use crate::prelude::*;
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rect {
+    /// The x coordinate of the top left corner of the rect.
     pub x: u16,
+    /// The y coordinate of the top left corner of the rect.
     pub y: u16,
+    /// The width of the rect.
     pub width: u16,
+    /// The height of the rect.
     pub height: u16,
 }
 
@@ -23,8 +28,8 @@ impl fmt::Display for Rect {
 }
 
 impl Rect {
-    /// Creates a new rect, with width and height limited to keep the area under max u16.
-    /// If clipped, aspect ratio will be preserved.
+    /// Creates a new rect, with width and height limited to keep the area under max u16. If
+    /// clipped, aspect ratio will be preserved.
     pub fn new(x: u16, y: u16, width: u16, height: u16) -> Rect {
         let max_area = u16::max_value();
         let (clipped_width, clipped_height) =
@@ -45,6 +50,8 @@ impl Rect {
         }
     }
 
+    /// The area of the rect. If the area is larger than the maximum value of u16, it will be
+    /// clamped to u16::MAX.
     pub const fn area(self) -> u16 {
         self.width.saturating_mul(self.height)
     }
@@ -54,22 +61,35 @@ impl Rect {
         self.width == 0 || self.height == 0
     }
 
+    /// Returns the left coordinate of the rect.
     pub const fn left(self) -> u16 {
         self.x
     }
 
+    /// Returns the right coordinate of the rect. This is the first coordinate outside of the rect.
+    ///
+    /// If the right coordinate is larger than the maximum value of u16, it will be clamped to
+    /// u16::MAX.
     pub const fn right(self) -> u16 {
         self.x.saturating_add(self.width)
     }
 
+    /// Returns the top coordinate of the rect.
     pub const fn top(self) -> u16 {
         self.y
     }
 
+    /// Returns the bottom coordinate of the rect. This is the first coordinate outside of the rect.
+    ///
+    /// If the bottom coordinate is larger than the maximum value of u16, it will be clamped to
+    /// u16::MAX.
     pub const fn bottom(self) -> u16 {
         self.y.saturating_add(self.height)
     }
 
+    /// Returns a new rect inside the current one, with the given margin on each side.
+    ///
+    /// If the margin is larger than the rect, the returned rect will have no area.
     pub fn inner(self, margin: &Margin) -> Rect {
         let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
         let doubled_margin_vertical = margin.vertical.saturating_mul(2);
@@ -86,24 +106,28 @@ impl Rect {
         }
     }
 
+    /// Returns a new rect that contains both the current one and the given one.
     pub fn union(self, other: Rect) -> Rect {
         let x1 = min(self.x, other.x);
         let y1 = min(self.y, other.y);
-        let x2 = max(self.x + self.width, other.x + other.width);
-        let y2 = max(self.y + self.height, other.y + other.height);
+        let x2 = max(self.right(), other.right());
+        let y2 = max(self.bottom(), other.bottom());
         Rect {
             x: x1,
             y: y1,
-            width: x2 - x1,
-            height: y2 - y1,
+            width: x2.saturating_sub(x1),
+            height: y2.saturating_sub(y1),
         }
     }
 
+    /// Returns a new rect that is the intersection of the current one and the given one.
+    ///
+    /// If the two rects do not intersect, the returned rect will have no area.
     pub fn intersection(self, other: Rect) -> Rect {
         let x1 = max(self.x, other.x);
         let y1 = max(self.y, other.y);
-        let x2 = min(self.x + self.width, other.x + other.width);
-        let y2 = min(self.y + self.height, other.y + other.height);
+        let x2 = min(self.right(), other.right());
+        let y2 = min(self.bottom(), other.bottom());
         Rect {
             x: x1,
             y: y1,
@@ -112,11 +136,12 @@ impl Rect {
         }
     }
 
+    /// Returns true if the two rects intersect.
     pub const fn intersects(self, other: Rect) -> bool {
-        self.x < other.x + other.width
-            && self.x + self.width > other.x
-            && self.y < other.y + other.height
-            && self.y + self.height > other.y
+        self.x < other.right()
+            && self.right() > other.x
+            && self.y < other.bottom()
+            && self.bottom() > other.y
     }
 }
 
