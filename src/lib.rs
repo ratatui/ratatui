@@ -153,7 +153,7 @@
 //!
 //! Running this example produces the following output:
 //!
-//! ![docsrs-hello](https://github.com/ratatui-org/ratatui/assets/381361/9afccfe3-5f33-42e9-9a55-2d143af3b128)
+//! ![docsrs-hello](https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-hello.png?raw=true)
 //!
 //! ## Layout
 //!
@@ -166,7 +166,7 @@
 //! use ratatui::{prelude::*, widgets::*};
 //!
 //! fn ui(frame: &mut Frame) {
-//!     let areas = Layout::default()
+//!     let main_layout = Layout::default()
 //!         .direction(Direction::Vertical)
 //!         .constraints(vec![
 //!             Constraint::Length(1),
@@ -174,27 +174,33 @@
 //!             Constraint::Length(1),
 //!         ])
 //!         .split(frame.size());
-//!     frame.render_widget(Paragraph::new("Title Bar"), areas[0]);
-//!     frame.render_widget(Paragraph::new("Status Bar"), areas[2]);
+//!     frame.render_widget(
+//!         Block::new().borders(Borders::TOP).title("Title Bar"),
+//!         main_layout[0],
+//!     );
+//!     frame.render_widget(
+//!         Block::new().borders(Borders::TOP).title("Status Bar"),
+//!         main_layout[2],
+//!     );
 //!
-//!     let areas = Layout::default()
+//!     let inner_layout = Layout::default()
 //!         .direction(Direction::Horizontal)
 //!         .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
-//!         .split(areas[1]);
+//!         .split(main_layout[1]);
 //!     frame.render_widget(
 //!         Block::default().borders(Borders::ALL).title("Left"),
-//!         areas[0],
+//!         inner_layout[0],
 //!     );
 //!     frame.render_widget(
 //!         Block::default().borders(Borders::ALL).title("Right"),
-//!         areas[1],
+//!         inner_layout[1],
 //!     );
 //! }
 //! ```
 //!
 //! Running this example produces the following output:
 //!
-//! ![docsrs-layout](https://github.com/ratatui-org/ratatui/assets/381361/a18da2a3-1bf4-4939-a5e1-06f3e32bacd1)
+//! ![docsrs-layout](https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-layout.png?raw=true)
 //!
 //! ## Text and styling
 //!
@@ -255,7 +261,7 @@
 //!
 //! Running this example produces the following output:
 //!
-//! ![docsrs-styling](https://github.com/ratatui-org/ratatui/assets/381361/c16024f7-3d36-4f66-973c-5892b69bca7f)
+//! ![docsrs-styling](https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-styling.png?raw=true)
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 #![cfg_attr(
