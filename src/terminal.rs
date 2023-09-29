@@ -332,7 +332,7 @@ where
         f(&mut frame);
         // We can't change the cursor position right away because we have to flush the frame to
         // stdout first. But we also can't keep the frame around, since it holds a &mut to
-        // Terminal. Thus, we're taking the important data out of the Frame and dropping it.
+        // Buffer. Thus, we're taking the important data out of the Frame and dropping it.
         let cursor_position = frame.cursor_position;
 
         // Draw to stdout
