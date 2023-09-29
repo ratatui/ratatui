@@ -81,7 +81,7 @@ pub struct TerminalOptions {
     pub viewport: Viewport,
 }
 
-/// An interface that Ratatui to interact and draw [`Frame`]s on the user's terminal.
+/// An interface to interact and draw [`Frame`]s on the user's terminal.
 ///
 /// This is the main entry point for Ratatui. It is responsible for drawing and maintaining the
 /// state of the buffers, cursor and viewport.
