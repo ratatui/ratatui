@@ -6,6 +6,31 @@ github with a [breaking change] label.
 
 [breaking change]: (https://github.com/ratatui-org/ratatui/issues?q=label%3A%22breaking+change%22)
 
+## Summary
+
+This is a quick summary of the sections below:
+
+- [Unreleased (v0.24.0)](#unreleased-0240)
+  - `ScrollbarState`: `position`, `content_length`, and `viewport_content_length` are now `usize`
+  - `BorderType`: `line_symbols` is now `border_symbols` and returns `symbols::border::set`
+  - `Frame<'a, B: Backend>` is now `Frame<'a>`
+  - `Stylize` shorthands for `String` now consume the value and return `Span<'static>`
+  - `Spans` is removed
+- [v0.23.0](#v0230)
+  - `Scrollbar`: `track_symbol` now takes `Option<&str>`
+  - `Scrollbar`: symbols moved to `symbols` module
+  - MSRV is now 1.67.0
+- [v0.22.0](#v0220)
+  - serde representation of `Borders` and `Modifiers` has changed
+- [v0.21.0](#v0210)
+  - MSRV is now 1.65.0
+  - `terminal::ViewPort` is now an enum
+  - `"".as_ref()` must be annotated to implement `Into<Text<'a>>`
+  - `Marker::Block` renders as a block char instead of a bar char
+- [v0.20.0](#v0200)
+  - MSRV is now 1.63.0
+  - `List` no longer ignores empty strings
+
 ## Unreleased (0.24.0)
 
 ### ScrollbarState field type changed from `u16` to `usize` ([#456])
