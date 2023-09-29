@@ -95,6 +95,41 @@ mod tests {
     }
 
     #[test]
+    fn draw_half_block_lines() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
+        let canvas = Canvas::default()
+            .marker(Marker::HalfBlock)
+            .x_bounds([0.0, 10.0])
+            .y_bounds([0.0, 10.0])
+            .paint(|context| {
+                context.draw(&Rectangle {
+                    x: 0.0,
+                    y: 0.0,
+                    width: 10.0,
+                    height: 10.0,
+                    color: Color::Red,
+                });
+            });
+        canvas.render(buffer.area, &mut buffer);
+        let mut expected = Buffer::with_lines(vec![
+            "█▀▀▀▀▀▀▀▀█",
+            "█        █",
+            "█        █",
+            "█        █",
+            "█        █",
+            "█        █",
+            "█        █",
+            "█        █",
+            "█        █",
+            "█▄▄▄▄▄▄▄▄█",
+        ]);
+        expected.set_style(buffer.area, Style::new().red().on_red());
+        expected.set_style(buffer.area.inner(&Margin::new(1, 0)), Style::reset().red());
+        expected.set_style(buffer.area.inner(&Margin::new(1, 1)), Style::reset());
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
     fn draw_braille_lines() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
         let canvas = Canvas::default()

@@ -54,6 +54,12 @@ pub mod block {
     };
 }
 
+pub mod half_block {
+    pub const UPPER: char = '▀';
+    pub const LOWER: char = '▄';
+    pub const FULL: char = '█';
+}
+
 pub mod bar {
     pub const FULL: &str = "█";
     pub const SEVEN_EIGHTHS: &str = "▇";
@@ -408,6 +414,10 @@ pub enum Marker {
     /// Braille Patterns. If your terminal does not support this, you will see unicode replacement
     /// characters (�) instead of Braille dots.
     Braille,
+    /// Use the unicode block and half block characters ("█", "▄", and "▀") to represent points in
+    /// a grid that is double the resolution of the terminal. Because each terminal cell is
+    /// generally about twice as tall as it is wide, this allows for a square grid of pixels.
+    HalfBlock,
 }
 
 pub mod scrollbar {

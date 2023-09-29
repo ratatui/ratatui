@@ -5,7 +5,9 @@ mod points;
 mod rectangle;
 mod world;
 
-use std::fmt::Debug;
+use std::{fmt::Debug, iter::zip};
+
+use itertools::Itertools;
 
 pub use self::{
     circle::Circle,
@@ -36,30 +38,72 @@ pub struct Label<'a> {
     line: TextLine<'a>,
 }
 
+/// A single layer of the canvas.
+///
+/// This allows the canvas to be drawn in multiple layers. This is useful if you want to draw
+/// multiple shapes on the canvas in specific order.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 struct Layer {
+    // a string of characters representing the grid. This will be wrapped to the width of the grid
+    // when rendering
     string: String,
-    colors: Vec<Color>,
+    // colors for foreground and background
+    colors: Vec<(Color, Color)>,
 }
 
+/// A grid of cells that can be painted on.
+///
+/// The grid represents a particular screen region measured in rows and columns. The underlying
+/// resolution of the grid might exceed the number of rows and columns. For example, a grid of
+/// Braille patterns will have a resolution of 2x4 dots per cell. This means that a grid of 10x10
+/// cells will have a resolution of 20x40 dots.
 trait Grid: Debug {
+    /// Get the width of the grid in number of terminal columns
     fn width(&self) -> u16;
+    /// Get the height of the grid in number of terminal rows
     fn height(&self) -> u16;
+    /// Get the resolution of the grid in number of dots.
+    ///
+    /// Note the resolution is expressed as the last dot of the grid. For example, a grid of 10x10
+    /// cells using a Braille pattern will have a resolution of 20x40 dots, the last dot being at
+    /// (19, 39).
     fn resolution(&self) -> (f64, f64);
+    /// Paint a point of the grid. The point is expressed in number of dots starting at the origin
+    /// of the grid in the lower left corner.
     fn paint(&mut self, x: usize, y: usize, color: Color);
+    /// Save the current state of the grid as a layer to be rendered
     fn save(&self) -> Layer;
+    /// Reset the grid to its initial state
     fn reset(&mut self);
 }
 
+/// The BrailleGrid is a grid made up of cells each containing a Braille pattern.
+///
+/// This makes it possible to draw shapes with a resolution of 2x4 dots per cell. This is useful
+/// when you want to draw shapes with a high resolution. Font support for Braille patterns is
+/// required to see the dots. If your terminal or font does not support this unicode block, you
+/// will see unicode replacement characters (�) instead of braille dots.
+///
+/// This grid type only supports a single foreground color for each 2x4 dots cell. There is no way
+/// to set the individual color of each dot in the braille pattern.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 struct BrailleGrid {
+    /// width of the grid in number of terminal columns
     width: u16,
+    /// height of the grid in number of terminal rows
     height: u16,
+    /// represents the unicode braille patterns. Will take a value between 0x2800 and 0x28FF
+    /// this is converted to a utf16 string when converting to a layer. See
+    /// <https://en.wikipedia.org/wiki/Braille_Patterns> for more info.
     cells: Vec<u16>,
+    /// The color of each cell only supports foreground colors for now as there's no way to
+    /// individually set the background color of each dot in the braille pattern.
     colors: Vec<Color>,
 }
 
 impl BrailleGrid {
+    /// Create a new BrailleGrid with the given width and height measured in terminal columns and
+    /// rows respectively.
     fn new(width: u16, height: u16) -> BrailleGrid {
         let length = usize::from(width * height);
         BrailleGrid {
@@ -88,23 +132,21 @@ impl Grid for BrailleGrid {
     }
 
     fn save(&self) -> Layer {
-        Layer {
-            string: String::from_utf16(&self.cells).unwrap(),
-            colors: self.colors.clone(),
-        }
+        let string = String::from_utf16(&self.cells).unwrap();
+        // the background color is always reset for braille patterns
+        let colors = self.colors.iter().map(|c| (*c, Color::Reset)).collect();
+        Layer { string, colors }
     }
 
     fn reset(&mut self) {
-        for c in &mut self.cells {
-            *c = symbols::braille::BLANK;
-        }
-        for c in &mut self.colors {
-            *c = Color::Reset;
-        }
+        self.cells.fill(symbols::braille::BLANK);
+        self.colors.fill(Color::Reset);
     }
 
     fn paint(&mut self, x: usize, y: usize, color: Color) {
         let index = y / 4 * self.width as usize + x / 2;
+        // using get_mut here because we are indexing the vector with usize values
+        // and we want to make sure we don't panic if the index is out of bounds
         if let Some(c) = self.cells.get_mut(index) {
             *c |= symbols::braille::DOTS[y % 4][x % 2];
         }
@@ -114,16 +156,27 @@ impl Grid for BrailleGrid {
     }
 }
 
+/// The CharGrid is a grid made up of cells each containing a single character.
+///
+/// This makes it possible to draw shapes with a resolution of 1x1 dots per cell. This is useful
+/// when you want to draw shapes with a low resolution.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 struct CharGrid {
+    /// width of the grid in number of terminal columns
     width: u16,
+    /// height of the grid in number of terminal rows
     height: u16,
+    /// represents a single character for each cell
     cells: Vec<char>,
+    /// The color of each cell
     colors: Vec<Color>,
+    /// The character to use for every cell - e.g. a block, dot, etc.
     cell_char: char,
 }
 
 impl CharGrid {
+    /// Create a new CharGrid with the given width and height measured in terminal columns and
+    /// rows respectively.
     fn new(width: u16, height: u16, cell_char: char) -> CharGrid {
         let length = usize::from(width * height);
         CharGrid {
@@ -152,21 +205,19 @@ impl Grid for CharGrid {
     fn save(&self) -> Layer {
         Layer {
             string: self.cells.iter().collect(),
-            colors: self.colors.clone(),
+            colors: self.colors.iter().map(|c| (*c, Color::Reset)).collect(),
         }
     }
 
     fn reset(&mut self) {
-        for c in &mut self.cells {
-            *c = ' ';
-        }
-        for c in &mut self.colors {
-            *c = Color::Reset;
-        }
+        self.cells.fill(' ');
+        self.colors.fill(Color::Reset);
     }
 
     fn paint(&mut self, x: usize, y: usize, color: Color) {
         let index = y * self.width as usize + x;
+        // using get_mut here because we are indexing the vector with usize values
+        // and we want to make sure we don't panic if the index is out of bounds
         if let Some(c) = self.cells.get_mut(index) {
             *c = self.cell_char;
         }
@@ -176,6 +227,106 @@ impl Grid for CharGrid {
     }
 }
 
+/// The HalfBlockGrid is a grid made up of cells each containing a half block character.
+/// This makes it possible to draw shapes with a resolution of 1x2 dots per cell. This is useful
+/// when you want to draw shapes with a higher resolution than a CharGrid but lower than a
+/// BrailleGrid. This grid type supports a foreground and background color for each terminal cell.
+/// This allows for more flexibility than the BrailleGrid which only supports a single foreground
+/// color for each 2x4 dots cell.
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+struct HalfBlockGrid {
+    /// width of the grid in number of terminal columns
+    width: u16,
+    /// height of the grid in number of terminal rows
+    height: u16,
+    /// represents a single color for each cell
+    cells: Vec<Vec<Color>>,
+}
+
+impl HalfBlockGrid {
+    /// Create a new HalfBlockGrid with the given width and height measured in terminal columns and
+    /// rows respectively.
+    fn new(width: u16, height: u16) -> HalfBlockGrid {
+        HalfBlockGrid {
+            width,
+            height,
+            cells: vec![vec![Color::Reset; width as usize]; height as usize * 2],
+        }
+    }
+}
+
+impl Grid for HalfBlockGrid {
+    fn width(&self) -> u16 {
+        self.width
+    }
+
+    fn height(&self) -> u16 {
+        self.height
+    }
+
+    fn resolution(&self) -> (f64, f64) {
+        (
+            f64::from(self.width) - 1.0,
+            f64::from(self.height) * 2.0 - 1.0,
+        )
+    }
+
+    fn save(&self) -> Layer {
+        // We use the following 4 states to represent the 4 possible combinations of foreground and
+        // background colors for each cell:
+        // - off: ' ' colors: reset/reset
+        // - top: '▀' colors: upper/reset
+        // - bottom: '▄' colors: lower/reset (use lower half block set the fg to the lower color)
+        // - both: '▀' colors upper/lower
+        let color_pairs = self
+            .cells
+            .iter()
+            .tuples()
+            .flat_map(|(lower_row, upper_row)| zip(lower_row, upper_row));
+        let colors = color_pairs
+            .clone()
+            .map(|cell_colors| match cell_colors {
+                // necessary as the foreground reset color is not the same as the background
+                // reset color, so we need to swap them and use the lower half block
+                (Color::Reset, &fg) => (fg, Color::Reset),
+                (&fg, &bg) => (fg, bg),
+            })
+            .collect();
+        let string = color_pairs
+            .map(|cell_colors| match cell_colors {
+                // necessary as the foreground reset color is not the same as the background
+                // reset color, so we need to swap them and use the lower half block
+                (Color::Reset, Color::Reset) => ' ',
+                (Color::Reset, _) => symbols::half_block::LOWER,
+                (_, Color::Reset) => symbols::half_block::UPPER,
+                (&fg, &bg) => {
+                    if fg == bg {
+                        // we could just use the upper half block here but it looks better with
+                        // the full block when the colors are the same particularly when writing
+                        // unit tests
+                        symbols::half_block::FULL
+                    } else {
+                        symbols::half_block::LOWER
+                    }
+                }
+            })
+            .collect();
+        Layer { string, colors }
+    }
+
+    fn reset(&mut self) {
+        self.cells.fill(vec![Color::Reset; self.width as usize]);
+    }
+
+    fn paint(&mut self, x: usize, y: usize, color: Color) {
+        self.cells[y][x] = color;
+    }
+}
+
+/// Painter is an abstraction over the [`Context`] that allows to draw shapes on the grid.
+///
+/// It is used by the Shape trait to draw shapes on the grid. It can be useful to think of this as
+/// similar to the [`Buffer`] struct that is used to draw widgets on the terminal.
 #[derive(Debug)]
 pub struct Painter<'a, 'b> {
     context: &'a mut Context<'b>,
@@ -246,6 +397,11 @@ impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
 }
 
 /// Holds the state of the Canvas when painting to it.
+///
+/// This is used by the [`Canvas`] widget to draw shapes on the grid. It can be useful to think of
+/// this as similar to the [`Frame`] struct that is used to draw widgets on the terminal.
+///
+/// [`Frame`]: crate::prelude::Frame
 #[derive(Debug)]
 pub struct Context<'a> {
     x_bounds: [f64; 2],
@@ -257,6 +413,22 @@ pub struct Context<'a> {
 }
 
 impl<'a> Context<'a> {
+    /// Create a new Context with the given width and height measured in terminal columns and rows
+    /// respectively. The x and y bounds define the specific area of some coordinate system that
+    /// will be drawn on the canvas. The marker defines the type of points used to draw the shapes.
+    ///
+    /// Applications should not use this directly but rather use the [`Canvas`] widget. This will be
+    /// created by the [`Canvas::paint`] moethod and passed to the closure that is used to draw on
+    /// the canvas.
+    ///
+    /// The x and y bounds should be specified as left/right and bottom/top respectively. For
+    /// example, if you want to draw a map of the world, you might want to use the following bounds:
+    ///
+    /// ```
+    /// use ratatui::{prelude::*, widgets::canvas::*};
+    ///
+    /// let ctx = Context::new(100, 100, [-180.0, 180.0], [-90.0, 90.0], symbols::Marker::Braille);
+    /// ```
     pub fn new(
         width: u16,
         height: u16,
@@ -272,6 +444,7 @@ impl<'a> Context<'a> {
             symbols::Marker::Block => Box::new(CharGrid::new(width, height, block)),
             symbols::Marker::Bar => Box::new(CharGrid::new(width, height, bar)),
             symbols::Marker::Braille => Box::new(BrailleGrid::new(width, height)),
+            symbols::Marker::HalfBlock => Box::new(HalfBlockGrid::new(width, height)),
         };
         Context {
             x_bounds,
@@ -293,14 +466,16 @@ impl<'a> Context<'a> {
         shape.draw(&mut painter);
     }
 
-    /// Go one layer above in the canvas.
+    /// Save the existing state of the grid as a layer to be rendered and reset the grid to its
+    /// initial state for the next layer.
     pub fn layer(&mut self) {
         self.layers.push(self.grid.save());
         self.grid.reset();
         self.dirty = false;
     }
 
-    /// Print a string on the canvas at the given position
+    /// Print a string on the canvas at the given position. Note that the text is always printed
+    /// on top of the canvas and is not affected by the layers.
     pub fn print<T>(&mut self, x: f64, y: f64, line: T)
     where
         T: Into<TextLine<'a>>,
@@ -329,6 +504,22 @@ impl<'a> Context<'a> {
 /// calling the [`marker`] method if your target environment does not support those symbols,
 ///
 /// See [Unicode Braille Patterns](https://en.wikipedia.org/wiki/Braille_Patterns) for more info.
+///
+/// The HalfBlock marker is useful when you want to draw shapes with a higher resolution than a
+/// CharGrid but lower than a BrailleGrid. This grid type supports a foreground and background color
+/// for each terminal cell. This allows for more flexibility than the BrailleGrid which only
+/// supports a single foreground color for each 2x4 dots cell.
+///
+/// The Canvas widget is used by calling the [`Canvas::paint`] method and passing a closure that
+/// will be used to draw on the canvas. The closure will be passed a [`Context`] object that can be
+/// used to draw shapes on the canvas.
+///
+/// The [`Context`] object provides a [`Context::draw`] method that can be used to draw shapes on
+/// the canvas. The [`Context::layer`] method can be used to save the current state of the canvas
+/// and start a new layer. This is useful if you want to draw multiple shapes on the canvas in
+/// specific order. The [`Context`] object also provides a [`Context::print`] method that can be
+/// used to print text on the canvas. Note that the text is always printed on top of the canvas and
+/// is not affected by the layers.
 ///
 /// # Examples
 ///
@@ -371,7 +562,7 @@ where
     block: Option<Block<'a>>,
     x_bounds: [f64; 2],
     y_bounds: [f64; 2],
-    painter: Option<F>,
+    paint_func: Option<F>,
     background_color: Color,
     marker: symbols::Marker,
 }
@@ -385,7 +576,7 @@ where
             block: None,
             x_bounds: [0.0, 0.0],
             y_bounds: [0.0, 0.0],
-            painter: None,
+            paint_func: None,
             background_color: Color::Reset,
             marker: symbols::Marker::Braille,
         }
@@ -396,6 +587,7 @@ impl<'a, F> Canvas<'a, F>
 where
     F: Fn(&mut Context),
 {
+    /// Set the block that will be rendered around the canvas
     pub fn block(mut self, block: Block<'a>) -> Canvas<'a, F> {
         self.block = Some(block);
         self
@@ -420,10 +612,11 @@ where
 
     /// Store the closure that will be used to draw to the Canvas
     pub fn paint(mut self, f: F) -> Canvas<'a, F> {
-        self.painter = Some(f);
+        self.paint_func = Some(f);
         self
     }
 
+    /// Change the background color of the canvas
     pub fn background_color(mut self, color: Color) -> Canvas<'a, F> {
         self.background_color = color;
         self
@@ -433,12 +626,18 @@ where
     /// as they provide a more fine grained result but you might want to use the simple dot or
     /// block instead if the targeted terminal does not support those symbols.
     ///
+    /// The HalfBlock marker is useful when you want to draw shapes with a higher resolution than a
+    /// CharGrid but lower than a BrailleGrid. This grid type supports a foreground and background
+    /// color for each terminal cell. This allows for more flexibility than the BrailleGrid which
+    /// only supports a single foreground color for each 2x4 dots cell.
+    ///
     /// # Examples
     ///
     /// ```
     /// use ratatui::{prelude::*, widgets::canvas::*};
     ///
     /// Canvas::default().marker(symbols::Marker::Braille).paint(|ctx| {});
+    /// Canvas::default().marker(symbols::Marker::HalfBlock).paint(|ctx| {});
     /// Canvas::default().marker(symbols::Marker::Dot).paint(|ctx| {});
     /// Canvas::default().marker(symbols::Marker::Block).paint(|ctx| {});
     /// ```
@@ -466,7 +665,7 @@ where
 
         let width = canvas_area.width as usize;
 
-        let Some(ref painter) = self.painter else {
+        let Some(ref painter) = self.paint_func else {
             return;
         };
 
@@ -484,17 +683,19 @@ where
 
         // Retrieve painted points for each layer
         for layer in ctx.layers {
-            for (i, (ch, color)) in layer
-                .string
-                .chars()
-                .zip(layer.colors.into_iter())
-                .enumerate()
-            {
+            for (index, (ch, colors)) in layer.string.chars().zip(layer.colors).enumerate() {
                 if ch != ' ' && ch != '\u{2800}' {
-                    let (x, y) = (i % width, i / width);
-                    buf.get_mut(x as u16 + canvas_area.left(), y as u16 + canvas_area.top())
-                        .set_char(ch)
-                        .set_fg(color);
+                    let (x, y) = (
+                        (index % width) as u16 + canvas_area.left(),
+                        (index / width) as u16 + canvas_area.top(),
+                    );
+                    let cell = buf.get_mut(x, y).set_char(ch);
+                    if colors.0 != Color::Reset {
+                        cell.set_fg(colors.0);
+                    }
+                    if colors.1 != Color::Reset {
+                        cell.set_bg(colors.1);
+                    }
                 }
             }
         }

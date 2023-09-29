@@ -2,6 +2,7 @@
 # To run this script, install vhs and run `vhs ./examples/canvas.tape`
 Output "target/canvas.gif"
 Set Theme "OceanicMaterial"
+Set FontSize 12
 Set Width 1200
 Set Height 800
 Hide
@@ -9,4 +10,4 @@ Type "cargo run --example=canvas --features=crossterm"
 Enter
 Sleep 1s
 Show
-Sleep 5s
+Sleep 30s
