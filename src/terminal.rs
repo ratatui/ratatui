@@ -91,9 +91,11 @@ pub struct TerminalOptions {
 /// terminal libraries: [Crossterm], [Termion] and [Termwiz]. See the [`backend`] module for more
 /// information.
 ///
-/// The terminal has two buffers that are used to draw the application. The first buffer is the
-/// current buffer and the second buffer is the previous buffer. The two buffers are compared at
-/// the end of each draw pass to output only the changes to the terminal.
+/// The `Terminal` struct maintains two buffers: the current and the previous.
+/// When the widgets are drawn, the changes are accumulated in the current buffer.
+/// At the end of each draw pass, the two buffers are compared, and only the changes
+/// between these buffers are written to the terminal, avoiding any redundant operations.
+/// After flushing these changes, the buffers are swapped to prepare for the next draw cycle./
 ///
 /// The terminal also has a viewport which is the area of the terminal that is currently visible to
 /// the user. It can be either fullscreen, inline or fixed. See [`Viewport`] for more information.
@@ -546,10 +548,9 @@ fn compute_inline_size<B: Backend>(
 /// This is obtained via the closure argument of [`Terminal::draw`]. It is used to render widgets
 /// to the terminal and control the cursor position.
 ///
-/// The changes drawn to the frame are not immediately applied to the terminal. They are only
-/// applied after the closure returns. This allows for widgets to be drawn in any order. The
-/// changes are then compared to the previous frame and only the necessary updates are applied to
-/// the terminal.
+/// The changes drawn to the frame are applied only to the current buffer.
+/// After the closure returns, the current buffer is compared to the previous
+/// buffer and only the changes are applied to the terminal.
 ///
 /// The [`Frame`] is generic over a [`Backend`] implementation which is used to interface with the
 /// underlying terminal library. The [`Backend`] trait is implemented for three popular Rust
