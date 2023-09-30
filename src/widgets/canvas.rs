@@ -62,14 +62,14 @@ trait Grid: Debug {
     fn width(&self) -> u16;
     /// Get the height of the grid in number of terminal rows
     fn height(&self) -> u16;
-    /// Get the resolution of the grid in number of dots.
-    ///
-    /// Note the resolution is expressed as the last dot of the grid. For example, a grid of 10x10
-    /// cells using a Braille pattern will have a resolution of 20x40 dots, the last dot being at
-    /// (19, 39).
+    /// Get the resolution of the grid in number of dots. This doesn't have to be the same as the
+    /// number of rows and columns of the grid. For example, a grid of Braille patterns will have a
+    /// resolution of 2x4 dots per cell. This means that a grid of 10x10 cells will have a
+    /// resolution of 20x40 dots.
     fn resolution(&self) -> (f64, f64);
     /// Paint a point of the grid. The point is expressed in number of dots starting at the origin
-    /// of the grid in the lower left corner.
+    /// of the grid in the top left corner. Note that this is not the same as the (x, y) coordinates
+    /// of the canvas.
     fn paint(&mut self, x: usize, y: usize, color: Color);
     /// Save the current state of the grid as a layer to be rendered
     fn save(&self) -> Layer;
@@ -95,7 +95,7 @@ struct BrailleGrid {
     /// represents the unicode braille patterns. Will take a value between 0x2800 and 0x28FF
     /// this is converted to a utf16 string when converting to a layer. See
     /// <https://en.wikipedia.org/wiki/Braille_Patterns> for more info.
-    cells: Vec<u16>,
+    utf16_code_points: Vec<u16>,
     /// The color of each cell only supports foreground colors for now as there's no way to
     /// individually set the background color of each dot in the braille pattern.
     colors: Vec<Color>,
@@ -109,7 +109,7 @@ impl BrailleGrid {
         BrailleGrid {
             width,
             height,
-            cells: vec![symbols::braille::BLANK; length],
+            utf16_code_points: vec![symbols::braille::BLANK; length],
             colors: vec![Color::Reset; length],
         }
     }
@@ -125,21 +125,18 @@ impl Grid for BrailleGrid {
     }
 
     fn resolution(&self) -> (f64, f64) {
-        (
-            f64::from(self.width) * 2.0 - 1.0,
-            f64::from(self.height) * 4.0 - 1.0,
-        )
+        (f64::from(self.width) * 2.0, f64::from(self.height) * 4.0)
     }
 
     fn save(&self) -> Layer {
-        let string = String::from_utf16(&self.cells).unwrap();
+        let string = String::from_utf16(&self.utf16_code_points).unwrap();
         // the background color is always reset for braille patterns
         let colors = self.colors.iter().map(|c| (*c, Color::Reset)).collect();
         Layer { string, colors }
     }
 
     fn reset(&mut self) {
-        self.cells.fill(symbols::braille::BLANK);
+        self.utf16_code_points.fill(symbols::braille::BLANK);
         self.colors.fill(Color::Reset);
     }
 
@@ -147,7 +144,7 @@ impl Grid for BrailleGrid {
         let index = y / 4 * self.width as usize + x / 2;
         // using get_mut here because we are indexing the vector with usize values
         // and we want to make sure we don't panic if the index is out of bounds
-        if let Some(c) = self.cells.get_mut(index) {
+        if let Some(c) = self.utf16_code_points.get_mut(index) {
             *c |= symbols::braille::DOTS[y % 4][x % 2];
         }
         if let Some(c) = self.colors.get_mut(index) {
@@ -199,7 +196,7 @@ impl Grid for CharGrid {
     }
 
     fn resolution(&self) -> (f64, f64) {
-        (f64::from(self.width) - 1.0, f64::from(self.height) - 1.0)
+        (f64::from(self.width), f64::from(self.height))
     }
 
     fn save(&self) -> Layer {
@@ -228,19 +225,26 @@ impl Grid for CharGrid {
 }
 
 /// The HalfBlockGrid is a grid made up of cells each containing a half block character.
-/// This makes it possible to draw shapes with a resolution of 1x2 dots per cell. This is useful
-/// when you want to draw shapes with a higher resolution than a CharGrid but lower than a
-/// BrailleGrid. This grid type supports a foreground and background color for each terminal cell.
-/// This allows for more flexibility than the BrailleGrid which only supports a single foreground
-/// color for each 2x4 dots cell.
+///
+/// In terminals, each character is usually twice as tall as it is wide. Unicode has a ccouple of
+/// vertical half block characters, the upper half block '▀' and lower half block '▄' which take up
+/// half the height of a normal character but the full width. Together with an empty space ' ' and a
+/// full block '█', we can effectively double the resolution of a single cell. In addition, because
+/// each character can have a foreground and background color, we can control the color of the upper
+/// and lower half of each cell. This allows us to draw shapes with a resolution of 1x2 "pixels" per
+/// cell.
+///
+/// This allows for more flexibility than the BrailleGrid which only supports a single
+/// foreground color for each 2x4 dots cell, and the CharGrid which only supports a single
+/// character for each cell.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 struct HalfBlockGrid {
     /// width of the grid in number of terminal columns
     width: u16,
     /// height of the grid in number of terminal rows
     height: u16,
-    /// represents a single color for each cell
-    cells: Vec<Vec<Color>>,
+    /// represents a single color for each "pixel" arranged in column, row order
+    pixels: Vec<Vec<Color>>,
 }
 
 impl HalfBlockGrid {
@@ -250,7 +254,7 @@ impl HalfBlockGrid {
         HalfBlockGrid {
             width,
             height,
-            cells: vec![vec![Color::Reset; width as usize]; height as usize * 2],
+            pixels: vec![vec![Color::Reset; width as usize]; height as usize * 2],
         }
     }
 }
@@ -265,61 +269,76 @@ impl Grid for HalfBlockGrid {
     }
 
     fn resolution(&self) -> (f64, f64) {
-        (
-            f64::from(self.width) - 1.0,
-            f64::from(self.height) * 2.0 - 1.0,
-        )
+        (f64::from(self.width), f64::from(self.height) * 2.0)
     }
 
     fn save(&self) -> Layer {
-        // We use the following 4 states to represent the 4 possible combinations of foreground and
-        // background colors for each cell:
-        // - off: ' ' colors: reset/reset
-        // - top: '▀' colors: upper/reset
-        // - bottom: '▄' colors: lower/reset (use lower half block set the fg to the lower color)
-        // - both: '▀' colors upper/lower
-        let color_pairs = self
-            .cells
+        // Given that we store the pixels in a grid, and that we want to use 2 pixels arranged
+        // vertically to form a single terminal cell, which can be either empty, upper half block,
+        // lower half block or full block, we need examine the pixels in vertical pairs to decide
+        // what character to print in each cell. So these are the 4 states we use to represent each
+        // cell:
+        //
+        // 1. upper: reset, lower: reset => ' ' fg: reset / bg: reset
+        // 2. upper: reset, lower: color => '▄' fg: lower color / bg: reset
+        // 3. upper: color, lower: reset => '▀' fg: upper color / bg: reset
+        // 4. upper: color, lower: color => '▀' fg: upper color / bg: lower color
+        //
+        // Note that because the foreground reset color (i.e. default foreground color) is usually
+        // not the same as the background reset color (i.e. default background color), we need to
+        // swap around the colors for that state (2 reset/color).
+        //
+        // If color1 == color2, we could just use the upper half block here but replacing this with
+        // a full block character allows us to write unit tests that treat the cell as a single
+        // character instead of two half block characters.
+
+        // first we join each adjacent row together to get an iterator that contains vertical pairs
+        // of pixels, with the lower row being the first element in the pair
+        let vertical_color_pairs = self
+            .pixels
             .iter()
             .tuples()
-            .flat_map(|(lower_row, upper_row)| zip(lower_row, upper_row));
-        let colors = color_pairs
+            .flat_map(|(upper_row, lower_row)| zip(upper_row, lower_row));
+
+        // then we work out what character to print for each pair of pixels
+        let string = vertical_color_pairs
             .clone()
-            .map(|cell_colors| match cell_colors {
-                // necessary as the foreground reset color is not the same as the background
-                // reset color, so we need to swap them and use the lower half block
-                (Color::Reset, &fg) => (fg, Color::Reset),
-                (&fg, &bg) => (fg, bg),
-            })
-            .collect();
-        let string = color_pairs
-            .map(|cell_colors| match cell_colors {
-                // necessary as the foreground reset color is not the same as the background
-                // reset color, so we need to swap them and use the lower half block
+            .map(|(upper, lower)| match (upper, lower) {
                 (Color::Reset, Color::Reset) => ' ',
                 (Color::Reset, _) => symbols::half_block::LOWER,
                 (_, Color::Reset) => symbols::half_block::UPPER,
-                (&fg, &bg) => {
-                    if fg == bg {
-                        // we could just use the upper half block here but it looks better with
-                        // the full block when the colors are the same particularly when writing
-                        // unit tests
+                (&lower, &upper) => {
+                    if lower == upper {
                         symbols::half_block::FULL
                     } else {
-                        symbols::half_block::LOWER
+                        symbols::half_block::UPPER
                     }
                 }
             })
             .collect();
+
+        // then we convert these each vertical pair of pixels into a foreground and background color
+        let colors = vertical_color_pairs
+            .map(|(upper, lower)| {
+                let (fg, bg) = match (upper, lower) {
+                    (Color::Reset, Color::Reset) => (Color::Reset, Color::Reset),
+                    (Color::Reset, &lower) => (lower, Color::Reset),
+                    (&upper, Color::Reset) => (upper, Color::Reset),
+                    (&upper, &lower) => (upper, lower),
+                };
+                (fg, bg)
+            })
+            .collect();
+
         Layer { string, colors }
     }
 
     fn reset(&mut self) {
-        self.cells.fill(vec![Color::Reset; self.width as usize]);
+        self.pixels.fill(vec![Color::Reset; self.width as usize]);
     }
 
     fn paint(&mut self, x: usize, y: usize, color: Color) {
-        self.cells[y][x] = color;
+        self.pixels[y][x] = color;
     }
 }
 
@@ -335,6 +354,16 @@ pub struct Painter<'a, 'b> {
 
 impl<'a, 'b> Painter<'a, 'b> {
     /// Convert the (x, y) coordinates to location of a point on the grid
+    ///
+    /// (x, y) coordinates are expressed in the coordinate system of the canvas. The origin is in
+    /// the lower left corner of the canvas. The x and y bounds of the canvas define the specific
+    /// area of some coordinate system that will be drawn on the canvas. The resolution of the grid
+    /// is used to convert the (x, y) coordinates to the location of a point on the grid.
+    ///
+    /// The grid coordinates are expressed in the coordinate system of the grid. The origin is in
+    /// the top left corner of the grid. The x and y bounds of the grid are always [0, width - 1]
+    /// and [0, height - 1] respectively. The resolution of the grid is used to convert the (x, y)
+    /// coordinates to the location of a point on the grid.
     ///
     /// # Examples:
     /// ```
@@ -366,8 +395,8 @@ impl<'a, 'b> Painter<'a, 'b> {
         if width == 0.0 || height == 0.0 {
             return None;
         }
-        let x = ((x - left) * self.resolution.0 / width) as usize;
-        let y = ((top - y) * self.resolution.1 / height) as usize;
+        let x = ((x - left) * (self.resolution.0 - 1.0) / width) as usize;
+        let y = ((top - y) * (self.resolution.1 - 1.0) / height) as usize;
         Some((x, y))
     }
 

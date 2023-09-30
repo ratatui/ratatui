@@ -39,9 +39,9 @@ impl App {
                 radius: 10.0,
                 color: Color::Yellow,
             },
-            playground: Rect::new(10, 10, 100, 100),
-            vx: 0.1,
-            vy: 0.1,
+            playground: Rect::new(10, 10, 200, 100),
+            vx: 1.0,
+            vy: 1.0,
             tick_count: 0,
             marker: Marker::Dot,
         }
@@ -144,7 +144,7 @@ impl App {
             .paint(|ctx| {
                 ctx.draw(&self.ball);
             })
-            .x_bounds([10.0, 110.0])
+            .x_bounds([10.0, 210.0])
             .y_bounds([10.0, 110.0])
     }
 
