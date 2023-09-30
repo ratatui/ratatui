@@ -111,11 +111,11 @@ fn render_map(selected_row: usize, area: Rect, buf: &mut Buffer) {
                 .padding(Padding::new(1, 0, 1, 0))
                 .style(theme.style),
         )
-        .marker(Marker::Dot)
+        .marker(Marker::HalfBlock)
         // picked to show Australia for the demo as it's the most interesting part of the map
         // (and the only part with hops ;))
-        .x_bounds([113.0, 154.0])
-        .y_bounds([-42.0, -11.0])
+        .x_bounds([112.0, 155.0])
+        .y_bounds([-46.0, -11.0])
         .paint(|context| {
             context.draw(&map);
             if let Some(path) = path {
