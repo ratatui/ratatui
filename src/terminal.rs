@@ -651,6 +651,11 @@ impl Frame<'_> {
     pub fn set_cursor(&mut self, x: u16, y: u16) {
         self.cursor_position = Some((x, y));
     }
+
+    /// Gets the buffer that this `Frame` draws into as a mutable reference.
+    pub fn buffer_mut(&mut self) -> &mut Buffer {
+        self.buffer
+    }
 }
 
 /// `CompletedFrame` represents the state of the terminal after all changes performed in the last
