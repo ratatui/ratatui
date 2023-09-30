@@ -8,6 +8,6 @@ Set Height 800
 Hide
 Type "cargo run --example=canvas --features=crossterm"
 Enter
-Sleep 1s
+Sleep 2s
 Show
 Sleep 30s

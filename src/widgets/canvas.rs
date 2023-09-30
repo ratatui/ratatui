@@ -226,7 +226,7 @@ impl Grid for CharGrid {
 
 /// The HalfBlockGrid is a grid made up of cells each containing a half block character.
 ///
-/// In terminals, each character is usually twice as tall as it is wide. Unicode has a ccouple of
+/// In terminals, each character is usually twice as tall as it is wide. Unicode has a couple of
 /// vertical half block characters, the upper half block '▀' and lower half block '▄' which take up
 /// half the height of a normal character but the full width. Together with an empty space ' ' and a
 /// full block '█', we can effectively double the resolution of a single cell. In addition, because
@@ -288,9 +288,9 @@ impl Grid for HalfBlockGrid {
         // not the same as the background reset color (i.e. default background color), we need to
         // swap around the colors for that state (2 reset/color).
         //
-        // If color1 == color2, we could just use the upper half block here but replacing this with
-        // a full block character allows us to write unit tests that treat the cell as a single
-        // character instead of two half block characters.
+        // When the upper and lower colors are the same, we could continue to use an upper half
+        // block, but we choose to use a full block instead. This allows us to write unit tests that
+        // treat the cell as a single character instead of two half block characters.
 
         // first we join each adjacent row together to get an iterator that contains vertical pairs
         // of pixels, with the lower row being the first element in the pair
@@ -344,8 +344,8 @@ impl Grid for HalfBlockGrid {
 
 /// Painter is an abstraction over the [`Context`] that allows to draw shapes on the grid.
 ///
-/// It is used by the Shape trait to draw shapes on the grid. It can be useful to think of this as
-/// similar to the [`Buffer`] struct that is used to draw widgets on the terminal.
+/// It is used by the [`Shape`] trait to draw shapes on the grid. It can be useful to think of this
+/// as similar to the [`Buffer`] struct that is used to draw widgets on the terminal.
 #[derive(Debug)]
 pub struct Painter<'a, 'b> {
     context: &'a mut Context<'b>,
@@ -356,9 +356,10 @@ impl<'a, 'b> Painter<'a, 'b> {
     /// Convert the (x, y) coordinates to location of a point on the grid
     ///
     /// (x, y) coordinates are expressed in the coordinate system of the canvas. The origin is in
-    /// the lower left corner of the canvas. The x and y bounds of the canvas define the specific
-    /// area of some coordinate system that will be drawn on the canvas. The resolution of the grid
-    /// is used to convert the (x, y) coordinates to the location of a point on the grid.
+    /// the lower left corner of the canvas (unlike most other coordinates in Ratatui where the
+    /// origin is the upper left corner). The x and y bounds of the canvas define the specific area
+    /// of some coordinate system that will be drawn on the canvas. The resolution of the grid is
+    /// used to convert the (x, y) coordinates to the location of a point on the grid.
     ///
     /// The grid coordinates are expressed in the coordinate system of the grid. The origin is in
     /// the top left corner of the grid. The x and y bounds of the grid are always [0, width - 1]
