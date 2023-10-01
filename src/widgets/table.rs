@@ -162,7 +162,7 @@ impl<'a> Styled for Row<'a> {
     }
 }
 
-/// This option allows the user to configure the "highlight symbol" column width spacing
+/// This option allows the user to configure WHEN should the "highlight symbol" be drawn
 #[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Default, Hash)]
 pub enum HighlightSpacing {
     /// Always add spacing for the selection symbol column
@@ -193,6 +193,34 @@ impl HighlightSpacing {
             HighlightSpacing::Never => false,
         }
     }
+}
+
+/// Sets the area of the table that should be highlighted with a selection.
+#[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Default, Hash)]
+pub enum HighlightArea {
+    /// No highlight
+    None,
+    /// Highlight cell only
+    Cell,
+    /// Highlight entire row
+    #[default]
+    Row,
+    /// Highlight entire column
+    Col,
+    /// Highlight entire row and column
+    RowAndCol,
+}
+
+/// This option allows the user to configure WHICH columns should draw the "highlight symbol"
+///
+/// This setting is ignored when [`HighlightSpacing`] is set to [`HighlightSpacing::Never`]
+#[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Default, Hash)]
+pub enum ColumnHighlightSpacing {
+    #[default]
+    FirstColumnOnly,
+    SelectedColumn,
+    SpecificColumns(Vec<usize>),
+    AllColumns,
 }
 
 /// A widget to display data in formatted columns.
@@ -256,14 +284,18 @@ pub struct Table<'a> {
     column_spacing: u16,
     /// Style used to render the selected row
     highlight_style: Style,
+    /// Whether to highlight the entire row
+    highlight_area: HighlightArea,
     /// Symbol in front of the selected rom
     highlight_symbol: Option<&'a str>,
     /// Optional header
     header: Option<Row<'a>>,
     /// Data to display in each row
     rows: Vec<Row<'a>>,
-    /// Decides when to allocate spacing for the row selection
+    /// Decides when to allocate spacing for the selection
     highlight_spacing: HighlightSpacing,
+    /// Decides which columns to allocate spacing for the selection
+    columns_with_highlight_spacing: ColumnHighlightSpacing,
 }
 
 impl<'a> Table<'a> {
@@ -297,10 +329,12 @@ impl<'a> Table<'a> {
             widths: &[],
             column_spacing: 1,
             highlight_style: Style::default(),
+            highlight_area: HighlightArea::Cell,
             highlight_symbol: None,
             header: None,
             rows: rows.into_iter().collect(),
             highlight_spacing: HighlightSpacing::default(),
+            columns_with_highlight_spacing: ColumnHighlightSpacing::default(),
         }
     }
 
@@ -383,6 +417,14 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Set the area of the table to highlight with selection
+    ///
+    /// See [`HighlightArea`] about which variant affects highlighting in which way
+    pub fn highlight_area(mut self, highlight_area: HighlightArea) -> Self {
+        self.highlight_area = highlight_area;
+        self
+    }
+
     /// Set when to show the highlight spacing
     ///
     /// See [`HighlightSpacing`] about which variant affects spacing in which way
@@ -391,21 +433,64 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Set which columns should show the highlight spacing
+    ///
+    /// See [`ColumnHighlightSpacing`] about which variant affects spacing in which way
+    pub fn columns_with_highlight_spacing(mut self, value: ColumnHighlightSpacing) -> Self {
+        self.columns_with_highlight_spacing = value;
+        self
+    }
+
     pub fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self
     }
 
+    /// Gets the index of the columns that should have spacing for highlihgting symbol
+    fn get_columns_with_spacing(&self, state: &TableState) -> Vec<usize> {
+        match &self.columns_with_highlight_spacing {
+            ColumnHighlightSpacing::FirstColumnOnly => {
+                vec![0]
+            }
+            ColumnHighlightSpacing::SelectedColumn => vec![state.selected_col().unwrap_or(0)],
+            ColumnHighlightSpacing::SpecificColumns(vec) => vec.clone(),
+            ColumnHighlightSpacing::AllColumns => self
+                .widths
+                .iter()
+                .enumerate()
+                .map(|(i, _)| i)
+                .collect::<Vec<usize>>(),
+        }
+    }
+
     /// Get all offsets and widths of all user specified columns
     /// Returns (x, width)
-    fn get_columns_widths(&self, max_width: u16, selection_width: u16) -> Vec<(u16, u16)> {
-        let mut constraints = Vec::with_capacity(self.widths.len() * 2 + 1);
-        constraints.push(Constraint::Length(selection_width));
-        for constraint in self.widths {
+    fn get_columns_widths(
+        &self,
+        max_width: u16,
+        selection_width: u16,
+        state: &TableState,
+    ) -> Vec<(u16, u16)> {
+        let columns_with_spacing = self.get_columns_with_spacing(state);
+        let mut highlight_symbol_indexes: Vec<usize> = Vec::new(); //track cols with highlight symbol
+
+        let mut constraints =
+            Vec::with_capacity(self.widths.len() * 2 + columns_with_spacing.len());
+
+        let mut curr_index: usize = 0;
+        for (col_num, constraint) in self.widths.iter().enumerate() {
+            // If we have spacing for this column, add it
+            if columns_with_spacing.contains(&col_num) {
+                constraints.push(Constraint::Length(selection_width));
+                highlight_symbol_indexes.push(curr_index);
+                curr_index += 1;
+            }
             constraints.push(*constraint);
             constraints.push(Constraint::Length(self.column_spacing));
+            curr_index += 2;
         }
         if !self.widths.is_empty() {
+            // remove last column spacing
             constraints.pop();
         }
         let chunks = Layout::default()
@@ -418,17 +503,19 @@ impl<'a> Table<'a> {
                 width: max_width,
                 height: 1,
             });
+
         chunks
             .iter()
-            .skip(1)
-            .step_by(2)
-            .map(|c| (c.x, c.width))
+            .enumerate()
+            .filter(|(i, _)| !highlight_symbol_indexes.contains(i)) //skip symbol spacing constraint
+            .map(|(_, c)| (c.x, c.width))
+            .step_by(2) // skip column spacing constraint
             .collect()
     }
 
     fn get_row_bounds(
         &self,
-        selected: Option<usize>,
+        selected: Option<TableSelection>,
         offset: usize,
         max_height: u16,
     ) -> (usize, usize) {
@@ -444,7 +531,12 @@ impl<'a> Table<'a> {
             end += 1;
         }
 
-        let selected = selected.unwrap_or(0).min(self.rows.len() - 1);
+        let selected = match selected.unwrap_or(TableSelection::default()) {
+            TableSelection::Row(row) => row,
+            TableSelection::Col(_) => 0,
+            TableSelection::Cell { row, .. } => row,
+        }
+        .min(self.rows.len() - 1);
         while selected >= end {
             height = height.saturating_add(self.rows[end].total_height());
             end += 1;
@@ -477,10 +569,28 @@ impl<'a> Styled for Table<'a> {
     }
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum TableSelection {
+    Row(usize),
+    Col(usize),
+    Cell { row: usize, col: usize },
+}
+impl Default for TableSelection {
+    fn default() -> Self {
+        Self::Cell { row: 0, col: 0 }
+    }
+}
+
+impl From<usize> for TableSelection {
+    fn from(row: usize) -> Self {
+        Self::Row(row)
+    }
+}
+
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct TableState {
     offset: usize,
-    selected: Option<usize>,
+    selected: Option<TableSelection>,
 }
 
 impl TableState {
@@ -492,8 +602,13 @@ impl TableState {
         &mut self.offset
     }
 
-    pub fn with_selected(mut self, selected: Option<usize>) -> Self {
-        self.selected = selected;
+    pub fn with_selected(mut self, selected: Option<impl Into<TableSelection>>) -> Self {
+        match selected {
+            Some(index) => {
+                self.selected = Some(index.into());
+            }
+            None => self.selected = None,
+        }
         self
     }
 
@@ -502,14 +617,97 @@ impl TableState {
         self
     }
 
-    pub fn selected(&self) -> Option<usize> {
+    pub fn selected(&self) -> Option<TableSelection> {
         self.selected
     }
 
-    pub fn select(&mut self, index: Option<usize>) {
-        self.selected = index;
-        if index.is_none() {
-            self.offset = 0;
+    /// Returns the current selected row index, if any
+    pub fn selected_row(&self) -> Option<usize> {
+        match self.selected {
+            Some(TableSelection::Row(row)) => Some(row),
+            Some(TableSelection::Cell { row, .. }) => Some(row),
+            _ => None,
+        }
+    }
+
+    /// Returns the current selected col index, if any
+    pub fn selected_col(&self) -> Option<usize> {
+        match self.selected {
+            Some(TableSelection::Col(col)) => Some(col),
+            Some(TableSelection::Cell { col, .. }) => Some(col),
+            _ => None,
+        }
+    }
+
+    pub fn select(&mut self, index: Option<impl Into<TableSelection>>) {
+        self.selected = match index {
+            Some(index) => Some(index.into()),
+            None => {
+                self.offset = 0;
+                None
+            }
+        };
+    }
+
+    /// Adds, update or removes the row component of the [`TableSelection`]
+    ///
+    /// If current TableSelection is [`None`], it will be set as [`TableSelection::Row`]
+    /// If current is [`TableSelection::Col`], it will be set as [`TableSelection::Cell`],
+    /// If current is [`TableSelection::Cell`] and you set row to [`None`], the selection will be
+    ///     turned into a [`TableSelection::Col`]
+    pub fn select_row(&mut self, row: Option<usize>) {
+        match row {
+            Some(new_row) => match self.selected() {
+                None | Some(TableSelection::Row(_)) => {
+                    self.select(Some(TableSelection::Row(new_row)));
+                }
+                Some(TableSelection::Col(col)) => {
+                    self.select(Some(TableSelection::Cell { row: new_row, col }));
+                }
+                Some(TableSelection::Cell { col, .. }) => {
+                    self.select(Some(TableSelection::Cell { row: new_row, col }));
+                }
+            },
+            None => match self.selected() {
+                Some(TableSelection::Cell { col, .. }) => {
+                    self.select(Some(TableSelection::Col(col)));
+                }
+                Some(TableSelection::Row(_)) => {
+                    self.select(None::<TableSelection>);
+                }
+                _ => {}
+            },
+        }
+    }
+
+    /// Adds, updates or removes the column component of the [`TableSelection`]
+    ///
+    /// If the current [`TableSelection`] is [`None`], it will be set as a [`TableSelection::Col`]
+    /// If  current is [`TableSelection::Row`], it will be set as a [`TableSelection::Cell`]
+    /// If current is [`TableSelection::Cell`] and you set col to [`None`], the selection will be
+    ///     turned into a [`TableSelection::Row`]
+    pub fn select_col(&mut self, col: Option<usize>) {
+        match col {
+            Some(new_col) => match self.selected() {
+                None | Some(TableSelection::Col(_)) => {
+                    self.select(Some(TableSelection::Col(new_col)));
+                }
+                Some(TableSelection::Row(row)) => {
+                    self.select(Some(TableSelection::Cell { row, col: new_col }))
+                }
+                Some(TableSelection::Cell { row, .. }) => {
+                    self.select(Some(TableSelection::Cell { row, col: new_col }))
+                }
+            },
+            None => match self.selected() {
+                Some(TableSelection::Cell { row, .. }) => {
+                    self.select(Some(TableSelection::Row(row)))
+                }
+                Some(TableSelection::Col(_)) => {
+                    self.select(None::<TableSelection>);
+                }
+                _ => {}
+            },
         }
     }
 }
@@ -536,7 +734,7 @@ impl<'a> StatefulWidget for Table<'a> {
         } else {
             0
         };
-        let columns_widths = self.get_columns_widths(table_area.width, selection_width);
+        let columns_widths = self.get_columns_widths(table_area.width, selection_width, state);
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
         let mut current_height = 0;
         let mut rows_height = table_area.height;
@@ -576,7 +774,10 @@ impl<'a> StatefulWidget for Table<'a> {
         }
         let (start, end) = self.get_row_bounds(state.selected, state.offset, rows_height);
         state.offset = start;
-        for (i, table_row) in self
+
+        let cols_with_symbol_spacing = self.get_columns_with_spacing(state);
+        // Loop through each row
+        for (row_num, table_row) in self
             .rows
             .iter_mut()
             .enumerate()
@@ -592,33 +793,80 @@ impl<'a> StatefulWidget for Table<'a> {
                 height: table_row.height,
             };
             buf.set_style(table_row_area, table_row.style);
-            let is_selected = state.selected.map_or(false, |s| s == i);
-            if selection_width > 0 && is_selected {
-                // this should in normal cases be safe, because "get_columns_widths" allocates
-                // "highlight_symbol.width()" space but "get_columns_widths"
-                // currently does not bind it to max table.width()
-                buf.set_stringn(
-                    inner_offset,
-                    row,
-                    highlight_symbol,
-                    table_area.width as usize,
-                    table_row.style,
-                );
+
+            let selected = state.selected();
+            let is_selected_row = match selected {
+                Some(TableSelection::Row(row)) => row == row_num,
+                Some(TableSelection::Cell { row, .. }) => row == row_num,
+                _ => false,
             };
-            for ((x, width), cell) in columns_widths.iter().zip(table_row.cells.iter()) {
-                render_cell(
-                    buf,
-                    cell,
-                    Rect {
-                        x: inner_offset + x,
-                        y: row,
-                        width: *width,
-                        height: table_row.height,
-                    },
-                );
-            }
-            if is_selected {
-                buf.set_style(table_row_area, self.highlight_style);
+
+            // Loop trough each column in row (i.e loop through each cell)
+            for ((col_num, (x, width)), cell) in columns_widths
+                .iter()
+                .enumerate()
+                .zip(table_row.cells.iter())
+            {
+                let should_show_symbol_in_col = cols_with_symbol_spacing.contains(&col_num);
+                let is_selected_col = match selected {
+                    Some(TableSelection::Col(col)) => col == col_num,
+                    Some(TableSelection::Cell { col, .. }) => col == col_num,
+                    _ => false,
+                };
+                let is_selected_cell = match selected {
+                    None => false,
+                    Some(TableSelection::Row(_)) => is_selected_row && col_num == 0,
+                    Some(TableSelection::Col(_)) => is_selected_col && row_num == 0,
+                    Some(TableSelection::Cell { .. }) => is_selected_row && is_selected_col,
+                };
+
+                if selection_width > 0 && is_selected_cell && should_show_symbol_in_col {
+                    // if selection_width > 0 && is_selected_cell {
+                    // this should in normal cases be safe, because "get_columns_widths" allocates
+                    // "highlight_symbol.width()" space but "get_columns_widths"
+                    // currently does not bind it to max table.width()
+                    buf.set_stringn(
+                        inner_offset + x - selection_width,
+                        row,
+                        highlight_symbol,
+                        table_area.width as usize,
+                        table_row.style,
+                    );
+                };
+                let table_cell_area = Rect {
+                    x: inner_offset + x,
+                    y: row,
+                    width: *width,
+                    height: table_row.height,
+                };
+
+                render_cell(buf, cell, table_cell_area);
+                if is_selected_cell {
+                    // Highlight from left to right, with height of row:
+                    match self.highlight_area {
+                        HighlightArea::Row | HighlightArea::RowAndCol => {
+                            buf.set_style(table_row_area, self.highlight_style);
+                        }
+                        HighlightArea::Cell => {
+                            buf.set_style(table_cell_area, self.highlight_style);
+                        }
+                        _ => {}
+                    };
+
+                    // Highlight from top to bottom, with width of column:
+                    match self.highlight_area {
+                        HighlightArea::Col | HighlightArea::RowAndCol => {
+                            let vertical_rect = Rect {
+                                x: inner_offset + x,
+                                y: table_area.top(),
+                                width: *width,
+                                height: table_area.height,
+                            };
+                            buf.set_style(vertical_rect, self.highlight_style);
+                        }
+                        _ => {}
+                    };
+                }
             }
         }
     }
@@ -679,7 +927,8 @@ mod tests {
         ) {
             let table = Table::new(vec![]).widths(constraints);
 
-            let widths = table.get_columns_widths(available_width, selection_width);
+            let widths =
+                table.get_columns_widths(available_width, selection_width, &TableState::default());
             assert_eq!(widths, expected);
         }
 
