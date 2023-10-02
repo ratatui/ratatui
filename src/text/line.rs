@@ -1,7 +1,6 @@
-#![allow(deprecated)]
 use std::borrow::Cow;
 
-use super::{Span, Spans, Style, StyledGrapheme};
+use super::{Span, Style, StyledGrapheme};
 use crate::layout::Alignment;
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -11,13 +10,35 @@ pub struct Line<'a> {
 }
 
 impl<'a> Line<'a> {
+    /// Create a line with the default style.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// Line::raw("test content");
+    /// Line::raw(String::from("test content"));
+    /// ```
+    pub fn raw<T>(content: T) -> Line<'a>
+    where
+        T: Into<Cow<'a, str>>,
+    {
+        Line {
+            spans: content
+                .into()
+                .lines()
+                .map(|v| Span::raw(v.to_string()))
+                .collect(),
+            alignment: None,
+        }
+    }
+
     /// Create a line with a style.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::text::Line;
-    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// Line::styled("My text", style);
     /// Line::styled(String::from("My text"), style);
@@ -34,8 +55,7 @@ impl<'a> Line<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Line};
-    /// # use ratatui::style::{Color, Style};
+    /// # use ratatui::prelude::*;
     /// let line = Line::from(vec![
     ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::raw(" text"),
@@ -54,9 +74,9 @@ impl<'a> Line<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Line, StyledGrapheme};
-    /// # use ratatui::style::{Color, Modifier, Style};
-    /// # use std::iter::Iterator;
+    /// use std::iter::Iterator;
+    /// use ratatui::{prelude::*, text::StyledGrapheme};
+    ///
     /// let line = Line::styled("Text", Style::default().fg(Color::Yellow));
     /// let style = Style::default().fg(Color::Green).bg(Color::Black);
     /// assert_eq!(
@@ -83,8 +103,7 @@ impl<'a> Line<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Line};
-    /// # use ratatui::style::{Color, Style, Modifier};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// let mut raw_line = Line::from(vec![
     ///     Span::raw("My"),
@@ -112,8 +131,7 @@ impl<'a> Line<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Line};
-    /// # use ratatui::style::{Color, Style, Modifier};
+    /// # use ratatui::prelude::*;
     /// let mut line = Line::from(vec![
     ///     Span::styled("My", Style::default().fg(Color::Yellow)),
     ///     Span::styled(" text", Style::default().add_modifier(Modifier::BOLD)),
@@ -135,10 +153,7 @@ impl<'a> Line<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use std::borrow::Cow;
-    /// # use ratatui::layout::Alignment;
-    /// # use ratatui::text::{Span, Line};
-    /// # use ratatui::style::{Color, Style, Modifier};
+    /// # use ratatui::prelude::*;
     /// let mut line = Line::from("Hi, what's up?");
     /// assert_eq!(None, line.alignment);
     /// assert_eq!(Some(Alignment::Right), line.alignment(Alignment::Right).alignment)
@@ -187,18 +202,12 @@ impl<'a> From<Line<'a>> for String {
     }
 }
 
-impl<'a> From<Spans<'a>> for Line<'a> {
-    fn from(value: Spans<'a>) -> Self {
-        Self::from(value.0)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{
         layout::Alignment,
         style::{Color, Modifier, Style},
-        text::{Line, Span, Spans, StyledGrapheme},
+        text::{Line, Span, StyledGrapheme},
     };
 
     #[test]
@@ -274,15 +283,6 @@ mod tests {
     }
 
     #[test]
-    fn test_from_spans() {
-        let spans = vec![
-            Span::styled("Hello,", Style::default().fg(Color::Red)),
-            Span::styled(" world!", Style::default().fg(Color::Green)),
-        ];
-        assert_eq!(Line::from(Spans::from(spans.clone())), Line::from(spans));
-    }
-
-    #[test]
     fn test_into_string() {
         let line = Line::from(vec![
             Span::styled("Hello,", Style::default().fg(Color::Red)),
@@ -329,5 +329,16 @@ mod tests {
                 StyledGrapheme::new("!", BLUE_ON_WHITE),
             ],
         );
+    }
+
+    #[test]
+    fn raw_str() {
+        let line = Line::raw("test content");
+        assert_eq!(line.spans, vec![Span::raw("test content")]);
+        assert_eq!(line.alignment, None);
+
+        let line = Line::raw("a\nb");
+        assert_eq!(line.spans, vec![Span::raw("a"), Span::raw("b")]);
+        assert_eq!(line.alignment, None);
     }
 }

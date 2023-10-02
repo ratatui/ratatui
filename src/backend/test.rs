@@ -9,24 +9,28 @@ use std::{
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    backend::Backend,
+    backend::{Backend, WindowSize},
     buffer::{Buffer, Cell},
-    layout::Rect,
+    layout::{Rect, Size},
 };
 
-/// A backend used for the integration tests.
+/// A [`Backend`] implementation used for integration testing that that renders to an in memory
+/// buffer.
+///
+/// Note: that although many of the integration and unit tests in ratatui are written using this
+/// backend, it is preferable to write unit tests for widgets directly against the buffer rather
+/// than using this backend. This backend is intended for integration tests that test the entire
+/// terminal UI.
 ///
 /// # Example
 ///
 /// ```rust
-/// use ratatui::{backend::{Backend, TestBackend}, buffer::Buffer};
+/// use ratatui::{backend::TestBackend, prelude::*};
 ///
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut backend = TestBackend::new(10, 2);
 /// backend.clear()?;
 /// backend.assert_buffer(&Buffer::with_lines(vec!["          "; 2]));
-/// # Ok(())
-/// # }
+/// # std::io::Result::Ok(())
 /// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -179,7 +183,151 @@ impl Backend for TestBackend {
         Ok(Rect::new(0, 0, self.width, self.height))
     }
 
+    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+        // Some arbitrary window pixel size, probably doesn't need much testing.
+        static WINDOW_PIXEL_SIZE: Size = Size {
+            width: 640,
+            height: 480,
+        };
+        Ok(WindowSize {
+            columns_rows: (self.width, self.height).into(),
+            pixels: WINDOW_PIXEL_SIZE,
+        })
+    }
+
     fn flush(&mut self) -> Result<(), io::Error> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new() {
+        assert_eq!(
+            TestBackend::new(10, 2),
+            TestBackend {
+                width: 10,
+                height: 2,
+                buffer: Buffer::with_lines(vec!["          "; 2]),
+                cursor: false,
+                pos: (0, 0),
+            }
+        );
+    }
+    #[test]
+    fn test_buffer_view() {
+        let buffer = Buffer::with_lines(vec!["aaaa"; 2]);
+        assert_eq!(buffer_view(&buffer), "\"aaaa\"\n\"aaaa\"\n");
+    }
+
+    #[test]
+    fn buffer_view_with_overwrites() {
+        let multi_byte_char = "👨‍👩‍👧‍👦"; // renders 8 wide
+        let buffer = Buffer::with_lines(vec![multi_byte_char]);
+        assert_eq!(
+            buffer_view(&buffer),
+            format!(
+                r#""{multi_byte_char}" Hidden by multi-width symbols: [(1, " "), (2, " "), (3, " "), (4, " "), (5, " "), (6, " "), (7, " ")]
+"#,
+                multi_byte_char = multi_byte_char
+            )
+        );
+    }
+
+    #[test]
+    fn buffer() {
+        let backend = TestBackend::new(10, 2);
+        assert_eq!(backend.buffer(), &Buffer::with_lines(vec!["          "; 2]));
+    }
+
+    #[test]
+    fn resize() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.resize(5, 5);
+        assert_eq!(backend.buffer(), &Buffer::with_lines(vec!["     "; 5]));
+    }
+
+    #[test]
+    fn assert_buffer() {
+        let backend = TestBackend::new(10, 2);
+        let buffer = Buffer::with_lines(vec!["          "; 2]);
+        backend.assert_buffer(&buffer);
+    }
+
+    #[test]
+    #[should_panic]
+    fn assert_buffer_panics() {
+        let backend = TestBackend::new(10, 2);
+        let buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
+        backend.assert_buffer(&buffer);
+    }
+
+    #[test]
+    fn display() {
+        let backend = TestBackend::new(10, 2);
+        assert_eq!(format!("{}", backend), "\"          \"\n\"          \"\n");
+    }
+
+    #[test]
+    fn draw() {
+        let mut backend = TestBackend::new(10, 2);
+        let mut cell = Cell::default();
+        cell.set_symbol("a");
+        backend.draw([(0, 0, &cell)].into_iter()).unwrap();
+        backend.draw([(0, 1, &cell)].into_iter()).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec!["a         "; 2]));
+    }
+
+    #[test]
+    fn hide_cursor() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.hide_cursor().unwrap();
+        assert!(!backend.cursor);
+    }
+
+    #[test]
+    fn show_cursor() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.show_cursor().unwrap();
+        assert!(backend.cursor);
+    }
+
+    #[test]
+    fn get_cursor() {
+        let mut backend = TestBackend::new(10, 2);
+        assert_eq!(backend.get_cursor().unwrap(), (0, 0));
+    }
+
+    #[test]
+    fn set_cursor() {
+        let mut backend = TestBackend::new(10, 10);
+        backend.set_cursor(5, 5).unwrap();
+        assert_eq!(backend.pos, (5, 5));
+    }
+
+    #[test]
+    fn clear() {
+        let mut backend = TestBackend::new(10, 2);
+        let mut cell = Cell::default();
+        cell.set_symbol("a");
+        backend.draw([(0, 0, &cell)].into_iter()).unwrap();
+        backend.draw([(0, 1, &cell)].into_iter()).unwrap();
+        backend.clear().unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec!["          "; 2]));
+    }
+
+    #[test]
+    fn size() {
+        let backend = TestBackend::new(10, 2);
+        assert_eq!(backend.size().unwrap(), Rect::new(0, 0, 10, 2));
+    }
+
+    #[test]
+    fn flush() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.flush().unwrap();
     }
 }

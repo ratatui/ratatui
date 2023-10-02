@@ -9,7 +9,6 @@
 //!
 //! ```rust
 //! use ratatui::{prelude::*, widgets::*};
-//! use ratatui::widgets::{Block, Borders};
 //!
 //! #[derive(Debug, Default, PartialEq, Eq)]
 //! struct Line;
@@ -30,6 +29,6 @@ pub use crate::{
     layout::{self, Alignment, Constraint, Corner, Direction, Layout, Margin, Rect},
     style::{self, Color, Modifier, Style, Styled, Stylize},
     symbols::{self, Marker},
-    terminal::{self, Frame, Terminal, TerminalOptions, Viewport},
+    terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport},
     text::{self, Line, Masked, Span, Text},
 };

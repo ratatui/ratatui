@@ -6,11 +6,10 @@ use std::{
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-#[allow(deprecated)]
 use crate::{
     layout::Rect,
     style::{Color, Modifier, Style},
-    text::{Line, Span, Spans},
+    text::{Line, Span},
 };
 
 /// A buffer cell
@@ -129,9 +128,7 @@ impl Default for Cell {
 /// # Examples:
 ///
 /// ```
-/// use ratatui::buffer::{Buffer, Cell};
-/// use ratatui::layout::Rect;
-/// use ratatui::style::{Color, Style, Modifier};
+/// use ratatui::{prelude::*, buffer::Cell};
 ///
 /// let mut buf = Buffer::empty(Rect{x: 0, y: 0, width: 10, height: 5});
 /// buf.get_mut(0, 2).set_symbol("x");
@@ -177,24 +174,16 @@ impl Buffer {
     }
 
     /// Returns a Buffer containing the given lines
-    pub fn with_lines<S>(lines: Vec<S>) -> Buffer
+    pub fn with_lines<'a, S>(lines: Vec<S>) -> Buffer
     where
-        S: AsRef<str>,
+        S: Into<Line<'a>>,
     {
+        let lines = lines.into_iter().map(Into::into).collect::<Vec<_>>();
         let height = lines.len() as u16;
-        let width = lines
-            .iter()
-            .map(|i| i.as_ref().width() as u16)
-            .max()
-            .unwrap_or_default();
-        let mut buffer = Buffer::empty(Rect {
-            x: 0,
-            y: 0,
-            width,
-            height,
-        });
+        let width = lines.iter().map(Line::width).max().unwrap_or_default() as u16;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, width, height));
         for (y, line) in lines.iter().enumerate() {
-            buffer.set_string(0, y as u16, line, Style::default());
+            buffer.set_line(0, y as u16, line, width);
         }
         buffer
     }
@@ -228,8 +217,7 @@ impl Buffer {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::buffer::Buffer;
-    /// # use ratatui::layout::Rect;
+    /// # use ratatui::prelude::*;
     /// let rect = Rect::new(200, 100, 10, 10);
     /// let buffer = Buffer::empty(rect);
     /// // Global coordinates to the top corner of this buffer's area
@@ -241,8 +229,7 @@ impl Buffer {
     /// Panics when given an coordinate that is outside of this Buffer's area.
     ///
     /// ```should_panic
-    /// # use ratatui::buffer::Buffer;
-    /// # use ratatui::layout::Rect;
+    /// # use ratatui::prelude::*;
     /// let rect = Rect::new(200, 100, 10, 10);
     /// let buffer = Buffer::empty(rect);
     /// // Top coordinate is outside of the buffer in global coordinate space, as the Buffer's area
@@ -268,8 +255,7 @@ impl Buffer {
     /// # Examples
     ///
     /// ```
-    /// # use ratatui::buffer::Buffer;
-    /// # use ratatui::layout::Rect;
+    /// # use ratatui::prelude::*;
     /// let rect = Rect::new(200, 100, 10, 10);
     /// let buffer = Buffer::empty(rect);
     /// assert_eq!(buffer.pos_of(0), (200, 100));
@@ -281,8 +267,7 @@ impl Buffer {
     /// Panics when given an index that is outside the Buffer's content.
     ///
     /// ```should_panic
-    /// # use ratatui::buffer::Buffer;
-    /// # use ratatui::layout::Rect;
+    /// # use ratatui::prelude::*;
     /// let rect = Rect::new(0, 0, 10, 10); // 100 cells in total
     /// let buffer = Buffer::empty(rect);
     /// // Index 100 is the 101th cell, which lies outside of the area of this Buffer.
@@ -346,29 +331,6 @@ impl Buffer {
             x_offset += width;
         }
         (x_offset as u16, y)
-    }
-
-    #[allow(deprecated)]
-    #[deprecated(note = "Use `Buffer::set_line` instead")]
-    pub fn set_spans(&mut self, x: u16, y: u16, spans: &Spans<'_>, width: u16) -> (u16, u16) {
-        let mut remaining_width = width;
-        let mut x = x;
-        for span in &spans.0 {
-            if remaining_width == 0 {
-                break;
-            }
-            let pos = self.set_stringn(
-                x,
-                y,
-                span.content.as_ref(),
-                remaining_width as usize,
-                span.style,
-            );
-            let w = pos.0.saturating_sub(x);
-            x = pos.0;
-            remaining_width = remaining_width.saturating_sub(w);
-        }
-        (x, y)
     }
 
     pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, width: u16) -> (u16, u16) {
@@ -1071,5 +1033,14 @@ mod tests {
         one.merge(&two);
         let skipped: Vec<bool> = one.content().iter().map(|c| c.skip).collect();
         assert_eq!(skipped, vec![true, true, false, false, false, false]);
+    }
+
+    #[test]
+    fn with_lines_accepts_into_lines() {
+        use crate::style::Stylize;
+        let mut buf = Buffer::empty(Rect::new(0, 0, 3, 2));
+        buf.set_string(0, 0, "foo", Style::new().red());
+        buf.set_string(0, 1, "bar", Style::new().blue());
+        assert_eq!(buf, Buffer::with_lines(vec!["foo".red(), "bar".blue()]));
     }
 }

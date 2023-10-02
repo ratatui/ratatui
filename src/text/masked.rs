@@ -13,7 +13,7 @@ use super::Text;
 /// # Examples
 ///
 /// ```rust
-/// use ratatui::{buffer::Buffer, layout::Rect, text::Masked, widgets::{Paragraph, Widget}};
+/// use ratatui::{prelude::*, widgets::*};
 ///
 /// let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
 /// let password = Masked::new("12345", 'x');

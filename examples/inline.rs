@@ -216,7 +216,7 @@ fn run_app<B: Backend>(
     Ok(())
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, downloads: &Downloads) {
+fn ui(f: &mut Frame, downloads: &Downloads) {
     let size = f.size();
 
     let block = Block::default().title(block::Title::from("Progress").alignment(Alignment::Center));

@@ -2,43 +2,60 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [v0.23.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.23.0) - 2023-08-28
+
+We are thrilled to release the new version of `ratatui` 🐭, the official successor[\*](https://github.com/fdehau/tui-rs/commit/335f5a4563342f9a4ee19e2462059e1159dcbf25) of [`tui-rs`](https://github.com/fdehau/tui-rs).
+
+In this version, we improved the existing widgets such as `Barchart` and `Scrollbar`. We also made improvmements in the testing/internal APIs to provide a smoother testing/development experience. Additionally, we have addressed various bugs and implemented enhancements.
+
+Here is a blog post that highlights the new features and breaking changes along with a retrospective about the project: [https://blog.orhun.dev/ratatui-0-23-0](https://blog.orhun.dev/ratatui-0-23-0)
 
 ### Features
 
-- *(uncategorized)* Add weak constraints to make rects closer to each other in size ✨ ([#395](https://github.com/ratatui-org/ratatui/issues/395))
-([6153371](https://github.com/ratatui-org/ratatui/commit/61533712be57f3921217a905618b319975f90330))
+- *(barchart)* Add direction attribute. (horizontal bars support) ([#325](https://github.com/ratatui-org/ratatui/issues/325))
+([0dca6a6](https://github.com/ratatui-org/ratatui/commit/0dca6a689a7af640c5de8f7c87c2f1e03f0adf25))
 
   ````text
-  Also make `Max` and `Min` constraints MEDIUM strength for higher priority over equal chunks
+  * feat(barchart): Add direction attribute
+
+  Enable rendering the bars horizontally. In some cases this allow us to
+  make more efficient use of the available space.
   ````
 
-### Bug Fixes
-
-- *(table)* Fix unit tests broken due to rounding ([#419](https://github.com/ratatui-org/ratatui/issues/419))
-([dc55211](https://github.com/ratatui-org/ratatui/commit/dc552116cf5e83c7ffcc2f5299c00d2315490c1d))
+- *(cell)* Add voluntary skipping capability for sixel ([#215](https://github.com/ratatui-org/ratatui/issues/215))
+([e4bcf78](https://github.com/ratatui-org/ratatui/commit/e4bcf78afabe6b06970c51b4284246e345002cf5))
 
   ````text
-  The merge of the table unit tests after the rounding layout fix was not
-  rebased correctly, this addresses the broken tests, makes them more
-  concise while adding comments to help clarify that the rounding behavior
-  is working as expected.
+  > Sixel is a bitmap graphics format supported by terminals.
+  > "Sixel mode" is entered by sending the sequence ESC+Pq.
+  > The "String Terminator" sequence ESC+\ exits the mode.
+
+  The graphics are then rendered with the top left positioned at the
+  cursor position.
+
+  It is actually possible to render sixels in ratatui with just
+  `buf.get_mut(x, y).set_symbol("^[Pq ... ^[\")`. But any buffer covering
+  the "image area" will overwrite the graphics. This is most likely the same
+  buffer, even though it consists of empty characters `' '`, except for
+  the top-left character that starts the sequence.
+
+  Thus, either the buffer or cells must be specialized to avoid drawing
+  over the graphics. This patch specializes the `Cell` with a
+  `set_skip(bool)` method, based on James' patch:
+  https://github.com/TurtleTheSeaHobo/tui-rs/tree/sixel-support
+  I unsuccessfully tried specializing the `Buffer`, but as far as I can tell
+  buffers get merged all the way "up" and thus skipping must be set on the
+  Cells. Otherwise some kind of "skipping area" state would be required,
+  which I think is too complicated.
+
+  Having access to the buffer now it is possible to skip all cells but the
+  first one which can then `set_symbol(sixel)`. It is up to the user to
+  deal with the graphics size and buffer area size. It is possible to get
+  the terminal's font size in pixels with a syscall.
+
+  An image widget for ratatui that uses this `skip` flag is available at
+  https://github.com/benjajaja/ratatu-image.
   ````
-
-### Styling
-
-- *(paragraph)* Add documentation for "scroll"'s "offset" ([#355](https://github.com/ratatui-org/ratatui/issues/355))
-([ab5e616](https://github.com/ratatui-org/ratatui/commit/ab5e6166358b2e6f0e9601a1ec5480760b91ca8e))
-
-  ````text
-  * style(paragraph): add documentation for "scroll"'s "offset"
-
-  * style(paragraph): add more text to the scroll doc-comment
-  ````
-
-## [v0.22.1-alpha.2](https://github.com/ratatui-org/ratatui/releases/tag/v0.22.1-alpha.2) - 2023-08-19
-
-### Features
 
 - *(list)* Add option to always allocate the "selection" column width ([#394](https://github.com/ratatui-org/ratatui/issues/394))
 ([4d70169](https://github.com/ratatui-org/ratatui/commit/4d70169bef86898d331f46013ff72ef6d1c275ed))
@@ -54,6 +71,25 @@ All notable changes to this project will be documented in this file.
   * style: change "highlight_spacing" doc comment to use inline code-block for reference
   ````
 
+- *(release)* Add automated nightly releases ([#359](https://github.com/ratatui-org/ratatui/issues/359))
+([aad164a](https://github.com/ratatui-org/ratatui/commit/aad164a5311b0a6d6d3f752a87ed385d5f0c1962))
+
+  ````text
+  * feat(release): add automated nightly releases
+
+  * refactor(release): rename the alpha workflow
+
+  * refactor(release): simplify the release calculation
+  ````
+
+- *(scrollbar)* Add optional track symbol ([#360](https://github.com/ratatui-org/ratatui/issues/360))
+([1727fa5](https://github.com/ratatui-org/ratatui/commit/1727fa5120fa4bfcddd57484e532b2d5da88bc73)) [**breaking**]
+
+  ````text
+  The track symbol is now optional, simplifying composition with other
+  widgets.
+  ````
+
 - *(table)* Add support for line alignment in the table widget ([#392](https://github.com/ratatui-org/ratatui/issues/392))
 ([7748720](https://github.com/ratatui-org/ratatui/commit/77487209634f26da32bc59d9280769d80cc7c25c))
 
@@ -63,10 +99,70 @@ All notable changes to this project will be documented in this file.
   * test(table): add table alignment render test
   ````
 
+- *(widgets::table)* Add option to always allocate the "selection" constraint ([#375](https://github.com/ratatui-org/ratatui/issues/375))
+([f63ac72](https://github.com/ratatui-org/ratatui/commit/f63ac72305f80062727d81996f9bdb523e666099))
+
+  ````text
+  * feat(table): add option to configure selection layout changes
+
+  Before this option was available, selecting a row in the table when no row was selected
+  previously made the tables layout change (the same applies to unselecting) by adding the width
+  of the "highlight symbol" in the front of the first column, this option allows to configure this
+  behavior.
+
+  * refactor(table): refactor "get_columns_widths" to return (x, width)
+
+  and "render" to make use of that
+
+  * refactor(table): refactor "get_columns_widths" to take in a selection_width instead of a boolean
+
+  also refactor "render" to make use of this change
+
+  * fix(table): rename "highlight_set_selection_space" to "highlight_spacing"
+
+  * style(table): apply doc-comment suggestions from code review
+  ````
+
+- *(uncategorized)* Expand serde attributes for `TestBuffer` ([#389](https://github.com/ratatui-org/ratatui/issues/389))
+([57ea871](https://github.com/ratatui-org/ratatui/commit/57ea871753a5b23f302c6f0a83d98f6a1988abfb))
+
+- *(uncategorized)* Add weak constraints to make rects closer to each other in size ✨ ([#395](https://github.com/ratatui-org/ratatui/issues/395))
+([6153371](https://github.com/ratatui-org/ratatui/commit/61533712be57f3921217a905618b319975f90330))
+
+  ````text
+  Also make `Max` and `Min` constraints MEDIUM strength for higher priority over equal chunks
+  ````
+
 - *(uncategorized)* Simplify split function ✨ ([#411](https://github.com/ratatui-org/ratatui/issues/411))
 ([b090101](https://github.com/ratatui-org/ratatui/commit/b090101b231a467628c910f05a73715809cb8d73))
 
 ### Bug Fixes
+
+- *(barchart)* Empty groups causes panic ([#333](https://github.com/ratatui-org/ratatui/issues/333))
+([9c95673](https://github.com/ratatui-org/ratatui/commit/9c956733f740b18616974e2c7d786ca761666f79))
+
+  ````text
+  This unlikely to happen, since nobody wants to add an empty group.
+  Even we fix the panic, things will not render correctly.
+  So it is better to just not add them to the BarChart.
+  ````
+
+- *(block)* Fixed title_style not rendered ([#349](https://github.com/ratatui-org/ratatui/issues/349)) ([#363](https://github.com/ratatui-org/ratatui/issues/363))
+([49a82e0](https://github.com/ratatui-org/ratatui/commit/49a82e062f2c46dc3060cdfdb230b65d9dbfb2d9))
+
+- *(cargo)* Adjust minimum paste version ([#348](https://github.com/ratatui-org/ratatui/issues/348))
+([8db9fb4](https://github.com/ratatui-org/ratatui/commit/8db9fb4aebd01e5ddc4edd68482361928f7e9c97))
+
+  ````text
+  ratatui is using features that are currently only available in paste 1.0.2; specifying the minimum version to be 1.0 will consequently cause a compilation error if cargo is only able to use a version less than 1.0.2.
+  ````
+
+- *(example)* Fix typo ([#337](https://github.com/ratatui-org/ratatui/issues/337))
+([daf5890](https://github.com/ratatui-org/ratatui/commit/daf589015290ac8b379389d29ef90a1af15e3f75))
+
+  ````text
+  the existential feels
+  ````
 
 - *(layout)* Don't leave gaps between chunks ([#408](https://github.com/ratatui-org/ratatui/issues/408))
 ([56455e0](https://github.com/ratatui-org/ratatui/commit/56455e0fee57616f87ea43872fb7d5d9bb14aff5))
@@ -97,10 +193,53 @@ All notable changes to this project will be documented in this file.
   The recent refactor missed the positive width constraint
   ````
 
+- *(readme)* Fix typo in readme ([#344](https://github.com/ratatui-org/ratatui/issues/344))
+([d05ab6f](https://github.com/ratatui-org/ratatui/commit/d05ab6fb700527f0e062f334c7a5319c07099b04))
+
+- *(readme)* Fix incorrect template link ([#338](https://github.com/ratatui-org/ratatui/issues/338))
+([b9290b3](https://github.com/ratatui-org/ratatui/commit/b9290b35d13df57726d65a16d3c8bb18ce43e8c2))
+
+- *(readme)* Fix typo in readme ([#336](https://github.com/ratatui-org/ratatui/issues/336))
+([7e37a96](https://github.com/ratatui-org/ratatui/commit/7e37a96678440bc62cce52de840fef82eed58dd8))
+
 - *(release)* Fix the last tag retrieval for alpha releases ([#416](https://github.com/ratatui-org/ratatui/issues/416))
 ([b6b2da5](https://github.com/ratatui-org/ratatui/commit/b6b2da5eb761ac5894cc7a2ee67f422312b63cfc))
 
+- *(release)* Set the correct permissions for creating alpha releases ([#400](https://github.com/ratatui-org/ratatui/issues/400))
+([778c320](https://github.com/ratatui-org/ratatui/commit/778c32000815b9abb0246c73997b1800256aade2))
+
+- *(scrollbar)* Move symbols to symbols module ([#330](https://github.com/ratatui-org/ratatui/issues/330))
+([7539f77](https://github.com/ratatui-org/ratatui/commit/7539f775fef4d816495e1e06732f6500cf08c126)) [**breaking**]
+
+  ````text
+  The symbols and sets are moved from `widgets::scrollbar` to
+  `symbols::scrollbar`. This makes it consistent with the other symbol
+  sets and allows us to make the scrollbar module private rather than
+  re-exporting it.
+  ````
+
+- *(table)* Fix unit tests broken due to rounding ([#419](https://github.com/ratatui-org/ratatui/issues/419))
+([dc55211](https://github.com/ratatui-org/ratatui/commit/dc552116cf5e83c7ffcc2f5299c00d2315490c1d))
+
+  ````text
+  The merge of the table unit tests after the rounding layout fix was not
+  rebased correctly, this addresses the broken tests, makes them more
+  concise while adding comments to help clarify that the rounding behavior
+  is working as expected.
+  ````
+
+- *(uncategorized)* Correct minor typos in documentation ([#331](https://github.com/ratatui-org/ratatui/issues/331))
+([13fb11a](https://github.com/ratatui-org/ratatui/commit/13fb11a62c826da412045d498a03673d130ec057))
+
 ### Refactor
+
+- *(barchart)* Reduce some calculations ([#430](https://github.com/ratatui-org/ratatui/issues/430))
+([fc727df](https://github.com/ratatui-org/ratatui/commit/fc727df7d2d8347434a7d3a4e19465b29d7a0ed8))
+
+  ````text
+  Calculating the label_offset is unnecessary, if we just render the
+  group label after rendering the bars. We can just reuse bar_y.
+  ````
 
 - *(layout)* Simplify and doc split() ([#405](https://github.com/ratatui-org/ratatui/issues/405))
 ([de25de0](https://github.com/ratatui-org/ratatui/commit/de25de0a9506e53df1378929251594bccf63d932))
@@ -125,6 +264,9 @@ All notable changes to this project will be documented in this file.
 
 ### Documentation
 
+- *(examples)* Fix the instructions for generating demo GIF ([#442](https://github.com/ratatui-org/ratatui/issues/442))
+([7a70602](https://github.com/ratatui-org/ratatui/commit/7a70602ec6bfcfec51bafd3bdbd35ff68b64340c))
+
 - *(examples)* Show layout constraints ([#393](https://github.com/ratatui-org/ratatui/issues/393))
 ([10dbd6f](https://github.com/ratatui-org/ratatui/commit/10dbd6f2075285473ef47c4c898ef2f643180cd1))
 
@@ -133,141 +275,6 @@ All notable changes to this project will be documented in this file.
 
   ![example](https://vhs.charm.sh/vhs-1ZNoNLNlLtkJXpgg9nCV5e.gif)
   ````
-
-- *(layout)* Add doc comments ([#403](https://github.com/ratatui-org/ratatui/issues/403))
-([418ed20](https://github.com/ratatui-org/ratatui/commit/418ed20479e060c1bd2f430ae127eae19a013afc))
-
-### Testing
-
-- *(table)* Add test for consistent table-column-width ([#404](https://github.com/ratatui-org/ratatui/issues/404))
-([4cd843e](https://github.com/ratatui-org/ratatui/commit/4cd843eda97abbc8fa7af85a03c2fffafce3c676))
-
-### Miscellaneous Tasks
-
-- *(ci)* Update the name of the CI workflow ([#417](https://github.com/ratatui-org/ratatui/issues/417))
-([89ef0e2](https://github.com/ratatui-org/ratatui/commit/89ef0e29f56078ed0629f2dce89656c1131ebda1))
-
-- *(codecov)* Fix yaml syntax ([#407](https://github.com/ratatui-org/ratatui/issues/407))
-([ea48af1](https://github.com/ratatui-org/ratatui/commit/ea48af1c9abac7012e3bf79e78c6179f889a6321))
-
-  ````text
-  a yaml file cannot contain tabs outside of strings
-  ````
-
-- *(uncategorized)* Create rust-toolchain.toml ([#415](https://github.com/ratatui-org/ratatui/issues/415))
-([d2429bc](https://github.com/ratatui-org/ratatui/commit/d2429bc3e44a34197511192dbd215dd32fdf2d9c))
-
-- *(uncategorized)* Use vhs to create demo.gif ([#390](https://github.com/ratatui-org/ratatui/issues/390))
-([8c55158](https://github.com/ratatui-org/ratatui/commit/8c551588224ca97ee07948b445aa2ac9d05f997d))
-
-  ````text
-  The bug that prevented braille rendering is fixed, so switch to VHS for
-  rendering the demo gif
-
-  ![Demo of Ratatui](https://vhs.charm.sh/vhs-tF0QbuPbtHgUeG0sTVgFr.gif)
-  ````
-
-## [v0.22.1-alpha.1](https://github.com/ratatui-org/ratatui/releases/tag/v0.22.1-alpha.1) - 2023-08-12
-
-### Features
-
-- *(release)* Add automated nightly releases ([#359](https://github.com/ratatui-org/ratatui/issues/359))
-([aad164a](https://github.com/ratatui-org/ratatui/commit/aad164a5311b0a6d6d3f752a87ed385d5f0c1962))
-
-  ````text
-  * feat(release): add automated nightly releases
-
-  * refactor(release): rename the alpha workflow
-
-  * refactor(release): simplify the release calculation
-  ````
-
-- *(scrollbar)* Add optional track symbol ([#360](https://github.com/ratatui-org/ratatui/issues/360))
-([1727fa5](https://github.com/ratatui-org/ratatui/commit/1727fa5120fa4bfcddd57484e532b2d5da88bc73)) [**breaking**]
-
-  ````text
-  The track symbol is now optional, simplifying composition with other
-  widgets.
-  ````
-
-- *(widgets::table)* Add option to always allocate the "selection" constraint ([#375](https://github.com/ratatui-org/ratatui/issues/375))
-([f63ac72](https://github.com/ratatui-org/ratatui/commit/f63ac72305f80062727d81996f9bdb523e666099))
-
-  ````text
-  * feat(table): add option to configure selection layout changes
-
-  Before this option was available, selecting a row in the table when no row was selected
-  previously made the tables layout change (the same applies to unselecting) by adding the width
-  of the "highlight symbol" in the front of the first column, this option allows to configure this
-  behavior.
-
-  * refactor(table): refactor "get_columns_widths" to return (x, width)
-
-  and "render" to make use of that
-
-  * refactor(table): refactor "get_columns_widths" to take in a selection_width instead of a boolean
-
-  also refactor "render" to make use of this change
-
-  * fix(table): rename "highlight_set_selection_space" to "highlight_spacing"
-
-  * style(table): apply doc-comment suggestions from code review
-  ````
-
-### Bug Fixes
-
-- *(barchart)* Empty groups causes panic ([#333](https://github.com/ratatui-org/ratatui/issues/333))
-([9c95673](https://github.com/ratatui-org/ratatui/commit/9c956733f740b18616974e2c7d786ca761666f79))
-
-  ````text
-  This unlikely to happen, since nobody wants to add an empty group.
-  Even we fix the panic, things will not render correctly.
-  So it is better to just not add them to the BarChart.
-  ````
-
-- *(block)* Fixed title_style not rendered ([#349](https://github.com/ratatui-org/ratatui/issues/349)) ([#363](https://github.com/ratatui-org/ratatui/issues/363))
-([49a82e0](https://github.com/ratatui-org/ratatui/commit/49a82e062f2c46dc3060cdfdb230b65d9dbfb2d9))
-
-- *(cargo)* Adjust minimum paste version ([#348](https://github.com/ratatui-org/ratatui/issues/348))
-([8db9fb4](https://github.com/ratatui-org/ratatui/commit/8db9fb4aebd01e5ddc4edd68482361928f7e9c97))
-
-  ````text
-  ratatui is using features that are currently only available in paste 1.0.2; specifying the minimum version to be 1.0 will consequently cause a compilation error if cargo is only able to use a version less than 1.0.2.
-  ````
-
-- *(example)* Fix typo ([#337](https://github.com/ratatui-org/ratatui/issues/337))
-([daf5890](https://github.com/ratatui-org/ratatui/commit/daf589015290ac8b379389d29ef90a1af15e3f75))
-
-  ````text
-  the existential feels
-  ````
-
-- *(readme)* Fix typo in readme ([#344](https://github.com/ratatui-org/ratatui/issues/344))
-([d05ab6f](https://github.com/ratatui-org/ratatui/commit/d05ab6fb700527f0e062f334c7a5319c07099b04))
-
-- *(readme)* Fix incorrect template link ([#338](https://github.com/ratatui-org/ratatui/issues/338))
-([b9290b3](https://github.com/ratatui-org/ratatui/commit/b9290b35d13df57726d65a16d3c8bb18ce43e8c2))
-
-- *(readme)* Fix typo in readme ([#336](https://github.com/ratatui-org/ratatui/issues/336))
-([7e37a96](https://github.com/ratatui-org/ratatui/commit/7e37a96678440bc62cce52de840fef82eed58dd8))
-
-- *(release)* Set the correct permissions for creating alpha releases ([#400](https://github.com/ratatui-org/ratatui/issues/400))
-([778c320](https://github.com/ratatui-org/ratatui/commit/778c32000815b9abb0246c73997b1800256aade2))
-
-- *(scrollbar)* Move symbols to symbols module ([#330](https://github.com/ratatui-org/ratatui/issues/330))
-([7539f77](https://github.com/ratatui-org/ratatui/commit/7539f775fef4d816495e1e06732f6500cf08c126)) [**breaking**]
-
-  ````text
-  The symbols and sets are moved from `widgets::scrollbar` to
-  `symbols::scrollbar`. This makes it consistent with the other symbol
-  sets and allows us to make the scrollbar module private rather than
-  re-exporting it.
-  ````
-
-- *(uncategorized)* Correct minor typos in documentation ([#331](https://github.com/ratatui-org/ratatui/issues/331))
-([13fb11a](https://github.com/ratatui-org/ratatui/commit/13fb11a62c826da412045d498a03673d130ec057))
-
-### Documentation
 
 - *(examples)* Add color and modifiers examples ([#345](https://github.com/ratatui-org/ratatui/issues/345))
 ([6ad4bd4](https://github.com/ratatui-org/ratatui/commit/6ad4bd4cf2e7ea7548e49e64f92114c30d61ebb2))
@@ -314,8 +321,34 @@ All notable changes to this project will be documented in this file.
   constrained on each block (which is now a paragraph with a block).
   ````
 
+- *(layout)* Add doc comments ([#403](https://github.com/ratatui-org/ratatui/issues/403))
+([418ed20](https://github.com/ratatui-org/ratatui/commit/418ed20479e060c1bd2f430ae127eae19a013afc))
+
 - *(layout::Constraint)* Add doc-comments for all variants ([#371](https://github.com/ratatui-org/ratatui/issues/371))
 ([c8ddc16](https://github.com/ratatui-org/ratatui/commit/c8ddc164c7941c31b1b5fa82345e452923ec56e7))
+
+- *(lib)* Extract feature documentation from Cargo.toml ([#438](https://github.com/ratatui-org/ratatui/issues/438))
+([8b36683](https://github.com/ratatui-org/ratatui/commit/8b36683571e078792b20d6f693b817522cf6e992))
+
+  ````text
+  * docs(lib): extract feature documentation from Cargo.toml
+
+  * chore(deps): make `document-features` optional dependency
+
+  * docs(lib): document the serde feature from features section
+  ````
+
+- *(paragraph)* Add more docs ([#428](https://github.com/ratatui-org/ratatui/issues/428))
+([6d6ecee](https://github.com/ratatui-org/ratatui/commit/6d6eceeb88b4da593c63dad258d2724cd583f9e0))
+
+- *(project)* Make the project description cooler ([#441](https://github.com/ratatui-org/ratatui/issues/441))
+([47fe4ad](https://github.com/ratatui-org/ratatui/commit/47fe4ad69f527fcbf879e9fec2a4d3702badc76b))
+
+  ````text
+  * docs(project): make the project description cooler
+
+  * docs(lib): simplify description
+  ````
 
 - *(readme)* Use the correct version for MSRV ([#369](https://github.com/ratatui-org/ratatui/issues/369))
 ([3a37d2f](https://github.com/ratatui-org/ratatui/commit/3a37d2f6ede02fdde9ddffbb996059d6b95f98e7))
@@ -326,6 +359,9 @@ All notable changes to this project will be documented in this file.
   ````text
   Add scrollbar, clear. Fix Block link. Sort
   ````
+
+- *(span)* Update docs and tests for `Span` ([#427](https://github.com/ratatui-org/ratatui/issues/427))
+([d0ee04a](https://github.com/ratatui-org/ratatui/commit/d0ee04a69f30506fae706b429f15fe63b056b79e))
 
 - *(uncategorized)* Improve scrollbar doc comment ([#329](https://github.com/ratatui-org/ratatui/issues/329))
 ([c3f87f2](https://github.com/ratatui-org/ratatui/commit/c3f87f245a5a2fc180d4c8f64557bcff716d09a9))
@@ -339,7 +375,21 @@ All notable changes to this project will be documented in this file.
   Replaced `Bencher::iter` by `Bencher::iter_batched` to clone the widget in the setup function instead of in the benchmark timing.
   ````
 
+### Styling
+
+- *(paragraph)* Add documentation for "scroll"'s "offset" ([#355](https://github.com/ratatui-org/ratatui/issues/355))
+([ab5e616](https://github.com/ratatui-org/ratatui/commit/ab5e6166358b2e6f0e9601a1ec5480760b91ca8e))
+
+  ````text
+  * style(paragraph): add documentation for "scroll"'s "offset"
+
+  * style(paragraph): add more text to the scroll doc-comment
+  ````
+
 ### Testing
+
+- *(block)* Test all block methods ([#431](https://github.com/ratatui-org/ratatui/issues/431))
+([a890f2a](https://github.com/ratatui-org/ratatui/commit/a890f2ac004b0e45db40de222fe3560fe0fdf94b))
 
 - *(block)* Add benchmarks ([#368](https://github.com/ratatui-org/ratatui/issues/368))
 ([e18393d](https://github.com/ratatui-org/ratatui/commit/e18393dbc6781a8b1266906e8ba7da019a0a5d82))
@@ -348,12 +398,28 @@ All notable changes to this project will be documented in this file.
   Added benchmarks to the block widget to uncover eventual performance issues
   ````
 
+- *(canvas)* Add unit tests for line ([#437](https://github.com/ratatui-org/ratatui/issues/437))
+([ad3413e](https://github.com/ratatui-org/ratatui/commit/ad3413eeec9aab1568f8519caaf5efb951b2800c))
+
+  ````text
+  Also add constructor to simplify creating lines
+  ````
+
+- *(canvas)* Add tests for rectangle ([#429](https://github.com/ratatui-org/ratatui/issues/429))
+([ad4d6e7](https://github.com/ratatui-org/ratatui/commit/ad4d6e7dec0f7e4c4e2e5624ccec54eb71c3f5ca))
+
+- *(clear)* Test Clear rendering ([#432](https://github.com/ratatui-org/ratatui/issues/432))
+([e9bd736](https://github.com/ratatui-org/ratatui/commit/e9bd736b1a680204fa801a7208cddc477f208680))
+
 - *(list)* Added benchmarks ([#377](https://github.com/ratatui-org/ratatui/issues/377))
 ([664fb4c](https://github.com/ratatui-org/ratatui/commit/664fb4cffd71c85da87545cb4258165c1a44afa6))
 
   ````text
   Added benchmarks for the list widget (render and render half scrolled)
   ````
+
+- *(map)* Add unit tests ([#436](https://github.com/ratatui-org/ratatui/issues/436))
+([f0716ed](https://github.com/ratatui-org/ratatui/commit/f0716edbcfd33d50e4e74eaf51fe5ad945dab6b3))
 
 - *(sparkline)* Added benchmark ([#384](https://github.com/ratatui-org/ratatui/issues/384))
 ([3293c6b](https://github.com/ratatui-org/ratatui/commit/3293c6b80b0505f9ed031fc8d9678e3db627b7ad))
@@ -362,7 +428,52 @@ All notable changes to this project will be documented in this file.
   Added benchmark for the `sparkline` widget testing a basic render with different amount of data
   ````
 
+- *(styled_grapheme)* Test StyledGrapheme methods ([#433](https://github.com/ratatui-org/ratatui/issues/433))
+([292a11d](https://github.com/ratatui-org/ratatui/commit/292a11d81e2f8c7676cc897f3493b75903025766))
+
+- *(table)* Add test for consistent table-column-width ([#404](https://github.com/ratatui-org/ratatui/issues/404))
+([4cd843e](https://github.com/ratatui-org/ratatui/commit/4cd843eda97abbc8fa7af85a03c2fffafce3c676))
+
+- *(tabs)* Add unit tests ([#439](https://github.com/ratatui-org/ratatui/issues/439))
+([14eb6b6](https://github.com/ratatui-org/ratatui/commit/14eb6b69796550648f7d0d0427384b64c31e36d8))
+
+- *(test_backend)* Add tests for TestBackend coverage ([#434](https://github.com/ratatui-org/ratatui/issues/434))
+([b35f19e](https://github.com/ratatui-org/ratatui/commit/b35f19ec442d3eb4810f6181e03ba0d4c077b768))
+
+  ````text
+  These are mostly to catch any future bugs introduced in the test backend
+  ````
+
+- *(text)* Add unit tests ([#435](https://github.com/ratatui-org/ratatui/issues/435))
+([fc9f637](https://github.com/ratatui-org/ratatui/commit/fc9f637fb08fdc2959a52ed3eb12643565c634d9))
+
 ### Miscellaneous Tasks
+
+- *(changelog)* Ignore alpha tags ([#440](https://github.com/ratatui-org/ratatui/issues/440))
+([6009844](https://github.com/ratatui-org/ratatui/commit/6009844e256cf926039fa969b9ad8896e2289213))
+
+- *(changelog)* Show full commit message ([#423](https://github.com/ratatui-org/ratatui/issues/423))
+([a937500](https://github.com/ratatui-org/ratatui/commit/a937500ae4ac0a60fc5db82f6ce105a1154215f6))
+
+  ````text
+  This allows someone reading the changelog to search for information
+  about breaking changes or implementation of new functionality.
+
+  - refactored the commit template part to a macro instead of repeating it
+  - added a link to the commit and to the release
+  - updated the current changelog for the alpha and unreleased changes
+  - Automatically changed the existing * lists to - lists
+  ````
+
+- *(ci)* Update the name of the CI workflow ([#417](https://github.com/ratatui-org/ratatui/issues/417))
+([89ef0e2](https://github.com/ratatui-org/ratatui/commit/89ef0e29f56078ed0629f2dce89656c1131ebda1))
+
+- *(codecov)* Fix yaml syntax ([#407](https://github.com/ratatui-org/ratatui/issues/407))
+([ea48af1](https://github.com/ratatui-org/ratatui/commit/ea48af1c9abac7012e3bf79e78c6179f889a6321))
+
+  ````text
+  a yaml file cannot contain tabs outside of strings
+  ````
 
 - *(docs)* Add doc comment bump to release documentation ([#382](https://github.com/ratatui-org/ratatui/issues/382))
 ([8b28672](https://github.com/ratatui-org/ratatui/commit/8b286721314142dc7078354015db909e6938068c))
@@ -383,6 +494,27 @@ All notable changes to this project will be documented in this file.
   * chore(toolchain)!: bump msrv to 1.67
   ````
 
+- *(traits)* Add Display and FromStr traits ([#425](https://github.com/ratatui-org/ratatui/issues/425))
+([98155dc](https://github.com/ratatui-org/ratatui/commit/98155dce25bbc0e8fe271735024a1f6bf2279d67))
+
+  ````text
+  Use strum for most of these, with a couple of manual implementations,
+  and related tests
+  ````
+
+- *(uncategorized)* Create rust-toolchain.toml ([#415](https://github.com/ratatui-org/ratatui/issues/415))
+([d2429bc](https://github.com/ratatui-org/ratatui/commit/d2429bc3e44a34197511192dbd215dd32fdf2d9c))
+
+- *(uncategorized)* Use vhs to create demo.gif ([#390](https://github.com/ratatui-org/ratatui/issues/390))
+([8c55158](https://github.com/ratatui-org/ratatui/commit/8c551588224ca97ee07948b445aa2ac9d05f997d))
+
+  ````text
+  The bug that prevented braille rendering is fixed, so switch to VHS for
+  rendering the demo gif
+
+  ![Demo of Ratatui](https://vhs.charm.sh/vhs-tF0QbuPbtHgUeG0sTVgFr.gif)
+  ````
+
 - *(uncategorized)* Implement `Hash` common traits ([#381](https://github.com/ratatui-org/ratatui/issues/381))
 ([8c4a2e0](https://github.com/ratatui-org/ratatui/commit/8c4a2e0fbfd021f1e087bb7256d9c6457742ea39))
 
@@ -400,6 +532,30 @@ All notable changes to this project will be documented in this file.
 ([181706c](https://github.com/ratatui-org/ratatui/commit/181706c564d86e02991f89ec674b1af1d7f393fe))
 
   ````text
+  Reorder the derive fields to be more consistent:
+
+      Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash
+  ````
+
+- *(uncategorized)* Implement `Clone & Copy` common traits ([#350](https://github.com/ratatui-org/ratatui/issues/350))
+([440f62f](https://github.com/ratatui-org/ratatui/commit/440f62ff5435af9536c55d17707a9bc48dae92cc))
+
+  ````text
+  Implement `Clone & Copy` common traits for most structs in src.
+
+  Only implement `Copy` for structs that are simple and trivial to copy.
+
+  Reorder the derive fields to be more consistent:
+
+      Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash
+  ````
+
+- *(uncategorized)* Implement `Debug & Default` common traits ([#339](https://github.com/ratatui-org/ratatui/issues/339))
+([bf49446](https://github.com/ratatui-org/ratatui/commit/bf4944683d6afb6f42bec80a1bd308ecdac50cbc))
+
+  ````text
+  Implement `Debug & Default` common traits for most structs in src.
+
   Reorder the derive fields to be more consistent:
 
       Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash
@@ -442,31 +598,23 @@ All notable changes to this project will be documented in this file.
 - *(uncategorized)* Add coverage token ([#352](https://github.com/ratatui-org/ratatui/issues/352))
 ([6f659cf](https://github.com/ratatui-org/ratatui/commit/6f659cfb07aad5ad2524f32fe46c45b84c8e9e34))
 
-### Chore
+### Contributors
 
-- *(uncategorized)* Implement `Clone & Copy` common traits ([#350](https://github.com/ratatui-org/ratatui/issues/350))
-([440f62f](https://github.com/ratatui-org/ratatui/commit/440f62ff5435af9536c55d17707a9bc48dae92cc))
+Thank you so much to everyone that contributed to this release!
 
-  ````text
-  Implement `Clone & Copy` common traits for most structs in src.
+Here is the list of contributors who have contributed to `ratatui` for the first time!
 
-  Only implement `Copy` for structs that are simple and trivial to copy.
-
-  Reorder the derive fields to be more consistent:
-
-      Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash
-  ````
-
-- *(uncategorized)* Implement `Debug & Default` common traits ([#339](https://github.com/ratatui-org/ratatui/issues/339))
-([bf49446](https://github.com/ratatui-org/ratatui/commit/bf4944683d6afb6f42bec80a1bd308ecdac50cbc))
-
-  ````text
-  Implement `Debug & Default` common traits for most structs in src.
-
-  Reorder the derive fields to be more consistent:
-
-      Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash
-  ````
+- @[EdJoPaTo](https://github.com/EdJoPaTo)
+- @[mhovd](https://github.com/mhovd)
+- @[joshrotenberg](https://github.com/joshrotenberg)
+- @[t-nil](https://github.com/t-nil)
+- @[ndd7xv](https://github.com/ndd7xv)
+- @[TieWay59](https://github.com/TieWay59)
+- @[Valentin271](https://github.com/Valentin271)
+- @[hasezoey](https://github.com/hasezoey)
+- @[jkcdarunday](https://github.com/jkcdarunday)
+- @[stappersg](https://github.com/stappersg)
+- @[benjajaja](https://github.com/benjajaja)
 
 ## v0.22.0 - 2023-07-17
 

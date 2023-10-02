@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 use crate::{
     buffer::Buffer,
     layout::Rect,
@@ -7,18 +8,36 @@ use crate::{
     widgets::{Block, Widget},
 };
 
-/// A widget to display a task progress.
+/// A widget to display a progress bar.
 ///
-/// # Examples:
+/// A `Gauge` renders a bar filled according to the value given to [`Gauge::percent`] or
+/// [`Gauge::ratio`]. The bar width and height are defined by the [`Rect`] it is
+/// [rendered](Widget::render) in.  
+/// The associated label is always centered horizontally and vertically. If not set with
+/// [`Gauge::label`], the label is the percentage of the bar filled.  
+/// You might want to have a higher precision bar using [`Gauge::use_unicode`].
+///
+/// This can be useful to indicate the progression of a task, like a download.
+///
+/// # Example
 ///
 /// ```
-/// # use ratatui::widgets::{Widget, Gauge, Block, Borders};
-/// # use ratatui::style::{Style, Color, Modifier};
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// Gauge::default()
 ///     .block(Block::default().borders(Borders::ALL).title("Progress"))
-///     .gauge_style(Style::default().fg(Color::White).bg(Color::Black).add_modifier(Modifier::ITALIC))
+///     .gauge_style(
+///         Style::default()
+///             .fg(Color::White)
+///             .bg(Color::Black)
+///             .add_modifier(Modifier::ITALIC),
+///     )
 ///     .percent(20);
 /// ```
+///
+/// # See also
+///
+/// - [`LineGauge`] for a thin progress bar
 #[derive(Debug, Clone, PartialEq)]
 pub struct Gauge<'a> {
     block: Option<Block<'a>>,
@@ -43,11 +62,24 @@ impl<'a> Default for Gauge<'a> {
 }
 
 impl<'a> Gauge<'a> {
+    /// Surrounds the `Gauge` with a [`Block`].
+    ///
+    /// The gauge is rendered in the inner portion of the block once space for borders and padding
+    /// is reserved. Styles set on the block do **not** affect the bar itself.
     pub fn block(mut self, block: Block<'a>) -> Gauge<'a> {
         self.block = Some(block);
         self
     }
 
+    /// Sets the bar progression from a percentage.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if `percent` is **not** between 0 and 100 inclusively.
+    ///
+    /// # See also
+    ///
+    /// See [`Gauge::ratio`] to set from a float.
     pub fn percent(mut self, percent: u16) -> Gauge<'a> {
         assert!(
             percent <= 100,
@@ -57,7 +89,18 @@ impl<'a> Gauge<'a> {
         self
     }
 
-    /// Sets ratio ([0.0, 1.0]) directly.
+    /// Sets the bar progression from a ratio (float).
+    ///
+    /// `ratio` is the ratio between filled bar over empty bar (i.e. `3/4` completion is `0.75`).
+    /// This is more easily seen as a floating point percentage (e.g. 42% = `0.42`).
+    ///
+    /// # Panics
+    ///
+    /// This method panics if `ratio` is **not** between 0 and 1 inclusively.
+    ///
+    /// # See also
+    ///
+    /// See [`Gauge::percent`] to set from a percentage.
     pub fn ratio(mut self, ratio: f64) -> Gauge<'a> {
         assert!(
             (0.0..=1.0).contains(&ratio),
@@ -67,6 +110,10 @@ impl<'a> Gauge<'a> {
         self
     }
 
+    /// Sets the label to display in the center of the bar.
+    ///
+    /// For a left-aligned label, see [`LineGauge`].
+    /// If the label is not defined, it is the percentage filled.
     pub fn label<T>(mut self, label: T) -> Gauge<'a>
     where
         T: Into<Span<'a>>,
@@ -75,16 +122,26 @@ impl<'a> Gauge<'a> {
         self
     }
 
+    /// Sets the widget style.
+    ///
+    /// This will style the block (if any non-styled) and background of the widget (everything
+    /// except the bar itself). [`Block`] style set with [`Gauge::block`] takes precedence.
     pub fn style(mut self, style: Style) -> Gauge<'a> {
         self.style = style;
         self
     }
 
+    /// Sets the style of the bar.
     pub fn gauge_style(mut self, style: Style) -> Gauge<'a> {
         self.gauge_style = style;
         self
     }
 
+    /// Sets whether to use unicode characters to display the progress bar.
+    ///
+    /// This enables the use of
+    /// [unicode block characters](https://en.wikipedia.org/wiki/Block_Elements).
+    /// This is useful to display a higher precision bar (8 extra fractional parts per cell).
     pub fn use_unicode(mut self, unicode: bool) -> Gauge<'a> {
         self.use_unicode = unicode;
         self
@@ -165,20 +222,37 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
     }
 }
 
-/// A compact widget to display a task progress over a single line.
+/// A compact widget to display a progress bar over a single thin line.
+///
+/// A `LineGauge` renders a thin line filled according to the value given to [`LineGauge::ratio`].
+/// Unlike [`Gauge`], only the width can be defined by the [rendering](Widget::render) [`Rect`].
+/// The height is always 1.  
+/// The associated label is always left-aligned. If not set with [`LineGauge::label`], the label
+/// is the percentage of the bar filled.  
+/// You can also set the symbols used to draw the bar with [`LineGauge::line_set`].
+///
+/// This can be useful to indicate the progression of a task, like a download.
 ///
 /// # Examples:
 ///
 /// ```
-/// # use ratatui::widgets::{Widget, LineGauge, Block, Borders};
-/// # use ratatui::style::{Style, Color, Modifier};
-/// # use ratatui::symbols;
+/// use ratatui::{prelude::*, widgets::*};
+///
 /// LineGauge::default()
 ///     .block(Block::default().borders(Borders::ALL).title("Progress"))
-///     .gauge_style(Style::default().fg(Color::White).bg(Color::Black).add_modifier(Modifier::BOLD))
+///     .gauge_style(
+///         Style::default()
+///             .fg(Color::White)
+///             .bg(Color::Black)
+///             .add_modifier(Modifier::BOLD),
+///     )
 ///     .line_set(symbols::line::THICK)
 ///     .ratio(0.4);
 /// ```
+///
+/// # See also
+///
+/// - [`Gauge`] for bigger, higher precision and more configurable progress bar
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct LineGauge<'a> {
     block: Option<Block<'a>>,
@@ -190,11 +264,20 @@ pub struct LineGauge<'a> {
 }
 
 impl<'a> LineGauge<'a> {
+    /// Surrounds the `LineGauge` with a [`Block`].
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
 
+    /// Sets the bar progression from a ratio (float).
+    ///
+    /// `ratio` is the ratio between filled bar over empty bar (i.e. `3/4` completion is `0.75`).
+    /// This is more easily seen as a floating point percentage (e.g. 42% = `0.42`).
+    ///
+    /// # Panics
+    ///
+    /// This method panics if `ratio` is **not** between 0 and 1 inclusively.
     pub fn ratio(mut self, ratio: f64) -> Self {
         assert!(
             (0.0..=1.0).contains(&ratio),
@@ -204,11 +287,22 @@ impl<'a> LineGauge<'a> {
         self
     }
 
+    /// Sets the characters to use for the line.
+    ///
+    /// # See also
+    ///
+    /// See [`symbols::line::Set`] for more information. Predefined sets are also available, see
+    /// [`NORMAL`](symbols::line::NORMAL), [`DOUBLE`](symbols::line::DOUBLE) and
+    /// [`THICK`](symbols::line::THICK).
     pub fn line_set(mut self, set: symbols::line::Set) -> Self {
         self.line_set = set;
         self
     }
 
+    /// Sets the label to display.
+    ///
+    /// With `LineGauge`, labels are only on the left, see [`Gauge`] for a centered label.
+    /// If the label is not defined, it is the percentage filled.
     pub fn label<T>(mut self, label: T) -> Self
     where
         T: Into<Line<'a>>,
@@ -217,11 +311,16 @@ impl<'a> LineGauge<'a> {
         self
     }
 
+    /// Sets the widget style.
+    ///
+    /// This will style everything except the bar itself, so basically the block (if any) and
+    /// background.
     pub fn style(mut self, style: Style) -> Self {
         self.style = style;
         self
     }
 
+    /// Sets the style of the bar.
     pub fn gauge_style(mut self, style: Style) -> Self {
         self.gauge_style = style;
         self

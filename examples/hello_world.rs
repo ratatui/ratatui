@@ -61,7 +61,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
 
 /// Render the application. This is where you would draw the application UI. This example just
 /// draws a greeting.
-fn render_app(frame: &mut ratatui::Frame<CrosstermBackend<Stdout>>) {
+fn render_app(frame: &mut Frame) {
     let greeting = Paragraph::new("Hello World! (press 'q' to quit)");
     frame.render_widget(greeting, frame.size());
 }

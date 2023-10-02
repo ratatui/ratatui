@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 
-#[allow(deprecated)]
-use super::{Line, Span, Spans};
+use super::{Line, Span};
 use crate::style::Style;
 
 /// A string split over multiple lines where each line is composed of several clusters, each with
@@ -12,8 +11,8 @@ use crate::style::Style;
 /// [`core::iter::Extend`] which enables the concatenation of several [`Text`] blocks.
 ///
 /// ```rust
-/// # use ratatui::text::Text;
-/// # use ratatui::style::{Color, Modifier, Style};
+/// use ratatui::prelude::*;
+///
 /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
 ///
 /// // An initial two lines of `Text` built from a `&str`
@@ -39,7 +38,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::Text;
+    /// # use ratatui::prelude::*;
     /// Text::raw("The first line\nThe second line");
     /// Text::raw(String::from("The first line\nThe second line"));
     /// ```
@@ -62,8 +61,7 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::text::Text;
-    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// Text::styled("The first line\nThe second line", style);
     /// Text::styled(String::from("The first line\nThe second line"), style);
@@ -82,7 +80,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// use ratatui::text::Text;
+    /// # use ratatui::prelude::*;
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(15, text.width());
     /// ```
@@ -95,7 +93,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// use ratatui::text::Text;
+    /// # use ratatui::prelude::*;
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(2, text.height());
     /// ```
@@ -108,8 +106,7 @@ impl<'a> Text<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::text::Text;
-    /// # use ratatui::style::{Color, Modifier, Style};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// let mut raw_text = Text::raw("The first line\nThe second line");
     /// let styled_text = Text::styled(String::from("The first line\nThe second line"), style);
@@ -130,8 +127,7 @@ impl<'a> Text<'a> {
     /// ## Examples
     ///
     /// ```rust
-    /// # use ratatui::text::{Span, Line, Text};
-    /// # use ratatui::style::{Color, Style, Modifier};
+    /// # use ratatui::prelude::*;
     /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
     /// let mut text = Text::styled("The first line\nThe second line", style);
     ///
@@ -175,27 +171,9 @@ impl<'a> From<Span<'a>> for Text<'a> {
     }
 }
 
-#[allow(deprecated)]
-impl<'a> From<Spans<'a>> for Text<'a> {
-    fn from(spans: Spans<'a>) -> Text<'a> {
-        Text {
-            lines: vec![spans.into()],
-        }
-    }
-}
-
 impl<'a> From<Line<'a>> for Text<'a> {
     fn from(line: Line<'a>) -> Text<'a> {
         Text { lines: vec![line] }
-    }
-}
-
-#[allow(deprecated)]
-impl<'a> From<Vec<Spans<'a>>> for Text<'a> {
-    fn from(lines: Vec<Spans<'a>>) -> Text<'a> {
-        Text {
-            lines: lines.into_iter().map(|l| l.0.into()).collect(),
-        }
     }
 }
 
@@ -221,5 +199,195 @@ where
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let lines = iter.into_iter().map(Into::into);
         self.lines.extend(lines);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::style::Stylize;
+
+    #[test]
+    fn raw() {
+        let text = Text::raw("The first line\nThe second line");
+        assert_eq!(
+            text.lines,
+            vec![Line::from("The first line"), Line::from("The second line")]
+        );
+    }
+
+    #[test]
+    fn styled() {
+        let style = Style::new().yellow().italic();
+        let text = Text::styled("The first line\nThe second line", style);
+        assert_eq!(
+            text.lines,
+            vec![
+                Line::from(Span::styled("The first line", style)),
+                Line::from(Span::styled("The second line", style))
+            ]
+        );
+    }
+
+    #[test]
+    fn width() {
+        let text = Text::from("The first line\nThe second line");
+        assert_eq!(15, text.width());
+    }
+
+    #[test]
+    fn height() {
+        let text = Text::from("The first line\nThe second line");
+        assert_eq!(2, text.height());
+    }
+
+    #[test]
+    fn patch_style() {
+        let style = Style::new().yellow().italic();
+        let style2 = Style::new().red().underlined();
+        let mut text = Text::styled("The first line\nThe second line", style);
+
+        text.patch_style(style2);
+        let expected_style = Style::new().red().italic().underlined();
+        assert_eq!(
+            text.lines,
+            vec![
+                Line::from(Span::styled("The first line", expected_style)),
+                Line::from(Span::styled("The second line", expected_style))
+            ]
+        );
+    }
+
+    #[test]
+    fn reset_style() {
+        let style = Style::new().yellow().italic();
+        let mut text = Text::styled("The first line\nThe second line", style);
+
+        text.reset_style();
+        assert_eq!(
+            text.lines,
+            vec![
+                Line::from(Span::styled("The first line", Style::reset())),
+                Line::from(Span::styled("The second line", Style::reset()))
+            ]
+        );
+    }
+
+    #[test]
+    fn from_string() {
+        let text = Text::from(String::from("The first line\nThe second line"));
+        assert_eq!(
+            text.lines,
+            vec![Line::from("The first line"), Line::from("The second line")]
+        );
+    }
+
+    #[test]
+    fn from_str() {
+        let text = Text::from("The first line\nThe second line");
+        assert_eq!(
+            text.lines,
+            vec![Line::from("The first line"), Line::from("The second line")]
+        );
+    }
+
+    #[test]
+    fn from_cow() {
+        let text = Text::from(Cow::Borrowed("The first line\nThe second line"));
+        assert_eq!(
+            text.lines,
+            vec![Line::from("The first line"), Line::from("The second line")]
+        );
+    }
+
+    #[test]
+    fn from_span() {
+        let style = Style::new().yellow().italic();
+        let text = Text::from(Span::styled("The first line\nThe second line", style));
+        assert_eq!(
+            text.lines,
+            vec![Line::from(Span::styled(
+                "The first line\nThe second line",
+                style
+            ))]
+        );
+    }
+
+    #[test]
+    fn from_line() {
+        let text = Text::from(Line::from("The first line"));
+        assert_eq!(text.lines, vec![Line::from("The first line")]);
+    }
+
+    #[test]
+    fn from_vec_line() {
+        let text = Text::from(vec![
+            Line::from("The first line"),
+            Line::from("The second line"),
+        ]);
+        assert_eq!(
+            text.lines,
+            vec![Line::from("The first line"), Line::from("The second line")]
+        );
+    }
+
+    #[test]
+    fn into_iter() {
+        let text = Text::from("The first line\nThe second line");
+        let mut iter = text.into_iter();
+        assert_eq!(iter.next(), Some(Line::from("The first line")));
+        assert_eq!(iter.next(), Some(Line::from("The second line")));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn extend() {
+        let mut text = Text::from("The first line\nThe second line");
+        text.extend(vec![
+            Line::from("The third line"),
+            Line::from("The fourth line"),
+        ]);
+        assert_eq!(
+            text.lines,
+            vec![
+                Line::from("The first line"),
+                Line::from("The second line"),
+                Line::from("The third line"),
+                Line::from("The fourth line"),
+            ]
+        );
+    }
+
+    #[test]
+    fn extend_from_iter() {
+        let mut text = Text::from("The first line\nThe second line");
+        text.extend(vec![
+            Line::from("The third line"),
+            Line::from("The fourth line"),
+        ]);
+        assert_eq!(
+            text.lines,
+            vec![
+                Line::from("The first line"),
+                Line::from("The second line"),
+                Line::from("The third line"),
+                Line::from("The fourth line"),
+            ]
+        );
+    }
+
+    #[test]
+    fn extend_from_iter_str() {
+        let mut text = Text::from("The first line\nThe second line");
+        text.extend(vec!["The third line", "The fourth line"]);
+        assert_eq!(
+            text.lines,
+            vec![
+                Line::from("The first line"),
+                Line::from("The second line"),
+                Line::from("The third line"),
+                Line::from("The fourth line"),
+            ]
+        );
     }
 }

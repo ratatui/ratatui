@@ -1,10 +1,4 @@
-use std::{
-    cell::RefCell,
-    cmp::{max, min},
-    collections::HashMap,
-    fmt,
-    rc::Rc,
-};
+use std::{cell::RefCell, collections::HashMap, fmt, num::NonZeroUsize, rc::Rc, sync::OnceLock};
 
 use cassowary::{
     strength::{MEDIUM, REQUIRED, STRONG, WEAK},
@@ -12,6 +6,7 @@ use cassowary::{
     WeightedRelation::{EQ, GE, LE},
 };
 use itertools::Itertools;
+use lru::LruCache;
 use strum::{Display, EnumString};
 
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
@@ -30,6 +25,9 @@ pub enum Direction {
     Vertical,
 }
 
+mod rect;
+pub use rect::*;
+
 /// Constraints to apply
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Constraint {
@@ -38,7 +36,7 @@ pub enum Constraint {
     /// Converts the given percentage to a f32, and then converts it back, trimming off the decimal
     /// point (effectively rounding down)
     /// ```
-    /// # use ratatui::prelude::Constraint;
+    /// # use ratatui::prelude::*;
     /// assert_eq!(0, Constraint::Percentage(50).apply(0));
     /// assert_eq!(2, Constraint::Percentage(50).apply(4));
     /// assert_eq!(5, Constraint::Percentage(50).apply(10));
@@ -50,7 +48,7 @@ pub enum Constraint {
     /// Converts the given numbers to a f32, and then converts it back, trimming off the decimal
     /// point (effectively rounding down)
     /// ```
-    /// # use ratatui::prelude::Constraint;
+    /// # use ratatui::prelude::*;
     /// assert_eq!(0, Constraint::Ratio(4, 3).apply(0));
     /// assert_eq!(4, Constraint::Ratio(4, 3).apply(4));
     /// assert_eq!(10, Constraint::Ratio(4, 3).apply(10));
@@ -65,7 +63,7 @@ pub enum Constraint {
     /// Apply no more than the given amount (currently roughly equal to [Constraint::Max], but less
     /// consistent)
     /// ```
-    /// # use ratatui::prelude::Constraint;
+    /// # use ratatui::prelude::*;
     /// assert_eq!(0, Constraint::Length(4).apply(0));
     /// assert_eq!(4, Constraint::Length(4).apply(4));
     /// assert_eq!(4, Constraint::Length(4).apply(10));
@@ -75,7 +73,7 @@ pub enum Constraint {
     ///
     /// also see [std::cmp::min]
     /// ```
-    /// # use ratatui::prelude::Constraint;
+    /// # use ratatui::prelude::*;
     /// assert_eq!(0, Constraint::Max(4).apply(0));
     /// assert_eq!(4, Constraint::Max(4).apply(4));
     /// assert_eq!(4, Constraint::Max(4).apply(10));
@@ -85,7 +83,7 @@ pub enum Constraint {
     ///
     /// also see [std::cmp::max]
     /// ```
-    /// # use ratatui::prelude::Constraint;
+    /// # use ratatui::prelude::*;
     /// assert_eq!(4, Constraint::Min(4).apply(0));
     /// assert_eq!(4, Constraint::Min(4).apply(4));
     /// assert_eq!(10, Constraint::Min(4).apply(10));
@@ -162,113 +160,6 @@ pub enum Alignment {
     Right,
 }
 
-/// A simple rectangle used in the computation of the layout and to give widgets a hint about the
-/// area they are supposed to render to.
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Rect {
-    pub x: u16,
-    pub y: u16,
-    pub width: u16,
-    pub height: u16,
-}
-
-impl fmt::Display for Rect {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}x{}+{}+{}", self.width, self.height, self.x, self.y)
-    }
-}
-
-impl Rect {
-    /// Creates a new rect, with width and height limited to keep the area under max u16.
-    /// If clipped, aspect ratio will be preserved.
-    pub fn new(x: u16, y: u16, width: u16, height: u16) -> Rect {
-        let max_area = u16::max_value();
-        let (clipped_width, clipped_height) =
-            if u32::from(width) * u32::from(height) > u32::from(max_area) {
-                let aspect_ratio = f64::from(width) / f64::from(height);
-                let max_area_f = f64::from(max_area);
-                let height_f = (max_area_f / aspect_ratio).sqrt();
-                let width_f = height_f * aspect_ratio;
-                (width_f as u16, height_f as u16)
-            } else {
-                (width, height)
-            };
-        Rect {
-            x,
-            y,
-            width: clipped_width,
-            height: clipped_height,
-        }
-    }
-
-    pub const fn area(self) -> u16 {
-        self.width * self.height
-    }
-
-    pub const fn left(self) -> u16 {
-        self.x
-    }
-
-    pub const fn right(self) -> u16 {
-        self.x.saturating_add(self.width)
-    }
-
-    pub const fn top(self) -> u16 {
-        self.y
-    }
-
-    pub const fn bottom(self) -> u16 {
-        self.y.saturating_add(self.height)
-    }
-
-    pub fn inner(self, margin: &Margin) -> Rect {
-        if self.width < 2 * margin.horizontal || self.height < 2 * margin.vertical {
-            Rect::default()
-        } else {
-            Rect {
-                x: self.x + margin.horizontal,
-                y: self.y + margin.vertical,
-                width: self.width - 2 * margin.horizontal,
-                height: self.height - 2 * margin.vertical,
-            }
-        }
-    }
-
-    pub fn union(self, other: Rect) -> Rect {
-        let x1 = min(self.x, other.x);
-        let y1 = min(self.y, other.y);
-        let x2 = max(self.x + self.width, other.x + other.width);
-        let y2 = max(self.y + self.height, other.y + other.height);
-        Rect {
-            x: x1,
-            y: y1,
-            width: x2 - x1,
-            height: y2 - y1,
-        }
-    }
-
-    pub fn intersection(self, other: Rect) -> Rect {
-        let x1 = max(self.x, other.x);
-        let y1 = max(self.y, other.y);
-        let x2 = min(self.x + self.width, other.x + other.width);
-        let y2 = min(self.y + self.height, other.y + other.height);
-        Rect {
-            x: x1,
-            y: y1,
-            width: x2 - x1,
-            height: y2 - y1,
-        }
-    }
-
-    pub const fn intersects(self, other: Rect) -> bool {
-        self.x < other.x + other.width
-            && self.x + self.width > other.x
-            && self.y < other.y + other.height
-            && self.y + self.height > other.y
-    }
-}
-
 #[derive(Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
 pub(crate) enum SegmentSize {
     EvenDistribution,
@@ -302,9 +193,9 @@ pub(crate) enum SegmentSize {
 /// # Example
 ///
 /// ```rust
-/// # use ratatui::prelude::*;
-/// # use ratatui::widgets::Paragraph;
-/// fn render<B: Backend>(frame: &mut Frame<B>, area: Rect) {
+/// use ratatui::{prelude::*, widgets::*};
+///
+/// fn render(frame: &mut Frame, area: Rect) {
 ///     let layout = Layout::default()
 ///         .direction(Direction::Vertical)
 ///         .constraints(vec![Constraint::Length(5), Constraint::Min(0)])
@@ -337,6 +228,7 @@ impl Default for Layout {
 }
 
 impl Layout {
+    pub const DEFAULT_CACHE_SIZE: usize = 16;
     /// Creates a new layout with default values.
     ///
     /// - direction: [Direction::Vertical]
@@ -353,6 +245,28 @@ impl Layout {
             constraints: Vec::new(),
             segment_size: SegmentSize::LastTakesRemainder,
         }
+    }
+
+    /// Initialize an empty cache with a custom size. The cache is keyed on the layout and area, so
+    /// that subsequent calls with the same parameters are faster. The cache is a LruCache, and
+    /// grows until `cache_size` is reached.
+    ///
+    /// Returns true if the cell's value was set by this call.
+    /// Returns false if the cell's value was not set by this call, this means that another thread
+    /// has set this value or that the cache size is already initialized.
+    ///
+    /// Note that a custom cache size will be set only if this function:
+    /// * is called before [Layout::split()] otherwise, the cache size is
+    ///   [`Self::DEFAULT_CACHE_SIZE`].
+    /// * is called for the first time, subsequent calls do not modify the cache size.
+    pub fn init_cache(cache_size: usize) -> bool {
+        LAYOUT_CACHE
+            .with(|c| {
+                c.set(RefCell::new(LruCache::new(
+                    NonZeroUsize::new(cache_size).unwrap(),
+                )))
+            })
+            .is_ok()
     }
 
     /// Builder method to set the constraints of the layout.
@@ -474,7 +388,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// simple HashMap, and grows indefinitely (<https://github.com/ratatui-org/ratatui/issues/402>).
+    /// LruCache, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
+    /// is initialized with the [Layout::init_cache()] grows until the initialized cache size.
     ///
     /// # Examples
     ///
@@ -494,18 +409,21 @@ impl Layout {
     /// ```
     pub fn split(&self, area: Rect) -> Rc<[Rect]> {
         LAYOUT_CACHE.with(|c| {
-            c.borrow_mut()
-                .entry((area, self.clone()))
-                .or_insert_with(|| split(area, self))
-                .clone()
+            c.get_or_init(|| {
+                RefCell::new(LruCache::new(
+                    NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap(),
+                ))
+            })
+            .borrow_mut()
+            .get_or_insert((area, self.clone()), || split(area, self))
+            .clone()
         })
     }
 }
 
-type Cache = HashMap<(Rect, Layout), Rc<[Rect]>>;
+type Cache = LruCache<(Rect, Layout), Rc<[Rect]>>;
 thread_local! {
-    // TODO: Maybe use a fixed size cache https://github.com/ratatui-org/ratatui/issues/402
-    static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(HashMap::new());
+    static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = OnceLock::new();
 }
 
 /// A container used by the solver inside split
@@ -647,12 +565,63 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
     Ok(results)
 }
 
+/// A simple size struct
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+pub struct Size {
+    pub width: u16,
+    pub height: u16,
+}
+
+impl From<(u16, u16)> for Size {
+    fn from((width, height): (u16, u16)) -> Self {
+        Size { width, height }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use strum::ParseError;
 
     use super::{SegmentSize::*, *};
     use crate::prelude::Constraint::*;
+
+    #[test]
+    fn custom_cache_size() {
+        assert!(Layout::init_cache(10));
+        assert!(!Layout::init_cache(15));
+        LAYOUT_CACHE.with(|c| {
+            assert_eq!(c.get().unwrap().borrow().cap().get(), 10);
+        })
+    }
+
+    #[test]
+    fn default_cache_size() {
+        let target = Rect {
+            x: 2,
+            y: 2,
+            width: 10,
+            height: 10,
+        };
+
+        Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(
+                [
+                    Constraint::Percentage(10),
+                    Constraint::Max(5),
+                    Constraint::Min(1),
+                ]
+                .as_ref(),
+            )
+            .split(target);
+        assert!(!Layout::init_cache(15));
+        LAYOUT_CACHE.with(|c| {
+            assert_eq!(
+                c.get().unwrap().borrow().cap().get(),
+                Layout::DEFAULT_CACHE_SIZE
+            );
+        })
+    }
 
     #[test]
     fn corner_to_string() {
@@ -722,79 +691,6 @@ mod tests {
         assert_eq!("Center".parse::<Alignment>(), Ok(Alignment::Center));
         assert_eq!("Right".parse::<Alignment>(), Ok(Alignment::Right));
         assert_eq!("".parse::<Alignment>(), Err(ParseError::VariantNotFound));
-    }
-
-    #[test]
-    fn rect_to_string() {
-        assert_eq!(Rect::new(1, 2, 3, 4).to_string(), "3x4+1+2");
-    }
-
-    #[test]
-    fn rect_new() {
-        assert_eq!(
-            Rect::new(1, 2, 3, 4),
-            Rect {
-                x: 1,
-                y: 2,
-                width: 3,
-                height: 4
-            }
-        );
-    }
-
-    #[test]
-    fn rect_area() {
-        assert_eq!(Rect::new(1, 2, 3, 4).area(), 12);
-    }
-
-    #[test]
-    fn rect_left() {
-        assert_eq!(Rect::new(1, 2, 3, 4).left(), 1);
-    }
-
-    #[test]
-    fn rect_right() {
-        assert_eq!(Rect::new(1, 2, 3, 4).right(), 4);
-    }
-
-    #[test]
-    fn rect_top() {
-        assert_eq!(Rect::new(1, 2, 3, 4).top(), 2);
-    }
-
-    #[test]
-    fn rect_bottom() {
-        assert_eq!(Rect::new(1, 2, 3, 4).bottom(), 6);
-    }
-
-    #[test]
-    fn rect_inner() {
-        assert_eq!(
-            Rect::new(1, 2, 3, 4).inner(&Margin::new(1, 2)),
-            Rect::new(2, 4, 1, 0)
-        );
-    }
-
-    #[test]
-    fn rect_union() {
-        assert_eq!(
-            Rect::new(1, 2, 3, 4).union(Rect::new(2, 3, 4, 5)),
-            Rect::new(1, 2, 5, 6)
-        );
-    }
-
-    #[test]
-    fn rect_intersection() {
-        assert_eq!(
-            Rect::new(1, 2, 3, 4).intersection(Rect::new(2, 3, 4, 5)),
-            Rect::new(2, 3, 2, 3)
-        );
-    }
-
-    #[test]
-    fn rect_intersects() {
-        assert!(Rect::new(1, 2, 3, 4).intersects(Rect::new(2, 3, 4, 5)));
-        assert!(!Rect::new(1, 2, 3, 4).intersects(Rect::new(5, 6, 7, 8)));
     }
 
     #[test]
@@ -914,50 +810,6 @@ mod tests {
     }
 
     #[test]
-    fn test_rect_size_truncation() {
-        for width in 256u16..300u16 {
-            for height in 256u16..300u16 {
-                let rect = Rect::new(0, 0, width, height);
-                rect.area(); // Should not panic.
-                assert!(rect.width < width || rect.height < height);
-                // The target dimensions are rounded down so the math will not be too precise
-                // but let's make sure the ratios don't diverge crazily.
-                assert!(
-                    (f64::from(rect.width) / f64::from(rect.height)
-                        - f64::from(width) / f64::from(height))
-                    .abs()
-                        < 1.0
-                );
-            }
-        }
-
-        // One dimension below 255, one above. Area above max u16.
-        let width = 900;
-        let height = 100;
-        let rect = Rect::new(0, 0, width, height);
-        assert_ne!(rect.width, 900);
-        assert_ne!(rect.height, 100);
-        assert!(rect.width < width || rect.height < height);
-    }
-
-    #[test]
-    fn test_rect_size_preservation() {
-        for width in 0..256u16 {
-            for height in 0..256u16 {
-                let rect = Rect::new(0, 0, width, height);
-                rect.area(); // Should not panic.
-                assert_eq!(rect.width, width);
-                assert_eq!(rect.height, height);
-            }
-        }
-
-        // One dimension below 255, one above. Area below max u16.
-        let rect = Rect::new(0, 0, 300, 100);
-        assert_eq!(rect.width, 300);
-        assert_eq!(rect.height, 100);
-    }
-
-    #[test]
     fn test_constraint_apply() {
         assert_eq!(Constraint::Percentage(0).apply(100), 0);
         assert_eq!(Constraint::Percentage(50).apply(100), 50);
@@ -995,22 +847,6 @@ mod tests {
     }
 
     #[test]
-    fn rect_can_be_const() {
-        const RECT: Rect = Rect {
-            x: 0,
-            y: 0,
-            width: 10,
-            height: 10,
-        };
-        const _AREA: u16 = RECT.area();
-        const _LEFT: u16 = RECT.left();
-        const _RIGHT: u16 = RECT.right();
-        const _TOP: u16 = RECT.top();
-        const _BOTTOM: u16 = RECT.bottom();
-        assert!(RECT.intersects(RECT));
-    }
-
-    #[test]
     fn layout_can_be_const() {
         const _LAYOUT: Layout = Layout::new();
         const _DEFAULT_LAYOUT: Layout = Layout::new()
@@ -1042,6 +878,7 @@ mod tests {
         use pretty_assertions::assert_eq;
 
         use crate::{
+            assert_buffer_eq,
             prelude::{Constraint::*, *},
             widgets::{Paragraph, Widget},
         };
@@ -1065,7 +902,8 @@ mod tests {
                 let s: String = c.to_string().repeat(area.width as usize);
                 Paragraph::new(s).render(layout[i], &mut buffer);
             }
-            assert_eq!(buffer.content, Buffer::with_lines(vec![expected]).content);
+            let expected = Buffer::with_lines(vec![expected]);
+            assert_buffer_eq!(buffer, expected);
         }
 
         #[test]

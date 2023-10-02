@@ -29,3 +29,39 @@ impl<'a> Styled for StyledGrapheme<'a> {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::prelude::*;
+
+    #[test]
+    fn new() {
+        let style = Style::new().yellow();
+        let sg = StyledGrapheme::new("a", style);
+        assert_eq!(sg.symbol, "a");
+        assert_eq!(sg.style, style);
+    }
+
+    #[test]
+    fn style() {
+        let style = Style::new().yellow();
+        let sg = StyledGrapheme::new("a", style);
+        assert_eq!(sg.style(), style);
+    }
+
+    #[test]
+    fn set_style() {
+        let style = Style::new().yellow().on_red();
+        let style2 = Style::new().green();
+        let sg = StyledGrapheme::new("a", style).set_style(style2);
+        assert_eq!(sg.style, style2);
+    }
+
+    #[test]
+    fn stylize() {
+        let style = Style::new().yellow().on_red();
+        let sg = StyledGrapheme::new("a", style).green();
+        assert_eq!(sg.style, Style::new().green().on_red());
+    }
+}

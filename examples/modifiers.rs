@@ -43,7 +43,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     }
 }
 
-fn ui<B: Backend>(frame: &mut Frame<B>) {
+fn ui(frame: &mut Frame) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Length(1), Constraint::Min(0)])

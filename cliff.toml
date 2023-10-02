@@ -21,8 +21,8 @@ body = """
 {% endif -%}
 
 {% macro commit(commit) -%}
-- *({{commit.scope | default(value = "uncategorized")}})* {{ commit.message | upper_first }}
-([{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui-org/ratatui/commit/" ~ commit.id }}))
+- [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui-org/ratatui/commit/" ~ commit.id }})
+  *({{commit.scope | default(value = "uncategorized") | lower }})* {{ commit.message | upper_first }}
 {%- if commit.breaking %} [**breaking**]{% endif %}
 {%- if commit.body %}
 
@@ -80,7 +80,7 @@ commit_parsers = [
   { message = "^chore\\(release\\): prepare for", skip = true },
   { message = "^chore\\(pr\\)", skip = true },
   { message = "^chore\\(pull\\)", skip = true },
-  { message = "^chore", group = "<!-- 07 -->Miscellaneous Tasks" },
+  { message = "^[cC]hore", group = "<!-- 07 -->Miscellaneous Tasks" },
   { body = ".*security", group = "<!-- 08 -->Security" },
   { message = "^build", group = "<!-- 09 -->Build" },
   { message = "^ci", group = "<!-- 10 -->Continuous Integration" },
@@ -98,7 +98,7 @@ tag_pattern = "v[0-9]*"
 # regex for skipping tags
 skip_tags = "v0.1.0-rc.1"
 # regex for ignoring tags
-ignore_tags = ""
+ignore_tags = "alpha"
 # sort the tags topologically
 topo_order = false
 # sort the commits inside sections by oldest/newest order

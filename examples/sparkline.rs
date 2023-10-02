@@ -126,14 +126,13 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+fn ui(f: &mut Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
             [
                 Constraint::Length(3),
                 Constraint::Length(3),
-                Constraint::Length(7),
                 Constraint::Min(0),
             ]
             .as_ref(),

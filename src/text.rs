@@ -19,9 +19,8 @@
 //! its `title` property (which is a [`Line`] under the hood):
 //!
 //! ```rust
-//! # use ratatui::widgets::Block;
-//! # use ratatui::text::{Span, Line};
-//! # use ratatui::style::{Color, Style};
+//! use ratatui::{prelude::*, widgets::*};
+//!
 //! // A simple string with no styling.
 //! // Converted to Line(vec![
 //! //   Span { content: Cow::Borrowed("My title"), style: Style { .. } }
@@ -60,11 +59,6 @@ pub use masked::Masked;
 
 mod span;
 pub use span::Span;
-
-/// We keep this for backward compatibility.
-mod spans;
-#[allow(deprecated)]
-pub use spans::Spans;
 
 #[allow(clippy::module_inception)]
 mod text;

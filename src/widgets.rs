@@ -4,18 +4,22 @@
 //! meant to be stored but used as *commands* to draw common figures in the UI.
 //!
 //! The available widgets are:
-//! - [`Block`]
-//! - [`Tabs`]
-//! - [`List`]
-//! - [`Table`]
-//! - [`Paragraph`]
-//! - [`Chart`]
-//! - [`BarChart`]
-//! - [`Gauge`]
-//! - [`Sparkline`]
-//! - [`calendar::Monthly`]
-//! - [`Clear`]
-
+//! - [`Block`]: a basic widget that draws a block with optional borders, titles and styles.
+//! - [`BarChart`]: displays multiple datasets as bars with optional grouping.
+//! - [`calendar::Monthly`]: displays a single month.
+//! - [`Canvas`]: draws arbitrary shapes using drawing characters.
+//! - [`Chart`]: displays multiple datasets as a lines or scatter graph.
+//! - [`Clear`]: clears the area it occupies. Useful to render over previously drawn widgets.
+//! - [`Gauge`]: displays progress percentage using block characters.
+//! - [`LineGauge`]: display progress as a line.
+//! - [`List`]: displays a list of items and allows selection.
+//! - [`Paragraph`]: displays a paragraph of optionally styled and wrapped text.
+//! - [`Scrollbar`]: displays a scrollbar.
+//! - [`Sparkline`]: display a single data set as a sparkline.
+//! - [`Table`]: displays multiple rows and columns in a grid and allows selection.
+//! - [`Tabs`]: displays a tab bar and allows selection.
+//!
+//! [`Canvas`]: crate::widgets::canvas::Canvas
 mod barchart;
 pub mod block;
 #[cfg(feature = "widget-calendar")]
@@ -125,10 +129,8 @@ pub trait Widget {
 /// ## Examples
 ///
 /// ```rust,no_run
-/// # use std::io;
-/// # use ratatui::Terminal;
-/// # use ratatui::backend::{Backend, TestBackend};
-/// # use ratatui::widgets::{Widget, List, ListItem, ListState};
+/// use std::io;
+/// use ratatui::{backend::TestBackend, prelude::*, widgets::*};
 ///
 /// // Let's say we have some events to display.
 /// struct Events {
@@ -230,9 +232,7 @@ pub trait StatefulWidget {
 /// ## Examples
 ///
 ///```
-/// # use ratatui::widgets::{Block, Borders};
-/// # use ratatui::style::{Style, Color};
-/// # use ratatui::border;
+/// use ratatui::{border, prelude::*, widgets::*};
 ///
 /// Block::default()
 ///     //Construct a `Borders` object and use it in place

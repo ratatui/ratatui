@@ -136,10 +136,9 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+fn ui(f: &mut Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .margin(2)
         .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
         .split(f.size());
 
@@ -199,10 +198,7 @@ fn create_groups<'a>(app: &'a App, combine_values_and_labels: bool) -> Vec<BarGr
         .collect()
 }
 
-fn draw_bar_with_group_labels<B>(f: &mut Frame<B>, app: &App, area: Rect)
-where
-    B: Backend,
-{
+fn draw_bar_with_group_labels(f: &mut Frame, app: &App, area: Rect) {
     let groups = create_groups(app, false);
 
     let mut barchart = BarChart::default()
@@ -229,10 +225,7 @@ where
     }
 }
 
-fn draw_horizontal_bars<B>(f: &mut Frame<B>, app: &App, area: Rect)
-where
-    B: Backend,
-{
+fn draw_horizontal_bars(f: &mut Frame, app: &App, area: Rect) {
     let groups = create_groups(app, true);
 
     let mut barchart = BarChart::default()
@@ -261,10 +254,7 @@ where
     }
 }
 
-fn draw_legend<B>(f: &mut Frame<B>, area: Rect)
-where
-    B: Backend,
-{
+fn draw_legend(f: &mut Frame, area: Rect) {
     let text = vec![
         Line::from(Span::styled(
             TOTAL_REVENUE,

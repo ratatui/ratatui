@@ -7,32 +7,53 @@ skip_core_tasks = true
 # all features except the backend ones
 ALL_FEATURES = "all-widgets,macros,serde"
 
+# Windows does not support building termion, so this avoids the build failure by providing two
+# sets of flags, one for Windows and one for other platforms.
+# Windows: --features=all-widgets,macros,serde,crossterm,termwiz
+# Other: --all-features
+ALL_FEATURES_FLAG = { source = "${CARGO_MAKE_RUST_TARGET_OS}", default_value = "--all-features", mapping = { "windows" = "--features=all-widgets,macros,serde,crossterm,termwiz" } }
+
 [tasks.default]
 alias = "ci"
 
 [tasks.ci]
 description = "Run continuous integration tasks"
-dependencies = [
-  "style-check",
-  "clippy",
-  "check",
-  "test",
-]
+dependencies = ["lint-style", "clippy", "check", "test"]
 
-[tasks.style-check]
-description = "Check code style"
-dependencies = ["fmt", "typos"]
+[tasks.lint-style]
+description = "Lint code style (formatting, typos, docs)"
+dependencies = ["lint-format", "lint-typos", "lint-docs"]
 
-[tasks.fmt]
-description = "Format source code"
+[tasks.lint-format]
+description = "Lint code formatting"
 toolchain = "nightly"
 command = "cargo"
 args = ["fmt", "--all", "--check"]
 
-[tasks.typos]
+[tasks.format]
+description = "Fix code formatting"
+toolchain = "nightly"
+command = "cargo"
+args = ["fmt", "--all"]
+
+[tasks.lint-typos]
 description = "Run typo checks"
 install_crate = { crate_name = "typos-cli", binary = "typos", test_arg = "--version" }
 command = "typos"
+
+[tasks.lint-docs]
+description = "Check documentation for errors and warnings"
+toolchain = "nightly"
+command = "cargo"
+args = [
+  "rustdoc",
+  "--no-default-features",
+  "${ALL_FEATURES_FLAG}",
+  "--",
+  "-Zunstable-options",
+  "--check",
+  "-Dwarnings",
+]
 
 [tasks.check]
 description = "Check code for errors and warnings"
@@ -40,14 +61,8 @@ command = "cargo"
 args = [
   "check",
   "--all-targets",
-  "--all-features"
-]
-
-[tasks.check.windows]
-args = [
-  "check",
-  "--all-targets",
-  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
+  "--no-default-features",
+  "${ALL_FEATURES_FLAG}",
 ]
 
 [tasks.build]
@@ -56,14 +71,8 @@ command = "cargo"
 args = [
   "build",
   "--all-targets",
-  "--all-features",
-]
-
-[tasks.build.windows]
-args = [
-  "build",
-  "--all-targets",
-  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
+  "--no-default-features",
+  "${ALL_FEATURES_FLAG}",
 ]
 
 [tasks.clippy]
@@ -74,19 +83,8 @@ args = [
   "--all-targets",
   "--tests",
   "--benches",
-  "--all-features",
-  "--",
-  "-D",
-  "warnings",
-]
-
-[tasks.clippy.windows]
-args = [
-  "clippy",
-  "--all-targets",
-  "--tests",
-  "--benches",
-  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz",
+  "--no-default-features",
+  "${ALL_FEATURES_FLAG}",
   "--",
   "-D",
   "warnings",
@@ -94,41 +92,19 @@ args = [
 
 [tasks.test]
 description = "Run tests"
-dependencies = [
-  "test-doc",
-]
+dependencies = ["test-doc"]
 command = "cargo"
 args = [
   "test",
   "--all-targets",
-  "--all-features",
-]
-
-
-[tasks.test-windows]
-description = "Run tests on Windows"
-dependencies = [
-  "test-doc",
-]
-args = [
-  "test",
-  "--all-targets",
-  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
+  "--no-default-features",
+  "${ALL_FEATURES_FLAG}",
 ]
 
 [tasks.test-doc]
 description = "Run documentation tests"
 command = "cargo"
-args = [
-  "test", "--doc",
-  "--all-features",
-]
-
-[tasks.test-doc.windows]
-args = [
-  "test", "--doc",
-  "--no-default-features", "--features", "${ALL_FEATURES},crossterm,termwiz"
-]
+args = ["test", "--doc", "--no-default-features", "${ALL_FEATURES_FLAG}"]
 
 [tasks.test-backend]
 # takes a command line parameter to specify the backend to test (e.g. "crossterm")
@@ -137,9 +113,10 @@ command = "cargo"
 args = [
   "test",
   "--all-targets",
-  "--no-default-features", "--features", "${ALL_FEATURES},${@}"
+  "--no-default-features",
+  "--features",
+  "${ALL_FEATURES},${@}",
 ]
-
 
 [tasks.coverage]
 description = "Generate code coverage report"
@@ -147,25 +124,24 @@ command = "cargo"
 args = [
   "llvm-cov",
   "--lcov",
-  "--output-path", "target/lcov.info",
-  "--all-features",
-]
-
-[tasks.coverage.windows]
-command = "cargo"
-args = [
-  "llvm-cov",
-  "--lcov",
-  "--output-path", "target/lcov.info",
+  "--output-path",
+  "target/lcov.info",
   "--no-default-features",
-  "--features", "${ALL_FEATURES},crossterm,termwiz",
+  "${ALL_FEATURES_FLAG}",
 ]
 
 [tasks.run-example]
 private = true
 condition = { env_set = ["TUI_EXAMPLE_NAME"] }
 command = "cargo"
-args = ["run", "--release", "--example", "${TUI_EXAMPLE_NAME}", "--features", "all-widgets"]
+args = [
+  "run",
+  "--release",
+  "--example",
+  "${TUI_EXAMPLE_NAME}",
+  "--features",
+  "all-widgets",
+]
 
 [tasks.build-examples]
 description = "Compile project examples"

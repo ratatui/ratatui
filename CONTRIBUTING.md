@@ -29,6 +29,11 @@ change becomes a place where a bug may have been introduced. Consider splitting 
 reformatting changes into a separate PR from those that make a behavioral change, as the tests help
 guarantee that the behavior is unchanged.
 
+### Code formatting
+
+Run `cargo make format` before committing to ensure that code is consistently formatted with
+rustfmt. Configuration is in [rustfmt.toml](./rustfmt.toml).
+
 ### Search `tui-rs` for similar work
 
 The original fork of Ratatui, [`tui-rs`](https://github.com/fdehau/tui-rs/), has a large amount of
@@ -112,6 +117,59 @@ exist to show coverage directly in your editor. E.g.:
 
 - <https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters>
 - <https://github.com/alepez/vim-llvmcov>
+
+### Documentation
+
+Here are some guidelines for writing documentation in Ratatui.  
+Every public API **must** be documented.
+
+Keep in mind that Ratatui tends to attract beginner Rust users that may not be familiar with Rust
+concepts.
+
+#### Content
+
+The main doc comment should talk about the general features that the widget supports and introduce
+the concepts pointing to the various methods. Focus on interaction with various features and giving
+enough information that helps understand why you might want something.
+
+Examples should help users understand a particular usage, not test a feature. They should be as
+simple as possible.  
+Prefer hiding imports and using wildcards to keep things concise. Some imports may still be shown
+to demonstrate a particular non-obvious import (e.g. `Stylize` trait to use style methods).  
+Speaking of `Stylize`, you should use it over the more verbose style setters:
+
+```rust
+let style = Style::new().red().bold();
+// not
+let style = Style::default().fg(Color::Red).add_modifier(Modifiers::BOLD);
+```
+
+#### Format
+
+- First line is summary, second is blank, third onward is more detail  
+
+```rust
+/// Summary
+///
+/// A detailed description
+/// with examples.
+fn foo() {}
+```
+
+- Max line length is 100 characters  
+See [vscode rewrap extension](https://marketplace.visualstudio.com/items?itemName=stkb.rewrap)
+
+- Doc comments are above macros  
+i.e.
+
+```rust
+/// doc comment
+#[derive(Debug)]
+struct Foo {}
+```
+
+- Code items should be between backticks  
+i.e. ``[`Block`]``, **NOT** ``[Block]``
 
 ### Use of unsafe for optimization purposes
 

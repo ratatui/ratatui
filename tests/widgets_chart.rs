@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Alignment, Rect},
     style::{Color, Style},
     symbols,
-    text::Span,
+    text::{self, Span},
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType::Line},
     Terminal,
 };
@@ -13,9 +13,9 @@ fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {
     labels.iter().map(|l| Span::from(*l)).collect()
 }
 
-fn axis_test_case<S>(width: u16, height: u16, x_axis: Axis, y_axis: Axis, lines: Vec<S>)
+fn axis_test_case<'a, S>(width: u16, height: u16, x_axis: Axis, y_axis: Axis, lines: Vec<S>)
 where
-    S: AsRef<str>,
+    S: Into<text::Line<'a>>,
 {
     let backend = TestBackend::new(width, height);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -25,6 +25,7 @@ where
             f.render_widget(chart, f.size());
         })
         .unwrap();
+    let lines = lines.into_iter().map(|l| l.into()).collect();
     let expected = Buffer::with_lines(lines);
     terminal.backend().assert_buffer(&expected);
 }
@@ -616,5 +617,43 @@ fn widgets_chart_can_have_a_legend() {
         expected.get_mut(col, row).set_fg(Color::Yellow);
     }
 
+    terminal.backend().assert_buffer(&expected);
+}
+
+#[test]
+fn widgets_chart_top_line_styling_is_correct() {
+    let backend = TestBackend::new(9, 5);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    let title_style = Style::default().fg(Color::Red).bg(Color::LightRed);
+    let data_style = Style::default().fg(Color::Blue);
+
+    terminal
+        .draw(|f| {
+            let data: [(f64, f64); 2] = [(0.0, 1.0), (1.0, 1.0)];
+            let widget = Chart::new(vec![Dataset::default()
+                .data(&data)
+                .graph_type(ratatui::widgets::GraphType::Line)
+                .style(data_style)])
+            .y_axis(
+                Axis::default()
+                    .title(Span::styled("abc", title_style))
+                    .bounds([0.0, 1.0])
+                    .labels(create_labels(&["a", "b"])),
+            )
+            .x_axis(Axis::default().bounds([0.0, 1.0]));
+            f.render_widget(widget, f.size());
+        })
+        .unwrap();
+
+    let mut expected = Buffer::with_lines(vec![
+        "b│abc••••",
+        " │       ",
+        " │       ",
+        " │       ",
+        "a│       ",
+    ]);
+    expected.set_style(Rect::new(2, 0, 3, 1), title_style);
+    expected.set_style(Rect::new(5, 0, 4, 1), data_style);
     terminal.backend().assert_buffer(&expected);
 }

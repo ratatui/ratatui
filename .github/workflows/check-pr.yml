@@ -1,0 +1,83 @@
+name: Check Pull Requests
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - labeled
+      - unlabeled
+  merge_group:
+
+permissions:
+  pull-requests: write
+
+jobs:
+  check-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        if: github.event_name == 'pull_request_target'
+        uses: amannn/action-semantic-pull-request@v5
+        id: check_pr_title
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Add comment indicating we require pull request titles to follow conventional commits specification
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: always() && (steps.check_pr_title.outputs.error_message != null)
+        with:
+          header: pr-title-lint-error
+          message: |
+            Thank you for opening this pull request!
+
+            We require pull request titles to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and it looks like your proposed title needs to be adjusted.
+
+            Details:
+
+            > ${{ steps.check_pr_title.outputs.error_message }}
+
+      # Delete a previous comment when the issue has been resolved
+      - if: ${{ steps.check_pr_title.outputs.error_message == null }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-title-lint-error
+          delete: true
+
+  check-breaking-change-label:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check breaking change label
+      id: check_breaking_change
+      run: |
+        pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\(\w+\))?!:'
+        # Check if pattern matches
+        if echo "${{ github.event.pull_request.title }}" | grep -qE "$pattern"; then
+          echo "breaking_change=true" >> $GITHUB_OUTPUT
+        else
+          echo "breaking_change=false" >> $GITHUB_OUTPUT
+        fi
+    - name: Add label
+      if: steps.check_breaking_change.outputs.breaking_change == 'true'
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.issues.addLabels({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: ['breaking change']
+          })
+
+  do-not-merge:
+    if: ${{ contains(github.event.*.labels.*.name, 'do not merge') }}
+    name: Prevent Merging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for label
+        run: |
+          echo "Pull request is labeled as 'do not merge'"
+          echo "This workflow fails so that the pull request cannot be merged"
+          exit 1
+

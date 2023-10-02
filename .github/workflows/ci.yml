@@ -36,6 +36,16 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: Check formatting
+        run: cargo make lint-format
+      - name: Check documentation
+        run: cargo make lint-docs
       - name: Check conventional commits
         uses: crate-ci/committed@master
         with:
@@ -45,14 +55,6 @@ jobs:
         uses: crate-ci/typos@master
       - name: Lint dependencies
         uses: EmbarkStudios/cargo-deny-action@v1
-      - name: Install Rust nightly
-        uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: rustfmt
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
-      - name: Check formatting
-        run: cargo make fmt
 
   clippy:
     runs-on: ubuntu-latest
