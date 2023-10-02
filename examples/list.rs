@@ -231,7 +231,8 @@ fn ui(f: &mut Frame, app: &mut App) {
                 .bg(Color::LightGreen)
                 .add_modifier(Modifier::BOLD),
         )
-        .highlight_symbol(">> ");
+        .highlight_symbol(">> ")
+        .item_alignment(Alignment::Center);
 
     // We can now render the item list
     f.render_stateful_widget(items, chunks[0], &mut app.items.state);

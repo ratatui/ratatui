@@ -3,6 +3,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::{
     buffer::Buffer,
     layout::{Corner, Rect},
+    prelude::Alignment,
     style::{Style, Styled},
     text::Text,
     widgets::{Block, HighlightSpacing, StatefulWidget, Widget},
@@ -97,6 +98,7 @@ pub struct List<'a> {
     /// Style used as a base style for the widget
     style: Style,
     start_corner: Corner,
+    item_alignment: Alignment,
     /// Style used to render selected item
     highlight_style: Style,
     /// Symbol in front of the selected item (Shift all items to the right)
@@ -115,6 +117,7 @@ impl<'a> List<'a> {
         List {
             block: None,
             style: Style::default(),
+            item_alignment: Alignment::Left,
             items: items.into(),
             start_corner: Corner::TopLeft,
             highlight_style: Style::default(),
@@ -131,6 +134,11 @@ impl<'a> List<'a> {
 
     pub fn style(mut self, style: Style) -> List<'a> {
         self.style = style;
+        self
+    }
+
+    pub fn item_alignment(mut self, alignment: Alignment) -> List<'a> {
+        self.item_alignment = alignment;
         self
     }
 
@@ -274,17 +282,45 @@ impl<'a> StatefulWidget for List<'a> {
                 } else {
                     &blank_symbol
                 };
+
+                let mut aligned_x = match self.item_alignment {
+                    Alignment::Left => x,
+                    Alignment::Center => {
+                        if line.width() > list_area.width as usize {
+                            x
+                        } else {
+                            x.max((x + list_area.width - line.width() as u16) / 2)
+                        }
+                    }
+                    Alignment::Right => {
+                        if line.width() > list_area.width as usize {
+                            x
+                        } else {
+                            x.max(x + list_area.width - line.width() as u16)
+                        }
+                    }
+                };
+
+                // Fixes alignment issues when an item is selected
+                if selection_spacing {
+                    if aligned_x > symbol.width() as u16 {
+                        aligned_x -= symbol.width() as u16;
+                    } else {
+                        aligned_x = x;
+                    }
+                }
+
                 let (elem_x, max_element_width) = if selection_spacing {
                     let (elem_x, _) = buf.set_stringn(
-                        x,
+                        aligned_x,
                         y + j as u16,
                         symbol,
                         list_area.width as usize,
                         item_style,
                     );
-                    (elem_x, (list_area.width - (elem_x - x)))
+                    (elem_x, (list_area.width - (elem_x - aligned_x)))
                 } else {
-                    (x, list_area.width)
+                    (aligned_x, list_area.width)
                 };
                 buf.set_line(elem_x, y + j as u16, line, max_element_width);
             }
