@@ -139,7 +139,7 @@ fn run_app<B: Backend>(
 fn ui(f: &mut Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
+        .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
         .split(f.size());
 
     let barchart = BarChart::default()
@@ -152,7 +152,7 @@ fn ui(f: &mut Frame, app: &App) {
 
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(chunks[1]);
 
     draw_bar_with_group_labels(f, app, chunks[0]);

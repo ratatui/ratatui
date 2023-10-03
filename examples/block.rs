@@ -105,18 +105,18 @@ fn ui(frame: &mut Frame) {
 fn calculate_layout(area: Rect) -> (Rect, Vec<Vec<Rect>>) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Length(1), Constraint::Min(0)])
+        .constraints([Constraint::Length(1), Constraint::Min(0)])
         .split(area);
     let title_area = layout[0];
     let main_areas = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Max(4); 9])
+        .constraints([Constraint::Max(4); 9])
         .split(layout[1])
         .iter()
         .map(|&area| {
             Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
                 .split(area)
                 .to_vec()
         })

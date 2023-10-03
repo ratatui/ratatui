@@ -169,7 +169,7 @@
 //! fn ui(frame: &mut Frame) {
 //!     let main_layout = Layout::default()
 //!         .direction(Direction::Vertical)
-//!         .constraints(vec![
+//!         .constraints([
 //!             Constraint::Length(1),
 //!             Constraint::Min(0),
 //!             Constraint::Length(1),
@@ -186,7 +186,7 @@
 //!
 //!     let inner_layout = Layout::default()
 //!         .direction(Direction::Horizontal)
-//!         .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
+//!         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
 //!         .split(main_layout[1]);
 //!     frame.render_widget(
 //!         Block::default().borders(Borders::ALL).title("Left"),
@@ -221,7 +221,7 @@
 //! fn ui(frame: &mut Frame) {
 //!     let areas = Layout::default()
 //!         .direction(Direction::Vertical)
-//!         .constraints(vec![
+//!         .constraints([
 //!             Constraint::Length(1),
 //!             Constraint::Length(1),
 //!             Constraint::Length(1),

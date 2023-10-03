@@ -173,7 +173,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 fn ui(frame: &mut Frame, states: &[State; 3]) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![
+        .constraints([
             Constraint::Length(1),
             Constraint::Max(3),
             Constraint::Length(1),
@@ -194,7 +194,7 @@ fn ui(frame: &mut Frame, states: &[State; 3]) {
 fn render_buttons(frame: &mut Frame<'_>, area: Rect, states: &[State; 3]) {
     let layout = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints(vec![
+        .constraints([
             Constraint::Length(15),
             Constraint::Length(15),
             Constraint::Length(15),

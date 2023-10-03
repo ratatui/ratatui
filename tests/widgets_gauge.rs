@@ -18,7 +18,7 @@ fn widgets_gauge_renders() {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(2)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
                 .split(f.size());
 
             let gauge = Gauge::default()
@@ -87,7 +87,7 @@ fn widgets_gauge_renders_no_unicode() {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(2)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
                 .split(f.size());
 
             let gauge = Gauge::default()

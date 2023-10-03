@@ -44,7 +44,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 fn ui(frame: &mut Frame) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![
+        .constraints([
             Constraint::Length(30),
             Constraint::Length(17),
             Constraint::Length(2),
@@ -78,7 +78,7 @@ const NAMED_COLORS: [Color; 16] = [
 fn render_named_colors(frame: &mut Frame, area: Rect) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Length(3); 10])
+        .constraints([Constraint::Length(3); 10])
         .split(area);
 
     render_fg_named_colors(frame, Color::Reset, layout[0]);
@@ -101,13 +101,13 @@ fn render_fg_named_colors(frame: &mut Frame, bg: Color, area: Rect) {
 
     let layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Length(1); 2])
+        .constraints([Constraint::Length(1); 2])
         .split(inner)
         .iter()
         .flat_map(|area| {
             Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(vec![Constraint::Ratio(1, 8); 8])
+                .constraints([Constraint::Ratio(1, 8); 8])
                 .split(*area)
                 .to_vec()
         })
@@ -126,13 +126,13 @@ fn render_bg_named_colors(frame: &mut Frame, fg: Color, area: Rect) {
 
     let layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Length(1); 2])
+        .constraints([Constraint::Length(1); 2])
         .split(inner)
         .iter()
         .flat_map(|area| {
             Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(vec![Constraint::Ratio(1, 8); 8])
+                .constraints([Constraint::Ratio(1, 8); 8])
                 .split(*area)
                 .to_vec()
         })
@@ -151,7 +151,7 @@ fn render_indexed_colors(frame: &mut Frame, area: Rect) {
 
     let layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![
+        .constraints([
             Constraint::Length(1), // 0 - 15
             Constraint::Length(1), // blank
             Constraint::Min(6),    // 16 - 123
@@ -164,7 +164,7 @@ fn render_indexed_colors(frame: &mut Frame, area: Rect) {
     //    0   1   2   3   4   5    6   7   8   9  10  11   12  13  14  15
     let color_layout = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints(vec![Constraint::Length(5); 16])
+        .constraints([Constraint::Length(5); 16])
         .split(layout[0]);
     for i in 0..16 {
         let color = Color::Indexed(i);
@@ -198,7 +198,7 @@ fn render_indexed_colors(frame: &mut Frame, area: Rect) {
         .flat_map(|area| {
             Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(vec![Constraint::Length(27); 3])
+                .constraints([Constraint::Length(27); 3])
                 .split(*area)
                 .to_vec()
         })
@@ -206,7 +206,7 @@ fn render_indexed_colors(frame: &mut Frame, area: Rect) {
         .flat_map(|area| {
             Layout::default()
                 .direction(Direction::Vertical)
-                .constraints(vec![Constraint::Length(1); 6])
+                .constraints([Constraint::Length(1); 6])
                 .split(area)
                 .to_vec()
         })
@@ -214,7 +214,7 @@ fn render_indexed_colors(frame: &mut Frame, area: Rect) {
         .flat_map(|area| {
             Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(vec![Constraint::Min(4); 6])
+                .constraints([Constraint::Min(4); 6])
                 .split(area)
                 .to_vec()
         })
@@ -246,7 +246,7 @@ fn title_block(title: String) -> Block<'static> {
 fn render_indexed_grayscale(frame: &mut Frame, area: Rect) {
     let layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![
+        .constraints([
             Constraint::Length(1), // 232 - 243
             Constraint::Length(1), // 244 - 255
         ])
@@ -255,7 +255,7 @@ fn render_indexed_grayscale(frame: &mut Frame, area: Rect) {
         .flat_map(|area| {
             Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(vec![Constraint::Length(6); 12])
+                .constraints([Constraint::Length(6); 12])
                 .split(*area)
                 .to_vec()
         })

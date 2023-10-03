@@ -115,7 +115,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 
 fn ui(f: &mut Frame, app: &mut App) {
     let rects = Layout::default()
-        .constraints([Constraint::Percentage(100)].as_ref())
+        .constraints([Constraint::Percentage(100)])
         .split(f.size());
 
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);

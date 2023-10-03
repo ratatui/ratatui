@@ -30,7 +30,7 @@ impl Widget for TracerouteTab {
         Block::new().style(THEME.content).render(area, buf);
         let area = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints(vec![Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
+            .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
             .split(area);
         let left_area = layout(area[0], Direction::Vertical, vec![0, 3]);
         render_hops(self.selected_row, left_area[0], buf);
