@@ -69,14 +69,11 @@ fn split_rows(area: &Rect) -> Rc<[Rect]> {
     let list_layout = Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
-        .constraints(
-            [
-                Constraint::Percentage(33),
-                Constraint::Percentage(33),
-                Constraint::Percentage(33),
-            ]
-            .as_ref(),
-        );
+        .constraints([
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ]);
 
     list_layout.split(*area)
 }
@@ -85,15 +82,12 @@ fn split_cols(area: &Rect) -> Rc<[Rect]> {
     let list_layout = Layout::default()
         .direction(Direction::Horizontal)
         .margin(0)
-        .constraints(
-            [
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-            ]
-            .as_ref(),
-        );
+        .constraints([
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+        ]);
 
     list_layout.split(*area)
 }

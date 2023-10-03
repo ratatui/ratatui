@@ -89,7 +89,7 @@ impl RgbColors {
     fn layout(area: Rect) -> Rc<[Rect]> {
         Layout::default()
             .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Length(1), Constraint::Min(0)])
+            .constraints([Constraint::Length(1), Constraint::Min(0)])
             .split(area)
     }
 

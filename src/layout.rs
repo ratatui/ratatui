@@ -198,7 +198,7 @@ pub(crate) enum SegmentSize {
 /// fn render(frame: &mut Frame, area: Rect) {
 ///     let layout = Layout::default()
 ///         .direction(Direction::Vertical)
-///         .constraints(vec![Constraint::Length(5), Constraint::Min(0)])
+///         .constraints([Constraint::Length(5), Constraint::Min(0)])
 ///         .split(Rect::new(0, 0, 10, 10));
 ///     frame.render_widget(Paragraph::new("foo"), layout[0]);
 ///     frame.render_widget(Paragraph::new("bar"), layout[1]);
@@ -276,7 +276,7 @@ impl Layout {
     /// ```rust
     /// # use ratatui::prelude::*;
     /// let layout = Layout::default()
-    ///     .constraints(vec![
+    ///     .constraints([
     ///         Constraint::Percentage(20),
     ///         Constraint::Ratio(1, 5),
     ///         Constraint::Length(2),
@@ -307,7 +307,7 @@ impl Layout {
     /// ```rust
     /// # use ratatui::prelude::*;
     /// let layout = Layout::default()
-    ///     .constraints(vec![Constraint::Min(0)])
+    ///     .constraints([Constraint::Min(0)])
     ///     .margin(2)
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 2, 6, 6)]);
@@ -327,7 +327,7 @@ impl Layout {
     /// ```rust
     /// # use ratatui::prelude::*;
     /// let layout = Layout::default()
-    ///     .constraints(vec![Constraint::Min(0)])
+    ///     .constraints([Constraint::Min(0)])
     ///     .horizontal_margin(2)
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 0, 6, 10)]);
@@ -344,7 +344,7 @@ impl Layout {
     /// ```rust
     /// # use ratatui::prelude::*;
     /// let layout = Layout::default()
-    ///     .constraints(vec![Constraint::Min(0)])
+    ///     .constraints([Constraint::Min(0)])
     ///     .vertical_margin(2)
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 2, 10, 6)]);
@@ -362,13 +362,13 @@ impl Layout {
     /// # use ratatui::prelude::*;
     /// let layout = Layout::default()
     ///     .direction(Direction::Horizontal)
-    ///     .constraints(vec![Constraint::Length(5), Constraint::Min(0)])
+    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 0, 5, 10), Rect::new(5, 0, 5, 10)]);
     ///
     /// let layout = Layout::default()
     ///     .direction(Direction::Vertical)
-    ///     .constraints(vec![Constraint::Length(5), Constraint::Min(0)])
+    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 0, 10, 5), Rect::new(0, 5, 10, 5)]);
     /// ```
@@ -397,13 +397,13 @@ impl Layout {
     /// # use ratatui::prelude::*;
     /// let layout = Layout::default()
     ///     .direction(Direction::Vertical)
-    ///     .constraints(vec![Constraint::Length(5), Constraint::Min(0)])
+    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
     ///     .split(Rect::new(2, 2, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 2, 10, 5), Rect::new(2, 7, 10, 5)]);
     ///
     /// let layout = Layout::default()
     ///     .direction(Direction::Horizontal)
-    ///     .constraints(vec![Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
+    ///     .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
     ///     .split(Rect::new(0, 0, 9, 2));
     /// assert_eq!(layout[..], [Rect::new(0, 0, 3, 2), Rect::new(3, 0, 6, 2)]);
     /// ```
@@ -605,14 +605,11 @@ mod tests {
 
         Layout::default()
             .direction(Direction::Vertical)
-            .constraints(
-                [
-                    Constraint::Percentage(10),
-                    Constraint::Max(5),
-                    Constraint::Min(1),
-                ]
-                .as_ref(),
-            )
+            .constraints([
+                Constraint::Percentage(10),
+                Constraint::Max(5),
+                Constraint::Min(1),
+            ])
             .split(target);
         assert!(!Layout::init_cache(15));
         LAYOUT_CACHE.with(|c| {
@@ -1239,7 +1236,7 @@ mod tests {
         #[test]
         fn edge_cases() {
             let layout = Layout::default()
-                .constraints(vec![
+                .constraints([
                     Constraint::Percentage(50),
                     Constraint::Percentage(50),
                     Constraint::Min(0),
@@ -1255,7 +1252,7 @@ mod tests {
             );
 
             let layout = Layout::default()
-                .constraints(vec![
+                .constraints([
                     Constraint::Max(1),
                     Constraint::Percentage(99),
                     Constraint::Min(0),
@@ -1273,7 +1270,7 @@ mod tests {
             // minimal bug from
             // https://github.com/ratatui-org/ratatui/pull/404#issuecomment-1681850644
             let layout = Layout::default()
-                .constraints(vec![Min(1), Length(0), Min(1)])
+                .constraints([Min(1), Length(0), Min(1)])
                 .direction(Direction::Horizontal)
                 .split(Rect::new(0, 0, 1, 1));
             assert_eq!(
@@ -1286,7 +1283,7 @@ mod tests {
             );
 
             let layout = Layout::default()
-                .constraints(vec![Length(3), Min(4), Length(1), Min(4)])
+                .constraints([Length(3), Min(4), Length(1), Min(4)])
                 .direction(Direction::Horizontal)
                 .split(Rect::new(0, 0, 7, 1));
             assert_eq!(

@@ -50,7 +50,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 fn ui(frame: &mut Frame) {
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![
+        .constraints([
             Length(4),  // text
             Length(50), // examples
             Min(0),     // fills remaining space
@@ -71,7 +71,7 @@ fn ui(frame: &mut Frame) {
 
     let example_rows = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![
+        .constraints([
             Length(9),
             Length(9),
             Length(9),
@@ -85,7 +85,7 @@ fn ui(frame: &mut Frame) {
         .flat_map(|area| {
             Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(vec![
+                .constraints([
                     Length(14),
                     Length(14),
                     Length(14),

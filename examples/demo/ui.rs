@@ -7,7 +7,7 @@ use crate::app::App;
 
 pub fn draw(f: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
-        .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
+        .constraints([Constraint::Length(3), Constraint::Min(0)])
         .split(f.size());
     let titles = app
         .tabs
@@ -30,14 +30,11 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
 fn draw_first_tab(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::default()
-        .constraints(
-            [
-                Constraint::Length(9),
-                Constraint::Min(8),
-                Constraint::Length(7),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Length(9),
+            Constraint::Min(8),
+            Constraint::Length(7),
+        ])
         .split(area);
     draw_gauges(f, app, chunks[0]);
     draw_charts(f, app, chunks[1]);
@@ -46,14 +43,11 @@ fn draw_first_tab(f: &mut Frame, app: &mut App, area: Rect) {
 
 fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::default()
-        .constraints(
-            [
-                Constraint::Length(2),
-                Constraint::Length(3),
-                Constraint::Length(1),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Length(2),
+            Constraint::Length(3),
+            Constraint::Length(1),
+        ])
         .margin(1)
         .split(area);
     let block = Block::default().borders(Borders::ALL).title("Graphs");
@@ -108,11 +102,11 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
         .split(area);
     {
         let chunks = Layout::default()
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(chunks[0]);
         {
             let chunks = Layout::default()
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
                 .direction(Direction::Horizontal)
                 .split(chunks[0]);
 
@@ -280,7 +274,7 @@ fn draw_text(f: &mut Frame, area: Rect) {
 
 fn draw_second_tab(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::default()
-        .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
+        .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
         .direction(Direction::Horizontal)
         .split(area);
     let up_style = Style::default().fg(Color::Green);

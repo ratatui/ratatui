@@ -202,7 +202,7 @@ fn ui(f: &mut Frame, app: &mut App) {
     // Create two chunks with equal horizontal screen space
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(f.size());
 
     // Iterate through all elements in the `items` app and append some debug text to it.

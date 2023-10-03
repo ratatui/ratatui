@@ -223,7 +223,7 @@ fn ui(f: &mut Frame, downloads: &Downloads) {
     f.render_widget(block, size);
 
     let chunks = Layout::default()
-        .constraints(vec![Constraint::Length(2), Constraint::Length(4)])
+        .constraints([Constraint::Length(2), Constraint::Length(4)])
         .margin(1)
         .split(size);
 
@@ -237,7 +237,7 @@ fn ui(f: &mut Frame, downloads: &Downloads) {
 
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints(vec![Constraint::Percentage(20), Constraint::Percentage(80)])
+        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)])
         .split(chunks[1]);
 
     // in progress downloads

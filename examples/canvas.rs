@@ -109,12 +109,12 @@ impl App {
     fn ui(&self, frame: &mut Frame) {
         let main_layout = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(frame.size());
 
         let right_layout = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(main_layout[1]);
 
         frame.render_widget(self.map_canvas(), main_layout[0]);

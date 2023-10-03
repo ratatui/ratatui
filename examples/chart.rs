@@ -146,14 +146,11 @@ fn ui(f: &mut Frame, app: &App) {
     let size = f.size();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Ratio(1, 3),
-                Constraint::Ratio(1, 3),
-                Constraint::Ratio(1, 3),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Ratio(1, 3),
+            Constraint::Ratio(1, 3),
+            Constraint::Ratio(1, 3),
+        ])
         .split(size);
     let x_labels = vec![
         Span::styled(
