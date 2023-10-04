@@ -245,12 +245,13 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
         .split(rects[1]);
-    let help_text_1 = Paragraph::new(format!(
+    let help_text_1 = Paragraph::new(
         "Use Arrows to move Selection
 Press ESC to remove selection
 Press 'h' to toggle highlight_spacing Never->Always->WhenSelected.
 Press 'a' to toggle space from selected column to all columns."
-    ))
+            .to_string(),
+    )
     .alignment(Alignment::Center)
     .block(Block::default().borders(Borders::ALL).title("Help"));
 

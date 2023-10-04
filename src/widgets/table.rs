@@ -200,10 +200,14 @@ impl HighlightSpacing {
 /// This setting is ignored when [`HighlightSpacing`] is set to [`HighlightSpacing::Never`]
 #[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Default, Hash)]
 pub enum ColumnHighlightSpacing {
+    /// Only add spacing for the highlight symbol to the left of the first column
     #[default]
     FirstColumnOnly,
+    /// Add spacing for the highlight symbol only to the selected column
     SelectedColumn,
+    /// Add spacing for the highlight symbol to the columns specified in the vector
     SpecificColumns(Vec<usize>),
+    /// Add spacing for the highlight symbol to all columns
     AllColumns,
 }
 
@@ -266,9 +270,6 @@ pub struct Table<'a> {
     widths: &'a [Constraint],
     /// Space between each column
     column_spacing: u16,
-    /// Style used to render the selected row
-    #[deprecated]
-    highlight_style: Style,
     /// Style used to render the selected cell
     cell_highlight_style: Style,
     /// Style used to render the selected row
@@ -317,7 +318,6 @@ impl<'a> Table<'a> {
             style: Style::default(),
             widths: &[],
             column_spacing: 1,
-            highlight_style: Style::default(),
             cell_highlight_style: Style::default(),
             row_highlight_style: Style::default(),
             col_highlight_style: Style::default(),
@@ -380,6 +380,10 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Sets the widths for the columns of the table
+    ///
+    /// The `widths` parameter is a slice of [`Constraint`]s. This holds the widths for each column
+    /// You should also consider the [`Table::column_spacing`] method to set the spacing between
     pub fn widths(mut self, widths: &'a [Constraint]) -> Self {
         let between_0_and_100 = |&w| match w {
             Constraint::Percentage(p) => p <= 100,
@@ -393,17 +397,27 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Sets the style for the whole table
+    ///
+    /// This style will be used as a base for all the other styles of the table
     pub fn style(mut self, style: Style) -> Self {
         self.style = style;
         self
     }
 
+    /// Sets the highlight symbol for the table
+    ///
+    /// This symbol will be displayed in front of the selected row or cell
     pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
 
-    #[deprecated]
+    /// Applies the given [`Style`] to the selected row.
+    ///
+    /// This method is deprecated in favor of [`Table::row_highlight_style`]
+    // #[deprecated] --> Had to comment this because it has a conflict in `cargo make` with the same
+    // method in the [`Tabs`] Widget
     pub fn highlight_style(mut self, highlight_style: Style) -> Self {
         // We emulate the behaviour before deprecating the method to avoid
         // breaking changes. Applies `highlight_style` to `row_highlight_style`
@@ -455,6 +469,7 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Sets the spacing between each column
     pub fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self
@@ -485,21 +500,28 @@ impl<'a> Table<'a> {
         selection_width: u16,
         state: &TableState,
     ) -> Vec<(u16, u16)> {
-        let columns_with_spacing = self.get_columns_with_spacing(state);
+        let columns_with_spacing = self.get_columns_with_spacing(state); // Get cols with highlight symbol spacing
         let mut highlight_symbol_indexes: Vec<usize> = Vec::new(); //track cols with highlight symbol
 
+        // We need to generate 1 constraint for each column + 1 constraint for the space between
+        // each column + 1 constraint for the selection symbol spacing.. (This generates 1
+        // space extra that we will `pop()` later)
         let mut constraints =
             Vec::with_capacity(self.widths.len() * 2 + columns_with_spacing.len());
 
-        let mut curr_index: usize = 0;
-        for (col_num, constraint) in self.widths.iter().enumerate() {
-            // If we have spacing for this column, add it
+        let mut curr_index: usize = 0; // This represents where we are in the constraints vector
+        for (col_num, col_width) in self.widths.iter().enumerate() {
+            // If we have it for this column, add a constraint for the selection symbol
             if columns_with_spacing.contains(&col_num) {
                 constraints.push(Constraint::Length(selection_width));
                 highlight_symbol_indexes.push(curr_index);
                 curr_index += 1;
             }
-            constraints.push(*constraint);
+
+            // Add the constraint for the column width
+            constraints.push(*col_width);
+
+            // Add the constraint for the column spacing
             constraints.push(Constraint::Length(self.column_spacing));
             curr_index += 2;
         }
@@ -507,6 +529,7 @@ impl<'a> Table<'a> {
             // remove last column spacing
             constraints.pop();
         }
+        // Create a layout with the constraints
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(constraints)
@@ -518,6 +541,8 @@ impl<'a> Table<'a> {
                 height: 1,
             });
 
+        // Skip and filter spacing constraints
+        // Return the start coordinate (x) and the width of each
         chunks
             .iter()
             .enumerate()
@@ -527,6 +552,7 @@ impl<'a> Table<'a> {
             .collect()
     }
 
+    /// Returns the index of the visible top and bottom rows of the table
     fn get_row_bounds(
         &self,
         selected: Option<TableSelection>,
@@ -537,6 +563,8 @@ impl<'a> Table<'a> {
         let mut start = offset;
         let mut end = offset;
         let mut height = 0;
+
+        // Find the current visible top and bottom rows
         for item in self.rows.iter().skip(offset) {
             if height + item.height > max_height {
                 break;
@@ -545,12 +573,18 @@ impl<'a> Table<'a> {
             end += 1;
         }
 
-        let selected = match selected.unwrap_or(TableSelection::default()) {
-            TableSelection::Row(row) => row,
-            TableSelection::Col(_) => 0,
-            TableSelection::Cell { row, .. } => row,
+        // Get the current selected row index. If none selected, return current bounds
+        let selected = match selected {
+            Some(selection) => match selection {
+                TableSelection::Row(row) => row,
+                TableSelection::Col(_) => 0,
+                TableSelection::Cell { row, .. } => row,
+            },
+            None => return (start, end),
         }
-        .min(self.rows.len() - 1);
+        .min(self.rows.len() - 1); // clamp to last row
+
+        // Shift visible rows by one until selection is visible
         while selected >= end {
             height = height.saturating_add(self.rows[end].total_height());
             end += 1;
@@ -559,6 +593,8 @@ impl<'a> Table<'a> {
                 start += 1;
             }
         }
+
+        // Shift visible rows by minus one until selection is visible
         while selected < start {
             start -= 1;
             height = height.saturating_add(self.rows[start].total_height());
@@ -583,12 +619,17 @@ impl<'a> Styled for Table<'a> {
     }
 }
 
+/// An Enum to represent the current selection of a [`Table`]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum TableSelection {
+    /// Select a Row, with index `usize`
     Row(usize),
+    /// Select a Column, with index `usize`
     Col(usize),
+    /// Select a Cell, with index `usize` for row and `usize` for column
     Cell { row: usize, col: usize },
 }
+
 impl Default for TableSelection {
     fn default() -> Self {
         Self::Cell { row: 0, col: 0 }
@@ -596,6 +637,7 @@ impl Default for TableSelection {
 }
 
 impl From<usize> for TableSelection {
+    /// Convert from a usize to a TableSelection::Row, to preserve backwards compatibility
     fn from(row: usize) -> Self {
         Self::Row(row)
     }
@@ -608,14 +650,24 @@ pub struct TableState {
 }
 
 impl TableState {
+    /// Returns the current offset. The offset is the index of the first row to render.
+    ///
+    /// This is used to implement scrolling. The offset is the index of the first row to render
     pub fn offset(&self) -> usize {
         self.offset
     }
 
+    /// Mutable reference to the offset. The offset is the index of the first row to render.
+    ///
+    /// This is used to implement scrolling. The offset is the index of the first row to render
     pub fn offset_mut(&mut self) -> &mut usize {
         &mut self.offset
     }
 
+    /// Sets the current selected index and returns Self for chaining methods
+    ///
+    /// If the index is [`None`], the selection will be cleared
+    /// You can Select a row, column or cell with the [`TableSelection`] enum
     pub fn with_selected(mut self, selected: Option<impl Into<TableSelection>>) -> Self {
         match selected {
             Some(index) => {
@@ -626,11 +678,15 @@ impl TableState {
         self
     }
 
+    /// Sets the current offset and returns Self for chaining methods
+    ///
+    /// The offset is the index of the first row to render in a scrolled table
     pub fn with_offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
     }
 
+    /// Returns the current selected index, if any
     pub fn selected(&self) -> Option<TableSelection> {
         self.selected
     }
@@ -653,6 +709,10 @@ impl TableState {
         }
     }
 
+    /// Sets the current selection
+    ///
+    /// If the index is [`None`], the selection will be cleared
+    /// You can Select a row, column or cell with the [`TableSelection`] enum
     pub fn select(&mut self, index: Option<impl Into<TableSelection>>) {
         self.selected = match index {
             Some(index) => Some(index.into()),
