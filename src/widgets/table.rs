@@ -256,9 +256,17 @@ pub enum ColumnHighlightSpacing {
 /// // ...and they can be separated by a fixed spacing.
 /// .column_spacing(1)
 /// // If you wish to highlight a row in any specific way when it is selected...
-/// .highlight_style(Style::default().add_modifier(Modifier::BOLD))
+/// .row_highlight_style(Style::default().add_modifier(Modifier::BOLD))
+/// // ... or a selected column...
+/// .col_highlight_style(Style::default().bg(Color::Green))
+/// // ... or a selected cell ..
+/// .cell_highlight_style(Style::default().bg(Color::Red))
 /// // ...and potentially show a symbol in front of the selection.
-/// .highlight_symbol(">>");
+/// .highlight_symbol(">>")
+/// // You can also specify when to show the highlight symbol
+/// .highlight_spacing(HighlightSpacing::WhenSelected)
+/// // You can also specify which columns should show the highlight symbol
+/// .columns_with_highlight_spacing(ColumnHighlightSpacing::SelectedColumn);
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Table<'a> {
@@ -620,6 +628,10 @@ impl<'a> Styled for Table<'a> {
 }
 
 /// An Enum to represent the current selection of a [`Table`]
+///
+/// Use [`TableSelection::Row`] to select a row
+/// Use [`TableSelection::Col`] to select a column
+/// Use [`TableSelection::Cell`] to select a cell (row and column)
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum TableSelection {
     /// Select a Row, with index `usize`
@@ -668,6 +680,7 @@ impl TableState {
     ///
     /// If the index is [`None`], the selection will be cleared
     /// You can Select a row, column or cell with the [`TableSelection`] enum
+    /// Or you can pass a usize to select a row
     pub fn with_selected(mut self, selected: Option<impl Into<TableSelection>>) -> Self {
         match selected {
             Some(index) => {
@@ -713,6 +726,7 @@ impl TableState {
     ///
     /// If the index is [`None`], the selection will be cleared
     /// You can Select a row, column or cell with the [`TableSelection`] enum
+    /// Or you can pass a usize to select a row
     pub fn select(&mut self, index: Option<impl Into<TableSelection>>) {
         self.selected = match index {
             Some(index) => Some(index.into()),
