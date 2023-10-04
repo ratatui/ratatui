@@ -167,14 +167,15 @@
 //! use ratatui::{prelude::*, widgets::*};
 //!
 //! fn ui(frame: &mut Frame) {
-//!     let main_layout = Layout::default()
-//!         .direction(Direction::Vertical)
-//!         .constraints([
+//!     let main_layout = Layout::new(
+//!         Direction::Vertical,
+//!         [
 //!             Constraint::Length(1),
 //!             Constraint::Min(0),
 //!             Constraint::Length(1),
-//!         ])
-//!         .split(frame.size());
+//!         ]
+//!     )
+//!     .split(frame.size());
 //!     frame.render_widget(
 //!         Block::new().borders(Borders::TOP).title("Title Bar"),
 //!         main_layout[0],
@@ -184,10 +185,11 @@
 //!         main_layout[2],
 //!     );
 //!
-//!     let inner_layout = Layout::default()
-//!         .direction(Direction::Horizontal)
-//!         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-//!         .split(main_layout[1]);
+//!     let inner_layout = Layout::new(
+//!         Direction::Horizontal,
+//!         [Constraint::Percentage(50), Constraint::Percentage(50)]
+//!     )
+//!     .split(main_layout[1]);
 //!     frame.render_widget(
 //!         Block::default().borders(Borders::ALL).title("Left"),
 //!         inner_layout[0],
@@ -219,16 +221,17 @@
 //! use ratatui::{prelude::*, widgets::*};
 //!
 //! fn ui(frame: &mut Frame) {
-//!     let areas = Layout::default()
-//!         .direction(Direction::Vertical)
-//!         .constraints([
+//!     let areas = Layout::new(
+//!         Direction::Vertical,
+//!         [
 //!             Constraint::Length(1),
 //!             Constraint::Length(1),
 //!             Constraint::Length(1),
 //!             Constraint::Length(1),
 //!             Constraint::Min(0),
-//!         ])
-//!         .split(frame.size());
+//!         ]
+//!     )
+//!     .split(frame.size());
 //!
 //!     let span1 = Span::raw("Hello ");
 //!     let span2 = Span::styled(
@@ -290,7 +293,7 @@
 //! [Backends]: https://ratatui.rs/concepts/backends/index.html
 //! [Widgets]: https://ratatui.rs/how-to/widgets/index.html
 //! [Handling Events]: https://ratatui.rs/concepts/event_handling.html
-//! [Layout]: https://ratatui.rs/how-to/layout/index.html
+//! [Layout]: https://ratatui.rs/concepts/layout/index.html
 //! [Styling Text]: https://ratatui.rs/how-to/render/style-text.html
 //! [rust-tui-template]: https://github.com/ratatui-org/rust-tui-template
 //! [ratatui-async-template]: https://ratatui-org.github.io/ratatui-async-template/
