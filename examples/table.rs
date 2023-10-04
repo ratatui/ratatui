@@ -15,7 +15,6 @@ struct App {
 
 #[derive(Debug, Clone, Default)]
 struct AppOpts {
-    highlight_area: HighlightArea,
     columns_with_spacing: ColumnHighlightSpacing,
     highlight_spacing: HighlightSpacing,
 }
@@ -32,23 +31,11 @@ impl App {
             vec!["Row71", "Row72", "Row73"],
             vec!["Row81", "Row82", "Row83"],
             vec!["Row91", "Row92", "Row93"],
-            vec!["Use Arrows to move selection", "Row142", "Row143"],
-            vec!["Press 'Esc' to remove selection", "", ""],
-            vec![
-                "Press 's' to toggle Cell/Row/Col/RowAndCol highlighting",
-                "Current -->",
-                "Row",
-            ],
-            vec![
-                "Press 'h' to toggle highlight_spacing Never->Always->WhenSelected",
-                "Current -->",
-                "WhenSelected",
-            ],
-            vec![
-                "Press 'a' to toggle space from selected column to all columns",
-                "Current -->",
-                "FirstColumnOnly",
-            ],
+            vec!["Row101", "Row102", "Row103"],
+            vec!["Row111", "Row112", "Row113"],
+            vec!["Row121", "Row122", "Row123"],
+            vec!["Row131", "Row132", "Row133"],
+            vec!["Row141", "Row142", "Row143"],
         ];
         let mut items: Vec<Vec<String>> = vec![];
         for row in items_str {
@@ -126,7 +113,6 @@ impl App {
     }
 
     pub fn toggle_columns_with_spacing(&mut self) {
-        self.items[13][2] = format!("{:?}", self.opts.columns_with_spacing);
         self.opts.columns_with_spacing = match self.opts.columns_with_spacing {
             ColumnHighlightSpacing::FirstColumnOnly => ColumnHighlightSpacing::SelectedColumn,
             ColumnHighlightSpacing::SelectedColumn => ColumnHighlightSpacing::AllColumns,
@@ -138,23 +124,11 @@ impl App {
     }
 
     pub fn toggle_highlight_spacing(&mut self) {
-        self.items[12][2] = format!("{:?}", self.opts.highlight_spacing);
         self.opts.highlight_spacing = match self.opts.highlight_spacing {
             HighlightSpacing::Never => HighlightSpacing::Always,
             HighlightSpacing::Always => HighlightSpacing::WhenSelected,
             HighlightSpacing::WhenSelected => HighlightSpacing::Never,
-        }
-    }
-
-    pub fn toggle_selection_type(&mut self) {
-        self.items[11][2] = format!("{:?}", self.opts.highlight_area);
-        self.opts.highlight_area = match self.opts.highlight_area {
-            HighlightArea::None => HighlightArea::Cell,
-            HighlightArea::Cell => HighlightArea::Row,
-            HighlightArea::Row => HighlightArea::Col,
-            HighlightArea::Col => HighlightArea::RowAndCol,
-            HighlightArea::RowAndCol => HighlightArea::None,
-        }
+        };
     }
 
     fn test(&mut self) {
@@ -202,7 +176,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     KeyCode::Up => app.prev_row(),
                     KeyCode::Right => app.next_col(),
                     KeyCode::Left => app.prev_col(),
-                    KeyCode::Char('s') => app.toggle_selection_type(),
                     KeyCode::Char('a') => app.toggle_columns_with_spacing(),
                     KeyCode::Char('h') => app.toggle_highlight_spacing(),
                     KeyCode::Char('t') => app.test(),
@@ -216,10 +189,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let rects = Layout::default()
-        .constraints([Constraint::Percentage(100)].as_ref())
+        .constraints([Constraint::Min(8), Constraint::Length(6)].as_ref())
         .split(f.size());
 
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
+    let row_selected_style = Style::default().bg(Color::Red);
+    let col_selected_style = Style::default().bg(Color::Blue);
     let normal_style = Style::default().bg(Color::Blue);
     let header_cells = ["Header1", "Header2", "Header3"]
         .iter()
@@ -238,12 +213,12 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let cells = item.iter().map(|c| Cell::from(c.clone()));
         Row::new(cells).height(height as u16).bottom_margin(1)
     });
+
+    // Create the table
     let t = Table::new(rows)
         .header(header)
         .block(Block::default().borders(Borders::ALL).title("Table"))
-        .highlight_style(selected_style)
         .highlight_symbol(">> ")
-        .highlight_area(app.opts.highlight_area.clone())
         .columns_with_highlight_spacing(app.opts.columns_with_spacing.clone())
         .highlight_spacing(app.opts.highlight_spacing.clone())
         .widths(&[
@@ -251,5 +226,55 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             Constraint::Max(30),
             Constraint::Min(24),
         ]);
+
+    // The Table widget is a little bit opinionated about the order of highlighting [`Style`]:
+    // 1. First, the highlighting [`Style`] of the [`Row`] is applied.
+    // 2. Then, the highlighting [`Style`] of the [`Column`] is applied.
+    // 3. Finally, highlighting [`Style`] of the [`Cell`] is applied
+    // For example, note that even though we apply Highlight Style to Cell first, it will be applied
+    // last.
+    let t = t
+        .cell_highlight_style(selected_style)
+        .col_highlight_style(col_selected_style)
+        .row_highlight_style(row_selected_style);
+
     f.render_stateful_widget(t, rects[0], &mut app.state);
+
+    // Help Text:
+    let help_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .split(rects[1]);
+    let help_text_1 = Paragraph::new(format!(
+        "Use Arrows to move Selection
+Press ESC to remove selection
+Press 'h' to toggle highlight_spacing Never->Always->WhenSelected.
+Press 'a' to toggle space from selected column to all columns."
+    ))
+    .alignment(Alignment::Center)
+    .block(Block::default().borders(Borders::ALL).title("Help"));
+
+    let help_text_2 = Paragraph::new(format!(
+        "Selection:  {:?}
+Offset:   {},
+highlight_spacing:  {:?} 
+columns_with_spacing:  {:?}",
+        app.state.selected(),
+        app.state.offset(),
+        app.opts.highlight_spacing,
+        app.opts.columns_with_spacing
+    ))
+    .alignment(Alignment::Center)
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title("Current values"),
+    );
+
+    f.render_widget(help_text_1, help_layout[0]);
+    f.render_widget(help_text_2, help_layout[1]);
+    // Paragraph::ew(help_text.iter())
+    //     .block(Block::default().borders(Borders::ALL).title("Help"))
+    //     .wrap(Wrap(true)));
+    // rects[1];
 }

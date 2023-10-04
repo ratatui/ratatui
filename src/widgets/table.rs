@@ -195,22 +195,6 @@ impl HighlightSpacing {
     }
 }
 
-/// Sets the area of the table that should be highlighted with a selection.
-#[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Default, Hash)]
-pub enum HighlightArea {
-    /// No highlight
-    None,
-    /// Highlight cell only
-    Cell,
-    /// Highlight entire row
-    #[default]
-    Row,
-    /// Highlight entire column
-    Col,
-    /// Highlight entire row and column
-    RowAndCol,
-}
-
 /// This option allows the user to configure WHICH columns should draw the "highlight symbol"
 ///
 /// This setting is ignored when [`HighlightSpacing`] is set to [`HighlightSpacing::Never`]
@@ -283,9 +267,14 @@ pub struct Table<'a> {
     /// Space between each column
     column_spacing: u16,
     /// Style used to render the selected row
+    #[deprecated]
     highlight_style: Style,
-    /// Whether to highlight the entire row
-    highlight_area: HighlightArea,
+    /// Style used to render the selected cell
+    cell_highlight_style: Style,
+    /// Style used to render the selected row
+    row_highlight_style: Style,
+    /// Style used to render the selected column
+    col_highlight_style: Style,
     /// Symbol in front of the selected rom
     highlight_symbol: Option<&'a str>,
     /// Optional header
@@ -329,7 +318,9 @@ impl<'a> Table<'a> {
             widths: &[],
             column_spacing: 1,
             highlight_style: Style::default(),
-            highlight_area: HighlightArea::Cell,
+            cell_highlight_style: Style::default(),
+            row_highlight_style: Style::default(),
+            col_highlight_style: Style::default(),
             highlight_symbol: None,
             header: None,
             rows: rows.into_iter().collect(),
@@ -412,16 +403,39 @@ impl<'a> Table<'a> {
         self
     }
 
+    #[deprecated]
     pub fn highlight_style(mut self, highlight_style: Style) -> Self {
-        self.highlight_style = highlight_style;
+        // We emulate the behaviour before deprecating the method to avoid
+        // breaking changes. Applies `highlight_style` to `row_highlight_style`
+        self.row_highlight_style = highlight_style;
         self
     }
 
-    /// Set the area of the table to highlight with selection
+    /// Applies the given [`Style`] to the selected row.
     ///
-    /// See [`HighlightArea`] about which variant affects highlighting in which way
-    pub fn highlight_area(mut self, highlight_area: HighlightArea) -> Self {
-        self.highlight_area = highlight_area;
+    /// This highlight [`Style`] will be applied first, before the highlight [`Style`] in
+    /// [`table.col_highlight_style()`] and [`table.cell_highlight_style()`]
+    pub fn row_highlight_style(mut self, row_highlight_style: Style) -> Self {
+        self.row_highlight_style = row_highlight_style;
+        self
+    }
+
+    /// Applies the given [`Style`] to the selected column.
+    ///
+    /// This highlighting [`Style`] will be applied after the highlight [`Style`] in
+    /// [`table.row_highlight_style()`], but before the highlight [`Style`] in
+    /// [`table.cell_highlight_style()`]
+    pub fn col_highlight_style(mut self, col_highlight_style: Style) -> Self {
+        self.col_highlight_style = col_highlight_style;
+        self
+    }
+
+    /// Applies the given [`Style`] to the selected cell.
+    ///
+    /// This highlighting [`Style`] will be applied last, after the highlight [`Style`] in
+    /// [`table.row_highlight_style()`] and [`table.col_highlight_style()`]
+    pub fn cell_highlight_style(mut self, cell_highlight_style: Style) -> Self {
+        self.cell_highlight_style = cell_highlight_style;
         self
     }
 
@@ -842,30 +856,20 @@ impl<'a> StatefulWidget for Table<'a> {
 
                 render_cell(buf, cell, table_cell_area);
                 if is_selected_cell {
-                    // Highlight from left to right, with height of row:
-                    match self.highlight_area {
-                        HighlightArea::Row | HighlightArea::RowAndCol => {
-                            buf.set_style(table_row_area, self.highlight_style);
-                        }
-                        HighlightArea::Cell => {
-                            buf.set_style(table_cell_area, self.highlight_style);
-                        }
-                        _ => {}
-                    };
+                    // Highlight ROW first
+                    buf.set_style(table_row_area, self.row_highlight_style);
 
-                    // Highlight from top to bottom, with width of column:
-                    match self.highlight_area {
-                        HighlightArea::Col | HighlightArea::RowAndCol => {
-                            let vertical_rect = Rect {
-                                x: inner_offset + x,
-                                y: table_area.top(),
-                                width: *width,
-                                height: table_area.height,
-                            };
-                            buf.set_style(vertical_rect, self.highlight_style);
-                        }
-                        _ => {}
+                    // Then, highlight column (on top of row)
+                    let vertical_rect = Rect {
+                        x: inner_offset + x,
+                        y: table_area.top(),
+                        width: *width,
+                        height: table_area.height,
                     };
+                    buf.set_style(vertical_rect, self.col_highlight_style);
+
+                    // Finally, highlight cell (on top of row and column)
+                    buf.set_style(table_cell_area, self.cell_highlight_style);
                 }
             }
         }

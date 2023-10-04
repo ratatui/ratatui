@@ -51,8 +51,7 @@ pub use self::{
     scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
     sparkline::{RenderDirection, Sparkline},
     table::{
-        Cell, ColumnHighlightSpacing, HighlightArea, HighlightSpacing, Row, Table, TableSelection,
-        TableState,
+        Cell, ColumnHighlightSpacing, HighlightSpacing, Row, Table, TableSelection, TableState,
     },
     tabs::Tabs,
 };
