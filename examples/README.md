@@ -58,7 +58,7 @@ Demonstrates the [`Calendar`](https://docs.rs/ratatui/latest/ratatui/widgets/cal
 widget. Source: [calendar.rs](./calendar.rs).
 
 ```shell
-cargo run --example=calendar --features=crossterm widget-calendar
+cargo run --example=calendar --features="crossterm widget-calendar"
 ```
 
 ![Calendar][calendar.gif]
