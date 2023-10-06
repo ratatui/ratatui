@@ -7,8 +7,8 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{
-        Block, Borders, Cell, ColumnHighlightSpacing, HighlightArea, HighlightSpacing, Row, Table,
-        TableSelection, TableState,
+        Block, Borders, Cell, ColumnHighlightSpacing, HighlightSpacing, Row, Table, TableSelection,
+        TableState,
     },
     Terminal,
 };
@@ -766,7 +766,6 @@ fn widgets_table_can_have_spacing_in_all_columns() {
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))
                 .highlight_symbol(">> ")
-                .highlight_area(HighlightArea::Row)
                 .highlight_spacing(HighlightSpacing::Always)
                 .columns_with_highlight_spacing(ColumnHighlightSpacing::AllColumns)
                 .widths(&[
@@ -834,7 +833,6 @@ fn widgets_table_can_specify_columns_with_symbol_spacing() {
                     .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                     .block(Block::default().borders(Borders::ALL))
                     .highlight_symbol(">> ")
-                    .highlight_area(HighlightArea::Row)
                     .highlight_spacing(HighlightSpacing::Always)
                     .columns_with_highlight_spacing(columns_with_spacing)
                     .widths(&[
@@ -1062,41 +1060,41 @@ fn widgets_table_can_select_row_or_columns_independently() {
     let mut state = TableState::default();
 
     // Start with None
-    assert_eq!(state.selected(), None);
+    assert_eq!(state.selection(), None);
 
     // Add a row to None
     state.select_row(Some(0));
-    assert_eq!(state.selected(), Some(TableSelection::Row(0)));
+    assert_eq!(state.selection(), Some(TableSelection::Row(0)));
     assert_eq!(state.selected_row(), Some(0));
 
     // Update existing Row
     state.select_row(Some(1));
-    assert_eq!(state.selected(), Some(TableSelection::Row(1)));
+    assert_eq!(state.selection(), Some(TableSelection::Row(1)));
     assert_eq!(state.selected_row(), Some(1));
 
     // Add a col to None
     state.select(None::<TableSelection>);
     state.select_col(Some(0));
-    assert_eq!(state.selected(), Some(TableSelection::Col(0)));
+    assert_eq!(state.selection(), Some(TableSelection::Col(0)));
     assert_eq!(state.selected_col(), Some(0));
 
     // Update existing Col
     state.select_col(Some(1));
-    assert_eq!(state.selected(), Some(TableSelection::Col(1)));
+    assert_eq!(state.selection(), Some(TableSelection::Col(1)));
     assert_eq!(state.selected_col(), Some(1));
 
     // Add a cell to None
     state.select(None::<TableSelection>);
     state.select(Some(TableSelection::Cell { row: 0, col: 0 }));
     assert_eq!(
-        state.selected(),
+        state.selection(),
         Some(TableSelection::Cell { row: 0, col: 0 })
     );
 
     // Update existing Cell
     state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
     assert_eq!(
-        state.selected(),
+        state.selection(),
         Some(TableSelection::Cell { row: 2, col: 1 })
     );
 
@@ -1104,7 +1102,7 @@ fn widgets_table_can_select_row_or_columns_independently() {
     state.select(Some(TableSelection::Col(0)));
     state.select_row(Some(3));
     assert_eq!(
-        state.selected(),
+        state.selection(),
         Some(TableSelection::Cell { row: 3, col: 0 })
     );
 
@@ -1112,7 +1110,7 @@ fn widgets_table_can_select_row_or_columns_independently() {
     state.select(Some(TableSelection::Row(0)));
     state.select_col(Some(3));
     assert_eq!(
-        state.selected(),
+        state.selection(),
         Some(TableSelection::Cell { row: 0, col: 3 })
     );
 
@@ -1120,7 +1118,7 @@ fn widgets_table_can_select_row_or_columns_independently() {
     state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
     state.select_row(Some(3));
     assert_eq!(
-        state.selected(),
+        state.selection(),
         Some(TableSelection::Cell { row: 3, col: 1 })
     );
 
@@ -1128,54 +1126,54 @@ fn widgets_table_can_select_row_or_columns_independently() {
     state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
     state.select_col(Some(3));
     assert_eq!(
-        state.selected(),
+        state.selection(),
         Some(TableSelection::Cell { row: 2, col: 3 })
     );
 
     // Remove a row from a Row
     state.select(Some(TableSelection::Row(0)));
     state.select_row(None);
-    assert_eq!(state.selected(), None);
+    assert_eq!(state.selection(), None);
 
     // Remove a row from a Cell
     state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
     state.select_row(None);
-    assert_eq!(state.selected(), Some(TableSelection::Col(1)));
+    assert_eq!(state.selection(), Some(TableSelection::Col(1)));
 
     // Remove a row from a Col
     state.select(Some(TableSelection::Col(0)));
     state.select_row(None);
-    assert_eq!(state.selected(), Some(TableSelection::Col(0)));
+    assert_eq!(state.selection(), Some(TableSelection::Col(0)));
 
     // Remove a col from a Col
     state.select(Some(TableSelection::Col(0)));
     state.select_col(None);
-    assert_eq!(state.selected(), None);
+    assert_eq!(state.selection(), None);
 
     // Remove a col from a Row
     state.select(Some(TableSelection::Row(0)));
     state.select_col(None);
-    assert_eq!(state.selected(), Some(TableSelection::Row(0)));
+    assert_eq!(state.selection(), Some(TableSelection::Row(0)));
 
     // Remove a col from a Cell
     state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
     state.select_col(None);
-    assert_eq!(state.selected(), Some(TableSelection::Row(2)));
+    assert_eq!(state.selection(), Some(TableSelection::Row(2)));
 
     // Remove a cell from a Row
     state.select(Some(TableSelection::Row(0)));
     state.select(None::<TableSelection>);
-    assert_eq!(state.selected(), None);
+    assert_eq!(state.selection(), None);
 
     // Remove a cell from a Col
     state.select(Some(TableSelection::Col(0)));
     state.select(None::<TableSelection>);
-    assert_eq!(state.selected(), None);
+    assert_eq!(state.selection(), None);
 
     // Remove a cell from a Cell
     state.select(Some(TableSelection::Cell { row: 2, col: 1 }));
     state.select(None::<TableSelection>);
-    assert_eq!(state.selected(), None);
+    assert_eq!(state.selection(), None);
 }
 
 #[test]
@@ -1203,8 +1201,7 @@ fn widgets_table_can_have_row_elements_styled_individually() {
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
             .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
             .highlight_symbol(">> ")
-            .highlight_area(ratatui::widgets::HighlightArea::Row)
-            .highlight_style(Style::default().add_modifier(Modifier::BOLD))
+            .row_highlight_style(Style::default().add_modifier(Modifier::BOLD))
             .widths(&[
                 Constraint::Length(6),
                 Constraint::Length(6),

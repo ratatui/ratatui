@@ -422,8 +422,6 @@ impl<'a> Table<'a> {
     }
 
     /// Applies the given [`Style`] to the selected row.
-    ///
-    /// This method is deprecated in favor of [`Table::row_highlight_style`]
     // #[deprecated] --> Had to comment this because it has a conflict in `cargo make` with the same
     // method in the [`Tabs`] Widget
     pub fn highlight_style(mut self, highlight_style: Style) -> Self {
@@ -629,9 +627,10 @@ impl<'a> Styled for Table<'a> {
 
 /// An Enum to represent the current selection of a [`Table`]
 ///
-/// Use [`TableSelection::Row`] to select a row
-/// Use [`TableSelection::Col`] to select a column
-/// Use [`TableSelection::Cell`] to select a cell (row and column)
+/// Use [`TableSelection::Row`] to select a row.
+/// Use [`TableSelection::Col`] to select a column.
+/// Use [`TableSelection::Cell`] to select a cell (row and column).
+/// Use [`TableSelection::From<usize>(row)`] to select a row with a usize.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum TableSelection {
     /// Select a Row, with index `usize`
@@ -700,7 +699,13 @@ impl TableState {
     }
 
     /// Returns the current selected index, if any
-    pub fn selected(&self) -> Option<TableSelection> {
+    #[deprecated]
+    pub fn selected(&self) -> Option<usize> {
+        self.selected_row()
+    }
+
+    /// Returns the current selected index, if any
+    pub fn selection(&self) -> Option<TableSelection> {
         self.selected
     }
 
@@ -745,7 +750,7 @@ impl TableState {
     ///     turned into a [`TableSelection::Col`]
     pub fn select_row(&mut self, row: Option<usize>) {
         match row {
-            Some(new_row) => match self.selected() {
+            Some(new_row) => match self.selection() {
                 None | Some(TableSelection::Row(_)) => {
                     self.select(Some(TableSelection::Row(new_row)));
                 }
@@ -756,7 +761,7 @@ impl TableState {
                     self.select(Some(TableSelection::Cell { row: new_row, col }));
                 }
             },
-            None => match self.selected() {
+            None => match self.selection() {
                 Some(TableSelection::Cell { col, .. }) => {
                     self.select(Some(TableSelection::Col(col)));
                 }
@@ -776,7 +781,7 @@ impl TableState {
     ///     turned into a [`TableSelection::Row`]
     pub fn select_col(&mut self, col: Option<usize>) {
         match col {
-            Some(new_col) => match self.selected() {
+            Some(new_col) => match self.selection() {
                 None | Some(TableSelection::Col(_)) => {
                     self.select(Some(TableSelection::Col(new_col)));
                 }
@@ -787,7 +792,7 @@ impl TableState {
                     self.select(Some(TableSelection::Cell { row, col: new_col }))
                 }
             },
-            None => match self.selected() {
+            None => match self.selection() {
                 Some(TableSelection::Cell { row, .. }) => {
                     self.select(Some(TableSelection::Row(row)))
                 }
@@ -882,7 +887,7 @@ impl<'a> StatefulWidget for Table<'a> {
             };
             buf.set_style(table_row_area, table_row.style);
 
-            let selected = state.selected();
+            let selected = state.selection();
             let is_selected_row = match selected {
                 Some(TableSelection::Row(row)) => row == row_num,
                 Some(TableSelection::Cell { row, .. }) => row == row_num,

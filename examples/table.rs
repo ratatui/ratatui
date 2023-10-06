@@ -260,7 +260,7 @@ Press 'a' to toggle space from selected column to all columns."
 Offset:   {},
 highlight_spacing:  {:?} 
 columns_with_spacing:  {:?}",
-        app.state.selected(),
+        app.state.selection(),
         app.state.offset(),
         app.opts.highlight_spacing,
         app.opts.columns_with_spacing

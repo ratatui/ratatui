@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     loop {
-        let _ = terminal.draw(|f| draw(f));
+        let _ = terminal.draw(draw);
 
         if let Event::Key(key) = event::read()? {
             #[allow(clippy::single_match)]
