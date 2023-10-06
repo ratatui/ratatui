@@ -16,7 +16,7 @@ use crate::{
     buffer::Buffer,
     layout::{Alignment, Rect},
     style::{Style, Styled},
-    symbols::line,
+    symbols::border,
     widgets::{Borders, Widget},
 };
 
@@ -70,17 +70,45 @@ pub enum BorderType {
     /// ┗━━━━━━━┛
     /// ```
     Thick,
+    /// A border with a single line on the inside of a half block.
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ▗▄▄▄▄▄▄▄▖
+    /// ▐       ▌
+    /// ▐       ▌
+    /// ▝▀▀▀▀▀▀▀▘
+    QuadrantInside,
+
+    /// A border with a single line on the outside of a half block.
+    ///
+    /// # Example
+    ///
+    /// ```plain
+    /// ▛▀▀▀▀▀▀▀▜
+    /// ▌       ▐
+    /// ▌       ▐
+    /// ▙▄▄▄▄▄▄▄▟
+    QuadrantOutside,
 }
 
 impl BorderType {
-    /// Convert this `BorderType` into the corresponding [`Set`](line::Set) of lines.
-    pub const fn line_symbols(border_type: BorderType) -> line::Set {
+    /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
+    pub const fn border_symbols(border_type: BorderType) -> border::Set {
         match border_type {
-            BorderType::Plain => line::NORMAL,
-            BorderType::Rounded => line::ROUNDED,
-            BorderType::Double => line::DOUBLE,
-            BorderType::Thick => line::THICK,
+            BorderType::Plain => border::PLAIN,
+            BorderType::Rounded => border::ROUNDED,
+            BorderType::Double => border::DOUBLE,
+            BorderType::Thick => border::THICK,
+            BorderType::QuadrantInside => border::QUADRANT_INSIDE,
+            BorderType::QuadrantOutside => border::QUADRANT_OUTSIDE,
         }
+    }
+
+    /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
+    pub const fn to_border_set(self) -> border::Set {
+        Self::border_symbols(self)
     }
 }
 
@@ -213,10 +241,9 @@ pub struct Block<'a> {
     borders: Borders,
     /// Border style
     border_style: Style,
-    /// Type of the border. The default is plain lines but one can choose to have rounded or
-    /// doubled lines instead.
-    border_type: BorderType,
-
+    /// The symbols used to render the border. The default is plain lines but one can choose to
+    /// have rounded or doubled lines instead or a custom set of symbols
+    border_set: border::Set,
     /// Widget style
     style: Style,
     /// Block padding
@@ -233,7 +260,7 @@ impl<'a> Block<'a> {
             titles_position: Position::Top,
             borders: Borders::NONE,
             border_style: Style::new(),
-            border_type: BorderType::Plain,
+            border_set: BorderType::Plain.to_border_set(),
             style: Style::new(),
             padding: Padding::zero(),
         }
@@ -414,9 +441,40 @@ impl<'a> Block<'a> {
     /// Sets the symbols used to display the border (e.g. single line, double line, thick or
     /// rounded borders).
     ///
+    /// Setting this overwrites any custom [`border_set`](Block::border_set) that was set.
+    ///
     /// See [`BorderType`] for the full list of available symbols.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// Block::default().title("Block").borders(Borders::ALL).border_type(BorderType::Rounded);
+    /// // Renders
+    /// // ╭Block╮
+    /// // │     │
+    /// // ╰─────╯
+    /// ```
     pub const fn border_type(mut self, border_type: BorderType) -> Block<'a> {
-        self.border_type = border_type;
+        self.border_set = border_type.to_border_set();
+        self
+    }
+
+    /// Sets the symbols used to display the border as a [`crate::symbols::border::Set`].
+    ///
+    /// Setting this overwrites any [`border_type`](Block::border_type) that was set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// Block::default().title("Block").borders(Borders::ALL).border_set(symbols::border::DOUBLE);
+    /// // Renders
+    /// // ╔Block╗
+    /// // ║     ║
+    /// // ╚═════╝
+    pub const fn border_set(mut self, border_set: border::Set) -> Block<'a> {
+        self.border_set = border_set;
         self
     }
 
@@ -427,7 +485,7 @@ impl<'a> Block<'a> {
     /// Draw a block nested within another block
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// # fn render_nested_block<B: Backend>(frame: &mut Frame<B>) {
+    /// # fn render_nested_block(frame: &mut Frame) {
     /// let outer_block = Block::default().title("Outer").borders(Borders::ALL);
     /// let inner_block = Block::default().title("Inner").borders(Borders::ALL);
     ///
@@ -511,20 +569,20 @@ impl<'a> Block<'a> {
 
     fn render_borders(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        let symbols = BorderType::line_symbols(self.border_type);
+        let symbols = self.border_set;
 
         // Sides
         if self.borders.intersects(Borders::LEFT) {
             for y in area.top()..area.bottom() {
                 buf.get_mut(area.left(), y)
-                    .set_symbol(symbols.vertical)
+                    .set_symbol(symbols.vertical_left)
                     .set_style(self.border_style);
             }
         }
         if self.borders.intersects(Borders::TOP) {
             for x in area.left()..area.right() {
                 buf.get_mut(x, area.top())
-                    .set_symbol(symbols.horizontal)
+                    .set_symbol(symbols.horizontal_top)
                     .set_style(self.border_style);
             }
         }
@@ -532,7 +590,7 @@ impl<'a> Block<'a> {
             let x = area.right() - 1;
             for y in area.top()..area.bottom() {
                 buf.get_mut(x, y)
-                    .set_symbol(symbols.vertical)
+                    .set_symbol(symbols.vertical_right)
                     .set_style(self.border_style);
             }
         }
@@ -540,7 +598,7 @@ impl<'a> Block<'a> {
             let y = area.bottom() - 1;
             for x in area.left()..area.right() {
                 buf.get_mut(x, y)
-                    .set_symbol(symbols.horizontal)
+                    .set_symbol(symbols.horizontal_bottom)
                     .set_style(self.border_style);
             }
         }
@@ -883,7 +941,7 @@ mod tests {
 
     #[test]
     fn border_type_can_be_const() {
-        const _PLAIN: line::Set = BorderType::line_symbols(BorderType::Plain);
+        const _PLAIN: border::Set = BorderType::border_symbols(BorderType::Plain);
     }
 
     #[test]
@@ -927,7 +985,7 @@ mod tests {
                 titles_position: Position::Top,
                 borders: Borders::NONE,
                 border_style: Style::new(),
-                border_type: BorderType::Plain,
+                border_set: BorderType::Plain.to_border_set(),
                 style: Style::new(),
                 padding: Padding::zero(),
             }
@@ -1119,6 +1177,7 @@ mod tests {
             ])
         );
     }
+
     #[test]
     fn render_rounded_border() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
@@ -1135,6 +1194,7 @@ mod tests {
             ])
         );
     }
+
     #[test]
     fn render_double_border() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
@@ -1153,6 +1213,40 @@ mod tests {
     }
 
     #[test]
+    fn render_quadrant_inside() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::QuadrantInside)
+            .render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "▗▄▄▄▄▄▄▄▄▄▄▄▄▄▖",
+                "▐             ▌",
+                "▝▀▀▀▀▀▀▀▀▀▀▀▀▀▘",
+            ])
+        );
+    }
+
+    #[test]
+    fn render_border_quadrant_outside() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::QuadrantOutside)
+            .render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▜",
+                "▌             ▐",
+                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▟",
+            ])
+        );
+    }
+
+    #[test]
     fn render_solid_border() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
         Block::default()
@@ -1165,6 +1259,32 @@ mod tests {
                 "┏━━━━━━━━━━━━━┓",
                 "┃             ┃",
                 "┗━━━━━━━━━━━━━┛"
+            ])
+        );
+    }
+
+    #[test]
+    fn render_custom_border_set() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        Block::default()
+            .borders(Borders::ALL)
+            .border_set(border::Set {
+                top_left: "1",
+                top_right: "2",
+                bottom_left: "3",
+                bottom_right: "4",
+                vertical_left: "L",
+                vertical_right: "R",
+                horizontal_top: "T",
+                horizontal_bottom: "B",
+            })
+            .render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "1TTTTTTTTTTTTT2",
+                "L             R",
+                "3BBBBBBBBBBBBB4",
             ])
         );
     }

@@ -5,7 +5,7 @@ use ratatui::{
 
 use crate::app::App;
 
-pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+pub fn draw(f: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
         .split(f.size());
@@ -28,10 +28,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     };
 }
 
-fn draw_first_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
-where
-    B: Backend,
-{
+fn draw_first_tab(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .constraints(
             [
@@ -47,10 +44,7 @@ where
     draw_text(f, chunks[2]);
 }
 
-fn draw_gauges<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
-where
-    B: Backend,
-{
+fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .constraints(
             [
@@ -102,10 +96,7 @@ where
     f.render_widget(line_gauge, chunks[2]);
 }
 
-fn draw_charts<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
-where
-    B: Backend,
-{
+fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
     let constraints = if app.show_chart {
         vec![Constraint::Percentage(50), Constraint::Percentage(50)]
     } else {
@@ -249,10 +240,7 @@ where
     }
 }
 
-fn draw_text<B>(f: &mut Frame<B>, area: Rect)
-where
-    B: Backend,
-{
+fn draw_text(f: &mut Frame, area: Rect) {
     let text = vec![
         text::Line::from("This is a paragraph with several lines. You can change style your text the way you want"),
         text::Line::from(""),
@@ -290,10 +278,7 @@ where
     f.render_widget(paragraph, area);
 }
 
-fn draw_second_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
-where
-    B: Backend,
-{
+fn draw_second_tab(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
         .direction(Direction::Horizontal)
@@ -379,10 +364,7 @@ where
     f.render_widget(map, chunks[1]);
 }
 
-fn draw_third_tab<B>(f: &mut Frame<B>, _app: &mut App, area: Rect)
-where
-    B: Backend,
-{
+fn draw_third_tab(f: &mut Frame, _app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])

@@ -81,7 +81,7 @@ pub struct TerminalOptions {
     pub viewport: Viewport,
 }
 
-/// An interface that Ratatui to interact and draw [`Frame`]s on the user's terminal.
+/// An interface to interact and draw [`Frame`]s on the user's terminal.
 ///
 /// This is the main entry point for Ratatui. It is responsible for drawing and maintaining the
 /// state of the buffers, cursor and viewport.
@@ -91,9 +91,11 @@ pub struct TerminalOptions {
 /// terminal libraries: [Crossterm], [Termion] and [Termwiz]. See the [`backend`] module for more
 /// information.
 ///
-/// The terminal has two buffers that are used to draw the application. The first buffer is the
-/// current buffer and the second buffer is the previous buffer. The two buffers are compared at
-/// the end of each draw pass to output only the changes to the terminal.
+/// The `Terminal` struct maintains two buffers: the current and the previous.
+/// When the widgets are drawn, the changes are accumulated in the current buffer.
+/// At the end of each draw pass, the two buffers are compared, and only the changes
+/// between these buffers are written to the terminal, avoiding any redundant operations.
+/// After flushing these changes, the buffers are swapped to prepare for the next draw cycle./
 ///
 /// The terminal also has a viewport which is the area of the terminal that is currently visible to
 /// the user. It can be either fullscreen, inline or fixed. See [`Viewport`] for more information.
@@ -225,10 +227,11 @@ where
     }
 
     /// Get a Frame object which provides a consistent view into the terminal state for rendering.
-    pub fn get_frame(&mut self) -> Frame<B> {
+    pub fn get_frame(&mut self) -> Frame {
         Frame {
-            terminal: self,
             cursor_position: None,
+            viewport_area: self.viewport_area,
+            buffer: self.current_buffer_mut(),
         }
     }
 
@@ -321,7 +324,7 @@ where
     /// ```
     pub fn draw<F>(&mut self, f: F) -> io::Result<CompletedFrame>
     where
-        F: FnOnce(&mut Frame<B>),
+        F: FnOnce(&mut Frame),
     {
         // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
         // and the terminal (if growing), which may OOB.
@@ -331,7 +334,7 @@ where
         f(&mut frame);
         // We can't change the cursor position right away because we have to flush the frame to
         // stdout first. But we also can't keep the frame around, since it holds a &mut to
-        // Terminal. Thus, we're taking the important data out of the Frame and dropping it.
+        // Buffer. Thus, we're taking the important data out of the Frame and dropping it.
         let cursor_position = frame.cursor_position;
 
         // Draw to stdout
@@ -545,10 +548,9 @@ fn compute_inline_size<B: Backend>(
 /// This is obtained via the closure argument of [`Terminal::draw`]. It is used to render widgets
 /// to the terminal and control the cursor position.
 ///
-/// The changes drawn to the frame are not immediately applied to the terminal. They are only
-/// applied after the closure returns. This allows for widgets to be drawn in any order. The
-/// changes are then compared to the previous frame and only the necessary updates are applied to
-/// the terminal.
+/// The changes drawn to the frame are applied only to the current buffer.
+/// After the closure returns, the current buffer is compared to the previous
+/// buffer and only the changes are applied to the terminal.
 ///
 /// The [`Frame`] is generic over a [`Backend`] implementation which is used to interface with the
 /// underlying terminal library. The [`Backend`] trait is implemented for three popular Rust
@@ -562,29 +564,25 @@ fn compute_inline_size<B: Backend>(
 /// [`Backend`]: crate::backend::Backend
 /// [`Buffer`]: crate::buffer::Buffer
 #[derive(Debug, Hash)]
-pub struct Frame<'a, B: 'a>
-where
-    B: Backend,
-{
-    /// The terminal that this frame is associated with.
-    terminal: &'a mut Terminal<B>,
-
+pub struct Frame<'a> {
     /// Where should the cursor be after drawing this frame?
     ///
     /// If `None`, the cursor is hidden and its position is controlled by the backend. If `Some((x,
     /// y))`, the cursor is shown and placed at `(x, y)` after the call to `Terminal::draw()`.
     cursor_position: Option<(u16, u16)>,
+    /// The area of the viewport
+    viewport_area: Rect,
+
+    /// The buffer that is used to draw the current frame
+    buffer: &'a mut Buffer,
 }
 
-impl<'a, B> Frame<'a, B>
-where
-    B: Backend,
-{
+impl Frame<'_> {
     /// The size of the current frame
     ///
     /// This is guaranteed not to change when rendering.
     pub fn size(&self) -> Rect {
-        self.terminal.viewport_area
+        self.viewport_area
     }
 
     /// Render a [`Widget`] to the current buffer using [`Widget::render`].
@@ -609,7 +607,7 @@ where
     where
         W: Widget,
     {
-        widget.render(area, self.terminal.current_buffer_mut());
+        widget.render(area, self.buffer);
     }
 
     /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
@@ -641,7 +639,7 @@ where
     where
         W: StatefulWidget,
     {
-        widget.render(area, self.terminal.current_buffer_mut(), state);
+        widget.render(area, self.buffer, state);
     }
 
     /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
@@ -652,6 +650,11 @@ where
     /// with it.
     pub fn set_cursor(&mut self, x: u16, y: u16) {
         self.cursor_position = Some((x, y));
+    }
+
+    /// Gets the buffer that this `Frame` draws into as a mutable reference.
+    pub fn buffer_mut(&mut self) -> &mut Buffer {
+        self.buffer
     }
 }
 

@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn draw<B: Backend>(f: &mut Frame<B>) {
+fn draw(f: &mut Frame) {
     let app_area = f.size();
 
     let calarea = Rect {

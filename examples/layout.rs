@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     loop {
-        terminal.draw(|f| ui(f))?;
+        terminal.draw(ui)?;
 
         if let Event::Key(key) = event::read()? {
             if let KeyCode::Char('q') = key.code {
@@ -47,7 +47,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     }
 }
 
-fn ui<B: Backend>(frame: &mut Frame<B>) {
+fn ui(frame: &mut Frame) {
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
@@ -169,8 +169,8 @@ fn ui<B: Backend>(frame: &mut Frame<B>) {
 }
 
 /// Renders a single example box
-fn render_example_combination<B: Backend>(
-    frame: &mut Frame<B>,
+fn render_example_combination(
+    frame: &mut Frame,
     area: Rect,
     title: &str,
     constraints: Vec<(Constraint, Constraint)>,
@@ -195,11 +195,7 @@ fn render_example_combination<B: Backend>(
 }
 
 /// Renders a single example line
-fn render_single_example<B: Backend>(
-    frame: &mut Frame<B>,
-    area: Rect,
-    constraints: Vec<Constraint>,
-) {
+fn render_single_example(frame: &mut Frame, area: Rect, constraints: Vec<Constraint>) {
     let red = Paragraph::new(constraint_label(constraints[0])).on_red();
     let blue = Paragraph::new(constraint_label(constraints[1])).on_blue();
     let green = Paragraph::new("·".repeat(12)).on_green();

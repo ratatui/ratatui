@@ -1,141 +1,346 @@
-![Demo of
-Ratatui](https://raw.githubusercontent.com/ratatui-org/ratatui/aa09e59dc0058347f68d7c1e0c91f863c6f2b8c9/examples/demo2.gif)
-<!--
-Permalink to https://github.com/ratatui-org/ratatui/blob/images/examples/demo2.gif
-See RELEASE.md for instructions on creating the demo gif
---->
+<details>
+<summary>Table of Contents</summary>
+
+- [Ratatui](#ratatui)
+  - [Installation](#installation)
+  - [Introduction](#introduction)
+  - [Other Documentation](#other-documentation)
+  - [Quickstart](#quickstart)
+  - [Status of this fork](#status-of-this-fork)
+  - [Rust version requirements](#rust-version-requirements)
+  - [Widgets](#widgets)
+    - [Built in](#built-in)
+    - [Third\-party libraries, bootstrapping templates and
+      widgets](#third-party-libraries-bootstrapping-templates-and-widgets)
+  - [Apps](#apps)
+  - [Alternatives](#alternatives)
+  - [Acknowledgments](#acknowledgments)
+  - [License](#license)
+
+</details>
+
+<!-- cargo-rdme start -->
+
+![Demo](https://raw.githubusercontent.com/ratatui-org/ratatui/aa09e59dc0058347f68d7c1e0c91f863c6f2b8c9/examples/demo2.gif)
 
 <div align="center">
 
-[![Crates.io](https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square)](https://crates.io/crates/ratatui)
-[![License](https://img.shields.io/crates/l/ratatui?style=flat-square)](./LICENSE) [![GitHub CI
-Status](https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github)](https://github.com/ratatui-org/ratatui/actions?query=workflow%3ACI+)
-[![Docs.rs](https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square)](https://docs.rs/crate/ratatui/)<br>
-[![Dependency
-Status](https://deps.rs/repo/github/ratatui-org/ratatui/status.svg?style=flat-square)](https://deps.rs/repo/github/ratatui-org/ratatui)
-[![Codecov](https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST)](https://app.codecov.io/gh/ratatui-org/ratatui)
-[![Discord](https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square)](https://discord.gg/pMCEU9hNEj)
-[![Matrix](https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix)](https://matrix.to/#/#ratatui:matrix.org)<br>
-[Documentation](https://docs.rs/ratatui)
-· [Examples](https://github.com/ratatui-org/ratatui/tree/main/examples)
-· [Report a bug](https://github.com/ratatui-org/ratatui/issues/new?labels=bug&projects=&template=bug_report.md)
-· [Request a Feature](https://github.com/ratatui-org/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md)
+[![Crate Badge]](https://crates.io/crates/ratatui) [![License Badge]](./LICENSE) [![CI
+Badge]](https://github.com/ratatui-org/ratatui/actions?query=workflow%3ACI+) [![Docs
+Badge]](https://docs.rs/crate/ratatui/)<br>
+[![Dependencies Badge]](https://deps.rs/repo/github/ratatui-org/ratatui) [![Codecov
+Badge]](https://app.codecov.io/gh/ratatui-org/ratatui) [![Discord
+Badge]](https://discord.gg/pMCEU9hNEj) [![Matrix
+Badge]](https://matrix.to/#/#ratatui:matrix.org)<br>
+[Documentation](https://docs.rs/ratatui) · [Ratatui Book](https://ratatui.rs) ·
+[Examples](https://github.com/ratatui-org/ratatui/tree/main/examples) · [Report a
+bug](https://github.com/ratatui-org/ratatui/issues/new?labels=bug&projects=&template=bug_report.md)
+· [Request a
+Feature](https://github.com/ratatui-org/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md)
 · [Send a Pull Request](https://github.com/ratatui-org/ratatui/compare)
 
 </div>
 
-<img align="left" src="https://avatars.githubusercontent.com/u/125200832?s=128&v=4">
-
 # Ratatui
 
-`ratatui` is a [Rust](https://www.rust-lang.org) library that is all about cooking up terminal user
-interfaces. It is a community fork of the original [tui-rs](https://github.com/fdehau/tui-rs)
-project.
-
-<details>
-<summary>Table of Contents</summary>
-
-* [Ratatui](#ratatui)
-  * [Installation](#installation)
-  * [Introduction](#introduction)
-  * [Quickstart](#quickstart)
-  * [Status of this fork](#status-of-this-fork)
-  * [Rust version requirements](#rust-version-requirements)
-  * [Documentation](#documentation)
-  * [Examples](#examples)
-  * [Widgets](#widgets)
-    * [Built in](#built-in)
-    * [Third\-party libraries, bootstrapping templates and
-      widgets](#third-party-libraries-bootstrapping-templates-and-widgets)
-  * [Apps](#apps)
-  * [Alternatives](#alternatives)
-  * [Contributors](#contributors)
-  * [Acknowledgments](#acknowledgments)
-  * [License](#license)
-
-</details>
+[Ratatui] is a crate for cooking up terminal user interfaces in rust. It is a lightweight
+library that provides a set of widgets and utilities to build complex rust TUIs. Ratatui was
+forked from the [Tui-rs crate] in 2023 in order to continue its development.
 
 ## Installation
 
+Add `ratatui` and `crossterm` as dependencies to your cargo.toml:
+
 ```shell
-cargo add ratatui --features all-widgets
+cargo add ratatui crossterm
 ```
 
-Or modify your `Cargo.toml`
-
-```toml
-[dependencies]
-ratatui = { version = "0.23.0", features = ["all-widgets"]}
-```
+Ratatui uses [Crossterm] by default as it works on most platforms. See the [Installation]
+section of the [Ratatui Book] for more details on how to use other backends ([Termion] /
+[Termwiz]).
 
 ## Introduction
 
-`ratatui` is a terminal UI library that supports multiple backends:
+Ratatui is based on the principle of immediate rendering with intermediate buffers. This means
+that for each frame, your app must render all widgets that are supposed to be part of the UI.
+This is in contrast to the retained mode style of rendering where widgets are updated and then
+automatically redrawn on the next frame. See the [Rendering] section of the [Ratatui Book] for
+more info.
 
-* [crossterm](https://github.com/crossterm-rs/crossterm) [default]
-* [termion](https://github.com/ticki/termion)
-* [termwiz](https://github.com/wez/wezterm/tree/master/termwiz)
+## Other documentation
 
-The library is based on the principle of immediate rendering with intermediate buffers. This means
-that at each new frame you should build all widgets that are supposed to be part of the UI. While
-providing a great flexibility for rich and interactive UI, this may introduce overhead for highly
-dynamic content. So, the implementation try to minimize the number of ansi escapes sequences
-generated to draw the updated UI. In practice, given the speed of `Rust` the overhead rather comes
-from the terminal emulator than the library itself.
-
-Moreover, the library does not provide any input handling nor any event system and you may rely on
-the previously cited libraries to achieve such features.
-
-We keep a [CHANGELOG](./CHANGELOG.md) generated by [git-cliff](https://github.com/orhun/git-cliff)
-utilizing [Conventional Commits](https://www.conventionalcommits.org/).
+- [Ratatui Book] - explains the library's concepts and provides step-by-step tutorials
+- [Examples] - a collection of examples that demonstrate how to use the library.
+- [API Documentation] - the full API documentation for the library on docs.rs.
+- [Changelog] - generated by [git-cliff] utilizing [Conventional Commits].
+- [Contributing] - Please read this if you are interested in contributing to the project.
+- [Breaking Changes] - a list of breaking changes in the library.
 
 ## Quickstart
 
 The following example demonstrates the minimal amount of code necessary to setup a terminal and
 render "Hello World!". The full code for this example which contains a little more detail is in
-[hello_world.rs](./examples/hello_world.rs). For more guidance on how to create Ratatui apps, see
-the [Docs](https://docs.rs/ratatui) and [Examples](#examples). There is also a starter template
-available at [rust-tui-template](https://github.com/ratatui-org/rust-tui-template).
+[hello_world.rs]. For more guidance on different ways to structure your application see the
+[Application Patterns] and [Hello World tutorial] sections in the [Ratatui Book] and the various
+[Examples]. There are also several starter templates available:
+
+- [rust-tui-template]
+- [ratatui-async-template] (book and template)
+- [simple-tui-rs]
+
+Every application built with `ratatui` needs to implement the following steps:
+
+- Initialize the terminal
+- A main loop to:
+  - Handle input events
+  - Draw the UI
+- Restore the terminal state
+
+The library contains a [`prelude`] module that re-exports the most commonly used traits and
+types for convenience. Most examples in the documentation will use this instead of showing the
+full path of each type.
+
+### Initialize and restore the terminal
+
+The [`Terminal`] type is the main entry point for any Ratatui application. It is a light
+abstraction over a choice of [`Backend`] implementations that provides functionality to draw
+each frame, clear the screen, hide the cursor, etc. It is parametrized over any type that
+implements the [`Backend`] trait which has implementations for [Crossterm], [Termion] and
+[Termwiz].
+
+Most applications should enter the Alternate Screen when starting and leave it when exiting and
+also enable raw mode to disable line buffering and enable reading key events. See the [`backend`
+module] and the [Backends] section of the [Ratatui Book] for more info.
+
+### Drawing the UI
+
+The drawing logic is delegated to a closure that takes a [`Frame`] instance as argument. The
+[`Frame`] provides the size of the area to draw to and allows the app to render any [`Widget`]
+using the provided [`render_widget`] method. See the [Widgets] section of the [Ratatui Book] for
+more info.
+
+### Handling events
+
+Ratatui does not include any input handling. Instead event handling can be implemented by
+calling backend library methods directly. See the [Handling Events] section of the [Ratatui
+Book] for more info. For example, if you are using [Crossterm], you can use the
+[`crossterm::event`] module to handle events.
+
+### Example
 
 ```rust
-fn main() -> Result<(), Box<dyn Error>> {
-    let mut terminal = setup_terminal()?;
-    run(&mut terminal)?;
-    restore_terminal(&mut terminal)?;
+use std::io::{self, stdout};
+use crossterm::{
+    event::{self, Event, KeyCode},
+    ExecutableCommand,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}
+};
+use ratatui::{prelude::*, widgets::*};
+
+fn main() -> io::Result<()> {
+    enable_raw_mode()?;
+    stdout().execute(EnterAlternateScreen)?;
+    let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
+
+    let mut should_quit = false;
+    while !should_quit {
+        terminal.draw(ui)?;
+        should_quit = handle_events()?;
+    }
+
+    disable_raw_mode()?;
+    stdout().execute(LeaveAlternateScreen)?;
     Ok(())
 }
 
-fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
-    let mut stdout = io::stdout();
-    enable_raw_mode()?;
-    execute!(stdout, EnterAlternateScreen)?;
-    Ok(Terminal::new(CrosstermBackend::new(stdout))?)
-}
-
-fn restore_terminal(
-    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-) -> Result<(), Box<dyn Error>> {
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen,)?;
-    Ok(terminal.show_cursor()?)
-}
-
-fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<(), Box<dyn Error>> {
-    Ok(loop {
-        terminal.draw(|frame| {
-            let greeting = Paragraph::new("Hello World!");
-            frame.render_widget(greeting, frame.size());
-        })?;
-        if event::poll(Duration::from_millis(250))? {
-            if let Event::Key(key) = event::read()? {
-                if KeyCode::Char('q') == key.code {
-                    break;
-                }
+fn handle_events() -> io::Result<bool> {
+    if event::poll(std::time::Duration::from_millis(50))? {
+        if let Event::Key(key) = event::read()? {
+            if key.kind == event::KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                return Ok(true);
             }
-        }
-    })
+       }
+    }
+    Ok(false)
+}
+
+fn ui(frame: &mut Frame) {
+    frame.render_widget(
+        Paragraph::new("Hello World!")
+            .block(Block::default().title("Greeting").borders(Borders::ALL)),
+        frame.size(),
+    );
 }
 ```
+
+Running this example produces the following output:
+
+![docsrs-hello]
+
+## Layout
+
+The library comes with a basic yet useful layout management object called [`Layout`] which
+allows you to split the available space into multiple areas and then render widgets in each
+area. This lets you describe a responsive terminal UI by nesting layouts. See the [Layout]
+section of the [Ratatui Book] for more info.
+
+```rust
+use ratatui::{prelude::*, widgets::*};
+
+fn ui(frame: &mut Frame) {
+    let main_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![
+            Constraint::Length(1),
+            Constraint::Min(0),
+            Constraint::Length(1),
+        ])
+        .split(frame.size());
+    frame.render_widget(
+        Block::new().borders(Borders::TOP).title("Title Bar"),
+        main_layout[0],
+    );
+    frame.render_widget(
+        Block::new().borders(Borders::TOP).title("Status Bar"),
+        main_layout[2],
+    );
+
+    let inner_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(main_layout[1]);
+    frame.render_widget(
+        Block::default().borders(Borders::ALL).title("Left"),
+        inner_layout[0],
+    );
+    frame.render_widget(
+        Block::default().borders(Borders::ALL).title("Right"),
+        inner_layout[1],
+    );
+}
+```
+
+Running this example produces the following output:
+
+![docsrs-layout]
+
+## Text and styling
+
+The [`Text`], [`Line`] and [`Span`] types are the building blocks of the library and are used in
+many places. [`Text`] is a list of [`Line`]s and a [`Line`] is a list of [`Span`]s. A [`Span`]
+is a string with a specific style.
+
+The [`style` module] provides types that represent the various styling options. The most
+important one is [`Style`] which represents the foreground and background colors and the text
+attributes of a [`Span`]. The [`style` module] also provides a [`Stylize`] trait that allows
+short-hand syntax to apply a style to widgets and text. See the [Styling Text] section of the
+[Ratatui Book] for more info.
+
+```rust
+use ratatui::{prelude::*, widgets::*};
+
+fn ui(frame: &mut Frame) {
+    let areas = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![
+            Constraint::Length(1),
+            Constraint::Length(1),
+            Constraint::Length(1),
+            Constraint::Length(1),
+            Constraint::Min(0),
+        ])
+        .split(frame.size());
+
+    let span1 = Span::raw("Hello ");
+    let span2 = Span::styled(
+        "World",
+        Style::new()
+            .fg(Color::Green)
+            .bg(Color::White)
+            .add_modifier(Modifier::BOLD),
+    );
+    let span3 = "!".red().on_light_yellow().italic();
+
+    let line = Line::from(vec![span1, span2, span3]);
+    let text: Text = Text::from(vec![line]);
+
+    frame.render_widget(Paragraph::new(text), areas[0]);
+    // or using the short-hand syntax and implicit conversions
+    frame.render_widget(
+        Paragraph::new("Hello World!".red().on_white().bold()),
+        areas[1],
+    );
+
+    // to style the whole widget instead of just the text
+    frame.render_widget(
+        Paragraph::new("Hello World!").style(Style::new().red().on_white()),
+        areas[2],
+    );
+    // or using the short-hand syntax
+    frame.render_widget(Paragraph::new("Hello World!").blue().on_yellow(), areas[3]);
+}
+```
+
+Running this example produces the following output:
+
+![docsrs-styling]
+
+[Ratatui Book]: https://ratatui.rs
+[Installation]: https://ratatui.rs/installation.html
+[Rendering]: https://ratatui.rs/concepts/rendering/index.html
+[Application Patterns]: https://ratatui.rs/concepts/application_patterns/index.html
+[Hello World tutorial]: https://ratatui.rs/tutorial/hello_world.html
+[Backends]: https://ratatui.rs/concepts/backends/index.html
+[Widgets]: https://ratatui.rs/how-to/widgets/index.html
+[Handling Events]: https://ratatui.rs/concepts/event_handling.html
+[Layout]: https://ratatui.rs/how-to/layout/index.html
+[Styling Text]: https://ratatui.rs/how-to/render/style-text.html
+[rust-tui-template]: https://github.com/ratatui-org/rust-tui-template
+[ratatui-async-template]: https://ratatui-org.github.io/ratatui-async-template/
+[simple-tui-rs]: https://github.com/pmsanford/simple-tui-rs
+[Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples
+[git-cliff]: https://github.com/orhun/git-cliff
+[Conventional Commits]: https://www.conventionalcommits.org
+[API Documentation]: https://docs.rs/ratatui
+[Changelog]: https://github.com/ratatui-org/ratatui/blob/main/CHANGELOG.md
+[Contributing]: https:://github.com/ratatui-org/ratatui/blob/main/CONTRIBUTING.md
+[Breaking Changes]: https:://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md
+[docsrs-hello]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-hello.png?raw=true
+[docsrs-layout]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-layout.png?raw=true
+[docsrs-styling]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-styling.png?raw=true
+[`Frame`]: terminal::Frame
+[`render_widget`]: terminal::Frame::render_widget
+[`Widget`]: widgets::Widget
+[`Layout`]: layout::Layout
+[`Text`]: text::Text
+[`Line`]: text::Line
+[`Span`]: text::Span
+[`Style`]: style::Style
+[`style` module]: style
+[`Stylize`]: style::Stylize
+[`Backend`]: backend::Backend
+[`backend` module]: backend
+[`crossterm::event`]: https://docs.rs/crossterm/latest/crossterm/event/index.html
+[Ratatui]: https://ratatui.rs
+[Crossterm]: https://crates.io/crates/crossterm
+[Termion]: https://crates.io/crates/termion
+[Termwiz]: https://crates.io/crates/termwiz
+[Tui-rs crate]: https://crates.io/crates/tui
+[hello_world.rs]: https://github.com/ratatui-org/ratatui/blob/main/examples/hello_world.rs
+[Crate Badge]: https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square
+[CI Badge]:
+    https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github
+[Codecov Badge]:
+    https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST
+[Dependencies Badge]: https://deps.rs/repo/github/ratatui-org/ratatui/status.svg?style=flat-square
+[Discord Badge]:
+    https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square
+[Docs Badge]: https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square
+[License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square
+[Matrix Badge]:
+    https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix
+
+<!-- cargo-rdme end -->
 
 ## Status of this fork
 
@@ -159,35 +364,6 @@ you are interested in working on a PR or issue opened in the previous repository
 
 Since version 0.23.0, The Minimum Supported Rust Version (MSRV) of `ratatui` is 1.67.0.
 
-## Documentation
-
-The documentation can be found on [docs.rs.](https://docs.rs/ratatui)
-
-## Examples
-
-The demo shown in the gif above is available on all available backends.
-
-```shell
-# crossterm
-cargo run --example demo
-# termion
-cargo run --example demo --no-default-features --features=termion
-# termwiz
-cargo run --example demo --no-default-features --features=termwiz
-```
-
-The UI code for this is in [examples/demo/ui.rs](./examples/demo/ui.rs) while the application state
-is in [examples/demo/app.rs](./examples/demo/app.rs).
-
-If the user interface contains glyphs that are not displayed correctly by your terminal, you may
-want to run the demo without those symbols:
-
-```shell
-cargo run --example demo --release -- --tick-rate 200 --enhanced-graphics false
-```
-
-More examples are available in the [examples](./examples/) folder.
-
 ## Widgets
 
 ### Built in
@@ -195,21 +371,21 @@ More examples are available in the [examples](./examples/) folder.
 The library comes with the following
 [widgets](https://docs.rs/ratatui/latest/ratatui/widgets/index.html):
 
-* [BarChart](https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html)
-* [Block](https://docs.rs/ratatui/latest/ratatui/widgets/block/struct.Block.html)
-* [Calendar](https://docs.rs/ratatui/latest/ratatui/widgets/calendar/index.html)
-* [Canvas](https://docs.rs/ratatui/latest/ratatui/widgets/canvas/struct.Canvas.html) which allows
+- [BarChart](https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html)
+- [Block](https://docs.rs/ratatui/latest/ratatui/widgets/block/struct.Block.html)
+- [Calendar](https://docs.rs/ratatui/latest/ratatui/widgets/calendar/index.html)
+- [Canvas](https://docs.rs/ratatui/latest/ratatui/widgets/canvas/struct.Canvas.html) which allows
   rendering [points, lines, shapes and a world
   map](https://docs.rs/ratatui/latest/ratatui/widgets/canvas/index.html)
-* [Chart](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Chart.html)
-* [Clear](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Clear.html)
-* [Gauge](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Gauge.html)
-* [List](https://docs.rs/ratatui/latest/ratatui/widgets/struct.List.html)
-* [Paragraph](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Paragraph.html)
-* [Scrollbar](https://docs.rs/ratatui/latest/ratatui/widgets/scrollbar/struct.Scrollbar.html)
-* [Sparkline](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Sparkline.html)
-* [Table](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Table.html)
-* [Tabs](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Tabs.html)
+- [Chart](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Chart.html)
+- [Clear](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Clear.html)
+- [Gauge](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Gauge.html)
+- [List](https://docs.rs/ratatui/latest/ratatui/widgets/struct.List.html)
+- [Paragraph](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Paragraph.html)
+- [Scrollbar](https://docs.rs/ratatui/latest/ratatui/widgets/scrollbar/struct.Scrollbar.html)
+- [Sparkline](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Sparkline.html)
+- [Table](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Table.html)
+- [Tabs](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Tabs.html)
 
 Each widget has an associated example which can be found in the [examples](./examples/) folder. Run
 each examples with cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by
@@ -220,31 +396,31 @@ be installed with `cargo install cargo-make`).
 
 ### Third-party libraries, bootstrapping templates and widgets
 
-* [ansi-to-tui](https://github.com/uttarayan21/ansi-to-tui) — Convert ansi colored text to
+- [ansi-to-tui](https://github.com/uttarayan21/ansi-to-tui) — Convert ansi colored text to
   `ratatui::text::Text`
-* [color-to-tui](https://github.com/uttarayan21/color-to-tui) — Parse hex colors to
+- [color-to-tui](https://github.com/uttarayan21/color-to-tui) — Parse hex colors to
   `ratatui::style::Color`
-* [rust-tui-template](https://github.com/ratatui-org/rust-tui-template) — A template for bootstrapping a
-  Rust TUI application with Tui-rs & crossterm
-* [simple-tui-rs](https://github.com/pmsanford/simple-tui-rs) — A simple example tui-rs app
-* [tui-builder](https://github.com/jkelleyrtp/tui-builder) — Batteries-included MVC framework for
+- [rust-tui-template](https://github.com/ratatui-org/rust-tui-template) — A template for
+  bootstrapping a Rust TUI application with Tui-rs & crossterm
+- [simple-tui-rs](https://github.com/pmsanford/simple-tui-rs) — A simple example tui-rs app
+- [tui-builder](https://github.com/jkelleyrtp/tui-builder) — Batteries-included MVC framework for
   Tui-rs + Crossterm apps
-* [tui-clap](https://github.com/kegesch/tui-clap-rs) — Use clap-rs together with Tui-rs
-* [tui-log](https://github.com/kegesch/tui-log-rs) — Example of how to use logging with Tui-rs
-* [tui-logger](https://github.com/gin66/tui-logger) — Logger and Widget for Tui-rs
-* [tui-realm](https://github.com/veeso/tui-realm) — Tui-rs framework to build stateful applications
+- [tui-clap](https://github.com/kegesch/tui-clap-rs) — Use clap-rs together with Tui-rs
+- [tui-log](https://github.com/kegesch/tui-log-rs) — Example of how to use logging with Tui-rs
+- [tui-logger](https://github.com/gin66/tui-logger) — Logger and Widget for Tui-rs
+- [tui-realm](https://github.com/veeso/tui-realm) — Tui-rs framework to build stateful applications
   with a React/Elm inspired approach
-* [tui-realm-treeview](https://github.com/veeso/tui-realm-treeview) — Treeview component for
+- [tui-realm-treeview](https://github.com/veeso/tui-realm-treeview) — Treeview component for
   Tui-realm
-* [tui-rs-tree-widgets](https://github.com/EdJoPaTo/tui-rs-tree-widget): Widget for tree data
+- [tui-rs-tree-widgets](https://github.com/EdJoPaTo/tui-rs-tree-widget): Widget for tree data
   structures.
-* [tui-windows](https://github.com/markatk/tui-windows-rs) — Tui-rs abstraction to handle multiple
+- [tui-windows](https://github.com/markatk/tui-windows-rs) — Tui-rs abstraction to handle multiple
   windows and their rendering
-* [tui-textarea](https://github.com/rhysd/tui-textarea): Simple yet powerful multi-line text editor
+- [tui-textarea](https://github.com/rhysd/tui-textarea): Simple yet powerful multi-line text editor
   widget supporting several key shortcuts, undo/redo, text search, etc.
-* [tui-input](https://github.com/sayanarijit/tui-input): TUI input library supporting multiple
+- [tui-input](https://github.com/sayanarijit/tui-input): TUI input library supporting multiple
   backends and tui-rs.
-* [tui-term](https://github.com/a-kenji/tui-term): A pseudoterminal widget library
+- [tui-term](https://github.com/a-kenji/tui-term): A pseudoterminal widget library
   that enables the rendering of terminal applications as ratatui widgets.
 
 ## Apps
@@ -256,11 +432,6 @@ Check out the list of more than 50 [Apps using
 
 You might want to checkout [Cursive](https://github.com/gyscos/Cursive) for an alternative solution
 to build text user interfaces in Rust.
-
-## Contributors
-
-[![GitHub
-Contributors](https://contrib.rocks/image?repo=ratatui-org/ratatui)](https://github.com/ratatui-org/ratatui/graphs/contributors)
 
 ## Acknowledgments
 
