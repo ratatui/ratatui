@@ -164,6 +164,17 @@ cargo run --example=gauge --features=crossterm
 
 ![Gauge][gauge.gif]
 
+## Line Gauge
+
+Demonstrates the [`Line Gauge`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.LineGauge.html) widget.
+Source: [line_gauge.rs](./line_gauge.rs).
+
+```shell
+cargo run --example=line_gauge --features=crossterm
+```
+
+![LineGauge][line_gauge.gif]
+
 ## Inline
 
 Demonstrates how to use the
