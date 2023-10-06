@@ -252,8 +252,12 @@ fn handle_mouse_event(
                 _ => 2,
             };
             if old_selected_button != *selected_button {
-                button_states[old_selected_button] = State::Normal;
-                button_states[*selected_button] = State::Selected;
+                if button_states[old_selected_button] != State::Active {
+                    button_states[old_selected_button] = State::Normal;
+                }
+                if button_states[*selected_button] != State::Active {
+                    button_states[*selected_button] = State::Selected;
+                }
             }
         }
         MouseEventKind::Down(MouseButton::Left) => {
