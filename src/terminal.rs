@@ -548,20 +548,10 @@ fn compute_inline_size<B: Backend>(
 /// This is obtained via the closure argument of [`Terminal::draw`]. It is used to render widgets
 /// to the terminal and control the cursor position.
 ///
-/// The changes drawn to the frame are applied only to the current buffer.
+/// The changes drawn to the frame are applied only to the current [`Buffer`].
 /// After the closure returns, the current buffer is compared to the previous
 /// buffer and only the changes are applied to the terminal.
 ///
-/// The [`Frame`] is generic over a [`Backend`] implementation which is used to interface with the
-/// underlying terminal library. The [`Backend`] trait is implemented for three popular Rust
-/// terminal libraries: [Crossterm], [Termion] and [Termwiz]. See the [`backend`] module for more
-/// information.
-///
-/// [Crossterm]: https://crates.io/crates/crossterm
-/// [Termion]: https://crates.io/crates/termion
-/// [Termwiz]: https://crates.io/crates/termwiz
-/// [`backend`]: crate::backend
-/// [`Backend`]: crate::backend::Backend
 /// [`Buffer`]: crate::buffer::Buffer
 #[derive(Debug, Hash)]
 pub struct Frame<'a> {
