@@ -825,13 +825,13 @@ impl Table<'_> {
                 },
                 header.style,
             );
-            let inner_offset = table_area.left();
-            for ((x, width), cell) in columns_widths.iter().zip(header.cells.iter()) {
+            let table_left_pos = table_area.left();
+            for ((header_cell_x, width), cell) in columns_widths.iter().zip(header.cells.iter()) {
                 render_cell(
                     buf,
                     cell,
                     Rect {
-                        x: inner_offset + x,
+                        x: table_left_pos + header_cell_x,
                         y: table_area.top(),
                         width: *width,
                         height: max_header_height,
@@ -840,6 +840,99 @@ impl Table<'_> {
             }
             *current_height += max_header_height;
             *rows_height = rows_height.saturating_sub(max_header_height);
+        }
+    }
+
+    fn render_rows(
+        &mut self,
+        table_area: Rect,
+        state: &mut TableState,
+        buf: &mut Buffer,
+        current_height: &mut u16,
+        columns_widths: &Vec<(u16, u16)>,
+        rows_height: u16,
+        selection_width: u16,
+    ) {
+        if self.rows.is_empty() {
+            return;
+        }
+        let (start, end) = self.get_row_bounds(state.selected, state.offset, rows_height);
+        state.offset = start;
+
+        let cols_with_symbol_spacing = self.get_columns_with_spacing(state);
+        // Loop through each row
+        for (row_num, table_row) in self
+            .rows
+            .iter_mut()
+            .enumerate()
+            .skip(state.offset)
+            .take(end - start)
+        {
+            let (row, table_left_pos) = (table_area.top() + *current_height, table_area.left());
+            *current_height += table_row.total_height();
+            let table_row_area = Rect {
+                x: table_left_pos,
+                y: row,
+                width: table_area.width,
+                height: table_row.height,
+            };
+            buf.set_style(table_row_area, table_row.style);
+
+            let selected = state.selection();
+            let is_selected_row = Table::is_selected_row(row_num, selected);
+
+            // Loop trough each column in row (i.e loop through each cell)
+            for ((col_num, (cell_x, width)), cell) in columns_widths
+                .iter()
+                .enumerate()
+                .zip(table_row.cells.iter())
+            {
+                let should_show_symbol_in_col = cols_with_symbol_spacing.contains(&col_num);
+                let is_selected_col = Table::is_selected_col(col_num, selected);
+
+                let is_selected_cell = Table::is_selected_cell(row_num, col_num, selected);
+
+                if selection_width > 0 && is_selected_cell && should_show_symbol_in_col {
+                    // this should in normal cases be safe, because "get_columns_widths" allocates
+                    // "highlight_symbol.width()" space but "get_columns_widths"
+                    // currently does not bind it to max table.width()
+                    buf.set_stringn(
+                        table_left_pos + cell_x - selection_width,
+                        row,
+                        self.highlight_symbol.unwrap_or(""),
+                        table_area.width as usize,
+                        table_row.style,
+                    );
+                };
+                let table_cell_area = Rect {
+                    x: table_left_pos + cell_x,
+                    y: row,
+                    width: *width,
+                    height: table_row.height,
+                };
+                render_cell(buf, cell, table_cell_area);
+
+                // Highlight ROW first
+                if is_selected_row {
+                    buf.set_style(table_row_area, self.row_highlight_style);
+                }
+
+                // Then, highlight column (on top of row)
+                if is_selected_col {
+                    let vertical_rect = Rect {
+                        x: table_left_pos + cell_x,
+                        y: table_area.top(),
+                        width: *width,
+                        height: table_area.height,
+                    };
+                    buf.set_style(vertical_rect, self.col_highlight_style);
+                }
+
+                // Finally, highlight cell (on top of row and column)
+                if is_selected_cell {
+                    buf.set_style(table_cell_area, self.cell_highlight_style);
+                }
+            }
         }
     }
 
@@ -875,6 +968,8 @@ impl<'a> StatefulWidget for Table<'a> {
             return;
         }
         buf.set_style(area, self.style);
+
+        // Get table area [`Rect`]
         let table_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
@@ -890,7 +985,6 @@ impl<'a> StatefulWidget for Table<'a> {
             0
         };
         let columns_widths = self.get_columns_widths(table_area.width, selection_width, state);
-        let highlight_symbol = self.highlight_symbol.unwrap_or("");
         let mut current_height = 0;
         let mut rows_height = table_area.height;
 
@@ -904,88 +998,15 @@ impl<'a> StatefulWidget for Table<'a> {
         );
 
         // Draw rows
-        if self.rows.is_empty() {
-            return;
-        }
-        let (start, end) = self.get_row_bounds(state.selected, state.offset, rows_height);
-        state.offset = start;
-
-        let cols_with_symbol_spacing = self.get_columns_with_spacing(state);
-        // Loop through each row
-        for (row_num, table_row) in self
-            .rows
-            .iter_mut()
-            .enumerate()
-            .skip(state.offset)
-            .take(end - start)
-        {
-            let (row, inner_offset) = (table_area.top() + current_height, table_area.left());
-            current_height += table_row.total_height();
-            let table_row_area = Rect {
-                x: inner_offset,
-                y: row,
-                width: table_area.width,
-                height: table_row.height,
-            };
-            buf.set_style(table_row_area, table_row.style);
-
-            let selected = state.selection();
-            let is_selected_row = Table::is_selected_row(row_num, selected);
-
-            // Loop trough each column in row (i.e loop through each cell)
-            for ((col_num, (x, width)), cell) in columns_widths
-                .iter()
-                .enumerate()
-                .zip(table_row.cells.iter())
-            {
-                let should_show_symbol_in_col = cols_with_symbol_spacing.contains(&col_num);
-                let is_selected_col = Table::is_selected_col(col_num, selected);
-
-                let is_selected_cell = Table::is_selected_cell(row_num, col_num, selected);
-
-                if selection_width > 0 && is_selected_cell && should_show_symbol_in_col {
-                    // if selection_width > 0 && is_selected_cell {
-                    // this should in normal cases be safe, because "get_columns_widths" allocates
-                    // "highlight_symbol.width()" space but "get_columns_widths"
-                    // currently does not bind it to max table.width()
-                    buf.set_stringn(
-                        inner_offset + x - selection_width,
-                        row,
-                        highlight_symbol,
-                        table_area.width as usize,
-                        table_row.style,
-                    );
-                };
-                let table_cell_area = Rect {
-                    x: inner_offset + x,
-                    y: row,
-                    width: *width,
-                    height: table_row.height,
-                };
-                render_cell(buf, cell, table_cell_area);
-
-                // Highlight ROW first
-                if is_selected_row {
-                    buf.set_style(table_row_area, self.row_highlight_style);
-                }
-
-                // Then, highlight column (on top of row)
-                if is_selected_col {
-                    let vertical_rect = Rect {
-                        x: inner_offset + x,
-                        y: table_area.top(),
-                        width: *width,
-                        height: table_area.height,
-                    };
-                    buf.set_style(vertical_rect, self.col_highlight_style);
-                }
-
-                // Finally, highlight cell (on top of row and column)
-                if is_selected_cell {
-                    buf.set_style(table_cell_area, self.cell_highlight_style);
-                }
-            }
-        }
+        self.render_rows(
+            table_area,
+            state,
+            buf,
+            &mut current_height,
+            &columns_widths,
+            rows_height,
+            selection_width,
+        );
     }
 }
 
