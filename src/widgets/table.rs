@@ -842,6 +842,29 @@ impl Table<'_> {
             *rows_height = rows_height.saturating_sub(max_header_height);
         }
     }
+
+    fn is_selected_row(row_num: usize, selected: Option<TableSelection>) -> bool {
+        match selected {
+            Some(TableSelection::Row(row)) => row == row_num,
+            Some(TableSelection::Cell { row, .. }) => row == row_num,
+            _ => false,
+        }
+    }
+
+    fn is_selected_col(col_num: usize, selected: Option<TableSelection>) -> bool {
+        match selected {
+            Some(TableSelection::Col(col)) => col == col_num,
+            Some(TableSelection::Cell { col, .. }) => col == col_num,
+            _ => false,
+        }
+    }
+
+    fn is_selected_cell(row_num: usize, col_num: usize, selected: Option<TableSelection>) -> bool {
+        match selected {
+            Some(TableSelection::Cell { row, col }) => row == row_num && col == col_num,
+            _ => false,
+        }
+    }
 }
 
 impl<'a> StatefulWidget for Table<'a> {
@@ -907,11 +930,7 @@ impl<'a> StatefulWidget for Table<'a> {
             buf.set_style(table_row_area, table_row.style);
 
             let selected = state.selection();
-            let is_selected_row = match selected {
-                Some(TableSelection::Row(row)) => row == row_num,
-                Some(TableSelection::Cell { row, .. }) => row == row_num,
-                _ => false,
-            };
+            let is_selected_row = Table::is_selected_row(row_num, selected);
 
             // Loop trough each column in row (i.e loop through each cell)
             for ((col_num, (x, width)), cell) in columns_widths
@@ -920,17 +939,9 @@ impl<'a> StatefulWidget for Table<'a> {
                 .zip(table_row.cells.iter())
             {
                 let should_show_symbol_in_col = cols_with_symbol_spacing.contains(&col_num);
-                let is_selected_col = match selected {
-                    Some(TableSelection::Col(col)) => col == col_num,
-                    Some(TableSelection::Cell { col, .. }) => col == col_num,
-                    _ => false,
-                };
-                let is_selected_cell = match selected {
-                    None => false,
-                    Some(TableSelection::Row(_)) => is_selected_row && col_num == 0,
-                    Some(TableSelection::Col(_)) => is_selected_col && row_num == 0,
-                    Some(TableSelection::Cell { .. }) => is_selected_row && is_selected_col,
-                };
+                let is_selected_col = Table::is_selected_col(col_num, selected);
+
+                let is_selected_cell = Table::is_selected_cell(row_num, col_num, selected);
 
                 if selection_width > 0 && is_selected_cell && should_show_symbol_in_col {
                     // if selection_width > 0 && is_selected_cell {
@@ -951,13 +962,15 @@ impl<'a> StatefulWidget for Table<'a> {
                     width: *width,
                     height: table_row.height,
                 };
-
                 render_cell(buf, cell, table_cell_area);
-                if is_selected_cell {
-                    // Highlight ROW first
-                    buf.set_style(table_row_area, self.row_highlight_style);
 
-                    // Then, highlight column (on top of row)
+                // Highlight ROW first
+                if is_selected_row {
+                    buf.set_style(table_row_area, self.row_highlight_style);
+                }
+
+                // Then, highlight column (on top of row)
+                if is_selected_col {
                     let vertical_rect = Rect {
                         x: inner_offset + x,
                         y: table_area.top(),
@@ -965,8 +978,10 @@ impl<'a> StatefulWidget for Table<'a> {
                         height: table_area.height,
                     };
                     buf.set_style(vertical_rect, self.col_highlight_style);
+                }
 
-                    // Finally, highlight cell (on top of row and column)
+                // Finally, highlight cell (on top of row and column)
+                if is_selected_cell {
                     buf.set_style(table_cell_area, self.cell_highlight_style);
                 }
             }
