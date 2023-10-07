@@ -805,6 +805,45 @@ impl TableState {
     }
 }
 
+impl Table<'_> {
+    fn render_header(
+        &self,
+        table_area: Rect,
+        buf: &mut Buffer,
+        current_height: &mut u16,
+        columns_widths: &Vec<(u16, u16)>,
+        rows_height: &mut u16,
+    ) {
+        if let Some(ref header) = self.header {
+            let max_header_height = table_area.height.min(header.total_height());
+            buf.set_style(
+                Rect {
+                    x: table_area.left(),
+                    y: table_area.top(),
+                    width: table_area.width,
+                    height: table_area.height.min(header.height),
+                },
+                header.style,
+            );
+            let inner_offset = table_area.left();
+            for ((x, width), cell) in columns_widths.iter().zip(header.cells.iter()) {
+                render_cell(
+                    buf,
+                    cell,
+                    Rect {
+                        x: inner_offset + x,
+                        y: table_area.top(),
+                        width: *width,
+                        height: max_header_height,
+                    },
+                );
+            }
+            *current_height += max_header_height;
+            *rows_height = rows_height.saturating_sub(max_header_height);
+        }
+    }
+}
+
 impl<'a> StatefulWidget for Table<'a> {
     type State = TableState;
 
@@ -833,33 +872,13 @@ impl<'a> StatefulWidget for Table<'a> {
         let mut rows_height = table_area.height;
 
         // Draw header
-        if let Some(ref header) = self.header {
-            let max_header_height = table_area.height.min(header.total_height());
-            buf.set_style(
-                Rect {
-                    x: table_area.left(),
-                    y: table_area.top(),
-                    width: table_area.width,
-                    height: table_area.height.min(header.height),
-                },
-                header.style,
-            );
-            let inner_offset = table_area.left();
-            for ((x, width), cell) in columns_widths.iter().zip(header.cells.iter()) {
-                render_cell(
-                    buf,
-                    cell,
-                    Rect {
-                        x: inner_offset + x,
-                        y: table_area.top(),
-                        width: *width,
-                        height: max_header_height,
-                    },
-                );
-            }
-            current_height += max_header_height;
-            rows_height = rows_height.saturating_sub(max_header_height);
-        }
+        self.render_header(
+            table_area,
+            buf,
+            &mut current_height,
+            &columns_widths,
+            &mut rows_height,
+        );
 
         // Draw rows
         if self.rows.is_empty() {
