@@ -412,15 +412,15 @@ be installed with `cargo install cargo-make`).
   with a React/Elm inspired approach
 - [tui-realm-treeview](https://github.com/veeso/tui-realm-treeview) — Treeview component for
   Tui-realm
-- [tui-rs-tree-widgets](https://github.com/EdJoPaTo/tui-rs-tree-widget): Widget for tree data
+- [tui-rs-tree-widgets](https://github.com/EdJoPaTo/tui-rs-tree-widget) — Widget for tree data
   structures.
 - [tui-windows](https://github.com/markatk/tui-windows-rs) — Tui-rs abstraction to handle multiple
   windows and their rendering
-- [tui-textarea](https://github.com/rhysd/tui-textarea): Simple yet powerful multi-line text editor
+- [tui-textarea](https://github.com/rhysd/tui-textarea) — Simple yet powerful multi-line text editor
   widget supporting several key shortcuts, undo/redo, text search, etc.
-- [tui-input](https://github.com/sayanarijit/tui-input): TUI input library supporting multiple
+- [tui-input](https://github.com/sayanarijit/tui-input) — TUI input library supporting multiple
   backends and tui-rs.
-- [tui-term](https://github.com/a-kenji/tui-term): A pseudoterminal widget library
+- [tui-term](https://github.com/a-kenji/tui-term) — A pseudoterminal widget library
   that enables the rendering of terminal applications as ratatui widgets.
 
 ## Apps
