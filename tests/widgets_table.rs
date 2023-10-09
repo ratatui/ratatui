@@ -950,7 +950,6 @@ fn widgets_table_can_select_cells_rows_and_cols() {
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))
                 .highlight_symbol(">> ")
-                // .highlight_area(HighlightArea::Row)
                 .highlight_spacing(HighlightSpacing::Always)
                 .columns_with_highlight_spacing(ColumnHighlightSpacing::AllColumns)
                 .highlight_spacing(space)
@@ -1006,7 +1005,8 @@ fn widgets_table_can_select_cells_rows_and_cols() {
         ]),
     );
 
-    state.select(Some(TableSelection::Row(0)));
+    // Highlight symbol will appear on first column when selecting a row
+    state.select(Some(TableSelection::Row(1)));
     test_case(
         &mut state,
         HighlightSpacing::default(),
@@ -1014,15 +1014,16 @@ fn widgets_table_can_select_cells_rows_and_cols() {
             "┌────────────────────────────┐",
             "│   Head1    Head2    Head3  │",
             "│                            │",
-            "│>> Row11    Row12    Row13  │",
-            "│   Row21    Row22    Row23  │",
+            "│   Row11    Row12    Row13  │",
+            "│>> Row21    Row22    Row23  │",
             "│                            │",
             "│   Row31    Row32    Row33  │",
             "└────────────────────────────┘",
         ]),
     );
 
-    state.select(Some(TableSelection::Col(0)));
+    // Highlight symbol will appear on first row when selecting a col
+    state.select(Some(TableSelection::Col(2)));
     test_case(
         &mut state,
         HighlightSpacing::default(),
@@ -1030,7 +1031,7 @@ fn widgets_table_can_select_cells_rows_and_cols() {
             "┌────────────────────────────┐",
             "│   Head1    Head2    Head3  │",
             "│                            │",
-            "│>> Row11    Row12    Row13  │",
+            "│   Row11    Row12 >> Row13  │",
             "│   Row21    Row22    Row23  │",
             "│                            │",
             "│   Row31    Row32    Row33  │",

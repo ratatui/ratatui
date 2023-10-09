@@ -811,7 +811,7 @@ impl Table<'_> {
         table_area: Rect,
         buf: &mut Buffer,
         current_height: &mut u16,
-        columns_widths: &Vec<(u16, u16)>,
+        columns_widths: &[(u16, u16)],
         rows_height: &mut u16,
     ) {
         if let Some(ref header) = self.header {
@@ -849,9 +849,8 @@ impl Table<'_> {
         state: &mut TableState,
         buf: &mut Buffer,
         current_height: &mut u16,
-        columns_widths: &Vec<(u16, u16)>,
+        columns_widths: &[(u16, u16)],
         rows_height: u16,
-        selection_width: u16,
     ) {
         if self.rows.is_empty() {
             return;
@@ -860,6 +859,11 @@ impl Table<'_> {
         state.offset = start;
 
         let cols_with_symbol_spacing = self.get_columns_with_spacing(state);
+        let selection_width = if self.highlight_spacing.should_add(state.selected.is_some()) {
+            self.highlight_symbol.map_or(0, |s| s.width() as u16)
+        } else {
+            0
+        };
         // Loop through each row
         for (row_num, table_row) in self
             .rows
@@ -892,7 +896,15 @@ impl Table<'_> {
 
                 let is_selected_cell = Table::is_selected_cell(row_num, col_num, selected);
 
-                if selection_width > 0 && is_selected_cell && should_show_symbol_in_col {
+                // Defines if this cell is where the highlight symbol should appear
+                let is_highlight_symbol_cell = match selected {
+                    Some(TableSelection::Cell { .. }) => is_selected_cell,
+                    Some(TableSelection::Col(_)) => is_selected_col && row_num == 0,
+                    Some(TableSelection::Row(_)) => is_selected_row && col_num == 0,
+                    None => false,
+                };
+
+                if selection_width > 0 && is_highlight_symbol_cell && should_show_symbol_in_col {
                     // this should in normal cases be safe, because "get_columns_widths" allocates
                     // "highlight_symbol.width()" space but "get_columns_widths"
                     // currently does not bind it to max table.width()
@@ -1005,7 +1017,6 @@ impl<'a> StatefulWidget for Table<'a> {
             &mut current_height,
             &columns_widths,
             rows_height,
-            selection_width,
         );
     }
 }
