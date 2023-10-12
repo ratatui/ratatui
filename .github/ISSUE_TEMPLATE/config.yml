@@ -1,1 +1,8 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Discord Chat
+    url: https://discord.gg/pMCEU9hNEj
+    about: Ask questions about ratatui on Discord
+  - name: Matrix Chat
+    url: https://matrix.to/#/#ratatui:matrix.org
+    about: Ask questions about ratatui on Matrix
