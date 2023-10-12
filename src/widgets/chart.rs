@@ -304,15 +304,15 @@ impl<'a> Chart<'a> {
             }
         }
 
-        if let Some(inner_width) = self
+        let dataset_names: Vec<&Cow<str>> = self
             .datasets
             .iter()
-            .filter_map(|d| Some(d.name.as_ref()?.width() as u16))
-            .max()
-        {
-            let legend_width = inner_width + 2;
-            let legend_height =
-                self.datasets.iter().filter(|d| d.name.is_some()).count() as u16 + 2;
+            .filter_map(|d| d.name.as_ref()) // filter out unnamed dataset and extract name
+            .collect();
+
+        if let Some(inner_width) = dataset_names.iter().map(|name| name.width()).max() {
+            let legend_width = inner_width as u16 + 2;
+            let legend_height = dataset_names.len() as u16 + 2;
             let max_legend_width = self
                 .hidden_legend_constraints
                 .0
@@ -556,8 +556,8 @@ impl<'a> Widget for Chart<'a> {
                 .render(legend_area, buf);
             for (i, (dataset_name, dataset_style)) in self
                 .datasets
-                .iter()
-                .filter_map(|d| Some((d.name.as_ref()?, d.style)))
+                .iter() // exclude unnamed datasets and then extract name and style
+                .filter_map(|d| Some((d.name.as_ref()?, d.style))) // note ? short circuit
                 .enumerate()
             {
                 buf.set_string(
