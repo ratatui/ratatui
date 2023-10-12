@@ -102,6 +102,9 @@ pub struct Dataset<'a> {
 }
 
 impl<'a> Dataset<'a> {
+    /// Assigns a name to this dataset, making it appear on the [Chart] legend.
+    /// Datasets don't require a name and can be created without specifying one.
+    /// Once assigned, a name can't be removed, only changed.
     pub fn name<S>(mut self, name: S) -> Dataset<'a>
     where
         S: Into<Cow<'a, str>>,
@@ -154,6 +157,7 @@ struct ChartLayout {
 }
 
 /// A widget to plot one or more dataset in a cartesian coordinate system
+/// It will draw a legend box listing only datasets with a name set
 ///
 /// # Examples
 ///
@@ -162,13 +166,12 @@ struct ChartLayout {
 ///
 /// let datasets = vec![
 ///     Dataset::default()
-///         .name("data1")
+///         .name("my data") // name set, will be listed in legend box
 ///         .marker(symbols::Marker::Dot)
 ///         .graph_type(GraphType::Scatter)
 ///         .style(Style::default().fg(Color::Cyan))
 ///         .data(&[(0.0, 5.0), (1.0, 6.0), (1.5, 6.434)]),
-///     Dataset::default()
-///         .name("data2")
+///     Dataset::default() // no name set, won't be listed in legend box
 ///         .marker(symbols::Marker::Braille)
 ///         .graph_type(GraphType::Line)
 ///         .style(Style::default().fg(Color::Magenta))
@@ -736,5 +739,18 @@ mod tests {
         widget.render(buffer.area, &mut buffer);
 
         assert_eq!(buffer, Buffer::with_lines(vec![" ".repeat(8); 4]))
+    }
+
+    #[test]
+    fn datasets_without_name_dont_contribuite_to_legend_height() {
+        let data_named_1 = Dataset::default().name("data1"); // must occupy a row in legend
+        let data_named_2 = Dataset::default().name(""); // must occupy a row in legend, even if name is empty
+        let data_unnamed = Dataset::default(); // must not occupy a row in legend
+        let widget = Chart::new(vec![data_named_1, data_unnamed, data_named_2]);
+        let buffer = Buffer::empty(Rect::new(0, 0, 50, 25));
+        let layout = widget.layout(buffer.area);
+
+        assert!(layout.legend_area.is_some());
+        assert_eq!(layout.legend_area.unwrap().height, 4); // 2 for borders, 2 for rows
     }
 }
