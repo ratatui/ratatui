@@ -867,6 +867,9 @@ impl Table<'_> {
             0
         };
 
+        let mut highlight_row_area: Rect = Rect::default();
+        let mut highlight_col_area: Rect = Rect::default();
+        let mut highlight_cell_area: Rect = Rect::default();
         // Loop through each visible row
         for (row_num, table_row) in self
             .rows
@@ -888,6 +891,9 @@ impl Table<'_> {
 
             let selected = state.selection();
             let is_selected_row = Table::is_selected_row(row_num, selected);
+            if is_selected_row {
+                highlight_row_area = table_row_area;
+            }
 
             // Loop trough each column in row (i.e loop through each cell)
             for ((col_num, (cell_x, cell_width)), cell) in columns_widths
@@ -929,28 +935,29 @@ impl Table<'_> {
                 };
                 render_cell(buf, cell, table_cell_area);
 
-                // Highlight ROW first
-                if is_selected_row {
-                    buf.set_style(table_row_area, self.row_highlight_style);
-                }
-
-                // Then, highlight column (on top of row)
                 if is_selected_col {
-                    let vertical_rect = Rect {
+                    highlight_col_area = Rect {
                         x: table_x + cell_x,
                         y: table_area.top(),
                         width: *cell_width,
                         height: table_area.height,
                     };
-                    buf.set_style(vertical_rect, self.col_highlight_style);
                 }
 
-                // Finally, highlight cell (on top of row and column)
                 if is_selected_cell {
-                    buf.set_style(table_cell_area, self.cell_highlight_style);
+                    highlight_cell_area = table_cell_area;
                 }
             }
         }
+
+        // Highlight ROW first
+        buf.set_style(highlight_row_area, self.row_highlight_style);
+
+        // Then, highlight column (on top of row)
+        buf.set_style(highlight_col_area, self.col_highlight_style);
+
+        // Finally, highlight cell (on top of row and column)
+        buf.set_style(highlight_cell_area, self.cell_highlight_style);
     }
 
     fn is_selected_row(row_num: usize, selected: Option<TableSelection>) -> bool {
