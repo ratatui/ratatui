@@ -76,6 +76,12 @@ impl<'a> ListItem<'a> {
     }
 }
 
+impl ToString for ListItem<'_> {
+    fn to_string(&self) -> String {
+        self.content.to_string()
+    }
+}
+
 /// A widget to display several items among which one can be selected (optional)
 ///
 /// # Examples
@@ -206,6 +212,44 @@ impl<'a> List<'a> {
             }
         }
         (start, end)
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_block(&self) -> Option<Block> {
+        self.block.clone()
+    }
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_style(&self) -> Style {
+        self.style
+    }
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_items(&self) -> Vec<ListItem> {
+        self.items.clone()
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_start_corner(&self) -> Corner {
+        self.start_corner
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_highlight_style(&self) -> Style {
+        self.highlight_style
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_highlight_symbol(&self) -> Option<&str> {
+        self.highlight_symbol
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_repeat_highlight_symbol(&self) -> bool {
+        self.repeat_highlight_symbol
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_highlight_spacing(&self) -> HighlightSpacing {
+        self.highlight_spacing.clone()
     }
 }
 

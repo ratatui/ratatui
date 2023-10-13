@@ -60,7 +60,7 @@ palette = "0.7.3"
 pretty_assertions = "1.4.0"
 
 [features]
-default = ["crossterm"]
+default = ["crossterm", "unstable-testing-mode"]
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [Serde crate].
 ## This is useful if you want to save themes to a file.
@@ -76,6 +76,9 @@ all-widgets = ["widget-calendar"]
 #! dependencies. The available features are:
 ## enables the [`calendar`] widget module and adds a dependency on the [Time crate].
 widget-calendar = ["dep:time"]
+
+## Adds a unstable API for unit testing ratatui. THIS MAY BREAK AT ANY TIME!
+unstable-testing-mode = []
 
 [package.metadata.docs.rs]
 all-features = true

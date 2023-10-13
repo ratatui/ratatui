@@ -747,6 +747,51 @@ impl<'a> Block<'a> {
         self.render_title_position(Position::Top, area, buf);
         self.render_title_position(Position::Bottom, area, buf);
     }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_titles(&self) -> Vec<Title> {
+        self.titles.clone()
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_titles_style(&self) -> Style {
+        self.titles_style
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_titles_alignment(&self) -> Alignment {
+        self.titles_alignment
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_titles_position(&self) -> Position {
+        self.titles_position
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_borders(&self) -> Borders{
+        self.borders
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_border_style(&self) -> Style{
+        self.border_style
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_border_type(&self) -> BorderType{
+        self.border_type
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_style(&self) -> Style {
+        self.style
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_padding(&self) -> Padding{
+        self.padding
+    }
 }
 
 impl<'a> Widget for Block<'a> {

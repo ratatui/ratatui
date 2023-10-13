@@ -208,6 +208,36 @@ impl<'a> Paragraph<'a> {
         self.alignment = alignment;
         self
     }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_block(&self) -> Option<Block> {
+        self.block.clone()
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_style(&self) -> Style {
+        self.style
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_wrap(&self) -> Option<Wrap> {
+        self.wrap
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_text(&self) -> Text {
+        self.text.clone()
+    } 
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_scroll(&self) -> (u16, u16) {
+        self.scroll
+    }
+
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_alignment(&self) -> Alignment {
+        self.alignment
+    }
 }
 
 impl<'a> Widget for Paragraph<'a> {

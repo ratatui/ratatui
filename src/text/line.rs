@@ -164,6 +164,19 @@ impl<'a> Line<'a> {
             ..self
         }
     }
+    
+    #[cfg(feature = "unstable-testing-mode")]
+    pub fn get_spans(&self) -> Vec<Span>{
+        self.spans.clone()
+    }
+}
+
+impl<'a> ToString for Line<'a> {
+    fn to_string(&self) -> String {
+        self.spans.iter().fold("".to_string(), |acc, span: &Span| {
+            acc + &span.content
+        })
+    }
 }
 
 impl<'a> From<String> for Line<'a> {

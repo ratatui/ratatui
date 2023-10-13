@@ -143,6 +143,17 @@ impl<'a> Text<'a> {
             line.reset_style();
         }
     }
+    
+    
+}
+
+#[cfg(feature = "unstable-testing-mode")]
+impl<'a> ToString for Text<'a> {
+    fn to_string(&self) -> String{
+        self.lines.iter().fold("".to_string(), |acc: String, line: &Line| {
+            acc + &line.to_string()
+        })
+    }
 }
 
 impl<'a> From<String> for Text<'a> {
