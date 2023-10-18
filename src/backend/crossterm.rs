@@ -4,12 +4,14 @@
 //! [Crossterm]: https://crates.io/crates/crossterm
 use std::io::{self, Write};
 
+#[cfg(feature = "underline-color")]
+use crossterm::style::SetUnderlineColor;
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
     execute, queue,
     style::{
         Attribute as CAttribute, Color as CColor, Print, SetAttribute, SetBackgroundColor,
-        SetForegroundColor, SetUnderlineColor,
+        SetForegroundColor,
     },
     terminal::{self, Clear},
 };
@@ -124,6 +126,7 @@ where
     {
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
+        #[cfg(feature = "underline-color")]
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
         let mut last_pos: Option<(u16, u16)> = None;
@@ -151,6 +154,7 @@ where
                 queue!(self.writer, SetBackgroundColor(color))?;
                 bg = cell.bg;
             }
+            #[cfg(feature = "underline-color")]
             if cell.underline_color != underline_color {
                 let color = CColor::from(cell.underline_color);
                 queue!(self.writer, SetUnderlineColor(color))?;
@@ -160,13 +164,21 @@ where
             queue!(self.writer, Print(&cell.symbol))?;
         }
 
-        queue!(
+        #[cfg(feature = "underline-color")]
+        return queue!(
             self.writer,
             SetForegroundColor(CColor::Reset),
             SetBackgroundColor(CColor::Reset),
             SetUnderlineColor(CColor::Reset),
-            SetAttribute(CAttribute::Reset)
-        )
+            SetAttribute(CAttribute::Reset),
+        );
+        #[cfg(not(feature = "underline-color"))]
+        return queue!(
+            self.writer,
+            SetForegroundColor(CColor::Reset),
+            SetBackgroundColor(CColor::Reset),
+            SetAttribute(CAttribute::Reset),
+        );
     }
 
     fn hide_cursor(&mut self) -> io::Result<()> {

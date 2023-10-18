@@ -23,14 +23,8 @@ rust-version = "1.67.0"
 [badges]
 
 [dependencies]
-#! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
-#!
-#! Generally an application will only use one backend, so you should only enable one of the following features:
-## enables the [`CrosstermBackend`] backend and adds a dependency on the [Crossterm crate].
 crossterm = { version = "0.27", optional = true }
-## enables the [`TermionBackend`] backend and adds a dependency on the [Termion crate].
 termion = { version = "2.0", optional = true }
-## enables the [`TermwizBackend`] backend and adds a dependency on the [Termwiz crate].
 termwiz = { version = "0.20.0", optional = true }
 
 serde = { version = "1", optional = true, features = ["derive"] }
@@ -60,7 +54,20 @@ palette = "0.7.3"
 pretty_assertions = "1.4.0"
 
 [features]
-default = ["crossterm"]
+#! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
+#!
+## By default, we enable the crossterm backend as this is a reasonable choice for most applications
+## as it is supported on Linux/Mac/Windows systems. We also enable the `underline-color` feature
+## which allows you to set the underline color of text.
+default = ["crossterm", "underline-color"]
+#! Generally an application will only use one backend, so you should only enable one of the following features:
+## enables the [`CrosstermBackend`] backend and adds a dependency on the [Crossterm crate].
+crossterm = ["dep:crossterm"]
+## enables the [`TermionBackend`] backend and adds a dependency on the [Termion crate].
+termion = ["dep:termion"]
+## enables the [`TermwizBackend`] backend and adds a dependency on the [Termwiz crate].
+termwiz = ["dep:termwiz"]
+
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [Serde crate].
 ## This is useful if you want to save themes to a file.
@@ -76,6 +83,11 @@ all-widgets = ["widget-calendar"]
 #! dependencies. The available features are:
 ## enables the [`calendar`] widget module and adds a dependency on the [Time crate].
 widget-calendar = ["dep:time"]
+
+#! Underline color is only supported by the [`CrosstermBackend`] backend, and is not supported
+#! on Windows 7.
+## enables the backend code that sets the underline color.
+underline-color = ["dep:crossterm"]
 
 [package.metadata.docs.rs]
 all-features = true

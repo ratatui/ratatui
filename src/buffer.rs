@@ -19,7 +19,7 @@ pub struct Cell {
     pub symbol: String,
     pub fg: Color,
     pub bg: Color,
-    #[cfg(feature = "crossterm")]
+    #[cfg(feature = "underline-color")]
     pub underline_color: Color,
     pub modifier: Modifier,
     pub skip: bool,
@@ -55,7 +55,7 @@ impl Cell {
         if let Some(c) = style.bg {
             self.bg = c;
         }
-        #[cfg(feature = "crossterm")]
+        #[cfg(feature = "underline-color")]
         if let Some(c) = style.underline_color {
             self.underline_color = c;
         }
@@ -64,7 +64,7 @@ impl Cell {
         self
     }
 
-    #[cfg(feature = "crossterm")]
+    #[cfg(feature = "underline-color")]
     pub fn style(&self) -> Style {
         Style::default()
             .fg(self.fg)
@@ -73,7 +73,7 @@ impl Cell {
             .add_modifier(self.modifier)
     }
 
-    #[cfg(not(feature = "crossterm"))]
+    #[cfg(not(feature = "underline-color"))]
     pub fn style(&self) -> Style {
         Style::default()
             .fg(self.fg)
@@ -95,7 +95,7 @@ impl Cell {
         self.symbol.push(' ');
         self.fg = Color::Reset;
         self.bg = Color::Reset;
-        #[cfg(feature = "crossterm")]
+        #[cfg(feature = "underline-color")]
         {
             self.underline_color = Color::Reset;
         }
@@ -110,7 +110,7 @@ impl Default for Cell {
             symbol: " ".into(),
             fg: Color::Reset,
             bg: Color::Reset,
-            #[cfg(feature = "crossterm")]
+            #[cfg(feature = "underline-color")]
             underline_color: Color::Reset,
             modifier: Modifier::empty(),
             skip: false,
@@ -138,7 +138,7 @@ impl Default for Cell {
 ///     symbol: String::from("r"),
 ///     fg: Color::Red,
 ///     bg: Color::White,
-///     #[cfg(feature = "crossterm")]
+///     #[cfg(feature = "underline-color")]
 ///     underline_color: Color::Reset,
 ///     modifier: Modifier::empty(),
 ///     skip: false
@@ -560,7 +560,7 @@ impl Debug for Buffer {
                     overwritten.push((x, &c.symbol));
                 }
                 skip = std::cmp::max(skip, c.symbol.width()).saturating_sub(1);
-                #[cfg(feature = "crossterm")]
+                #[cfg(feature = "underline-color")]
                 {
                     let style = (c.fg, c.bg, c.underline_color, c.modifier);
                     if last_style != Some(style) {
@@ -568,7 +568,7 @@ impl Debug for Buffer {
                         styles.push((x, y, c.fg, c.bg, c.underline_color, c.modifier));
                     }
                 }
-                #[cfg(not(feature = "crossterm"))]
+                #[cfg(not(feature = "underline-color"))]
                 {
                     let style = (c.fg, c.bg, c.modifier);
                     if last_style != Some(style) {
@@ -586,12 +586,12 @@ impl Debug for Buffer {
         }
         f.write_str("    ],\n    styles: [\n")?;
         for s in styles {
-            #[cfg(feature = "crossterm")]
+            #[cfg(feature = "underline-color")]
             f.write_fmt(format_args!(
                 "        x: {}, y: {}, fg: {:?}, bg: {:?}, underline: {:?}, modifier: {:?},\n",
                 s.0, s.1, s.2, s.3, s.4, s.5
             ))?;
-            #[cfg(not(feature = "crossterm"))]
+            #[cfg(not(feature = "underline-color"))]
             f.write_fmt(format_args!(
                 "        x: {}, y: {}, fg: {:?}, bg: {:?}, modifier: {:?},\n",
                 s.0, s.1, s.2, s.3, s.4
@@ -625,7 +625,7 @@ mod tests {
                 .bg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
         );
-        #[cfg(feature = "crossterm")]
+        #[cfg(feature = "underline-color")]
         assert_eq!(
             format!("{buf:?}"),
             indoc::indoc!(
@@ -643,7 +643,7 @@ mod tests {
                 }"
             )
         );
-        #[cfg(not(feature = "crossterm"))]
+        #[cfg(not(feature = "underline-color"))]
         assert_eq!(
             format!("{buf:?}"),
             indoc::indoc!(
