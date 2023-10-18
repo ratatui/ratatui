@@ -1,17 +1,32 @@
 use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
+    io::{self, stdout, Stdout},
+    rc::Rc,
+    time::Duration,
 };
 
+use anyhow::Result;
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
+    event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    ExecutableCommand,
 };
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{block::Title, *},
+};
+
+fn main() -> Result<()> {
+    App::run()
+}
 
 struct App {
+    term: Term,
+    should_quit: bool,
+    state: AppState,
+}
+
+#[derive(Debug, Default, Clone, Copy)]
+struct AppState {
     progress1: u16,
     progress2: u16,
     progress3: f64,
@@ -19,138 +34,154 @@ struct App {
 }
 
 impl App {
-    fn new() -> App {
-        App {
-            progress1: 0,
-            progress2: 0,
-            progress3: 0.45,
-            progress4: 0,
+    fn run() -> Result<()> {
+        // run at ~10 fps minus the time it takes to draw
+        let timeout = Duration::from_secs_f32(1.0 / 10.0);
+        let mut app = Self::start()?;
+        while !app.should_quit {
+            app.update();
+            app.draw()?;
+            app.handle_events(timeout)?;
         }
+        app.stop()?;
+        Ok(())
     }
 
-    fn on_tick(&mut self) {
-        self.progress1 += 1;
-        if self.progress1 > 100 {
-            self.progress1 = 0;
-        }
-        self.progress2 += 2;
-        if self.progress2 > 100 {
-            self.progress2 = 0;
-        }
-        self.progress3 += 0.001;
-        if self.progress3 > 1.0 {
-            self.progress3 = 0.0;
-        }
-        self.progress4 += 1;
-        if self.progress4 > 100 {
-            self.progress4 = 0;
-        }
-    }
-}
-
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    // create app and run it
-    let tick_rate = Duration::from_millis(250);
-    let app = App::new();
-    let res = run_app(&mut terminal, app, tick_rate);
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
+    fn start() -> Result<Self> {
+        Ok(App {
+            term: Term::start()?,
+            should_quit: false,
+            state: AppState {
+                progress1: 0,
+                progress2: 0,
+                progress3: 0.0,
+                progress4: 0,
+            },
+        })
     }
 
-    Ok(())
-}
+    fn stop(&mut self) -> Result<()> {
+        Term::stop()?;
+        Ok(())
+    }
 
-fn run_app<B: Backend>(
-    terminal: &mut Terminal<B>,
-    mut app: App,
-    tick_rate: Duration,
-) -> io::Result<()> {
-    let mut last_tick = Instant::now();
-    loop {
-        terminal.draw(|f| ui(f, &app))?;
+    fn update(&mut self) {
+        self.state.progress1 = (self.state.progress1 + 4).min(100);
+        self.state.progress2 = (self.state.progress2 + 3).min(100);
+        self.state.progress3 = (self.state.progress3 + 0.02).min(1.0);
+        self.state.progress4 = (self.state.progress4 + 1).min(100);
+    }
 
-        let timeout = tick_rate
-            .checked_sub(last_tick.elapsed())
-            .unwrap_or_else(|| Duration::from_secs(0));
-        if crossterm::event::poll(timeout)? {
+    fn draw(&mut self) -> Result<()> {
+        self.term.draw(|frame| {
+            let state = self.state;
+            let layout = Self::equal_layout(frame);
+            Self::render_gauge1(state.progress1, frame, layout[0]);
+            Self::render_gauge2(state.progress2, frame, layout[1]);
+            Self::render_gauge3(state.progress3, frame, layout[2]);
+            Self::render_gauge4(state.progress4, frame, layout[3]);
+        })?;
+        Ok(())
+    }
+
+    fn handle_events(&mut self, timeout: Duration) -> io::Result<()> {
+        if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                if let KeyCode::Char('q') = key.code {
-                    return Ok(());
+                if key.kind == KeyEventKind::Press {
+                    if let KeyCode::Char('q') = key.code {
+                        self.should_quit = true;
+                    }
                 }
             }
         }
-        if last_tick.elapsed() >= tick_rate {
-            app.on_tick();
-            last_tick = Instant::now();
-        }
+        Ok(())
+    }
+
+    fn equal_layout(frame: &Frame) -> Rc<[Rect]> {
+        Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+            ])
+            .split(frame.size())
+    }
+
+    fn render_gauge1(progress: u16, frame: &mut Frame, area: Rect) {
+        let title = Self::title_block("Gauge with percentage progress");
+        let gauge = Gauge::default()
+            .block(title)
+            .gauge_style(Style::new().light_red())
+            .percent(progress);
+        frame.render_widget(gauge, area);
+    }
+
+    fn render_gauge2(progress: u16, frame: &mut Frame, area: Rect) {
+        let title = Self::title_block("Gauge with percentage progress and custom label");
+        let label = format!("{}/100", progress);
+        let gauge = Gauge::default()
+            .block(title)
+            .gauge_style(Style::new().blue().on_light_blue())
+            .percent(progress)
+            .label(label);
+        frame.render_widget(gauge, area);
+    }
+
+    fn render_gauge3(progress: f64, frame: &mut Frame, area: Rect) {
+        let title =
+            Self::title_block("Gauge with ratio progress, custom label with style, and unicode");
+        let label = Span::styled(
+            format!("{:.2}%", progress * 100.0),
+            Style::new().red().italic().bold(),
+        );
+        let gauge = Gauge::default()
+            .block(title)
+            .gauge_style(Style::default().fg(Color::Yellow))
+            .ratio(progress)
+            .label(label)
+            .use_unicode(true);
+        frame.render_widget(gauge, area);
+    }
+
+    fn render_gauge4(progress: u16, frame: &mut Frame, area: Rect) {
+        let title = Self::title_block("Gauge with percentage progress and label");
+        let label = format!("{}/100", progress);
+        let gauge = Gauge::default()
+            .block(title)
+            .gauge_style(Style::new().green().italic())
+            .percent(progress)
+            .label(label);
+        frame.render_widget(gauge, area);
+    }
+
+    fn title_block(title: &str) -> Block {
+        let title = Title::from(title).alignment(Alignment::Center);
+        Block::default().title(title).borders(Borders::TOP)
     }
 }
 
-fn ui(f: &mut Frame, app: &App) {
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-        ])
-        .split(f.size());
+struct Term {
+    terminal: Terminal<CrosstermBackend<Stdout>>,
+}
 
-    let gauge = Gauge::default()
-        .block(Block::default().title("Gauge1").borders(Borders::ALL))
-        .gauge_style(Style::default().fg(Color::Yellow))
-        .percent(app.progress1);
-    f.render_widget(gauge, chunks[0]);
+impl Term {
+    pub fn start() -> io::Result<Term> {
+        stdout().execute(EnterAlternateScreen)?;
+        enable_raw_mode()?;
+        let terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
+        Ok(Self { terminal })
+    }
 
-    let label = format!("{}/100", app.progress2);
-    let gauge = Gauge::default()
-        .block(Block::default().title("Gauge2").borders(Borders::ALL))
-        .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Green))
-        .percent(app.progress2)
-        .label(label);
-    f.render_widget(gauge, chunks[1]);
+    pub fn stop() -> io::Result<()> {
+        disable_raw_mode()?;
+        stdout().execute(LeaveAlternateScreen)?;
+        Ok(())
+    }
 
-    let label = Span::styled(
-        format!("{:.2}%", app.progress3 * 100.0),
-        Style::default()
-            .fg(Color::Red)
-            .add_modifier(Modifier::ITALIC | Modifier::BOLD),
-    );
-    let gauge = Gauge::default()
-        .block(Block::default().title("Gauge3").borders(Borders::ALL))
-        .gauge_style(Style::default().fg(Color::Yellow))
-        .ratio(app.progress3)
-        .label(label)
-        .use_unicode(true);
-    f.render_widget(gauge, chunks[2]);
-
-    let label = format!("{}/100", app.progress4);
-    let gauge = Gauge::default()
-        .block(Block::default().title("Gauge4").borders(Borders::ALL))
-        .gauge_style(
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::ITALIC),
-        )
-        .percent(app.progress4)
-        .label(label);
-    f.render_widget(gauge, chunks[3]);
+    fn draw(&mut self, frame: impl FnOnce(&mut Frame)) -> Result<()> {
+        self.terminal.draw(frame)?;
+        Ok(())
+    }
 }

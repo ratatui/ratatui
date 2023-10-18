@@ -185,14 +185,14 @@ impl<'a> Widget for Gauge<'a> {
             // render the filled area (left to end)
             for x in gauge_area.left()..end {
                 let cell = buf.get_mut(x, y);
-                if self.use_unicode {
+                // Use full block for the filled part of the gauge and spaces for the part that is
+                // covered by the label. Note that the background and foreground colors are swapped
+                // for the label part, otherwise the gauge will be inverted
+                if x < label_col || x > label_col + clamped_label_width || y != label_row {
                     cell.set_symbol(symbols::block::FULL)
                         .set_fg(self.gauge_style.fg.unwrap_or(Color::Reset))
                         .set_bg(self.gauge_style.bg.unwrap_or(Color::Reset));
                 } else {
-                    // spaces are needed to apply the background styling.
-                    // note that the background and foreground colors are swapped
-                    // otherwise the gauge will be inverted
                     cell.set_symbol(" ")
                         .set_fg(self.gauge_style.bg.unwrap_or(Color::Reset))
                         .set_bg(self.gauge_style.fg.unwrap_or(Color::Reset));
