@@ -2,7 +2,7 @@
 # To run this script, install vhs and run `vhs ./examples/demo.tape`
 
 Output "target/demo2-social.gif"
-Set Theme "OceanicMaterial"
+Set Theme "Aardvark Blue"
 # Github social preview size (1280x640 with 80px padding) and must be < 1MB
 # This puts some constraints on the amount of interactivity we can do.
 Set Width 1280

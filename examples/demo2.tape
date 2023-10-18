@@ -2,7 +2,7 @@
 # To run this script, install vhs and run `vhs ./examples/demo.tape`
 # NOTE: Requires VHS 0.6.1 or later for Screenshot support
 Output "target/demo2.gif"
-Set Theme "OceanicMaterial"
+Set Theme "Aardvark Blue"
 # The reason for this strange size is that the social preview image for this
 # demo is 1280x64 with 80 pixels of padding on each side. We want a version
 # without the padding for README.md, etc.
