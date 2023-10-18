@@ -303,8 +303,8 @@ Running this example produces the following output:
 [Conventional Commits]: https://www.conventionalcommits.org
 [API Documentation]: https://docs.rs/ratatui
 [Changelog]: https://github.com/ratatui-org/ratatui/blob/main/CHANGELOG.md
-[Contributing]: https:://github.com/ratatui-org/ratatui/blob/main/CONTRIBUTING.md
-[Breaking Changes]: https:://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md
+[Contributing]: https://github.com/ratatui-org/ratatui/blob/main/CONTRIBUTING.md
+[Breaking Changes]: https://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md
 [docsrs-hello]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-hello.png?raw=true
 [docsrs-layout]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-layout.png?raw=true
 [docsrs-styling]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-styling.png?raw=true
