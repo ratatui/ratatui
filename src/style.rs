@@ -140,7 +140,7 @@ impl fmt::Debug for Modifier {
 /// let styles = [
 ///     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD | Modifier::ITALIC),
 ///     Style::default().bg(Color::Red).add_modifier(Modifier::UNDERLINED),
-///     #[cfg(feature = "crossterm")]
+///     #[cfg(feature = "underline-color")]
 ///     Style::default().underline_color(Color::Green),
 ///     Style::default().fg(Color::Yellow).remove_modifier(Modifier::ITALIC),
 /// ];
@@ -152,7 +152,7 @@ impl fmt::Debug for Modifier {
 ///     Style {
 ///         fg: Some(Color::Yellow),
 ///         bg: Some(Color::Red),
-///         #[cfg(feature = "crossterm")]
+///         #[cfg(feature = "underline-color")]
 ///         underline_color: Some(Color::Green),
 ///         add_modifier: Modifier::BOLD | Modifier::UNDERLINED,
 ///         sub_modifier: Modifier::empty(),
@@ -179,7 +179,7 @@ impl fmt::Debug for Modifier {
 ///     Style {
 ///         fg: Some(Color::Yellow),
 ///         bg: Some(Color::Reset),
-///         #[cfg(feature = "crossterm")]
+///         #[cfg(feature = "underline-color")]
 ///         underline_color: Some(Color::Reset),
 ///         add_modifier: Modifier::empty(),
 ///         sub_modifier: Modifier::empty(),
@@ -192,7 +192,7 @@ impl fmt::Debug for Modifier {
 pub struct Style {
     pub fg: Option<Color>,
     pub bg: Option<Color>,
-    #[cfg(feature = "crossterm")]
+    #[cfg(feature = "underline-color")]
     pub underline_color: Option<Color>,
     pub add_modifier: Modifier,
     pub sub_modifier: Modifier,
@@ -220,7 +220,7 @@ impl Style {
         Style {
             fg: None,
             bg: None,
-            #[cfg(feature = "crossterm")]
+            #[cfg(feature = "underline-color")]
             underline_color: None,
             add_modifier: Modifier::empty(),
             sub_modifier: Modifier::empty(),
@@ -232,7 +232,7 @@ impl Style {
         Style {
             fg: Some(Color::Reset),
             bg: Some(Color::Reset),
-            #[cfg(feature = "crossterm")]
+            #[cfg(feature = "underline-color")]
             underline_color: Some(Color::Reset),
             add_modifier: Modifier::empty(),
             sub_modifier: Modifier::all(),
@@ -272,9 +272,12 @@ impl Style {
     /// Changes the underline color. The text must be underlined with a modifier for this to work.
     ///
     /// This uses a non-standard ANSI escape sequence. It is supported by most terminal emulators,
-    /// but is only implemented in the crossterm backend.
+    /// but is only implemented in the crossterm backend and enabled by the `underline-color`
+    /// feature flag.
     ///
-    /// See [Wikipedia](https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters) code `58` and `59` for more information.
+    /// See
+    /// [Wikipedia](https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters)
+    /// code `58` and `59` for more information.
     ///
     /// ## Examples
     ///
@@ -284,7 +287,7 @@ impl Style {
     /// let diff = Style::default().underline_color(Color::Red).add_modifier(Modifier::UNDERLINED);
     /// assert_eq!(style.patch(diff), Style::default().underline_color(Color::Red).add_modifier(Modifier::UNDERLINED));
     /// ```
-    #[cfg(feature = "crossterm")]
+    #[cfg(feature = "underline-color")]
     pub const fn underline_color(mut self, color: Color) -> Style {
         self.underline_color = Some(color);
         self
@@ -347,7 +350,7 @@ impl Style {
         self.fg = other.fg.or(self.fg);
         self.bg = other.bg.or(self.bg);
 
-        #[cfg(feature = "crossterm")]
+        #[cfg(feature = "underline-color")]
         {
             self.underline_color = other.underline_color.or(self.underline_color);
         }
