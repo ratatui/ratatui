@@ -2,7 +2,7 @@ use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     symbols,
     text::Span,
     widgets::{Block, Borders, Gauge, LineGauge},
@@ -47,32 +47,12 @@ fn widgets_gauge_renders() {
         "                                        ",
         "                                        ",
     ]);
+    expected.set_style(Rect::new(3, 3, 34, 1), Style::new().red().on_blue());
 
-    for i in 3..17 {
-        expected
-            .get_mut(i, 3)
-            .set_bg(Color::Blue)
-            .set_fg(Color::Red);
-    }
-    for i in 17..37 {
-        expected
-            .get_mut(i, 3)
-            .set_bg(Color::Blue)
-            .set_fg(Color::Red);
-    }
-
-    for i in 3..20 {
-        expected
-            .get_mut(i, 6)
-            .set_bg(Color::Blue)
-            .set_fg(Color::Red);
-    }
-    for i in 20..37 {
-        expected
-            .get_mut(i, 6)
-            .set_bg(Color::Blue)
-            .set_fg(Color::Red);
-    }
+    expected.set_style(Rect::new(3, 6, 15, 1), Style::new().red().on_blue());
+    // Note that filled part of the gauge only covers the 5 and the 1, not the % symbol
+    expected.set_style(Rect::new(18, 6, 2, 1), Style::new().blue().on_red());
+    expected.set_style(Rect::new(20, 6, 17, 1), Style::new().red().on_blue());
 
     terminal.backend().assert_buffer(&expected);
 }
@@ -106,10 +86,10 @@ fn widgets_gauge_renders_no_unicode() {
         "                                        ",
         "                                        ",
         "  ┌Percentage────────────────────────┐  ",
-        "  │               43%                │  ",
+        "  │███████████████43%                │  ",
         "  └──────────────────────────────────┘  ",
         "  ┌Ratio─────────────────────────────┐  ",
-        "  │               21%                │  ",
+        "  │███████        21%                │  ",
         "  └──────────────────────────────────┘  ",
         "                                        ",
         "                                        ",
@@ -143,9 +123,9 @@ fn widgets_gauge_applies_styles() {
         .unwrap();
     let mut expected = Buffer::with_lines(vec![
         "┌Test──────┐",
-        "│          │",
-        "│   43%    │",
-        "│          │",
+        "│████      │",
+        "│███43%    │",
+        "│████      │",
         "└──────────┘",
     ]);
     // title
@@ -156,13 +136,10 @@ fn widgets_gauge_applies_styles() {
         Style::default().fg(Color::Blue).bg(Color::Red),
     );
     // filled area
-    for y in 1..4 {
-        expected.set_style(
-            Rect::new(1, y, 4, 1),
-            // filled style is invert of gauge_style
-            Style::default().fg(Color::Red).bg(Color::Blue),
-        );
-    }
+    expected.set_style(
+        Rect::new(1, 1, 4, 3),
+        Style::default().fg(Color::Blue).bg(Color::Red),
+    );
     // label (foreground and modifier from label style)
     expected.set_style(
         Rect::new(4, 2, 1, 1),
