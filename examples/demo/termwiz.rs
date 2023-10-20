@@ -37,9 +37,7 @@ fn run_app(
     loop {
         terminal.draw(|f| ui::draw(f, &mut app))?;
 
-        let timeout = tick_rate
-            .checked_sub(last_tick.elapsed())
-            .unwrap_or_else(|| Duration::from_secs(0));
+        let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if let Ok(Some(input)) = terminal
             .backend_mut()
             .buffered_terminal_mut()
