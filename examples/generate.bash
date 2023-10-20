@@ -5,7 +5,11 @@
 # - cargo: https://doc.rust-lang.org/cargo/getting-started/installation.html
 # - gh: https://github.com/cli/cli
 # - git: https://git-scm.com/
-# - vhs: https://github.com/charmbracelet/vhs
+# - vhs: https://github.com/charmbracelet/vhs - currently this needs to be installed from the
+#   main branch, as the latest release doesn't support the theme we use or the Screenshot
+#   command. Install using `go install github.com/charmbracelet/vhs@main``
+# - go: https://golang.org/doc/install
+# - ttyd: https://github.com/tsl0922/ttyd
 
 # Exit on error. Append "|| true" if you expect an error.
 set -o errexit
@@ -21,9 +25,8 @@ set -o pipefail
 # ensure that running each example doesn't have to wait for the build
 cargo build --examples --features=crossterm,all-widgets
 
-for tape in examples/*.tape
-do
-    gif=${tape/examples\/}
+for tape in examples/*.tape; do
+    gif=${tape/examples\//}
     gif=${gif/.tape/.gif}
     ~/go/bin/vhs $tape --quiet
     # this can be pasted into the examples README.md
