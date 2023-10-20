@@ -98,9 +98,7 @@ fn input_handling(tx: mpsc::Sender<Event>) {
         let mut last_tick = Instant::now();
         loop {
             // poll for tick rate duration, if no events, sent tick event.
-            let timeout = tick_rate
-                .checked_sub(last_tick.elapsed())
-                .unwrap_or_else(|| Duration::from_secs(0));
+            let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if crossterm::event::poll(timeout).unwrap() {
                 match crossterm::event::read().unwrap() {
                     crossterm::event::Event::Key(key) => tx.send(Event::Input(key)).unwrap(),

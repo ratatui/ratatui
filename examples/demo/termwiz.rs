@@ -1,6 +1,5 @@
 use std::{
     error::Error,
-    io,
     time::{Duration, Instant},
 };
 
@@ -32,19 +31,17 @@ fn run_app(
     terminal: &mut Terminal<TermwizBackend>,
     mut app: App,
     tick_rate: Duration,
-) -> io::Result<()> {
+) -> Result<(), Box<dyn Error>> {
     let mut last_tick = Instant::now();
     loop {
         terminal.draw(|f| ui::draw(f, &mut app))?;
 
-        let timeout = tick_rate
-            .checked_sub(last_tick.elapsed())
-            .unwrap_or_else(|| Duration::from_secs(0));
-        if let Ok(Some(input)) = terminal
+        let timeout = tick_rate.saturating_sub(last_tick.elapsed());
+        if let Some(input) = terminal
             .backend_mut()
             .buffered_terminal_mut()
             .terminal()
-            .poll_input(Some(timeout))
+            .poll_input(Some(timeout))?
         {
             match input {
                 InputEvent::Key(key_code) => match key_code.key {
