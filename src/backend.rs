@@ -140,6 +140,7 @@ pub enum ClearType {
 }
 
 /// The window size in characters (columns / rows) as well as pixels.
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct WindowSize {
     /// Size of the window in characters (columns / rows).
     pub columns_rows: Size,
