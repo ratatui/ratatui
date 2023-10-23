@@ -21,7 +21,7 @@
 
 <!-- cargo-rdme start -->
 
-![Demo](https://raw.githubusercontent.com/ratatui-org/ratatui/aa09e59dc0058347f68d7c1e0c91f863c6f2b8c9/examples/demo2.gif)
+![Demo](https://raw.githubusercontent.com/ratatui-org/ratatui/b33c878808c4c40591d7a2d9f9d94d6fee95a96f/examples/demo2.gif)
 
 <div align="center">
 
