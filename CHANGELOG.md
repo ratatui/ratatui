@@ -2,6 +2,675 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.24.0](https://github.com/ratatui-org/ratatui/releases/tag/0.24.0) - 2023-10-23
+
+We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭
+
+In this version, we've introduced features like window size API, enhanced chart rendering, and more.
+The list of \*breaking changes\* can be found [here](https://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md) ⚠️.
+Also, we created various tutorials and walkthroughs in [Ratatui Book](https://github.com/ratatui-org/ratatui-book) which is available at <https://ratatui.rs> 🚀
+
+✨ **Release highlights**: <https://ratatui.rs/highlights/v0.24.html>
+
+### Features
+
+- [c6c3f88](https://github.com/ratatui-org/ratatui/commit/c6c3f88a79515a085fb8a96fe150843dab6dd5bc)
+  _(backend)_ Implement common traits for `WindowSize` ([#586](https://github.com/ratatui-org/ratatui/issues/586))
+
+- [d077903](https://github.com/ratatui-org/ratatui/commit/d0779034e741834aac36b5b7a87c54bd8c50b7f2)
+  _(backend)_ Backend provides window_size, add Size struct ([#276](https://github.com/ratatui-org/ratatui/issues/276))
+
+  ```text
+  For image (sixel, iTerm2, Kitty...) support that handles graphics in
+  terms of `Rect` so that the image area can be included in layouts.
+
+  For example: an image is loaded with a known pixel-size, and drawn, but
+  the image protocol has no mechanism of knowing the actual cell/character
+  area that been drawn on. It is then impossible to skip overdrawing the
+  area.
+
+  Returning the window size in pixel-width / pixel-height, together with
+  columns / rows, it can be possible to account the pixel size of each cell
+  / character, and then known the `Rect` of a given image, and also resize
+  the image so that it fits exactly in a `Rect`.
+
+  Crossterm and termwiz also both return both sizes from one syscall,
+  while termion does two.
+
+  Add a `Size` struct for the cases where a `Rect`'s `x`/`y` is unused
+  (always zero).
+
+  `Size` is not "clipped" for `area < u16::max_value()` like `Rect`. This
+  is why there are `From` implementations between the two.
+  ```
+
+- [301366c](https://github.com/ratatui-org/ratatui/commit/301366c4fa33524b0634bbd3dcf1abd1a1ebe7c6)
+  _(barchart)_ Render charts smaller than 3 lines ([#532](https://github.com/ratatui-org/ratatui/issues/532))
+
+  ```text
+  The bar values are not shown if the value width is equal the bar width
+  and the bar is height is less than one line
+
+  Add an internal structure `LabelInfo` which stores the reserved height
+  for the labels (0, 1 or 2) and also whether the labels will be shown.
+
+  Fixes ratatui-org#513
+  ```
+
+- [32e4619](https://github.com/ratatui-org/ratatui/commit/32e461953c8c9231edeef65c410b295916f26f3e)
+  _(block)_ Allow custom symbols for borders ([#529](https://github.com/ratatui-org/ratatui/issues/529)) [**breaking**]
+
+  ````text
+  Adds a new `Block::border_set` method that allows the user to specify
+  the symbols used for the border.
+
+  Added two new border types: `BorderType::QuadrantOutside` and
+  `BorderType::QuadrantInside`. These are used to draw borders using the
+  unicode quadrant characters (which look like half block "pixels").
+
+  ```
+  ▛▀▀▜
+  ▌  ▐
+  ▙▄▄▟
+
+  ▗▄▄▖
+  ▐  ▌
+  ▝▀▀▘
+  ```
+  Fixes: https://github.com/ratatui-org/ratatui/issues/528
+
+  BREAKING CHANGES:
+  - BorderType::to_line_set is renamed to to_border_set
+  - BorderType::line_symbols is renamed to border_symbols
+  ````
+
+- [4541336](https://github.com/ratatui-org/ratatui/commit/45413365146ede5472dc28e0ee1970d245e2fa02)
+  _(canvas)_ Implement half block marker ([#550](https://github.com/ratatui-org/ratatui/issues/550))
+
+  ```text
+  * feat(canvas): implement half block marker
+
+  A useful technique for the terminal is to use half blocks to draw a grid
+  of "pixels" on the screen. Because we can set two colors per cell, and
+  because terminal cells are about twice as tall as they are wide, we can
+  draw a grid of half blocks that looks like a grid of square pixels.
+
+  This commit adds a new `HalfBlock` marker that can be used in the Canvas
+  widget and the associated HalfBlockGrid.
+
+  Also updated demo2 to use the new marker as it looks much nicer.
+
+  Adds docs for many of the methods and structs on canvas.
+
+  Changes the grid resolution method to return the pixel count
+  rather than the index of the last pixel.
+  This is an internal detail with no user impact.
+  ```
+
+- [be55a5f](https://github.com/ratatui-org/ratatui/commit/be55a5fbcdffc4fd6aeb7edffa32f6e6c942a41e)
+  _(examples)_ Add demo2 example ([#500](https://github.com/ratatui-org/ratatui/issues/500))
+
+- [082cbcb](https://github.com/ratatui-org/ratatui/commit/082cbcbc501d4284dc7e142227f9e04ef17da61d)
+  _(frame)_ Remove generic Backend parameter ([#530](https://github.com/ratatui-org/ratatui/issues/530)) [**breaking**]
+
+  ````text
+  This change simplifies UI code that uses the Frame type. E.g.:
+
+  ```rust
+  fn draw<B: Backend>(frame: &mut Frame<B>) {
+      // ...
+  }
+  ```
+
+  Frame was generic over Backend because it stored a reference to the
+  terminal in the field. Instead it now directly stores the viewport area
+  and current buffer. These are provided at creation time and are valid
+  for the duration of the frame.
+
+  BREAKING CHANGE: Frame is no longer generic over Backend. Code that
+  accepted a Frame<Backend> will now need to accept a Frame.
+  ````
+
+- [d67fa2c](https://github.com/ratatui-org/ratatui/commit/d67fa2c00d6d6125eeefa0eeeb032664dae9a4de)
+  _(line)_ Add `Line::raw` constructor ([#511](https://github.com/ratatui-org/ratatui/issues/511))
+
+  ```text
+  * feat(line): add `Line::raw` constructor
+
+  There is already `Span::raw` and `Text::raw` methods
+  and this commit simply adds `Line::raw` method for symmetry.
+
+  Multi-line content is converted to multiple spans with the new line removed
+  ```
+
+- [cbf86da](https://github.com/ratatui-org/ratatui/commit/cbf86da0e7e4a2d99ace8df68854de74157a665a)
+  _(rect)_ Add is_empty() to simplify some common checks ([#534](https://github.com/ratatui-org/ratatui/issues/534))
+
+  ```text
+  - add `Rect::is_empty()` that checks whether either height or width == 0
+  - refactored `Rect` into layout/rect.rs from layout.rs. No public API change as
+     the module is private and the type is re-exported under the `layout` module.
+  ```
+
+- [15641c8](https://github.com/ratatui-org/ratatui/commit/15641c8475b7596c97a0affce0d6082c4b9586c2)
+  _(uncategorized)_ Add `buffer_mut` method on `Frame` ✨ ([#548](https://github.com/ratatui-org/ratatui/issues/548))
+
+### Bug Fixes
+
+- [638d596](https://github.com/ratatui-org/ratatui/commit/638d596a3b7aec723a2354cf0e261b207ac412f8)
+  _(layout)_ Use LruCache for layout cache ([#487](https://github.com/ratatui-org/ratatui/issues/487))
+
+  ```text
+  The layout cache now uses a LruCache with default size set to 16 entries.
+  Previously the cache was backed by a HashMap, and was able to grow
+  without bounds as a new entry was added for every new combination of
+  layout parameters.
+
+  - Added a new method (`layout::init_cache(usize)`) that allows the cache
+  size to be changed if necessary. This will only have an effect if it is called
+  prior to any calls to `layout::split()` as the cache is wrapped in a `OnceLock`
+  ```
+
+- [8d507c4](https://github.com/ratatui-org/ratatui/commit/8d507c43fa866ab4c0eda9fd169f307fba2a1109)
+  _(backend)_ Add feature flag for underline-color ([#570](https://github.com/ratatui-org/ratatui/issues/570))
+
+  ````text
+  Windows 7 doesn't support the underline color attribute, so we need to
+  make it optional. This commit adds a feature flag for the underline
+  color attribute - it is enabled by default, but can be disabled by
+  passing `--no-default-features` to cargo.
+
+  We could specically check for Windows 7 and disable the feature flag
+  automatically, but I think it's better for this check to be done by the
+  crossterm crate, since it's the one that actually knows about the
+  underlying terminal.
+
+  To disable the feature flag in an application that supports Windows 7,
+  add the following to your Cargo.toml:
+
+  ```toml
+  ratatui = { version = "0.24.0", default-features = false, features = ["crossterm"] }
+  ```
+
+  Fixes https://github.com/ratatui-org/ratatui/issues/555
+  ````
+
+- [c3155a2](https://github.com/ratatui-org/ratatui/commit/c3155a24895ec4dfb1a8e580fb9ee3d31e9af139)
+  _(barchart)_ Add horizontal labels([#518](https://github.com/ratatui-org/ratatui/issues/518))
+
+  ```text
+  Labels were missed in the initial implementation of the horizontal
+  mode for the BarChart widget. This adds them.
+
+  Fixes https://github.com/ratatui-org/ratatui/issues/499
+  ```
+
+- [c5ea656](https://github.com/ratatui-org/ratatui/commit/c5ea656385843c880b3bef45dccbe8ea57431d10)
+  _(barchart)_ Avoid divide by zero in rendering ([#525](https://github.com/ratatui-org/ratatui/issues/525))
+
+- [c9b8e7c](https://github.com/ratatui-org/ratatui/commit/c9b8e7cf412de235082f1fcd1698468c4b1b6171)
+  _(barchart)_ Render value labels with unicode correctly ([#515](https://github.com/ratatui-org/ratatui/issues/515))
+
+  ```text
+  An earlier change introduced a bug where the width of value labels with
+  unicode characters was incorrectly using the string length in bytes
+  instead of the unicode character count. This reverts the earlier change.
+  ```
+
+- [c8ab2d5](https://github.com/ratatui-org/ratatui/commit/c8ab2d59087f5b475ecf6ffa31b89ce24b6b1d28)
+  _(chart)_ Use graph style for top line ([#462](https://github.com/ratatui-org/ratatui/issues/462))
+
+  ```text
+  A bug in the rendering caused the top line of the chart to be rendered
+  using the style of the chart, instead of the dataset style. This is
+  fixed by only setting the style for the width of the text, and not the
+  entire row.
+  ```
+
+- [0c7d547](https://github.com/ratatui-org/ratatui/commit/0c7d547db196a7cf65a6bf8cde74bd908407a3ff)
+  _(docs)_ Don't fail rustdoc due to termion ([#503](https://github.com/ratatui-org/ratatui/issues/503))
+
+  ```text
+  Windows cannot compile termion, so it is not included in the docs.
+  Rustdoc will fail if it cannot find a link, so the docs fail to build
+  on windows.
+
+  This replaces the link to TermionBackend with one that does not fail
+  during checks.
+
+  Fixes https://github.com/ratatui-org/ratatui/issues/498
+  ```
+
+- [0c52ff4](https://github.com/ratatui-org/ratatui/commit/0c52ff431a1eedb0e38b5c8fb6623d4da17fa97e)
+  _(gauge)_ Fix gauge widget colors ([#572](https://github.com/ratatui-org/ratatui/issues/572))
+
+  ```text
+  The background colors of the gauge had a workaround for the issue we had
+  with VHS / TTYD rendering the background color of the gauge. This
+  workaround is no longer necessary in the updated versions of VHS / TTYD.
+
+  Fixes https://github.com/ratatui-org/ratatui/issues/501
+  ```
+
+- [11076d0](https://github.com/ratatui-org/ratatui/commit/11076d0af3a76229af579fb40684fdd37df172dd)
+  _(rect)_ Fix arithmetic overflow edge cases ([#543](https://github.com/ratatui-org/ratatui/issues/543))
+
+  ```text
+  Fixes https://github.com/ratatui-org/ratatui/issues/258
+  ```
+
+- [21303f2](https://github.com/ratatui-org/ratatui/commit/21303f21672de1405135bb785497c30150644078)
+  _(rect)_ Prevent overflow in inner() and area() ([#523](https://github.com/ratatui-org/ratatui/issues/523))
+
+- [ebd3680](https://github.com/ratatui-org/ratatui/commit/ebd3680a471d96ae1d8f52cd9e4a8a80c142d060)
+  _(stylize)_ Add Stylize impl for String ([#466](https://github.com/ratatui-org/ratatui/issues/466)) [**breaking**]
+
+  ```text
+  Although the `Stylize` trait is already implemented for `&str` which
+  extends to `String`, it is not implemented for `String` itself. This
+  commit adds an impl of Stylize that returns a Span<'static> for `String`
+  so that code can call Stylize methods on temporary `String`s.
+
+  E.g. the following now compiles instead of failing with a compile error
+  about referencing a temporary value:
+
+      let s = format!("hello {name}!", "world").red();
+
+  BREAKING CHANGE: This may break some code that expects to call Stylize
+  methods on `String` values and then use the String value later. This
+  will now fail to compile because the String is consumed by set_style
+  instead of a slice being created and consumed.
+
+  This can be fixed by cloning the `String`. E.g.:
+
+      let s = String::from("hello world");
+      let line = Line::from(vec![s.red(), s.green()]); // fails to compile
+      let line = Line::from(vec![s.clone().red(), s.green()]); // works
+
+  Fixes https://discord.com/channels/1070692720437383208/1072907135664529508/1148229700821450833
+  ```
+
+### Refactor
+
+- [2fd85af](https://github.com/ratatui-org/ratatui/commit/2fd85af33c5cb7c04286e4e4198a939b4857eadc)
+  _(barchart)_ Simplify internal implementation ([#544](https://github.com/ratatui-org/ratatui/issues/544))
+
+  ```text
+  Replace `remove_invisible_groups_and_bars` with `group_ticks`
+  `group_ticks` calculates the visible bar length in ticks. (A cell contains 8 ticks).
+
+  It is used for 2 purposes:
+  1. to get the bar length in ticks for rendering
+  2. since it delivers only the values of the visible bars, If we zip these values
+     with the groups and bars, then we will filter out the invisible groups and bars
+  ```
+
+### Documentation
+
+- [0c68ebe](https://github.com/ratatui-org/ratatui/commit/0c68ebed4f63a595811006e0af221b11a83780cf)
+  _(block)_ Add documentation to Block ([#469](https://github.com/ratatui-org/ratatui/issues/469))
+
+- [0fe7385](https://github.com/ratatui-org/ratatui/commit/0fe738500cd461aeafa0a63b37ed6250777f3599)
+  _(gauge)_ Add docs for `Gauge` and `LineGauge` ([#514](https://github.com/ratatui-org/ratatui/issues/514))
+
+- [27c5637](https://github.com/ratatui-org/ratatui/commit/27c56376756b854db6d2fd8939419bd8578f8a90)
+  _(readme)_ Fix links to CONTRIBUTING.md and BREAKING-CHANGES.md ([#577](https://github.com/ratatui-org/ratatui/issues/577))
+
+- [1947c58](https://github.com/ratatui-org/ratatui/commit/1947c58c60127ee7d1a72bcd408ee23062b8c4ec)
+  _(backend)_ Improve backend module docs ([#489](https://github.com/ratatui-org/ratatui/issues/489))
+
+- [e098731](https://github.com/ratatui-org/ratatui/commit/e098731d6c1a68a0319d544301ac91cf2d05ccb2)
+  _(barchart)_ Add documentation to `BarChart` ([#449](https://github.com/ratatui-org/ratatui/issues/449))
+
+  ```text
+  Add documentation to the `BarChart` widgets and its sub-modules.
+  ```
+
+- [17797d8](https://github.com/ratatui-org/ratatui/commit/17797d83dab07dc6b76e7a3838e3e17fc3c94711)
+  _(canvas)_ Add support note for Braille marker ([#472](https://github.com/ratatui-org/ratatui/issues/472))
+
+- [3cf0b83](https://github.com/ratatui-org/ratatui/commit/3cf0b83bda5deee18b8a1233acec0a21fde1f5f4)
+  _(color)_ Document true color support ([#477](https://github.com/ratatui-org/ratatui/issues/477))
+
+  ```text
+  * refactor(style): move Color to separate color mod
+
+  * docs(color): document true color support
+  ```
+
+- [e5caf17](https://github.com/ratatui-org/ratatui/commit/e5caf170c8c304b952cbff7499fd4da17ab154ea)
+  _(custom_widget)_ Make button sticky when clicking with mouse ([#561](https://github.com/ratatui-org/ratatui/issues/561))
+
+- [ad2dc56](https://github.com/ratatui-org/ratatui/commit/ad2dc5646dae04fa5502e677182cdeb0c3630cce)
+  _(examples)_ Update examples readme ([#576](https://github.com/ratatui-org/ratatui/issues/576))
+
+  ```text
+  remove VHS bug info, tweak colors_rgb image, update some of the instructions. add demo2
+  ```
+
+- [b61f65b](https://github.com/ratatui-org/ratatui/commit/b61f65bc20918380f2854253d4301ea804fc7437)
+  _(examples)_ Update theme to Aardvark Blue ([#574](https://github.com/ratatui-org/ratatui/issues/574))
+
+  ```text
+  This is a nicer theme that makes the colors pop
+  ```
+
+- [61af0d9](https://github.com/ratatui-org/ratatui/commit/61af0d99069ec99b3075cd499ede13cc2143401f)
+  _(examples)_ Make custom widget example into a button ([#539](https://github.com/ratatui-org/ratatui/issues/539))
+
+  ```text
+  The widget also now supports mouse
+  ```
+
+- [6b8725f](https://github.com/ratatui-org/ratatui/commit/6b8725f09173f418e9f17933d8ef8c943af444de)
+  _(examples)_ Add colors_rgb example ([#476](https://github.com/ratatui-org/ratatui/issues/476))
+
+- [5c785b2](https://github.com/ratatui-org/ratatui/commit/5c785b22709fb64a0982722e4f6d0021ccf621b2)
+  _(examples)_ Move example gifs to github ([#460](https://github.com/ratatui-org/ratatui/issues/460))
+
+  ```text
+  - A new orphan branch named "images" is created to store the example
+    images
+  ```
+
+- [ca9bcd3](https://github.com/ratatui-org/ratatui/commit/ca9bcd3156f55cd2df4edf003aa1401abbed9b12)
+  _(examples)_ Add descriptions and update theme ([#460](https://github.com/ratatui-org/ratatui/issues/460))
+
+  ```text
+  - Use the OceanicMaterial consistently in examples
+  ```
+
+- [080a05b](https://github.com/ratatui-org/ratatui/commit/080a05bbd3357cde3f0a02721a0f7f1aa206206b)
+  _(paragraph)_ Add docs for alignment fn ([#467](https://github.com/ratatui-org/ratatui/issues/467))
+
+- [1e20475](https://github.com/ratatui-org/ratatui/commit/1e204750617acccf952b1845a3c7ce86e2b90cf7)
+  _(stylize)_ Improve docs for style shorthands ([#491](https://github.com/ratatui-org/ratatui/issues/491))
+
+  ```text
+  The Stylize trait was introduced in 0.22 to make styling less verbose.
+  This adds a bunch of documentation comments to the style module and
+  types to make this easier to discover.
+  ```
+
+- [dd9a8df](https://github.com/ratatui-org/ratatui/commit/dd9a8df03ab09d2381ef5ddd0c2b6ef5517b44df)
+  _(table)_ Add documentation for `block` and `header` methods of the `Table` widget ([#505](https://github.com/ratatui-org/ratatui/issues/505))
+
+- [232be80](https://github.com/ratatui-org/ratatui/commit/232be80325cb899359ea1389516c421e57bc9cce)
+  _(table)_ Add documentation for `Table::new()` ([#471](https://github.com/ratatui-org/ratatui/issues/471))
+
+- [3bda372](https://github.com/ratatui-org/ratatui/commit/3bda37284781b62560cde2a7fa774211f651ec25)
+  _(tabs)_ Add documentation to `Tabs` ([#535](https://github.com/ratatui-org/ratatui/issues/535))
+
+- [42f8169](https://github.com/ratatui-org/ratatui/commit/42f816999e2cd573c498c4885069a5523707663c)
+  _(terminal)_ Add docs for terminal module ([#486](https://github.com/ratatui-org/ratatui/issues/486))
+
+  ```text
+  - moves the impl Terminal block up to be closer to the type definition
+  ```
+
+- [28e7fd4](https://github.com/ratatui-org/ratatui/commit/28e7fd4bc58edf537b66b69095691ae06872acd8)
+  _(terminal)_ Fix doc comment ([#452](https://github.com/ratatui-org/ratatui/issues/452))
+
+- [51fdcbe](https://github.com/ratatui-org/ratatui/commit/51fdcbe7e936b3af3ee6a8ae8fee43df31aab27c)
+  _(title)_ Add documentation to title ([#443](https://github.com/ratatui-org/ratatui/issues/443))
+
+  ```text
+  This adds documentation for Title and Position
+  ```
+
+- [d4976d4](https://github.com/ratatui-org/ratatui/commit/d4976d4b63d4a17adb31bbe853a82109e2caaf1b)
+  _(widgets)_ Update the list of available widgets ([#496](https://github.com/ratatui-org/ratatui/issues/496))
+
+- [6c7bef8](https://github.com/ratatui-org/ratatui/commit/6c7bef8d111bbc3ecfe228b14002c5db9634841c)
+  _(uncategorized)_ Replace colons with dashes in README.md for consistency ([#566](https://github.com/ratatui-org/ratatui/issues/566))
+
+- [88ae348](https://github.com/ratatui-org/ratatui/commit/88ae3485c2c540b4ee630ab13e613e84efa7440a)
+  _(uncategorized)_ Update `Frame` docstring to remove reference to generic backend ([#564](https://github.com/ratatui-org/ratatui/issues/564))
+
+- [089f8ba](https://github.com/ratatui-org/ratatui/commit/089f8ba66a50847780c4416b9b8833778a95e558)
+  _(uncategorized)_ Add double quotes to instructions for features ([#560](https://github.com/ratatui-org/ratatui/issues/560))
+
+- [346e7b4](https://github.com/ratatui-org/ratatui/commit/346e7b4f4d53063ee13b04758b1b994e4f14e51c)
+  _(uncategorized)_ Add summary to breaking changes ([#549](https://github.com/ratatui-org/ratatui/issues/549))
+
+- [401a7a7](https://github.com/ratatui-org/ratatui/commit/401a7a7f7111989d7dda11524b211a488483e732)
+  _(uncategorized)_ Improve clarity in documentation for `Frame` and `Terminal` 📚 ([#545](https://github.com/ratatui-org/ratatui/issues/545))
+
+- [e35e413](https://github.com/ratatui-org/ratatui/commit/e35e4135c9080389baa99e13814aace7784d9cb3)
+  _(uncategorized)_ Fix terminal comment ([#547](https://github.com/ratatui-org/ratatui/issues/547))
+
+- [8ae4403](https://github.com/ratatui-org/ratatui/commit/8ae4403b63a82d353b224c898b15249f30215476)
+  _(uncategorized)_ Fix `Terminal` docstring ([#546](https://github.com/ratatui-org/ratatui/issues/546))
+
+- [9cfb133](https://github.com/ratatui-org/ratatui/commit/9cfb133a981c070a27342d78f4b9451673d8b349)
+  _(uncategorized)_ Document alpha release process ([#542](https://github.com/ratatui-org/ratatui/issues/542))
+
+  ```text
+  Fixes https://github.com/ratatui-org/ratatui/issues/412
+  ```
+
+- [4548a9b](https://github.com/ratatui-org/ratatui/commit/4548a9b7e22b07c1bd6839280c44123b8679589d)
+  _(uncategorized)_ Add BREAKING-CHANGES.md ([#538](https://github.com/ratatui-org/ratatui/issues/538))
+
+  ```text
+  Document the breaking changes in each version. This document is
+  manually curated by summarizing the breaking changes in the changelog.
+  ```
+
+- [c0991cc](https://github.com/ratatui-org/ratatui/commit/c0991cc576b3ade02494cb33fd7c290aba55bfb8)
+  _(uncategorized)_ Make library and README consistent ([#526](https://github.com/ratatui-org/ratatui/issues/526))
+
+  ```text
+  * docs: make library and README consistent
+
+  Generate the bulk of the README from the library documentation, so that
+  they are consistent using cargo-rdme.
+
+  - Removed the Contributors section, as it is redundant with the github
+    contributors list.
+  - Removed the info about the other backends and replaced it with a
+    pointer to the documentation.
+  - add docsrs example, vhs tape and images that will end up in the README
+  ```
+
+- [1414fbc](https://github.com/ratatui-org/ratatui/commit/1414fbcc05b4dfd7706cc68fcaba7d883e22f869)
+  _(uncategorized)_ Import prelude::\* in doc examples ([#490](https://github.com/ratatui-org/ratatui/issues/490))
+
+  ```text
+  This commit adds `prelude::*` all doc examples and widget::* to those
+  that need it. This is done to highlight the use of the prelude and
+  simplify the examples.
+
+  - Examples in Type and module level comments show all imports and use
+    `prelude::*` and `widget::*` where possible.
+  - Function level comments hide imports unless there are imports other
+    than `prelude::*` and `widget::*`.
+  ```
+
+- [74c5244](https://github.com/ratatui-org/ratatui/commit/74c5244be12031e372797c3c7949914552293f5c)
+  _(uncategorized)_ Add logo and favicon to docs.rs page ([#473](https://github.com/ratatui-org/ratatui/issues/473))
+
+- [927a5d8](https://github.com/ratatui-org/ratatui/commit/927a5d8251a7947446100f4bb4d7a8e3ec2ad962)
+  _(uncategorized)_ Fix documentation lint warnings ([#450](https://github.com/ratatui-org/ratatui/issues/450))
+
+- [eda2fb7](https://github.com/ratatui-org/ratatui/commit/eda2fb7077dcf0b158d1a69d2725aeb9464162be)
+  _(uncategorized)_ Use ratatui 📚 ([#446](https://github.com/ratatui-org/ratatui/issues/446))
+
+### Testing
+
+- [ea70bff](https://github.com/ratatui-org/ratatui/commit/ea70bffe5d3ec68dcf9eff015437d2474c08f855)
+  _(barchart)_ Add benchmarks ([#455](https://github.com/ratatui-org/ratatui/issues/455))
+
+- [94af2a2](https://github.com/ratatui-org/ratatui/commit/94af2a29e10248ed709bbc8a7bf2f569894abc62)
+  _(buffer)_ Allow with_lines to accept Vec<Into<Line>> ([#494](https://github.com/ratatui-org/ratatui/issues/494))
+
+  ```text
+  This allows writing unit tests without having to call set_style on the
+  expected buffer.
+  ```
+
+### Miscellaneous Tasks
+
+- [1278131](https://github.com/ratatui-org/ratatui/commit/127813120eb17a7652b90e4333bb576e510ff51b)
+  _(changelog)_ Make the scopes lowercase in the changelog ([#479](https://github.com/ratatui-org/ratatui/issues/479))
+
+- [82b40be](https://github.com/ratatui-org/ratatui/commit/82b40be4ab8aa735070dff1681c3d711147792e1)
+  _(ci)_ Improve checking the PR title ([#464](https://github.com/ratatui-org/ratatui/issues/464))
+
+  ```text
+  - Use [`action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request)
+  - Allow only reading the PR contents
+  - Enable merge group
+  ```
+
+- [a20bd6a](https://github.com/ratatui-org/ratatui/commit/a20bd6adb5431d19140acdf1f9201381a31b2b24)
+  _(deps)_ Update lru requirement from 0.11.1 to 0.12.0 ([#581](https://github.com/ratatui-org/ratatui/issues/581))
+
+  ```text
+  Updates the requirements on [lru](https://github.com/jeromefroe/lru-rs) to permit the latest version.
+  - [Changelog](https://github.com/jeromefroe/lru-rs/blob/master/CHANGELOG.md)
+  - [Commits](https://github.com/jeromefroe/lru-rs/compare/0.11.1...0.12.0)
+
+  ---
+  updated-dependencies:
+  - dependency-name: lru
+    dependency-type: direct:production
+  ...
+  ```
+
+- [5213f78](https://github.com/ratatui-org/ratatui/commit/5213f78d25927d834ada29b8c1023fcba5c891c6)
+  _(deps)_ Bump actions/checkout from 3 to 4 ([#580](https://github.com/ratatui-org/ratatui/issues/580))
+
+  ```text
+  Bumps [actions/checkout](https://github.com/actions/checkout) from 3 to 4.
+  - [Release notes](https://github.com/actions/checkout/releases)
+  - [Changelog](https://github.com/actions/checkout/blob/main/CHANGELOG.md)
+  - [Commits](https://github.com/actions/checkout/compare/v3...v4)
+
+  ---
+  updated-dependencies:
+  - dependency-name: actions/checkout
+    dependency-type: direct:production
+    update-type: version-update:semver-major
+  ...
+  ```
+
+- [6cbdb06](https://github.com/ratatui-org/ratatui/commit/6cbdb06fd86858849d2454d09393a8e43c10741f)
+  _(examples)_ Refactor some examples ([#578](https://github.com/ratatui-org/ratatui/issues/578))
+
+  ```text
+  * chore(examples): Simplify timeout calculation with `Duration::saturating_sub`
+  ```
+
+- [12f9291](https://github.com/ratatui-org/ratatui/commit/12f92911c74211a22c6c142762ccb459d399763b)
+  _(github)_ Create dependabot.yml ([#575](https://github.com/ratatui-org/ratatui/issues/575))
+
+  ```text
+  * chore: Create dependabot.yml
+
+  * Update .github/dependabot.yml
+  ```
+
+- [3a57e76](https://github.com/ratatui-org/ratatui/commit/3a57e76ed18b93f0bcee264d818a469920ce70db)
+  _(github)_ Add contact links for issues ([#567](https://github.com/ratatui-org/ratatui/issues/567))
+
+- [5498a88](https://github.com/ratatui-org/ratatui/commit/5498a889ae8bd4ccb51b04d3a848dd2f58935906)
+  _(spans)_ Remove deprecated `Spans` type ([#426](https://github.com/ratatui-org/ratatui/issues/426))
+
+  ```text
+  The `Spans` type (plural, not singular) was replaced with a more ergonomic `Line` type
+  in Ratatui v0.21.0 and marked deprecated byt left for backwards compatibility. This is now
+  removed.
+
+  - `Line` replaces `Spans`
+  - `Buffer::set_line` replaces `Buffer::set_spans`
+  ```
+
+- [fbf1a45](https://github.com/ratatui-org/ratatui/commit/fbf1a451c85871db598cf1df2ad9a50edbe07cd2)
+  _(uncategorized)_ Simplify constraints ([#556](https://github.com/ratatui-org/ratatui/issues/556))
+
+  ```text
+  Use bare arrays rather than array refs / Vecs for all constraint
+  examples.
+  ```
+
+- [a7bf4b3](https://github.com/ratatui-org/ratatui/commit/a7bf4b3f36f3281017d112ac1a67af7e82308261)
+  _(uncategorized)_ Use modern modules syntax ([#492](https://github.com/ratatui-org/ratatui/issues/492))
+
+  ```text
+  Move xxx/mod.rs to xxx.rs
+  ```
+
+- [af36282](https://github.com/ratatui-org/ratatui/commit/af36282df5d8dd1b4e6b32bba0539dba3382c23c)
+  _(uncategorized)_ Only run check pr action on pull_request_target events ([#485](https://github.com/ratatui-org/ratatui/issues/485))
+
+- [322e46f](https://github.com/ratatui-org/ratatui/commit/322e46f15d8326d18c951be4c57e3b47005285bc)
+  _(uncategorized)_ Prevent PR merge with do not merge labels ♻️ ([#484](https://github.com/ratatui-org/ratatui/issues/484))
+
+- [983ea7f](https://github.com/ratatui-org/ratatui/commit/983ea7f7a5371dd608891a0e2a7444a16e9fdc54)
+  _(uncategorized)_ Fix check for if breaking change label should be added ♻️ ([#483](https://github.com/ratatui-org/ratatui/issues/483))
+
+- [384e616](https://github.com/ratatui-org/ratatui/commit/384e616231c1579328e7a4ba1a7130f624753ad1)
+  _(uncategorized)_ Add a check for if breaking change label should be added ♻️ ([#481](https://github.com/ratatui-org/ratatui/issues/481))
+
+- [5f6aa30](https://github.com/ratatui-org/ratatui/commit/5f6aa30be54ea5dfcef730d709707a814e64deee)
+  _(uncategorized)_ Check documentation lint ([#454](https://github.com/ratatui-org/ratatui/issues/454))
+
+- [47ae602](https://github.com/ratatui-org/ratatui/commit/47ae602df43674928f10016e2edc97c550b01ba2)
+  _(uncategorized)_ Check that PR title matches conventional commit guidelines ♻️ ([#459](https://github.com/ratatui-org/ratatui/issues/459))
+
+- [28c6157](https://github.com/ratatui-org/ratatui/commit/28c61571e8a90345a866285a6f8459b24b70578a)
+  _(uncategorized)_ Add documentation guidelines ([#447](https://github.com/ratatui-org/ratatui/issues/447))
+
+### Continuous Integration
+
+- [343c6cd](https://github.com/ratatui-org/ratatui/commit/343c6cdc47c4fe38e64633d982aa413be356fb90)
+  _(lint)_ Move formatting and doc checks first ([#465](https://github.com/ratatui-org/ratatui/issues/465))
+
+  ```text
+  Putting the formatting and doc checks first to ensure that more critical
+  errors are caught first (e.g. a conventional commit error or typo should
+  not prevent the formatting and doc checks from running).
+  ```
+
+- [c95a75c](https://github.com/ratatui-org/ratatui/commit/c95a75c5d5e0370c98a2a37bcbd65bde996b2306)
+  _(makefile)_ Remove termion dependency from doc lint ([#470](https://github.com/ratatui-org/ratatui/issues/470))
+
+  ```text
+  Only build termion on non-windows targets
+  ```
+
+- [b996102](https://github.com/ratatui-org/ratatui/commit/b996102837dad7c77710bcbbc524c6e9691bd96f)
+  _(makefile)_ Add format target ([#468](https://github.com/ratatui-org/ratatui/issues/468))
+
+  ```text
+  - add format target to Makefile.toml that actually fixes the formatting
+  - rename fmt target to lint-format
+  - rename style-check target to lint-style
+  - rename typos target to lint-typos
+  - rename check-docs target to lint-docs
+  - add section to CONTRIBUTING.md about formatting
+  ```
+
+- [572df75](https://github.com/ratatui-org/ratatui/commit/572df758ba1056759aa6f79c9e975854d27331db)
+  _(uncategorized)_ Put commit id first in changelog ([#463](https://github.com/ratatui-org/ratatui/issues/463))
+
+- [878b6fc](https://github.com/ratatui-org/ratatui/commit/878b6fc258110b41e85833c35150d7dfcedf31ca)
+  _(uncategorized)_ Ignore benches from code coverage ([#461](https://github.com/ratatui-org/ratatui/issues/461))
+
+### Contributors
+
+Thank you so much to everyone that contributed to this release!
+
+Here is the list of contributors who have contributed to `ratatui` for the first time!
+
+- @[aatukaj](https://github.com/aatukaj)
+- @[DreadedHippy](https://github.com/DreadedHippy)
+- @[marianomarciello](https://github.com/marianomarciello)
+- @[HeeillWang](https://github.com/HeeillWang)
+- @[tz629](https://github.com/tz629)
+- @[hueblu](https://github.com/hueblu)
+
 ## [v0.23.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.23.0) - 2023-08-28
 
 We are thrilled to release the new version of `ratatui` 🐭, the official successor[\*](https://github.com/fdehau/tui-rs/commit/335f5a4563342f9a4ee19e2462059e1159dcbf25) of [`tui-rs`](https://github.com/fdehau/tui-rs).

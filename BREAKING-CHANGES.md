@@ -10,7 +10,7 @@ github with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [Unreleased (v0.24.0)](#unreleased-0240)
+- [v0.24.0](#v0240)
   - `ScrollbarState`: `position`, `content_length`, and `viewport_content_length` are now `usize`
   - `BorderType`: `line_symbols` is now `border_symbols` and returns `symbols::border::set`
   - `Frame<'a, B: Backend>` is now `Frame<'a>`
@@ -31,7 +31,7 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## Unreleased (0.24.0)
+## [v0.24.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.24.0)
 
 ### ScrollbarState field type changed from `u16` to `usize` ([#456])
 
