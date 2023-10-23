@@ -81,6 +81,7 @@ commit_parsers = [
   { message = "^chore\\(pr\\)", skip = true },
   { message = "^chore\\(pull\\)", skip = true },
   { message = "^chore\\(deps\\)", skip = true },
+  { message = "^chore\\(changelog\\)", skip = true },
   { message = "^[cC]hore", group = "<!-- 07 -->Miscellaneous Tasks" },
   { body = ".*security", group = "<!-- 08 -->Security" },
   { message = "^build", group = "<!-- 09 -->Build" },
