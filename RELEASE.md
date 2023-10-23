@@ -17,7 +17,6 @@ actions](.github/workflows/cd.yml) and triggered by pushing a tag.
    Avoid adding the gif to the git repo as binary files tend to bloat repositories.
 
 1. Bump the version in [Cargo.toml](Cargo.toml).
-1. Bump versions in the doc comments of [lib.rs](src/lib.rs).
 1. Ensure [CHANGELOG.md](CHANGELOG.md) is updated. [git-cliff](https://github.com/orhun/git-cliff)
    can be used for generating the entries.
 1. Ensure that any breaking changes are documented in [BREAKING-CHANGES.md](./BREAKING-CHANGES.md)
