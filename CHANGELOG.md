@@ -30,7 +30,7 @@ Also, we created various tutorials and walkthroughs in [Ratatui Book](https://gi
   area.
 
   Returning the window size in pixel-width / pixel-height, together with
-  colums / rows, it can be possible to account the pixel size of each cell
+  columns / rows, it can be possible to account the pixel size of each cell
   / character, and then known the `Rect` of a given image, and also resize
   the image so that it fits exactly in a `Rect`.
 
@@ -114,7 +114,7 @@ Also, we created various tutorials and walkthroughs in [Ratatui Book](https://gi
   _(frame)_ Remove generic Backend parameter ([#530](https://github.com/ratatui-org/ratatui/issues/530)) [**breaking**]
 
   ````text
-  This change simplifys UI code that uses the Frame type. E.g.:
+  This change simplifies UI code that uses the Frame type. E.g.:
 
   ```rust
   fn draw<B: Backend>(frame: &mut Frame<B>) {
@@ -349,7 +349,7 @@ Also, we created various tutorials and walkthroughs in [Ratatui Book](https://gi
   ```
 
 - [b61f65b](https://github.com/ratatui-org/ratatui/commit/b61f65bc20918380f2854253d4301ea804fc7437)
-  _(examples)_ Udpate theme to Aardvark Blue ([#574](https://github.com/ratatui-org/ratatui/issues/574))
+  _(examples)_ Update theme to Aardvark Blue ([#574](https://github.com/ratatui-org/ratatui/issues/574))
 
   ```text
   This is a nicer theme that makes the colors pop

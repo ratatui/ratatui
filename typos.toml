@@ -2,3 +2,8 @@
 
 [default.extend-words]
 ratatui = "ratatui"
+
+[type.md]
+extend-ignore-re = [
+  "\\[[[:xdigit:]]{7}\\]\\(https://github.com/ratatui-org/ratatui/commit/[[:xdigit:]]{40}\\)",
+]
