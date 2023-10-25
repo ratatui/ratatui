@@ -96,7 +96,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        toolchain: [ "1.67.0", "stable" ]
+        toolchain: [ "1.70.0", "stable" ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -135,7 +135,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        toolchain: [ "1.67.0", "stable" ]
+        toolchain: [ "1.70.0", "stable" ]
         backend: [ crossterm, termion, termwiz ]
         exclude:
           # termion is not supported on windows

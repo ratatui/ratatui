@@ -11,6 +11,7 @@ github with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.24.0](#v0240)
+  - MSRV is now 1.70.0
   - `ScrollbarState`: `position`, `content_length`, and `viewport_content_length` are now `usize`
   - `BorderType`: `line_symbols` is now `border_symbols` and returns `symbols::border::set`
   - `Frame<'a, B: Backend>` is now `Frame<'a>`
