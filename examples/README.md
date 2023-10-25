@@ -9,7 +9,7 @@ images themselves are stored in a separate git branch to avoid bloating the main
 This is the demo example from the main README and crate page. Source: [demo2](./demo2/).
 
 ```shell
-cargo run --example=demo2 --features=crossterm
+cargo run --example=demo2 --features="crossterm widget-calendar"
 ```
 
 ![Demo2][demo2.gif]
