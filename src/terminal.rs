@@ -511,6 +511,7 @@ where
             });
             self.backend.draw(iter)?;
             self.backend.flush()?;
+            self.set_cursor(self.viewport_area.left(), self.viewport_area.top())?;
         }
 
         Ok(())
