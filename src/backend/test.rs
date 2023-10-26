@@ -9,7 +9,7 @@ use std::{
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    backend::{Backend, WindowSize},
+    backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
     layout::{Rect, Size},
 };
@@ -179,6 +179,103 @@ impl Backend for TestBackend {
         Ok(())
     }
 
+    fn clear_region(&mut self, clear_type: super::ClearType) -> io::Result<()> {
+        match clear_type {
+            ClearType::All => self.clear()?,
+            ClearType::AfterCursor => {
+                self.buffer.content = self
+                    .buffer
+                    .content()
+                    .iter()
+                    .enumerate()
+                    .map(|(i, c)| {
+                        if i > self.buffer.index_of(self.pos.0, self.pos.1) {
+                            Cell::default()
+                        } else {
+                            c.clone()
+                        }
+                    })
+                    .collect()
+            }
+            ClearType::BeforeCursor => {
+                self.buffer.content = self
+                    .buffer
+                    .content()
+                    .iter()
+                    .enumerate()
+                    .map(|(i, c)| {
+                        if i < self.buffer.index_of(self.pos.0, self.pos.1) {
+                            Cell::default()
+                        } else {
+                            c.clone()
+                        }
+                    })
+                    .collect()
+            }
+            ClearType::CurrentLine => {
+                self.buffer.content = self
+                    .buffer
+                    .content()
+                    .iter()
+                    .enumerate()
+                    .map(|(i, c)| {
+                        if self.buffer.pos_of(i).1 == self.pos.1 {
+                            Cell::default()
+                        } else {
+                            c.clone()
+                        }
+                    })
+                    .collect()
+            }
+            ClearType::UntilNewLine => {
+                self.buffer.content = self
+                    .buffer
+                    .content()
+                    .iter()
+                    .enumerate()
+                    .map(|(i, c)| {
+                        let p = self.buffer.pos_of(i);
+                        if p.1 == self.pos.1 && p.0 >= self.pos.0 {
+                            Cell::default()
+                        } else {
+                            c.clone()
+                        }
+                    })
+                    .collect()
+            }
+        }
+        Ok(())
+    }
+
+    fn append_lines(&mut self, n: u16) -> io::Result<()> {
+        let (cur_x, cur_y) = self.get_cursor()?;
+
+        let new_cursor_x = if cur_x.saturating_add(1) > self.width {
+            self.width.saturating_sub(1)
+        } else {
+            cur_x.saturating_add(1)
+        };
+
+        let new_cursor_y = if cur_y.saturating_add(n) >= self.height {
+            for _ in 0..(cur_y
+                .saturating_add(n)
+                .saturating_sub(self.height)
+                .saturating_add(1))
+            {
+                self.set_cursor(0, 0)?;
+                self.clear_region(ClearType::CurrentLine)?;
+                self.buffer.content.rotate_left(self.width.into());
+            }
+            cur_y.saturating_add(n).min(self.height.saturating_sub(1))
+        } else {
+            cur_y.saturating_add(n)
+        };
+
+        self.set_cursor(new_cursor_x, new_cursor_y)?;
+
+        Ok(())
+    }
+
     fn size(&self) -> Result<Rect, io::Error> {
         Ok(Rect::new(0, 0, self.width, self.height))
     }
@@ -317,6 +414,127 @@ mod tests {
         backend.draw([(0, 1, &cell)].into_iter()).unwrap();
         backend.clear().unwrap();
         backend.assert_buffer(&Buffer::with_lines(vec!["          "; 2]));
+    }
+
+    #[test]
+    fn clear_region_all() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
+
+        backend.clear_region(ClearType::All).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec!["          "; 2]));
+    }
+
+    #[test]
+    fn clear_region_after_cursor() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
+
+        backend.set_cursor(0, 1).unwrap();
+        backend.clear_region(ClearType::AfterCursor).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec!["aaaaaaaaaa", "a         "]));
+    }
+
+    #[test]
+    fn clear_region_before_cursor() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
+
+        backend.set_cursor(0, 1).unwrap();
+        backend.clear_region(ClearType::BeforeCursor).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec!["          ", "aaaaaaaaaa"]));
+    }
+
+    #[test]
+    fn clear_region_current_line() {
+        let mut backend = TestBackend::new(10, 3);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 3]);
+
+        backend.set_cursor(3, 1).unwrap();
+        backend.clear_region(ClearType::CurrentLine).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "          ",
+            "aaaaaaaaaa",
+        ]));
+    }
+
+    #[test]
+    fn clear_region_until_new_line() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
+
+        backend.set_cursor(3, 0).unwrap();
+        backend.clear_region(ClearType::UntilNewLine).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec!["aaa       ", "aaaaaaaaaa"]));
+    }
+
+    #[test]
+    fn append_lines() {
+        let mut backend = TestBackend::new(10, 3);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "bbbbbbbbbb", "cccccccccc"]);
+
+        backend.set_cursor(0, 0).unwrap();
+
+        backend.append_lines(1).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 1));
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+        ]));
+
+        backend.append_lines(1).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (2, 2));
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+        ]));
+
+        backend.append_lines(1).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (3, 2));
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "          ",
+        ]));
+    }
+
+    #[test]
+    fn append_lines_multiple() {
+        let mut backend = TestBackend::new(10, 3);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "bbbbbbbbbb", "cccccccccc"]);
+
+        backend.set_cursor(0, 0).unwrap();
+
+        backend.append_lines(2).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 2));
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+        ]));
+
+        backend.set_cursor(0, 1).unwrap();
+
+        backend.append_lines(2).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 2));
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "          ",
+        ]));
+
+        backend.set_cursor(0, 0).unwrap();
+
+        backend.append_lines(4).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 2));
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "          ",
+            "          ",
+            "          ",
+        ]));
     }
 
     #[test]
