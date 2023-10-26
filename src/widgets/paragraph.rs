@@ -226,49 +226,50 @@ impl<'a> Widget for Paragraph<'a> {
             return;
         }
 
-        let style = self.style;
         let styled = self.text.lines.iter().map(|line| {
-            (
-                line.spans
-                    .iter()
-                    .flat_map(|span| span.styled_graphemes(style)),
-                line.alignment.unwrap_or(self.alignment),
-            )
+            let graphemes = line
+                .spans
+                .iter()
+                .flat_map(|span| span.styled_graphemes(self.style));
+            let alignment = line.alignment.unwrap_or(self.alignment);
+            (graphemes, alignment)
         });
 
-        let mut line_composer: Box<dyn LineComposer> = if let Some(Wrap { trim }) = self.wrap {
-            Box::new(WordWrapper::new(styled, text_area.width, trim))
+        if let Some(Wrap { trim }) = self.wrap {
+            let line_composer = WordWrapper::new(styled, text_area.width, trim);
+            self.render_text(line_composer, text_area, buf);
         } else {
-            let mut line_composer = Box::new(LineTruncator::new(styled, text_area.width));
+            let mut line_composer = LineTruncator::new(styled, text_area.width);
             line_composer.set_horizontal_offset(self.scroll.1);
-            line_composer
-        };
+            self.render_text(line_composer, text_area, buf);
+        }
+    }
+}
+
+impl<'a> Paragraph<'a> {
+    fn render_text<C: LineComposer<'a>>(&self, mut composer: C, area: Rect, buf: &mut Buffer) {
         let mut y = 0;
         while let Some((current_line, current_line_width, current_line_alignment)) =
-            line_composer.next_line()
+            composer.next_line()
         {
             if y >= self.scroll.0 {
-                let mut x =
-                    get_line_offset(current_line_width, text_area.width, current_line_alignment);
+                let mut x = get_line_offset(current_line_width, area.width, current_line_alignment);
                 for StyledGrapheme { symbol, style } in current_line {
                     let width = symbol.width();
                     if width == 0 {
                         continue;
                     }
-                    buf.get_mut(text_area.left() + x, text_area.top() + y - self.scroll.0)
-                        .set_symbol(if symbol.is_empty() {
-                            // If the symbol is empty, the last char which rendered last time will
-                            // leave on the line. It's a quick fix.
-                            " "
-                        } else {
-                            symbol
-                        })
+                    // If the symbol is empty, the last char which rendered last time will
+                    // leave on the line. It's a quick fix.
+                    let symbol = if symbol.is_empty() { " " } else { symbol };
+                    buf.get_mut(area.left() + x, area.top() + y - self.scroll.0)
+                        .set_symbol(symbol)
                         .set_style(*style);
                     x += width as u16;
                 }
             }
             y += 1;
-            if y >= text_area.height + self.scroll.0 {
+            if y >= area.height + self.scroll.0 {
                 break;
             }
         }
