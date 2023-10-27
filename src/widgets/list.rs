@@ -1082,7 +1082,7 @@ mod tests {
             Line::from("Right").alignment(Alignment::Right),
         ]
         .into_iter()
-        .map(|i| ListItem::new(i))
+        .map(ListItem::new)
         .collect::<Vec<ListItem>>();
         let list = List::new(items);
         let buffer = render_widget(list, 10, 5);
