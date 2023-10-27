@@ -2,7 +2,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     buffer::Buffer,
-    layout::{Corner, Rect},
+    layout::{Alignment, Corner, Rect},
     style::{Style, Styled},
     text::Text,
     widgets::{Block, HighlightSpacing, StatefulWidget, Widget},
@@ -286,7 +286,14 @@ impl<'a> StatefulWidget for List<'a> {
                 } else {
                     (x, list_area.width)
                 };
-                buf.set_line(elem_x, y + j as u16, line, max_element_width);
+                let x_offset = match line.alignment {
+                    Some(Alignment::Center) => {
+                        (area.width / 2).saturating_sub(line.width() as u16 / 2)
+                    }
+                    Some(Alignment::Right) => area.width.saturating_sub(line.width() as u16),
+                    _ => 0,
+                };
+                buf.set_line(elem_x + x_offset, y + j as u16, line, max_element_width);
             }
             if is_selected {
                 buf.set_style(area, self.highlight_style);
@@ -333,6 +340,7 @@ mod tests {
     use super::*;
     use crate::{
         assert_buffer_eq,
+        prelude::Alignment,
         style::{Color, Modifier, Stylize},
         text::{Line, Span},
         widgets::{Borders, StatefulWidget, Widget},
@@ -1064,5 +1072,27 @@ mod tests {
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
         )
+    }
+
+    #[test]
+    fn test_render_list_with_alignment() {
+        let items = [
+            Line::from("Left").alignment(Alignment::Left),
+            Line::from("Center").alignment(Alignment::Center),
+            Line::from("Right").alignment(Alignment::Right),
+        ]
+        .into_iter()
+        .map(|i| ListItem::new(i))
+        .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let buffer = render_widget(list, 10, 5);
+        let expected = Buffer::with_lines(vec![
+            "Left      ",
+            "  Center  ",
+            "     Right",
+            "          ",
+            "          ",
+        ]);
+        assert_buffer_eq!(buffer, expected);
     }
 }
