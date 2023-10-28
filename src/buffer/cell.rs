@@ -1,21 +1,22 @@
 use std::fmt::Debug;
 
+use compact_str::CompactString;
+
 use crate::prelude::*;
 
 /// A buffer cell
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cell {
-    #[deprecated(
-        since = "0.24.1",
-        note = "This field will be hidden at next major version. Use `Cell::symbol` method to get \
-                the value. Use `Cell::set_symbol` to update the field. Use `Cell::default` to \
-                create `Cell` instance"
-    )]
     /// The string to be drawn in the cell.
     ///
     /// This accepts unicode grapheme clusters which might take up more than one cell.
-    pub symbol: String,
+    ///
+    /// This is a [`CompactString`] which is a wrapper around [`String`] that uses a small inline
+    /// buffer for short strings.
+    ///
+    /// See <https://github.com/ratatui-org/ratatui/pull/601> for more information.
+    symbol: CompactString,
 
     /// The foreground color of the cell.
     pub fg: Color,
@@ -24,8 +25,6 @@ pub struct Cell {
     pub bg: Color,
 
     /// The underline color of the cell.
-    ///
-    /// This is only used when the `underline-color` feature is enabled.
     #[cfg(feature = "underline-color")]
     pub underline_color: Color,
 
@@ -36,7 +35,6 @@ pub struct Cell {
     pub skip: bool,
 }
 
-#[allow(deprecated)] // For Cell::symbol
 impl Cell {
     /// Gets the symbol of the cell.
     pub fn symbol(&self) -> &str {
@@ -45,15 +43,14 @@ impl Cell {
 
     /// Sets the symbol of the cell.
     pub fn set_symbol(&mut self, symbol: &str) -> &mut Cell {
-        self.symbol.clear();
-        self.symbol.push_str(symbol);
+        self.symbol = CompactString::new(symbol);
         self
     }
 
     /// Sets the symbol of the cell to a single character.
     pub fn set_char(&mut self, ch: char) -> &mut Cell {
-        self.symbol.clear();
-        self.symbol.push(ch);
+        let mut buf = [0; 4];
+        self.symbol = CompactString::new(ch.encode_utf8(&mut buf));
         self
     }
 
@@ -68,6 +65,7 @@ impl Cell {
         self.bg = color;
         self
     }
+
     /// Sets the style of the cell.
     ///
     ///  `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
@@ -116,8 +114,7 @@ impl Cell {
 
     /// Resets the cell to the default state.
     pub fn reset(&mut self) {
-        self.symbol.clear();
-        self.symbol.push(' ');
+        self.symbol = CompactString::new(" ");
         self.fg = Color::Reset;
         self.bg = Color::Reset;
         #[cfg(feature = "underline-color")]
@@ -131,9 +128,8 @@ impl Cell {
 
 impl Default for Cell {
     fn default() -> Cell {
-        #[allow(deprecated)] // For Cell::symbol
         Cell {
-            symbol: " ".into(),
+            symbol: CompactString::new(" "),
             fg: Color::Reset,
             bg: Color::Reset,
             #[cfg(feature = "underline-color")]
