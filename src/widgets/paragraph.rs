@@ -208,41 +208,11 @@ impl<'a> Paragraph<'a> {
         self.alignment = alignment;
         self
     }
-}
 
-impl<'a> Widget for Paragraph<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
-        let text_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
-
-        if text_area.height < 1 {
-            return;
-        }
-
-        let style = self.style;
-        let styled = self.text.lines.iter().map(|line| {
-            (
-                line.spans
-                    .iter()
-                    .flat_map(|span| span.styled_graphemes(style)),
-                line.alignment.unwrap_or(self.alignment),
-            )
-        });
-
-        let mut line_composer: Box<dyn LineComposer> = if let Some(Wrap { trim }) = self.wrap {
-            Box::new(WordWrapper::new(styled, text_area.width, trim))
-        } else {
-            let mut line_composer = Box::new(LineTruncator::new(styled, text_area.width));
-            line_composer.set_horizontal_offset(self.scroll.1);
-            line_composer
-        };
+    fn render_with_composer<LC>(&self, text_area: Rect, buf: &mut Buffer, mut line_composer: LC)
+    where
+        LC: LineComposer<'a>,
+    {
         let mut y = 0;
         while let Some(WrappedLine {
             line: current_line,
@@ -274,6 +244,46 @@ impl<'a> Widget for Paragraph<'a> {
             if y >= text_area.height + self.scroll.0 {
                 break;
             }
+        }
+    }
+}
+
+impl<'a> Widget for Paragraph<'a> {
+    fn render(mut self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
+        let text_area = match self.block.take() {
+            Some(b) => {
+                let inner_area = b.inner(area);
+                b.render(area, buf);
+                inner_area
+            }
+            None => area,
+        };
+
+        if text_area.height < 1 {
+            return;
+        }
+
+        let style = self.style;
+        let styled = self.text.lines.iter().map(|line| {
+            (
+                line.spans
+                    .iter()
+                    .flat_map(|span| span.styled_graphemes(style)),
+                line.alignment.unwrap_or(self.alignment),
+            )
+        });
+
+        if let Some(Wrap { trim }) = self.wrap {
+            self.render_with_composer(
+                text_area,
+                buf,
+                WordWrapper::new(styled, text_area.width, trim),
+            )
+        } else {
+            let mut line_composer = LineTruncator::new(styled, text_area.width);
+            line_composer.set_horizontal_offset(self.scroll.1);
+            self.render_with_composer(text_area, buf, line_composer)
         }
     }
 }
