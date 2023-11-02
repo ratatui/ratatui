@@ -1,5 +1,6 @@
 use std::{collections::VecDeque, vec::IntoIter};
 
+use lender::{Lender, Lending};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
@@ -12,6 +13,15 @@ const NBSP: &str = "\u{00a0}";
 /// iterators for that).
 pub trait LineComposer<'a> {
     fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>>;
+}
+
+impl<'a, Composer> LineComposer<'a> for Composer
+where
+    Composer: Lender + for<'lend> Lending<'lend, Lend = WrappedLine<'lend, 'a>>,
+{
+    fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
+        self.next()
+    }
 }
 
 pub struct WrappedLine<'lend, 'text> {
@@ -60,12 +70,19 @@ where
     }
 }
 
-impl<'a, O, I> LineComposer<'a> for WordWrapper<'a, O, I>
+impl<'a, 'lend, O, I> Lending<'lend> for WordWrapper<'a, O, I>
 where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
-    fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
+    type Lend = WrappedLine<'lend, 'a>;
+}
+impl<'a, O, I> Lender for WordWrapper<'a, O, I>
+where
+    O: Iterator<Item = (I, Alignment)>,
+    I: Iterator<Item = StyledGrapheme<'a>>,
+{
+    fn next<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
         if self.max_line_width == 0 {
             return None;
         }
@@ -257,12 +274,19 @@ where
     }
 }
 
-impl<'a, O, I> LineComposer<'a> for LineTruncator<'a, O, I>
+impl<'a, 'lend, O, I> Lending<'lend> for LineTruncator<'a, O, I>
 where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
-    fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
+    type Lend = WrappedLine<'lend, 'a>;
+}
+impl<'a, O, I> Lender for LineTruncator<'a, O, I>
+where
+    O: Iterator<Item = (I, Alignment)>,
+    I: Iterator<Item = StyledGrapheme<'a>>,
+{
+    fn next<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
         if self.max_line_width == 0 {
             return None;
         }
