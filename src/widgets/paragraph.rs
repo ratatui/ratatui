@@ -6,7 +6,7 @@ use crate::{
     style::{Style, Styled},
     text::{StyledGrapheme, Text},
     widgets::{
-        reflow::{LineComposer, LineTruncator, WordWrapper},
+        reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine},
         Block, Widget,
     },
 };
@@ -244,8 +244,11 @@ impl<'a> Widget for Paragraph<'a> {
             line_composer
         };
         let mut y = 0;
-        while let Some((current_line, current_line_width, current_line_alignment)) =
-            line_composer.next_line()
+        while let Some(WrappedLine {
+            line: current_line,
+            width: current_line_width,
+            alignment: current_line_alignment,
+        }) = line_composer.next_line()
         {
             if y >= self.scroll.0 {
                 let mut x =
