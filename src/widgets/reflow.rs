@@ -1,3 +1,8 @@
+//! Utilities to make text fit within a given width
+//!
+//! This is used internally by [`Paragraph`](crate::widgets::Paragraph), and generally does not
+//! need to be used directly unless one is writing a custom `Paragraph` alternative.
+
 use std::{collections::VecDeque, vec::IntoIter};
 
 use unicode_segmentation::UnicodeSegmentation;
@@ -39,6 +44,13 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
+    /// Creates a new [`WordWrapper`].
+    ///
+    /// The `lines` are the list of lines to be re-formatted, so each call to
+    /// [`WordWrapper::next_line`] returns fragments of which whose width is at most
+    /// `max_line_width`.
+    ///
+    /// `trim` configures whether leading whitespaces should be trimmed from each line.
     pub fn new(lines: O, max_line_width: u16, trim: bool) -> WordWrapper<'a, O, I> {
         WordWrapper {
             input_lines: lines,
@@ -230,6 +242,13 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
+    /// Creates a new [`WordWrapper`].
+    ///
+    /// The `lines` are the list of lines to be re-formatted, so each call to
+    /// [`WordWrapper::next_line`] returns the start of each line so that its width is at most
+    /// `max_line_width`.
+    ///
+    /// `trim` configures whether leading whitespaces should be trimmed from each line.
     pub fn new(lines: O, max_line_width: u16) -> LineTruncator<'a, O, I> {
         LineTruncator {
             input_lines: lines,

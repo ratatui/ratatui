@@ -30,7 +30,7 @@ mod clear;
 mod gauge;
 mod list;
 mod paragraph;
-mod reflow;
+pub mod reflow;
 mod scrollbar;
 mod sparkline;
 mod table;
