@@ -183,65 +183,22 @@ impl Backend for TestBackend {
         match clear_type {
             ClearType::All => self.clear()?,
             ClearType::AfterCursor => {
-                self.buffer.content = self
-                    .buffer
-                    .content()
-                    .iter()
-                    .enumerate()
-                    .map(|(i, c)| {
-                        if i > self.buffer.index_of(self.pos.0, self.pos.1) {
-                            Cell::default()
-                        } else {
-                            c.clone()
-                        }
-                    })
-                    .collect()
+                let index = self.buffer.index_of(self.pos.0, self.pos.1) + 1;
+                self.buffer.content[index..].fill(Cell::default());
             }
             ClearType::BeforeCursor => {
-                self.buffer.content = self
-                    .buffer
-                    .content()
-                    .iter()
-                    .enumerate()
-                    .map(|(i, c)| {
-                        if i < self.buffer.index_of(self.pos.0, self.pos.1) {
-                            Cell::default()
-                        } else {
-                            c.clone()
-                        }
-                    })
-                    .collect()
+                let index = self.buffer.index_of(self.pos.0, self.pos.1);
+                self.buffer.content[..index].fill(Cell::default());
             }
             ClearType::CurrentLine => {
-                self.buffer.content = self
-                    .buffer
-                    .content()
-                    .iter()
-                    .enumerate()
-                    .map(|(i, c)| {
-                        if self.buffer.pos_of(i).1 == self.pos.1 {
-                            Cell::default()
-                        } else {
-                            c.clone()
-                        }
-                    })
-                    .collect()
+                let line_start_index = self.buffer.index_of(0, self.pos.1);
+                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
+                self.buffer.content[line_start_index..=line_end_index].fill(Cell::default());
             }
             ClearType::UntilNewLine => {
-                self.buffer.content = self
-                    .buffer
-                    .content()
-                    .iter()
-                    .enumerate()
-                    .map(|(i, c)| {
-                        let p = self.buffer.pos_of(i);
-                        if p.1 == self.pos.1 && p.0 >= self.pos.0 {
-                            Cell::default()
-                        } else {
-                            c.clone()
-                        }
-                    })
-                    .collect()
+                let index = self.buffer.index_of(self.pos.0, self.pos.1);
+                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
+                self.buffer.content[index..=line_end_index].fill(Cell::default());
             }
         }
         Ok(())
