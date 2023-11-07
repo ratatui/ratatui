@@ -369,42 +369,50 @@ mod tests {
         backend.draw([(0, 0, &cell)].into_iter()).unwrap();
         backend.draw([(0, 1, &cell)].into_iter()).unwrap();
         backend.clear().unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec!["          "; 2]));
+        backend.assert_buffer(&Buffer::with_lines(vec!["          ", "          "]));
     }
 
     #[test]
     fn clear_region_all() {
         let mut backend = TestBackend::new(10, 2);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "aaaaaaaaaa"]);
 
         backend.clear_region(ClearType::All).unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec!["          "; 2]));
+        backend.assert_buffer(&Buffer::with_lines(vec!["          ", "          "]));
     }
 
     #[test]
     fn clear_region_after_cursor() {
         let mut backend = TestBackend::new(10, 2);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaaaa"]);
 
         backend.set_cursor(0, 1).unwrap();
         backend.clear_region(ClearType::AfterCursor).unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec!["aaaaaaaaaa", "a         "]));
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "a         ",
+            "          ",
+        ]));
     }
 
     #[test]
     fn clear_region_before_cursor() {
         let mut backend = TestBackend::new(10, 2);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaaaa"]);
 
         backend.set_cursor(0, 1).unwrap();
         backend.clear_region(ClearType::BeforeCursor).unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec!["          ", "aaaaaaaaaa"]));
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "          ",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]));
     }
 
     #[test]
     fn clear_region_current_line() {
         let mut backend = TestBackend::new(10, 3);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 3]);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaaaa"]);
 
         backend.set_cursor(3, 1).unwrap();
         backend.clear_region(ClearType::CurrentLine).unwrap();
@@ -418,7 +426,7 @@ mod tests {
     #[test]
     fn clear_region_until_new_line() {
         let mut backend = TestBackend::new(10, 2);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
+        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "aaaaaaaaaa"]);
 
         backend.set_cursor(3, 0).unwrap();
         backend.clear_region(ClearType::UntilNewLine).unwrap();
