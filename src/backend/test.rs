@@ -207,25 +207,24 @@ impl Backend for TestBackend {
     fn append_lines(&mut self, n: u16) -> io::Result<()> {
         let (cur_x, cur_y) = self.get_cursor()?;
 
-        let new_cursor_x = if cur_x.saturating_add(1) > self.width {
-            self.width.saturating_sub(1)
-        } else {
-            cur_x.saturating_add(1)
-        };
+        let new_cursor_x = cur_x.saturating_add(1).min(self.width.saturating_sub(1));
 
-        let new_cursor_y = if cur_y.saturating_add(n) >= self.height {
-            for _ in 0..(cur_y
-                .saturating_add(n)
+        let cursor_y_after_newlines = cur_y.saturating_add(n);
+        let max_y = self.height.saturating_sub(1);
+        let new_cursor_y = if cursor_y_after_newlines > max_y {
+            let rotate_by = cursor_y_after_newlines
                 .saturating_sub(self.height)
-                .saturating_add(1))
-            {
-                self.set_cursor(0, 0)?;
-                self.clear_region(ClearType::CurrentLine)?;
-                self.buffer.content.rotate_left(self.width.into());
-            }
-            cur_y.saturating_add(n).min(self.height.saturating_sub(1))
+                .saturating_add(1)
+                .min(max_y);
+
+            self.set_cursor(0, rotate_by)?;
+            self.clear_region(ClearType::BeforeCursor)?;
+            self.buffer
+                .content
+                .rotate_left((self.width * rotate_by).into());
+            cursor_y_after_newlines.min(max_y)
         } else {
-            cur_y.saturating_add(n)
+            cursor_y_after_newlines
         };
 
         self.set_cursor(new_cursor_x, new_cursor_y)?;
