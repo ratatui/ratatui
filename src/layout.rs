@@ -209,6 +209,51 @@ pub enum Direction {
     Vertical,
 }
 
+#[stability::unstable(
+    feature = "popup-layout",
+    reason = "The variant for this feature is not final and may change in the future",
+    issue = "https://github.com/ratatui-org/ratatui/issues/617"
+)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub struct Popup {
+    container: Rect,
+}
+
+impl Popup {
+    /// Returns a new rectangle both centered on `self` and using up a percentage of the containing
+    /// rectangle.
+    #[stability::unstable(
+        feature = "popup-layout",
+        reason = "The variant for this feature is not final and may change in the future",
+        issue = "https://github.com/ratatui-org/ratatui/issues/617"
+    )]
+    pub fn percent(&self, x: u16, y: u16) -> Rect {
+        let popup_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage((100 - y) / 2),
+                Constraint::Percentage(y),
+                Constraint::Percentage((100 - y) / 2),
+            ])
+            .split(self.container);
+
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage((100 - x) / 2),
+                Constraint::Percentage(x),
+                Constraint::Percentage((100 - x) / 2),
+            ])
+            .split(popup_layout[1])[1]
+    }
+}
+
+impl From<Rect> for Popup {
+    fn from(rect: Rect) -> Self {
+        Popup { container: rect }
+    }
+}
+
 /// Option for segment size preferences
 ///
 /// This controls how the space is distributed when the constraints are satisfied. By default, the

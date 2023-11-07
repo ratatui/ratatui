@@ -94,7 +94,11 @@ underline-color = ["dep:crossterm"]
 #! The following features are unstable and may change in the future:
 
 ## Enable all unstable features.
-unstable = ["unstable-segment-size", "unstable-rendered-line-info"]
+unstable = ["unstable-popup-layout", "unstable-segment-size", "unstable-rendered-line-info"]
+
+## Enables [`Popup`](crate::layout::Popup) as a layout which is experimental and may change in the
+## future. See [Issue #617](https://github.com/ratatui-org/ratatui/issues/617) for more details.
+unstable-popup-layout = []
 
 ## Enables the [`Layout::segment_size`](crate::layout::Layout::segment_size) method which is experimental and may change in the
 ## future. See [Issue #536](https://github.com/ratatui-org/ratatui/issues/536) for more details.
@@ -230,7 +234,7 @@ doc-scrape-examples = true
 
 [[example]]
 name = "popup"
-required-features = ["crossterm"]
+required-features = ["crossterm", "unstable-popup-layout"]
 doc-scrape-examples = true
 
 [[example]]
