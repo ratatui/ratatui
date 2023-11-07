@@ -143,6 +143,27 @@ impl Rect {
             && self.y < other.bottom()
             && self.bottom() > other.y
     }
+
+    /// Returns a new rectangle both centered on `self` and using up a percentage of `self`.
+    pub fn centered_rect(self, percent_x: u16, percent_y: u16) -> Rect {
+        let popup_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage((100 - percent_y) / 2),
+                Constraint::Percentage(percent_y),
+                Constraint::Percentage((100 - percent_y) / 2),
+            ])
+            .split(self);
+
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage((100 - percent_x) / 2),
+                Constraint::Percentage(percent_x),
+                Constraint::Percentage((100 - percent_x) / 2),
+            ])
+            .split(popup_layout[1])[1]
+    }
 }
 
 #[cfg(test)]
