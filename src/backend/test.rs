@@ -363,28 +363,51 @@ mod tests {
 
     #[test]
     fn clear() {
-        let mut backend = TestBackend::new(10, 2);
+        let mut backend = TestBackend::new(10, 4);
         let mut cell = Cell::default();
         cell.set_symbol("a");
         backend.draw([(0, 0, &cell)].into_iter()).unwrap();
         backend.draw([(0, 1, &cell)].into_iter()).unwrap();
         backend.clear().unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec!["          ", "          "]));
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]));
     }
 
     #[test]
     fn clear_region_all() {
-        let mut backend = TestBackend::new(10, 2);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "aaaaaaaaaa"]);
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]);
 
         backend.clear_region(ClearType::All).unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec!["          ", "          "]));
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]));
     }
 
     #[test]
     fn clear_region_after_cursor() {
-        let mut backend = TestBackend::new(10, 2);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaaaa"]);
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]);
 
         backend.set_cursor(0, 1).unwrap();
         backend.clear_region(ClearType::AfterCursor).unwrap();
@@ -392,13 +415,21 @@ mod tests {
             "aaaaaaaaaa",
             "a         ",
             "          ",
+            "          ",
+            "          ",
         ]));
     }
 
     #[test]
     fn clear_region_before_cursor() {
-        let mut backend = TestBackend::new(10, 2);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaaaa"]);
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]);
 
         backend.set_cursor(0, 1).unwrap();
         backend.clear_region(ClearType::BeforeCursor).unwrap();
@@ -406,13 +437,21 @@ mod tests {
             "          ",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
         ]));
     }
 
     #[test]
     fn clear_region_current_line() {
-        let mut backend = TestBackend::new(10, 3);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaaaa"]);
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]);
 
         backend.set_cursor(3, 1).unwrap();
         backend.clear_region(ClearType::CurrentLine).unwrap();
@@ -420,82 +459,150 @@ mod tests {
             "aaaaaaaaaa",
             "          ",
             "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
         ]));
     }
 
     #[test]
     fn clear_region_until_new_line() {
-        let mut backend = TestBackend::new(10, 2);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "aaaaaaaaaa"]);
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]);
 
         backend.set_cursor(3, 0).unwrap();
         backend.clear_region(ClearType::UntilNewLine).unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec!["aaa       ", "aaaaaaaaaa"]));
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "aaa       ",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]));
     }
 
     #[test]
-    fn append_lines() {
-        let mut backend = TestBackend::new(10, 3);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "bbbbbbbbbb", "cccccccccc"]);
+    fn append_lines_not_at_last_line() {
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
 
         backend.set_cursor(0, 0).unwrap();
+
+        // If the cursor is not at the last line in the terminal the addition of a
+        // newline simply moves the cursor down and to the right
 
         backend.append_lines(1).unwrap();
         assert_eq!(backend.get_cursor().unwrap(), (1, 1));
-        backend.assert_buffer(&Buffer::with_lines(vec![
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-        ]));
 
         backend.append_lines(1).unwrap();
         assert_eq!(backend.get_cursor().unwrap(), (2, 2));
+
+        backend.append_lines(1).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (3, 3));
+
+        backend.append_lines(1).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (4, 4));
+
+        // As such the buffer should remain unchanged
         backend.assert_buffer(&Buffer::with_lines(vec![
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
-        ]));
-
-        backend.append_lines(1).unwrap();
-        assert_eq!(backend.get_cursor().unwrap(), (3, 2));
-        backend.assert_buffer(&Buffer::with_lines(vec![
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "          ",
+            "dddddddddd",
+            "eeeeeeeeee",
         ]));
     }
 
     #[test]
-    fn append_lines_multiple() {
-        let mut backend = TestBackend::new(10, 3);
-        backend.buffer = Buffer::with_lines(vec!["aaaaaaaaaa", "bbbbbbbbbb", "cccccccccc"]);
+    fn append_lines_at_last_line() {
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
+
+        // If the cursor is at the last line in the terminal the addition of a
+        // newline will scroll the contents of the buffer
+        backend.set_cursor(0, 4).unwrap();
+
+        backend.append_lines(1).unwrap();
+
+        backend.buffer = Buffer::with_lines(vec![
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+            "          ",
+        ]);
+
+        // It also moves the cursor to the right, as is common of the behaviour of
+        // terminals in raw-mode
+        assert_eq!(backend.get_cursor().unwrap(), (1, 4));
+    }
+
+    #[test]
+    fn append_multiple_lines_not_at_last_line() {
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
 
         backend.set_cursor(0, 0).unwrap();
 
-        backend.append_lines(2).unwrap();
-        assert_eq!(backend.get_cursor().unwrap(), (1, 2));
+        // If the cursor is not at the last line in the terminal the addition of multiple
+        // newlines simply moves the cursor n lines down and to the right by 1
+
+        backend.append_lines(4).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 4));
+
+        // As such the buffer should remain unchanged
         backend.assert_buffer(&Buffer::with_lines(vec![
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
         ]));
+    }
 
-        backend.set_cursor(0, 1).unwrap();
-
-        backend.append_lines(2).unwrap();
-        assert_eq!(backend.get_cursor().unwrap(), (1, 2));
-        backend.assert_buffer(&Buffer::with_lines(vec![
+    #[test]
+    fn append_multiple_lines_past_last_line() {
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
-            "          ",
-        ]));
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
 
-        backend.set_cursor(0, 0).unwrap();
+        backend.set_cursor(0, 3).unwrap();
 
-        backend.append_lines(4).unwrap();
-        assert_eq!(backend.get_cursor().unwrap(), (1, 2));
+        backend.append_lines(3).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 4));
+
         backend.assert_buffer(&Buffer::with_lines(vec![
-            "          ",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
             "          ",
             "          ",
         ]));
