@@ -421,12 +421,12 @@ mod tests {
             "aaaaaaaaaa",
         ]);
 
-        backend.set_cursor(0, 1).unwrap();
+        backend.set_cursor(3, 2).unwrap();
         backend.clear_region(ClearType::AfterCursor).unwrap();
         backend.assert_buffer(&Buffer::with_lines(vec![
             "aaaaaaaaaa",
-            "a         ",
-            "          ",
+            "aaaaaaaaaa",
+            "aaaa      ",
             "          ",
             "          ",
         ]));
@@ -443,13 +443,13 @@ mod tests {
             "aaaaaaaaaa",
         ]);
 
-        backend.set_cursor(0, 1).unwrap();
+        backend.set_cursor(5, 3).unwrap();
         backend.clear_region(ClearType::BeforeCursor).unwrap();
         backend.assert_buffer(&Buffer::with_lines(vec![
             "          ",
-            "aaaaaaaaaa",
-            "aaaaaaaaaa",
-            "aaaaaaaaaa",
+            "          ",
+            "          ",
+            "     aaaaa",
             "aaaaaaaaaa",
         ]));
     }
