@@ -204,29 +204,41 @@ impl Backend for TestBackend {
         Ok(())
     }
 
+    /// Inserts n line breaks at the current cursor position.
+    ///
+    /// After the insertion, the cursor x position will be incremented by 1 (unless it's already
+    /// at the end of line).
+    ///
+    /// If the number of lines to append is fewer than the number of lines in the buffer after the
+    /// cursor y position then the cursor is moved down by n rows.
+    ///
+    /// If the number of lines to append is greater than the number of lines in the buffer after
+    /// the cursor y position then that number of empty lines (at most the buffer's height in this
+    /// case but this limit is instead replaced with scrolling in most backend implementations) will
+    /// be added after the current position and the cursor will be moved to the last row.
     fn append_lines(&mut self, n: u16) -> io::Result<()> {
         let (cur_x, cur_y) = self.get_cursor()?;
 
+        // the next column ensuring that we don't go past the last column
         let new_cursor_x = cur_x.saturating_add(1).min(self.width.saturating_sub(1));
 
-        let cursor_y_after_newlines = cur_y.saturating_add(n);
         let max_y = self.height.saturating_sub(1);
-        let new_cursor_y = if cursor_y_after_newlines > max_y {
-            let rotate_by = cursor_y_after_newlines
-                .saturating_sub(self.height)
-                .saturating_add(1)
-                .min(max_y);
+        let lines_after_cursor = max_y.saturating_sub(cur_y);
+        if n > lines_after_cursor {
+            let rotate_by = n.saturating_sub(lines_after_cursor).min(max_y);
+
+            if rotate_by == self.height - 1 {
+                self.clear()?;
+            }
 
             self.set_cursor(0, rotate_by)?;
             self.clear_region(ClearType::BeforeCursor)?;
             self.buffer
                 .content
                 .rotate_left((self.width * rotate_by).into());
-            cursor_y_after_newlines.min(max_y)
-        } else {
-            cursor_y_after_newlines
-        };
+        }
 
+        let new_cursor_y = cur_y.saturating_add(n).min(max_y);
         self.set_cursor(new_cursor_x, new_cursor_y)?;
 
         Ok(())
@@ -604,6 +616,56 @@ mod tests {
             "dddddddddd",
             "eeeeeeeeee",
             "          ",
+            "          ",
+        ]));
+    }
+
+    #[test]
+    fn append_multiple_lines_where_cursor_at_end_appends_height_lines() {
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
+
+        backend.set_cursor(0, 4).unwrap();
+
+        backend.append_lines(5).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 4));
+
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]));
+    }
+
+    #[test]
+    fn append_multiple_lines_where_cursor_appends_height_lines() {
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
+
+        backend.set_cursor(0, 0).unwrap();
+
+        backend.append_lines(5).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 4));
+
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
             "          ",
         ]));
     }
