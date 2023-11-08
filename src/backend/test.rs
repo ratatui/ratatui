@@ -207,7 +207,7 @@ impl Backend for TestBackend {
     /// Inserts n line breaks at the current cursor position.
     ///
     /// After the insertion, the cursor x position will be incremented by 1 (unless it's already
-    /// at the end of line).
+    /// at the end of line). This is a common behaviour of terminals in raw mode.
     ///
     /// If the number of lines to append is fewer than the number of lines in the buffer after the
     /// cursor y position then the cursor is moved down by n rows.
