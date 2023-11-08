@@ -474,13 +474,15 @@ where
         // Clear the viewport off the screen
         self.clear()?;
 
-        // Move the viewport accordingly - if it's not already at the bottom of the terminal
+        // Move the viewport by height, but don't move it past the bottom of the terminal
+        let viewport_at_bottom = self.last_known_size.bottom() - self.viewport_area.height;
         self.set_viewport_area(Rect {
-            x: self.viewport_area.left(),
-            y: (self.viewport_area.top() + height)
-                .min(self.last_known_size.bottom() - self.viewport_area.height),
-            width: self.viewport_area.width,
-            height: self.viewport_area.height,
+            y: self
+                .viewport_area
+                .y
+                .saturating_add(height)
+                .min(viewport_at_bottom),
+            ..self.viewport_area
         });
 
         // Draw contents into buffer
