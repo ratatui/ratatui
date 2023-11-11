@@ -176,7 +176,7 @@ impl Backend for TermwizBackend {
                     },
                 )));
 
-            self.buffered_terminal.add_change(&cell.symbol);
+            self.buffered_terminal.add_change(cell.symbol());
         }
         Ok(())
     }
