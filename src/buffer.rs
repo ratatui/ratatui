@@ -16,6 +16,12 @@ use crate::{
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cell {
+    #[deprecated(
+        since = "0.24.1",
+        note = "This field will be hidden at next major version. Use `Cell::symbol` method to get \
+                the value. Use `Cell::set_symbol` to update the field. Use `Cell::default` to \
+                create `Cell` instance"
+    )]
     pub symbol: String,
     pub fg: Color,
     pub bg: Color,
@@ -25,7 +31,12 @@ pub struct Cell {
     pub skip: bool,
 }
 
+#[allow(deprecated)] // For Cell::symbol
 impl Cell {
+    pub fn symbol(&self) -> &str {
+        self.symbol.as_str()
+    }
+
     pub fn set_symbol(&mut self, symbol: &str) -> &mut Cell {
         self.symbol.clear();
         self.symbol.push_str(symbol);
@@ -106,6 +117,7 @@ impl Cell {
 
 impl Default for Cell {
     fn default() -> Cell {
+        #[allow(deprecated)] // For Cell::symbol
         Cell {
             symbol: " ".into(),
             fg: Color::Reset,
@@ -132,7 +144,7 @@ impl Default for Cell {
 ///
 /// let mut buf = Buffer::empty(Rect{x: 0, y: 0, width: 10, height: 5});
 /// buf.get_mut(0, 2).set_symbol("x");
-/// assert_eq!(buf.get(0, 2).symbol, "x");
+/// assert_eq!(buf.get(0, 2).symbol(), "x");
 /// buf.set_string(3, 0, "string", Style::default().fg(Color::Red).bg(Color::White));
 /// assert_eq!(buf.get(5, 0), &Cell{
 ///     symbol: String::from("r"),
@@ -144,7 +156,7 @@ impl Default for Cell {
 ///     skip: false
 /// });
 /// buf.get_mut(5, 0).set_char('x');
-/// assert_eq!(buf.get(5, 0).symbol, "x");
+/// assert_eq!(buf.get(5, 0).symbol(), "x");
 /// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -471,9 +483,9 @@ impl Buffer {
                 updates.push((x, y, &next_buffer[i]));
             }
 
-            to_skip = current.symbol.width().saturating_sub(1);
+            to_skip = current.symbol().width().saturating_sub(1);
 
-            let affected_width = std::cmp::max(current.symbol.width(), previous.symbol.width());
+            let affected_width = std::cmp::max(current.symbol().width(), previous.symbol().width());
             invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
         }
         updates
@@ -555,11 +567,11 @@ impl Debug for Buffer {
             f.write_str("        \"")?;
             for (x, c) in line.iter().enumerate() {
                 if skip == 0 {
-                    f.write_str(&c.symbol)?;
+                    f.write_str(c.symbol())?;
                 } else {
-                    overwritten.push((x, &c.symbol));
+                    overwritten.push((x, c.symbol()));
                 }
-                skip = std::cmp::max(skip, c.symbol.width()).saturating_sub(1);
+                skip = std::cmp::max(skip, c.symbol().width()).saturating_sub(1);
                 #[cfg(feature = "underline-color")]
                 {
                     let style = (c.fg, c.bg, c.underline_color, c.modifier);
@@ -1042,5 +1054,15 @@ mod tests {
         buf.set_string(0, 0, "foo", Style::new().red());
         buf.set_string(0, 1, "bar", Style::new().blue());
         assert_eq!(buf, Buffer::with_lines(vec!["foo".red(), "bar".blue()]));
+    }
+
+    #[test]
+    fn cell_symbol_field() {
+        let mut cell = Cell::default();
+        assert_eq!(cell.symbol(), " ");
+        cell.set_symbol("あ"); // Multi-byte character
+        assert_eq!(cell.symbol(), "あ");
+        cell.set_symbol("👨‍👩‍👧‍👦"); // Multiple code units combined with ZWJ
+        assert_eq!(cell.symbol(), "👨‍👩‍👧‍👦");
     }
 }

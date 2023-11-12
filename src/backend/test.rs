@@ -56,11 +56,11 @@ fn buffer_view(buffer: &Buffer) -> String {
         view.push('"');
         for (x, c) in cells.iter().enumerate() {
             if skip == 0 {
-                view.push_str(&c.symbol);
+                view.push_str(c.symbol());
             } else {
-                overwritten.push((x, &c.symbol));
+                overwritten.push((x, c.symbol()));
             }
-            skip = std::cmp::max(skip, c.symbol.width()).saturating_sub(1);
+            skip = std::cmp::max(skip, c.symbol().width()).saturating_sub(1);
         }
         view.push('"');
         if !overwritten.is_empty() {
