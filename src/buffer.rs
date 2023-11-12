@@ -18,7 +18,9 @@ use crate::{
 pub struct Cell {
     #[deprecated(
         since = "0.24.1",
-        note = "This field will be hidden at next major version. Use `Cell::symbol` method to get the value. Use `Cell::set_symbol` to update the field. Use `Cell::default` to create `Cell` instance"
+        note = "This field will be hidden at next major version. Use `Cell::symbol` method to get \
+                the value. Use `Cell::set_symbol` to update the field. Use `Cell::default` to \
+                create `Cell` instance"
     )]
     pub symbol: String,
     pub fg: Color,
