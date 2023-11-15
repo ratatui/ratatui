@@ -27,7 +27,7 @@ fn widgets_table_column_spacing_can_be_changed() {
                 ])
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))
-                .widths(&[
+                .widths([
                     Constraint::Length(5),
                     Constraint::Length(5),
                     Constraint::Length(5),
@@ -198,7 +198,8 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints() {
 
 #[test]
 fn widgets_table_columns_widths_can_use_percentage_constraints() {
-    let test_case = |widths, expected| {
+    #[track_caller]
+    fn test_case(widths: &[Constraint], expected: Buffer) {
         let backend = TestBackend::new(30, 10);
         let mut terminal = Terminal::new(backend).unwrap();
 
@@ -219,7 +220,7 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
             })
             .unwrap();
         terminal.backend().assert_buffer(&expected);
-    };
+    }
 
     // columns of zero width show nothing
     test_case(
@@ -536,7 +537,7 @@ fn widgets_table_can_have_rows_with_multi_lines() {
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))
                 .highlight_symbol(">> ")
-                .widths(&[
+                .widths([
                     Constraint::Length(5),
                     Constraint::Length(5),
                     Constraint::Length(5),
@@ -631,7 +632,7 @@ fn widgets_table_enable_always_highlight_spacing() {
                 .block(Block::default().borders(Borders::ALL))
                 .highlight_symbol(">> ")
                 .highlight_spacing(space)
-                .widths(&[
+                .widths([
                     Constraint::Length(5),
                     Constraint::Length(5),
                     Constraint::Length(5),
@@ -772,7 +773,7 @@ fn widgets_table_can_have_elements_styled_individually() {
             .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
             .highlight_symbol(">> ")
             .highlight_style(Style::default().add_modifier(Modifier::BOLD))
-            .widths(&[
+            .widths([
                 Constraint::Length(6),
                 Constraint::Length(6),
                 Constraint::Length(6),
@@ -833,7 +834,7 @@ fn widgets_table_should_render_even_if_empty() {
             let table = Table::new(vec![])
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]))
                 .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
-                .widths(&[
+                .widths([
                     Constraint::Length(6),
                     Constraint::Length(6),
                     Constraint::Length(6),
@@ -873,7 +874,7 @@ fn widgets_table_columns_dont_panic() {
         .block(Block::default().borders(Borders::ALL))
         .highlight_symbol(">> ")
         .column_spacing(1)
-        .widths(&[
+        .widths([
             Constraint::Percentage(15),
             Constraint::Percentage(15),
             Constraint::Percentage(25),
@@ -908,7 +909,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
             ])
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
             .block(Block::default().borders(Borders::ALL))
-            .widths(&[
+            .widths([
                 Constraint::Length(5),
                 Constraint::Length(5),
                 Constraint::Length(5),
@@ -937,7 +938,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
             let table = Table::new(vec![Row::new(vec!["Row31", "Row32", "Row33"])])
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
                 .block(Block::default().borders(Borders::ALL))
-                .widths(&[
+                .widths([
                     Constraint::Length(5),
                     Constraint::Length(5),
                     Constraint::Length(5),

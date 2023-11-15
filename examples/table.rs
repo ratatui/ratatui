@@ -142,7 +142,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         .block(Block::default().borders(Borders::ALL).title("Table"))
         .highlight_style(selected_style)
         .highlight_symbol(">> ")
-        .widths(&[
+        .widths([
             Constraint::Percentage(50),
             Constraint::Max(30),
             Constraint::Min(10),
