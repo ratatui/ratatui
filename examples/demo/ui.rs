@@ -296,7 +296,7 @@ fn draw_second_tab(f: &mut Frame, app: &mut App, area: Rect) {
                 .bottom_margin(1),
         )
         .block(Block::default().title("Servers").borders(Borders::ALL))
-        .widths(&[
+        .widths([
             Constraint::Length(15),
             Constraint::Length(15),
             Constraint::Length(10),
@@ -395,7 +395,7 @@ fn draw_third_tab(f: &mut Frame, _app: &mut App, area: Rect) {
         .collect();
     let table = Table::new(items)
         .block(Block::default().title("Colors").borders(Borders::ALL))
-        .widths(&[
+        .widths([
             Constraint::Ratio(1, 3),
             Constraint::Ratio(1, 3),
             Constraint::Ratio(1, 3),
