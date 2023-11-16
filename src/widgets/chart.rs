@@ -335,7 +335,12 @@ impl<'a> Chart<'a> {
             .map(|l| l.iter().map(Span::width).max().unwrap_or_default() as u16)
             .unwrap_or_default();
 
-        if let Some(first_x_label) = self.x_axis.labels.as_ref().and_then(|labels| labels.get(0)) {
+        if let Some(first_x_label) = self
+            .x_axis
+            .labels
+            .as_ref()
+            .and_then(|labels| labels.first())
+        {
             let first_label_width = first_x_label.content.width() as u16;
             let width_left_of_y_axis = match self.x_axis.labels_alignment {
                 Alignment::Left => {

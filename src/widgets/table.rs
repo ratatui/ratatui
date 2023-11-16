@@ -678,17 +678,25 @@ mod tests {
 
     #[test]
     fn widths_conversions() {
-        let table = Table::new(vec![]).widths([Constraint::Percentage(100)]);
+        let array = [Constraint::Percentage(100)];
+        let table = Table::new(vec![]).widths(array);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "array");
 
-        #[allow(clippy::needless_borrow)] // for backwards compatibility with existing code
-        let table = Table::new(vec![]).widths(&[Constraint::Percentage(100)]);
+        let array_ref = &[Constraint::Percentage(100)];
+        let table = Table::new(vec![]).widths(array_ref);
+        assert_eq!(table.widths, vec![Constraint::Percentage(100)], "array ref");
+
+        let vec = vec![Constraint::Percentage(100)];
+        let slice = vec.as_slice();
+        let table = Table::new(vec![]).widths(slice);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "slice");
 
-        let table = Table::new(vec![]).widths(vec![Constraint::Percentage(100)]);
+        let vec = vec![Constraint::Percentage(100)];
+        let table = Table::new(vec![]).widths(vec);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "vec");
 
-        let table = Table::new(vec![]).widths(&vec![Constraint::Percentage(100)]);
+        let vec_ref = &vec![Constraint::Percentage(100)];
+        let table = Table::new(vec![]).widths(vec_ref);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "vec ref");
     }
 
