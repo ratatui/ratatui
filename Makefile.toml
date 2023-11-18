@@ -11,7 +11,7 @@ ALL_FEATURES = "all-widgets,macros,serde"
 # sets of flags, one for Windows and one for other platforms.
 # Windows: --features=all-widgets,macros,serde,crossterm,termwiz,underline-color
 # Other: --features=all-widgets,macros,serde,crossterm,termion,termwiz,underline-color
-ALL_FEATURES_FLAG = { source = "${CARGO_MAKE_RUST_TARGET_OS}", default_value = "--features=all-widgets,macros,serde,crossterm,termion,termwiz", mapping = { "windows" = "--features=all-widgets,macros,serde,crossterm,termwiz" } }
+ALL_FEATURES_FLAG = { source = "${CARGO_MAKE_RUST_TARGET_OS}", default_value = "--features=all-widgets,macros,serde,crossterm,termion,termwiz,unstable", mapping = { "windows" = "--features=all-widgets,macros,serde,crossterm,termwiz,unstable" } }
 
 [tasks.default]
 alias = "ci"
