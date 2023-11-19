@@ -1,5 +1,11 @@
 use ratatui::{
-    backend::TestBackend, buffer::Buffer, layout::Rect, symbols, text::Line, widgets::Tabs,
+    backend::TestBackend,
+    buffer::Buffer,
+    layout::Rect,
+    style::{Style, Stylize},
+    symbols,
+    text::Line,
+    widgets::Tabs,
     Terminal,
 };
 
@@ -43,6 +49,7 @@ fn widgets_tabs_should_truncate_the_last_item() {
             );
         })
         .unwrap();
-    let expected = Buffer::with_lines(vec![format!(" Tab1 {} T ", symbols::line::VERTICAL)]);
+    let mut expected = Buffer::with_lines(vec![format!(" Tab1 {} T ", symbols::line::VERTICAL)]);
+    expected.set_style(Rect::new(1, 0, 4, 1), Style::new().reversed());
     terminal.backend().assert_buffer(&expected);
 }
