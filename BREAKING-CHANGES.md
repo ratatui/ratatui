@@ -55,6 +55,25 @@ let table = Table::new(rows).widths([Constraint::Length(1)]);
 
 ## [v0.24.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.24.0)
 
+### Layout::new() now takes direction and constraint parameters ([#557])
+
+[#557]: https://github.com/ratatui-org/ratatui/pull/557
+
+Previously layout new took no parameters. Existing code should either use `Layout::default()` or
+the new constructor.
+
+```rust
+let layout = layout::new()
+  .direction(Direction::Vertical)
+  .constraints([Constraint::Min(1), Constraint::Max(2)]);
+// becomes either
+let layout = layout::default()
+  .direction(Direction::Vertical)
+  .constraints([Constraint::Min(1), Constraint::Max(2)]);
+// or
+let layout = layout::new(Direction::Vertical, [Constraint::Min(1), Constraint::Max(2)]);
+```
+
 ### ScrollbarState field type changed from `u16` to `usize` ([#456])
 
 [#456]: https://github.com/ratatui-org/ratatui/pull/456
