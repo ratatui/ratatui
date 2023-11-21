@@ -12,7 +12,9 @@ use crate::{
 ///
 /// Each tab title is stored as a [`Line`] which can be individually styled. The selected tab is set
 /// using [`Tabs::select`] and styled using [`Tabs::highlight_style`]. The divider can be customized
-/// with [`Tabs::divider`].
+/// with [`Tabs::divider`]. Padding can be set with [`Tabs::padding`] or [`Tabs::left_padding`] and [`Tabs::right_padding`].
+///
+/// The divider defaults to |, and padding defaults to a singular space on each side.
 ///
 /// # Example
 ///
@@ -24,7 +26,8 @@ use crate::{
 ///     .style(Style::default().white())
 ///     .highlight_style(Style::default().yellow())
 ///     .select(2)
-///     .divider(symbols::DOT);
+///     .divider(symbols::DOT)
+///     .padding("->", "<-");
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Tabs<'a> {
@@ -40,6 +43,10 @@ pub struct Tabs<'a> {
     highlight_style: Style,
     /// Tab divider
     divider: Span<'a>,
+    /// Tab Left Padding
+    padding_left: Line<'a>,
+    /// Tab Right Padding
+    padding_right: Line<'a>,
 }
 
 impl<'a> Tabs<'a> {
@@ -72,6 +79,8 @@ impl<'a> Tabs<'a> {
             style: Style::default(),
             highlight_style: Style::default(),
             divider: Span::raw(symbols::line::VERTICAL),
+            padding_left: Line::from(" "),
+            padding_right: Line::from(" "),
         }
     }
 
@@ -83,7 +92,7 @@ impl<'a> Tabs<'a> {
 
     /// Sets the selected tab.
     ///
-    /// The first tab has index 0 (this is also the default index).  
+    /// The first tab has index 0 (this is also the default index).
     /// The selected tab can have a different style with [`Tabs::highlight_style`].
     pub fn select(mut self, selected: usize) -> Tabs<'a> {
         self.selected = selected;
@@ -121,7 +130,7 @@ impl<'a> Tabs<'a> {
     /// ```
     /// Use dash (`-`) as separator.
     /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs, symbols};
+    /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider("-");
     /// ```
     pub fn divider<T>(mut self, divider: T) -> Tabs<'a>
@@ -129,6 +138,70 @@ impl<'a> Tabs<'a> {
         T: Into<Span<'a>>,
     {
         self.divider = divider.into();
+        self
+    }
+
+    /// Sets the padding between tabs.
+    ///
+    /// Both default to space.
+    ///
+    /// # Examples
+    ///
+    /// A space on either side of the tabs.
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding(" ", " ");
+    /// ```
+    /// Nothing on either side of the tabs.
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding("", "");
+    /// ```
+    pub fn padding<T, U>(mut self, left: T, right: U) -> Tabs<'a>
+    where
+        T: Into<Line<'a>>,
+        U: Into<Line<'a>>,
+    {
+        self.padding_left = left.into();
+        self.padding_right = right.into();
+        self
+    }
+
+    /// Sets the left side padding between tabs.
+    ///
+    /// Defaults to a space.
+    ///
+    /// # Example
+    ///
+    /// An arrow on the left of tabs.
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_left("->");
+    /// ```
+    pub fn padding_left<T>(mut self, padding: T) -> Tabs<'a>
+    where
+        T: Into<Line<'a>>,
+    {
+        self.padding_left = padding.into();
+        self
+    }
+
+    /// Sets the right side padding between tabs.
+    ///
+    /// Defaults to a space.
+    ///
+    /// # Example
+    ///
+    /// An arrow on the right of tabs.
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::Tabs};
+    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_right("<-");
+    /// ```
+    pub fn padding_right<T>(mut self, padding: T) -> Tabs<'a>
+    where
+        T: Into<Line<'a>>,
+    {
+        self.padding_left = padding.into();
         self
     }
 }
@@ -165,11 +238,21 @@ impl<'a> Widget for Tabs<'a> {
         let titles_length = self.titles.len();
         for (i, title) in self.titles.into_iter().enumerate() {
             let last_title = titles_length - 1 == i;
-            x = x.saturating_add(1);
+            let remaining_width = tabs_area.right().saturating_sub(x);
+
+            if remaining_width == 0 {
+                break;
+            }
+
+            // Left Padding
+            let pos = buf.set_line(x, tabs_area.top(), &self.padding_left, remaining_width);
+            x = pos.0;
             let remaining_width = tabs_area.right().saturating_sub(x);
             if remaining_width == 0 {
                 break;
             }
+
+            // Title
             let pos = buf.set_line(x, tabs_area.top(), &title, remaining_width);
             if i == self.selected {
                 buf.set_style(
@@ -182,11 +265,20 @@ impl<'a> Widget for Tabs<'a> {
                     self.highlight_style,
                 );
             }
-            x = pos.0.saturating_add(1);
+            x = pos.0;
+            let remaining_width = tabs_area.right().saturating_sub(x);
+            if remaining_width == 0 {
+                break;
+            }
+
+            // Right Padding
+            let pos = buf.set_line(x, tabs_area.top(), &self.padding_right, remaining_width);
+            x = pos.0;
             let remaining_width = tabs_area.right().saturating_sub(x);
             if remaining_width == 0 || last_title {
                 break;
             }
+
             let pos = buf.set_span(x, tabs_area.top(), &self.divider, remaining_width);
             x = pos.0;
         }
@@ -216,6 +308,8 @@ mod tests {
                 style: Style::default(),
                 highlight_style: Style::default(),
                 divider: Span::raw(symbols::line::VERTICAL),
+                padding_right: Line::from(" "),
+                padding_left: Line::from(" "),
             }
         );
     }
@@ -232,6 +326,24 @@ mod tests {
         assert_buffer_eq!(
             render(tabs, Rect::new(0, 0, 30, 1)),
             Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "])
+        );
+    }
+
+    #[test]
+    fn render_no_padding() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding("", "");
+        assert_buffer_eq!(
+            render(tabs, Rect::new(0, 0, 30, 1)),
+            Buffer::with_lines(vec!["Tab1│Tab2│Tab3│Tab4           "])
+        );
+    }
+
+    #[test]
+    fn render_more_padding() {
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding("   ", "  ");
+        assert_buffer_eq!(
+            render(tabs, Rect::new(0, 0, 30, 1)),
+            Buffer::with_lines(vec!["   Tab1  │   Tab2  │   Tab3  │"])
         );
     }
 
