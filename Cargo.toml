@@ -107,6 +107,9 @@ harness = false
 name = "list"
 harness = false
 
+[lib]
+bench = false
+
 [[bench]]
 name = "paragraph"
 harness = false
