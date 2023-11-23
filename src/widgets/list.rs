@@ -1180,8 +1180,11 @@ mod tests {
             .map(ListItem::new)
             .collect::<Vec<ListItem>>();
         let list = List::new(items);
-        let buffer = render_widget(list, 4, 0);
-        let expected = Buffer::with_lines::<&str>(vec![]);
+        // assert_buffer_eq! doesn't handle zero height buffers so we call this test manually
+        // rather than using render_widget
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 1));
+        Widget::render(list, Rect::new(0, 0, 4, 0), &mut buffer);
+        let expected = Buffer::with_lines(vec!["    "]);
         assert_buffer_eq!(buffer, expected);
     }
 
