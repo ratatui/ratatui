@@ -1095,4 +1095,135 @@ mod tests {
         ]);
         assert_buffer_eq!(buffer, expected);
     }
+
+    #[test]
+    fn test_render_list_alignment_odd_line_odd_area() {
+        let items = [
+            Line::from("Odd").alignment(Alignment::Left),
+            Line::from("Even").alignment(Alignment::Center),
+            Line::from("Width").alignment(Alignment::Right),
+        ]
+        .into_iter()
+        .map(ListItem::new)
+        .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let buffer = render_widget(list, 7, 5);
+        let expected =
+            Buffer::with_lines(vec!["Odd    ", " Even  ", "  Width", "       ", "       "]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_list_alignment_even_line_even_area() {
+        let items = [
+            Line::from("Odd").alignment(Alignment::Left),
+            Line::from("Even").alignment(Alignment::Center),
+            Line::from("Width").alignment(Alignment::Right),
+        ]
+        .into_iter()
+        .map(ListItem::new)
+        .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let buffer = render_widget(list, 6, 4);
+        let expected = Buffer::with_lines(vec!["Odd   ", " Even ", " Width", "      "]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_list_alignment_odd_line_even_area() {
+        let items = [
+            Line::from("Odd").alignment(Alignment::Left),
+            Line::from("Even").alignment(Alignment::Center),
+            Line::from("Width").alignment(Alignment::Right),
+        ]
+        .into_iter()
+        .map(ListItem::new)
+        .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let buffer = render_widget(list, 8, 4);
+        let expected = Buffer::with_lines(vec!["Odd     ", "  Even  ", "   Width", "        "]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_list_alignment_even_line_odd_area() {
+        let items = [
+            Line::from("Odd").alignment(Alignment::Left),
+            Line::from("Even").alignment(Alignment::Center),
+            Line::from("Width").alignment(Alignment::Right),
+        ]
+        .into_iter()
+        .map(ListItem::new)
+        .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let buffer = render_widget(list, 6, 5);
+        let expected = Buffer::with_lines(vec!["Odd   ", " Even ", " Width", "     ", "     "]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_list_alignment_zero_line_width() {
+        let items = [Line::from("This line has zero width").alignment(Alignment::Center)]
+            .into_iter()
+            .map(ListItem::new)
+            .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let buffer = render_widget(list, 0, 5);
+        let expected = Buffer::with_lines(vec!["", "", "", "", ""]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_list_alignment_zero_area_width() {
+        let items = [Line::from("Text").alignment(Alignment::Left)]
+            .into_iter()
+            .map(ListItem::new)
+            .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let buffer = render_widget(list, 4, 0);
+        let expected = Buffer::with_lines::<&str>(vec![]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_list_alignment_line_less_than_width() {
+        let items = [Line::from("Small").alignment(Alignment::Center)]
+            .into_iter()
+            .map(ListItem::new)
+            .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let buffer = render_widget(list, 10, 5);
+        let expected = Buffer::with_lines(vec![
+            "   Small  ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_list_alignment_line_equal_to_width() {
+        let items = [Line::from("Exact").alignment(Alignment::Left)]
+            .into_iter()
+            .map(ListItem::new)
+            .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let buffer = render_widget(list, 5, 3);
+        let expected = Buffer::with_lines(vec!["Exact", "     ", "     "]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_render_list_alignment_line_greater_than_width() {
+        let items = [Line::from("Large line").alignment(Alignment::Left)]
+            .into_iter()
+            .map(ListItem::new)
+            .collect::<Vec<ListItem>>();
+        let list = List::new(items);
+        let buffer = render_widget(list, 5, 3);
+        let expected = Buffer::with_lines(vec!["Large", "     ", "     "]);
+        assert_buffer_eq!(buffer, expected);
+    }
 }
