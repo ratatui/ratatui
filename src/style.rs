@@ -249,6 +249,7 @@ impl Style {
     /// let diff = Style::default().fg(Color::Red);
     /// assert_eq!(style.patch(diff), Style::default().fg(Color::Red));
     /// ```
+    #[must_use = "`fg` returns the modified style without modifying the original"]
     pub const fn fg(mut self, color: Color) -> Style {
         self.fg = Some(color);
         self
@@ -264,6 +265,7 @@ impl Style {
     /// let diff = Style::default().bg(Color::Red);
     /// assert_eq!(style.patch(diff), Style::default().bg(Color::Red));
     /// ```
+    #[must_use = "`bg` returns the modified style without modifying the original"]
     pub const fn bg(mut self, color: Color) -> Style {
         self.bg = Some(color);
         self
@@ -288,6 +290,7 @@ impl Style {
     /// assert_eq!(style.patch(diff), Style::default().underline_color(Color::Red).add_modifier(Modifier::UNDERLINED));
     /// ```
     #[cfg(feature = "underline-color")]
+    #[must_use = "`underline_color` returns the modified style without modifying the original"]
     pub const fn underline_color(mut self, color: Color) -> Style {
         self.underline_color = Some(color);
         self
@@ -307,6 +310,7 @@ impl Style {
     /// assert_eq!(patched.add_modifier, Modifier::BOLD | Modifier::ITALIC);
     /// assert_eq!(patched.sub_modifier, Modifier::empty());
     /// ```
+    #[must_use = "`add_modifier` returns the modified style without modifying the original"]
     pub const fn add_modifier(mut self, modifier: Modifier) -> Style {
         self.sub_modifier = self.sub_modifier.difference(modifier);
         self.add_modifier = self.add_modifier.union(modifier);
@@ -327,6 +331,7 @@ impl Style {
     /// assert_eq!(patched.add_modifier, Modifier::BOLD);
     /// assert_eq!(patched.sub_modifier, Modifier::ITALIC);
     /// ```
+    #[must_use = "`remove_modifier` returns the modified style without modifying the original"]
     pub const fn remove_modifier(mut self, modifier: Modifier) -> Style {
         self.add_modifier = self.add_modifier.difference(modifier);
         self.sub_modifier = self.sub_modifier.union(modifier);
@@ -346,6 +351,7 @@ impl Style {
     ///     Style::default().patch(style_1).patch(style_2),
     ///     Style::default().patch(combined));
     /// ```
+    #[must_use = "`patch` returns the modified style without modifying the original"]
     pub fn patch(mut self, other: Style) -> Style {
         self.fg = other.fg.or(self.fg);
         self.bg = other.bg.or(self.bg);

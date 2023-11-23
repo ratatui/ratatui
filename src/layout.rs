@@ -196,10 +196,11 @@ pub(crate) enum SegmentSize {
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// fn render(frame: &mut Frame, area: Rect) {
-///     let layout = Layout::default()
-///         .direction(Direction::Vertical)
-///         .constraints([Constraint::Length(5), Constraint::Min(0)])
-///         .split(Rect::new(0, 0, 10, 10));
+///     let layout = Layout::new(
+///         Direction::Vertical,
+///         [Constraint::Length(5), Constraint::Min(0)],
+///     )
+///     .split(Rect::new(0, 0, 10, 10));
 ///     frame.render_widget(Paragraph::new("foo"), layout[0]);
 ///     frame.render_widget(Paragraph::new("bar"), layout[1]);
 /// }
@@ -223,7 +224,7 @@ pub struct Layout {
 
 impl Default for Layout {
     fn default() -> Layout {
-        Layout::new()
+        Layout::new(Direction::Vertical, [])
     }
 }
 
@@ -231,18 +232,13 @@ impl Layout {
     pub const DEFAULT_CACHE_SIZE: usize = 16;
     /// Creates a new layout with default values.
     ///
-    /// - direction: [Direction::Vertical]
     /// - margin: 0, 0
-    /// - constraints: empty
     /// - segment_size: SegmentSize::LastTakesRemainder
-    pub const fn new() -> Layout {
+    pub fn new<C: AsRef<[Constraint]>>(direction: Direction, constraints: C) -> Layout {
         Layout {
-            direction: Direction::Vertical,
-            margin: Margin {
-                horizontal: 0,
-                vertical: 0,
-            },
-            constraints: Vec::new(),
+            direction,
+            margin: Margin::new(0, 0),
+            constraints: constraints.as_ref().to_vec(),
             segment_size: SegmentSize::LastTakesRemainder,
         }
     }
@@ -292,11 +288,8 @@ impl Layout {
     ///     Rect::new(0, 8, 10, 2),
     /// ]);
     /// ```
-    pub fn constraints<C>(mut self, constraints: C) -> Layout
-    where
-        C: Into<Vec<Constraint>>,
-    {
-        self.constraints = constraints.into();
+    pub fn constraints<C: AsRef<[Constraint]>>(mut self, constraints: C) -> Layout {
+        self.constraints = constraints.as_ref().to_vec();
         self
     }
 
@@ -621,6 +614,117 @@ mod tests {
     }
 
     #[test]
+    fn layout_new() {
+        // array
+        let fixed_size_array = [Constraint::Min(0)];
+        let layout = Layout::new(Direction::Horizontal, fixed_size_array);
+        assert_eq!(layout.direction, Direction::Horizontal);
+        assert_eq!(layout.constraints, [Constraint::Min(0)]);
+
+        // slice of a fixed size array
+        let slice_of_fixed_size_array = &[Constraint::Min(0)];
+        let layout = Layout::new(Direction::Horizontal, slice_of_fixed_size_array);
+        assert_eq!(layout.direction, Direction::Horizontal);
+        assert_eq!(layout.constraints, [Constraint::Min(0)]);
+
+        // slice of vec
+        let vec = &[Constraint::Min(0)].to_vec();
+        let constraints = vec.as_slice();
+        let layout = Layout::new(Direction::Horizontal, constraints);
+        assert_eq!(layout.direction, Direction::Horizontal);
+        assert_eq!(layout.constraints, [Constraint::Min(0)]);
+
+        // vec
+        let layout = Layout::new(Direction::Horizontal, vec);
+        assert_eq!(layout.direction, Direction::Horizontal);
+        assert_eq!(layout.constraints, [Constraint::Min(0)]);
+    }
+
+    #[test]
+    #[allow(clippy::needless_borrow, clippy::unnecessary_to_owned)]
+    fn layout_constraints() {
+        const CONSTRAINTS: [Constraint; 2] = [Constraint::Min(0), Constraint::Max(10)];
+        let fixed_size_array = CONSTRAINTS;
+        assert_eq!(
+            Layout::default().constraints(fixed_size_array).constraints,
+            CONSTRAINTS,
+            "constraints should be settable with an array"
+        );
+
+        let slice_of_fixed_size_array = &CONSTRAINTS;
+        assert_eq!(
+            Layout::default()
+                .constraints(slice_of_fixed_size_array)
+                .constraints,
+            CONSTRAINTS,
+            "constraints should be settable with a slice"
+        );
+
+        let vec = CONSTRAINTS.to_vec();
+        let slice_of_vec = vec.as_slice();
+        assert_eq!(
+            Layout::default().constraints(slice_of_vec).constraints,
+            CONSTRAINTS,
+            "constraints should be settable with a slice"
+        );
+
+        assert_eq!(
+            Layout::default().constraints(vec).constraints,
+            CONSTRAINTS,
+            "constraints should be settable with a Vec"
+        );
+    }
+
+    #[test]
+    fn layout_direction() {
+        assert_eq!(
+            Layout::default().direction(Direction::Horizontal).direction,
+            Direction::Horizontal
+        );
+        assert_eq!(
+            Layout::default().direction(Direction::Vertical).direction,
+            Direction::Vertical
+        );
+    }
+
+    #[test]
+    fn layout_margins() {
+        assert_eq!(Layout::default().margin(10).margin, Margin::new(10, 10));
+        assert_eq!(
+            Layout::default().horizontal_margin(10).margin,
+            Margin::new(10, 0)
+        );
+        assert_eq!(
+            Layout::default().vertical_margin(10).margin,
+            Margin::new(0, 10)
+        );
+        assert_eq!(
+            Layout::default()
+                .horizontal_margin(10)
+                .vertical_margin(20)
+                .margin,
+            Margin::new(10, 20)
+        );
+    }
+
+    #[test]
+    fn layout_segment_size() {
+        assert_eq!(
+            Layout::default()
+                .segment_size(EvenDistribution)
+                .segment_size,
+            EvenDistribution
+        );
+        assert_eq!(
+            Layout::default()
+                .segment_size(LastTakesRemainder)
+                .segment_size,
+            LastTakesRemainder
+        );
+        assert_eq!(Layout::default().segment_size(None).segment_size, None);
+    }
+
+    #[test]
     fn corner_to_string() {
         assert_eq!(Corner::BottomLeft.to_string(), "BottomLeft");
         assert_eq!(Corner::BottomRight.to_string(), "BottomRight");
@@ -841,17 +945,6 @@ mod tests {
         assert_eq!(Constraint::Min(100).apply(100), 100);
         assert_eq!(Constraint::Min(200).apply(100), 200);
         assert_eq!(Constraint::Min(u16::MAX).apply(100), u16::MAX);
-    }
-
-    #[test]
-    fn layout_can_be_const() {
-        const _LAYOUT: Layout = Layout::new();
-        const _DEFAULT_LAYOUT: Layout = Layout::new()
-            .direction(Direction::Horizontal)
-            .margin(1)
-            .segment_size(SegmentSize::LastTakesRemainder);
-        const _HORIZONTAL_LAYOUT: Layout = Layout::new().horizontal_margin(1);
-        const _VERTICAL_LAYOUT: Layout = Layout::new().vertical_margin(1);
     }
 
     /// Tests for the `Layout::split()` function.

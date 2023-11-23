@@ -161,7 +161,7 @@ where
                 underline_color = cell.underline_color;
             }
 
-            queue!(self.writer, Print(&cell.symbol))?;
+            queue!(self.writer, Print(cell.symbol()))?;
         }
 
         #[cfg(feature = "underline-color")]

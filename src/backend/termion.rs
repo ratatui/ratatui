@@ -179,7 +179,7 @@ where
                 write!(string, "{}", Bg(cell.bg)).unwrap();
                 bg = cell.bg;
             }
-            string.push_str(&cell.symbol);
+            string.push_str(cell.symbol());
         }
         write!(
             self.writer,

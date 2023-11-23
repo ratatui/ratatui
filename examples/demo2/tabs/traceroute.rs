@@ -52,7 +52,7 @@ fn render_hops(selected_row: usize, area: Rect, buf: &mut Buffer) {
     StatefulWidget::render(
         Table::new(rows)
             .header(Row::new(vec!["Host", "Address"]).set_style(THEME.traceroute.header))
-            .widths(&[Constraint::Max(100), Constraint::Length(15)])
+            .widths([Constraint::Max(100), Constraint::Length(15)])
             .highlight_style(THEME.traceroute.selected)
             .block(block),
         area,

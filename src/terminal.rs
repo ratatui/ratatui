@@ -471,38 +471,50 @@ where
             return Ok(());
         }
 
+        // Clear the viewport off the screen
         self.clear()?;
-        let height = height.min(self.last_known_size.height);
-        self.backend.append_lines(height)?;
-        let missing_lines =
-            height.saturating_sub(self.last_known_size.bottom() - self.viewport_area.top());
+
+        // Move the viewport by height, but don't move it past the bottom of the terminal
+        let viewport_at_bottom = self.last_known_size.bottom() - self.viewport_area.height;
+        self.set_viewport_area(Rect {
+            y: self
+                .viewport_area
+                .y
+                .saturating_add(height)
+                .min(viewport_at_bottom),
+            ..self.viewport_area
+        });
+
+        // Draw contents into buffer
         let area = Rect {
             x: self.viewport_area.left(),
-            y: self.viewport_area.top().saturating_sub(missing_lines),
+            y: 0,
             width: self.viewport_area.width,
             height,
         };
         let mut buffer = Buffer::empty(area);
-
         draw_fn(&mut buffer);
 
-        let iter = buffer.content.iter().enumerate().map(|(i, c)| {
-            let (x, y) = buffer.pos_of(i);
-            (x, y, c)
-        });
-        self.backend.draw(iter)?;
-        self.backend.flush()?;
+        // Split buffer into screen-sized chunks and draw
+        let max_chunk_size = (self.viewport_area.top() * area.width).into();
+        for buffer_content_chunk in buffer.content.chunks(max_chunk_size) {
+            let chunk_size = buffer_content_chunk.len() as u16 / area.width;
 
-        let remaining_lines = self.last_known_size.height - area.bottom();
-        let missing_lines = self.viewport_area.height.saturating_sub(remaining_lines);
-        self.backend.append_lines(self.viewport_area.height)?;
+            self.backend
+                .append_lines(self.viewport_area.height.saturating_sub(1) + chunk_size)?;
 
-        self.set_viewport_area(Rect {
-            x: area.left(),
-            y: area.bottom().saturating_sub(missing_lines),
-            width: area.width,
-            height: self.viewport_area.height,
-        });
+            let iter = buffer_content_chunk.iter().enumerate().map(|(i, c)| {
+                let (x, y) = buffer.pos_of(i);
+                (
+                    x,
+                    self.viewport_area.top().saturating_sub(chunk_size) + y,
+                    c,
+                )
+            });
+            self.backend.draw(iter)?;
+            self.backend.flush()?;
+            self.set_cursor(self.viewport_area.left(), self.viewport_area.top())?;
+        }
 
         Ok(())
     }

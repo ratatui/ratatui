@@ -1,3 +1,6 @@
+use std::iter;
+
+use itertools::Itertools;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
@@ -251,7 +254,7 @@ pub struct Table<'a> {
     /// Base style for the widget
     style: Style,
     /// Width constraints for each column
-    widths: &'a [Constraint],
+    widths: Vec<Constraint>,
     /// Space between each column
     column_spacing: u16,
     /// Style used to render the selected row
@@ -294,7 +297,7 @@ impl<'a> Table<'a> {
         Self {
             block: None,
             style: Style::default(),
-            widths: &[],
+            widths: vec![],
             column_spacing: 1,
             highlight_style: Style::default(),
             highlight_symbol: None,
@@ -355,7 +358,24 @@ impl<'a> Table<'a> {
         self
     }
 
-    pub fn widths(mut self, widths: &'a [Constraint]) -> Self {
+    /// Set the widths of the columns of the [`Table`] widget.
+    ///
+    /// The `widths` parameter accepts `AsRef<[Constraint]>`` which can be an array, slice, or Vec.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let table = Table::new(vec![]).widths([Constraint::Length(5), Constraint::Length(5)]);
+    /// let table = Table::new(vec![]).widths(&[Constraint::Length(5), Constraint::Length(5)]);
+    ///
+    /// // widths could also be computed at runtime
+    /// let widths = vec![Constraint::Length(5), Constraint::Length(5)];
+    /// let table = Table::new(vec![]).widths(widths.clone());
+    /// let table = Table::new(vec![]).widths(&widths);
+    /// ```
+    pub fn widths<T: AsRef<[Constraint]>>(mut self, widths: T) -> Self {
+        let widths = widths.as_ref().to_vec();
         let between_0_and_100 = |&w| match w {
             Constraint::Percentage(p) => p <= 100,
             _ => true,
@@ -399,29 +419,21 @@ impl<'a> Table<'a> {
     /// Get all offsets and widths of all user specified columns
     /// Returns (x, width)
     fn get_columns_widths(&self, max_width: u16, selection_width: u16) -> Vec<(u16, u16)> {
-        let mut constraints = Vec::with_capacity(self.widths.len() * 2 + 1);
-        constraints.push(Constraint::Length(selection_width));
-        for constraint in self.widths {
-            constraints.push(*constraint);
-            constraints.push(Constraint::Length(self.column_spacing));
-        }
-        if !self.widths.is_empty() {
-            constraints.pop();
-        }
-        let chunks = Layout::default()
+        let constraints = iter::once(Constraint::Length(selection_width))
+            .chain(Itertools::intersperse(
+                self.widths.iter().cloned(),
+                Constraint::Length(self.column_spacing),
+            ))
+            .collect_vec();
+        let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(constraints)
             .segment_size(SegmentSize::None)
-            .split(Rect {
-                x: 0,
-                y: 0,
-                width: max_width,
-                height: 1,
-            });
-        chunks
+            .split(Rect::new(0, 0, max_width, 1));
+        layout
             .iter()
-            .skip(1)
-            .step_by(2)
+            .skip(1) // skip selection column
+            .step_by(2) // skip spacing between columns
             .map(|c| (c.x, c.width))
             .collect()
     }
@@ -661,7 +673,31 @@ mod tests {
     #[test]
     #[should_panic]
     fn table_invalid_percentages() {
-        Table::new(vec![]).widths(&[Constraint::Percentage(110)]);
+        Table::new(vec![]).widths([Constraint::Percentage(110)]);
+    }
+
+    #[test]
+    fn widths_conversions() {
+        let array = [Constraint::Percentage(100)];
+        let table = Table::new(vec![]).widths(array);
+        assert_eq!(table.widths, vec![Constraint::Percentage(100)], "array");
+
+        let array_ref = &[Constraint::Percentage(100)];
+        let table = Table::new(vec![]).widths(array_ref);
+        assert_eq!(table.widths, vec![Constraint::Percentage(100)], "array ref");
+
+        let vec = vec![Constraint::Percentage(100)];
+        let slice = vec.as_slice();
+        let table = Table::new(vec![]).widths(slice);
+        assert_eq!(table.widths, vec![Constraint::Percentage(100)], "slice");
+
+        let vec = vec![Constraint::Percentage(100)];
+        let table = Table::new(vec![]).widths(vec);
+        assert_eq!(table.widths, vec![Constraint::Percentage(100)], "vec");
+
+        let vec_ref = &vec![Constraint::Percentage(100)];
+        let table = Table::new(vec![]).widths(vec_ref);
+        assert_eq!(table.widths, vec![Constraint::Percentage(100)], "vec ref");
     }
 
     // test how constraints interact with table column width allocation
@@ -779,7 +815,7 @@ mod tests {
             Row::new(vec![Line::from("Center").alignment(Alignment::Center)]),
             Row::new(vec![Line::from("Right").alignment(Alignment::Right)]),
         ])
-        .widths(&[Percentage(100)]);
+        .widths([Percentage(100)]);
 
         Widget::render(table, Rect::new(0, 0, 20, 3), &mut buf);
 

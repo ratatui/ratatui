@@ -128,7 +128,7 @@ mod tests {
 
         let mut expected = Buffer::with_lines(expected_lines);
         for cell in expected.content.iter_mut() {
-            if cell.symbol == "•" {
+            if cell.symbol() == "•" {
                 cell.set_style(Style::new().red());
             }
         }

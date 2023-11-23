@@ -228,7 +228,7 @@ pub trait Backend {
     /// [`get_cursor`]: Backend::get_cursor
     fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()>;
 
-    /// Clears the whole terminal scree
+    /// Clears the whole terminal screen
     ///
     /// # Example
     ///

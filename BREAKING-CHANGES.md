@@ -10,6 +10,10 @@ github with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- Unreleased (0.24.1)
+  -`Table::widths()` now accepts `AsRef<[Constraint]>`
+  - Layout::new() now accepts direction and constraint parameters
+
 - [v0.24.0](#v0240)
   - MSRV is now 1.70.0
   - `ScrollbarState`: `position`, `content_length`, and `viewport_content_length` are now `usize`
@@ -31,6 +35,43 @@ This is a quick summary of the sections below:
 - [v0.20.0](#v0200)
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
+
+## Unreleased (v0.24.1)
+
+### `Table::widths()` now accepts `AsRef<[Constraint]>` ([#628])
+
+[#628]: https://github.com/ratatui-org/ratatui/pull/628
+
+Previously `Table::widths()` took a slice (`&'a [Constraint]`). This change will introduce clippy
+`needless_borrow` warnings for places where slices are passed to this method. To fix these, remove
+the `&`.
+
+E.g.
+
+```rust
+let table = Table::new(rows).widths(&[Constraint::Length(1)]);
+// becomes
+let table = Table::new(rows).widths([Constraint::Length(1)]);
+```
+
+### Layout::new() now accepts direction and constraint parameters ([#557])
+
+[#557]: https://github.com/ratatui-org/ratatui/pull/557
+
+Previously layout new took no parameters. Existing code should either use `Layout::default()` or
+the new constructor.
+
+```rust
+let layout = layout::new()
+  .direction(Direction::Vertical)
+  .constraints([Constraint::Min(1), Constraint::Max(2)]);
+// becomes either
+let layout = layout::default()
+  .direction(Direction::Vertical)
+  .constraints([Constraint::Min(1), Constraint::Max(2)]);
+// or
+let layout = layout::new(Direction::Vertical, [Constraint::Min(1), Constraint::Max(2)]);
+```
 
 ## [v0.24.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.24.0)
 
