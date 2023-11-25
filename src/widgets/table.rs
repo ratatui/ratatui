@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 use std::iter;
 
 use itertools::Itertools;
@@ -360,7 +361,7 @@ impl<'a> Table<'a> {
 
     /// Set the widths of the columns of the [`Table`] widget.
     ///
-    /// The `widths` parameter accepts `AsRef<[Constraint]>`` which can be an array, slice, or Vec.
+    /// The `widths` parameter accepts `AsRef<[Constraint]>` which can be an array, slice, or Vec.
     ///
     /// # Examples
     ///
@@ -388,16 +389,29 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Sets the style for the entire table.
     pub fn style(mut self, style: Style) -> Self {
         self.style = style;
         self
     }
 
+    /// Sets the symbol used for the currently selected line.
+    ///
+    /// # See also
+    ///
+    /// [`TableState::with_selected`] to set the selected line.
     pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
 
+    /// Sets the style for the currently selected line
+    ///
+    /// This is merged with the table's [style](Table::style).
+    ///
+    /// # See also
+    ///
+    /// [`TableState::with_selected`] to set the selected line.
     pub fn highlight_style(mut self, highlight_style: Style) -> Self {
         self.highlight_style = highlight_style;
         self
@@ -411,13 +425,15 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Sets the space between columns.
     pub fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self
     }
 
-    /// Get all offsets and widths of all user specified columns
-    /// Returns (x, width)
+    /// Get all offsets and widths of all user specified columns.
+    ///
+    /// Tuples contain (x, width).
     fn get_columns_widths(&self, max_width: u16, selection_width: u16) -> Vec<(u16, u16)> {
         let constraints = iter::once(Constraint::Length(selection_width))
             .chain(Itertools::intersperse(
@@ -489,6 +505,12 @@ impl<'a> Styled for Table<'a> {
     }
 }
 
+/// Stores the [`Table`]'s state.
+///
+/// You can set the selected row with [`TableState::with_selected`].
+/// You can set the scroll offset with [`TableState::with_offset`].
+///
+/// A selected row is always displayed. It might internally change the offset value to do so.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct TableState {
     offset: usize,
@@ -496,28 +518,47 @@ pub struct TableState {
 }
 
 impl TableState {
+    /// Returns the scroll offset.
     pub fn offset(&self) -> usize {
         self.offset
     }
 
+    /// Returns the mutable scroll offset.
     pub fn offset_mut(&mut self) -> &mut usize {
         &mut self.offset
     }
 
+    /// Sets the selected row.
+    ///
+    /// `None` sets no selected row. The selected row is always displayed.
     pub fn with_selected(mut self, selected: Option<usize>) -> Self {
         self.selected = selected;
         self
     }
 
+    /// Sets the scroll offset for the table.
+    ///
+    /// `0` means the table is at the top.
+    ///
+    /// Note that even if explicitly set, it might be changed internally to always render the
+    /// selected row.
     pub fn with_offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
     }
 
+    /// Returns the index of the currently selected row.
+    ///
+    /// Or `None` if there is no selected row.
     pub fn selected(&self) -> Option<usize> {
         self.selected
     }
 
+    /// Sets the selected row.
+    ///
+    /// When `index` is `None`, the table offset is reset, i.e. the table goes back to the top.
+    ///
+    /// See [`TableState::with_selected`] for specific details about row selection.
     pub fn select(&mut self, index: Option<usize>) {
         self.selected = index;
         if index.is_none() {
