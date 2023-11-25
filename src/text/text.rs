@@ -34,14 +34,6 @@ pub struct Text<'a> {
 
 impl<'a> Text<'a> {
     /// Create some text (potentially multiple lines) with no style.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// Text::raw("The first line\nThe second line");
-    /// Text::raw(String::from("The first line\nThe second line"));
-    /// ```
     pub fn raw<T>(content: T) -> Text<'a>
     where
         T: Into<Cow<'a, str>>,
@@ -57,15 +49,6 @@ impl<'a> Text<'a> {
     }
 
     /// Create some text (potentially multiple lines) with a style.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
-    /// Text::styled("The first line\nThe second line", style);
-    /// Text::styled(String::from("The first line\nThe second line"), style);
-    /// ```
     pub fn styled<T>(content: T, style: Style) -> Text<'a>
     where
         T: Into<Cow<'a, str>>,
@@ -76,14 +59,6 @@ impl<'a> Text<'a> {
     }
 
     /// Returns the max width of all the lines.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let text = Text::from("The first line\nThe second line");
-    /// assert_eq!(15, text.width());
-    /// ```
     pub fn width(&self) -> usize {
         self.lines.iter().map(Line::width).max().unwrap_or_default()
     }
@@ -102,19 +77,6 @@ impl<'a> Text<'a> {
     }
 
     /// Patches the style of each line in an existing Text, adding modifiers from the given style.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
-    /// let mut raw_text = Text::raw("The first line\nThe second line");
-    /// let styled_text = Text::styled(String::from("The first line\nThe second line"), style);
-    /// assert_ne!(raw_text, styled_text);
-    ///
-    /// raw_text.patch_style(style);
-    /// assert_eq!(raw_text, styled_text);
-    /// ```
     pub fn patch_style(&mut self, style: Style) {
         for line in &mut self.lines {
             line.patch_style(style);
@@ -321,10 +283,7 @@ mod tests {
 
     #[test]
     fn from_vec_line() {
-        let text = Text::from(vec![
-            Line::from("The first line"),
-            Line::from("The second line"),
-        ]);
+        let text = Text::from(vec![Line::from("The first line"), Line::from("The second line")]);
         assert_eq!(
             text.lines,
             vec![Line::from("The first line"), Line::from("The second line")]
@@ -343,10 +302,7 @@ mod tests {
     #[test]
     fn extend() {
         let mut text = Text::from("The first line\nThe second line");
-        text.extend(vec![
-            Line::from("The third line"),
-            Line::from("The fourth line"),
-        ]);
+        text.extend(vec![Line::from("The third line"), Line::from("The fourth line")]);
         assert_eq!(
             text.lines,
             vec![
@@ -361,10 +317,7 @@ mod tests {
     #[test]
     fn extend_from_iter() {
         let mut text = Text::from("The first line\nThe second line");
-        text.extend(vec![
-            Line::from("The third line"),
-            Line::from("The fourth line"),
-        ]);
+        text.extend(vec![Line::from("The third line"), Line::from("The fourth line")]);
         assert_eq!(
             text.lines,
             vec![

@@ -103,45 +103,47 @@ fn ui(f: &mut Frame, app: &mut App) {
     let block = Block::default().black();
     f.render_widget(block, size);
 
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Min(1),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-        ])
-        .split(size);
+    let chunks =
+        Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Min(1),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+            ])
+            .split(size);
 
-    let text = vec![
-        Line::from("This is a line "),
-        Line::from("This is a line   ".red()),
-        Line::from("This is a line".on_dark_gray()),
-        Line::from("This is a longer line".crossed_out()),
-        Line::from(long_line.clone()),
-        Line::from("This is a line".reset()),
-        Line::from(vec![
-            Span::raw("Masked text: "),
-            Span::styled(
-                Masked::new("password", '*'),
-                Style::default().fg(Color::Red),
-            ),
-        ]),
-        Line::from("This is a line "),
-        Line::from("This is a line   ".red()),
-        Line::from("This is a line".on_dark_gray()),
-        Line::from("This is a longer line".crossed_out()),
-        Line::from(long_line.clone()),
-        Line::from("This is a line".reset()),
-        Line::from(vec![
-            Span::raw("Masked text: "),
-            Span::styled(
-                Masked::new("password", '*'),
-                Style::default().fg(Color::Red),
-            ),
-        ]),
-    ];
+    let text =
+        vec![
+            Line::from("This is a line "),
+            Line::from("This is a line   ".red()),
+            Line::from("This is a line".on_dark_gray()),
+            Line::from("This is a longer line".crossed_out()),
+            Line::from(long_line.clone()),
+            Line::from("This is a line".reset()),
+            Line::from(vec![
+                Span::raw("Masked text: "),
+                Span::styled(
+                    Masked::new("password", '*'),
+                    Style::default().fg(Color::Red),
+                ),
+            ]),
+            Line::from("This is a line "),
+            Line::from("This is a line   ".red()),
+            Line::from("This is a line".on_dark_gray()),
+            Line::from("This is a longer line".crossed_out()),
+            Line::from(long_line.clone()),
+            Line::from("This is a line".reset()),
+            Line::from(vec![
+                Span::raw("Masked text: "),
+                Span::styled(
+                    Masked::new("password", '*'),
+                    Style::default().fg(Color::Red),
+                ),
+            ]),
+        ];
     app.vertical_scroll_state = app.vertical_scroll_state.content_length(text.len());
     app.horizontal_scroll_state = app.horizontal_scroll_state.content_length(long_line.len());
 
@@ -149,10 +151,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         Block::default()
             .borders(Borders::ALL)
             .gray()
-            .title(Span::styled(
-                title,
-                Style::default().add_modifier(Modifier::BOLD),
-            ))
+            .title(Span::styled(title, Style::default().add_modifier(Modifier::BOLD)))
     };
 
     let title = Block::default()
@@ -176,9 +175,7 @@ fn ui(f: &mut Frame, app: &mut App) {
 
     let paragraph = Paragraph::new(text.clone())
         .gray()
-        .block(create_block(
-            "Vertical scrollbar without arrows, without track symbol and mirrored",
-        ))
+        .block(create_block("Vertical scrollbar without arrows, without track symbol and mirrored"))
         .scroll((app.vertical_scroll as u16, 0));
     f.render_widget(paragraph, chunks[2]);
     f.render_stateful_widget(
@@ -197,9 +194,7 @@ fn ui(f: &mut Frame, app: &mut App) {
 
     let paragraph = Paragraph::new(text.clone())
         .gray()
-        .block(create_block(
-            "Horizontal scrollbar with only begin arrow & custom thumb symbol",
-        ))
+        .block(create_block("Horizontal scrollbar with only begin arrow & custom thumb symbol"))
         .scroll((0, app.horizontal_scroll as u16));
     f.render_widget(paragraph, chunks[3]);
     f.render_stateful_widget(
@@ -216,9 +211,7 @@ fn ui(f: &mut Frame, app: &mut App) {
 
     let paragraph = Paragraph::new(text.clone())
         .gray()
-        .block(create_block(
-            "Horizontal scrollbar without arrows & custom thumb and track symbol",
-        ))
+        .block(create_block("Horizontal scrollbar without arrows & custom thumb and track symbol"))
         .scroll((0, app.horizontal_scroll as u16));
     f.render_widget(paragraph, chunks[4]);
     f.render_stateful_widget(

@@ -49,11 +49,12 @@ impl<'a> BarGroup<'a> {
                 span.style = default_label_style.patch(span.style);
             }
 
-            let x_offset = match label.alignment {
-                Some(Alignment::Center) => area.width.saturating_sub(label.width() as u16) >> 1,
-                Some(Alignment::Right) => area.width.saturating_sub(label.width() as u16),
-                _ => 0,
-            };
+            let x_offset =
+                match label.alignment {
+                    Some(Alignment::Center) => area.width.saturating_sub(label.width() as u16) >> 1,
+                    Some(Alignment::Right) => area.width.saturating_sub(label.width() as u16),
+                    _ => 0,
+                };
 
             buf.set_line(area.x + x_offset, area.y, &label, area.width);
         }

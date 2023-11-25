@@ -135,9 +135,10 @@ where
                             // or if it would be too long with the current partially processed word added
                             || current_line_width + whitespace_width + word_width >= self.max_line_width && symbol_width > 0
                         {
-                            let mut remaining_width =
-                                (self.max_line_width as i32 - current_line_width as i32).max(0)
-                                    as u16;
+                            let mut remaining_width = (self.max_line_width as i32
+                                - current_line_width as i32)
+                                .max(0)
+                                as u16;
                             wrapped_lines.push(std::mem::take(&mut current_line));
                             current_line_width = 0;
 
@@ -443,13 +444,14 @@ mod test {
         );
         let (line_truncator, _, _) = run_composer(Composer::LineTruncator, text, width as u16);
 
-        let word_wrapped = vec![
-            "abcd efghij",
-            "klmnopabcd efgh",
-            "ijklmnopabcdefg",
-            "hijkl mnopab c d e f",
-            "g h i j k l m n o",
-        ];
+        let word_wrapped =
+            vec![
+                "abcd efghij",
+                "klmnopabcd efgh",
+                "ijklmnopabcdefg",
+                "hijkl mnopab c d e f",
+                "g h i j k l m n o",
+            ];
         assert_eq!(word_wrapper_single_space, word_wrapped);
         assert_eq!(word_wrapper_multi_space, word_wrapped);
 

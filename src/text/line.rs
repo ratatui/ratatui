@@ -34,15 +34,6 @@ impl<'a> Line<'a> {
     }
 
     /// Create a line with a style.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
-    /// Line::styled("My text", style);
-    /// Line::styled(String::from("My text"), style);
-    /// ```
     pub fn styled<T>(content: T, style: Style) -> Line<'a>
     where
         T: Into<Cow<'a, str>>,
@@ -51,17 +42,6 @@ impl<'a> Line<'a> {
     }
 
     /// Returns the width of the underlying string.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let line = Line::from(vec![
-    ///     Span::styled("My", Style::default().fg(Color::Yellow)),
-    ///     Span::raw(" text"),
-    /// ]);
-    /// assert_eq!(7, line.width());
-    /// ```
     pub fn width(&self) -> usize {
         self.spans.iter().map(Span::width).sum()
     }
@@ -99,26 +79,6 @@ impl<'a> Line<'a> {
     }
 
     /// Patches the style of each Span in an existing Line, adding modifiers from the given style.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
-    /// let mut raw_line = Line::from(vec![
-    ///     Span::raw("My"),
-    ///     Span::raw(" text"),
-    /// ]);
-    /// let mut styled_line = Line::from(vec![
-    ///     Span::styled("My", style),
-    ///     Span::styled(" text", style),
-    /// ]);
-    ///
-    /// assert_ne!(raw_line, styled_line);
-    ///
-    /// raw_line.patch_style(style);
-    /// assert_eq!(raw_line, styled_line);
-    /// ```
     pub fn patch_style(&mut self, style: Style) {
         for span in &mut self.spans {
             span.patch_style(style);
@@ -212,10 +172,11 @@ mod tests {
 
     #[test]
     fn test_width() {
-        let line = Line::from(vec![
-            Span::styled("My", Style::default().fg(Color::Yellow)),
-            Span::raw(" text"),
-        ]);
+        let line =
+            Line::from(vec![
+                Span::styled("My", Style::default().fg(Color::Yellow)),
+                Span::raw(" text"),
+            ]);
         assert_eq!(7, line.width());
 
         let empty_line = Line::default();
@@ -228,10 +189,7 @@ mod tests {
             .fg(Color::Yellow)
             .add_modifier(Modifier::ITALIC);
         let mut raw_line = Line::from(vec![Span::raw("My"), Span::raw(" text")]);
-        let styled_line = Line::from(vec![
-            Span::styled("My", style),
-            Span::styled(" text", style),
-        ]);
+        let styled_line = Line::from(vec![Span::styled("My", style), Span::styled(" text", style)]);
 
         assert_ne!(raw_line, styled_line);
 

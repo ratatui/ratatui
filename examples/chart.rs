@@ -12,15 +12,16 @@ use crossterm::{
 use ratatui::{prelude::*, widgets::*};
 
 const DATA: [(f64, f64); 5] = [(0.0, 0.0), (1.0, 1.0), (2.0, 2.0), (3.0, 3.0), (4.0, 4.0)];
-const DATA2: [(f64, f64); 7] = [
-    (0.0, 0.0),
-    (10.0, 1.0),
-    (20.0, 0.5),
-    (30.0, 1.5),
-    (40.0, 1.0),
-    (50.0, 2.5),
-    (60.0, 3.0),
-];
+const DATA2: [(f64, f64); 7] =
+    [
+        (0.0, 0.0),
+        (10.0, 1.0),
+        (20.0, 0.5),
+        (30.0, 1.5),
+        (40.0, 1.0),
+        (50.0, 2.5),
+        (60.0, 3.0),
+    ];
 
 #[derive(Clone)]
 pub struct SinSignal {
@@ -150,17 +151,18 @@ fn ui(f: &mut Frame, app: &App) {
             Constraint::Ratio(1, 3),
         ])
         .split(size);
-    let x_labels = vec![
-        Span::styled(
-            format!("{}", app.window[0]),
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
-        Span::raw(format!("{}", (app.window[0] + app.window[1]) / 2.0)),
-        Span::styled(
-            format!("{}", app.window[1]),
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
-    ];
+    let x_labels =
+        vec![
+            Span::styled(
+                format!("{}", app.window[0]),
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(format!("{}", (app.window[0] + app.window[1]) / 2.0)),
+            Span::styled(
+                format!("{}", app.window[1]),
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
+        ];
     let datasets = vec![
         Dataset::default()
             .name("data2")
@@ -174,26 +176,27 @@ fn ui(f: &mut Frame, app: &App) {
             .data(&app.data2),
     ];
 
-    let chart = Chart::new(datasets)
-        .block(
-            Block::default()
-                .title("Chart 1".cyan().bold())
-                .borders(Borders::ALL),
-        )
-        .x_axis(
-            Axis::default()
-                .title("X Axis")
-                .style(Style::default().fg(Color::Gray))
-                .labels(x_labels)
-                .bounds(app.window),
-        )
-        .y_axis(
-            Axis::default()
-                .title("Y Axis")
-                .style(Style::default().fg(Color::Gray))
-                .labels(vec!["-20".bold(), "0".into(), "20".bold()])
-                .bounds([-20.0, 20.0]),
-        );
+    let chart =
+        Chart::new(datasets)
+            .block(
+                Block::default()
+                    .title("Chart 1".cyan().bold())
+                    .borders(Borders::ALL),
+            )
+            .x_axis(
+                Axis::default()
+                    .title("X Axis")
+                    .style(Style::default().fg(Color::Gray))
+                    .labels(x_labels)
+                    .bounds(app.window),
+            )
+            .y_axis(
+                Axis::default()
+                    .title("Y Axis")
+                    .style(Style::default().fg(Color::Gray))
+                    .labels(vec!["-20".bold(), "0".into(), "20".bold()])
+                    .bounds([-20.0, 20.0]),
+            );
     f.render_widget(chart, chunks[0]);
 
     let datasets = vec![Dataset::default()

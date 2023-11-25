@@ -39,36 +39,10 @@ pub enum BorderType {
     #[default]
     Plain,
     /// A plain border with rounded corners.
-    ///
-    /// # Example
-    ///
-    /// ```plain
-    /// ╭───────╮
-    /// │       │
-    /// ╰───────╯
-    /// ```
     Rounded,
     /// A doubled border.
-    ///
-    /// Note this uses one character that draws two lines.
-    ///
-    /// # Example
-    ///
-    /// ```plain
-    /// ╔═══════╗
-    /// ║       ║
-    /// ╚═══════╝
-    /// ```
     Double,
     /// A thick border.
-    ///
-    /// # Example
-    ///
-    /// ```plain
-    /// ┏━━━━━━━┓
-    /// ┃       ┃
-    /// ┗━━━━━━━┛
-    /// ```
     Thick,
     /// A border with a single line on the inside of a half block.
     ///
@@ -200,32 +174,6 @@ impl Padding {
 }
 
 /// Base widget to be used to display a box border around all [upper level ones](crate::widgets).
-///
-/// The borders can be configured with [`Block::borders`] and others. A block can have multiple
-/// [`Title`] using [`Block::title`]. It can also be [styled](Block::style) and
-/// [padded](Block::padding).
-///
-/// # Examples
-///
-/// ```
-/// use ratatui::{prelude::*, widgets::*};
-///
-/// Block::default()
-///     .title("Block")
-///     .borders(Borders::LEFT | Borders::RIGHT)
-///     .border_style(Style::default().fg(Color::White))
-///     .border_type(BorderType::Rounded)
-///     .style(Style::default().bg(Color::Black));
-/// ```
-///
-/// You may also use multiple titles like in the following:
-/// ```
-/// use ratatui::{prelude::*, widgets::{*, block::*}};
-///
-/// Block::default()
-///     .title("Title 1")
-///     .title(Title::from("Title 2").position(Position::Bottom));
-/// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
     /// List of titles
@@ -387,18 +335,6 @@ impl<'a> Block<'a> {
     }
 
     /// Defines the style of the borders.
-    ///
-    /// If a [`Block::style`] is defined, `border_style` will be applied on top of it.
-    ///
-    /// # Example
-    ///
-    /// This example shows a `Block` with blue borders.
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default()
-    ///     .borders(Borders::ALL)
-    ///     .border_style(Style::new().blue());
-    /// ```
     pub const fn border_style(mut self, style: Style) -> Block<'a> {
         self.border_style = style;
         self
@@ -461,47 +397,12 @@ impl<'a> Block<'a> {
     }
 
     /// Sets the symbols used to display the border as a [`crate::symbols::border::Set`].
-    ///
-    /// Setting this overwrites any [`border_type`](Block::border_type) that was set.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default().title("Block").borders(Borders::ALL).border_set(symbols::border::DOUBLE);
-    /// // Renders
-    /// // ╔Block╗
-    /// // ║     ║
-    /// // ╚═════╝
     pub const fn border_set(mut self, border_set: border::Set) -> Block<'a> {
         self.border_set = border_set;
         self
     }
 
     /// Compute the inner area of a block based on its border visibility rules.
-    ///
-    /// # Examples
-    ///
-    /// Draw a block nested within another block
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # fn render_nested_block(frame: &mut Frame) {
-    /// let outer_block = Block::default().title("Outer").borders(Borders::ALL);
-    /// let inner_block = Block::default().title("Inner").borders(Borders::ALL);
-    ///
-    /// let outer_area = frame.size();
-    /// let inner_area = outer_block.inner(outer_area);
-    ///
-    /// frame.render_widget(outer_block, outer_area);
-    /// frame.render_widget(inner_block, inner_area);
-    /// # }
-    /// // Renders
-    /// // ┌Outer────────┐
-    /// // │┌Inner──────┐│
-    /// // ││           ││
-    /// // │└───────────┘│
-    /// // └─────────────┘
-    /// ```
     pub fn inner(&self, area: Rect) -> Rect {
         let mut inner = area;
         if self.borders.intersects(Borders::LEFT) {
@@ -533,35 +434,6 @@ impl<'a> Block<'a> {
     }
 
     /// Defines the padding inside a `Block`.
-    ///
-    /// See [`Padding`] for more information.
-    ///
-    /// # Examples
-    ///
-    /// This renders a `Block` with no padding (the default).
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default()
-    ///     .borders(Borders::ALL)
-    ///     .padding(Padding::zero());
-    /// // Renders
-    /// // ┌───────┐
-    /// // │content│
-    /// // └───────┘
-    /// ```
-    ///
-    /// This example shows a `Block` with padding left and right ([`Padding::horizontal`]).
-    /// Notice the two spaces before and after the content.
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default()
-    ///     .borders(Borders::ALL)
-    ///     .padding(Padding::horizontal(2));
-    /// // Renders
-    /// // ┌───────────┐
-    /// // │  content  │
-    /// // └───────────┘
-    /// ```
     pub const fn padding(mut self, padding: Padding) -> Block<'a> {
         self.padding = padding;
         self
@@ -1133,11 +1005,8 @@ mod tests {
             .border_style(Style::new().yellow())
             .render(buffer.area, &mut buffer);
 
-        let mut expected_buffer = Buffer::with_lines(vec![
-            "┌test─────────┐",
-            "│             │",
-            "└─────────────┘",
-        ]);
+        let mut expected_buffer =
+            Buffer::with_lines(vec!["┌test─────────┐", "│             │", "└─────────────┘"]);
         expected_buffer.set_style(Rect::new(0, 0, 15, 3), Style::new().yellow());
         expected_buffer.set_style(Rect::new(1, 1, 13, 1), Style::reset());
 
@@ -1170,11 +1039,7 @@ mod tests {
             .render(buffer.area, &mut buffer);
         assert_buffer_eq!(
             buffer,
-            Buffer::with_lines(vec![
-                "┌─────────────┐",
-                "│             │",
-                "└─────────────┘"
-            ])
+            Buffer::with_lines(vec!["┌─────────────┐", "│             │", "└─────────────┘"])
         );
     }
 
@@ -1187,11 +1052,7 @@ mod tests {
             .render(buffer.area, &mut buffer);
         assert_buffer_eq!(
             buffer,
-            Buffer::with_lines(vec![
-                "╭─────────────╮",
-                "│             │",
-                "╰─────────────╯"
-            ])
+            Buffer::with_lines(vec!["╭─────────────╮", "│             │", "╰─────────────╯"])
         );
     }
 
@@ -1204,11 +1065,7 @@ mod tests {
             .render(buffer.area, &mut buffer);
         assert_buffer_eq!(
             buffer,
-            Buffer::with_lines(vec![
-                "╔═════════════╗",
-                "║             ║",
-                "╚═════════════╝"
-            ])
+            Buffer::with_lines(vec!["╔═════════════╗", "║             ║", "╚═════════════╝"])
         );
     }
 
@@ -1221,11 +1078,7 @@ mod tests {
             .render(buffer.area, &mut buffer);
         assert_buffer_eq!(
             buffer,
-            Buffer::with_lines(vec![
-                "▗▄▄▄▄▄▄▄▄▄▄▄▄▄▖",
-                "▐             ▌",
-                "▝▀▀▀▀▀▀▀▀▀▀▀▀▀▘",
-            ])
+            Buffer::with_lines(vec!["▗▄▄▄▄▄▄▄▄▄▄▄▄▄▖", "▐             ▌", "▝▀▀▀▀▀▀▀▀▀▀▀▀▀▘",])
         );
     }
 
@@ -1238,11 +1091,7 @@ mod tests {
             .render(buffer.area, &mut buffer);
         assert_buffer_eq!(
             buffer,
-            Buffer::with_lines(vec![
-                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▜",
-                "▌             ▐",
-                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▟",
-            ])
+            Buffer::with_lines(vec!["▛▀▀▀▀▀▀▀▀▀▀▀▀▀▜", "▌             ▐", "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▟",])
         );
     }
 
@@ -1255,11 +1104,7 @@ mod tests {
             .render(buffer.area, &mut buffer);
         assert_buffer_eq!(
             buffer,
-            Buffer::with_lines(vec![
-                "┏━━━━━━━━━━━━━┓",
-                "┃             ┃",
-                "┗━━━━━━━━━━━━━┛"
-            ])
+            Buffer::with_lines(vec!["┏━━━━━━━━━━━━━┓", "┃             ┃", "┗━━━━━━━━━━━━━┛"])
         );
     }
 

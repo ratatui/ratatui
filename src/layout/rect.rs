@@ -32,16 +32,17 @@ impl Rect {
     /// clipped, aspect ratio will be preserved.
     pub fn new(x: u16, y: u16, width: u16, height: u16) -> Rect {
         let max_area = u16::max_value();
-        let (clipped_width, clipped_height) =
-            if u32::from(width) * u32::from(height) > u32::from(max_area) {
-                let aspect_ratio = f64::from(width) / f64::from(height);
-                let max_area_f = f64::from(max_area);
-                let height_f = (max_area_f / aspect_ratio).sqrt();
-                let width_f = height_f * aspect_ratio;
-                (width_f as u16, height_f as u16)
-            } else {
-                (width, height)
-            };
+        let (clipped_width, clipped_height) = if u32::from(width) * u32::from(height)
+            > u32::from(max_area)
+        {
+            let aspect_ratio = f64::from(width) / f64::from(height);
+            let max_area_f = f64::from(max_area);
+            let height_f = (max_area_f / aspect_ratio).sqrt();
+            let width_f = height_f * aspect_ratio;
+            (width_f as u16, height_f as u16)
+        } else {
+            (width, height)
+        };
         Rect {
             x,
             y,
@@ -80,9 +81,6 @@ impl Rect {
     }
 
     /// Returns the bottom coordinate of the rect. This is the first coordinate outside of the rect.
-    ///
-    /// If the bottom coordinate is larger than the maximum value of u16, it will be clamped to
-    /// u16::MAX.
     pub const fn bottom(self) -> u16 {
         self.y.saturating_add(self.height)
     }

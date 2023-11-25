@@ -108,19 +108,20 @@ fn calculate_layout(area: Rect) -> (Rect, Vec<Vec<Rect>>) {
         .constraints([Constraint::Length(1), Constraint::Min(0)])
         .split(area);
     let title_area = layout[0];
-    let main_areas = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Max(4); 9])
-        .split(layout[1])
-        .iter()
-        .map(|&area| {
-            Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(area)
-                .to_vec()
-        })
-        .collect_vec();
+    let main_areas =
+        Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Max(4); 9])
+            .split(layout[1])
+            .iter()
+            .map(|&area| {
+                Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                    .split(area)
+                    .to_vec()
+            })
+            .collect_vec();
     (title_area, main_areas)
 }
 

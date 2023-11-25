@@ -62,12 +62,13 @@ fn render_hops(selected_row: usize, area: Rect, buf: &mut Buffer) {
     let mut scrollbar_state = ScrollbarState::default()
         .content_length(HOPS.len())
         .position(selected_row);
-    let area = Rect {
-        width: area.width + 1,
-        y: area.y + 3,
-        height: area.height - 4,
-        ..area
-    };
+    let area =
+        Rect {
+            width: area.width + 1,
+            y: area.y + 3,
+            height: area.height - 4,
+            ..area
+        };
     Scrollbar::default()
         .orientation(ScrollbarOrientation::VerticalLeft)
         .begin_symbol(None)

@@ -48,14 +48,15 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 }
 
 fn ui(frame: &mut Frame) {
-    let main_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Length(4),  // text
-            Length(50), // examples
-            Min(0),     // fills remaining space
-        ])
-        .split(frame.size());
+    let main_layout =
+        Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Length(4),  // text
+                Length(50), // examples
+                Min(0),     // fills remaining space
+            ])
+            .split(frame.size());
 
     // title
     frame.render_widget(

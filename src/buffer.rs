@@ -131,30 +131,6 @@ impl Default for Cell {
 }
 
 /// A buffer that maps to the desired content of the terminal after the draw call
-///
-/// No widget in the library interacts directly with the terminal. Instead each of them is required
-/// to draw their state to an intermediate buffer. It is basically a grid where each cell contains
-/// a grapheme, a foreground color and a background color. This grid will then be used to output
-/// the appropriate escape sequences and characters to draw the UI as the user has defined it.
-///
-/// # Examples:
-///
-/// ```
-/// use ratatui::{prelude::*, buffer::Cell};
-///
-/// let mut buf = Buffer::empty(Rect{x: 0, y: 0, width: 10, height: 5});
-/// buf.get_mut(0, 2).set_symbol("x");
-/// assert_eq!(buf.get(0, 2).symbol(), "x");
-///
-/// buf.set_string(3, 0, "string", Style::default().fg(Color::Red).bg(Color::White));
-/// let cell = buf.get_mut(5, 0);
-/// assert_eq!(cell.symbol(), "r");
-/// assert_eq!(cell.fg, Color::Red);
-/// assert_eq!(cell.bg, Color::White);
-///
-/// buf.get_mut(5, 0).set_char('x');
-/// assert_eq!(buf.get(5, 0).symbol(), "x");
-/// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Buffer {
@@ -349,13 +325,14 @@ impl Buffer {
             if remaining_width == 0 {
                 break;
             }
-            let pos = self.set_stringn(
-                x,
-                y,
-                span.content.as_ref(),
-                remaining_width as usize,
-                span.style,
-            );
+            let pos =
+                self.set_stringn(
+                    x,
+                    y,
+                    span.content.as_ref(),
+                    remaining_width as usize,
+                    span.style,
+                );
             let w = pos.0.saturating_sub(x);
             x = pos.0;
             remaining_width = remaining_width.saturating_sub(w);
@@ -587,9 +564,7 @@ impl Debug for Buffer {
                 }
             }
             if !overwritten.is_empty() {
-                f.write_fmt(format_args!(
-                    "// hidden by multi-width symbols: {overwritten:?}"
-                ))?;
+                f.write_fmt(format_args!("// hidden by multi-width symbols: {overwritten:?}"))?;
             }
             f.write_str("\",\n")?;
         }

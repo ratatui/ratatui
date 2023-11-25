@@ -58,14 +58,14 @@ impl Root<'_> {
             ("↑/k", "Up"),
             ("↓/j", "Down"),
         ];
-        let spans = keys
-            .iter()
-            .flat_map(|(key, desc)| {
-                let key = Span::styled(format!(" {} ", key), THEME.key_binding.key);
-                let desc = Span::styled(format!(" {} ", desc), THEME.key_binding.description);
-                [key, desc]
-            })
-            .collect_vec();
+        let spans =
+            keys.iter()
+                .flat_map(|(key, desc)| {
+                    let key = Span::styled(format!(" {} ", key), THEME.key_binding.key);
+                    let desc = Span::styled(format!(" {} ", desc), THEME.key_binding.description);
+                    [key, desc]
+                })
+                .collect_vec();
         Paragraph::new(Line::from(spans))
             .alignment(Alignment::Center)
             .fg(Color::Indexed(236))

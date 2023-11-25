@@ -246,11 +246,12 @@ fn handle_mouse_event(
     match mouse.kind {
         MouseEventKind::Moved => {
             let old_selected_button = *selected_button;
-            *selected_button = match mouse.column {
-                x if x < 15 => 0,
-                x if x < 30 => 1,
-                _ => 2,
-            };
+            *selected_button =
+                match mouse.column {
+                    x if x < 15 => 0,
+                    x if x < 30 => 1,
+                    _ => 2,
+                };
             if old_selected_button != *selected_button {
                 if button_states[old_selected_button] != State::Active {
                     button_states[old_selected_button] = State::Normal;

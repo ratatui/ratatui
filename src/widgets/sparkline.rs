@@ -11,18 +11,6 @@ use crate::{
 };
 
 /// Widget to render a sparkline over one or more lines.
-///
-/// # Examples
-///
-/// ```
-/// use ratatui::{prelude::*, widgets::*};
-///
-/// Sparkline::default()
-///     .block(Block::default().title("Sparkline").borders(Borders::ALL))
-///     .data(&[0, 2, 3, 4, 1, 4, 10])
-///     .max(5)
-///     .style(Style::default().fg(Color::Red).bg(Color::White));
-/// ```
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Sparkline<'a> {
     /// A block to wrap the widget in

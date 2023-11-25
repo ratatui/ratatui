@@ -247,14 +247,15 @@ impl<'a> StatefulWidget for List<'a> {
             .skip(state.offset)
             .take(end - start)
         {
-            let (x, y) = if self.start_corner == Corner::BottomLeft {
-                current_height += item.height() as u16;
-                (list_area.left(), list_area.bottom() - current_height)
-            } else {
-                let pos = (list_area.left(), list_area.top() + current_height);
-                current_height += item.height() as u16;
-                pos
-            };
+            let (x, y) =
+                if self.start_corner == Corner::BottomLeft {
+                    current_height += item.height() as u16;
+                    (list_area.left(), list_area.bottom() - current_height)
+                } else {
+                    let pos = (list_area.left(), list_area.top() + current_height);
+                    current_height += item.height() as u16;
+                    pos
+                };
             let area = Rect {
                 x,
                 y,
@@ -286,13 +287,14 @@ impl<'a> StatefulWidget for List<'a> {
                 } else {
                     (x, list_area.width)
                 };
-                let x_offset = match line.alignment {
-                    Some(Alignment::Center) => {
-                        (area.width / 2).saturating_sub(line.width() as u16 / 2)
-                    }
-                    Some(Alignment::Right) => area.width.saturating_sub(line.width() as u16),
-                    _ => 0,
-                };
+                let x_offset =
+                    match line.alignment {
+                        Some(Alignment::Center) => {
+                            (area.width / 2).saturating_sub(line.width() as u16 / 2)
+                        }
+                        Some(Alignment::Right) => area.width.saturating_sub(line.width() as u16),
+                        _ => 0,
+                    };
                 buf.set_line(elem_x + x_offset, y + j as u16, line, max_element_width);
             }
             if is_selected {

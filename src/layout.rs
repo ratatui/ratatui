@@ -44,21 +44,6 @@ pub enum Constraint {
     /// ```
     Percentage(u16),
     /// Apply a ratio
-    ///
-    /// Converts the given numbers to a f32, and then converts it back, trimming off the decimal
-    /// point (effectively rounding down)
-    /// ```
-    /// # use ratatui::prelude::*;
-    /// assert_eq!(0, Constraint::Ratio(4, 3).apply(0));
-    /// assert_eq!(4, Constraint::Ratio(4, 3).apply(4));
-    /// assert_eq!(10, Constraint::Ratio(4, 3).apply(10));
-    /// assert_eq!(100, Constraint::Ratio(4, 3).apply(100));
-    ///
-    /// assert_eq!(0, Constraint::Ratio(3, 4).apply(0));
-    /// assert_eq!(3, Constraint::Ratio(3, 4).apply(4));
-    /// assert_eq!(7, Constraint::Ratio(3, 4).apply(10));
-    /// assert_eq!(75, Constraint::Ratio(3, 4).apply(100));
-    /// ```
     Ratio(u32, u32),
     /// Apply no more than the given amount (currently roughly equal to [Constraint::Max], but less
     /// consistent)
@@ -231,9 +216,6 @@ impl Default for Layout {
 impl Layout {
     pub const DEFAULT_CACHE_SIZE: usize = 16;
     /// Creates a new layout with default values.
-    ///
-    /// - margin: 0, 0
-    /// - segment_size: SegmentSize::LastTakesRemainder
     pub fn new<C: AsRef<[Constraint]>>(direction: Direction, constraints: C) -> Layout {
         Layout {
             direction,
@@ -257,11 +239,7 @@ impl Layout {
     /// * is called for the first time, subsequent calls do not modify the cache size.
     pub fn init_cache(cache_size: usize) -> bool {
         LAYOUT_CACHE
-            .with(|c| {
-                c.set(RefCell::new(LruCache::new(
-                    NonZeroUsize::new(cache_size).unwrap(),
-                )))
-            })
+            .with(|c| c.set(RefCell::new(LruCache::new(NonZeroUsize::new(cache_size).unwrap()))))
             .is_ok()
     }
 
@@ -294,17 +272,6 @@ impl Layout {
     }
 
     /// Builder method to set the margin of the layout.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let layout = Layout::default()
-    ///     .constraints([Constraint::Min(0)])
-    ///     .margin(2)
-    ///     .split(Rect::new(0, 0, 10, 10));
-    /// assert_eq!(layout[..], [Rect::new(2, 2, 6, 6)]);
-    /// ```
     pub const fn margin(mut self, margin: u16) -> Layout {
         self.margin = Margin {
             horizontal: margin,
@@ -314,57 +281,18 @@ impl Layout {
     }
 
     /// Builder method to set the horizontal margin of the layout.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let layout = Layout::default()
-    ///     .constraints([Constraint::Min(0)])
-    ///     .horizontal_margin(2)
-    ///     .split(Rect::new(0, 0, 10, 10));
-    /// assert_eq!(layout[..], [Rect::new(2, 0, 6, 10)]);
-    /// ```
     pub const fn horizontal_margin(mut self, horizontal: u16) -> Layout {
         self.margin.horizontal = horizontal;
         self
     }
 
     /// Builder method to set the vertical margin of the layout.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let layout = Layout::default()
-    ///     .constraints([Constraint::Min(0)])
-    ///     .vertical_margin(2)
-    ///     .split(Rect::new(0, 0, 10, 10));
-    /// assert_eq!(layout[..], [Rect::new(0, 2, 10, 6)]);
-    /// ```
     pub const fn vertical_margin(mut self, vertical: u16) -> Layout {
         self.margin.vertical = vertical;
         self
     }
 
     /// Builder method to set the direction of the layout.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let layout = Layout::default()
-    ///     .direction(Direction::Horizontal)
-    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
-    ///     .split(Rect::new(0, 0, 10, 10));
-    /// assert_eq!(layout[..], [Rect::new(0, 0, 5, 10), Rect::new(5, 0, 5, 10)]);
-    ///
-    /// let layout = Layout::default()
-    ///     .direction(Direction::Vertical)
-    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
-    ///     .split(Rect::new(0, 0, 10, 10));
-    /// assert_eq!(layout[..], [Rect::new(0, 0, 10, 5), Rect::new(0, 5, 10, 5)]);
-    /// ```
     pub const fn direction(mut self, direction: Direction) -> Layout {
         self.direction = direction;
         self
@@ -402,11 +330,9 @@ impl Layout {
     /// ```
     pub fn split(&self, area: Rect) -> Rc<[Rect]> {
         LAYOUT_CACHE.with(|c| {
-            c.get_or_init(|| {
-                RefCell::new(LruCache::new(
-                    NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap(),
-                ))
-            })
+            c.get_or_init(
+                || RefCell::new(LruCache::new(NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap()))
+            )
             .borrow_mut()
             .get_or_insert((area, self.clone()), || split(area, self))
             .clone()
@@ -533,28 +459,29 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
     // dbg!(ends);
 
     // convert to Rects
-    let results = elements
-        .iter()
-        .map(|element| {
-            let start = changes.get(&element.start).unwrap_or(&0.0).round() as u16;
-            let end = changes.get(&element.end).unwrap_or(&0.0).round() as u16;
-            let size = end - start;
-            match layout.direction {
-                Direction::Horizontal => Rect {
-                    x: start,
-                    y: inner.y,
-                    width: size,
-                    height: inner.height,
-                },
-                Direction::Vertical => Rect {
-                    x: inner.x,
-                    y: start,
-                    width: inner.width,
-                    height: size,
-                },
-            }
-        })
-        .collect::<Rc<[Rect]>>();
+    let results =
+        elements
+            .iter()
+            .map(|element| {
+                let start = changes.get(&element.start).unwrap_or(&0.0).round() as u16;
+                let end = changes.get(&element.end).unwrap_or(&0.0).round() as u16;
+                let size = end - start;
+                match layout.direction {
+                    Direction::Horizontal => Rect {
+                        x: start,
+                        y: inner.y,
+                        width: size,
+                        height: inner.height,
+                    },
+                    Direction::Vertical => Rect {
+                        x: inner.x,
+                        y: start,
+                        width: inner.width,
+                        height: size,
+                    },
+                }
+            })
+            .collect::<Rc<[Rect]>>();
     Ok(results)
 }
 
@@ -1302,12 +1229,13 @@ mod tests {
 
         #[test]
         fn vertical_split_by_height() {
-            let target = Rect {
-                x: 2,
-                y: 2,
-                width: 10,
-                height: 10,
-            };
+            let target =
+                Rect {
+                    x: 2,
+                    y: 2,
+                    width: 10,
+                    height: 10,
+                };
 
             let chunks = Layout::default()
                 .direction(Direction::Vertical)

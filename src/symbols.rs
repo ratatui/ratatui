@@ -41,17 +41,18 @@ pub mod block {
         empty: " ",
     };
 
-    pub const NINE_LEVELS: Set = Set {
-        full: FULL,
-        seven_eighths: SEVEN_EIGHTHS,
-        three_quarters: THREE_QUARTERS,
-        five_eighths: FIVE_EIGHTHS,
-        half: HALF,
-        three_eighths: THREE_EIGHTHS,
-        one_quarter: ONE_QUARTER,
-        one_eighth: ONE_EIGHTH,
-        empty: " ",
-    };
+    pub const NINE_LEVELS: Set =
+        Set {
+            full: FULL,
+            seven_eighths: SEVEN_EIGHTHS,
+            three_quarters: THREE_QUARTERS,
+            five_eighths: FIVE_EIGHTHS,
+            half: HALF,
+            three_eighths: THREE_EIGHTHS,
+            one_quarter: ONE_QUARTER,
+            one_eighth: ONE_EIGHTH,
+            empty: " ",
+        };
 }
 
 pub mod half_block {
@@ -101,17 +102,18 @@ pub mod bar {
         empty: " ",
     };
 
-    pub const NINE_LEVELS: Set = Set {
-        full: FULL,
-        seven_eighths: SEVEN_EIGHTHS,
-        three_quarters: THREE_QUARTERS,
-        five_eighths: FIVE_EIGHTHS,
-        half: HALF,
-        three_eighths: THREE_EIGHTHS,
-        one_quarter: ONE_QUARTER,
-        one_eighth: ONE_EIGHTH,
-        empty: " ",
-    };
+    pub const NINE_LEVELS: Set =
+        Set {
+            full: FULL,
+            seven_eighths: SEVEN_EIGHTHS,
+            three_quarters: THREE_QUARTERS,
+            five_eighths: FIVE_EIGHTHS,
+            half: HALF,
+            three_eighths: THREE_EIGHTHS,
+            one_quarter: ONE_QUARTER,
+            one_eighth: ONE_EIGHTH,
+            empty: " ",
+        };
 }
 
 pub mod line {
@@ -275,12 +277,6 @@ pub mod border {
     };
 
     /// Border Set with a single line width and rounded corners
-    ///
-    /// ```text
-    /// ╭─────╮
-    /// │xxxxx│
-    /// │xxxxx│
-    /// ╰─────╯
     pub const ROUNDED: Set = Set {
         top_left: line::ROUNDED.top_left,
         top_right: line::ROUNDED.top_right,
@@ -387,12 +383,13 @@ pub const DOT: &str = "•";
 
 pub mod braille {
     pub const BLANK: u16 = 0x2800;
-    pub const DOTS: [[u16; 2]; 4] = [
-        [0x0001, 0x0008],
-        [0x0002, 0x0010],
-        [0x0004, 0x0020],
-        [0x0040, 0x0080],
-    ];
+    pub const DOTS: [[u16; 2]; 4] =
+        [
+            [0x0001, 0x0008],
+            [0x0002, 0x0010],
+            [0x0004, 0x0020],
+            [0x0040, 0x0080],
+        ];
 }
 
 /// Marker to use when plotting data points
@@ -440,33 +437,37 @@ pub mod scrollbar {
         pub end: &'static str,
     }
 
-    pub const DOUBLE_VERTICAL: Set = Set {
-        track: line::DOUBLE_VERTICAL,
-        thumb: block::FULL,
-        begin: "▲",
-        end: "▼",
-    };
+    pub const DOUBLE_VERTICAL: Set =
+        Set {
+            track: line::DOUBLE_VERTICAL,
+            thumb: block::FULL,
+            begin: "▲",
+            end: "▼",
+        };
 
-    pub const DOUBLE_HORIZONTAL: Set = Set {
-        track: line::DOUBLE_HORIZONTAL,
-        thumb: block::FULL,
-        begin: "◄",
-        end: "►",
-    };
+    pub const DOUBLE_HORIZONTAL: Set =
+        Set {
+            track: line::DOUBLE_HORIZONTAL,
+            thumb: block::FULL,
+            begin: "◄",
+            end: "►",
+        };
 
-    pub const VERTICAL: Set = Set {
-        track: line::VERTICAL,
-        thumb: block::FULL,
-        begin: "↑",
-        end: "↓",
-    };
+    pub const VERTICAL: Set =
+        Set {
+            track: line::VERTICAL,
+            thumb: block::FULL,
+            begin: "↑",
+            end: "↓",
+        };
 
-    pub const HORIZONTAL: Set = Set {
-        track: line::HORIZONTAL,
-        thumb: block::FULL,
-        begin: "←",
-        end: "→",
-    };
+    pub const HORIZONTAL: Set =
+        Set {
+            track: line::HORIZONTAL,
+            thumb: block::FULL,
+            begin: "←",
+            end: "→",
+        };
 }
 
 #[cfg(test)]

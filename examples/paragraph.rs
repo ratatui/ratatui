@@ -120,10 +120,7 @@ fn ui(f: &mut Frame, app: &App) {
         Block::default()
             .borders(Borders::ALL)
             .style(Style::default().fg(Color::Gray))
-            .title(Span::styled(
-                title,
-                Style::default().add_modifier(Modifier::BOLD),
-            ))
+            .title(Span::styled(title, Style::default().add_modifier(Modifier::BOLD)))
     };
 
     let paragraph = Paragraph::new(text.clone())

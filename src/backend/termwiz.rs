@@ -66,24 +66,6 @@ pub struct TermwizBackend {
 
 impl TermwizBackend {
     /// Creates a new Termwiz backend instance.
-    ///
-    /// The backend will automatically enable raw mode and enter the alternate screen.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if unable to do any of the following:
-    /// - query the terminal capabilities.
-    /// - enter raw mode.
-    /// - enter the alternate screen.
-    /// - create the system or buffered terminal.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use ratatui::prelude::*;
-    /// let backend = TermwizBackend::new()?;
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
-    /// ```
     pub fn new() -> Result<TermwizBackend, Box<dyn Error>> {
         let mut buffered_terminal =
             BufferedTerminal::new(SystemTerminal::new(Capabilities::new_from_env()?)?)?;
@@ -136,10 +118,9 @@ impl Backend for TermwizBackend {
                     },
                 )));
 
-            self.buffered_terminal
-                .add_change(Change::Attribute(AttributeChange::Italic(
-                    cell.modifier.contains(Modifier::ITALIC),
-                )));
+            self.buffered_terminal.add_change(
+                Change::Attribute(AttributeChange::Italic(cell.modifier.contains(Modifier::ITALIC)))
+            );
 
             self.buffered_terminal
                 .add_change(Change::Attribute(AttributeChange::Underline(
@@ -150,20 +131,17 @@ impl Backend for TermwizBackend {
                     },
                 )));
 
-            self.buffered_terminal
-                .add_change(Change::Attribute(AttributeChange::Reverse(
-                    cell.modifier.contains(Modifier::REVERSED),
-                )));
+            self.buffered_terminal.add_change(Change::Attribute(
+                AttributeChange::Reverse(cell.modifier.contains(Modifier::REVERSED))
+            ));
 
-            self.buffered_terminal
-                .add_change(Change::Attribute(AttributeChange::Invisible(
-                    cell.modifier.contains(Modifier::HIDDEN),
-                )));
+            self.buffered_terminal.add_change(Change::Attribute(
+                AttributeChange::Invisible(cell.modifier.contains(Modifier::HIDDEN))
+            ));
 
-            self.buffered_terminal
-                .add_change(Change::Attribute(AttributeChange::StrikeThrough(
-                    cell.modifier.contains(Modifier::CROSSED_OUT),
-                )));
+            self.buffered_terminal.add_change(Change::Attribute(
+                AttributeChange::StrikeThrough(cell.modifier.contains(Modifier::CROSSED_OUT))
+            ));
 
             self.buffered_terminal
                 .add_change(Change::Attribute(AttributeChange::Blink(

@@ -6,42 +6,6 @@ use strum::{Display, EnumString};
 use crate::{layout::Alignment, text::Line};
 
 /// A [`Block`](crate::widgets::Block) title.
-///
-/// It can be aligned (see [`Alignment`]) and positioned (see [`Position`]).
-///
-/// # Example
-///
-/// Title with no style.
-/// ```
-/// use ratatui::widgets::block::Title;
-///
-/// Title::from("Title");
-/// ```
-///
-/// Blue title on a white background (via [`Stylize`](crate::style::Stylize) trait).
-/// ```
-/// use ratatui::{prelude::*, widgets::block::*};
-///
-/// Title::from("Title".blue().on_white());
-/// ```
-///
-/// Title with multiple styles (see [`Line`] and [`Stylize`](crate::style::Stylize)).
-/// ```
-/// use ratatui::{prelude::*, widgets::block::*};
-///
-/// Title::from(
-///     Line::from(vec!["Q".white().underlined(), "uit".gray()])
-/// );
-/// ```
-///
-/// Complete example
-/// ```
-/// use ratatui::{prelude::*, widgets::{*, block::*}};
-///
-/// Title::from("Title")
-///     .position(Position::Top)
-///     .alignment(Alignment::Right);
-/// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Title<'a> {
     /// Title content

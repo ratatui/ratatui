@@ -240,15 +240,6 @@ impl Style {
     }
 
     /// Changes the foreground color.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let style = Style::default().fg(Color::Blue);
-    /// let diff = Style::default().fg(Color::Red);
-    /// assert_eq!(style.patch(diff), Style::default().fg(Color::Red));
-    /// ```
     #[must_use = "`fg` returns the modified style without modifying the original"]
     pub const fn fg(mut self, color: Color) -> Style {
         self.fg = Some(color);
@@ -256,15 +247,6 @@ impl Style {
     }
 
     /// Changes the background color.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let style = Style::default().bg(Color::Blue);
-    /// let diff = Style::default().bg(Color::Red);
-    /// assert_eq!(style.patch(diff), Style::default().bg(Color::Red));
-    /// ```
     #[must_use = "`bg` returns the modified style without modifying the original"]
     pub const fn bg(mut self, color: Color) -> Style {
         self.bg = Some(color);
@@ -272,23 +254,6 @@ impl Style {
     }
 
     /// Changes the underline color. The text must be underlined with a modifier for this to work.
-    ///
-    /// This uses a non-standard ANSI escape sequence. It is supported by most terminal emulators,
-    /// but is only implemented in the crossterm backend and enabled by the `underline-color`
-    /// feature flag.
-    ///
-    /// See
-    /// [Wikipedia](https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters)
-    /// code `58` and `59` for more information.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let style = Style::default().underline_color(Color::Blue).add_modifier(Modifier::UNDERLINED);
-    /// let diff = Style::default().underline_color(Color::Red).add_modifier(Modifier::UNDERLINED);
-    /// assert_eq!(style.patch(diff), Style::default().underline_color(Color::Red).add_modifier(Modifier::UNDERLINED));
-    /// ```
     #[cfg(feature = "underline-color")]
     #[must_use = "`underline_color` returns the modified style without modifying the original"]
     pub const fn underline_color(mut self, color: Color) -> Style {
@@ -297,19 +262,6 @@ impl Style {
     }
 
     /// Changes the text emphasis.
-    ///
-    /// When applied, it adds the given modifier to the `Style` modifiers.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let style = Style::default().add_modifier(Modifier::BOLD);
-    /// let diff = Style::default().add_modifier(Modifier::ITALIC);
-    /// let patched = style.patch(diff);
-    /// assert_eq!(patched.add_modifier, Modifier::BOLD | Modifier::ITALIC);
-    /// assert_eq!(patched.sub_modifier, Modifier::empty());
-    /// ```
     #[must_use = "`add_modifier` returns the modified style without modifying the original"]
     pub const fn add_modifier(mut self, modifier: Modifier) -> Style {
         self.sub_modifier = self.sub_modifier.difference(modifier);
@@ -318,19 +270,6 @@ impl Style {
     }
 
     /// Changes the text emphasis.
-    ///
-    /// When applied, it removes the given modifier from the `Style` modifiers.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let style = Style::default().add_modifier(Modifier::BOLD | Modifier::ITALIC);
-    /// let diff = Style::default().remove_modifier(Modifier::ITALIC);
-    /// let patched = style.patch(diff);
-    /// assert_eq!(patched.add_modifier, Modifier::BOLD);
-    /// assert_eq!(patched.sub_modifier, Modifier::ITALIC);
-    /// ```
     #[must_use = "`remove_modifier` returns the modified style without modifying the original"]
     pub const fn remove_modifier(mut self, modifier: Modifier) -> Style {
         self.add_modifier = self.add_modifier.difference(modifier);

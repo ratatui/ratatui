@@ -88,14 +88,6 @@ where
     W: Write,
 {
     /// Creates a new `CrosstermBackend` with the given writer.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use std::io::stdout;
-    /// # use ratatui::prelude::*;
-    /// let backend = CrosstermBackend::new(stdout());
-    /// ```
     pub fn new(writer: W) -> CrosstermBackend<W> {
         CrosstermBackend { writer }
     }

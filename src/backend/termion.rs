@@ -71,14 +71,6 @@ where
     W: Write,
 {
     /// Creates a new Termion backend with the given writer.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use std::io::stdout;
-    /// # use ratatui::prelude::*;
-    /// let backend = TermionBackend::new(stdout());
-    /// ```
     pub fn new(writer: W) -> TermionBackend<W> {
         TermionBackend { writer }
     }

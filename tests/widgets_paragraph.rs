@@ -320,15 +320,16 @@ fn widgets_paragraph_can_align_spans() {
         .into_iter()
         .map(|s| Line::from(s).alignment(Alignment::Left))
         .collect::<Vec<_>>();
-    let mut lines = vec![
-        "This",
-        "must be pretty long",
-        "in order to effectively show",
-        "truncation.",
-    ]
-    .into_iter()
-    .map(Line::from)
-    .collect::<Vec<_>>();
+    let mut lines =
+        vec![
+            "This",
+            "must be pretty long",
+            "in order to effectively show",
+            "truncation.",
+        ]
+        .into_iter()
+        .map(Line::from)
+        .collect::<Vec<_>>();
 
     let mut text = left_lines.clone();
     text.append(&mut lines);

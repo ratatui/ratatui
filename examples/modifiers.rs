@@ -67,13 +67,14 @@ fn ui(frame: &mut Frame) {
         })
         .collect_vec();
 
-    let colors = [
-        Color::Black,
-        Color::DarkGray,
-        Color::Gray,
-        Color::White,
-        Color::Red,
-    ];
+    let colors =
+        [
+            Color::Black,
+            Color::DarkGray,
+            Color::Gray,
+            Color::White,
+            Color::Red,
+        ];
     let all_modifiers = once(Modifier::empty())
         .chain(Modifier::all().iter())
         .collect_vec();

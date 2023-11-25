@@ -1,34 +1,5 @@
 #![deny(missing_docs)]
 //! Provides the [`Terminal`], [`Frame`] and related types.
-//!
-//! The [`Terminal`] is the main interface of this library. It is responsible for drawing and
-//! maintaining the state of the different widgets that compose your application.
-//!
-//! The [`Frame`] is a consistent view into the terminal state for rendering. It is obtained via
-//! the closure argument of [`Terminal::draw`]. It is used to render widgets to the terminal and
-//! control the cursor position.
-//!
-//! # Example
-//!
-//! ```rust,no_run
-//! use std::io::stdout;
-//! use ratatui::{prelude::*, widgets::Paragraph};
-//!
-//! let backend = CrosstermBackend::new(stdout());
-//! let mut terminal = Terminal::new(backend)?;
-//! terminal.draw(|frame| {
-//!     let area = frame.size();
-//!     frame.render_widget(Paragraph::new("Hello world!"), area);
-//! })?;
-//! # std::io::Result::Ok(())
-//! ```
-//!
-//! [Crossterm]: https://crates.io/crates/crossterm
-//! [Termion]: https://crates.io/crates/termion
-//! [Termwiz]: https://crates.io/crates/termwiz
-//! [`backend`]: crate::backend
-//! [`Backend`]: crate::backend::Backend
-//! [`Buffer`]: crate::buffer::Buffer
 use std::{fmt, io};
 
 use crate::{
@@ -82,50 +53,6 @@ pub struct TerminalOptions {
 }
 
 /// An interface to interact and draw [`Frame`]s on the user's terminal.
-///
-/// This is the main entry point for Ratatui. It is responsible for drawing and maintaining the
-/// state of the buffers, cursor and viewport.
-///
-/// The [`Terminal`] is generic over a [`Backend`] implementation which is used to interface with
-/// the underlying terminal library. The [`Backend`] trait is implemented for three popular Rust
-/// terminal libraries: [Crossterm], [Termion] and [Termwiz]. See the [`backend`] module for more
-/// information.
-///
-/// The `Terminal` struct maintains two buffers: the current and the previous.
-/// When the widgets are drawn, the changes are accumulated in the current buffer.
-/// At the end of each draw pass, the two buffers are compared, and only the changes
-/// between these buffers are written to the terminal, avoiding any redundant operations.
-/// After flushing these changes, the buffers are swapped to prepare for the next draw cycle./
-///
-/// The terminal also has a viewport which is the area of the terminal that is currently visible to
-/// the user. It can be either fullscreen, inline or fixed. See [`Viewport`] for more information.
-///
-/// Applications should detect terminal resizes and call [`Terminal::draw`] to redraw the
-/// application with the new size. This will automatically resize the internal buffers to match the
-/// new size for inline and fullscreen viewports. Fixed viewports are not resized automatically.
-///
-/// # Examples
-///
-/// ```rust,no_run
-/// use std::io::stdout;
-/// use ratatui::{prelude::*, widgets::Paragraph};
-///
-/// let backend = CrosstermBackend::new(stdout());
-/// let mut terminal = Terminal::new(backend)?;
-/// terminal.draw(|frame| {
-///     let area = frame.size();
-///     frame.render_widget(Paragraph::new("Hello World!"), area);
-///     frame.set_cursor(0, 0);
-/// })?;
-/// # std::io::Result::Ok(())
-/// ```
-///
-/// [Crossterm]: https://crates.io/crates/crossterm
-/// [Termion]: https://crates.io/crates/termion
-/// [Termwiz]: https://crates.io/crates/termwiz
-/// [`backend`]: crate::backend
-/// [`Backend`]: crate::backend::Backend
-/// [`Buffer`]: crate::buffer::Buffer
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Terminal<B>
 where
@@ -374,9 +301,6 @@ where
     }
 
     /// Gets the current cursor position.
-    ///
-    /// This is the position of the cursor after the last draw call and is returned as a tuple of
-    /// `(x, y)` coordinates.
     pub fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
         self.backend.get_cursor()
     }

@@ -37,52 +37,53 @@ const RECIPE: &[(&str, &str)] = &[
     ),
 ];
 
-const INGREDIENTS: &[Ingredient] = &[
-    Ingredient {
-        quantity: "4 tbsp",
-        name: "olive oil",
-    },
-    Ingredient {
-        quantity: "1",
-        name: "onion thinly sliced",
-    },
-    Ingredient {
-        quantity: "4",
-        name: "cloves garlic\npeeled and sliced",
-    },
-    Ingredient {
-        quantity: "1",
-        name: "small bay leaf",
-    },
-    Ingredient {
-        quantity: "1",
-        name: "small eggplant cut\ninto 1/2 inch cubes",
-    },
-    Ingredient {
-        quantity: "1",
-        name: "small zucchini halved\nlengthwise and cut\ninto thin slices",
-    },
-    Ingredient {
-        quantity: "1",
-        name: "red bell pepper cut\ninto slivers",
-    },
-    Ingredient {
-        quantity: "4",
-        name: "plum tomatoes\ncoarsely chopped",
-    },
-    Ingredient {
-        quantity: "1 tsp",
-        name: "kosher salt",
-    },
-    Ingredient {
-        quantity: "1/4 cup",
-        name: "shredded fresh basil\nleaves",
-    },
-    Ingredient {
-        quantity: "",
-        name: "freshly ground black\npepper",
-    },
-];
+const INGREDIENTS: &[Ingredient] =
+    &[
+        Ingredient {
+            quantity: "4 tbsp",
+            name: "olive oil",
+        },
+        Ingredient {
+            quantity: "1",
+            name: "onion thinly sliced",
+        },
+        Ingredient {
+            quantity: "4",
+            name: "cloves garlic\npeeled and sliced",
+        },
+        Ingredient {
+            quantity: "1",
+            name: "small bay leaf",
+        },
+        Ingredient {
+            quantity: "1",
+            name: "small eggplant cut\ninto 1/2 inch cubes",
+        },
+        Ingredient {
+            quantity: "1",
+            name: "small zucchini halved\nlengthwise and cut\ninto thin slices",
+        },
+        Ingredient {
+            quantity: "1",
+            name: "red bell pepper cut\ninto slivers",
+        },
+        Ingredient {
+            quantity: "4",
+            name: "plum tomatoes\ncoarsely chopped",
+        },
+        Ingredient {
+            quantity: "1 tsp",
+            name: "kosher salt",
+        },
+        Ingredient {
+            quantity: "1/4 cup",
+            name: "shredded fresh basil\nleaves",
+        },
+        Ingredient {
+            quantity: "",
+            name: "freshly ground black\npepper",
+        },
+    ];
 
 #[derive(Debug)]
 pub struct RecipeTab {

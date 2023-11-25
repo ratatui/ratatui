@@ -170,10 +170,9 @@ fn render_indexed_colors(frame: &mut Frame, area: Rect) {
         let color = Color::Indexed(i);
         let color_index = format!("{i:0>2}");
         let bg = if i < 1 { Color::DarkGray } else { Color::Black };
-        let paragraph = Paragraph::new(Line::from(vec![
-            color_index.fg(color).bg(bg),
-            "██".bg(color).fg(color),
-        ]));
+        let paragraph = Paragraph::new(
+            Line::from(vec![color_index.fg(color).bg(bg), "██".bg(color).fg(color)])
+        );
         frame.render_widget(paragraph, color_layout[i as usize]);
     }
 

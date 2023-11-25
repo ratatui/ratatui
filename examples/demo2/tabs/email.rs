@@ -11,33 +11,34 @@ pub struct Email {
     body: &'static str,
 }
 
-const EMAILS: &[Email] = &[
-    Email {
-        from: "Alice <alice@example.com>",
-        subject: "Hello",
-        body: "Hi Bob,\nHow are you?\n\nAlice",
-    },
-    Email {
-        from: "Bob <bob@example.com>",
-        subject: "Re: Hello",
-        body: "Hi Alice,\nI'm fine, thanks!\n\nBob",
-    },
-    Email {
-        from: "Charlie <charlie@example.com>",
-        subject: "Re: Hello",
-        body: "Hi Alice,\nI'm fine, thanks!\n\nCharlie",
-    },
-    Email {
-        from: "Dave <dave@example.com>",
-        subject: "Re: Hello (STOP REPLYING TO ALL)",
-        body: "Hi Everyone,\nPlease stop replying to all.\n\nDave",
-    },
-    Email {
-        from: "Eve <eve@example.com>",
-        subject: "Re: Hello (STOP REPLYING TO ALL)",
-        body: "Hi Everyone,\nI'm reading all your emails.\n\nEve",
-    },
-];
+const EMAILS: &[Email] =
+    &[
+        Email {
+            from: "Alice <alice@example.com>",
+            subject: "Hello",
+            body: "Hi Bob,\nHow are you?\n\nAlice",
+        },
+        Email {
+            from: "Bob <bob@example.com>",
+            subject: "Re: Hello",
+            body: "Hi Alice,\nI'm fine, thanks!\n\nBob",
+        },
+        Email {
+            from: "Charlie <charlie@example.com>",
+            subject: "Re: Hello",
+            body: "Hi Alice,\nI'm fine, thanks!\n\nCharlie",
+        },
+        Email {
+            from: "Dave <dave@example.com>",
+            subject: "Re: Hello (STOP REPLYING TO ALL)",
+            body: "Hi Everyone,\nPlease stop replying to all.\n\nDave",
+        },
+        Email {
+            from: "Eve <eve@example.com>",
+            subject: "Re: Hello (STOP REPLYING TO ALL)",
+            body: "Hi Everyone,\nI'm reading all your emails.\n\nEve",
+        },
+    ];
 
 #[derive(Debug, Default)]
 pub struct EmailTab {
@@ -81,13 +82,14 @@ fn render_inbox(selected_index: usize, area: Rect, buf: &mut Buffer) {
         .map(|e| e.from.width())
         .max()
         .unwrap_or_default();
-    let items = EMAILS
-        .iter()
-        .map(|e| {
-            let from = format!("{:width$}", e.from, width = from_width).into();
-            ListItem::new(Line::from(vec![from, " ".into(), e.subject.into()]))
-        })
-        .collect_vec();
+    let items =
+        EMAILS
+            .iter()
+            .map(|e| {
+                let from = format!("{:width$}", e.from, width = from_width).into();
+                ListItem::new(Line::from(vec![from, " ".into(), e.subject.into()]))
+            })
+            .collect_vec();
     let mut state = ListState::default().with_selected(Some(selected_index));
     StatefulWidget::render(
         List::new(items)

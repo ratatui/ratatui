@@ -1,26 +1,6 @@
 use crate::{buffer::Buffer, layout::Rect, widgets::Widget};
 
 /// A widget to clear/reset a certain area to allow overdrawing (e.g. for popups).
-///
-/// This widget **cannot be used to clear the terminal on the first render** as `ratatui` assumes
-/// the render area is empty. Use [`crate::Terminal::clear`] instead.
-///
-/// # Examples
-///
-/// ```
-/// use ratatui::{prelude::*, widgets::*};
-///
-/// fn draw_on_clear(f: &mut Frame, area: Rect) {
-///     let block = Block::default().title("Block").borders(Borders::ALL);
-///     f.render_widget(Clear, area); // <- this will clear/reset the area first
-///     f.render_widget(block, area); // now render the block widget
-/// }
-/// ```
-///
-/// # Popup Example
-///
-/// For a more complete example how to utilize `Clear` to realize popups see
-/// the example `examples/popup.rs`
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Clear;
 

@@ -126,11 +126,12 @@ fn render_line_gauge(percent: f64, area: Rect, buf: &mut Buffer) {
     let value = Okhsv::max_value();
     let fg = color_from_oklab(hue, Okhsv::max_saturation(), value);
     let bg = color_from_oklab(hue, Okhsv::max_saturation(), value * 0.5);
-    let label = if percent < 100.0 {
-        format!("Downloading: {}%", percent)
-    } else {
-        "Download Complete!".into()
-    };
+    let label =
+        if percent < 100.0 {
+            format!("Downloading: {}%", percent)
+        } else {
+            "Download Complete!".into()
+        };
     LineGauge::default()
         .ratio(percent / 100.0)
         .label(label)

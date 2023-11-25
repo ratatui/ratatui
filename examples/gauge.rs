@@ -136,12 +136,13 @@ impl App {
             format!("{:.2}%", progress * 100.0),
             Style::new().red().italic().bold(),
         );
-        let gauge = Gauge::default()
-            .block(title)
-            .gauge_style(Style::default().fg(Color::Yellow))
-            .ratio(progress)
-            .label(label)
-            .use_unicode(true);
+        let gauge =
+            Gauge::default()
+                .block(title)
+                .gauge_style(Style::default().fg(Color::Yellow))
+                .ratio(progress)
+                .label(label)
+                .use_unicode(true);
         frame.render_widget(gauge, area);
     }
 

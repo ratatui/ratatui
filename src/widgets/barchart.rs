@@ -106,18 +106,6 @@ impl<'a> Default for BarChart<'a> {
 
 impl<'a> BarChart<'a> {
     /// Add group of bars to the BarChart
-    ///
-    /// # Examples
-    ///
-    /// The following example creates a BarChart with two groups of bars.  
-    /// The first group is added by an array slice (`&[(&str, u64)]`).
-    /// The second group is added by a [`BarGroup`] instance.
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// BarChart::default()
-    ///     .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
-    ///     .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]));
-    /// ```
     pub fn data(mut self, data: impl Into<BarGroup<'a>>) -> BarChart<'a> {
         let group: BarGroup = data.into();
         if !group.bars.is_empty() {
@@ -135,32 +123,6 @@ impl<'a> BarChart<'a> {
     /// Set the value necessary for a [`Bar`] to reach the maximum height.
     ///
     /// If not set, the maximum value in the data is taken as reference.
-    ///
-    /// # Examples
-    ///
-    /// This example shows the default behavior when `max` is not set.
-    /// The maximum value in the dataset is taken (here, `100`).
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// BarChart::default().data(&[("foo", 1), ("bar", 2), ("baz", 100)]);
-    /// // Renders
-    /// //     █
-    /// //     █
-    /// // f b b
-    /// ```
-    ///
-    /// This example shows a custom max value.
-    /// The maximum height being `2`, `bar` & `baz` render as the max.
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// BarChart::default()
-    ///     .data(&[("foo", 1), ("bar", 2), ("baz", 100)])
-    ///     .max(2);
-    /// // Renders
-    /// //   █ █
-    /// // █ █ █
-    /// // f b b
-    /// ```
     pub fn max(mut self, max: u64) -> BarChart<'a> {
         self.max = Some(max);
         self
@@ -176,12 +138,6 @@ impl<'a> BarChart<'a> {
     }
 
     /// Set the width of the displayed bars.
-    ///
-    /// For [`Horizontal`](crate::layout::Direction::Horizontal) bars this becomes the height of
-    /// the bar.
-    ///
-    /// If not set, this defaults to `1`.  
-    /// The bar label also uses this value as its width.
     pub fn bar_width(mut self, width: u16) -> BarChart<'a> {
         self.bar_width = width;
         self
@@ -261,22 +217,6 @@ impl<'a> BarChart<'a> {
     /// Set the direction of the bars.
     ///
     /// [`Vertical`](crate::layout::Direction::Vertical) bars are the default.
-    ///
-    /// # Examples
-    ///
-    /// Vertical bars
-    /// ```plain
-    ///   █
-    /// █ █
-    /// f b
-    /// ```
-    ///
-    /// Horizontal bars
-    /// ```plain
-    /// █foo██
-    ///
-    /// █bar██
-    /// ```
     pub fn direction(mut self, direction: Direction) -> BarChart<'a> {
         self.direction = direction;
         self
@@ -389,14 +329,15 @@ impl<'a> BarChart<'a> {
             .unwrap_or(0) as u16;
 
         let label_x = area.x;
-        let bars_area = {
-            let margin = if label_size == 0 { 0 } else { 1 };
-            Rect {
-                x: area.x + label_size + margin,
-                width: area.width - label_size - margin,
-                ..area
-            }
-        };
+        let bars_area =
+            {
+                let margin = if label_size == 0 { 0 } else { 1 };
+                Rect {
+                    x: area.x + label_size + margin,
+                    width: area.width - label_size - margin,
+                    ..area
+                }
+            };
 
         let group_ticks = self.group_ticks(bars_area.height, bars_area.width);
 
@@ -873,16 +814,17 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 8));
         chart.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec![
-            "2█   ",
-            "3██  ",
-            "4███ ",
-            "G1   ",
-            "3██  ",
-            "4███ ",
-            "5████",
-            "G2   ",
-        ]);
+        let expected =
+            Buffer::with_lines(vec![
+                "2█   ",
+                "3██  ",
+                "4███ ",
+                "G1   ",
+                "3██  ",
+                "4███ ",
+                "5████",
+                "G2   ",
+            ]);
 
         assert_buffer_eq!(buffer, expected);
     }
@@ -1104,18 +1046,19 @@ mod tests {
 
     #[test]
     fn single_line() {
-        let mut group: BarGroup = (&[
-            ("a", 0),
-            ("b", 1),
-            ("c", 2),
-            ("d", 3),
-            ("e", 4),
-            ("f", 5),
-            ("g", 6),
-            ("h", 7),
-            ("i", 8),
-        ])
-            .into();
+        let mut group: BarGroup =
+            (&[
+                ("a", 0),
+                ("b", 1),
+                ("c", 2),
+                ("d", 3),
+                ("e", 4),
+                ("f", 5),
+                ("g", 6),
+                ("h", 7),
+                ("i", 8),
+            ])
+                .into();
         group = group.label("Group".into());
 
         let chart = BarChart::default()
@@ -1130,18 +1073,19 @@ mod tests {
 
     #[test]
     fn two_lines() {
-        let mut group: BarGroup = (&[
-            ("a", 0),
-            ("b", 1),
-            ("c", 2),
-            ("d", 3),
-            ("e", 4),
-            ("f", 5),
-            ("g", 6),
-            ("h", 7),
-            ("i", 8),
-        ])
-            .into();
+        let mut group: BarGroup =
+            (&[
+                ("a", 0),
+                ("b", 1),
+                ("c", 2),
+                ("d", 3),
+                ("e", 4),
+                ("f", 5),
+                ("g", 6),
+                ("h", 7),
+                ("i", 8),
+            ])
+                .into();
         group = group.label("Group".into());
 
         let chart = BarChart::default()
@@ -1163,18 +1107,19 @@ mod tests {
 
     #[test]
     fn three_lines() {
-        let mut group: BarGroup = (&[
-            ("a", 0),
-            ("b", 1),
-            ("c", 2),
-            ("d", 3),
-            ("e", 4),
-            ("f", 5),
-            ("g", 6),
-            ("h", 7),
-            ("i", 8),
-        ])
-            .into();
+        let mut group: BarGroup =
+            (&[
+                ("a", 0),
+                ("b", 1),
+                ("c", 2),
+                ("d", 3),
+                ("e", 4),
+                ("f", 5),
+                ("g", 6),
+                ("h", 7),
+                ("i", 8),
+            ])
+                .into();
         group = group.label(Line::from("Group").alignment(Alignment::Center));
 
         let chart = BarChart::default()
@@ -1196,17 +1141,18 @@ mod tests {
 
     #[test]
     fn three_lines_double_width() {
-        let mut group = BarGroup::from(&[
-            ("a", 0),
-            ("b", 1),
-            ("c", 2),
-            ("d", 3),
-            ("e", 4),
-            ("f", 5),
-            ("g", 6),
-            ("h", 7),
-            ("i", 8),
-        ]);
+        let mut group =
+            BarGroup::from(&[
+                ("a", 0),
+                ("b", 1),
+                ("c", 2),
+                ("d", 3),
+                ("e", 4),
+                ("f", 5),
+                ("g", 6),
+                ("h", 7),
+                ("i", 8),
+            ]);
         group = group.label(Line::from("Group").alignment(Alignment::Center));
 
         let chart = BarChart::default()
@@ -1229,18 +1175,19 @@ mod tests {
 
     #[test]
     fn four_lines() {
-        let mut group: BarGroup = (&[
-            ("a", 0),
-            ("b", 1),
-            ("c", 2),
-            ("d", 3),
-            ("e", 4),
-            ("f", 5),
-            ("g", 6),
-            ("h", 7),
-            ("i", 8),
-        ])
-            .into();
+        let mut group: BarGroup =
+            (&[
+                ("a", 0),
+                ("b", 1),
+                ("c", 2),
+                ("d", 3),
+                ("e", 4),
+                ("f", 5),
+                ("g", 6),
+                ("h", 7),
+                ("i", 8),
+            ])
+                .into();
         group = group.label(Line::from("Group").alignment(Alignment::Center));
 
         let chart = BarChart::default()
@@ -1303,9 +1250,7 @@ mod tests {
 
         assert_buffer_eq!(
             buffer,
-            Buffer::with_lines(vec![
-                "        ▁ ▁ ▁ ▁ ▂ ▂ ▂ ▃ ▃ ▃ ▃ ▄ ▄ ▄ ▄ ▅ ▅ ▅ ▆ ▆ ▆ ▆ ▇ ▇ ▇ █",
-            ])
+            Buffer::with_lines(vec!["        ▁ ▁ ▁ ▁ ▂ ▂ ▂ ▃ ▃ ▃ ▃ ▄ ▄ ▄ ▄ ▅ ▅ ▅ ▆ ▆ ▆ ▆ ▇ ▇ ▇ █",])
         );
     }
 

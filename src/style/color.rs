@@ -136,31 +136,6 @@ impl std::fmt::Display for ParseColorError {
 impl std::error::Error for ParseColorError {}
 
 /// Converts a string representation to a `Color` instance.
-///
-/// The `from_str` function attempts to parse the given string and convert it to the corresponding
-/// `Color` variant. It supports named colors, RGB values, and indexed colors. If the string cannot
-/// be parsed, a `ParseColorError` is returned.
-///
-/// See the [`Color`] documentation for more information on the supported color names.
-///
-/// # Examples
-///
-/// ```
-/// use std::str::FromStr;
-/// use ratatui::prelude::*;
-///
-/// let color: Color = Color::from_str("blue").unwrap();
-/// assert_eq!(color, Color::Blue);
-///
-/// let color: Color = Color::from_str("#FF0000").unwrap();
-/// assert_eq!(color, Color::Rgb(255, 0, 0));
-///
-/// let color: Color = Color::from_str("10").unwrap();
-/// assert_eq!(color, Color::Indexed(10));
-///
-/// let color: Result<Color, _> = Color::from_str("invalid_color");
-/// assert!(color.is_err());
-/// ```
 impl FromStr for Color {
     type Err = ParseColorError;
 

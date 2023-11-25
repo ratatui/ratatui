@@ -67,12 +67,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     crossterm::terminal::enable_raw_mode()?;
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::with_options(
-        backend,
-        TerminalOptions {
-            viewport: Viewport::Inline(8),
-        },
-    )?;
+    let mut terminal =
+        Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(8),
+            },
+        )?;
 
     let (tx, rx) = mpsc::channel();
     input_handling(tx.clone());
@@ -220,10 +221,11 @@ fn ui(f: &mut Frame, downloads: &Downloads) {
     let block = Block::default().title(block::Title::from("Progress").alignment(Alignment::Center));
     f.render_widget(block, size);
 
-    let chunks = Layout::default()
-        .constraints([Constraint::Length(2), Constraint::Length(4)])
-        .margin(1)
-        .split(size);
+    let chunks =
+        Layout::default()
+            .constraints([Constraint::Length(2), Constraint::Length(4)])
+            .margin(1)
+            .split(size);
 
     // total progress
     let done = NUM_DOWNLOADS - downloads.pending.len() - downloads.in_progress.len();
@@ -251,10 +253,7 @@ fn ui(f: &mut Frame, downloads: &Downloads) {
                         .fg(Color::LightGreen)
                         .add_modifier(Modifier::BOLD),
                 ),
-                Span::raw(format!(
-                    " ({}ms)",
-                    download.started_at.elapsed().as_millis()
-                )),
+                Span::raw(format!(" ({}ms)", download.started_at.elapsed().as_millis())),
             ]))
         })
         .collect();

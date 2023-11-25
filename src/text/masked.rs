@@ -6,21 +6,6 @@ use std::{
 use super::Text;
 
 /// A wrapper around a string that is masked when displayed.
-///
-/// The masked string is displayed as a series of the same character.
-/// This might be used to display a password field or similar secure data.
-///
-/// # Examples
-///
-/// ```rust
-/// use ratatui::{prelude::*, widgets::*};
-///
-/// let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
-/// let password = Masked::new("12345", 'x');
-///
-/// Paragraph::new(password).render(buffer.area, &mut buffer);
-/// assert_eq!(buffer, Buffer::with_lines(vec!["xxxxx"]));
-/// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Masked<'a> {
     inner: Cow<'a, str>,

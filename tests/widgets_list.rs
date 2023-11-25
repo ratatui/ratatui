@@ -63,32 +63,33 @@ fn widgets_list_should_truncate_items() {
         expected: Buffer,
     }
 
-    let cases = vec![
-        // An item is selected
-        TruncateTestCase {
-            selected: Some(0),
-            items: vec![
-                ListItem::new("A very long line"),
-                ListItem::new("A very long line"),
-            ],
-            expected: Buffer::with_lines(vec![
-                format!(">> A ve{}  ", symbols::line::VERTICAL),
-                format!("   A ve{}  ", symbols::line::VERTICAL),
-            ]),
-        },
-        // No item is selected
-        TruncateTestCase {
-            selected: None,
-            items: vec![
-                ListItem::new("A very long line"),
-                ListItem::new("A very long line"),
-            ],
-            expected: Buffer::with_lines(vec![
-                format!("A very {}  ", symbols::line::VERTICAL),
-                format!("A very {}  ", symbols::line::VERTICAL),
-            ]),
-        },
-    ];
+    let cases =
+        vec![
+            // An item is selected
+            TruncateTestCase {
+                selected: Some(0),
+                items: vec![
+                    ListItem::new("A very long line"),
+                    ListItem::new("A very long line"),
+                ],
+                expected: Buffer::with_lines(vec![
+                    format!(">> A ve{}  ", symbols::line::VERTICAL),
+                    format!("   A ve{}  ", symbols::line::VERTICAL),
+                ]),
+            },
+            // No item is selected
+            TruncateTestCase {
+                selected: None,
+                items: vec![
+                    ListItem::new("A very long line"),
+                    ListItem::new("A very long line"),
+                ],
+                expected: Buffer::with_lines(vec![
+                    format!("A very {}  ", symbols::line::VERTICAL),
+                    format!("A very {}  ", symbols::line::VERTICAL),
+                ]),
+            },
+        ];
     for case in cases {
         let mut state = ListState::default();
         state.select(case.selected);

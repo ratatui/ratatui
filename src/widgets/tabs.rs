@@ -9,23 +9,6 @@ use crate::{
 };
 
 /// A widget that displays a horizontal set of Tabs with a single tab selected.
-///
-/// Each tab title is stored as a [`Line`] which can be individually styled. The selected tab is set
-/// using [`Tabs::select`] and styled using [`Tabs::highlight_style`]. The divider can be customized
-/// with [`Tabs::divider`].
-///
-/// # Example
-///
-/// ```
-/// use ratatui::{prelude::*, widgets::*};
-///
-/// Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
-///     .block(Block::default().title("Tabs").borders(Borders::ALL))
-///     .style(Style::default().white())
-///     .highlight_style(Style::default().yellow())
-///     .select(2)
-///     .divider(symbols::DOT);
-/// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Tabs<'a> {
     /// A block to wrap this widget in if necessary
@@ -44,23 +27,6 @@ pub struct Tabs<'a> {
 
 impl<'a> Tabs<'a> {
     /// Creates new `Tabs` from their titles.
-    ///
-    /// `titles` can be a [`Vec`] of [`&str`], [`String`] or anything that can be converted into
-    /// [`Line`]. As such, titles can be styled independently.
-    ///
-    /// # Examples
-    ///
-    /// Basic titles.
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs};
-    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]);
-    /// ```
-    ///
-    /// Styled titles
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs};
-    /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
-    /// ```
     pub fn new<T>(titles: Vec<T>) -> Tabs<'a>
     where
         T: Into<Line<'a>>,
@@ -109,21 +75,6 @@ impl<'a> Tabs<'a> {
     }
 
     /// Sets the string to use as tab divider.
-    ///
-    /// By default, the divider is a pipe (`|`).
-    ///
-    /// # Examples
-    ///
-    /// Use a dot (`•`) as separator.
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs, symbols};
-    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider(symbols::DOT);
-    /// ```
-    /// Use dash (`-`) as separator.
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::Tabs, symbols};
-    /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider("-");
-    /// ```
     pub fn divider<T>(mut self, divider: T) -> Tabs<'a>
     where
         T: Into<Span<'a>>,

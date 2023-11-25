@@ -28,14 +28,15 @@ fn barchart_can_be_stylized() {
         })
         .unwrap();
 
-    let mut expected = Buffer::with_lines(vec![
-        "      ██ ",
-        "   ▅▅ ██ ",
-        "▂▂ ██ ██ ",
-        "1█ 2█ 3█ ",
-        "A  B  C  ",
-        "         ",
-    ]);
+    let mut expected =
+        Buffer::with_lines(vec![
+            "      ██ ",
+            "   ▅▅ ██ ",
+            "▂▂ ██ ██ ",
+            "1█ 2█ 3█ ",
+            "A  B  C  ",
+            "         ",
+        ]);
     for y in area.y..area.height {
         // background
         for x in area.x..area.width {
@@ -61,11 +62,12 @@ fn barchart_can_be_stylized() {
 
 #[test]
 fn block_can_be_stylized() -> io::Result<()> {
-    let block = Block::default()
-        .title("Title".light_blue())
-        .on_cyan()
-        .cyan()
-        .borders(Borders::ALL);
+    let block =
+        Block::default()
+            .title("Title".light_blue())
+            .on_cyan()
+            .cyan()
+            .borders(Borders::ALL);
 
     let area = Rect::new(0, 0, 8, 3);
     let mut terminal = Terminal::new(TestBackend::new(11, 4))?;
@@ -73,12 +75,8 @@ fn block_can_be_stylized() -> io::Result<()> {
         f.render_widget(block, area);
     })?;
 
-    let mut expected = Buffer::with_lines(vec![
-        "┌Title─┐   ",
-        "│      │   ",
-        "└──────┘   ",
-        "           ",
-    ]);
+    let mut expected =
+        Buffer::with_lines(vec!["┌Title─┐   ", "│      │   ", "└──────┘   ", "           "]);
     for x in area.x..area.width {
         for y in area.y..area.height {
             expected

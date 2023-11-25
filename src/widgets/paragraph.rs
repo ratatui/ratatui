@@ -20,29 +20,6 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 }
 
 /// A widget to display some text.
-///
-/// # Example
-///
-/// ```
-/// use ratatui::{prelude::*, widgets::*};
-///
-/// let text = vec![
-///     Line::from(vec![
-///         Span::raw("First"),
-///         Span::styled("line",Style::new().green().italic()),
-///         ".".into(),
-///     ]),
-///     Line::from("Second line".red()),
-///     "Third line".into(),
-/// ];
-/// Paragraph::new(text)
-///     .block(Block::new()
-///         .title("Paragraph")
-///         .borders(Borders::ALL))
-///     .style(Style::new().white().on_black())
-///     .alignment(Alignment::Center)
-///     .wrap(Wrap { trim: true });
-/// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Paragraph<'a> {
     /// A block to wrap the widget in
@@ -60,32 +37,6 @@ pub struct Paragraph<'a> {
 }
 
 /// Describes how to wrap text across lines.
-///
-/// ## Examples
-///
-/// ```
-/// use ratatui::{prelude::*, widgets::*};
-///
-/// let bullet_points = Text::from(r#"Some indented points:
-///     - First thing goes here and is long so that it wraps
-///     - Here is another point that is long enough to wrap"#);
-///
-/// // With leading spaces trimmed (window width of 30 chars):
-/// Paragraph::new(bullet_points.clone()).wrap(Wrap { trim: true });
-/// // Some indented points:
-/// // - First thing goes here and is
-/// // long so that it wraps
-/// // - Here is another point that
-/// // is long enough to wrap
-///
-/// // But without trimming, indentation is preserved:
-/// Paragraph::new(bullet_points).wrap(Wrap { trim: false });
-/// // Some indented points:
-/// //     - First thing goes here
-/// // and is long so that it wraps
-/// //     - Here is another point
-/// // that is long enough to wrap
-/// ```
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Wrap {
     /// Should leading whitespace be trimmed
@@ -97,22 +48,6 @@ type Vertical = u16;
 
 impl<'a> Paragraph<'a> {
     /// Creates a new [`Paragraph`] widget with the given text.
-    ///
-    /// The `text` parameter can be a [`Text`] or any type that can be converted into a [`Text`]. By
-    /// default, the text is styled with [`Style::default()`], not wrapped, and aligned to the left.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// let paragraph = Paragraph::new("Hello, world!");
-    /// let paragraph = Paragraph::new(String::from("Hello, world!"));
-    /// let paragraph = Paragraph::new(Text::raw("Hello, world!"));
-    /// let paragraph = Paragraph::new(
-    ///     Text::styled("Hello, world!", Style::default()));
-    /// let paragraph = Paragraph::new(
-    ///     Line::from(vec!["Hello, ".into(), "world!".red()]));
-    /// ```
     pub fn new<T>(text: T) -> Paragraph<'a>
     where
         T: Into<Text<'a>>,
@@ -128,16 +63,6 @@ impl<'a> Paragraph<'a> {
     }
 
     /// Surrounds the [`Paragraph`] widget with a [`Block`].
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// let paragraph = Paragraph::new("Hello, world!")
-    ///    .block(Block::default()
-    ///         .title("Paragraph")
-    ///         .borders(Borders::ALL));
-    /// ```
     pub fn block(mut self, block: Block<'a>) -> Paragraph<'a> {
         self.block = Some(block);
         self
@@ -161,16 +86,6 @@ impl<'a> Paragraph<'a> {
     }
 
     /// Sets the wrapping configuration for the widget.
-    ///
-    /// See [`Wrap`] for more information on the different options.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// let paragraph = Paragraph::new("Hello, world!")
-    ///   .wrap(Wrap { trim: true });
-    /// ```
     pub fn wrap(mut self, wrap: Wrap) -> Paragraph<'a> {
         self.wrap = Some(wrap);
         self
@@ -193,17 +108,6 @@ impl<'a> Paragraph<'a> {
     }
 
     /// Set the text alignment for the given paragraph
-    ///
-    /// The alignment is a variant of the [`Alignment`] enum which can be one of Left, Right, or
-    /// Center.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// let paragraph = Paragraph::new("Hello World")
-    ///     .alignment(Alignment::Center);
-    /// ```
     pub fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {
         self.alignment = alignment;
         self

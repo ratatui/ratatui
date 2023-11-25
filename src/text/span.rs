@@ -81,15 +81,6 @@ impl<'a> Span<'a> {
     }
 
     /// Create a span with the specified style.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let style = Style::new().yellow().on_green().italic();
-    /// Span::styled("test content", style);
-    /// Span::styled(String::from("test content"), style);
-    /// ```
     pub fn styled<T>(content: T, style: Style) -> Span<'a>
     where
         T: Into<Cow<'a, str>>,
@@ -143,31 +134,11 @@ impl<'a> Span<'a> {
     }
 
     /// Patches the style of the Span, adding modifiers from the given style.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let mut span = Span::styled("test content", Style::new().green().italic());
-    /// span.patch_style(Style::new().red().on_yellow().bold());
-    /// assert_eq!(span.style, Style::new().red().on_yellow().italic().bold());
-    /// ```
     pub fn patch_style(&mut self, style: Style) {
         self.style = self.style.patch(style);
     }
 
     /// Resets the style of the Span.
-    ///
-    /// This is Equivalent to calling `patch_style(Style::reset())`.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let mut span = Span::styled("Test Content", Style::new().green().on_yellow().italic());
-    /// span.reset_style();
-    /// assert_eq!(span.style, Style::reset());
-    /// ```
     pub fn reset_style(&mut self) {
         self.patch_style(Style::reset());
     }

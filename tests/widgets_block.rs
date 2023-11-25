@@ -434,13 +434,14 @@ fn widgets_block_title_alignment_bottom() {
         let backend = TestBackend::new(15, 2);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let block = Block::default()
-            .title(
-                Title::from(Span::styled("Title", Style::default()))
-                    .alignment(alignment)
-                    .position(Position::Bottom),
-            )
-            .borders(borders);
+        let block =
+            Block::default()
+                .title(
+                    Title::from(Span::styled("Title", Style::default()))
+                        .alignment(alignment)
+                        .position(Position::Bottom),
+                )
+                .borders(borders);
 
         let area = Rect {
             x: 1,

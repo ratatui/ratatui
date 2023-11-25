@@ -95,40 +95,6 @@ macro_rules! modifier {
 }
 
 /// An extension trait for styling objects.
-///
-/// For any type that implements `Stylize`, the provided methods in this trait can be used to style
-/// the type further. This trait is automatically implemented for any type that implements the
-/// [`Styled`] trait which e.g.: [`String`], [`&str`], [`Span`], [`Style`] and many Widget types.
-///
-/// This results in much more ergonomic styling of text and widgets. For example, instead of
-/// writing:
-///
-/// ```rust,ignore
-/// let text = Span::styled("Hello", Style::default().fg(Color::Red).bg(Color::Blue));
-/// ```
-///
-/// You can write:
-///
-/// ```rust,ignore
-/// let text = "Hello".red().on_blue();
-/// ```
-///
-/// This trait implements a provided method for every color as both foreground and background
-/// (prefixed by `on_`), and all modifiers as both an additive and subtractive modifier (prefixed
-/// by `not_`). The `reset()` method is also provided to reset the style.
-///
-/// # Examples
-/// ```
-/// use ratatui::{prelude::*, widgets::*};
-///
-/// let span = "hello".red().on_blue().bold();
-/// let line = Line::from(vec![
-///     "hello".red().on_blue().bold(),
-///     "world".green().on_yellow().not_bold(),
-/// ]);
-/// let paragraph = Paragraph::new(line).italic().underlined();
-/// let block = Block::default().title("Title").borders(Borders::ALL).on_white().bold();
-/// ```
 pub trait Stylize<'a, T>: Sized {
     #[must_use = "`bg` returns the modified style without modifying the original"]
     fn bg(self, color: Color) -> T;

@@ -112,11 +112,12 @@ impl<'a> Bar<'a> {
         default_value_style: Style,
         bar_style: Style,
     ) {
-        let text = if let Some(text) = self.text_value {
-            text
-        } else {
-            self.value.to_string()
-        };
+        let text =
+            if let Some(text) = self.text_value {
+                text
+            } else {
+                self.value.to_string()
+            };
 
         if !text.is_empty() {
             let style = default_value_style.patch(self.value_style);

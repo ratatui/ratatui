@@ -39,9 +39,6 @@ pub struct Label<'a> {
 }
 
 /// A single layer of the canvas.
-///
-/// This allows the canvas to be drawn in multiple layers. This is useful if you want to draw
-/// multiple shapes on the canvas in specific order.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 struct Layer {
     // a string of characters representing the grid. This will be wrapped to the width of the grid
@@ -354,35 +351,6 @@ pub struct Painter<'a, 'b> {
 
 impl<'a, 'b> Painter<'a, 'b> {
     /// Convert the (x, y) coordinates to location of a point on the grid
-    ///
-    /// (x, y) coordinates are expressed in the coordinate system of the canvas. The origin is in
-    /// the lower left corner of the canvas (unlike most other coordinates in Ratatui where the
-    /// origin is the upper left corner). The x and y bounds of the canvas define the specific area
-    /// of some coordinate system that will be drawn on the canvas. The resolution of the grid is
-    /// used to convert the (x, y) coordinates to the location of a point on the grid.
-    ///
-    /// The grid coordinates are expressed in the coordinate system of the grid. The origin is in
-    /// the top left corner of the grid. The x and y bounds of the grid are always [0, width - 1]
-    /// and [0, height - 1] respectively. The resolution of the grid is used to convert the (x, y)
-    /// coordinates to the location of a point on the grid.
-    ///
-    /// # Examples:
-    /// ```
-    /// use ratatui::{prelude::*, widgets::canvas::*};
-    ///
-    /// let mut ctx = Context::new(2, 2, [1.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
-    /// let mut painter = Painter::from(&mut ctx);
-    /// let point = painter.get_point(1.0, 0.0);
-    /// assert_eq!(point, Some((0, 7)));
-    /// let point = painter.get_point(1.5, 1.0);
-    /// assert_eq!(point, Some((1, 3)));
-    /// let point = painter.get_point(0.0, 0.0);
-    /// assert_eq!(point, None);
-    /// let point = painter.get_point(2.0, 2.0);
-    /// assert_eq!(point, Some((3, 0)));
-    /// let point = painter.get_point(1.0, 2.0);
-    /// assert_eq!(point, Some((0, 0)));
-    /// ```
     pub fn get_point(&self, x: f64, y: f64) -> Option<(usize, usize)> {
         let left = self.context.x_bounds[0];
         let right = self.context.x_bounds[1];
@@ -402,15 +370,6 @@ impl<'a, 'b> Painter<'a, 'b> {
     }
 
     /// Paint a point of the grid
-    ///
-    /// # Examples:
-    /// ```
-    /// use ratatui::{prelude::*, widgets::canvas::*};
-    ///
-    /// let mut ctx = Context::new(1, 1, [0.0, 2.0], [0.0, 2.0], symbols::Marker::Braille);
-    /// let mut painter = Painter::from(&mut ctx);
-    /// let cell = painter.paint(1, 3, Color::Red);
-    /// ```
     pub fn paint(&mut self, x: usize, y: usize, color: Color) {
         self.context.grid.paint(x, y, color);
     }
@@ -632,9 +591,6 @@ where
     }
 
     /// Define the viewport of the canvas.
-    ///
-    /// If you were to "zoom" to a certain part of the world you may want to choose different
-    /// bounds.
     pub fn y_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
         self.y_bounds = bounds;
         self

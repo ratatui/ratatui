@@ -29,13 +29,14 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 }
 
 fn draw_first_tab(f: &mut Frame, app: &mut App, area: Rect) {
-    let chunks = Layout::default()
-        .constraints([
-            Constraint::Length(9),
-            Constraint::Min(8),
-            Constraint::Length(7),
-        ])
-        .split(area);
+    let chunks =
+        Layout::default()
+            .constraints([
+                Constraint::Length(9),
+                Constraint::Min(8),
+                Constraint::Length(7),
+            ])
+            .split(area);
     draw_gauges(f, app, chunks[0]);
     draw_charts(f, app, chunks[1]);
     draw_text(f, chunks[2]);
@@ -78,15 +79,16 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
         });
     f.render_widget(sparkline, chunks[1]);
 
-    let line_gauge = LineGauge::default()
-        .block(Block::default().title("LineGauge:"))
-        .gauge_style(Style::default().fg(Color::Magenta))
-        .line_set(if app.enhanced_graphics {
-            symbols::line::THICK
-        } else {
-            symbols::line::NORMAL
-        })
-        .ratio(app.progress);
+    let line_gauge =
+        LineGauge::default()
+            .block(Block::default().title("LineGauge:"))
+            .gauge_style(Style::default().fg(Color::Magenta))
+            .line_set(if app.enhanced_graphics {
+                symbols::line::THICK
+            } else {
+                symbols::line::NORMAL
+            })
+            .ratio(app.progress);
     f.render_widget(line_gauge, chunks[2]);
 }
 
@@ -176,10 +178,7 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
                 format!("{}", app.signals.window[0]),
                 Style::default().add_modifier(Modifier::BOLD),
             ),
-            Span::raw(format!(
-                "{}",
-                (app.signals.window[0] + app.signals.window[1]) / 2.0
-            )),
+            Span::raw(format!("{}", (app.signals.window[0] + app.signals.window[1]) / 2.0)),
             Span::styled(
                 format!("{}", app.signals.window[1]),
                 Style::default().add_modifier(Modifier::BOLD),
@@ -382,17 +381,18 @@ fn draw_third_tab(f: &mut Frame, _app: &mut App, area: Rect) {
         Color::LightCyan,
         Color::White,
     ];
-    let items: Vec<Row> = colors
-        .iter()
-        .map(|c| {
-            let cells = vec![
-                Cell::from(Span::raw(format!("{c:?}: "))),
-                Cell::from(Span::styled("Foreground", Style::default().fg(*c))),
-                Cell::from(Span::styled("Background", Style::default().bg(*c))),
-            ];
-            Row::new(cells)
-        })
-        .collect();
+    let items: Vec<Row> =
+        colors
+            .iter()
+            .map(|c| {
+                let cells = vec![
+                    Cell::from(Span::raw(format!("{c:?}: "))),
+                    Cell::from(Span::styled("Foreground", Style::default().fg(*c))),
+                    Cell::from(Span::styled("Background", Style::default().bg(*c))),
+                ];
+                Row::new(cells)
+            })
+            .collect();
     let table = Table::new(items)
         .block(Block::default().title("Colors").borders(Borders::ALL))
         .widths([

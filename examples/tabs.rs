@@ -87,14 +87,14 @@ fn ui(f: &mut Frame, app: &App) {
 
     let block = Block::default().on_white().black();
     f.render_widget(block, size);
-    let titles = app
-        .titles
-        .iter()
-        .map(|t| {
-            let (first, rest) = t.split_at(1);
-            Line::from(vec![first.yellow(), rest.green()])
-        })
-        .collect();
+    let titles =
+        app.titles
+            .iter()
+            .map(|t| {
+                let (first, rest) = t.split_at(1);
+                Line::from(vec![first.yellow(), rest.green()])
+            })
+            .collect();
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title("Tabs"))
         .select(app.index)

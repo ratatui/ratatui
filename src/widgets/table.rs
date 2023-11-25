@@ -308,72 +308,18 @@ impl<'a> Table<'a> {
     }
 
     /// Creates a custom block around a [`Table`] widget.
-    ///
-    /// The `block` parameter is of type [`Block`]. This holds the specified block to be
-    /// created around the [`Table`]
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// let table = Table::new(vec![
-    ///     Row::new(vec![
-    ///         Cell::from("Cell1"),
-    ///         Cell::from("Cell2")
-    ///     ]),
-    ///     Row::new(vec![
-    ///         Cell::from("Cell3"),
-    ///         Cell::from("Cell4")
-    ///     ]),
-    /// ]).block(Block::default().title("Table"));
-    /// ```
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
 
     /// Creates a header for a [`Table`] widget.
-    ///
-    /// The `header` parameter is of type [`Row`] and this holds the cells to be displayed at the
-    /// top of the [`Table`]
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// let table = Table::new(vec![
-    ///     Row::new(vec![
-    ///         Cell::from("Cell1"),
-    ///         Cell::from("Cell2")
-    ///     ])
-    /// ]).header(
-    ///     Row::new(vec![
-    ///         Cell::from("Header Cell 1"),
-    ///         Cell::from("Header Cell 2")
-    ///     ])
-    /// );
-    /// ```
     pub fn header(mut self, header: Row<'a>) -> Self {
         self.header = Some(header);
         self
     }
 
     /// Set the widths of the columns of the [`Table`] widget.
-    ///
-    /// The `widths` parameter accepts `AsRef<[Constraint]>`` which can be an array, slice, or Vec.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// let table = Table::new(vec![]).widths([Constraint::Length(5), Constraint::Length(5)]);
-    /// let table = Table::new(vec![]).widths(&[Constraint::Length(5), Constraint::Length(5)]);
-    ///
-    /// // widths could also be computed at runtime
-    /// let widths = vec![Constraint::Length(5), Constraint::Length(5)];
-    /// let table = Table::new(vec![]).widths(widths.clone());
-    /// let table = Table::new(vec![]).widths(&widths);
-    /// ```
     pub fn widths<T: AsRef<[Constraint]>>(mut self, widths: T) -> Self {
         let widths = widths.as_ref().to_vec();
         let between_0_and_100 = |&w| match w {

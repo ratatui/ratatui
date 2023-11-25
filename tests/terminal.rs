@@ -34,17 +34,19 @@ fn swap_buffer_clears_prev_buffer() {
 fn terminal_draw_returns_the_completed_frame() -> Result<(), Box<dyn Error>> {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend)?;
-    let frame = terminal.draw(|f| {
-        let paragraph = Paragraph::new("Test");
-        f.render_widget(paragraph, f.size());
-    })?;
+    let frame =
+        terminal.draw(|f| {
+            let paragraph = Paragraph::new("Test");
+            f.render_widget(paragraph, f.size());
+        })?;
     assert_eq!(frame.buffer.get(0, 0).symbol(), "T");
     assert_eq!(frame.area, Rect::new(0, 0, 10, 10));
     terminal.backend_mut().resize(8, 8);
-    let frame = terminal.draw(|f| {
-        let paragraph = Paragraph::new("test");
-        f.render_widget(paragraph, f.size());
-    })?;
+    let frame =
+        terminal.draw(|f| {
+            let paragraph = Paragraph::new("test");
+            f.render_widget(paragraph, f.size());
+        })?;
     assert_eq!(frame.buffer.get(0, 0).symbol(), "t");
     assert_eq!(frame.area, Rect::new(0, 0, 8, 8));
     Ok(())
@@ -57,22 +59,20 @@ fn terminal_insert_before_moves_viewport() -> Result<(), Box<dyn Error>> {
     // viewport down to accommodate the new lines.
 
     let backend = TestBackend::new(20, 5);
-    let mut terminal = Terminal::with_options(
-        backend,
-        TerminalOptions {
-            viewport: Viewport::Inline(1),
-        },
-    )?;
+    let mut terminal =
+        Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(1),
+            },
+        )?;
 
     // insert_before cannot guarantee the contents of the viewport remain unharmed
     // by potential scrolling as such it is necessary to call draw afterwards to
     // redraw the contents of the viewport over the newly designated area.
     terminal.insert_before(2, |buf| {
-        Paragraph::new(vec![
-            "------ Line 1 ------".into(),
-            "------ Line 2 ------".into(),
-        ])
-        .render(buf.area, buf);
+        Paragraph::new(vec!["------ Line 1 ------".into(), "------ Line 2 ------".into()])
+            .render(buf.area, buf);
     })?;
 
     terminal.draw(|f| {
@@ -102,12 +102,13 @@ fn terminal_insert_before_scrolls_on_large_input() -> Result<(), Box<dyn Error>>
     // until all have been added to the buffer.
 
     let backend = TestBackend::new(20, 5);
-    let mut terminal = Terminal::with_options(
-        backend,
-        TerminalOptions {
-            viewport: Viewport::Inline(1),
-        },
-    )?;
+    let mut terminal =
+        Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(1),
+            },
+        )?;
 
     terminal.insert_before(5, |buf| {
         Paragraph::new(vec![
@@ -148,12 +149,13 @@ fn terminal_insert_before_scrolls_on_many_inserts() -> Result<(), Box<dyn Error>
     // been removed.
 
     let backend = TestBackend::new(20, 5);
-    let mut terminal = Terminal::with_options(
-        backend,
-        TerminalOptions {
-            viewport: Viewport::Inline(1),
-        },
-    )?;
+    let mut terminal =
+        Terminal::with_options(
+            backend,
+            TerminalOptions {
+                viewport: Viewport::Inline(1),
+            },
+        )?;
 
     terminal.insert_before(1, |buf| {
         Paragraph::new(vec!["------ Line 1 ------".into()]).render(buf.area, buf);

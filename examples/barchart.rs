@@ -162,33 +162,31 @@ fn create_groups<'a>(app: &'a App, combine_values_and_labels: bool) -> Vec<BarGr
         .iter()
         .enumerate()
         .map(|(i, &month)| {
-            let bars: Vec<Bar> = app
-                .companies
-                .iter()
-                .map(|c| {
-                    let mut bar = Bar::default()
-                        .value(c.revenue[i])
-                        .style(c.bar_style)
-                        .value_style(
-                            Style::default()
-                                .bg(c.bar_style.fg.unwrap())
-                                .fg(Color::Black),
-                        );
+            let bars: Vec<Bar> =
+                app.companies
+                    .iter()
+                    .map(|c| {
+                        let mut bar = Bar::default()
+                            .value(c.revenue[i])
+                            .style(c.bar_style)
+                            .value_style(
+                                Style::default()
+                                    .bg(c.bar_style.fg.unwrap())
+                                    .fg(Color::Black),
+                            );
 
-                    if combine_values_and_labels {
-                        bar = bar.text_value(format!(
-                            "{} ({:.1} M)",
-                            c.label,
-                            (c.revenue[i] as f64) / 1000.
-                        ));
-                    } else {
-                        bar = bar
-                            .text_value(format!("{:.1}", (c.revenue[i] as f64) / 1000.))
-                            .label(c.label.into());
-                    }
-                    bar
-                })
-                .collect();
+                        if combine_values_and_labels {
+                            bar = bar.text_value(
+                                format!("{} ({:.1} M)", c.label, (c.revenue[i] as f64) / 1000.)
+                            );
+                        } else {
+                            bar = bar
+                                .text_value(format!("{:.1}", (c.revenue[i] as f64) / 1000.))
+                                .label(c.label.into());
+                        }
+                        bar
+                    })
+                    .collect();
             BarGroup::default()
                 .label(Line::from(month).alignment(Alignment::Center))
                 .bars(&bars)
@@ -260,18 +258,9 @@ fn draw_legend(f: &mut Frame, area: Rect) {
                 .add_modifier(Modifier::BOLD)
                 .fg(Color::White),
         )),
-        Line::from(Span::styled(
-            "- Company A",
-            Style::default().fg(Color::Green),
-        )),
-        Line::from(Span::styled(
-            "- Company B",
-            Style::default().fg(Color::Yellow),
-        )),
-        Line::from(vec![Span::styled(
-            "- Company C",
-            Style::default().fg(Color::White),
-        )]),
+        Line::from(Span::styled("- Company A", Style::default().fg(Color::Green))),
+        Line::from(Span::styled("- Company B", Style::default().fg(Color::Yellow))),
+        Line::from(vec![Span::styled("- Company C", Style::default().fg(Color::White))]),
     ];
 
     let block = Block::default()
