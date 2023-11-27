@@ -65,7 +65,6 @@
 //!
 //! - [rust-tui-template]
 //! - [ratatui-async-template] (book and template)
-//! - [simple-tui-rs]
 //!
 //! Every application built with `ratatui` needs to implement the following steps:
 //!
@@ -297,7 +296,6 @@
 //! [Styling Text]: https://ratatui.rs/how-to/render/style-text.html
 //! [rust-tui-template]: https://github.com/ratatui-org/rust-tui-template
 //! [ratatui-async-template]: https://ratatui-org.github.io/ratatui-async-template/
-//! [simple-tui-rs]: https://github.com/pmsanford/simple-tui-rs
 //! [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples
 //! [git-cliff]: https://github.com/orhun/git-cliff
 //! [Conventional Commits]: https://www.conventionalcommits.org
