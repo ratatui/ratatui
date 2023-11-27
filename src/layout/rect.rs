@@ -6,6 +6,10 @@ use std::{
 
 use crate::prelude::*;
 
+mod offset;
+
+pub use offset::*;
+
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
 /// area they are supposed to render to.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
@@ -103,6 +107,26 @@ impl Rect {
                 width: self.width.saturating_sub(doubled_margin_horizontal),
                 height: self.height.saturating_sub(doubled_margin_vertical),
             }
+        }
+    }
+
+    /// Moves the `Rect` without modifying its size.
+    ///
+    /// Moves the `Rect` according to the given offset without modifying its [`width`](Rect::width)
+    /// or [`height`](Rect::height).
+    /// - Positive `x` moves the whole `Rect` to the right, negative to the left.
+    /// - Positive `y` moves the whole `Rect` to the bottom, negative to the top.
+    ///
+    /// See [`Offset`] for details.
+    pub fn offset(self, offset: Offset) -> Rect {
+        Rect {
+            x: i32::from(self.x)
+                .saturating_add(offset.x)
+                .clamp(0, (u16::MAX - self.width) as i32) as u16,
+            y: i32::from(self.y)
+                .saturating_add(offset.y)
+                .clamp(0, (u16::MAX - self.height) as i32) as u16,
+            ..self
         }
     }
 
@@ -204,6 +228,39 @@ mod tests {
         assert_eq!(
             Rect::new(1, 2, 3, 4).inner(&Margin::new(1, 2)),
             Rect::new(2, 4, 1, 0)
+        );
+    }
+
+    #[test]
+    fn offset() {
+        assert_eq!(
+            Rect::new(1, 2, 3, 4).offset(Offset { x: 5, y: 6 }),
+            Rect::new(6, 8, 3, 4),
+        );
+    }
+
+    #[test]
+    fn negative_offset() {
+        assert_eq!(
+            Rect::new(4, 3, 3, 4).offset(Offset { x: -2, y: -1 }),
+            Rect::new(2, 2, 3, 4),
+        );
+    }
+
+    #[test]
+    fn negative_offset_saturate() {
+        assert_eq!(
+            Rect::new(1, 2, 3, 4).offset(Offset { x: -5, y: -6 }),
+            Rect::new(0, 0, 3, 4),
+        );
+    }
+
+    /// Offsets a [`Rect`] making it go outside [`u16::MAX`], it should keep its size.
+    #[test]
+    fn offset_saturate_max() {
+        assert_eq!(
+            Rect::new(u16::MAX - 500, u16::MAX - 500, 100, 100).offset(Offset { x: 1000, y: 1000 }),
+            Rect::new(u16::MAX - 100, u16::MAX - 100, 100, 100),
         );
     }
 
