@@ -11,7 +11,7 @@
 //!
 //! Additionally, a [`TestBackend`] is provided for testing purposes.
 //!
-//! See the [Backend Comparison] section of the [Ratatui Book] for more details on the different
+//! See the [Backend Comparison] section of the [Ratatui Website] for more details on the different
 //! backends.
 //!
 //! Each backend supports a number of features, such as [raw mode](#raw-mode), [alternate
@@ -98,7 +98,7 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/tree/main/examples#readme
 //! [Backend Comparison]:
 //!     https://ratatui-org.github.io/ratatui-book/concepts/backends/comparison.html
-//! [Ratatui Book]: https://ratatui-org.github.io/ratatui-book
+//! [Ratatui Website]: https://ratatui-org.github.io/ratatui-book
 use std::io;
 
 use strum::{Display, EnumString};
