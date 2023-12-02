@@ -39,6 +39,7 @@ unicode-segmentation = "1.10"
 unicode-width = "0.1"
 document-features = { version = "0.2.7", optional = true }
 lru = "0.12.0"
+stability = "0.1.1"
 
 [dev-dependencies]
 anyhow = "1.0.71"
@@ -88,6 +89,15 @@ widget-calendar = ["dep:time"]
 #! on Windows 7.
 ## enables the backend code that sets the underline color.
 underline-color = ["dep:crossterm"]
+
+#! The following features are unstable and may change in the future:
+
+## Enable all unstable features.
+unstable = ["unstable-segment-size"]
+
+## Enables the [`Layout::segment_size`](crate::layout::Layout::segment_size) method which is experimental and may change in the
+## future. See [Issue #536](https://github.com/ratatui-org/ratatui/issues/536) for more details.
+unstable-segment-size = []
 
 [package.metadata.docs.rs]
 all-features = true

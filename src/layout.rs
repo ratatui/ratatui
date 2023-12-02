@@ -160,11 +160,32 @@ pub enum Alignment {
     Right,
 }
 
+/// Option for segment size preferences
+///
+/// This controls how the space is distributed when the constraints are satisfied. By default, the
+/// last chunk is expanded to fill the remaining space, but this can be changed to prefer equal
+/// chunks or to not distribute extra space at all (which is the default used for laying out the
+/// columns for [`Table`] widgets).
+///
+/// Note: If you're using this feature please help us come up with a good name. See [Issue
+/// #536](https://github.com/ratatui-org/ratatui/issues/536) for more information.
+///
+/// [`Table`]: crate::widgets::Table
+#[stability::unstable(
+    feature = "segment-size",
+    reason = "The name for this feature is not final and may change in the future",
+    issue = "https://github.com/ratatui-org/ratatui/issues/536"
+)]
 #[derive(Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
-pub(crate) enum SegmentSize {
+pub enum SegmentSize {
+    /// prefer equal chunks if other constraints are all satisfied
     EvenDistribution,
+
+    /// the last chunk is expanded to fill the remaining space
     #[default]
     LastTakesRemainder,
+
+    /// extra space is not distributed
     None,
 }
 
@@ -176,6 +197,7 @@ pub(crate) enum SegmentSize {
 /// - a set of constraints (length, ratio, percentage, min, max)
 /// - a margin (horizontal and vertical), the space between the edge of the main area and the split
 ///   areas
+/// - extra options for segment size preferences
 ///
 /// The algorithm used to compute the layout is based on the [`cassowary-rs`] solver. It is a simple
 /// linear solver that can be used to solve linear equations and inequalities. In our case, we
@@ -184,7 +206,9 @@ pub(crate) enum SegmentSize {
 /// many of the constraints as possible.
 ///
 /// By default, the last chunk of the computed layout is expanded to fill the remaining space. To
-/// avoid this behavior, add an unused `Constraint::Min(0)` as the last constraint.
+/// avoid this behavior, add an unused `Constraint::Min(0)` as the last constraint. There is also
+/// an unstable API to prefer equal chunks if other constraints are all satisfied, see
+/// [`SegmentSize`] for more info.
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
 /// calls with the same parameters are faster. The cache is a simple HashMap, and grows
@@ -371,7 +395,22 @@ impl Layout {
     }
 
     /// Builder method to set whether chunks should be of equal size.
-    pub(crate) const fn segment_size(mut self, segment_size: SegmentSize) -> Layout {
+    ///
+    /// This determines how the space is distributed when the constraints are satisfied. By default,
+    /// the last chunk is expanded to fill the remaining space, but this can be changed to prefer
+    /// equal chunks or to not distribute extra space at all (which is the default used for laying
+    /// out the columns for [`Table`] widgets).
+    ///
+    /// Note: If you're using this feature please help us come up with a good name. See [Issue
+    /// #536](https://github.com/ratatui-org/ratatui/issues/536) for more information.
+    ///
+    /// [`Table`]: crate::widgets::Table
+    #[stability::unstable(
+        feature = "segment-size",
+        reason = "The name for this feature is not final and may change in the future",
+        issue = "https://github.com/ratatui-org/ratatui/issues/536"
+    )]
+    pub const fn segment_size(mut self, segment_size: SegmentSize) -> Layout {
         self.segment_size = segment_size;
         self
     }
@@ -477,8 +516,8 @@ fn try_split(area: Rect, layout: &Layout) -> Result<Rc<[Rect]>, AddConstraintErr
     if let Some(first) = elements.first() {
         solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
     }
-    // ensure the last element touches the right/bottom edge of the area
     if layout.segment_size != SegmentSize::None {
+        // ensure the last element touches the right/bottom edge of the area
         if let Some(last) = elements.last() {
             solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
         }
