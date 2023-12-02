@@ -86,7 +86,6 @@ render "Hello World!". The full code for this example which contains a little mo
 
 - [rust-tui-template]
 - [ratatui-async-template] (book and template)
-- [simple-tui-rs]
 
 Every application built with `ratatui` needs to implement the following steps:
 
@@ -300,7 +299,6 @@ Running this example produces the following output:
 [Styling Text]: https://ratatui.rs/how-to/render/style-text.html
 [rust-tui-template]: https://github.com/ratatui-org/rust-tui-template
 [ratatui-async-template]: https://ratatui-org.github.io/ratatui-async-template/
-[simple-tui-rs]: https://github.com/pmsanford/simple-tui-rs
 [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples
 [git-cliff]: https://github.com/orhun/git-cliff
 [Conventional Commits]: https://www.conventionalcommits.org
@@ -405,7 +403,6 @@ be installed with `cargo install cargo-make`).
   `ratatui::style::Color`
 - [rust-tui-template](https://github.com/ratatui-org/rust-tui-template) — A template for
   bootstrapping a Rust TUI application with Tui-rs & crossterm
-- [simple-tui-rs](https://github.com/pmsanford/simple-tui-rs) — A simple example tui-rs app
 - [tui-builder](https://github.com/jkelleyrtp/tui-builder) — Batteries-included MVC framework for
   Tui-rs + Crossterm apps
 - [tui-clap](https://github.com/kegesch/tui-clap-rs) — Use clap-rs together with Tui-rs
