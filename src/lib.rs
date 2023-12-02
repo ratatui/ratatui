@@ -22,9 +22,9 @@
 //!
 //! # Ratatui
 //!
-//! [Ratatui] is a crate for cooking up terminal user interfaces in rust. It is a lightweight
-//! library that provides a set of widgets and utilities to build complex rust TUIs. Ratatui was
-//! forked from the [Tui-rs crate] in 2023 in order to continue its development.
+//! [Ratatui] is a crate for cooking up terminal user interfaces in Rust. It is a lightweight
+//! library that provides a set of widgets and utilities to build complex Rust TUIs. Ratatui was
+//! forked from the [tui-rs] crate in 2023 in order to continue its development.
 //!
 //! ## Installation
 //!
@@ -63,7 +63,7 @@
 //! [Application Patterns] and [Hello World tutorial] sections in the [Ratatui Book] and the various
 //! [Examples]. There are also several starter templates available:
 //!
-//! - [rust-tui-template]
+//! - [ratatui-template]
 //! - [ratatui-async-template] (book and template)
 //!
 //! Every application built with `ratatui` needs to implement the following steps:
@@ -284,20 +284,20 @@
     doc = "[`calendar`]: widgets::calendar::Monthly"
 )]
 //!
-//! [Ratatui Book]: https://ratatui.rs
-//! [Installation]: https://ratatui.rs/installation.html
-//! [Rendering]: https://ratatui.rs/concepts/rendering/index.html
-//! [Application Patterns]: https://ratatui.rs/concepts/application_patterns/index.html
-//! [Hello World tutorial]: https://ratatui.rs/tutorial/hello_world.html
-//! [Backends]: https://ratatui.rs/concepts/backends/index.html
-//! [Widgets]: https://ratatui.rs/how-to/widgets/index.html
-//! [Handling Events]: https://ratatui.rs/concepts/event_handling.html
-//! [Layout]: https://ratatui.rs/concepts/layout/index.html
-//! [Styling Text]: https://ratatui.rs/how-to/render/style-text.html
-//! [rust-tui-template]: https://github.com/ratatui-org/rust-tui-template
-//! [ratatui-async-template]: https://ratatui-org.github.io/ratatui-async-template/
+//! [Ratatui Book]: https://ratatui.rs/introduction/
+//! [Installation]: https://ratatui.rs/installation/
+//! [Rendering]: https://ratatui.rs/concepts/rendering/
+//! [Application Patterns]: https://ratatui.rs/concepts/application-patterns/
+//! [Hello World tutorial]: https://ratatui.rs/tutorials/hello-world/
+//! [Backends]: https://ratatui.rs/concepts/backends/
+//! [Widgets]: https://ratatui.rs/how-to/widgets/
+//! [Handling Events]: https://ratatui.rs/concepts/event-handling/
+//! [Layout]: https://ratatui.rs/how-to/layout/
+//! [Styling Text]: https://ratatui.rs/how-to/render/style-text/
+//! [ratatui-template]: https://github.com/ratatui-org/ratatui-template
+//! [ratatui-async-template]: https://ratatui-org.github.io/ratatui-async-template
 //! [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples
-//! [git-cliff]: https://github.com/orhun/git-cliff
+//! [git-cliff]: https://git-cliff.org
 //! [Conventional Commits]: https://www.conventionalcommits.org
 //! [API Documentation]: https://docs.rs/ratatui
 //! [Changelog]: https://github.com/ratatui-org/ratatui/blob/main/CHANGELOG.md
@@ -323,7 +323,7 @@
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
 //! [Termwiz]: https://crates.io/crates/termwiz
-//! [Tui-rs crate]: https://crates.io/crates/tui
+//! [tui-rs]: https://crates.io/crates/tui
 //! [hello_world.rs]: https://github.com/ratatui-org/ratatui/blob/main/examples/hello_world.rs
 //! [Crate Badge]: https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square
 //! [CI Badge]:
