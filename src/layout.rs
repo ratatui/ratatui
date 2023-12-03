@@ -182,7 +182,7 @@ pub enum Alignment {
     reason = "The name for this feature is not final and may change in the future",
     issue = "https://github.com/ratatui-org/ratatui/issues/536"
 )]
-#[derive(Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
 pub enum SegmentSize {
     /// prefer equal chunks if other constraints are all satisfied
     EvenDistribution,

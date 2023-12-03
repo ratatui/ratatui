@@ -267,6 +267,8 @@ pub struct Table<'a> {
     rows: Vec<Row<'a>>,
     /// Decides when to allocate spacing for the row selection
     highlight_spacing: HighlightSpacing,
+    /// Controls how to distribute extra space among the columns
+    segment_size: SegmentSize,
 }
 
 impl<'a> Table<'a> {
@@ -304,6 +306,7 @@ impl<'a> Table<'a> {
             header: None,
             rows: rows.into_iter().collect(),
             highlight_spacing: HighlightSpacing::default(),
+            segment_size: SegmentSize::None,
         }
     }
 
@@ -433,7 +436,7 @@ impl<'a> Table<'a> {
         let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(constraints)
-            .segment_size(SegmentSize::None)
+            .segment_size(self.segment_size)
             .split(Rect::new(0, 0, max_width, 1));
         layout
             .iter()
@@ -479,6 +482,35 @@ impl<'a> Table<'a> {
             }
         }
         (start, end)
+    }
+
+    /// Builder method to control how extra space is distributed amongst columns.
+    ///
+    /// This determines how the space is distributed when the constraints are satisfied. By default,
+    /// the extra space is not distributed at all.  But this can be changed to distribute all extra
+    /// space to the last column or to distribute it equally.
+    ///
+    /// # Examples
+    /// Create a table that needs at least 30 columns to display.  Any extra space will be assigned
+    /// to the last column.
+    #[cfg_attr(feature = "unstable", doc = " ```")]
+    #[cfg_attr(not(feature = "unstable"), doc = " ```ignore")]
+    /// # use ratatui::layout::Constraint;
+    /// # use ratatui::layout::SegmentSize;
+    /// # use ratatui::widgets::Table;
+    /// let widths = [Constraint::Min(10), Constraint::Min(10), Constraint::Min(10)];
+    /// let table = Table::new([])
+    ///     .widths(widths)
+    ///     .segment_size(SegmentSize::LastTakesRemainder);
+    /// ```
+    #[stability::unstable(
+        feature = "segment-size",
+        reason = "The name for this feature is not final and may change in the future",
+        issue = "https://github.com/ratatui-org/ratatui/issues/536"
+    )]
+    pub const fn segment_size(mut self, segment_size: SegmentSize) -> Self {
+        self.segment_size = segment_size;
+        self
     }
 }
 
@@ -714,11 +746,14 @@ mod tests {
         #[track_caller]
         fn test(
             constraints: &[Constraint],
+            segment_size: SegmentSize,
             available_width: u16,
             selection_width: u16,
             expected: &[(u16, u16)],
         ) {
-            let table = Table::new(vec![]).widths(constraints);
+            let table = Table::new(vec![])
+                .segment_size(segment_size)
+                .widths(constraints);
 
             let widths = table.get_columns_widths(available_width, selection_width);
             assert_eq!(widths, expected);
@@ -727,31 +762,79 @@ mod tests {
         #[test]
         fn length_constraint() {
             // without selection, more than needed width
-            test(&[Length(4), Length(4)], 20, 0, &[(0, 4), (5, 4)]);
+            test(
+                &[Length(4), Length(4)],
+                SegmentSize::None,
+                20,
+                0,
+                &[(0, 4), (5, 4)],
+            );
 
             // with selection, more than needed width
-            test(&[Length(4), Length(4)], 20, 3, &[(3, 4), (8, 4)]);
+            test(
+                &[Length(4), Length(4)],
+                SegmentSize::None,
+                20,
+                3,
+                &[(3, 4), (8, 4)],
+            );
 
             // without selection, less than needed width
-            test(&[Length(4), Length(4)], 7, 0, &[(0, 4), (5, 2)]);
+            test(
+                &[Length(4), Length(4)],
+                SegmentSize::None,
+                7,
+                0,
+                &[(0, 4), (5, 2)],
+            );
 
             // with selection, less than needed width
-            test(&[Length(4), Length(4)], 7, 3, &[(3, 4), (7, 0)]);
+            test(
+                &[Length(4), Length(4)],
+                SegmentSize::None,
+                7,
+                3,
+                &[(3, 4), (7, 0)],
+            );
         }
 
         #[test]
         fn max_constraint() {
             // without selection, more than needed width
-            test(&[Max(4), Max(4)], 20, 0, &[(0, 4), (5, 4)]);
+            test(
+                &[Max(4), Max(4)],
+                SegmentSize::None,
+                20,
+                0,
+                &[(0, 4), (5, 4)],
+            );
 
             // with selection, more than needed width
-            test(&[Max(4), Max(4)], 20, 3, &[(3, 4), (8, 4)]);
+            test(
+                &[Max(4), Max(4)],
+                SegmentSize::None,
+                20,
+                3,
+                &[(3, 4), (8, 4)],
+            );
 
             // without selection, less than needed width
-            test(&[Max(4), Max(4)], 7, 0, &[(0, 4), (5, 2)]);
+            test(
+                &[Max(4), Max(4)],
+                SegmentSize::None,
+                7,
+                0,
+                &[(0, 4), (5, 2)],
+            );
 
             // with selection, less than needed width
-            test(&[Max(4), Max(4)], 7, 3, &[(3, 3), (7, 0)]);
+            test(
+                &[Max(4), Max(4)],
+                SegmentSize::None,
+                7,
+                3,
+                &[(3, 3), (7, 0)],
+            );
         }
 
         #[test]
@@ -761,54 +844,153 @@ mod tests {
             // constraint and not split it with all available constraints
 
             // without selection, more than needed width
-            test(&[Min(4), Min(4)], 20, 0, &[(0, 4), (5, 4)]);
+            test(
+                &[Min(4), Min(4)],
+                SegmentSize::None,
+                20,
+                0,
+                &[(0, 4), (5, 4)],
+            );
 
             // with selection, more than needed width
-            test(&[Min(4), Min(4)], 20, 3, &[(3, 4), (8, 4)]);
+            test(
+                &[Min(4), Min(4)],
+                SegmentSize::None,
+                20,
+                3,
+                &[(3, 4), (8, 4)],
+            );
 
             // without selection, less than needed width
             // allocates no spacer
-            test(&[Min(4), Min(4)], 7, 0, &[(0, 4), (4, 3)]);
+            test(
+                &[Min(4), Min(4)],
+                SegmentSize::None,
+                7,
+                0,
+                &[(0, 4), (4, 3)],
+            );
 
             // with selection, less than needed width
             // allocates no selection and no spacer
-            test(&[Min(4), Min(4)], 7, 3, &[(0, 4), (4, 3)]);
+            test(
+                &[Min(4), Min(4)],
+                SegmentSize::None,
+                7,
+                3,
+                &[(0, 4), (4, 3)],
+            );
         }
 
         #[test]
         fn percentage_constraint() {
             // without selection, more than needed width
-            test(&[Percentage(30), Percentage(30)], 20, 0, &[(0, 6), (7, 6)]);
+            test(
+                &[Percentage(30), Percentage(30)],
+                SegmentSize::None,
+                20,
+                0,
+                &[(0, 6), (7, 6)],
+            );
 
             // with selection, more than needed width
-            test(&[Percentage(30), Percentage(30)], 20, 3, &[(3, 6), (10, 6)]);
+            test(
+                &[Percentage(30), Percentage(30)],
+                SegmentSize::None,
+                20,
+                3,
+                &[(3, 6), (10, 6)],
+            );
 
             // without selection, less than needed width
             // rounds from positions: [0.0, 0.0, 2.1, 3.1, 5.2, 7.0]
-            test(&[Percentage(30), Percentage(30)], 7, 0, &[(0, 2), (3, 2)]);
+            test(
+                &[Percentage(30), Percentage(30)],
+                SegmentSize::None,
+                7,
+                0,
+                &[(0, 2), (3, 2)],
+            );
 
             // with selection, less than needed width
             // rounds from positions: [0.0, 3.0, 5.1, 6.1, 7.0, 7.0]
-            test(&[Percentage(30), Percentage(30)], 7, 3, &[(3, 2), (6, 1)]);
+            test(
+                &[Percentage(30), Percentage(30)],
+                SegmentSize::None,
+                7,
+                3,
+                &[(3, 2), (6, 1)],
+            );
         }
 
         #[test]
         fn ratio_constraint() {
             // without selection, more than needed width
             // rounds from positions: [0.00, 0.00, 6.67, 7.67, 14.33]
-            test(&[Ratio(1, 3), Ratio(1, 3)], 20, 0, &[(0, 7), (8, 6)]);
+            test(
+                &[Ratio(1, 3), Ratio(1, 3)],
+                SegmentSize::None,
+                20,
+                0,
+                &[(0, 7), (8, 6)],
+            );
 
             // with selection, more than needed width
             // rounds from positions: [0.00, 3.00, 10.67, 17.33, 20.00]
-            test(&[Ratio(1, 3), Ratio(1, 3)], 20, 3, &[(3, 7), (11, 6)]);
+            test(
+                &[Ratio(1, 3), Ratio(1, 3)],
+                SegmentSize::None,
+                20,
+                3,
+                &[(3, 7), (11, 6)],
+            );
 
             // without selection, less than needed width
             // rounds from positions: [0.00, 2.33, 3.33, 5.66, 7.00]
-            test(&[Ratio(1, 3), Ratio(1, 3)], 7, 0, &[(0, 2), (3, 3)]);
+            test(
+                &[Ratio(1, 3), Ratio(1, 3)],
+                SegmentSize::None,
+                7,
+                0,
+                &[(0, 2), (3, 3)],
+            );
 
             // with selection, less than needed width
             // rounds from positions: [0.00, 3.00, 5.33, 6.33, 7.00, 7.00]
-            test(&[Ratio(1, 3), Ratio(1, 3)], 7, 3, &[(3, 2), (6, 1)]);
+            test(
+                &[Ratio(1, 3), Ratio(1, 3)],
+                SegmentSize::None,
+                7,
+                3,
+                &[(3, 2), (6, 1)],
+            );
+        }
+
+        /// When more width is available than requested, the behavior is controlled by segment_size
+        #[test]
+        fn underconstrained() {
+            let widths = [Min(10), Min(10), Min(1)];
+            test(
+                &widths[..],
+                SegmentSize::None,
+                62,
+                0,
+                &[(0, 10), (11, 10), (22, 1)],
+            );
+            test(
+                &widths[..],
+                SegmentSize::LastTakesRemainder,
+                62,
+                0,
+                &[(0, 10), (11, 10), (22, 40)],
+            );
+            test(
+                &widths[..],
+                SegmentSize::EvenDistribution,
+                62,
+                0,
+                &[(0, 20), (21, 20), (42, 20)],
+            );
         }
     }
 
