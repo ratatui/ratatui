@@ -295,7 +295,7 @@ mod test {
         backend::TestBackend,
         style::{Color, Modifier, Stylize},
         text::{Line, Span},
-        widgets::Borders,
+        widgets::{block::Position, Borders},
         Terminal,
     };
 
@@ -475,6 +475,20 @@ mod test {
                 "│worlds!    │",
                 "└───────────┘",
             ]),
+        );
+    }
+
+    #[test]
+    fn test_render_paragraph_with_block_with_bottom_title_and_border() {
+        let block = Block::default()
+            .title("Title")
+            .title_position(Position::Bottom)
+            .borders(Borders::BOTTOM);
+        let paragraph = Paragraph::new("Hello, world!").block(block);
+
+        test_case(
+            &paragraph,
+            Buffer::with_lines(vec!["Hello, world!  ", "Title──────────"]),
         );
     }
 

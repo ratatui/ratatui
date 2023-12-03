@@ -508,14 +508,15 @@ impl<'a> Block<'a> {
             inner.x = inner.x.saturating_add(1).min(inner.right());
             inner.width = inner.width.saturating_sub(1);
         }
-        if self.borders.intersects(Borders::TOP) || !self.titles.is_empty() {
+        if self.borders.intersects(Borders::TOP) || self.have_title_at_position(Position::Top) {
             inner.y = inner.y.saturating_add(1).min(inner.bottom());
             inner.height = inner.height.saturating_sub(1);
         }
         if self.borders.intersects(Borders::RIGHT) {
             inner.width = inner.width.saturating_sub(1);
         }
-        if self.borders.intersects(Borders::BOTTOM) {
+        if self.borders.intersects(Borders::BOTTOM) || self.have_title_at_position(Position::Bottom)
+        {
             inner.height = inner.height.saturating_sub(1);
         }
 
@@ -530,6 +531,12 @@ impl<'a> Block<'a> {
             .saturating_sub(self.padding.top + self.padding.bottom);
 
         inner
+    }
+
+    fn have_title_at_position(&self, position: Position) -> bool {
+        self.titles
+            .iter()
+            .any(|title| title.position.unwrap_or(self.titles_position) == position)
     }
 
     /// Defines the padding inside a `Block`.
@@ -937,6 +944,78 @@ mod tests {
                 .inner(Rect::new(0, 0, 0, 1)),
             Rect::new(0, 1, 0, 0),
         );
+    }
+
+    #[test]
+    fn inner_takes_into_account_border_and_title() {
+        let test_rect = Rect::new(0, 0, 0, 2);
+
+        let top_top = Block::default()
+            .title(Title::from("Test").position(Position::Top))
+            .borders(Borders::TOP);
+        assert_eq!(top_top.inner(test_rect), Rect::new(0, 1, 0, 1));
+
+        let top_bot = Block::default()
+            .title(Title::from("Test").position(Position::Top))
+            .borders(Borders::BOTTOM);
+        assert_eq!(top_bot.inner(test_rect), Rect::new(0, 1, 0, 0));
+
+        let bot_top = Block::default()
+            .title(Title::from("Test").position(Position::Bottom))
+            .borders(Borders::TOP);
+        assert_eq!(bot_top.inner(test_rect), Rect::new(0, 1, 0, 0));
+
+        let bot_bot = Block::default()
+            .title(Title::from("Test").position(Position::Bottom))
+            .borders(Borders::BOTTOM);
+        assert_eq!(bot_bot.inner(test_rect), Rect::new(0, 0, 0, 1));
+    }
+
+    #[test]
+    fn have_title_at_position_takes_into_account_all_positioning_declarations() {
+        let block = Block::default();
+        assert!(!block.have_title_at_position(Position::Top));
+        assert!(!block.have_title_at_position(Position::Bottom));
+
+        let block = Block::default().title(Title::from("Test").position(Position::Top));
+        assert!(block.have_title_at_position(Position::Top));
+        assert!(!block.have_title_at_position(Position::Bottom));
+
+        let block = Block::default().title(Title::from("Test").position(Position::Bottom));
+        assert!(!block.have_title_at_position(Position::Top));
+        assert!(block.have_title_at_position(Position::Bottom));
+
+        let block = Block::default()
+            .title(Title::from("Test").position(Position::Top))
+            .title_position(Position::Bottom);
+        assert!(block.have_title_at_position(Position::Top));
+        assert!(!block.have_title_at_position(Position::Bottom));
+
+        let block = Block::default()
+            .title(Title::from("Test").position(Position::Bottom))
+            .title_position(Position::Top);
+        assert!(!block.have_title_at_position(Position::Top));
+        assert!(block.have_title_at_position(Position::Bottom));
+
+        let block = Block::default()
+            .title(Title::from("Test").position(Position::Top))
+            .title(Title::from("Test").position(Position::Bottom));
+        assert!(block.have_title_at_position(Position::Top));
+        assert!(block.have_title_at_position(Position::Bottom));
+
+        let block = Block::default()
+            .title(Title::from("Test").position(Position::Top))
+            .title(Title::from("Test"))
+            .title_position(Position::Bottom);
+        assert!(block.have_title_at_position(Position::Top));
+        assert!(block.have_title_at_position(Position::Bottom));
+
+        let block = Block::default()
+            .title(Title::from("Test"))
+            .title(Title::from("Test").position(Position::Bottom))
+            .title_position(Position::Top);
+        assert!(block.have_title_at_position(Position::Top));
+        assert!(block.have_title_at_position(Position::Bottom));
     }
 
     #[test]
