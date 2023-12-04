@@ -347,19 +347,19 @@ mod tests {
     #[test]
     fn render_no_padding() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding("", "");
-        assert_buffer_eq!(
-            render(tabs, Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec!["Tab1│Tab2│Tab3│Tab4           "])
-        );
+        let mut expected = Buffer::with_lines(vec!["Tab1│Tab2│Tab3│Tab4           "]);
+        // first tab selected
+        expected.set_style(Rect::new(0, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
+        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
     }
 
     #[test]
     fn render_more_padding() {
-        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding("   ", "  ");
-        assert_buffer_eq!(
-            render(tabs, Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec!["   Tab1  │   Tab2  │   Tab3  │"])
-        );
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding("---", "++");
+        let mut expected = Buffer::with_lines(vec!["---Tab1++│---Tab2++│---Tab3++│"]);
+        // first tab selected
+        expected.set_style(Rect::new(3, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
+        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
     }
 
     #[test]
