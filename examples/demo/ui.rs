@@ -289,18 +289,20 @@ fn draw_second_tab(f: &mut Frame, app: &mut App, area: Rect) {
         };
         Row::new(vec![s.name, s.location, s.status]).style(style)
     });
-    let table = Table::new(rows)
-        .header(
-            Row::new(vec!["Server", "Location", "Status"])
-                .style(Style::default().fg(Color::Yellow))
-                .bottom_margin(1),
-        )
-        .block(Block::default().title("Servers").borders(Borders::ALL))
-        .widths([
+    let table = Table::new(
+        rows,
+        [
             Constraint::Length(15),
             Constraint::Length(15),
             Constraint::Length(10),
-        ]);
+        ],
+    )
+    .header(
+        Row::new(vec!["Server", "Location", "Status"])
+            .style(Style::default().fg(Color::Yellow))
+            .bottom_margin(1),
+    )
+    .block(Block::default().title("Servers").borders(Borders::ALL));
     f.render_widget(table, chunks[0]);
 
     let map = Canvas::default()
@@ -393,12 +395,14 @@ fn draw_third_tab(f: &mut Frame, _app: &mut App, area: Rect) {
             Row::new(cells)
         })
         .collect();
-    let table = Table::new(items)
-        .block(Block::default().title("Colors").borders(Borders::ALL))
-        .widths([
+    let table = Table::new(
+        items,
+        [
             Constraint::Ratio(1, 3),
             Constraint::Ratio(1, 3),
             Constraint::Ratio(1, 3),
-        ]);
+        ],
+    )
+    .block(Block::default().title("Colors").borders(Borders::ALL));
     f.render_widget(table, chunks[0]);
 }

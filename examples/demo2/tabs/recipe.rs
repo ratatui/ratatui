@@ -146,10 +146,9 @@ fn render_ingredients(selected_row: usize, area: Rect, buf: &mut Buffer) {
     let rows = INGREDIENTS.iter().map(|&i| i.into()).collect_vec();
     let theme = THEME.recipe;
     StatefulWidget::render(
-        Table::new(rows)
+        Table::new(rows, [Constraint::Length(7), Constraint::Length(30)])
             .block(Block::new().style(theme.ingredients))
             .header(Row::new(vec!["Qty", "Ingredient"]).style(theme.ingredients_header))
-            .widths([Constraint::Length(7), Constraint::Length(30)])
             .highlight_style(Style::new().light_yellow()),
         area,
         buf,

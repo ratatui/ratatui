@@ -11,7 +11,8 @@ github with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - Unreleased (0.24.1)
-  - `Table::widths()` now accepts `AsRef<[Constraint]>`
+  - `Table::new()` now requires specifying the widths
+  -`Table::widths()` now accepts `IntoIterator<Item = AsRef<Constraint>>`
   - Layout::new() now accepts direction and constraint parameters
   - The default `Tabs::highlight_style` is now `Style::new().reversed()`
 
@@ -46,9 +47,39 @@ widget in the default configuration would not show any indication of the selecte
 
 [#635]: https://github.com/ratatui-org/ratatui/pull/635
 
-### `Table::widths()` now accepts `AsRef<[Constraint]>` ([#628])
+### The default `Tabs::highlight_style` is now `Style::new().reversed()` ([#635])
 
-[#628]: https://github.com/ratatui-org/ratatui/pull/628
+Previously the default highlight style for tabs was `Style::default()`, which meant that a `Tabs`
+widget in the default configuration would not show any indication of the selected tab.
+
+
+### `Table::new()` now requires specifying the widths of the columrs (#664)
+
+Previously `Table`s could be constructed without widths. In almost all cases this is an error.
+A new widths parameter is now manadatory on `Table::new()`. Existing code of the form:
+
+```rust
+Table::new(rows).widths(widths)
+```
+
+Should be updated to:
+
+```rust
+Table::new(rows, widths)
+```
+
+For ease of automated replacement in cases where the amount of code broken by this change is large
+or complex, it may be convenient to replace `Table::new` with `Table::default().rows`.
+
+```rust
+Table::new(rows).block(block).widths(widths);
+// becomes
+Table::default().rows(rows).widths(widths)
+```
+
+### `Table::widths()` now accepts `IntoIterator<Item = AsRef<Constraint>>` ([#663])
+
+[#663]: https://github.com/ratatui-org/ratatui/pull/663
 
 Previously `Table::widths()` took a slice (`&'a [Constraint]`). This change will introduce clippy
 `needless_borrow` warnings for places where slices are passed to this method. To fix these, remove

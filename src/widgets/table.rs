@@ -204,28 +204,33 @@ impl HighlightSpacing {
 /// ```rust
 /// use ratatui::{prelude::*, widgets::*};
 ///
-/// Table::new(vec![
-///     // Row can be created from simple strings.
-///     Row::new(vec!["Row11", "Row12", "Row13"]),
-///     // You can style the entire row.
-///     Row::new(vec!["Row21", "Row22", "Row23"]).style(Style::default().fg(Color::Blue)),
-///     // If you need more control over the styling you may need to create Cells directly
-///     Row::new(vec![
-///         Cell::from("Row31"),
-///         Cell::from("Row32").style(Style::default().fg(Color::Yellow)),
-///         Cell::from(Line::from(vec![
-///             Span::raw("Row"),
-///             Span::styled("33", Style::default().fg(Color::Green))
-///         ])),
-///     ]),
-///     // If a Row need to display some content over multiple lines, you just have to change
-///     // its height.
-///     Row::new(vec![
-///         Cell::from("Row\n41"),
-///         Cell::from("Row\n42"),
-///         Cell::from("Row\n43"),
-///     ]).height(2),
-/// ])
+/// Table::new(
+///     vec![
+///         // Row can be created from simple strings.
+///         Row::new(vec!["Row11", "Row12", "Row13"]),
+///         // You can style the entire row.
+///         Row::new(vec!["Row21", "Row22", "Row23"]).style(Style::default().fg(Color::Blue)),
+///         // If you need more control over the styling you may need to create Cells directly
+///         Row::new(vec![
+///             Cell::from("Row31"),
+///             Cell::from("Row32").style(Style::default().fg(Color::Yellow)),
+///             Cell::from(Line::from(vec![
+///                 Span::raw("Row"),
+///                 Span::styled("33", Style::default().fg(Color::Green))
+///             ])),
+///         ]),
+///         // If a Row need to display some content over multiple lines, you just have to change
+///         // its height.
+///         Row::new(vec![
+///             Cell::from("Row\n41"),
+///             Cell::from("Row\n42"),
+///             Cell::from("Row\n43"),
+///         ]).height(2),
+///     ],
+///     // Columns widths are constrained in the same way as Layout...
+///     [Constraint::Length(5), Constraint::Length(5), Constraint::Length(10)])
+/// // ...and they can be separated by a fixed spacing.
+/// .column_spacing(1)
 /// // You can set the style of the entire Table.
 /// .style(Style::default().fg(Color::White))
 /// // It has an optional header, which is simply a Row always visible at the top.
@@ -238,10 +243,6 @@ impl HighlightSpacing {
 /// )
 /// // As any other widget, a Table can be wrapped in a Block.
 /// .block(Block::default().title("Table"))
-/// // Columns widths are constrained in the same way as Layout...
-/// .widths(&[Constraint::Length(5), Constraint::Length(5), Constraint::Length(10)])
-/// // ...and they can be separated by a fixed spacing.
-/// .column_spacing(1)
 /// // If you wish to highlight a row in any specific way when it is selected...
 /// .highlight_style(Style::default().add_modifier(Modifier::BOLD))
 /// // ...and potentially show a symbol in front of the selection.
@@ -275,31 +276,41 @@ impl<'a> Table<'a> {
     /// Creates a new [`Table`] widget with the given rows.
     ///
     /// The `rows` parameter is a Vector of [`Row`], this holds the data to be displayed by the
-    /// table
+    /// table.
+    ///
+    /// The `widths` parameter is an array (or any other type that implements IntoIterator) of
+    /// [`Constraint`]s, this holds the widths of each column. This parameter was added in 0.25.0.
     ///
     /// # Examples
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let table = Table::new(vec![
-    ///     Row::new(vec![
-    ///         Cell::from("Cell1"),
-    ///         Cell::from("Cell2")
-    ///     ]),
-    ///     Row::new(vec![
-    ///         Cell::from("Cell3"),
-    ///         Cell::from("Cell4")
-    ///     ]),
-    /// ]);
+    /// let table = Table::new(
+    ///     vec![
+    ///         Row::new(vec![
+    ///             Cell::from("Cell1"),
+    ///             Cell::from("Cell2")
+    ///         ]),
+    ///         Row::new(vec![
+    ///             Cell::from("Cell3"),
+    ///             Cell::from("Cell4")
+    ///         ]),
+    ///     ],
+    ///     [Constraint::Length(5), Constraint::Length(5)]
+    /// );
     /// ```
-    pub fn new<T>(rows: T) -> Self
+    pub fn new<R, C>(rows: R, widths: C) -> Self
     where
-        T: IntoIterator<Item = Row<'a>>,
+        R: IntoIterator<Item = Row<'a>>,
+        C: IntoIterator,
+        C::Item: AsRef<Constraint>,
     {
+        let widths = widths.into_iter().map(|c| *c.as_ref()).collect_vec();
+        ensure_percentages_less_than_100(&widths);
         Self {
             block: None,
             style: Style::default(),
-            widths: vec![],
+            widths,
             column_spacing: 1,
             highlight_style: Style::default(),
             highlight_symbol: None,
@@ -319,16 +330,20 @@ impl<'a> Table<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let table = Table::new(vec![
-    ///     Row::new(vec![
-    ///         Cell::from("Cell1"),
-    ///         Cell::from("Cell2")
-    ///     ]),
-    ///     Row::new(vec![
-    ///         Cell::from("Cell3"),
-    ///         Cell::from("Cell4")
-    ///     ]),
-    /// ]).block(Block::default().title("Table"));
+    /// let table = Table::new(
+    ///     vec![
+    ///         Row::new(vec![
+    ///             Cell::from("Cell1"),
+    ///             Cell::from("Cell2")
+    ///         ]),
+    ///         Row::new(vec![
+    ///             Cell::from("Cell3"),
+    ///             Cell::from("Cell4")
+    ///         ]),
+    ///     ],
+    ///     [Constraint::Length(5), Constraint::Length(5)]
+    /// )
+    /// .block(Block::default().title("Table"));
     /// ```
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
@@ -344,12 +359,13 @@ impl<'a> Table<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let table = Table::new(vec![
-    ///     Row::new(vec![
-    ///         Cell::from("Cell1"),
-    ///         Cell::from("Cell2")
-    ///     ])
-    /// ]).header(
+    /// let table = Table::new(
+    ///     vec![
+    ///         Row::new(vec![Cell::from("Cell1"), Cell::from("Cell2")])
+    ///     ],
+    ///     [Constraint::Length(20), Constraint::Length(20)]
+    /// )
+    /// .header(
     ///     Row::new(vec![
     ///         Cell::from("Header Cell 1"),
     ///         Cell::from("Header Cell 2")
@@ -370,13 +386,13 @@ impl<'a> Table<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let table = Table::new(vec![]).widths([Constraint::Length(5), Constraint::Length(5)]);
-    /// let table = Table::new(vec![]).widths(&[Constraint::Length(5), Constraint::Length(5)]);
+    /// let table = Table::default().widths([Constraint::Length(5), Constraint::Length(5)]);
+    /// let table = Table::default().widths(&[Constraint::Length(5), Constraint::Length(5)]);
     ///
     /// // widths could also be computed at runtime
     /// let widths = vec![Constraint::Length(5), Constraint::Length(5)];
-    /// let table = Table::new(vec![]).widths(widths.clone());
-    /// let table = Table::new(vec![]).widths(&widths);
+    /// let table = Table::default().widths(widths.clone());
+    /// let table = Table::default().widths(&widths);
     /// ```
     pub fn widths<I, C>(mut self, widths: I) -> Self
     where
@@ -384,14 +400,7 @@ impl<'a> Table<'a> {
         C: AsRef<Constraint>,
     {
         let widths = widths.into_iter().map(|c| *c.as_ref()).collect_vec();
-        let between_0_and_100 = |&w| match w {
-            Constraint::Percentage(p) => p <= 100,
-            _ => true,
-        };
-        assert!(
-            widths.iter().all(between_0_and_100),
-            "Percentages should be between 0 and 100 inclusively."
-        );
+        ensure_percentages_less_than_100(&widths);
         self.widths = widths;
         self
     }
@@ -491,6 +500,7 @@ impl<'a> Table<'a> {
     /// space to the last column or to distribute it equally.
     ///
     /// # Examples
+    ///
     /// Create a table that needs at least 30 columns to display.  Any extra space will be assigned
     /// to the last column.
     #[cfg_attr(feature = "unstable", doc = " ```")]
@@ -499,8 +509,7 @@ impl<'a> Table<'a> {
     /// # use ratatui::layout::SegmentSize;
     /// # use ratatui::widgets::Table;
     /// let widths = [Constraint::Min(10), Constraint::Min(10), Constraint::Min(10)];
-    /// let table = Table::new([])
-    ///     .widths(widths)
+    /// let table = Table::new([], widths)
     ///     .segment_size(SegmentSize::LastTakesRemainder);
     /// ```
     #[stability::unstable(
@@ -512,6 +521,17 @@ impl<'a> Table<'a> {
         self.segment_size = segment_size;
         self
     }
+}
+
+fn ensure_percentages_less_than_100(widths: &[Constraint]) {
+    let between_0_and_100 = |&w| match w {
+        Constraint::Percentage(p) => p <= 100,
+        _ => true,
+    };
+    assert!(
+        widths.iter().all(between_0_and_100),
+        "Percentages should be between 0 and 100 inclusively."
+    );
 }
 
 impl<'a> Styled for Table<'a> {
@@ -710,30 +730,30 @@ mod tests {
     #[test]
     #[should_panic]
     fn table_invalid_percentages() {
-        Table::new(vec![]).widths([Constraint::Percentage(110)]);
+        Table::new(vec![], [Constraint::Percentage(110)]);
     }
 
     #[test]
     fn widths_conversions() {
         let array = [Constraint::Percentage(100)];
-        let table = Table::new(vec![]).widths(array);
+        let table = Table::new(vec![], array);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "array");
 
         let array_ref = &[Constraint::Percentage(100)];
-        let table = Table::new(vec![]).widths(array_ref);
+        let table = Table::new(vec![], array_ref);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "array ref");
 
         let vec = vec![Constraint::Percentage(100)];
         let slice = vec.as_slice();
-        let table = Table::new(vec![]).widths(slice);
+        let table = Table::new(vec![], slice);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "slice");
 
         let vec = vec![Constraint::Percentage(100)];
-        let table = Table::new(vec![]).widths(vec);
+        let table = Table::new(vec![], vec);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "vec");
 
         let vec_ref = &vec![Constraint::Percentage(100)];
-        let table = Table::new(vec![]).widths(vec_ref);
+        let table = Table::new(vec![], vec_ref);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "vec ref");
     }
 
@@ -751,9 +771,7 @@ mod tests {
             selection_width: u16,
             expected: &[(u16, u16)],
         ) {
-            let table = Table::new(vec![])
-                .segment_size(segment_size)
-                .widths(constraints);
+            let table = Table::new(vec![], constraints).segment_size(segment_size);
 
             let widths = table.get_columns_widths(available_width, selection_width);
             assert_eq!(widths, expected);
@@ -997,12 +1015,14 @@ mod tests {
     #[test]
     fn test_render_table_with_alignment() {
         let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
-        let table = Table::new(vec![
-            Row::new(vec![Line::from("Left").alignment(Alignment::Left)]),
-            Row::new(vec![Line::from("Center").alignment(Alignment::Center)]),
-            Row::new(vec![Line::from("Right").alignment(Alignment::Right)]),
-        ])
-        .widths([Percentage(100)]);
+        let table = Table::new(
+            vec![
+                Row::new(vec![Line::from("Left").alignment(Alignment::Left)]),
+                Row::new(vec![Line::from("Center").alignment(Alignment::Center)]),
+                Row::new(vec![Line::from("Right").alignment(Alignment::Right)]),
+            ],
+            [Percentage(100)],
+        );
 
         Widget::render(table, Rect::new(0, 0, 20, 3), &mut buf);
 
@@ -1047,7 +1067,7 @@ mod tests {
     #[test]
     fn table_can_be_stylized() {
         assert_eq!(
-            Table::new(vec![Row::new(vec![Cell::from("")])])
+            Table::new(vec![Row::new(vec![Cell::from("")])], [Percentage(100)])
                 .black()
                 .on_white()
                 .bold()

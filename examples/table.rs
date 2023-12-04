@@ -137,15 +137,17 @@ fn ui(f: &mut Frame, app: &mut App) {
         let cells = item.iter().map(|c| Cell::from(*c));
         Row::new(cells).height(height as u16).bottom_margin(1)
     });
-    let t = Table::new(rows)
-        .header(header)
-        .block(Block::default().borders(Borders::ALL).title("Table"))
-        .highlight_style(selected_style)
-        .highlight_symbol(">> ")
-        .widths([
+    let t = Table::new(
+        rows,
+        [
             Constraint::Percentage(50),
             Constraint::Max(30),
             Constraint::Min(10),
-        ]);
+        ],
+    )
+    .header(header)
+    .block(Block::default().borders(Borders::ALL).title("Table"))
+    .highlight_style(selected_style)
+    .highlight_symbol(">> ");
     f.render_stateful_widget(t, rects[0], &mut app.state);
 }
