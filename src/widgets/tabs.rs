@@ -2,11 +2,13 @@
 use crate::{
     buffer::Buffer,
     layout::Rect,
-    style::{Style, Styled},
+    style::{Modifier, Style, Styled},
     symbols,
     text::{Line, Span},
     widgets::{Block, Widget},
 };
+
+const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVERSED);
 
 /// A widget that displays a horizontal set of Tabs with a single tab selected.
 ///
@@ -56,6 +58,18 @@ impl<'a> Tabs<'a> {
     /// `titles` can be a [`Vec`] of [`&str`], [`String`] or anything that can be converted into
     /// [`Line`]. As such, titles can be styled independently.
     ///
+    /// The selected tab can be set with [`Tabs::select`]. The first tab has index 0 (this is also
+    /// the default index).
+    ///
+    /// The selected tab can have a different style with [`Tabs::highlight_style`]. This defaults to
+    /// a style with the [`Modifier::REVERSED`] modifier added.
+    ///
+    /// The default divider is a pipe (`|`), but it can be customized with [`Tabs::divider`].
+    ///
+    /// The entire widget can be styled with [`Tabs::style`].
+    ///
+    /// The widget can be wrapped in a [`Block`] using [`Tabs::block`].
+    ///
     /// # Examples
     ///
     /// Basic titles.
@@ -78,7 +92,7 @@ impl<'a> Tabs<'a> {
             titles: titles.into_iter().map(Into::into).collect(),
             selected: 0,
             style: Style::default(),
-            highlight_style: Style::default(),
+            highlight_style: DEFAULT_HIGHLIGHT_STYLE,
             divider: Span::raw(symbols::line::VERTICAL),
             padding_left: Line::from(" "),
             padding_right: Line::from(" "),
@@ -307,7 +321,7 @@ mod tests {
                 ],
                 selected: 0,
                 style: Style::default(),
-                highlight_style: Style::default(),
+                highlight_style: DEFAULT_HIGHLIGHT_STYLE,
                 divider: Span::raw(symbols::line::VERTICAL),
                 padding_right: Line::from(" "),
                 padding_left: Line::from(" "),
@@ -324,10 +338,10 @@ mod tests {
     #[test]
     fn render_default() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]);
-        assert_buffer_eq!(
-            render(tabs, Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "])
-        );
+        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
+        // first tab selected
+        expected.set_style(Rect::new(1, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
+        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
     }
 
     #[test]
@@ -352,30 +366,28 @@ mod tests {
     fn render_with_block() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
             .block(Block::default().title("Tabs").borders(Borders::ALL));
-        assert_buffer_eq!(
-            render(tabs, Rect::new(0, 0, 30, 3)),
-            Buffer::with_lines(vec![
-                "┌Tabs────────────────────────┐",
-                "│ Tab1 │ Tab2 │ Tab3 │ Tab4  │",
-                "└────────────────────────────┘",
-            ])
-        );
+        let mut expected = Buffer::with_lines(vec![
+            "┌Tabs────────────────────────┐",
+            "│ Tab1 │ Tab2 │ Tab3 │ Tab4  │",
+            "└────────────────────────────┘",
+        ]);
+        // first tab selected
+        expected.set_style(Rect::new(2, 1, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
+        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 3)), expected);
     }
 
     #[test]
     fn render_style() {
         let tabs =
             Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).style(Style::default().fg(Color::Red));
-        assert_buffer_eq!(
-            render(tabs, Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    ".red()])
-        );
+        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    ".red()]);
+        expected.set_style(Rect::new(1, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE.red());
+        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
     }
 
     #[test]
     fn render_select() {
-        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
-            .highlight_style(Style::new().reversed());
+        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]);
 
         // first tab selected
         assert_buffer_eq!(
@@ -418,13 +430,13 @@ mod tests {
     fn render_style_and_selected() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
             .style(Style::new().red())
-            .highlight_style(Style::new().reversed())
+            .highlight_style(Style::new().underlined())
             .select(0);
         assert_buffer_eq!(
             render(tabs, Rect::new(0, 0, 30, 1)),
             Buffer::with_lines(vec![Line::from(vec![
                 " ".red(),
-                "Tab1".red().reversed(),
+                "Tab1".red().underlined(),
                 " │ Tab2 │ Tab3 │ Tab4    ".red(),
             ])])
         );
@@ -433,10 +445,10 @@ mod tests {
     #[test]
     fn render_divider() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).divider("--");
-        assert_buffer_eq!(
-            render(tabs, Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![" Tab1 -- Tab2 -- Tab3 -- Tab4 ",])
-        );
+        let mut expected = Buffer::with_lines(vec![" Tab1 -- Tab2 -- Tab3 -- Tab4 "]);
+        // first tab selected
+        expected.set_style(Rect::new(1, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
+        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
     }
 
     #[test]

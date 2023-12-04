@@ -11,8 +11,9 @@ github with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - Unreleased (0.24.1)
-  -`Table::widths()` now accepts `AsRef<[Constraint]>`
+  - `Table::widths()` now accepts `AsRef<[Constraint]>`
   - Layout::new() now accepts direction and constraint parameters
+  - The default `Tabs::highlight_style` is now `Style::new().reversed()`
 
 - [v0.24.0](#v0240)
   - MSRV is now 1.70.0
@@ -37,6 +38,13 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased (v0.24.1)
+
+### The default `Tabs::highlight_style` is now `Style::new().reversed()` ([#635])
+
+Previously the default highlight style for tabs was `Style::default()`, which meant that a `Tabs`
+widget in the default configuration would not show any indication of the selected tab.
+
+[#635]: https://github.com/ratatui-org/ratatui/pull/635
 
 ### `Table::widths()` now accepts `AsRef<[Constraint]>` ([#628])
 
