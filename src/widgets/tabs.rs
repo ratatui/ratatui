@@ -12,7 +12,8 @@ use crate::{
 ///
 /// Each tab title is stored as a [`Line`] which can be individually styled. The selected tab is set
 /// using [`Tabs::select`] and styled using [`Tabs::highlight_style`]. The divider can be customized
-/// with [`Tabs::divider`]. Padding can be set with [`Tabs::padding`] or [`Tabs::left_padding`] and [`Tabs::right_padding`].
+/// with [`Tabs::divider`]. Padding can be set with [`Tabs::padding`] or [`Tabs::padding_left`] and
+/// [`Tabs::padding_right`].
 ///
 /// The divider defaults to |, and padding defaults to a singular space on each side.
 ///
