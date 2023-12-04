@@ -360,7 +360,8 @@ impl<'a> Table<'a> {
 
     /// Set the widths of the columns of the [`Table`] widget.
     ///
-    /// The `widths` parameter accepts `AsRef<[Constraint]>`` which can be an array, slice, or Vec.
+    /// The `widths` parameter accepts anything which be converted to an Iterator of Constraints
+    /// which can be an array, slice, Vec etc.
     ///
     /// # Examples
     ///
@@ -374,8 +375,12 @@ impl<'a> Table<'a> {
     /// let table = Table::new(vec![]).widths(widths.clone());
     /// let table = Table::new(vec![]).widths(&widths);
     /// ```
-    pub fn widths<T: AsRef<[Constraint]>>(mut self, widths: T) -> Self {
-        let widths = widths.as_ref().to_vec();
+    pub fn widths<I, C>(mut self, widths: I) -> Self
+    where
+        I: IntoIterator<Item = C>,
+        C: AsRef<Constraint>,
+    {
+        let widths = widths.into_iter().map(|c| *c.as_ref()).collect_vec();
         let between_0_and_100 = |&w| match w {
             Constraint::Percentage(p) => p <= 100,
             _ => true,
