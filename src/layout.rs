@@ -97,6 +97,12 @@ impl Default for Constraint {
     }
 }
 
+impl AsRef<Constraint> for Constraint {
+    fn as_ref(&self) -> &Constraint {
+        self
+    }
+}
+
 impl fmt::Display for Constraint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -237,7 +243,7 @@ pub enum SegmentSize {
 /// example](https://camo.githubusercontent.com/77d22f3313b782a81e5e033ef82814bb48d786d2598699c27f8e757ccee62021/68747470733a2f2f7668732e636861726d2e73682f7668732d315a4e6f4e4c4e6c4c746b4a58706767396e435635652e676966)
 ///
 /// [`cassowary-rs`]: https://crates.io/crates/cassowary
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,
     margin: Margin,
@@ -246,23 +252,41 @@ pub struct Layout {
     segment_size: SegmentSize,
 }
 
-impl Default for Layout {
-    fn default() -> Layout {
-        Layout::new(Direction::Vertical, [])
-    }
-}
-
 impl Layout {
     pub const DEFAULT_CACHE_SIZE: usize = 16;
     /// Creates a new layout with default values.
     ///
-    /// - margin: 0, 0
-    /// - segment_size: SegmentSize::LastTakesRemainder
-    pub fn new<C: AsRef<[Constraint]>>(direction: Direction, constraints: C) -> Layout {
+    /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
+    /// AsRef<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
+    ///
+    /// Default values for the other fields are:
+    ///
+    /// - `margin`: 0, 0
+    /// - `segment_size`: SegmentSize::LastTakesRemainder
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let layout = Layout::new(
+    ///     Direction::Horizontal,
+    ///     [Constraint::Length(5), Constraint::Min(0)],
+    /// );
+    ///
+    /// let layout = Layout::new(
+    ///     Direction::Vertical,
+    ///     [1,2,3].iter().map(|&c| Constraint::Length(c)),
+    /// );
+    /// ```
+    pub fn new<I>(direction: Direction, constraints: I) -> Layout
+    where
+        I: IntoIterator,
+        I::Item: AsRef<Constraint>,
+    {
         Layout {
             direction,
             margin: Margin::new(0, 0),
-            constraints: constraints.as_ref().to_vec(),
+            constraints: constraints.into_iter().map(|c| *c.as_ref()).collect(),
             segment_size: SegmentSize::LastTakesRemainder,
         }
     }
@@ -289,7 +313,15 @@ impl Layout {
             .is_ok()
     }
 
-    /// Builder method to set the constraints of the layout.
+    /// Sets the constraints of the layout.
+    ///
+    /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
+    /// AsRef<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
+    ///
+    /// Note that the constraints are applied to the whole area that is to be split, so using
+    /// percentages and ratios with the other constraints may not have the desired effect of
+    /// splitting the area up. (e.g. splitting 100 into [min 20, 50%, 50%], may not result in
+    /// [20, 40, 40] but rather an indeterminate result between [20, 50, 30] and [20, 30, 50]).
     ///
     /// # Examples
     ///
@@ -311,9 +343,19 @@ impl Layout {
     ///     Rect::new(0, 6, 10, 2),
     ///     Rect::new(0, 8, 10, 2),
     /// ]);
+    ///
+    /// let layout = Layout::default().constraints([Constraint::Min(0)]);
+    /// let layout = Layout::default().constraints(&[Constraint::Min(0)]);
+    /// let layout = Layout::default().constraints(vec![Constraint::Min(0)]);
+    /// let layout = Layout::default().constraints([Constraint::Min(0)].iter().filter(|_| true));
+    /// let layout = Layout::default().constraints([1,2,3].iter().map(|&c| Constraint::Length(c)));
     /// ```
-    pub fn constraints<C: AsRef<[Constraint]>>(mut self, constraints: C) -> Layout {
-        self.constraints = constraints.as_ref().to_vec();
+    pub fn constraints<I>(mut self, constraints: I) -> Layout
+    where
+        I: IntoIterator,
+        I::Item: AsRef<Constraint>,
+    {
+        self.constraints = constraints.into_iter().map(|c| *c.as_ref()).collect();
         self
     }
 
@@ -417,6 +459,11 @@ impl Layout {
 
     /// Wrapper function around the cassowary-rs solver to be able to split a given area into
     /// smaller ones based on the preferred widths or heights and the direction.
+    ///
+    /// Note that the constraints are applied to the whole area that is to be split, so using
+    /// percentages and ratios with the other constraints may not have the desired effect of
+    /// splitting the area up. (e.g. splitting 100 into [min 20, 50%, 50%], may not result in [20,
+    /// 40, 40] but rather an indeterminate result between [20, 50, 30] and [20, 30, 50]).
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
@@ -653,6 +700,19 @@ mod tests {
     }
 
     #[test]
+    fn layout_default() {
+        assert_eq!(
+            Layout::default(),
+            Layout {
+                direction: Direction::Vertical,
+                margin: Margin::new(0, 0),
+                constraints: vec![],
+                segment_size: LastTakesRemainder,
+            }
+        );
+    }
+
+    #[test]
     fn layout_new() {
         // array
         let fixed_size_array = [Constraint::Min(0)];
@@ -677,10 +737,22 @@ mod tests {
         let layout = Layout::new(Direction::Horizontal, vec);
         assert_eq!(layout.direction, Direction::Horizontal);
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
+
+        // iterator
+        let iter = [Constraint::Min(0)].iter().filter(|_| true);
+        let layout = Layout::new(Direction::Horizontal, iter);
+        assert_eq!(layout.direction, Direction::Horizontal);
+        assert_eq!(layout.constraints, [Constraint::Min(0)]);
     }
 
+    /// The purpose of this test is to ensure that layout can be constructed with any type that
+    /// implements IntoIterator<Item = AsRef<Constraint>>.
     #[test]
-    #[allow(clippy::needless_borrow, clippy::unnecessary_to_owned)]
+    #[allow(
+        clippy::needless_borrow,
+        clippy::unnecessary_to_owned,
+        clippy::useless_asref
+    )]
     fn layout_constraints() {
         const CONSTRAINTS: [Constraint; 2] = [Constraint::Min(0), Constraint::Max(10)];
         let fixed_size_array = CONSTRAINTS;
@@ -711,6 +783,27 @@ mod tests {
             Layout::default().constraints(vec).constraints,
             CONSTRAINTS,
             "constraints should be settable with a Vec"
+        );
+
+        let iter = CONSTRAINTS.iter();
+        assert_eq!(
+            Layout::default().constraints(iter).constraints,
+            CONSTRAINTS,
+            "constraints should be settable with an iter"
+        );
+
+        let iterator = CONSTRAINTS.iter().map(|c| c.to_owned());
+        assert_eq!(
+            Layout::default().constraints(iterator).constraints,
+            CONSTRAINTS,
+            "constraints should be settable with an iterator"
+        );
+
+        let iterator_ref = CONSTRAINTS.iter().map(|c| c.as_ref());
+        assert_eq!(
+            Layout::default().constraints(iterator_ref).constraints,
+            CONSTRAINTS,
+            "constraints should be settable with an iterator of refs"
         );
     }
 
