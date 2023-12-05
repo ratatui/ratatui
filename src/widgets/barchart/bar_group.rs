@@ -26,12 +26,14 @@ pub struct BarGroup<'a> {
 
 impl<'a> BarGroup<'a> {
     /// Set the group label
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn label(mut self, label: Line<'a>) -> BarGroup<'a> {
         self.label = Some(label);
         self
     }
 
     /// Set the bars of the group to be shown
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bars(mut self, bars: &[Bar<'a>]) -> BarGroup<'a> {
         self.bars = bars.to_vec();
         self

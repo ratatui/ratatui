@@ -138,6 +138,7 @@ impl<'a> Paragraph<'a> {
     ///         .title("Paragraph")
     ///         .borders(Borders::ALL));
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> Paragraph<'a> {
         self.block = Some(block);
         self
@@ -155,6 +156,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello, world!")
     ///    .style(Style::new().red().on_white());
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Paragraph<'a> {
         self.style = style;
         self
@@ -171,6 +173,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello, world!")
     ///   .wrap(Wrap { trim: true });
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn wrap(mut self, wrap: Wrap) -> Paragraph<'a> {
         self.wrap = Some(wrap);
         self
@@ -187,6 +190,7 @@ impl<'a> Paragraph<'a> {
     ///
     /// For more information about future scrolling design and concerns, see [RFC: Design of
     /// Scrollable Widgets](https://github.com/ratatui-org/ratatui/issues/174) on GitHub.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn scroll(mut self, offset: (Vertical, Horizontal)) -> Paragraph<'a> {
         self.scroll = offset;
         self
@@ -204,6 +208,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World")
     ///     .alignment(Alignment::Center);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {
         self.alignment = alignment;
         self

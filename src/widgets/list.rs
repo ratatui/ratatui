@@ -23,11 +23,13 @@ impl ListState {
         &mut self.offset
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn with_selected(mut self, selected: Option<usize>) -> Self {
         self.selected = selected;
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn with_offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
@@ -62,6 +64,7 @@ impl<'a> ListItem<'a> {
         }
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> ListItem<'a> {
         self.style = style;
         self
@@ -124,26 +127,31 @@ impl<'a> List<'a> {
         }
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> List<'a> {
         self.block = Some(block);
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> List<'a> {
         self.style = style;
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> List<'a> {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_style(mut self, style: Style) -> List<'a> {
         self.highlight_style = style;
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn repeat_highlight_symbol(mut self, repeat: bool) -> List<'a> {
         self.repeat_highlight_symbol = repeat;
         self
@@ -152,11 +160,13 @@ impl<'a> List<'a> {
     /// Set when to show the highlight spacing
     ///
     /// See [`HighlightSpacing`] about which variant affects spacing in which way
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn start_corner(mut self, corner: Corner) -> List<'a> {
         self.start_corner = corner;
         self
