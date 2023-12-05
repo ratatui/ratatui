@@ -11,6 +11,26 @@ use crate::style::{Style, Styled};
 /// A `Span` is the smallest unit of text that can be styled. It is usually combined in the [`Line`]
 /// type to represent a line of text where each `Span` may have a different style.
 ///
+/// # Constructor Methods
+///
+/// - [`Span::default`] creates an span with empty content and the default style.
+/// - [`Span::raw`] creates an span with the specified content and the default style.
+/// - [`Span::styled`] creates an span with the specified content and style.
+///
+/// # Setter Methods
+///
+/// These methods are fluent setters. They return a new `Span` with the specified property set.
+///
+/// - [`Span::content`] sets the content of the span.
+/// - [`Span::style`] sets the style of the span.
+///
+/// # Other Methods
+///
+/// - [`Span::patch_style`] patches the style of the span, adding modifiers from the given style.
+/// - [`Span::reset_style`] resets the style of the span.
+/// - [`Span::width`] returns the unicode width of the content held by this span.
+/// - [`Span::styled_graphemes`] returns an iterator over the graphemes held by this span.
+///
 /// # Examples
 ///
 /// A `Span` with `style` set to [`Style::default()`] can be created from a `&str`, a `String`, or
@@ -35,12 +55,14 @@ use crate::style::{Style, Styled};
 ///
 /// let span = Span::styled("test content", Style::new().green());
 /// let span = Span::styled(String::from("test content"), Style::new().green());
+///
+/// // using Stylize trait shortcuts
 /// let span = "test content".green();
 /// let span = String::from("test content").green();
 /// ```
 ///
-/// `Span` implements [`Stylize`], which allows it to be styled using the shortcut methods. Styles
-/// applied are additive.
+/// `Span` implements the [`Styled`] trait, which allows it to be styled using the shortcut methods
+/// defined in the [`Stylize`] trait.
 ///
 /// ```rust
 /// use ratatui::prelude::*;
@@ -100,6 +122,82 @@ impl<'a> Span<'a> {
         }
     }
 
+    /// Sets the content of the span.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// Accepts any type that can be converted to [`Cow<str>`] (e.g. `&str`, `String`, `&String`,
+    /// etc.).
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut span = Span::default().content("content");
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn content<T>(mut self, content: T) -> Self
+    where
+        T: Into<Cow<'a, str>>,
+    {
+        self.content = content.into();
+        self
+    }
+
+    /// Sets the style of the span.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// In contrast to [`Span::patch_style`], this method replaces the style of the span instead of
+    /// patching it.
+    ///
+    /// Accepts any type that can be converted to [`Style`]
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut span = Span::default().style(Style::new().green());
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn style<T>(mut self, style: T) -> Self
+    where
+        T: Into<Style>,
+    {
+        self.style = style.into();
+        self
+    }
+
+    /// Patches the style of the Span, adding modifiers from the given style.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut span = Span::styled("test content", Style::new().green().italic());
+    /// span.patch_style(Style::new().red().on_yellow().bold());
+    /// assert_eq!(span.style, Style::new().red().on_yellow().italic().bold());
+    /// ```
+    pub fn patch_style(&mut self, style: Style) {
+        self.style = self.style.patch(style);
+    }
+
+    /// Resets the style of the Span.
+    ///
+    /// This is Equivalent to calling `patch_style(Style::reset())`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut span = Span::styled("Test Content", Style::new().green().on_yellow().italic());
+    /// span.reset_style();
+    /// assert_eq!(span.style, Style::reset());
+    /// ```
+    pub fn reset_style(&mut self) {
+        self.patch_style(Style::reset());
+    }
+
     /// Returns the unicode width of the content held by this span.
     pub fn width(&self) -> usize {
         self.content.width()
@@ -140,36 +238,6 @@ impl<'a> Span<'a> {
                 symbol: g,
                 style: base_style.patch(self.style),
             })
-    }
-
-    /// Patches the style of the Span, adding modifiers from the given style.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let mut span = Span::styled("test content", Style::new().green().italic());
-    /// span.patch_style(Style::new().red().on_yellow().bold());
-    /// assert_eq!(span.style, Style::new().red().on_yellow().italic().bold());
-    /// ```
-    pub fn patch_style(&mut self, style: Style) {
-        self.style = self.style.patch(style);
-    }
-
-    /// Resets the style of the Span.
-    ///
-    /// This is Equivalent to calling `patch_style(Style::reset())`.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let mut span = Span::styled("Test Content", Style::new().green().on_yellow().italic());
-    /// span.reset_style();
-    /// assert_eq!(span.style, Style::reset());
-    /// ```
-    pub fn reset_style(&mut self) {
-        self.patch_style(Style::reset());
     }
 }
 
@@ -237,6 +305,18 @@ mod tests {
         let span = Span::styled(content.clone(), style);
         assert_eq!(span.content, Cow::Owned::<str>(content));
         assert_eq!(span.style, style);
+    }
+
+    #[test]
+    fn set_content() {
+        let span = Span::default().content("test content");
+        assert_eq!(span.content, Cow::Borrowed("test content"));
+    }
+
+    #[test]
+    fn set_style() {
+        let span = Span::default().style(Style::new().green());
+        assert_eq!(span.style, Style::new().green());
     }
 
     #[test]
