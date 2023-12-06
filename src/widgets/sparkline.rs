@@ -18,7 +18,7 @@ use crate::{
 /// `Sparkline` can be styled either using [`Sparkline::style`] or preferably using the methods
 /// provided by the [`Stylize`](crate::style::Stylize) trait.
 ///
-/// # Builder methods
+/// # Setter methods
 ///
 /// - [`Sparkline::block`] wraps the sparkline in a [`Block`]
 /// - [`Sparkline::data`] defines the dataset, you'll almost always want to use it
@@ -81,6 +81,7 @@ impl<'a> Default for Sparkline<'a> {
 
 impl<'a> Sparkline<'a> {
     /// Wraps the sparkline with the given `block`.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> Sparkline<'a> {
         self.block = Some(block);
         self
@@ -89,6 +90,7 @@ impl<'a> Sparkline<'a> {
     /// Sets the style of the entire widget.
     ///
     /// The foreground corresponds to the bars while the background is everything else.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Sparkline<'a> {
         self.style = style;
         self
@@ -106,6 +108,7 @@ impl<'a> Sparkline<'a> {
     /// frame.render_widget(sparkline, area);
     /// # }
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn data(mut self, data: &'a [u64]) -> Sparkline<'a> {
         self.data = data;
         self
@@ -115,6 +118,7 @@ impl<'a> Sparkline<'a> {
     ///
     /// Every bar will be scaled accordingly. If no max is given, this will be the max in the
     /// dataset.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn max(mut self, max: u64) -> Sparkline<'a> {
         self.max = Some(max);
         self
@@ -124,6 +128,7 @@ impl<'a> Sparkline<'a> {
     ///
     /// Can be [`symbols::bar::THREE_LEVELS`], [`symbols::bar::NINE_LEVELS`] (default) or a custom
     /// [`Set`](symbols::bar::Set).
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bar_set(mut self, bar_set: symbols::bar::Set) -> Sparkline<'a> {
         self.bar_set = bar_set;
         self
@@ -132,6 +137,7 @@ impl<'a> Sparkline<'a> {
     /// Sets the direction of the sparkline.
     ///
     /// [`RenderDirection::LeftToRight`] by default.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn direction(mut self, direction: RenderDirection) -> Sparkline<'a> {
         self.direction = direction;
         self

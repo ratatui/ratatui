@@ -1,7 +1,7 @@
 //! `widgets` is a collection of types that implement [`Widget`] or [`StatefulWidget`] or both.
 //!
-//! All widgets are implemented using the builder pattern and are consumable objects. They are not
-//! meant to be stored but used as *commands* to draw common figures in the UI.
+//! Widgets are created for each frame as they are consumed after rendered.
+//! They are not meant to be stored but used as *commands* to draw common figures in the UI.
 //!
 //! The available widgets are:
 //! - [`Block`]: a basic widget that draws a block with optional borders, titles and styles.

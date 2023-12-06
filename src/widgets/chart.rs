@@ -43,6 +43,7 @@ impl<'a> Axis<'a> {
         since = "0.10.0",
         note = "You should use styling capabilities of `text::Line` given as argument of the `title` method to apply styling to the title."
     )]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_style(mut self, style: Style) -> Axis<'a> {
         if let Some(t) = self.title {
             let title = String::from(t);
@@ -51,16 +52,19 @@ impl<'a> Axis<'a> {
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bounds(mut self, bounds: [f64; 2]) -> Axis<'a> {
         self.bounds = bounds;
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn labels(mut self, labels: Vec<Span<'a>>) -> Axis<'a> {
         self.labels = Some(labels);
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Axis<'a> {
         self.style = style;
         self
@@ -70,6 +74,7 @@ impl<'a> Axis<'a> {
     /// The alignment behaves differently based on the axis:
     /// - Y-Axis: The labels are aligned within the area on the left of the axis
     /// - X-Axis: The first X-axis label is aligned relative to the Y-axis
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn labels_alignment(mut self, alignment: Alignment) -> Axis<'a> {
         self.labels_alignment = alignment;
         self
@@ -110,21 +115,25 @@ impl<'a> Dataset<'a> {
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn data(mut self, data: &'a [(f64, f64)]) -> Dataset<'a> {
         self.data = data;
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn marker(mut self, marker: symbols::Marker) -> Dataset<'a> {
         self.marker = marker;
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn graph_type(mut self, graph_type: GraphType) -> Dataset<'a> {
         self.graph_type = graph_type;
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Dataset<'a> {
         self.style = style;
         self
@@ -215,21 +224,25 @@ impl<'a> Chart<'a> {
         }
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> Chart<'a> {
         self.block = Some(block);
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Chart<'a> {
         self.style = style;
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn x_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
         self.x_axis = axis;
         self
     }
 
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn y_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
         self.y_axis = axis;
         self
@@ -250,6 +263,7 @@ impl<'a> Chart<'a> {
     /// let _chart: Chart = Chart::new(vec![])
     ///     .hidden_legend_constraints(constraints);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn hidden_legend_constraints(mut self, constraints: (Constraint, Constraint)) -> Chart<'a> {
         self.hidden_legend_constraints = constraints;
         self

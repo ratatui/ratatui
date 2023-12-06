@@ -350,6 +350,7 @@ impl Layout {
     /// let layout = Layout::default().constraints([Constraint::Min(0)].iter().filter(|_| true));
     /// let layout = Layout::default().constraints([1,2,3].iter().map(|&c| Constraint::Length(c)));
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn constraints<I>(mut self, constraints: I) -> Layout
     where
         I: IntoIterator,
@@ -359,7 +360,7 @@ impl Layout {
         self
     }
 
-    /// Builder method to set the margin of the layout.
+    /// Set the margin of the layout.
     ///
     /// # Examples
     ///
@@ -371,6 +372,7 @@ impl Layout {
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 2, 6, 6)]);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn margin(mut self, margin: u16) -> Layout {
         self.margin = Margin {
             horizontal: margin,
@@ -379,7 +381,7 @@ impl Layout {
         self
     }
 
-    /// Builder method to set the horizontal margin of the layout.
+    /// Set the horizontal margin of the layout.
     ///
     /// # Examples
     ///
@@ -391,12 +393,13 @@ impl Layout {
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 0, 6, 10)]);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn horizontal_margin(mut self, horizontal: u16) -> Layout {
         self.margin.horizontal = horizontal;
         self
     }
 
-    /// Builder method to set the vertical margin of the layout.
+    /// Set the vertical margin of the layout.
     ///
     /// # Examples
     ///
@@ -408,12 +411,13 @@ impl Layout {
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 2, 10, 6)]);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn vertical_margin(mut self, vertical: u16) -> Layout {
         self.margin.vertical = vertical;
         self
     }
 
-    /// Builder method to set the direction of the layout.
+    /// Set the direction of the layout.
     ///
     /// # Examples
     ///
@@ -431,12 +435,13 @@ impl Layout {
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 0, 10, 5), Rect::new(0, 5, 10, 5)]);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn direction(mut self, direction: Direction) -> Layout {
         self.direction = direction;
         self
     }
 
-    /// Builder method to set whether chunks should be of equal size.
+    /// Set whether chunks should be of equal size.
     ///
     /// This determines how the space is distributed when the constraints are satisfied. By default,
     /// the last chunk is expanded to fill the remaining space, but this can be changed to prefer
@@ -452,6 +457,7 @@ impl Layout {
         reason = "The name for this feature is not final and may change in the future",
         issue = "https://github.com/ratatui-org/ratatui/issues/536"
     )]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn segment_size(mut self, segment_size: SegmentSize) -> Layout {
         self.segment_size = segment_size;
         self

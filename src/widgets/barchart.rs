@@ -127,6 +127,7 @@ impl<'a> BarChart<'a> {
     }
 
     /// Surround the [`BarChart`] with a [`Block`].
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> BarChart<'a> {
         self.block = Some(block);
         self
@@ -161,6 +162,7 @@ impl<'a> BarChart<'a> {
     /// // █ █ █
     /// // f b b
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn max(mut self, max: u64) -> BarChart<'a> {
         self.max = Some(max);
         self
@@ -170,6 +172,7 @@ impl<'a> BarChart<'a> {
     ///
     /// It is also possible to set individually the style of each [`Bar`].
     /// In this case the default style will be patched by the individual style
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bar_style(mut self, style: Style) -> BarChart<'a> {
         self.bar_style = style;
         self
@@ -182,6 +185,7 @@ impl<'a> BarChart<'a> {
     ///
     /// If not set, this defaults to `1`.  
     /// The bar label also uses this value as its width.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bar_width(mut self, width: u16) -> BarChart<'a> {
         self.bar_width = width;
         self
@@ -205,6 +209,7 @@ impl<'a> BarChart<'a> {
     /// // █   █
     /// // f   b
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bar_gap(mut self, gap: u16) -> BarChart<'a> {
         self.bar_gap = gap;
         self
@@ -213,6 +218,7 @@ impl<'a> BarChart<'a> {
     /// The [`bar::Set`](crate::symbols::bar::Set) to use for displaying the bars.
     ///
     /// If not set, the default is [`bar::NINE_LEVELS`](crate::symbols::bar::NINE_LEVELS).
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bar_set(mut self, bar_set: symbols::bar::Set) -> BarChart<'a> {
         self.bar_set = bar_set;
         self
@@ -226,6 +232,7 @@ impl<'a> BarChart<'a> {
     /// # See also
     ///
     /// [Bar::value_style] to set the value style individually.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn value_style(mut self, style: Style) -> BarChart<'a> {
         self.value_style = style;
         self
@@ -239,12 +246,14 @@ impl<'a> BarChart<'a> {
     /// # See also
     ///
     /// [Bar::label] to set the label style individually.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn label_style(mut self, style: Style) -> BarChart<'a> {
         self.label_style = style;
         self
     }
 
     /// Set the gap between [`BarGroup`].
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn group_gap(mut self, gap: u16) -> BarChart<'a> {
         self.group_gap = gap;
         self
@@ -253,6 +262,7 @@ impl<'a> BarChart<'a> {
     /// Set the style of the entire chart.
     ///
     /// The style will be applied to everything that isn't styled (borders, bars, labels, ...).
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> BarChart<'a> {
         self.style = style;
         self
@@ -277,6 +287,7 @@ impl<'a> BarChart<'a> {
     ///
     /// █bar██
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn direction(mut self, direction: Direction) -> BarChart<'a> {
         self.direction = direction;
         self

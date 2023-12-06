@@ -87,7 +87,7 @@ pub enum Position {
 }
 
 impl<'a> Title<'a> {
-    /// Builder pattern method for setting the title content.
+    /// Set the title content.
     pub fn content<T>(mut self, content: T) -> Title<'a>
     where
         T: Into<Line<'a>>,
@@ -96,13 +96,15 @@ impl<'a> Title<'a> {
         self
     }
 
-    /// Builder pattern method for setting the title alignment.
+    /// Set the title alignment.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn alignment(mut self, alignment: Alignment) -> Title<'a> {
         self.alignment = Some(alignment);
         self
     }
 
-    /// Builder pattern method for setting the title position.
+    /// Set the title position.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn position(mut self, position: Position) -> Title<'a> {
         self.position = Some(position);
         self

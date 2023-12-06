@@ -100,6 +100,7 @@ impl<'a> Tabs<'a> {
     }
 
     /// Surrounds the `Tabs` with a [`Block`].
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> Tabs<'a> {
         self.block = Some(block);
         self
@@ -109,6 +110,7 @@ impl<'a> Tabs<'a> {
     ///
     /// The first tab has index 0 (this is also the default index).
     /// The selected tab can have a different style with [`Tabs::highlight_style`].
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn select(mut self, selected: usize) -> Tabs<'a> {
         self.selected = selected;
         self
@@ -119,6 +121,7 @@ impl<'a> Tabs<'a> {
     /// This will set the given style on the entire render area.
     /// More precise style can be applied to the titles by styling the ones given to [`Tabs::new`].
     /// The selected tab can be styled differently using [`Tabs::highlight_style`].
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Tabs<'a> {
         self.style = style;
         self
@@ -127,6 +130,7 @@ impl<'a> Tabs<'a> {
     /// Sets the style for the highlighted tab.
     ///
     /// Highlighted tab can be selected with [`Tabs::select`].
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_style(mut self, style: Style) -> Tabs<'a> {
         self.highlight_style = style;
         self

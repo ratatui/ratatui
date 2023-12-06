@@ -329,6 +329,7 @@ impl<'a> Block<'a> {
     /// Applies the style to all titles.
     ///
     /// If a [`Title`] already has a style, the title's style will add on top of this one.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn title_style(mut self, style: Style) -> Block<'a> {
         self.titles_style = style;
         self
@@ -352,6 +353,7 @@ impl<'a> Block<'a> {
     ///     .title("bar")
     ///     .title_alignment(Alignment::Center);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn title_alignment(mut self, alignment: Alignment) -> Block<'a> {
         self.titles_alignment = alignment;
         self
@@ -381,6 +383,7 @@ impl<'a> Block<'a> {
     ///     .title("bar")
     ///     .title_position(Position::Bottom);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn title_position(mut self, position: Position) -> Block<'a> {
         self.titles_position = position;
         self
@@ -399,6 +402,7 @@ impl<'a> Block<'a> {
     ///     .borders(Borders::ALL)
     ///     .border_style(Style::new().blue());
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn border_style(mut self, style: Style) -> Block<'a> {
         self.border_style = style;
         self
@@ -411,6 +415,7 @@ impl<'a> Block<'a> {
     /// [`Block::border_style`].
     ///
     /// This will also apply to the widget inside that block, unless the inner widget is styled.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn style(mut self, style: Style) -> Block<'a> {
         self.style = style;
         self
@@ -433,6 +438,7 @@ impl<'a> Block<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// Block::default().borders(Borders::LEFT | Borders::RIGHT);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn borders(mut self, flag: Borders) -> Block<'a> {
         self.borders = flag;
         self
@@ -455,6 +461,7 @@ impl<'a> Block<'a> {
     /// // │     │
     /// // ╰─────╯
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn border_type(mut self, border_type: BorderType) -> Block<'a> {
         self.border_set = border_type.to_border_set();
         self
@@ -473,6 +480,7 @@ impl<'a> Block<'a> {
     /// // ╔Block╗
     /// // ║     ║
     /// // ╚═════╝
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn border_set(mut self, border_set: border::Set) -> Block<'a> {
         self.border_set = border_set;
         self
@@ -569,6 +577,7 @@ impl<'a> Block<'a> {
     /// // │  content  │
     /// // └───────────┘
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn padding(mut self, padding: Padding) -> Block<'a> {
         self.padding = padding;
         self

@@ -62,18 +62,21 @@ impl ScrollbarState {
         }
     }
     /// Sets the scroll position of the scrollbar and returns the modified ScrollbarState.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn position(mut self, position: usize) -> Self {
         self.position = position;
         self
     }
 
     /// Sets the length of the scrollable content and returns the modified ScrollbarState.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn content_length(mut self, content_length: usize) -> Self {
         self.content_length = content_length;
         self
     }
 
     /// Sets the length of the viewport content and returns the modified ScrollbarState.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn viewport_content_length(mut self, viewport_content_length: usize) -> Self {
         self.viewport_content_length = viewport_content_length;
         self
@@ -204,6 +207,7 @@ impl<'a> Scrollbar<'a> {
 
     /// Sets the orientation of the scrollbar.
     /// Resets the symbols to [`DOUBLE_VERTICAL`] or [`DOUBLE_HORIZONTAL`] based on orientation
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn orientation(mut self, orientation: ScrollbarOrientation) -> Self {
         self.orientation = orientation;
         let set = if self.is_vertical() {
@@ -215,54 +219,63 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the orientation and symbols for the scrollbar from a [`Set`].
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn orientation_and_symbol(mut self, orientation: ScrollbarOrientation, set: Set) -> Self {
         self.orientation = orientation;
         self.symbols(set)
     }
 
     /// Sets the symbol that represents the thumb of the scrollbar.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn thumb_symbol(mut self, thumb_symbol: &'a str) -> Self {
         self.thumb_symbol = thumb_symbol;
         self
     }
 
     /// Sets the style that represents the thumb of the scrollbar.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn thumb_style(mut self, thumb_style: Style) -> Self {
         self.thumb_style = thumb_style;
         self
     }
 
     /// Sets the symbol that represents the track of the scrollbar.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn track_symbol(mut self, track_symbol: Option<&'a str>) -> Self {
         self.track_symbol = track_symbol;
         self
     }
 
     /// Sets the style that is used for the track of the scrollbar.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn track_style(mut self, track_style: Style) -> Self {
         self.track_style = track_style;
         self
     }
 
     /// Sets the symbol that represents the beginning of the scrollbar.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn begin_symbol(mut self, begin_symbol: Option<&'a str>) -> Self {
         self.begin_symbol = begin_symbol;
         self
     }
 
     /// Sets the style that is used for the beginning of the scrollbar.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn begin_style(mut self, begin_style: Style) -> Self {
         self.begin_style = begin_style;
         self
     }
 
     /// Sets the symbol that represents the end of the scrollbar.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn end_symbol(mut self, end_symbol: Option<&'a str>) -> Self {
         self.end_symbol = end_symbol;
         self
     }
 
     /// Sets the style that is used for the end of the scrollbar.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn end_style(mut self, end_style: Style) -> Self {
         self.end_style = end_style;
         self
@@ -281,6 +294,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// Only sets begin_symbol, end_symbol and track_symbol if they already contain a value.
     /// If they were set to `None` explicitly, this function will respect that choice.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn symbols(mut self, symbol: Set) -> Self {
         self.thumb_symbol = symbol.thumb;
         if self.track_symbol.is_some() {
@@ -304,6 +318,7 @@ impl<'a> Scrollbar<'a> {
     /// │  └──────── thumb
     /// └─────────── begin
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Self {
         self.track_style = style;
         self.thumb_style = style;
