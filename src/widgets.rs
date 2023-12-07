@@ -46,7 +46,7 @@ pub use self::{
     chart::{Axis, Chart, Dataset, GraphType},
     clear::Clear,
     gauge::{Gauge, LineGauge},
-    list::{List, ListItem, ListState},
+    list::{List, ListDirection, ListItem, ListState},
     paragraph::{Paragraph, Wrap},
     scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
     sparkline::{RenderDirection, Sparkline},

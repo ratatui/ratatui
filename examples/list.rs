@@ -273,6 +273,6 @@ fn ui(f: &mut Frame, app: &mut App) {
         .collect();
     let events_list = List::new(events)
         .block(Block::default().borders(Borders::ALL).title("List"))
-        .start_corner(Corner::BottomLeft);
+        .direction(ListDirection::BottomToTop);
     f.render_widget(events_list, chunks[1]);
 }

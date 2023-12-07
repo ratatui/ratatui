@@ -11,6 +11,7 @@ github with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - Unreleased (0.24.1)
+  - `List::start_corner` is renamed to `List::direction`
   - `List::new()` now accepts `IntoIterator<Item = Into<ListItem<'a>>>`
   - `Table::new()` now requires specifying the widths
   - `Table::widths()` now accepts `IntoIterator<Item = AsRef<Constraint>>`
@@ -41,6 +42,29 @@ This is a quick summary of the sections below:
 
 ## Unreleased (v0.24.1)
 
+### `List::start_corner` is renamed to `List::direction` ([#673])
+
+[#673]: https://github.com/ratatui-org/ratatui/pull/673
+
+Previously `List::start_corner` didn't communicate the intent of the method. It also used an
+inadequate `Corner` enum. The method is now renamed `direction` and a new enum
+`ListDirection` has been added.
+
+```diff
+- List::new(/* items */).start_corner(Corner::TopLeft);
+- List::new(/* items */).start_corner(Corner::TopRight);
+// This is not an error, BottomRight rendered top to bottom previously
+- List::new(/* items */).start_corner(Corner::BottomRight);
+// all becomes
++ List::new(/* items */).direction(ListDirection::TopToBottom);
+```
+
+```diff
+- List::new(/* items */).start_corner(Corner::BottomLeft);
+// becomes
++ List::new(/* items */).direction(ListDirection::BottomToTop);
+```
+
 ### `List::new()` now accepts `IntoIterator<Item = Into<ListItem<'a>>>` ([#672])
 
 [#672]: https://github.com/ratatui-org/ratatui/pull/672
@@ -50,10 +74,10 @@ error for `IntoIterator`s with an indeterminate item (e.g. empty vecs).
 
 E.g.
 
-```rust
-let list = List::new(vec![]);
+```diff
+- let list = List::new(vec![]);
 // becomes
-let list = List::default();
++ let list = List::default();
 ```
 
 ### The default `Tabs::highlight_style` is now `Style::new().reversed()` ([#635])
@@ -76,23 +100,23 @@ widget in the default configuration would not show any indication of the selecte
 Previously `Table`s could be constructed without widths. In almost all cases this is an error.
 A new widths parameter is now mandatory on `Table::new()`. Existing code of the form:
 
-```rust
-Table::new(rows).widths(widths)
+```diff
+- Table::new(rows).widths(widths)
 ```
 
 Should be updated to:
 
-```rust
-Table::new(rows, widths)
+```diff
++ Table::new(rows, widths)
 ```
 
 For ease of automated replacement in cases where the amount of code broken by this change is large
 or complex, it may be convenient to replace `Table::new` with `Table::default().rows`.
 
-```rust
-Table::new(rows).block(block).widths(widths);
+```diff
+- Table::new(rows).block(block).widths(widths);
 // becomes
-Table::default().rows(rows).widths(widths)
++ Table::default().rows(rows).widths(widths)
 ```
 
 ### `Table::widths()` now accepts `IntoIterator<Item = AsRef<Constraint>>` ([#663])
@@ -105,10 +129,10 @@ the `&`.
 
 E.g.
 
-```rust
-let table = Table::new(rows).widths(&[Constraint::Length(1)]);
+```diff
+- let table = Table::new(rows).widths(&[Constraint::Length(1)]);
 // becomes
-let table = Table::new(rows).widths([Constraint::Length(1)]);
++ let table = Table::new(rows).widths([Constraint::Length(1)]);
 ```
 
 ### Layout::new() now accepts direction and constraint parameters ([#557])
@@ -147,10 +171,10 @@ Applications can now set custom borders on a `Block` by calling `border_set()`. 
 `BorderType::line_symbols()` is renamed to `border_symbols()` and now returns a new struct
 `symbols::border::Set`. E.g.:
 
-```rust
-let line_set: symbols::line::Set = BorderType::line_symbols(BorderType::Plain);
+```diff
+- let line_set: symbols::line::Set = BorderType::line_symbols(BorderType::Plain);
 // becomes
-let border_set: symbols::border::Set = BorderType::border_symbols(BorderType::Plain);
++ let border_set: symbols::border::Set = BorderType::border_symbols(BorderType::Plain);
 ```
 
 ### Generic `Backend` parameter removed from `Frame` ([#530])
@@ -161,10 +185,10 @@ let border_set: symbols::border::Set = BorderType::border_symbols(BorderType::Pl
 accept `Frame`. To migrate existing code, remove any generic parameters from code that uses an
 instance of a Frame. E.g.:
 
-```rust
-fn ui<B: Backend>(frame: &mut Frame<B>) { ... }
+```diff
+- fn ui<B: Backend>(frame: &mut Frame<B>) { ... }
 // becomes
-fn ui(frame: Frame) { ... }
++ fn ui(frame: Frame) { ... }
 ```
 
 ### `Stylize` shorthands now consume rather than borrow `String` ([#466])
@@ -176,13 +200,13 @@ new implementation of `Stylize` was added that returns a `Span<'static>`. This c
 be consumed rather than borrowed. Existing code that expects to use the string after a call will no
 longer compile. E.g.
 
-```rust
-let s = String::new("foo");
-let span1 = s.red();
-let span2 = s.blue(); // will no longer compile as s is consumed by the previous line
+```diff
+- let s = String::new("foo");
+- let span1 = s.red();
+- let span2 = s.blue(); // will no longer compile as s is consumed by the previous line
 // becomes
-let span1 = s.clone().red();
-let span2 = s.blue();
++ let span1 = s.clone().red();
++ let span2 = s.blue();
 ```
 
 ### Deprecated `Spans` type removed (replaced with `Line`) ([#426])
@@ -192,12 +216,12 @@ let span2 = s.blue();
 `Spans` was replaced with `Line` in 0.21.0. `Buffer::set_spans` was replaced with
 `Buffer::set_line`.
 
-```rust
-let spans = Spans::from(some_string_str_span_or_vec_span);
-buffer.set_spans(0, 0, spans, 10);
+```diff
+- let spans = Spans::from(some_string_str_span_or_vec_span);
+- buffer.set_spans(0, 0, spans, 10);
 // becomes
-let line - Line::from(some_string_str_span_or_vec_span);
-buffer.set_line(0, 0, line, 10);
++ let line - Line::from(some_string_str_span_or_vec_span);
++ buffer.set_line(0, 0, line, 10);
 ```
 
 ## [v0.23.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.23.0)
@@ -208,10 +232,10 @@ buffer.set_line(0, 0, line, 10);
 
 The track symbol of `Scrollbar` is now optional, this method now takes an optional value.
 
-```rust
-let scrollbar = Scrollbar::default().track_symbol("|");
+```diff
+- let scrollbar = Scrollbar::default().track_symbol("|");
 // becomes
-let scrollbar = Scrollbar::default().track_symbol(Some("|"));
++ let scrollbar = Scrollbar::default().track_symbol(Some("|"));
 ```
 
 ### `Scrollbar` symbols moved to `symbols::scrollbar` and `widgets::scrollbar` module is private ([#330])
@@ -222,10 +246,10 @@ The symbols for defining scrollbars have been moved to the `symbols` module from
 `widgets::scrollbar` module which is no longer public. To update your code update any imports to the
 new module locations. E.g.:
 
-```rust
-use ratatui::{widgets::scrollbar::{Scrollbar, Set}};
+```diff
+- use ratatui::{widgets::scrollbar::{Scrollbar, Set}};
 // becomes
-use ratatui::{widgets::Scrollbar, symbols::scrollbar::Set} 
++ use ratatui::{widgets::Scrollbar, symbols::scrollbar::Set} 
 ```
 
 ### MSRV updated to 1.67 ([#361])
@@ -259,13 +283,13 @@ The minimum supported rust version is now 1.65.0.
 In order to support inline viewports, the unstable method `Terminal::with_options()` was stabilized
 and  `ViewPort` was changed from a struct to an enum.
 
-```rust
+```diff
 let terminal = Terminal::with_options(backend, TerminalOptions {
-    viewport: Viewport::fixed(area),
+-    viewport: Viewport::fixed(area),
 });
 // becomes
 let terminal = Terminal::with_options(backend, TerminalOptions {
-    viewport: Viewport::Fixed(area),
++    viewport: Viewport::Fixed(area),
 });
 ```
 
@@ -277,10 +301,10 @@ A new type `Masked` was introduced that implements `From<Text<'a>>`. This causes
 previously did not need to use type annotations to fail to compile.  To fix this, annotate or call
 to_string() / to_owned() / as_str() on the value. E.g.:
 
-```rust
-let paragraph = Paragraph::new("".as_ref());
+```diff
+- let paragraph = Paragraph::new("".as_ref());
 // becomes
-let paragraph = Paragraph::new("".as_str());
++ let paragraph = Paragraph::new("".as_str());
 ```
 
 ### `Marker::Block` now renders as a block rather than a bar character ([#133])
@@ -291,10 +315,10 @@ Code using the `Block` marker that previously rendered using a half block charac
 renders using the full block character (`'█'`). A new marker variant`Bar` is introduced to replace
 the existing code.
 
-```rust
-let canvas = Canvas::default().marker(Marker::Block);
+```diff
+- let canvas = Canvas::default().marker(Marker::Block);
 // becomes
-let canvas = Canvas::default().marker(Marker::Bar);
++ let canvas = Canvas::default().marker(Marker::Bar);
 ```
 
 ## [v0.20.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.20.0)
