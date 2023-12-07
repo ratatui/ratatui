@@ -213,6 +213,77 @@ impl<'a> Paragraph<'a> {
         self.alignment = alignment;
         self
     }
+
+    /// Calculates the number of lines needed to fully render.
+    ///
+    /// Given a max line width, this method calculates the number of lines that a paragraph will
+    /// need in order to be fully rendered. For paragraphs that do not use wrapping, this count is
+    /// simply the number of lines present in the paragraph.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let paragraph = Paragraph::new("Hello World")
+    ///     .wrap(Wrap { trim: false });
+    /// assert_eq!(paragraph.line_count(20), 1);
+    /// assert_eq!(paragraph.line_count(10), 2);
+    /// ```
+    #[stability::unstable(
+        feature = "rendered-line-info",
+        reason = "The design for text wrapping is not stable and might affect this API.",
+        issue = "https://github.com/ratatui-org/ratatui/issues/293"
+    )]
+    pub fn line_count(&self, width: u16) -> usize {
+        if width < 1 {
+            return 0;
+        }
+
+        if let Some(Wrap { trim }) = self.wrap {
+            let styled = self.text.lines.iter().map(|line| {
+                let graphemes = line
+                    .spans
+                    .iter()
+                    .flat_map(|span| span.styled_graphemes(self.style));
+                let alignment = line.alignment.unwrap_or(self.alignment);
+                (graphemes, alignment)
+            });
+            let mut line_composer = WordWrapper::new(styled, width, trim);
+            let mut count = 0;
+            while line_composer.next_line().is_some() {
+                count += 1;
+            }
+            count
+        } else {
+            self.text.lines.len()
+        }
+    }
+
+    /// Calculates the shortest line width needed to avoid any word being wrapped or truncated.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let paragraph = Paragraph::new("Hello World");
+    /// assert_eq!(paragraph.line_width(), 11);
+    ///
+    /// let paragraph = Paragraph::new("Hello World\nhi\nHello World!!!");
+    /// assert_eq!(paragraph.line_width(), 14);
+    /// ```
+    #[stability::unstable(
+        feature = "rendered-line-info",
+        reason = "The design for text wrapping is not stable and might affect this API.",
+        issue = "https://github.com/ratatui-org/ratatui/issues/293"
+    )]
+    pub fn line_width(&self) -> usize {
+        self.text
+            .lines
+            .iter()
+            .map(|l| l.width())
+            .max()
+            .unwrap_or_default()
+    }
 }
 
 impl<'a> Widget for Paragraph<'a> {
@@ -814,5 +885,47 @@ mod test {
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
         )
+    }
+
+    #[test]
+    fn widgets_paragraph_count_rendered_lines() {
+        let paragraph = Paragraph::new("Hello World");
+        assert_eq!(paragraph.line_count(20), 1);
+        assert_eq!(paragraph.line_count(10), 1);
+        let paragraph = Paragraph::new("Hello World").wrap(Wrap { trim: false });
+        assert_eq!(paragraph.line_count(20), 1);
+        assert_eq!(paragraph.line_count(10), 2);
+        let paragraph = Paragraph::new("Hello World").wrap(Wrap { trim: true });
+        assert_eq!(paragraph.line_count(20), 1);
+        assert_eq!(paragraph.line_count(10), 2);
+
+        let text = "Hello World ".repeat(100);
+        let paragraph = Paragraph::new(text.trim());
+        assert_eq!(paragraph.line_count(11), 1);
+        assert_eq!(paragraph.line_count(6), 1);
+        let paragraph = paragraph.wrap(Wrap { trim: false });
+        assert_eq!(paragraph.line_count(11), 100);
+        assert_eq!(paragraph.line_count(6), 200);
+        let paragraph = paragraph.wrap(Wrap { trim: true });
+        assert_eq!(paragraph.line_count(11), 100);
+        assert_eq!(paragraph.line_count(6), 200);
+    }
+
+    #[test]
+    fn widgets_paragraph_line_width() {
+        let paragraph = Paragraph::new("Hello World");
+        assert_eq!(paragraph.line_width(), 11);
+        let paragraph = Paragraph::new("Hello World").wrap(Wrap { trim: false });
+        assert_eq!(paragraph.line_width(), 11);
+        let paragraph = Paragraph::new("Hello World").wrap(Wrap { trim: true });
+        assert_eq!(paragraph.line_width(), 11);
+
+        let text = "Hello World ".repeat(100);
+        let paragraph = Paragraph::new(text);
+        assert_eq!(paragraph.line_width(), 1200);
+        let paragraph = paragraph.wrap(Wrap { trim: false });
+        assert_eq!(paragraph.line_width(), 1200);
+        let paragraph = paragraph.wrap(Wrap { trim: true });
+        assert_eq!(paragraph.line_width(), 1200);
     }
 }
