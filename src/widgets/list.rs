@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
@@ -8,6 +9,43 @@ use crate::{
     widgets::{Block, HighlightSpacing, StatefulWidget, Widget},
 };
 
+/// State of the [`List`] widget
+///
+/// This state can be used to scroll through items and select one. When the list is rendered as a
+/// stateful widget, the selected item will be highlighted and the list will be shifted to ensure
+/// that the selected item is visible. This will modify the [`ListState`] object passed to the
+/// [`Frame::render_stateful_widget`](crate::terminal::Frame::render_stateful_widget) method.
+///
+/// The state consists of two fields:
+/// - [`offset`]: the index of the first item to be displayed
+/// - [`selected`]: the index of the selected item, which can be `None` if no item is selected
+///
+/// [`offset`]: ListState::offset()
+/// [`selected`]: ListState::selected()
+///
+/// See the [list example] for a more in depth example of the various configuration options and
+/// for how to handle state.
+///
+/// [list example]: https://github.com/ratatui-org/ratatui/blob/main/examples/list.rs
+///
+/// # Example
+///
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// # fn ui(frame: &mut Frame) {
+/// # let area = Rect::default();
+/// # let items = vec![];
+/// let list = List::new(items);
+///
+/// // This should be stored outside of the function in your application state.
+/// let mut state = ListState::default();
+///
+/// *state.offset_mut() = 1; // display the second item and onwards
+/// state.select(Some(3));   // select the forth item (0-indexed)
+///
+/// frame.render_stateful_widget(list, area, &mut state);
+/// # }
+/// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct ListState {
     offset: usize,
@@ -15,30 +53,105 @@ pub struct ListState {
 }
 
 impl ListState {
-    pub fn offset(&self) -> usize {
-        self.offset
-    }
-
-    pub fn offset_mut(&mut self) -> &mut usize {
-        &mut self.offset
-    }
-
-    #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn with_selected(mut self, selected: Option<usize>) -> Self {
-        self.selected = selected;
-        self
-    }
-
+    /// Sets the index of the first item to be displayed
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let state = ListState::default().with_offset(1);
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn with_offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
     }
 
+    /// Sets the index of the selected item
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let state = ListState::default().with_selected(Some(1));
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn with_selected(mut self, selected: Option<usize>) -> Self {
+        self.selected = selected;
+        self
+    }
+
+    /// Index of the first item to be displayed
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let state = ListState::default();
+    /// assert_eq!(state.offset(), 0);
+    /// ```
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
+
+    /// Mutable reference to the index of the first item to be displayed
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = ListState::default();
+    /// *state.offset_mut() = 1;
+    /// ```
+    pub fn offset_mut(&mut self) -> &mut usize {
+        &mut self.offset
+    }
+
+    /// Index of the selected item
+    ///
+    /// Returns `None` if no item is selected
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let state = TableState::default();
+    /// assert_eq!(state.selected(), None);
+    /// ```
     pub fn selected(&self) -> Option<usize> {
         self.selected
     }
 
+    /// Mutable reference to the index of the selected item
+    ///
+    /// Returns `None` if no item is selected
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = ListState::default();
+    /// *state.selected_mut() = Some(1);
+    /// ```
+    pub fn selected_mut(&mut self) -> &mut Option<usize> {
+        &mut self.selected
+    }
+
+    /// Sets the index of the selected item
+    ///
+    /// Set to `None` if no item is selected. This will also reset the offset to `0`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = ListState::default();
+    /// state.select(Some(1));
+    /// ```
     pub fn select(&mut self, index: Option<usize>) {
         self.selected = index;
         if index.is_none() {
@@ -47,6 +160,40 @@ impl ListState {
     }
 }
 
+/// A single item in a [`List`]
+///
+/// The item's height is defined by the number of lines it contains. This can be queried using
+/// [`ListItem::height`]. Similarly, [`ListItem::width`] will return the maximum width of all
+/// lines.
+///
+/// You can set the style of an item with [`ListItem::style`] or using the [`Stylize`] trait.
+/// This [`Style`] will be combined with the [`Style`] of the inner [`Text`]. The [`Style`]
+/// of the [`Text`] will be added to the [`Style`] of the [`ListItem`].
+///
+/// # Examples
+///
+/// You can create [`ListItem`]s from simple `&str`
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// let item = ListItem::new("Item 1");
+/// ```
+///
+/// A [`ListItem`] styled with [`Stylize`]
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// let item = ListItem::new("Item 1").red().on_white();
+/// ```
+///
+/// If you need more control over the item's style, you can explicitly style the underlying
+/// [`Text`]
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// let mut text = Text::default();
+/// text.extend(["Item".blue(), Span::raw(" "), "1".bold().red()]);
+/// let item = ListItem::new(text);
+/// ```
+///
+/// [`Stylize`]: crate::style::Stylize
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ListItem<'a> {
     content: Text<'a>,
@@ -54,6 +201,27 @@ pub struct ListItem<'a> {
 }
 
 impl<'a> ListItem<'a> {
+    /// Creates a new [`ListItem`]
+    ///
+    /// The `content` parameter accepts any value that can be converted into [`Text`].
+    ///
+    /// # Examples
+    ///
+    /// You can create [`ListItem`]s from simple `&str`
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let item = ListItem::new("Item 1");
+    /// ```
+    ///
+    /// You can also create multilines item
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let item = ListItem::new("Multi-line\nitem");
+    /// ```
+    ///
+    /// # See also
+    ///
+    /// - [`List::new`] to create a list of items that can be converted to [`ListItem`]
     pub fn new<T>(content: T) -> ListItem<'a>
     where
         T: Into<Text<'a>>,
@@ -64,16 +232,69 @@ impl<'a> ListItem<'a> {
         }
     }
 
+    /// Sets the item style
+    ///
+    /// This [`Style`] can be overridden by the [`Style`] of the [`Text`] content.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let item = ListItem::new("Item 1").style(Style::new().red().italic());
+    /// ```
+    ///
+    /// `ListItem` also implements the [`Styled`] trait, which means you can use style shorthands
+    /// from the [`Stylize`](crate::style::Stylize) trait to set the style of the widget more
+    /// concisely.
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let item = ListItem::new("Item 1").red().italic();
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> ListItem<'a> {
         self.style = style;
         self
     }
 
+    /// Returns the item height
+    ///
+    /// # Examples
+    ///
+    /// One line item
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let item = ListItem::new("Item 1");
+    /// assert_eq!(item.height(), 1);
+    /// ```
+    ///
+    /// Two lines item (note the `\n`)
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let item = ListItem::new("Multi-line\nitem");
+    /// assert_eq!(item.height(), 2);
+    /// ```
     pub fn height(&self) -> usize {
         self.content.height()
     }
 
+    /// Returns the max width of all the lines
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let item = ListItem::new("12345");
+    /// assert_eq!(item.width(), 5);
+    /// ```
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let item = ListItem::new("12345\n1234567");
+    /// assert_eq!(item.width(), 7);
+    /// ```
     pub fn width(&self) -> usize {
         self.content.width()
     }
@@ -81,24 +302,77 @@ impl<'a> ListItem<'a> {
 
 /// A widget to display several items among which one can be selected (optional)
 ///
+/// A list is a collection of [`ListItem`]s.
+///
+/// This is different from a [`Table`] because it does not handle columns or headers and the item's
+/// height is automatically determined. A `List` can also be put in reverse order (i.e. *bottom to
+/// top*) whereas a [`Table`] cannot.
+///
+/// [`Table`]: crate::widgets::Table
+///
+/// [`List`] implements [`Widget`] and so it can be drawn using
+/// [`Frame::render_widget`](crate::terminal::Frame::render_widget).
+///
+/// [`List`] is also a [`StatefulWidget`], which means you can use it with [`ListState`] to allow
+/// the user to [scroll](ListState::offset) through items and [select](ListState::select) one of
+/// them.
+///
+/// See the [list example] for a more in depth example of the various configuration options and for
+/// how to handle state.
+///
+/// [list example]: https://github.com/ratatui-org/ratatui/blob/main/examples/list.rs
+///
+/// # Fluent setters
+///
+/// - [`List::highlight_style`] sets the style of the selected item.
+/// - [`List::highlight_symbol`] sets the symbol to be displayed in front of the selected item.
+/// - [`List::repeat_highlight_symbol`] sets whether to repeat the symbol and style over selected
+/// multi-line items
+/// - [`List::start_corner`] sets the list direction
+///
 /// # Examples
 ///
 /// ```
 /// use ratatui::{prelude::*, widgets::*};
-///
+/// # fn ui(frame: &mut Frame) {
+/// # let area = Rect::default();
 /// let items = [ListItem::new("Item 1"), ListItem::new("Item 2"), ListItem::new("Item 3")];
-/// List::new(items)
+/// let list = List::new(items)
 ///     .block(Block::default().title("List").borders(Borders::ALL))
 ///     .style(Style::default().fg(Color::White))
 ///     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
-///     .highlight_symbol(">>");
+///     .highlight_symbol(">>")
+///     .repeat_highlight_symbol(true)
+///     .start_corner(Corner::TopLeft);
+///
+/// frame.render_widget(list, area);
+/// # }
 /// ```
+///
+/// # Stateful example
+///
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// # fn ui(frame: &mut Frame) {
+/// # let area = Rect::default();
+/// // This should be stored outside of the function in your application state.
+/// let mut state = ListState::default();
+/// let items = [ListItem::new("Item 1"), ListItem::new("Item 2"), ListItem::new("Item 3")];
+/// let list = List::new(items)
+///     .block(Block::default().title("List").borders(Borders::ALL))
+///     .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
+///     .highlight_symbol(">>")
+///     .repeat_highlight_symbol(true);
+///
+/// frame.render_stateful_widget(list, area, &mut state);
+/// # }
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct List<'a> {
     block: Option<Block<'a>>,
     items: Vec<ListItem<'a>>,
     /// Style used as a base style for the widget
     style: Style,
+    /// List display direction, *top to bottom* or *bottom to top*
     start_corner: Corner,
     /// Style used to render selected item
     highlight_style: Style,
@@ -111,6 +385,16 @@ pub struct List<'a> {
 }
 
 impl<'a> List<'a> {
+    /// Creates a new list from [`ListItem`]s
+    ///
+    /// # Example
+    ///
+    /// From a slice of [`ListItem`]
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let items = [ListItem::new("Item 1"), ListItem::new("Item 2")];
+    /// let list = List::new(items);
+    /// ```
     pub fn new<T>(items: T) -> List<'a>
     where
         T: Into<Vec<ListItem<'a>>>,
@@ -127,30 +411,102 @@ impl<'a> List<'a> {
         }
     }
 
+    /// Wraps the list with a custom [`Block`] widget.
+    ///
+    /// The `block` parameter holds the specified [`Block`] to be created around the [`List`]
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let items = vec![ListItem::new("Item 1")];
+    /// let block = Block::default().title("List").borders(Borders::ALL);
+    /// let list = List::new(items).block(block);
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> List<'a> {
         self.block = Some(block);
         self
     }
 
+    /// Sets the base style of the widget
+    ///
+    /// All text rendered by the widget will use this style, unless overridden by [`Block::style`],
+    /// [`ListItem::style`], or the styles of the [`ListItem`]'s content.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let items = vec![ListItem::new("Item 1")];
+    /// let list = List::new(items).style(Style::new().red().italic());
+    /// ```
+    ///
+    /// `List` also implements the [`Styled`] trait, which means you can use style shorthands from
+    /// the [`Stylize`] trait to set the style of the widget more concisely.
+    ///
+    /// [`Stylize`]: crate::style::Stylize
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let items = vec![ListItem::new("Item 1")];
+    /// let list = List::new(items).red().italic();
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> List<'a> {
         self.style = style;
         self
     }
 
+    /// Set the symbol to be displayed in front of the selected item
+    ///
+    /// By default there are no highlight symbol.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let items = vec![ListItem::new("Item 1"), ListItem::new("Item 2")];
+    /// let list = List::new(items).highlight_symbol(">>");
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> List<'a> {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
 
+    /// Set the style of the selected item
+    ///
+    /// This style will be applied to the entire item, including the
+    /// [highlight symbol](List::highlight_symbol) if it is displayed, and will override any style
+    /// set on the item or on the individual cells.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let items = vec![ListItem::new("Item 1"), ListItem::new("Item 2")];
+    /// let list = List::new(items).highlight_style(Style::new().red().italic());
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_style(mut self, style: Style) -> List<'a> {
         self.highlight_style = style;
         self
     }
 
+    /// Set whether to repeat the highlight symbol and style over selected multi-line items
+    ///
+    /// This is `false` by default.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn repeat_highlight_symbol(mut self, repeat: bool) -> List<'a> {
         self.repeat_highlight_symbol = repeat;
@@ -159,23 +515,76 @@ impl<'a> List<'a> {
 
     /// Set when to show the highlight spacing
     ///
-    /// See [`HighlightSpacing`] about which variant affects spacing in which way
+    /// The highlight spacing is the spacing that is allocated for the selection symbol (if enabled)
+    /// and is used to shift the list when an item is selected. This method allows you to configure
+    /// when this spacing is allocated.
+    ///
+    /// - [`HighlightSpacing::Always`] will always allocate the spacing, regardless of whether an
+    ///   item is selected or not. This means that the table will never change size, regardless of
+    ///   if an item is selected or not.
+    /// - [`HighlightSpacing::WhenSelected`] will only allocate the spacing if an itemis selected.
+    ///   This means that the table will shift when an item is selected. This is the default setting
+    ///   for backwards compatibility, but it is recommended to use `HighlightSpacing::Always` for a
+    ///   better user experience.
+    /// - [`HighlightSpacing::Never`] will never allocate the spacing, regardless of whether an item
+    ///   is selected or not. This means that the highlight symbol will never be drawn.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let items = vec![ListItem::new("Item 1")];
+    /// let list = List::new(items).highlight_spacing(HighlightSpacing::Always);
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
     }
 
+    /// Defines the list direction (up or down)
+    ///
+    /// Defines if the `List` is displayed *top to bottom* (default) or *bottom to top*. Use
+    /// [`Corner::BottomLeft`] to go *bottom to top*. **Any** other variant will go *top to bottom*.
+    ///
+    /// This is set to [`Corner::TopLeft`] by default.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// ## Note
+    ///
+    /// Despite its name, this method doesn't change the horizontal alignment, i.e. the `List`
+    /// **won't** start in a corner.
+    ///
+    /// # Example
+    ///
+    /// Same as default, i.e. *top to bottom*. Despite the name implying otherwise.
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let items = vec![ListItem::new("Item 1")];
+    /// let list = List::new(items).start_corner(Corner::BottomRight);
+    /// ```
+    ///
+    /// Bottom to top
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let items = vec![ListItem::new("Item 1")];
+    /// let list = List::new(items).start_corner(Corner::BottomLeft);
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn start_corner(mut self, corner: Corner) -> List<'a> {
         self.start_corner = corner;
         self
     }
 
+    /// Returns the number of [`ListItem`]s in the list
     pub fn len(&self) -> usize {
         self.items.len()
     }
 
+    /// Returns true if the list contains no elements.
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
