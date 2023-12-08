@@ -34,7 +34,7 @@ use crate::{
 /// # use ratatui::{prelude::*, widgets::*};
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
-/// # let items = vec![];
+/// # let items = vec!["Item 1"];
 /// let list = List::new(items);
 ///
 /// // This should be stored outside of the function in your application state.
@@ -173,12 +173,22 @@ impl ListState {
 /// # Examples
 ///
 /// You can create [`ListItem`]s from simple `&str`
+///
 /// ```rust
 /// # use ratatui::{prelude::*, widgets::*};
 /// let item = ListItem::new("Item 1");
 /// ```
 ///
+/// Anything that can be converted to [`Text`] can be a [`ListItem`].
+///
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// let item1: ListItem = "Item 1".into();
+/// let item2: ListItem = Line::raw("Item 2").into();
+/// ```
+///
 /// A [`ListItem`] styled with [`Stylize`]
+///
 /// ```rust
 /// # use ratatui::{prelude::*, widgets::*};
 /// let item = ListItem::new("Item 1").red().on_white();
@@ -186,6 +196,7 @@ impl ListState {
 ///
 /// If you need more control over the item's style, you can explicitly style the underlying
 /// [`Text`]
+///
 /// ```rust
 /// # use ratatui::{prelude::*, widgets::*};
 /// let mut text = Text::default();
@@ -208,12 +219,22 @@ impl<'a> ListItem<'a> {
     /// # Examples
     ///
     /// You can create [`ListItem`]s from simple `&str`
+    ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
     /// let item = ListItem::new("Item 1");
     /// ```
     ///
+    /// Anything that can be converted to [`Text`] can be a [`ListItem`].
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let item1: ListItem = "Item 1".into();
+    /// let item2: ListItem = Line::raw("Item 2").into();
+    /// ```
+    ///
     /// You can also create multilines item
+    ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
     /// let item = ListItem::new("Multi-line\nitem");
@@ -264,6 +285,7 @@ impl<'a> ListItem<'a> {
     /// # Examples
     ///
     /// One line item
+    ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
     /// let item = ListItem::new("Item 1");
@@ -271,6 +293,7 @@ impl<'a> ListItem<'a> {
     /// ```
     ///
     /// Two lines item (note the `\n`)
+    ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
     /// let item = ListItem::new("Multi-line\nitem");
@@ -297,6 +320,15 @@ impl<'a> ListItem<'a> {
     /// ```
     pub fn width(&self) -> usize {
         self.content.width()
+    }
+}
+
+impl<'a, T> From<T> for ListItem<'a>
+where
+    T: Into<Text<'a>>,
+{
+    fn from(value: T) -> Self {
+        ListItem::new(value)
     }
 }
 
@@ -336,7 +368,7 @@ impl<'a> ListItem<'a> {
 /// use ratatui::{prelude::*, widgets::*};
 /// # fn ui(frame: &mut Frame) {
 /// # let area = Rect::default();
-/// let items = [ListItem::new("Item 1"), ListItem::new("Item 2"), ListItem::new("Item 3")];
+/// let items = ["Item 1", "Item 2", "Item 3"];
 /// let list = List::new(items)
 ///     .block(Block::default().title("List").borders(Borders::ALL))
 ///     .style(Style::default().fg(Color::White))
@@ -357,7 +389,7 @@ impl<'a> ListItem<'a> {
 /// # let area = Rect::default();
 /// // This should be stored outside of the function in your application state.
 /// let mut state = ListState::default();
-/// let items = [ListItem::new("Item 1"), ListItem::new("Item 2"), ListItem::new("Item 3")];
+/// let items = ["Item 1", "Item 2", "Item 3"];
 /// let list = List::new(items)
 ///     .block(Block::default().title("List").borders(Borders::ALL))
 ///     .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
@@ -366,7 +398,7 @@ impl<'a> ListItem<'a> {
 ///
 /// frame.render_stateful_widget(list, area, &mut state);
 /// # }
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub struct List<'a> {
     block: Option<Block<'a>>,
     items: Vec<ListItem<'a>>,
@@ -387,28 +419,74 @@ pub struct List<'a> {
 impl<'a> List<'a> {
     /// Creates a new list from [`ListItem`]s
     ///
+    /// The `items` parameter accepts any value that can be converted into an iterator of
+    /// [`Into<ListItem>`]. This includes arrays of [`&str`] or [`Vec`]s of [`Text`].
+    ///
     /// # Example
     ///
-    /// From a slice of [`ListItem`]
+    /// From a slice of [`&str`]
+    ///
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let items = [ListItem::new("Item 1"), ListItem::new("Item 2")];
-    /// let list = List::new(items);
+    /// let list = List::new(["Item 1", "Item 2"]);
+    /// ```
+    ///
+    /// From [`Text`]
+    ///
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let list = List::new([
+    ///     Text::styled("Item 1", Style::default().red()),
+    ///     Text::styled("Item 2", Style::default().red())
+    /// ]);
+    /// ```
+    ///
+    /// You can also create an empty list using the [`Default`] implementation and use the
+    /// [`List::items`] fluent setter.
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let empty_list = List::default();
+    /// let filled_list = empty_list.items(["Item 1"]);
     /// ```
     pub fn new<T>(items: T) -> List<'a>
     where
-        T: Into<Vec<ListItem<'a>>>,
+        T: IntoIterator,
+        T::Item: Into<ListItem<'a>>,
     {
         List {
             block: None,
             style: Style::default(),
-            items: items.into(),
+            items: items.into_iter().map(|i| i.into()).collect(),
             start_corner: Corner::TopLeft,
             highlight_style: Style::default(),
             highlight_symbol: None,
             repeat_highlight_symbol: false,
             highlight_spacing: HighlightSpacing::default(),
         }
+    }
+
+    /// Set the items
+    ///
+    /// The `items` parameter accepts any value that can be converted into an iterator of
+    /// [`Into<ListItem>`]. This includes arrays of [`&str`] or [`Vec`]s of [`Text`].
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let list = List::default().items(["Item 1", "Item 2"]);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn items<T>(mut self, items: T) -> Self
+    where
+        T: IntoIterator,
+        T::Item: Into<ListItem<'a>>,
+    {
+        self.items = items.into_iter().map(|i| i.into()).collect();
+        self
     }
 
     /// Wraps the list with a custom [`Block`] widget.
@@ -421,7 +499,7 @@ impl<'a> List<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = vec![ListItem::new("Item 1")];
+    /// # let items = vec!["Item 1"];
     /// let block = Block::default().title("List").borders(Borders::ALL);
     /// let list = List::new(items).block(block);
     /// ```
@@ -442,7 +520,7 @@ impl<'a> List<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = vec![ListItem::new("Item 1")];
+    /// # let items = vec!["Item 1"];
     /// let list = List::new(items).style(Style::new().red().italic());
     /// ```
     ///
@@ -453,7 +531,7 @@ impl<'a> List<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = vec![ListItem::new("Item 1")];
+    /// # let items = vec!["Item 1"];
     /// let list = List::new(items).red().italic();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -472,7 +550,7 @@ impl<'a> List<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = vec![ListItem::new("Item 1"), ListItem::new("Item 2")];
+    /// # let items = vec!["Item 1", "Item 2"];
     /// let list = List::new(items).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -493,7 +571,7 @@ impl<'a> List<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = vec![ListItem::new("Item 1"), ListItem::new("Item 2")];
+    /// # let items = vec!["Item 1", "Item 2"];
     /// let list = List::new(items).highlight_style(Style::new().red().italic());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -535,7 +613,7 @@ impl<'a> List<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = vec![ListItem::new("Item 1")];
+    /// # let items = vec!["Item 1"];
     /// let list = List::new(items).highlight_spacing(HighlightSpacing::Always);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -561,16 +639,18 @@ impl<'a> List<'a> {
     /// # Example
     ///
     /// Same as default, i.e. *top to bottom*. Despite the name implying otherwise.
+    ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = vec![ListItem::new("Item 1")];
+    /// # let items = vec!["Item 1"];
     /// let list = List::new(items).start_corner(Corner::BottomRight);
     /// ```
     ///
     /// Bottom to top
+    ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = vec![ListItem::new("Item 1")];
+    /// # let items = vec!["Item 1"];
     /// let list = List::new(items).start_corner(Corner::BottomLeft);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -850,6 +930,38 @@ mod tests {
     }
 
     #[test]
+    fn test_str_into_list_item() {
+        let s = "Test item";
+        let item: ListItem = s.into();
+        assert_eq!(item.content, Text::from(s));
+        assert_eq!(item.style, Style::default());
+    }
+
+    #[test]
+    fn test_string_into_list_item() {
+        let s = String::from("Test item");
+        let item: ListItem = s.clone().into();
+        assert_eq!(item.content, Text::from(s));
+        assert_eq!(item.style, Style::default());
+    }
+
+    #[test]
+    fn test_span_into_list_item() {
+        let s = Span::from("Test item");
+        let item: ListItem = s.clone().into();
+        assert_eq!(item.content, Text::from(s));
+        assert_eq!(item.style, Style::default());
+    }
+
+    #[test]
+    fn test_vec_lines_into_list_item() {
+        let lines = vec![Line::raw("l1"), Line::raw("l2")];
+        let item: ListItem = lines.clone().into();
+        assert_eq!(item.content, Text::from(lines));
+        assert_eq!(item.style, Style::default());
+    }
+
+    #[test]
     fn test_list_item_style() {
         let item = ListItem::new("Test item").style(Style::default().bg(Color::Red));
         assert_eq!(item.content, Text::from("Test item"));
@@ -897,7 +1009,7 @@ mod tests {
 
     #[test]
     fn test_list_does_not_render_in_small_space() {
-        let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
+        let items = vec!["Item 0", "Item 1", "Item 2"];
         let list = List::new(items.clone()).highlight_symbol(">>");
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
 
@@ -1134,6 +1246,21 @@ mod tests {
                 "  Item 2  ",
                 "          ",
             ],
+        );
+    }
+
+    #[test]
+    fn test_list_items_setter() {
+        let list = List::default().items(["Item 0", "Item 1", "Item 2"]);
+        assert_buffer_eq!(
+            render_widget(list, 10, 5),
+            Buffer::with_lines(vec![
+                "Item 0    ",
+                "Item 1    ",
+                "Item 2    ",
+                "          ",
+                "          ",
+            ])
         );
     }
 
@@ -1472,7 +1599,12 @@ mod tests {
     #[test]
     fn list_can_be_stylized() {
         assert_eq!(
-            List::new(vec![]).black().on_white().bold().not_dim().style,
+            List::new::<Vec<&str>>(vec![])
+                .black()
+                .on_white()
+                .bold()
+                .not_dim()
+                .style,
             Style::default()
                 .fg(Color::Black)
                 .bg(Color::White)
