@@ -155,8 +155,8 @@ impl Rect {
         Rect {
             x: x1,
             y: y1,
-            width: x2 - x1,
-            height: y2 - y1,
+            width: x2.saturating_sub(x1),
+            height: y2.saturating_sub(y1),
         }
     }
 
@@ -277,6 +277,14 @@ mod tests {
         assert_eq!(
             Rect::new(1, 2, 3, 4).intersection(Rect::new(2, 3, 4, 5)),
             Rect::new(2, 3, 2, 3)
+        );
+    }
+
+    #[test]
+    fn intersection_underflow() {
+        assert_eq!(
+            Rect::new(1, 1, 2, 2).intersection(Rect::new(4, 4, 2, 2)),
+            Rect::new(4, 4, 0, 0)
         );
     }
 
