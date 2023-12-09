@@ -46,13 +46,17 @@ jobs:
 
   check-breaking-change-label:
     runs-on: ubuntu-latest
+    env:
+      # use an environment variable to pass untrusted input to the script
+      # see https://securitylab.github.com/research/github-actions-untrusted-input/
+      PR_TITLE: ${{ github.event.pull_request.title }}
     steps:
     - name: Check breaking change label
       id: check_breaking_change
       run: |
         pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\(\w+\))?!:'
         # Check if pattern matches
-        if echo "${{ github.event.pull_request.title }}" | grep -qE "$pattern"; then
+        if echo "${PR_TITLE}" | grep -qE "$pattern"; then
           echo "breaking_change=true" >> $GITHUB_OUTPUT
         else
           echo "breaking_change=false" >> $GITHUB_OUTPUT
