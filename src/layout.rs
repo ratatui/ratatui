@@ -113,7 +113,7 @@ pub enum Alignment {
 ///
 /// # Examples
 ///
-/// `Constraint`` has some helper methods to create lists of constraints from anything that can be
+/// `Constraint` has some helper methods to create lists of constraints from anything that can be
 /// converted into an iterator of u16s ((u16, u16) for ratios).
 ///
 /// ```rust
