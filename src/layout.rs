@@ -103,7 +103,34 @@ pub enum Alignment {
     Right,
 }
 
-/// Constraints to apply
+/// A constraint that can be applied to a layout
+///
+/// Constraints are used to define the size of a layout. They can be used to define a fixed size, a
+/// percentage of the available space, a ratio of the available space, or a minimum or maximum size.
+///
+/// Relative constraints (percentage, ratio) are calculated relative to the entire space being
+/// split, not the space available after applying the more fixed constraints (min, max, length).
+///
+/// # Examples
+///
+/// `Constraint` has some helper methods to create lists of constraints from anything that can be
+/// converted into an iterator of u16s ((u16, u16) for ratios).
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// // a fixed layout
+/// let constraints = Constraint::from_lengths([10, 20, 10]);
+///
+/// // a centered layout
+/// let constraints = Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]);
+/// let constraints = Constraint::from_percentages([25, 50, 25]);
+///
+/// // a centered layout with a minimum size
+/// let constraints = Constraint::from_mins([0, 100, 0]);
+///
+/// // a sidebar layout specifying maximum sizes of the columns
+/// let constraints = Constraint::from_maxes([30, 170]);
+/// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Constraint {
     /// Apply a percentage to a given amount
@@ -624,6 +651,107 @@ impl Constraint {
             Constraint::Min(m) => length.max(m),
         }
     }
+
+    /// Convert an iterator of lengths into a vector of constraints
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # let area = Rect::default();
+    /// let constraints = Constraint::from_lengths([1, 2, 3]);
+    /// let layout = Layout::default()
+    ///     .constraints(constraints)
+    ///     .split(area);
+    /// ```
+    pub fn from_lengths<T>(lengths: T) -> Vec<Constraint>
+    where
+        T: IntoIterator<Item = u16>,
+    {
+        lengths.into_iter().map(Constraint::Length).collect_vec()
+    }
+
+    /// Convert an iterator of ratios into a vector of constraints
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # let area = Rect::default();
+    /// let constraints = Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]);
+    /// let layout = Layout::default()
+    ///     .constraints(constraints)
+    ///     .split(area);
+    /// ```
+    pub fn from_ratios<T>(ratios: T) -> Vec<Constraint>
+    where
+        T: IntoIterator<Item = (u32, u32)>,
+    {
+        ratios
+            .into_iter()
+            .map(|(n, d)| Constraint::Ratio(n, d))
+            .collect_vec()
+    }
+
+    /// Convert an iterator of percentages into a vector of constraints
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # let area = Rect::default();
+    /// let constraints = Constraint::from_percentages([25, 50, 25]);
+    /// let layout = Layout::default()
+    ///     .constraints(constraints)
+    ///     .split(area);
+    /// ```
+    pub fn from_percentages<T>(percentages: T) -> Vec<Constraint>
+    where
+        T: IntoIterator<Item = u16>,
+    {
+        percentages
+            .into_iter()
+            .map(Constraint::Percentage)
+            .collect_vec()
+    }
+
+    /// Convert an iterator of maxes into a vector of constraints
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # let area = Rect::default();
+    /// let constraints = Constraint::from_maxes([1, 2, 3]);
+    /// let layout = Layout::default()
+    ///     .constraints(constraints)
+    ///     .split(area);
+    /// ```
+    pub fn from_maxes<T>(maxes: T) -> Vec<Constraint>
+    where
+        T: IntoIterator<Item = u16>,
+    {
+        maxes.into_iter().map(Constraint::Max).collect_vec()
+    }
+
+    /// Convert an iterator of mins into a vector of constraints
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # let area = Rect::default();
+    /// let constraints = Constraint::from_mins([1, 2, 3]);
+    /// let layout = Layout::default()
+    ///     .constraints(constraints)
+    ///     .split(area);
+    /// ```
+    pub fn from_mins<T>(mins: T) -> Vec<Constraint>
+    where
+        T: IntoIterator<Item = u16>,
+    {
+        mins.into_iter().map(Constraint::Min).collect_vec()
+    }
 }
 
 impl AsRef<Constraint> for Constraint {
@@ -898,13 +1026,109 @@ mod tests {
         assert_eq!("".parse::<Direction>(), Err(ParseError::VariantNotFound));
     }
 
-    #[test]
-    fn constraint_to_string() {
-        assert_eq!(Constraint::Percentage(50).to_string(), "Percentage(50)");
-        assert_eq!(Constraint::Ratio(1, 2).to_string(), "Ratio(1, 2)");
-        assert_eq!(Constraint::Length(10).to_string(), "Length(10)");
-        assert_eq!(Constraint::Max(10).to_string(), "Max(10)");
-        assert_eq!(Constraint::Min(10).to_string(), "Min(10)");
+    mod constraint {
+        use super::*;
+
+        #[test]
+        fn default() {
+            assert_eq!(Constraint::default(), Constraint::Percentage(100));
+        }
+
+        #[test]
+        fn to_string() {
+            assert_eq!(Constraint::Percentage(50).to_string(), "Percentage(50)");
+            assert_eq!(Constraint::Ratio(1, 2).to_string(), "Ratio(1, 2)");
+            assert_eq!(Constraint::Length(10).to_string(), "Length(10)");
+            assert_eq!(Constraint::Max(10).to_string(), "Max(10)");
+            assert_eq!(Constraint::Min(10).to_string(), "Min(10)");
+        }
+
+        #[test]
+        fn from_lengths() {
+            let expected = [
+                Constraint::Length(1),
+                Constraint::Length(2),
+                Constraint::Length(3),
+            ];
+            assert_eq!(Constraint::from_lengths([1, 2, 3]), expected);
+            assert_eq!(Constraint::from_lengths(vec![1, 2, 3]), expected);
+        }
+
+        #[test]
+        fn from_ratios() {
+            let expected = [
+                Constraint::Ratio(1, 4),
+                Constraint::Ratio(1, 2),
+                Constraint::Ratio(1, 4),
+            ];
+            assert_eq!(Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]), expected);
+            assert_eq!(
+                Constraint::from_ratios(vec![(1, 4), (1, 2), (1, 4)]),
+                expected
+            );
+        }
+
+        #[test]
+        fn from_percentages() {
+            let expected = [
+                Constraint::Percentage(25),
+                Constraint::Percentage(50),
+                Constraint::Percentage(25),
+            ];
+            assert_eq!(Constraint::from_percentages([25, 50, 25]), expected);
+            assert_eq!(Constraint::from_percentages(vec![25, 50, 25]), expected);
+        }
+
+        #[test]
+        fn from_maxes() {
+            let expected = [Constraint::Max(1), Constraint::Max(2), Constraint::Max(3)];
+            assert_eq!(Constraint::from_maxes([1, 2, 3]), expected);
+            assert_eq!(Constraint::from_maxes(vec![1, 2, 3]), expected);
+        }
+
+        #[test]
+        fn from_mins() {
+            let expected = [Constraint::Min(1), Constraint::Min(2), Constraint::Min(3)];
+            assert_eq!(Constraint::from_mins([1, 2, 3]), expected);
+            assert_eq!(Constraint::from_mins(vec![1, 2, 3]), expected);
+        }
+
+        #[test]
+        fn apply() {
+            assert_eq!(Constraint::Percentage(0).apply(100), 0);
+            assert_eq!(Constraint::Percentage(50).apply(100), 50);
+            assert_eq!(Constraint::Percentage(100).apply(100), 100);
+            assert_eq!(Constraint::Percentage(200).apply(100), 100);
+            assert_eq!(Constraint::Percentage(u16::MAX).apply(100), 100);
+
+            // 0/0 intentionally avoids a panic by returning 0.
+            assert_eq!(Constraint::Ratio(0, 0).apply(100), 0);
+            // 1/0 intentionally avoids a panic by returning 100% of the length.
+            assert_eq!(Constraint::Ratio(1, 0).apply(100), 100);
+            assert_eq!(Constraint::Ratio(0, 1).apply(100), 0);
+            assert_eq!(Constraint::Ratio(1, 2).apply(100), 50);
+            assert_eq!(Constraint::Ratio(2, 2).apply(100), 100);
+            assert_eq!(Constraint::Ratio(3, 2).apply(100), 100);
+            assert_eq!(Constraint::Ratio(u32::MAX, 2).apply(100), 100);
+
+            assert_eq!(Constraint::Length(0).apply(100), 0);
+            assert_eq!(Constraint::Length(50).apply(100), 50);
+            assert_eq!(Constraint::Length(100).apply(100), 100);
+            assert_eq!(Constraint::Length(200).apply(100), 100);
+            assert_eq!(Constraint::Length(u16::MAX).apply(100), 100);
+
+            assert_eq!(Constraint::Max(0).apply(100), 0);
+            assert_eq!(Constraint::Max(50).apply(100), 50);
+            assert_eq!(Constraint::Max(100).apply(100), 100);
+            assert_eq!(Constraint::Max(200).apply(100), 100);
+            assert_eq!(Constraint::Max(u16::MAX).apply(100), 100);
+
+            assert_eq!(Constraint::Min(0).apply(100), 100);
+            assert_eq!(Constraint::Min(50).apply(100), 100);
+            assert_eq!(Constraint::Min(100).apply(100), 100);
+            assert_eq!(Constraint::Min(200).apply(100), 200);
+            assert_eq!(Constraint::Min(u16::MAX).apply(100), u16::MAX);
+        }
     }
 
     #[test]
@@ -1052,43 +1276,6 @@ mod tests {
             ),
             [(100, 45), (145, 10), (155, 45)]
         );
-    }
-
-    #[test]
-    fn test_constraint_apply() {
-        assert_eq!(Constraint::Percentage(0).apply(100), 0);
-        assert_eq!(Constraint::Percentage(50).apply(100), 50);
-        assert_eq!(Constraint::Percentage(100).apply(100), 100);
-        assert_eq!(Constraint::Percentage(200).apply(100), 100);
-        assert_eq!(Constraint::Percentage(u16::MAX).apply(100), 100);
-
-        // 0/0 intentionally avoids a panic by returning 0.
-        assert_eq!(Constraint::Ratio(0, 0).apply(100), 0);
-        // 1/0 intentionally avoids a panic by returning 100% of the length.
-        assert_eq!(Constraint::Ratio(1, 0).apply(100), 100);
-        assert_eq!(Constraint::Ratio(0, 1).apply(100), 0);
-        assert_eq!(Constraint::Ratio(1, 2).apply(100), 50);
-        assert_eq!(Constraint::Ratio(2, 2).apply(100), 100);
-        assert_eq!(Constraint::Ratio(3, 2).apply(100), 100);
-        assert_eq!(Constraint::Ratio(u32::MAX, 2).apply(100), 100);
-
-        assert_eq!(Constraint::Length(0).apply(100), 0);
-        assert_eq!(Constraint::Length(50).apply(100), 50);
-        assert_eq!(Constraint::Length(100).apply(100), 100);
-        assert_eq!(Constraint::Length(200).apply(100), 100);
-        assert_eq!(Constraint::Length(u16::MAX).apply(100), 100);
-
-        assert_eq!(Constraint::Max(0).apply(100), 0);
-        assert_eq!(Constraint::Max(50).apply(100), 50);
-        assert_eq!(Constraint::Max(100).apply(100), 100);
-        assert_eq!(Constraint::Max(200).apply(100), 100);
-        assert_eq!(Constraint::Max(u16::MAX).apply(100), 100);
-
-        assert_eq!(Constraint::Min(0).apply(100), 100);
-        assert_eq!(Constraint::Min(50).apply(100), 100);
-        assert_eq!(Constraint::Min(100).apply(100), 100);
-        assert_eq!(Constraint::Min(200).apply(100), 200);
-        assert_eq!(Constraint::Min(u16::MAX).apply(100), u16::MAX);
     }
 
     /// Tests for the `Layout::split()` function.
