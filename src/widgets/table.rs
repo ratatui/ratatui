@@ -706,7 +706,12 @@ fn render_cell(buf: &mut Buffer, cell: &Cell, area: Rect) {
             _ => 0,
         };
 
-        buf.set_line(area.x + x_offset, area.y + i as u16, line, area.width);
+        let x = area.x + x_offset;
+        if x >= area.right() {
+            continue;
+        }
+
+        buf.set_line(x, area.y + i as u16, line, area.width);
     }
 }
 
@@ -1033,6 +1038,15 @@ mod tests {
         ]);
 
         assert_eq!(buf, expected);
+    }
+
+    #[test]
+    fn test_render_table_when_overflow() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
+        let table = Table::new(vec![], [Constraint::Min(20); 1])
+            .header(Row::new([Line::from("").alignment(Alignment::Right)]));
+
+        Widget::render(table, Rect::new(0, 0, 20, 3), &mut buf);
     }
 
     #[test]
