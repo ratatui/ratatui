@@ -317,7 +317,8 @@ pub struct Chart<'a> {
     style: Style,
     /// Constraints used to determine whether the legend should be shown or not
     hidden_legend_constraints: (Constraint, Constraint),
-    /// The position of a legend
+    /// The position detnermine where the legenth is shown or hide regaurdless of
+    /// `hidden_legend_constraints`
     legend_position: Option<LegendPosition>,
 }
 
@@ -330,7 +331,7 @@ impl<'a> Chart<'a> {
             style: Style::default(),
             datasets,
             hidden_legend_constraints: (Constraint::Ratio(1, 4), Constraint::Ratio(1, 4)),
-            legend_position: Some(LegendPosition::TopRight),
+            legend_position: Some(LegendPosition::default()),
         }
     }
 
@@ -379,7 +380,10 @@ impl<'a> Chart<'a> {
         self
     }
 
-    /// Set the position of a legend.
+    /// Set the position of a legend or hide it.
+    ///
+    /// If [`None`], hide the legend even if satisfied with
+    /// [`hidden_legend_constraints`](Self::hidden_legend_constraints)
     ///
     /// # Examples
     ///
