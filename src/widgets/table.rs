@@ -426,7 +426,7 @@ impl<'a> Table<'a> {
     /// ];
     /// let table = Table::default().rows(rows);
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn rows<T>(mut self, rows: T) -> Self
     where
         T: IntoIterator<Item = Row<'a>>,
@@ -448,7 +448,7 @@ impl<'a> Table<'a> {
     /// let header = Row::new(vec![Cell::from("Header Cell 1"), Cell::from("Header Cell 2")]);
     /// let table = Table::default().header(header);
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn header(mut self, header: Row<'a>) -> Self {
         self.header = Some(header);
         self
@@ -472,7 +472,7 @@ impl<'a> Table<'a> {
     /// let widths = [10, 10, 20].into_iter().map(|c| Constraint::Length(c));
     /// let table = Table::default().widths(widths);
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn widths<I>(mut self, widths: I) -> Self
     where
         I: IntoIterator,
@@ -496,7 +496,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).column_spacing(1);
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self
@@ -518,7 +518,7 @@ impl<'a> Table<'a> {
     /// let block = Block::default().title("Table").borders(Borders::ALL);
     /// let table = Table::new(rows, widths).block(block);
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
@@ -549,7 +549,7 @@ impl<'a> Table<'a> {
     /// # let widths = vec![Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).red().italic();
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Self {
         self.style = style;
         self
@@ -570,7 +570,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).highlight_style(Style::new().red().italic());
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_style(mut self, highlight_style: Style) -> Self {
         self.highlight_style = highlight_style;
         self
@@ -588,7 +588,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).highlight_symbol(">>");
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
         self.highlight_symbol = Some(highlight_symbol);
         self
@@ -620,7 +620,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).highlight_spacing(HighlightSpacing::Always);
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
@@ -697,7 +697,7 @@ impl<'a> Row<'a> {
     /// let row = Row::default().cells(vec!["Cell 1", "Cell 2", "Cell 3"]);
     /// let row = Row::default().cells(vec![Cell::new("Cell 1"), Cell::new("Cell 2"), Cell::new("Cell 3")]);
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn cells<T>(mut self, cells: T) -> Self
     where
         T: IntoIterator,
@@ -722,7 +722,7 @@ impl<'a> Row<'a> {
     /// let cells = vec!["Cell 1\nline 2", "Cell 2", "Cell 3"];
     /// let row = Row::new(cells).height(2);
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn height(mut self, height: u16) -> Self {
         self.height = height;
         self
@@ -741,7 +741,7 @@ impl<'a> Row<'a> {
     /// # let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
     /// let row = Row::default().bottom_margin(1);
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bottom_margin(mut self, margin: u16) -> Self {
         self.bottom_margin = margin;
         self
@@ -770,7 +770,7 @@ impl<'a> Row<'a> {
     /// let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
     /// let row = Row::new(cells).red().italic();
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Self {
         self.style = style;
         self
@@ -822,7 +822,7 @@ impl<'a> Cell<'a> {
     /// ]));
     /// Cell::default().content(Text::from("a text"));
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn content<T>(mut self, content: T) -> Self
     where
         T: Into<Text<'a>>,
@@ -852,7 +852,7 @@ impl<'a> Cell<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// Cell::new("Cell 1").red().italic();
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Self {
         self.style = style;
         self
@@ -897,7 +897,7 @@ impl TableState {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let state = TableState::new().with_offset(1);
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn with_offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
@@ -913,7 +913,7 @@ impl TableState {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let state = TableState::new().with_selected(Some(1));
     /// ```
-    #[must_use = "fluent setter methods do not modify the underlying object"]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn with_selected(mut self, selected: Option<usize>) -> Self {
         self.selected = selected;
         self
