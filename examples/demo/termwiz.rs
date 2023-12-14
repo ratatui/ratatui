@@ -45,10 +45,10 @@ fn run_app(
         {
             match input {
                 InputEvent::Key(key_code) => match key_code.key {
-                    KeyCode::UpArrow => app.on_up(),
-                    KeyCode::DownArrow => app.on_down(),
-                    KeyCode::LeftArrow => app.on_left(),
-                    KeyCode::RightArrow => app.on_right(),
+                    KeyCode::UpArrow | KeyCode::Char('k') => app.on_up(),
+                    KeyCode::DownArrow | KeyCode::Char('j') => app.on_down(),
+                    KeyCode::LeftArrow | KeyCode::Char('h') => app.on_left(),
+                    KeyCode::RightArrow | KeyCode::Char('l') => app.on_right(),
                     KeyCode::Char(c) => app.on_key(c),
                     _ => {}
                 },

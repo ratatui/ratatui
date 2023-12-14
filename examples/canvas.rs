@@ -59,10 +59,10 @@ impl App {
                 if let Event::Key(key) = event::read()? {
                     match key.code {
                         KeyCode::Char('q') => break,
-                        KeyCode::Down => app.y += 1.0,
-                        KeyCode::Up => app.y -= 1.0,
-                        KeyCode::Right => app.x += 1.0,
-                        KeyCode::Left => app.x -= 1.0,
+                        KeyCode::Down | KeyCode::Char('j') => app.y += 1.0,
+                        KeyCode::Up | KeyCode::Char('k') => app.y -= 1.0,
+                        KeyCode::Right | KeyCode::Char('l') => app.x += 1.0,
+                        KeyCode::Left | KeyCode::Char('h') => app.x -= 1.0,
                         _ => {}
                     }
                 }

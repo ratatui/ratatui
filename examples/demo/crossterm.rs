@@ -55,11 +55,11 @@ fn run_app<B: Backend>(
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
                     match key.code {
+                        KeyCode::Left | KeyCode::Char('h') => app.on_left(),
+                        KeyCode::Up | KeyCode::Char('k') => app.on_up(),
+                        KeyCode::Right | KeyCode::Char('l') => app.on_right(),
+                        KeyCode::Down | KeyCode::Char('j') => app.on_down(),
                         KeyCode::Char(c) => app.on_key(c),
-                        KeyCode::Left => app.on_left(),
-                        KeyCode::Up => app.on_up(),
-                        KeyCode::Right => app.on_right(),
-                        KeyCode::Down => app.on_down(),
                         _ => {}
                     }
                 }
