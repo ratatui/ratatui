@@ -427,8 +427,8 @@ be installed with `cargo install cargo-make`).
 
 ## Apps
 
-Check out the list of more than 50 [Apps using
-`Ratatui`](https://github.com/ratatui-org/ratatui/wiki/Apps-using-Ratatui)!
+Check out [awesome-ratatui](https://github.com/ratatui-org/awesome-ratatui) for a curated list of
+awesome apps/libraries built with `ratatui`!
 
 ## Alternatives
 
