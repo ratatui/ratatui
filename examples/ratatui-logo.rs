@@ -53,7 +53,7 @@ fn main() -> io::Result<()> {
     })?;
     sleep(Duration::from_secs(5));
     restore()?;
-    println!("");
+    println!();
     Ok(())
 }
 
