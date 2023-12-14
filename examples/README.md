@@ -223,6 +223,18 @@ cargo run --example=popup --features=crossterm
 
 ![Popup][popup.gif]
 
+## Ratatui-logo
+
+A fun example of using half blocks to render graphics Source:
+[ratatui-logo.rs](./ratatui-logo.rs).
+
+>
+```shell
+cargo run --example=ratatui-logo --features=crossterm
+```
+
+![Ratatui Logo][ratatui-logo.gif]
+
 ## Scrollbar
 
 Demonstrates the [`Scrollbar`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Scrollbar.html)
@@ -309,6 +321,7 @@ examples/generate.bash
 [panic.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/panic.gif?raw=true
 [paragraph.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/paragraph.gif?raw=true
 [popup.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/popup.gif?raw=true
+[ratatui-logo.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/ratatui-logo.gif?raw=true
 [scrollbar.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/scrollbar.gif?raw=true
 [sparkline.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/sparkline.gif?raw=true
 [table.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/table.gif?raw=true
