@@ -216,12 +216,12 @@ fn handle_key_event(
 ) -> ControlFlow<()> {
     match key.code {
         KeyCode::Char('q') => return ControlFlow::Break(()),
-        KeyCode::Left => {
+        KeyCode::Left | KeyCode::Char('h') => {
             button_states[*selected_button] = State::Normal;
             *selected_button = selected_button.saturating_sub(1);
             button_states[*selected_button] = State::Selected;
         }
-        KeyCode::Right => {
+        KeyCode::Right | KeyCode::Char('l') => {
             button_states[*selected_button] = State::Normal;
             *selected_button = selected_button.saturating_add(1).min(2);
             button_states[*selected_button] = State::Selected;

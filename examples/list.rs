@@ -181,9 +181,9 @@ fn run_app<B: Backend>(
                 if key.kind == KeyEventKind::Press {
                     match key.code {
                         KeyCode::Char('q') => return Ok(()),
-                        KeyCode::Left => app.items.unselect(),
-                        KeyCode::Down => app.items.next(),
-                        KeyCode::Up => app.items.previous(),
+                        KeyCode::Left | KeyCode::Char('h') => app.items.unselect(),
+                        KeyCode::Down | KeyCode::Char('j') => app.items.next(),
+                        KeyCode::Up | KeyCode::Char('k') => app.items.previous(),
                         _ => {}
                     }
                 }

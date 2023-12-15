@@ -39,11 +39,11 @@ fn run_app<B: Backend>(
 
         match events.recv()? {
             Event::Input(key) => match key {
+                Key::Up | Key::Char('k') => app.on_up(),
+                Key::Down | Key::Char('j') => app.on_down(),
+                Key::Left | Key::Char('h') => app.on_left(),
+                Key::Right | Key::Char('l') => app.on_right(),
                 Key::Char(c) => app.on_key(c),
-                Key::Up => app.on_up(),
-                Key::Down => app.on_down(),
-                Key::Left => app.on_left(),
-                Key::Right => app.on_right(),
                 _ => {}
             },
             Event::Tick => app.on_tick(),
