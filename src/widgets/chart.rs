@@ -39,19 +39,6 @@ impl<'a> Axis<'a> {
         self
     }
 
-    #[deprecated(
-        since = "0.10.0",
-        note = "You should use styling capabilities of `text::Line` given as argument of the `title` method to apply styling to the title."
-    )]
-    #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title_style(mut self, style: Style) -> Axis<'a> {
-        if let Some(t) = self.title {
-            let title = String::from(t);
-            self.title = Some(TextLine::from(Span::styled(title, style)));
-        }
-        self
-    }
-
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bounds(mut self, bounds: [f64; 2]) -> Axis<'a> {
         self.bounds = bounds;
