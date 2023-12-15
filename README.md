@@ -86,8 +86,8 @@ render "Hello World!". The full code for this example which contains a little mo
 [Application Patterns] and [Hello World tutorial] sections in the [Ratatui Website] and the various
 [Examples]. There are also several starter templates available:
 
-- [ratatui-template]
-- [ratatui-async-template] (book and template)
+- [template]
+- [async-template] (book and template)
 
 Every application built with `ratatui` needs to implement the following steps:
 
@@ -299,8 +299,8 @@ Running this example produces the following output:
 [Handling Events]: https://ratatui.rs/concepts/event-handling/
 [Layout]: https://ratatui.rs/how-to/layout/
 [Styling Text]: https://ratatui.rs/how-to/render/style-text/
-[ratatui-template]: https://github.com/ratatui-org/ratatui-template
-[ratatui-async-template]: https://ratatui-org.github.io/ratatui-async-template
+[template]: https://github.com/ratatui-org/template
+[async-template]: https://ratatui-org.github.io/async-template
 [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples
 [git-cliff]: https://git-cliff.org
 [Conventional Commits]: https://www.conventionalcommits.org
