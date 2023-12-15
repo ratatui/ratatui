@@ -274,6 +274,46 @@ impl fmt::Display for Bg {
     }
 }
 
+macro_rules! from_termion_for_color {
+    ($termion_color:ident, $color: ident) => {
+        impl From<termion::color::$termion_color> for Color {
+            fn from(_: termion::color::$termion_color) -> Self {
+                Color::$color
+            }
+        }
+    };
+}
+
+from_termion_for_color!(Reset, Reset);
+from_termion_for_color!(Black, Black);
+from_termion_for_color!(Red, Red);
+from_termion_for_color!(Green, Green);
+from_termion_for_color!(Yellow, Yellow);
+from_termion_for_color!(Blue, Blue);
+from_termion_for_color!(Magenta, Magenta);
+from_termion_for_color!(Cyan, Cyan);
+from_termion_for_color!(White, Gray);
+from_termion_for_color!(LightBlack, DarkGray);
+from_termion_for_color!(LightRed, LightRed);
+from_termion_for_color!(LightGreen, LightGreen);
+from_termion_for_color!(LightBlue, LightBlue);
+from_termion_for_color!(LightYellow, LightYellow);
+from_termion_for_color!(LightMagenta, LightMagenta);
+from_termion_for_color!(LightCyan, LightCyan);
+from_termion_for_color!(LightWhite, White);
+
+impl From<termion::color::AnsiValue> for Color {
+    fn from(value: termion::color::AnsiValue) -> Self {
+        Color::Indexed(value.0)
+    }
+}
+
+impl From<termion::color::Rgb> for Color {
+    fn from(value: termion::color::Rgb) -> Self {
+        Color::Rgb(value.0, value.1, value.2)
+    }
+}
+
 impl fmt::Display for ModifierDiff {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let remove = self.from - self.to;
@@ -336,5 +376,35 @@ impl fmt::Display for ModifierDiff {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn from_termion_color() {
+        use termion::color as tcolor;
+
+        assert_eq!(Color::from(tcolor::Reset), Color::Reset);
+        assert_eq!(Color::from(tcolor::Black), Color::Black);
+        assert_eq!(Color::from(tcolor::Red), Color::Red);
+        assert_eq!(Color::from(tcolor::Green), Color::Green);
+        assert_eq!(Color::from(tcolor::Yellow), Color::Yellow);
+        assert_eq!(Color::from(tcolor::Blue), Color::Blue);
+        assert_eq!(Color::from(tcolor::Magenta), Color::Magenta);
+        assert_eq!(Color::from(tcolor::Cyan), Color::Cyan);
+        assert_eq!(Color::from(tcolor::White), Color::Gray);
+        assert_eq!(Color::from(tcolor::LightBlack), Color::DarkGray);
+        assert_eq!(Color::from(tcolor::LightRed), Color::LightRed);
+        assert_eq!(Color::from(tcolor::LightGreen), Color::LightGreen);
+        assert_eq!(Color::from(tcolor::LightBlue), Color::LightBlue);
+        assert_eq!(Color::from(tcolor::LightYellow), Color::LightYellow);
+        assert_eq!(Color::from(tcolor::LightMagenta), Color::LightMagenta);
+        assert_eq!(Color::from(tcolor::LightCyan), Color::LightCyan);
+        assert_eq!(Color::from(tcolor::LightWhite), Color::White);
+        assert_eq!(Color::from(tcolor::AnsiValue(31)), Color::Indexed(31));
+        assert_eq!(Color::from(tcolor::Rgb(1, 2, 3)), Color::Rgb(1, 2, 3));
     }
 }
