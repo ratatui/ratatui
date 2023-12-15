@@ -11,7 +11,7 @@ github with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - Unreleased (0.24.1)
-  - `List::start_corner` is renamed to `List::direction`
+  - Removed `Axis::title_style` and `Buffer::set_background`
   - `List::new()` now accepts `IntoIterator<Item = Into<ListItem<'a>>>`
   - `Table::new()` now requires specifying the widths
   - `Table::widths()` now accepts `IntoIterator<Item = AsRef<Constraint>>`
@@ -42,28 +42,17 @@ This is a quick summary of the sections below:
 
 ## Unreleased (v0.24.1)
 
-### `List::start_corner` is renamed to `List::direction` ([#673])
+### Removed `Axis::title_style` and `Buffer::set_background`
 
-[#673]: https://github.com/ratatui-org/ratatui/pull/673
+These items were deprecated since 0.10.
 
-Previously `List::start_corner` didn't communicate the intent of the method. It also used an
-inadequate `Corner` enum. The method is now renamed `direction` and a new enum
-`ListDirection` has been added.
+- You should use styling capabilities of [`text::Line`] given as argument of [`Axis::title`]
+instead of `Axis::title_style`
+- You should use styling capabilities of [`Buffer::set_style`] instead of `Buffer::set_background`
 
-```diff
-- List::new(/* items */).start_corner(Corner::TopLeft);
-- List::new(/* items */).start_corner(Corner::TopRight);
-// This is not an error, BottomRight rendered top to bottom previously
-- List::new(/* items */).start_corner(Corner::BottomRight);
-// all becomes
-+ List::new(/* items */).direction(ListDirection::TopToBottom);
-```
-
-```diff
-- List::new(/* items */).start_corner(Corner::BottomLeft);
-// becomes
-+ List::new(/* items */).direction(ListDirection::BottomToTop);
-```
+[`text::Line`]: https://docs.rs/ratatui/latest/ratatui/text/struct.Line.html
+[`Axis::title`]: https://docs.rs/ratatui/latest/ratatui/widgets/struct.Axis.html#method.title
+[`Buffer::set_style`]: https://docs.rs/ratatui/latest/ratatui/buffer/struct.Buffer.html#method.set_style
 
 ### `List::new()` now accepts `IntoIterator<Item = Into<ListItem<'a>>>` ([#672])
 
