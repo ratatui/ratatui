@@ -379,6 +379,30 @@ impl fmt::Display for ModifierDiff {
     }
 }
 
+macro_rules! from_termion_for_modifier {
+    ($termion_modifier:ident, $modifier: ident) => {
+        impl From<termion::style::$termion_modifier> for Modifier {
+            fn from(_: termion::style::$termion_modifier) -> Self {
+                Modifier::$modifier
+            }
+        }
+    };
+}
+
+from_termion_for_modifier!(Invert, REVERSED);
+from_termion_for_modifier!(Bold, BOLD);
+from_termion_for_modifier!(Italic, ITALIC);
+from_termion_for_modifier!(Underline, UNDERLINED);
+from_termion_for_modifier!(Faint, DIM);
+from_termion_for_modifier!(CrossedOut, CROSSED_OUT);
+from_termion_for_modifier!(Blink, SLOW_BLINK);
+
+impl From<termion::style::Reset> for Modifier {
+    fn from(_: termion::style::Reset) -> Self {
+        Modifier::empty()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -406,5 +430,19 @@ mod tests {
         assert_eq!(Color::from(tcolor::LightWhite), Color::White);
         assert_eq!(Color::from(tcolor::AnsiValue(31)), Color::Indexed(31));
         assert_eq!(Color::from(tcolor::Rgb(1, 2, 3)), Color::Rgb(1, 2, 3));
+    }
+
+    #[test]
+    fn from_termion_style() {
+        use termion::style as tstyle;
+
+        assert_eq!(Modifier::from(tstyle::Invert), Modifier::REVERSED);
+        assert_eq!(Modifier::from(tstyle::Bold), Modifier::BOLD);
+        assert_eq!(Modifier::from(tstyle::Italic), Modifier::ITALIC);
+        assert_eq!(Modifier::from(tstyle::Underline), Modifier::UNDERLINED);
+        assert_eq!(Modifier::from(tstyle::Faint), Modifier::DIM);
+        assert_eq!(Modifier::from(tstyle::CrossedOut), Modifier::CROSSED_OUT);
+        assert_eq!(Modifier::from(tstyle::Blink), Modifier::SLOW_BLINK);
+        assert_eq!(Modifier::from(tstyle::Reset), Modifier::empty());
     }
 }
