@@ -221,7 +221,8 @@ fn ui(f: &mut Frame, app: &App) {
                 .style(Style::default().fg(Color::Gray))
                 .bounds([0.0, 5.0])
                 .labels(vec!["0".bold(), "2.5".into(), "5.0".bold()]),
-        );
+        )
+        .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)));
     f.render_widget(chart, chunks[1]);
 
     let datasets = vec![Dataset::default()
@@ -249,6 +250,8 @@ fn ui(f: &mut Frame, app: &App) {
                 .style(Style::default().fg(Color::Gray))
                 .bounds([0.0, 5.0])
                 .labels(vec!["0".bold(), "2.5".into(), "5".bold()]),
-        );
+        )
+        .legend_position(Some(LegendPosition::TopLeft))
+        .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)));
     f.render_widget(chart, chunks[2]);
 }
