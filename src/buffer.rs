@@ -140,13 +140,23 @@ impl Default for Cell {
 /// # Examples:
 ///
 /// ```
-/// use ratatui::{prelude::*, buffer::Cell};
+/// use ratatui::{buffer::Cell, prelude::*};
 ///
-/// let mut buf = Buffer::empty(Rect{x: 0, y: 0, width: 10, height: 5});
+/// let mut buf = Buffer::empty(Rect {
+///     x: 0,
+///     y: 0,
+///     width: 10,
+///     height: 5,
+/// });
 /// buf.get_mut(0, 2).set_symbol("x");
 /// assert_eq!(buf.get(0, 2).symbol(), "x");
 ///
-/// buf.set_string(3, 0, "string", Style::default().fg(Color::Red).bg(Color::White));
+/// buf.set_string(
+///     3,
+///     0,
+///     "string",
+///     Style::default().fg(Color::Red).bg(Color::White),
+/// );
 /// let cell = buf.get_mut(5, 0);
 /// assert_eq!(cell.symbol(), "r");
 /// assert_eq!(cell.fg, Color::Red);
@@ -365,18 +375,6 @@ impl Buffer {
 
     pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, width: u16) -> (u16, u16) {
         self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
-    }
-
-    #[deprecated(
-        since = "0.10.0",
-        note = "You should use styling capabilities of `Buffer::set_style`"
-    )]
-    pub fn set_background(&mut self, area: Rect, color: Color) {
-        for y in area.top()..area.bottom() {
-            for x in area.left()..area.right() {
-                self.get_mut(x, y).set_bg(color);
-            }
-        }
     }
 
     pub fn set_style(&mut self, area: Rect, style: Style) {

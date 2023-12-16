@@ -39,6 +39,7 @@ use std::{
 ///
 /// ```
 /// use std::str::FromStr;
+///
 /// use ratatui::prelude::*;
 ///
 /// assert_eq!(Color::from_str("red"), Ok(Color::Red));
@@ -147,6 +148,7 @@ impl std::error::Error for ParseColorError {}
 ///
 /// ```
 /// use std::str::FromStr;
+///
 /// use ratatui::prelude::*;
 ///
 /// let color: Color = Color::from_str("blue").unwrap();

@@ -43,7 +43,8 @@ use crate::{
 /// # Example
 ///
 /// ```rust,no_run
-/// use std::io::{stdout, stderr};
+/// use std::io::{stderr, stdout};
+///
 /// use crossterm::{
 ///     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 ///     ExecutableCommand,

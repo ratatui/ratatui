@@ -150,7 +150,11 @@ pub enum ScrollbarOrientation {
 ///
 /// let vertical_scroll = 0; // from app state
 ///
-/// let items = vec![Line::from("Item 1"), Line::from("Item 2"), Line::from("Item 3")];
+/// let items = vec![
+///     Line::from("Item 1"),
+///     Line::from("Item 2"),
+///     Line::from("Item 3"),
+/// ];
 /// let paragraph = Paragraph::new(items.clone())
 ///     .scroll((vertical_scroll as u16, 0))
 ///     .block(Block::new().borders(Borders::RIGHT)); // to show a background for the scrollbar
@@ -163,12 +167,14 @@ pub enum ScrollbarOrientation {
 ///
 /// let area = frame.size();
 /// frame.render_widget(paragraph, area);
-/// frame.render_stateful_widget(scrollbar,
+/// frame.render_stateful_widget(
+///     scrollbar,
 ///     area.inner(&Margin {
 ///         vertical: 1,
 ///         horizontal: 0,
 ///     }), // using a inner vertical margin of 1 unit makes the scrollbar inside the block
-///    &mut scrollbar_state);
+///     &mut scrollbar_state,
+/// );
 /// # }
 /// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]

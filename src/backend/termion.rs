@@ -38,7 +38,8 @@ use crate::{
 /// # Example
 ///
 /// ```rust,no_run
-/// use std::io::{stdout, stderr};
+/// use std::io::{stderr, stdout};
+///
 /// use ratatui::prelude::*;
 /// use termion::{raw::IntoRawMode, screen::IntoAlternateScreen};
 ///

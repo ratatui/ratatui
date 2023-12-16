@@ -26,6 +26,7 @@
 //!
 //! ```rust,no_run
 //! use std::io::stdout;
+//!
 //! use ratatui::prelude::*;
 //!
 //! let backend = CrosstermBackend::new(stdout());

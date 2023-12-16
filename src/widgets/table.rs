@@ -58,30 +58,27 @@ use crate::{
 ///
 /// let rows = [Row::new(vec!["Cell1", "Cell2", "Cell3"])];
 /// // Columns widths are constrained in the same way as Layout...
-/// let widths = [Constraint::Length(5), Constraint::Length(5), Constraint::Length(10)];
+/// let widths = [
+///     Constraint::Length(5),
+///     Constraint::Length(5),
+///     Constraint::Length(10),
+/// ];
 /// let table = Table::new(rows, widths)
-///
 ///     // ...and they can be separated by a fixed spacing.
 ///     .column_spacing(1)
-///
 ///     // You can set the style of the entire Table.
 ///     .style(Style::new().blue())
-///
 ///     // It has an optional header, which is simply a Row always visible at the top.
 ///     .header(
 ///         Row::new(vec!["Col1", "Col2", "Col3"])
 ///             .style(Style::new().bold())
 ///             // To add space between the header and the rest of the rows, specify the margin
-///             .bottom_margin(1)
+///             .bottom_margin(1),
 ///     )
-///
 ///     // As any other widget, a Table can be wrapped in a Block.
 ///     .block(Block::default().title("Table"))
-///
-///
 ///     // The selected row and its content can also be styled.
 ///     .highlight_style(Style::new().reversed())
-///
 ///     // ...and potentially show a symbol in front of the selection.
 ///     .highlight_symbol(">>");
 /// ```
@@ -95,8 +92,7 @@ use crate::{
 /// let row = Row::new(vec!["Row11", "Row12", "Row13"]);
 ///
 /// // You can style the entire row.
-/// let row = Row::new(vec!["Row21", "Row22", "Row23"])
-///     .style(Style::new().red());
+/// let row = Row::new(vec!["Row21", "Row22", "Row23"]).style(Style::new().red());
 ///
 /// // If you need more control over the styling, create Cells directly
 /// let row = Row::new(vec![
@@ -104,7 +100,7 @@ use crate::{
 ///     Cell::from("Row32").style(Style::default().fg(Color::Yellow)),
 ///     Cell::from(Line::from(vec![
 ///         Span::raw("Row"),
-///         Span::styled("33", Style::default().fg(Color::Green))
+///         Span::styled("33", Style::default().fg(Color::Green)),
 ///     ])),
 /// ]);
 ///
@@ -113,7 +109,8 @@ use crate::{
 ///     Cell::from("Row\n41"),
 ///     Cell::from("Row\n42"),
 ///     Cell::from("Row\n43"),
-/// ]).height(2);
+/// ])
+/// .height(2);
 /// ```
 ///
 /// Cells can be created from anything that can be converted to [`Text`]. See [`Cell`] for more
@@ -127,7 +124,7 @@ use crate::{
 /// Cell::from(Span::styled("styled span", Style::new().red()));
 /// Cell::from(Line::from(vec![
 ///     Span::raw("a vec of "),
-///     Span::styled("spans", Style::new().bold())
+///     Span::styled("spans", Style::new().bold()),
 /// ]));
 /// Cell::from(Text::from("text"));
 /// ```
@@ -139,7 +136,11 @@ use crate::{
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// let rows = [Row::new(vec!["Cell1", "Cell2", "Cell3"])];
-/// let widths = [Constraint::Length(5), Constraint::Length(5), Constraint::Length(10)];
+/// let widths = [
+///     Constraint::Length(5),
+///     Constraint::Length(5),
+///     Constraint::Length(10),
+/// ];
 /// let table = Table::new(rows, widths).red().italic();
 /// ```
 ///
@@ -236,6 +237,7 @@ pub struct Table<'a> {
 ///
 /// ```rust
 /// use std::borrow::Cow;
+///
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// Row::new(vec![
@@ -273,13 +275,14 @@ pub struct Row<'a> {
 ///
 /// ```rust
 /// use std::borrow::Cow;
+///
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// Cell::from("simple string");
 /// Cell::from(Span::from("span"));
 /// Cell::from(Line::from(vec![
 ///     Span::raw("a vec of "),
-///     Span::styled("spans", Style::default().add_modifier(Modifier::BOLD))
+///     Span::styled("spans", Style::default().add_modifier(Modifier::BOLD)),
 /// ]));
 /// Cell::from(Text::from("a text"));
 /// Cell::from(Text::from(Cow::Borrowed("hello")));
@@ -355,7 +358,7 @@ pub enum HighlightSpacing {
 /// // method) so that the selected row is preserved across renders
 /// let mut table_state = TableState::default();
 /// *table_state.offset_mut() = 1; // display the second row and onwards
-/// table_state.select(Some(3));   // select the forth row (0-indexed)
+/// table_state.select(Some(3)); // select the forth row (0-indexed)
 ///
 /// frame.render_stateful_widget(table, area, &mut table_state);
 /// # }
@@ -445,7 +448,10 @@ impl<'a> Table<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let header = Row::new(vec![Cell::from("Header Cell 1"), Cell::from("Header Cell 2")]);
+    /// let header = Row::new(vec![
+    ///     Cell::from("Header Cell 1"),
+    ///     Cell::from("Header Cell 2"),
+    /// ]);
     /// let table = Table::default().header(header);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -669,7 +675,11 @@ impl<'a> Row<'a> {
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
     /// let row = Row::new(vec!["Cell 1", "Cell 2", "Cell 3"]);
-    /// let row = Row::new(vec![Cell::new("Cell 1"), Cell::new("Cell 2"), Cell::new("Cell 3")]);
+    /// let row = Row::new(vec![
+    ///     Cell::new("Cell 1"),
+    ///     Cell::new("Cell 2"),
+    ///     Cell::new("Cell 3"),
+    /// ]);
     /// ```
     pub fn new<T>(cells: T) -> Self
     where
@@ -695,7 +705,11 @@ impl<'a> Row<'a> {
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
     /// let row = Row::default().cells(vec!["Cell 1", "Cell 2", "Cell 3"]);
-    /// let row = Row::default().cells(vec![Cell::new("Cell 1"), Cell::new("Cell 2"), Cell::new("Cell 3")]);
+    /// let row = Row::default().cells(vec![
+    ///     Cell::new("Cell 1"),
+    ///     Cell::new("Cell 2"),
+    ///     Cell::new("Cell 3"),
+    /// ]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn cells<T>(mut self, cells: T) -> Self
@@ -790,7 +804,7 @@ impl<'a> Cell<'a> {
     /// Cell::new(Span::from("span"));
     /// Cell::new(Line::from(vec![
     ///     Span::raw("a vec of "),
-    ///     Span::styled("spans", Style::default().add_modifier(Modifier::BOLD))
+    ///     Span::styled("spans", Style::default().add_modifier(Modifier::BOLD)),
     /// ]));
     /// Cell::new(Text::from("a text"));
     /// ```
@@ -818,7 +832,7 @@ impl<'a> Cell<'a> {
     /// Cell::default().content(Span::from("span"));
     /// Cell::default().content(Line::from(vec![
     ///     Span::raw("a vec of "),
-    ///     Span::styled("spans", Style::new().bold())
+    ///     Span::styled("spans", Style::new().bold()),
     /// ]));
     /// Cell::default().content(Text::from("a text"));
     /// ```

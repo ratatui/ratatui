@@ -29,14 +29,15 @@ use crate::{layout::Alignment, text::Line};
 /// ```
 /// use ratatui::{prelude::*, widgets::block::*};
 ///
-/// Title::from(
-///     Line::from(vec!["Q".white().underlined(), "uit".gray()])
-/// );
+/// Title::from(Line::from(vec!["Q".white().underlined(), "uit".gray()]));
 /// ```
 ///
 /// Complete example
 /// ```
-/// use ratatui::{prelude::*, widgets::{*, block::*}};
+/// use ratatui::{
+///     prelude::*,
+///     widgets::{block::*, *},
+/// };
 ///
 /// Title::from("Title")
 ///     .position(Position::Top)
@@ -69,11 +70,9 @@ pub struct Title<'a> {
 /// # Example
 ///
 /// ```
-/// use ratatui::widgets::{*, block::*};
+/// use ratatui::widgets::{block::*, *};
 ///
-/// Block::new().title(
-///     Title::from("title").position(Position::Bottom)
-/// );
+/// Block::new().title(Title::from("title").position(Position::Bottom));
 /// ```
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Position {

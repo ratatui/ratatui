@@ -42,7 +42,7 @@ use crate::{
 /// let mut state = ListState::default();
 ///
 /// *state.offset_mut() = 1; // display the second item and onwards
-/// state.select(Some(3));   // select the forth item (0-indexed)
+/// state.select(Some(3)); // select the forth item (0-indexed)
 ///
 /// frame.render_stateful_widget(list, area, &mut state);
 /// # }
@@ -452,7 +452,7 @@ impl<'a> List<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let list = List::new([
     ///     Text::styled("Item 1", Style::default().red()),
-    ///     Text::styled("Item 2", Style::default().red())
+    ///     Text::styled("Item 2", Style::default().red()),
     /// ]);
     /// ```
     ///

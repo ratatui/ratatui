@@ -68,7 +68,10 @@ use crate::style::{Style, Styled};
 /// use ratatui::prelude::*;
 ///
 /// let span = Span::raw("test content").green().on_yellow().italic();
-/// let span = Span::raw(String::from("test content")).green().on_yellow().italic();
+/// let span = Span::raw(String::from("test content"))
+///     .green()
+///     .on_yellow()
+///     .italic();
 /// ```
 ///
 /// [`Line`]: crate::text::Line
@@ -212,12 +215,14 @@ impl<'a> Span<'a> {
     ///
     /// ```rust
     /// use std::iter::Iterator;
+    ///
     /// use ratatui::{prelude::*, text::StyledGrapheme};
     ///
     /// let span = Span::styled("Test", Style::new().green().italic());
     /// let style = Style::new().red().on_yellow();
     /// assert_eq!(
-    ///     span.styled_graphemes(style).collect::<Vec<StyledGrapheme>>(),
+    ///     span.styled_graphemes(style)
+    ///         .collect::<Vec<StyledGrapheme>>(),
     ///     vec![
     ///         StyledGrapheme::new("T", Style::new().green().on_yellow().italic()),
     ///         StyledGrapheme::new("e", Style::new().green().on_yellow().italic()),

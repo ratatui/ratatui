@@ -220,7 +220,10 @@ impl Padding {
 ///
 /// You may also use multiple titles like in the following:
 /// ```
-/// use ratatui::{prelude::*, widgets::{*, block::*}};
+/// use ratatui::{
+///     prelude::*,
+///     widgets::{block::*, *},
+/// };
 ///
 /// Block::default()
 ///     .title("Title 1")
@@ -301,7 +304,10 @@ impl<'a> Block<'a> {
     /// the leftover space)
     /// - Two titles with the same alignment (notice the left titles are separated)
     /// ```
-    /// use ratatui::{prelude::*, widgets::{*, block::*}};
+    /// use ratatui::{
+    ///     prelude::*,
+    ///     widgets::{block::*, *},
+    /// };
     ///
     /// Block::default()
     ///     .title("Title") // By default in the top left corner
@@ -344,7 +350,10 @@ impl<'a> Block<'a> {
     /// This example aligns all titles in the center except the "right" title which explicitly sets
     /// [`Alignment::Right`].
     /// ```
-    /// use ratatui::{prelude::*, widgets::{*, block::*}};
+    /// use ratatui::{
+    ///     prelude::*,
+    ///     widgets::{block::*, *},
+    /// };
     ///
     /// Block::default()
     ///     // This title won't be aligned in the center
@@ -374,7 +383,10 @@ impl<'a> Block<'a> {
     /// This example positions all titles on the bottom except the "top" title which explicitly sets
     /// [`Position::Top`].
     /// ```
-    /// use ratatui::{prelude::*, widgets::{*, block::*}};
+    /// use ratatui::{
+    ///     prelude::*,
+    ///     widgets::{block::*, *},
+    /// };
     ///
     /// Block::default()
     ///     // This title won't be aligned in the center
@@ -455,7 +467,10 @@ impl<'a> Block<'a> {
     ///
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default().title("Block").borders(Borders::ALL).border_type(BorderType::Rounded);
+    /// Block::default()
+    ///     .title("Block")
+    ///     .borders(Borders::ALL)
+    ///     .border_type(BorderType::Rounded);
     /// // Renders
     /// // ╭Block╮
     /// // │     │

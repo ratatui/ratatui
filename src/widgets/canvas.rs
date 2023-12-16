@@ -457,7 +457,13 @@ impl<'a> Context<'a> {
     /// ```
     /// use ratatui::{prelude::*, widgets::canvas::*};
     ///
-    /// let ctx = Context::new(100, 100, [-180.0, 180.0], [-90.0, 90.0], symbols::Marker::Braille);
+    /// let ctx = Context::new(
+    ///     100,
+    ///     100,
+    ///     [-180.0, 180.0],
+    ///     [-90.0, 90.0],
+    ///     symbols::Marker::Braille,
+    /// );
     /// ```
     pub fn new(
         width: u16,
@@ -554,7 +560,10 @@ impl<'a> Context<'a> {
 /// # Examples
 ///
 /// ```
-/// use ratatui::{style::Color, widgets::{*, canvas::*}};
+/// use ratatui::{
+///     style::Color,
+///     widgets::{canvas::*, *},
+/// };
 ///
 /// Canvas::default()
 ///     .block(Block::default().title("Canvas").borders(Borders::ALL))
@@ -563,7 +572,7 @@ impl<'a> Context<'a> {
 ///     .paint(|ctx| {
 ///         ctx.draw(&Map {
 ///             resolution: MapResolution::High,
-///             color: Color::White
+///             color: Color::White,
 ///         });
 ///         ctx.layer();
 ///         ctx.draw(&Line {
@@ -578,7 +587,7 @@ impl<'a> Context<'a> {
 ///             y: 20.0,
 ///             width: 10.0,
 ///             height: 10.0,
-///             color: Color::Red
+///             color: Color::Red,
 ///         });
 ///     });
 /// ```
@@ -666,10 +675,18 @@ where
     /// ```
     /// use ratatui::{prelude::*, widgets::canvas::*};
     ///
-    /// Canvas::default().marker(symbols::Marker::Braille).paint(|ctx| {});
-    /// Canvas::default().marker(symbols::Marker::HalfBlock).paint(|ctx| {});
-    /// Canvas::default().marker(symbols::Marker::Dot).paint(|ctx| {});
-    /// Canvas::default().marker(symbols::Marker::Block).paint(|ctx| {});
+    /// Canvas::default()
+    ///     .marker(symbols::Marker::Braille)
+    ///     .paint(|ctx| {});
+    /// Canvas::default()
+    ///     .marker(symbols::Marker::HalfBlock)
+    ///     .paint(|ctx| {});
+    /// Canvas::default()
+    ///     .marker(symbols::Marker::Dot)
+    ///     .paint(|ctx| {});
+    /// Canvas::default()
+    ///     .marker(symbols::Marker::Block)
+    ///     .paint(|ctx| {});
     /// ```
     pub fn marker(mut self, marker: symbols::Marker) -> Canvas<'a, F> {
         self.marker = marker;

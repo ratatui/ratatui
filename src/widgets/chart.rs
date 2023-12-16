@@ -39,19 +39,6 @@ impl<'a> Axis<'a> {
         self
     }
 
-    #[deprecated(
-        since = "0.10.0",
-        note = "You should use styling capabilities of `text::Line` given as argument of the `title` method to apply styling to the title."
-    )]
-    #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title_style(mut self, style: Style) -> Axis<'a> {
-        if let Some(t) = self.title {
-            let title = String::from(t);
-            self.title = Some(TextLine::from(Span::styled(title, style)));
-        }
-        self
-    }
-
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bounds(mut self, bounds: [f64; 2]) -> Axis<'a> {
         self.bounds = bounds;
@@ -292,16 +279,32 @@ struct ChartLayout {
 /// ];
 /// Chart::new(datasets)
 ///     .block(Block::default().title("Chart"))
-///     .x_axis(Axis::default()
-///         .title(Span::styled("X Axis", Style::default().fg(Color::Red)))
-///         .style(Style::default().fg(Color::White))
-///         .bounds([0.0, 10.0])
-///         .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()))
-///     .y_axis(Axis::default()
-///         .title(Span::styled("Y Axis", Style::default().fg(Color::Red)))
-///         .style(Style::default().fg(Color::White))
-///         .bounds([0.0, 10.0])
-///         .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()));
+///     .x_axis(
+///         Axis::default()
+///             .title(Span::styled("X Axis", Style::default().fg(Color::Red)))
+///             .style(Style::default().fg(Color::White))
+///             .bounds([0.0, 10.0])
+///             .labels(
+///                 ["0.0", "5.0", "10.0"]
+///                     .iter()
+///                     .cloned()
+///                     .map(Span::from)
+///                     .collect(),
+///             ),
+///     )
+///     .y_axis(
+///         Axis::default()
+///             .title(Span::styled("Y Axis", Style::default().fg(Color::Red)))
+///             .style(Style::default().fg(Color::White))
+///             .bounds([0.0, 10.0])
+///             .labels(
+///                 ["0.0", "5.0", "10.0"]
+///                     .iter()
+///                     .cloned()
+///                     .map(Span::from)
+///                     .collect(),
+///             ),
+///     );
 /// ```
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Chart<'a> {
@@ -365,14 +368,10 @@ impl<'a> Chart<'a> {
     ///
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let constraints = (
-    ///     Constraint::Ratio(1, 3),
-    ///     Constraint::Ratio(1, 4)
-    /// );
+    /// let constraints = (Constraint::Ratio(1, 3), Constraint::Ratio(1, 4));
     /// // Hide the legend when either its width is greater than 33% of the total widget width
     /// // or if its height is greater than 25% of the total widget height.
-    /// let _chart: Chart = Chart::new(vec![])
-    ///     .hidden_legend_constraints(constraints);
+    /// let _chart: Chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn hidden_legend_constraints(mut self, constraints: (Constraint, Constraint)) -> Chart<'a> {
@@ -389,8 +388,7 @@ impl<'a> Chart<'a> {
     ///
     /// ```
     /// # use ratatui::widgets::{Chart, LegendPosition};
-    /// let _chart: Chart = Chart::new(vec![])
-    ///     .legend_position(Some(LegendPosition::TopLeft));
+    /// let _chart: Chart = Chart::new(vec![]).legend_position(Some(LegendPosition::TopLeft));
     /// ```
     pub fn legend_position(mut self, position: Option<LegendPosition>) -> Chart<'a> {
         self.legend_position = position;
