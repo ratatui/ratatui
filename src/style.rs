@@ -16,9 +16,9 @@
 //! use ratatui::prelude::*;
 //!
 //! let heading_style = Style::new()
-//!    .fg(Color::Black)
-//!    .bg(Color::Green)
-//!    .add_modifier(Modifier::ITALIC | Modifier::BOLD);
+//!     .fg(Color::Black)
+//!     .bg(Color::Green)
+//!     .add_modifier(Modifier::ITALIC | Modifier::BOLD);
 //! let span = Span::styled("hello", heading_style);
 //! ```
 //!
@@ -44,16 +44,24 @@
 //! use ratatui::{prelude::*, widgets::*};
 //!
 //! assert_eq!(
-//!    "hello".red().on_blue().bold(),
+//!     "hello".red().on_blue().bold(),
 //!     Span::styled(
 //!         "hello",
-//!         Style::default().fg(Color::Red).bg(Color::Blue).add_modifier(Modifier::BOLD))
+//!         Style::default()
+//!             .fg(Color::Red)
+//!             .bg(Color::Blue)
+//!             .add_modifier(Modifier::BOLD)
+//!     )
 //! );
 //!
 //! assert_eq!(
 //!     Paragraph::new("hello").red().on_blue().bold(),
-//!     Paragraph::new("hello")
-//!         .style(Style::default().fg(Color::Red).bg(Color::Blue).add_modifier(Modifier::BOLD))
+//!     Paragraph::new("hello").style(
+//!         Style::default()
+//!             .fg(Color::Red)
+//!             .bg(Color::Blue)
+//!             .add_modifier(Modifier::BOLD)
+//!     )
 //! );
 //! ```
 //!
@@ -113,7 +121,7 @@ impl fmt::Debug for Modifier {
 /// Style lets you control the main characteristics of the displayed elements.
 ///
 /// ```rust
-/// use ratatui::{prelude::*};
+/// use ratatui::prelude::*;
 ///
 /// Style::default()
 ///     .fg(Color::Black)
@@ -135,18 +143,24 @@ impl fmt::Debug for Modifier {
 /// just S3.
 ///
 /// ```rust
-/// use ratatui::{prelude::*};
+/// use ratatui::prelude::*;
 ///
 /// let styles = [
-///     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD | Modifier::ITALIC),
-///     Style::default().bg(Color::Red).add_modifier(Modifier::UNDERLINED),
+///     Style::default()
+///         .fg(Color::Blue)
+///         .add_modifier(Modifier::BOLD | Modifier::ITALIC),
+///     Style::default()
+///         .bg(Color::Red)
+///         .add_modifier(Modifier::UNDERLINED),
 ///     #[cfg(feature = "underline-color")]
 ///     Style::default().underline_color(Color::Green),
-///     Style::default().fg(Color::Yellow).remove_modifier(Modifier::ITALIC),
+///     Style::default()
+///         .fg(Color::Yellow)
+///         .remove_modifier(Modifier::ITALIC),
 /// ];
 /// let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
 /// for style in &styles {
-///   buffer.get_mut(0, 0).set_style(*style);
+///     buffer.get_mut(0, 0).set_style(*style);
 /// }
 /// assert_eq!(
 ///     Style {
@@ -165,15 +179,17 @@ impl fmt::Debug for Modifier {
 /// reset all properties until that point use [`Style::reset`].
 ///
 /// ```
-/// use ratatui::{prelude::*};
+/// use ratatui::prelude::*;
 ///
 /// let styles = [
-///     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD | Modifier::ITALIC),
+///     Style::default()
+///         .fg(Color::Blue)
+///         .add_modifier(Modifier::BOLD | Modifier::ITALIC),
 ///     Style::reset().fg(Color::Yellow),
 /// ];
 /// let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
 /// for style in &styles {
-///   buffer.get_mut(0, 0).set_style(*style);
+///     buffer.get_mut(0, 0).set_style(*style);
 /// }
 /// assert_eq!(
 ///     Style {
@@ -285,9 +301,18 @@ impl Style {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let style = Style::default().underline_color(Color::Blue).add_modifier(Modifier::UNDERLINED);
-    /// let diff = Style::default().underline_color(Color::Red).add_modifier(Modifier::UNDERLINED);
-    /// assert_eq!(style.patch(diff), Style::default().underline_color(Color::Red).add_modifier(Modifier::UNDERLINED));
+    /// let style = Style::default()
+    ///     .underline_color(Color::Blue)
+    ///     .add_modifier(Modifier::UNDERLINED);
+    /// let diff = Style::default()
+    ///     .underline_color(Color::Red)
+    ///     .add_modifier(Modifier::UNDERLINED);
+    /// assert_eq!(
+    ///     style.patch(diff),
+    ///     Style::default()
+    ///         .underline_color(Color::Red)
+    ///         .add_modifier(Modifier::UNDERLINED)
+    /// );
     /// ```
     #[cfg(feature = "underline-color")]
     #[must_use = "`underline_color` returns the modified style without modifying the original"]
@@ -349,7 +374,8 @@ impl Style {
     /// let combined = style_1.patch(style_2);
     /// assert_eq!(
     ///     Style::default().patch(style_1).patch(style_2),
-    ///     Style::default().patch(combined));
+    ///     Style::default().patch(combined)
+    /// );
     /// ```
     #[must_use = "`patch` returns the modified style without modifying the original"]
     pub fn patch(mut self, other: Style) -> Style {

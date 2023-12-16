@@ -140,13 +140,23 @@ impl Default for Cell {
 /// # Examples:
 ///
 /// ```
-/// use ratatui::{prelude::*, buffer::Cell};
+/// use ratatui::{buffer::Cell, prelude::*};
 ///
-/// let mut buf = Buffer::empty(Rect{x: 0, y: 0, width: 10, height: 5});
+/// let mut buf = Buffer::empty(Rect {
+///     x: 0,
+///     y: 0,
+///     width: 10,
+///     height: 5,
+/// });
 /// buf.get_mut(0, 2).set_symbol("x");
 /// assert_eq!(buf.get(0, 2).symbol(), "x");
 ///
-/// buf.set_string(3, 0, "string", Style::default().fg(Color::Red).bg(Color::White));
+/// buf.set_string(
+///     3,
+///     0,
+///     "string",
+///     Style::default().fg(Color::Red).bg(Color::White),
+/// );
 /// let cell = buf.get_mut(5, 0);
 /// assert_eq!(cell.symbol(), "r");
 /// assert_eq!(cell.fg, Color::Red);

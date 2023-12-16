@@ -110,10 +110,11 @@
 //!
 //! ```rust,no_run
 //! use std::io::{self, stdout};
+//!
 //! use crossterm::{
 //!     event::{self, Event, KeyCode},
+//!     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 //!     ExecutableCommand,
-//!     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}
 //! };
 //! use ratatui::{prelude::*, widgets::*};
 //!
@@ -139,7 +140,7 @@
 //!             if key.kind == event::KeyEventKind::Press && key.code == KeyCode::Char('q') {
 //!                 return Ok(true);
 //!             }
-//!        }
+//!         }
 //!     }
 //!     Ok(false)
 //! }
@@ -174,7 +175,7 @@
 //!             Constraint::Length(1),
 //!             Constraint::Min(0),
 //!             Constraint::Length(1),
-//!         ]
+//!         ],
 //!     )
 //!     .split(frame.size());
 //!     frame.render_widget(
@@ -188,7 +189,7 @@
 //!
 //!     let inner_layout = Layout::new(
 //!         Direction::Horizontal,
-//!         [Constraint::Percentage(50), Constraint::Percentage(50)]
+//!         [Constraint::Percentage(50), Constraint::Percentage(50)],
 //!     )
 //!     .split(main_layout[1]);
 //!     frame.render_widget(
@@ -230,7 +231,7 @@
 //!             Constraint::Length(1),
 //!             Constraint::Length(1),
 //!             Constraint::Min(0),
-//!         ]
+//!         ],
 //!     )
 //!     .split(frame.size());
 //!

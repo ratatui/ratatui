@@ -12,6 +12,7 @@
 //!
 //! ```rust,no_run
 //! use std::io::stdout;
+//!
 //! use ratatui::{prelude::*, widgets::Paragraph};
 //!
 //! let backend = CrosstermBackend::new(stdout());
@@ -108,6 +109,7 @@ pub struct TerminalOptions {
 ///
 /// ```rust,no_run
 /// use std::io::stdout;
+///
 /// use ratatui::{prelude::*, widgets::Paragraph};
 ///
 /// let backend = CrosstermBackend::new(stdout());
@@ -198,10 +200,7 @@ where
     /// # use ratatui::{prelude::*, backend::TestBackend};
     /// let backend = CrosstermBackend::new(stdout());
     /// let viewport = Viewport::Fixed(Rect::new(0, 0, 10, 10));
-    /// let terminal = Terminal::with_options(
-    ///     backend,
-    ///     TerminalOptions { viewport },
-    /// )?;
+    /// let terminal = Terminal::with_options(backend, TerminalOptions { viewport })?;
     /// # std::io::Result::Ok(())
     /// ```
     pub fn with_options(mut backend: B, options: TerminalOptions) -> io::Result<Terminal<B>> {
@@ -459,8 +458,9 @@ where
     ///     Paragraph::new(Line::from(vec![
     ///         Span::raw("This line will be added "),
     ///         Span::styled("before", Style::default().fg(Color::Blue)),
-    ///         Span::raw(" the current viewport")
-    ///     ])).render(buf.area, buf);
+    ///         Span::raw(" the current viewport"),
+    ///     ]))
+    ///     .render(buf.area, buf);
     /// });
     /// ```
     pub fn insert_before<F>(&mut self, height: u16, draw_fn: F) -> io::Result<()>
@@ -628,10 +628,7 @@ impl Frame<'_> {
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();
     /// let mut state = ListState::default().with_selected(Some(1));
-    /// let list = List::new(vec![
-    ///     ListItem::new("Item 1"),
-    ///     ListItem::new("Item 2"),
-    /// ]);
+    /// let list = List::new(vec![ListItem::new("Item 1"), ListItem::new("Item 2")]);
     /// let area = Rect::new(0, 0, 5, 5);
     /// frame.render_stateful_widget(list, area, &mut state);
     /// ```
