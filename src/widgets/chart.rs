@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 use std::{borrow::Cow, cmp::max};
 
 use strum::{Display, EnumString};
@@ -8,18 +9,37 @@ use crate::{
     layout::{Alignment, Constraint, Rect},
     style::{Color, Style, Styled},
     symbols,
-    text::{Line as TextLine, Span},
+    text::{Line, Span},
     widgets::{
-        canvas::{Canvas, Line, Points},
+        canvas::{Canvas, Line as CanvasLine, Points},
         Block, Borders, Widget,
     },
 };
 
-/// An X or Y axis for the chart widget
+/// An X or Y axis for the [`Chart`] widget
+///
+/// An axis can have a [title](Axis::title) which will be displayed at the end of the axis. For an
+/// X axis this is the right, for a Y axis, this is the top.
+///
+/// You can also set the bounds and labels on this axis using respectively [`Axis::bounds`] and
+/// [`Axis::labels`].
+///
+/// See [`Chart::x_axis`] and [`Chart::y_axis`] to set an axis on a chart.
+///
+/// # Example
+///
+/// ```rust
+/// use ratatui::{prelude::*, widgets::*};
+/// let axis = Axis::default()
+///     .title("X Axis")
+///     .style(Style::default().gray())
+///     .bounds([0.0, 50.0])
+///     .labels(vec!["0".bold(), "25".into(), "50".bold()]);
+/// ```
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Axis<'a> {
     /// Title displayed next to axis end
-    title: Option<TextLine<'a>>,
+    title: Option<Line<'a>>,
     /// Bounds for the axis (all data points outside these limits will not be represented)
     bounds: [f64; 2],
     /// A list of labels to put to the left or below the axis
@@ -31,36 +51,86 @@ pub struct Axis<'a> {
 }
 
 impl<'a> Axis<'a> {
+    /// Sets the axis title
+    ///
+    /// It will be displayed at the end of the axis. For an X axis this is the right, for a Y axis,
+    /// this is the top.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title<T>(mut self, title: T) -> Axis<'a>
     where
-        T: Into<TextLine<'a>>,
+        T: Into<Line<'a>>,
     {
         self.title = Some(title.into());
         self
     }
 
+    /// Sets the bounds of this axis
+    ///
+    /// In other words, sets the min and max value on this axis.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn bounds(mut self, bounds: [f64; 2]) -> Axis<'a> {
         self.bounds = bounds;
         self
     }
 
+    /// Sets the axis labels
+    ///
+    /// - For the X axis, the labels are displayed left to right.
+    /// - For the Y axis, the labels are displayed bottom to top.
+    ///
+    /// Currently, you need to give at least two labels or the render will panic. Also, giving
+    /// more than 3 labels is currently broken and the middle labels won't be in the correct
+    /// position, see [issue 334].
+    ///
+    /// [issue 334]: https://github.com/ratatui-org/ratatui/issues/334
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let axis =
+    ///     Axis::default()
+    ///         .bounds([0.0, 50.0])
+    ///         .labels(vec!["0".bold(), "25".into(), "50".bold()]);
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn labels(mut self, labels: Vec<Span<'a>>) -> Axis<'a> {
         self.labels = Some(labels);
         self
     }
 
+    /// Sets the axis style
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Example
+    ///
+    /// [`Axis`] also implements [`Stylize`](crate::style::Stylize) which mean you can style it
+    /// like so
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let axis = Axis::default().red();
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Axis<'a> {
         self.style = style;
         self
     }
 
-    /// Defines the alignment of the labels of the axis.
+    /// Sets the labels alignment of the axis
+    ///
     /// The alignment behaves differently based on the axis:
-    /// - Y-Axis: The labels are aligned within the area on the left of the axis
-    /// - X-Axis: The first X-axis label is aligned relative to the Y-axis
+    /// - Y axis: The labels are aligned within the area on the left of the axis
+    /// - X axis: The first X-axis label is aligned relative to the Y-axis
+    ///
+    /// On the X axis, this parameter only affects the first label.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn labels_alignment(mut self, alignment: Alignment) -> Axis<'a> {
         self.labels_alignment = alignment;
@@ -71,23 +141,37 @@ impl<'a> Axis<'a> {
 /// Used to determine which style of graphing to use
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum GraphType {
-    /// Draw each point
+    /// Draw each point. This is the default.
     #[default]
     Scatter,
-    /// Draw each point and lines between each point using the same marker
+    /// Draw a line between each following point.
+    ///
+    /// The order of the lines will be the same as the order of the points in the dataset, which
+    /// allows this widget to draw lines both left-to-right and right-to-left
     Line,
 }
 
+/// Allow users to specify the position of a legend in a [`Chart`]
+///
+/// See [`Chart::legend_position`]
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub enum LegendPosition {
+    /// Legend is centered on top
     Top,
+    /// Legend is in the top-right corner. This is the **default**.
     #[default]
     TopRight,
+    /// Legend is in the top-left corner
     TopLeft,
+    /// Legend is centered on the left
     Left,
+    /// Legend is centered on the right
     Right,
+    /// Legend is centered on the bottom
     Bottom,
+    /// Legend is in the bottom-right corner
     BottomRight,
+    /// Legend is in the bottom-left corner
     BottomLeft,
 }
 
@@ -186,6 +270,34 @@ impl LegendPosition {
 }
 
 /// A group of data points
+///
+/// This is the main element composing a [`Chart`].
+///
+/// A dataset can be [named](Dataset::name) to be referenced in the legend (NOTE: Currently,
+/// datasets with an empty name will show an empty line in the legend, see [PR 527]).
+///
+/// After that, you can pass it data with [`Dataset::data`]. Data is an array of `f64` tuples
+/// (`(f64, f64)`), the first element being X and the second Y. It's also worth noting that, unlike
+/// the [`Rect`], here the Y axis is bottom to top, as in math.
+///
+/// You can also customize the rendering by using [`Dataset::marker`] and [`Dataset::graph_type`].
+///
+/// [PR 527]: https://github.com/ratatui-org/ratatui/pull/527
+///
+/// # Example
+///
+/// This example draws a red line between two points.
+///
+/// ```rust
+/// use ratatui::{prelude::*, widgets::*};
+///
+/// let dataset = Dataset::default()
+///     .name("dataset 1")
+///     .data(&[(1., 1.), (5., 5.)])
+///     .marker(Marker::Braille)
+///     .graph_type(GraphType::Line)
+///     .red();
+/// ```
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Dataset<'a> {
     /// Name of the dataset (used in the legend if shown)
@@ -201,6 +313,15 @@ pub struct Dataset<'a> {
 }
 
 impl<'a> Dataset<'a> {
+    /// Sets the name of the dataset
+    ///
+    /// The dataset's name is used when displaying the chart legend. Currently, datasets with an
+    /// empty name will show an empty line in the legend, see [PR 527]).
+    ///
+    /// [PR 527]: https://github.com/ratatui-org/ratatui/pull/527
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn name<S>(mut self, name: S) -> Dataset<'a>
     where
         S: Into<Cow<'a, str>>,
@@ -209,24 +330,66 @@ impl<'a> Dataset<'a> {
         self
     }
 
+    /// Sets the data points of this dataset
+    ///
+    /// Points will then either be rendered as scrattered points or with lines between them
+    /// depending on [`Dataset::graph_type`].
+    ///
+    /// Data consist in an array of `f64` tuples (`(f64, f64)`), the first element being X and the
+    /// second Y. It's also worth noting that, unlike the [`Rect`], here the Y axis is bottom to
+    /// top, as in math.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn data(mut self, data: &'a [(f64, f64)]) -> Dataset<'a> {
         self.data = data;
         self
     }
 
+    /// Sets the kind of character to use to display this dataset
+    ///
+    /// You can use dots (`•`), blocks (`█`), bars (`▄`), braille (`⠓`, `⣇`, `⣿`) or half-blocks
+    /// (`█`, `▄`, and `▀`). See [symbols::Marker] for more details.
+    ///
+    /// Note [`Marker::Braille`](symbols::Marker::Braille) requires a font that supports Unicode
+    /// Braille Patterns.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn marker(mut self, marker: symbols::Marker) -> Dataset<'a> {
         self.marker = marker;
         self
     }
 
+    /// Sets how the dataset should be drawn
+    ///
+    /// [`Chart`] can draw either a [scatter](GraphType::Scatter) or [line](GraphType::Line) charts.
+    /// A scatter will draw only the points in the dataset while a line will also draw a line
+    /// between them. See [`GraphType`] for more details
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn graph_type(mut self, graph_type: GraphType) -> Dataset<'a> {
         self.graph_type = graph_type;
         self
     }
 
+    /// Sets the style of this dataset
+    ///
+    /// The given style will be used to draw the legend and the data points. Currently the legend
+    /// will use the entire style whereas the data points will only use the foreground.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Example
+    ///
+    /// [`Dataset`] also implements [`Stylize`](crate::style::Stylize) which mean you can style it
+    /// like so
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let dataset = Dataset::default().red();
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Dataset<'a> {
         self.style = style;
@@ -256,55 +419,65 @@ struct ChartLayout {
     graph_area: Rect,
 }
 
-/// A widget to plot one or more dataset in a cartesian coordinate system
+/// A widget to plot one or more [`Dataset`] in a cartesian coordinate system
+///
+/// To use this widget, start by creating one or more [`Dataset`]. With it, you can set the
+/// [data points](Dataset::data), the [name](Dataset::name) or the
+/// [chart type](Dataset::graph_type). See [`Dataset`] for a complete documentation of what is
+/// possible.
+///
+/// Then, you'll usually want to configure the [`Axis`]. Axis [titles](Axis::title),
+/// [bounds](Axis::bounds) and [labels](Axis::labels) can be configured on both axis. See [`Axis`]
+/// for a complete documentation of what is possible.
+///
+/// Finally, you can pass all of that to the `Chart` via [`Chart::new`], [`Chart::x_axis`] and
+/// [`Chart::y_axis`].
+///
+/// Additionally, `Chart` allows configuring the legend [position](Chart::legend_position) and
+/// [hiding constraints](Chart::hidden_legend_constraints).
 ///
 /// # Examples
 ///
 /// ```
 /// use ratatui::{prelude::*, widgets::*};
 ///
+/// // Create the datasets to fill the chart with
 /// let datasets = vec![
+///     // Scatter chart
 ///     Dataset::default()
 ///         .name("data1")
 ///         .marker(symbols::Marker::Dot)
 ///         .graph_type(GraphType::Scatter)
-///         .style(Style::default().fg(Color::Cyan))
+///         .style(Style::default().cyan())
 ///         .data(&[(0.0, 5.0), (1.0, 6.0), (1.5, 6.434)]),
+///     // Line chart
 ///     Dataset::default()
 ///         .name("data2")
 ///         .marker(symbols::Marker::Braille)
 ///         .graph_type(GraphType::Line)
-///         .style(Style::default().fg(Color::Magenta))
+///         .style(Style::default().magenta())
 ///         .data(&[(4.0, 5.0), (5.0, 8.0), (7.66, 13.5)]),
 /// ];
-/// Chart::new(datasets)
+///
+/// // Create the X axis and define its properties
+/// let x_axis = Axis::default()
+///     .title("X Axis".red())
+///     .style(Style::default().white())
+///     .bounds([0.0, 10.0])
+///     .labels(vec!["0.0".into(), "5.0".into(), "10.0".into()]);
+///
+/// // Create the Y axis and define its properties
+/// let y_axis = Axis::default()
+///     .title("Y Axis".red())
+///     .style(Style::default().white())
+///     .bounds([0.0, 10.0])
+///     .labels(vec!["0.0".into(), "5.0".into(), "10.0".into()]);
+///
+/// // Create the chart and link all the parts together
+/// let chart = Chart::new(datasets)
 ///     .block(Block::default().title("Chart"))
-///     .x_axis(
-///         Axis::default()
-///             .title(Span::styled("X Axis", Style::default().fg(Color::Red)))
-///             .style(Style::default().fg(Color::White))
-///             .bounds([0.0, 10.0])
-///             .labels(
-///                 ["0.0", "5.0", "10.0"]
-///                     .iter()
-///                     .cloned()
-///                     .map(Span::from)
-///                     .collect(),
-///             ),
-///     )
-///     .y_axis(
-///         Axis::default()
-///             .title(Span::styled("Y Axis", Style::default().fg(Color::Red)))
-///             .style(Style::default().fg(Color::White))
-///             .bounds([0.0, 10.0])
-///             .labels(
-///                 ["0.0", "5.0", "10.0"]
-///                     .iter()
-///                     .cloned()
-///                     .map(Span::from)
-///                     .collect(),
-///             ),
-///     );
+///     .x_axis(x_axis)
+///     .y_axis(y_axis);
 /// ```
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Chart<'a> {
@@ -326,6 +499,31 @@ pub struct Chart<'a> {
 }
 
 impl<'a> Chart<'a> {
+    /// Creates a chart with the given [datasets](Dataset)
+    ///
+    /// A chart can render multiple datasets.
+    ///
+    /// # Example
+    ///
+    /// This creates a simple chart with one [`Dataset`]
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let data_points = vec![];
+    /// let chart = Chart::new(vec![Dataset::default().data(&data_points)]);
+    /// ```
+    ///
+    /// This creates a chart with multiple [`Dataset`]s
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let data_points = vec![];
+    /// # let data_points2 = vec![];
+    /// let chart = Chart::new(vec![
+    ///     Dataset::default().data(&data_points),
+    ///     Dataset::default().data(&data_points2),
+    /// ]);
+    /// ```
     pub fn new(datasets: Vec<Dataset<'a>>) -> Chart<'a> {
         Chart {
             block: None,
@@ -338,40 +536,110 @@ impl<'a> Chart<'a> {
         }
     }
 
+    /// Wraps the chart with the given [`Block`]
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> Chart<'a> {
         self.block = Some(block);
         self
     }
 
+    /// Sets the style of the entire chart
+    ///
+    /// Styles of [`Axis`] and [`Dataset`] will have priority over this style.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Chart<'a> {
         self.style = style;
         self
     }
 
+    /// Sets the X [`Axis`]
+    ///
+    /// The default is an empty [`Axis`], i.e. only a line.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let chart = Chart::new(vec![]).x_axis(
+    ///     Axis::default()
+    ///         .title("X Axis")
+    ///         .bounds([0.0, 20.0])
+    ///         .labels(vec!["0".into(), "20".into()]),
+    /// );
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn x_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
         self.x_axis = axis;
         self
     }
 
+    /// Sets the Y [`Axis`]
+    ///
+    /// The default is an empty [`Axis`], i.e. only a line.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let chart = Chart::new(vec![]).y_axis(
+    ///     Axis::default()
+    ///         .title("Y Axis")
+    ///         .bounds([0.0, 20.0])
+    ///         .labels(vec!["0".into(), "20".into()]),
+    /// );
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn y_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
         self.y_axis = axis;
         self
     }
 
-    /// Set the constraints used to determine whether the legend should be shown or not.
+    /// Sets the constraints used to determine whether the legend should be shown or not.
+    ///
+    /// The tuple's first constraint is used for the width and the second for the height. If the
+    /// legend takes more space than what is allowed by any constraint, the legend is hidden.
+    /// [`Constraint::Min`] is an exception and will always show the legend.
+    ///
+    /// If this is not set, the default behavior is to hide the legend if it is greater than 25% of
+    /// the chart, either horizontally or vertically.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     ///
     /// # Examples
+    ///
+    /// Hide the legend when either its width is greater than 33% of the total widget width or if
+    /// its height is greater than 25% of the total widget height.
     ///
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
     /// let constraints = (Constraint::Ratio(1, 3), Constraint::Ratio(1, 4));
-    /// // Hide the legend when either its width is greater than 33% of the total widget width
-    /// // or if its height is greater than 25% of the total widget height.
-    /// let _chart: Chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
+    /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
+    /// ```
+    ///
+    /// Always show the legend, note the second constraint doesn't matter in this case since the
+    /// first one is always true.
+    ///
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let constraints = (Constraint::Min(0), Constraint::Ratio(1, 4));
+    /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
+    /// ```
+    ///
+    /// Always hide the legend. Note this can be accomplished more exclicitely by passing `None` to
+    /// [`Chart::legend_position`].
+    ///
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let constraints = (Constraint::Length(0), Constraint::Ratio(1, 4));
+    /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn hidden_legend_constraints(mut self, constraints: (Constraint, Constraint)) -> Chart<'a> {
@@ -379,17 +647,36 @@ impl<'a> Chart<'a> {
         self
     }
 
-    /// Set the position of a legend or hide it.
+    /// Sets the position of a legend or hide it
     ///
-    /// If [`None`], hide the legend even if satisfied with
-    /// [`hidden_legend_constraints`](Self::hidden_legend_constraints)
+    /// The default is [`LegendPosition::TopRight`].
+    ///
+    /// If [`None`] is given, hide the legend even if [`hidden_legend_constraints`] determines it
+    /// should be shown. In contrast, if `Some(...)` is given, [`hidden_legend_constraints`] might
+    /// still decide whether to show the legend or not.
+    ///
+    /// See [`LegendPosition`] for all available positions.
+    ///
+    /// [`hidden_legend_constraints`]: Self::hidden_legend_constraints
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     ///
     /// # Examples
     ///
+    /// Show the legend on the top left corner.
+    ///
     /// ```
     /// # use ratatui::widgets::{Chart, LegendPosition};
-    /// let _chart: Chart = Chart::new(vec![]).legend_position(Some(LegendPosition::TopLeft));
+    /// let chart: Chart = Chart::new(vec![]).legend_position(Some(LegendPosition::TopLeft));
     /// ```
+    ///
+    /// Hide the legend altogether
+    ///
+    /// ```
+    /// # use ratatui::widgets::{Chart, LegendPosition};
+    /// let chart = Chart::new(vec![]).legend_position(None);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn legend_position(mut self, position: Option<LegendPosition>) -> Chart<'a> {
         self.legend_position = position;
         self
@@ -683,7 +970,7 @@ impl<'a> Widget for Chart<'a> {
                     });
                     if let GraphType::Line = dataset.graph_type {
                         for data in dataset.data.windows(2) {
-                            ctx.draw(&Line {
+                            ctx.draw(&CanvasLine {
                                 x1: data[0].0,
                                 y1: data[0].1,
                                 x2: data[1].0,
