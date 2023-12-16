@@ -130,6 +130,7 @@ pub trait Widget {
 ///
 /// ```rust,no_run
 /// use std::io;
+///
 /// use ratatui::{backend::TestBackend, prelude::*, widgets::*};
 ///
 /// // Let's say we have some events to display.
@@ -139,7 +140,7 @@ pub trait Widget {
 ///     // `state` is the state that can be modified by the UI. It stores the index of the selected
 ///     // item as well as the offset computed during the previous draw call (used to implement
 ///     // natural scrolling).
-///     state: ListState
+///     state: ListState,
 /// }
 ///
 /// impl Events {
@@ -199,16 +200,17 @@ pub trait Widget {
 /// # let backend = TestBackend::new(5, 5);
 /// # let mut terminal = Terminal::new(backend).unwrap();
 ///
-/// let mut events = Events::new(vec![
-///     String::from("Item 1"),
-///     String::from("Item 2")
-/// ]);
+/// let mut events = Events::new(vec![String::from("Item 1"), String::from("Item 2")]);
 ///
 /// loop {
 ///     terminal.draw(|f| {
 ///         // The items managed by the application are transformed to something
 ///         // that is understood by ratatui.
-///         let items: Vec<ListItem>= events.items.iter().map(|i| ListItem::new(i.as_str())).collect();
+///         let items: Vec<ListItem> = events
+///             .items
+///             .iter()
+///             .map(|i| ListItem::new(i.as_str()))
+///             .collect();
 ///         // The `List` widget is then built with those items.
 ///         let list = List::new(items);
 ///         // Finally the widget is rendered using the associated state. `events.state` is

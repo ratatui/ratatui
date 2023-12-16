@@ -29,16 +29,14 @@ fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) 
 /// let text = vec![
 ///     Line::from(vec![
 ///         Span::raw("First"),
-///         Span::styled("line",Style::new().green().italic()),
+///         Span::styled("line", Style::new().green().italic()),
 ///         ".".into(),
 ///     ]),
 ///     Line::from("Second line".red()),
 ///     "Third line".into(),
 /// ];
 /// Paragraph::new(text)
-///     .block(Block::new()
-///         .title("Paragraph")
-///         .borders(Borders::ALL))
+///     .block(Block::new().title("Paragraph").borders(Borders::ALL))
 ///     .style(Style::new().white().on_black())
 ///     .alignment(Alignment::Center)
 ///     .wrap(Wrap { trim: true });
@@ -66,9 +64,11 @@ pub struct Paragraph<'a> {
 /// ```
 /// use ratatui::{prelude::*, widgets::*};
 ///
-/// let bullet_points = Text::from(r#"Some indented points:
+/// let bullet_points = Text::from(
+///     r#"Some indented points:
 ///     - First thing goes here and is long so that it wraps
-///     - Here is another point that is long enough to wrap"#);
+///     - Here is another point that is long enough to wrap"#,
+/// );
 ///
 /// // With leading spaces trimmed (window width of 30 chars):
 /// Paragraph::new(bullet_points.clone()).wrap(Wrap { trim: true });
@@ -108,10 +108,8 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello, world!");
     /// let paragraph = Paragraph::new(String::from("Hello, world!"));
     /// let paragraph = Paragraph::new(Text::raw("Hello, world!"));
-    /// let paragraph = Paragraph::new(
-    ///     Text::styled("Hello, world!", Style::default()));
-    /// let paragraph = Paragraph::new(
-    ///     Line::from(vec!["Hello, ".into(), "world!".red()]));
+    /// let paragraph = Paragraph::new(Text::styled("Hello, world!", Style::default()));
+    /// let paragraph = Paragraph::new(Line::from(vec!["Hello, ".into(), "world!".red()]));
     /// ```
     pub fn new<T>(text: T) -> Paragraph<'a>
     where
@@ -134,9 +132,7 @@ impl<'a> Paragraph<'a> {
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello, world!")
-    ///    .block(Block::default()
-    ///         .title("Paragraph")
-    ///         .borders(Borders::ALL));
+    ///     .block(Block::default().title("Paragraph").borders(Borders::ALL));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> Paragraph<'a> {
@@ -153,8 +149,7 @@ impl<'a> Paragraph<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let paragraph = Paragraph::new("Hello, world!")
-    ///    .style(Style::new().red().on_white());
+    /// let paragraph = Paragraph::new("Hello, world!").style(Style::new().red().on_white());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style(mut self, style: Style) -> Paragraph<'a> {
@@ -170,8 +165,7 @@ impl<'a> Paragraph<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let paragraph = Paragraph::new("Hello, world!")
-    ///   .wrap(Wrap { trim: true });
+    /// let paragraph = Paragraph::new("Hello, world!").wrap(Wrap { trim: true });
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn wrap(mut self, wrap: Wrap) -> Paragraph<'a> {
@@ -205,8 +199,7 @@ impl<'a> Paragraph<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let paragraph = Paragraph::new("Hello World")
-    ///     .alignment(Alignment::Center);
+    /// let paragraph = Paragraph::new("Hello World").alignment(Alignment::Center);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {

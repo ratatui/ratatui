@@ -268,7 +268,7 @@ impl Layout {
     ///
     /// let layout = Layout::new(
     ///     Direction::Vertical,
-    ///     [1,2,3].iter().map(|&c| Constraint::Length(c)),
+    ///     [1, 2, 3].iter().map(|&c| Constraint::Length(c)),
     /// );
     /// ```
     pub fn new<I>(direction: Direction, constraints: I) -> Layout
@@ -353,19 +353,22 @@ impl Layout {
     ///         Constraint::Max(2),
     ///     ])
     ///     .split(Rect::new(0, 0, 10, 10));
-    /// assert_eq!(layout[..], [
-    ///     Rect::new(0, 0, 10, 2),
-    ///     Rect::new(0, 2, 10, 2),
-    ///     Rect::new(0, 4, 10, 2),
-    ///     Rect::new(0, 6, 10, 2),
-    ///     Rect::new(0, 8, 10, 2),
-    /// ]);
+    /// assert_eq!(
+    ///     layout[..],
+    ///     [
+    ///         Rect::new(0, 0, 10, 2),
+    ///         Rect::new(0, 2, 10, 2),
+    ///         Rect::new(0, 4, 10, 2),
+    ///         Rect::new(0, 6, 10, 2),
+    ///         Rect::new(0, 8, 10, 2),
+    ///     ]
+    /// );
     ///
     /// let layout = Layout::default().constraints([Constraint::Min(0)]);
     /// let layout = Layout::default().constraints(&[Constraint::Min(0)]);
     /// let layout = Layout::default().constraints(vec![Constraint::Min(0)]);
     /// let layout = Layout::default().constraints([Constraint::Min(0)].iter().filter(|_| true));
-    /// let layout = Layout::default().constraints([1,2,3].iter().map(|&c| Constraint::Length(c)));
+    /// let layout = Layout::default().constraints([1, 2, 3].iter().map(|&c| Constraint::Length(c)));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn constraints<I>(mut self, constraints: I) -> Layout
@@ -660,9 +663,7 @@ impl Constraint {
     /// # use ratatui::prelude::*;
     /// # let area = Rect::default();
     /// let constraints = Constraint::from_lengths([1, 2, 3]);
-    /// let layout = Layout::default()
-    ///     .constraints(constraints)
-    ///     .split(area);
+    /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
     pub fn from_lengths<T>(lengths: T) -> Vec<Constraint>
     where
@@ -679,9 +680,7 @@ impl Constraint {
     /// # use ratatui::prelude::*;
     /// # let area = Rect::default();
     /// let constraints = Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]);
-    /// let layout = Layout::default()
-    ///     .constraints(constraints)
-    ///     .split(area);
+    /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
     pub fn from_ratios<T>(ratios: T) -> Vec<Constraint>
     where
@@ -701,9 +700,7 @@ impl Constraint {
     /// # use ratatui::prelude::*;
     /// # let area = Rect::default();
     /// let constraints = Constraint::from_percentages([25, 50, 25]);
-    /// let layout = Layout::default()
-    ///     .constraints(constraints)
-    ///     .split(area);
+    /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
     pub fn from_percentages<T>(percentages: T) -> Vec<Constraint>
     where
@@ -723,9 +720,7 @@ impl Constraint {
     /// # use ratatui::prelude::*;
     /// # let area = Rect::default();
     /// let constraints = Constraint::from_maxes([1, 2, 3]);
-    /// let layout = Layout::default()
-    ///     .constraints(constraints)
-    ///     .split(area);
+    /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
     pub fn from_maxes<T>(maxes: T) -> Vec<Constraint>
     where
@@ -742,9 +737,7 @@ impl Constraint {
     /// # use ratatui::prelude::*;
     /// # let area = Rect::default();
     /// let constraints = Constraint::from_mins([1, 2, 3]);
-    /// let layout = Layout::default()
-    ///     .constraints(constraints)
-    ///     .split(area);
+    /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
     pub fn from_mins<T>(mins: T) -> Vec<Constraint>
     where

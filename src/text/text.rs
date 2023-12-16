@@ -13,7 +13,9 @@ use crate::style::Style;
 /// ```rust
 /// use ratatui::prelude::*;
 ///
-/// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+/// let style = Style::default()
+///     .fg(Color::Yellow)
+///     .add_modifier(Modifier::ITALIC);
 ///
 /// // An initial two lines of `Text` built from a `&str`
 /// let mut text = Text::from("The first line\nThe second line");
@@ -62,7 +64,9 @@ impl<'a> Text<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+    /// let style = Style::default()
+    ///     .fg(Color::Yellow)
+    ///     .add_modifier(Modifier::ITALIC);
     /// Text::styled("The first line\nThe second line", style);
     /// Text::styled(String::from("The first line\nThe second line"), style);
     /// ```
@@ -107,7 +111,9 @@ impl<'a> Text<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+    /// let style = Style::default()
+    ///     .fg(Color::Yellow)
+    ///     .add_modifier(Modifier::ITALIC);
     /// let mut raw_text = Text::raw("The first line\nThe second line");
     /// let styled_text = Text::styled(String::from("The first line\nThe second line"), style);
     /// assert_ne!(raw_text, styled_text);
@@ -128,7 +134,9 @@ impl<'a> Text<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+    /// let style = Style::default()
+    ///     .fg(Color::Yellow)
+    ///     .add_modifier(Modifier::ITALIC);
     /// let mut text = Text::styled("The first line\nThe second line", style);
     ///
     /// text.reset_style();

@@ -39,7 +39,9 @@ impl<'a> Line<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
+    /// let style = Style::default()
+    ///     .fg(Color::Yellow)
+    ///     .add_modifier(Modifier::ITALIC);
     /// Line::styled("My text", style);
     /// Line::styled(String::from("My text"), style);
     /// ```
@@ -75,12 +77,14 @@ impl<'a> Line<'a> {
     ///
     /// ```rust
     /// use std::iter::Iterator;
+    ///
     /// use ratatui::{prelude::*, text::StyledGrapheme};
     ///
     /// let line = Line::styled("Text", Style::default().fg(Color::Yellow));
     /// let style = Style::default().fg(Color::Green).bg(Color::Black);
     /// assert_eq!(
-    ///     line.styled_graphemes(style).collect::<Vec<StyledGrapheme>>(),
+    ///     line.styled_graphemes(style)
+    ///         .collect::<Vec<StyledGrapheme>>(),
     ///     vec![
     ///         StyledGrapheme::new("T", Style::default().fg(Color::Yellow).bg(Color::Black)),
     ///         StyledGrapheme::new("e", Style::default().fg(Color::Yellow).bg(Color::Black)),
@@ -104,11 +108,10 @@ impl<'a> Line<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let style = Style::default().fg(Color::Yellow).add_modifier(Modifier::ITALIC);
-    /// let mut raw_line = Line::from(vec![
-    ///     Span::raw("My"),
-    ///     Span::raw(" text"),
-    /// ]);
+    /// let style = Style::default()
+    ///     .fg(Color::Yellow)
+    ///     .add_modifier(Modifier::ITALIC);
+    /// let mut raw_line = Line::from(vec![Span::raw("My"), Span::raw(" text")]);
     /// let mut styled_line = Line::from(vec![
     ///     Span::styled("My", style),
     ///     Span::styled(" text", style),
@@ -156,7 +159,10 @@ impl<'a> Line<'a> {
     /// # use ratatui::prelude::*;
     /// let mut line = Line::from("Hi, what's up?");
     /// assert_eq!(None, line.alignment);
-    /// assert_eq!(Some(Alignment::Right), line.alignment(Alignment::Right).alignment)
+    /// assert_eq!(
+    ///     Some(Alignment::Right),
+    ///     line.alignment(Alignment::Right).alignment
+    /// )
     /// ```
     pub fn alignment(self, alignment: Alignment) -> Self {
         Self {
