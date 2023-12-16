@@ -1,13 +1,12 @@
 /// This example shows the full range of RGB colors that can be displayed in the terminal.
 ///
 /// Requires a terminal that supports 24-bit color (true color) and unicode.
-///
 use std::{
-    io::{stdout, Write},
+    io::stdout,
     time::{Duration, Instant},
 };
 
-use anyhow::Result;
+use color_eyre::config::HookBuilder;
 use crossterm::{
     event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -16,9 +15,8 @@ use crossterm::{
 use palette::{convert::FromColorUnclamped, Okhsv, Srgb};
 use ratatui::{prelude::*, widgets::*};
 
-fn main() -> Result<()> {
-    // stdout runs ~ 2x faster than stderr on a 2023 Macbook Pro M2 Max (~22-26fps vs ~11-12fps)
-    App::run(stdout())
+fn main() -> color_eyre::Result<()> {
+    App::run()
 }
 
 struct App {
@@ -31,25 +29,25 @@ struct App {
 }
 
 impl App {
-    fn new() -> Result<Self> {
-        Ok(Self {
+    fn new() -> Self {
+        Self {
             should_quit: false,
             colors: vec![],
             frame_count: 0,
             last_fps_frame_count: 0,
             last_fps_instant: Instant::now(),
             fps: 0.0,
-        })
+        }
     }
 
-    pub fn run<W: Write>(writer: W) -> Result<()> {
-        install_panic_hook();
-        init_terminal()?;
-        let mut terminal = Terminal::new(CrosstermBackend::new(writer))?;
+    pub fn run() -> color_eyre::Result<()> {
+        install_panic_hook()?;
+
+        let mut terminal = init_terminal()?;
+        let mut app = Self::new();
+
         let size = terminal.size()?;
-        let mut app = Self::new()?;
         app.setup_colors(size.width, size.height * 2);
-        terminal.clear()?;
         while !app.should_quit {
             terminal.draw(|frame| {
                 app.render(frame);
@@ -91,8 +89,8 @@ impl App {
         }
     }
 
-    fn handle_events(&mut self) -> Result<()> {
-        if event::poll(Duration::from_millis(1))? {
+    fn handle_events(&mut self) -> color_eyre::Result<()> {
+        if event::poll(Duration::from_secs_f32(1.0 / 60.0))? {
             match event::read()? {
                 Event::Key(key) => {
                     if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
@@ -110,9 +108,9 @@ impl App {
 
     fn setup_colors(&mut self, width: u16, height: u16) {
         self.colors.clear();
-        for y in 0..height {
+        for y in 0..=height {
             let mut row = Vec::new();
-            for x in 0..width {
+            for x in 0..=width {
                 let hue = x as f32 * 360.0 / width as f32;
                 let value = (height - y) as f32 / height as f32;
                 let saturation = Okhsv::max_saturation();
@@ -127,16 +125,10 @@ impl App {
     }
 }
 
-impl Drop for App {
-    fn drop(&mut self) {
-        let _ = restore_terminal();
-    }
-}
-
 struct RgbColors<'a> {
-    // The colors to render - should be double the height of the area
+    /// The colors to render - should be double the height of the area
     colors: &'a Vec<Vec<Color>>,
-    // the number of elapsed frames that have passed - used to animate the colors
+    /// the number of elapsed frames that have passed - used to animate the colors
     frame_count: usize,
 }
 
@@ -156,22 +148,31 @@ impl Widget for RgbColors<'_> {
 }
 
 /// Install a panic hook that restores the terminal before panicking.
-fn install_panic_hook() {
-    better_panic::install();
-    let prev_hook = std::panic::take_hook();
+fn install_panic_hook() -> color_eyre::Result<()> {
+    let (panic, error) = HookBuilder::default().into_hooks();
+    let panic = panic.into_panic_hook();
+    let error = error.into_eyre_hook();
+    color_eyre::eyre::set_hook(Box::new(move |e| {
+        let _ = restore_terminal();
+        error(e)
+    }))?;
     std::panic::set_hook(Box::new(move |info| {
         let _ = restore_terminal();
-        prev_hook(info);
+        panic(info)
     }));
-}
-
-fn init_terminal() -> Result<()> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
     Ok(())
 }
 
-fn restore_terminal() -> Result<()> {
+fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
+    enable_raw_mode()?;
+    stdout().execute(EnterAlternateScreen)?;
+    let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
+    terminal.clear()?;
+    terminal.hide_cursor()?;
+    Ok(terminal)
+}
+
+fn restore_terminal() -> color_eyre::Result<()> {
     disable_raw_mode()?;
     stdout().execute(LeaveAlternateScreen)?;
     Ok(())
