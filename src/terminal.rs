@@ -582,7 +582,11 @@ pub struct Frame<'a> {
 impl Frame<'_> {
     /// The size of the current frame
     ///
-    /// This is guaranteed not to change when rendering.
+    /// This is guaranteed not to change during rendering, so may be called multiple times.
+    ///
+    /// If your app listens for a resize event from the backend, it should ignore the values from
+    /// the event for any calculations that are used to render the current frame and use this value
+    /// instead as this is the size of the buffer that is used to render the current frame.
     pub fn size(&self) -> Rect {
         self.viewport_area
     }
