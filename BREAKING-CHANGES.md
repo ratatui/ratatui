@@ -121,7 +121,7 @@ E.g.
 ```diff
 - let table = Table::new(rows).widths(&[Constraint::Length(1)]);
 // becomes
-+ let table = Table::new(rows).widths([Constraint::Length(1)]);
++ let table = Table::new(rows, [Constraint::Length(1)]);
 ```
 
 ### Layout::new() now accepts direction and constraint parameters ([#557])
