@@ -48,11 +48,12 @@ better-panic = "0.3.0"
 cargo-husky = { version = "1.5.0", default-features = false, features = [
   "user-hooks",
 ] }
+color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 fakeit = "1.1"
-rand = "0.8.5"
 palette = "0.7.3"
 pretty_assertions = "1.4.0"
+rand = "0.8.5"
 
 [features]
 #! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
