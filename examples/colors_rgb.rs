@@ -22,7 +22,7 @@ fn main() -> color_eyre::Result<()> {
 #[derive(Debug, Default)]
 struct App {
     should_quit: bool,
-    // a 2d array of the colors to render, calculated when the size changes as this is expensive
+    // a 2d vec of the colors to render, calculated when the size changes as this is expensive
     // to calculate every frame
     colors: Vec<Vec<Color>>,
     last_size: Rect,
@@ -81,13 +81,10 @@ impl App {
 
     fn handle_events(&mut self) -> color_eyre::Result<()> {
         if event::poll(Duration::from_secs_f32(1.0 / 60.0))? {
-            match event::read()? {
-                Event::Key(key) => {
-                    if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                        self.should_quit = true;
-                    };
-                }
-                _ => (),
+            if let Event::Key(key) = event::read()? {
+                if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                    self.should_quit = true;
+                };
             }
         }
         Ok(())
