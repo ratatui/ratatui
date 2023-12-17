@@ -117,7 +117,7 @@ two square-ish pixels in the space of a single rectangular terminal cell.
 cargo run --example=colors_rgb --features=crossterm
 ```
 
-![Colors RGB][colors_rgb.png]
+![Colors RGB][colors_rgb.mov]
 
 ## Custom Widget
 
@@ -308,7 +308,7 @@ examples/generate.bash
 [canvas.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/canvas.gif?raw=true
 [chart.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/chart.gif?raw=true
 [colors.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/colors.gif?raw=true
-[colors_rgb.png]: https://github.com/ratatui-org/ratatui/blob/images/examples/colors_rgb.png?raw=true
+[colors_rgb.mov]: https://github.com/ratatui-org/ratatui/blob/images/examples/colors_rgb.mov?raw=true
 [custom_widget.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/custom_widget.gif?raw=true
 [demo.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/demo.gif?raw=true
 [demo2.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/demo2.gif?raw=true
