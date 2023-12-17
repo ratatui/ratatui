@@ -22,7 +22,10 @@ fn main() -> color_eyre::Result<()> {
 #[derive(Debug, Default)]
 struct App {
     should_quit: bool,
+    // a 2d array of the colors to render, calculated when the size changes as this is expensive
+    // to calculate every frame
     colors: Vec<Vec<Color>>,
+    last_size: Rect,
     fps: Fps,
     frame_count: usize,
 }
@@ -58,12 +61,12 @@ impl App {
         let mut terminal = init_terminal()?;
         let mut app = Self::default();
 
-        let size = terminal.size()?;
-        app.setup_colors(size.width, size.height * 2);
         while !app.should_quit {
             app.tick();
             terminal.draw(|frame| {
-                frame.render_widget(AppWidget::new(&app), frame.size());
+                let size = frame.size();
+                app.setup_colors(size);
+                frame.render_widget(AppWidget::new(&app), size);
             })?;
             app.handle_events()?;
         }
@@ -84,20 +87,25 @@ impl App {
                         self.should_quit = true;
                     };
                 }
-                Event::Resize(width, height) => {
-                    self.setup_colors(width, height * 2);
-                }
                 _ => (),
             }
         }
         Ok(())
     }
 
-    fn setup_colors(&mut self, width: u16, height: u16) {
+    fn setup_colors(&mut self, size: Rect) {
+        // only update the colors if the size has changed since the last time we rendered
+        if self.last_size.width == size.width && self.last_size.height == size.height {
+            return;
+        }
+        self.last_size = size;
+        let Rect { width, height, .. } = size;
+        // double the height because each screen row has two rows of half block pixels
+        let height = height * 2;
         self.colors.clear();
-        for y in 0..=height {
+        for y in 0..height {
             let mut row = Vec::new();
-            for x in 0..=width {
+            for x in 0..width {
                 let hue = x as f32 * 360.0 / width as f32;
                 let value = (height - y) as f32 / height as f32;
                 let saturation = Okhsv::max_saturation();
