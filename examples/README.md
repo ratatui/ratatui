@@ -117,10 +117,7 @@ two square-ish pixels in the space of a single rectangular terminal cell.
 cargo run --example=colors_rgb --features=crossterm
 ```
 
-Note: VHs renders full screen animations poorly, so this is a screen capture rather than the output
-of the VHS tape.
-
-<https://github.com/ratatui-org/ratatui/assets/381361/485e775a-e0b5-4133-899b-1e8aeb56e774>
+![Colors RGB][colors_rgb.png]
 
 ## Custom Widget
 
@@ -311,6 +308,7 @@ examples/generate.bash
 [canvas.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/canvas.gif?raw=true
 [chart.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/chart.gif?raw=true
 [colors.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/colors.gif?raw=true
+[colors_rgb.png]: https://github.com/ratatui-org/ratatui/blob/images/examples/colors_rgb.png?raw=true
 [custom_widget.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/custom_widget.gif?raw=true
 [demo.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/demo.gif?raw=true
 [demo2.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/demo2.gif?raw=true
