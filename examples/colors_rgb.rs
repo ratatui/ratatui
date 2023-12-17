@@ -19,74 +19,61 @@ fn main() -> color_eyre::Result<()> {
     App::run()
 }
 
+#[derive(Debug, Default)]
 struct App {
     should_quit: bool,
     colors: Vec<Vec<Color>>,
+    fps: Fps,
     frame_count: usize,
-    last_fps_frame_count: usize,
-    last_fps_instant: Instant,
-    fps: f64,
+}
+
+#[derive(Debug)]
+struct Fps {
+    frame_count: usize,
+    last_instant: Instant,
+    fps: Option<f32>,
+}
+
+struct AppWidget<'a> {
+    title: Paragraph<'a>,
+    fps_widget: FpsWidget<'a>,
+    rgb_colors_widget: RgbColorsWidget<'a>,
+}
+
+struct FpsWidget<'a> {
+    fps: &'a Fps,
+}
+
+struct RgbColorsWidget<'a> {
+    /// The colors to render - should be double the height of the area
+    colors: &'a Vec<Vec<Color>>,
+    /// the number of elapsed frames that have passed - used to animate the colors
+    frame_count: usize,
 }
 
 impl App {
-    fn new() -> Self {
-        Self {
-            should_quit: false,
-            colors: vec![],
-            frame_count: 0,
-            last_fps_frame_count: 0,
-            last_fps_instant: Instant::now(),
-            fps: 0.0,
-        }
-    }
-
     pub fn run() -> color_eyre::Result<()> {
         install_panic_hook()?;
 
         let mut terminal = init_terminal()?;
-        let mut app = Self::new();
+        let mut app = Self::default();
 
         let size = terminal.size()?;
         app.setup_colors(size.width, size.height * 2);
         while !app.should_quit {
+            app.tick();
             terminal.draw(|frame| {
-                app.render(frame);
+                frame.render_widget(AppWidget::new(&app), frame.size());
             })?;
             app.handle_events()?;
-            app.frame_count += 1;
         }
         restore_terminal()?;
         Ok(())
     }
 
-    fn render(&mut self, frame: &mut Frame) {
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Length(1), Constraint::Min(0)])
-            .split(frame.size());
-        self.calculate_fps();
-        let title = format!(
-            "colors_rgb example. Press q to quit. {fps:.2} fps",
-            fps = self.fps
-        );
-        let title = Paragraph::new(title).alignment(Alignment::Center);
-        let rgb_colors = RgbColors {
-            colors: &self.colors,
-            frame_count: self.frame_count,
-        };
-        frame.render_widget(title, layout[0]);
-        frame.render_widget(rgb_colors, layout[1]);
-    }
-
-    fn calculate_fps(&mut self) {
-        let elapsed_frames = self.frame_count - self.last_fps_frame_count;
-        let elapsed_duration = self.last_fps_instant.elapsed();
-        // avoid noise in the FPS calculation by only updating it if at least 3 frames have passed
-        if elapsed_frames > 2 && elapsed_duration > Duration::from_secs(1) {
-            self.fps = elapsed_frames as f64 / elapsed_duration.as_secs_f64();
-            self.last_fps_frame_count = self.frame_count;
-            self.last_fps_instant = Instant::now();
-        }
+    fn tick(&mut self) {
+        self.frame_count += 1;
+        self.fps.tick();
     }
 
     fn handle_events(&mut self) -> color_eyre::Result<()> {
@@ -125,14 +112,63 @@ impl App {
     }
 }
 
-struct RgbColors<'a> {
-    /// The colors to render - should be double the height of the area
-    colors: &'a Vec<Vec<Color>>,
-    /// the number of elapsed frames that have passed - used to animate the colors
-    frame_count: usize,
+impl Fps {
+    fn tick(&mut self) {
+        self.frame_count += 1;
+        let elapsed = self.last_instant.elapsed();
+        // update the fps every second, but only if we've rendered at least 2 frames (to avoid
+        // noise in the fps calculation)
+        if elapsed > Duration::from_secs(1) && self.frame_count > 2 {
+            self.fps = Some(self.frame_count as f32 / elapsed.as_secs_f32());
+            self.frame_count = 0;
+            self.last_instant = Instant::now();
+        }
+    }
 }
 
-impl Widget for RgbColors<'_> {
+impl Default for Fps {
+    fn default() -> Self {
+        Self {
+            frame_count: 0,
+            last_instant: Instant::now(),
+            fps: None,
+        }
+    }
+}
+
+impl<'a> AppWidget<'a> {
+    fn new(app: &'a App) -> Self {
+        let title =
+            Paragraph::new("colors_rgb example. Press q to quit").alignment(Alignment::Center);
+        Self {
+            title,
+            fps_widget: FpsWidget { fps: &app.fps },
+            rgb_colors_widget: RgbColorsWidget {
+                colors: &app.colors,
+                frame_count: app.frame_count,
+            },
+        }
+    }
+}
+
+impl Widget for AppWidget<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let main_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(1), Constraint::Min(0)])
+            .split(area);
+        let title_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(0), Constraint::Length(8)])
+            .split(main_layout[0]);
+
+        self.title.render(title_layout[0], buf);
+        self.fps_widget.render(title_layout[1], buf);
+        self.rgb_colors_widget.render(main_layout[1], buf);
+    }
+}
+
+impl Widget for RgbColorsWidget<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let colors = self.colors;
         for (xi, x) in (area.left()..area.right()).enumerate() {
@@ -143,6 +179,15 @@ impl Widget for RgbColors<'_> {
                 let bg = colors[yi * 2 + 1][xi];
                 buf.get_mut(x, y).set_char('▀').set_fg(fg).set_bg(bg);
             }
+        }
+    }
+}
+
+impl<'a> Widget for FpsWidget<'a> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(fps) = self.fps.fps {
+            let text = format!("{:.1} fps", fps);
+            Paragraph::new(text).render(area, buf);
         }
     }
 }
