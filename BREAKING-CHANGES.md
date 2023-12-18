@@ -1,7 +1,7 @@
 # Breaking Changes
 
 This document contains a list of breaking changes in each version and some notes to help migrate
-between versions. It is compile manually from the commit history and changelog. We also tag PRs on
+between versions. It is compiled manually from the commit history and changelog. We also tag PRs on
 github with a [breaking change] label.
 
 [breaking change]: (https://github.com/ratatui-org/ratatui/issues?q=label%3A%22breaking+change%22)
