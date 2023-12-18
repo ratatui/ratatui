@@ -10,14 +10,13 @@ github with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- Unreleased (0.24.1)
+- [v0.25.0](#v0250)
   - Removed `Axis::title_style` and `Buffer::set_background`
   - `List::new()` now accepts `IntoIterator<Item = Into<ListItem<'a>>>`
   - `Table::new()` now requires specifying the widths
   - `Table::widths()` now accepts `IntoIterator<Item = AsRef<Constraint>>`
   - Layout::new() now accepts direction and constraint parameters
   - The default `Tabs::highlight_style` is now `Style::new().reversed()`
-
 - [v0.24.0](#v0240)
   - MSRV is now 1.70.0
   - `ScrollbarState`: `position`, `content_length`, and `viewport_content_length` are now `usize`
@@ -40,7 +39,7 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## Unreleased (v0.24.1)
+## [v0.25.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.25.0)
 
 ### Removed `Axis::title_style` and `Buffer::set_background`
 

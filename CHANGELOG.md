@@ -2,6 +2,491 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.25.0](https://github.com/ratatui-org/ratatui/releases/tag/0.25.0) - 2023-12-18
+
+We are thrilled to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭
+
+In this version, we made improvements on widgets such as List, Table and Layout and changed some of the defaults for a better user experience.
+Also, we renewed our website and updated our documentation/tutorials to get started with `ratatui`: <https://ratatui.rs> 🚀
+
+✨ **Release highlights**: <https://ratatui.rs/highlights/v025/>
+
+⚠️ List of breaking changes can be found [here](https://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md).
+
+💖 We also enabled GitHub Sponsors for our organization, consider sponsoring us if you like `ratatui`: <https://github.com/sponsors/ratatui-org>
+
+### Features
+
+- [aef4956](https://github.com/ratatui-org/ratatui/commit/aef495604c52e563fbacfb1a6e730cd441a99129)
+  *(list)* `List::new` now accepts `IntoIterator<Item = Into<ListItem>>` ([#672](https://github.com/ratatui-org/ratatui/issues/672)) [**breaking**]
+
+  ````text
+  This allows to build list like
+
+  ```
+  List::new(["Item 1", "Item 2"])
+  ```
+  ````
+
+- [8bfd666](https://github.com/ratatui-org/ratatui/commit/8bfd6661e251b6943f74bda626e4708b2e9f4b51)
+  *(paragraph)* Add `line_count` and `line_width` unstable helper methods
+
+  ````text
+  This is an unstable feature that may be removed in the future
+  ````
+
+- [1229b96](https://github.com/ratatui-org/ratatui/commit/1229b96e428df880a951ef57f53ca73e74ef1ea2)
+  *(rect)* Add `offset` method ([#533](https://github.com/ratatui-org/ratatui/issues/533))
+
+  ````text
+  The offset method creates a new Rect that is moved by the amount
+  specified in the x and y direction. These values can be positive or
+  negative. This is useful for manual layout tasks.
+
+  ```rust
+  let rect = area.offset(Offset { x: 10, y -10 });
+  ```
+  ````
+
+- [edacaf7](https://github.com/ratatui-org/ratatui/commit/edacaf7ff4e4b14702f6361af5a6da713b7dc564)
+  *(buffer)* Deprecate `Cell::symbol` field ([#624](https://github.com/ratatui-org/ratatui/issues/624))
+
+  ````text
+  The Cell::symbol field is now accessible via a getter method (`symbol()`). This will
+  allow us to make future changes to the Cell internals such as replacing `String` with
+  `compact_str`.
+  ````
+
+- [6b2efd0](https://github.com/ratatui-org/ratatui/commit/6b2efd0f6c3bf56dc06bbf042db40c0c66de577e)
+  *(layout)* Accept IntoIterator for constraints ([#663](https://github.com/ratatui-org/ratatui/issues/663))
+
+  ````text
+  Layout and Table now accept IntoIterator for constraints with an Item
+  that is AsRef<Constraint>. This allows pretty much any collection of
+  constraints to be passed to the layout functions including arrays,
+  vectors, slices, and iterators (without having to call collect() on
+  them).
+  ````
+
+- [753e246](https://github.com/ratatui-org/ratatui/commit/753e246531e1e9e2ea558911f8d03e738901d85f)
+  *(layout)* Allow configuring layout fill ([#633](https://github.com/ratatui-org/ratatui/issues/633))
+
+  ````text
+  The layout split will generally fill the remaining area when `split()`
+  is called. This change allows the caller to configure how any extra
+  space is allocated to the `Rect`s. This is useful for cases where the
+  caller wants to have a fixed size for one of the `Rect`s, and have the
+  other `Rect`s fill the remaining space.
+
+  For now, the method and enum are marked as unstable because the exact
+  name is still being bikeshedded. To enable this functionality, add the
+  `unstable-segment-size` feature flag in your `Cargo.toml`.
+
+  To configure the layout to fill the remaining space evenly, use
+  `Layout::segment_size(SegmentSize::EvenDistribution)`. The default
+  behavior is `SegmentSize::LastTakesRemainder`, which gives the last
+  segment the remaining space. `SegmentSize::None` will disable this
+  behavior. See the docs for `Layout::segment_size()` and
+  `layout::SegmentSize` for more information.
+
+  Fixes https://github.com/ratatui-org/ratatui/issues/536
+  ````
+
+- [1e2f0be](https://github.com/ratatui-org/ratatui/commit/1e2f0be75ac3fb3d6500c1de291bd49972b808e4)
+  *(layout)* Add parameters to Layout::new() ([#557](https://github.com/ratatui-org/ratatui/issues/557)) [**breaking**]
+
+  ````text
+  Adds a convenience function to create a layout with a direction and a
+  list of constraints which are the most common parameters that would be
+  generally configured using the builder pattern. The constraints can be
+  passed in as any iterator of constraints.
+
+  ```rust
+  let layout = Layout::new(Direction::Horizontal, [
+      Constraint::Percentage(50),
+      Constraint::Percentage(50),
+  ]);
+  ```
+  ````
+
+- [c862aa5](https://github.com/ratatui-org/ratatui/commit/c862aa5e9ef4dbf494b5151214ac87f5c71e76d4)
+  *(list)* Support line alignment ([#599](https://github.com/ratatui-org/ratatui/issues/599))
+
+  ````text
+  The `List` widget now respects the alignment of `Line`s and renders them as expected.
+  ````
+
+- [4424637](https://github.com/ratatui-org/ratatui/commit/4424637af252dc2f227fe4956eac71135e60fb02)
+  *(span)* Add setters for content and style ([#647](https://github.com/ratatui-org/ratatui/issues/647))
+
+- [ebf1f42](https://github.com/ratatui-org/ratatui/commit/ebf1f4294211d478b8633a06576ec269a50db588)
+  *(style)* Implement `From` trait for crossterm to `Style` related structs ([#686](https://github.com/ratatui-org/ratatui/issues/686))
+
+- [e49385b](https://github.com/ratatui-org/ratatui/commit/e49385b78c8e01fe6381b19d15137346bc6eb8a1)
+  *(table)* Add a Table::segment_size method ([#660](https://github.com/ratatui-org/ratatui/issues/660))
+
+  ````text
+  It controls how to distribute extra space to an underconstrained table.
+  The default, legacy behavior is to leave the extra space unused.  The
+  new options are LastTakesRemainder which gets all space to the rightmost
+  column that can used it, and EvenDistribution which divides it amongst
+  all columns.
+  ````
+
+- [b8f71c0](https://github.com/ratatui-org/ratatui/commit/b8f71c0d6eda3da272d29c7a9b3c47181049f76a)
+  *(widgets/chart)* Add option to set the position of legend ([#378](https://github.com/ratatui-org/ratatui/issues/378))
+
+- [5bf4f52](https://github.com/ratatui-org/ratatui/commit/5bf4f52119ab3e0e3a266af196058179dc1d18c3)
+  *(uncategorized)* Implement `From` trait for termion to `Style` related structs ([#692](https://github.com/ratatui-org/ratatui/issues/692))
+
+  ````text
+  * feat(termion): implement from termion color
+
+  * feat(termion): implement from termion style
+
+  * feat(termion): implement from termion `Bg` and `Fg`
+  ````
+
+- [d19b266](https://github.com/ratatui-org/ratatui/commit/d19b266e0eabdb0fb00660439a1818239c94024b)
+  *(uncategorized)* Add Constraint helpers (e.g. from_lengths) ([#641](https://github.com/ratatui-org/ratatui/issues/641))
+
+  ````text
+  Adds helper methods that convert from iterators of u16 values to the
+  specific Constraint type. This makes it easy to create constraints like:
+
+  ```rust
+  // a fixed layout
+  let constraints = Constraint::from_lengths([10, 20, 10]);
+
+  // a centered layout
+  let constraints = Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]);
+  let constraints = Constraint::from_percentages([25, 50, 25]);
+
+  // a centered layout with a minimum size
+  let constraints = Constraint::from_mins([0, 100, 0]);
+
+  // a sidebar / main layout with maximum sizes
+  let constraints = Constraint::from_maxes([30, 200]);
+  ```
+  ````
+
+### Bug Fixes
+
+- [f69d57c](https://github.com/ratatui-org/ratatui/commit/f69d57c3b59e27b517a5ca1a002af808fee47970)
+  *(rect)* Fix underflow in the `Rect::intersection` method ([#678](https://github.com/ratatui-org/ratatui/issues/678))
+
+- [56fc410](https://github.com/ratatui-org/ratatui/commit/56fc4101056e0f631f563f8f2c07646063e650d3)
+  *(block)* Make `inner` aware of title positions ([#657](https://github.com/ratatui-org/ratatui/issues/657))
+
+  ````text
+  Previously, when computing the inner rendering area of a block, all
+  titles were assumed to be positioned at the top, which caused the
+  height of the inner area to be miscalculated.
+  ````
+
+- [ec7b387](https://github.com/ratatui-org/ratatui/commit/ec7b3872b46c6828c88ce7f72308dc67731fca25)
+  *(doc)* Do not access deprecated `Cell::symbol` field in doc example ([#626](https://github.com/ratatui-org/ratatui/issues/626))
+
+- [37c70db](https://github.com/ratatui-org/ratatui/commit/37c70dbb8e19c0fb35ced16b29751933514a441e)
+  *(table)* Add widths parameter to new() ([#664](https://github.com/ratatui-org/ratatui/issues/664)) [**breaking**]
+
+  ````text
+  This prevents creating a table that doesn't actually render anything.
+  ````
+
+- [1f88da7](https://github.com/ratatui-org/ratatui/commit/1f88da75383f6de76e64e9258fbf38d02ec77af9)
+  *(table)* Fix new clippy lint which triggers on table widths tests ([#630](https://github.com/ratatui-org/ratatui/issues/630))
+
+  ````text
+  * fix(table): new clippy lint in 1.74.0 triggers on table widths tests
+  ````
+
+- [36d8c53](https://github.com/ratatui-org/ratatui/commit/36d8c5364590a559913c40ee5f021b5d8e3466e6)
+  *(table)* Widths() now accepts AsRef<[Constraint]> ([#628](https://github.com/ratatui-org/ratatui/issues/628))
+
+  ````text
+  This allows passing an array, slice or Vec of constraints, which is more
+  ergonomic than requiring this to always be a slice.
+
+  The following calls now all succeed:
+
+  ```rust
+  Table::new(rows).widths([Constraint::Length(5), Constraint::Length(5)]);
+  Table::new(rows).widths(&[Constraint::Length(5), Constraint::Length(5)]);
+
+  // widths could also be computed at runtime
+  let widths = vec![Constraint::Length(5), Constraint::Length(5)];
+  Table::new(rows).widths(widths.clone());
+  Table::new(rows).widths(&widths);
+  ```
+  ````
+
+- [34d099c](https://github.com/ratatui-org/ratatui/commit/34d099c99af27eacfdde71f9ced255c29e1e001a)
+  *(tabs)* Fixup tests broken by semantic merge conflict ([#665](https://github.com/ratatui-org/ratatui/issues/665))
+
+  ````text
+  Two changes without any line overlap caused the tabs tests to break
+  ````
+
+- [e4579f0](https://github.com/ratatui-org/ratatui/commit/e4579f0db2b70b59590cae02e994e3736b19a1b3)
+  *(tabs)* Set the default highlight_style ([#635](https://github.com/ratatui-org/ratatui/issues/635)) [**breaking**]
+
+  ````text
+  Previously the default highlight_style was set to `Style::default()`,
+  which meant that the highlight style was the same as the normal style.
+  This change sets the default highlight_style to reversed text.
+  ````
+
+- [28ac55b](https://github.com/ratatui-org/ratatui/commit/28ac55bc62e4e14e3ace300633d56791a1d3dea0)
+  *(tabs)* Tab widget now supports custom padding ([#629](https://github.com/ratatui-org/ratatui/issues/629))
+
+  ````text
+  The Tab widget now contains padding_left and and padding_right
+  properties. Those values can be set with functions `padding_left()`,
+  `padding_right()`, and `padding()` which all accept `Into<Line>`.
+
+  Fixes issue https://github.com/ratatui-org/ratatui/issues/502
+  ````
+
+- [df0eb1f](https://github.com/ratatui-org/ratatui/commit/df0eb1f8e94752db542ff58e1453f4f8beab17e2)
+  *(terminal)* Insert_before() now accepts lines > terminal height and doesn't add an extra blank line ([#596](https://github.com/ratatui-org/ratatui/issues/596))
+
+  ````text
+  Fixes issue with inserting content with height>viewport_area.height and adds
+  the ability to insert content of height>terminal_height
+
+  - Adds TestBackend::append_lines() and TestBackend::clear_region() methods to
+    support testing the changes
+  ````
+
+- [aaeba27](https://github.com/ratatui-org/ratatui/commit/aaeba2709c09b7373f3781ecd4b0a96b22fc2764)
+  *(uncategorized)* Truncate table when overflow ([#685](https://github.com/ratatui-org/ratatui/issues/685))
+
+  ````text
+  This prevents a panic when rendering an empty right aligned and rightmost table cell
+  ````
+
+- [ffa78aa](https://github.com/ratatui-org/ratatui/commit/ffa78aa67ccd79b9aa1af0d7ccf56a2059d0f519)
+  *(uncategorized)* Add #[must_use] to Style-moving methods ([#600](https://github.com/ratatui-org/ratatui/issues/600))
+
+- [a2f2bd5](https://github.com/ratatui-org/ratatui/commit/a2f2bd5df53a796c0f2a57bb1b22151e52b5ef03)
+  *(uncategorized)* MSRV is now `1.70.0` ([#593](https://github.com/ratatui-org/ratatui/issues/593))
+
+### Refactor
+
+- [f767ea7](https://github.com/ratatui-org/ratatui/commit/f767ea7d3766887cb79145103b5aa92e0eabf8f6)
+  *(list)* `start_corner` is now `direction` ([#673](https://github.com/ratatui-org/ratatui/issues/673))
+
+  ````text
+  The previous name `start_corner` did not communicate clearly the intent of the method.
+  A new method `direction` and a new enum `ListDirection` were added.
+
+  `start_corner` is now deprecated
+  ````
+
+- [b82451f](https://github.com/ratatui-org/ratatui/commit/b82451fb33f35ae0323a56bb6f962404b076a262)
+  *(examples)* Add vim binding ([#688](https://github.com/ratatui-org/ratatui/issues/688))
+
+- [0576a8a](https://github.com/ratatui-org/ratatui/commit/0576a8aa3212c57d288c67592337a3870ae6dafc)
+  *(layout)* To natural reading order ([#681](https://github.com/ratatui-org/ratatui/issues/681))
+
+  ````text
+  Structs and enums at the top of the file helps show the interaction
+  between the types without having to find each type in between longer
+  impl sections.
+
+  Also moved the try_split function into the Layout impl as an associated
+  function and inlined the `layout::split()` which just called try_split.
+  This makes the code a bit more contained.
+  ````
+
+- [4be18ab](https://github.com/ratatui-org/ratatui/commit/4be18aba8b535165f03d15450276b2e95a7970eb)
+  *(readme)* Reference awesome-ratatui instead of wiki ([#689](https://github.com/ratatui-org/ratatui/issues/689))
+
+  ````text
+  * refactor(readme): link awesome-ratatui instead of wiki
+
+  The apps wiki moved to awesome-ratatui
+
+  * docs(readme): Update README.md
+  ````
+
+- [7ef0afc](https://github.com/ratatui-org/ratatui/commit/7ef0afcb62198f76321e84d9bb19a8a590a3b649)
+  *(widgets)* Remove unnecessary dynamic dispatch and heap allocation ([#597](https://github.com/ratatui-org/ratatui/issues/597))
+
+- [b282a06](https://github.com/ratatui-org/ratatui/commit/b282a0693289d9d2602b54b639d3701d8c8cc8a8)
+  *(uncategorized)* Remove items deprecated since 0.10 ([#691](https://github.com/ratatui-org/ratatui/issues/691)) [**breaking**]
+
+  ````text
+  Remove `Axis::title_style` and `Buffer::set_background` which are deprecated since 0.10
+  ````
+
+- [7ced7c0](https://github.com/ratatui-org/ratatui/commit/7ced7c0aa3acdaa63ed6add59711614993210ba3)
+  *(uncategorized)* Define struct WrappedLine instead of anonymous tuple ([#608](https://github.com/ratatui-org/ratatui/issues/608))
+
+  ````text
+  It makes the type easier to document, and more obvious for users
+  ````
+
+### Documentation
+
+- [fe632d7](https://github.com/ratatui-org/ratatui/commit/fe632d70cb150264d9af2f79145a1d14a3637f3e)
+  *(sparkline)* Add documentation ([#648](https://github.com/ratatui-org/ratatui/issues/648))
+
+- [f4c8de0](https://github.com/ratatui-org/ratatui/commit/f4c8de041d48cec5ea9b3e1f540f57af5a09d7a4)
+  *(chart)* Document chart module ([#696](https://github.com/ratatui-org/ratatui/issues/696))
+
+- [1b8b626](https://github.com/ratatui-org/ratatui/commit/1b8b6261e2de29a37b2cd7d6ee8659fb46d3beff)
+  *(examples)* Add animation and FPS counter to colors_rgb ([#583](https://github.com/ratatui-org/ratatui/issues/583))
+
+- [2169a0d](https://github.com/ratatui-org/ratatui/commit/2169a0da01e3bd6272e33b9de26a033fcb5f55f2)
+  *(examples)* Add example of half block rendering ([#687](https://github.com/ratatui-org/ratatui/issues/687))
+
+  ````text
+  This is a fun example of how to render big text using half blocks
+  ````
+
+- [41c44a4](https://github.com/ratatui-org/ratatui/commit/41c44a4af66ba791959f3a298d1b544330b9a164)
+  *(frame)* Add docs about resize events ([#697](https://github.com/ratatui-org/ratatui/issues/697))
+
+- [91c67eb](https://github.com/ratatui-org/ratatui/commit/91c67eb1009449e0dfdd29e6ef0132c5254cfbde)
+  *(github)* Update code owners ([#666](https://github.com/ratatui-org/ratatui/issues/666))
+
+  ````text
+  onboard @Valentin271 as maintainer
+  ````
+
+- [458fa90](https://github.com/ratatui-org/ratatui/commit/458fa9036281e0e6e88bd2ec90c633e499ce547c)
+  *(lib)* Tweak the crate documentation ([#659](https://github.com/ratatui-org/ratatui/issues/659))
+
+- [3ec4e24](https://github.com/ratatui-org/ratatui/commit/3ec4e24d00e118a12c8fea888e16ce19b75cf45f)
+  *(list)* Add documentation to the List widget ([#669](https://github.com/ratatui-org/ratatui/issues/669))
+
+  ````text
+  Adds documentation to the List widget and all its sub components like `ListState` and `ListItem`
+  ````
+
+- [9f37100](https://github.com/ratatui-org/ratatui/commit/9f371000968044e09545d66068c4ed4ea4b35d8a)
+  *(readme)* Update README.md and fix the bug that demo2 cannot run ([#595](https://github.com/ratatui-org/ratatui/issues/595))
+
+  ````text
+  Fixes https://github.com/ratatui-org/ratatui/issues/594
+  ````
+
+- [2a87251](https://github.com/ratatui-org/ratatui/commit/2a87251152432fd99c18864f32874fed2cab2f99)
+  *(security)* Add security policy ([#676](https://github.com/ratatui-org/ratatui/issues/676))
+
+  ````text
+  * docs: Create SECURITY.md
+
+  * Update SECURITY.md
+  ````
+
+- [987f7ee](https://github.com/ratatui-org/ratatui/commit/987f7eed4c8bd09e319b504e587eb1f3667ee64b)
+  *(website)* Rename book to website ([#661](https://github.com/ratatui-org/ratatui/issues/661))
+
+- [a15c3b2](https://github.com/ratatui-org/ratatui/commit/a15c3b2660bf4102bc881a5bc11959bc136f4a17)
+  *(uncategorized)* Remove deprecated table constructor from breaking changes ([#698](https://github.com/ratatui-org/ratatui/issues/698))
+
+- [113b4b7](https://github.com/ratatui-org/ratatui/commit/113b4b7a4ea841fe2ca7b1c153243fec781c3cc0)
+  *(uncategorized)* Rename template links to remove ratatui from name 📚 ([#690](https://github.com/ratatui-org/ratatui/issues/690))
+
+- [211160c](https://github.com/ratatui-org/ratatui/commit/211160ca165e2ad23b3d4cd9382c6e4869644a9c)
+  *(uncategorized)* Remove simple-tui-rs ([#651](https://github.com/ratatui-org/ratatui/issues/651))
+
+  ````text
+  This has not been recently and doesn't lead to good code
+  ````
+
+### Styling
+
+- [6a6e9dd](https://github.com/ratatui-org/ratatui/commit/6a6e9dde9dc66ecb6f47f858fd0a67d7dc9eb7d1)
+  *(tabs)* Fix doc formatting ([#662](https://github.com/ratatui-org/ratatui/issues/662))
+
+### Miscellaneous Tasks
+
+- [910ad00](https://github.com/ratatui-org/ratatui/commit/910ad00059c3603ba6b1751c95783f974fde88a1)
+  *(rustfmt)* Enable format_code_in_doc_comments ([#695](https://github.com/ratatui-org/ratatui/issues/695))
+
+  ````text
+  This enables more consistently formatted code in doc comments,
+  especially since ratatui heavily uses fluent setters.
+
+  See https://rust-lang.github.io/rustfmt/?version=v1.6.0#format_code_in_doc_comments
+  ````
+
+- [d118565](https://github.com/ratatui-org/ratatui/commit/d118565ef60480fba8f2906ede81f875a562cb61)
+  *(table)* Cleanup docs and builder methods ([#638](https://github.com/ratatui-org/ratatui/issues/638))
+
+  ````text
+  - Refactor the `table` module for better top to bottom readability by
+  putting types first and arranging them in a logical order (Table, Row,
+  Cell, other).
+
+  - Adds new methods for:
+    - `Table::rows`
+    - `Row::cells`
+    - `Cell::new`
+    - `Cell::content`
+    - `TableState::new`
+    - `TableState::selected_mut`
+
+  - Makes `HighlightSpacing::should_add` pub(crate) since it's an internal
+    detail.
+
+  - Adds tests for all the new methods and simple property tests for all
+    the other setter methods.
+  ````
+
+- [dd22e72](https://github.com/ratatui-org/ratatui/commit/dd22e721e3aed24538eb08e46e40339cec636bcb)
+  *(uncategorized)* Correct "builder methods" in docs and add `must_use` on widgets setters ([#655](https://github.com/ratatui-org/ratatui/issues/655))
+
+- [18e19f6](https://github.com/ratatui-org/ratatui/commit/18e19f6ce6ae3ce9bd52110ab6cbd4ed4bcca5e6)
+  *(uncategorized)* Fix breaking changes doc versions ([#639](https://github.com/ratatui-org/ratatui/issues/639))
+
+  ````text
+  Moves the layout::new change to unreleasedd section and adds the table change
+  ````
+
+- [a58cce2](https://github.com/ratatui-org/ratatui/commit/a58cce2dba404fe394bbb298645bf3c40518fe1f)
+  *(uncategorized)* Disable default benchmarking ([#598](https://github.com/ratatui-org/ratatui/issues/598))
+
+  ````text
+  Disables the default benchmarking behaviour for the lib target to fix unrecognized
+  criterion benchmark arguments.
+
+  See https://bheisler.github.io/criterion.rs/book/faq.html#cargo-bench-gives-unrecognized-option-errors-for-valid-command-line-options for details
+  ````
+
+### Continuous Integration
+
+- [59b9c32](https://github.com/ratatui-org/ratatui/commit/59b9c32fbc2bc6725bdec42e63216024fab71493)
+  *(codecov)* Adjust threshold and noise settings ([#615](https://github.com/ratatui-org/ratatui/issues/615))
+
+  ````text
+  Fixes https://github.com/ratatui-org/ratatui/issues/612
+  ````
+
+- [03401cd](https://github.com/ratatui-org/ratatui/commit/03401cd46e6566af4d063bac11efc30f28b5358a)
+  *(uncategorized)* Fix untrusted input in pr check workflow ([#680](https://github.com/ratatui-org/ratatui/issues/680))
+
+### Contributors
+
+Thank you so much to everyone that contributed to this release!
+
+Here is the list of contributors who have contributed to `ratatui` for the first time!
+
+* @rikonaka
+* @danny-burrows
+* @SOF3
+* @jan-ferdinand
+* @rhaskia
+* @asomers
+* @progval
+* @TylerBloom
+* @YeungKC
+* @lyuha
+
 ## [0.24.0](https://github.com/ratatui-org/ratatui/releases/tag/0.24.0) - 2023-10-23
 
 We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭
@@ -10,7 +495,7 @@ In this version, we've introduced features like window size API, enhanced chart 
 The list of \*breaking changes\* can be found [here](https://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md) ⚠️.
 Also, we created various tutorials and walkthroughs in [Ratatui Book](https://github.com/ratatui-org/ratatui-book) which is available at <https://ratatui.rs> 🚀
 
-✨ **Release highlights**: <https://ratatui.rs/highlights/v0.24.html>
+✨ **Release highlights**: <https://ratatui.rs/highlights/v024>
 
 ### Features
 
