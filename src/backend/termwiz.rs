@@ -10,7 +10,7 @@ use std::{error::Error, io};
 use termwiz::{
     caps::Capabilities,
     cell::{AttributeChange, Blink, Intensity, Underline},
-    color::{AnsiColor, ColorAttribute, SrgbaTuple},
+    color::{AnsiColor, ColorAttribute, ColorSpec, LinearRgba, RgbColor, SrgbaTuple},
     surface::{Change, CursorVisibility, Position},
     terminal::{buffered::BufferedTerminal, ScreenSize, SystemTerminal, Terminal},
 };
@@ -254,7 +254,8 @@ impl From<Color> for ColorAttribute {
         match color {
             Color::Reset => ColorAttribute::Default,
             Color::Black => AnsiColor::Black.into(),
-            Color::Gray | Color::DarkGray => AnsiColor::Grey.into(),
+            Color::DarkGray => AnsiColor::Grey.into(),
+            Color::Gray => AnsiColor::Silver.into(),
             Color::Red => AnsiColor::Maroon.into(),
             Color::LightRed => AnsiColor::Red.into(),
             Color::Green => AnsiColor::Green.into(),
@@ -273,6 +274,70 @@ impl From<Color> for ColorAttribute {
                 ColorAttribute::TrueColorWithDefaultFallback(SrgbaTuple::from((r, g, b)))
             }
         }
+    }
+}
+
+impl From<AnsiColor> for Color {
+    fn from(value: AnsiColor) -> Self {
+        match value {
+            AnsiColor::Black => Color::Black,
+            AnsiColor::Grey => Color::DarkGray,
+            AnsiColor::Silver => Color::Gray,
+            AnsiColor::Maroon => Color::Red,
+            AnsiColor::Red => Color::LightRed,
+            AnsiColor::Green => Color::Green,
+            AnsiColor::Lime => Color::LightGreen,
+            AnsiColor::Olive => Color::Yellow,
+            AnsiColor::Yellow => Color::LightYellow,
+            AnsiColor::Purple => Color::Magenta,
+            AnsiColor::Fuchsia => Color::LightMagenta,
+            AnsiColor::Teal => Color::Cyan,
+            AnsiColor::Aqua => Color::LightCyan,
+            AnsiColor::White => Color::White,
+            AnsiColor::Navy => Color::Blue,
+            AnsiColor::Blue => Color::LightBlue,
+        }
+    }
+}
+
+impl From<ColorAttribute> for Color {
+    fn from(value: ColorAttribute) -> Self {
+        match value {
+            ColorAttribute::TrueColorWithDefaultFallback(srgba)
+            | ColorAttribute::TrueColorWithPaletteFallback(srgba, _) => srgba.into(),
+            ColorAttribute::PaletteIndex(i) => Color::Indexed(i),
+            ColorAttribute::Default => Color::Reset,
+        }
+    }
+}
+
+impl From<ColorSpec> for Color {
+    fn from(value: ColorSpec) -> Self {
+        match value {
+            ColorSpec::Default => Color::Reset,
+            ColorSpec::PaletteIndex(i) => Color::Indexed(i),
+            ColorSpec::TrueColor(srgba) => srgba.into(),
+        }
+    }
+}
+
+impl From<SrgbaTuple> for Color {
+    fn from(value: SrgbaTuple) -> Self {
+        let (r, g, b, _) = value.to_srgb_u8();
+        Color::Rgb(r, g, b)
+    }
+}
+
+impl From<RgbColor> for Color {
+    fn from(value: RgbColor) -> Self {
+        let (r, g, b) = value.to_tuple_rgb8();
+        Color::Rgb(r, g, b)
+    }
+}
+
+impl From<LinearRgba> for Color {
+    fn from(value: LinearRgba) -> Self {
+        value.to_srgb().into()
     }
 }
 
