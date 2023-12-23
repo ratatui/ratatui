@@ -61,7 +61,9 @@ impl App {
     }
 
     fn enter_char(&mut self, new_char: char) {
-        self.input.insert(self.cursor_position, new_char);
+        let mut chars = self.input.chars().collect::<Vec<char>>();
+        chars.insert(self.cursor_position, new_char);
+        self.input = chars.into_iter().collect();
 
         self.move_cursor_right();
     }
@@ -69,27 +71,16 @@ impl App {
     fn delete_char(&mut self) {
         let is_not_cursor_leftmost = self.cursor_position != 0;
         if is_not_cursor_leftmost {
-            // Method "remove" is not used on the saved text for deleting the selected char.
-            // Reason: Using remove on String works on bytes instead of the chars.
-            // Using remove would require special care because of char boundaries.
+            let mut chars = self.input.chars().collect::<Vec<char>>();
+            chars.remove(self.cursor_position - 1);
+            self.input = chars.into_iter().collect();
 
-            let current_index = self.cursor_position;
-            let from_left_to_current_index = current_index - 1;
-
-            // Getting all characters before the selected character.
-            let before_char_to_delete = self.input.chars().take(from_left_to_current_index);
-            // Getting all characters after selected character.
-            let after_char_to_delete = self.input.chars().skip(current_index);
-
-            // Put all characters together except the selected one.
-            // By leaving the selected one out, it is forgotten and therefore deleted.
-            self.input = before_char_to_delete.chain(after_char_to_delete).collect();
             self.move_cursor_left();
         }
     }
 
     fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
-        new_cursor_pos.clamp(0, self.input.len())
+        new_cursor_pos.clamp(0, self.input.chars().count())
     }
 
     fn reset_cursor(&mut self) {
@@ -100,6 +91,16 @@ impl App {
         self.messages.push(self.input.clone());
         self.input.clear();
         self.reset_cursor();
+    }
+
+    fn input_cursor_len(&self) -> u16 {
+        let mut len = 0;
+        self.input.chars().enumerate().for_each(|(idx, c)| {
+            if self.cursor_position > idx {
+                len += if c.len_utf8() > 1 { 2 } else { 1 }
+            }
+        });
+        len + 1
     }
 }
 
@@ -226,7 +227,7 @@ fn ui(f: &mut Frame, app: &App) {
             f.set_cursor(
                 // Draw the cursor at the current position in the input field.
                 // This position is can be controlled via the left and right arrow key
-                chunks[1].x + app.cursor_position as u16 + 1,
+                chunks[1].x + app.input_cursor_len(),
                 // Move one line down, from the border to the input line
                 chunks[1].y + 1,
             )
