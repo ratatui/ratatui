@@ -61,7 +61,7 @@ use std::{
 ///
 /// [ANSI color table]: https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum Color {
     /// Resets the foreground or background color
     #[default]
@@ -122,6 +122,17 @@ pub enum Color {
     ///
     /// See also <https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit>
     Indexed(u8),
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Color {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        FromStr::from_str(&s).map_err(serde::de::Error::custom)
+    }
 }
 
 /// Error type indicating a failure to parse a color string.
@@ -251,6 +262,9 @@ impl Display for Color {
 mod tests {
     use std::error::Error;
 
+    #[cfg(feature = "serde")]
+    use serde::de::{Deserialize, IntoDeserializer};
+
     use super::*;
 
     #[test]
@@ -360,5 +374,47 @@ mod tests {
         assert_eq!(format!("{}", Color::Indexed(10)), "10");
         assert_eq!(format!("{}", Color::Rgb(255, 0, 0)), "#FF0000");
         assert_eq!(format!("{}", Color::Reset), "Reset");
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn deserialize() -> Result<(), serde::de::value::Error> {
+        assert_eq!(
+            Color::Black,
+            Color::deserialize("Black".into_deserializer())?
+        );
+        assert_eq!(
+            Color::Magenta,
+            Color::deserialize("magenta".into_deserializer())?
+        );
+        assert_eq!(
+            Color::LightGreen,
+            Color::deserialize("LightGreen".into_deserializer())?
+        );
+        assert_eq!(
+            Color::White,
+            Color::deserialize("bright-white".into_deserializer())?
+        );
+        assert_eq!(
+            Color::Indexed(42),
+            Color::deserialize("42".into_deserializer())?
+        );
+        assert_eq!(
+            Color::Rgb(0, 255, 0),
+            Color::deserialize("#00ff00".into_deserializer())?
+        );
+        Ok(())
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn deserialize_error() {
+        let color: Result<_, serde::de::value::Error> =
+            Color::deserialize("invalid".into_deserializer());
+        assert!(color.is_err());
+
+        let color: Result<_, serde::de::value::Error> =
+            Color::deserialize("#00000000".into_deserializer());
+        assert!(color.is_err());
     }
 }
