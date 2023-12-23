@@ -12,11 +12,11 @@ Show
 Sleep 2s
 Type e
 Sleep 1s
-Type "Hello, world!"
+Type "Hello, world!你好世界！"
 Enter
 Sleep 2s
 Backspace 13
 Sleep 1s
-Type "Goodbye, world!"
+Type "Goodbye, world!再见世界！"
 Enter
 Sleep 5s
