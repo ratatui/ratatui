@@ -39,7 +39,7 @@ use crate::{
 ///
 /// # Setter methods
 ///
-/// These methods a fluent setters. They return a new `Table` with the specified property set.
+/// These methods are fluent setters. They return a new `Table` with the specified property set.
 ///
 /// - [`Table::rows`] sets the rows of the [`Table`].
 /// - [`Table::header`] sets the header row of the [`Table`].
