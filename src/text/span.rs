@@ -4,7 +4,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 use super::StyledGrapheme;
-use crate::style::{Style, Styled};
+use crate::{prelude::*, widgets::Widget};
 
 /// Represents a part of a line that is contiguous and where all characters share the same style.
 ///
@@ -74,7 +74,19 @@ use crate::style::{Style, Styled};
 ///     .italic();
 /// ```
 ///
+/// `Span` implements the [`Widget`] trait, which allows it to be rendered to a [`Buffer`]. Usually
+/// apps will use the [`Paragraph`] widget instead of rendering `Span` directly, as it handles text
+/// wrapping and alignment for you.
+///
+/// ```rust
+/// use ratatui::prelude::*;
+///
+/// # fn render_frame(frame: &mut Frame) {
+/// frame.render_widget("test content".green().on_yellow().italic(), frame.size());
+/// # }
+/// ```
 /// [`Line`]: crate::text::Line
+/// [`Paragraph`]: crate::widgets::Paragraph
 /// [`Stylize`]: crate::style::Stylize
 /// [`Cow<str>`]: std::borrow::Cow
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
@@ -268,10 +280,42 @@ impl<'a> Styled for Span<'a> {
     }
 }
 
+impl Widget for Span<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let Rect {
+            x: mut current_x,
+            y,
+            width,
+            ..
+        } = area;
+        let max_x = Ord::min(current_x.saturating_add(width), buf.area.right());
+        for g in self.styled_graphemes(Style::default()) {
+            let symbol_width = g.symbol.width();
+            let next_x = current_x.saturating_add(symbol_width as u16);
+            if next_x > max_x {
+                break;
+            }
+            buf.get_mut(current_x, y)
+                .set_symbol(g.symbol)
+                .set_style(g.style);
+
+            // multi-width graphemes must clear the cells of characters that are hidden by the
+            // grapheme, otherwise the hidden characters will be re-rendered if the grapheme is
+            // overwritten.
+            for i in (current_x + 1)..next_x {
+                buf.get_mut(i, y).reset();
+                // it may seem odd that the style of the hidden cells are not set to the style of
+                // the grapheme, but this is how the existing buffer.set_span() method works.
+                // buf.get_mut(i, y).set_style(g.style);
+            }
+            current_x = next_x;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::style::Stylize;
 
     #[test]
     fn default() {
@@ -387,5 +431,104 @@ mod tests {
         let stylized = span.on_yellow().bold();
         assert_eq!(stylized.content, Cow::Borrowed("test content"));
         assert_eq!(stylized.style, Style::new().green().on_yellow().bold());
+    }
+
+    mod widget {
+        use super::*;
+        use crate::{assert_buffer_eq, style::Stylize};
+
+        #[test]
+        fn render() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("test content", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
+            span.render(buf.area, &mut buf);
+
+            let expected = Buffer::with_lines(vec![Line::from(vec![
+                "test content".green().on_yellow(),
+                "   ".into(),
+            ])]);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        /// When the content of the span is longer than the area passed to render, the content
+        /// should be truncated
+        #[test]
+        fn render_truncates_too_long_content() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("test content", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
+            span.render(buf.area, &mut buf);
+
+            let expected =
+                Buffer::with_lines(vec![Line::from(vec!["test conte".green().on_yellow()])]);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        /// When there is already a style set on the buffer, the style of the span should be
+        /// patched with the existing style
+        #[test]
+        fn render_patches_existing_style() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("test content", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
+            buf.set_style(buf.area, Style::new().italic());
+            span.render(buf.area, &mut buf);
+
+            let expected = Buffer::with_lines(vec![Line::from(vec![
+                "test content".green().on_yellow().italic(),
+                "   ".italic(),
+            ])]);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        /// When the span contains a multi-width grapheme, the grapheme will ensure that the cells
+        /// of the hidden characters are cleared.
+        #[test]
+        fn render_multi_width_symbol() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("test 😃 content", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
+            span.render(buf.area, &mut buf);
+
+            // The existing code in buffer.set_line() handles multi-width graphemes by clearing the
+            // cells of the hidden characters. This test ensures that the existing behavior is
+            // preserved.
+            let expected = Buffer::with_lines(vec!["test 😃 content".green().on_yellow()]);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        /// When the span contains a multi-width grapheme that does not fit in the area passed to
+        /// render, the entire grapheme will be truncated.
+        #[test]
+        fn render_multi_width_symbol_truncates_entire_symbol() {
+            // the 😃 emoji is 2 columns wide so it will be truncated
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("test 😃 content", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 6, 1));
+            span.render(buf.area, &mut buf);
+
+            let expected = Buffer::with_lines(vec![Line::from(vec![
+                "test ".green().on_yellow(),
+                " ".into(),
+            ])]);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        /// When the area passed to render overflows the buffer, the content should be truncated
+        /// to fit the buffer.
+        #[test]
+        fn render_overflowing_area_truncates() {
+            let style = Style::new().green().on_yellow();
+            let span = Span::styled("test content", style);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
+            span.render(Rect::new(10, 0, 20, 1), &mut buf);
+
+            let expected = Buffer::with_lines(vec![Line::from(vec![
+                "          ".into(),
+                "test ".green().on_yellow(),
+            ])]);
+            assert_buffer_eq!(buf, expected);
+        }
     }
 }
