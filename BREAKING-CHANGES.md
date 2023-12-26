@@ -10,6 +10,8 @@ github with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [v0.26.0 (unreleased)](#v0260-unreleased)
+  - `Line` now has an extra `style` field which applies the style to the entire line
 - [v0.25.0](#v0250)
   - Removed `Axis::title_style` and `Buffer::set_background`
   - `List::new()` now accepts `IntoIterator<Item = Into<ListItem<'a>>>`
@@ -39,6 +41,34 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
+## v0.26.0 (unreleased)
+
+### `Line` now has a `style` field that applies to the entire line [#708]
+
+[#708]: https://github.com/ratatui-org/ratatui/pull/708
+
+Previously the style of a `Line` was stored in the `Span`s that make up the line. Now the `Line`
+itself has a `style` field, which can be set with the `Line::style` method. Any code that creates
+`Line`s using the struct initializer instead of constructors will fail to compile due to the added
+field. This can be easily fixed by adding `..Default::default()` to the field list or by using a
+constructor method (`Line::styled()`, `Line::raw()`) or conversion method (`Line::from()`).
+
+Each `Span` contained within the line will no longer have the style that is applied to the line in
+the `Span::style` field.
+
+```diff
+  let line = Line {
+      spans: vec!["".into()],
+      alignment: Alignment::Left,
++     ..Default::default()    
+  };
+
+  // or
+
+  let line = Line::raw(vec!["".into()])
+      .alignment(Alignment::Left);
+```
+
 ## [v0.25.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.25.0)
 
 ### Removed `Axis::title_style` and `Buffer::set_background`
@@ -57,7 +87,7 @@ instead of `Axis::title_style`
 
 [#672]: https://github.com/ratatui-org/ratatui/pull/672
 
-Previously `List::new()` took `Into<Vec<ListItem<'a>>>`. This change will throw a compilation 
+Previously `List::new()` took `Into<Vec<ListItem<'a>>>`. This change will throw a compilation
 error for `IntoIterator`s with an indeterminate item (e.g. empty vecs).
 
 E.g.
@@ -80,10 +110,7 @@ widget in the default configuration would not show any indication of the selecte
 Previously the default highlight style for tabs was `Style::default()`, which meant that a `Tabs`
 widget in the default configuration would not show any indication of the selected tab.
 
-
 ### `Table::new()` now requires specifying the widths of the columns (#664)
-
-[#664]: https://github.com/ratatui-org/ratatui/pull/664
 
 Previously `Table`s could be constructed without widths. In almost all cases this is an error.
 A new widths parameter is now mandatory on `Table::new()`. Existing code of the form:
