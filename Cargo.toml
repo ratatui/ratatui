@@ -71,8 +71,8 @@ termion = ["dep:termion"]
 termwiz = ["dep:termwiz"]
 
 #! The following optional features are available for all backends:
-## enables serialization and deserialization of style and color types using the [Serde crate].
-## This is useful if you want to save themes to a file.
+## enables serialization and deserialization of state, style and color types using the
+## [Serde crate]. This is useful if you want to save themes or the current view to a file.
 serde = ["dep:serde", "bitflags/serde"]
 
 ## enables the [`border!`] macro.

@@ -369,6 +369,7 @@ pub enum HighlightSpacing {
 /// Note that if [`Table::widths`] is not called before rendering, the rendered columns will have
 /// equal width.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TableState {
     offset: usize,
     selected: Option<usize>,
