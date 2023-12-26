@@ -14,6 +14,10 @@ pub use offset::*;
 /// area they are supposed to render to.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
 pub struct Rect {
     /// The x coordinate of the top left corner of the rect.
     pub x: u16,

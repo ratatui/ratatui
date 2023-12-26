@@ -370,6 +370,10 @@ pub enum HighlightSpacing {
 /// equal width.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
 pub struct TableState {
     offset: usize,
     selected: Option<usize>,
