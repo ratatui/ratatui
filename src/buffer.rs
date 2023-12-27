@@ -6,11 +6,7 @@ use std::{
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::{
-    layout::Rect,
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
-};
+use crate::prelude::*;
 
 /// A buffer cell
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -377,7 +373,9 @@ impl Buffer {
         self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
     }
 
+    /// Set the style of all cells in the given area.
     pub fn set_style(&mut self, area: Rect, style: Style) {
+        let area = self.area.intersection(area);
         for y in area.top()..area.bottom() {
             for x in area.left()..area.right() {
                 self.get_mut(x, y).set_style(style);
@@ -795,6 +793,26 @@ mod tests {
         // Only 1 space left.
         buffer.set_string(0, 0, "コンピ", Style::default());
         assert_buffer_eq!(buffer, Buffer::with_lines(vec!["コン "]));
+    }
+
+    #[test]
+    fn buffer_set_style() {
+        let mut buffer = Buffer::with_lines(vec!["aaaaa", "bbbbb", "ccccc"]);
+        buffer.set_style(Rect::new(0, 1, 5, 1), Style::new().red());
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec!["aaaaa".into(), "bbbbb".red(), "ccccc".into(),])
+        );
+    }
+
+    #[test]
+    fn buffer_set_style_does_not_panic_when_out_of_area() {
+        let mut buffer = Buffer::with_lines(vec!["aaaaa", "bbbbb", "ccccc"]);
+        buffer.set_style(Rect::new(0, 1, 10, 3), Style::new().red());
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec!["aaaaa".into(), "bbbbb".red(), "ccccc".red(),])
+        );
     }
 
     #[test]
