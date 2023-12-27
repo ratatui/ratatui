@@ -43,7 +43,7 @@ This is a quick summary of the sections below:
 
 ## v0.26.0 (unreleased)
 
-### `Line` now has a `style` field that applies to the entire line [#708]
+### `Line` now has a `style` field that applies to the entire line ([#708])
 
 [#708]: https://github.com/ratatui-org/ratatui/pull/708
 
@@ -71,7 +71,9 @@ the `Span::style` field.
 
 ## [v0.25.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.25.0)
 
-### Removed `Axis::title_style` and `Buffer::set_background`
+### Removed `Axis::title_style` and `Buffer::set_background` ([#691])
+
+[#691]: https://github.com/ratatui-org/ratatui/pull/691
 
 These items were deprecated since 0.10.
 
@@ -100,17 +102,19 @@ E.g.
 
 ### The default `Tabs::highlight_style` is now `Style::new().reversed()` ([#635])
 
+[#635]: https://github.com/ratatui-org/ratatui/pull/635
+
 Previously the default highlight style for tabs was `Style::default()`, which meant that a `Tabs`
 widget in the default configuration would not show any indication of the selected tab.
-
-[#635]: https://github.com/ratatui-org/ratatui/pull/635
 
 ### The default `Tabs::highlight_style` is now `Style::new().reversed()` ([#635])
 
 Previously the default highlight style for tabs was `Style::default()`, which meant that a `Tabs`
 widget in the default configuration would not show any indication of the selected tab.
 
-### `Table::new()` now requires specifying the widths of the columns (#664)
+### `Table::new()` now requires specifying the widths of the columns ([#664])
+
+[#664]: https://github.com/ratatui-org/ratatui/pull/664
 
 Previously `Table`s could be constructed without widths. In almost all cases this is an error.
 A new widths parameter is now mandatory on `Table::new()`. Existing code of the form:
