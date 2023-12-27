@@ -182,6 +182,29 @@ impl<'a> Line<'a> {
         self
     }
 
+    /// Sets the target alignment for this line of text.
+    ///
+    /// Defaults to: [`None`], meaning the alignment is determined by the rendering widget.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut line = Line::from("Hi, what's up?");
+    /// assert_eq!(None, line.alignment);
+    /// assert_eq!(
+    ///     Some(Alignment::Right),
+    ///     line.alignment(Alignment::Right).alignment
+    /// )
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn alignment(self, alignment: Alignment) -> Self {
+        Self {
+            alignment: Some(alignment),
+            ..self
+        }
+    }
+
     /// Returns the width of the underlying string.
     ///
     /// # Examples
@@ -282,29 +305,6 @@ impl<'a> Line<'a> {
             span.reset_style();
         }
     }
-
-    /// Sets the target alignment for this line of text.
-    ///
-    /// Defaults to: [`None`], meaning the alignment is determined by the rendering widget.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let mut line = Line::from("Hi, what's up?");
-    /// assert_eq!(None, line.alignment);
-    /// assert_eq!(
-    ///     Some(Alignment::Right),
-    ///     line.alignment(Alignment::Right).alignment
-    /// )
-    /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn alignment(self, alignment: Alignment) -> Self {
-        Self {
-            alignment: Some(alignment),
-            ..self
-        }
-    }
 }
 
 impl<'a> From<String> for Line<'a> {
@@ -347,6 +347,17 @@ impl<'a> From<Line<'a>> for String {
 mod tests {
     use super::*;
     use crate::prelude::*;
+
+    #[test]
+    fn raw_str() {
+        let line = Line::raw("test content");
+        assert_eq!(line.spans, vec![Span::raw("test content")]);
+        assert_eq!(line.alignment, None);
+
+        let line = Line::raw("a\nb");
+        assert_eq!(line.spans, vec![Span::raw("a"), Span::raw("b")]);
+        assert_eq!(line.alignment, None);
+    }
 
     #[test]
     fn styled_str() {
@@ -407,7 +418,16 @@ mod tests {
     }
 
     #[test]
-    fn test_width() {
+    fn alignment() {
+        let line = Line::from("This is left").alignment(Alignment::Left);
+        assert_eq!(Some(Alignment::Left), line.alignment);
+
+        let line = Line::from("This is default");
+        assert_eq!(None, line.alignment);
+    }
+
+    #[test]
+    fn width() {
         let line = Line::from(vec![
             Span::styled("My", Style::default().fg(Color::Yellow)),
             Span::raw(" text"),
@@ -419,7 +439,7 @@ mod tests {
     }
 
     #[test]
-    fn test_patch_style() {
+    fn patch_style() {
         let style = Style::default()
             .fg(Color::Yellow)
             .add_modifier(Modifier::ITALIC);
@@ -436,7 +456,7 @@ mod tests {
     }
 
     #[test]
-    fn test_reset_style() {
+    fn reset_style() {
         let mut line = Line::from(vec![
             Span::styled("My", Style::default().fg(Color::Yellow)),
             Span::styled(" text", Style::default().add_modifier(Modifier::BOLD)),
@@ -448,21 +468,21 @@ mod tests {
     }
 
     #[test]
-    fn test_from_string() {
+    fn from_string() {
         let s = String::from("Hello, world!");
         let line = Line::from(s);
         assert_eq!(vec![Span::from("Hello, world!")], line.spans);
     }
 
     #[test]
-    fn test_from_str() {
+    fn from_str() {
         let s = "Hello, world!";
         let line = Line::from(s);
         assert_eq!(vec![Span::from("Hello, world!")], line.spans);
     }
 
     #[test]
-    fn test_from_vec() {
+    fn from_vec() {
         let spans = vec![
             Span::styled("Hello,", Style::default().fg(Color::Red)),
             Span::styled(" world!", Style::default().fg(Color::Green)),
@@ -472,29 +492,20 @@ mod tests {
     }
 
     #[test]
-    fn test_from_span() {
+    fn from_span() {
         let span = Span::styled("Hello, world!", Style::default().fg(Color::Yellow));
         let line = Line::from(span.clone());
         assert_eq!(vec![span], line.spans);
     }
 
     #[test]
-    fn test_into_string() {
+    fn into_string() {
         let line = Line::from(vec![
             Span::styled("Hello,", Style::default().fg(Color::Red)),
             Span::styled(" world!", Style::default().fg(Color::Green)),
         ]);
         let s: String = line.into();
         assert_eq!("Hello, world!", s);
-    }
-
-    #[test]
-    fn test_alignment() {
-        let line = Line::from("This is left").alignment(Alignment::Left);
-        assert_eq!(Some(Alignment::Left), line.alignment);
-
-        let line = Line::from("This is default");
-        assert_eq!(None, line.alignment);
     }
 
     #[test]
@@ -525,16 +536,5 @@ mod tests {
                 StyledGrapheme::new("!", BLUE_ON_WHITE),
             ],
         );
-    }
-
-    #[test]
-    fn raw_str() {
-        let line = Line::raw("test content");
-        assert_eq!(line.spans, vec![Span::raw("test content")]);
-        assert_eq!(line.alignment, None);
-
-        let line = Line::raw("a\nb");
-        assert_eq!(line.spans, vec![Span::raw("a"), Span::raw("b")]);
-        assert_eq!(line.alignment, None);
     }
 }
