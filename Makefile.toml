@@ -96,7 +96,11 @@ install_crate = { crate_name = "cargo-nextest", binary = "cargo-nextest", test_a
 
 [tasks.test]
 description = "Run tests"
-dependencies = ["test-doc", "install-nextest"]
+run_task = { name = ["test-lib", "test-doc"] }
+
+[tasks.test-lib]
+description = "Run default tests"
+dependencies = ["install-nextest"]
 command = "cargo"
 args = [
   "nextest",
