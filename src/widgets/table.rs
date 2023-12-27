@@ -45,6 +45,7 @@ use crate::{
 ///
 /// - [`Table::rows`] sets the rows of the [`Table`].
 /// - [`Table::header`] sets the header row of the [`Table`].
+/// - [`Table::footer`] sets the footer row of the [`Table`].
 /// - [`Table::widths`] sets the width constraints of each column.
 /// - [`Table::column_spacing`] sets the spacing between each column.
 /// - [`Table::block`] wraps the table in a [`Block`] widget.
@@ -77,6 +78,8 @@ use crate::{
 ///             // To add space between the header and the rest of the rows, specify the margin
 ///             .bottom_margin(1),
 ///     )
+///     // It has an optional footer, which is simply a Row always visible at the bottom.
+///     .footer(Row::new(vec!["Updated on Dec 27"]))
 ///     // As any other widget, a Table can be wrapped in a Block.
 ///     .block(Block::default().title("Table"))
 ///     // The selected row and its content can also be styled.
@@ -178,6 +181,9 @@ pub struct Table<'a> {
 
     /// Optional header
     header: Option<Row<'a>>,
+
+    /// Optional footer
+    footer: Option<Row<'a>>,
 
     /// Width constraints for each column
     widths: Vec<Constraint>,
@@ -462,6 +468,28 @@ impl<'a> Table<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn header(mut self, header: Row<'a>) -> Self {
         self.header = Some(header);
+        self
+    }
+
+    /// Sets the footer row
+    ///
+    /// The `footer` parameter is a [`Row`] which will be displayed at the bottom of the [`Table`]
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let footer = Row::new(vec![
+    ///     Cell::from("Footer Cell 1"),
+    ///     Cell::from("Footer Cell 2"),
+    /// ]);
+    /// let table = Table::default().footer(footer);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn footer(mut self, footer: Row<'a>) -> Self {
+        self.footer = Some(footer);
         self
     }
 
@@ -1078,53 +1106,78 @@ impl<'a> StatefulWidget for Table<'a> {
         }
 
         // Draw rows
-        if self.rows.is_empty() {
-            return;
+        if !self.rows.is_empty() {
+            let (start, end) = self.get_row_bounds(state.selected, state.offset, rows_height);
+            state.offset = start;
+            for (i, table_row) in self
+                .rows
+                .iter_mut()
+                .enumerate()
+                .skip(state.offset)
+                .take(end - start)
+            {
+                let (row, inner_offset) = (table_area.top() + current_height, table_area.left());
+                current_height += table_row.total_height();
+                let table_row_area = Rect {
+                    x: inner_offset,
+                    y: row,
+                    width: table_area.width,
+                    height: table_row.height,
+                };
+                buf.set_style(table_row_area, table_row.style);
+                let is_selected = state.selected.map_or(false, |s| s == i);
+                if selection_width > 0 && is_selected {
+                    // this should in normal cases be safe, because "get_columns_widths" allocates
+                    // "highlight_symbol.width()" space but "get_columns_widths"
+                    // currently does not bind it to max table.width()
+                    buf.set_stringn(
+                        inner_offset,
+                        row,
+                        highlight_symbol,
+                        table_area.width as usize,
+                        table_row.style,
+                    );
+                };
+                for ((x, width), cell) in columns_widths.iter().zip(table_row.cells.iter()) {
+                    cell.render(
+                        buf,
+                        Rect {
+                            x: inner_offset + x,
+                            y: row,
+                            width: *width,
+                            height: table_row.height,
+                        },
+                    );
+                }
+                if is_selected {
+                    buf.set_style(table_row_area, self.highlight_style);
+                }
+            }
         }
-        let (start, end) = self.get_row_bounds(state.selected, state.offset, rows_height);
-        state.offset = start;
-        for (i, table_row) in self
-            .rows
-            .iter_mut()
-            .enumerate()
-            .skip(state.offset)
-            .take(end - start)
-        {
-            let (row, inner_offset) = (table_area.top() + current_height, table_area.left());
-            current_height += table_row.total_height();
-            let table_row_area = Rect {
-                x: inner_offset,
-                y: row,
-                width: table_area.width,
-                height: table_row.height,
-            };
-            buf.set_style(table_row_area, table_row.style);
-            let is_selected = state.selected.map_or(false, |s| s == i);
-            if selection_width > 0 && is_selected {
-                // this should in normal cases be safe, because "get_columns_widths" allocates
-                // "highlight_symbol.width()" space but "get_columns_widths"
-                // currently does not bind it to max table.width()
-                buf.set_stringn(
-                    inner_offset,
-                    row,
-                    highlight_symbol,
-                    table_area.width as usize,
-                    table_row.style,
-                );
-            };
-            for ((x, width), cell) in columns_widths.iter().zip(table_row.cells.iter()) {
+
+        // Draw footer
+        if let Some(ref footer) = self.footer {
+            let max_footer_height = table_area.height.min(footer.total_height());
+            buf.set_style(
+                Rect {
+                    x: table_area.left(),
+                    y: table_area.top() + current_height,
+                    width: table_area.width,
+                    height: table_area.height.min(footer.height),
+                },
+                footer.style,
+            );
+            let inner_offset = table_area.left();
+            for ((x, width), cell) in columns_widths.iter().zip(footer.cells.iter()) {
                 cell.render(
                     buf,
                     Rect {
                         x: inner_offset + x,
-                        y: row,
+                        y: table_area.top() + current_height,
                         width: *width,
-                        height: table_row.height,
+                        height: max_footer_height,
                     },
                 );
-            }
-            if is_selected {
-                buf.set_style(table_row_area, self.highlight_style);
             }
         }
     }
@@ -1142,6 +1195,7 @@ impl Table<'_> {
                 .rows
                 .iter()
                 .chain(self.header.iter())
+                .chain(self.footer.iter())
                 .map(|r| r.cells.len())
                 .max()
                 .unwrap_or(0);
@@ -1604,8 +1658,9 @@ mod tests {
                     Row::new(vec!["a", "b"]),
                     Row::new(vec!["c", "d", "e"]),
                 ])
-                // rows should get precedence over header
+                // rows should get precedence over header and footer
                 .header(Row::new(vec!["f", "g"]))
+                .footer(Row::new(vec!["i", "j"]))
                 .column_spacing(0);
             assert_eq!(
                 table.get_columns_widths(30, 0),
@@ -1618,6 +1673,15 @@ mod tests {
             let table = Table::default()
                 .rows(vec![])
                 .header(Row::new(vec!["f", "g"]))
+                .column_spacing(0);
+            assert_eq!(table.get_columns_widths(10, 0), &[(0, 5), (5, 5)])
+        }
+
+        #[test]
+        fn no_constraint_with_footer() {
+            let table = Table::default()
+                .rows(vec![])
+                .footer(Row::new(vec!["i", "j"]))
                 .column_spacing(0);
             assert_eq!(table.get_columns_widths(10, 0), &[(0, 5), (5, 5)])
         }
@@ -1650,7 +1714,8 @@ mod tests {
     fn test_render_table_when_overflow() {
         let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
         let table = Table::new(vec![], [Constraint::Min(20); 1])
-            .header(Row::new([Line::from("").alignment(Alignment::Right)]));
+            .header(Row::new([Line::from("").alignment(Alignment::Right)]))
+            .footer(Row::new([Line::from("").alignment(Alignment::Right)]));
 
         Widget::render(table, Rect::new(0, 0, 20, 3), &mut buf);
     }
@@ -1788,6 +1853,13 @@ mod tests {
             let header = Row::new(vec![Cell::from("")]);
             let table = Table::default().header(header.clone());
             assert_eq!(table.header, Some(header));
+        }
+
+        #[test]
+        fn table_footer() {
+            let footer = Row::new(vec![Cell::from("")]);
+            let table = Table::default().footer(footer.clone());
+            assert_eq!(table.footer, Some(footer));
         }
 
         #[test]
