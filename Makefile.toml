@@ -90,12 +90,17 @@ args = [
   "warnings",
 ]
 
+[tasks.install-nextest]
+description = "Install cargo-nextest"
+install_crate = { crate_name = "cargo-nextest", binary = "cargo-nextest", test_arg = "--help" }
+
 [tasks.test]
 description = "Run tests"
-dependencies = ["test-doc"]
+dependencies = ["test-doc", "install-nextest"]
 command = "cargo"
 args = [
-  "test",
+  "nextest",
+  "run",
   "--all-targets",
   "--no-default-features",
   "${ALL_FEATURES_FLAG}",
@@ -109,9 +114,11 @@ args = ["test", "--doc", "--no-default-features", "${ALL_FEATURES_FLAG}"]
 [tasks.test-backend]
 # takes a command line parameter to specify the backend to test (e.g. "crossterm")
 description = "Run backend-specific tests"
+dependencies = ["install-nextest"]
 command = "cargo"
 args = [
-  "test",
+  "nextest",
+  "run",
   "--all-targets",
   "--no-default-features",
   "--features",

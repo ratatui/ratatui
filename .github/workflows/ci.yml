@@ -151,6 +151,8 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
       - name: Install cargo-make
         uses: taiki-e/install-action@cargo-make
+      - name: Install cargo-make
+        uses: taiki-e/install-action@nextest
       - name: Test ${{ matrix.backend }}
         run: cargo make test-backend ${{ matrix.backend }}
         env:
