@@ -45,8 +45,6 @@
 //! ]);
 //! ```
 
-use crate::style::Style;
-
 mod grapheme;
 pub use grapheme::StyledGrapheme;
 
