@@ -1,8 +1,8 @@
 #![deny(missing_docs)]
 use std::borrow::Cow;
 
-use super::{Span, Style, StyledGrapheme};
-use crate::layout::Alignment;
+use super::StyledGrapheme;
+use crate::{prelude::*, widgets::Widget};
 
 /// A line of text, consisting of one or more [`Span`]s.
 ///
@@ -21,6 +21,10 @@ use crate::layout::Alignment;
 /// line is longer than the available space, the style is applied to the entire line, and the line
 /// is truncated. Each [`Span`] in the line will be styled with the [`Style`] of the line, and then
 /// with its own [`Style`].
+///
+/// `Line` implements the [`Widget`] trait, which means it can be rendered to a [`Buffer`]. Usually
+/// apps will use the [`Paragraph`] widget instead of rendering a [`Line`] directly as it provides
+/// more functionality.
 ///
 /// # Constructor Methods
 ///
@@ -64,6 +68,8 @@ use crate::layout::Alignment;
 ///     Span::raw(" world!"),
 /// ]);
 /// ```
+///
+/// [`Paragraph`]: crate::widgets::Paragraph
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Line<'a> {
     /// The spans that make up this line of text.
@@ -343,10 +349,37 @@ impl<'a> From<Line<'a>> for String {
     }
 }
 
+impl Widget for Line<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
+        buf.set_style(area, self.style);
+        let width = self.width() as u16;
+        let offset = match self.alignment {
+            Some(Alignment::Left) => 0,
+            Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
+            Some(Alignment::Right) => area.width.saturating_sub(width),
+            None => 0,
+        };
+        let mut x = area.left().saturating_add(offset);
+        for span in self.spans {
+            let span_width = span.width() as u16;
+            let span_area = Rect {
+                x,
+                width: span_width,
+                ..area
+            };
+            span.render(span_area, buf);
+            x = x.saturating_add(span_width);
+            if x >= area.right() {
+                break;
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prelude::*;
 
     #[test]
     fn raw_str() {
@@ -536,5 +569,77 @@ mod tests {
                 StyledGrapheme::new("!", BLUE_ON_WHITE),
             ],
         );
+    }
+
+    mod widget {
+        use super::*;
+        use crate::assert_buffer_eq;
+        const BLUE: Style = Style::new().fg(Color::Blue);
+        const GREEN: Style = Style::new().fg(Color::Green);
+        const ITALIC: Style = Style::new().add_modifier(Modifier::ITALIC);
+
+        fn hello_world() -> Line<'static> {
+            Line::from(vec![
+                Span::styled("Hello ", BLUE),
+                Span::styled("world!", GREEN),
+            ])
+            .style(ITALIC)
+        }
+
+        #[test]
+        fn render() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
+            hello_world().render(Rect::new(0, 0, 15, 1), &mut buf);
+            let mut expected = Buffer::with_lines(vec!["Hello world!   "]);
+            expected.set_style(Rect::new(0, 0, 15, 1), ITALIC);
+            expected.set_style(Rect::new(0, 0, 6, 1), BLUE);
+            expected.set_style(Rect::new(6, 0, 6, 1), GREEN);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_only_styles_line_area() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 20, 1));
+            hello_world().render(Rect::new(0, 0, 15, 1), &mut buf);
+            let mut expected = Buffer::with_lines(vec!["Hello world!        "]);
+            expected.set_style(Rect::new(0, 0, 15, 1), ITALIC);
+            expected.set_style(Rect::new(0, 0, 6, 1), BLUE);
+            expected.set_style(Rect::new(6, 0, 6, 1), GREEN);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_truncates() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 11, 1));
+            hello_world().render(Rect::new(0, 0, 11, 1), &mut buf);
+            let mut expected = Buffer::with_lines(vec!["Hello world"]);
+            expected.set_style(Rect::new(0, 0, 6, 1), BLUE.italic());
+            expected.set_style(Rect::new(6, 0, 5, 1), GREEN.italic());
+            assert_buffer_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_centered() {
+            let line = hello_world().alignment(Alignment::Center);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
+            line.render(Rect::new(0, 0, 15, 1), &mut buf);
+            let mut expected = Buffer::with_lines(vec![" Hello world!  "]);
+            expected.set_style(Rect::new(0, 0, 15, 1), ITALIC);
+            expected.set_style(Rect::new(1, 0, 6, 1), BLUE);
+            expected.set_style(Rect::new(7, 0, 6, 1), GREEN);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_right_aligned() {
+            let line = hello_world().alignment(Alignment::Right);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
+            line.render(Rect::new(0, 0, 15, 1), &mut buf);
+            let mut expected = Buffer::with_lines(vec!["   Hello world!"]);
+            expected.set_style(Rect::new(0, 0, 15, 1), ITALIC);
+            expected.set_style(Rect::new(3, 0, 6, 1), BLUE);
+            expected.set_style(Rect::new(9, 0, 6, 1), GREEN);
+            assert_buffer_eq!(buf, expected);
+        }
     }
 }
