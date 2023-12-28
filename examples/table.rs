@@ -127,6 +127,13 @@ fn ui(f: &mut Frame, app: &mut App) {
         .style(normal_style)
         .height(1)
         .bottom_margin(1);
+    let footer_cells = ["Footer1", "Footer2", "Footer3"]
+        .iter()
+        .map(|f| Cell::from(*f).style(Style::default().fg(Color::Yellow)));
+    let footer = Row::new(footer_cells)
+        .style(normal_style)
+        .height(1)
+        .top_margin(1);
     let rows = app.items.iter().map(|item| {
         let height = item
             .iter()
@@ -146,6 +153,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         ],
     )
     .header(header)
+    .footer(footer)
     .block(Block::default().borders(Borders::ALL).title("Table"))
     .highlight_style(selected_style)
     .highlight_symbol(">> ");
