@@ -570,17 +570,25 @@ impl StatefulWidget for Table<'_> {
 impl Table<'_> {
     /// Splits the table area into a header, rows area and a footer
     fn layout(&self, area: Rect) -> (Rect, Rect, Rect) {
-        let header_height = self.header.as_ref().map_or(0, |h| h.height_with_margin());
-        let footer_height = self.footer.as_ref().map_or(0, |f| f.height_with_margin());
+        let header_top_margin = self.header.as_ref().map_or(0, |h| h.top_margin);
+        let header_height = self.header.as_ref().map_or(0, |h| h.height);
+        let header_bottom_margin = self.header.as_ref().map_or(0, |h| h.bottom_margin);
+        let footer_top_margin = self.footer.as_ref().map_or(0, |h| h.top_margin);
+        let footer_height = self.footer.as_ref().map_or(0, |f| f.height);
+        let footer_bottom_margin = self.footer.as_ref().map_or(0, |h| h.bottom_margin);
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
+                Constraint::Length(header_top_margin),
                 Constraint::Length(header_height),
+                Constraint::Length(header_bottom_margin),
                 Constraint::Min(0),
+                Constraint::Length(footer_top_margin),
                 Constraint::Length(footer_height),
+                Constraint::Length(footer_bottom_margin),
             ])
             .split(area);
-        let (header_area, rows_area, footer_area) = (layout[0], layout[1], layout[2]);
+        let (header_area, rows_area, footer_area) = (layout[1], layout[3], layout[5]);
         (header_area, rows_area, footer_area)
     }
 
@@ -639,9 +647,9 @@ impl Table<'_> {
         {
             let row_area = Rect::new(
                 area.x,
-                area.y + y_offset,
+                area.y + y_offset + row.top_margin,
                 area.width,
-                row.height_with_margin(),
+                row.height_with_margin() - row.top_margin,
             );
             buf.set_style(row_area, row.style);
 
@@ -1023,8 +1031,8 @@ mod tests {
         #[test]
         fn render_with_footer_margin() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
-            let footer = Row::new(vec!["Foot1", "Foot2"]);
-            let rows = vec![Row::new(vec!["Cell1", "Cell2"]).bottom_margin(1)];
+            let footer = Row::new(vec!["Foot1", "Foot2"]).top_margin(1);
+            let rows = vec![Row::new(vec!["Cell1", "Cell2"])];
             let table = Table::new(rows, [Constraint::Length(5); 2]).footer(footer);
             Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
             let expected = Buffer::with_lines(vec![
