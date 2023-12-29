@@ -59,6 +59,7 @@ use crate::prelude::*;
 pub struct Row<'a> {
     pub(crate) cells: Vec<Cell<'a>>,
     pub(crate) height: u16,
+    pub(crate) top_margin: u16,
     pub(crate) bottom_margin: u16,
     pub(crate) style: Style,
 }
@@ -141,6 +142,25 @@ impl<'a> Row<'a> {
         self
     }
 
+    /// Set the top margin. By default, the top margin is `0`.
+    ///
+    /// The top margin is the number of blank lines to be displayed before the row.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
+    /// let row = Row::default().top_margin(1);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn top_margin(mut self, margin: u16) -> Self {
+        self.top_margin = margin;
+        self
+    }
+
     /// Set the bottom margin. By default, the bottom margin is `0`.
     ///
     /// The bottom margin is the number of blank lines to be displayed after the row.
@@ -194,7 +214,9 @@ impl<'a> Row<'a> {
 impl Row<'_> {
     /// Returns the total height of the row.
     pub(crate) fn height_with_margin(&self) -> u16 {
-        self.height.saturating_add(self.bottom_margin)
+        self.height
+            .saturating_add(self.top_margin)
+            .saturating_add(self.bottom_margin)
     }
 }
 
@@ -235,6 +257,12 @@ mod tests {
     fn height() {
         let row = Row::default().height(2);
         assert_eq!(row.height, 2);
+    }
+
+    #[test]
+    fn top_margin() {
+        let row = Row::default().top_margin(1);
+        assert_eq!(row.top_margin, 1);
     }
 
     #[test]

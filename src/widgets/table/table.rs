@@ -44,6 +44,7 @@ use crate::{
 ///
 /// - [`Table::rows`] sets the rows of the [`Table`].
 /// - [`Table::header`] sets the header row of the [`Table`].
+/// - [`Table::footer`] sets the footer row of the [`Table`].
 /// - [`Table::widths`] sets the width constraints of each column.
 /// - [`Table::column_spacing`] sets the spacing between each column.
 /// - [`Table::block`] wraps the table in a [`Block`] widget.
@@ -76,6 +77,8 @@ use crate::{
 ///             // To add space between the header and the rest of the rows, specify the margin
 ///             .bottom_margin(1),
 ///     )
+///     // It has an optional footer, which is simply a Row always visible at the bottom.
+///     .footer(Row::new(vec!["Updated on Dec 28"]))
 ///     // As any other widget, a Table can be wrapped in a Block.
 ///     .block(Block::default().title("Table"))
 ///     // The selected row and its content can also be styled.
@@ -177,6 +180,9 @@ pub struct Table<'a> {
 
     /// Optional header
     header: Option<Row<'a>>,
+
+    /// Optional footer
+    footer: Option<Row<'a>>,
 
     /// Width constraints for each column
     widths: Vec<Constraint>,
@@ -291,6 +297,28 @@ impl<'a> Table<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn header(mut self, header: Row<'a>) -> Self {
         self.header = Some(header);
+        self
+    }
+
+    /// Sets the footer row
+    ///
+    /// The `footer` parameter is a [`Row`] which will be displayed at the bottom of the [`Table`]
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let footer = Row::new(vec![
+    ///     Cell::from("Footer Cell 1"),
+    ///     Cell::from("Footer Cell 2"),
+    /// ]);
+    /// let table = Table::default().footer(footer);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn footer(mut self, footer: Row<'a>) -> Self {
+        self.footer = Some(footer);
         self
     }
 
@@ -521,7 +549,7 @@ impl StatefulWidget for Table<'_> {
         let columns_widths = self.get_columns_widths(table_area.width, selection_width);
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
 
-        let (header_area, rows_area) = self.layout(table_area);
+        let (header_area, rows_area, footer_area) = self.layout(table_area);
 
         self.render_header(header_area, buf, &columns_widths);
 
@@ -531,22 +559,37 @@ impl StatefulWidget for Table<'_> {
             state,
             selection_width,
             highlight_symbol,
-            columns_widths,
+            &columns_widths,
         );
+
+        self.render_footer(footer_area, buf, columns_widths);
     }
 }
 
 // private methods for rendering
 impl Table<'_> {
-    /// Splits the table area into a header and rows area
-    fn layout(&self, area: Rect) -> (Rect, Rect) {
-        let header_height = self.header.as_ref().map_or(0, |h| h.height_with_margin());
+    /// Splits the table area into a header, rows area and a footer
+    fn layout(&self, area: Rect) -> (Rect, Rect, Rect) {
+        let header_top_margin = self.header.as_ref().map_or(0, |h| h.top_margin);
+        let header_height = self.header.as_ref().map_or(0, |h| h.height);
+        let header_bottom_margin = self.header.as_ref().map_or(0, |h| h.bottom_margin);
+        let footer_top_margin = self.footer.as_ref().map_or(0, |h| h.top_margin);
+        let footer_height = self.footer.as_ref().map_or(0, |f| f.height);
+        let footer_bottom_margin = self.footer.as_ref().map_or(0, |h| h.bottom_margin);
         let layout = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Length(header_height), Constraint::Min(0)])
+            .constraints([
+                Constraint::Length(header_top_margin),
+                Constraint::Length(header_height),
+                Constraint::Length(header_bottom_margin),
+                Constraint::Min(0),
+                Constraint::Length(footer_top_margin),
+                Constraint::Length(footer_height),
+                Constraint::Length(footer_bottom_margin),
+            ])
             .split(area);
-        let (header_area, rows_area) = (layout[0], layout[1]);
-        (header_area, rows_area)
+        let (header_area, rows_area, footer_area) = (layout[1], layout[3], layout[5]);
+        (header_area, rows_area, footer_area)
     }
 
     fn render_block(&mut self, area: Rect, buf: &mut Buffer) -> Rect {
@@ -568,6 +611,15 @@ impl Table<'_> {
         }
     }
 
+    fn render_footer(&self, area: Rect, buf: &mut Buffer, column_widths: Vec<(u16, u16)>) {
+        if let Some(ref footer) = self.footer {
+            buf.set_style(area, footer.style);
+            for ((x, width), cell) in column_widths.iter().zip(footer.cells.iter()) {
+                cell.render(Rect::new(area.x + x, area.y, *width, area.height), buf);
+            }
+        }
+    }
+
     fn render_rows(
         &self,
         area: Rect,
@@ -575,7 +627,7 @@ impl Table<'_> {
         state: &mut TableState,
         selection_width: u16,
         highlight_symbol: &str,
-        columns_widths: Vec<(u16, u16)>,
+        columns_widths: &[(u16, u16)],
     ) {
         if self.rows.is_empty() {
             return;
@@ -595,9 +647,9 @@ impl Table<'_> {
         {
             let row_area = Rect::new(
                 area.x,
-                area.y + y_offset,
+                area.y + y_offset + row.top_margin,
                 area.width,
-                row.height_with_margin(),
+                row.height_with_margin() - row.top_margin,
             );
             buf.set_style(row_area, row.style);
 
@@ -637,6 +689,7 @@ impl Table<'_> {
                 .rows
                 .iter()
                 .chain(self.header.iter())
+                .chain(self.footer.iter())
                 .map(|r| r.cells.len())
                 .max()
                 .unwrap_or(0);
@@ -808,6 +861,13 @@ mod tests {
     }
 
     #[test]
+    fn footer() {
+        let footer = Row::new(vec![Cell::from("")]);
+        let table = Table::default().footer(footer.clone());
+        assert_eq!(table.footer, Some(footer));
+    }
+
+    #[test]
     fn highlight_style() {
         let style = Style::default().red().italic();
         let table = Table::default().highlight_style(style);
@@ -915,6 +975,42 @@ mod tests {
         }
 
         #[test]
+        fn render_with_footer() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
+            let footer = Row::new(vec!["Foot1", "Foot2"]);
+            let rows = vec![
+                Row::new(vec!["Cell1", "Cell2"]),
+                Row::new(vec!["Cell3", "Cell4"]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 2]).footer(footer);
+            Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
+            let expected = Buffer::with_lines(vec![
+                "Cell1 Cell2    ",
+                "Cell3 Cell4    ",
+                "Foot1 Foot2    ",
+            ]);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_header_and_footer() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
+            let header = Row::new(vec!["Head1", "Head2"]);
+            let footer = Row::new(vec!["Foot1", "Foot2"]);
+            let rows = vec![Row::new(vec!["Cell1", "Cell2"])];
+            let table = Table::new(rows, [Constraint::Length(5); 2])
+                .header(header)
+                .footer(footer);
+            Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
+            let expected = Buffer::with_lines(vec![
+                "Head1 Head2    ",
+                "Cell1 Cell2    ",
+                "Foot1 Foot2    ",
+            ]);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        #[test]
         fn render_with_header_margin() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
             let header = Row::new(vec!["Head1", "Head2"]).bottom_margin(1);
@@ -928,6 +1024,21 @@ mod tests {
                 "Head1 Head2    ",
                 "               ",
                 "Cell1 Cell2    ",
+            ]);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_footer_margin() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
+            let footer = Row::new(vec!["Foot1", "Foot2"]).top_margin(1);
+            let rows = vec![Row::new(vec!["Cell1", "Cell2"])];
+            let table = Table::new(rows, [Constraint::Length(5); 2]).footer(footer);
+            Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
+            let expected = Buffer::with_lines(vec![
+                "Cell1 Cell2    ",
+                "               ",
+                "Foot1 Foot2    ",
             ]);
             assert_buffer_eq!(buf, expected);
         }
@@ -971,7 +1082,8 @@ mod tests {
         fn render_with_overflow_does_not_panic() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
             let table = Table::new(vec![], [Constraint::Min(20); 1])
-                .header(Row::new([Line::from("").alignment(Alignment::Right)]));
+                .header(Row::new([Line::from("").alignment(Alignment::Right)]))
+                .footer(Row::new([Line::from("").alignment(Alignment::Right)]));
             Widget::render(table, Rect::new(0, 0, 20, 3), &mut buf);
         }
 
@@ -1259,6 +1371,7 @@ mod tests {
                 ])
                 // rows should get precedence over header
                 .header(Row::new(vec!["f", "g"]))
+                .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
             assert_eq!(
                 table.get_columns_widths(30, 0),
@@ -1271,6 +1384,15 @@ mod tests {
             let table = Table::default()
                 .rows(vec![])
                 .header(Row::new(vec!["f", "g"]))
+                .column_spacing(0);
+            assert_eq!(table.get_columns_widths(10, 0), &[(0, 5), (5, 5)])
+        }
+
+        #[test]
+        fn no_constraint_with_footer() {
+            let table = Table::default()
+                .rows(vec![])
+                .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
             assert_eq!(table.get_columns_widths(10, 0), &[(0, 5), (5, 5)])
         }
