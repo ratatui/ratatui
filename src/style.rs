@@ -82,6 +82,9 @@ bitflags! {
     ///
     /// They are bitflags so they can easily be composed.
     ///
+    /// `From<Modifier> for Style` is implemented so you can use `Modifier` anywhere that accepts
+    /// `Into<Style>`.
+    ///
     /// ## Examples
     ///
     /// ```rust
@@ -137,6 +140,20 @@ impl fmt::Debug for Modifier {
 /// ```
 ///
 /// For more information about the style shorthands, see the [`Stylize`] trait.
+///
+/// We implement conversions from [`Color`] and [`Modifier`] to [`Style`] so you can use them
+/// anywhere that accepts `Into<Style>`.
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// Line::styled("hello", Style::new().fg(Color::Red));
+/// // simplifies to
+/// Line::styled("hello", Color::Red);
+///
+/// Line::styled("hello", Style::new().add_modifier(Modifier::BOLD));
+/// // simplifies to
+/// Line::styled("hello", Modifier::BOLD);
+/// ```
 ///
 /// Styles represents an incremental change. If you apply the styles S1, S2, S3 to a cell of the
 /// terminal buffer, the style of this cell will be the result of the merge of S1, S2 and S3, not
@@ -227,10 +244,11 @@ impl Styled for Style {
         *self
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.patch(style)
     }
 }
+
 impl Style {
     pub const fn new() -> Style {
         Style {
@@ -366,6 +384,9 @@ impl Style {
     /// Results in a combined style that is equivalent to applying the two individual styles to
     /// a style one after the other.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// ## Examples
     /// ```
     /// # use ratatui::prelude::*;
@@ -378,7 +399,8 @@ impl Style {
     /// );
     /// ```
     #[must_use = "`patch` returns the modified style without modifying the original"]
-    pub fn patch(mut self, other: Style) -> Style {
+    pub fn patch<S: Into<Style>>(mut self, other: S) -> Style {
+        let other = other.into();
         self.fg = other.fg.or(self.fg);
         self.bg = other.bg.or(self.bg);
 
@@ -393,6 +415,18 @@ impl Style {
         self.sub_modifier.insert(other.sub_modifier);
 
         self
+    }
+}
+
+impl From<Modifier> for Style {
+    fn from(modifier: Modifier) -> Self {
+        Self::new().add_modifier(modifier)
+    }
+}
+
+impl From<Color> for Style {
+    fn from(color: Color) -> Self {
+        Self::new().fg(color)
     }
 }
 

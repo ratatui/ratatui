@@ -12,6 +12,7 @@ This is a quick summary of the sections below:
 
 - [v0.26.0 (unreleased)](#v0260-unreleased)
   - `Line` now has an extra `style` field which applies the style to the entire line
+  - `Block` style methods cannot be created in a const context
 - [v0.25.0](#v0250)
   - Removed `Axis::title_style` and `Buffer::set_background`
   - `List::new()` now accepts `IntoIterator<Item = Into<ListItem<'a>>>`
@@ -42,6 +43,14 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.26.0 (unreleased)
+
+### `Block` style methods cannot be used in a const context ([#720])
+
+[#720]: https://github.com/ratatui-org/ratatui/pull/720
+
+Previously the `style()`, `border_style()` and `title_style()` methods could be used to create a
+`Block` in a constant context. These now accept `Into<Style>` instead of `Style`. These methods no
+longer can be called from a constant context.
 
 ### `Line` now has a `style` field that applies to the entire line ([#708])
 

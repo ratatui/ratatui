@@ -182,6 +182,9 @@ impl<'a> Row<'a> {
 
     /// Set the [`Style`] of the entire row
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// This [`Style`] can be overridden by the [`Style`] of a any individual [`Cell`] or by their
     /// [`Text`] content.
     ///
@@ -204,8 +207,8 @@ impl<'a> Row<'a> {
     /// let row = Row::new(cells).red().italic();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Self {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.style = style.into();
         self
     }
 }
@@ -227,7 +230,7 @@ impl<'a> Styled for Row<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }

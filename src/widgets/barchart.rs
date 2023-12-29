@@ -170,11 +170,14 @@ impl<'a> BarChart<'a> {
 
     /// Set the default style of the bar.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// It is also possible to set individually the style of each [`Bar`].
     /// In this case the default style will be patched by the individual style
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bar_style(mut self, style: Style) -> BarChart<'a> {
-        self.bar_style = style;
+    pub fn bar_style<S: Into<Style>>(mut self, style: S) -> BarChart<'a> {
+        self.bar_style = style.into();
         self
     }
 
@@ -226,6 +229,9 @@ impl<'a> BarChart<'a> {
 
     /// Set the default value style of the bar.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// It is also possible to set individually the value style of each [`Bar`].
     /// In this case the default value style will be patched by the individual value style
     ///
@@ -233,12 +239,15 @@ impl<'a> BarChart<'a> {
     ///
     /// [Bar::value_style] to set the value style individually.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn value_style(mut self, style: Style) -> BarChart<'a> {
-        self.value_style = style;
+    pub fn value_style<S: Into<Style>>(mut self, style: S) -> BarChart<'a> {
+        self.value_style = style.into();
         self
     }
 
     /// Set the default label style of the groups and bars.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
     ///
     /// It is also possible to set individually the label style of each [`Bar`] or [`BarGroup`].
     /// In this case the default label style will be patched by the individual label style
@@ -247,8 +256,8 @@ impl<'a> BarChart<'a> {
     ///
     /// [Bar::label] to set the label style individually.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label_style(mut self, style: Style) -> BarChart<'a> {
-        self.label_style = style;
+    pub fn label_style<S: Into<Style>>(mut self, style: S) -> BarChart<'a> {
+        self.label_style = style.into();
         self
     }
 
@@ -261,10 +270,13 @@ impl<'a> BarChart<'a> {
 
     /// Set the style of the entire chart.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// The style will be applied to everything that isn't styled (borders, bars, labels, ...).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> BarChart<'a> {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> BarChart<'a> {
+        self.style = style.into();
         self
     }
 
@@ -597,7 +609,7 @@ impl<'a> Styled for BarChart<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }

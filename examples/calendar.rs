@@ -175,7 +175,7 @@ fn make_dates(current_year: i32) -> CalendarEventStore {
 mod cals {
     use super::*;
 
-    pub(super) fn get_cal<'a, S: DateStyler>(m: Month, y: i32, es: S) -> Monthly<'a, S> {
+    pub(super) fn get_cal<'a, DS: DateStyler>(m: Month, y: i32, es: DS) -> Monthly<'a, DS> {
         use Month::*;
         match m {
             May => example1(m, y, es),
@@ -188,7 +188,7 @@ mod cals {
         }
     }
 
-    fn default<'a, S: DateStyler>(m: Month, y: i32, es: S) -> Monthly<'a, S> {
+    fn default<'a, DS: DateStyler>(m: Month, y: i32, es: DS) -> Monthly<'a, DS> {
         let default_style = Style::default()
             .add_modifier(Modifier::BOLD)
             .bg(Color::Rgb(50, 50, 50));
@@ -198,7 +198,7 @@ mod cals {
             .default_style(default_style)
     }
 
-    fn example1<'a, S: DateStyler>(m: Month, y: i32, es: S) -> Monthly<'a, S> {
+    fn example1<'a, DS: DateStyler>(m: Month, y: i32, es: DS) -> Monthly<'a, DS> {
         let default_style = Style::default()
             .add_modifier(Modifier::BOLD)
             .bg(Color::Rgb(50, 50, 50));
@@ -209,7 +209,7 @@ mod cals {
             .show_month_header(Style::default())
     }
 
-    fn example2<'a, S: DateStyler>(m: Month, y: i32, es: S) -> Monthly<'a, S> {
+    fn example2<'a, DS: DateStyler>(m: Month, y: i32, es: DS) -> Monthly<'a, DS> {
         let header_style = Style::default()
             .add_modifier(Modifier::BOLD)
             .add_modifier(Modifier::DIM)
@@ -225,7 +225,7 @@ mod cals {
             .show_month_header(Style::default())
     }
 
-    fn example3<'a, S: DateStyler>(m: Month, y: i32, es: S) -> Monthly<'a, S> {
+    fn example3<'a, DS: DateStyler>(m: Month, y: i32, es: DS) -> Monthly<'a, DS> {
         let header_style = Style::default()
             .add_modifier(Modifier::BOLD)
             .fg(Color::Green);
@@ -241,7 +241,7 @@ mod cals {
             .show_month_header(Style::default())
     }
 
-    fn example4<'a, S: DateStyler>(m: Month, y: i32, es: S) -> Monthly<'a, S> {
+    fn example4<'a, DS: DateStyler>(m: Month, y: i32, es: DS) -> Monthly<'a, DS> {
         let header_style = Style::default()
             .add_modifier(Modifier::BOLD)
             .fg(Color::Green);
@@ -255,7 +255,7 @@ mod cals {
             .default_style(default_style)
     }
 
-    fn example5<'a, S: DateStyler>(m: Month, y: i32, es: S) -> Monthly<'a, S> {
+    fn example5<'a, DS: DateStyler>(m: Month, y: i32, es: DS) -> Monthly<'a, DS> {
         let header_style = Style::default()
             .add_modifier(Modifier::BOLD)
             .fg(Color::Green);

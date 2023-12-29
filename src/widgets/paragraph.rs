@@ -1,10 +1,8 @@
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    buffer::Buffer,
-    layout::{Alignment, Rect},
-    style::{Style, Styled},
-    text::{StyledGrapheme, Text},
+    prelude::*,
+    text::StyledGrapheme,
     widgets::{
         reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine},
         Block, Widget,
@@ -142,6 +140,9 @@ impl<'a> Paragraph<'a> {
 
     /// Sets the style of the entire widget.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// This applies to the entire widget, including the block if one is present. Any style set on
     /// the block or text will be added to this style.
     ///
@@ -152,8 +153,8 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello, world!").style(Style::new().red().on_white());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Paragraph<'a> {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Paragraph<'a> {
+        self.style = style.into();
         self
     }
 
@@ -355,7 +356,7 @@ impl<'a> Styled for Paragraph<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }

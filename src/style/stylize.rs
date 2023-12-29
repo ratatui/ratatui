@@ -13,8 +13,14 @@ use crate::{
 pub trait Styled {
     type Item;
 
+    /// Returns the style of the object.
     fn style(&self) -> Style;
-    fn set_style(self, style: Style) -> Self::Item;
+
+    /// Sets the style of the object.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item;
 }
 
 /// Generates two methods for each color, one for setting the foreground color (`red()`, `blue()`,
@@ -209,7 +215,7 @@ impl<'a> Styled for &'a str {
         Style::default()
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         Span::styled(self, style)
     }
 }
@@ -221,7 +227,7 @@ impl Styled for String {
         Style::default()
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         Span::styled(self, style)
     }
 }

@@ -2,9 +2,7 @@ use strum::{Display, EnumString};
 
 use super::StatefulWidget;
 use crate::{
-    buffer::Buffer,
-    layout::Rect,
-    style::Style,
+    prelude::*,
     symbols::scrollbar::{Set, DOUBLE_HORIZONTAL, DOUBLE_VERTICAL},
 };
 
@@ -239,9 +237,12 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the style that represents the thumb of the scrollbar.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn thumb_style(mut self, thumb_style: Style) -> Self {
-        self.thumb_style = thumb_style;
+    pub fn thumb_style<S: Into<Style>>(mut self, thumb_style: S) -> Self {
+        self.thumb_style = thumb_style.into();
         self
     }
 
@@ -253,9 +254,12 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the style that is used for the track of the scrollbar.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn track_style(mut self, track_style: Style) -> Self {
-        self.track_style = track_style;
+    pub fn track_style<S: Into<Style>>(mut self, track_style: S) -> Self {
+        self.track_style = track_style.into();
         self
     }
 
@@ -267,9 +271,12 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the style that is used for the beginning of the scrollbar.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn begin_style(mut self, begin_style: Style) -> Self {
-        self.begin_style = begin_style;
+    pub fn begin_style<S: Into<Style>>(mut self, begin_style: S) -> Self {
+        self.begin_style = begin_style.into();
         self
     }
 
@@ -281,9 +288,12 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the style that is used for the end of the scrollbar.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn end_style(mut self, end_style: Style) -> Self {
-        self.end_style = end_style;
+    pub fn end_style<S: Into<Style>>(mut self, end_style: S) -> Self {
+        self.end_style = end_style.into();
         self
     }
 
@@ -316,6 +326,10 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the style used for the various parts of the scrollbar from a [`Style`].
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// ```text
     /// <--▮------->
     /// ^  ^   ^   ^
@@ -325,7 +339,8 @@ impl<'a> Scrollbar<'a> {
     /// └─────────── begin
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Self {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
+        let style = style.into();
         self.track_style = style;
         self.thumb_style = style;
         self.begin_style = style;

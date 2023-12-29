@@ -183,26 +183,35 @@ impl Buffer {
     }
 
     /// Print a string, starting at the position (x, y)
-    pub fn set_string<S>(&mut self, x: u16, y: u16, string: S, style: Style)
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    pub fn set_string<T, S>(&mut self, x: u16, y: u16, string: T, style: S)
     where
-        S: AsRef<str>,
+        T: AsRef<str>,
+        S: Into<Style>,
     {
-        self.set_stringn(x, y, string, usize::MAX, style);
+        self.set_stringn(x, y, string, usize::MAX, style.into());
     }
 
     /// Print at most the first n characters of a string if enough space is available
     /// until the end of the line
-    pub fn set_stringn<S>(
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    pub fn set_stringn<T, S>(
         &mut self,
         x: u16,
         y: u16,
-        string: S,
+        string: T,
         width: usize,
-        style: Style,
+        style: S,
     ) -> (u16, u16)
     where
-        S: AsRef<str>,
+        T: AsRef<str>,
+        S: Into<Style>,
     {
+        let style = style.into();
         let mut index = self.index_of(x, y);
         let mut x_offset = x as usize;
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true);
@@ -230,6 +239,7 @@ impl Buffer {
         (x_offset as u16, y)
     }
 
+    /// Print a line, starting at the position (x, y)
     pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, width: u16) -> (u16, u16) {
         let mut remaining_width = width;
         let mut x = x;
@@ -251,12 +261,17 @@ impl Buffer {
         (x, y)
     }
 
+    /// Print a span, starting at the position (x, y)
     pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, width: u16) -> (u16, u16) {
         self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
     }
 
     /// Set the style of all cells in the given area.
-    pub fn set_style(&mut self, area: Rect, style: Style) {
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    pub fn set_style<S: Into<Style>>(&mut self, area: Rect, style: S) {
+        let style = style.into();
         let area = self.area.intersection(area);
         for y in area.top()..area.bottom() {
             for x in area.left()..area.right() {
