@@ -444,7 +444,7 @@ impl From<(Color, Color)> for Style {
     /// // red foreground, blue background
     /// let style = Style::from((Color::Red, Color::Blue));
     /// // default foreground, blue background
-    /// let style = Style::from((Color::Default, Color::Blue));
+    /// let style = Style::from((Color::Reset, Color::Blue));
     /// ```
     fn from((fg, bg): (Color, Color)) -> Self {
         Self::new().fg(fg).bg(bg)
@@ -530,7 +530,12 @@ impl From<(Color, Color, Modifier, Modifier)> for Style {
     /// ```rust
     /// # use ratatui::prelude::*;
     /// // red foreground, blue background, add bold and italic, remove dim
-    /// let style = Style::from((Color::Red, Color::Blue, Modifier::BOLD | Modifier::ITALIC, Modifier::DIM));
+    /// let style = Style::from((
+    ///     Color::Red,
+    ///     Color::Blue,
+    ///     Modifier::BOLD | Modifier::ITALIC,
+    ///     Modifier::DIM,
+    /// ));
     /// ```
     fn from((fg, bg, add_modifier, sub_modifier): (Color, Color, Modifier, Modifier)) -> Self {
         Self::new()
@@ -819,49 +824,62 @@ mod tests {
     #[test]
     fn from_modifier() {
         assert_eq!(
-            Style::from(Modifier::BOLD),
-            Style::new().add_modifier(Modifier::BOLD)
+            Style::from(Modifier::BOLD | Modifier::ITALIC),
+            Style::new()
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::ITALIC)
         );
     }
 
     #[test]
     fn from_modifier_modifier() {
         assert_eq!(
-            Style::from((Modifier::BOLD, Modifier::ITALIC)),
+            Style::from((Modifier::BOLD | Modifier::ITALIC, Modifier::DIM)),
             Style::new()
                 .add_modifier(Modifier::BOLD)
-                .remove_modifier(Modifier::ITALIC)
+                .add_modifier(Modifier::ITALIC)
+                .remove_modifier(Modifier::DIM)
         );
     }
 
     #[test]
     fn from_color_modifier() {
         assert_eq!(
-            Style::from((Color::Red, Modifier::BOLD)),
-            Style::new().fg(Color::Red).add_modifier(Modifier::BOLD)
+            Style::from((Color::Red, Modifier::BOLD | Modifier::ITALIC)),
+            Style::new()
+                .fg(Color::Red)
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::ITALIC)
         );
     }
 
     #[test]
     fn from_color_color_modifier() {
         assert_eq!(
-            Style::from((Color::Red, Color::Blue, Modifier::BOLD)),
+            Style::from((Color::Red, Color::Blue, Modifier::BOLD | Modifier::ITALIC)),
             Style::new()
                 .fg(Color::Red)
                 .bg(Color::Blue)
                 .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::ITALIC)
         );
     }
 
     #[test]
     fn from_color_color_modifier_modifier() {
         assert_eq!(
-            Style::from((Color::Red, Color::Blue, Modifier::BOLD, Modifier::ITALIC)),
+            Style::from((
+                Color::Red,
+                Color::Blue,
+                Modifier::BOLD | Modifier::ITALIC,
+                Modifier::DIM
+            )),
             Style::new()
                 .fg(Color::Red)
                 .bg(Color::Blue)
                 .add_modifier(Modifier::BOLD)
-                .remove_modifier(Modifier::ITALIC)
+                .add_modifier(Modifier::ITALIC)
+                .remove_modifier(Modifier::DIM)
         );
     }
 }

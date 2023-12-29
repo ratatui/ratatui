@@ -1117,6 +1117,50 @@ mod tests {
             .padding(_DEFAULT_PADDING);
     }
 
+    /// This test ensures that we have some coverage on the Style::from() implementations
+    #[test]
+    fn block_style() {
+        // nominal style
+        let block = Block::default().style(Style::new().red());
+        assert_eq!(block.style, Style::new().red());
+
+        // auto-convert from Color
+        let block = Block::default().style(Color::Red);
+        assert_eq!(block.style, Style::new().red());
+
+        // auto-convert from (Color, Color)
+        let block = Block::default().style((Color::Red, Color::Blue));
+        assert_eq!(block.style, Style::new().red().on_blue());
+
+        // auto-convert from Modifier
+        let block = Block::default().style(Modifier::BOLD | Modifier::ITALIC);
+        assert_eq!(block.style, Style::new().bold().italic());
+
+        // auto-convert from (Modifier, Modifier)
+        let block = Block::default().style((Modifier::BOLD | Modifier::ITALIC, Modifier::DIM));
+        assert_eq!(block.style, Style::new().bold().italic().not_dim());
+
+        // auto-convert from (Color, Modifier)
+        let block = Block::default().style((Color::Red, Modifier::BOLD));
+        assert_eq!(block.style, Style::new().red().bold());
+
+        // auto-convert from (Color, Color, Modifier)
+        let block = Block::default().style((Color::Red, Color::Blue, Modifier::BOLD));
+        assert_eq!(block.style, Style::new().red().on_blue().bold());
+
+        // auto-convert from (Color, Color, Modifier, Modifier)
+        let block = Block::default().style((
+            Color::Red,
+            Color::Blue,
+            Modifier::BOLD | Modifier::ITALIC,
+            Modifier::DIM,
+        ));
+        assert_eq!(
+            block.style,
+            Style::new().red().on_blue().bold().italic().not_dim()
+        );
+    }
+
     #[test]
     fn can_be_stylized() {
         let block = Block::default().black().on_white().bold().not_dim();
