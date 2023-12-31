@@ -128,18 +128,24 @@ impl<'a> Gauge<'a> {
 
     /// Sets the widget style.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// This will style the block (if any non-styled) and background of the widget (everything
     /// except the bar itself). [`Block`] style set with [`Gauge::block`] takes precedence.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Gauge<'a> {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Gauge<'a> {
+        self.style = style.into();
         self
     }
 
     /// Sets the style of the bar.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn gauge_style(mut self, style: Style) -> Gauge<'a> {
-        self.gauge_style = style;
+    pub fn gauge_style<S: Into<Style>>(mut self, style: S) -> Gauge<'a> {
+        self.gauge_style = style.into();
         self
     }
 
@@ -323,18 +329,24 @@ impl<'a> LineGauge<'a> {
 
     /// Sets the widget style.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// This will style everything except the bar itself, so basically the block (if any) and
     /// background.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Self {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.style = style.into();
         self
     }
 
     /// Sets the style of the bar.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn gauge_style(mut self, style: Style) -> Self {
-        self.gauge_style = style;
+    pub fn gauge_style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.gauge_style = style.into();
         self
     }
 }
@@ -406,7 +418,7 @@ impl<'a> Styled for Gauge<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }
@@ -418,7 +430,7 @@ impl<'a> Styled for LineGauge<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }

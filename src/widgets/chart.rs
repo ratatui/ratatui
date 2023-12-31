@@ -109,6 +109,9 @@ impl<'a> Axis<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// # Example
     ///
     /// [`Axis`] also implements [`Stylize`](crate::style::Stylize) which mean you can style it
@@ -119,8 +122,8 @@ impl<'a> Axis<'a> {
     /// let axis = Axis::default().red();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Axis<'a> {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Axis<'a> {
+        self.style = style.into();
         self
     }
 
@@ -379,6 +382,9 @@ impl<'a> Dataset<'a> {
     /// The given style will be used to draw the legend and the data points. Currently the legend
     /// will use the entire style whereas the data points will only use the foreground.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
     /// # Example
@@ -391,8 +397,8 @@ impl<'a> Dataset<'a> {
     /// let dataset = Dataset::default().red();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Dataset<'a> {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Dataset<'a> {
+        self.style = style.into();
         self
     }
 }
@@ -547,12 +553,15 @@ impl<'a> Chart<'a> {
 
     /// Sets the style of the entire chart
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// Styles of [`Axis`] and [`Dataset`] will have priority over this style.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Chart<'a> {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Chart<'a> {
+        self.style = style.into();
         self
     }
 
@@ -1043,7 +1052,7 @@ impl<'a> Styled for Axis<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }
@@ -1055,7 +1064,7 @@ impl<'a> Styled for Dataset<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }
@@ -1067,7 +1076,7 @@ impl<'a> Styled for Chart<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }

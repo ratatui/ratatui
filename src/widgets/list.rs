@@ -3,10 +3,7 @@ use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    buffer::Buffer,
-    layout::{Alignment, Corner, Rect},
-    style::{Style, Styled},
-    text::Text,
+    prelude::*,
     widgets::{Block, HighlightSpacing, StatefulWidget, Widget},
 };
 
@@ -256,6 +253,9 @@ impl<'a> ListItem<'a> {
 
     /// Sets the item style
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// This [`Style`] can be overridden by the [`Style`] of the [`Text`] content.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
@@ -276,8 +276,8 @@ impl<'a> ListItem<'a> {
     /// let item = ListItem::new("Item 1").red().italic();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> ListItem<'a> {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> ListItem<'a> {
+        self.style = style.into();
         self
     }
 
@@ -523,6 +523,9 @@ impl<'a> List<'a> {
 
     /// Sets the base style of the widget
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// All text rendered by the widget will use this style, unless overridden by [`Block::style`],
     /// [`ListItem::style`], or the styles of the [`ListItem`]'s content.
     ///
@@ -547,8 +550,8 @@ impl<'a> List<'a> {
     /// let list = List::new(items).red().italic();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> List<'a> {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> List<'a> {
+        self.style = style.into();
         self
     }
 
@@ -573,6 +576,9 @@ impl<'a> List<'a> {
 
     /// Set the style of the selected item
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// This style will be applied to the entire item, including the
     /// [highlight symbol](List::highlight_symbol) if it is displayed, and will override any style
     /// set on the item or on the individual cells.
@@ -587,8 +593,8 @@ impl<'a> List<'a> {
     /// let list = List::new(items).highlight_style(Style::new().red().italic());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_style(mut self, style: Style) -> List<'a> {
-        self.highlight_style = style;
+    pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> List<'a> {
+        self.highlight_style = style.into();
         self
     }
 
@@ -854,7 +860,7 @@ impl<'a> Styled for List<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }
@@ -866,7 +872,7 @@ impl<'a> Styled for ListItem<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }

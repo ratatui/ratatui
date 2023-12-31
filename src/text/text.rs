@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 
-use super::{Line, Span};
-use crate::style::Style;
+use crate::prelude::*;
 
 /// A string split over multiple lines where each line is composed of several clusters, each with
 /// their own style.
@@ -60,6 +59,9 @@ impl<'a> Text<'a> {
 
     /// Create some text (potentially multiple lines) with a style.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -70,9 +72,10 @@ impl<'a> Text<'a> {
     /// Text::styled("The first line\nThe second line", style);
     /// Text::styled(String::from("The first line\nThe second line"), style);
     /// ```
-    pub fn styled<T>(content: T, style: Style) -> Text<'a>
+    pub fn styled<T, S>(content: T, style: S) -> Text<'a>
     where
         T: Into<Cow<'a, str>>,
+        S: Into<Style>,
     {
         let mut text = Text::raw(content);
         text.patch_style(style);
@@ -107,6 +110,9 @@ impl<'a> Text<'a> {
 
     /// Patches the style of each line in an existing Text, adding modifiers from the given style.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -121,7 +127,8 @@ impl<'a> Text<'a> {
     /// raw_text.patch_style(style);
     /// assert_eq!(raw_text, styled_text);
     /// ```
-    pub fn patch_style(&mut self, style: Style) {
+    pub fn patch_style<S: Into<Style>>(&mut self, style: S) {
+        let style = style.into();
         for line in &mut self.lines {
             line.patch_style(style);
         }

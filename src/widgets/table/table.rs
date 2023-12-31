@@ -396,6 +396,9 @@ impl<'a> Table<'a> {
 
     /// Sets the base style of the widget
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// All text rendered by the widget will use this style, unless overridden by [`Block::style`],
     /// [`Row::style`], [`Cell::style`], or the styles of cell's content.
     ///
@@ -420,12 +423,15 @@ impl<'a> Table<'a> {
     /// let table = Table::new(rows, widths).red().italic();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Self {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.style = style.into();
         self
     }
 
     /// Set the style of the selected row
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
     ///
     /// This style will be applied to the entire row, including the selection symbol if it is
     /// displayed, and will override any style set on the row or on the individual cells.
@@ -441,8 +447,8 @@ impl<'a> Table<'a> {
     /// let table = Table::new(rows, widths).highlight_style(Style::new().red().italic());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_style(mut self, highlight_style: Style) -> Self {
-        self.highlight_style = highlight_style;
+    pub fn highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
+        self.highlight_style = highlight_style.into();
         self
     }
 
@@ -788,7 +794,7 @@ impl<'a> Styled for Table<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }

@@ -119,6 +119,12 @@ impl<'a> Span<'a> {
 
     /// Create a span with the specified style.
     ///
+    /// `content` accepts any type that is convertible to [`Cow<str>`] (e.g. `&str`, `String`,
+    /// `&String`, etc.).
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -127,13 +133,14 @@ impl<'a> Span<'a> {
     /// Span::styled("test content", style);
     /// Span::styled(String::from("test content"), style);
     /// ```
-    pub fn styled<T>(content: T, style: Style) -> Span<'a>
+    pub fn styled<T, S>(content: T, style: S) -> Span<'a>
     where
         T: Into<Cow<'a, str>>,
+        S: Into<Style>,
     {
         Span {
             content: content.into(),
-            style,
+            style: style.into(),
         }
     }
 
@@ -166,7 +173,8 @@ impl<'a> Span<'a> {
     /// In contrast to [`Span::patch_style`], this method replaces the style of the span instead of
     /// patching it.
     ///
-    /// Accepts any type that can be converted to [`Style`]
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
     ///
     /// # Examples
     ///
@@ -175,15 +183,15 @@ impl<'a> Span<'a> {
     /// let mut span = Span::default().style(Style::new().green());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<T>(mut self, style: T) -> Self
-    where
-        T: Into<Style>,
-    {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
 
     /// Patches the style of the Span, adding modifiers from the given style.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
     ///
     /// # Example
     ///
@@ -193,7 +201,7 @@ impl<'a> Span<'a> {
     /// span.patch_style(Style::new().red().on_yellow().bold());
     /// assert_eq!(span.style, Style::new().red().on_yellow().italic().bold());
     /// ```
-    pub fn patch_style(&mut self, style: Style) {
+    pub fn patch_style<S: Into<Style>>(&mut self, style: S) {
         self.style = self.style.patch(style);
     }
 
@@ -223,6 +231,9 @@ impl<'a> Span<'a> {
     /// `base_style` is the [`Style`] that will be patched with the `Span`'s `style` to get the
     /// resulting [`Style`].
     ///
+    /// `base_style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`],
+    /// or your own type that implements [`Into<Style>`]).
+    ///
     /// # Example
     ///
     /// ```rust
@@ -243,18 +254,16 @@ impl<'a> Span<'a> {
     ///     ],
     /// );
     /// ```
-    pub fn styled_graphemes(
+    pub fn styled_graphemes<S: Into<Style>>(
         &'a self,
-        base_style: Style,
+        base_style: S,
     ) -> impl Iterator<Item = StyledGrapheme<'a>> {
+        let style = base_style.into().patch(self.style);
         self.content
             .as_ref()
             .graphemes(true)
             .filter(|g| *g != "\n")
-            .map(move |g| StyledGrapheme {
-                symbol: g,
-                style: base_style.patch(self.style),
-            })
+            .map(move |g| StyledGrapheme { symbol: g, style })
     }
 }
 
@@ -274,9 +283,8 @@ impl<'a> Styled for Span<'a> {
         self.style
     }
 
-    fn set_style(mut self, style: Style) -> Self {
-        self.style = style;
-        self
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
+        self.style(style)
     }
 }
 

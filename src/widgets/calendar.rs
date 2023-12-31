@@ -13,18 +13,15 @@ use std::collections::HashMap;
 use time::{Date, Duration, OffsetDateTime};
 
 use crate::{
-    buffer::Buffer,
-    layout::Rect,
-    style::Style,
-    text::Span,
+    prelude::*,
     widgets::{Block, Widget},
 };
 
 /// Display a month calendar for the month containing `display_date`
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Monthly<'a, S: DateStyler> {
+pub struct Monthly<'a, DS: DateStyler> {
     display_date: Date,
-    events: S,
+    events: DS,
     show_surrounding: Option<Style>,
     show_weekday: Option<Style>,
     show_month: Option<Style>,
@@ -32,9 +29,9 @@ pub struct Monthly<'a, S: DateStyler> {
     block: Option<Block<'a>>,
 }
 
-impl<'a, S: DateStyler> Monthly<'a, S> {
+impl<'a, DS: DateStyler> Monthly<'a, DS> {
     /// Construct a calendar for the `display_date` and highlight the `events`
-    pub fn new(display_date: Date, events: S) -> Self {
+    pub fn new(display_date: Date, events: DS) -> Self {
         Self {
             display_date,
             events,
@@ -49,32 +46,44 @@ impl<'a, S: DateStyler> Monthly<'a, S> {
     /// Fill the calendar slots for days not in the current month also, this causes each line to be
     /// completely filled. If there is an event style for a date, this style will be patched with
     /// the event's style
-    pub fn show_surrounding(mut self, style: Style) -> Self {
-        self.show_surrounding = Some(style);
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    pub fn show_surrounding<S: Into<Style>>(mut self, style: S) -> Self {
+        self.show_surrounding = Some(style.into());
         self
     }
 
     /// Display a header containing weekday abbreviations
-    pub fn show_weekdays_header(mut self, style: Style) -> Self {
-        self.show_weekday = Some(style);
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    pub fn show_weekdays_header<S: Into<Style>>(mut self, style: S) -> Self {
+        self.show_weekday = Some(style.into());
         self
     }
 
     /// Display a header containing the month and year
-    pub fn show_month_header(mut self, style: Style) -> Self {
-        self.show_month = Some(style);
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    pub fn show_month_header<S: Into<Style>>(mut self, style: S) -> Self {
+        self.show_month = Some(style.into());
         self
     }
 
     /// How to render otherwise unstyled dates
-    pub fn default_style(mut self, s: Style) -> Self {
-        self.default_style = s;
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    pub fn default_style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.default_style = style.into();
         self
     }
 
     /// Render the calendar within a [Block]
-    pub fn block(mut self, b: Block<'a>) -> Self {
-        self.block = Some(b);
+    pub fn block(mut self, block: Block<'a>) -> Self {
+        self.block = Some(block);
         self
     }
 
@@ -108,7 +117,7 @@ impl<'a, S: DateStyler> Monthly<'a, S> {
     }
 }
 
-impl<'a, S: DateStyler> Widget for Monthly<'a, S> {
+impl<'a, DS: DateStyler> Widget for Monthly<'a, DS> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
         // Block is used for borders and such
         // Draw that first, and use the blank area inside the block for our own purposes
@@ -178,16 +187,22 @@ pub struct CalendarEventStore(pub HashMap<Date, Style>);
 
 impl CalendarEventStore {
     /// Construct a store that has the current date styled.
-    pub fn today(style: Style) -> Self {
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    pub fn today<S: Into<Style>>(style: S) -> Self {
         let mut res = Self::default();
-        res.add(OffsetDateTime::now_local().unwrap().date(), style);
+        res.add(OffsetDateTime::now_local().unwrap().date(), style.into());
         res
     }
 
     /// Add a date and style to the store
-    pub fn add(&mut self, date: Date, style: Style) {
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    pub fn add<S: Into<Style>>(&mut self, date: Date, style: S) {
         // to simplify style nonsense, last write wins
-        let _ = self.0.insert(date, style);
+        let _ = self.0.insert(date, style.into());
     }
 
     /// Helper for trait impls

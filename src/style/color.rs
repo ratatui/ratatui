@@ -35,6 +35,9 @@ use std::{
 /// - we support `-` and `_` and ` ` as separators for all colors
 /// - we support both `gray` and `grey` spellings
 ///
+/// `From<Color> for Style` is implemented by creating a style with the foreground color set to the
+/// given color. This allows you to use colors anywhere that accepts `Into<Style>`.
+///
 /// # Example
 ///
 /// ```

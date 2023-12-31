@@ -12,44 +12,68 @@ pub struct Cell {
                 the value. Use `Cell::set_symbol` to update the field. Use `Cell::default` to \
                 create `Cell` instance"
     )]
+    /// The string to be drawn in the cell.
+    ///
+    /// This accepts unicode grapheme clusters which might take up more than one cell.
     pub symbol: String,
+
+    /// The foreground color of the cell.
     pub fg: Color,
+
+    /// The background color of the cell.
     pub bg: Color,
+
+    /// The underline color of the cell.
+    ///
+    /// This is only used when the `underline-color` feature is enabled.
     #[cfg(feature = "underline-color")]
     pub underline_color: Color,
+
+    /// The modifier of the cell.
     pub modifier: Modifier,
+
+    /// Whether the cell should be skipped when copying (diffing) the buffer to the screen.
     pub skip: bool,
 }
 
 #[allow(deprecated)] // For Cell::symbol
 impl Cell {
+    /// Gets the symbol of the cell.
     pub fn symbol(&self) -> &str {
         self.symbol.as_str()
     }
 
+    /// Sets the symbol of the cell.
     pub fn set_symbol(&mut self, symbol: &str) -> &mut Cell {
         self.symbol.clear();
         self.symbol.push_str(symbol);
         self
     }
 
+    /// Sets the symbol of the cell to a single character.
     pub fn set_char(&mut self, ch: char) -> &mut Cell {
         self.symbol.clear();
         self.symbol.push(ch);
         self
     }
 
+    /// Sets the foreground color of the cell.
     pub fn set_fg(&mut self, color: Color) -> &mut Cell {
         self.fg = color;
         self
     }
 
+    /// Sets the background color of the cell.
     pub fn set_bg(&mut self, color: Color) -> &mut Cell {
         self.bg = color;
         self
     }
-
-    pub fn set_style(&mut self, style: Style) -> &mut Cell {
+    /// Sets the style of the cell.
+    ///
+    ///  `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    pub fn set_style<S: Into<Style>>(&mut self, style: S) -> &mut Cell {
+        let style = style.into();
         if let Some(c) = style.fg {
             self.fg = c;
         }
@@ -65,21 +89,20 @@ impl Cell {
         self
     }
 
-    #[cfg(feature = "underline-color")]
+    /// Returns the style of the cell.
     pub fn style(&self) -> Style {
-        Style::default()
+        #[cfg(feature = "underline-color")]
+        return Style::default()
             .fg(self.fg)
             .bg(self.bg)
             .underline_color(self.underline_color)
-            .add_modifier(self.modifier)
-    }
+            .add_modifier(self.modifier);
 
-    #[cfg(not(feature = "underline-color"))]
-    pub fn style(&self) -> Style {
-        Style::default()
+        #[cfg(not(feature = "underline-color"))]
+        return Style::default()
             .fg(self.fg)
             .bg(self.bg)
-            .add_modifier(self.modifier)
+            .add_modifier(self.modifier);
     }
 
     /// Sets the cell to be skipped when copying (diffing) the buffer to the screen.
@@ -91,6 +114,7 @@ impl Cell {
         self
     }
 
+    /// Resets the cell to the default state.
     pub fn reset(&mut self) {
         self.symbol.clear();
         self.symbol.push(' ');

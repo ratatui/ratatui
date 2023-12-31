@@ -1,10 +1,6 @@
 #![deny(missing_docs)]
 use crate::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Modifier, Style, Styled},
-    symbols,
-    text::{Line, Span},
+    prelude::*,
     widgets::{Block, Widget},
 };
 
@@ -118,21 +114,27 @@ impl<'a> Tabs<'a> {
 
     /// Sets the style of the tabs.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// This will set the given style on the entire render area.
     /// More precise style can be applied to the titles by styling the ones given to [`Tabs::new`].
     /// The selected tab can be styled differently using [`Tabs::highlight_style`].
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Tabs<'a> {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.style = style.into();
         self
     }
 
     /// Sets the style for the highlighted tab.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// Highlighted tab can be selected with [`Tabs::select`].
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_style(mut self, style: Style) -> Tabs<'a> {
-        self.highlight_style = style;
+    pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> Tabs<'a> {
+        self.highlight_style = style.into();
         self
     }
 
@@ -232,7 +234,7 @@ impl<'a> Styled for Tabs<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }
@@ -307,7 +309,7 @@ impl<'a> Widget for Tabs<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{assert_buffer_eq, prelude::*, widgets::Borders};
+    use crate::{assert_buffer_eq, widgets::Borders};
 
     #[test]
     fn new() {

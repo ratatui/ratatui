@@ -120,6 +120,9 @@ impl<'a> Line<'a> {
     // `content` can be any type that is convertible to [`Cow<str>`] (e.g. [`&str`], [`String`],
     /// [`Cow<str>`], or your own type that implements [`Into<Cow<str>>`]).
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// # Examples
     ///
     /// Any newlines in the content are removed.
@@ -132,9 +135,10 @@ impl<'a> Line<'a> {
     /// Line::styled(String::from("My text"), style);
     /// Line::styled(Cow::from("test content"), style);
     /// ```
-    pub fn styled<T>(content: T, style: Style) -> Line<'a>
+    pub fn styled<T, S>(content: T, style: S) -> Line<'a>
     where
         T: Into<Cow<'a, str>>,
+        S: Into<Style>,
     {
         Line {
             spans: content
@@ -142,7 +146,7 @@ impl<'a> Line<'a> {
                 .lines()
                 .map(|v| Span::raw(v.to_string()))
                 .collect(),
-            style,
+            style: style.into(),
             ..Default::default()
         }
     }
@@ -177,13 +181,16 @@ impl<'a> Line<'a> {
     /// only by the style of each [`Span`] contained in the line. For this reason, this field may
     /// not be supported by all widgets (outside of the `ratatui` crate itself).
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// # Examples
     /// ```rust
     /// # use ratatui::prelude::*;
     /// let mut line = Line::from("foo").style(Style::new().red());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<T: Into<Style>>(mut self, style: T) -> Self {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -229,6 +236,9 @@ impl<'a> Line<'a> {
     /// `base_style` is the [`Style`] that will be patched with each grapheme [`Style`] to get
     /// the resulting [`Style`].
     ///
+    /// `base_style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`],
+    /// or your own type that implements [`Into<Style>`]).
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -249,11 +259,11 @@ impl<'a> Line<'a> {
     ///     ]
     /// );
     /// ```
-    pub fn styled_graphemes(
+    pub fn styled_graphemes<S: Into<Style>>(
         &'a self,
-        base_style: Style,
+        base_style: S,
     ) -> impl Iterator<Item = StyledGrapheme<'a>> {
-        let style = base_style.patch(self.style);
+        let style = base_style.into().patch(self.style);
         self.spans
             .iter()
             .flat_map(move |span| span.styled_graphemes(style))
@@ -264,6 +274,9 @@ impl<'a> Line<'a> {
     /// This is useful for when you want to apply a style to a line that already has some styling.
     /// In contrast to [`Line::style`], this method will not overwrite the existing style, but
     /// instead will add the given style's modifiers to the existing style of each `Span`.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
     ///
     /// # Examples
     ///
@@ -283,7 +296,8 @@ impl<'a> Line<'a> {
     /// raw_line.patch_style(style);
     /// assert_eq!(raw_line, styled_line);
     /// ```
-    pub fn patch_style(&mut self, style: Style) {
+    pub fn patch_style<S: Into<Style>>(&mut self, style: S) {
+        let style = style.into();
         for span in &mut self.spans {
             span.patch_style(style);
         }

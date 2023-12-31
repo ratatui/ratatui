@@ -82,6 +82,9 @@ bitflags! {
     ///
     /// They are bitflags so they can easily be composed.
     ///
+    /// `From<Modifier> for Style` is implemented so you can use `Modifier` anywhere that accepts
+    /// `Into<Style>`.
+    ///
     /// ## Examples
     ///
     /// ```rust
@@ -137,6 +140,20 @@ impl fmt::Debug for Modifier {
 /// ```
 ///
 /// For more information about the style shorthands, see the [`Stylize`] trait.
+///
+/// We implement conversions from [`Color`] and [`Modifier`] to [`Style`] so you can use them
+/// anywhere that accepts `Into<Style>`.
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// Line::styled("hello", Style::new().fg(Color::Red));
+/// // simplifies to
+/// Line::styled("hello", Color::Red);
+///
+/// Line::styled("hello", Style::new().add_modifier(Modifier::BOLD));
+/// // simplifies to
+/// Line::styled("hello", Modifier::BOLD);
+/// ```
 ///
 /// Styles represents an incremental change. If you apply the styles S1, S2, S3 to a cell of the
 /// terminal buffer, the style of this cell will be the result of the merge of S1, S2 and S3, not
@@ -227,10 +244,11 @@ impl Styled for Style {
         *self
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.patch(style)
     }
 }
+
 impl Style {
     pub const fn new() -> Style {
         Style {
@@ -366,6 +384,9 @@ impl Style {
     /// Results in a combined style that is equivalent to applying the two individual styles to
     /// a style one after the other.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// ## Examples
     /// ```
     /// # use ratatui::prelude::*;
@@ -378,7 +399,8 @@ impl Style {
     /// );
     /// ```
     #[must_use = "`patch` returns the modified style without modifying the original"]
-    pub fn patch(mut self, other: Style) -> Style {
+    pub fn patch<S: Into<Style>>(mut self, other: S) -> Style {
+        let other = other.into();
         self.fg = other.fg.or(self.fg);
         self.bg = other.bg.or(self.bg);
 
@@ -393,6 +415,134 @@ impl Style {
         self.sub_modifier.insert(other.sub_modifier);
 
         self
+    }
+}
+
+impl From<Color> for Style {
+    /// Creates a new `Style` with the given foreground color.
+    ///
+    /// To specify a foreground and background color, use the `from((fg, bg))` constructor.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let style = Style::from(Color::Red);
+    /// ```
+    fn from(color: Color) -> Self {
+        Self::new().fg(color)
+    }
+}
+
+impl From<(Color, Color)> for Style {
+    /// Creates a new `Style` with the given foreground and background colors.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// // red foreground, blue background
+    /// let style = Style::from((Color::Red, Color::Blue));
+    /// // default foreground, blue background
+    /// let style = Style::from((Color::Reset, Color::Blue));
+    /// ```
+    fn from((fg, bg): (Color, Color)) -> Self {
+        Self::new().fg(fg).bg(bg)
+    }
+}
+
+impl From<Modifier> for Style {
+    /// Creates a new `Style` with the given modifier added.
+    ///
+    /// To specify multiple modifiers, use the `|` operator.
+    ///
+    /// To specify modifiers to add and remove, use the `from((add_modifier, sub_modifier))`
+    /// constructor.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// // add bold and italic
+    /// let style = Style::from(Modifier::BOLD|Modifier::ITALIC);
+    fn from(modifier: Modifier) -> Self {
+        Self::new().add_modifier(modifier)
+    }
+}
+
+impl From<(Modifier, Modifier)> for Style {
+    /// Creates a new `Style` with the given modifiers added and removed.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// // add bold and italic, remove dim
+    /// let style = Style::from((Modifier::BOLD | Modifier::ITALIC, Modifier::DIM));
+    /// ```
+    fn from((add_modifier, sub_modifier): (Modifier, Modifier)) -> Self {
+        Self::new()
+            .add_modifier(add_modifier)
+            .remove_modifier(sub_modifier)
+    }
+}
+
+impl From<(Color, Modifier)> for Style {
+    /// Creates a new `Style` with the given foreground color and modifier added.
+    ///
+    /// To specify multiple modifiers, use the `|` operator.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// // red foreground, add bold and italic
+    /// let style = Style::from((Color::Red, Modifier::BOLD | Modifier::ITALIC));
+    /// ```
+    fn from((fg, modifier): (Color, Modifier)) -> Self {
+        Self::new().fg(fg).add_modifier(modifier)
+    }
+}
+
+impl From<(Color, Color, Modifier)> for Style {
+    /// Creates a new `Style` with the given foreground and background colors and modifier added.
+    ///
+    /// To specify multiple modifiers, use the `|` operator.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// // red foreground, blue background, add bold and italic
+    /// let style = Style::from((Color::Red, Color::Blue, Modifier::BOLD | Modifier::ITALIC));
+    /// ```
+    fn from((fg, bg, modifier): (Color, Color, Modifier)) -> Self {
+        Self::new().fg(fg).bg(bg).add_modifier(modifier)
+    }
+}
+
+impl From<(Color, Color, Modifier, Modifier)> for Style {
+    /// Creates a new `Style` with the given foreground and background colors and modifiers added
+    /// and removed.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// // red foreground, blue background, add bold and italic, remove dim
+    /// let style = Style::from((
+    ///     Color::Red,
+    ///     Color::Blue,
+    ///     Modifier::BOLD | Modifier::ITALIC,
+    ///     Modifier::DIM,
+    /// ));
+    /// ```
+    fn from((fg, bg, add_modifier, sub_modifier): (Color, Color, Modifier, Modifier)) -> Self {
+        Self::new()
+            .fg(fg)
+            .bg(bg)
+            .add_modifier(add_modifier)
+            .remove_modifier(sub_modifier)
     }
 }
 
@@ -656,5 +806,80 @@ mod tests {
 
         // reset
         assert_eq!(Style::new().reset(), Style::reset());
+    }
+
+    #[test]
+    fn from_color() {
+        assert_eq!(Style::from(Color::Red), Style::new().fg(Color::Red));
+    }
+
+    #[test]
+    fn from_color_color() {
+        assert_eq!(
+            Style::from((Color::Red, Color::Blue)),
+            Style::new().fg(Color::Red).bg(Color::Blue)
+        );
+    }
+
+    #[test]
+    fn from_modifier() {
+        assert_eq!(
+            Style::from(Modifier::BOLD | Modifier::ITALIC),
+            Style::new()
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::ITALIC)
+        );
+    }
+
+    #[test]
+    fn from_modifier_modifier() {
+        assert_eq!(
+            Style::from((Modifier::BOLD | Modifier::ITALIC, Modifier::DIM)),
+            Style::new()
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::ITALIC)
+                .remove_modifier(Modifier::DIM)
+        );
+    }
+
+    #[test]
+    fn from_color_modifier() {
+        assert_eq!(
+            Style::from((Color::Red, Modifier::BOLD | Modifier::ITALIC)),
+            Style::new()
+                .fg(Color::Red)
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::ITALIC)
+        );
+    }
+
+    #[test]
+    fn from_color_color_modifier() {
+        assert_eq!(
+            Style::from((Color::Red, Color::Blue, Modifier::BOLD | Modifier::ITALIC)),
+            Style::new()
+                .fg(Color::Red)
+                .bg(Color::Blue)
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::ITALIC)
+        );
+    }
+
+    #[test]
+    fn from_color_color_modifier_modifier() {
+        assert_eq!(
+            Style::from((
+                Color::Red,
+                Color::Blue,
+                Modifier::BOLD | Modifier::ITALIC,
+                Modifier::DIM
+            )),
+            Style::new()
+                .fg(Color::Red)
+                .bg(Color::Blue)
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::ITALIC)
+                .remove_modifier(Modifier::DIM)
+        );
     }
 }

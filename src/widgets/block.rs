@@ -13,9 +13,7 @@ use strum::{Display, EnumString};
 
 pub use self::title::{Position, Title};
 use crate::{
-    buffer::Buffer,
-    layout::{Alignment, Rect},
-    style::{Style, Styled},
+    prelude::*,
     symbols::border,
     widgets::{Borders, Widget},
 };
@@ -334,10 +332,13 @@ impl<'a> Block<'a> {
 
     /// Applies the style to all titles.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// If a [`Title`] already has a style, the title's style will add on top of this one.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn title_style(mut self, style: Style) -> Block<'a> {
-        self.titles_style = style;
+    pub fn title_style<S: Into<Style>>(mut self, style: S) -> Block<'a> {
+        self.titles_style = style.into();
         self
     }
 
@@ -405,6 +406,9 @@ impl<'a> Block<'a> {
     ///
     /// If a [`Block::style`] is defined, `border_style` will be applied on top of it.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// # Example
     ///
     /// This example shows a `Block` with blue borders.
@@ -415,8 +419,8 @@ impl<'a> Block<'a> {
     ///     .border_style(Style::new().blue());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn border_style(mut self, style: Style) -> Block<'a> {
-        self.border_style = style;
+    pub fn border_style<S: Into<Style>>(mut self, style: S) -> Block<'a> {
+        self.border_style = style.into();
         self
     }
 
@@ -426,10 +430,13 @@ impl<'a> Block<'a> {
     /// more specific style. Elements can be styled further with [`Block::title_style`] and
     /// [`Block::border_style`].
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// This will also apply to the widget inside that block, unless the inner widget is styled.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn style(mut self, style: Style) -> Block<'a> {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Block<'a> {
+        self.style = style.into();
         self
     }
 
@@ -797,7 +804,7 @@ impl<'a> Styled for Block<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }
@@ -1100,13 +1107,58 @@ mod tests {
         const _DEFAULT_STYLE: Style = Style::new();
         const _DEFAULT_PADDING: Padding = Padding::uniform(1);
         const _DEFAULT_BLOCK: Block = Block::new()
-            .title_style(_DEFAULT_STYLE)
+            // the following methods are no longer const because they use Into<Style>
+            // .style(_DEFAULT_STYLE)           // no longer const
+            // .border_style(_DEFAULT_STYLE)    // no longer const
+            // .title_style(_DEFAULT_STYLE)     // no longer const
             .title_alignment(Alignment::Left)
             .title_position(Position::Top)
             .borders(Borders::ALL)
-            .border_style(_DEFAULT_STYLE)
-            .style(_DEFAULT_STYLE)
             .padding(_DEFAULT_PADDING);
+    }
+
+    /// This test ensures that we have some coverage on the Style::from() implementations
+    #[test]
+    fn block_style() {
+        // nominal style
+        let block = Block::default().style(Style::new().red());
+        assert_eq!(block.style, Style::new().red());
+
+        // auto-convert from Color
+        let block = Block::default().style(Color::Red);
+        assert_eq!(block.style, Style::new().red());
+
+        // auto-convert from (Color, Color)
+        let block = Block::default().style((Color::Red, Color::Blue));
+        assert_eq!(block.style, Style::new().red().on_blue());
+
+        // auto-convert from Modifier
+        let block = Block::default().style(Modifier::BOLD | Modifier::ITALIC);
+        assert_eq!(block.style, Style::new().bold().italic());
+
+        // auto-convert from (Modifier, Modifier)
+        let block = Block::default().style((Modifier::BOLD | Modifier::ITALIC, Modifier::DIM));
+        assert_eq!(block.style, Style::new().bold().italic().not_dim());
+
+        // auto-convert from (Color, Modifier)
+        let block = Block::default().style((Color::Red, Modifier::BOLD));
+        assert_eq!(block.style, Style::new().red().bold());
+
+        // auto-convert from (Color, Color, Modifier)
+        let block = Block::default().style((Color::Red, Color::Blue, Modifier::BOLD));
+        assert_eq!(block.style, Style::new().red().on_blue().bold());
+
+        // auto-convert from (Color, Color, Modifier, Modifier)
+        let block = Block::default().style((
+            Color::Red,
+            Color::Blue,
+            Modifier::BOLD | Modifier::ITALIC,
+            Modifier::DIM,
+        ));
+        assert_eq!(
+            block.style,
+            Style::new().red().on_blue().bold().italic().not_dim()
+        );
     }
 
     #[test]

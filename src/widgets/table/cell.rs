@@ -98,6 +98,9 @@ impl<'a> Cell<'a> {
 
     /// Set the `Style` of this cell
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// This `Style` will override the `Style` of the [`Row`] and can be overridden by the `Style`
     /// of the [`Text`] content.
     ///
@@ -120,8 +123,8 @@ impl<'a> Cell<'a> {
     ///
     /// [`Row`]: super::Row
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Self {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.style = style.into();
         self
     }
 }
@@ -169,7 +172,7 @@ impl<'a> Styled for Cell<'a> {
         self.style
     }
 
-    fn set_style(self, style: Style) -> Self::Item {
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
     }
 }

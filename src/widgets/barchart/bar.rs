@@ -1,6 +1,6 @@
 use unicode_width::UnicodeWidthStr;
 
-use crate::{buffer::Buffer, prelude::Rect, style::Style, text::Line};
+use crate::prelude::*;
 
 /// A bar to be shown by the [`BarChart`](crate::widgets::BarChart) widget.
 ///
@@ -70,22 +70,27 @@ impl<'a> Bar<'a> {
 
     /// Set the style of the bar.
     ///
-    /// This will apply to every non-styled element.
-    /// It can be seen and used as a default value.
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
+    /// This will apply to every non-styled element. It can be seen and used as a default value.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style(mut self, style: Style) -> Bar<'a> {
-        self.style = style;
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Bar<'a> {
+        self.style = style.into();
         self
     }
 
     /// Set the style of the value.
     ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
     /// # See also
     ///
     /// [`Bar::value`] to set the value.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn value_style(mut self, style: Style) -> Bar<'a> {
-        self.value_style = style;
+    pub fn value_style<S: Into<Style>>(mut self, style: S) -> Bar<'a> {
+        self.value_style = style.into();
         self
     }
 
