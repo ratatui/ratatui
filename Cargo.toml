@@ -54,6 +54,7 @@ fakeit = "1.1"
 palette = "0.7.3"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
+serde_json = "1.0.109"
 
 [features]
 #! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
@@ -267,3 +268,7 @@ doc-scrape-examples = true
 name = "inline"
 required-features = ["crossterm"]
 doc-scrape-examples = true
+
+[[test]]
+name = "state_serde"
+required-features = ["serde"]
