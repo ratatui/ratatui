@@ -43,6 +43,10 @@ pub enum ScrollDirection {
 /// default of 0 and it'll use the track size as a `viewport_content_length`.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
 pub struct ScrollbarState {
     // The total length of the scrollable content.
     content_length: usize,

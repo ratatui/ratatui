@@ -5,6 +5,10 @@ use crate::prelude::*;
 /// A buffer cell
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
 pub struct Cell {
     #[deprecated(
         since = "0.24.1",

@@ -28,6 +28,8 @@ termion = { version = "2.0", optional = true }
 termwiz = { version = "0.20.0", optional = true }
 
 serde = { version = "1", optional = true, features = ["derive"] }
+rkyv = { version = "0.7", optional = true }
+
 bitflags = "2.3"
 cassowary = "0.3"
 indoc = "2.0"
@@ -75,6 +77,8 @@ termwiz = ["dep:termwiz"]
 ## enables serialization and deserialization of style and color types using the [Serde crate].
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "bitflags/serde"]
+## similar to the `serde` feature, but includes traits for the `rkyv` crate instead.
+rkyv = ["dep:rkyv"]
 
 ## enables the [`border!`] macro.
 macros = []

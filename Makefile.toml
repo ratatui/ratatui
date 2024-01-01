@@ -5,7 +5,7 @@ skip_core_tasks = true
 
 [env]
 # all features except the backend ones
-ALL_FEATURES = "all-widgets,macros,serde"
+ALL_FEATURES = "all-widgets,macros,rkyv,serde"
 
 # Windows does not support building termion, so this avoids the build failure by providing two
 # sets of flags, one for Windows and one for other platforms.

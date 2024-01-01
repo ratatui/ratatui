@@ -46,6 +46,10 @@
 /// [`Frame::render_stateful_widget`]: crate::Frame::render_stateful_widget
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
 pub struct TableState {
     pub(crate) offset: usize,
     pub(crate) selected: Option<usize>,

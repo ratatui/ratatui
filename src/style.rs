@@ -77,24 +77,30 @@ pub use stylize::{Styled, Stylize};
 mod color;
 pub use color::Color;
 
+/// Modifier changes the way a piece of text is displayed.
+///
+/// They are bitflags so they can easily be composed.
+///
+/// `From<Modifier> for Style` is implemented so you can use `Modifier` anywhere that accepts
+/// `Into<Style>`.
+///
+/// ## Examples
+///
+/// ```rust
+/// use ratatui::prelude::*;
+///
+/// let m = Modifier::BOLD | Modifier::ITALIC;
+/// ```
+#[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
+pub struct Modifier(u16); // separated struct is needed for a painless rkyv derive
+
 bitflags! {
-    /// Modifier changes the way a piece of text is displayed.
-    ///
-    /// They are bitflags so they can easily be composed.
-    ///
-    /// `From<Modifier> for Style` is implemented so you can use `Modifier` anywhere that accepts
-    /// `Into<Style>`.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// use ratatui::{prelude::*};
-    ///
-    /// let m = Modifier::BOLD | Modifier::ITALIC;
-    /// ```
-    #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-    #[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
-    pub struct Modifier: u16 {
+    impl Modifier: u16 {
         const BOLD              = 0b0000_0000_0001;
         const DIM               = 0b0000_0000_0010;
         const ITALIC            = 0b0000_0000_0100;
@@ -107,7 +113,12 @@ bitflags! {
     }
 }
 
-/// Implement the `Debug` trait for `Modifier` manually.
+/// Implement the `Debug` trait for `Modifier` manually, as
+///
+/// 1. The empty modifier should be `NONE`, not `Borders(0x0)` (which is what [`bitflags!`] would
+///    generate)
+/// 2. [`bitflags!`] in `impl` mode doesn't generate a debug impl, but we need `impl` mode for
+///    `rkyv` support
 ///
 /// This will avoid printing the empty modifier as 'Borders(0x0)' and instead print it as 'NONE'.
 impl fmt::Debug for Modifier {
@@ -117,7 +128,20 @@ impl fmt::Debug for Modifier {
         if self.is_empty() {
             return write!(f, "NONE");
         }
-        fmt::Debug::fmt(&self.0, f)
+
+        for (i, (name, _flag)) in self.iter_names().enumerate() {
+            if i != 0 {
+                // do we want to split over multiple lines?
+                match f.alternate() {
+                    true => write!(f, "\n    | ")?,
+                    false => write!(f, " | ")?,
+                }
+            }
+
+            write!(f, "{name}")?;
+        }
+
+        Ok(())
     }
 }
 
@@ -222,6 +246,10 @@ impl fmt::Debug for Modifier {
 /// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
 pub struct Style {
     pub fg: Option<Color>,
     pub bg: Option<Color>,
