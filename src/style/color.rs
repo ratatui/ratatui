@@ -67,7 +67,8 @@ use std::{
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(
     feature = "rkyv",
-    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
+    archive(check_bytes)
 )]
 pub enum Color {
     /// Resets the foreground or background color
