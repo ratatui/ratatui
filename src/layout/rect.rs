@@ -167,6 +167,32 @@ impl Rect {
             && self.y < other.bottom()
             && self.bottom() > other.y
     }
+
+    /// Split the rect into a number of sub-rects according to the given [`Layout`]`.
+    ///
+    /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
+    /// `Rc<[Rect]>`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of constraints is not equal to the length of the returned array.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # fn render(frame: &mut Frame) {
+    /// let area = frame.size();
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let [top, main] = area.split(&layout);
+    /// # }
+    pub fn split<const N: usize>(self, layout: &Layout) -> [Rect; N] {
+        layout
+            .split(self)
+            .to_vec()
+            .try_into()
+            .expect("invalid number of rects")
+    }
 }
 
 #[cfg(test)]
@@ -352,5 +378,20 @@ mod tests {
         const _TOP: u16 = RECT.top();
         const _BOTTOM: u16 = RECT.bottom();
         assert!(RECT.intersects(RECT));
+    }
+
+    #[test]
+    fn split() {
+        let layout = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
+        let [a, b] = Rect::new(0, 0, 2, 1).split(&layout);
+        assert_eq!(a, Rect::new(0, 0, 1, 1));
+        assert_eq!(b, Rect::new(1, 0, 1, 1));
+    }
+
+    #[test]
+    #[should_panic(expected = "invalid number of rects")]
+    fn split_invalid_number_of_recs() {
+        let layout = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
+        let [_a, _b, _c] = Rect::new(0, 0, 2, 1).split(&layout);
     }
 }
