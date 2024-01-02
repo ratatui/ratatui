@@ -405,3 +405,145 @@ impl From<LinearRgba> for Color {
 fn u16_max(i: usize) -> u16 {
     u16::try_from(i).unwrap_or(u16::MAX)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod into_color {
+        use Color as C;
+
+        use super::*;
+
+        #[test]
+        fn from_linear_rgba() {
+            // full black + opaque
+            assert_eq!(C::from(LinearRgba(0., 0., 0., 1.)), Color::Rgb(0, 0, 0));
+            // full black + transparent
+            assert_eq!(C::from(LinearRgba(0., 0., 0., 0.)), Color::Rgb(0, 0, 0));
+
+            // full white + opaque
+            assert_eq!(C::from(LinearRgba(1., 1., 1., 1.)), C::Rgb(254, 254, 254));
+            // full white + transparent
+            assert_eq!(C::from(LinearRgba(1., 1., 1., 0.)), C::Rgb(254, 254, 254));
+
+            // full red
+            assert_eq!(C::from(LinearRgba(1., 0., 0., 1.)), C::Rgb(254, 0, 0));
+            // full green
+            assert_eq!(C::from(LinearRgba(0., 1., 0., 1.)), C::Rgb(0, 254, 0));
+            // full blue
+            assert_eq!(C::from(LinearRgba(0., 0., 1., 1.)), C::Rgb(0, 0, 254));
+
+            // See https://stackoverflow.com/questions/12524623/what-are-the-practical-differences-when-working-with-colors-in-a-linear-vs-a-no
+            // for an explanation
+
+            // half red
+            assert_eq!(C::from(LinearRgba(0.214, 0., 0., 1.)), C::Rgb(127, 0, 0));
+            // half green
+            assert_eq!(C::from(LinearRgba(0., 0.214, 0., 1.)), C::Rgb(0, 127, 0));
+            // half blue
+            assert_eq!(C::from(LinearRgba(0., 0., 0.214, 1.)), C::Rgb(0, 0, 127));
+        }
+
+        #[test]
+        fn from_srgba() {
+            // full black + opaque
+            assert_eq!(C::from(SrgbaTuple(0., 0., 0., 1.)), Color::Rgb(0, 0, 0));
+            // full black + transparent
+            assert_eq!(C::from(SrgbaTuple(0., 0., 0., 0.)), Color::Rgb(0, 0, 0));
+
+            // full white + opaque
+            assert_eq!(C::from(SrgbaTuple(1., 1., 1., 1.)), C::Rgb(255, 255, 255));
+            // full white + transparent
+            assert_eq!(C::from(SrgbaTuple(1., 1., 1., 0.)), C::Rgb(255, 255, 255));
+
+            // full red
+            assert_eq!(C::from(SrgbaTuple(1., 0., 0., 1.)), C::Rgb(255, 0, 0));
+            // full green
+            assert_eq!(C::from(SrgbaTuple(0., 1., 0., 1.)), C::Rgb(0, 255, 0));
+            // full blue
+            assert_eq!(C::from(SrgbaTuple(0., 0., 1., 1.)), C::Rgb(0, 0, 255));
+
+            // half red
+            assert_eq!(C::from(SrgbaTuple(0.5, 0., 0., 1.)), C::Rgb(127, 0, 0));
+            // half green
+            assert_eq!(C::from(SrgbaTuple(0., 0.5, 0., 1.)), C::Rgb(0, 127, 0));
+            // half blue
+            assert_eq!(C::from(SrgbaTuple(0., 0., 0.5, 1.)), C::Rgb(0, 0, 127));
+        }
+
+        #[test]
+        fn from_rgbcolor() {
+            // full black
+            assert_eq!(C::from(RgbColor::new_8bpc(0, 0, 0)), Color::Rgb(0, 0, 0));
+            // full white
+            assert_eq!(
+                C::from(RgbColor::new_8bpc(255, 255, 255)),
+                C::Rgb(255, 255, 255)
+            );
+
+            // full red
+            assert_eq!(C::from(RgbColor::new_8bpc(255, 0, 0)), C::Rgb(255, 0, 0));
+            // full green
+            assert_eq!(C::from(RgbColor::new_8bpc(0, 255, 0)), C::Rgb(0, 255, 0));
+            // full blue
+            assert_eq!(C::from(RgbColor::new_8bpc(0, 0, 255)), C::Rgb(0, 0, 255));
+
+            // half red
+            assert_eq!(C::from(RgbColor::new_8bpc(127, 0, 0)), C::Rgb(127, 0, 0));
+            // half green
+            assert_eq!(C::from(RgbColor::new_8bpc(0, 127, 0)), C::Rgb(0, 127, 0));
+            // half blue
+            assert_eq!(C::from(RgbColor::new_8bpc(0, 0, 127)), C::Rgb(0, 0, 127));
+        }
+
+        #[test]
+        fn from_colorspec() {
+            assert_eq!(C::from(ColorSpec::Default), C::Reset);
+            assert_eq!(C::from(ColorSpec::PaletteIndex(33)), C::Indexed(33));
+            assert_eq!(
+                C::from(ColorSpec::TrueColor(SrgbaTuple(0., 0., 0., 1.))),
+                C::Rgb(0, 0, 0)
+            );
+        }
+
+        #[test]
+        fn from_colorattribute() {
+            assert_eq!(C::from(ColorAttribute::Default), C::Reset);
+            assert_eq!(C::from(ColorAttribute::PaletteIndex(32)), C::Indexed(32));
+            assert_eq!(
+                C::from(ColorAttribute::TrueColorWithDefaultFallback(SrgbaTuple(
+                    0., 0., 0., 1.
+                ))),
+                C::Rgb(0, 0, 0)
+            );
+            assert_eq!(
+                C::from(ColorAttribute::TrueColorWithPaletteFallback(
+                    SrgbaTuple(0., 0., 0., 1.),
+                    31
+                )),
+                C::Rgb(0, 0, 0)
+            );
+        }
+
+        #[test]
+        fn from_ansicolor() {
+            assert_eq!(C::from(AnsiColor::Black), Color::Black);
+            assert_eq!(C::from(AnsiColor::Grey), Color::DarkGray);
+            assert_eq!(C::from(AnsiColor::Silver), Color::Gray);
+            assert_eq!(C::from(AnsiColor::Maroon), Color::Red);
+            assert_eq!(C::from(AnsiColor::Red), Color::LightRed);
+            assert_eq!(C::from(AnsiColor::Green), Color::Green);
+            assert_eq!(C::from(AnsiColor::Lime), Color::LightGreen);
+            assert_eq!(C::from(AnsiColor::Olive), Color::Yellow);
+            assert_eq!(C::from(AnsiColor::Yellow), Color::LightYellow);
+            assert_eq!(C::from(AnsiColor::Purple), Color::Magenta);
+            assert_eq!(C::from(AnsiColor::Fuchsia), Color::LightMagenta);
+            assert_eq!(C::from(AnsiColor::Teal), Color::Cyan);
+            assert_eq!(C::from(AnsiColor::Aqua), Color::LightCyan);
+            assert_eq!(C::from(AnsiColor::White), Color::White);
+            assert_eq!(C::from(AnsiColor::Navy), Color::Blue);
+            assert_eq!(C::from(AnsiColor::Blue), Color::LightBlue);
+        }
+    }
+}
