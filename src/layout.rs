@@ -284,6 +284,44 @@ impl Layout {
         }
     }
 
+    /// Creates a new vertical layout with default values.
+    ///
+    /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
+    /// AsRef<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
+    /// ```
+    pub fn vertical<I>(constraints: I) -> Layout
+    where
+        I: IntoIterator,
+        I::Item: AsRef<Constraint>,
+    {
+        Layout::new(Direction::Vertical, constraints)
+    }
+
+    /// Creates a new horizontal layout with default values.
+    ///
+    /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
+    /// AsRef<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let layout = Layout::horizontal([Constraint::Length(5), Constraint::Min(0)]);
+    /// ```
+    pub fn horizontal<I>(constraints: I) -> Layout
+    where
+        I: IntoIterator,
+        I::Item: AsRef<Constraint>,
+    {
+        Layout::new(Direction::Horizontal, constraints)
+    }
+
     /// Initialize an empty cache with a custom size. The cache is keyed on the layout and area, so
     /// that subsequent calls with the same parameters are faster. The cache is a LruCache, and
     /// grows until `cache_size` is reached.
