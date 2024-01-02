@@ -937,6 +937,32 @@ mod tests {
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
     }
 
+    #[test]
+    fn layout_vertical() {
+        assert_eq!(
+            Layout::vertical([Constraint::Min(0)]),
+            Layout {
+                direction: Direction::Vertical,
+                margin: Margin::new(0, 0),
+                constraints: vec![Constraint::Min(0)],
+                segment_size: LastTakesRemainder,
+            }
+        );
+    }
+
+    #[test]
+    fn layout_horizontal() {
+        assert_eq!(
+            Layout::horizontal([Constraint::Min(0)]),
+            Layout {
+                direction: Direction::Horizontal,
+                margin: Margin::new(0, 0),
+                constraints: vec![Constraint::Min(0)],
+                segment_size: LastTakesRemainder,
+            }
+        );
+    }
+
     /// The purpose of this test is to ensure that layout can be constructed with any type that
     /// implements IntoIterator<Item = AsRef<Constraint>>.
     #[test]
