@@ -50,6 +50,27 @@ thread_local! {
 /// calls with the same parameters are faster. The cache is a simple HashMap, and grows
 /// indefinitely. (See <https://github.com/ratatui-org/ratatui/issues/402> for more information)
 ///
+/// # Constructors
+///
+/// There are four ways to create a new layout:
+///
+/// - [`Layout::default`]: create a new layout with default values
+/// - [`Layout::new`]: create a new layout with a given direction and constraints
+/// - [`Layout::vertical`]: create a new vertical layout with the given constraints
+/// - [`Layout::horizontal`]: create a new horizontal layout with the given constraints
+///
+/// # Setters
+///
+/// There are several setters to modify the layout:
+///
+/// - [`Layout::direction`]: set the direction of the layout
+/// - [`Layout::constraints`]: set the constraints of the layout
+/// - [`Layout::margin`]: set the margin of the layout
+/// - [`Layout::horizontal_margin`]: set the horizontal margin of the layout
+/// - [`Layout::vertical_margin`]: set the vertical margin of the layout
+/// - [`Layout::segment_size`]: set the way the space is distributed when the constraints are
+///   satisfied
+///
 /// # Example
 ///
 /// ```rust
