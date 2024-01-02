@@ -409,6 +409,7 @@ fn u16_max(i: usize) -> u16 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::style::Stylize;
 
     mod into_color {
         use Color as C;
@@ -573,5 +574,89 @@ mod tests {
             assert_eq!(Modifier::from(Blink::Slow), Modifier::SLOW_BLINK);
             assert_eq!(Modifier::from(Blink::Rapid), Modifier::RAPID_BLINK);
         }
+    }
+
+    #[test]
+    fn from_cell_attribute_for_style() {
+        // default
+        assert_eq!(
+            Style::from(CellAttributes::default()),
+            Style::new().fg(Color::Reset).bg(Color::Reset)
+        );
+        // foreground color
+        assert_eq!(
+            Style::from(
+                CellAttributes::default()
+                    .set_foreground(ColorAttribute::PaletteIndex(31))
+                    .to_owned()
+            ),
+            Style::new().fg(Color::Indexed(31)).bg(Color::Reset)
+        );
+        // background color
+        assert_eq!(
+            Style::from(
+                CellAttributes::default()
+                    .set_background(ColorAttribute::PaletteIndex(31))
+                    .to_owned()
+            ),
+            Style::new().fg(Color::Reset).bg(Color::Indexed(31))
+        );
+        // underline color
+        #[cfg(feature = "underline_color")]
+        assert_eq!(
+            Style::from(
+                CellAttributes::default()
+                    .set_underline_color(AnsiColor::Red)
+                    .set
+                    .to_owned()
+            ),
+            Style::new()
+                .fg(Color::Reset)
+                .bg(Color::Reset)
+                .underline_color(Color::Red)
+        );
+        // underlined
+        assert_eq!(
+            Style::from(
+                CellAttributes::default()
+                    .set_underline(Underline::Single)
+                    .to_owned()
+            ),
+            Style::new().fg(Color::Reset).bg(Color::Reset).underlined()
+        );
+        // blink
+        assert_eq!(
+            Style::from(CellAttributes::default().set_blink(Blink::Slow).to_owned()),
+            Style::new().fg(Color::Reset).bg(Color::Reset).slow_blink()
+        );
+        // intensity
+        assert_eq!(
+            Style::from(
+                CellAttributes::default()
+                    .set_intensity(Intensity::Bold)
+                    .to_owned()
+            ),
+            Style::new().fg(Color::Reset).bg(Color::Reset).bold()
+        );
+        // italic
+        assert_eq!(
+            Style::from(CellAttributes::default().set_italic(true).to_owned()),
+            Style::new().fg(Color::Reset).bg(Color::Reset).italic()
+        );
+        // reversed
+        assert_eq!(
+            Style::from(CellAttributes::default().set_reverse(true).to_owned()),
+            Style::new().fg(Color::Reset).bg(Color::Reset).reversed()
+        );
+        // strikethrough
+        assert_eq!(
+            Style::from(CellAttributes::default().set_strikethrough(true).to_owned()),
+            Style::new().fg(Color::Reset).bg(Color::Reset).crossed_out()
+        );
+        // hidden
+        assert_eq!(
+            Style::from(CellAttributes::default().set_invisible(true).to_owned()),
+            Style::new().fg(Color::Reset).bg(Color::Reset).hidden()
+        );
     }
 }
