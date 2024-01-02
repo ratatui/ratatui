@@ -249,6 +249,37 @@ impl Backend for TermwizBackend {
     }
 }
 
+impl From<CellAttributes> for Style {
+    fn from(value: CellAttributes) -> Self {
+        let mut style = Style::new()
+            .add_modifier(value.intensity().into())
+            .add_modifier(value.underline().into())
+            .add_modifier(value.blink().into());
+
+        if value.italic() {
+            style.add_modifier |= Modifier::ITALIC;
+        }
+        if value.reverse() {
+            style.add_modifier |= Modifier::REVERSED;
+        }
+        if value.strikethrough() {
+            style.add_modifier |= Modifier::CROSSED_OUT;
+        }
+        if value.invisible() {
+            style.add_modifier |= Modifier::HIDDEN;
+        }
+
+        style.fg = Some(value.foreground().into());
+        style.bg = Some(value.background().into());
+        #[cfg(feature = "underline_color")]
+        {
+            style.underline_color = Some(value.underline_color().into());
+        }
+
+        style
+    }
+}
+
 impl From<Intensity> for Modifier {
     fn from(value: Intensity) -> Self {
         match value {
