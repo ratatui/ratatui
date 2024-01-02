@@ -676,6 +676,29 @@ impl Layout {
             .collect::<Rc<[Rect]>>();
         Ok(results)
     }
+
+    /// An ergonomic wrapper around [`Layout::split`] that returns an array instead of `Rc<[Rect]>`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of constraints is not equal to the length of the returned array.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # fn render(frame: &mut Frame) {
+    /// let area = frame.size();
+    /// let [top, main] =
+    ///     Layout::new(Direction::Vertical,[Constraint::Length(1), Constraint::Min(0)])
+    ///     .split_array(area);
+    /// # }
+    pub fn split_array<const N: usize>(self, area: Rect) -> [Rect; N] {
+        self.split(area)
+            .to_vec()
+            .try_into()
+            .expect("invalid number of rects")
+    }
 }
 
 impl Margin {
@@ -1797,6 +1820,27 @@ mod tests {
                     Rect::new(4, 0, 3, 1),
                 ]
             );
+        }
+
+        #[test]
+        fn split_array() {
+            let [a, b] = Layout::new(
+                Direction::Horizontal,
+                [Constraint::Percentage(50), Constraint::Percentage(50)],
+            )
+            .split_array(Rect::new(0, 0, 2, 1));
+            assert_eq!(a, Rect::new(0, 0, 1, 1));
+            assert_eq!(b, Rect::new(1, 0, 1, 1));
+        }
+
+        #[test]
+        #[should_panic(expected = "invalid number of rects")]
+        fn split_array_invalid_number_of_recs() {
+            let [_a, _b, _c] = Layout::new(
+                Direction::Horizontal,
+                [Constraint::Percentage(50), Constraint::Percentage(50)],
+            )
+            .split_array(Rect::new(0, 0, 2, 1));
         }
     }
 }
