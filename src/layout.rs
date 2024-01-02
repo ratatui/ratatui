@@ -50,6 +50,27 @@ thread_local! {
 /// calls with the same parameters are faster. The cache is a simple HashMap, and grows
 /// indefinitely. (See <https://github.com/ratatui-org/ratatui/issues/402> for more information)
 ///
+/// # Constructors
+///
+/// There are four ways to create a new layout:
+///
+/// - [`Layout::default`]: create a new layout with default values
+/// - [`Layout::new`]: create a new layout with a given direction and constraints
+/// - [`Layout::vertical`]: create a new vertical layout with the given constraints
+/// - [`Layout::horizontal`]: create a new horizontal layout with the given constraints
+///
+/// # Setters
+///
+/// There are several setters to modify the layout:
+///
+/// - [`Layout::direction`]: set the direction of the layout
+/// - [`Layout::constraints`]: set the constraints of the layout
+/// - [`Layout::margin`]: set the margin of the layout
+/// - [`Layout::horizontal_margin`]: set the horizontal margin of the layout
+/// - [`Layout::vertical_margin`]: set the vertical margin of the layout
+/// - [`Layout::segment_size`]: set the way the space is distributed when the constraints are
+///   satisfied
+///
 /// # Example
 ///
 /// ```rust
@@ -282,6 +303,44 @@ impl Layout {
             constraints: constraints.into_iter().map(|c| *c.as_ref()).collect(),
             segment_size: SegmentSize::LastTakesRemainder,
         }
+    }
+
+    /// Creates a new vertical layout with default values.
+    ///
+    /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
+    /// AsRef<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
+    /// ```
+    pub fn vertical<I>(constraints: I) -> Layout
+    where
+        I: IntoIterator,
+        I::Item: AsRef<Constraint>,
+    {
+        Layout::new(Direction::Vertical, constraints)
+    }
+
+    /// Creates a new horizontal layout with default values.
+    ///
+    /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
+    /// AsRef<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let layout = Layout::horizontal([Constraint::Length(5), Constraint::Min(0)]);
+    /// ```
+    pub fn horizontal<I>(constraints: I) -> Layout
+    where
+        I: IntoIterator,
+        I::Item: AsRef<Constraint>,
+    {
+        Layout::new(Direction::Horizontal, constraints)
     }
 
     /// Initialize an empty cache with a custom size. The cache is keyed on the layout and area, so
@@ -876,6 +935,32 @@ mod tests {
         let layout = Layout::new(Direction::Horizontal, iter);
         assert_eq!(layout.direction, Direction::Horizontal);
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
+    }
+
+    #[test]
+    fn layout_vertical() {
+        assert_eq!(
+            Layout::vertical([Constraint::Min(0)]),
+            Layout {
+                direction: Direction::Vertical,
+                margin: Margin::new(0, 0),
+                constraints: vec![Constraint::Min(0)],
+                segment_size: LastTakesRemainder,
+            }
+        );
+    }
+
+    #[test]
+    fn layout_horizontal() {
+        assert_eq!(
+            Layout::horizontal([Constraint::Min(0)]),
+            Layout {
+                direction: Direction::Horizontal,
+                margin: Margin::new(0, 0),
+                constraints: vec![Constraint::Min(0)],
+                segment_size: LastTakesRemainder,
+            }
+        );
     }
 
     /// The purpose of this test is to ensure that layout can be constructed with any type that
