@@ -33,7 +33,7 @@ thread_local! {
 /// - a set of constraints (length, ratio, percentage, min, max)
 /// - a margin (horizontal and vertical), the space between the edge of the main area and the split
 ///   areas
-/// - extra options for segment size preferences
+/// - extra options for spread preferences
 ///
 /// The algorithm used to compute the layout is based on the [`cassowary-rs`] solver. It is a simple
 /// linear solver that can be used to solve linear equations and inequalities. In our case, we
@@ -42,9 +42,8 @@ thread_local! {
 /// many of the constraints as possible.
 ///
 /// By default, the last chunk of the computed layout is expanded to fill the remaining space. To
-/// avoid this behavior, add an unused `Constraint::Min(0)` as the last constraint. There is also
-/// an unstable API to prefer equal chunks if other constraints are all satisfied, see
-/// [`SegmentSize`] for more info.
+/// avoid this behavior, add an unused `Constraint::Min(0)` as the last constraint. There is also an
+/// API to prefer equal chunks if other constraints are all satisfied, see [`Spread`] for more info.
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
 /// calls with the same parameters are faster. The cache is a simple HashMap, and grows
@@ -78,8 +77,7 @@ pub struct Layout {
     direction: Direction,
     constraints: Vec<Constraint>,
     margin: Margin,
-    /// option for segment size preferences
-    segment_size: SegmentSize,
+    spread: Spread,
 }
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
@@ -209,24 +207,16 @@ pub enum Direction {
     Vertical,
 }
 
-/// Option for segment size preferences
+/// Describes how the space is distributed when the constraints are satisfied.
 ///
 /// This controls how the space is distributed when the constraints are satisfied. By default, the
 /// last chunk is expanded to fill the remaining space, but this can be changed to prefer equal
 /// chunks or to not distribute extra space at all (which is the default used for laying out the
 /// columns for [`Table`] widgets).
 ///
-/// Note: If you're using this feature please help us come up with a good name. See [Issue
-/// #536](https://github.com/ratatui-org/ratatui/issues/536) for more information.
-///
 /// [`Table`]: crate::widgets::Table
-#[stability::unstable(
-    feature = "segment-size",
-    reason = "The name for this feature is not final and may change in the future",
-    issue = "https://github.com/ratatui-org/ratatui/issues/536"
-)]
 #[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
-pub enum SegmentSize {
+pub enum Spread {
     /// prefer equal chunks if other constraints are all satisfied
     EvenDistribution,
 
@@ -255,7 +245,7 @@ impl Layout {
     /// Default values for the other fields are:
     ///
     /// - `margin`: 0, 0
-    /// - `segment_size`: SegmentSize::LastTakesRemainder
+    /// - `spread`: Spread::LastTakesRemainder
     ///
     /// # Examples
     ///
@@ -280,7 +270,7 @@ impl Layout {
             direction,
             margin: Margin::new(0, 0),
             constraints: constraints.into_iter().map(|c| *c.as_ref()).collect(),
-            segment_size: SegmentSize::LastTakesRemainder,
+            spread: Spread::LastTakesRemainder,
         }
     }
 
@@ -437,25 +427,17 @@ impl Layout {
         self
     }
 
-    /// Set whether chunks should be of equal size.
+    /// Set how to allocate extra space when the constraints are satisfied.
     ///
     /// This determines how the space is distributed when the constraints are satisfied. By default,
     /// the last chunk is expanded to fill the remaining space, but this can be changed to prefer
     /// equal chunks or to not distribute extra space at all (which is the default used for laying
     /// out the columns for [`Table`] widgets).
     ///
-    /// Note: If you're using this feature please help us come up with a good name. See [Issue
-    /// #536](https://github.com/ratatui-org/ratatui/issues/536) for more information.
-    ///
     /// [`Table`]: crate::widgets::Table
-    #[stability::unstable(
-        feature = "segment-size",
-        reason = "The name for this feature is not final and may change in the future",
-        issue = "https://github.com/ratatui-org/ratatui/issues/536"
-    )]
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn segment_size(mut self, segment_size: SegmentSize) -> Layout {
-        self.segment_size = segment_size;
+    pub const fn spread(mut self, spread: Spread) -> Layout {
+        self.spread = spread;
         self
     }
 
@@ -537,7 +519,7 @@ impl Layout {
         if let Some(first) = elements.first() {
             solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
         }
-        if layout.segment_size != SegmentSize::None {
+        if layout.spread != Spread::None {
             // ensure the last element touches the right/bottom edge of the area
             if let Some(last) = elements.last() {
                 solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
@@ -573,7 +555,7 @@ impl Layout {
             }
         }
         // prefer equal chunks if other constraints are all satisfied
-        if layout.segment_size == SegmentSize::EvenDistribution {
+        if layout.spread == Spread::EvenDistribution {
             for (left, right) in elements.iter().tuple_combinations() {
                 solver.add_constraint(left.size() | EQ(WEAK) | right.size())?;
             }
@@ -794,7 +776,7 @@ impl Element {
 mod tests {
     use strum::ParseError;
 
-    use super::{SegmentSize::*, *};
+    use super::{Spread::*, *};
     use crate::prelude::Constraint::*;
 
     #[test]
@@ -840,7 +822,7 @@ mod tests {
                 direction: Direction::Vertical,
                 margin: Margin::new(0, 0),
                 constraints: vec![],
-                segment_size: LastTakesRemainder,
+                spread: LastTakesRemainder,
             }
         );
     }
@@ -973,20 +955,16 @@ mod tests {
     }
 
     #[test]
-    fn layout_segment_size() {
+    fn layout_spread() {
         assert_eq!(
-            Layout::default()
-                .segment_size(EvenDistribution)
-                .segment_size,
+            Layout::default().spread(EvenDistribution).spread,
             EvenDistribution
         );
         assert_eq!(
-            Layout::default()
-                .segment_size(LastTakesRemainder)
-                .segment_size,
+            Layout::default().spread(LastTakesRemainder).spread,
             LastTakesRemainder
         );
-        assert_eq!(Layout::default().segment_size(None).segment_size, None);
+        assert_eq!(Layout::default().spread(None).spread, None);
     }
 
     #[test]
@@ -1156,41 +1134,32 @@ mod tests {
     }
 
     #[test]
-    fn segment_size_to_string() {
-        assert_eq!(
-            SegmentSize::EvenDistribution.to_string(),
-            "EvenDistribution"
-        );
-        assert_eq!(
-            SegmentSize::LastTakesRemainder.to_string(),
-            "LastTakesRemainder"
-        );
-        assert_eq!(SegmentSize::None.to_string(), "None");
+    fn spread_to_string() {
+        assert_eq!(Spread::EvenDistribution.to_string(), "EvenDistribution");
+        assert_eq!(Spread::LastTakesRemainder.to_string(), "LastTakesRemainder");
+        assert_eq!(Spread::None.to_string(), "None");
     }
 
     #[test]
-    fn segment_size_from_string() {
+    fn spread_from_string() {
+        assert_eq!("EvenDistribution".parse::<Spread>(), Ok(EvenDistribution));
         assert_eq!(
-            "EvenDistribution".parse::<SegmentSize>(),
-            Ok(EvenDistribution)
-        );
-        assert_eq!(
-            "LastTakesRemainder".parse::<SegmentSize>(),
+            "LastTakesRemainder".parse::<Spread>(),
             Ok(LastTakesRemainder)
         );
-        assert_eq!("None".parse::<SegmentSize>(), Ok(None));
-        assert_eq!("".parse::<SegmentSize>(), Err(ParseError::VariantNotFound));
+        assert_eq!("None".parse::<Spread>(), Ok(None));
+        assert_eq!("".parse::<Spread>(), Err(ParseError::VariantNotFound));
     }
 
-    fn get_x_width_with_segment_size(
-        segment_size: SegmentSize,
+    fn get_x_width_with_spread(
+        spread: Spread,
         constraints: Vec<Constraint>,
         target: Rect,
     ) -> Vec<(u16, u16)> {
         let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(constraints)
-            .segment_size(segment_size);
+            .spread(spread);
         let chunks = layout.split(target);
         chunks.iter().map(|r| (r.x, r.width)).collect()
     }
@@ -1199,11 +1168,11 @@ mod tests {
     fn test_split_equally_in_underspecified_case() {
         let target = Rect::new(100, 200, 10, 10);
         assert_eq!(
-            get_x_width_with_segment_size(LastTakesRemainder, vec![Min(2), Min(2), Min(0)], target),
+            get_x_width_with_spread(LastTakesRemainder, vec![Min(2), Min(2), Min(0)], target),
             [(100, 2), (102, 2), (104, 6)]
         );
         assert_eq!(
-            get_x_width_with_segment_size(EvenDistribution, vec![Min(2), Min(2), Min(0)], target),
+            get_x_width_with_spread(EvenDistribution, vec![Min(2), Min(2), Min(0)], target),
             [(100, 3), (103, 4), (107, 3)]
         );
     }
@@ -1212,7 +1181,7 @@ mod tests {
     fn test_split_equally_in_overconstrained_case_for_min() {
         let target = Rect::new(100, 200, 100, 10);
         assert_eq!(
-            get_x_width_with_segment_size(
+            get_x_width_with_spread(
                 LastTakesRemainder,
                 vec![Percentage(50), Min(10), Percentage(50)],
                 target
@@ -1220,7 +1189,7 @@ mod tests {
             [(100, 50), (150, 10), (160, 40)]
         );
         assert_eq!(
-            get_x_width_with_segment_size(
+            get_x_width_with_spread(
                 EvenDistribution,
                 vec![Percentage(50), Min(10), Percentage(50)],
                 target
@@ -1233,7 +1202,7 @@ mod tests {
     fn test_split_equally_in_overconstrained_case_for_max() {
         let target = Rect::new(100, 200, 100, 10);
         assert_eq!(
-            get_x_width_with_segment_size(
+            get_x_width_with_spread(
                 LastTakesRemainder,
                 vec![Percentage(30), Max(10), Percentage(30)],
                 target
@@ -1241,7 +1210,7 @@ mod tests {
             [(100, 30), (130, 10), (140, 60)]
         );
         assert_eq!(
-            get_x_width_with_segment_size(
+            get_x_width_with_spread(
                 EvenDistribution,
                 vec![Percentage(30), Max(10), Percentage(30)],
                 target
@@ -1254,7 +1223,7 @@ mod tests {
     fn test_split_equally_in_overconstrained_case_for_length() {
         let target = Rect::new(100, 200, 100, 10);
         assert_eq!(
-            get_x_width_with_segment_size(
+            get_x_width_with_spread(
                 LastTakesRemainder,
                 vec![Percentage(50), Length(10), Percentage(50)],
                 target
@@ -1262,7 +1231,7 @@ mod tests {
             [(100, 50), (150, 10), (160, 40)]
         );
         assert_eq!(
-            get_x_width_with_segment_size(
+            get_x_width_with_spread(
                 EvenDistribution,
                 vec![Percentage(50), Length(10), Percentage(50)],
                 target

@@ -5,7 +5,7 @@ use unicode_width::UnicodeWidthStr;
 
 use super::*;
 use crate::{
-    layout::SegmentSize,
+    layout::Spread,
     prelude::*,
     widgets::{Block, StatefulWidget, Widget},
 };
@@ -206,7 +206,7 @@ pub struct Table<'a> {
     highlight_spacing: HighlightSpacing,
 
     /// Controls how to distribute extra space among the columns
-    segment_size: SegmentSize,
+    spread: Spread,
 }
 
 impl<'a> Table<'a> {
@@ -241,8 +241,8 @@ impl<'a> Table<'a> {
             rows: rows.into_iter().collect(),
             widths,
             column_spacing: 1,
-            // Note: None is not the default value for SegmentSize, so we need to explicitly set it
-            segment_size: SegmentSize::None,
+            // Note: None is not the default value for Spread, so we need to explicitly set it
+            spread: Spread::None,
             ..Default::default()
         }
     }
@@ -517,19 +517,19 @@ impl<'a> Table<'a> {
     #[cfg_attr(feature = "unstable", doc = " ```")]
     #[cfg_attr(not(feature = "unstable"), doc = " ```ignore")]
     /// # use ratatui::layout::Constraint;
-    /// # use ratatui::layout::SegmentSize;
+    /// # use ratatui::layout::Spread;
     /// # use ratatui::widgets::Table;
     /// let widths = [Constraint::Min(10), Constraint::Min(10), Constraint::Min(10)];
     /// let table = Table::new([], widths)
-    ///     .segment_size(SegmentSize::LastTakesRemainder);
+    ///     .spread(Spread::LastTakesRemainder);
     /// ```
     #[stability::unstable(
         feature = "segment-size",
         reason = "The name for this feature is not final and may change in the future",
         issue = "https://github.com/ratatui-org/ratatui/issues/536"
     )]
-    pub const fn segment_size(mut self, segment_size: SegmentSize) -> Self {
-        self.segment_size = segment_size;
+    pub const fn spread(mut self, spread: Spread) -> Self {
+        self.spread = spread;
         self
     }
 }
@@ -716,7 +716,7 @@ impl Table<'_> {
         let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(constraints)
-            .segment_size(self.segment_size)
+            .spread(self.spread)
             .split(Rect::new(0, 0, max_width, 1));
         layout
             .iter()
@@ -1123,12 +1123,12 @@ mod tests {
         #[track_caller]
         fn test(
             constraints: &[Constraint],
-            segment_size: SegmentSize,
+            spread: Spread,
             available_width: u16,
             selection_width: u16,
             expected: &[(u16, u16)],
         ) {
-            let table = Table::new(vec![], constraints).segment_size(segment_size);
+            let table = Table::new(vec![], constraints).spread(spread);
 
             let widths = table.get_columns_widths(available_width, selection_width);
             assert_eq!(widths, expected);
@@ -1139,7 +1139,7 @@ mod tests {
             // without selection, more than needed width
             test(
                 &[Length(4), Length(4)],
-                SegmentSize::None,
+                Spread::None,
                 20,
                 0,
                 &[(0, 4), (5, 4)],
@@ -1148,7 +1148,7 @@ mod tests {
             // with selection, more than needed width
             test(
                 &[Length(4), Length(4)],
-                SegmentSize::None,
+                Spread::None,
                 20,
                 3,
                 &[(3, 4), (8, 4)],
@@ -1157,7 +1157,7 @@ mod tests {
             // without selection, less than needed width
             test(
                 &[Length(4), Length(4)],
-                SegmentSize::None,
+                Spread::None,
                 7,
                 0,
                 &[(0, 4), (5, 2)],
@@ -1166,7 +1166,7 @@ mod tests {
             // with selection, less than needed width
             test(
                 &[Length(4), Length(4)],
-                SegmentSize::None,
+                Spread::None,
                 7,
                 3,
                 &[(3, 4), (7, 0)],
@@ -1176,40 +1176,16 @@ mod tests {
         #[test]
         fn max_constraint() {
             // without selection, more than needed width
-            test(
-                &[Max(4), Max(4)],
-                SegmentSize::None,
-                20,
-                0,
-                &[(0, 4), (5, 4)],
-            );
+            test(&[Max(4), Max(4)], Spread::None, 20, 0, &[(0, 4), (5, 4)]);
 
             // with selection, more than needed width
-            test(
-                &[Max(4), Max(4)],
-                SegmentSize::None,
-                20,
-                3,
-                &[(3, 4), (8, 4)],
-            );
+            test(&[Max(4), Max(4)], Spread::None, 20, 3, &[(3, 4), (8, 4)]);
 
             // without selection, less than needed width
-            test(
-                &[Max(4), Max(4)],
-                SegmentSize::None,
-                7,
-                0,
-                &[(0, 4), (5, 2)],
-            );
+            test(&[Max(4), Max(4)], Spread::None, 7, 0, &[(0, 4), (5, 2)]);
 
             // with selection, less than needed width
-            test(
-                &[Max(4), Max(4)],
-                SegmentSize::None,
-                7,
-                3,
-                &[(3, 3), (7, 0)],
-            );
+            test(&[Max(4), Max(4)], Spread::None, 7, 3, &[(3, 3), (7, 0)]);
         }
 
         #[test]
@@ -1219,42 +1195,18 @@ mod tests {
             // constraint and not split it with all available constraints
 
             // without selection, more than needed width
-            test(
-                &[Min(4), Min(4)],
-                SegmentSize::None,
-                20,
-                0,
-                &[(0, 4), (5, 4)],
-            );
+            test(&[Min(4), Min(4)], Spread::None, 20, 0, &[(0, 4), (5, 4)]);
 
             // with selection, more than needed width
-            test(
-                &[Min(4), Min(4)],
-                SegmentSize::None,
-                20,
-                3,
-                &[(3, 4), (8, 4)],
-            );
+            test(&[Min(4), Min(4)], Spread::None, 20, 3, &[(3, 4), (8, 4)]);
 
             // without selection, less than needed width
             // allocates no spacer
-            test(
-                &[Min(4), Min(4)],
-                SegmentSize::None,
-                7,
-                0,
-                &[(0, 4), (4, 3)],
-            );
+            test(&[Min(4), Min(4)], Spread::None, 7, 0, &[(0, 4), (4, 3)]);
 
             // with selection, less than needed width
             // allocates no selection and no spacer
-            test(
-                &[Min(4), Min(4)],
-                SegmentSize::None,
-                7,
-                3,
-                &[(0, 4), (4, 3)],
-            );
+            test(&[Min(4), Min(4)], Spread::None, 7, 3, &[(0, 4), (4, 3)]);
         }
 
         #[test]
@@ -1262,7 +1214,7 @@ mod tests {
             // without selection, more than needed width
             test(
                 &[Percentage(30), Percentage(30)],
-                SegmentSize::None,
+                Spread::None,
                 20,
                 0,
                 &[(0, 6), (7, 6)],
@@ -1271,7 +1223,7 @@ mod tests {
             // with selection, more than needed width
             test(
                 &[Percentage(30), Percentage(30)],
-                SegmentSize::None,
+                Spread::None,
                 20,
                 3,
                 &[(3, 6), (10, 6)],
@@ -1281,7 +1233,7 @@ mod tests {
             // rounds from positions: [0.0, 0.0, 2.1, 3.1, 5.2, 7.0]
             test(
                 &[Percentage(30), Percentage(30)],
-                SegmentSize::None,
+                Spread::None,
                 7,
                 0,
                 &[(0, 2), (3, 2)],
@@ -1291,7 +1243,7 @@ mod tests {
             // rounds from positions: [0.0, 3.0, 5.1, 6.1, 7.0, 7.0]
             test(
                 &[Percentage(30), Percentage(30)],
-                SegmentSize::None,
+                Spread::None,
                 7,
                 3,
                 &[(3, 2), (6, 1)],
@@ -1304,7 +1256,7 @@ mod tests {
             // rounds from positions: [0.00, 0.00, 6.67, 7.67, 14.33]
             test(
                 &[Ratio(1, 3), Ratio(1, 3)],
-                SegmentSize::None,
+                Spread::None,
                 20,
                 0,
                 &[(0, 7), (8, 6)],
@@ -1314,7 +1266,7 @@ mod tests {
             // rounds from positions: [0.00, 3.00, 10.67, 17.33, 20.00]
             test(
                 &[Ratio(1, 3), Ratio(1, 3)],
-                SegmentSize::None,
+                Spread::None,
                 20,
                 3,
                 &[(3, 7), (11, 6)],
@@ -1324,7 +1276,7 @@ mod tests {
             // rounds from positions: [0.00, 2.33, 3.33, 5.66, 7.00]
             test(
                 &[Ratio(1, 3), Ratio(1, 3)],
-                SegmentSize::None,
+                Spread::None,
                 7,
                 0,
                 &[(0, 2), (3, 3)],
@@ -1334,34 +1286,34 @@ mod tests {
             // rounds from positions: [0.00, 3.00, 5.33, 6.33, 7.00, 7.00]
             test(
                 &[Ratio(1, 3), Ratio(1, 3)],
-                SegmentSize::None,
+                Spread::None,
                 7,
                 3,
                 &[(3, 2), (6, 1)],
             );
         }
 
-        /// When more width is available than requested, the behavior is controlled by segment_size
+        /// When more width is available than requested, the behavior is controlled by spread
         #[test]
         fn underconstrained() {
             let widths = [Min(10), Min(10), Min(1)];
             test(
                 &widths[..],
-                SegmentSize::None,
+                Spread::None,
                 62,
                 0,
                 &[(0, 10), (11, 10), (22, 1)],
             );
             test(
                 &widths[..],
-                SegmentSize::LastTakesRemainder,
+                Spread::LastTakesRemainder,
                 62,
                 0,
                 &[(0, 10), (11, 10), (22, 40)],
             );
             test(
                 &widths[..],
-                SegmentSize::EvenDistribution,
+                Spread::EvenDistribution,
                 62,
                 0,
                 &[(0, 20), (21, 20), (42, 20)],
