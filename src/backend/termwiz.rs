@@ -9,7 +9,7 @@ use std::{error::Error, io};
 
 use termwiz::{
     caps::Capabilities,
-    cell::{AttributeChange, Blink, Intensity, Underline},
+    cell::{AttributeChange, Blink, CellAttributes, Intensity, Underline},
     color::{AnsiColor, ColorAttribute, ColorSpec, LinearRgba, RgbColor, SrgbaTuple},
     surface::{Change, CursorVisibility, Position},
     terminal::{buffered::BufferedTerminal, ScreenSize, SystemTerminal, Terminal},
@@ -20,7 +20,7 @@ use crate::{
     buffer::Cell,
     layout::Size,
     prelude::Rect,
-    style::{Color, Modifier},
+    style::{Color, Modifier, Style},
 };
 
 /// A [`Backend`] implementation that uses [Termwiz] to render to the terminal.
@@ -246,6 +246,35 @@ impl Backend for TermwizBackend {
             .flush()
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
         Ok(())
+    }
+}
+
+impl From<Intensity> for Modifier {
+    fn from(value: Intensity) -> Self {
+        match value {
+            Intensity::Normal => Modifier::empty(),
+            Intensity::Bold => Modifier::BOLD,
+            Intensity::Half => Modifier::DIM,
+        }
+    }
+}
+
+impl From<Underline> for Modifier {
+    fn from(value: Underline) -> Self {
+        match value {
+            Underline::None => Modifier::empty(),
+            _ => Modifier::UNDERLINED,
+        }
+    }
+}
+
+impl From<Blink> for Modifier {
+    fn from(value: Blink) -> Self {
+        match value {
+            Blink::None => Modifier::empty(),
+            Blink::Slow => Modifier::SLOW_BLINK,
+            Blink::Rapid => Modifier::RAPID_BLINK,
+        }
     }
 }
 
