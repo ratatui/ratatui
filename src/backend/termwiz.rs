@@ -546,4 +546,32 @@ mod tests {
             assert_eq!(C::from(AnsiColor::Blue), Color::LightBlue);
         }
     }
+
+    mod into_modifier {
+        use super::*;
+
+        #[test]
+        fn from_intensity() {
+            assert_eq!(Modifier::from(Intensity::Normal), Modifier::empty());
+            assert_eq!(Modifier::from(Intensity::Bold), Modifier::BOLD);
+            assert_eq!(Modifier::from(Intensity::Half), Modifier::DIM);
+        }
+
+        #[test]
+        fn from_underline() {
+            assert_eq!(Modifier::from(Underline::None), Modifier::empty());
+            assert_eq!(Modifier::from(Underline::Single), Modifier::UNDERLINED);
+            assert_eq!(Modifier::from(Underline::Double), Modifier::UNDERLINED);
+            assert_eq!(Modifier::from(Underline::Curly), Modifier::UNDERLINED);
+            assert_eq!(Modifier::from(Underline::Dashed), Modifier::UNDERLINED);
+            assert_eq!(Modifier::from(Underline::Dotted), Modifier::UNDERLINED);
+        }
+
+        #[test]
+        fn from_blink() {
+            assert_eq!(Modifier::from(Blink::None), Modifier::empty());
+            assert_eq!(Modifier::from(Blink::Slow), Modifier::SLOW_BLINK);
+            assert_eq!(Modifier::from(Blink::Rapid), Modifier::RAPID_BLINK);
+        }
+    }
 }
