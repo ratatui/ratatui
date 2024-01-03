@@ -286,7 +286,8 @@ cargo run --example=tabs --features=crossterm
 
 Demonstrates one approach to accepting user input. Source [user_input.rs](./user_input.rs).
 
-> [!NOTE] Consider using [`tui-textarea`](https://crates.io/crates/tui-textarea) or
+> [!NOTE]
+> Consider using [`tui-textarea`](https://crates.io/crates/tui-textarea) or
 > [`tui-input`](https://crates.io/crates/tui-input) crates for more functional text entry UIs.
 
 ```shell
