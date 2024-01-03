@@ -11,105 +11,194 @@
 //! instead construct the state for widgets on the fly instead, if that allows you to express you
 //! the semantic meaning of your state better or only fetch part of a dataset.
 
+// not too happy about the redundancy in these tests,
+// but if that helps readability then it's ok i guess /shrug
+
 use ratatui::{backend::TestBackend, prelude::*, widgets::*};
-use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct AppState {
+    list_state: ListState,
+    table_state: TableState,
+    scrollbar_state: ScrollbarState,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self {
+            list_state: ListState::default(),
+            table_state: TableState::default(),
+            scrollbar_state: ScrollbarState::new(10),
+        }
+    }
+}
+impl AppState {
+    fn select(&mut self, index: usize) {
+        self.list_state.select(Some(index));
+        self.table_state.select(Some(index));
+        self.scrollbar_state = self.scrollbar_state.position(index);
+    }
+}
+
+/// Renders the list to a TestBackend and asserts that the result matches the expected buffer.
+#[track_caller]
+fn assert_buffer(state: &mut AppState, expected: &Buffer) {
+    let backend = TestBackend::new(21, 5);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let items = vec![
+                "awa", "banana", "Cats!!", "d20", "Echo", "Foxtrot", "Golf", "Hotel", "IwI",
+                "Juliett",
+            ];
+
+            use Constraint::*;
+            let layout = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Length(10), Length(10), Length(1)])
+                .split(f.size());
+            let list = List::new(items.clone())
+                .highlight_symbol(">>")
+                .block(Block::default().borders(Borders::RIGHT));
+            f.render_stateful_widget(list, layout[0], &mut state.list_state);
+
+            let table = Table::new(
+                items.iter().map(|i| Row::new(vec![*i])),
+                [Constraint::Length(10); 5],
+            )
+            .highlight_symbol(">>");
+            f.render_stateful_widget(table, layout[1], &mut state.table_state);
+
+            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
+            f.render_stateful_widget(scrollbar, layout[2], &mut state.scrollbar_state);
+        })
+        .unwrap();
+    terminal.backend().assert_buffer(&expected);
+}
+
+const DEFAULT_STATE_BUFFER: [&'static str; 5] = [
+    "awa      │awa       ▲",
+    "banana   │banana    █",
+    "Cats!!   │Cats!!    ║",
+    "d20      │d20       ║",
+    "Echo     │Echo      ▼",
+];
+
+const DEFAULT_STATE_REPR: &'static str = r#"{
+  "list_state": {
+    "offset": 0,
+    "selected": null
+  },
+  "table_state": {
+    "offset": 0,
+    "selected": null
+  },
+  "scrollbar_state": {
+    "content_length": 10,
+    "position": 0,
+    "viewport_content_length": 0
+  }
+}"#;
 
 #[test]
-fn state_serde_roundtrip() {
-    // default unmodified case
-    test_case(
-        0,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│awa                         │",
-            "│banana                      │",
-            "│Cats!!                      │",
-            "│d20                         │",
-            "│Echo                        │",
-            "│Foxtrot                     │",
-            "│Golf                        │",
-            "│Hotel                       │",
-            "└────────────────────────────┘",
-        ]),
-    );
-    // scrolled, but not cut off
-    test_case(
-        1,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│banana                      │",
-            "│Cats!!                      │",
-            "│d20                         │",
-            "│Echo                        │",
-            "│Foxtrot                     │",
-            "│Golf                        │",
-            "│Hotel                       │",
-            "│IwI                         │",
-            "└────────────────────────────┘",
-        ]),
-    );
-    // scrolled and partly cut off
-    test_case(
-        4,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Echo                        │",
-            "│Foxtrot                     │",
-            "│Golf                        │",
-            "│Hotel                       │",
-            "│IwI                         │",
-            "│Juliett                     │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
+fn default_state_serialize() {
+    let mut state = AppState::default();
+
+    let expected = Buffer::with_lines(DEFAULT_STATE_BUFFER.to_vec());
+    assert_buffer(&mut state, &expected);
+
+    let state = serde_json::to_string_pretty(&state).unwrap();
+    assert_eq!(state, DEFAULT_STATE_REPR);
 }
 
-fn test_case(scroll: usize, expected: Buffer) {
-    // make sure the buffer is what we expect it to be
-    // then "forget" the original state
-    let serialized = {
-        let mut state = State {
-            list: ListState::default()
-                .with_offset(scroll)
-                .with_selected(Some(scroll)),
-        };
-
-        state.check(&expected);
-        serde_json::to_string_pretty(&state).unwrap()
-    };
-
-    // at this point nothing is carried over except for
-    // 1. the serialized state
-    // 2. the expected target buffer
-
-    // so reconstruct the state
-    let mut state: State = serde_json::from_str(&serialized).unwrap();
-    state.check(&expected)
+#[test]
+fn default_state_deserialize() {
+    let expected = Buffer::with_lines(DEFAULT_STATE_BUFFER.to_vec());
+    let mut state: AppState = serde_json::from_str(DEFAULT_STATE_REPR).unwrap();
+    assert_buffer(&mut state, &expected);
 }
 
-#[derive(Serialize, Deserialize)]
-struct State {
-    list: ListState,
+const SELECTED_STATE_BUFFER: [&'static str; 5] = [
+    "  awa    │  awa     ▲",
+    ">>banana │>>banana  █",
+    "  Cats!! │  Cats!!  ║",
+    "  d20    │  d20     ║",
+    "  Echo   │  Echo    ▼",
+];
+const SELECTED_STATE_REPR: &'static str = r#"{
+  "list_state": {
+    "offset": 0,
+    "selected": 1
+  },
+  "table_state": {
+    "offset": 0,
+    "selected": 1
+  },
+  "scrollbar_state": {
+    "content_length": 10,
+    "position": 1,
+    "viewport_content_length": 0
+  }
+}"#;
+
+#[test]
+fn selected_state_serialize() {
+    let mut state = AppState::default();
+    state.select(1);
+
+    let expected = Buffer::with_lines(SELECTED_STATE_BUFFER.to_vec());
+    assert_buffer(&mut state, &expected);
+
+    let state = serde_json::to_string_pretty(&state).unwrap();
+    assert_eq!(state, SELECTED_STATE_REPR);
 }
 
-impl State {
-    fn check(&mut self, expected: &Buffer) {
-        // In an actual application, you'd want to create a backend once and store it somewhere
-        let backend = TestBackend::new(30, 10);
-        let mut terminal = Terminal::new(backend).unwrap();
+#[test]
+fn selected_state_deserialize() {
+    let expected = Buffer::with_lines(SELECTED_STATE_BUFFER.to_vec());
+    let mut state: AppState = serde_json::from_str(SELECTED_STATE_REPR).unwrap();
+    assert_buffer(&mut state, &expected);
+}
 
-        terminal
-            .draw(|f| {
-                let list = List::new([
-                    "awa", "banana", "Cats!!", "d20", "Echo", "Foxtrot", "Golf", "Hotel", "IwI",
-                    "Juliett",
-                ])
-                .block(Block::default().borders(Borders::ALL));
-                f.render_stateful_widget(list, f.size(), &mut self.list);
-            })
-            .unwrap();
-        terminal.backend().assert_buffer(expected);
-    }
+const SCROLLED_STATE_BUFFER: [&'static str; 5] = [
+    "  Echo   │  Echo    ▲",
+    "  Foxtrot│  Foxtrot ║",
+    "  Golf   │  Golf    ║",
+    "  Hotel  │  Hotel   █",
+    ">>IwI    │>>IwI     ▼",
+];
+
+const SCROLLED_STATE_REPR: &'static str = r#"{
+  "list_state": {
+    "offset": 4,
+    "selected": 8
+  },
+  "table_state": {
+    "offset": 4,
+    "selected": 8
+  },
+  "scrollbar_state": {
+    "content_length": 10,
+    "position": 8,
+    "viewport_content_length": 0
+  }
+}"#;
+
+#[test]
+fn scrolled_state_serialize() {
+    let mut state = AppState::default();
+    state.select(8);
+
+    let expected = Buffer::with_lines(SCROLLED_STATE_BUFFER.to_vec());
+    assert_buffer(&mut state, &expected);
+
+    let state = serde_json::to_string_pretty(&state).unwrap();
+    assert_eq!(state, SCROLLED_STATE_REPR);
+}
+
+#[test]
+fn scrolled_state_deserialize() {
+    let expected = Buffer::with_lines(SCROLLED_STATE_BUFFER.to_vec());
+    let mut state: AppState = serde_json::from_str(SCROLLED_STATE_REPR).unwrap();
+    assert_buffer(&mut state, &expected);
 }
