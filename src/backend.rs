@@ -98,7 +98,7 @@
 //! [Termwiz]: https://crates.io/crates/termwiz
 //! [examples]: https://github.com/ratatui-org/ratatui/tree/main/examples#readme
 //! [Backend Comparison]:
-//!     https://ratatui-org.github.io/ratatui-book/concepts/backends/comparison.html
+//!     https://ratatui.rs/concepts/backends/comparison/
 //! [Ratatui Website]: https://ratatui-org.github.io/ratatui-book
 use std::io;
 
