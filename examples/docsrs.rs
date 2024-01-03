@@ -53,48 +53,36 @@ fn handle_events() -> io::Result<bool> {
 }
 
 fn layout(frame: &mut Frame) {
-    let main_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(1),
-            Constraint::Min(0),
-            Constraint::Length(1),
-        ])
-        .split(frame.size());
+    let vertical = Layout::vertical([
+        Constraint::Length(1),
+        Constraint::Min(0),
+        Constraint::Length(1),
+    ]);
+    let horizontal = Layout::horizontal([Constraint::Ratio(1, 2); 2]);
+    let [title_bar, main_area, status_bar] = frame.size().split(&vertical);
+    let [left, right] = main_area.split(&horizontal);
+
     frame.render_widget(
         Block::new().borders(Borders::TOP).title("Title Bar"),
-        main_layout[0],
+        title_bar,
     );
     frame.render_widget(
         Block::new().borders(Borders::TOP).title("Status Bar"),
-        main_layout[2],
+        status_bar,
     );
-
-    let inner_layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(main_layout[1]);
-    frame.render_widget(
-        Block::default().borders(Borders::ALL).title("Left"),
-        inner_layout[0],
-    );
-    frame.render_widget(
-        Block::default().borders(Borders::ALL).title("Right"),
-        inner_layout[1],
-    );
+    frame.render_widget(Block::default().borders(Borders::ALL).title("Left"), left);
+    frame.render_widget(Block::default().borders(Borders::ALL).title("Right"), right);
 }
 
 fn styling(frame: &mut Frame) {
-    let areas = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(1),
-            Constraint::Length(1),
-            Constraint::Length(1),
-            Constraint::Length(1),
-            Constraint::Min(0),
-        ])
-        .split(frame.size());
+    let areas = Layout::vertical([
+        Constraint::Length(1),
+        Constraint::Length(1),
+        Constraint::Length(1),
+        Constraint::Length(1),
+        Constraint::Min(0),
+    ])
+    .split(frame.size());
 
     let span1 = Span::raw("Hello ");
     let span2 = Span::styled(

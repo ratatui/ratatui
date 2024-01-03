@@ -132,27 +132,17 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui(f: &mut Frame, app: &App) {
-    let size = f.size();
-    let vertical_chunks = Layout::new(
-        Direction::Vertical,
-        [Constraint::Percentage(40), Constraint::Percentage(60)],
-    )
-    .split(size);
+fn ui(frame: &mut Frame, app: &App) {
+    let area = frame.size();
 
-    // top chart
-    render_chart1(f, vertical_chunks[0], app);
+    let vertical = Layout::vertical([Constraint::Percentage(40), Constraint::Percentage(60)]);
+    let horizontal = Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)]);
+    let [chart1, bottom] = area.split(&vertical);
+    let [line_chart, scatter] = bottom.split(&horizontal);
 
-    let horizontal_chunks = Layout::new(
-        Direction::Horizontal,
-        [Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)],
-    )
-    .split(vertical_chunks[1]);
-
-    // bottom left
-    render_line_chart(f, horizontal_chunks[0]);
-    // bottom right
-    render_scatter(f, horizontal_chunks[1]);
+    render_chart1(frame, chart1, app);
+    render_line_chart(frame, line_chart);
+    render_scatter(frame, scatter);
 }
 
 fn render_chart1(f: &mut Frame, area: Rect, app: &App) {

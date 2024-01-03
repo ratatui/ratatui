@@ -6,7 +6,7 @@ use ratatui::{
 };
 use time::OffsetDateTime;
 
-use crate::{color_from_oklab, layout, RgbSwatch, THEME};
+use crate::{color_from_oklab, RgbSwatch, THEME};
 
 pub struct WeatherTab {
     pub selected_row: usize,
@@ -32,14 +32,24 @@ impl Widget for WeatherTab {
             horizontal: 2,
             vertical: 1,
         });
-        let area = layout(area, Direction::Vertical, vec![0, 1, 1]);
-        render_gauges(self.selected_row, area[2], buf);
+        let [main, _, gauges] = area.split(&Layout::vertical([
+            Constraint::Min(0),
+            Constraint::Length(1),
+            Constraint::Length(1),
+        ]));
+        let [calendar, charts] = main.split(&Layout::horizontal([
+            Constraint::Length(23),
+            Constraint::Min(0),
+        ]));
+        let [simple, horizontal] = charts.split(&Layout::vertical([
+            Constraint::Length(29),
+            Constraint::Min(0),
+        ]));
 
-        let area = layout(area[0], Direction::Horizontal, vec![23, 0]);
-        render_calendar(area[0], buf);
-        let area = layout(area[1], Direction::Horizontal, vec![29, 0]);
-        render_simple_barchart(area[0], buf);
-        render_horizontal_barchart(area[1], buf);
+        render_calendar(calendar, buf);
+        render_simple_barchart(simple, buf);
+        render_horizontal_barchart(horizontal, buf);
+        render_gauge(self.selected_row, gauges, buf);
     }
 }
 
@@ -114,7 +124,7 @@ fn render_horizontal_barchart(area: Rect, buf: &mut Buffer) {
         .render(area, buf);
 }
 
-pub fn render_gauges(progress: usize, area: Rect, buf: &mut Buffer) {
+pub fn render_gauge(progress: usize, area: Rect, buf: &mut Buffer) {
     let percent = (progress * 3).min(100) as f64;
 
     render_line_gauge(percent, area, buf);

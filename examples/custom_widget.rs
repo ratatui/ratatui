@@ -171,42 +171,34 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 }
 
 fn ui(frame: &mut Frame, states: &[State; 3]) {
-    let layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(1),
-            Constraint::Max(3),
-            Constraint::Length(1),
-            Constraint::Min(0), // ignore remaining space
-        ])
-        .split(frame.size());
+    let vertical = Layout::vertical([
+        Constraint::Length(1),
+        Constraint::Max(3),
+        Constraint::Length(1),
+        Constraint::Min(0), // ignore remaining space
+    ]);
+    let [title, buttons, help, _] = frame.size().split(&vertical);
+
     frame.render_widget(
         Paragraph::new("Custom Widget Example (mouse enabled)"),
-        layout[0],
+        title,
     );
-    render_buttons(frame, layout[1], states);
-    frame.render_widget(
-        Paragraph::new("←/→: select, Space: toggle, q: quit"),
-        layout[2],
-    );
+    render_buttons(frame, buttons, states);
+    frame.render_widget(Paragraph::new("←/→: select, Space: toggle, q: quit"), help);
 }
 
 fn render_buttons(frame: &mut Frame<'_>, area: Rect, states: &[State; 3]) {
-    let layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Length(15),
-            Constraint::Length(15),
-            Constraint::Length(15),
-            Constraint::Min(0), // ignore remaining space
-        ])
-        .split(area);
-    frame.render_widget(Button::new("Red").theme(RED).state(states[0]), layout[0]);
-    frame.render_widget(
-        Button::new("Green").theme(GREEN).state(states[1]),
-        layout[1],
-    );
-    frame.render_widget(Button::new("Blue").theme(BLUE).state(states[2]), layout[2]);
+    let horizontal = Layout::horizontal([
+        Constraint::Length(15),
+        Constraint::Length(15),
+        Constraint::Length(15),
+        Constraint::Min(0), // ignore remaining space
+    ]);
+    let [red, green, blue, _] = area.split(&horizontal);
+
+    frame.render_widget(Button::new("Red").theme(RED).state(states[0]), red);
+    frame.render_widget(Button::new("Green").theme(GREEN).state(states[1]), green);
+    frame.render_widget(Button::new("Blue").theme(BLUE).state(states[2]), blue);
 }
 
 fn handle_key_event(

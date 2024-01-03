@@ -586,18 +586,16 @@ impl Table<'_> {
         let footer_top_margin = self.footer.as_ref().map_or(0, |h| h.top_margin);
         let footer_height = self.footer.as_ref().map_or(0, |f| f.height);
         let footer_bottom_margin = self.footer.as_ref().map_or(0, |h| h.bottom_margin);
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(header_top_margin),
-                Constraint::Length(header_height),
-                Constraint::Length(header_bottom_margin),
-                Constraint::Min(0),
-                Constraint::Length(footer_top_margin),
-                Constraint::Length(footer_height),
-                Constraint::Length(footer_bottom_margin),
-            ])
-            .split(area);
+        let layout = Layout::vertical([
+            Constraint::Length(header_top_margin),
+            Constraint::Length(header_height),
+            Constraint::Length(header_bottom_margin),
+            Constraint::Min(0),
+            Constraint::Length(footer_top_margin),
+            Constraint::Length(footer_height),
+            Constraint::Length(footer_bottom_margin),
+        ])
+        .split(area);
         let (header_area, rows_area, footer_area) = (layout[1], layout[3], layout[5]);
         (header_area, rows_area, footer_area)
     }
@@ -717,9 +715,7 @@ impl Table<'_> {
                 Constraint::Length(self.column_spacing),
             ))
             .collect_vec();
-        let layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(constraints)
+        let layout = Layout::horizontal(constraints)
             .segment_size(self.segment_size)
             .split(Rect::new(0, 0, max_width, 1));
         layout
