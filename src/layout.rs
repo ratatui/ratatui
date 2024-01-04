@@ -319,9 +319,9 @@ impl Layout {
     pub fn vertical<I>(constraints: I) -> Layout
     where
         I: IntoIterator,
-        I::Item: AsRef<Constraint>,
+        I::Item: Into<Constraint>,
     {
-        Layout::new(Direction::Vertical, constraints)
+        Layout::new(Direction::Vertical, constraints.into_iter().map(Into::into))
     }
 
     /// Creates a new horizontal layout with default values.
@@ -338,9 +338,12 @@ impl Layout {
     pub fn horizontal<I>(constraints: I) -> Layout
     where
         I: IntoIterator,
-        I::Item: AsRef<Constraint>,
+        I::Item: Into<Constraint>,
     {
-        Layout::new(Direction::Horizontal, constraints)
+        Layout::new(
+            Direction::Horizontal,
+            constraints.into_iter().map(Into::into),
+        )
     }
 
     /// Initialize an empty cache with a custom size. The cache is keyed on the layout and area, so
@@ -826,6 +829,67 @@ impl Constraint {
         T: IntoIterator<Item = u16>,
     {
         mins.into_iter().map(Constraint::Min).collect_vec()
+    }
+}
+
+/// Helper function to create a Length constraint
+///
+/// Equivalent to `Constraint::Length(length)`
+pub fn eq(length: u16) -> Constraint {
+    Constraint::Length(length)
+}
+
+/// Helper function to create a Min constraint
+///
+/// Equivalent to `Constraint::Min(length)`
+pub fn ge(length: u16) -> Constraint {
+    Constraint::Min(length)
+}
+
+/// Helper function to create a Min constraint
+///
+/// Equivalent to `Constraint::Min(length)`
+pub fn min(length: u16) -> Constraint {
+    Constraint::Min(length)
+}
+
+/// Helper function to create a Max constraint
+///
+/// Equivalent to `Constraint::Max(length)`
+pub fn le(length: u16) -> Constraint {
+    Constraint::Max(length)
+}
+
+/// Helper function to create a Max constraint
+///
+/// Equivalent to `Constraint::Max(length)`
+pub fn max(length: u16) -> Constraint {
+    Constraint::Max(length)
+}
+
+/// Helper function to create a Percentage constraint
+///
+/// Equivalent to `Constraint::Percentage(p)`
+pub fn perc(p: u16) -> Constraint {
+    Constraint::Percentage(p)
+}
+
+/// Helper function to create a Ratio constraint
+///
+/// Equivalent to `Constraint::Ratio(numerator, denominator)`
+pub fn ratio(numerator: u32, denominator: u32) -> Constraint {
+    Constraint::Ratio(numerator, denominator)
+}
+
+impl From<u16> for Constraint {
+    fn from(length: u16) -> Constraint {
+        Constraint::Length(length)
+    }
+}
+
+impl From<(u32, u32)> for Constraint {
+    fn from((n, d): (u32, u32)) -> Constraint {
+        Constraint::Ratio(n, d)
     }
 }
 
@@ -1842,5 +1906,28 @@ mod tests {
             )
             .split_array(Rect::new(0, 0, 2, 1));
         }
+    }
+
+    /// A small test that just checks the ideas behind the layout shortcuts
+    #[test]
+    fn constraint_helper_examples() {
+        let constraints = [
+            Constraint::Length(1),
+            Constraint::Min(1),
+            Constraint::Max(1),
+            Constraint::Percentage(1),
+            Constraint::Ratio(1, 1),
+            eq(1),
+            min(1),
+            ge(1),
+            max(1),
+            le(1),
+            perc(1),
+            ratio(1, 1),
+        ];
+        let area = Rect::new(0, 0, 1, 1);
+        let layout = Layout::horizontal([eq(5), ge(20), le(20)]).split(area);
+        let layout = Layout::vertical([1, 2, 3, 4]).split(area);
+        let layout = Layout::vertical([(1, 4), (1, 2), (1, 4)]).split(area);
     }
 }
