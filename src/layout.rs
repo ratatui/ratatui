@@ -1910,6 +1910,7 @@ mod tests {
 
     /// A small test that just checks the ideas behind the layout shortcuts
     #[test]
+    #[allow(unused_variables)]
     fn constraint_helper_examples() {
         let constraints = [
             Constraint::Length(1),
@@ -1926,8 +1927,8 @@ mod tests {
             ratio(1, 1),
         ];
         let area = Rect::new(0, 0, 1, 1);
-        let layout = Layout::horizontal([eq(5), ge(20), le(20)]).split(area);
-        let layout = Layout::vertical([1, 2, 3, 4]).split(area);
-        let layout = Layout::vertical([(1, 4), (1, 2), (1, 4)]).split(area);
+        let [a, b, c, d] = Layout::horizontal([eq(5), ge(20), le(20), eq(5)]).split_array(area);
+        let [a, b, c, d] = Layout::vertical([1, 2, 3, 4]).split_array(area);
+        let [left, mid, right] = Layout::vertical([(1, 4), (1, 2), (1, 4)]).split_array(area);
     }
 }
