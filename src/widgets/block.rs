@@ -267,6 +267,13 @@ impl<'a> Block<'a> {
         }
     }
 
+    /// Create a new block with [all borders](Borders::ALL) shown
+    pub const fn bordered() -> Self {
+        let mut block = Block::new();
+        block.borders = Borders::ALL;
+        block
+    }
+
     /// Adds a title to the block.
     ///
     /// The `title` function allows you to add a title to the block. You can call this function
@@ -819,6 +826,12 @@ mod tests {
         layout::Rect,
         style::{Color, Modifier, Stylize},
     };
+
+    #[test]
+    fn create_with_all_borders() {
+        let block = Block::bordered();
+        assert_eq!(block.borders, Borders::all());
+    }
 
     #[test]
     fn inner_takes_into_account_the_borders() {
