@@ -44,6 +44,16 @@ This is a quick summary of the sections below:
 
 ## v0.26.0 (unreleased)
 
+### Table::default() now sets segment_size to None and column_spacing to ([#751])
+
+[#751]: https://github.com/ratatui-org/ratatui/pull/751
+
+The default() implementation of Table now sets the column_spacing field to 1 and the segment_size
+field to SegmentSize::None. This will affect the rendering of a small amount of apps.
+
+To use the previous default values, call `table.segment_size(Default::default())` and
+`table.column_spacing(0)`.
+
 ### `Block` style methods cannot be used in a const context ([#720])
 
 [#720]: https://github.com/ratatui-org/ratatui/pull/720
