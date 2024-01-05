@@ -229,6 +229,8 @@ impl Rect {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     #[test]
@@ -427,67 +429,21 @@ mod tests {
         let [_a, _b, _c] = Rect::new(0, 0, 2, 1).split(&layout);
     }
 
-    #[test]
-    fn clamp() {
+    #[rstest]
+    #[case(Rect::new(20, 20, 10, 10), Rect::new(20, 20, 10, 10), "inside")]
+    #[case(Rect::new(5, 5, 10, 10), Rect::new(10, 10, 10, 10), "up left")]
+    #[case(Rect::new(20, 5, 10, 10), Rect::new(20, 10, 10, 10), "up")]
+    #[case(Rect::new(105, 5, 10, 10), Rect::new(100, 10, 10, 10), "up right")]
+    #[case(Rect::new(5, 20, 10, 10), Rect::new(10, 20, 10, 10), "left")]
+    #[case(Rect::new(105, 20, 10, 10), Rect::new(100, 20, 10, 10), "right")]
+    #[case(Rect::new(5, 105, 10, 10), Rect::new(10, 100, 10, 10), "down left")]
+    #[case(Rect::new(20, 105, 10, 10), Rect::new(20, 100, 10, 10), "down")]
+    #[case(Rect::new(105, 105, 10, 10), Rect::new(100, 100, 10, 10), "down right")]
+    #[case(Rect::new(5, 20, 200, 10), Rect::new(10, 20, 100, 10), "too wide")]
+    #[case(Rect::new(20, 5, 10, 200), Rect::new(20, 10, 10, 100), "too tall")]
+    #[case(Rect::new(0, 0, 200, 200), Rect::new(10, 10, 100, 100), "too large")]
+    fn clamp(#[case] rect: Rect, #[case] expected: Rect, #[case] name: &str) {
         let other = Rect::new(10, 10, 100, 100);
-
-        assert_eq!(
-            Rect::new(10, 10, 10, 10).clamp(other),
-            Rect::new(10, 10, 10, 10),
-            "inside"
-        );
-
-        assert_eq!(
-            Rect::new(5, 5, 10, 10).clamp(other),
-            Rect::new(10, 10, 10, 10),
-            "outside top left"
-        );
-        assert_eq!(
-            Rect::new(20, 5, 10, 10).clamp(other),
-            Rect::new(20, 10, 10, 10),
-            "outside top"
-        );
-        assert_eq!(
-            Rect::new(105, 5, 10, 10).clamp(other),
-            Rect::new(100, 10, 10, 10),
-            "outside top right"
-        );
-        assert_eq!(
-            Rect::new(5, 20, 10, 10).clamp(other),
-            Rect::new(10, 20, 10, 10),
-            "outside left"
-        );
-        assert_eq!(
-            Rect::new(105, 20, 10, 10).clamp(other),
-            Rect::new(100, 20, 10, 10),
-            "outside right"
-        );
-        assert_eq!(
-            Rect::new(5, 105, 10, 10).clamp(other),
-            Rect::new(10, 100, 10, 10),
-            "outside bottom left"
-        );
-        assert_eq!(
-            Rect::new(20, 105, 10, 10).clamp(other),
-            Rect::new(20, 100, 10, 10),
-            "outside bottom"
-        );
-        assert_eq!(
-            Rect::new(105, 105, 10, 10).clamp(other),
-            Rect::new(100, 100, 10, 10),
-            "outside bottom right"
-        );
-
-        assert_eq!(
-            Rect::new(5, 20, 200, 10).clamp(other),
-            Rect::new(10, 20, 100, 10),
-            "too wide"
-        );
-
-        assert_eq!(
-            Rect::new(20, 5, 10, 200).clamp(other),
-            Rect::new(20, 10, 10, 100),
-            "too tall"
-        );
+        assert_eq!(rect.clamp(other), expected, "{}", name);
     }
 }
