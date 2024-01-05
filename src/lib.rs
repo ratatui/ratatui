@@ -17,6 +17,7 @@
 /// ```
 /// use ratatui_macros::constraints;
 /// constraints!([==5, ==30%, >=3, <=1, ==1/2]);
+/// constraints!([==5; 5]);
 /// ```
 ///
 /// # Internal Implementation
@@ -32,6 +33,10 @@ macro_rules! constraints {
     ([ $( $constraint:tt )+ ]) => {
         // e.g. the tokens `==100%, >=1, >=1` are matched with @parse rules
         $crate::constraints!(@parse () $($constraint)+)
+    };
+    // Special case for `;`
+    (@parse ($($acc:tt)*) ; $count:expr) => {
+        $crate::constraints!(@process ($($acc)* ; $count))
     };
     // Internal parsing rules for constraints
     // This rule checks if `,` exists after the `head` token
@@ -74,17 +79,32 @@ macro_rules! constraints {
         ratatui::prelude::Constraint::Ratio(t1, t2)
         }
     };
+    (@process (== $token:tt % ; $count:expr)) => {
+        // Percentage constraint
+        std::iter::repeat(ratatui::prelude::Constraint::Percentage($token)).take($count as usize)
+    };
     (@process (== $token:tt %)) => {
         // Percentage constraint
         ratatui::prelude::Constraint::Percentage($token)
+    };
+    (@process (>= $token:expr; $count:expr)) => {
+        // Percentage constraint
+        std::iter::repeat(ratatui::prelude::Constraint::Min($token)).take($count as usize)
     };
     (@process (>= $token:expr)) => {
         // Minimum size constraint
         ratatui::prelude::Constraint::Min($token)
     };
+    (@process (<= $token:expr; $count:expr)) => {
+        // Percentage constraint
+        std::iter::repeat(ratatui::prelude::Constraint::Max($token)).take($count as usize)
+    };
     (@process (<= $token:expr)) => {
         // Maximum size constraint
         ratatui::prelude::Constraint::Max($token)
+    };
+    (@process (== $token:expr ; $count:expr)) => {
+        std::iter::repeat(ratatui::prelude::Constraint::Length($token)).take($count as usize)
     };
     (@process (== $token:expr)) => {
         // Fixed size constraint
@@ -114,7 +134,7 @@ macro_rules! constraints {
 /// ```
 /// // Vertical layout with fixed size and percentage constraints
 /// use ratatui_macros::layout;
-/// layout!([== 50, == 30%]);
+/// layout!([== 50, == 30%], direction = v);
 /// ```
 ///
 /// ```
@@ -131,10 +151,6 @@ macro_rules! constraints {
 /// This macro simplifies the process of creating complex layouts with various constraints.
 #[macro_export]
 macro_rules! layout {
-    // Default layout variant
-    ([ $( $constraint:tt )+ ]) => {
-        $crate::layout!([ $( $constraint )+ ], direction = v)
-    };
     // Horizontal layout variant
     ([ $( $constraint:tt )+ ], direction = h) => {
         // use internal `constraint!(@parse ...)` rule directly since it will always be an iterator
@@ -153,6 +169,32 @@ macro_rules! layout {
     };
 }
 
+/// Creates a vertical layout with specified constraints.
+///
+/// This macro is a convenience wrapper around the `layout!` macro for defining vertical layouts.
+/// It accepts a series of constraints and applies them to create a vertical layout. The constraints
+/// can include fixed sizes, minimum and maximum sizes, percentages, and ratios.
+///
+/// # Syntax
+///
+/// - `vertical!([$( $constraint:tt )+])`: Defines a vertical layout with the given constraints.
+///
+/// # Constraints
+///
+/// Constraints are defined using a specific syntax:
+/// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
+/// - `== $token:tt %`: Sets a percentage constraint for the token.
+/// - `>= $token:tt`: Sets a minimum size constraint for the token.
+/// - `<= $token:tt`: Sets a maximum size constraint for the token.
+/// - `== $token:tt`: Sets a fixed size constraint for the token.
+///
+/// # Examples
+///
+/// ```
+/// // Vertical layout with a fixed size and a percentage constraint
+/// use ratatui_macros::vertical;
+/// vertical!([== 50, == 30%]);
+/// ```
 #[macro_export]
 macro_rules! vertical {
     ([ $( $constraint:tt )+ ]) => {
@@ -160,6 +202,32 @@ macro_rules! vertical {
     };
 }
 
+/// Creates a horizontal layout with specified constraints.
+///
+/// This macro is a convenience wrapper around the `layout!` macro for defining horizontal layouts.
+/// It takes a series of constraints and applies them to create a horizontal layout. The constraints
+/// can include fixed sizes, minimum and maximum sizes, percentages, and ratios.
+///
+/// # Syntax
+///
+/// - `horizontal!([$( $constraint:tt )+])`: Defines a horizontal layout with the given constraints.
+///
+/// # Constraints
+///
+/// Constraints are defined using a specific syntax:
+/// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
+/// - `== $token:tt %`: Sets a percentage constraint for the token.
+/// - `>= $token:tt`: Sets a minimum size constraint for the token.
+/// - `<= $token:tt`: Sets a maximum size constraint for the token.
+/// - `== $token:tt`: Sets a fixed size constraint for the token.
+///
+/// # Examples
+///
+/// ```
+/// // Horizontal layout with a ratio constraint and a minimum size constraint
+/// use ratatui_macros::horizontal;
+/// horizontal!([== 1/3, >= 100]);
+/// ```
 #[macro_export]
 macro_rules! horizontal {
     ([ $( $constraint:tt )+ ]) => {
