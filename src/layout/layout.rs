@@ -108,7 +108,7 @@ impl Layout {
     ///
     /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
     /// Into<Constraint>>`. This includes arrays, slices, vectors, iterators. `Into<Constraint>` is
-    /// implemented on u16, so you can pass an array or vec of u16 to this function to create a
+    /// implemented on u16, so you can pass an array, vec, etc. of u16 to this function to create a
     /// layout with fixed size chunks.
     ///
     /// Default values for the other fields are:
