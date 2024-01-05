@@ -381,7 +381,7 @@ impl Layout {
     /// There is a helper method on Rect that can be used to split the whole area into smaller ones
     /// based on the layout: [`Rect::split()`]. That method is a shortcut for calling this method.
     /// It allows you to destructure the result directly into variables, which is useful when you
-    /// know the number of areas that will be created.
+    /// know at compile time the number of areas that will be created.
     ///
     /// # Examples
     ///
