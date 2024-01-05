@@ -198,10 +198,44 @@ impl Rect {
             .try_into()
             .expect("invalid number of rects")
     }
+
+    /// Clamp this rect to fit inside the other rect.
+    ///
+    /// If the width or height of this rect is larger than the other rect, it will be clamped to the
+    /// other rect's width or height.
+    ///
+    /// If the left or top coordinate of this rect is smaller than the other rect, it will be
+    /// clamped to the other rect's left or top coordinate.
+    ///
+    /// If the right or bottom coordinate of this rect is larger than the other rect, it will be
+    /// clamped to the other rect's right or bottom coordinate.
+    ///
+    /// This is different from [`Rect::intersection`] because it will move this rect to fit inside
+    /// the other rect, while [`Rect::intersection`] instead would keep this rect's position and
+    /// truncate its size to only that which is inside the other rect.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # fn render(frame: &mut Frame) {
+    /// let area = frame.size();
+    /// let rect = Rect::new(0, 0, 100, 100).clamp(area);
+    /// # }
+    /// ```
+    pub fn clamp(self, other: Rect) -> Rect {
+        let width = self.width.min(other.width);
+        let height = self.height.min(other.height);
+        let x = self.x.clamp(other.x, other.right().saturating_sub(width));
+        let y = self.y.clamp(other.y, other.bottom().saturating_sub(height));
+        Rect::new(x, y, width, height)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     #[test]
@@ -398,5 +432,23 @@ mod tests {
     fn split_invalid_number_of_recs() {
         let layout = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
         let [_a, _b, _c] = Rect::new(0, 0, 2, 1).split(&layout);
+    }
+
+    #[rstest]
+    #[case::inside(Rect::new(20, 20, 10, 10), Rect::new(20, 20, 10, 10))]
+    #[case::up_left(Rect::new(5, 5, 10, 10), Rect::new(10, 10, 10, 10))]
+    #[case::up(Rect::new(20, 5, 10, 10), Rect::new(20, 10, 10, 10))]
+    #[case::up_right(Rect::new(105, 5, 10, 10), Rect::new(100, 10, 10, 10))]
+    #[case::left(Rect::new(5, 20, 10, 10), Rect::new(10, 20, 10, 10))]
+    #[case::right(Rect::new(105, 20, 10, 10), Rect::new(100, 20, 10, 10))]
+    #[case::down_left(Rect::new(5, 105, 10, 10), Rect::new(10, 100, 10, 10))]
+    #[case::down(Rect::new(20, 105, 10, 10), Rect::new(20, 100, 10, 10))]
+    #[case::down_right(Rect::new(105, 105, 10, 10), Rect::new(100, 100, 10, 10))]
+    #[case::too_wide(Rect::new(5, 20, 200, 10), Rect::new(10, 20, 100, 10))]
+    #[case::too_tall(Rect::new(20, 5, 10, 200), Rect::new(20, 10, 10, 100))]
+    #[case::too_large(Rect::new(0, 0, 200, 200), Rect::new(10, 10, 100, 100))]
+    fn clamp(#[case] rect: Rect, #[case] expected: Rect) {
+        let other = Rect::new(10, 10, 100, 100);
+        assert_eq!(rect.clamp(other), expected);
     }
 }
