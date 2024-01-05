@@ -215,8 +215,10 @@ impl<'a> Table<'a> {
     /// The `rows` parameter accepts any value that can be converted into an iterator of [`Row`]s.
     /// This includes arrays, slices, and [`Vec`]s.
     ///
-    /// The `widths` parameter is an array (or any other type that implements IntoIterator) of
-    /// [`Constraint`]s, this holds the widths of each column. This parameter was added in 0.25.0.
+    /// The `widths` parameter accepts any type that implements `IntoIterator<Item =
+    /// Into<Constraint>>`. This includes arrays, slices, vectors, iterators. `Into<Constraint>` is
+    /// implemented on u16, so you can pass an array, vec, etc. of u16 to this function to create a
+    /// table with fixed width columns.
     ///
     /// # Examples
     ///
@@ -233,9 +235,9 @@ impl<'a> Table<'a> {
     where
         R: IntoIterator<Item = Row<'a>>,
         C: IntoIterator,
-        C::Item: AsRef<Constraint>,
+        C::Item: Into<Constraint>,
     {
-        let widths = widths.into_iter().map(|c| *c.as_ref()).collect_vec();
+        let widths = widths.into_iter().map(Into::into).collect_vec();
         ensure_percentages_less_than_100(&widths);
         Self {
             rows: rows.into_iter().collect(),
@@ -324,8 +326,10 @@ impl<'a> Table<'a> {
 
     /// Set the widths of the columns.
     ///
-    /// The `widths` parameter accepts anything which be converted to an Iterator of Constraints
-    /// which can be an array, slice, Vec etc.
+    /// The `widths` parameter accepts any type that implements `IntoIterator<Item =
+    /// Into<Constraint>>`. This includes arrays, slices, vectors, iterators. `Into<Constraint>` is
+    /// implemented on u16, so you can pass an array, vec, etc. of u16 to this function to create a
+    /// table with fixed width columns.
     ///
     /// If the widths are empty, the table will be rendered with equal widths.
     ///
@@ -346,9 +350,9 @@ impl<'a> Table<'a> {
     pub fn widths<I>(mut self, widths: I) -> Self
     where
         I: IntoIterator,
-        I::Item: AsRef<Constraint>,
+        I::Item: Into<Constraint>,
     {
-        let widths = widths.into_iter().map(|c| *c.as_ref()).collect_vec();
+        let widths = widths.into_iter().map(Into::into).collect_vec();
         ensure_percentages_less_than_100(&widths);
         self.widths = widths;
         self
