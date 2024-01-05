@@ -1,8 +1,8 @@
 mod alignment;
 mod constraint;
-#[allow(clippy::module_inception)]
 mod corner;
 mod direction;
+#[allow(clippy::module_inception)]
 mod layout;
 mod margin;
 mod rect;
@@ -16,5 +16,8 @@ pub use direction::Direction;
 pub use layout::Layout;
 pub use margin::Margin;
 pub use rect::*;
+#[cfg(feature = "unstable-segment-size")]
 pub use segment_size::SegmentSize;
+#[cfg(not(feature = "unstable-segment-size"))]
+pub(crate) use segment_size::SegmentSize;
 pub use size::Size;
