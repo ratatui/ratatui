@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use ratatui::{prelude::*, widgets::*};
 
-use crate::{layout, RgbSwatch, THEME};
+use crate::{RgbSwatch, THEME};
 
 const RATATUI_LOGO: [&str; 32] = [
     "               ███              ",
@@ -51,9 +51,10 @@ impl AboutTab {
 impl Widget for AboutTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         RgbSwatch.render(area, buf);
-        let area = layout(area, Direction::Horizontal, vec![34, 0]);
-        render_crate_description(area[1], buf);
-        render_logo(self.selected_row, area[0], buf);
+        let horizontal = Layout::horizontal([Constraint::Length(34), Constraint::Min(0)]);
+        let [description, logo] = area.split(&horizontal);
+        render_crate_description(description, buf);
+        render_logo(self.selected_row, logo, buf);
     }
 }
 

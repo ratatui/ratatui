@@ -90,15 +90,7 @@ fn ui(f: &mut Frame, app: &App) {
     let block = Block::default().black();
     f.render_widget(block, size);
 
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-        ])
-        .split(size);
+    let layout = Layout::vertical([Constraint::Ratio(1, 4); 4]).split(size);
 
     let text = vec![
         Line::from("This is a line "),
@@ -129,20 +121,20 @@ fn ui(f: &mut Frame, app: &App) {
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().fg(Color::Gray))
         .block(create_block("Default alignment (Left), no wrap"));
-    f.render_widget(paragraph, chunks[0]);
+    f.render_widget(paragraph, layout[0]);
 
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().fg(Color::Gray))
         .block(create_block("Default alignment (Left), with wrap"))
         .wrap(Wrap { trim: true });
-    f.render_widget(paragraph, chunks[1]);
+    f.render_widget(paragraph, layout[1]);
 
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().fg(Color::Gray))
         .block(create_block("Right alignment, with wrap"))
         .alignment(Alignment::Right)
         .wrap(Wrap { trim: true });
-    f.render_widget(paragraph, chunks[2]);
+    f.render_widget(paragraph, layout[2]);
 
     let paragraph = Paragraph::new(text)
         .style(Style::default().fg(Color::Gray))
@@ -150,5 +142,5 @@ fn ui(f: &mut Frame, app: &App) {
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
         .scroll((app.scroll, 0));
-    f.render_widget(paragraph, chunks[3]);
+    f.render_widget(paragraph, layout[3]);
 }

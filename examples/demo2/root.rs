@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use itertools::Itertools;
 use ratatui::{prelude::*, widgets::*};
 
@@ -18,25 +16,31 @@ impl<'a> Root<'a> {
 impl Widget for Root<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         Block::new().style(THEME.root).render(area, buf);
-        let area = layout(area, Direction::Vertical, vec![1, 0, 1]);
-        self.render_title_bar(area[0], buf);
-        self.render_selected_tab(area[1], buf);
-        self.render_bottom_bar(area[2], buf);
+        let vertical = Layout::vertical([
+            Constraint::Length(1),
+            Constraint::Min(0),
+            Constraint::Length(1),
+        ]);
+        let [title_bar, tab, bottom_bar] = area.split(&vertical);
+        self.render_title_bar(title_bar, buf);
+        self.render_selected_tab(tab, buf);
+        self.render_bottom_bar(bottom_bar, buf);
     }
 }
 
 impl Root<'_> {
     fn render_title_bar(&self, area: Rect, buf: &mut Buffer) {
-        let area = layout(area, Direction::Horizontal, vec![0, 45]);
+        let horizontal = Layout::horizontal([Constraint::Min(0), Constraint::Length(45)]);
+        let [title, tabs] = area.split(&horizontal);
 
-        Paragraph::new(Span::styled("Ratatui", THEME.app_title)).render(area[0], buf);
+        Paragraph::new(Span::styled("Ratatui", THEME.app_title)).render(title, buf);
         let titles = vec!["", " Recipe ", " Email ", " Traceroute ", " Weather "];
         Tabs::new(titles)
             .style(THEME.tabs)
             .highlight_style(THEME.tabs_selected)
             .select(self.context.tab_index)
             .divider("")
-            .render(area[1], buf);
+            .render(tabs, buf);
     }
 
     fn render_selected_tab(&self, area: Rect, buf: &mut Buffer) {
@@ -72,22 +76,4 @@ impl Root<'_> {
             .bg(Color::Indexed(232))
             .render(area, buf);
     }
-}
-
-/// simple helper method to split an area into multiple sub-areas
-pub fn layout(area: Rect, direction: Direction, heights: Vec<u16>) -> Rc<[Rect]> {
-    let constraints = heights
-        .iter()
-        .map(|&h| {
-            if h > 0 {
-                Constraint::Length(h)
-            } else {
-                Constraint::Min(0)
-            }
-        })
-        .collect_vec();
-    Layout::default()
-        .direction(direction)
-        .constraints(constraints)
-        .split(area)
 }

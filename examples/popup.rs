@@ -62,11 +62,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui(f: &mut Frame, app: &App) {
-    let size = f.size();
+    let area = f.size();
 
-    let chunks = Layout::default()
-        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)])
-        .split(size);
+    let vertical = Layout::vertical([Constraint::Percentage(20), Constraint::Percentage(80)]);
+    let [instructions, content] = area.split(&vertical);
 
     let text = if app.show_popup {
         "Press p to close the popup"
@@ -76,17 +75,17 @@ fn ui(f: &mut Frame, app: &App) {
     let paragraph = Paragraph::new(text.slow_blink())
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true });
-    f.render_widget(paragraph, chunks[0]);
+    f.render_widget(paragraph, instructions);
 
     let block = Block::default()
         .title("Content")
         .borders(Borders::ALL)
         .on_blue();
-    f.render_widget(block, chunks[1]);
+    f.render_widget(block, content);
 
     if app.show_popup {
         let block = Block::default().title("Popup").borders(Borders::ALL);
-        let area = centered_rect(60, 20, size);
+        let area = centered_rect(60, 20, area);
         f.render_widget(Clear, area); //this clears out the background
         f.render_widget(block, area);
     }
@@ -94,21 +93,17 @@ fn ui(f: &mut Frame, app: &App) {
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-    let popup_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - percent_y) / 2),
-            Constraint::Percentage(percent_y),
-            Constraint::Percentage((100 - percent_y) / 2),
-        ])
-        .split(r);
+    let popup_layout = Layout::vertical([
+        Constraint::Percentage((100 - percent_y) / 2),
+        Constraint::Percentage(percent_y),
+        Constraint::Percentage((100 - percent_y) / 2),
+    ])
+    .split(r);
 
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - percent_x) / 2),
-            Constraint::Percentage(percent_x),
-            Constraint::Percentage((100 - percent_x) / 2),
-        ])
-        .split(popup_layout[1])[1]
+    Layout::horizontal([
+        Constraint::Percentage((100 - percent_x) / 2),
+        Constraint::Percentage(percent_x),
+        Constraint::Percentage((100 - percent_x) / 2),
+    ])
+    .split(popup_layout[1])[1]
 }

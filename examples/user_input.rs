@@ -172,14 +172,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui(f: &mut Frame, app: &App) {
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(1),
-            Constraint::Length(3),
-            Constraint::Min(1),
-        ])
-        .split(f.size());
+    let vertical = Layout::vertical([
+        Constraint::Length(1),
+        Constraint::Length(3),
+        Constraint::Min(1),
+    ]);
+    let [help_area, input_area, messages_area] = f.size().split(&vertical);
 
     let (msg, style) = match app.input_mode {
         InputMode::Normal => (
@@ -206,7 +204,7 @@ fn ui(f: &mut Frame, app: &App) {
     let mut text = Text::from(Line::from(msg));
     text.patch_style(style);
     let help_message = Paragraph::new(text);
-    f.render_widget(help_message, chunks[0]);
+    f.render_widget(help_message, help_area);
 
     let input = Paragraph::new(app.input.as_str())
         .style(match app.input_mode {
@@ -214,7 +212,7 @@ fn ui(f: &mut Frame, app: &App) {
             InputMode::Editing => Style::default().fg(Color::Yellow),
         })
         .block(Block::default().borders(Borders::ALL).title("Input"));
-    f.render_widget(input, chunks[1]);
+    f.render_widget(input, input_area);
     match app.input_mode {
         InputMode::Normal =>
             // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
@@ -226,9 +224,9 @@ fn ui(f: &mut Frame, app: &App) {
             f.set_cursor(
                 // Draw the cursor at the current position in the input field.
                 // This position is can be controlled via the left and right arrow key
-                chunks[1].x + app.cursor_position as u16 + 1,
+                input_area.x + app.cursor_position as u16 + 1,
                 // Move one line down, from the border to the input line
-                chunks[1].y + 1,
+                input_area.y + 1,
             )
         }
     }
@@ -244,5 +242,5 @@ fn ui(f: &mut Frame, app: &App) {
         .collect();
     let messages =
         List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
-    f.render_widget(messages, chunks[2]);
+    f.render_widget(messages, messages_area);
 }

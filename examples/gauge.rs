@@ -1,6 +1,5 @@
 use std::{
     io::{self, stdout, Stdout},
-    rc::Rc,
     time::Duration,
 };
 
@@ -75,7 +74,7 @@ impl App {
     fn draw(&mut self) -> Result<()> {
         self.term.draw(|frame| {
             let state = self.state;
-            let layout = Self::equal_layout(frame);
+            let layout = Layout::vertical([Constraint::Ratio(1, 4); 4]).split(frame.size());
             Self::render_gauge1(state.progress1, frame, layout[0]);
             Self::render_gauge2(state.progress2, frame, layout[1]);
             Self::render_gauge3(state.progress3, frame, layout[2]);
@@ -95,18 +94,6 @@ impl App {
             }
         }
         Ok(())
-    }
-
-    fn equal_layout(frame: &Frame) -> Rc<[Rect]> {
-        Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-            ])
-            .split(frame.size())
     }
 
     fn render_gauge1(progress: u16, frame: &mut Frame, area: Rect) {

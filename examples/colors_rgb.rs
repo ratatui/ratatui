@@ -158,18 +158,14 @@ impl<'a> AppWidget<'a> {
 
 impl Widget for AppWidget<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let main_layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Length(1), Constraint::Min(0)])
-            .split(area);
-        let title_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(0), Constraint::Length(8)])
-            .split(main_layout[0]);
+        let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+        let horizontal = Layout::horizontal([Constraint::Min(0), Constraint::Length(8)]);
+        let [top, colors] = area.split(&vertical);
+        let [title, fps] = top.split(&horizontal);
 
-        self.title.render(title_layout[0], buf);
-        self.fps_widget.render(title_layout[1], buf);
-        self.rgb_colors_widget.render(main_layout[1], buf);
+        self.title.render(title, buf);
+        self.fps_widget.render(fps, buf);
+        self.rgb_colors_widget.render(colors, buf);
     }
 }
 

@@ -79,14 +79,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui(f: &mut Frame, app: &App) {
-    let size = f.size();
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Min(0)])
-        .split(size);
+    let area = f.size();
+    let vertical = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]);
+    let [tabs_area, inner_area] = area.split(&vertical);
 
     let block = Block::default().on_white().black();
-    f.render_widget(block, size);
+    f.render_widget(block, area);
     let titles = app
         .titles
         .iter()
@@ -100,7 +98,7 @@ fn ui(f: &mut Frame, app: &App) {
         .select(app.index)
         .style(Style::default().cyan().on_gray())
         .highlight_style(Style::default().bold().on_black());
-    f.render_widget(tabs, chunks[0]);
+    f.render_widget(tabs, tabs_area);
     let inner = match app.index {
         0 => Block::default().title("Inner 0").borders(Borders::ALL),
         1 => Block::default().title("Inner 1").borders(Borders::ALL),
@@ -108,5 +106,5 @@ fn ui(f: &mut Frame, app: &App) {
         3 => Block::default().title("Inner 3").borders(Borders::ALL),
         _ => unreachable!(),
     };
-    f.render_widget(inner, chunks[1]);
+    f.render_widget(inner, inner_area);
 }

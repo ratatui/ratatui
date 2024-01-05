@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use ratatui::{prelude::*, widgets::*};
 
-use crate::{layout, RgbSwatch, THEME};
+use crate::{RgbSwatch, THEME};
 
 #[derive(Debug, Default, Clone, Copy)]
 struct Ingredient {
@@ -123,10 +123,13 @@ impl Widget for RecipeTab {
             horizontal: 2,
             vertical: 1,
         });
-        let area = layout(area, Direction::Horizontal, vec![44, 0]);
+        let [recipe, ingredients] = area.split(&Layout::horizontal([
+            Constraint::Length(44),
+            Constraint::Min(0),
+        ]));
 
-        render_recipe(area[0], buf);
-        render_ingredients(self.selected_row, area[1], buf);
+        render_recipe(recipe, buf);
+        render_ingredients(self.selected_row, ingredients, buf);
     }
 }
 
