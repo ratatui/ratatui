@@ -1,0 +1,10 @@
+[package]
+name = "ratatui-macros"
+version = "0.1.0"
+edition = "2021"
+authors = ["Dheepak Krishnamurthy"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ratatui = "0.25.0"
