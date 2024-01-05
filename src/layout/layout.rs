@@ -378,6 +378,11 @@ impl Layout {
     /// LruCache, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
     /// is initialized with the [Layout::init_cache()] grows until the initialized cache size.
     ///
+    /// There is a helper method on Rect that can be used to split the whole area into smaller ones
+    /// based on the layout: [`Rect::split()`]. That method is a shortcut for calling this method.
+    /// It allows you to destructure the result directly into variables, which is useful when you
+    /// know the number of areas that will be created.
+    ///
     /// # Examples
     ///
     /// ```
