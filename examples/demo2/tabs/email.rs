@@ -67,8 +67,8 @@ impl Widget for EmailTab {
     }
 }
 fn render_inbox(selected_index: usize, area: Rect, buf: &mut Buffer) {
-    let horizontal = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
-    let [tabs, inbox] = area.split(&horizontal);
+    let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    let [tabs, inbox] = area.split(&vertical);
     let theme = THEME.email;
     Tabs::new(vec![" Inbox ", " Sent ", " Drafts "])
         .style(theme.tabs)
