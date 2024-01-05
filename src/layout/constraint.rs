@@ -205,6 +205,32 @@ impl Constraint {
     }
 }
 
+impl From<u16> for Constraint {
+    /// Convert a u16 into a [Constraint::Length]
+    ///
+    /// This is useful when you want to specify a fixed size for a layout, but don't want to
+    /// explicitly create a [Constraint::Length] yourself.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # let area = Rect::default();
+    /// let layout = Layout::new(Direction::Vertical, [1, 2, 3]).split(area);
+    /// let layout = Layout::horizontal([1, 2, 3]).split(area);
+    /// let layout = Layout::vertical([1, 2, 3]).split(area);
+    /// ````
+    fn from(length: u16) -> Constraint {
+        Constraint::Length(length)
+    }
+}
+
+impl From<&Constraint> for Constraint {
+    fn from(constraint: &Constraint) -> Self {
+        *constraint
+    }
+}
+
 impl AsRef<Constraint> for Constraint {
     fn as_ref(&self) -> &Constraint {
         self

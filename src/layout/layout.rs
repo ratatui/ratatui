@@ -107,7 +107,9 @@ impl Layout {
     /// Creates a new layout with default values.
     ///
     /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
-    /// AsRef<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
+    /// Into<Constraint>>`. This includes arrays, slices, vectors, iterators. `Into<Constraint>` is
+    /// implemented on u16, so you can pass an array or vec of u16 to this function to create a
+    /// layout with fixed size chunks.
     ///
     /// Default values for the other fields are:
     ///
@@ -118,25 +120,27 @@ impl Layout {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let layout = Layout::new(
+    /// Layout::new(
     ///     Direction::Horizontal,
     ///     [Constraint::Length(5), Constraint::Min(0)],
     /// );
     ///
-    /// let layout = Layout::new(
+    /// Layout::new(
     ///     Direction::Vertical,
     ///     [1, 2, 3].iter().map(|&c| Constraint::Length(c)),
     /// );
+    ///
+    /// Layout::new(Direction::Horizontal, vec![1, 2]);
     /// ```
     pub fn new<I>(direction: Direction, constraints: I) -> Layout
     where
         I: IntoIterator,
-        I::Item: AsRef<Constraint>,
+        I::Item: Into<Constraint>,
     {
         Layout {
             direction,
             margin: Margin::new(0, 0),
-            constraints: constraints.into_iter().map(|c| *c.as_ref()).collect(),
+            constraints: constraints.into_iter().map(Into::into).collect(),
             segment_size: SegmentSize::LastTakesRemainder,
         }
     }
@@ -144,7 +148,7 @@ impl Layout {
     /// Creates a new vertical layout with default values.
     ///
     /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
-    /// AsRef<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
+    /// Into<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
     ///
     /// # Examples
     ///
@@ -155,15 +159,15 @@ impl Layout {
     pub fn vertical<I>(constraints: I) -> Layout
     where
         I: IntoIterator,
-        I::Item: AsRef<Constraint>,
+        I::Item: Into<Constraint>,
     {
-        Layout::new(Direction::Vertical, constraints)
+        Layout::new(Direction::Vertical, constraints.into_iter().map(Into::into))
     }
 
     /// Creates a new horizontal layout with default values.
     ///
     /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
-    /// AsRef<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
+    /// Into<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
     ///
     /// # Examples
     ///
@@ -174,9 +178,12 @@ impl Layout {
     pub fn horizontal<I>(constraints: I) -> Layout
     where
         I: IntoIterator,
-        I::Item: AsRef<Constraint>,
+        I::Item: Into<Constraint>,
     {
-        Layout::new(Direction::Horizontal, constraints)
+        Layout::new(
+            Direction::Horizontal,
+            constraints.into_iter().map(Into::into),
+        )
     }
 
     /// Initialize an empty cache with a custom size. The cache is keyed on the layout and area, so
@@ -228,12 +235,14 @@ impl Layout {
     /// Sets the constraints of the layout.
     ///
     /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
-    /// AsRef<Constraint>>`. This includes arrays, slices, vectors, iterators, etc.
+    /// Into<Constraint>>`. This includes arrays, slices, vectors, iterators. `Into<Constraint>` is
+    /// implemented on u16, so you can pass an array or vec of u16 to this function to create a
+    /// layout with fixed size chunks.
     ///
     /// Note that the constraints are applied to the whole area that is to be split, so using
     /// percentages and ratios with the other constraints may not have the desired effect of
-    /// splitting the area up. (e.g. splitting 100 into [min 20, 50%, 50%], may not result in
-    /// [20, 40, 40] but rather an indeterminate result between [20, 50, 30] and [20, 30, 50]).
+    /// splitting the area up. (e.g. splitting 100 into [min 20, 50%, 50%], may not result in [20,
+    /// 40, 40] but rather an indeterminate result between [20, 50, 30] and [20, 30, 50]).
     ///
     /// # Examples
     ///
@@ -259,19 +268,21 @@ impl Layout {
     ///     ]
     /// );
     ///
-    /// let layout = Layout::default().constraints([Constraint::Min(0)]);
-    /// let layout = Layout::default().constraints(&[Constraint::Min(0)]);
-    /// let layout = Layout::default().constraints(vec![Constraint::Min(0)]);
-    /// let layout = Layout::default().constraints([Constraint::Min(0)].iter().filter(|_| true));
-    /// let layout = Layout::default().constraints([1, 2, 3].iter().map(|&c| Constraint::Length(c)));
+    /// Layout::default().constraints([Constraint::Min(0)]);
+    /// Layout::default().constraints(&[Constraint::Min(0)]);
+    /// Layout::default().constraints(vec![Constraint::Min(0)]);
+    /// Layout::default().constraints([Constraint::Min(0)].iter().filter(|_| true));
+    /// Layout::default().constraints([1, 2, 3].iter().map(|&c| Constraint::Length(c)));
+    /// Layout::default().constraints([1, 2, 3]);
+    /// Layout::default().constraints(vec![1, 2, 3]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn constraints<I>(mut self, constraints: I) -> Layout
     where
         I: IntoIterator,
-        I::Item: AsRef<Constraint>,
+        I::Item: Into<Constraint>,
     {
-        self.constraints = constraints.into_iter().map(|c| *c.as_ref()).collect();
+        self.constraints = constraints.into_iter().map(Into::into).collect();
         self
     }
 
@@ -529,6 +540,8 @@ impl Element {
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
+
     use super::*;
 
     #[test]
@@ -587,27 +600,25 @@ mod tests {
         assert_eq!(layout.direction, Direction::Horizontal);
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
 
-        // slice of a fixed size array
-        let slice_of_fixed_size_array = &[Constraint::Min(0)];
-        let layout = Layout::new(Direction::Horizontal, slice_of_fixed_size_array);
-        assert_eq!(layout.direction, Direction::Horizontal);
-        assert_eq!(layout.constraints, [Constraint::Min(0)]);
-
-        // slice of vec
-        let vec = &[Constraint::Min(0)].to_vec();
-        let constraints = vec.as_slice();
-        let layout = Layout::new(Direction::Horizontal, constraints);
+        // array_ref
+        #[allow(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
+        let layout = Layout::new(Direction::Horizontal, &[Constraint::Min(0)]);
         assert_eq!(layout.direction, Direction::Horizontal);
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
 
         // vec
-        let layout = Layout::new(Direction::Horizontal, vec);
+        let layout = Layout::new(Direction::Horizontal, vec![Constraint::Min(0)]);
+        assert_eq!(layout.direction, Direction::Horizontal);
+        assert_eq!(layout.constraints, [Constraint::Min(0)]);
+
+        // vec_ref
+        #[allow(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
+        let layout = Layout::new(Direction::Horizontal, &(vec![Constraint::Min(0)]));
         assert_eq!(layout.direction, Direction::Horizontal);
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
 
         // iterator
-        let iter = [Constraint::Min(0)].iter().filter(|_| true);
-        let layout = Layout::new(Direction::Horizontal, iter);
+        let layout = Layout::new(Direction::Horizontal, iter::once(Constraint::Min(0)));
         assert_eq!(layout.direction, Direction::Horizontal);
         assert_eq!(layout.constraints, [Constraint::Min(0)]);
     }
