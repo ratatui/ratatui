@@ -430,20 +430,20 @@ mod tests {
     }
 
     #[rstest]
-    #[case(Rect::new(20, 20, 10, 10), Rect::new(20, 20, 10, 10), "inside")]
-    #[case(Rect::new(5, 5, 10, 10), Rect::new(10, 10, 10, 10), "up left")]
-    #[case(Rect::new(20, 5, 10, 10), Rect::new(20, 10, 10, 10), "up")]
-    #[case(Rect::new(105, 5, 10, 10), Rect::new(100, 10, 10, 10), "up right")]
-    #[case(Rect::new(5, 20, 10, 10), Rect::new(10, 20, 10, 10), "left")]
-    #[case(Rect::new(105, 20, 10, 10), Rect::new(100, 20, 10, 10), "right")]
-    #[case(Rect::new(5, 105, 10, 10), Rect::new(10, 100, 10, 10), "down left")]
-    #[case(Rect::new(20, 105, 10, 10), Rect::new(20, 100, 10, 10), "down")]
-    #[case(Rect::new(105, 105, 10, 10), Rect::new(100, 100, 10, 10), "down right")]
-    #[case(Rect::new(5, 20, 200, 10), Rect::new(10, 20, 100, 10), "too wide")]
-    #[case(Rect::new(20, 5, 10, 200), Rect::new(20, 10, 10, 100), "too tall")]
-    #[case(Rect::new(0, 0, 200, 200), Rect::new(10, 10, 100, 100), "too large")]
-    fn clamp(#[case] rect: Rect, #[case] expected: Rect, #[case] name: &str) {
+    #[case::inside(Rect::new(20, 20, 10, 10), Rect::new(20, 20, 10, 10))]
+    #[case::up_left(Rect::new(5, 5, 10, 10), Rect::new(10, 10, 10, 10))]
+    #[case::up(Rect::new(20, 5, 10, 10), Rect::new(20, 10, 10, 10))]
+    #[case::up_right(Rect::new(105, 5, 10, 10), Rect::new(100, 10, 10, 10))]
+    #[case::left(Rect::new(5, 20, 10, 10), Rect::new(10, 20, 10, 10))]
+    #[case::right(Rect::new(105, 20, 10, 10), Rect::new(100, 20, 10, 10))]
+    #[case::down_left(Rect::new(5, 105, 10, 10), Rect::new(10, 100, 10, 10))]
+    #[case::down(Rect::new(20, 105, 10, 10), Rect::new(20, 100, 10, 10))]
+    #[case::down_right(Rect::new(105, 105, 10, 10), Rect::new(100, 100, 10, 10))]
+    #[case::too_wide(Rect::new(5, 20, 200, 10), Rect::new(10, 20, 100, 10))]
+    #[case::too_tall(Rect::new(20, 5, 10, 200), Rect::new(20, 10, 10, 100))]
+    #[case::too_large(Rect::new(0, 0, 200, 200), Rect::new(10, 10, 100, 100))]
+    fn clamp(#[case] rect: Rect, #[case] expected: Rect) {
         let other = Rect::new(10, 10, 100, 100);
-        assert_eq!(rect.clamp(other), expected, "{}", name);
+        assert_eq!(rect.clamp(other), expected);
     }
 }
