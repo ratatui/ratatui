@@ -193,6 +193,38 @@ impl Rect {
             .try_into()
             .expect("invalid number of rects")
     }
+
+    /// Clamp the rect to fit inside the given rect.
+    ///
+    /// If the width or height of the rect is larger than the given rect, it will be clamped to
+    /// the given rect's width or height.
+    ///
+    /// If the left or top coordinate is smaller than the given rect, it will be clamped to the
+    /// given rect's left or top coordinate.
+    ///
+    /// If the right or bottom coordinate is larger than the given rect, it will be clamped to the
+    /// given rect's right or bottom coordinate.
+    ///
+    /// This is different from [`Rect::intersection`] because it will move the rect to fit inside
+    /// the given rect, while [`Rect::intersection`] will keep the rect's position and truncate
+    /// its size.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # fn render(frame: &mut Frame) {
+    /// let area = frame.size();
+    /// let rect = Rect::new(0, 0, 100, 100).clamp(area);
+    /// # }
+    /// ```
+    pub fn clamp(self, other: Rect) -> Rect {
+        let width = self.width.min(other.width);
+        let height = self.height.min(other.height);
+        let x = self.x.clamp(other.x, other.right().saturating_sub(width));
+        let y = self.y.clamp(other.y, other.bottom().saturating_sub(height));
+        Rect::new(x, y, width, height)
+    }
 }
 
 #[cfg(test)]
@@ -393,5 +425,69 @@ mod tests {
     fn split_invalid_number_of_recs() {
         let layout = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
         let [_a, _b, _c] = Rect::new(0, 0, 2, 1).split(&layout);
+    }
+
+    #[test]
+    fn clamp() {
+        let other = Rect::new(10, 10, 100, 100);
+
+        assert_eq!(
+            Rect::new(10, 10, 10, 10).clamp(other),
+            Rect::new(10, 10, 10, 10),
+            "inside"
+        );
+
+        assert_eq!(
+            Rect::new(5, 5, 10, 10).clamp(other),
+            Rect::new(10, 10, 10, 10),
+            "outside top left"
+        );
+        assert_eq!(
+            Rect::new(20, 5, 10, 10).clamp(other),
+            Rect::new(20, 10, 10, 10),
+            "outside top"
+        );
+        assert_eq!(
+            Rect::new(105, 5, 10, 10).clamp(other),
+            Rect::new(100, 10, 10, 10),
+            "outside top right"
+        );
+        assert_eq!(
+            Rect::new(5, 20, 10, 10).clamp(other),
+            Rect::new(10, 20, 10, 10),
+            "outside left"
+        );
+        assert_eq!(
+            Rect::new(105, 20, 10, 10).clamp(other),
+            Rect::new(100, 20, 10, 10),
+            "outside right"
+        );
+        assert_eq!(
+            Rect::new(5, 105, 10, 10).clamp(other),
+            Rect::new(10, 100, 10, 10),
+            "outside bottom left"
+        );
+        assert_eq!(
+            Rect::new(20, 105, 10, 10).clamp(other),
+            Rect::new(20, 100, 10, 10),
+            "outside bottom"
+        );
+        assert_eq!(
+            Rect::new(105, 105, 10, 10).clamp(other),
+            Rect::new(100, 100, 10, 10),
+            "outside bottom right"
+        );
+
+        assert_eq!(
+            Rect::new(5, 20, 200, 10).clamp(other),
+            Rect::new(10, 20, 100, 10),
+            "too wide"
+        );
+
+        assert_eq!(
+            Rect::new(20, 5, 10, 200).clamp(other),
+            Rect::new(20, 10, 10, 100),
+            "too tall"
+        );
     }
 }
