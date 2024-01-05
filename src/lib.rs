@@ -70,14 +70,14 @@ macro_rules! constraints {
     (@parse ($($acc:tt)*)) => {
         [$crate::constraints!(@process ($($acc)*))]
     };
+    (@process (== $token1:tt / token2::tt ; $count:expr)) => {
+        // Percentage constraint
+        std::iter::repeat(ratatui::prelude::Constraint::Ratio($token1 as u32, $token2 as u32)).take($count as usize)
+    };
     // Process different types of constraints into a `Constraint`
     (@process (== $token1:tt / $token2:tt)) => {
         // Ratio constraint
-        {
-        let t1: u32 = $token1;
-        let t2: u32 = $token2;
-        ratatui::prelude::Constraint::Ratio(t1, t2)
-        }
+        ratatui::prelude::Constraint::Ratio($token1 as u32, $token2 as u32)
     };
     (@process (== $token:tt % ; $count:expr)) => {
         // Percentage constraint
