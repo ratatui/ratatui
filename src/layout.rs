@@ -1,11 +1,4 @@
-use std::{
-    cell::RefCell,
-    collections::HashMap,
-    fmt::{self, Display},
-    num::NonZeroUsize,
-    rc::Rc,
-    sync::OnceLock,
-};
+use std::{cell::RefCell, collections::HashMap, num::NonZeroUsize, rc::Rc, sync::OnceLock};
 
 use cassowary::{
     strength::{MEDIUM, REQUIRED, STRONG, WEAK},
@@ -17,9 +10,11 @@ use lru::LruCache;
 use strum::{Display, EnumString};
 
 mod constraint;
+mod margin;
 mod rect;
 
 pub use constraint::Constraint;
+pub use margin::Margin;
 pub use rect::*;
 
 type Cache = LruCache<(Rect, Layout), Rc<[Rect]>>;
@@ -104,12 +99,6 @@ pub struct Layout {
     margin: Margin,
     /// option for segment size preferences
     segment_size: SegmentSize,
-}
-
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
-pub struct Margin {
-    pub horizontal: u16,
-    pub vertical: u16,
 }
 
 /// A simple size struct
@@ -591,21 +580,6 @@ impl Layout {
     }
 }
 
-impl Margin {
-    pub const fn new(horizontal: u16, vertical: u16) -> Margin {
-        Margin {
-            horizontal,
-            vertical,
-        }
-    }
-}
-
-impl Display for Margin {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}x{}", self.horizontal, self.vertical)
-    }
-}
-
 impl From<(u16, u16)> for Size {
     fn from((width, height): (u16, u16)) -> Self {
         Size { width, height }
@@ -878,22 +852,6 @@ mod tests {
         assert_eq!("Horizontal".parse::<Direction>(), Ok(Direction::Horizontal));
         assert_eq!("Vertical".parse::<Direction>(), Ok(Direction::Vertical));
         assert_eq!("".parse::<Direction>(), Err(ParseError::VariantNotFound));
-    }
-
-    #[test]
-    fn margin_to_string() {
-        assert_eq!(Margin::new(1, 2).to_string(), "1x2");
-    }
-
-    #[test]
-    fn margin_new() {
-        assert_eq!(
-            Margin::new(1, 2),
-            Margin {
-                horizontal: 1,
-                vertical: 2
-            }
-        );
     }
 
     #[test]
