@@ -194,20 +194,20 @@ impl Rect {
             .expect("invalid number of rects")
     }
 
-    /// Clamp the rect to fit inside the given rect.
+    /// Clamp this rect to fit inside the other rect.
     ///
-    /// If the width or height of the rect is larger than the given rect, it will be clamped to
-    /// the given rect's width or height.
+    /// If the width or height of this rect is larger than the other rect, it will be clamped to the
+    /// other rect's width or height.
     ///
-    /// If the left or top coordinate is smaller than the given rect, it will be clamped to the
-    /// given rect's left or top coordinate.
+    /// If the left or top coordinate of this rect is smaller than the other rect, it will be
+    /// clamped to the other rect's left or top coordinate.
     ///
-    /// If the right or bottom coordinate is larger than the given rect, it will be clamped to the
-    /// given rect's right or bottom coordinate.
+    /// If the right or bottom coordinate of this rect is larger than the other rect, it will be
+    /// clamped to the other rect's right or bottom coordinate.
     ///
-    /// This is different from [`Rect::intersection`] because it will move the rect to fit inside
-    /// the given rect, while [`Rect::intersection`] will keep the rect's position and truncate
-    /// its size.
+    /// This is different from [`Rect::intersection`] because it will move this rect to fit inside
+    /// the other rect, while [`Rect::intersection`] instead would keep this rect's position and
+    /// truncate its size to only that which is inside the other rect.
     ///
     /// # Examples
     ///
