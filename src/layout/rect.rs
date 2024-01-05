@@ -173,6 +173,9 @@ impl Rect {
     /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
     /// `Rc<[Rect]>`.
     ///
+    /// This method requires the number of constraints to be known at compile time. If you don't
+    /// know the number of constraints at compile time, use [`Layout::split`] instead.
+    ///
     /// # Panics
     ///
     /// Panics if the number of constraints is not equal to the length of the returned array.
@@ -185,6 +188,8 @@ impl Rect {
     /// let area = frame.size();
     /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     /// let [top, main] = area.split(&layout);
+    /// // or explicitly specify the number of constraints:
+    /// let rects = area.split::<2>(&layout);
     /// # }
     pub fn split<const N: usize>(self, layout: &Layout) -> [Rect; N] {
         layout
