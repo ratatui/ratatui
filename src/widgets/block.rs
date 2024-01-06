@@ -376,12 +376,6 @@ impl<'a> Block<'a> {
         self
     }
 
-    #[deprecated(since = "0.22.0", note = "You should use a `title_position` instead.")]
-    /// This method just calls `title_position` with Position::Bottom
-    pub fn title_on_bottom(self) -> Block<'a> {
-        self.title_position(Position::Bottom)
-    }
-
     /// Sets the default [`Position`] for all block [titles](Title).
     ///
     /// Titles that explicitly set a [`Position`] will ignore this.
@@ -1219,17 +1213,6 @@ mod tests {
                 .render(buffer.area, &mut buffer);
             assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
         }
-    }
-
-    #[test]
-    fn title_on_bottom() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
-        #[allow(deprecated)]
-        Block::default()
-            .title("test")
-            .title_on_bottom()
-            .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["    ", "test"]));
     }
 
     #[test]

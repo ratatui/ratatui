@@ -11,6 +11,7 @@ github with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.26.0 (unreleased)](#v0260-unreleased)
+  - Removed deprecated `Block::title_on_bottom`
   - `Line` now has an extra `style` field which applies the style to the entire line
   - `Block` style methods cannot be created in a const context
 - [v0.25.0](#v0250)
@@ -43,6 +44,17 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## v0.26.0 (unreleased)
+
+### Remove deprecated `Block::title_on_bottom` ([#757])
+
+[#757]: https://github.com/ratatui-org/ratatui/pull/757
+
+`Block::title_on_bottom` was deprecated in v0.22. Use `Block::title` and `Title::position` instead.
+
+```diff
+- block.title("foobar").title_on_bottom();
++ block.title(Title::from("foobar").position(Position::Bottom));
+```
 
 ### `Block` style methods cannot be used in a const context ([#720])
 
