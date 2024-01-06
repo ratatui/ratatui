@@ -1,6 +1,12 @@
 # Ratatui Macros
 
-`ratatui_macros` is a Rust crate that provides easy-to-use macros for simplifying boilerplate
+[![Crates.io](https://img.shields.io/crates/v/ratatui-macros)](https://crates.io/crates/ratatui-macros)
+[![Docs.rs](https://docs.rs/ratatui-macros/badge.svg)](https://docs.rs/ratatui-macros)
+[![Build Status](https://github.com/kdheepak/ratatui-macros/actions/workflows/ci.yml/badge.svg)](https://github.com/kdheepak/ratatui-macros/actions)
+[![License](https://img.shields.io/crates/l/ratatui-macros)](https://crates.io/crates/ratatui-macros#license)
+[![Downloads](https://img.shields.io/crates/d/ratatui-macros)](https://crates.io/crates/ratatui-macros)
+
+`ratatui-macros` is a Rust crate that provides easy-to-use macros for simplifying boilerplate
 associated with creating UI using ratatui.
 
 ## Features
@@ -11,11 +17,10 @@ associated with creating UI using ratatui.
 
 ## Getting Started
 
-To use `ratatui_macros` in your Rust project, add it as a dependency in your Cargo.toml:
+To use `ratatui-macros` in your Rust project, add it as a dependency in your `Cargo.toml`:
 
-```toml
-[dependencies]
-ratatui_macros = "0.1.0"
+```shell
+cargo add ratatui-macros
 ```
 
 Then, import the macros in your Rust file:
