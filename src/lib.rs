@@ -1,3 +1,5 @@
+#![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/README.md"))]
+
 /// This macro creates an iterator of constraints.
 ///
 /// # Syntax
