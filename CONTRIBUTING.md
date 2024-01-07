@@ -171,6 +171,12 @@ struct Foo {}
 - Code items should be between backticks  
 i.e. ``[`Block`]``, **NOT** ``[Block]``
 
+### Deprecation notice
+
+We generally want to wait at least two versions before removing deprecated items so users have
+time to update. However, if a deprecation is blocking for us to implement a new feature we may
+*consider* removing it in a one version notice.
+
 ### Use of unsafe for optimization purposes
 
 We don't currently use any unsafe code in Ratatui, and would like to keep it that way. However there
