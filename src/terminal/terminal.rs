@@ -72,7 +72,7 @@ where
     /// and the terminal resized.
     last_known_cursor_pos: (u16, u16),
     /// Number of frames rendered up until current time.
-    frame_count: u64,
+    frame_count: usize,
 }
 
 /// Options to pass to [`Terminal::with_options`]

@@ -28,7 +28,7 @@ pub struct Frame<'a> {
     pub(crate) buffer: &'a mut Buffer,
 
     /// The frame count indicating the sequence number of this frame.
-    pub(crate) count: u64,
+    pub(crate) count: usize,
 }
 
 /// `CompletedFrame` represents the state of the terminal after all changes performed in the last
@@ -41,7 +41,7 @@ pub struct CompletedFrame<'a> {
     /// The size of the last frame.
     pub area: Rect,
     /// The frame count indicating the sequence number of this frame.
-    pub count: u64,
+    pub count: usize,
 }
 
 impl Frame<'_> {
@@ -133,7 +133,7 @@ impl Frame<'_> {
     ///
     /// Each time a new frame is created and rendered, this count is incremented,
     /// providing a consistent way to reference the order and number of frames processed by the
-    /// terminal. When count reaches its maximum value (u64::MAX), it wraps around to zero.
+    /// terminal. When count reaches its maximum value (usize::MAX), it wraps around to zero.
     ///
     /// This count is particularly useful when dealing with dynamic content or animations where the
     /// state of the display changes over time. By tracking the frame count, developers can
@@ -149,7 +149,7 @@ impl Frame<'_> {
     /// let current_count = frame.count();
     /// println!("Current frame count: {}", current_count);
     /// ```
-    pub fn count(&self) -> u64 {
+    pub fn count(&self) -> usize {
         self.count
     }
 }
