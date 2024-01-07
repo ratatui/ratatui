@@ -25,6 +25,58 @@ pub struct Rect {
     pub height: u16,
 }
 
+/// Manages row divisions within a `Rect`.
+///
+/// The `Rows` struct is an iterator that allows iterating through rows of a given `Rect`.
+pub struct Rows {
+    /// The `Rect` associated with the rows.
+    pub rect: Rect,
+    /// The y coordinate of the row within the `Rect`.
+    pub current_row: u16,
+}
+
+impl Iterator for Rows {
+    type Item = Rect;
+
+    /// Retrieves the next row within the `Rect`.
+    ///
+    /// Returns `None` when there are no more rows to iterate through.
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_row >= self.rect.bottom() {
+            return None;
+        }
+        let row = Rect::new(self.rect.x, self.current_row, self.rect.width, 1);
+        self.current_row += 1;
+        Some(row)
+    }
+}
+
+/// Manages column divisions within a `Rect`.
+///
+/// The `Columns` struct is an iterator that allows iterating through columns of a given `Rect`.
+pub struct Columns {
+    /// The `Rect` associated with the columns.
+    pub rect: Rect,
+    /// The x coordinate of the column within the `Rect`.
+    pub current_column: u16,
+}
+
+impl Iterator for Columns {
+    type Item = Rect;
+
+    /// Retrieves the next column within the `Rect`.
+    ///
+    /// Returns `None` when there are no more columns to iterate through.
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_column >= self.rect.right() {
+            return None;
+        }
+        let column = Rect::new(self.current_column, self.rect.y, 1, self.rect.height);
+        self.current_column += 1;
+        Some(column)
+    }
+}
+
 impl fmt::Display for Rect {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}x{}+{}+{}", self.width, self.height, self.x, self.y)
@@ -229,6 +281,49 @@ impl Rect {
         let x = self.x.clamp(other.x, other.right().saturating_sub(width));
         let y = self.y.clamp(other.y, other.bottom().saturating_sub(height));
         Rect::new(x, y, width, height)
+    }
+
+    /// Creates an iterator over rows within the `Rect`.
+    ///
+    /// This method returns a `Rows` iterator that allows iterating through rows of the `Rect`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::prelude::*;
+    /// let area = Rect::new(0, 0, 10, 5);
+    /// for row in area.rows() {
+    ///     // Perform operations on each row of the area
+    ///     println!("Row: {:?}", row);
+    /// }
+    /// ```
+    pub fn rows(&self) -> Rows {
+        Rows {
+            rect: *self,
+            current_row: self.y,
+        }
+    }
+
+    /// Creates an iterator over columns within the `Rect`.
+    ///
+    /// This method returns a `Columns` iterator that allows iterating through columns of the
+    /// `Rect`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::prelude::*;
+    /// let area = Rect::new(0, 0, 10, 5);
+    /// for column in area.columns() {
+    ///     // Perform operations on each column of the area
+    ///     println!("Column: {:?}", column);
+    /// }
+    /// ```
+    pub fn columns(&self) -> Columns {
+        Columns {
+            rect: *self,
+            current_column: self.x,
+        }
     }
 }
 
@@ -450,5 +545,29 @@ mod tests {
     fn clamp(#[case] rect: Rect, #[case] expected: Rect) {
         let other = Rect::new(10, 10, 100, 100);
         assert_eq!(rect.clamp(other), expected);
+    }
+
+    #[test]
+    fn test_rows() {
+        let area = Rect::new(0, 0, 3, 2);
+        let rows: Vec<Rect> = area.rows().collect();
+
+        let expected_rows: Vec<Rect> = vec![Rect::new(0, 0, 3, 1), Rect::new(0, 1, 3, 1)];
+
+        assert_eq!(rows, expected_rows);
+    }
+
+    #[test]
+    fn test_columns() {
+        let area = Rect::new(0, 0, 3, 2);
+        let columns: Vec<Rect> = area.columns().collect();
+
+        let expected_columns: Vec<Rect> = vec![
+            Rect::new(0, 0, 1, 2),
+            Rect::new(1, 0, 1, 2),
+            Rect::new(2, 0, 1, 2),
+        ];
+
+        assert_eq!(columns, expected_columns);
     }
 }
