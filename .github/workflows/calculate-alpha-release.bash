@@ -11,11 +11,11 @@ set -o pipefail
 # Turn on traces, useful while debugging but commented out by default
 # set -o xtrace
 
-last_release="$(git tag --sort=committerdate | grep -E "v0\.\d+\.\d+$" | tail -1)"
+last_release="$(git tag --sort=committerdate | grep -P "v0+\.\d+\.\d+$" | tail -1)"
 echo "🐭 Last release: ${last_release}"
 
 # detect breaking changes
-if git log --oneline ${last_release}..HEAD | grep -q '!:' || true; then
+if [ -n "$(git log --oneline ${last_release}..HEAD | grep '!:')" ]; then
     echo "🐭 Breaking changes detected since ${last_release}"
     git log --oneline ${last_release}..HEAD | grep '!:'
     # increment the minor version
@@ -33,7 +33,7 @@ echo "🐭 Next release: ${next_release}"
 
 suffix="alpha"
 last_tag="$(git tag --sort=committerdate | tail -1)"
-if [[ "${last_tag}" = "${next-release}-${suffix}"* ]]; then
+if [[ "${last_tag}" = "${next_release}-${suffix}"* ]]; then
     echo "🐭 Last alpha release: ${last_tag}"
     # increment the alpha version
     # e.g. v0.22.1-alpha.12 -> v0.22.1-alpha.13
