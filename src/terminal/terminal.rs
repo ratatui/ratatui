@@ -157,7 +157,7 @@ where
 
     /// Get a Frame object which provides a consistent view into the terminal state for rendering.
     pub fn get_frame(&mut self) -> Frame {
-        let count = self.frame_count.wrapping_add(1);
+        let count = self.frame_count;
         Frame {
             cursor_position: None,
             viewport_area: self.viewport_area,
@@ -261,6 +261,9 @@ where
         // and the terminal (if growing), which may OOB.
         self.autoresize()?;
 
+        // increment frame count before getting frame
+        self.frame_count = self.frame_count.wrapping_add(1);
+
         let mut frame = self.get_frame();
         f(&mut frame);
         // We can't change the cursor position right away because we have to flush the frame to
@@ -283,8 +286,6 @@ where
 
         // Flush
         self.backend.flush()?;
-
-        self.frame_count = self.frame_count.wrapping_add(1);
 
         Ok(CompletedFrame {
             buffer: &self.buffers[1 - self.current],
