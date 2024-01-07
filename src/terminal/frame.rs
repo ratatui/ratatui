@@ -26,6 +26,9 @@ pub struct Frame<'a> {
 
     /// The buffer that is used to draw the current frame
     pub(crate) buffer: &'a mut Buffer,
+
+    /// The frame count indicating the sequence number of this frame.
+    pub(crate) count: u64,
 }
 
 /// `CompletedFrame` represents the state of the terminal after all changes performed in the last
@@ -37,6 +40,8 @@ pub struct CompletedFrame<'a> {
     pub buffer: &'a Buffer,
     /// The size of the last frame.
     pub area: Rect,
+    /// The frame count indicating the sequence number of this frame.
+    pub count: u64,
 }
 
 impl Frame<'_> {
@@ -118,5 +123,33 @@ impl Frame<'_> {
     /// Gets the buffer that this `Frame` draws into as a mutable reference.
     pub fn buffer_mut(&mut self) -> &mut Buffer {
         self.buffer
+    }
+
+    /// Returns the current frame count.
+    ///
+    /// This method provides access to the frame count, which is a sequence number indicating
+    /// how many frames have been rendered up to and including this one. It can be used
+    /// for purposes such as animation, performance tracking, or debugging.
+    ///
+    /// Each time a new frame is created and rendered, this count is incremented,
+    /// providing a consistent way to reference the order and number of frames processed by the
+    /// terminal. When count reaches its maximum value (u64::MAX), it wraps around to zero.
+    ///
+    /// This count is particularly useful when dealing with dynamic content or animations where the
+    /// state of the display changes over time. By tracking the frame count, developers can
+    /// synchronize updates or changes to the content with the rendering process.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+    /// # let backend = TestBackend::new(5, 5);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
+    /// # let mut frame = terminal.get_frame();
+    /// let current_count = frame.count();
+    /// println!("Current frame count: {}", current_count);
+    /// ```
+    pub fn count(&self) -> u64 {
+        self.count
     }
 }

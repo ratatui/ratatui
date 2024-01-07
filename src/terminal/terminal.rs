@@ -71,6 +71,8 @@ where
     /// Last known position of the cursor. Used to find the new area when the viewport is inlined
     /// and the terminal resized.
     last_known_cursor_pos: (u16, u16),
+    /// Number of frames rendered up until current time.
+    frame_count: u64,
 }
 
 /// Options to pass to [`Terminal::with_options`]
@@ -149,15 +151,18 @@ where
             viewport_area,
             last_known_size: size,
             last_known_cursor_pos: cursor_pos,
+            frame_count: 0,
         })
     }
 
     /// Get a Frame object which provides a consistent view into the terminal state for rendering.
     pub fn get_frame(&mut self) -> Frame {
+        let count = self.frame_count.wrapping_add(1);
         Frame {
             cursor_position: None,
             viewport_area: self.viewport_area,
             buffer: self.current_buffer_mut(),
+            count,
         }
     }
 
@@ -279,9 +284,12 @@ where
         // Flush
         self.backend.flush()?;
 
+        self.frame_count = self.frame_count.wrapping_add(1);
+
         Ok(CompletedFrame {
             buffer: &self.buffers[1 - self.current],
             area: self.last_known_size,
+            count: self.frame_count,
         })
     }
 
