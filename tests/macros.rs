@@ -65,36 +65,36 @@ fn layout_constraints_macro() {
   assert_eq!(e, Rect::new(8, 0, 1, 10));
   assert_eq!(f, Rect::new(9, 0, 1, 10));
 
-  let [a, b, c, d, e] = constraints!([>=0, ==1, <=5, ==10%, ==1/2]).collect::<Vec<Constraint>>().try_into().unwrap();
+  let [a, b, c, d, e] = constraints!([>=0, ==1, <=5, ==10%, ==1/2]);
   assert_eq!(a, Constraint::Min(0));
   assert_eq!(b, Constraint::Length(1));
   assert_eq!(c, Constraint::Max(5));
   assert_eq!(d, Constraint::Percentage(10));
   assert_eq!(e, Constraint::Ratio(1, 2));
 
-  let [a, b, c, d, e] = constraints!([>=0; 5]).collect::<Vec<Constraint>>().try_into().unwrap();
+  let [a, b, c, d, e] = constraints!([>=0; 5]);
   assert_eq!(a, Constraint::Min(0));
   assert_eq!(b, Constraint::Min(0));
   assert_eq!(c, Constraint::Min(0));
   assert_eq!(d, Constraint::Min(0));
   assert_eq!(e, Constraint::Min(0));
 
-  let [a, b, c, d, e] = constraints!([<=0; 5]).collect::<Vec<Constraint>>().try_into().unwrap();
+  let [a, b, c, d, e] = constraints!([<=0; 5]);
   assert_eq!(a, Constraint::Max(0));
   assert_eq!(b, Constraint::Max(0));
   assert_eq!(c, Constraint::Max(0));
   assert_eq!(d, Constraint::Max(0));
   assert_eq!(e, Constraint::Max(0));
 
-  let [a, b] = constraints!([==0; 2]).collect::<Vec<Constraint>>().try_into().unwrap();
+  let [a, b] = constraints!([==0; 2]);
   assert_eq!(a, Constraint::Length(0));
   assert_eq!(b, Constraint::Length(0));
 
-  let [a, b] = constraints!([== 50%; 2]).collect::<Vec<Constraint>>().try_into().unwrap();
+  let [a, b] = constraints!([== 50%; 2]);
   assert_eq!(a, Constraint::Percentage(50));
   assert_eq!(b, Constraint::Percentage(50));
 
-  let [a, b] = constraints!([== 1/2; 2]).collect::<Vec<Constraint>>().try_into().unwrap();
+  let [a, b] = constraints!([== 1/2; 2]);
   assert_eq!(a, Constraint::Ratio(1, 2));
   assert_eq!(b, Constraint::Ratio(1, 2));
 }
