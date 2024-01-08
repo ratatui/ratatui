@@ -48,6 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: write
     steps:
       # Check commit signature and add comment if needed
       - name: Check signed commits in PR
