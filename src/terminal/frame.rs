@@ -128,10 +128,10 @@ impl Frame<'_> {
     /// Returns the current frame count.
     ///
     /// This method provides access to the frame count, which is a sequence number indicating
-    /// how many frames have been rendered up to and including this one. It can be used
+    /// how many frames have been rendered up to (but not including) this one. It can be used
     /// for purposes such as animation, performance tracking, or debugging.
     ///
-    /// Each time a new frame is created and rendered, this count is incremented,
+    /// Each time a frame has been rendered, this count is incremented,
     /// providing a consistent way to reference the order and number of frames processed by the
     /// terminal. When count reaches its maximum value (usize::MAX), it wraps around to zero.
     ///
