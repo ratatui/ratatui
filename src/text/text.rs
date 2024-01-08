@@ -77,9 +77,7 @@ impl<'a> Text<'a> {
         T: Into<Cow<'a, str>>,
         S: Into<Style>,
     {
-        let mut text = Text::raw(content);
-        text.patch_style(style);
-        text
+        Text::raw(content).patch_style(style)
     }
 
     /// Returns the max width of all the lines.
@@ -113,29 +111,37 @@ impl<'a> Text<'a> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
     /// # Examples
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let style = Style::default()
-    ///     .fg(Color::Yellow)
-    ///     .add_modifier(Modifier::ITALIC);
-    /// let mut raw_text = Text::raw("The first line\nThe second line");
-    /// let styled_text = Text::styled(String::from("The first line\nThe second line"), style);
+    /// let mut raw_text = Text::styled("The first line\nThe second line", Modifier::ITALIC);
+    /// let styled_text = Text::styled(
+    ///     String::from("The first line\nThe second line"),
+    ///     (Color::Yellow, Modifier::ITALIC),
+    /// );
     /// assert_ne!(raw_text, styled_text);
     ///
-    /// raw_text.patch_style(style);
+    /// let raw_text = raw_text.patch_style(Color::Yellow);
     /// assert_eq!(raw_text, styled_text);
     /// ```
-    pub fn patch_style<S: Into<Style>>(&mut self, style: S) {
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn patch_style<S: Into<Style>>(mut self, style: S) -> Self {
         let style = style.into();
-        for line in &mut self.lines {
-            line.patch_style(style);
-        }
+        self.lines = self
+            .lines
+            .into_iter()
+            .map(|line| line.patch_style(style))
+            .collect();
+        self
     }
 
     /// Resets the style of the Text.
     /// Equivalent to calling `patch_style(Style::reset())`.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     ///
     /// ## Examples
     ///
@@ -144,19 +150,21 @@ impl<'a> Text<'a> {
     /// let style = Style::default()
     ///     .fg(Color::Yellow)
     ///     .add_modifier(Modifier::ITALIC);
-    /// let mut text = Text::styled("The first line\nThe second line", style);
+    /// let text = Text::styled("The first line\nThe second line", style);
     ///
-    /// text.reset_style();
+    /// let text = text.reset_style();
     /// for line in &text.lines {
-    ///     for span in &line.spans {
-    ///         assert_eq!(Style::reset(), span.style);
-    ///     }
+    ///     assert_eq!(Style::reset(), line.style);
     /// }
     /// ```
-    pub fn reset_style(&mut self) {
-        for line in &mut self.lines {
-            line.reset_style();
-        }
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn reset_style(mut self) -> Self {
+        self.lines = self
+            .lines
+            .into_iter()
+            .map(|line| line.reset_style())
+            .collect();
+        self
     }
 }
 
@@ -238,8 +246,8 @@ mod tests {
         assert_eq!(
             text.lines,
             vec![
-                Line::from(Span::styled("The first line", style)),
-                Line::from(Span::styled("The second line", style))
+                Line::styled("The first line", style),
+                Line::styled("The second line", style)
             ]
         );
     }
@@ -260,15 +268,14 @@ mod tests {
     fn patch_style() {
         let style = Style::new().yellow().italic();
         let style2 = Style::new().red().underlined();
-        let mut text = Text::styled("The first line\nThe second line", style);
+        let text = Text::styled("The first line\nThe second line", style).patch_style(style2);
 
-        text.patch_style(style2);
         let expected_style = Style::new().red().italic().underlined();
         assert_eq!(
             text.lines,
             vec![
-                Line::from(Span::styled("The first line", expected_style)),
-                Line::from(Span::styled("The second line", expected_style))
+                Line::styled("The first line", expected_style),
+                Line::styled("The second line", expected_style)
             ]
         );
     }
@@ -276,14 +283,13 @@ mod tests {
     #[test]
     fn reset_style() {
         let style = Style::new().yellow().italic();
-        let mut text = Text::styled("The first line\nThe second line", style);
+        let text = Text::styled("The first line\nThe second line", style).reset_style();
 
-        text.reset_style();
         assert_eq!(
             text.lines,
             vec![
-                Line::from(Span::styled("The first line", Style::reset())),
-                Line::from(Span::styled("The second line", Style::reset()))
+                Line::styled("The first line", Style::reset()),
+                Line::styled("The second line", Style::reset())
             ]
         );
     }

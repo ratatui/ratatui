@@ -118,17 +118,17 @@ fn ui(f: &mut Frame, app: &mut App) {
 
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
     let normal_style = Style::default().bg(Color::Blue);
-    let header_cells = ["Header1", "Header2", "Header3"]
+    let header = ["Header1", "Header2", "Header3"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Red)));
-    let header = Row::new(header_cells)
+        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Red)))
+        .collect::<Row>()
         .style(normal_style)
         .height(1)
         .bottom_margin(1);
-    let footer_cells = ["Footer1", "Footer2", "Footer3"]
+    let footer = ["Footer1", "Footer2", "Footer3"]
         .iter()
-        .map(|f| Cell::from(*f).style(Style::default().fg(Color::Yellow)));
-    let footer = Row::new(footer_cells)
+        .map(|f| Cell::from(*f).style(Style::default().fg(Color::Yellow)))
+        .collect::<Row>()
         .style(normal_style)
         .height(1)
         .top_margin(1);
@@ -139,8 +139,11 @@ fn ui(f: &mut Frame, app: &mut App) {
             .max()
             .unwrap_or(0)
             + 1;
-        let cells = item.iter().map(|c| Cell::from(*c));
-        Row::new(cells).height(height as u16).bottom_margin(1)
+        item.iter()
+            .cloned()
+            .collect::<Row>()
+            .height(height as u16)
+            .bottom_margin(1)
     });
     let t = Table::new(
         rows,

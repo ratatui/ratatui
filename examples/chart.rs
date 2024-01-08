@@ -196,7 +196,7 @@ fn render_chart1(f: &mut Frame, area: Rect, app: &App) {
 
 fn render_line_chart(f: &mut Frame, area: Rect) {
     let datasets = vec![Dataset::default()
-        .name("Line from only 2 points")
+        .name("Line from only 2 points".italic())
         .marker(symbols::Marker::Braille)
         .style(Style::default().fg(Color::Yellow))
         .graph_type(GraphType::Line)
@@ -241,7 +241,7 @@ fn render_scatter(f: &mut Frame, area: Rect) {
             .style(Style::new().yellow())
             .data(&HEAVY_PAYLOAD_DATA),
         Dataset::default()
-            .name("Medium")
+            .name("Medium".underlined())
             .marker(Marker::Braille)
             .graph_type(GraphType::Scatter)
             .style(Style::new().magenta())

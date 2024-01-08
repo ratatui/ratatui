@@ -1,5 +1,5 @@
 #![warn(missing_docs)]
-use std::{borrow::Cow, cmp::max};
+use std::cmp::max;
 
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
@@ -276,16 +276,13 @@ impl LegendPosition {
 ///
 /// This is the main element composing a [`Chart`].
 ///
-/// A dataset can be [named](Dataset::name) to be referenced in the legend (NOTE: Currently,
-/// datasets with an empty name will show an empty line in the legend, see [PR 527]).
+/// A dataset can be [named](Dataset::name). Only named datasets will be rendered in the legend.
 ///
 /// After that, you can pass it data with [`Dataset::data`]. Data is an array of `f64` tuples
 /// (`(f64, f64)`), the first element being X and the second Y. It's also worth noting that, unlike
 /// the [`Rect`], here the Y axis is bottom to top, as in math.
 ///
 /// You can also customize the rendering by using [`Dataset::marker`] and [`Dataset::graph_type`].
-///
-/// [PR 527]: https://github.com/ratatui-org/ratatui/pull/527
 ///
 /// # Example
 ///
@@ -304,7 +301,7 @@ impl LegendPosition {
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Dataset<'a> {
     /// Name of the dataset (used in the legend if shown)
-    name: Cow<'a, str>,
+    name: Option<Line<'a>>,
     /// A reference to the actual data
     data: &'a [(f64, f64)],
     /// Symbol used for each points of this dataset
@@ -318,18 +315,20 @@ pub struct Dataset<'a> {
 impl<'a> Dataset<'a> {
     /// Sets the name of the dataset
     ///
-    /// The dataset's name is used when displaying the chart legend. Currently, datasets with an
-    /// empty name will show an empty line in the legend, see [PR 527]).
+    /// The dataset's name is used when displaying the chart legend. Datasets don't require a name
+    /// and can be created without specifying one. Once assigned, a name can't be removed, only
+    /// changed
     ///
-    /// [PR 527]: https://github.com/ratatui-org/ratatui/pull/527
+    /// The name can be styled (see [`Line`] for that), but the dataset's style will always have
+    /// precedence.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn name<S>(mut self, name: S) -> Dataset<'a>
     where
-        S: Into<Cow<'a, str>>,
+        S: Into<Line<'a>>,
     {
-        self.name = name.into();
+        self.name = Some(name.into());
         self
     }
 
@@ -738,9 +737,14 @@ impl<'a> Chart<'a> {
         }
 
         if let Some(legend_position) = self.legend_position {
-            if let Some(inner_width) = self.datasets.iter().map(|d| d.name.width() as u16).max() {
+            let legends = self
+                .datasets
+                .iter()
+                .filter_map(|d| Some(d.name.as_ref()?.width() as u16));
+
+            if let Some(inner_width) = legends.clone().max() {
                 let legend_width = inner_width + 2;
-                let legend_height = self.datasets.len() as u16 + 2;
+                let legend_height = legends.count() as u16 + 2;
                 let max_legend_width = self
                     .hidden_legend_constraints
                     .0
@@ -1033,12 +1037,22 @@ impl<'a> Widget for Chart<'a> {
             Block::default()
                 .borders(Borders::ALL)
                 .render(legend_area, buf);
-            for (i, dataset) in self.datasets.iter().enumerate() {
-                buf.set_string(
-                    legend_area.x + 1,
-                    legend_area.y + 1 + i as u16,
-                    &dataset.name,
-                    dataset.style,
+
+            for (i, (dataset_name, dataset_style)) in self
+                .datasets
+                .iter()
+                .filter_map(|ds| Some((ds.name.as_ref()?, ds.style())))
+                .enumerate()
+            {
+                let name = dataset_name.clone().patch_style(dataset_style);
+                name.render(
+                    Rect {
+                        x: legend_area.x + 1,
+                        y: legend_area.y + 1 + i as u16,
+                        width: legend_area.width - 2,
+                        height: 1,
+                    },
+                    buf,
                 );
             }
         }
@@ -1086,7 +1100,10 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::style::{Modifier, Stylize};
+    use crate::{
+        assert_buffer_eq,
+        style::{Modifier, Stylize},
+    };
 
     struct LegendTestCase {
         chart_area: Rect,
@@ -1183,6 +1200,50 @@ mod tests {
         widget.render(buffer.area, &mut buffer);
 
         assert_eq!(buffer, Buffer::with_lines(vec![" ".repeat(8); 4]))
+    }
+
+    #[test]
+    fn datasets_without_name_dont_contribute_to_legend_height() {
+        let data_named_1 = Dataset::default().name("data1"); // must occupy a row in legend
+        let data_named_2 = Dataset::default().name(""); // must occupy a row in legend, even if name is empty
+        let data_unnamed = Dataset::default(); // must not occupy a row in legend
+        let widget = Chart::new(vec![data_named_1, data_unnamed, data_named_2]);
+        let buffer = Buffer::empty(Rect::new(0, 0, 50, 25));
+        let layout = widget.layout(buffer.area);
+
+        assert!(layout.legend_area.is_some());
+        assert_eq!(layout.legend_area.unwrap().height, 4); // 2 for borders, 2 for rows
+    }
+
+    #[test]
+    fn no_legend_if_no_named_datasets() {
+        let dataset = Dataset::default();
+        let widget = Chart::new(vec![dataset; 3]);
+        let buffer = Buffer::empty(Rect::new(0, 0, 50, 25));
+        let layout = widget.layout(buffer.area);
+
+        assert!(layout.legend_area.is_none());
+    }
+
+    #[test]
+    fn dataset_legend_style_is_patched() {
+        let long_dataset_name = Dataset::default().name("Very long name");
+        let short_dataset =
+            Dataset::default().name(Line::from("Short name").alignment(Alignment::Right));
+        let widget = Chart::new(vec![long_dataset_name, short_dataset])
+            .hidden_legend_constraints((100.into(), 100.into()));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 5));
+
+        widget.render(buffer.area, &mut buffer);
+
+        let expected = Buffer::with_lines(vec![
+            "    ┌──────────────┐",
+            "    │Very long name│",
+            "    │    Short name│",
+            "    └──────────────┘",
+            "                    ",
+        ]);
+        assert_buffer_eq!(buffer, expected);
     }
 
     #[test]
