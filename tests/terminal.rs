@@ -55,8 +55,14 @@ fn terminal_draw_increments_frame_count() -> Result<(), Box<dyn Error>> {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend)?;
     let frame = terminal.draw(|f| {
-        assert_eq!(f.count(), 1);
+        assert_eq!(f.count(), 0);
         let paragraph = Paragraph::new("Test");
+        f.render_widget(paragraph, f.size());
+    })?;
+    assert_eq!(frame.count, 0);
+    let frame = terminal.draw(|f| {
+        assert_eq!(f.count(), 1);
+        let paragraph = Paragraph::new("test");
         f.render_widget(paragraph, f.size());
     })?;
     assert_eq!(frame.count, 1);

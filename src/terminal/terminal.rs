@@ -261,9 +261,6 @@ where
         // and the terminal (if growing), which may OOB.
         self.autoresize()?;
 
-        // increment frame count before getting frame
-        self.frame_count = self.frame_count.wrapping_add(1);
-
         let mut frame = self.get_frame();
         f(&mut frame);
         // We can't change the cursor position right away because we have to flush the frame to
@@ -287,11 +284,16 @@ where
         // Flush
         self.backend.flush()?;
 
-        Ok(CompletedFrame {
+        let completed_frame = CompletedFrame {
             buffer: &self.buffers[1 - self.current],
             area: self.last_known_size,
             count: self.frame_count,
-        })
+        };
+
+        // increment frame count before returning from draw
+        self.frame_count = self.frame_count.wrapping_add(1);
+
+        Ok(completed_frame)
     }
 
     /// Hides the cursor.
