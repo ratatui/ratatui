@@ -6,6 +6,7 @@
 ///
 /// The macro supports the following form:
 /// - `constraints!([$( $constraint:tt )+])`
+/// - `constraints!([$( $constraint:tt )+; $count:expr])`
 ///
 /// Constraints are defined using a specific syntax:
 /// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
@@ -18,19 +19,35 @@
 ///
 /// ```
 /// use ratatui_macros::constraints;
-/// constraints!([==5, ==30%, >=3, <=1, ==1/2]);
-/// constraints!([==5; 5]);
+/// assert_eq!(constraints!([==5, ==30%, >=3, <=1, ==1/2]).len(), 5);
+/// assert_eq!(constraints!([==5; 5]).len(), 5);
 /// ```
-///
-/// # Internal Implementation
-///
-/// - `@parse`: Internal rule to parse and accumulate constraints.
-/// - `@process`: Internal rule to convert tokens into constraints.
-///
-/// This macro simplifies the process of creating various constraints.
 #[macro_export]
 macro_rules! constraints {
-    // Rules for parsing one constraint at a time.
+    // Note: this implementation forgoes speed for the sake of simplicity. Adding variations of the
+    // comma and semicolon rules for each constraint type would be faster, but would result in a lot
+    // of duplicated code.
+
+    // Comma finishes a constraint element, so parse it and continue.
+    ([ , $($rest:tt)* ] -> ($($partial:tt)*) [ $($parsed:tt)* ]) => {
+        $crate::constraints!([$($rest)*] -> () [$($parsed)* $crate::constraint!($($partial)*) ,])
+    };
+
+    // Semicolon indicates that there's repetition. The trailing comma is because the 'entrypoint'
+    // rule adds a trailing comma.
+    ([ ; $count:expr , ] -> ($($partial:tt)*) []) => {
+        [$crate::constraint!($($partial)*); $count]
+    };
+
+    // User wrote something like `constraints!([== 3, == 4; 10])`.
+    ([ ; $count:expr , ] -> ($($partial:tt)*) [$($_:expr)+]) => {
+        compile_error!("constraint repetition requires exactly one constraint")
+    };
+
+    // Pull the first token (which can't be a comma or semicolon) onto the accumulator.
+    ([ $head:tt $($rest:tt)* ] -> ($($partial:tt)*) [ $($parsed:tt)* ]) => {
+        $crate::constraints!([$($rest)*] -> ($($partial)* $head) [$($parsed)* ])
+    };
 
     // Entrypoint; we add a comma to make sure there's always a trailing comma. Right-hand side
     // will accumulate the actual Constraint literals.
@@ -43,20 +60,28 @@ macro_rules! constraints {
         [$($parsed)*]
     };
 
-    ([ , $($rest:tt)* ] -> ($($partial:tt)*) [ $($parsed:tt)* ]) => {
-        $crate::constraints!([$($rest)*] -> () [$($parsed)* $crate::constraint!($($partial)*) ,])
-    };
-
-    // the comma here is because we always have a trailing comma
-    ([ ; $count:expr , ] -> ($($partial:tt)*) []) => {
-        [$crate::constraint!($($partial)*); $count]
-    };
-
-    ([ $head:tt $($rest:tt)* ] -> ($($partial:tt)*) [ $($parsed:tt)* ]) => {
-        $crate::constraints!([$($rest)*] -> ($($partial)* $head) [$($parsed)* ])
-    };
 }
 
+/// Expands to a single constraint. If creating an array of constraints, you probably want to use
+/// [`constraints!`] instead.
+///
+/// # Syntax
+///
+/// Constraints are defined using a specific syntax:
+/// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
+/// - `== $token:tt %`: Sets a percentage constraint for the token.
+/// - `>= $token:tt`: Sets a minimum size constraint for the token.
+/// - `<= $token:tt`: Sets a maximum size constraint for the token.
+/// - `== $token:tt`: Sets a fixed size constraint for the token.
+///
+/// # Examples
+///
+/// ```
+/// use ratatui_macros::constraint;
+/// use ratatui::prelude::Constraint;
+/// assert_eq!(constraint!(>= 3 + 4), Constraint::Min(7));
+/// assert_eq!(constraint!(== 1 / 3), Constraint::Ratio(1, 3));
+/// ```
 #[macro_export]
 macro_rules! constraint {
     ( == $token:tt % ) => { ratatui::prelude::Constraint::Percentage($token) };
