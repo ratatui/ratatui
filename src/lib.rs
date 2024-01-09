@@ -9,9 +9,8 @@
 //! [![Codecov Badge]][Codecov] [![Deps.rs Badge]][Deps.rs] [![Discord Badge]][Discord Server]
 //! [![Matrix Badge]][Matrix]<br>
 //!
-//! [Ratatui Website] · [API Docs] · [Examples]<br>
-//! [Contributing] · [Changelog] · [Breaking Changes]<br>
-//! [Report a bug] · [Request a Feature] · [Create a Pull Request]
+//! [Ratatui Website] · [API Docs] · [Examples] · [Changelog] · [Breaking Changes]<br>
+//! [Contributing] · [Report a bug] · [Request a Feature] · [Create a Pull Request]
 //!
 //! </div>
 //!
