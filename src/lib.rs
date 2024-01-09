@@ -44,12 +44,6 @@ macro_rules! constraints {
         [$crate::constraint!($($partial)*); $count]
     };
 
-    // User wrote something like `constraints!([== 3, == 4; 10])`.
-    // TODO: Unable to get this compiler error to trigger
-    ([ ; $count:expr , ] -> ($($partial:tt)*) [$($_:expr)+]) => {
-        compile_error!("constraint repetition requires exactly one constraint")
-    };
-
     // Pull the first token (which can't be a comma or semicolon) onto the accumulator.
     // if first token is a comma or semicolon, previous rules will match before this rule
     //
