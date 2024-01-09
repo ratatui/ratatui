@@ -34,7 +34,7 @@ use ratatui_macros::{
     constraint,
     constraints,
     horizontal,
-    palette
+    palette,
     vertical,
 };
 ```
