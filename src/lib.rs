@@ -5,15 +5,15 @@
 /// # Syntax
 ///
 /// The macro supports the following form:
-/// - `constraints!([$( $constraint:tt )+])`
-/// - `constraints!([$( $constraint:tt )+; $count:expr])`
+/// - `constraints![$( $constraint:tt )+]`
+/// - `constraints![$( $constraint:tt )+; $count:expr]`
 ///
 /// Constraints are defined using a specific syntax:
 /// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
 /// - `== $token:tt %`: Sets a percentage constraint for the token.
-/// - `>= $token:tt`: Sets a minimum size constraint for the token.
-/// - `<= $token:tt`: Sets a maximum size constraint for the token.
-/// - `== $token:tt`: Sets a fixed size constraint for the token.
+/// - `>= $token:expr`: Sets a minimum size constraint for the token.
+/// - `<= $token:expr`: Sets a maximum size constraint for the token.
+/// - `== $token:expr`: Sets a fixed size constraint for the token.
 ///
 /// # Examples
 ///
@@ -108,7 +108,7 @@ macro_rules! constraint {
 ///
 /// # Syntax
 ///
-/// - `vertical!([$( $constraint:tt )+])`: Defines a vertical layout with the given constraints.
+/// - `vertical![$( $constraint:tt )+]`: Defines a vertical layout with the given constraints.
 ///
 /// # Constraints
 ///
