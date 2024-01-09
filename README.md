@@ -107,7 +107,8 @@ use ratatui::prelude::*;
 use ratatui_macros::constraint;
 
 assert_eq!(
-    constraint!(==50), Constraint::Length(50),
+    constraint!(==50),
+    Constraint::Length(50),
 )
 ```
 
