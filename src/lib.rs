@@ -19,8 +19,8 @@
 ///
 /// ```
 /// use ratatui_macros::constraints;
-/// assert_eq!(constraints!([==5, ==30%, >=3, <=1, ==1/2]).len(), 5);
-/// assert_eq!(constraints!([==5; 5]).len(), 5);
+/// assert_eq!(constraints![==5, ==30%, >=3, <=1, ==1/2].len(), 5);
+/// assert_eq!(constraints![==5; 5].len(), 5);
 /// ```
 #[macro_export]
 macro_rules! constraints {
@@ -49,17 +49,16 @@ macro_rules! constraints {
         $crate::constraints!([$($rest)*] -> ($($partial)* $head) [$($parsed)* ])
     };
 
-    // Entrypoint; we add a comma to make sure there's always a trailing comma. Right-hand side
-    // will accumulate the actual Constraint literals.
-    ([ $( $constraint:tt )+ ]) => {
-        $crate::constraints!([ $($constraint)+ , ] -> () [])
-    };
-
     // No more input tokens; emit the parsed constraints.
     ([$(,)?]  -> () [ $( $parsed:tt )* ]) => {
         [$($parsed)*]
     };
 
+    // Entrypoint; we add a comma to make sure there's always a trailing comma. Right-hand side
+    // will accumulate the actual Constraint literals.
+    ($( $constraint:tt )+) => {
+        $crate::constraints!([ $($constraint)+ , ] -> () [])
+    };
 }
 
 /// Expands to a single constraint. If creating an array of constraints, you probably want to use
@@ -84,11 +83,21 @@ macro_rules! constraints {
 /// ```
 #[macro_export]
 macro_rules! constraint {
-    ( == $token:tt % ) => { ratatui::prelude::Constraint::Percentage($token) };
-    ( >= $expr:expr ) => { ratatui::prelude::Constraint::Min($expr) };
-    ( <= $expr:expr ) => { ratatui::prelude::Constraint::Max($expr) };
-    ( == $num:tt / $denom:tt ) => { ratatui::prelude::Constraint::Ratio($num as u32, $denom as u32) };
-    ( == $expr:expr ) => { ratatui::prelude::Constraint::Length($expr) };
+  ( == $token:tt % ) => {
+    ratatui::prelude::Constraint::Percentage($token)
+  };
+  ( >= $expr:expr ) => {
+    ratatui::prelude::Constraint::Min($expr)
+  };
+  ( <= $expr:expr ) => {
+    ratatui::prelude::Constraint::Max($expr)
+  };
+  ( == $num:tt / $denom:tt ) => {
+    ratatui::prelude::Constraint::Ratio($num as u32, $denom as u32)
+  };
+  ( == $expr:expr ) => {
+    ratatui::prelude::Constraint::Length($expr)
+  };
 }
 
 /// This macro creates a layout with specified constraints and direction.
@@ -133,12 +142,12 @@ macro_rules! layout {
     // Horizontal layout variant
     ([ $( $constraint:tt )+ ], direction = h) => {
         // use internal `constraint!(@parse ...)` rule directly since it will always be an iterator
-        $crate::layout!(@construct ratatui::prelude::Direction::Horizontal, $crate::constraints!( [ $($constraint)+ ]))
+        $crate::layout!(@construct ratatui::prelude::Direction::Horizontal, $crate::constraints!( $($constraint)+))
     };
     // Vertical layout variant
     ([ $( $constraint:tt )+ ], direction = v) => {
         // use internal `constraint!(@parse ...)` rule directly since it will always be an iterator
-        $crate::layout!(@construct ratatui::prelude::Direction::Vertical, $crate::constraints!( [ $($constraint)+ ] ))
+        $crate::layout!(@construct ratatui::prelude::Direction::Vertical, $crate::constraints!( $($constraint)+ ))
     };
     // Construct the final `Layout` object
     (@construct $direction:expr, $constraints:expr) => {
@@ -172,11 +181,11 @@ macro_rules! layout {
 /// ```
 /// // Vertical layout with a fixed size and a percentage constraint
 /// use ratatui_macros::vertical;
-/// vertical!([== 50, == 30%]);
+/// vertical![== 50, == 30%];
 /// ```
 #[macro_export]
 macro_rules! vertical {
-    ([ $( $constraint:tt )+ ]) => {
+    ($( $constraint:tt )+) => {
         $crate::layout!([ $( $constraint )+ ], direction = v)
     };
 }
@@ -205,11 +214,11 @@ macro_rules! vertical {
 /// ```
 /// // Horizontal layout with a ratio constraint and a minimum size constraint
 /// use ratatui_macros::horizontal;
-/// horizontal!([== 1/3, >= 100]);
+/// horizontal![== 1/3, >= 100];
 /// ```
 #[macro_export]
 macro_rules! horizontal {
-    ([ $( $constraint:tt )+ ]) => {
+    ($( $constraint:tt )+) => {
         $crate::layout!([ $( $constraint )+ ], direction = h)
     };
 }
