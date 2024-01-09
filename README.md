@@ -7,7 +7,7 @@
 [![Downloads](https://img.shields.io/crates/d/ratatui-macros)](https://crates.io/crates/ratatui-macros)
 
 `ratatui-macros` is a Rust crate that provides easy-to-use macros for simplifying boilerplate
-associated with creating UI using ratatui.
+associated with creating UI using [Ratatui](https://github.com/ratatui-org/ratatui).
 
 ## Features
 
