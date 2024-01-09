@@ -83,6 +83,7 @@ let [main, bottom] = vertical![==100%, >=3]
     .to_vec()
     .try_into()
     .unwrap();
+assert_eq!(bottom.y, 7);
 assert_eq!(bottom.height, 3);
 
 let [left, main, right] = horizontal![>=3, ==100%, >=3]
