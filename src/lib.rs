@@ -28,7 +28,7 @@ macro_rules! constraints {
     // comma and semicolon rules for each constraint type would be faster, but would result in a lot
     // of duplicated code.
 
-    // Comma finishes a constraint element, so parse it and continue.
+    // Cannot start the constraints macro with a ,
     ([ , $($rest:tt)* ] -> () []) => {
         compile_error!("No rules expected the token `,` while trying to match the end of the macro")
     };
@@ -75,8 +75,9 @@ macro_rules! constraints {
         [$($parsed)*]
     };
 
-    // Entrypoint; we add a comma to make sure there's always a trailing comma. Right-hand side
-    // will accumulate the actual Constraint literals.
+    // Entrypoint where there's a no comma at the end
+    // We add a comma to make sure there's always a trailing comma.
+    // Right-hand side will accumulate the actual `Constraint` literals.
     ($( $constraint:tt )+) => {
         $crate::constraints!([ $($constraint)+ , ] -> () [])
     };

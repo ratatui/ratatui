@@ -6,8 +6,49 @@ error: No rules expected the token `,` while trying to match the end of the macr
   |
   = note: this error originates in the macro `$crate::constraints` which comes from the expansion of the macro `constraints` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0601]: `main` function not found in crate `$CRATE`
- --> tests/ui/fails.rs:5:2
+error: unexpected end of macro invocation
+ --> tests/ui/fails.rs:8:16
   |
-5 | }
-  |  ^ consider adding a `main` function to `$DIR/tests/ui/fails.rs`
+8 |   let [a, b] = constraints![ == 1/2, == 2, ];
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing tokens in macro arguments
+  |
+note: while trying to match `==`
+ --> src/lib.rs
+  |
+  |   ( == $token:tt % ) => {
+  |     ^^
+  = note: this error originates in the macro `$crate::constraints` which comes from the expansion of the macro `constraints` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type `Constraint`
+ --> tests/ui/fails.rs:9:17
+  |
+9 |   assert_eq!(a, Constraint::Ratio(1, 2));
+  |                 ^^^^^^^^^^ use of undeclared type `Constraint`
+  |
+help: consider importing this enum
+  |
+1 + use ratatui::prelude::Constraint;
+  |
+
+error[E0433]: failed to resolve: use of undeclared type `Constraint`
+  --> tests/ui/fails.rs:10:17
+   |
+10 |   assert_eq!(b, Constraint::Length(2));
+   |                 ^^^^^^^^^^ use of undeclared type `Constraint`
+   |
+help: consider importing this enum
+   |
+1  + use ratatui::prelude::Constraint;
+   |
+
+error[E0601]: `main` function not found in crate `$CRATE`
+  --> tests/ui/fails.rs:11:2
+   |
+11 | }
+   |  ^ consider adding a `main` function to `$DIR/tests/ui/fails.rs`
+
+error[E0527]: pattern requires 2 elements but array has 3
+ --> tests/ui/fails.rs:8:7
+  |
+8 |   let [a, b] = constraints![ == 1/2, == 2, ];
+  |       ^^^^^^ expected 3 elements
