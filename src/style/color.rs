@@ -261,6 +261,115 @@ impl Display for Color {
     }
 }
 
+impl Color {
+    /// Converts a HSL representation to a `Color::Rgb` instance.
+    ///
+    /// The `from_hsl` function converts the Hue, Saturation and Lightness values to a
+    /// corresponding `Color` RGB equivalent.
+    ///
+    /// Hue values should be in the range [0, 360].
+    /// Saturation and L values should be in the range [0, 100].
+    /// Values that are not in the range are clamped to be within the range.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::prelude::*;
+    ///
+    /// let color: Color = Color::from_hsl(360.0, 100.0, 100.0);
+    /// assert_eq!(color, Color::Rgb(255, 255, 255));
+    ///
+    /// let color: Color = Color::from_hsl(0.0, 0.0, 0.0);
+    /// assert_eq!(color, Color::Rgb(0, 0, 0));
+    /// ```
+    pub fn from_hsl(h: f64, s: f64, l: f64) -> Self {
+        // Clamp input values to valid ranges
+        let h = h.clamp(0.0, 360.0);
+        let s = s.clamp(0.0, 100.0);
+        let l = l.clamp(0.0, 100.0);
+
+        // Delegate to the function for normalized HSL to RGB conversion
+        normalized_hsl_to_rgb(h / 360.0, s / 100.0, l / 100.0)
+    }
+}
+
+/// Converts normalized HSL (Hue, Saturation, Lightness) values to RGB (Red, Green, Blue) color
+/// representation. H, S, and L values should be in the range [0, 1].
+///
+/// Based on https://github.com/killercup/hsl-rs/blob/b8a30e11afd75f262e0550725333293805f4ead0/src/lib.rs
+fn normalized_hsl_to_rgb(h: f64, s: f64, l: f64) -> Color {
+    // This function can be made into `const` in the future.
+    // This comment contains the relevant information for making it `const`.
+    //
+    // If it is `const` and made public, users can write the following:
+    //
+    // ```rust
+    // const SLATE_50: Color = normalized_hsl_to_rgb(0.210, 0.40, 0.98);
+    // ```
+    //
+    // For it to be const now, we need `#![feature(const_fn_floating_point_arithmetic)]`
+    // Tracking issue: https://github.com/rust-lang/rust/issues/57241
+    //
+    // We would also need to remove the use of `.round()` in this function, i.e.:
+    //
+    // ```rust
+    // Color::Rgb((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
+    // ```
+
+    // Initialize RGB components
+    let r: f64;
+    let g: f64;
+    let b: f64;
+
+    // Check if the color is achromatic (grayscale)
+    if s == 0.0 {
+        r = l;
+        g = l;
+        b = l;
+    } else {
+        // Calculate RGB components for colored cases
+        let q = if l < 0.5 {
+            l * (1.0 + s)
+        } else {
+            l + s - l * s
+        };
+        let p = 2.0 * l - q;
+        r = hue_to_rgb(p, q, h + 1.0 / 3.0);
+        g = hue_to_rgb(p, q, h);
+        b = hue_to_rgb(p, q, h - 1.0 / 3.0);
+    }
+
+    // Scale RGB components to the range [0, 255] and create a Color::Rgb instance
+    Color::Rgb(
+        (r * 255.0).round() as u8,
+        (g * 255.0).round() as u8,
+        (b * 255.0).round() as u8,
+    )
+}
+
+/// Helper function to calculate RGB component for a specific hue value.
+fn hue_to_rgb(p: f64, q: f64, t: f64) -> f64 {
+    // Adjust the hue value to be within the valid range [0, 1]
+    let mut t = t;
+    if t < 0.0 {
+        t += 1.0;
+    }
+    if t > 1.0 {
+        t -= 1.0;
+    }
+
+    // Calculate the RGB component based on the hue value
+    if t < 1.0 / 6.0 {
+        p + (q - p) * 6.0 * t
+    } else if t < 1.0 / 2.0 {
+        q
+    } else if t < 2.0 / 3.0 {
+        p + (q - p) * (2.0 / 3.0 - t) * 6.0
+    } else {
+        p
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::error::Error;
@@ -269,6 +378,33 @@ mod tests {
     use serde::de::{Deserialize, IntoDeserializer};
 
     use super::*;
+
+    #[test]
+    fn test_hsl_to_rgb() {
+        // Test with valid HSL values
+        let color = Color::from_hsl(120.0, 50.0, 75.0);
+        assert_eq!(color, Color::Rgb(159, 223, 159));
+
+        // Test with H value at upper bound
+        let color = Color::from_hsl(360.0, 50.0, 75.0);
+        assert_eq!(color, Color::Rgb(223, 159, 159));
+
+        // Test with H value exceeding the upper bound
+        let color = Color::from_hsl(400.0, 50.0, 75.0);
+        assert_eq!(color, Color::Rgb(223, 159, 159));
+
+        // Test with S and L values exceeding the upper bound
+        let color = Color::from_hsl(240.0, 120.0, 150.0);
+        assert_eq!(color, Color::Rgb(255, 255, 255));
+
+        // Test with H, S, and L values below the lower bound
+        let color = Color::from_hsl(-20.0, -50.0, -20.0);
+        assert_eq!(color, Color::Rgb(0, 0, 0));
+
+        // Test with S and L values below the lower bound
+        let color = Color::from_hsl(60.0, -20.0, -10.0);
+        assert_eq!(color, Color::Rgb(0, 0, 0));
+    }
 
     #[test]
     fn from_rgb_color() {
