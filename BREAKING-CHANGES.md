@@ -16,6 +16,7 @@ This is a quick summary of the sections below:
   - `Line` now has an extra `style` field which applies the style to the entire line
   - `Block` style methods cannot be created in a const context
   - `Tabs::new()` now accepts `IntoIterator<Item: Into<Line<'a>>>`
+  - `Table::new` now accepts `IntoIterator<Item: Into<Row<'a>>>`.
 - [v0.25.0](#v0250)
   - Removed `Axis::title_style` and `Buffer::set_background`
   - `List::new()` now accepts `IntoIterator<Item = Into<ListItem<'a>>>`
@@ -47,20 +48,37 @@ This is a quick summary of the sections below:
 
 ## v0.26.0 (unreleased)
 
+### `Table::new()` now accepts `IntoIterator<Item: Into<Row<'a>>>` ([#774])
+
+[#774]: https://github.com/ratatui-org/ratatui/pull/774
+
+Previously, `Table::new()` accepted `IntoIterator<Item=Row<'a>>`.  The argument change to
+`IntoIterator<Item: Into<Row<'a>>>`, This allows more flexible types from calling scopes, though it
+can some break type inference in the calling scope for empty containers.
+
+This can be resolved either by providing an explicit type (e.g. `Vec::<Row>::new()`), or by using
+`Table::default()`.
+
+```diff
+- let table = Table::new(vec![], widths);
+// becomes
++ let table = Table::default().widths(widths);
+```
+
 ### `Tabs::new()` now accepts `IntoIterator<Item: Into<Line<'a>>>` ([#776])
 
 [#776]: https://github.com/ratatui-org/ratatui/pull/776
 
 Previously, `Tabs::new()` accepted `Vec<T>` where `T: Into<Line<'a>>`.  This allows more flexible
-types from calling scopes, though it can break type inference when the calling scope.
+types from calling scopes, though it can break some type inference in the calling scope.
 
 This typically occurs when collecting an iterator prior to calling `Tabs::new`, and can be resolved
 by removing the call to `.collect()`.
 
 ```diff
-- let table = Tabs::new((0.3).map(|i| format!("{i}")).collect());
+- let tabs = Tabs::new((0.3).map(|i| format!("{i}")).collect());
 // becomes
-+ let table = Tabs::new((0.3).map(|i| format!("{i}")));
++ let tabs = Tabs::new((0.3).map(|i| format!("{i}")));
 ```
 
 ### Table::default() now sets segment_size to None and column_spacing to ([#751])
