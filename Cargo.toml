@@ -7,7 +7,7 @@ description = "Macros for Ratatui"
 license = "MIT" # or any other appropriate license
 repository = "https://github.com/kdheepak/ratatui-macros"
 documentation = "https://docs.rs/ratatui-macros"
-keywords = ["ratatui", "macros", "tui", "ui", "layout", "colors"]
+keywords = ["ratatui", "macros", "tui", "ui"]
 categories = ["tui", "macro"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
