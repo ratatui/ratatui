@@ -14,3 +14,6 @@ categories = ["tui", "macro"]
 
 [dependencies]
 ratatui = "0.25.0"
+
+[dev-dependencies]
+trybuild = { version = "1.0.88", features = ["diff"] }

@@ -1,128 +1,119 @@
 #![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/README.md"))]
 
-/// This macro creates an iterator of constraints.
+/// This macro creates an array of constraints.
 ///
 /// # Syntax
 ///
-/// The macro supports the following form:
-/// - `constraints!([$( $constraint:tt )+])`
+/// The `constraints!` macro supports the following forms:
+///
+/// - `constraints![$( $constraint:tt )+]`
+/// - `constraints![$( $constraint:tt )+; $count:expr]`
 ///
 /// Constraints are defined using a specific syntax:
 /// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
 /// - `== $token:tt %`: Sets a percentage constraint for the token.
-/// - `>= $token:tt`: Sets a minimum size constraint for the token.
-/// - `<= $token:tt`: Sets a maximum size constraint for the token.
-/// - `== $token:tt`: Sets a fixed size constraint for the token.
+/// - `>= $token:expr`: Sets a minimum size constraint for the token.
+/// - `<= $token:expr`: Sets a maximum size constraint for the token.
+/// - `== $token:expr`: Sets a fixed size constraint for the token.
 ///
 /// # Examples
 ///
 /// ```
 /// use ratatui_macros::constraints;
-/// constraints!([==5, ==30%, >=3, <=1, ==1/2]);
-/// constraints!([==5; 5]);
+/// assert_eq!(constraints![==5, ==30%, >=3, <=1, ==1/2].len(), 5);
+/// assert_eq!(constraints![==5; 5].len(), 5);
 /// ```
-///
-/// # Internal Implementation
-///
-/// - `@parse`: Internal rule to parse and accumulate constraints.
-/// - `@process`: Internal rule to convert tokens into constraints.
-///
-/// This macro simplifies the process of creating various constraints.
 #[macro_export]
 macro_rules! constraints {
-    // Entry rule for constraints
-    // e.g. `[ ==100%, >=1, >=1 ]`
-    ([ $( $constraint:tt )+ ]) => {
-        // e.g. the tokens `==100%, >=1, >=1` are matched with @parse rules
-        $crate::constraints!(@parse () $($constraint)+)
+    // Note: this implementation forgoes speed for the sake of simplicity. Adding variations of the
+    // comma and semicolon rules for each constraint type would be faster, but would result in a lot
+    // of duplicated code.
+
+    // Cannot start the constraints macro with a ,
+    ([ , $($rest:tt)* ] -> () []) => {
+        compile_error!("No rules expected the token `,` while trying to match the end of the macro")
     };
-    // Special case for `;`
-    (@parse ($($acc:tt)*) ; $count:expr) => {
-        $crate::constraints!(@process ($($acc)* ; $count))
+
+    // Comma finishes a constraint element, so parse it and continue.
+    // When a comma is encountered, it marks the end of a constraint element, so this rule is responsible
+    // for parsing the constraint expression up to the comma and continuing the parsing process.
+    // It accumulated the $partial contains a Constraint and is parsed using a separate $crate::constraint! macro.
+    // The constraint is then appended to the list of parsed constraints.
+    //
+    // [ , $($rest:tt)* ]                     -> In the rule matcher, this pattern matches a comma followed
+    //                                              by the rest of the tokens. The comma signals the end of
+    //                                              the current constraint element.
+    // ($($partial:tt)*)                      -> In the rule matcher, this contains the partial tokens
+    //                                              accumulated so far for the current constraint element.
+    // [$($parsed:tt)* ]                      -> This contains the constraints that have been successfully
+    //                                              parsed so far.
+    // $crate::constraint!($($partial)*)      -> This macro call parses and expands the accumulated
+    //                                              partial tokens into a single Constraint expression.
+    // [$($parsed)* $crate::constraint!(...)] -> Appends the newly parsed constraint to the list of
+    //                                              already parsed constraints.
+    ([ , $($rest:tt)* ] -> ($($partial:tt)*) [ $($parsed:tt)* ]) => {
+        $crate::constraints!([$($rest)*] -> () [$($parsed)* $crate::constraint!($($partial)*) ,])
     };
-    // Internal parsing rules for constraints
-    // This rule checks if `,` exists after the `head` token
-    // e.g. acc: `==100`; head: `%`; `,`; tail: `>=1, >=1` will match this rule
-    (@parse ($($acc:tt)*) $head:tt , $($tail:tt)*) => {
-        // Combines the head constraint with the tail constraints into a vector
-        std::iter::once(
-            // e.g. (acc head): `==100%`; this can be processed as a `Constraint`
-            $crate::constraints!(@process ($($acc)* $head)) // -> Constraint
-        ).chain(
-            // e.g. tail: `>=1, >=1`; this can be parsed as a `Iterator<type = Constraint>`
-            $crate::constraints!(@parse () $($tail)*).into_iter() // -> Iterator with type Constraint
-        )
+
+    // Semicolon indicates that there's repetition. The trailing comma is required because the 'entrypoint'
+    // rule adds a trailing comma.
+    // This rule is triggered when a semicolon is encountered, indicating that there is repetition of
+    // constraints. It handles the repetition logic by parsing the count and generating an array of
+    // constraints using the $crate::constraint! macro.
+    //
+    // [ ; $count:expr , ]                  -> In the rule matcher, this pattern matches a semicolon
+    //                                          followed by an expression representing the count, and a
+    //                                          trailing comma.
+    // ($($partial:tt)*)                    -> In the rule matcher, this contains the partial tokens
+    //                                          accumulated so far for the current constraint element.
+    //                                          This represents everything before the ;
+    // []                                   -> There will be no existed parsed constraints when using ;
+    // $crate::constraint!($($partial)*)    -> This macro call parses and expands the accumulated
+    //                                          partial tokens into a single Constraint expression.
+    // [$crate::constraint!(...) ; $count]  -> Generates an array of constraints by repeating the
+    //                                          parsed constraint count number of times.
+    ([ ; $count:expr , ] -> ($($partial:tt)*) []) => {
+        [$crate::constraint!($($partial)*); $count]
     };
-    // If there is no `,` then accumulate `next` token into existing `acc` tokens
-    // and return `Iterator`
-    // e.g. for tokens `==100%, >=1, >=1`
-    // 1.   acc: ``      ; next: `=`        ; tail: `=100 %, >=1, >=1`    ; will match this rule
-    //      acc: `=`     ;                    tail: `=100 %, >=1, >=1`    ; is the next parse
-    // 2.   acc: `=`     ; next: `=`        ; tail: `100 %, >=1, >=1`     ; will match this rule again
-    //      acc: `==`    ;                    tail: `100 %, >=1, >=1`     ; is the next parse
-    // 3.   acc: `==`    ; next: `100`      ; tail: `%, >=1, >=1`         ; will match this rule again
-    //      acc: `==100` ;                    tail: `%, >=1, >=1`         ; is the next parse
-    // OR   acc: `==100` ; head: `%`; `,`;    tail: `>=1, >=1`            ; i.e. this is the match for the next parse
-    //                                ^^^ --------------------------------> this will match previous rule because of this comma
-    (@parse ($($acc:tt)*) $next:tt $($tail:tt)*) => {
-        $crate::constraints!(@parse ($($acc)* $next) $($tail)*)
+
+    // Pull the first token (which can't be a comma or semicolon) onto the accumulator.
+    // if first token is a comma or semicolon, previous rules will match before this rule
+    //
+    // [ $head:tt $($rest:tt)* ]           -> In the rule matcher, this pulls a single `head` token
+    //                                          out of the previous rest, and puts
+    //                                          the remaining into `rest`
+    // [ $($rest)* ]                       -> This is what is fed back into the `constraints!` macro
+    //                                          as the first segment for the match rule
+    //
+    // ($($partial:tt)*)                   -> In the rule matcher, this contains previous partial
+    //                                          tokens that will make up a `Constraint` expression
+    // ($($partial)* $head)                -> This combines head with the previous partial tokens
+    //                                          i.e. this is the accumulated tokens
+    //
+    // [ $($parsed:tt)* ]                  -> In the rule matcher, this contains all parsed exprs
+    // [$($parsed)* ]                      -> These are passed on to the next match untouched.
+    ([ $head:tt $($rest:tt)* ] -> ($($partial:tt)*) [ $($parsed:tt)* ]) => {
+        $crate::constraints!([$($rest)*] -> ($($partial)* $head) [$($parsed)* ])
     };
-    // At the end there will a set of tokens left after the last `,`
-    // Process that as a `Constraint`
-    (@parse ($($acc:tt)*)) => {
-        [$crate::constraints!(@process ($($acc)*))]
+
+    // This rule is triggered when there are no more input tokens to process. It signals the end of the
+    // macro invocation and outputs the parsed constraints as a final array.
+    ([$(,)?]  -> () [ $( $parsed:tt )* ]) => {
+        [$($parsed)*]
     };
-    (@process (== $token1:tt / $token2:tt ; $count:expr)) => {
-        // Percentage constraint
-        std::iter::repeat(ratatui::prelude::Constraint::Ratio($token1 as u32, $token2 as u32)).take($count as usize)
-    };
-    // Process different types of constraints into a `Constraint`
-    (@process (== $token1:tt / $token2:tt)) => {
-        // Ratio constraint
-        ratatui::prelude::Constraint::Ratio($token1 as u32, $token2 as u32)
-    };
-    (@process (== $token:tt % ; $count:expr)) => {
-        // Percentage constraint
-        std::iter::repeat(ratatui::prelude::Constraint::Percentage($token)).take($count as usize)
-    };
-    (@process (== $token:tt %)) => {
-        // Percentage constraint
-        ratatui::prelude::Constraint::Percentage($token)
-    };
-    (@process (>= $token:expr; $count:expr)) => {
-        // Percentage constraint
-        std::iter::repeat(ratatui::prelude::Constraint::Min($token)).take($count as usize)
-    };
-    (@process (>= $token:expr)) => {
-        // Minimum size constraint
-        ratatui::prelude::Constraint::Min($token)
-    };
-    (@process (<= $token:expr; $count:expr)) => {
-        // Percentage constraint
-        std::iter::repeat(ratatui::prelude::Constraint::Max($token)).take($count as usize)
-    };
-    (@process (<= $token:expr)) => {
-        // Maximum size constraint
-        ratatui::prelude::Constraint::Max($token)
-    };
-    (@process (== $token:expr ; $count:expr)) => {
-        std::iter::repeat(ratatui::prelude::Constraint::Length($token)).take($count as usize)
-    };
-    (@process (== $token:expr)) => {
-        // Fixed size constraint
-        ratatui::prelude::Constraint::Length($token)
+
+    // Entrypoint where there's no comma at the end.
+    // We add a comma to make sure there's always a trailing comma.
+    // Right-hand side will accumulate the actual `Constraint` literals.
+    ($( $constraint:tt )+) => {
+        $crate::constraints!([ $($constraint)+ , ] -> () [])
     };
 }
 
-/// This macro creates a layout with specified constraints and direction.
+/// Expands to a single constraint. If creating an array of constraints, you probably want to use
+/// [`constraints!`] instead.
 ///
 /// # Syntax
-///
-/// The macro supports three main forms:
-/// - `layout!([$( $constraint:tt )+])`: Defines a default layout (vertical) with constraints.
-/// - `layout!([$( $constraint:tt )+], direction = h)`: Defines a horizontal layout with
-///   constraints.
-/// - `layout!([$( $constraint:tt )+], direction = v)`: Defines a vertical layout with constraints.
 ///
 /// Constraints are defined using a specific syntax:
 /// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
@@ -134,41 +125,28 @@ macro_rules! constraints {
 /// # Examples
 ///
 /// ```
-/// // Vertical layout with fixed size and percentage constraints
-/// use ratatui_macros::layout;
-/// layout!([== 50, == 30%], direction = v);
+/// use ratatui_macros::constraint;
+/// use ratatui::prelude::Constraint;
+/// assert_eq!(constraint!(>= 3 + 4), Constraint::Min(7));
+/// assert_eq!(constraint!(== 1 / 3), Constraint::Ratio(1, 3));
 /// ```
-///
-/// ```
-/// // Horizontal layout with ratio and minimum size constraints
-/// use ratatui_macros::layout;
-/// layout!([== 1/3, >= 100, <=4], direction = h);
-/// ```
-///
-/// # Internal Implementation
-///
-/// - `@construct`: Internal rule to construct the final Layout with the specified direction and
-///   constraints.
-///
-/// This macro simplifies the process of creating complex layouts with various constraints.
 #[macro_export]
-macro_rules! layout {
-    // Horizontal layout variant
-    ([ $( $constraint:tt )+ ], direction = h) => {
-        // use internal `constraint!(@parse ...)` rule directly since it will always be an iterator
-        $crate::layout!(@construct ratatui::prelude::Direction::Horizontal, $crate::constraints!(@parse () $($constraint)+))
-    };
-    // Vertical layout variant
-    ([ $( $constraint:tt )+ ], direction = v) => {
-        // use internal `constraint!(@parse ...)` rule directly since it will always be an iterator
-        $crate::layout!(@construct ratatui::prelude::Direction::Vertical, $crate::constraints!(@parse () $($constraint)+))
-    };
-    // Construct the final `Layout` object
-    (@construct $direction:expr, $constraints:expr) => {
-        ratatui::prelude::Layout::default()
-            .direction($direction)
-            .constraints($constraints)
-    };
+macro_rules! constraint {
+  ( == $token:tt % ) => {
+    ratatui::prelude::Constraint::Percentage($token)
+  };
+  ( >= $expr:expr ) => {
+    ratatui::prelude::Constraint::Min($expr)
+  };
+  ( <= $expr:expr ) => {
+    ratatui::prelude::Constraint::Max($expr)
+  };
+  ( == $num:tt / $denom:tt ) => {
+    ratatui::prelude::Constraint::Ratio($num as u32, $denom as u32)
+  };
+  ( == $expr:expr ) => {
+    ratatui::prelude::Constraint::Length($expr)
+  };
 }
 
 /// Creates a vertical layout with specified constraints.
@@ -179,28 +157,30 @@ macro_rules! layout {
 ///
 /// # Syntax
 ///
-/// - `vertical!([$( $constraint:tt )+])`: Defines a vertical layout with the given constraints.
+/// - `vertical![$( $constraint:tt )+]`: Defines a vertical layout with the given constraints.
 ///
 /// # Constraints
 ///
 /// Constraints are defined using a specific syntax:
 /// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
 /// - `== $token:tt %`: Sets a percentage constraint for the token.
-/// - `>= $token:tt`: Sets a minimum size constraint for the token.
-/// - `<= $token:tt`: Sets a maximum size constraint for the token.
-/// - `== $token:tt`: Sets a fixed size constraint for the token.
+/// - `>= $token:expr`: Sets a minimum size constraint for the token.
+/// - `<= $token:expr`: Sets a maximum size constraint for the token.
+/// - `== $token:expr`: Sets a fixed size constraint for the token.
 ///
 /// # Examples
 ///
 /// ```
 /// // Vertical layout with a fixed size and a percentage constraint
 /// use ratatui_macros::vertical;
-/// vertical!([== 50, == 30%]);
+/// vertical![== 50, == 30%];
 /// ```
 #[macro_export]
 macro_rules! vertical {
-    ([ $( $constraint:tt )+ ]) => {
-        $crate::layout!([ $( $constraint )+ ], direction = v)
+    ($( $constraint:tt )+) => {
+        ratatui::prelude::Layout::default()
+            .direction(ratatui::prelude::Direction::Vertical)
+            .constraints($crate::constraints!( $($constraint)+ ))
     };
 }
 
@@ -212,27 +192,29 @@ macro_rules! vertical {
 ///
 /// # Syntax
 ///
-/// - `horizontal!([$( $constraint:tt )+])`: Defines a horizontal layout with the given constraints.
+/// - `horizontal![$( $constraint:tt )+]`: Defines a horizontal layout with the given constraints.
 ///
 /// # Constraints
 ///
 /// Constraints are defined using a specific syntax:
 /// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
 /// - `== $token:tt %`: Sets a percentage constraint for the token.
-/// - `>= $token:tt`: Sets a minimum size constraint for the token.
-/// - `<= $token:tt`: Sets a maximum size constraint for the token.
-/// - `== $token:tt`: Sets a fixed size constraint for the token.
+/// - `>= $token:expr`: Sets a minimum size constraint for the token.
+/// - `<= $token:expr`: Sets a maximum size constraint for the token.
+/// - `== $token:expr`: Sets a fixed size constraint for the token.
 ///
 /// # Examples
 ///
 /// ```
 /// // Horizontal layout with a ratio constraint and a minimum size constraint
 /// use ratatui_macros::horizontal;
-/// horizontal!([== 1/3, >= 100]);
+/// horizontal![== 1/3, >= 100];
 /// ```
 #[macro_export]
 macro_rules! horizontal {
-    ([ $( $constraint:tt )+ ]) => {
-        $crate::layout!([ $( $constraint )+ ], direction = h)
+    ($( $constraint:tt )+) => {
+        ratatui::prelude::Layout::default()
+            .direction(ratatui::prelude::Direction::Horizontal)
+            .constraints($crate::constraints!( $($constraint)+ ))
     };
 }
