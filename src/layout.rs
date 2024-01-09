@@ -4,6 +4,8 @@ mod corner;
 mod direction;
 #[allow(clippy::module_inception)]
 mod layout;
+#[cfg(feature = "macros")]
+mod macros;
 mod margin;
 mod rect;
 mod segment_size;

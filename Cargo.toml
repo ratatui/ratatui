@@ -76,7 +76,7 @@ termwiz = ["dep:termwiz"]
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "bitflags/serde"]
 
-## enables the [`border!`] macro.
+## enables [`border!`], [`vertical!`], [`horizontal!`], [`constraints!`] and [`constraint!`] macros.
 macros = []
 
 ## enables all widgets.
