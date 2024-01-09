@@ -17,7 +17,7 @@ error: unexpected end of macro invocation
    | |___^ missing tokens in macro arguments
    |
 note: while trying to match `==`
-  --> src/lib.rs
+  --> src/layout.rs
    |
    |   ( == $token:tt % ) => {
    |     ^^
@@ -30,7 +30,7 @@ error: no rules expected the token `;`
    |                                                   ^ no rules expected this token in macro call
    |
 note: while trying to match `%`
-  --> src/lib.rs
+  --> src/layout.rs
    |
    |   ( == $token:tt % ) => {
    |                  ^

@@ -14,6 +14,10 @@ associated with creating UI using ratatui.
 - Constraint-based Layouts: Easily define layout constraints such as fixed, percentage, minimum, and
   maximum sizes, as well as ratios.
 - Directional Layouts: Specify layouts as either horizontal or vertical with simple macro commands.
+- Color palette: Define color palette based on [TailwindCSS]'s expertly-crafted default color
+  palette.
+
+[TailwindCSS]: https://tailwindcss.com/docs/customizing-colors
 
 ## Getting Started
 
@@ -26,8 +30,40 @@ cargo add ratatui-macros
 Then, import the macros in your Rust file:
 
 ```rust
-use ratatui_macros::{constraints, constraint, vertical, horizontal};
+use ratatui_macros::{constraints, constraint, vertical, horizontal, palette};
 ```
+
+### Color
+
+The `palette!` macro allows you to define color palettes with ease. It is based on [TailwindCSS]'s
+default color palette.
+
+```rust
+use ratatui::prelude::Color;
+use ratatui_macros::palette;
+
+palette!(SLATE);
+
+assert_eq!(SLATE_900, Color::Rgb(15, 23, 42));
+```
+
+The `palette!(SLATE)` macro expands to the following:
+
+```rust
+use ratatui::prelude::Color;
+const SLATE_50: Color = Color::Rgb(248, 250, 252);
+const SLATE_100: Color = Color::Rgb(241, 245, 249);
+const SLATE_200: Color = Color::Rgb(226, 232, 240);
+const SLATE_300: Color = Color::Rgb(203, 213, 225);
+const SLATE_400: Color = Color::Rgb(148, 163, 184);
+const SLATE_500: Color = Color::Rgb(100, 116, 139);
+const SLATE_600: Color = Color::Rgb(71, 85, 105);
+const SLATE_700: Color = Color::Rgb(51, 65, 85);
+const SLATE_800: Color = Color::Rgb(30, 41, 59);
+const SLATE_900: Color = Color::Rgb(15, 23, 42);
+```
+
+### Layout
 
 If you are new to Ratatui, check out <https://ratatui.rs/concepts/layout/> before proceeding.
 
@@ -36,6 +72,7 @@ Use the `constraints!` macro to define layout constraints:
 ```rust
 use ratatui::prelude::*;
 use ratatui_macros::constraints;
+
 assert_eq!(
     constraints![==50, ==30%, >=3, <=1, ==1/2],
     [
@@ -51,6 +88,7 @@ assert_eq!(
 ```rust
 use ratatui::prelude::*;
 use ratatui_macros::constraints;
+
 assert_eq!(
     constraints![==1/4; 4],
     [
@@ -67,6 +105,7 @@ Use the `constraint!` macro to define individual constraints:
 ```rust
 use ratatui::prelude::*;
 use ratatui_macros::constraint;
+
 assert_eq!(
     constraint!(==50), Constraint::Length(50),
 )
@@ -85,6 +124,7 @@ let [main, bottom] = vertical![==100%, >=3]
     .to_vec()
     .try_into()
     .unwrap();
+
 assert_eq!(bottom.y, 7);
 assert_eq!(bottom.height, 3);
 
@@ -93,6 +133,7 @@ let [left, main, right] = horizontal![>=3, ==100%, >=3]
     .to_vec()
     .try_into()
     .unwrap();
+
 assert_eq!(left.width, 3);
 assert_eq!(right.width, 3);
 ```
