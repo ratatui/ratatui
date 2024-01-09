@@ -1,5 +1,5 @@
 use ratatui::prelude::*;
-use ratatui_macros::{constraints, horizontal, layout, vertical};
+use ratatui_macros::{constraints, horizontal, vertical};
 
 #[test]
 fn layout_constraints_macro() {
@@ -17,11 +17,8 @@ fn layout_constraints_macro() {
   let two = 2;
   let ten = 10;
   let zero = 0;
-  let [a, b, c, d, e, f] = layout!([==one, >=one, <=one, == 1 / two, == ten %, >=zero], direction = h)
-    .split(rect)
-    .to_vec()
-    .try_into()
-    .unwrap();
+  let [a, b, c, d, e, f] =
+    horizontal![==one, >=one, <=one, == 1 / two, == ten %, >=zero].split(rect).to_vec().try_into().unwrap();
 
   assert_eq!(a, Rect::new(0, 0, 1, 10));
   assert_eq!(b, Rect::new(1, 0, 1, 10));
@@ -34,17 +31,14 @@ fn layout_constraints_macro() {
   let two = 2;
   let ten = 10;
   let zero = 0;
-  let [a, b, c, d, e, f] = layout!(
-      [
-          == one*one, // expr allowed here
-          >= one+zero, // expr allowed here
-          <= one-zero, // expr allowed here
-          == 1/two, // only single token allowed in numerator and denominator
-          == ten%, // only single token allowed before %
-          >= zero // no trailing comma
-      ],
-      direction = h
-  )
+  let [a, b, c, d, e, f] = horizontal![
+    == one*one, // expr allowed here
+    >= one+zero, // expr allowed here
+    <= one-zero, // expr allowed here
+    == 1/two, // only single token allowed in numerator and denominator
+    == ten%, // only single token allowed before %
+    >= zero // no trailing comma
+  ]
   .split(rect)
   .to_vec()
   .try_into()

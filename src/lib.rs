@@ -1,6 +1,6 @@
 #![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/README.md"))]
 
-/// This macro creates an iterator of constraints.
+/// This macro creates an array of constraints.
 ///
 /// # Syntax
 ///
@@ -100,63 +100,6 @@ macro_rules! constraint {
   };
 }
 
-/// This macro creates a layout with specified constraints and direction.
-///
-/// # Syntax
-///
-/// The macro supports three main forms:
-/// - `layout!([$( $constraint:tt )+])`: Defines a default layout (vertical) with constraints.
-/// - `layout!([$( $constraint:tt )+], direction = h)`: Defines a horizontal layout with
-///   constraints.
-/// - `layout!([$( $constraint:tt )+], direction = v)`: Defines a vertical layout with constraints.
-///
-/// Constraints are defined using a specific syntax:
-/// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
-/// - `== $token:tt %`: Sets a percentage constraint for the token.
-/// - `>= $token:tt`: Sets a minimum size constraint for the token.
-/// - `<= $token:tt`: Sets a maximum size constraint for the token.
-/// - `== $token:tt`: Sets a fixed size constraint for the token.
-///
-/// # Examples
-///
-/// ```
-/// // Vertical layout with fixed size and percentage constraints
-/// use ratatui_macros::layout;
-/// layout!([== 50, == 30%], direction = v);
-/// ```
-///
-/// ```
-/// // Horizontal layout with ratio and minimum size constraints
-/// use ratatui_macros::layout;
-/// layout!([== 1/3, >= 100, <=4], direction = h);
-/// ```
-///
-/// # Internal Implementation
-///
-/// - `@construct`: Internal rule to construct the final Layout with the specified direction and
-///   constraints.
-///
-/// This macro simplifies the process of creating complex layouts with various constraints.
-#[macro_export]
-macro_rules! layout {
-    // Horizontal layout variant
-    ([ $( $constraint:tt )+ ], direction = h) => {
-        // use internal `constraint!(@parse ...)` rule directly since it will always be an iterator
-        $crate::layout!(@construct ratatui::prelude::Direction::Horizontal, $crate::constraints!( $($constraint)+))
-    };
-    // Vertical layout variant
-    ([ $( $constraint:tt )+ ], direction = v) => {
-        // use internal `constraint!(@parse ...)` rule directly since it will always be an iterator
-        $crate::layout!(@construct ratatui::prelude::Direction::Vertical, $crate::constraints!( $($constraint)+ ))
-    };
-    // Construct the final `Layout` object
-    (@construct $direction:expr, $constraints:expr) => {
-        ratatui::prelude::Layout::default()
-            .direction($direction)
-            .constraints($constraints)
-    };
-}
-
 /// Creates a vertical layout with specified constraints.
 ///
 /// This macro is a convenience wrapper around the `layout!` macro for defining vertical layouts.
@@ -172,9 +115,9 @@ macro_rules! layout {
 /// Constraints are defined using a specific syntax:
 /// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
 /// - `== $token:tt %`: Sets a percentage constraint for the token.
-/// - `>= $token:tt`: Sets a minimum size constraint for the token.
-/// - `<= $token:tt`: Sets a maximum size constraint for the token.
-/// - `== $token:tt`: Sets a fixed size constraint for the token.
+/// - `>= $token:expr`: Sets a minimum size constraint for the token.
+/// - `<= $token:expr`: Sets a maximum size constraint for the token.
+/// - `== $token:expr`: Sets a fixed size constraint for the token.
 ///
 /// # Examples
 ///
@@ -186,7 +129,9 @@ macro_rules! layout {
 #[macro_export]
 macro_rules! vertical {
     ($( $constraint:tt )+) => {
-        $crate::layout!([ $( $constraint )+ ], direction = v)
+        ratatui::prelude::Layout::default()
+            .direction(ratatui::prelude::Direction::Vertical)
+            .constraints($crate::constraints!( $($constraint)+ ))
     };
 }
 
@@ -198,16 +143,16 @@ macro_rules! vertical {
 ///
 /// # Syntax
 ///
-/// - `horizontal!([$( $constraint:tt )+])`: Defines a horizontal layout with the given constraints.
+/// - `horizontal![$( $constraint:tt )+]`: Defines a horizontal layout with the given constraints.
 ///
 /// # Constraints
 ///
 /// Constraints are defined using a specific syntax:
 /// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
 /// - `== $token:tt %`: Sets a percentage constraint for the token.
-/// - `>= $token:tt`: Sets a minimum size constraint for the token.
-/// - `<= $token:tt`: Sets a maximum size constraint for the token.
-/// - `== $token:tt`: Sets a fixed size constraint for the token.
+/// - `>= $token:expr`: Sets a minimum size constraint for the token.
+/// - `<= $token:expr`: Sets a maximum size constraint for the token.
+/// - `== $token:expr`: Sets a fixed size constraint for the token.
 ///
 /// # Examples
 ///
@@ -219,6 +164,8 @@ macro_rules! vertical {
 #[macro_export]
 macro_rules! horizontal {
     ($( $constraint:tt )+) => {
-        $crate::layout!([ $( $constraint )+ ], direction = h)
+        ratatui::prelude::Layout::default()
+            .direction(ratatui::prelude::Direction::Horizontal)
+            .constraints($crate::constraints!( $($constraint)+ ))
     };
 }
