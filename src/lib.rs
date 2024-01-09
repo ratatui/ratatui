@@ -4,7 +4,8 @@
 ///
 /// # Syntax
 ///
-/// The macro supports the following form:
+/// The `constraints!` macro supports the following forms:
+///
 /// - `constraints![$( $constraint:tt )+]`
 /// - `constraints![$( $constraint:tt )+; $count:expr]`
 ///
@@ -34,12 +35,43 @@ macro_rules! constraints {
     };
 
     // Comma finishes a constraint element, so parse it and continue.
+    // When a comma is encountered, it marks the end of a constraint element, so this rule is responsible
+    // for parsing the constraint expression up to the comma and continuing the parsing process.
+    // It accumulated the $partial contains a Constraint and is parsed using a separate $crate::constraint! macro.
+    // The constraint is then appended to the list of parsed constraints.
+    //
+    // [ , $($rest:tt)* ]                     -> In the rule matcher, this pattern matches a comma followed
+    //                                              by the rest of the tokens. The comma signals the end of
+    //                                              the current constraint element.
+    // ($($partial:tt)*)                      -> In the rule matcher, this contains the partial tokens
+    //                                              accumulated so far for the current constraint element.
+    // [$($parsed:tt)* ]                      -> This contains the constraints that have been successfully
+    //                                              parsed so far.
+    // $crate::constraint!($($partial)*)      -> This macro call parses and expands the accumulated
+    //                                              partial tokens into a single Constraint expression.
+    // [$($parsed)* $crate::constraint!(...)] -> Appends the newly parsed constraint to the list of
+    //                                              already parsed constraints.
     ([ , $($rest:tt)* ] -> ($($partial:tt)*) [ $($parsed:tt)* ]) => {
         $crate::constraints!([$($rest)*] -> () [$($parsed)* $crate::constraint!($($partial)*) ,])
     };
 
-    // Semicolon indicates that there's repetition. The trailing comma is because the 'entrypoint'
+    // Semicolon indicates that there's repetition. The trailing comma is required because the 'entrypoint'
     // rule adds a trailing comma.
+    // This rule is triggered when a semicolon is encountered, indicating that there is repetition of
+    // constraints. It handles the repetition logic by parsing the count and generating an array of
+    // constraints using the $crate::constraint! macro.
+    //
+    // [ ; $count:expr , ]                  -> In the rule matcher, this pattern matches a semicolon
+    //                                          followed by an expression representing the count, and a
+    //                                          trailing comma.
+    // ($($partial:tt)*)                    -> In the rule matcher, this contains the partial tokens
+    //                                          accumulated so far for the current constraint element.
+    //                                          This represents everything before the ;
+    // []                                   -> There will be no existed parsed constraints when using ;
+    // $crate::constraint!($($partial)*)    -> This macro call parses and expands the accumulated
+    //                                          partial tokens into a single Constraint expression.
+    // [$crate::constraint!(...) ; $count]  -> Generates an array of constraints by repeating the
+    //                                          parsed constraint count number of times.
     ([ ; $count:expr , ] -> ($($partial:tt)*) []) => {
         [$crate::constraint!($($partial)*); $count]
     };
@@ -64,12 +96,13 @@ macro_rules! constraints {
         $crate::constraints!([$($rest)*] -> ($($partial)* $head) [$($parsed)* ])
     };
 
-    // No more input tokens; emit the parsed constraints.
+    // This rule is triggered when there are no more input tokens to process. It signals the end of the
+    // macro invocation and outputs the parsed constraints as a final array.
     ([$(,)?]  -> () [ $( $parsed:tt )* ]) => {
         [$($parsed)*]
     };
 
-    // Entrypoint where there's a no comma at the end
+    // Entrypoint where there's no comma at the end.
     // We add a comma to make sure there's always a trailing comma.
     // Right-hand side will accumulate the actual `Constraint` literals.
     ($( $constraint:tt )+) => {
