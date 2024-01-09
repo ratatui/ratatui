@@ -80,8 +80,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 
 fn ui(f: &mut Frame, app: &App) {
     let area = f.size();
-    let vertical = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]);
-    let [tabs_area, inner_area] = area.split(&vertical);
+    let vertical = Layout::new(Direction::Vertical, [Constraint::Length(3), Constraint::Min(0)]).split(area);
+    let tabs_area = vertical[0];
+    let inner_area = vertical[1];
 
     let block = Block::default().on_white().black();
     f.render_widget(block, area);
