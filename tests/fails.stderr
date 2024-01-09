@@ -1,0 +1,13 @@
+warning: unused import: `ratatui_macros::constraints`
+ --> tests/fails.rs:1:5
+  |
+1 | use ratatui_macros::constraints;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+error[E0601]: `main` function not found in crate `$CRATE`
+ --> tests/fails.rs:5:2
+  |
+5 | }
+  |  ^ consider adding a `main` function to `$DIR/tests/fails.rs`

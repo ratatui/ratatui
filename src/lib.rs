@@ -40,11 +40,27 @@ macro_rules! constraints {
     };
 
     // User wrote something like `constraints!([== 3, == 4; 10])`.
+    // TODO: Unable to get this compiler error to trigger
     ([ ; $count:expr , ] -> ($($partial:tt)*) [$($_:expr)+]) => {
         compile_error!("constraint repetition requires exactly one constraint")
     };
 
     // Pull the first token (which can't be a comma or semicolon) onto the accumulator.
+    // if first token is a comma or semicolon, previous rules will match before this rule
+    //
+    // [ $head:tt $($rest:tt)* ]           -> In the rule matcher, this pulls a single `head` token
+    //                                          out of the previous rest, and puts
+    //                                          the remaining into `rest`
+    // [ $($rest)* ]                       -> This is what is fed back into the `constraints!` macro
+    //                                          as the first segment for the match rule
+    //
+    // ($($partial:tt)*)                   -> In the rule matcher, this contains previous partial
+    //                                          tokens that will make up a `Constraint` expression
+    // ($($partial)* $head)                -> This combines head with the previous partial tokens
+    //                                          i.e. this is the accumulated tokens
+    //
+    // [ $($parsed:tt)* ]                  -> In the rule matcher, this contains all parsed exprs
+    // [$($parsed)* ]                      -> These are passed on to the next match untouched.
     ([ $head:tt $($rest:tt)* ] -> ($($partial:tt)*) [ $($parsed:tt)* ]) => {
         $crate::constraints!([$($rest)*] -> ($($partial)* $head) [$($parsed)* ])
     };

@@ -84,3 +84,9 @@ fn layout_constraints_macro() {
   assert_eq!(a, Constraint::Ratio(1, 2));
   assert_eq!(b, Constraint::Ratio(1, 2));
 }
+
+#[test]
+fn fails() {
+  let t = trybuild::TestCases::new();
+  t.compile_fail("tests/fails.rs");
+}
