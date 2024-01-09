@@ -32,37 +32,49 @@ use ratatui_macros::{constraints, vertical, horizontal};
 Use the `constraints!` macro to define layout constraints:
 
 ```rust
+use ratatui::prelude::*;
 use ratatui_macros::constraints;
 assert_eq!(
     constraints![==50, ==30%, >=3, <=1, ==1/2],
     [
-        ratatui::prelude::Constraint::Length(50),
-        ratatui::prelude::Constraint::Percentage(30),
-        ratatui::prelude::Constraint::Min(3),
-        ratatui::prelude::Constraint::Max(1),
-        ratatui::prelude::Constraint::Ratio(1, 2),
+        Constraint::Length(50),
+        Constraint::Percentage(30),
+        Constraint::Min(3),
+        Constraint::Max(1),
+        Constraint::Ratio(1, 2),
     ]
 )
 ```
 
 ```rust
+use ratatui::prelude::*;
 use ratatui_macros::constraints;
 assert_eq!(
     constraints![==1/4; 4],
     [
-        ratatui::prelude::Constraint::Ratio(1, 4),
-        ratatui::prelude::Constraint::Ratio(1, 4),
-        ratatui::prelude::Constraint::Ratio(1, 4),
-        ratatui::prelude::Constraint::Ratio(1, 4),
+        Constraint::Ratio(1, 4),
+        Constraint::Ratio(1, 4),
+        Constraint::Ratio(1, 4),
+        Constraint::Ratio(1, 4),
     ]
+)
+```
+
+You can also use the `constraint!` macro to define individual constraints:
+
+```rust
+use ratatui::prelude::*;
+use ratatui_macros::constraint;
+assert_eq!(
+    constraint!(==50), Constraint::Length(50),
 )
 ```
 
 Create vertical and horizontal layouts using the `vertical!` and `horizontal!` macros:
 
 ```rust
+use ratatui::prelude::*;
 use ratatui_macros::{vertical, horizontal};
-use ratatui::prelude::Rect;
 
 let area = Rect { x: 0, y: 0, width: 10, height: 10 };
 
