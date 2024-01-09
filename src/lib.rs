@@ -11,7 +11,10 @@
 /// use ratatui_macros::constraint;
 /// use ratatui::prelude::Constraint;
 /// assert_eq!(constraint!(>= 3 + 4), Constraint::Min(7));
+/// assert_eq!(constraint!(<= 3 + 4), Constraint::Max(7));
 /// assert_eq!(constraint!(== 1 / 3), Constraint::Ratio(1, 3));
+/// assert_eq!(constraint!(== 3), Constraint::Length(3));
+/// assert_eq!(constraint!(== 10 %), Constraint::Percentage(10));
 /// ```
 #[macro_export]
 macro_rules! constraint {
@@ -36,10 +39,25 @@ macro_rules! constraint {
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust
 /// use ratatui_macros::constraints;
 /// assert_eq!(constraints![==5, ==30%, >=3, <=1, ==1/2].len(), 5);
 /// assert_eq!(constraints![==5; 5].len(), 5);
+/// ```
+///
+/// ```rust
+/// use ratatui::prelude::*;
+/// use ratatui_macros::constraints;
+/// assert_eq!(
+///     constraints![==50, ==30%, >=3, <=1, ==1/2],
+///     [
+///         Constraint::Length(50),
+///         Constraint::Percentage(30),
+///         Constraint::Min(3),
+///         Constraint::Max(1),
+///         Constraint::Ratio(1, 2),
+///     ]
+/// )
 /// ```
 #[macro_export]
 macro_rules! constraints {
