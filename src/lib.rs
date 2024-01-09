@@ -1,20 +1,38 @@
 #![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/README.md"))]
 
-/// This macro creates an array of constraints.
+/// Creates a single constraint.
 ///
-/// # Syntax
+/// If creating an array of constraints, you probably want to use
+/// [`constraints!`] instead.
 ///
-/// The `constraints!` macro supports the following forms:
+/// # Examples
 ///
-/// - `constraints![$( $constraint:tt )+]`
-/// - `constraints![$( $constraint:tt )+; $count:expr]`
-///
-/// Constraints are defined using a specific syntax:
-/// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
-/// - `== $token:tt %`: Sets a percentage constraint for the token.
-/// - `>= $token:expr`: Sets a minimum size constraint for the token.
-/// - `<= $token:expr`: Sets a maximum size constraint for the token.
-/// - `== $token:expr`: Sets a fixed size constraint for the token.
+/// ```
+/// use ratatui_macros::constraint;
+/// use ratatui::prelude::Constraint;
+/// assert_eq!(constraint!(>= 3 + 4), Constraint::Min(7));
+/// assert_eq!(constraint!(== 1 / 3), Constraint::Ratio(1, 3));
+/// ```
+#[macro_export]
+macro_rules! constraint {
+  ( == $token:tt % ) => {
+    ratatui::prelude::Constraint::Percentage($token)
+  };
+  ( >= $expr:expr ) => {
+    ratatui::prelude::Constraint::Min($expr)
+  };
+  ( <= $expr:expr ) => {
+    ratatui::prelude::Constraint::Max($expr)
+  };
+  ( == $num:tt / $denom:tt ) => {
+    ratatui::prelude::Constraint::Ratio($num as u32, $denom as u32)
+  };
+  ( == $expr:expr ) => {
+    ratatui::prelude::Constraint::Length($expr)
+  };
+}
+
+/// Creates an array of constraints.
 ///
 /// # Examples
 ///
@@ -110,63 +128,10 @@ macro_rules! constraints {
     };
 }
 
-/// Expands to a single constraint. If creating an array of constraints, you probably want to use
-/// [`constraints!`] instead.
-///
-/// # Syntax
-///
-/// Constraints are defined using a specific syntax:
-/// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
-/// - `== $token:tt %`: Sets a percentage constraint for the token.
-/// - `>= $token:tt`: Sets a minimum size constraint for the token.
-/// - `<= $token:tt`: Sets a maximum size constraint for the token.
-/// - `== $token:tt`: Sets a fixed size constraint for the token.
-///
-/// # Examples
-///
-/// ```
-/// use ratatui_macros::constraint;
-/// use ratatui::prelude::Constraint;
-/// assert_eq!(constraint!(>= 3 + 4), Constraint::Min(7));
-/// assert_eq!(constraint!(== 1 / 3), Constraint::Ratio(1, 3));
-/// ```
-#[macro_export]
-macro_rules! constraint {
-  ( == $token:tt % ) => {
-    ratatui::prelude::Constraint::Percentage($token)
-  };
-  ( >= $expr:expr ) => {
-    ratatui::prelude::Constraint::Min($expr)
-  };
-  ( <= $expr:expr ) => {
-    ratatui::prelude::Constraint::Max($expr)
-  };
-  ( == $num:tt / $denom:tt ) => {
-    ratatui::prelude::Constraint::Ratio($num as u32, $denom as u32)
-  };
-  ( == $expr:expr ) => {
-    ratatui::prelude::Constraint::Length($expr)
-  };
-}
-
 /// Creates a vertical layout with specified constraints.
 ///
-/// This macro is a convenience wrapper around the `layout!` macro for defining vertical layouts.
 /// It accepts a series of constraints and applies them to create a vertical layout. The constraints
 /// can include fixed sizes, minimum and maximum sizes, percentages, and ratios.
-///
-/// # Syntax
-///
-/// - `vertical![$( $constraint:tt )+]`: Defines a vertical layout with the given constraints.
-///
-/// # Constraints
-///
-/// Constraints are defined using a specific syntax:
-/// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
-/// - `== $token:tt %`: Sets a percentage constraint for the token.
-/// - `>= $token:expr`: Sets a minimum size constraint for the token.
-/// - `<= $token:expr`: Sets a maximum size constraint for the token.
-/// - `== $token:expr`: Sets a fixed size constraint for the token.
 ///
 /// # Examples
 ///
@@ -189,19 +154,6 @@ macro_rules! vertical {
 /// This macro is a convenience wrapper around the `layout!` macro for defining horizontal layouts.
 /// It takes a series of constraints and applies them to create a horizontal layout. The constraints
 /// can include fixed sizes, minimum and maximum sizes, percentages, and ratios.
-///
-/// # Syntax
-///
-/// - `horizontal![$( $constraint:tt )+]`: Defines a horizontal layout with the given constraints.
-///
-/// # Constraints
-///
-/// Constraints are defined using a specific syntax:
-/// - `== $token:tt / $token2:tt`: Sets a ratio constraint between two tokens.
-/// - `== $token:tt %`: Sets a percentage constraint for the token.
-/// - `>= $token:expr`: Sets a minimum size constraint for the token.
-/// - `<= $token:expr`: Sets a maximum size constraint for the token.
-/// - `== $token:expr`: Sets a fixed size constraint for the token.
 ///
 /// # Examples
 ///
