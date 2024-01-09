@@ -42,25 +42,25 @@ default color palette.
 use ratatui::prelude::Color;
 use ratatui_macros::palette;
 
-palette!(SLATE);
+palette!(pub SLATE);
 
 assert_eq!(SLATE_900, Color::Rgb(15, 23, 42));
 ```
 
-The `palette!(SLATE)` macro expands to the following:
+The `palette!(pub SLATE)` macro expands to the following:
 
 ```rust
 use ratatui::prelude::Color;
-const SLATE_50: Color = Color::Rgb(248, 250, 252);
-const SLATE_100: Color = Color::Rgb(241, 245, 249);
-const SLATE_200: Color = Color::Rgb(226, 232, 240);
-const SLATE_300: Color = Color::Rgb(203, 213, 225);
-const SLATE_400: Color = Color::Rgb(148, 163, 184);
-const SLATE_500: Color = Color::Rgb(100, 116, 139);
-const SLATE_600: Color = Color::Rgb(71, 85, 105);
-const SLATE_700: Color = Color::Rgb(51, 65, 85);
-const SLATE_800: Color = Color::Rgb(30, 41, 59);
-const SLATE_900: Color = Color::Rgb(15, 23, 42);
+pub const SLATE_50: Color = Color::Rgb(248, 250, 252);
+pub const SLATE_100: Color = Color::Rgb(241, 245, 249);
+pub const SLATE_200: Color = Color::Rgb(226, 232, 240);
+pub const SLATE_300: Color = Color::Rgb(203, 213, 225);
+pub const SLATE_400: Color = Color::Rgb(148, 163, 184);
+pub const SLATE_500: Color = Color::Rgb(100, 116, 139);
+pub const SLATE_600: Color = Color::Rgb(71, 85, 105);
+pub const SLATE_700: Color = Color::Rgb(51, 65, 85);
+pub const SLATE_800: Color = Color::Rgb(30, 41, 59);
+pub const SLATE_900: Color = Color::Rgb(15, 23, 42);
 ```
 
 ### Layout
