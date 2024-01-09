@@ -33,27 +33,29 @@ Use the `constraints!` macro to define layout constraints:
 
 ```rust
 use ratatui_macros::constraints;
-constraints![==50, ==30%, >=3, <=1, ==1/2];
-// is equivalent to
-[
-    ratatui::prelude::Constraint::Length(50),
-    ratatui::prelude::Constraint::Percentage(30),
-    ratatui::prelude::Constraint::Min(3),
-    ratatui::prelude::Constraint::Max(1),
-    ratatui::prelude::Constraint::Ratio(1, 2),
-];
+assert_eq!(
+    constraints![==50, ==30%, >=3, <=1, ==1/2],
+    [
+        ratatui::prelude::Constraint::Length(50),
+        ratatui::prelude::Constraint::Percentage(30),
+        ratatui::prelude::Constraint::Min(3),
+        ratatui::prelude::Constraint::Max(1),
+        ratatui::prelude::Constraint::Ratio(1, 2),
+    ]
+)
 ```
 
 ```rust
 use ratatui_macros::constraints;
-constraints![==1/4; 4];
-// is equivalent to
-[
-    ratatui::prelude::Constraint::Ratio(1, 4),
-    ratatui::prelude::Constraint::Ratio(1, 4),
-    ratatui::prelude::Constraint::Ratio(1, 4),
-    ratatui::prelude::Constraint::Ratio(1, 4),
-];
+assert_eq!(
+    constraints![==1/4; 4],
+    [
+        ratatui::prelude::Constraint::Ratio(1, 4),
+        ratatui::prelude::Constraint::Ratio(1, 4),
+        ratatui::prelude::Constraint::Ratio(1, 4),
+        ratatui::prelude::Constraint::Ratio(1, 4),
+    ]
+)
 ```
 
 Create vertical and horizontal layouts using the `vertical!` and `horizontal!` macros:
