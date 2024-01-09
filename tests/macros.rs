@@ -88,5 +88,5 @@ fn layout_constraints_macro() {
 #[test]
 fn fails() {
   let t = trybuild::TestCases::new();
-  t.compile_fail("tests/fails.rs");
+  t.compile_fail("tests/ui/fails.rs");
 }

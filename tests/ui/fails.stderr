@@ -1,0 +1,13 @@
+error: No rules expected the token `,` while trying to match the end of the macro
+ --> tests/ui/fails.rs:4:3
+  |
+4 |   constraints![,];
+  |   ^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `$crate::constraints` which comes from the expansion of the macro `constraints` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0601]: `main` function not found in crate `$CRATE`
+ --> tests/ui/fails.rs:5:2
+  |
+5 | }
+  |  ^ consider adding a `main` function to `$DIR/tests/ui/fails.rs`

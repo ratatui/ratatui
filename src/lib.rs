@@ -29,6 +29,11 @@ macro_rules! constraints {
     // of duplicated code.
 
     // Comma finishes a constraint element, so parse it and continue.
+    ([ , $($rest:tt)* ] -> () []) => {
+        compile_error!("No rules expected the token `,` while trying to match the end of the macro")
+    };
+
+    // Comma finishes a constraint element, so parse it and continue.
     ([ , $($rest:tt)* ] -> ($($partial:tt)*) [ $($parsed:tt)* ]) => {
         $crate::constraints!([$($rest)*] -> () [$($parsed)* $crate::constraint!($($partial)*) ,])
     };
