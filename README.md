@@ -30,7 +30,13 @@ cargo add ratatui-macros
 Then, import the macros in your Rust file:
 
 ```rust
-use ratatui_macros::{constraints, constraint, vertical, horizontal, palette};
+use ratatui_macros::{
+    constraint,
+    constraints,
+    horizontal,
+    palette
+    vertical,
+};
 ```
 
 ### Color
