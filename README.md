@@ -26,7 +26,7 @@ cargo add ratatui-macros
 Then, import the macros in your Rust file:
 
 ```rust
-use ratatui_macros::{constraints, vertical, horizontal};
+use ratatui_macros::{constraints, constraint, vertical, horizontal};
 ```
 
 Use the `constraints!` macro to define layout constraints:
@@ -60,7 +60,7 @@ assert_eq!(
 )
 ```
 
-You can also use the `constraint!` macro to define individual constraints:
+Use the `constraint!` macro to define individual constraints:
 
 ```rust
 use ratatui::prelude::*;
