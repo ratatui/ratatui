@@ -169,7 +169,6 @@ macro_rules! vertical {
 
 /// Creates a horizontal layout with specified constraints.
 ///
-/// This macro is a convenience wrapper around the `layout!` macro for defining horizontal layouts.
 /// It takes a series of constraints and applies them to create a horizontal layout. The constraints
 /// can include fixed sizes, minimum and maximum sizes, percentages, and ratios.
 ///
