@@ -60,8 +60,14 @@ Create vertical and horizontal layouts using the `vertical!` and `horizontal!` m
 
 ```rust
 use ratatui_macros::{vertical, horizontal};
-let vertical_layout = vertical![==50, ==30%];
-let horizontal_layout = horizontal![==1/3, >=100, <=4];
+use ratatui::prelude::Rect;
+let area = Rect { x: 0, y: 0, width: 10, height: 10 };
+
+let vertical_layout = vertical![==100%, >=3];
+let [main, bottom] = vertical_layout.split(area).to_vec().try_into().unwrap();
+
+let horizontal_layout = horizontal![==10, ==100%, ==10];
+let [left, main, right] = horizontal_layout.split(area).to_vec().try_into().unwrap();
 ```
 
 ## Contributing
