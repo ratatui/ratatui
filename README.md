@@ -78,12 +78,19 @@ use ratatui_macros::{vertical, horizontal};
 
 let area = Rect { x: 0, y: 0, width: 10, height: 10 };
 
-let vertical_layout = vertical![==100%, >=3];
-let [main, bottom] = vertical_layout.split(area).to_vec().try_into().unwrap();
+let [main, bottom] = vertical![==100%, >=3]
+                        .split(area)
+                        .to_vec()
+                        .try_into()
+                        .unwrap();
 assert_eq!(bottom.height, 3);
 
-let horizontal_layout = horizontal![==100%, >=3];
-let [main, right] = horizontal_layout.split(area).to_vec().try_into().unwrap();
+let [left, main, right] = horizontal![>=3, ==100%, >=3]
+                            .split(area)
+                            .to_vec()
+                            .try_into()
+                            .unwrap();
+assert_eq!(left.width, 3);
 assert_eq!(right.width, 3);
 ```
 
