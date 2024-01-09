@@ -29,6 +29,8 @@ Then, import the macros in your Rust file:
 use ratatui_macros::{constraints, constraint, vertical, horizontal};
 ```
 
+If you are new to Ratatui, check out <https://ratatui.rs/concepts/layout/> before proceeding.
+
 Use the `constraints!` macro to define layout constraints:
 
 ```rust

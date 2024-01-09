@@ -37,6 +37,11 @@ macro_rules! constraint {
 
 /// Creates an array of constraints.
 ///
+/// See [`constraint!`] for more information.
+///
+/// If you want to solve the constraints, see
+/// [`vertical!`] and [`horizontal!`] macros.
+///
 /// # Examples
 ///
 /// ```rust
@@ -151,6 +156,8 @@ macro_rules! constraints {
 /// It accepts a series of constraints and applies them to create a vertical layout. The constraints
 /// can include fixed sizes, minimum and maximum sizes, percentages, and ratios.
 ///
+/// See [`constraint!`]  or [`constraints!`] for more information.
+///
 /// # Examples
 ///
 /// ```
@@ -171,6 +178,8 @@ macro_rules! vertical {
 ///
 /// It takes a series of constraints and applies them to create a horizontal layout. The constraints
 /// can include fixed sizes, minimum and maximum sizes, percentages, and ratios.
+///
+/// See [`constraint!`]  or [`constraints!`] for more information.
 ///
 /// # Examples
 ///
