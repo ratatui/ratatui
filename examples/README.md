@@ -1,5 +1,11 @@
 # Examples
 
+> [!WARNING]
+> The examples in this folder run against the `main` branch. If you find that code from an example
+> fails to run in your own application, please check the tag of the release that your project is
+> using. We also release regular alpha releases (usually weekly), if you prefer the updated example
+> code.
+
 These gifs were created using [VHS](https://github.com/charmbracelet/vhs). Each example has a
 corresponding `.tape` file that holds instructions for how to generate the images. Note that the
 images themselves are stored in a separate git branch to avoid bloating the main repository.
