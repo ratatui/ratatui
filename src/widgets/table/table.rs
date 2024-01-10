@@ -1,7 +1,6 @@
 use std::iter;
 
 use itertools::Itertools;
-use unicode_width::UnicodeWidthStr;
 
 use super::*;
 use crate::{
@@ -200,7 +199,7 @@ pub struct Table<'a> {
     highlight_style: Style,
 
     /// Symbol in front of the selected rom
-    highlight_symbol: Option<&'a str>,
+    highlight_symbol: Text<'a>,
 
     /// Decides when to allocate spacing for the row selection
     highlight_spacing: HighlightSpacing,
@@ -469,8 +468,8 @@ impl<'a> Table<'a> {
     /// let table = Table::new(rows, widths).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
-        self.highlight_symbol = Some(highlight_symbol);
+    pub fn highlight_symbol<T: Into<Text<'a>>>(mut self, highlight_symbol: T) -> Self {
+        self.highlight_symbol = highlight_symbol.into();
         self
     }
 
@@ -557,8 +556,6 @@ impl StatefulWidget for Table<'_> {
         }
         let selection_width = self.selection_width(state);
         let columns_widths = self.get_columns_widths(table_area.width, selection_width);
-        let highlight_symbol = self.highlight_symbol.unwrap_or("");
-
         let (header_area, rows_area, footer_area) = self.layout(table_area);
 
         self.render_header(header_area, buf, &columns_widths);
@@ -568,7 +565,7 @@ impl StatefulWidget for Table<'_> {
             buf,
             state,
             selection_width,
-            highlight_symbol,
+            &self.highlight_symbol,
             &columns_widths,
         );
 
@@ -634,7 +631,7 @@ impl Table<'_> {
         buf: &mut Buffer,
         state: &mut TableState,
         selection_width: u16,
-        highlight_symbol: &str,
+        highlight_symbol: &Text<'_>,
         columns_widths: &[(u16, u16)],
     ) {
         if self.rows.is_empty() {
@@ -666,13 +663,9 @@ impl Table<'_> {
                 // this should in normal cases be safe, because "get_columns_widths" allocates
                 // "highlight_symbol.width()" space but "get_columns_widths"
                 // currently does not bind it to max table.width()
-                buf.set_stringn(
-                    row_area.x,
-                    row_area.y,
-                    highlight_symbol,
-                    area.width as usize,
-                    row.style,
-                );
+                for (line, line_row) in highlight_symbol.lines.iter().zip(row_area.rows()) {
+                    line.clone().style(row.style).render(line_row, buf);
+                }
             };
             for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
                 cell.render(
@@ -769,7 +762,7 @@ impl Table<'_> {
     fn selection_width(&self, state: &TableState) -> u16 {
         let has_selection = state.selected().is_some();
         if self.highlight_spacing.should_add(has_selection) {
-            self.highlight_symbol.map_or(0, UnicodeWidthStr::width) as u16
+            self.highlight_symbol.width() as u16
         } else {
             0
         }
@@ -883,7 +876,7 @@ mod tests {
     #[test]
     fn highlight_symbol() {
         let table = Table::default().highlight_symbol(">>");
-        assert_eq!(table.highlight_symbol, Some(">>"));
+        assert_eq!(table.highlight_symbol, Text::from(">>"));
     }
 
     #[test]

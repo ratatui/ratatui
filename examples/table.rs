@@ -1,42 +1,23 @@
-use std::{error::Error, io};
+use std::{error::Error, io, str::FromStr};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use itertools::Itertools;
 use ratatui::{prelude::*, widgets::*};
 
-struct App<'a> {
+struct App {
     state: TableState,
-    items: Vec<Vec<&'a str>>,
+    items: Vec<Vec<String>>,
 }
 
-impl<'a> App<'a> {
-    fn new() -> App<'a> {
+impl App {
+    fn new() -> App {
         App {
-            state: TableState::default(),
-            items: vec![
-                vec!["Row11", "Row12", "Row13"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row31", "Row32", "Row33"],
-                vec!["Row41", "Row42", "Row43"],
-                vec!["Row51", "Row52", "Row53"],
-                vec!["Row61", "Row62\nTest", "Row63"],
-                vec!["Row71", "Row72", "Row73"],
-                vec!["Row81", "Row82", "Row83"],
-                vec!["Row91", "Row92", "Row93"],
-                vec!["Row101", "Row102", "Row103"],
-                vec!["Row111", "Row112", "Row113"],
-                vec!["Row121", "Row122", "Row123"],
-                vec!["Row131", "Row132", "Row133"],
-                vec!["Row141", "Row142", "Row143"],
-                vec!["Row151", "Row152", "Row153"],
-                vec!["Row161", "Row162", "Row163"],
-                vec!["Row171", "Row172", "Row173"],
-                vec!["Row181", "Row182", "Row183"],
-                vec!["Row191", "Row192", "Row193"],
-            ],
+            state: TableState::default().with_selected(0),
+            items: generate_fake_names(),
         }
     }
     pub fn next(&mut self) {
@@ -66,6 +47,26 @@ impl<'a> App<'a> {
         };
         self.state.select(Some(i));
     }
+}
+
+fn generate_fake_names() -> Vec<Vec<String>> {
+    use fakeit::{address, contact, name};
+
+    (0..20)
+        .map(|_| {
+            let name = name::full();
+            let address = format!(
+                "{}\n{}, {} {}",
+                address::street(),
+                address::city(),
+                address::state(),
+                address::zip()
+            );
+            let email = contact::email();
+            vec![name, address, email]
+        })
+        .sorted_by(|a, b| a[0].cmp(&b[0]))
+        .collect_vec()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -116,47 +117,50 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 fn ui(f: &mut Frame, app: &mut App) {
     let rects = Layout::vertical([Constraint::Percentage(100)]).split(f.size());
 
+    // colors from https://tailwindcss.com/docs/customizing-colors
+    let header_bg = Color::from_str("#1e3a8a").unwrap();
+    let header_fg = Color::from_str("#eff6ff").unwrap();
+    let header_style = Style::default().fg(header_fg).bg(header_bg);
+    let normal_row_color = Color::from_str("#1e293b").unwrap();
+    let alt_row_color = Color::from_str("#0f172a").unwrap();
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
-    let normal_style = Style::default().bg(Color::Blue);
-    let header = ["Header1", "Header2", "Header3"]
+
+    let header = ["Name", "Address", "Email"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Red)))
+        .cloned()
+        .map(Cell::from)
         .collect::<Row>()
-        .style(normal_style)
-        .height(1)
-        .bottom_margin(1);
-    let footer = ["Footer1", "Footer2", "Footer3"]
-        .iter()
-        .map(|f| Cell::from(*f).style(Style::default().fg(Color::Yellow)))
-        .collect::<Row>()
-        .style(normal_style)
-        .height(1)
-        .top_margin(1);
-    let rows = app.items.iter().map(|item| {
-        let height = item
-            .iter()
-            .map(|content| content.chars().filter(|c| *c == '\n').count())
-            .max()
-            .unwrap_or(0)
-            + 1;
+        .style(header_style)
+        .height(1);
+    let rows = app.items.iter().enumerate().map(|(i, item)| {
+        let color = match i % 2 {
+            0 => normal_row_color,
+            _ => alt_row_color,
+        };
         item.iter()
             .cloned()
+            .map(|content| Cell::from(Text::from(format!("\n{}\n", content))))
             .collect::<Row>()
-            .height(height as u16)
-            .bottom_margin(1)
+            .style(Style::new().bg(color))
+            .height(4)
     });
+    let bar = " █ ";
     let t = Table::new(
         rows,
         [
-            Constraint::Percentage(50),
-            Constraint::Max(30),
-            Constraint::Min(10),
+            Constraint::Length(15),
+            Constraint::Min(30),
+            Constraint::Min(25),
         ],
     )
     .header(header)
-    .footer(footer)
-    .block(Block::default().borders(Borders::ALL).title("Table"))
     .highlight_style(selected_style)
-    .highlight_symbol(">> ");
+    .highlight_symbol(Text::from(vec![
+        "".into(),
+        bar.into(),
+        bar.into(),
+        "".into(),
+    ]))
+    .highlight_spacing(HighlightSpacing::Always);
     f.render_stateful_widget(t, rects[0], &mut app.state);
 }
