@@ -56,17 +56,16 @@ assert_eq!(SLATE_900, Color::Rgb(15, 23, 42));
 The `palette!(pub SLATE)` macro expands to the following:
 
 ```rust
-use ratatui::prelude::Color;
-pub const SLATE_50: Color = Color::Rgb(248, 250, 252);
-pub const SLATE_100: Color = Color::Rgb(241, 245, 249);
-pub const SLATE_200: Color = Color::Rgb(226, 232, 240);
-pub const SLATE_300: Color = Color::Rgb(203, 213, 225);
-pub const SLATE_400: Color = Color::Rgb(148, 163, 184);
-pub const SLATE_500: Color = Color::Rgb(100, 116, 139);
-pub const SLATE_600: Color = Color::Rgb(71, 85, 105);
-pub const SLATE_700: Color = Color::Rgb(51, 65, 85);
-pub const SLATE_800: Color = Color::Rgb(30, 41, 59);
-pub const SLATE_900: Color = Color::Rgb(15, 23, 42);
+pub const SLATE_50: ratatui::prelude::Color = ratatui::prelude::Color::Rgb(248, 250, 252);
+pub const SLATE_100: ratatui::prelude::Color = ratatui::prelude::Color::Rgb(241, 245, 249);
+pub const SLATE_200: ratatui::prelude::Color = ratatui::prelude::Color::Rgb(226, 232, 240);
+pub const SLATE_300: ratatui::prelude::Color = ratatui::prelude::Color::Rgb(203, 213, 225);
+pub const SLATE_400: ratatui::prelude::Color = ratatui::prelude::Color::Rgb(148, 163, 184);
+pub const SLATE_500: ratatui::prelude::Color = ratatui::prelude::Color::Rgb(100, 116, 139);
+pub const SLATE_600: ratatui::prelude::Color = ratatui::prelude::Color::Rgb(71, 85, 105);
+pub const SLATE_700: ratatui::prelude::Color = ratatui::prelude::Color::Rgb(51, 65, 85);
+pub const SLATE_800: ratatui::prelude::Color = ratatui::prelude::Color::Rgb(30, 41, 59);
+pub const SLATE_900: ratatui::prelude::Color = ratatui::prelude::Color::Rgb(15, 23, 42);
 ```
 
 ### Layout
