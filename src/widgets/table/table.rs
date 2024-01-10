@@ -172,7 +172,7 @@ use crate::{
 ///
 /// frame.render_stateful_widget(table, area, &mut table_state);
 /// # }
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Table<'a> {
     /// Data to display in each row
     rows: Vec<Row<'a>>,
@@ -208,6 +208,24 @@ pub struct Table<'a> {
     segment_size: SegmentSize,
 }
 
+impl<'a> Default for Table<'a> {
+    fn default() -> Self {
+        Self {
+            rows: Default::default(),
+            header: Default::default(),
+            footer: Default::default(),
+            widths: Default::default(),
+            column_spacing: 1,
+            block: Default::default(),
+            style: Default::default(),
+            highlight_style: Default::default(),
+            highlight_symbol: Default::default(),
+            highlight_spacing: Default::default(),
+            segment_size: SegmentSize::None,
+        }
+    }
+}
+
 impl<'a> Table<'a> {
     /// Creates a new [`Table`] widget with the given rows.
     ///
@@ -241,9 +259,6 @@ impl<'a> Table<'a> {
         Self {
             rows: rows.into_iter().collect(),
             widths,
-            column_spacing: 1,
-            // Note: None is not the default value for SegmentSize, so we need to explicitly set it
-            segment_size: SegmentSize::None,
             ..Default::default()
         }
     }
@@ -810,7 +825,32 @@ mod tests {
         let widths = [Constraint::Percentage(100)];
         let table = Table::new(rows.clone(), widths);
         assert_eq!(table.rows, rows);
+        assert_eq!(table.header, None);
+        assert_eq!(table.footer, None);
         assert_eq!(table.widths, widths);
+        assert_eq!(table.column_spacing, 1);
+        assert_eq!(table.block, None);
+        assert_eq!(table.style, Style::default());
+        assert_eq!(table.highlight_style, Style::default());
+        assert_eq!(table.highlight_symbol, None);
+        assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
+        assert_eq!(table.segment_size, SegmentSize::None);
+    }
+
+    #[test]
+    fn default() {
+        let table = Table::default();
+        assert_eq!(table.rows, vec![]);
+        assert_eq!(table.header, None);
+        assert_eq!(table.footer, None);
+        assert_eq!(table.widths, vec![]);
+        assert_eq!(table.column_spacing, 1);
+        assert_eq!(table.block, None);
+        assert_eq!(table.style, Style::default());
+        assert_eq!(table.highlight_style, Style::default());
+        assert_eq!(table.highlight_symbol, None);
+        assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
+        assert_eq!(table.segment_size, SegmentSize::None);
     }
 
     #[test]
