@@ -1,10 +1,17 @@
 # Examples
 
-> [!WARNING]
-> The examples in this folder run against the `main` branch. If you find that code from an example
-> fails to run in your own application, please check the tag of the release that your project is
-> using. We also release regular alpha releases (usually weekly), if you prefer the updated example
-> code.
+> [!WARNING] The examples in this folder run against the `main` branch. There may be backwards
+> incompatible changes to the example code.
+>
+> If you find that code copied from an example fails to run in your own application, please check
+> the tag of the release that your project is using.
+>
+> To view examples that match the version of Ratatui that you are using checkout the matching tag in
+> your local git repository, or select the tag in the "Switch branches/tags" button if you're
+> viewing this file on GitHub.
+>
+> To use incompatible example code as is, you can also use the most recent alpha release of Ratatui
+> (we release these weekly).
 
 These gifs were created using [VHS](https://github.com/charmbracelet/vhs). Each example has a
 corresponding `.tape` file that holds instructions for how to generate the images. Note that the
