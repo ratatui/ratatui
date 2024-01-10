@@ -112,6 +112,11 @@ impl<'a> Tabs<'a> {
         self
     }
 
+    /// Returns the current selected tab
+    pub fn selected(self) -> usize {
+        self.selected
+    }
+
     /// Sets the style of the tabs.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
