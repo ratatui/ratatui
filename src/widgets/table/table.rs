@@ -832,7 +832,7 @@ mod tests {
         assert_eq!(table.block, None);
         assert_eq!(table.style, Style::default());
         assert_eq!(table.highlight_style, Style::default());
-        assert_eq!(table.highlight_symbol, Text::raw(""));
+        assert_eq!(table.highlight_symbol, Text::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
         assert_eq!(table.segment_size, SegmentSize::None);
     }
@@ -848,7 +848,7 @@ mod tests {
         assert_eq!(table.block, None);
         assert_eq!(table.style, Style::default());
         assert_eq!(table.highlight_style, Style::default());
-        assert_eq!(table.highlight_symbol, Text::raw(""));
+        assert_eq!(table.highlight_symbol, Text::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
         assert_eq!(table.segment_size, SegmentSize::None);
     }
