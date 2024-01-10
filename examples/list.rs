@@ -198,10 +198,8 @@ fn run_app<B: Backend>(
 
 fn ui(f: &mut Frame, app: &mut App) {
     // Create two chunks with equal horizontal screen space
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(f.size());
+    let horizontal = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
+    let [item_list_area, event_list_area] = f.size().split(&horizontal);
 
     // Iterate through all elements in the `items` app and append some debug text to it.
     let items: Vec<ListItem> = app
@@ -232,7 +230,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         .highlight_symbol(">> ");
 
     // We can now render the item list
-    f.render_stateful_widget(items, chunks[0], &mut app.items.state);
+    f.render_stateful_widget(items, item_list_area, &mut app.items.state);
 
     // Let's do the same for the events.
     // The event list doesn't have any state and only displays the current state of the list.
@@ -264,7 +262,7 @@ fn ui(f: &mut Frame, app: &mut App) {
             // 3. Add a spacer line
             // 4. Add the actual event
             ListItem::new(vec![
-                Line::from("-".repeat(chunks[1].width as usize)),
+                Line::from("-".repeat(event_list_area.width as usize)),
                 header,
                 Line::from(""),
                 log,
@@ -274,5 +272,5 @@ fn ui(f: &mut Frame, app: &mut App) {
     let events_list = List::new(events)
         .block(Block::default().borders(Borders::ALL).title("List"))
         .direction(ListDirection::BottomToTop);
-    f.render_widget(events_list, chunks[1]);
+    f.render_widget(events_list, event_list_area);
 }

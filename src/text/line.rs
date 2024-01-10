@@ -278,52 +278,42 @@ impl<'a> Line<'a> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
     /// # Examples
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let style = Style::default()
-    ///     .fg(Color::Yellow)
-    ///     .add_modifier(Modifier::ITALIC);
-    /// let mut raw_line = Line::from(vec![Span::raw("My"), Span::raw(" text")]);
-    /// let mut styled_line = Line::from(vec![
-    ///     Span::styled("My", style),
-    ///     Span::styled(" text", style),
-    /// ]);
+    /// let line = Line::styled("My text", Modifier::ITALIC);
     ///
-    /// assert_ne!(raw_line, styled_line);
+    /// let styled_line = Line::styled("My text", (Color::Yellow, Modifier::ITALIC));
     ///
-    /// raw_line.patch_style(style);
-    /// assert_eq!(raw_line, styled_line);
+    /// assert_eq!(styled_line, line.patch_style(Color::Yellow));
     /// ```
-    pub fn patch_style<S: Into<Style>>(&mut self, style: S) {
-        let style = style.into();
-        for span in &mut self.spans {
-            span.patch_style(style);
-        }
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn patch_style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.style = self.style.patch(style);
+        self
     }
 
     /// Resets the style of each Span in the Line.
     ///
     /// Equivalent to calling `patch_style(Style::reset())`.
     ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
     /// # Examples
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let mut line = Line::from(vec![
-    ///     Span::styled("My", Style::default().fg(Color::Yellow)),
-    ///     Span::styled(" text", Style::default().add_modifier(Modifier::BOLD)),
-    /// ]);
+    /// # let style = Style::default().yellow();
+    /// let line = Line::styled("My text", style);
     ///
-    /// line.reset_style();
-    /// assert_eq!(Style::reset(), line.spans[0].style);
-    /// assert_eq!(Style::reset(), line.spans[1].style);
+    /// assert_eq!(Style::reset(), line.reset_style().style);
     /// ```
-    pub fn reset_style(&mut self) {
-        for span in &mut self.spans {
-            span.reset_style();
-        }
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn reset_style(self) -> Self {
+        self.patch_style(Style::reset())
     }
 }
 
@@ -487,31 +477,21 @@ mod tests {
 
     #[test]
     fn patch_style() {
-        let style = Style::default()
-            .fg(Color::Yellow)
-            .add_modifier(Modifier::ITALIC);
-        let mut raw_line = Line::from(vec![Span::raw("My"), Span::raw(" text")]);
-        let styled_line = Line::from(vec![
-            Span::styled("My", style),
-            Span::styled(" text", style),
-        ]);
+        let raw_line = Line::styled("foobar", Color::Yellow);
+        let styled_line = Line::styled("foobar", (Color::Yellow, Modifier::ITALIC));
 
         assert_ne!(raw_line, styled_line);
 
-        raw_line.patch_style(style);
+        let raw_line = raw_line.patch_style(Modifier::ITALIC);
         assert_eq!(raw_line, styled_line);
     }
 
     #[test]
     fn reset_style() {
-        let mut line = Line::from(vec![
-            Span::styled("My", Style::default().fg(Color::Yellow)),
-            Span::styled(" text", Style::default().add_modifier(Modifier::BOLD)),
-        ]);
+        let line =
+            Line::styled("foobar", Style::default().yellow().on_red().italic()).reset_style();
 
-        line.reset_style();
-        assert_eq!(Style::reset(), line.spans[0].style);
-        assert_eq!(Style::reset(), line.spans[1].style);
+        assert_eq!(Style::reset(), line.style);
     }
 
     #[test]

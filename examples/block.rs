@@ -103,20 +103,14 @@ fn ui(frame: &mut Frame) {
 ///
 /// Returns a tuple of the title area and the main areas.
 fn calculate_layout(area: Rect) -> (Rect, Vec<Vec<Rect>>) {
-    let layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Length(1), Constraint::Min(0)])
-        .split(area);
-    let title_area = layout[0];
-    let main_areas = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Max(4); 9])
-        .split(layout[1])
+    let main_layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    let block_layout = &Layout::vertical([Constraint::Max(4); 9]);
+    let [title_area, main_area] = area.split(&main_layout);
+    let main_areas = block_layout
+        .split(main_area)
         .iter()
         .map(|&area| {
-            Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
                 .split(area)
                 .to_vec()
         })

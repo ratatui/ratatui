@@ -11,6 +11,8 @@ github with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.26.0 (unreleased)](#v0260-unreleased)
+  - `patch_style` & `reset_style` now consume and return `Self`
+  - Removed deprecated `Block::title_on_bottom`
   - `Line` now has an extra `style` field which applies the style to the entire line
   - `Block` style methods cannot be created in a const context
 - [v0.25.0](#v0250)
@@ -44,6 +46,44 @@ This is a quick summary of the sections below:
 
 ## v0.26.0 (unreleased)
 
+### Table::default() now sets segment_size to None and column_spacing to ([#751])
+
+[#751]: https://github.com/ratatui-org/ratatui/pull/751
+
+The default() implementation of Table now sets the column_spacing field to 1 and the segment_size
+field to SegmentSize::None. This will affect the rendering of a small amount of apps.
+
+To use the previous default values, call `table.segment_size(Default::default())` and
+`table.column_spacing(0)`.
+
+### `patch_style` & `reset_style` now consumes and returns `Self` ([#754])
+
+[#754]: https://github.com/ratatui-org/ratatui/pull/754
+
+Previously, `patch_style` and `reset_style` in `Text`, `Line` and `Span` were using a mutable
+reference to `Self`. To be more consistent with the rest of `ratatui`, which is using fluent
+setters, these now take ownership of `Self` and return it.
+
+The following example shows how to migrate for `Line`, but the same applies for `Text` and `Span`.
+
+```diff
+- let mut line = Line::from("foobar");
+- line.patch_style(style);
+// becomes
++ let line = Line::new("foobar").patch_style(style);
+```
+
+### Remove deprecated `Block::title_on_bottom` ([#757])
+
+[#757]: https://github.com/ratatui-org/ratatui/pull/757
+
+`Block::title_on_bottom` was deprecated in v0.22. Use `Block::title` and `Title::position` instead.
+
+```diff
+- block.title("foobar").title_on_bottom();
++ block.title(Title::from("foobar").position(Position::Bottom));
+```
+
 ### `Block` style methods cannot be used in a const context ([#720])
 
 [#720]: https://github.com/ratatui-org/ratatui/pull/720
@@ -69,7 +109,7 @@ the `Span::style` field.
   let line = Line {
       spans: vec!["".into()],
       alignment: Alignment::Left,
-+     ..Default::default()    
++     ..Default::default()
   };
 
   // or
@@ -87,7 +127,7 @@ the `Span::style` field.
 These items were deprecated since 0.10.
 
 - You should use styling capabilities of [`text::Line`] given as argument of [`Axis::title`]
-instead of `Axis::title_style`
+  instead of `Axis::title_style`
 - You should use styling capabilities of [`Buffer::set_style`] instead of `Buffer::set_background`
 
 [`text::Line`]: https://docs.rs/ratatui/latest/ratatui/text/struct.Line.html
@@ -277,7 +317,7 @@ new module locations. E.g.:
 ```diff
 - use ratatui::{widgets::scrollbar::{Scrollbar, Set}};
 // becomes
-+ use ratatui::{widgets::Scrollbar, symbols::scrollbar::Set} 
++ use ratatui::{widgets::Scrollbar, symbols::scrollbar::Set}
 ```
 
 ### MSRV updated to 1.67 ([#361])
@@ -298,7 +338,7 @@ changelog](https://github.com/bitflags/bitflags/blob/main/CHANGELOG.md#200-rc2).
 
 ## [v0.21.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.21.0)
 
-### MSRV is 1.65.0  ([#171])
+### MSRV is 1.65.0 ([#171])
 
 [#171]: https://github.com/ratatui-org/ratatui/issues/171
 
@@ -309,7 +349,7 @@ The minimum supported rust version is now 1.65.0.
 [#114]: https://github.com/ratatui-org/ratatui/issues/114
 
 In order to support inline viewports, the unstable method `Terminal::with_options()` was stabilized
-and  `ViewPort` was changed from a struct to an enum.
+and `ViewPort` was changed from a struct to an enum.
 
 ```diff
 let terminal = Terminal::with_options(backend, TerminalOptions {
@@ -326,7 +366,7 @@ let terminal = Terminal::with_options(backend, TerminalOptions {
 [#168]: https://github.com/ratatui-org/ratatui/issues/168
 
 A new type `Masked` was introduced that implements `From<Text<'a>>`. This causes any code that did
-previously did not need to use type annotations to fail to compile.  To fix this, annotate or call
+previously did not need to use type annotations to fail to compile. To fix this, annotate or call
 to_string() / to_owned() / as_str() on the value. E.g.:
 
 ```diff

@@ -103,16 +103,14 @@ fn ui(f: &mut Frame, app: &mut App) {
     let block = Block::default().black();
     f.render_widget(block, size);
 
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Min(1),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-        ])
-        .split(size);
+    let chunks = Layout::vertical([
+        Constraint::Min(1),
+        Constraint::Percentage(25),
+        Constraint::Percentage(25),
+        Constraint::Percentage(25),
+        Constraint::Percentage(25),
+    ])
+    .split(size);
 
     let text = vec![
         Line::from("This is a line "),

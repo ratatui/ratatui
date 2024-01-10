@@ -132,27 +132,17 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui(f: &mut Frame, app: &App) {
-    let size = f.size();
-    let vertical_chunks = Layout::new(
-        Direction::Vertical,
-        [Constraint::Percentage(40), Constraint::Percentage(60)],
-    )
-    .split(size);
+fn ui(frame: &mut Frame, app: &App) {
+    let area = frame.size();
 
-    // top chart
-    render_chart1(f, vertical_chunks[0], app);
+    let vertical = Layout::vertical([Constraint::Percentage(40), Constraint::Percentage(60)]);
+    let horizontal = Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)]);
+    let [chart1, bottom] = area.split(&vertical);
+    let [line_chart, scatter] = bottom.split(&horizontal);
 
-    let horizontal_chunks = Layout::new(
-        Direction::Horizontal,
-        [Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)],
-    )
-    .split(vertical_chunks[1]);
-
-    // bottom left
-    render_line_chart(f, horizontal_chunks[0]);
-    // bottom right
-    render_scatter(f, horizontal_chunks[1]);
+    render_chart1(frame, chart1, app);
+    render_line_chart(frame, line_chart);
+    render_scatter(frame, scatter);
 }
 
 fn render_chart1(f: &mut Frame, area: Rect, app: &App) {
@@ -206,7 +196,7 @@ fn render_chart1(f: &mut Frame, area: Rect, app: &App) {
 
 fn render_line_chart(f: &mut Frame, area: Rect) {
     let datasets = vec![Dataset::default()
-        .name("Line from only 2 points")
+        .name("Line from only 2 points".italic())
         .marker(symbols::Marker::Braille)
         .style(Style::default().fg(Color::Yellow))
         .graph_type(GraphType::Line)
@@ -251,7 +241,7 @@ fn render_scatter(f: &mut Frame, area: Rect) {
             .style(Style::new().yellow())
             .data(&HEAVY_PAYLOAD_DATA),
         Dataset::default()
-            .name("Medium")
+            .name("Medium".underlined())
             .marker(Marker::Braille)
             .graph_type(GraphType::Scatter)
             .style(Style::new().magenta())

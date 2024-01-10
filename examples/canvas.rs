@@ -107,19 +107,15 @@ impl App {
     }
 
     fn ui(&self, frame: &mut Frame) {
-        let main_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .split(frame.size());
+        let horizontal =
+            Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
+        let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
+        let [map, right] = frame.size().split(&horizontal);
+        let [pong, boxes] = right.split(&vertical);
 
-        let right_layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .split(main_layout[1]);
-
-        frame.render_widget(self.map_canvas(), main_layout[0]);
-        frame.render_widget(self.pong_canvas(), right_layout[0]);
-        frame.render_widget(self.boxes_canvas(right_layout[1]), right_layout[1]);
+        frame.render_widget(self.map_canvas(), map);
+        frame.render_widget(self.pong_canvas(), pong);
+        frame.render_widget(self.boxes_canvas(boxes), boxes);
     }
 
     fn map_canvas(&self) -> impl Widget + '_ {

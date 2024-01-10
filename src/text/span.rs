@@ -193,32 +193,42 @@ impl<'a> Span<'a> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
     /// # Example
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let mut span = Span::styled("test content", Style::new().green().italic());
-    /// span.patch_style(Style::new().red().on_yellow().bold());
+    /// let span = Span::styled("test content", Style::new().green().italic())
+    ///     .patch_style(Style::new().red().on_yellow().bold());
     /// assert_eq!(span.style, Style::new().red().on_yellow().italic().bold());
     /// ```
-    pub fn patch_style<S: Into<Style>>(&mut self, style: S) {
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn patch_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = self.style.patch(style);
+        self
     }
 
     /// Resets the style of the Span.
     ///
     /// This is Equivalent to calling `patch_style(Style::reset())`.
     ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
     /// # Example
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let mut span = Span::styled("Test Content", Style::new().green().on_yellow().italic());
-    /// span.reset_style();
+    /// let span = Span::styled(
+    ///     "Test Content",
+    ///     Style::new().dark_gray().on_yellow().italic(),
+    /// )
+    /// .reset_style();
     /// assert_eq!(span.style, Style::reset());
     /// ```
-    pub fn reset_style(&mut self) {
-        self.patch_style(Style::reset());
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn reset_style(self) -> Self {
+        self.patch_style(Style::reset())
     }
 
     /// Returns the unicode width of the content held by this span.
@@ -410,15 +420,14 @@ mod tests {
 
     #[test]
     fn reset_style() {
-        let mut span = Span::styled("test content", Style::new().green());
-        span.reset_style();
+        let span = Span::styled("test content", Style::new().green()).reset_style();
         assert_eq!(span.style, Style::reset());
     }
 
     #[test]
     fn patch_style() {
-        let mut span = Span::styled("test content", Style::new().green().on_yellow());
-        span.patch_style(Style::new().red().bold());
+        let span = Span::styled("test content", Style::new().green().on_yellow())
+            .patch_style(Style::new().red().bold());
         assert_eq!(span.style, Style::new().red().on_yellow().bold());
     }
 

@@ -400,6 +400,16 @@ where
 ///
 /// frame.render_stateful_widget(list, area, &mut state);
 /// # }
+/// ```
+///
+/// In addition to `List::new`, any iterator whose element is convertible to `ListItem` can be
+/// collected into `List`.
+///
+/// ```
+/// use ratatui::widgets::List;
+///
+/// (0..5).map(|i| format!("Item{i}")).collect::<List>();
+/// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub struct List<'a> {
     block: Option<Block<'a>>,
@@ -878,6 +888,15 @@ impl<'a> Styled for ListItem<'a> {
     }
 }
 
+impl<'a, Item> FromIterator<Item> for List<'a>
+where
+    Item: Into<ListItem<'a>>,
+{
+    fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
+        List::new(iter)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::borrow::Cow;
@@ -1326,6 +1345,13 @@ mod tests {
             "└────────┘",
         ]);
         assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_collect_list_from_iterator() {
+        let collected: List = (0..3).map(|i| format!("Item{i}")).collect();
+        let expected = List::new(["Item0", "Item1", "Item2"]);
+        assert_eq!(collected, expected);
     }
 
     #[test]

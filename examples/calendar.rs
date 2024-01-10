@@ -1,4 +1,4 @@
-use std::{error::Error, io, rc::Rc};
+use std::{error::Error, io};
 
 use crossterm::{
     event::{self, Event, KeyCode},
@@ -55,41 +55,17 @@ fn draw(f: &mut Frame) {
 
     let list = make_dates(start.year());
 
-    for chunk in split_rows(&calarea)
-        .iter()
-        .flat_map(|row| split_cols(row).to_vec())
-    {
+    let rows = Layout::vertical([Constraint::Ratio(1, 3); 3]).split(calarea);
+    let cols = rows.iter().flat_map(|row| {
+        Layout::horizontal([Constraint::Ratio(1, 4); 4])
+            .split(*row)
+            .to_vec()
+    });
+    for col in cols {
         let cal = cals::get_cal(start.month(), start.year(), &list);
-        f.render_widget(cal, chunk);
+        f.render_widget(cal, col);
         start = start.replace_month(start.month().next()).unwrap();
     }
-}
-
-fn split_rows(area: &Rect) -> Rc<[Rect]> {
-    let list_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .margin(0)
-        .constraints([
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
-        ]);
-
-    list_layout.split(*area)
-}
-
-fn split_cols(area: &Rect) -> Rc<[Rect]> {
-    let list_layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .margin(0)
-        .constraints([
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-        ]);
-
-    list_layout.split(*area)
 }
 
 fn make_dates(current_year: i32) -> CalendarEventStore {

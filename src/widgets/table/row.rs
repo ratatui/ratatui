@@ -45,6 +45,14 @@ use crate::prelude::*;
 /// ]);
 /// ```
 ///
+/// An iterator whose item type is convertible into [`Text`] can be collected into a row.
+///
+/// ```rust
+/// use ratatui::widgets::Row;
+///
+/// (0..10).map(|i| format!("{i}")).collect::<Row>();
+/// ```
+///
 /// `Row` implements [`Styled`] which means you can use style shorthands from the [`Stylize`] trait
 /// to set the style of the row concisely.
 ///
@@ -235,6 +243,15 @@ impl<'a> Styled for Row<'a> {
     }
 }
 
+impl<'a, Item> FromIterator<Item> for Row<'a>
+where
+    Item: Into<Cell<'a>>,
+{
+    fn from_iter<IterCells: IntoIterator<Item = Item>>(cells: IterCells) -> Self {
+        Row::new(cells)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::vec;
@@ -246,6 +263,13 @@ mod tests {
     fn new() {
         let cells = vec![Cell::from("")];
         let row = Row::new(cells.clone());
+        assert_eq!(row.cells, cells);
+    }
+
+    #[test]
+    fn collect() {
+        let cells = vec![Cell::from("")];
+        let row: Row = cells.iter().cloned().collect();
         assert_eq!(row.cells, cells);
     }
 

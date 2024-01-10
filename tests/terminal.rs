@@ -51,6 +51,31 @@ fn terminal_draw_returns_the_completed_frame() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
+fn terminal_draw_increments_frame_count() -> Result<(), Box<dyn Error>> {
+    let backend = TestBackend::new(10, 10);
+    let mut terminal = Terminal::new(backend)?;
+    let frame = terminal.draw(|f| {
+        assert_eq!(f.count(), 0);
+        let paragraph = Paragraph::new("Test");
+        f.render_widget(paragraph, f.size());
+    })?;
+    assert_eq!(frame.count, 0);
+    let frame = terminal.draw(|f| {
+        assert_eq!(f.count(), 1);
+        let paragraph = Paragraph::new("test");
+        f.render_widget(paragraph, f.size());
+    })?;
+    assert_eq!(frame.count, 1);
+    let frame = terminal.draw(|f| {
+        assert_eq!(f.count(), 2);
+        let paragraph = Paragraph::new("test");
+        f.render_widget(paragraph, f.size());
+    })?;
+    assert_eq!(frame.count, 2);
+    Ok(())
+}
+
+#[test]
 fn terminal_insert_before_moves_viewport() -> Result<(), Box<dyn Error>> {
     // When we have a terminal with 5 lines, and a single line viewport, if we insert a
     // number of lines less than the `terminal height - viewport height` it should move

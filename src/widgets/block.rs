@@ -267,6 +267,13 @@ impl<'a> Block<'a> {
         }
     }
 
+    /// Create a new block with [all borders](Borders::ALL) shown
+    pub const fn bordered() -> Self {
+        let mut block = Block::new();
+        block.borders = Borders::ALL;
+        block
+    }
+
     /// Adds a title to the block.
     ///
     /// The `title` function allows you to add a title to the block. You can call this function
@@ -367,12 +374,6 @@ impl<'a> Block<'a> {
     pub const fn title_alignment(mut self, alignment: Alignment) -> Block<'a> {
         self.titles_alignment = alignment;
         self
-    }
-
-    #[deprecated(since = "0.22.0", note = "You should use a `title_position` instead.")]
-    /// This method just calls `title_position` with Position::Bottom
-    pub fn title_on_bottom(self) -> Block<'a> {
-        self.title_position(Position::Bottom)
     }
 
     /// Sets the default [`Position`] for all block [titles](Title).
@@ -821,6 +822,12 @@ mod tests {
     };
 
     #[test]
+    fn create_with_all_borders() {
+        let block = Block::bordered();
+        assert_eq!(block.borders, Borders::all());
+    }
+
+    #[test]
     fn inner_takes_into_account_the_borders() {
         // No borders
         assert_eq!(
@@ -1206,17 +1213,6 @@ mod tests {
                 .render(buffer.area, &mut buffer);
             assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
         }
-    }
-
-    #[test]
-    fn title_on_bottom() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
-        #[allow(deprecated)]
-        Block::default()
-            .title("test")
-            .title_on_bottom()
-            .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["    ", "test"]));
     }
 
     #[test]

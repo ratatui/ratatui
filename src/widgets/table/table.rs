@@ -1,7 +1,6 @@
 use std::iter;
 
 use itertools::Itertools;
-use unicode_width::UnicodeWidthStr;
 
 use super::*;
 use crate::{
@@ -173,7 +172,7 @@ use crate::{
 ///
 /// frame.render_stateful_widget(table, area, &mut table_state);
 /// # }
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Table<'a> {
     /// Data to display in each row
     rows: Vec<Row<'a>>,
@@ -200,7 +199,7 @@ pub struct Table<'a> {
     highlight_style: Style,
 
     /// Symbol in front of the selected rom
-    highlight_symbol: Option<&'a str>,
+    highlight_symbol: Text<'a>,
 
     /// Decides when to allocate spacing for the row selection
     highlight_spacing: HighlightSpacing,
@@ -209,14 +208,34 @@ pub struct Table<'a> {
     segment_size: SegmentSize,
 }
 
+impl<'a> Default for Table<'a> {
+    fn default() -> Self {
+        Self {
+            rows: Default::default(),
+            header: Default::default(),
+            footer: Default::default(),
+            widths: Default::default(),
+            column_spacing: 1,
+            block: Default::default(),
+            style: Default::default(),
+            highlight_style: Default::default(),
+            highlight_symbol: Default::default(),
+            highlight_spacing: Default::default(),
+            segment_size: SegmentSize::None,
+        }
+    }
+}
+
 impl<'a> Table<'a> {
     /// Creates a new [`Table`] widget with the given rows.
     ///
     /// The `rows` parameter accepts any value that can be converted into an iterator of [`Row`]s.
     /// This includes arrays, slices, and [`Vec`]s.
     ///
-    /// The `widths` parameter is an array (or any other type that implements IntoIterator) of
-    /// [`Constraint`]s, this holds the widths of each column. This parameter was added in 0.25.0.
+    /// The `widths` parameter accepts any type that implements `IntoIterator<Item =
+    /// Into<Constraint>>`. This includes arrays, slices, vectors, iterators. `Into<Constraint>` is
+    /// implemented on u16, so you can pass an array, vec, etc. of u16 to this function to create a
+    /// table with fixed width columns.
     ///
     /// # Examples
     ///
@@ -233,16 +252,13 @@ impl<'a> Table<'a> {
     where
         R: IntoIterator<Item = Row<'a>>,
         C: IntoIterator,
-        C::Item: AsRef<Constraint>,
+        C::Item: Into<Constraint>,
     {
-        let widths = widths.into_iter().map(|c| *c.as_ref()).collect_vec();
+        let widths = widths.into_iter().map(Into::into).collect_vec();
         ensure_percentages_less_than_100(&widths);
         Self {
             rows: rows.into_iter().collect(),
             widths,
-            column_spacing: 1,
-            // Note: None is not the default value for SegmentSize, so we need to explicitly set it
-            segment_size: SegmentSize::None,
             ..Default::default()
         }
     }
@@ -324,8 +340,10 @@ impl<'a> Table<'a> {
 
     /// Set the widths of the columns.
     ///
-    /// The `widths` parameter accepts anything which be converted to an Iterator of Constraints
-    /// which can be an array, slice, Vec etc.
+    /// The `widths` parameter accepts any type that implements `IntoIterator<Item =
+    /// Into<Constraint>>`. This includes arrays, slices, vectors, iterators. `Into<Constraint>` is
+    /// implemented on u16, so you can pass an array, vec, etc. of u16 to this function to create a
+    /// table with fixed width columns.
     ///
     /// If the widths are empty, the table will be rendered with equal widths.
     ///
@@ -346,9 +364,9 @@ impl<'a> Table<'a> {
     pub fn widths<I>(mut self, widths: I) -> Self
     where
         I: IntoIterator,
-        I::Item: AsRef<Constraint>,
+        I::Item: Into<Constraint>,
     {
-        let widths = widths.into_iter().map(|c| *c.as_ref()).collect_vec();
+        let widths = widths.into_iter().map(Into::into).collect_vec();
         ensure_percentages_less_than_100(&widths);
         self.widths = widths;
         self
@@ -465,8 +483,8 @@ impl<'a> Table<'a> {
     /// let table = Table::new(rows, widths).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
-        self.highlight_symbol = Some(highlight_symbol);
+    pub fn highlight_symbol<T: Into<Text<'a>>>(mut self, highlight_symbol: T) -> Self {
+        self.highlight_symbol = highlight_symbol.into();
         self
     }
 
@@ -553,8 +571,6 @@ impl StatefulWidget for Table<'_> {
         }
         let selection_width = self.selection_width(state);
         let columns_widths = self.get_columns_widths(table_area.width, selection_width);
-        let highlight_symbol = self.highlight_symbol.unwrap_or("");
-
         let (header_area, rows_area, footer_area) = self.layout(table_area);
 
         self.render_header(header_area, buf, &columns_widths);
@@ -564,7 +580,7 @@ impl StatefulWidget for Table<'_> {
             buf,
             state,
             selection_width,
-            highlight_symbol,
+            &self.highlight_symbol,
             &columns_widths,
         );
 
@@ -582,18 +598,16 @@ impl Table<'_> {
         let footer_top_margin = self.footer.as_ref().map_or(0, |h| h.top_margin);
         let footer_height = self.footer.as_ref().map_or(0, |f| f.height);
         let footer_bottom_margin = self.footer.as_ref().map_or(0, |h| h.bottom_margin);
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(header_top_margin),
-                Constraint::Length(header_height),
-                Constraint::Length(header_bottom_margin),
-                Constraint::Min(0),
-                Constraint::Length(footer_top_margin),
-                Constraint::Length(footer_height),
-                Constraint::Length(footer_bottom_margin),
-            ])
-            .split(area);
+        let layout = Layout::vertical([
+            Constraint::Length(header_top_margin),
+            Constraint::Length(header_height),
+            Constraint::Length(header_bottom_margin),
+            Constraint::Min(0),
+            Constraint::Length(footer_top_margin),
+            Constraint::Length(footer_height),
+            Constraint::Length(footer_bottom_margin),
+        ])
+        .split(area);
         let (header_area, rows_area, footer_area) = (layout[1], layout[3], layout[5]);
         (header_area, rows_area, footer_area)
     }
@@ -632,7 +646,7 @@ impl Table<'_> {
         buf: &mut Buffer,
         state: &mut TableState,
         selection_width: u16,
-        highlight_symbol: &str,
+        highlight_symbol: &Text<'_>,
         columns_widths: &[(u16, u16)],
     ) {
         if self.rows.is_empty() {
@@ -664,13 +678,9 @@ impl Table<'_> {
                 // this should in normal cases be safe, because "get_columns_widths" allocates
                 // "highlight_symbol.width()" space but "get_columns_widths"
                 // currently does not bind it to max table.width()
-                buf.set_stringn(
-                    row_area.x,
-                    row_area.y,
-                    highlight_symbol,
-                    area.width as usize,
-                    row.style,
-                );
+                for (line, line_row) in highlight_symbol.lines.iter().zip(row_area.rows()) {
+                    line.clone().style(row.style).render(line_row, buf);
+                }
             };
             for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
                 cell.render(
@@ -713,9 +723,7 @@ impl Table<'_> {
                 Constraint::Length(self.column_spacing),
             ))
             .collect_vec();
-        let layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(constraints)
+        let layout = Layout::horizontal(constraints)
             .segment_size(self.segment_size)
             .split(Rect::new(0, 0, max_width, 1));
         layout
@@ -769,7 +777,7 @@ impl Table<'_> {
     fn selection_width(&self, state: &TableState) -> u16 {
         let has_selection = state.selected().is_some();
         if self.highlight_spacing.should_add(has_selection) {
-            self.highlight_symbol.map_or(0, UnicodeWidthStr::width) as u16
+            self.highlight_symbol.width() as u16
         } else {
             0
         }
@@ -817,7 +825,32 @@ mod tests {
         let widths = [Constraint::Percentage(100)];
         let table = Table::new(rows.clone(), widths);
         assert_eq!(table.rows, rows);
+        assert_eq!(table.header, None);
+        assert_eq!(table.footer, None);
         assert_eq!(table.widths, widths);
+        assert_eq!(table.column_spacing, 1);
+        assert_eq!(table.block, None);
+        assert_eq!(table.style, Style::default());
+        assert_eq!(table.highlight_style, Style::default());
+        assert_eq!(table.highlight_symbol, Text::default());
+        assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
+        assert_eq!(table.segment_size, SegmentSize::None);
+    }
+
+    #[test]
+    fn default() {
+        let table = Table::default();
+        assert_eq!(table.rows, vec![]);
+        assert_eq!(table.header, None);
+        assert_eq!(table.footer, None);
+        assert_eq!(table.widths, vec![]);
+        assert_eq!(table.column_spacing, 1);
+        assert_eq!(table.block, None);
+        assert_eq!(table.style, Style::default());
+        assert_eq!(table.highlight_style, Style::default());
+        assert_eq!(table.highlight_symbol, Text::default());
+        assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
+        assert_eq!(table.segment_size, SegmentSize::None);
     }
 
     #[test]
@@ -883,7 +916,7 @@ mod tests {
     #[test]
     fn highlight_symbol() {
         let table = Table::default().highlight_symbol(">>");
-        assert_eq!(table.highlight_symbol, Some(">>"));
+        assert_eq!(table.highlight_symbol, Text::from(">>"));
     }
 
     #[test]
