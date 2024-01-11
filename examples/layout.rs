@@ -203,6 +203,8 @@ fn constraint_label(constraint: Constraint) -> String {
         Min(n) => format!("{n}"),
         Max(n) => format!("{n}"),
         Percentage(n) => format!("{n}"),
+        Proportional(n) => format!("{n}"),
+        Fixed(n) => format!("{n}"),
         Ratio(a, b) => format!("{a}:{b}"),
     }
 }
