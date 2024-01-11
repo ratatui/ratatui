@@ -1,6 +1,7 @@
 # Examples
 
-> [!WARNING] The examples in this folder run against the `main` branch. There may be backwards
+> [!WARNING]
+> The examples in this folder run against the `main` branch. There may be backwards
 > incompatible changes to the example code.
 >
 > If you find that code copied from an example fails to run in your own application, please check
