@@ -127,6 +127,18 @@ pub enum Color {
     Indexed(u8),
 }
 
+impl Color {
+    /// Convert a u32 to a Color
+    ///
+    /// The u32 should be in the format 0x00RRGGBB.
+    pub const fn from_u32(u: u32) -> Color {
+        let r = (u >> 16) as u8;
+        let g = (u >> 8) as u8;
+        let b = u as u8;
+        Color::Rgb(r, g, b)
+    }
+}
+
 #[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for Color {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
