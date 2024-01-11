@@ -28,6 +28,15 @@ const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVER
 ///     .divider(symbols::DOT)
 ///     .padding("->", "<-");
 /// ```
+///
+/// In addition to `Tabs::new`, any iterator whose element is convertible to `Line` can be collected
+/// into `Tabs`.
+///
+/// ```
+/// use ratatui::widgets::Tabs;
+///
+/// (0..5).map(|i| format!("Tab{i}")).collect::<Tabs>();
+/// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Tabs<'a> {
     /// A block to wrap this widget in if necessary
@@ -79,9 +88,10 @@ impl<'a> Tabs<'a> {
     /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
-    pub fn new<T>(titles: Vec<T>) -> Tabs<'a>
+    pub fn new<Iter>(titles: Iter) -> Tabs<'a>
     where
-        T: Into<Line<'a>>,
+        Iter: IntoIterator,
+        Iter::Item: Into<Line<'a>>,
     {
         Tabs {
             block: None,
@@ -306,6 +316,15 @@ impl<'a> Widget for Tabs<'a> {
     }
 }
 
+impl<'a, Item> FromIterator<Item> for Tabs<'a>
+where
+    Item: Into<Line<'a>>,
+{
+    fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
+        Self::new(iter)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -332,6 +351,26 @@ mod tests {
                 padding_right: Line::from(" "),
                 padding_left: Line::from(" "),
             }
+        );
+    }
+
+    #[test]
+    fn new_from_vec_of_str() {
+        Tabs::new(vec!["a", "b"]);
+    }
+
+    #[test]
+    fn collect() {
+        let tabs: Tabs = (0..5).map(|i| format!("Tab{i}")).collect();
+        assert_eq!(
+            tabs.titles,
+            vec![
+                Line::from("Tab0"),
+                Line::from("Tab1"),
+                Line::from("Tab2"),
+                Line::from("Tab3"),
+                Line::from("Tab4"),
+            ],
         );
     }
 

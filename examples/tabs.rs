@@ -85,15 +85,14 @@ fn ui(f: &mut Frame, app: &App) {
 
     let block = Block::default().on_white().black();
     f.render_widget(block, area);
-    let titles = app
+    let tabs = app
         .titles
         .iter()
         .map(|t| {
             let (first, rest) = t.split_at(1);
             Line::from(vec![first.yellow(), rest.green()])
         })
-        .collect();
-    let tabs = Tabs::new(titles)
+        .collect::<Tabs>()
         .block(Block::default().borders(Borders::ALL).title("Tabs"))
         .select(app.index)
         .style(Style::default().cyan().on_gray())
