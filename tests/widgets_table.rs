@@ -849,7 +849,7 @@ fn widgets_table_should_render_even_if_empty() {
         .draw(|f| {
             let size = f.size();
             let table = Table::new(
-                vec![],
+                Vec::<Row>::new(),
                 [
                     Constraint::Length(6),
                     Constraint::Length(6),

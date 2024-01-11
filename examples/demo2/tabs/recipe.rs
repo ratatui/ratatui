@@ -146,7 +146,7 @@ fn render_recipe(area: Rect, buf: &mut Buffer) {
 
 fn render_ingredients(selected_row: usize, area: Rect, buf: &mut Buffer) {
     let mut state = TableState::default().with_selected(Some(selected_row));
-    let rows = INGREDIENTS.iter().map(|&i| i.into()).collect_vec();
+    let rows = INGREDIENTS.iter().cloned();
     let theme = THEME.recipe;
     StatefulWidget::render(
         Table::new(rows, [Constraint::Length(7), Constraint::Length(30)])

@@ -132,6 +132,22 @@ use crate::{
 /// Cell::from(Text::from("text"));
 /// ```
 ///
+/// Just as rows can be collected from iterators of `Cell`s, tables can be collected from iterators
+/// of `Row`s.  This will create a table with column widths evenly dividing the space available.
+/// These default columns widths can be overridden using the `Table::widths` method.
+///
+/// ```rust
+/// use ratatui::{prelude::*, widgets::*};
+///
+/// let text = "Mary had a\nlittle lamb.";
+///
+/// let table = text
+///     .split("\n")
+///     .map(|line: &str| -> Row { line.split_ascii_whitespace().collect() })
+///     .collect::<Table>()
+///     .widths([Constraint::Length(10); 3]);
+/// ```
+///
 /// `Table` also implements the [`Styled`] trait, which means you can use style shorthands from
 /// the [`Stylize`] trait to set the style of the widget more concisely.
 ///
@@ -250,14 +266,17 @@ impl<'a> Table<'a> {
     /// ```
     pub fn new<R, C>(rows: R, widths: C) -> Self
     where
-        R: IntoIterator<Item = Row<'a>>,
+        R: IntoIterator,
+        R::Item: Into<Row<'a>>,
         C: IntoIterator,
         C::Item: Into<Constraint>,
     {
         let widths = widths.into_iter().map(Into::into).collect_vec();
         ensure_percentages_less_than_100(&widths);
+
+        let rows = rows.into_iter().map(Into::into).collect();
         Self {
-            rows: rows.into_iter().collect(),
+            rows,
             widths,
             ..Default::default()
         }
@@ -534,11 +553,10 @@ impl<'a> Table<'a> {
     /// to the last column.
     #[cfg_attr(feature = "unstable", doc = " ```")]
     #[cfg_attr(not(feature = "unstable"), doc = " ```ignore")]
-    /// # use ratatui::layout::Constraint;
-    /// # use ratatui::layout::SegmentSize;
-    /// # use ratatui::widgets::Table;
+    /// # use ratatui::layout::{Constraint, SegmentSize};
+    /// # use ratatui::widgets::{Table, Row};
     /// let widths = [Constraint::Min(10), Constraint::Min(10), Constraint::Min(10)];
-    /// let table = Table::new([], widths)
+    /// let table = Table::new(Vec::<Row>::new(), widths)
     ///     .segment_size(SegmentSize::LastTakesRemainder);
     /// ```
     #[stability::unstable(
@@ -807,6 +825,20 @@ impl<'a> Styled for Table<'a> {
     }
 }
 
+impl<'a, Item> FromIterator<Item> for Table<'a>
+where
+    Item: Into<Row<'a>>,
+{
+    /// Collects an iterator of rows into a table.
+    ///
+    /// When collecting from an iterator into a table, the user must provide the widths using
+    /// `Table::widths` after construction.
+    fn from_iter<Iter: IntoIterator<Item = Item>>(rows: Iter) -> Self {
+        let widths: [Constraint; 0] = [];
+        Table::new(rows, widths)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::vec;
@@ -851,6 +883,24 @@ mod tests {
         assert_eq!(table.highlight_symbol, Text::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
         assert_eq!(table.segment_size, SegmentSize::None);
+    }
+
+    #[test]
+    fn collect() {
+        let table = (0..4)
+            .map(|i| -> Row { (0..4).map(|j| format!("{i}*{j} = {}", i * j)).collect() })
+            .collect::<Table>()
+            .widths([Constraint::Percentage(25); 4]);
+
+        let expected_rows: Vec<Row> = vec![
+            Row::new(["0*0 = 0", "0*1 = 0", "0*2 = 0", "0*3 = 0"]),
+            Row::new(["1*0 = 0", "1*1 = 1", "1*2 = 2", "1*3 = 3"]),
+            Row::new(["2*0 = 0", "2*1 = 2", "2*2 = 4", "2*3 = 6"]),
+            Row::new(["3*0 = 0", "3*1 = 3", "3*2 = 6", "3*3 = 9"]),
+        ];
+
+        assert_eq!(table.rows, expected_rows);
+        assert_eq!(table.widths, [Constraint::Percentage(25); 4]);
     }
 
     #[test]
@@ -934,24 +984,24 @@ mod tests {
     #[test]
     fn widths_conversions() {
         let array = [Constraint::Percentage(100)];
-        let table = Table::new(vec![], array);
+        let table = Table::new(Vec::<Row>::new(), array);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "array");
 
         let array_ref = &[Constraint::Percentage(100)];
-        let table = Table::new(vec![], array_ref);
+        let table = Table::new(Vec::<Row>::new(), array_ref);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "array ref");
 
         let vec = vec![Constraint::Percentage(100)];
         let slice = vec.as_slice();
-        let table = Table::new(vec![], slice);
+        let table = Table::new(Vec::<Row>::new(), slice);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "slice");
 
         let vec = vec![Constraint::Percentage(100)];
-        let table = Table::new(vec![], vec);
+        let table = Table::new(Vec::<Row>::new(), vec);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "vec");
 
         let vec_ref = &vec![Constraint::Percentage(100)];
-        let table = Table::new(vec![], vec_ref);
+        let table = Table::new(Vec::<Row>::new(), vec_ref);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "vec ref");
     }
 
@@ -1120,7 +1170,7 @@ mod tests {
         #[test]
         fn render_with_overflow_does_not_panic() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
-            let table = Table::new(vec![], [Constraint::Min(20); 1])
+            let table = Table::new(Vec::<Row>::new(), [Constraint::Min(20); 1])
                 .header(Row::new([Line::from("").alignment(Alignment::Right)]))
                 .footer(Row::new([Line::from("").alignment(Alignment::Right)]));
             Widget::render(table, Rect::new(0, 0, 20, 3), &mut buf);
@@ -1161,7 +1211,7 @@ mod tests {
             selection_width: u16,
             expected: &[(u16, u16)],
         ) {
-            let table = Table::new(vec![], constraints).segment_size(segment_size);
+            let table = Table::new(Vec::<Row>::new(), constraints).segment_size(segment_size);
 
             let widths = table.get_columns_widths(available_width, selection_width);
             assert_eq!(widths, expected);
