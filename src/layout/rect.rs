@@ -5,10 +5,9 @@ use std::{
 };
 
 use crate::prelude::*;
+use layout::{Position, Size};
 
 mod offset;
-
-use layout::Size;
 pub use offset::*;
 
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
@@ -327,11 +326,38 @@ impl Rect {
         }
     }
 
+    /// Returns a [`Position`] with the same coordinates as this rect.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::prelude::*;
+    /// let rect = Rect::new(1, 2, 3, 4);
+    /// let position = rect.as_position();
+    /// ````
+    pub fn as_position(self) -> Position {
+        Position {
+            x: self.x,
+            y: self.y,
+        }
+    }
+
     /// Converts the rect into a size struct.
     pub fn as_size(self) -> Size {
         Size {
             width: self.width,
             height: self.height,
+        }
+    }
+}
+
+impl From<(Position, Size)> for Rect {
+    fn from((position, size): (Position, Size)) -> Self {
+        Rect {
+            x: position.x,
+            y: position.y,
+            width: size.width,
+            height: size.height,
         }
     }
 }
@@ -578,6 +604,14 @@ mod tests {
         ];
 
         assert_eq!(columns, expected_columns);
+    }
+
+    #[test]
+    fn as_position() {
+        let rect = Rect::new(1, 2, 3, 4);
+        let position = rect.as_position();
+        assert_eq!(position.x, 1);
+        assert_eq!(position.y, 2);
     }
 
     #[test]
