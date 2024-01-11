@@ -8,6 +8,7 @@ use crate::prelude::*;
 
 mod offset;
 
+use layout::Size;
 pub use offset::*;
 
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
@@ -325,6 +326,14 @@ impl Rect {
             current_column: self.x,
         }
     }
+
+    /// Converts the rect into a size struct.
+    pub fn as_size(self) -> Size {
+        Size {
+            width: self.width,
+            height: self.height,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -548,7 +557,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rows() {
+    fn rows() {
         let area = Rect::new(0, 0, 3, 2);
         let rows: Vec<Rect> = area.rows().collect();
 
@@ -558,7 +567,7 @@ mod tests {
     }
 
     #[test]
-    fn test_columns() {
+    fn columns() {
         let area = Rect::new(0, 0, 3, 2);
         let columns: Vec<Rect> = area.columns().collect();
 
@@ -569,5 +578,16 @@ mod tests {
         ];
 
         assert_eq!(columns, expected_columns);
+    }
+
+    #[test]
+    fn as_size() {
+        assert_eq!(
+            Rect::new(1, 2, 3, 4).as_size(),
+            Size {
+                width: 3,
+                height: 4
+            }
+        );
     }
 }
