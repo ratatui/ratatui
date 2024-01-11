@@ -72,10 +72,12 @@ use std::fmt::{self, Debug};
 
 use bitflags::bitflags;
 
-mod stylize;
-pub use stylize::{Styled, Stylize};
 mod color;
+mod stylize;
+
 pub use color::Color;
+pub use stylize::{Styled, Stylize};
+pub mod palette;
 
 bitflags! {
     /// Modifier changes the way a piece of text is displayed.
