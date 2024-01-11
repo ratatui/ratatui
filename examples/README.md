@@ -2,7 +2,7 @@
 
 > [!WARNING]
 > The examples in this folder run against the `main` branch. There may be backwards
-> incompatible changes to the example code.
+> incompatible changes compared to the [latest stable version](https://github.com/ratatui-org/ratatui/releases/latest).
 >
 > If you find that code copied from an example fails to run in your own application, please check
 > the tag of the release that your project is using.
