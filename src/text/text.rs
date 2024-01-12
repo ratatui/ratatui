@@ -1,15 +1,31 @@
+#![warn(missing_docs)]
 use std::borrow::Cow;
 
 use itertools::{Itertools, Position};
 
-use crate::prelude::*;
+use crate::{prelude::*, widgets::Widget};
 
 /// A string split over multiple lines where each line is composed of several clusters, each with
 /// their own style.
 ///
-/// A [`Text`], like a [`Span`], can be constructed using one of the many `From` implementations
+/// A [`Text`], like a [`Line`], can be constructed using one of the many `From` implementations
 /// or via the [`Text::raw`] and [`Text::styled`] methods. Helpfully, [`Text`] also implements
 /// [`core::iter::Extend`] which enables the concatenation of several [`Text`] blocks.
+///
+/// The text's [`Style`] is used by the rendering widget to determine how to style the text. Each
+/// [`Line`] in the text will be styled with the [`Style`] of the text, and then with its own
+/// [`Style`]. `Text` also implements [`Styled`] which means you can use the methods of the
+/// [`Stylize`] trait.
+///
+/// The text's [`Alignment`] can be set using [`Text::alignment`]. Lines composing the text can
+/// also be individually aligned with [`Line::alignment`].
+///
+/// `Text` implements the [`Widget`] trait, which means it can be rendered to a [`Buffer`].
+/// Usually apps will use the [`Paragraph`] widget instead of rendering a `Text` directly as it
+/// provides more functionality.
+///
+/// [`Paragraph`]: crate::widgets::Paragraph
+/// [`Widget`]: crate::widgets::Widget
 ///
 /// ```rust
 /// use ratatui::prelude::*;
@@ -32,7 +48,12 @@ use crate::prelude::*;
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Text<'a> {
+    /// The lines that make up this piece of text.
     pub lines: Vec<Line<'a>>,
+    /// The style of this text.
+    pub style: Style,
+    /// The alignment of this text.
+    pub alignment: Option<Alignment>,
 }
 
 impl<'a> Text<'a> {
@@ -108,7 +129,36 @@ impl<'a> Text<'a> {
         self.lines.len()
     }
 
-    /// Patches the style of each line in an existing Text, adding modifiers from the given style.
+    /// Sets the style of this text.
+    ///
+    /// Defaults to [`Style::default()`].
+    ///
+    /// Note: This field was added in v0.26.0. Prior to that, the style of a text was determined
+    /// only by the style of each [`Line`] contained in the line. For this reason, this field may
+    /// not be supported by all widgets (outside of the `ratatui` crate itself).
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    ///
+    /// # Examples
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut line = Text::from("foo").style(Style::new().red());
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.style = style.into();
+        self
+    }
+
+    /// Patches the style of this Text, adding modifiers from the given style.
+    ///
+    /// This is useful for when you want to apply a style to a text that already has some styling.
+    /// In contrast to [`Text::style`], this method will not overwrite the existing style, but
+    /// instead will add the given style's modifiers to this text's style.
+    ///
+    /// `Text` also implements [`Styled`] which means you can use the methods of the [`Stylize`]
+    /// trait.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
@@ -119,7 +169,7 @@ impl<'a> Text<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let mut raw_text = Text::styled("The first line\nThe second line", Modifier::ITALIC);
+    /// let raw_text = Text::styled("The first line\nThe second line", Modifier::ITALIC);
     /// let styled_text = Text::styled(
     ///     String::from("The first line\nThe second line"),
     ///     (Color::Yellow, Modifier::ITALIC),
@@ -131,17 +181,13 @@ impl<'a> Text<'a> {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn patch_style<S: Into<Style>>(mut self, style: S) -> Self {
-        let style = style.into();
-        self.lines = self
-            .lines
-            .into_iter()
-            .map(|line| line.patch_style(style))
-            .collect();
+        self.style = self.style.patch(style);
         self
     }
 
     /// Resets the style of the Text.
-    /// Equivalent to calling `patch_style(Style::reset())`.
+    ///
+    /// Equivalent to calling [`patch_style(Style::reset())`](Text::patch_style).
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
@@ -149,24 +195,66 @@ impl<'a> Text<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let style = Style::default()
-    ///     .fg(Color::Yellow)
-    ///     .add_modifier(Modifier::ITALIC);
-    /// let text = Text::styled("The first line\nThe second line", style);
+    /// let text = Text::styled(
+    ///     "The first line\nThe second line",
+    ///     (Color::Yellow, Modifier::ITALIC),
+    /// );
     ///
     /// let text = text.reset_style();
-    /// for line in &text.lines {
-    ///     assert_eq!(Style::reset(), line.style);
-    /// }
+    /// assert_eq!(Style::reset(), text.style);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn reset_style(mut self) -> Self {
-        self.lines = self
-            .lines
-            .into_iter()
-            .map(|line| line.reset_style())
-            .collect();
-        self
+    pub fn reset_style(self) -> Self {
+        self.patch_style(Style::reset())
+    }
+
+    /// Sets the alignment for this text.
+    ///
+    /// Defaults to: [`None`], meaning the alignment is determined by the rendering widget.
+    ///
+    /// Alignment can be set individually on each line to override this text's alignment.
+    ///
+    /// # Examples
+    ///
+    /// Set alignment to the whole text.
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut text = Text::from("Hi, what's up?");
+    /// assert_eq!(None, text.alignment);
+    /// assert_eq!(
+    ///     Some(Alignment::Right),
+    ///     text.alignment(Alignment::Right).alignment
+    /// )
+    /// ```
+    ///
+    /// Set a default alignment and override it on a per line basis.
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let text = Text::from(vec![
+    ///     Line::from("left").alignment(Alignment::Left),
+    ///     Line::from("default"),
+    ///     Line::from("default"),
+    ///     Line::from("right").alignment(Alignment::Right),
+    /// ])
+    /// .alignment(Alignment::Center);
+    /// ```
+    ///
+    /// Will render the following
+    ///
+    /// ```plain
+    /// left
+    ///   default
+    ///   default
+    ///       right
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn alignment(self, alignment: Alignment) -> Self {
+        Self {
+            alignment: Some(alignment),
+            ..self
+        }
     }
 }
 
@@ -192,19 +280,26 @@ impl<'a> From<Span<'a>> for Text<'a> {
     fn from(span: Span<'a>) -> Text<'a> {
         Text {
             lines: vec![Line::from(span)],
+            ..Default::default()
         }
     }
 }
 
 impl<'a> From<Line<'a>> for Text<'a> {
     fn from(line: Line<'a>) -> Text<'a> {
-        Text { lines: vec![line] }
+        Text {
+            lines: vec![line],
+            ..Default::default()
+        }
     }
 }
 
 impl<'a> From<Vec<Line<'a>>> for Text<'a> {
     fn from(lines: Vec<Line<'a>>) -> Text<'a> {
-        Text { lines }
+        Text {
+            lines,
+            ..Default::default()
+        }
     }
 }
 
@@ -240,6 +335,42 @@ impl std::fmt::Display for Text<'_> {
     }
 }
 
+impl<'a> Widget for Text<'a> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
+        for (line, row) in self.lines.into_iter().zip(area.rows()) {
+            let line_width = line.width() as u16;
+
+            let x_offset = match (self.alignment, line.alignment) {
+                (Some(Alignment::Center), None) => area.width.saturating_sub(line_width) / 2,
+                (Some(Alignment::Right), None) => area.width.saturating_sub(line_width),
+                _ => 0,
+            };
+
+            let line_area = Rect {
+                x: area.x + x_offset,
+                y: row.y,
+                width: area.width - x_offset,
+                height: 1,
+            };
+
+            line.render(line_area, buf);
+        }
+    }
+}
+
+impl<'a> Styled for Text<'a> {
+    type Item = Text<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
+        self.style(style)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -257,14 +388,12 @@ mod tests {
     #[test]
     fn styled() {
         let style = Style::new().yellow().italic();
-        let text = Text::styled("The first line\nThe second line", style);
-        assert_eq!(
-            text.lines,
-            vec![
-                Line::styled("The first line", style),
-                Line::styled("The second line", style)
-            ]
-        );
+        let styled_text = Text::styled("The first line\nThe second line", style);
+
+        let mut text = Text::raw("The first line\nThe second line");
+        text.style = style;
+
+        assert_eq!(styled_text, text);
     }
 
     #[test]
@@ -286,13 +415,9 @@ mod tests {
         let text = Text::styled("The first line\nThe second line", style).patch_style(style2);
 
         let expected_style = Style::new().red().italic().underlined();
-        assert_eq!(
-            text.lines,
-            vec![
-                Line::styled("The first line", expected_style),
-                Line::styled("The second line", expected_style)
-            ]
-        );
+        let expected_text = Text::styled("The first line\nThe second line", expected_style);
+
+        assert_eq!(text, expected_text);
     }
 
     #[test]
@@ -300,13 +425,7 @@ mod tests {
         let style = Style::new().yellow().italic();
         let text = Text::styled("The first line\nThe second line", style).reset_style();
 
-        assert_eq!(
-            text.lines,
-            vec![
-                Line::styled("The first line", Style::reset()),
-                Line::styled("The second line", Style::reset())
-            ]
-        );
+        assert_eq!(text.style, Style::reset());
     }
 
     #[test]
@@ -472,5 +591,112 @@ mod tests {
             format!("{text}"),
             "The first line\nThe second line\nThe third line\nThe fourth line"
         );
+    }
+
+    #[test]
+    fn stylize() {
+        assert_eq!(Text::default().green().style, Color::Green.into());
+        assert_eq!(
+            Text::default().on_green().style,
+            Style::new().bg(Color::Green)
+        );
+        assert_eq!(Text::default().italic().style, Modifier::ITALIC.into());
+    }
+
+    mod widget {
+        use super::*;
+        use crate::{assert_buffer_eq, style::Color};
+
+        #[test]
+        fn render() {
+            let text = Text::from("foo");
+
+            let area = Rect::new(0, 0, 5, 1);
+            let mut buf = Buffer::empty(area);
+            text.render(area, &mut buf);
+
+            let expected_buf = Buffer::with_lines(vec!["foo  "]);
+
+            assert_buffer_eq!(buf, expected_buf);
+        }
+
+        #[test]
+        fn render_right_aligned() {
+            let text = Text::from("foo").alignment(Alignment::Right);
+
+            let area = Rect::new(0, 0, 5, 1);
+            let mut buf = Buffer::empty(area);
+            text.render(area, &mut buf);
+
+            let expected_buf = Buffer::with_lines(vec!["  foo"]);
+
+            assert_buffer_eq!(buf, expected_buf);
+        }
+
+        #[test]
+        fn render_centered_odd() {
+            let text = Text::from("foo").alignment(Alignment::Center);
+
+            let area = Rect::new(0, 0, 5, 1);
+            let mut buf = Buffer::empty(area);
+            text.render(area, &mut buf);
+
+            let expected_buf = Buffer::with_lines(vec![" foo "]);
+
+            assert_buffer_eq!(buf, expected_buf);
+        }
+
+        #[test]
+        fn render_centered_even() {
+            let text = Text::from("foo").alignment(Alignment::Center);
+
+            let area = Rect::new(0, 0, 6, 1);
+            let mut buf = Buffer::empty(area);
+            text.render(area, &mut buf);
+
+            let expected_buf = Buffer::with_lines(vec![" foo  "]);
+
+            assert_buffer_eq!(buf, expected_buf);
+        }
+
+        #[test]
+        fn render_one_line_right() {
+            let text = Text::from(vec![
+                "foo".into(),
+                Line::from("bar").alignment(Alignment::Center),
+            ])
+            .alignment(Alignment::Right);
+
+            let area = Rect::new(0, 0, 5, 2);
+            let mut buf = Buffer::empty(area);
+            text.render(area, &mut buf);
+
+            let expected_buf = Buffer::with_lines(vec!["  foo", " bar "]);
+
+            assert_buffer_eq!(buf, expected_buf);
+        }
+
+        #[test]
+        fn render_only_styles_line_area() {
+            let area = Rect::new(0, 0, 5, 1);
+            let mut buf = Buffer::empty(area);
+            Text::from("foo".on_blue()).render(area, &mut buf);
+
+            let mut expected = Buffer::with_lines(vec!["foo  "]);
+            expected.set_style(Rect::new(0, 0, 3, 1), Style::new().bg(Color::Blue));
+
+            assert_buffer_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_truncates() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 6, 1));
+            Text::from("foobar".on_blue()).render(Rect::new(0, 0, 3, 1), &mut buf);
+
+            let mut expected = Buffer::with_lines(vec!["foo   "]);
+            expected.set_style(Rect::new(0, 0, 3, 1), Style::new().bg(Color::Blue));
+
+            assert_buffer_eq!(buf, expected);
+        }
     }
 }

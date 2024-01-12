@@ -14,6 +14,8 @@ use crate::{
 /// You can construct a [`Table`] using either [`Table::new`] or [`Table::default`] and then chain
 /// builder style methods to set the desired properties.
 ///
+/// Table cells can be aligned, for more details see [`Cell`].
+///
 /// Make sure to call the [`Table::widths`] method, otherwise the columns will all have a width of 0
 /// and thus not be visible.
 ///
@@ -691,12 +693,12 @@ impl Table<'_> {
 
             let is_selected = state.selected().is_some_and(|index| index == i);
             if selection_width > 0 && is_selected {
-                // this should in normal cases be safe, because "get_columns_widths" allocates
-                // "highlight_symbol.width()" space but "get_columns_widths"
-                // currently does not bind it to max table.width()
-                for (line, line_row) in highlight_symbol.lines.iter().zip(row_area.rows()) {
-                    line.clone().style(row.style).render(line_row, buf);
-                }
+                let selection_area = Rect {
+                    width: selection_width,
+                    ..row_area
+                };
+                buf.set_style(selection_area, row.style);
+                highlight_symbol.clone().render(selection_area, buf);
             };
             for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
                 cell.render(

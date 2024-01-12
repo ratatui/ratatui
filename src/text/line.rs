@@ -269,11 +269,11 @@ impl<'a> Line<'a> {
             .flat_map(move |span| span.styled_graphemes(style))
     }
 
-    /// Patches the style of each Span in an existing Line, adding modifiers from the given style.
+    /// Patches the style of this Line, adding modifiers from the given style.
     ///
     /// This is useful for when you want to apply a style to a line that already has some styling.
     /// In contrast to [`Line::style`], this method will not overwrite the existing style, but
-    /// instead will add the given style's modifiers to the existing style of each `Span`.
+    /// instead will add the given style's modifiers to this Line's style.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
@@ -296,7 +296,7 @@ impl<'a> Line<'a> {
         self
     }
 
-    /// Resets the style of each Span in the Line.
+    /// Resets the style of this Line.
     ///
     /// Equivalent to calling `patch_style(Style::reset())`.
     ///
@@ -369,7 +369,7 @@ impl Widget for Line<'_> {
             let span_width = span.width() as u16;
             let span_area = Rect {
                 x,
-                width: span_width,
+                width: span_width.min(area.right() - x),
                 ..area
             };
             span.render(span_area, buf);
@@ -635,11 +635,9 @@ mod tests {
 
         #[test]
         fn render_truncates() {
-            let mut buf = Buffer::empty(Rect::new(0, 0, 11, 1));
-            hello_world().render(Rect::new(0, 0, 11, 1), &mut buf);
-            let mut expected = Buffer::with_lines(vec!["Hello world"]);
-            expected.set_style(Rect::new(0, 0, 6, 1), BLUE.italic());
-            expected.set_style(Rect::new(6, 0, 5, 1), GREEN.italic());
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
+            Line::from("Hello world!").render(Rect::new(0, 0, 5, 1), &mut buf);
+            let expected = Buffer::with_lines(vec!["Hello     "]);
             assert_buffer_eq!(buf, expected);
         }
 

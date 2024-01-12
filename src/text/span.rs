@@ -493,11 +493,13 @@ mod tests {
         fn render_truncates_too_long_content() {
             let style = Style::new().green().on_yellow();
             let span = Span::styled("test content", style);
-            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
-            span.render(buf.area, &mut buf);
 
-            let expected =
-                Buffer::with_lines(vec![Line::from(vec!["test conte".green().on_yellow()])]);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
+            span.render(Rect::new(0, 0, 5, 1), &mut buf);
+
+            let mut expected = Buffer::with_lines(vec![Line::from("test      ")]);
+            expected.set_style(Rect::new(0, 0, 5, 1), (Color::Green, Color::Yellow));
+
             assert_buffer_eq!(buf, expected);
         }
 

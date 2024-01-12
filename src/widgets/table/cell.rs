@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, widgets::Widget};
 
 /// A [`Cell`] contains the [`Text`] to be displayed in a [`Row`] of a [`Table`].
 ///
@@ -6,6 +6,8 @@ use crate::prelude::*;
 /// entire area of the cell. Any [`Style`] set on the [`Text`] content will be combined with the
 /// [`Style`] of the [`Cell`] by adding the [`Style`] of the [`Text`] content to the [`Style`] of
 /// the [`Cell`]. Styles set on the text content will only affect the content.
+///
+/// You can use [`Text::alignment`] when creating a cell to align its content.
 ///
 /// # Examples
 ///
@@ -132,24 +134,7 @@ impl<'a> Cell<'a> {
 impl Cell<'_> {
     pub(crate) fn render(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        for (i, line) in self.content.lines.iter().enumerate() {
-            if i as u16 >= area.height {
-                break;
-            }
-
-            let x_offset = match line.alignment {
-                Some(Alignment::Center) => (area.width / 2).saturating_sub(line.width() as u16 / 2),
-                Some(Alignment::Right) => area.width.saturating_sub(line.width() as u16),
-                _ => 0,
-            };
-
-            let x = area.x + x_offset;
-            if x >= area.right() {
-                continue;
-            }
-
-            buf.set_line(x, area.y + i as u16, line, area.width);
-        }
+        self.content.clone().render(area, buf);
     }
 }
 
