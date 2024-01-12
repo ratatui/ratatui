@@ -100,9 +100,6 @@ fn ui(f: &mut Frame, app: &mut App) {
     let mut long_line = s.repeat(usize::from(size.width) / s.len() + 4);
     long_line.push('\n');
 
-    let block = Block::default().black();
-    f.render_widget(block, size);
-
     let chunks = Layout::vertical([
         Constraint::Min(1),
         Constraint::Percentage(25),
@@ -143,18 +140,10 @@ fn ui(f: &mut Frame, app: &mut App) {
     app.vertical_scroll_state = app.vertical_scroll_state.content_length(text.len());
     app.horizontal_scroll_state = app.horizontal_scroll_state.content_length(long_line.len());
 
-    let create_block = |title| {
-        Block::default()
-            .borders(Borders::ALL)
-            .gray()
-            .title(Span::styled(
-                title,
-                Style::default().add_modifier(Modifier::BOLD),
-            ))
-    };
+    let create_block = |title: &'static str| Block::bordered().gray().title(title.bold());
 
     let title = Block::default()
-        .title("Use h j k l to scroll ◄ ▲ ▼ ►")
+        .title("Use h j k l or ◄ ▲ ▼ ► to scroll ".bold())
         .title_alignment(Alignment::Center);
     f.render_widget(title, chunks[0]);
 
