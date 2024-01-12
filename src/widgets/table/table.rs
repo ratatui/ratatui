@@ -13,7 +13,7 @@ use crate::{
 ///
 /// A `Table` is a collection of [`Row`]s, each composed of [`Cell`]s:
 ///
-/// You can consutrct a [`Table`] using either [`Table::new`] or [`Table::default`] and then chain
+/// You can construct a [`Table`] using either [`Table::new`] or [`Table::default`] and then chain
 /// builder style methods to set the desired properties.
 ///
 /// Make sure to call the [`Table::widths`] method, otherwise the columns will all have a width of 0
