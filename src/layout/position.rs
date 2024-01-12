@@ -6,6 +6,22 @@ use crate::layout::Rect;
 /// The position is relative to the top left corner of the terminal window, with the top left corner
 /// being (0, 0). The x axis is horizontal increasing to the right, and the y axis is vertical
 /// increasing downwards.
+///
+/// # Examples
+///
+/// ```
+/// use ratatui::layout::Position;
+///
+/// // the following are all equivalent
+/// let position = Position { x: 1, y: 2 };
+/// let position = Position::new(1, 2);
+/// let position = Position::from((1, 2));
+/// let position = Position::from(Rect::new(1, 2, 3, 4));
+///
+/// // position can be converted back into the components when needed
+/// let (x, y) = position.into();
+/// ```
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Position {
     /// The x coordinate of the position
     ///

@@ -4,8 +4,9 @@ use std::{
     fmt,
 };
 
-use crate::prelude::*;
 use layout::{Position, Size};
+
+use crate::prelude::*;
 
 mod offset;
 pub use offset::*;
@@ -619,6 +620,24 @@ mod tests {
         assert_eq!(
             Rect::new(1, 2, 3, 4).as_size(),
             Size {
+                width: 3,
+                height: 4
+            }
+        );
+    }
+
+    #[test]
+    fn from_position_and_size() {
+        let position = Position { x: 1, y: 2 };
+        let size = Size {
+            width: 3,
+            height: 4,
+        };
+        assert_eq!(
+            Rect::from((position, size)),
+            Rect {
+                x: 1,
+                y: 2,
                 width: 3,
                 height: 4
             }
