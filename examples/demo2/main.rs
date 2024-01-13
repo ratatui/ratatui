@@ -6,6 +6,7 @@ pub use term::*;
 pub use theme::*;
 
 mod app;
+mod big_text;
 mod colors;
 mod root;
 mod tabs;

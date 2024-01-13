@@ -21,7 +21,7 @@
 
 <!-- cargo-rdme start -->
 
-![Demo](https://raw.githubusercontent.com/ratatui-org/ratatui/b33c878808c4c40591d7a2d9f9d94d6fee95a96f/examples/demo2.gif)
+![Demo](https://github.com/ratatui-org/ratatui/blob/1d39444e3dea6f309cf9035be2417ac711c1abc9/examples/demo2-destroy.gif?raw=true)
 
 <div align="center">
 
@@ -30,9 +30,8 @@ Badge]](./LICENSE)<br>
 [![Codecov Badge]][Codecov] [![Deps.rs Badge]][Deps.rs] [![Discord Badge]][Discord Server]
 [![Matrix Badge]][Matrix]<br>
 
-[Ratatui Website] · [API Docs] · [Examples]<br>
-[Contributing] · [Changelog] · [Breaking Changes]<br>
-[Report a bug] · [Request a Feature] · [Create a Pull Request]
+[Ratatui Website] · [API Docs] · [Examples] · [Changelog] · [Breaking Changes]<br>
+[Contributing] · [Report a bug] · [Request a Feature] · [Create a Pull Request]
 
 </div>
 
