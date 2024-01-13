@@ -16,6 +16,7 @@ This is an experimental playground for us to explore macros that would be useful
 - Constraint-based Layouts: Easily define layout constraints such as fixed, percentage, minimum, and
   maximum sizes, as well as ratios.
 - Directional Layouts: Specify layouts as either horizontal or vertical with simple macro commands.
+- Raw and Styled span format macros.
 
 ## Getting Started
 
@@ -33,6 +34,8 @@ use ratatui_macros::{
     constraints,
     horizontal,
     vertical,
+    raw,
+    styled,
 };
 ```
 
@@ -111,6 +114,23 @@ let [left, main, right] = horizontal![>=3, ==100%, >=3]
 
 assert_eq!(left.width, 3);
 assert_eq!(right.width, 3);
+```
+
+## Spans
+
+The `raw!` and `styled!` macros create raw and styled `Span`s respectively. They each take a format
+string and arguments. `styled!` accepts as the first paramter any value that can be converted to a
+`Style`.
+
+```rust
+use ratatui::prelude::*;
+use ratatui_macros::{styled, raw};
+
+let name = "world!";
+let raw_greeting = raw!("hello {name}");
+let styled_greeting = styled!(Style::new().green(), "hello {name}");
+let styled_greeting = styled!(Color::Green, "hello {name}");
+let styled_greeting = styled!(Modifier::BOLD, "hello {name}");
 ```
 
 ## Contributing

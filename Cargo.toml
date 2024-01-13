@@ -13,7 +13,8 @@ categories = ["tui", "macro"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ratatui = "0.25.0"
+# requires alpha version of ratatui for the Into<Style> changes
+ratatui = "0.26.0-alpha.1"
 
 [dev-dependencies]
 trybuild = { version = "1.0.88", features = ["diff"] }
