@@ -93,7 +93,6 @@ pub struct Layout {
     constraints: Vec<Constraint>,
     margin: Margin,
     flex: Flex,
-    segment_size: SegmentSize,
 }
 
 /// A container used by the solver inside split
@@ -143,7 +142,6 @@ impl Layout {
             direction,
             margin: Margin::new(0, 0),
             constraints: constraints.into_iter().map(Into::into).collect(),
-            segment_size: SegmentSize::LastTakesRemainder,
             flex: Flex::default(),
         }
     }
@@ -737,7 +735,6 @@ mod tests {
                 margin: Margin::new(0, 0),
                 constraints: vec![],
                 flex: Flex::default(),
-                segment_size: SegmentSize::LastTakesRemainder,
             }
         );
     }
@@ -782,7 +779,6 @@ mod tests {
                 margin: Margin::new(0, 0),
                 constraints: vec![Constraint::Min(0)],
                 flex: Flex::default(),
-                segment_size: SegmentSize::LastTakesRemainder,
             }
         );
     }
@@ -796,7 +792,6 @@ mod tests {
                 margin: Margin::new(0, 0),
                 constraints: vec![Constraint::Min(0)],
                 flex: Flex::default(),
-                segment_size: SegmentSize::LastTakesRemainder,
             }
         );
     }
