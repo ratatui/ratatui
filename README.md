@@ -9,7 +9,7 @@
 `ratatui-macros` is a Rust crate that provides easy-to-use macros for simplifying boilerplate
 associated with creating UI using [Ratatui](https://github.com/ratatui-org/ratatui).
 
-This is an experimental playground to us explore macros that would be useful to have in Ratatui proper.
+This is an experimental playground for us to explore macros that would be useful to have in Ratatui proper.
 
 ## Features
 
