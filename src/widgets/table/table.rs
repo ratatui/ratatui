@@ -741,6 +741,7 @@ impl Table<'_> {
                 Constraint::Length(self.column_spacing),
             ))
             .collect_vec();
+        #[allow(deprecated)]
         let layout = Layout::horizontal(constraints)
             .segment_size(self.segment_size)
             .split(Rect::new(0, 0, max_width, 1));
