@@ -61,8 +61,6 @@ thread_local! {
 /// - [`Layout::horizontal_margin`]: set the horizontal margin of the layout
 /// - [`Layout::vertical_margin`]: set the vertical margin of the layout
 /// - [`Layout::flex`]: set the way the space is distributed when the constraints are satisfied
-/// - [`Layout::segment_size`]: set the way the space is distributed when the constraints are
-///   satisfied
 ///
 /// # Example
 ///
@@ -115,7 +113,6 @@ impl Layout {
     ///
     /// - `margin`: 0, 0
     /// - `flex`: Flex::Fill
-    /// - `segment_size`: SegmentSize::LastTakesRemainder
     ///
     /// # Examples
     ///
@@ -358,6 +355,10 @@ impl Layout {
     /// out the columns for [`Table`] widgets).
     ///
     /// This function exists for backwards compatibility reasons. Use [`Layout::flex`] instead.
+    ///
+    /// - `Flex::StretchLast` does now what `SegmentSize::LastTakesRemainder` did (default).
+    /// - `Flex::Stretch` does now what `SegmentSize::EvenDistribution` did.
+    /// - `Flex::Start` does now what `SegmentSize::None` did.
     #[stability::unstable(
         feature = "segment-size",
         reason = "The name for this feature is not final and may change in the future",
