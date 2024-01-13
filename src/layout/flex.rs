@@ -15,6 +15,7 @@ use strum::{Display, EnumString};
 #[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
 pub enum Flex {
     /// Fills the available space within the container, putting excess space into the last element.
+    /// This matches the default behavior of ratatui and tui applications without [`Flex`]
     ///
     /// # Examples
     ///
