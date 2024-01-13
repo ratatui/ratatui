@@ -26,8 +26,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
-        toolchain: [ "stable" ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        toolchain: ["stable"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -36,6 +36,8 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
       - name: Test ${{ matrix.os }}
         run: cargo test
         env:
