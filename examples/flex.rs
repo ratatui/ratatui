@@ -155,10 +155,10 @@ impl ExampleSelection {
         let [example1, example2, example3, example4, example5, example6, _] =
             area.split(&Layout::vertical([Fixed(8); 7]));
 
-        Example::new([Length(40), Length(20)])
+        Example::new([Length(20), Length(10)])
             .flex(flex)
             .render(example1, buf);
-        Example::new([Length(40), Fixed(20)])
+        Example::new([Length(20), Fixed(10)])
             .flex(flex)
             .render(example2, buf);
         Example::new([Proportional(1), Proportional(1), Length(40), Fixed(20)])

@@ -1,19 +1,183 @@
 use strum::{Display, EnumString};
 
-/// Option for layout flex justify content
+/// Defines the options for layout flex justify content in a container.
 ///
-/// This controls how the space is distributed when the constraints are satisfied.
+/// This enumeration controls the distribution of space when layout constraints are met.
+///
+/// - `StretchLast`: Fills the available space within the container, putting excess space into the
+///   last element.
+/// - `Stretch`: Always fills the available space within the container.
+/// - `Start`: Aligns items to the start of the container.
+/// - `End`: Aligns items to the end of the container.
+/// - `Center`: Centers items within the container.
+/// - `SpaceBetween`: Adds excess space between each element.
+/// - `SpaceAround`: Adds excess space around each element.
 #[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
 pub enum Flex {
+    /// Fills the available space within the container, putting excess space into the last element.
+    ///
+    /// # Examples
+    ///
+    /// Length(40), Length(20)
+    ///
+    /// ```plain
+    /// 
+    /// Length(20), Length(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    /// ┌──────────────────────────────────────┐┌──────────────────────────────────────┐
+    /// │                 40 px                ││                 40 px                │
+    /// └──────────────────────────────────────┘└──────────────────────────────────────┘
+    ///
+    /// Length(20), Fixed(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    /// ┌────────────────────────────────────────────────────────────────────┐┌────────┐
+    /// │                                70 px                               ││  10 px │
+    /// └────────────────────────────────────────────────────────────────────┘└────────┘
+    /// ```
     #[default]
-    StretchLast, /* Always fill available space within the container putting excess into last
-                  * element */
-    Stretch,      // Always fill available space within the container
-    Start,        // Align items to the start of the container
-    End,          // Align items to the end of the container
-    Center,       // Center items within the container
-    SpaceBetween, // Add excess space between each element
-    SpaceAround,  // Add excess space around each element
+    StretchLast,
+    /// Always fills the available space within the container.
+    ///
+    /// # Examples
+    ///
+    /// ```plain
+    /// 
+    /// Length(20), Length(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    /// ┌──────────────────┐┌──────────────────────────────────────────────────────────┐
+    /// │       20 px      ││                           60 px                          │
+    /// └──────────────────┘└──────────────────────────────────────────────────────────┘
+    ///
+    /// Length(20), Fixed(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    /// ┌────────────────────────────────────────────────────────────────────┐┌────────┐
+    /// │                                70 px                               ││  10 px │
+    /// └────────────────────────────────────────────────────────────────────┘└────────┘
+    /// ```
+    Stretch,
+    /// Aligns items to the start of the container.
+    ///
+    /// # Examples
+    ///
+    /// ```plain
+    /// 
+    /// Length(20), Length(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    /// ┌──────────────────┐┌────────┐
+    /// │       20 px      ││  10 px │
+    /// └──────────────────┘└────────┘
+    ///
+    /// Length(20), Fixed(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    /// ┌──────────────────┐┌────────┐
+    /// │       20 px      ││  10 px │
+    /// └──────────────────┘└────────┘
+    /// ```
+    Start,
+    /// Aligns items to the end of the container.
+    ///
+    /// # Examples
+    ///
+    /// ```plain
+    /// 
+    /// Length(20), Length(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    ///                                                   ┌──────────────────┐┌────────┐
+    ///                                                   │       20 px      ││  10 px │
+    ///                                                   └──────────────────┘└────────┘
+    ///
+    /// Length(20), Fixed(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    ///                                                   ┌──────────────────┐┌────────┐
+    ///                                                   │       20 px      ││  10 px │
+    ///                                                   └──────────────────┘└────────┘
+    /// ```
+    End,
+    /// Centers items within the container.
+    ///
+    /// # Examples
+    ///
+    /// ```plain
+    /// 
+    /// Length(20), Length(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    ///                          ┌──────────────────┐┌────────┐
+    ///                          │       20 px      ││  10 px │
+    ///                          └──────────────────┘└────────┘
+    ///
+    /// Length(20), Fixed(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    ///                          ┌──────────────────┐┌────────┐
+    ///                          │       20 px      ││  10 px │
+    ///                          └──────────────────┘└────────┘
+    /// ```
+    Center,
+    /// Adds excess space between each element.
+    ///
+    /// # Examples
+    ///
+    /// ```plain
+    /// 
+    /// Length(20), Length(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    /// ┌──────────────────┐                                                  ┌────────┐
+    /// │       20 px      │                                                  │  10 px │
+    /// └──────────────────┘                                                  └────────┘
+    ///
+    /// Length(20), Fixed(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    /// ┌──────────────────┐                                                  ┌────────┐
+    /// │       20 px      │                                                  │  10 px │
+    /// └──────────────────┘                                                  └────────┘
+    /// ```
+    SpaceBetween,
+    /// Adds excess space around each element.
+    ///
+    /// # Examples
+    ///
+    /// ```plain
+    /// 
+    /// Length(20), Length(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    ///                  ┌──────────────────┐                ┌────────┐
+    ///                  │       20 px      │                │  10 px │
+    ///                  └──────────────────┘                └────────┘
+    ///
+    /// Length(20), Fixed(10)
+    ///
+    /// <------------------------------------80 px------------------------------------->
+    ///
+    ///                  ┌──────────────────┐                ┌────────┐
+    ///                  │       20 px      │                │  10 px │
+    ///                  └──────────────────┘                └────────┘
+    /// ```
+    SpaceAround,
 }
 #[cfg(test)]
 mod tests {}
