@@ -445,11 +445,11 @@ impl Layout {
 
         match layout.flex {
             Flex::SpaceBetween => {
-                let mut spacers: Vec<Element> = elements
-                    .iter()
-                    .map(|_| Element::constrain(&mut solver, (area_start, area_end)))
-                    .try_collect()?;
-                spacers.pop();
+                let spacers: Vec<Element> = std::iter::repeat_with(|| {
+                    Element::constrain(&mut solver, (area_start, area_end))
+                })
+                .take(elements.len().saturating_sub(1))
+                .try_collect()?;
                 for spacer in spacers.iter() {
                     solver.add_constraint(spacer.size() | EQ(WEAK) | area_size)?;
                 }
@@ -464,11 +464,11 @@ impl Layout {
                 }
             }
             Flex::SpaceAround => {
-                let mut spacers: Vec<Element> = elements
-                    .iter()
-                    .map(|_| Element::constrain(&mut solver, (area_start, area_end)))
-                    .try_collect()?;
-                spacers.push(Element::constrain(&mut solver, (area_start, area_end))?);
+                let spacers: Vec<Element> = std::iter::repeat_with(|| {
+                    Element::constrain(&mut solver, (area_start, area_end))
+                })
+                .take(elements.len().saturating_add(1))
+                .try_collect()?;
                 for spacer in spacers.iter() {
                     solver.add_constraint(spacer.size() | EQ(WEAK) | area_size)?;
                 }
