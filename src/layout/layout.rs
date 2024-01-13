@@ -608,7 +608,7 @@ impl Layout {
                     // element size will take a higher priority.
                     //
                     // this constraint is placed here only for future proofing.
-                    solver.add_constraint(element.size() | EQ(WEAK) | area_size)?;
+                    solver.add_constraint(element.size() | EQ(MEDIUM / 10.0) | area_size)?;
                 }
             }
         }

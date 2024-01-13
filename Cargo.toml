@@ -215,6 +215,11 @@ required-features = ["crossterm"]
 doc-scrape-examples = false
 
 [[example]]
+name = "flex"
+required-features = ["crossterm"]
+doc-scrape-examples = false
+
+[[example]]
 name = "list"
 required-features = ["crossterm"]
 doc-scrape-examples = true
