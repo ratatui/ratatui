@@ -1845,38 +1845,38 @@ mod tests {
         }
 
         #[rstest]
-        #[case::length_stretches_to_end([Constraint::Length(50)], Flex::StretchLast, [0, 100])]
-        #[case::length_stretches([Constraint::Length(50)], Flex::Stretch, [0, 100])]
-        #[case::length_left_justified([Constraint::Length(50)], Flex::Start, [0, 50])]
-        #[case::length_right_justified([Length(50)], Flex::End, [50, 50])]
-        #[case::length_center_justified([Length(50)], Flex::Center, [25, 50])]
-        #[case::fixed_stretches_to_end([Fixed(50)], Flex::StretchLast, [0, 100])]
-        #[case::fixed_left_justified([Fixed(50)], Flex::Start, [0, 50])]
-        #[case::fixed_right_justified([Fixed(50)], Flex::End, [50, 50])]
-        #[case::fixed_center_justified([Fixed(50)], Flex::Center, [25, 50])]
-        #[case::ratio_stretches_to_end([Ratio(1, 2)], Flex::StretchLast, [0, 100])]
-        #[case::ratio_left_justified([Ratio(1, 2)], Flex::Start, [0, 50])]
-        #[case::ratio_right_justified([Ratio(1, 2)], Flex::End, [50, 50])]
-        #[case::ratio_center_justified([Ratio(1, 2)], Flex::Center, [25, 50])]
-        #[case::percent_stretches_to_end([Percentage(50)], Flex::StretchLast, [0, 100])]
-        #[case::percent_left_justified([Percentage(50)], Flex::Start, [0, 50])]
-        #[case::percent_right_justified([Percentage(50)], Flex::End, [50, 50])]
-        #[case::percent_center_justified([Percentage(50)], Flex::Center, [25, 50])]
-        #[case::min_stretches_to_end([Min(50)], Flex::StretchLast, [0, 100])]
-        #[case::min_left_justified([Min(50)], Flex::Start, [0, 50])]
-        #[case::min_right_justified([Min(50)], Flex::End, [50, 50])]
-        #[case::min_center_justified([Min(50)], Flex::Center, [25, 50])]
-        #[case::max_stretches_to_end([Max(50)], Flex::StretchLast, [0, 100])]
-        #[case::max_left_justified([Max(50)], Flex::Start, [0, 50])]
-        #[case::max_right_justified([Max(50)], Flex::End, [50, 50])]
-        #[case::max_center_justified([Max(50)], Flex::Center, [25, 50])]
+        #[case::length_stretches_to_end(Constraint::Length(50), Flex::StretchLast, (0, 100))]
+        #[case::length_stretches(Constraint::Length(50), Flex::Stretch, (0, 100))]
+        #[case::length_left_justified(Constraint::Length(50), Flex::Start, (0, 50))]
+        #[case::length_right_justified(Length(50), Flex::End, (50, 50))]
+        #[case::length_center_justified(Length(50), Flex::Center, (25, 50))]
+        #[case::fixed_stretches_to_end(Fixed(50), Flex::StretchLast, (0, 100))]
+        #[case::fixed_left_justified(Fixed(50), Flex::Start, (0, 50))]
+        #[case::fixed_right_justified(Fixed(50), Flex::End, (50, 50))]
+        #[case::fixed_center_justified(Fixed(50), Flex::Center, (25, 50))]
+        #[case::ratio_stretches_to_end(Ratio(1, 2), Flex::StretchLast, (0, 100))]
+        #[case::ratio_left_justified(Ratio(1, 2), Flex::Start, (0, 50))]
+        #[case::ratio_right_justified(Ratio(1, 2), Flex::End, (50, 50))]
+        #[case::ratio_center_justified(Ratio(1, 2), Flex::Center, (25, 50))]
+        #[case::percent_stretches_to_end(Percentage(50), Flex::StretchLast, (0, 100))]
+        #[case::percent_left_justified(Percentage(50), Flex::Start, (0, 50))]
+        #[case::percent_right_justified(Percentage(50), Flex::End, (50, 50))]
+        #[case::percent_center_justified(Percentage(50), Flex::Center, (25, 50))]
+        #[case::min_stretches_to_end(Min(50), Flex::StretchLast, (0, 100))]
+        #[case::min_left_justified(Min(50), Flex::Start, (0, 50))]
+        #[case::min_right_justified(Min(50), Flex::End, (50, 50))]
+        #[case::min_center_justified(Min(50), Flex::Center, (25, 50))]
+        #[case::max_stretches_to_end(Max(50), Flex::StretchLast, (0, 100))]
+        #[case::max_left_justified(Max(50), Flex::Start, (0, 50))]
+        #[case::max_right_justified(Max(50), Flex::End, (50, 50))]
+        #[case::max_center_justified(Max(50), Flex::Center, (25, 50))]
         fn flex_one_constraint(
-            #[case] constraints: [Constraint; 1],
+            #[case] constraint: Constraint,
             #[case] flex: Flex,
-            #[case] expected_widths: [u16; 2],
+            #[case] expected_widths: (u16, u16),
         ) {
-            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal(constraints).flex(flex));
-            assert_eq!([a.x, a.width], expected_widths);
+            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([constraint]).flex(flex));
+            assert_eq!((a.x, a.width), expected_widths);
         }
 
         #[rstest]
