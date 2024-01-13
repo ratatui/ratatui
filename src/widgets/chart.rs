@@ -745,10 +745,12 @@ impl<'a> Chart<'a> {
             if let Some(inner_width) = legends.clone().max() {
                 let legend_width = inner_width + 2;
                 let legend_height = legends.count() as u16 + 2;
+                #[allow(deprecated)]
                 let max_legend_width = self
                     .hidden_legend_constraints
                     .0
                     .apply(layout.graph_area.width);
+                #[allow(deprecated)]
                 let max_legend_height = self
                     .hidden_legend_constraints
                     .1
