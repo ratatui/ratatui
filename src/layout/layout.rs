@@ -603,11 +603,13 @@ impl Layout {
                 Constraint::Proportional(_) => {
                     // given no other constraints, this segment will grow as much as possible.
                     //
-                    // in the current implementation, this constraint will not have any effect
-                    // since in every combination of constraints, other constraints governing
-                    // element size will take a higher priority.
-                    //
-                    // this constraint is placed here only for future proofing.
+                    // We want proportional constraints to behave the same as they do without
+                    // spacers but we also want them to be fill excess space
+                    // before a spacer fills excess space. This means we want
+                    // Proportional to be stronger than a spacer constraint but weaker than all the
+                    // other constraints.
+                    // In my tests, I found choosing an order of magnitude weaker than a `MEDIUM`
+                    // constraint did the trick.
                     solver.add_constraint(element.size() | EQ(MEDIUM / 10.0) | area_size)?;
                 }
             }
