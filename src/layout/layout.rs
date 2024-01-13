@@ -1148,6 +1148,58 @@ mod tests {
             chunks.windows(2).for_each(|w| assert!(w[0].y <= w[1].y));
         }
 
+        #[test]
+        fn length_constraints() {
+            // 3 lengths for reference
+            // cassowary implementation tends to put excess in last variable
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
+                Length(25),
+                Length(25),
+                Length(25),
+            ]));
+            assert_eq!([a.width, b.width, c.width], [25, 25, 50]);
+
+            // Length is lower priority that breaking Min
+            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Min(100)]));
+            assert_eq!([a.width, b.width], [0, 100]);
+
+            // Length is higher priority to non binding Min
+            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Min(0)]));
+            assert_eq!([a.width, b.width], [25, 75]);
+
+            // Length is lower priority that breaking Max
+            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Max(0)]));
+            assert_eq!([a.width, b.width], [100, 0]);
+
+            // Length is higher priority to non binding Min
+            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Max(100)]));
+            assert_eq!([a.width, b.width], [25, 75]);
+
+            // Length is equal priority to Percentage
+            // but cassowary modifies last constraint of equal weight to satisfy everything
+            let [a, b] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Percentage(25)]));
+            assert_eq!([a.width, b.width], [25, 75]);
+
+            // Length is equal priority to Percentage
+            // but cassowary modifies last constraint of equal weight to satisfy everything
+            let [a, b] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Percentage(25), Length(25)]));
+            assert_eq!([a.width, b.width], [25, 75]);
+
+            // Length is equal priority to Ratio
+            // but cassowary modifies last constraint of equal weight to satisfy everything
+            let [a, b] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Ratio(1, 4)]));
+            assert_eq!([a.width, b.width], [25, 75]);
+
+            // Length is equal priority to Ratio
+            // but cassowary modifies last constraint of equal weight to satisfy everything
+            let [a, b] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Ratio(1, 4), Length(25)]));
+            assert_eq!([a.width, b.width], [25, 75]);
+        }
+
         // these are a few tests that document existing bugs in the layout algorithm
         #[test]
         fn edge_cases() {
