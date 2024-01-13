@@ -289,8 +289,8 @@
 //! [Handling Events]: https://ratatui.rs/concepts/event-handling/
 //! [Layout]: https://ratatui.rs/how-to/layout/
 //! [Styling Text]: https://ratatui.rs/how-to/render/style-text/
-//! [template]: https://github.com/ratatui-org/template
-//! [async-template]: https://ratatui-org.github.io/async-template
+//! [template]: https://github.com/ratatui-org/templates/tree/main/simple
+//! [async-template]: https://github.com/ratatui-org/templates/tree/main/async
 //! [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples
 //! [Report a bug]: https://github.com/ratatui-org/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
 //! [Request a Feature]: https://github.com/ratatui-org/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
