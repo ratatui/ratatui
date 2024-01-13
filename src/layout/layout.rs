@@ -357,10 +357,7 @@ impl Layout {
     /// equal chunks or to not distribute extra space at all (which is the default used for laying
     /// out the columns for [`Table`] widgets).
     ///
-    /// Note: If you're using this feature please help us come up with a good name. See [Issue
-    /// #536](https://github.com/ratatui-org/ratatui/issues/536) for more information.
-    ///
-    /// [`Table`]: crate::widgets::Table
+    /// This function exists for backwards compatibility reasons. Use [`Layout::flex`] instead.
     #[stability::unstable(
         feature = "segment-size",
         reason = "The name for this feature is not final and may change in the future",
