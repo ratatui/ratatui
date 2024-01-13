@@ -437,11 +437,11 @@ impl Layout {
 
         // create an element for each constraint that needs to be applied. Each element defines the
         // variables that will be used to compute the layout.
-        let elements = layout
+        let elements: Vec<Element> = layout
             .constraints
             .iter()
-            .map(|_| Element::constrain(&mut solver, (area_start, area_end)).unwrap())
-            .collect::<Vec<Element>>();
+            .map(|_| Element::constrain(&mut solver, (area_start, area_end)))
+            .try_collect()?;
 
         // ensure there are no gaps between the elements
         for pair in elements.windows(2) {
