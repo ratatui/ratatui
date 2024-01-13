@@ -128,9 +128,6 @@ impl Widget for ExampleSelection {
 
 impl ExampleSelection {
     fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
-        // ┌Constraints───────────────────────────────────────────────────────────────────┐
-        // │  Fixed  │  Length  │  Percentage  │  Ratio  │  Proportional  │  Min  │  Max  │
-        // └──────────────────────────────────────────────────────────────────────────────┘
         Tabs::new(
             [
                 ExampleSelection::Stretch,
@@ -248,11 +245,6 @@ impl Example {
     }
 
     fn illustration(&self, text: String, fg: Color) -> Paragraph {
-        // Renders the following
-        //
-        // ┌─────────┐┌─────────┐
-        // │  40 px  ││  40 px  │
-        // └─────────┘└─────────┘
         Paragraph::new(text)
             .alignment(Alignment::Center)
             .block(Block::bordered().style(Style::default().fg(fg)))
