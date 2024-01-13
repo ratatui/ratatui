@@ -776,6 +776,105 @@ mod tests {
     use std::iter;
 
     use super::*;
+    /// Simple macro to make tests easier to read
+    /// See `test_assert_width_macro_examples` test for examples.
+    macro_rules! assert_size {
+        // flex with x and size
+        (
+            let (area, flex) = ($area:expr, $flex:ident),
+            $($constraint:ident($($value:expr),*) => (x == $x:expr, size == $width:expr)),*
+            ,
+        ) => {
+            assert_size!(
+                @internal
+                let (area, flex) = ($area, $flex),
+                $($constraint($($value),*) => (x == $x, size == $width)),*
+            )
+        };
+        // flex with size
+        (
+            let (area, flex) = ($area:expr, $flex:ident),
+            $($constraint:ident($($value:expr),*) => (size == $width:expr)),*
+            ,
+        ) => {
+            assert_size!(
+                @internal
+                let (area, flex) = ($area, $flex),
+                $($constraint($($value),*) => (x == 0, size == $width)),*
+            )
+        };
+        // x and size
+        (
+            let area = $area:expr,
+            $($constraint:ident($($value:expr),*) => (x == $x:expr, size == $width:expr)),*
+            ,
+        ) => {
+            assert_size!(
+                @internal
+                let (area, flex) = ($area, StretchLast),
+                $($constraint($($value),*) => (x == $x, size == $width)),*
+            )
+        };
+        // size
+        (
+            let area = $area:expr,
+            $($constraint:ident($($value:expr),*) => (size == $width:expr)),*
+            ,
+        ) => {
+            assert_size!(
+                @internal
+                let (area, flex) = ($area, StretchLast),
+                $($constraint($($value),*) => (x == 0, size == $width)),*
+            )
+        };
+        (
+            @internal
+            let (area, flex) = ($area:expr, $flex:ident),
+            $($constraint:ident($($value:expr),*) => (x == $x:expr, size == $width:expr)),*
+        ) => {
+                let area = $area;
+                let flex = Flex::$flex;
+                let rect = Rect::new(0, 0, area, 1);
+                let constraints = [$(Constraint::$constraint($($value),*)),*];
+                let intended_widths = [$($width),*];
+                let intended_x = [$($x),*];
+                let items = &Layout::horizontal(constraints).flex(flex).split(rect);
+                let widths: Vec<_> = items.iter().map(|item| item.width).collect();
+                assert_eq!(widths, intended_widths);
+                let x: Vec<_> = items.iter().map(|item| item.x).collect();
+                if !(intended_x.iter().all(|&x| x == 0)) {
+                    assert_eq!(x, intended_x);
+                }
+        }
+    }
+
+    #[test]
+    fn test_assert_width_macro_examples() {
+        assert_size![
+            // Proportional splits equally (widths only test)
+            let (area, flex) = (100, Stretch),
+            Length(25) => (x == 0, size == 50),
+            Length(25) => (x == 50, size == 50),
+        ];
+        assert_size![
+            // Proportional splits equally (x and widths test)
+            let (area, flex) = (100, StretchLast),
+            Length(25) => (size == 25),
+            Length(25) => (size == 75),
+        ];
+        assert_size![
+            // Proportional splits equally (widths only test)
+            let area = 100,
+            Proportional(1) => (size == 50),
+            Proportional(1) => (size == 50),
+        ];
+        assert_size![
+            // Proportional splits equally (x and widths test)
+            let area = 100,
+            Proportional(1) => (x == 0, size == 50),
+            Proportional(1) => (x == 50, size == 50),
+        ];
+    }
 
     #[test]
     fn custom_cache_size() {
@@ -1021,7 +1120,6 @@ mod tests {
     /// - overflow: constraint is for more than the full space
     mod split {
         use pretty_assertions::assert_eq;
-        use rstest::rstest;
 
         use crate::{
             assert_buffer_eq,
@@ -1384,63 +1482,87 @@ mod tests {
 
         #[test]
         fn length_constraints() {
-            // cassowary implementation tends to put excess in last variable
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Length(25),
-                Length(25),
-                Length(25),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [25, 25, 50]);
+            assert_size![
+                // cassowary implementation tends to put excess in last variable
+                let area = 100,
+                Length(25) => (size == 25),
+                Length(25) => (size == 25),
+                Length(25) => (size == 50),
+            ];
 
-            // Length is lower priority that breaking Min
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Min(100)]));
-            assert_eq!([a.width, b.width], [0, 100]);
+            assert_size![
+                // Length is lower priority than breaking Min
+                let area = 100,
+                Length(25) => (size == 0),
+                Min(100) => (size == 100),
+            ];
 
-            // Length is higher priority to non binding Min
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Min(0)]));
-            assert_eq!([a.width, b.width], [25, 75]);
+            // Length is higher priority than non-binding Min
+            assert_size![
+                let area = 100,
+                Length(25) => (size == 25),
+                Min(0) => (size == 75),
+            ];
 
-            // Length is lower priority that breaking Max
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Max(0)]));
-            assert_eq!([a.width, b.width], [100, 0]);
+            // Length is lower priority than breaking Max
+            assert_size![
+                let area = 100,
+                Length(25) => (size == 100),
+                Max(0) => (size == 0),
+            ];
 
-            // Length is higher priority to non binding Min
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Max(100)]));
-            assert_eq!([a.width, b.width], [25, 75]);
+            // Length is higher priority than non-binding Max
+            assert_size![
+                let area = 100,
+                Length(25) => (size == 25),
+                Max(100) => (size == 75),
+            ];
 
             // Length is equal priority to Percentage
             // but cassowary modifies last constraint of equal weight to satisfy everything
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Percentage(25)]));
-            assert_eq!([a.width, b.width], [25, 75]);
+            assert_size![
+                let area = 100,
+                Length(25) => (size == 25),
+                Percentage(25) => (size == 75),
+            ];
 
             // Length is equal priority to Percentage
             // but cassowary modifies last constraint of equal weight to satisfy everything
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Percentage(25), Length(25)]));
-            assert_eq!([a.width, b.width], [25, 75]);
+            assert_size![
+                let area = 100,
+                Percentage(25) => (size == 25),
+                Length(25) => (size == 75),
+            ];
 
             // Length is equal priority to Ratio
             // but cassowary modifies last constraint of equal weight to satisfy everything
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Ratio(1, 4)]));
-            assert_eq!([a.width, b.width], [25, 75]);
+            assert_size![
+                let area = 100,
+                Length(25) => (size == 25),
+                Ratio(1, 4) => (size == 75),
+            ];
 
             // Length is equal priority to Ratio
             // but cassowary modifies last constraint of equal weight to satisfy everything
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Ratio(1, 4), Length(25)]));
-            assert_eq!([a.width, b.width], [25, 75]);
+            assert_size![
+                let area = 100,
+                Ratio(1, 4) => (size == 25),
+                Length(25) => (size == 75),
+            ];
 
-            // Length is lower priority to Fixed
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(25), Length(25)]));
-            assert_eq!([a.width, b.width], [25, 75]);
+            // Length is lower priority than Fixed
+            assert_size![
+                let area = 100,
+                Fixed(25) => (size == 25),
+                Length(25) => (size == 75),
+            ];
 
-            // Length is lower priority to Fixed
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Fixed(25)]));
-            assert_eq!([a.width, b.width], [75, 25]);
+            // Length is lower priority than Fixed
+            assert_size![
+                let area = 100,
+                Length(25) => (size == 75),
+                Fixed(25) => (size == 25),
+            ];
         }
 
         // these are a few tests that document existing bugs in the layout algorithm
@@ -1511,42 +1633,45 @@ mod tests {
         #[test]
         fn proportional_fixed() {
             // fixed doesn't panic when results don't match exactly
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Fixed(33),
-                Fixed(33),
-                Fixed(33),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [33, 33, 34]);
+            assert_size![
+                let area = 100,
+                Fixed(33) => (size == 33),
+                Fixed(33) => (size == 33),
+                Fixed(33) => (size == 34),
+            ];
 
-            // cassowary implementation tends to put excess in last variable
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Fixed(25),
-                Fixed(25),
-                Fixed(25),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [25, 25, 50]);
+            // cassowary implementation tends to put excess in the last variable
+            assert_size![
+                let area = 100,
+                Fixed(25) => (size == 25),
+                Fixed(25) => (size == 25),
+                Fixed(25) => (size == 50),
+            ];
 
             // fixed with min and max
-            let [a, b, c] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(25), Fixed(25), Max(25)]));
-            assert_eq!([a.width, b.width, c.width], [50, 25, 25]);
+            assert_size![
+                let area = 100,
+                Min(25) => (size == 50),
+                Fixed(25) => (size == 25),
+                Max(25) => (size == 25),
+            ];
 
             // fixed with percent and ratio
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Percentage(25),
-                Fixed(25),
-                Ratio(1, 4),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [25, 25, 50]);
+            assert_size![
+                let area = 100,
+                Percentage(25) => (size == 25),
+                Fixed(25) => (size == 25),
+                Ratio(1, 4) => (size == 50),
+            ];
 
             // 3 lengths for reference
-            // cassowary implementation tends to put excess in last variable
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Length(25),
-                Length(25),
-                Length(25),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [25, 25, 50]);
+            // cassowary implementation tends to put excess in the last variable
+            assert_size![
+                let area = 100,
+                Length(25) => (size == 25),
+                Length(25) => (size == 25),
+                Length(25) => (size == 50),
+            ];
 
             // fixed with length
             let [_a, _b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
@@ -1564,409 +1689,322 @@ mod tests {
 
             // ensure that middle width is 1
             // last length of 100 will not be met
-            let [a, b, c] =
-                Rect::new(0, 0, 50, 1).split(&Layout::horizontal([Min(20), Fixed(1), Length(100)]));
-
-            assert_eq!([a.width, b.width, c.width], [20, 1, 29]);
+            assert_size![
+                let area = 50,
+                Min(20) => (size == 20),
+                Fixed(1) => (size == 1),
+                Length(100) => (size == 29),
+            ];
 
             // ensure that middle width is 1
             // first length of 100 will not be met
-            let [a, b, c] =
-                Rect::new(0, 0, 50, 1).split(&Layout::horizontal([Length(100), Fixed(1), Min(20)]));
-            assert_eq!([a.width, b.width, c.width], [29, 1, 20]);
+            assert_size![
+                let area = 50,
+                Length(100) => (size == 29),
+                Fixed(1) => (size == 1),
+                Min(20) => (size == 20),
+            ];
 
             // middle fixed width is satisfied exactly
             // left and right are equal to each other
-            let [a, b, c] = Rect::new(0, 0, 50, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Fixed(10),
-                Proportional(1),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [20, 10, a.width]);
+            assert_size![
+                let area = 50,
+                Proportional(1) => (size == 20),
+                Fixed(10) => (size == 10),
+                Proportional(1) => (size == 20),
+            ];
 
             // middle fixed width is satisfied exactly
             // ratio of left and right is 1 / 2
-            let [a, b, c] = Rect::new(0, 0, 50, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Fixed(10),
-                Proportional(2),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [13, 10, 27]);
+            assert_size![
+                let area = 50,
+                Proportional(1) => (size == 13),
+                Fixed(10) => (size == 10),
+                Proportional(2) => (size == 27),
+            ];
 
             // second width is double all the others
-            let [a, b, c, d] = Rect::new(0, 0, 50, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(2),
-                Proportional(1),
-                Proportional(1),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [10, 20, 10, 10]);
+            assert_size![
+                let area = 50,
+                Proportional(1) => (size == 10),
+                Proportional(2) => (size == 20),
+                Proportional(1) => (size == 10),
+                Proportional(1) => (size == 10),
+            ];
 
             // second width is still double all the others
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(2),
-                Proportional(1),
-                Proportional(1),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [20, 40, 20, 20]);
+            assert_size![
+                let area = 100,
+                Proportional(1) => (size == 20),
+                Proportional(2) => (size == 40),
+                Proportional(1) => (size == 20),
+                Proportional(1) => (size == 20),
+            ];
 
             // incremental proportions
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(2),
-                Proportional(3),
-                Proportional(4),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [10, 20, 30, 40]);
+            assert_size![
+                let area = 100,
+                Proportional(1) => (size == 10),
+                Proportional(2) => (size == 20),
+                Proportional(3) => (size == 30),
+                Proportional(4) => (size == 40),
+            ];
 
             // decremental proportions
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(4),
-                Proportional(3),
-                Proportional(2),
-                Proportional(1),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [40, 30, 20, 10]);
+            assert_size![
+                let area = 100,
+                Proportional(4) => (size == 40),
+                Proportional(3) => (size == 30),
+                Proportional(2) => (size == 20),
+                Proportional(1) => (size == 10),
+            ];
 
             // randomly ordered proportions
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [10, 30, 20, 40]);
+            assert_size![
+                let area = 100,
+                Proportional(1) => (size == 10),
+                Proportional(3) => (size == 30),
+                Proportional(2) => (size == 20),
+                Proportional(4) => (size == 40),
+            ];
 
             // randomly ordered proportions with fixed
-            let [a, b, c, d, e] = Rect::new(0, 0, 200, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Fixed(100),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [10, 30, 100, 20, 40]
-            );
+            assert_size![
+                let area = 200,
+                Proportional(1) => (size == 10),
+                Proportional(3) => (size == 30),
+                Fixed(100) => (size == 100),
+                Proportional(2) => (size == 20),
+                Proportional(4) => (size == 40),
+            ];
 
             // randomly ordered proportions with length
-            let [a, b, c, d, e] = Rect::new(0, 0, 200, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Length(100),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [10, 30, 100, 20, 40]
-            );
+            assert_size![
+                let area = 200,
+                Proportional(1) => (size == 10),
+                Proportional(3) => (size == 30),
+                Length(100) => (size == 100),
+                Proportional(2) => (size == 20),
+                Proportional(4) => (size == 40),
+            ];
 
             // randomly ordered proportions with percentage
-            let [a, b, c, d, e] = Rect::new(0, 0, 200, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Percentage(50),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [10, 30, 100, 20, 40]
-            );
+            assert_size![
+                let area = 200,
+                Proportional(1) => (size == 10),
+                Proportional(3) => (size == 30),
+                Percentage(50) => (size == 100),
+                Proportional(2) => (size == 20),
+                Proportional(4) => (size == 40),
+            ];
 
             // randomly ordered proportions with min
-            let [a, b, c, d, e] = Rect::new(0, 0, 200, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Min(100),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [10, 30, 100, 20, 40]
-            );
+            assert_size![
+                let area = 200,
+                Proportional(1) => (size == 10),
+                Proportional(3) => (size == 30),
+                Min(100) => (size == 100),
+                Proportional(2) => (size == 20),
+                Proportional(4) => (size == 40),
+            ];
 
             // randomly ordered proportions with max
-            let [a, b, c, d, e] = Rect::new(0, 0, 200, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Max(100),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [10, 30, 100, 20, 40]
-            );
+            assert_size![
+                let area = 200,
+                Proportional(1) => (size == 10),
+                Proportional(3) => (size == 30),
+                Max(100) => (size == 100),
+                Proportional(2) => (size == 20),
+                Proportional(4) => (size == 40),
+            ];
 
             // first and third widths are zero
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Proportional(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [0, 100, 0]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 0),
+                Proportional(1) => (size == 100),
+                Proportional(0) => (size == 0),
+            ];
 
             // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Fixed(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 50),
+                Fixed(1) => (size == 1),
+                Proportional(0) => (size == 49),
+            ];
 
             // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Length(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 50),
+                Length(1) => (size == 1),
+                Proportional(0) => (size == 49),
+            ];
 
             // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Percentage(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 50),
+                Percentage(1) => (size == 1),
+                Proportional(0) => (size == 49),
+            ];
 
             // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Ratio(1, 100),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 50),
+                Ratio(1, 100) => (size == 1),
+                Proportional(0) => (size == 49),
+            ];
 
             // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Min(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 50),
+                Min(1) => (size == 1),
+                Proportional(0) => (size == 49),
+            ];
 
             // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Max(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 50),
+                Max(1) => (size == 1),
+                Proportional(0) => (size == 49),
+            ];
 
             // first and third widths are zero
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Proportional(2),
-                Proportional(0),
-                Proportional(1),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [0, 67, 0, 33]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 0),
+                Proportional(2) => (size == 67),
+                Proportional(0) => (size == 0),
+                Proportional(1) => (size == 33),
+            ];
 
             // 0 proportional will fill empty space
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Proportional(2),
-                Percentage(20),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [0, 80, 20]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 0),
+                Proportional(2) => (size == 80),
+                Percentage(20) => (size == 20),
+            ];
 
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Proportional(u16::MAX),
-            ]));
-            assert_eq!([a.width, b.width], [0, 100]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 0),
+                Proportional(u16::MAX) => (size == 100),
+            ];
 
             // 0 proportional will fill empty space
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Proportional(0), Percentage(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 80),
+                Percentage(20) => (size == 20),
+            ];
 
             // 1 proportional will fill empty spaces
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Proportional(1), Percentage(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
+            assert_size![
+                let area = 100,
+                Proportional(1) => (size == 80),
+                Percentage(20) => (size == 20),
+            ];
 
             // proportional can be zero because of high scaling factor
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(u16::MAX),
-                Proportional(1),
-                Percentage(20),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [80, 0, 20]);
+            assert_size![
+                let area = 100,
+                Proportional(u16::MAX) => (size == 80),
+                Proportional(1) => (size == 0),
+                Percentage(20) => (size == 20),
+            ];
 
             // single 0 proportional will fill empty space
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Proportional(0), Length(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 80),
+                Length(20) => (size == 20),
+            ];
 
             // single 0 proportional will fill empty space
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Proportional(0), Max(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
+            assert_size![
+                let area = 100,
+                Proportional(0) => (size == 80),
+                Max(20) => (size == 20),
+            ];
 
             // 1 proportional will fill empty space
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Proportional(1), Max(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
+            assert_size![
+                let area = 100,
+                Proportional(1) => (size == 80),
+                Max(20) => (size == 20),
+            ];
 
             // 0 min still fills empty space
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(0), Percentage(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
+            assert_size![
+                let area = 100,
+                Min(0) => (size == 80),
+                Percentage(20) => (size == 20),
+            ];
 
             // percentage constraint doesn't hold against defying `Max`
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Max(0), Percentage(20)]));
-            assert_eq!([a.width, b.width], [0, 100]);
+            assert_size![
+                let area = 100,
+                Max(0) => (size == 0),
+                Percentage(20) => (size == 100),
+            ];
 
             // specifying behavior of proportional with min and length
-            let [a, b, c, d, e] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(1),
-                Proportional(1),
-                Min(30),
-                Length(50),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [7, 6, 7, 30, 50]
-            );
+            assert_size![
+                let area = 100,
+                Proportional(1) => (size == 7),
+                Proportional(1) => (size == 6),
+                Proportional(1) => (size == 7),
+                Min(30) => (size == 30),
+                Length(50) => (size == 50),
+            ];
 
             // proportional is lower priority than length
-            let [a, b, c, d, e] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(1),
-                Proportional(1),
-                Length(50),
-                Length(50),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [0, 0, 0, 50, 50]
-            );
+            assert_size![
+                let area = 100,
+                Proportional(1) => (size == 0),
+                Proportional(1) => (size == 0),
+                Proportional(1) => (size == 0),
+                Length(50) => (size == 50),
+                Length(50) => (size == 50),
+            ];
 
             // proportional is lower priority than min and max
-            let [a, b, c, d, e] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(1),
-                Proportional(1),
-                Min(50),
-                Max(50),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [0, 0, 0, 50, 50]
-            );
+            assert_size![
+                let area = 100,
+                Proportional(1) => (size == 0),
+                Proportional(1) => (size == 0),
+                Proportional(1) => (size == 0),
+                Min(50) => (size == 50),
+                Max(50) => (size == 50),
+            ];
 
             // proportional is lower priority than percentage
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(1),
-                Proportional(1),
-                Percentage(100),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [0, 0, 0, 100]);
+            assert_size![
+                let area = 100,
+                Proportional(1) => (size == 0),
+                Proportional(1) => (size == 0),
+                Proportional(1) => (size == 0),
+                Percentage(100) => (size == 100),
+            ];
 
             // proportional is lower priority than ratio
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(1),
-                Proportional(1),
-                Ratio(1, 1),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [0, 0, 0, 100]);
-        }
-
-        #[rstest]
-        #[case::length_stretches_to_end(Constraint::Length(50), Flex::StretchLast, (0, 100))]
-        #[case::length_stretches(Constraint::Length(50), Flex::Stretch, (0, 100))]
-        #[case::length_left_justified(Constraint::Length(50), Flex::Start, (0, 50))]
-        #[case::length_right_justified(Length(50), Flex::End, (50, 50))]
-        #[case::length_center_justified(Length(50), Flex::Center, (25, 50))]
-        #[case::fixed_stretches_to_end(Fixed(50), Flex::StretchLast, (0, 100))]
-        #[case::fixed_left_justified(Fixed(50), Flex::Start, (0, 50))]
-        #[case::fixed_right_justified(Fixed(50), Flex::End, (50, 50))]
-        #[case::fixed_center_justified(Fixed(50), Flex::Center, (25, 50))]
-        #[case::ratio_stretches_to_end(Ratio(1, 2), Flex::StretchLast, (0, 100))]
-        #[case::ratio_left_justified(Ratio(1, 2), Flex::Start, (0, 50))]
-        #[case::ratio_right_justified(Ratio(1, 2), Flex::End, (50, 50))]
-        #[case::ratio_center_justified(Ratio(1, 2), Flex::Center, (25, 50))]
-        #[case::percent_stretches_to_end(Percentage(50), Flex::StretchLast, (0, 100))]
-        #[case::percent_left_justified(Percentage(50), Flex::Start, (0, 50))]
-        #[case::percent_right_justified(Percentage(50), Flex::End, (50, 50))]
-        #[case::percent_center_justified(Percentage(50), Flex::Center, (25, 50))]
-        #[case::min_stretches_to_end(Min(50), Flex::StretchLast, (0, 100))]
-        #[case::min_left_justified(Min(50), Flex::Start, (0, 50))]
-        #[case::min_right_justified(Min(50), Flex::End, (50, 50))]
-        #[case::min_center_justified(Min(50), Flex::Center, (25, 50))]
-        #[case::max_stretches_to_end(Max(50), Flex::StretchLast, (0, 100))]
-        #[case::max_left_justified(Max(50), Flex::Start, (0, 50))]
-        #[case::max_right_justified(Max(50), Flex::End, (50, 50))]
-        #[case::max_center_justified(Max(50), Flex::Center, (25, 50))]
-        fn flex_one_constraint(
-            #[case] constraint: Constraint,
-            #[case] flex: Flex,
-            #[case] expected_widths: (u16, u16),
-        ) {
-            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([constraint]).flex(flex));
-            assert_eq!((a.x, a.width), expected_widths);
-        }
-
-        #[rstest]
-        #[case::length_stretches_to_end([Length(25), Length(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
-        #[case::splits_equally_to_end([Length(25), Length(25)], Flex::Stretch, [(0, 50), (50, 50)])]
-        #[case::lengths_justify_to_start([Length(25), Length(25)], Flex::Start, [(0, 25), (25, 25)])]
-        #[case::length_justifies_to_center([Length(25), Length(25)], Flex::Center, [(25, 25), (50, 25)])]
-        #[case::length_justifies_to_end([Length(25), Length(25)], Flex::End, [(50, 25), (75, 25)])]
-        #[case::fixed_stretches_to_end_last([Fixed(25), Fixed(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
-        #[case::fixed_stretches_to_end([Fixed(25), Fixed(25)], Flex::Stretch, [(0, 50), (50, 50)])]
-        #[case::fixed_justifies_to_start([Fixed(25), Fixed(25)], Flex::Start, [(0, 25), (25, 25)])]
-        #[case::fixed_justifies_to_center([Fixed(25), Fixed(25)], Flex::Center, [(25, 25), (50, 25)])]
-        #[case::fixed_justifies_to_end([Fixed(25), Fixed(25)], Flex::End, [(50, 25), (75, 25)])]
-        #[case::percentage_stretches_to_end_last([Percentage(25), Percentage(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
-        #[case::percentage_stretches_to_end([Percentage(25), Percentage(25)], Flex::Stretch, [(0, 50), (50, 50)])]
-        #[case::percentage_justifies_to_start([Percentage(25), Percentage(25)], Flex::Start, [(0, 25), (25, 25)])]
-        #[case::percentage_justifies_to_center([Percentage(25), Percentage(25)], Flex::Center, [(25, 25), (50, 25)])]
-        #[case::percentage_justifies_to_end([Percentage(25), Percentage(25)], Flex::End, [(50, 25), (75, 25)])]
-        #[case::min_stretches_to_end([Min(25), Min(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
-        #[case::min_stretches_to_end([Min(25), Min(25)], Flex::Stretch, [(0, 50), (50, 50)])]
-        #[case::min_justifies_to_start([Min(25), Min(25)], Flex::Start, [(0, 25), (25, 25)])]
-        #[case::min_justifies_to_center([Min(25), Min(25)], Flex::Center, [(25, 25), (50, 25)])]
-        #[case::min_justifies_to_end([Min(25), Min(25)], Flex::End, [(50, 25), (75, 25)])]
-        #[case::length_spaced_between([Length(25), Length(25)], Flex::SpaceBetween, [(0, 25), (75, 25)])]
-        #[case::length_spaced_around([Length(25), Length(25)], Flex::SpaceAround, [(17, 25), (58, 25)])]
-        fn flex_two_constraints(
-            #[case] constraints: [Constraint; 2],
-            #[case] flex: Flex,
-            #[case] expected_widths: [(u16, u16); 2],
-        ) {
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal(constraints).flex(flex));
-            assert_eq!([(a.x, a.width), (b.x, b.width)], expected_widths);
-        }
-
-        #[rstest]
-        #[case::length_spaced_around([Length(25), Length(25), Length(25)], Flex::SpaceBetween, [(0, 25), (38, 25), (75, 25)])]
-        fn flex_three_constraints(
-            #[case] constraints: [Constraint; 3],
-            #[case] flex: Flex,
-            #[case] expected_widths: [(u16, u16); 3],
-        ) {
-            let [a, b, c] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal(constraints).flex(flex));
-            assert_eq!(
-                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
-                expected_widths
-            );
+            assert_size![
+                let area = 100,
+                Proportional(1) => (size == 0),
+                Proportional(1) => (size == 0),
+                Proportional(1) => (size == 0),
+                Ratio(1, 1) => (size == 100),
+            ];
         }
 
         #[test]
-        fn flex() {
+        fn flex_tests() {
             // length should be spaced around
             let [a, b, c] = Rect::new(0, 0, 100, 1).split(
                 &Layout::horizontal([Length(25), Length(25), Length(25)]).flex(Flex::SpaceAround),
@@ -1974,6 +2012,318 @@ mod tests {
             assert!(b.x == 37 || b.x == 38);
             assert!(b.width == 26 || b.width == 25);
             assert_eq!([[a.x, a.width], [c.x, c.width]], [[6, 25], [69, 25]]);
+
+            // length stretches to end
+            assert_size![
+                let (area, flex) = (100, StretchLast),
+                Length(50) => (x == 0, size == 100),
+            ];
+
+            // length stretches
+            assert_size![
+                let (area, flex) = (100, Stretch),
+                Length(50) => (x == 0, size == 100),
+            ];
+
+            // length left justified
+            assert_size![
+                let (area, flex) = (100, Start),
+                Length(50) => (x == 0, size == 50),
+            ];
+
+            // length right justified
+            assert_size![
+                let (area, flex) = (100, End),
+                Length(50) => (x == 50, size == 50),
+            ];
+
+            // length center justified
+            assert_size![
+                let (area, flex) = (100, Center),
+                Length(50) => (x == 25, size == 50),
+            ];
+
+            // fixed stretches to end
+            assert_size![
+                let (area, flex) = (100, StretchLast),
+                Fixed(50) => (x == 0, size == 100),
+            ];
+
+            // fixed left justified
+            assert_size![
+                let (area, flex) = (100, Start),
+                Fixed(50) => (x == 0, size == 50),
+            ];
+
+            // fixed right justified
+            assert_size![
+                let (area, flex) = (100, End),
+                Fixed(50) => (x == 50, size == 50),
+            ];
+
+            // fixed center justified
+            assert_size![
+                let (area, flex) = (100, Center),
+                Fixed(50) => (x == 25, size == 50),
+            ];
+
+            // ratio stretches to end
+            assert_size![
+                let (area, flex) = (100, StretchLast),
+                Ratio(1, 2) => (x == 0, size == 100),
+            ];
+
+            // ratio left justified
+            assert_size![
+                let (area, flex) = (100, Start),
+                Ratio(1, 2) => (x == 0, size == 50),
+            ];
+
+            // ratio right justified
+            assert_size![
+                let (area, flex) = (100, End),
+                Ratio(1, 2) => (x == 50, size == 50),
+            ];
+
+            // ratio center justified
+            assert_size![
+                let (area, flex) = (100, Center),
+                Ratio(1, 2) => (x == 25, size == 50),
+            ];
+
+            // percent stretches to end
+            assert_size![
+                let (area, flex) = (100, StretchLast),
+                Percentage(50) => (x == 0, size == 100),
+            ];
+
+            // percent left justified
+            assert_size![
+                let (area, flex) = (100, Start),
+                Percentage(50) => (x == 0, size == 50),
+            ];
+
+            // percent right justified
+            assert_size![
+                let (area, flex) = (100, End),
+                Percentage(50) => (x == 50, size == 50),
+            ];
+
+            // percent center justified
+            assert_size![
+                let (area, flex) = (100, Center),
+                Percentage(50) => (x == 25, size == 50),
+            ];
+
+            // min stretches to end
+            assert_size![
+                let (area, flex) = (100, StretchLast),
+                Min(50) => (x == 0, size == 100),
+            ];
+
+            // min left justified
+            assert_size![
+                let (area, flex) = (100, Start),
+                Min(50) => (x == 0, size == 50),
+            ];
+
+            // min right justified
+            assert_size![
+                let (area, flex) = (100, End),
+                Min(50) => (x == 50, size == 50),
+            ];
+
+            // min center justified
+            assert_size![
+                let (area, flex) = (100, Center),
+                Min(50) => (x == 25, size == 50),
+            ];
+
+            // max stretches to end
+            assert_size![
+                let (area, flex) = (100, StretchLast),
+                Max(50) => (x == 0, size == 100),
+            ];
+
+            // max left justified
+            assert_size![
+                let (area, flex) = (100, Start),
+                Max(50) => (x == 0, size == 50),
+            ];
+
+            // max right justified
+            assert_size![
+                let (area, flex) = (100, End),
+                Max(50) => (x == 50, size == 50),
+            ];
+
+            // max center justified
+            assert_size![
+                let (area, flex) = (100, Center),
+                Max(50) => (x == 25, size == 50),
+            ];
+
+            // length stretches to end
+            assert_size![
+                let (area, flex) = (100, StretchLast),
+                Length(25) => (x == 0, size == 25),
+                Length(25) => (x == 25, size == 75),
+            ];
+
+            // splits equally to end
+            assert_size![
+                let (area, flex) = (100, Stretch),
+                Length(25) => (x == 0, size == 50),
+                Length(25) => (x == 50, size == 50),
+            ];
+
+            // lengths justify to start
+            assert_size![
+                let (area, flex) = (100, Start),
+                Length(25) => (x == 0, size == 25),
+                Length(25) => (x == 25, size == 25),
+            ];
+
+            // length justifies to center
+            assert_size![
+                let (area, flex) = (100, Center),
+                Length(25) => (x == 25, size == 25),
+                Length(25) => (x == 50, size == 25),
+            ];
+
+            // length justifies to end
+            assert_size![
+                let (area, flex) = (100, End),
+                Length(25) => (x == 50, size == 25),
+                Length(25) => (x == 75, size == 25),
+            ];
+
+            // fixed stretches to end last
+            assert_size![
+                let (area, flex) = (100, StretchLast),
+                Fixed(25) => (x == 0, size == 25),
+                Fixed(25) => (x == 25, size == 75),
+            ];
+
+            // fixed stretches to end
+            assert_size![
+                let (area, flex) = (100, Stretch),
+                Fixed(25) => (x == 0, size == 50),
+                Fixed(25) => (x == 50, size == 50),
+            ];
+
+            // fixed justifies to start
+            assert_size![
+                let (area, flex) = (100, Start),
+                Fixed(25) => (x == 0, size == 25),
+                Fixed(25) => (x == 25, size == 25),
+            ];
+
+            // fixed justifies to center
+            assert_size![
+                let (area, flex) = (100, Center),
+                Fixed(25) => (x == 25, size == 25),
+                Fixed(25) => (x == 50, size == 25),
+            ];
+
+            // fixed justifies to end
+            assert_size![
+                let (area, flex) = (100, End),
+                Fixed(25) => (x == 50, size == 25),
+                Fixed(25) => (x == 75, size == 25),
+            ];
+
+            // percentage stretches to end last
+            assert_size![
+                let (area, flex) = (100, StretchLast),
+                Percentage(25) => (x == 0, size == 25),
+                Percentage(25) => (x == 25, size == 75),
+            ];
+
+            // percentage stretches to end
+            assert_size![
+                let (area, flex) = (100, Stretch),
+                Percentage(25) => (x == 0, size == 50),
+                Percentage(25) => (x == 50, size == 50),
+            ];
+
+            // percentage justifies to start
+            assert_size![
+                let (area, flex) = (100, Start),
+                Percentage(25) => (x == 0, size == 25),
+                Percentage(25) => (x == 25, size == 25),
+            ];
+
+            // percentage justifies to center
+            assert_size![
+                let (area, flex) = (100, Center),
+                Percentage(25) => (x == 25, size == 25),
+                Percentage(25) => (x == 50, size == 25),
+            ];
+
+            // percentage justifies to end
+            assert_size![
+                let (area, flex) = (100, End),
+                Percentage(25) => (x == 50, size == 25),
+                Percentage(25) => (x == 75, size == 25),
+            ];
+
+            // min stretches to end last
+            assert_size![
+                let (area, flex) = (100, StretchLast),
+                Min(25) => (x == 0, size == 25),
+                Min(25) => (x == 25, size == 75),
+            ];
+
+            // min stretches to end
+            assert_size![
+                let (area, flex) = (100, Stretch),
+                Min(25) => (x == 0, size == 50),
+                Min(25) => (x == 50, size == 50),
+            ];
+
+            // min justifies to start
+            assert_size![
+                let (area, flex) = (100, Start),
+                Min(25) => (x == 0, size == 25),
+                Min(25) => (x == 25, size == 25),
+            ];
+
+            // min justifies to center
+            assert_size![
+                let (area, flex) = (100, Center),
+                Min(25) => (x == 25, size == 25),
+                Min(25) => (x == 50, size == 25),
+            ];
+
+            // min justifies to end
+            assert_size![
+                let (area, flex) = (100, End),
+                Min(25) => (x == 50, size == 25),
+                Min(25) => (x == 75, size == 25),
+            ];
+
+            // length spaced between
+            assert_size![
+                let (area, flex) = (100, SpaceBetween),
+                Length(25) => (x == 0, size == 25),
+                Length(25) => (x == 75, size == 25),
+            ];
+
+            // length spaced around
+            assert_size![
+                let (area, flex) = (100, SpaceAround),
+                Length(25) => (x == 17, size == 25),
+                Length(25) => (x == 58, size == 25),
+            ];
+
+            // length spaced around
+            assert_size![
+                let (area, flex) = (100, SpaceBetween),
+                Length(25) => (x == 0, size == 25),
+                Length(25) => (x == 38, size == 25),
+                Length(25) => (x == 75, size == 25),
+            ];
         }
     }
 }
