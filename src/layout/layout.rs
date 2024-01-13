@@ -443,18 +443,55 @@ impl Layout {
             .map(|_| Element::constrain(&mut solver, (area_start, area_end)))
             .try_collect()?;
 
-        // ensure there are no gaps between the elements
-        for pair in elements.windows(2) {
-            solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
-        }
-
         match layout.flex {
+            Flex::SpaceBetween => {
+                let mut spacers: Vec<Element> = elements
+                    .iter()
+                    .map(|_| Element::constrain(&mut solver, (area_start, area_end)))
+                    .try_collect()?;
+                spacers.pop();
+                for spacer in spacers.iter() {
+                    solver.add_constraint(spacer.size() | EQ(WEAK) | area_size)?;
+                }
+                for (left, right) in spacers.iter().tuple_combinations() {
+                    solver.add_constraint(left.size() | EQ(STRONG) | right.size())?;
+                }
+                for pair in Itertools::interleave(elements.iter(), spacers.iter())
+                    .collect::<Vec<&Element>>()
+                    .windows(2)
+                {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+                }
+            }
+            Flex::SpaceAround => {
+                let mut spacers: Vec<Element> = elements
+                    .iter()
+                    .map(|_| Element::constrain(&mut solver, (area_start, area_end)))
+                    .try_collect()?;
+                spacers.push(Element::constrain(&mut solver, (area_start, area_end))?);
+                for spacer in spacers.iter() {
+                    solver.add_constraint(spacer.size() | EQ(WEAK) | area_size)?;
+                }
+                for (left, right) in spacers.iter().tuple_combinations() {
+                    solver.add_constraint(left.size() | EQ(STRONG) | right.size())?;
+                }
+                for pair in Itertools::interleave(spacers.iter(), elements.iter())
+                    .collect::<Vec<&Element>>()
+                    .windows(2)
+                {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+                }
+            }
             Flex::StretchLast => {
                 if let Some(first) = elements.first() {
                     solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
                 }
                 if let Some(last) = elements.last() {
                     solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
+                }
+                // ensure there are no gaps between the elements
+                for pair in elements.windows(2) {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
                 }
             }
             Flex::Stretch => {
@@ -467,6 +504,10 @@ impl Layout {
                 // prefer equal chunks if other constraints are all satisfied
                 for (left, right) in elements.iter().tuple_combinations() {
                     solver.add_constraint(left.size() | EQ(WEAK) | right.size())?;
+                }
+                // ensure there are no gaps between the elements
+                for pair in elements.windows(2) {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
                 }
             }
             Flex::Center => {
@@ -487,6 +528,10 @@ impl Layout {
                         flex_end_element.end | EQ(REQUIRED) | area_end,
                     ])?;
                 }
+                // ensure there are no gaps between the elements
+                for pair in elements.windows(2) {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+                }
             }
             Flex::Start => {
                 let flex_end_element = Element::constrain(&mut solver, (area_start, area_end))?;
@@ -499,6 +544,10 @@ impl Layout {
                         flex_end_element.end | EQ(REQUIRED) | area_end,
                     ])?;
                 }
+                // ensure there are no gaps between the elements
+                for pair in elements.windows(2) {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+                }
             }
             Flex::End => {
                 let flex_start_element = Element::constrain(&mut solver, (area_start, area_end))?;
@@ -510,6 +559,10 @@ impl Layout {
                 }
                 if let Some(last) = elements.last() {
                     solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
+                }
+                // ensure there are no gaps between the elements
+                for pair in elements.windows(2) {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
                 }
             }
         }
@@ -2001,6 +2054,33 @@ mod tests {
             let [a, b] = Rect::new(0, 0, 100, 1)
                 .split(&Layout::horizontal([Min(25), Min(25)]).flex(Flex::End));
             assert_eq!([[a.x, a.width], [b.x, b.width]], [[50, 25], [75, 25]]);
+
+            // length should be spaced between
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::SpaceBetween));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [75, 25]]);
+
+            // length should be spaced between
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Length(25), Length(25), Length(25)]).flex(Flex::SpaceBetween),
+            );
+            assert_eq!(
+                [[a.x, a.width], [b.x, b.width], [c.x, c.width]],
+                [[0, 25], [38, 25], [75, 25]]
+            );
+
+            // length should be spaced around
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::SpaceAround));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[17, 25], [58, 25]]);
+
+            // length should be spaced around
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Length(25), Length(25), Length(25)]).flex(Flex::SpaceAround),
+            );
+            assert!(b.x == 37 || b.x == 38);
+            assert!(b.width == 26 || b.width == 25);
+            assert_eq!([[a.x, a.width], [c.x, c.width]], [[6, 25], [69, 25]]);
         }
     }
 }
