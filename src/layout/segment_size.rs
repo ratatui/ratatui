@@ -60,6 +60,7 @@ mod tests {
         constraints: Vec<Constraint>,
         target: Rect,
     ) -> Vec<(u16, u16)> {
+        #[allow(deprecated)]
         let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(constraints)

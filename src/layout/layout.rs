@@ -365,6 +365,7 @@ impl Layout {
         issue = "https://github.com/ratatui-org/ratatui/issues/536"
     )]
     #[must_use = "method moves the value of self and returns the modified value"]
+    #[deprecated(since = "0.26.0", note = "You should use `Layout::flex` instead.")]
     pub const fn segment_size(self, segment_size: SegmentSize) -> Layout {
         let flex = match segment_size {
             SegmentSize::None => Flex::Start,
@@ -944,6 +945,12 @@ mod tests {
     }
 
     #[test]
+    fn flex_default() {
+        assert_eq!(Layout::default().flex, Flex::StretchLast);
+    }
+
+    #[test]
+    #[allow(deprecated)]
     fn segment_size() {
         assert_eq!(
             Layout::default()
