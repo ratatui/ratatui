@@ -9,15 +9,13 @@
 `ratatui-macros` is a Rust crate that provides easy-to-use macros for simplifying boilerplate
 associated with creating UI using [Ratatui](https://github.com/ratatui-org/ratatui).
 
+This is an experimental playground to us explore macros that would be useful to have in Ratatui proper.
+
 ## Features
 
 - Constraint-based Layouts: Easily define layout constraints such as fixed, percentage, minimum, and
   maximum sizes, as well as ratios.
 - Directional Layouts: Specify layouts as either horizontal or vertical with simple macro commands.
-- Color palette: Define color palette based on [TailwindCSS]'s expertly-crafted default color
-  palette.
-
-[TailwindCSS]: https://tailwindcss.com/docs/customizing-colors
 
 ## Getting Started
 
@@ -34,39 +32,8 @@ use ratatui_macros::{
     constraint,
     constraints,
     horizontal,
-    palette,
     vertical,
 };
-```
-
-### Color
-
-The `palette!` macro allows you to define color palettes with ease. It is based on [TailwindCSS]'s
-default color palette.
-
-```rust
-use ratatui::prelude::Color;
-use ratatui_macros::palette;
-
-palette!(pub SLATE);
-
-assert_eq!(SLATE_900, Color::Rgb(15, 23, 42));
-```
-
-The `palette!(pub SLATE)` macro expands to effectively the following:
-
-```rust
-use ratatui::prelude::Color;
-pub const SLATE_50: Color = Color::Rgb(248, 250, 252);
-pub const SLATE_100: Color = Color::Rgb(241, 245, 249);
-pub const SLATE_200: Color = Color::Rgb(226, 232, 240);
-pub const SLATE_300: Color = Color::Rgb(203, 213, 225);
-pub const SLATE_400: Color = Color::Rgb(148, 163, 184);
-pub const SLATE_500: Color = Color::Rgb(100, 116, 139);
-pub const SLATE_600: Color = Color::Rgb(71, 85, 105);
-pub const SLATE_700: Color = Color::Rgb(51, 65, 85);
-pub const SLATE_800: Color = Color::Rgb(30, 41, 59);
-pub const SLATE_900: Color = Color::Rgb(15, 23, 42);
 ```
 
 ### Layout
