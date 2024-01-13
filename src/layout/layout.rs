@@ -1903,6 +1903,104 @@ mod tests {
             let [a] =
                 Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Max(50)]).flex(Flex::Center));
             assert_eq!([a.x, a.width], [25, 50]);
+
+            // length should stretch to the very end
+            let [a, b] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Length(25)]));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 75]]);
+
+            // length should splits equally to the very end
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::Stretch));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 50], [50, 50]]);
+
+            // lengths should justify to start
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::Start));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 25]]);
+
+            // length should justify to the center
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::Center));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[25, 25], [50, 25]]);
+
+            // length should justify to the end
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::End));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[50, 25], [75, 25]]);
+
+            // fixed should stretch to the very end
+            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(25), Fixed(25)]));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 75]]);
+
+            // fixed should splits equally to the very end
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Fixed(25), Fixed(25)]).flex(Flex::Stretch));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 50], [50, 50]]);
+
+            // fixed should justify to start
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Fixed(25), Fixed(25)]).flex(Flex::Start));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 25]]);
+
+            // fixed should justify to the center
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Fixed(25), Fixed(25)]).flex(Flex::Center));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[25, 25], [50, 25]]);
+
+            // fixed should justify to the end
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Fixed(25), Fixed(25)]).flex(Flex::End));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[50, 25], [75, 25]]);
+
+            // percentage should stretch to the very end
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Percentage(25), Percentage(25)]));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 75]]);
+
+            // percentage should splits equally to the very end
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Percentage(25), Percentage(25)]).flex(Flex::Stretch));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 50], [50, 50]]);
+
+            // percentage should justify to start
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Percentage(25), Percentage(25)]).flex(Flex::Start));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 25]]);
+
+            // percentage should justify to the center
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Percentage(25), Percentage(25)]).flex(Flex::Center));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[25, 25], [50, 25]]);
+
+            // percentage should justify to the end
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Percentage(25), Percentage(25)]).flex(Flex::End));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[50, 25], [75, 25]]);
+
+            // min should stretch to the very end
+            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(25), Min(25)]));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 75]]);
+
+            // min should splits equally to the very end
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Min(25), Min(25)]).flex(Flex::Stretch));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 50], [50, 50]]);
+
+            // min should justify to start
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Min(25), Min(25)]).flex(Flex::Start));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 25]]);
+
+            // min should justify to the center
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Min(25), Min(25)]).flex(Flex::Center));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[25, 25], [50, 25]]);
+
+            // min should justify to the end
+            let [a, b] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Min(25), Min(25)]).flex(Flex::End));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], [[50, 25], [75, 25]]);
         }
     }
 }
