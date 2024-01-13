@@ -981,6 +981,7 @@ mod tests {
     /// - overflow: constraint is for more than the full space
     mod split {
         use pretty_assertions::assert_eq;
+        use rstest::rstest;
 
         use crate::{
             assert_buffer_eq,
@@ -1842,237 +1843,88 @@ mod tests {
             assert_eq!([a.width, b.width, c.width, d.width], [0, 0, 0, 100]);
         }
 
-        #[test]
-        fn flex() {
-            // length should stretch to the very end
-            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(50)]));
-            assert_eq!([a.x, a.width], [0, 100]);
+        #[rstest]
+        #[case::length_stretches_to_end([Length(50)], Flex::StretchLast, [0, 100])]
+        #[case::length_stretches([Length(50)], Flex::Stretch, [0, 100])]
+        #[case::length_left_justified([Length(50)], Flex::Start, [0, 50])]
+        #[case::length_right_justified([Length(50)], Flex::End, [50, 50])]
+        #[case::length_center_justified([Length(50)], Flex::Center, [25, 50])]
+        #[case::fixed_stretches_to_end([Fixed(50)], Flex::StretchLast, [0, 100])]
+        #[case::fixed_left_justified([Fixed(50)], Flex::Start, [0, 50])]
+        #[case::fixed_right_justified([Fixed(50)], Flex::End, [50, 50])]
+        #[case::fixed_center_justified([Fixed(50)], Flex::Center, [25, 50])]
+        #[case::ratio_stretches_to_end([Ratio(1, 2)], Flex::StretchLast, [0, 100])]
+        #[case::ratio_left_justified([Ratio(1, 2)], Flex::Start, [0, 50])]
+        #[case::ratio_right_justified([Ratio(1, 2)], Flex::End, [50, 50])]
+        #[case::ratio_center_justified([Ratio(1, 2)], Flex::Center, [25, 50])]
+        #[case::percent_stretches_to_end([Percentage(50)], Flex::StretchLast, [0, 100])]
+        #[case::percent_left_justified([Percentage(50)], Flex::Start, [0, 50])]
+        #[case::percent_right_justified([Percentage(50)], Flex::End, [50, 50])]
+        #[case::percent_center_justified([Percentage(50)], Flex::Center, [25, 50])]
+        #[case::min_stretches_to_end([Min(50)], Flex::StretchLast, [0, 100])]
+        #[case::min_left_justified([Min(50)], Flex::Start, [0, 50])]
+        #[case::min_right_justified([Min(50)], Flex::End, [50, 50])]
+        #[case::min_center_justified([Min(50)], Flex::Center, [25, 50])]
+        #[case::max_stretches_to_end([Max(50)], Flex::StretchLast, [0, 100])]
+        #[case::max_left_justified([Max(50)], Flex::Start, [0, 50])]
+        #[case::max_right_justified([Max(50)], Flex::End, [50, 50])]
+        #[case::max_center_justified([Max(50)], Flex::Center, [25, 50])]
+        fn flex_one_constraint(
+            #[case] constraints: [Constraint; 1],
+            #[case] flex: Flex,
+            #[case] expected_widths: [u16; 2],
+        ) {
+            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal(constraints).flex(flex));
+            assert_eq!([a.x, a.width], expected_widths);
+        }
 
-            // length should be left justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(50)]).flex(Flex::Start));
-            assert_eq!([a.x, a.width], [0, 50]);
+        #[rstest]
+        #[case::length_stretches_to_end([Length(25), Length(25)], Flex::StretchLast, [[0, 25], [25, 75]])]
+        #[case::length_stretches_to_end([Length(25), Length(25)], Flex::StretchLast, [[0, 25], [25, 75]])]
+        #[case::splits_equally_to_end([Length(25), Length(25)], Flex::Stretch, [[0, 50], [50, 50]])]
+        #[case::lengths_justify_to_start([Length(25), Length(25)], Flex::Start, [[0, 25], [25, 25]])]
+        #[case::length_justifies_to_center([Length(25), Length(25)], Flex::Center, [[25, 25], [50, 25]])]
+        #[case::length_justifies_to_end([Length(25), Length(25)], Flex::End, [[50, 25], [75, 25]])]
+        #[case::fixed_stretches_to_end([Fixed(25), Fixed(25)], Flex::Stretch, [[0, 50], [50, 50]])]
+        #[case::fixed_justifies_to_start([Fixed(25), Fixed(25)], Flex::Start, [[0, 25], [25, 25]])]
+        #[case::fixed_justifies_to_center([Fixed(25), Fixed(25)], Flex::Center, [[25, 25], [50, 25]])]
+        #[case::fixed_justifies_to_end([Fixed(25), Fixed(25)], Flex::End, [[50, 25], [75, 25]])]
+        #[case::percentage_stretches_to_end([Percentage(25), Percentage(25)], Flex::Stretch, [[0, 50], [50, 50]])]
+        #[case::percentage_justifies_to_start([Percentage(25), Percentage(25)], Flex::Start, [[0, 25], [25, 25]])]
+        #[case::percentage_justifies_to_center([Percentage(25), Percentage(25)], Flex::Center, [[25, 25], [50, 25]])]
+        #[case::percentage_justifies_to_end([Percentage(25), Percentage(25)], Flex::End, [[50, 25], [75, 25]])]
+        #[case::min_stretches_to_end([Min(25), Min(25)], Flex::Stretch, [[0, 50], [50, 50]])]
+        #[case::min_justifies_to_start([Min(25), Min(25)], Flex::Start, [[0, 25], [25, 25]])]
+        #[case::min_justifies_to_center([Min(25), Min(25)], Flex::Center, [[25, 25], [50, 25]])]
+        #[case::min_justifies_to_end([Min(25), Min(25)], Flex::End, [[50, 25], [75, 25]])]
+        #[case::length_spaced_between([Length(25), Length(25)], Flex::SpaceBetween, [[0, 25], [75, 25]])]
+        #[case::length_spaced_around([Length(25), Length(25)], Flex::SpaceAround, [[17, 25], [58, 25]])]
+        fn flex_two_constraints(
+            #[case] constraints: [Constraint; 2],
+            #[case] flex: Flex,
+            #[case] expected_widths: [[u16; 2]; 2],
+        ) {
+            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal(constraints).flex(flex));
+            assert_eq!([[a.x, a.width], [b.x, b.width]], expected_widths);
+        }
 
-            // length should be right justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(50)]).flex(Flex::End));
-            assert_eq!([a.x, a.width], [50, 50]);
-
-            // length should be center justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(50)]).flex(Flex::Center));
-            assert_eq!([a.x, a.width], [25, 50]);
-
-            // fixed should stretch to the very end
-            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(50)]));
-            assert_eq!([a.x, a.width], [0, 100]);
-
-            // fixed should be left justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(50)]).flex(Flex::Start));
-            assert_eq!([a.x, a.width], [0, 50]);
-
-            // fixed should be right justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(50)]).flex(Flex::End));
-            assert_eq!([a.x, a.width], [50, 50]);
-
-            // fixed should be center justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(50)]).flex(Flex::Center));
-            assert_eq!([a.x, a.width], [25, 50]);
-
-            // ratio should stretch to the very end
-            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Ratio(1, 2)]));
-            assert_eq!([a.x, a.width], [0, 100]);
-
-            // ratio should be left justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Ratio(1, 2)]).flex(Flex::Start));
-            assert_eq!([a.x, a.width], [0, 50]);
-
-            // ratio should be right justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Ratio(1, 2)]).flex(Flex::End));
-            assert_eq!([a.x, a.width], [50, 50]);
-
-            // ratio should be center justified
-            let [a] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Ratio(1, 2)]).flex(Flex::Center));
-            assert_eq!([a.x, a.width], [25, 50]);
-
-            // percent should stretch to the very end
-            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Percentage(50)]));
-            assert_eq!([a.x, a.width], [0, 100]);
-
-            // percent should be left justified
-            let [a] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Percentage(50)]).flex(Flex::Start));
-            assert_eq!([a.x, a.width], [0, 50]);
-
-            // percent should be right justified
-            let [a] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Percentage(50)]).flex(Flex::End));
-            assert_eq!([a.x, a.width], [50, 50]);
-
-            // percent should be center justified
-            let [a] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Percentage(50)]).flex(Flex::Center));
-            assert_eq!([a.x, a.width], [25, 50]);
-
-            // min should stretch to the very end
-            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(50)]));
-            assert_eq!([a.x, a.width], [0, 100]);
-
-            // min should be left justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(50)]).flex(Flex::Start));
-            assert_eq!([a.x, a.width], [0, 50]);
-
-            // min should be right justified
-            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(50)]).flex(Flex::End));
-            assert_eq!([a.x, a.width], [50, 50]);
-
-            // min should be center justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(50)]).flex(Flex::Center));
-            assert_eq!([a.x, a.width], [25, 50]);
-
-            // max should stretch to the very end
-            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Max(50)]));
-            assert_eq!([a.x, a.width], [0, 100]);
-
-            // max should be left justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Max(50)]).flex(Flex::Start));
-            assert_eq!([a.x, a.width], [0, 50]);
-
-            // max should be right justified
-            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Max(50)]).flex(Flex::End));
-            assert_eq!([a.x, a.width], [50, 50]);
-
-            // max should be center justified
-            let [a] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Max(50)]).flex(Flex::Center));
-            assert_eq!([a.x, a.width], [25, 50]);
-
-            // length should stretch to the very end
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Length(25)]));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 75]]);
-
-            // length should splits equally to the very end
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::Stretch));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 50], [50, 50]]);
-
-            // lengths should justify to start
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::Start));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 25]]);
-
-            // length should justify to the center
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::Center));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[25, 25], [50, 25]]);
-
-            // length should justify to the end
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::End));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[50, 25], [75, 25]]);
-
-            // fixed should stretch to the very end
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(25), Fixed(25)]));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 75]]);
-
-            // fixed should splits equally to the very end
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Fixed(25), Fixed(25)]).flex(Flex::Stretch));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 50], [50, 50]]);
-
-            // fixed should justify to start
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Fixed(25), Fixed(25)]).flex(Flex::Start));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 25]]);
-
-            // fixed should justify to the center
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Fixed(25), Fixed(25)]).flex(Flex::Center));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[25, 25], [50, 25]]);
-
-            // fixed should justify to the end
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Fixed(25), Fixed(25)]).flex(Flex::End));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[50, 25], [75, 25]]);
-
-            // percentage should stretch to the very end
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Percentage(25), Percentage(25)]));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 75]]);
-
-            // percentage should splits equally to the very end
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Percentage(25), Percentage(25)]).flex(Flex::Stretch));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 50], [50, 50]]);
-
-            // percentage should justify to start
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Percentage(25), Percentage(25)]).flex(Flex::Start));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 25]]);
-
-            // percentage should justify to the center
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Percentage(25), Percentage(25)]).flex(Flex::Center));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[25, 25], [50, 25]]);
-
-            // percentage should justify to the end
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Percentage(25), Percentage(25)]).flex(Flex::End));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[50, 25], [75, 25]]);
-
-            // min should stretch to the very end
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(25), Min(25)]));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 75]]);
-
-            // min should splits equally to the very end
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Min(25), Min(25)]).flex(Flex::Stretch));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 50], [50, 50]]);
-
-            // min should justify to start
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Min(25), Min(25)]).flex(Flex::Start));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [25, 25]]);
-
-            // min should justify to the center
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Min(25), Min(25)]).flex(Flex::Center));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[25, 25], [50, 25]]);
-
-            // min should justify to the end
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Min(25), Min(25)]).flex(Flex::End));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[50, 25], [75, 25]]);
-
-            // length should be spaced between
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::SpaceBetween));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[0, 25], [75, 25]]);
-
-            // length should be spaced between
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Length(25), Length(25), Length(25)]).flex(Flex::SpaceBetween),
-            );
+        #[rstest]
+        #[case::length_spaced_around([Length(25), Length(25), Length(25)], Flex::SpaceBetween, [[0, 25], [38, 25], [75, 25]])]
+        fn flex_three_constraints(
+            #[case] constraints: [Constraint; 3],
+            #[case] flex: Flex,
+            #[case] expected_widths: [[u16; 2]; 3],
+        ) {
+            let [a, b, c] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal(constraints).flex(flex));
             assert_eq!(
                 [[a.x, a.width], [b.x, b.width], [c.x, c.width]],
-                [[0, 25], [38, 25], [75, 25]]
+                expected_widths
             );
+        }
 
-            // length should be spaced around
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Length(25), Length(25)]).flex(Flex::SpaceAround));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], [[17, 25], [58, 25]]);
-
+        #[test]
+        fn flex() {
             // length should be spaced around
             let [a, b, c] = Rect::new(0, 0, 100, 1).split(
                 &Layout::horizontal([Length(25), Length(25), Length(25)]).flex(Flex::SpaceAround),
