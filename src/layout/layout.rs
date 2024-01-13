@@ -1880,48 +1880,48 @@ mod tests {
         }
 
         #[rstest]
-        #[case::length_stretches_to_end([Length(25), Length(25)], Flex::StretchLast, [[0, 25], [25, 75]])]
-        #[case::splits_equally_to_end([Length(25), Length(25)], Flex::Stretch, [[0, 50], [50, 50]])]
-        #[case::lengths_justify_to_start([Length(25), Length(25)], Flex::Start, [[0, 25], [25, 25]])]
-        #[case::length_justifies_to_center([Length(25), Length(25)], Flex::Center, [[25, 25], [50, 25]])]
-        #[case::length_justifies_to_end([Length(25), Length(25)], Flex::End, [[50, 25], [75, 25]])]
-        #[case::fixed_stretches_to_end_last([Fixed(25), Fixed(25)], Flex::StretchLast, [[0, 25], [25, 75]])]
-        #[case::fixed_stretches_to_end([Fixed(25), Fixed(25)], Flex::Stretch, [[0, 50], [50, 50]])]
-        #[case::fixed_justifies_to_start([Fixed(25), Fixed(25)], Flex::Start, [[0, 25], [25, 25]])]
-        #[case::fixed_justifies_to_center([Fixed(25), Fixed(25)], Flex::Center, [[25, 25], [50, 25]])]
-        #[case::fixed_justifies_to_end([Fixed(25), Fixed(25)], Flex::End, [[50, 25], [75, 25]])]
-        #[case::percentage_stretches_to_end_last([Percentage(25), Percentage(25)], Flex::StretchLast, [[0, 25], [25, 75]])]
-        #[case::percentage_stretches_to_end([Percentage(25), Percentage(25)], Flex::Stretch, [[0, 50], [50, 50]])]
-        #[case::percentage_justifies_to_start([Percentage(25), Percentage(25)], Flex::Start, [[0, 25], [25, 25]])]
-        #[case::percentage_justifies_to_center([Percentage(25), Percentage(25)], Flex::Center, [[25, 25], [50, 25]])]
-        #[case::percentage_justifies_to_end([Percentage(25), Percentage(25)], Flex::End, [[50, 25], [75, 25]])]
-        #[case::min_stretches_to_end([Min(25), Min(25)], Flex::StretchLast, [[0, 25], [25, 75]])]
-        #[case::min_stretches_to_end([Min(25), Min(25)], Flex::Stretch, [[0, 50], [50, 50]])]
-        #[case::min_justifies_to_start([Min(25), Min(25)], Flex::Start, [[0, 25], [25, 25]])]
-        #[case::min_justifies_to_center([Min(25), Min(25)], Flex::Center, [[25, 25], [50, 25]])]
-        #[case::min_justifies_to_end([Min(25), Min(25)], Flex::End, [[50, 25], [75, 25]])]
-        #[case::length_spaced_between([Length(25), Length(25)], Flex::SpaceBetween, [[0, 25], [75, 25]])]
-        #[case::length_spaced_around([Length(25), Length(25)], Flex::SpaceAround, [[17, 25], [58, 25]])]
+        #[case::length_stretches_to_end([Length(25), Length(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
+        #[case::splits_equally_to_end([Length(25), Length(25)], Flex::Stretch, [(0, 50), (50, 50)])]
+        #[case::lengths_justify_to_start([Length(25), Length(25)], Flex::Start, [(0, 25), (25, 25)])]
+        #[case::length_justifies_to_center([Length(25), Length(25)], Flex::Center, [(25, 25), (50, 25)])]
+        #[case::length_justifies_to_end([Length(25), Length(25)], Flex::End, [(50, 25), (75, 25)])]
+        #[case::fixed_stretches_to_end_last([Fixed(25), Fixed(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
+        #[case::fixed_stretches_to_end([Fixed(25), Fixed(25)], Flex::Stretch, [(0, 50), (50, 50)])]
+        #[case::fixed_justifies_to_start([Fixed(25), Fixed(25)], Flex::Start, [(0, 25), (25, 25)])]
+        #[case::fixed_justifies_to_center([Fixed(25), Fixed(25)], Flex::Center, [(25, 25), (50, 25)])]
+        #[case::fixed_justifies_to_end([Fixed(25), Fixed(25)], Flex::End, [(50, 25), (75, 25)])]
+        #[case::percentage_stretches_to_end_last([Percentage(25), Percentage(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
+        #[case::percentage_stretches_to_end([Percentage(25), Percentage(25)], Flex::Stretch, [(0, 50), (50, 50)])]
+        #[case::percentage_justifies_to_start([Percentage(25), Percentage(25)], Flex::Start, [(0, 25), (25, 25)])]
+        #[case::percentage_justifies_to_center([Percentage(25), Percentage(25)], Flex::Center, [(25, 25), (50, 25)])]
+        #[case::percentage_justifies_to_end([Percentage(25), Percentage(25)], Flex::End, [(50, 25), (75, 25)])]
+        #[case::min_stretches_to_end([Min(25), Min(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
+        #[case::min_stretches_to_end([Min(25), Min(25)], Flex::Stretch, [(0, 50), (50, 50)])]
+        #[case::min_justifies_to_start([Min(25), Min(25)], Flex::Start, [(0, 25), (25, 25)])]
+        #[case::min_justifies_to_center([Min(25), Min(25)], Flex::Center, [(25, 25), (50, 25)])]
+        #[case::min_justifies_to_end([Min(25), Min(25)], Flex::End, [(50, 25), (75, 25)])]
+        #[case::length_spaced_between([Length(25), Length(25)], Flex::SpaceBetween, [(0, 25), (75, 25)])]
+        #[case::length_spaced_around([Length(25), Length(25)], Flex::SpaceAround, [(17, 25), (58, 25)])]
         fn flex_two_constraints(
             #[case] constraints: [Constraint; 2],
             #[case] flex: Flex,
-            #[case] expected_widths: [[u16; 2]; 2],
+            #[case] expected_widths: [(u16, u16); 2],
         ) {
             let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal(constraints).flex(flex));
-            assert_eq!([[a.x, a.width], [b.x, b.width]], expected_widths);
+            assert_eq!([(a.x, a.width), (b.x, b.width)], expected_widths);
         }
 
         #[rstest]
-        #[case::length_spaced_around([Length(25), Length(25), Length(25)], Flex::SpaceBetween, [[0, 25], [38, 25], [75, 25]])]
+        #[case::length_spaced_around([Length(25), Length(25), Length(25)], Flex::SpaceBetween, [(0, 25), (38, 25), (75, 25)])]
         fn flex_three_constraints(
             #[case] constraints: [Constraint; 3],
             #[case] flex: Flex,
-            #[case] expected_widths: [[u16; 2]; 3],
+            #[case] expected_widths: [(u16, u16); 3],
         ) {
             let [a, b, c] =
                 Rect::new(0, 0, 100, 1).split(&Layout::horizontal(constraints).flex(flex));
             assert_eq!(
-                [[a.x, a.width], [b.x, b.width], [c.x, c.width]],
+                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
                 expected_widths
             );
         }
