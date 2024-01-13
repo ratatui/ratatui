@@ -1,13 +1,13 @@
 # Ratatui Macros
 
-[![Crates.io](https://img.shields.io/crates/v/ratatui-macros)](https://crates.io/crates/ratatui-macros)
-[![Docs.rs](https://docs.rs/ratatui-macros/badge.svg)](https://docs.rs/ratatui-macros)
-[![Build Status](https://github.com/kdheepak/ratatui-macros/actions/workflows/ci.yml/badge.svg)](https://github.com/kdheepak/ratatui-macros/actions)
-[![License](https://img.shields.io/crates/l/ratatui-macros)](https://crates.io/crates/ratatui-macros#license)
-[![Downloads](https://img.shields.io/crates/d/ratatui-macros)](https://crates.io/crates/ratatui-macros)
+[![Crates.io badge]][ratatui_macros crate]
+[![License badge]](./LICENSE)
+[![Docs.rs badge]][API Docs]
+[![CI Badge]][CI Status]
+[![Crate Downloads badge]][ratatui_macros crate]
 
 `ratatui-macros` is a Rust crate that provides easy-to-use macros for simplifying boilerplate
-associated with creating UI using [Ratatui](https://github.com/ratatui-org/ratatui).
+associated with creating UI using [Ratatui].
 
 This is an experimental playground for us to explore macros that would be useful to have in Ratatui proper.
 
@@ -38,7 +38,8 @@ use ratatui_macros::{
 
 ### Layout
 
-If you are new to Ratatui, check out <https://ratatui.rs/concepts/layout/> before proceeding.
+If you are new to Ratatui, check out the [Layout concepts] article on the Ratatui website before
+proceeding.
 
 Use the `constraints!` macro to define layout constraints:
 
@@ -116,3 +117,16 @@ assert_eq!(right.width, 3);
 
 Contributions to `ratatui-macros` are welcome! Whether it's submitting a bug report, a feature
 request, or a pull request, all forms of contributions are valued and appreciated.
+
+[Crates.io badge]: https://img.shields.io/crates/v/ratatui-macros?logo=rust&style=flat-square
+[License badge]: https://img.shields.io/crates/l/ratatui-macros
+[CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui-macros/ci.yml?logo=github&style=flat-square
+[Docs.rs badge]: https://img.shields.io/docsrs/ratatui-macros?logo=rust&style=flat-square
+[Crate Downloads badge]: https://img.shields.io/crates/d/ratatui-macros?logo=rust&style=flat-square
+
+[ratatui_macros crate]: https://crates.io/crates/ratatui-macros
+[API Docs]: https://docs.rs/ratatui-macros
+[CI Status]: https://github.com/kdheepak/ratatui-macros/actions
+
+[Ratatui]: https://github.com/ratatui-org/ratatui
+[Layout concepts]: https://ratatui.rs/concepts/layout
