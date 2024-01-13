@@ -60,3 +60,6 @@ pub use span::Span;
 #[allow(clippy::module_inception)]
 mod text;
 pub use text::Text;
+
+#[cfg(feature = "macros")]
+pub mod macros;
