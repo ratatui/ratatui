@@ -447,14 +447,23 @@ impl Layout {
                 let spacers: Vec<Element> = std::iter::repeat_with(|| {
                     Element::constrain(&mut solver, (area_start, area_end))
                 })
-                .take(elements.len().saturating_sub(1))
+                .take(elements.len().saturating_sub(1)) // one less than the number of elements
                 .try_collect()?;
+                // spacers growing should be the lowest priority
                 for spacer in spacers.iter() {
                     solver.add_constraint(spacer.size() | EQ(WEAK) | area_size)?;
                 }
+                // Spacers should all be similar in size
+                // these constraints should not be stronger than existing constraints
+                // but if they are weaker `Min` and `Max` won't be pushed to their desired values
+                // I found using `STRONG` gives the most desirable behavior
                 for (left, right) in spacers.iter().tuple_combinations() {
                     solver.add_constraint(left.size() | EQ(STRONG) | right.size())?;
                 }
+                // interleave elements and spacers
+                // for `SpaceBetween` we want the following
+                // `[element, spacer, element, spacer, ..., element]`
+                // this is why we use one less spacer than elements
                 for pair in Itertools::interleave(elements.iter(), spacers.iter())
                     .collect::<Vec<&Element>>()
                     .windows(2)
@@ -466,14 +475,23 @@ impl Layout {
                 let spacers: Vec<Element> = std::iter::repeat_with(|| {
                     Element::constrain(&mut solver, (area_start, area_end))
                 })
-                .take(elements.len().saturating_add(1))
+                .take(elements.len().saturating_add(1)) // one more than number of elements
                 .try_collect()?;
+                // spacers growing should be the lowest priority
                 for spacer in spacers.iter() {
                     solver.add_constraint(spacer.size() | EQ(WEAK) | area_size)?;
                 }
+                // Spacers should all be similar in size
+                // these constraints should not be stronger than existing constraints
+                // but if they are weaker `Min` and `Max` won't be pushed to their desired values
+                // I found using `STRONG` gives the most desirable behavior
                 for (left, right) in spacers.iter().tuple_combinations() {
                     solver.add_constraint(left.size() | EQ(STRONG) | right.size())?;
                 }
+                // interleave spacers and elements
+                // for `SpaceAround` we want the following
+                // `[spacer, element, spacer, element, ..., element, spacer]`
+                // this is why we use one spacer than elements
                 for pair in Itertools::interleave(spacers.iter(), elements.iter())
                     .collect::<Vec<&Element>>()
                     .windows(2)
@@ -482,6 +500,8 @@ impl Layout {
                 }
             }
             Flex::StretchLast => {
+                // this is the default behavior
+                // within reason, cassowary tends to put excess into the last constraint
                 if let Some(first) = elements.first() {
                     solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
                 }
@@ -500,7 +520,7 @@ impl Layout {
                 if let Some(last) = elements.last() {
                     solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
                 }
-                // prefer equal chunks if other constraints are all satisfied
+                // prefer equal elements if other constraints are all satisfied
                 for (left, right) in elements.iter().tuple_combinations() {
                     solver.add_constraint(left.size() | EQ(WEAK) | right.size())?;
                 }
@@ -510,29 +530,38 @@ impl Layout {
                 }
             }
             Flex::Center => {
+                // for center, we add two flex elements, one at the beginning and one at the end.
+                // this frees up inner constraints to be their true size
                 let flex_start_element = Element::constrain(&mut solver, (area_start, area_end))?;
                 let flex_end_element = Element::constrain(&mut solver, (area_start, area_end))?;
-                solver.add_constraint(
-                    flex_start_element.size() | EQ(STRONG) | flex_end_element.size(),
-                )?;
+                // the start flex element must be before the users constraint
                 if let Some(first) = elements.first() {
                     solver.add_constraints(&[
                         flex_start_element.start | EQ(REQUIRED) | area_start,
                         first.start | EQ(REQUIRED) | flex_start_element.end,
                     ])?;
                 }
+                // the end flex element must be after the users constraint
                 if let Some(last) = elements.last() {
                     solver.add_constraints(&[
                         last.end | EQ(REQUIRED) | flex_end_element.start,
                         flex_end_element.end | EQ(REQUIRED) | area_end,
                     ])?;
                 }
+                // finally we ask for a strong preference to make the starting flex and ending flex
+                // the same size, and this results in the remaining constraints being centered
+                solver.add_constraint(
+                    flex_start_element.size() | EQ(STRONG) | flex_end_element.size(),
+                )?;
                 // ensure there are no gaps between the elements
                 for pair in elements.windows(2) {
                     solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
                 }
             }
             Flex::Start => {
+                // for start, we add one flex element one at the end.
+                // this frees up the end constraints and allows inner constraints to be aligned to
+                // the start
                 let flex_end_element = Element::constrain(&mut solver, (area_start, area_end))?;
                 if let Some(first) = elements.first() {
                     solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
@@ -549,6 +578,9 @@ impl Layout {
                 }
             }
             Flex::End => {
+                // for end, we add one flex element one at the start.
+                // this frees up the start constraints and allows inner constraints to be aligned to
+                // the end
                 let flex_start_element = Element::constrain(&mut solver, (area_start, area_end))?;
                 if let Some(first) = elements.first() {
                     solver.add_constraints(&[
