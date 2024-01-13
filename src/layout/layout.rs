@@ -8,7 +8,7 @@ use cassowary::{
 use itertools::Itertools;
 use lru::LruCache;
 
-use super::SegmentSize;
+use super::{Flex, SegmentSize};
 use crate::prelude::*;
 
 type Cache = LruCache<(Rect, Layout), Rc<[Rect]>>;
@@ -60,6 +60,7 @@ thread_local! {
 /// - [`Layout::margin`]: set the margin of the layout
 /// - [`Layout::horizontal_margin`]: set the horizontal margin of the layout
 /// - [`Layout::vertical_margin`]: set the vertical margin of the layout
+/// - [`Layout::flex`]: set the way the space is distributed when the constraints are satisfied
 /// - [`Layout::segment_size`]: set the way the space is distributed when the constraints are
 ///   satisfied
 ///
@@ -91,7 +92,7 @@ pub struct Layout {
     direction: Direction,
     constraints: Vec<Constraint>,
     margin: Margin,
-    /// option for segment size preferences
+    flex: Flex,
     segment_size: SegmentSize,
 }
 
@@ -114,6 +115,7 @@ impl Layout {
     /// Default values for the other fields are:
     ///
     /// - `margin`: 0, 0
+    /// - `flex`: Flex::Fill
     /// - `segment_size`: SegmentSize::LastTakesRemainder
     ///
     /// # Examples
@@ -142,6 +144,7 @@ impl Layout {
             margin: Margin::new(0, 0),
             constraints: constraints.into_iter().map(Into::into).collect(),
             segment_size: SegmentSize::LastTakesRemainder,
+            flex: Flex::default(),
         }
     }
 
@@ -343,6 +346,12 @@ impl Layout {
         self
     }
 
+    /// Sets flex options for justify content
+    pub const fn flex(mut self, flex: Flex) -> Layout {
+        self.flex = flex;
+        self
+    }
+
     /// Set whether chunks should be of equal size.
     ///
     /// This determines how the space is distributed when the constraints are satisfied. By default,
@@ -360,9 +369,13 @@ impl Layout {
         issue = "https://github.com/ratatui-org/ratatui/issues/536"
     )]
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn segment_size(mut self, segment_size: SegmentSize) -> Layout {
-        self.segment_size = segment_size;
-        self
+    pub const fn segment_size(self, segment_size: SegmentSize) -> Layout {
+        let flex = match segment_size {
+            SegmentSize::None => Flex::Start,
+            SegmentSize::LastTakesRemainder => Flex::StretchLast,
+            SegmentSize::EvenDistribution => Flex::Stretch,
+        };
+        self.flex(flex)
     }
 
     /// Wrapper function around the cassowary-rs solver to be able to split a given area into
@@ -429,31 +442,80 @@ impl Layout {
         let elements = layout
             .constraints
             .iter()
-            .map(|_| Element::new())
+            .map(|_| Element::constrain(&mut solver, (area_start, area_end)).unwrap())
             .collect::<Vec<Element>>();
 
-        // ensure that all the elements are inside the area
-        for element in &elements {
-            solver.add_constraints(&[
-                element.start | GE(REQUIRED) | area_start,
-                element.end | LE(REQUIRED) | area_end,
-                element.start | LE(REQUIRED) | element.end,
-            ])?;
-        }
         // ensure there are no gaps between the elements
         for pair in elements.windows(2) {
             solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
         }
-        // ensure the first element touches the left/top edge of the area
-        if let Some(first) = elements.first() {
-            solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
-        }
-        if layout.segment_size != SegmentSize::None {
-            // ensure the last element touches the right/bottom edge of the area
-            if let Some(last) = elements.last() {
-                solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
+
+        match layout.flex {
+            Flex::StretchLast => {
+                if let Some(first) = elements.first() {
+                    solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
+                }
+                if let Some(last) = elements.last() {
+                    solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
+                }
+            }
+            Flex::Stretch => {
+                if let Some(first) = elements.first() {
+                    solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
+                }
+                if let Some(last) = elements.last() {
+                    solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
+                }
+                // prefer equal chunks if other constraints are all satisfied
+                for (left, right) in elements.iter().tuple_combinations() {
+                    solver.add_constraint(left.size() | EQ(WEAK) | right.size())?;
+                }
+            }
+            Flex::Center => {
+                let flex_start_element = Element::constrain(&mut solver, (area_start, area_end))?;
+                let flex_end_element = Element::constrain(&mut solver, (area_start, area_end))?;
+                solver.add_constraint(
+                    flex_start_element.size() | EQ(STRONG) | flex_end_element.size(),
+                )?;
+                if let Some(first) = elements.first() {
+                    solver.add_constraints(&[
+                        flex_start_element.start | EQ(REQUIRED) | area_start,
+                        first.start | EQ(REQUIRED) | flex_start_element.end,
+                    ])?;
+                }
+                if let Some(last) = elements.last() {
+                    solver.add_constraints(&[
+                        last.end | EQ(REQUIRED) | flex_end_element.start,
+                        flex_end_element.end | EQ(REQUIRED) | area_end,
+                    ])?;
+                }
+            }
+            Flex::Start => {
+                let flex_end_element = Element::constrain(&mut solver, (area_start, area_end))?;
+                if let Some(first) = elements.first() {
+                    solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
+                }
+                if let Some(last) = elements.last() {
+                    solver.add_constraints(&[
+                        last.end | EQ(REQUIRED) | flex_end_element.start,
+                        flex_end_element.end | EQ(REQUIRED) | area_end,
+                    ])?;
+                }
+            }
+            Flex::End => {
+                let flex_start_element = Element::constrain(&mut solver, (area_start, area_end))?;
+                if let Some(first) = elements.first() {
+                    solver.add_constraints(&[
+                        flex_start_element.start | EQ(REQUIRED) | area_start,
+                        first.start | EQ(REQUIRED) | flex_start_element.end,
+                    ])?;
+                }
+                if let Some(last) = elements.last() {
+                    solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
+                }
             }
         }
+
         // apply the constraints
         for (&constraint, &element) in layout.constraints.iter().zip(elements.iter()) {
             match constraint {
@@ -554,12 +616,6 @@ impl Layout {
                 )?;
             }
         }
-        // prefer equal chunks if other constraints are all satisfied
-        if layout.segment_size == SegmentSize::EvenDistribution {
-            for (left, right) in elements.iter().tuple_combinations() {
-                solver.add_constraint(left.size() | EQ(WEAK) | right.size())?;
-            }
-        }
 
         let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
 
@@ -602,11 +658,28 @@ impl Layout {
 }
 
 impl Element {
-    fn new() -> Element {
-        Element {
+    #[allow(dead_code)]
+    fn new() -> Self {
+        Self {
             start: Variable::new(),
             end: Variable::new(),
         }
+    }
+
+    fn constrain(
+        solver: &mut Solver,
+        (area_start, area_end): (f64, f64),
+    ) -> Result<Self, AddConstraintError> {
+        let e = Element {
+            start: Variable::new(),
+            end: Variable::new(),
+        };
+        solver.add_constraints(&[
+            e.start | GE(REQUIRED) | area_start,
+            e.end | LE(REQUIRED) | area_end,
+            e.start | LE(REQUIRED) | e.end,
+        ])?;
+        Ok(e)
     }
 
     fn size(&self) -> Expression {
@@ -663,6 +736,7 @@ mod tests {
                 direction: Direction::Vertical,
                 margin: Margin::new(0, 0),
                 constraints: vec![],
+                flex: Flex::default(),
                 segment_size: SegmentSize::LastTakesRemainder,
             }
         );
@@ -707,6 +781,7 @@ mod tests {
                 direction: Direction::Vertical,
                 margin: Margin::new(0, 0),
                 constraints: vec![Constraint::Min(0)],
+                flex: Flex::default(),
                 segment_size: SegmentSize::LastTakesRemainder,
             }
         );
@@ -720,6 +795,7 @@ mod tests {
                 direction: Direction::Horizontal,
                 margin: Margin::new(0, 0),
                 constraints: vec![Constraint::Min(0)],
+                flex: Flex::default(),
                 segment_size: SegmentSize::LastTakesRemainder,
             }
         );
@@ -824,20 +900,18 @@ mod tests {
         assert_eq!(
             Layout::default()
                 .segment_size(SegmentSize::EvenDistribution)
-                .segment_size,
-            SegmentSize::EvenDistribution
+                .flex,
+            Flex::Stretch
         );
         assert_eq!(
             Layout::default()
                 .segment_size(SegmentSize::LastTakesRemainder)
-                .segment_size,
-            SegmentSize::LastTakesRemainder
+                .flex,
+            Flex::StretchLast
         );
         assert_eq!(
-            Layout::default()
-                .segment_size(SegmentSize::None)
-                .segment_size,
-            SegmentSize::None
+            Layout::default().segment_size(SegmentSize::None).flex,
+            Flex::Start
         );
     }
 
@@ -863,6 +937,7 @@ mod tests {
 
         use crate::{
             assert_buffer_eq,
+            layout::flex::Flex,
             prelude::{Constraint::*, *},
             widgets::{Paragraph, Widget},
         };
@@ -1718,6 +1793,121 @@ mod tests {
                 Ratio(1, 1),
             ]));
             assert_eq!([a.width, b.width, c.width, d.width], [0, 0, 0, 100]);
+        }
+
+        #[test]
+        fn flex() {
+            // length should stretch to the very end
+            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(50)]));
+            assert_eq!([a.x, a.width], [0, 100]);
+
+            // length should be left justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(50)]).flex(Flex::Start));
+            assert_eq!([a.x, a.width], [0, 50]);
+
+            // length should be right justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(50)]).flex(Flex::End));
+            assert_eq!([a.x, a.width], [50, 50]);
+
+            // length should be center justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(50)]).flex(Flex::Center));
+            assert_eq!([a.x, a.width], [25, 50]);
+
+            // fixed should stretch to the very end
+            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(50)]));
+            assert_eq!([a.x, a.width], [0, 100]);
+
+            // fixed should be left justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(50)]).flex(Flex::Start));
+            assert_eq!([a.x, a.width], [0, 50]);
+
+            // fixed should be right justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(50)]).flex(Flex::End));
+            assert_eq!([a.x, a.width], [50, 50]);
+
+            // fixed should be center justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(50)]).flex(Flex::Center));
+            assert_eq!([a.x, a.width], [25, 50]);
+
+            // ratio should stretch to the very end
+            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Ratio(1, 2)]));
+            assert_eq!([a.x, a.width], [0, 100]);
+
+            // ratio should be left justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Ratio(1, 2)]).flex(Flex::Start));
+            assert_eq!([a.x, a.width], [0, 50]);
+
+            // ratio should be right justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Ratio(1, 2)]).flex(Flex::End));
+            assert_eq!([a.x, a.width], [50, 50]);
+
+            // ratio should be center justified
+            let [a] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Ratio(1, 2)]).flex(Flex::Center));
+            assert_eq!([a.x, a.width], [25, 50]);
+
+            // percent should stretch to the very end
+            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Percentage(50)]));
+            assert_eq!([a.x, a.width], [0, 100]);
+
+            // percent should be left justified
+            let [a] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Percentage(50)]).flex(Flex::Start));
+            assert_eq!([a.x, a.width], [0, 50]);
+
+            // percent should be right justified
+            let [a] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Percentage(50)]).flex(Flex::End));
+            assert_eq!([a.x, a.width], [50, 50]);
+
+            // percent should be center justified
+            let [a] = Rect::new(0, 0, 100, 1)
+                .split(&Layout::horizontal([Percentage(50)]).flex(Flex::Center));
+            assert_eq!([a.x, a.width], [25, 50]);
+
+            // min should stretch to the very end
+            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(50)]));
+            assert_eq!([a.x, a.width], [0, 100]);
+
+            // min should be left justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(50)]).flex(Flex::Start));
+            assert_eq!([a.x, a.width], [0, 50]);
+
+            // min should be right justified
+            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(50)]).flex(Flex::End));
+            assert_eq!([a.x, a.width], [50, 50]);
+
+            // min should be center justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(50)]).flex(Flex::Center));
+            assert_eq!([a.x, a.width], [25, 50]);
+
+            // max should stretch to the very end
+            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Max(50)]));
+            assert_eq!([a.x, a.width], [0, 100]);
+
+            // max should be left justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Max(50)]).flex(Flex::Start));
+            assert_eq!([a.x, a.width], [0, 50]);
+
+            // max should be right justified
+            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Max(50)]).flex(Flex::End));
+            assert_eq!([a.x, a.width], [50, 50]);
+
+            // max should be center justified
+            let [a] =
+                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Max(50)]).flex(Flex::Center));
+            assert_eq!([a.x, a.width], [25, 50]);
         }
     }
 }
