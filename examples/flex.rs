@@ -22,6 +22,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
+    // Each line in the example is a layout
+    // so EXAMPLE_HEIGHT * N_EXAMPLES_PER_TAB = 55 currently
+    // Plus additional layout for tabs ...
+    Layout::init_cache(50);
+
     // create app and run it
     let res = run_app(&mut terminal);
 
