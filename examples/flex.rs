@@ -36,10 +36,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+const N_EXAMPLES_PER_TAB: u16 = 7;
+
 fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-    // there's 6 examples
+    // each example has 5 height
     // we always want to show the last example when scrolling
-    let mut app = App::default().max_scroll_offset((6 - 1) * EXAMPLE_HEIGHT);
+    let mut app = App::default().max_scroll_offset((N_EXAMPLES_PER_TAB - 1) * EXAMPLE_HEIGHT);
+
     loop {
         terminal.draw(|f| f.render_widget(app, f.size()))?;
 
@@ -117,7 +120,12 @@ impl Widget for App {
 
         // render demo content into a separate buffer
         // there's 6 examples and each is just 5 pixels tall.
-        let mut demo_buf = Buffer::empty(Rect::new(0, 0, buf.area.width, 6 * EXAMPLE_HEIGHT));
+        let mut demo_buf = Buffer::empty(Rect::new(
+            0,
+            0,
+            buf.area.width,
+            N_EXAMPLES_PER_TAB * EXAMPLE_HEIGHT,
+        ));
 
         self.selected_example.render(demo_buf.area, &mut demo_buf);
 
@@ -209,10 +217,10 @@ impl Widget for ExampleSelection {
 
 impl ExampleSelection {
     fn render_example(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
-        let [example1, example2, example3, example4, example5, example6, _] =
-            area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 7]));
+        let [example1, example2, example3, example4, example5, example6, example7] = area
+            .split(&Layout::vertical([Fixed(5); N_EXAMPLES_PER_TAB as usize]).flex(Flex::Start));
 
-        Example::new([Length(20), Length(12)])
+        Example::new([Length(20), Length(15)])
             .flex(flex)
             .render(example1, buf);
         Example::new([Length(20), Fixed(20)])
@@ -236,6 +244,15 @@ impl ExampleSelection {
         ])
         .flex(flex)
         .render(example6, buf);
+        Example::new([
+            Min(10),
+            Proportional(3),
+            Proportional(2),
+            Length(15),
+            Fixed(15),
+        ])
+        .flex(flex)
+        .render(example7, buf);
     }
 }
 
@@ -270,9 +287,17 @@ impl Widget for Example {
 
         self.legend(legend.width as usize).render(legend, buf);
 
-        for (i, (block, constraint)) in blocks.iter().zip(&self.constraints).enumerate() {
+        for (block, constraint) in blocks.iter().zip(&self.constraints) {
             let text = format!("{} px", block.width);
-            let fg = Color::Indexed(i as u8 + 1);
+            let fg = match constraint {
+                Constraint::Ratio(_, _) => Color::Indexed(1),
+                Constraint::Percentage(_) => Color::Indexed(2),
+                Constraint::Max(_) => Color::Indexed(3),
+                Constraint::Min(_) => Color::Indexed(4),
+                Constraint::Length(_) => Color::Indexed(5),
+                Constraint::Fixed(_) => Color::Indexed(6),
+                Constraint::Proportional(_) => Color::Indexed(7),
+            };
             self.illustration(*constraint, text, fg).render(*block, buf);
         }
     }
