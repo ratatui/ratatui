@@ -527,7 +527,7 @@ impl Layout {
                 // interleave spacers and elements
                 // for `SpaceAround` we want the following
                 // `[spacer, element, spacer, element, ..., element, spacer]`
-                // this is why we use one spacer than elements
+                // this is why we use one more spacer than elements
                 for pair in Itertools::interleave(spacers.iter(), elements.iter())
                     .collect::<Vec<&Element>>()
                     .windows(2)
@@ -537,7 +537,8 @@ impl Layout {
             }
             Flex::StretchLast => {
                 // this is the default behavior
-                // within reason, cassowary tends to put excess into the last constraint
+                // by default cassowary tends to put excess into the last constraint of the lowest
+                // priority.
                 if let Some(first) = elements.first() {
                     solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
                 }
@@ -550,15 +551,18 @@ impl Layout {
                 }
             }
             Flex::Stretch => {
+                // this is the same as `StretchLast`
+                // however, we add one additional constraint to take priority over cassowary's
+                // default behavior.
+                // We prefer equal elements if other constraints are all satisfied.
+                for (left, right) in elements.iter().tuple_combinations() {
+                    solver.add_constraint(left.size() | EQ(WEAK) | right.size())?;
+                }
                 if let Some(first) = elements.first() {
                     solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
                 }
                 if let Some(last) = elements.last() {
                     solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
-                }
-                // prefer equal elements if other constraints are all satisfied
-                for (left, right) in elements.iter().tuple_combinations() {
-                    solver.add_constraint(left.size() | EQ(WEAK) | right.size())?;
                 }
                 // ensure there are no gaps between the elements
                 for pair in elements.windows(2) {
