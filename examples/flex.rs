@@ -39,7 +39,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 const N_EXAMPLES_PER_TAB: u16 = 7;
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-    // each example has 5 height
     // we always want to show the last example when scrolling
     let mut app = App::default().max_scroll_offset((N_EXAMPLES_PER_TAB - 1) * EXAMPLE_HEIGHT);
 
@@ -118,8 +117,7 @@ impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let [tabs_area, demo_area] = area.split(&Layout::vertical([Fixed(3), Proportional(0)]));
 
-        // render demo content into a separate buffer
-        // there's 6 examples and each is just 5 pixels tall.
+        // render demo content into a separate buffer so all examples fit
         let mut demo_buf = Buffer::empty(Rect::new(
             0,
             0,
@@ -218,7 +216,7 @@ impl Widget for ExampleSelection {
 impl ExampleSelection {
     fn render_example(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
         let [example1, example2, example3, example4, example5, example6, example7] = area
-            .split(&Layout::vertical([Fixed(5); N_EXAMPLES_PER_TAB as usize]).flex(Flex::Start));
+            .split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); N_EXAMPLES_PER_TAB as usize]).flex(Flex::Start));
 
         Example::new([Length(20), Length(15)])
             .flex(flex)
