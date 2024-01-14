@@ -75,11 +75,8 @@ for more info.
 The following example demonstrates the minimal amount of code necessary to setup a terminal and
 render "Hello World!". The full code for this example which contains a little more detail is in
 [hello_world.rs]. For more guidance on different ways to structure your application see the
-[Application Patterns] and [Hello World tutorial] sections in the [Ratatui Website] and the
-various [Examples]. There are also several starter templates available:
-
-- [template]
-- [async-template] (book and template)
+[Application Patterns] and [Hello World tutorial] sections in the [Ratatui Website] and the various
+[Examples]. There are also several starter templates in the [templates] repository.
 
 Every application built with `ratatui` needs to implement the following steps:
 
@@ -292,8 +289,7 @@ Running this example produces the following output:
 [Handling Events]: https://ratatui.rs/concepts/event-handling/
 [Layout]: https://ratatui.rs/how-to/layout/
 [Styling Text]: https://ratatui.rs/how-to/render/style-text/
-[template]: https://github.com/ratatui-org/template
-[async-template]: https://ratatui-org.github.io/async-template
+[templates]: https://github.com/ratatui-org/templates
 [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples
 [Report a bug]: https://github.com/ratatui-org/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
 [Request a Feature]: https://github.com/ratatui-org/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
@@ -404,8 +400,8 @@ be installed with `cargo install cargo-make`).
   `ratatui::text::Text`
 - [color-to-tui](https://github.com/uttarayan21/color-to-tui) — Parse hex colors to
   `ratatui::style::Color`
-- [rust-tui-template](https://github.com/ratatui-org/rust-tui-template) — A template for
-  bootstrapping a Rust TUI application with Tui-rs & crossterm
+- [templates](https://github.com/ratatui-org/templates) — Starter templates for
+  bootstrapping a Rust TUI application with Ratatui & crossterm
 - [tui-builder](https://github.com/jkelleyrtp/tui-builder) — Batteries-included MVC framework for
   Tui-rs + Crossterm apps
 - [tui-clap](https://github.com/kegesch/tui-clap-rs) — Use clap-rs together with Tui-rs
