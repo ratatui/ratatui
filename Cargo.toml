@@ -220,7 +220,7 @@ doc-scrape-examples = false
 [[example]]
 name = "flex"
 required-features = ["crossterm"]
-doc-scrape-examples = false
+doc-scrape-examples = true
 
 [[example]]
 name = "list"
