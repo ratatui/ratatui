@@ -16,6 +16,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
+    // Each line in the example is a layout
+    // There is on average 4 row per example
+    // 4 row * 7 example = 28
+    // Plus additional layout for tabs ...
+    // Examples might also grow in a very near future
+    Layout::init_cache(50);
+
     // create app and run it
     let res = run_app(&mut terminal);
 
