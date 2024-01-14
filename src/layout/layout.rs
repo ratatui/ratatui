@@ -1968,7 +1968,7 @@ mod tests {
         #[test]
         fn flex() {
             // length should be spaced around
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+            let [a, _b, c] = Rect::new(0, 0, 100, 1).split(
                 &Layout::horizontal([Length(25), Length(25), Length(25)]).flex(Flex::SpaceAround),
             );
             // TODO: figure out why this fails on occasion
