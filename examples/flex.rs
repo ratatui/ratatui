@@ -105,7 +105,7 @@ impl App {
                 .title(Title::from("Flex Layouts ".bold()))
                 .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll".bold()),
         )
-        .highlight_style(Style::default().yellow())
+        .highlight_style(Style::default().bold())
         .select(self.selected_example.selected())
         .padding(" ", " ")
         .render(area, buf);
