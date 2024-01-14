@@ -5,7 +5,6 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use itertools::Itertools;
 use ratatui::{
     layout::{Constraint::*, Flex},
     prelude::*,
@@ -36,7 +35,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-    let mut app = App::default();
+    // there's 6 examples that are each 5 height
+    // we always want to show the last example when scrolling
+    let mut app = App::default().max_scroll_offset((6 - 1) * 5);
     loop {
         terminal.draw(|f| f.render_widget(app, f.size()))?;
 
@@ -58,9 +59,14 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 struct App {
     selected_example: ExampleSelection,
     scroll_offset: u16,
+    max_scroll_offset: u16,
 }
 
 impl App {
+    fn max_scroll_offset(mut self, max_scroll_offset: u16) -> Self {
+        self.max_scroll_offset = max_scroll_offset;
+        self
+    }
     fn next(&mut self) {
         self.selected_example = self.selected_example.next();
     }
@@ -71,7 +77,10 @@ impl App {
         self.scroll_offset = self.scroll_offset.saturating_sub(1)
     }
     fn down(&mut self) {
-        self.scroll_offset = self.scroll_offset.saturating_add(1)
+        self.scroll_offset = self
+            .scroll_offset
+            .saturating_add(1)
+            .clamp(0, self.max_scroll_offset)
     }
 
     fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
@@ -95,7 +104,7 @@ impl App {
         )
         .highlight_style(Style::default().yellow())
         .select(self.selected_example.selected())
-        .padding("  ", "  ")
+        .padding(" ", " ")
         .render(area, buf);
     }
 }
@@ -105,7 +114,8 @@ impl Widget for App {
         let [tabs_area, demo_area] = area.split(&Layout::vertical([Fixed(3), Proportional(0)]));
 
         // render demo content into a separate buffer
-        let mut demo_buf = Buffer::empty(Rect::new(0, 0, buf.area.width, 48));
+        // there's 6 examples and each is just 5 pixels tall.
+        let mut demo_buf = Buffer::empty(Rect::new(0, 0, buf.area.width, 6 * 5));
 
         self.selected_example.render(demo_buf.area, &mut demo_buf);
 
@@ -198,29 +208,29 @@ impl Widget for ExampleSelection {
 impl ExampleSelection {
     fn render_example(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
         let [example1, example2, example3, example4, example5, example6, _] =
-            area.split(&Layout::vertical([Fixed(8); 7]));
+            area.split(&Layout::vertical([Fixed(5); 7]));
 
         Example::new([Length(20), Length(10)])
             .flex(flex)
             .render(example1, buf);
-        Example::new([Length(20), Fixed(10)])
+        Example::new([Length(20), Fixed(20)])
             .flex(flex)
             .render(example2, buf);
-        Example::new([Proportional(1), Proportional(1), Length(40), Fixed(20)])
+        Example::new([Proportional(1), Proportional(1), Length(20), Fixed(20)])
             .flex(flex)
             .render(example3, buf);
-        Example::new([Min(20), Length(40), Fixed(20)])
+        Example::new([Min(20), Length(20), Fixed(20)])
             .flex(flex)
             .render(example4, buf);
-        Example::new([Min(20), Proportional(0), Length(40), Fixed(20)])
+        Example::new([Min(20), Proportional(0), Length(20), Fixed(20)])
             .flex(flex)
             .render(example5, buf);
         Example::new([
-            Min(20),
+            Min(10),
             Proportional(0),
-            Percentage(10),
-            Length(40),
-            Fixed(20),
+            Percentage(20),
+            Length(15),
+            Fixed(15),
         ])
         .flex(flex)
         .render(example6, buf);
@@ -251,37 +261,22 @@ impl Example {
 
 impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [title, legend, area] = area.split(&Layout::vertical([Ratio(1, 3); 3]));
+        let [legend, area] = area.split(&Layout::vertical([Ratio(1, 3); 2]));
         let blocks = Layout::horizontal(&self.constraints)
             .flex(self.flex)
             .split(area);
 
-        self.heading().render(title, buf);
-
         self.legend(legend.width as usize).render(legend, buf);
 
-        for (i, (block, _constraint)) in blocks.iter().zip(&self.constraints).enumerate() {
+        for (i, (block, constraint)) in blocks.iter().zip(&self.constraints).enumerate() {
             let text = format!("{} px", block.width);
             let fg = Color::Indexed(i as u8 + 1);
-            self.illustration(text, fg).render(*block, buf);
+            self.illustration(*constraint, text, fg).render(*block, buf);
         }
     }
 }
 
 impl Example {
-    fn heading(&self) -> Paragraph {
-        // Renders the following
-        //
-        // Fixed(40), Proportional(0)
-        let spans = self.constraints.iter().enumerate().map(|(i, c)| {
-            let color = Color::Indexed(i as u8 + 1);
-            Span::styled(format!("{:?}", c), color)
-        });
-        let heading =
-            Line::from(Itertools::intersperse(spans, Span::raw(", ")).collect::<Vec<Span>>());
-        Paragraph::new(heading).block(Block::default().padding(Padding::vertical(1)))
-    }
-
     fn legend(&self, width: usize) -> Paragraph {
         // a bar like `<----- 80 px ----->`
         let width_label = format!("{} px", width);
@@ -289,12 +284,23 @@ impl Example {
             "<{width_label:-^width$}>",
             width = width - width_label.len() / 2
         );
-        Paragraph::new(width_bar.dark_gray()).alignment(Alignment::Center)
+        Paragraph::new(width_bar.dark_gray())
+            .alignment(Alignment::Center)
+            .block(Block::default().padding(Padding {
+                left: 0,
+                right: 0,
+                top: 1,
+                bottom: 0,
+            }))
     }
 
-    fn illustration(&self, text: String, fg: Color) -> Paragraph {
-        Paragraph::new(text)
+    fn illustration(&self, constraint: Constraint, text: String, fg: Color) -> Paragraph {
+        Paragraph::new(format!("{:?}", constraint))
             .alignment(Alignment::Center)
-            .block(Block::bordered().style(Style::default().fg(fg)))
+            .block(
+                Block::bordered()
+                    .style(Style::default().fg(fg))
+                    .title(block::Title::from(text).alignment(Alignment::Center)),
+            )
     }
 }
