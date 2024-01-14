@@ -11,7 +11,9 @@ use ratatui::{
     widgets::{block::Title, *},
 };
 
-const EXAMPLE_HEIGHT: u16 = 5;
+const SPACER_HEIGHT: u16 = 1;
+const ILLUSTRATION_HEIGHT: u16 = 3;
+const EXAMPLE_HEIGHT: u16 = ILLUSTRATION_HEIGHT + SPACER_HEIGHT;
 const N_EXAMPLES_PER_TAB: u16 = 11;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -91,6 +93,34 @@ impl App {
             .min(self.max_scroll_offset)
     }
 
+    fn render_tabs_and_axis(&self, area: Rect, buf: &mut Buffer) {
+        let [tabs, axis] = area.split(&Layout::vertical([
+            Constraint::Fixed(3),
+            Constraint::Fixed(3),
+        ]));
+        self.render_tabs(tabs, buf);
+        self.render_axis(axis, buf);
+    }
+
+    fn render_axis(&self, area: Rect, buf: &mut Buffer) {
+        let width = area.width as usize;
+        // a bar like `<----- 80 px ----->`
+        let width_label = format!("{} px", width);
+        let width_bar = format!(
+            "<{width_label:-^width$}>",
+            width = width - width_label.len() / 2
+        );
+        Paragraph::new(width_bar.dark_gray())
+            .alignment(Alignment::Center)
+            .block(Block::default().padding(Padding {
+                left: 0,
+                right: 0,
+                top: 1,
+                bottom: 0,
+            }))
+            .render(area, buf);
+    }
+
     fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
         Tabs::new(
             [
@@ -119,7 +149,8 @@ impl App {
 
 impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [tabs_area, demo_area] = area.split(&Layout::vertical([Fixed(3), Proportional(0)]));
+        let [tabs_and_axis_area, demo_area] =
+            area.split(&Layout::vertical([Fixed(6), Proportional(0)]));
 
         // render demo content into a separate buffer so all examples fit
         let mut demo_buf = Buffer::empty(Rect::new(
@@ -132,12 +163,12 @@ impl Widget for App {
         self.selected_example.render(demo_buf.area, &mut demo_buf);
 
         // render tabs into a separate buffer
-        let mut tabs_buf = Buffer::empty(tabs_area);
-        self.render_tabs(tabs_area, &mut tabs_buf);
+        let mut tabs_and_axis_buf = Buffer::empty(tabs_and_axis_area);
+        self.render_tabs_and_axis(tabs_and_axis_area, &mut tabs_and_axis_buf);
 
         // Assemble both buffers
         // NOTE: You shouldn't do this in a production app
-        buf.content = tabs_buf.content;
+        buf.content = tabs_and_axis_buf.content;
         buf.content.append(
             &mut demo_buf
                 .content
@@ -273,12 +304,9 @@ impl Example {
 
 impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [legend, area] = area.split(&Layout::vertical([Ratio(1, 3); 2]));
         let blocks = Layout::horizontal(&self.constraints)
             .flex(self.flex)
             .split(area);
-
-        self.legend(legend.width as usize).render(legend, buf);
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
             let text = format!("{} px", block.width);
@@ -291,29 +319,16 @@ impl Widget for Example {
                 Constraint::Fixed(_) => Color::Indexed(6),
                 Constraint::Proportional(_) => Color::Indexed(7),
             };
-            self.illustration(*constraint, text, fg).render(*block, buf);
+            let [block, _] = block.split(&Layout::vertical([
+                Fixed(ILLUSTRATION_HEIGHT),
+                Fixed(SPACER_HEIGHT),
+            ]));
+            self.illustration(*constraint, text, fg).render(block, buf);
         }
     }
 }
 
 impl Example {
-    fn legend(&self, width: usize) -> Paragraph {
-        // a bar like `<----- 80 px ----->`
-        let width_label = format!("{} px", width);
-        let width_bar = format!(
-            "<{width_label:-^width$}>",
-            width = width - width_label.len() / 2
-        );
-        Paragraph::new(width_bar.dark_gray())
-            .alignment(Alignment::Center)
-            .block(Block::default().padding(Padding {
-                left: 0,
-                right: 0,
-                top: 1,
-                bottom: 0,
-            }))
-    }
-
     fn illustration(&self, constraint: Constraint, text: String, fg: Color) -> Paragraph {
         Paragraph::new(format!("{:?}", constraint))
             .alignment(Alignment::Center)

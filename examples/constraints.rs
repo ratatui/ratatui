@@ -7,7 +7,9 @@ use crossterm::{
 };
 use ratatui::{layout::Constraint::*, prelude::*, widgets::*};
 
-const EXAMPLE_HEIGHT: u16 = 3;
+const SPACER_HEIGHT: u16 = 1;
+const ILLUSTRATION_HEIGHT: u16 = 3;
+const EXAMPLE_HEIGHT: u16 = ILLUSTRATION_HEIGHT + SPACER_HEIGHT;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // setup terminal
@@ -368,6 +370,10 @@ impl Example {
 
 impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let [area, _] = area.split(&Layout::vertical([
+            Fixed(ILLUSTRATION_HEIGHT),
+            Fixed(SPACER_HEIGHT),
+        ]));
         let blocks = Layout::horizontal(&self.constraints).split(area);
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
