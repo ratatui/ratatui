@@ -12,6 +12,7 @@ use ratatui::{
 };
 
 const EXAMPLE_HEIGHT: u16 = 5;
+const N_EXAMPLES_PER_TAB: u16 = 11;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // setup terminal
@@ -35,8 +36,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
-const N_EXAMPLES_PER_TAB: u16 = 7;
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     // we always want to show the last example when scrolling
@@ -215,42 +214,33 @@ impl Widget for ExampleSelection {
 
 impl ExampleSelection {
     fn render_example(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
-        let [example1, example2, example3, example4, example5, example6, example7] = area
-            .split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); N_EXAMPLES_PER_TAB as usize]).flex(Flex::Start));
+        let areas = &Layout::vertical([Fixed(EXAMPLE_HEIGHT); N_EXAMPLES_PER_TAB as usize])
+            .flex(Flex::Start)
+            .split(area);
 
-        Example::new([Length(20), Length(15)])
-            .flex(flex)
-            .render(example1, buf);
-        Example::new([Length(20), Fixed(20)])
-            .flex(flex)
-            .render(example2, buf);
-        Example::new([Proportional(1), Proportional(1), Length(20), Fixed(20)])
-            .flex(flex)
-            .render(example3, buf);
-        Example::new([Min(20), Length(20), Fixed(20)])
-            .flex(flex)
-            .render(example4, buf);
-        Example::new([Min(20), Proportional(0), Length(20), Fixed(20)])
-            .flex(flex)
-            .render(example5, buf);
-        Example::new([
-            Min(10),
-            Proportional(0),
-            Percentage(20),
-            Length(15),
-            Fixed(15),
-        ])
-        .flex(flex)
-        .render(example6, buf);
-        Example::new([
-            Min(10),
-            Proportional(3),
-            Proportional(2),
-            Length(15),
-            Fixed(15),
-        ])
-        .flex(flex)
-        .render(example7, buf);
+        let examples = [
+            vec![Length(20), Fixed(20), Percentage(20)],
+            vec![Fixed(20), Percentage(20), Length(20)],
+            vec![Percentage(20), Length(20), Fixed(20)],
+            vec![Length(20), Length(15)],
+            vec![Length(20), Fixed(20)],
+            vec![Min(20), Max(20)],
+            vec![Max(20)],
+            vec![Min(20), Max(20), Length(20), Fixed(20)],
+            vec![Proportional(0), Proportional(0)],
+            vec![Proportional(1), Proportional(1), Length(20), Fixed(20)],
+            vec![
+                Min(10),
+                Proportional(3),
+                Proportional(2),
+                Length(15),
+                Fixed(15),
+            ],
+        ];
+
+        for (area, constraints) in areas.iter().zip(examples) {
+            Example::new(constraints).flex(flex).render(*area, buf);
+        }
     }
 }
 
