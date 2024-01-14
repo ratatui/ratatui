@@ -9,7 +9,7 @@ use itertools::Itertools;
 use ratatui::{
     layout::{Constraint::*, Flex},
     prelude::*,
-    widgets::*,
+    widgets::{block::Title, *},
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -36,28 +36,101 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-    let mut selection = ExampleSelection::Stretch;
+    let mut app = App::default();
     loop {
-        terminal.draw(|f| f.render_widget(selection, f.size()))?;
+        terminal.draw(|f| f.render_widget(app, f.size()))?;
 
         if let Event::Key(key) = event::read()? {
             use KeyCode::*;
             match key.code {
                 Char('q') => break Ok(()),
-                Char('j') | Char('l') | Down | Right => {
-                    selection = selection.next();
-                }
-                Char('k') | Char('h') | Up | Left => {
-                    selection = selection.previous();
-                }
+                Char('l') | Right => app.next(),
+                Char('h') | Left => app.previous(),
+                Char('j') | Down => app.down(),
+                Char('k') | Up => app.up(),
                 _ => (),
             }
         }
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Default, Clone, Copy)]
+struct App {
+    selected_example: ExampleSelection,
+    scroll_offset: u16,
+}
+
+impl App {
+    fn next(&mut self) {
+        self.selected_example = self.selected_example.next();
+    }
+    fn previous(&mut self) {
+        self.selected_example = self.selected_example.previous();
+    }
+    fn up(&mut self) {
+        self.scroll_offset = self.scroll_offset.saturating_sub(1)
+    }
+    fn down(&mut self) {
+        self.scroll_offset = self.scroll_offset.saturating_add(1)
+    }
+
+    fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
+        Tabs::new(
+            [
+                ExampleSelection::Stretch,
+                ExampleSelection::StretchLast,
+                ExampleSelection::Start,
+                ExampleSelection::Center,
+                ExampleSelection::End,
+                ExampleSelection::SpaceAround,
+                ExampleSelection::SpaceBetween,
+            ]
+            .iter()
+            .map(|e| format!("{:?}", e)),
+        )
+        .block(
+            Block::bordered()
+                .title(Title::from("Flex Layouts ".bold()))
+                .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll".bold()),
+        )
+        .highlight_style(Style::default().yellow())
+        .select(self.selected_example.selected())
+        .padding("  ", "  ")
+        .render(area, buf);
+    }
+}
+
+impl Widget for App {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let [tabs_area, demo_area] = area.split(&Layout::vertical([Fixed(3), Proportional(0)]));
+
+        // render demo content into a separate buffer
+        let mut demo_buf = Buffer::empty(Rect::new(0, 0, buf.area.width, 48));
+
+        self.selected_example.render(demo_buf.area, &mut demo_buf);
+
+        // render tabs into a separate buffer
+        let mut tabs_buf = Buffer::empty(tabs_area);
+        self.render_tabs(tabs_area, &mut tabs_buf);
+
+        // Assemble both buffers
+        // NOTE: You shouldn't do this in a production app
+        buf.content = tabs_buf.content;
+        buf.content.append(
+            &mut demo_buf
+                .content
+                .into_iter()
+                .skip((buf.area.width * self.scroll_offset) as usize)
+                .take(demo_area.area() as usize)
+                .collect(),
+        );
+        buf.resize(buf.area);
+    }
+}
+
+#[derive(Default, Debug, Copy, Clone)]
 enum ExampleSelection {
+    #[default]
     Stretch,
     StretchLast,
     Start,
@@ -110,10 +183,6 @@ impl ExampleSelection {
 
 impl Widget for ExampleSelection {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [tabs, area] = area.split(&Layout::vertical([Fixed(3), Proportional(0)]));
-
-        self.render_tabs(tabs, buf);
-
         match self {
             ExampleSelection::Stretch => self.render_example(area, buf, Flex::Stretch),
             ExampleSelection::StretchLast => self.render_example(area, buf, Flex::StretchLast),
@@ -127,27 +196,6 @@ impl Widget for ExampleSelection {
 }
 
 impl ExampleSelection {
-    fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
-        Tabs::new(
-            [
-                ExampleSelection::Stretch,
-                ExampleSelection::StretchLast,
-                ExampleSelection::Start,
-                ExampleSelection::Center,
-                ExampleSelection::End,
-                ExampleSelection::SpaceAround,
-                ExampleSelection::SpaceBetween,
-            ]
-            .iter()
-            .map(|e| format!("{:?}", e)),
-        )
-        .block(Block::bordered().title("Flex Layouts"))
-        .highlight_style(Style::default().yellow())
-        .select(self.selected())
-        .padding("  ", "  ")
-        .render(area, buf);
-    }
-
     fn render_example(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
         let [example1, example2, example3, example4, example5, example6, _] =
             area.split(&Layout::vertical([Fixed(8); 7]));
