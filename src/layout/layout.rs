@@ -472,7 +472,6 @@ impl Layout {
         // If we changed our default layout to use `Flex::Start`, there is a case to be made for
         // this to do `Flex::Start` as well.
         //
-        // TODO: add test for this
         let flex = if layout.constraints.len() == 1 && layout.flex == Flex::SpaceBetween {
             Flex::Stretch
         } else {
@@ -1946,6 +1945,9 @@ mod tests {
         #[case::max_left_justified(Max(50), Flex::Start, (0, 50))]
         #[case::max_right_justified(Max(50), Flex::End, (50, 50))]
         #[case::max_center_justified(Max(50), Flex::Center, (25, 50))]
+        #[case::spacebetween_becomes_stretch(Min(1), Flex::SpaceBetween, (0, 100))]
+        #[case::spacebetween_becomes_stretch_with_max(Max(20), Flex::SpaceBetween, (0, 100))]
+        #[case::spacebetween_becomes_stretch_with_fixed(Fixed(20), Flex::SpaceBetween, (0, 100))]
         fn flex_one_constraint(
             #[case] constraint: Constraint,
             #[case] flex: Flex,
