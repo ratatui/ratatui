@@ -442,7 +442,43 @@ impl Layout {
             .map(|_| Element::constrain(&mut solver, (area_start, area_end)))
             .try_collect()?;
 
-        match layout.flex {
+        // If there's just one constraint, it doesn't make sense to use `SpaceBetween`.
+        // However, if the user chooses to use `SpaceBetween` we choose `Stretch` instead.
+        //
+        // Choosing `Stretch` will do this:
+        //
+        // <---~------80 px------~--->
+        // ┌─~────────80 px────────~─┐
+        // │         Max(20)         │
+        // └─~─────────────────────~─┘
+        //
+        // In CSS the default when you use `flex` is justify to the start. So when there's just one
+        // element that's what they do.
+        //
+        // For us, our default is `Stretch`.
+        //
+        // Additionally, there's two reasons I think `SpaceBetween` should be `Stretch`.
+        //
+        // 1. The way to think about it is that we are telling the solver that we want to add a
+        //    spacer between adjacent elements but make the start of the first element at the start
+        //    of the area and make the end of the last element at the end of the area. When there's
+        //    just one element, there's no spacers added, and now the start and ends of the element
+        //    should match the start and end of the area.
+        // 2. This above point is exactly is what constraints are added in the `SpaceBetween` match
+        //    but we are using `tuple_combinations` and `windows` so when there's just one element
+        //    and no spacers, it doesn't do anything. If we make that code work for one element,
+        //    it'll end up doing the same thing as `Stretch`.
+        //
+        // If we changed our default layout to use `Flex::Start`, there is a case to be made for
+        // this to do `Flex::Start` as well.
+        //
+        let flex = if layout.constraints.len() == 1 && layout.flex == Flex::SpaceBetween {
+            Flex::Stretch
+        } else {
+            layout.flex
+        };
+
+        match flex {
             Flex::SpaceBetween => {
                 let spacers: Vec<Element> = std::iter::repeat_with(|| {
                     Element::constrain(&mut solver, (area_start, area_end))
@@ -1909,6 +1945,9 @@ mod tests {
         #[case::max_left_justified(Max(50), Flex::Start, (0, 50))]
         #[case::max_right_justified(Max(50), Flex::End, (50, 50))]
         #[case::max_center_justified(Max(50), Flex::Center, (25, 50))]
+        #[case::spacebetween_becomes_stretch(Min(1), Flex::SpaceBetween, (0, 100))]
+        #[case::spacebetween_becomes_stretch_with_max(Max(20), Flex::SpaceBetween, (0, 100))]
+        #[case::spacebetween_becomes_stretch_with_fixed(Fixed(20), Flex::SpaceBetween, (0, 100))]
         fn flex_one_constraint(
             #[case] constraint: Constraint,
             #[case] flex: Flex,
