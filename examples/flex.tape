@@ -7,7 +7,11 @@ Set Height 1410
 Hide
 Type "cargo run --example=flex --features=crossterm"
 Enter
-Sleep 1s
+Sleep 2s
 Show
-Sleep 5s
+Sleep 2s
 Right @5s 7
+Sleep 2s
+Left 7
+Sleep 2s
+Down @200ms 50
