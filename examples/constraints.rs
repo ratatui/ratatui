@@ -91,16 +91,16 @@ impl App {
             .min(self.max_scroll_offset)
     }
 
-    fn render_tabs_and_legend(&self, area: Rect, buf: &mut Buffer) {
-        let [tabs, legend] = area.split(&Layout::vertical([
+    fn render_tabs_and_axis(&self, area: Rect, buf: &mut Buffer) {
+        let [tabs, axis] = area.split(&Layout::vertical([
             Constraint::Fixed(3),
             Constraint::Fixed(3),
         ]));
         self.render_tabs(tabs, buf);
-        self.render_legend(legend, buf);
+        self.render_axis(axis, buf);
     }
 
-    fn render_legend(&self, area: Rect, buf: &mut Buffer) {
+    fn render_axis(&self, area: Rect, buf: &mut Buffer) {
         let width = area.width as usize;
         // a bar like `<----- 80 px ----->`
         let width_label = format!("{} px", width);
@@ -150,7 +150,7 @@ impl App {
 
 impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [tabs_and_legend_area, demo_area] =
+        let [tabs_and_axis_area, demo_area] =
             area.split(&Layout::vertical([Fixed(6), Proportional(0)]));
 
         // render demo content into a separate buffer so all examples fit
@@ -158,19 +158,18 @@ impl Widget for App {
             0,
             0,
             buf.area.width,
-            self.selected_example.get_example_count() * EXAMPLE_HEIGHT
-                + tabs_and_legend_area.height,
+            self.selected_example.get_example_count() * EXAMPLE_HEIGHT + tabs_and_axis_area.height,
         ));
 
         self.selected_example.render(demo_buf.area, &mut demo_buf);
 
         // render tabs into a separate buffer
-        let mut tabs_and_legend_buf = Buffer::empty(tabs_and_legend_area);
-        self.render_tabs_and_legend(tabs_and_legend_area, &mut tabs_and_legend_buf);
+        let mut tabs_and_axis_buf = Buffer::empty(tabs_and_axis_area);
+        self.render_tabs_and_axis(tabs_and_axis_area, &mut tabs_and_axis_buf);
 
         // Assemble both buffers
         // NOTE: You shouldn't do this in a production app
-        buf.content = tabs_and_legend_buf.content;
+        buf.content = tabs_and_axis_buf.content;
         buf.content.append(
             &mut demo_buf
                 .content
