@@ -11,6 +11,8 @@ use ratatui::{
     widgets::{block::Title, *},
 };
 
+const EXAMPLE_HEIGHT: u16 = 5;
+
 fn main() -> Result<(), Box<dyn Error>> {
     // setup terminal
     enable_raw_mode()?;
@@ -35,9 +37,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-    // there's 6 examples that are each 5 height
+    // there's 6 examples
     // we always want to show the last example when scrolling
-    let mut app = App::default().max_scroll_offset((6 - 1) * 5);
+    let mut app = App::default().max_scroll_offset((6 - 1) * EXAMPLE_HEIGHT);
     loop {
         terminal.draw(|f| f.render_widget(app, f.size()))?;
 
@@ -80,7 +82,7 @@ impl App {
         self.scroll_offset = self
             .scroll_offset
             .saturating_add(1)
-            .clamp(0, self.max_scroll_offset)
+            .min(self.max_scroll_offset)
     }
 
     fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
@@ -115,7 +117,7 @@ impl Widget for App {
 
         // render demo content into a separate buffer
         // there's 6 examples and each is just 5 pixels tall.
-        let mut demo_buf = Buffer::empty(Rect::new(0, 0, buf.area.width, 6 * 5));
+        let mut demo_buf = Buffer::empty(Rect::new(0, 0, buf.area.width, 6 * EXAMPLE_HEIGHT));
 
         self.selected_example.render(demo_buf.area, &mut demo_buf);
 
@@ -208,9 +210,9 @@ impl Widget for ExampleSelection {
 impl ExampleSelection {
     fn render_example(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
         let [example1, example2, example3, example4, example5, example6, _] =
-            area.split(&Layout::vertical([Fixed(5); 7]));
+            area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 7]));
 
-        Example::new([Length(20), Length(10)])
+        Example::new([Length(20), Length(12)])
             .flex(flex)
             .render(example1, buf);
         Example::new([Length(20), Fixed(20)])
