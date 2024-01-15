@@ -1,9 +1,13 @@
-use std::{error::Error, io, str::FromStr};
+use std::{
+    io::{self, stdout},
+    str::FromStr,
+};
 
+use color_eyre::{config::HookBuilder, Result};
 use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
+    event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    ExecutableCommand,
 };
 use ratatui::{
     layout::{Constraint::*, Flex},
@@ -29,82 +33,106 @@ const RATIO_COLOR: Color = tailwind::SLATE.c900;
 // priority 4
 const PROPORTIONAL_COLOR: Color = tailwind::SLATE.c950;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    // Each line in the example is a layout
-    // so EXAMPLE_HEIGHT * N_EXAMPLES_PER_TAB = 55 currently
-    // Plus additional layout for tabs ...
-    Layout::init_cache(50);
-
-    // create app and run it
-    let res = run_app(&mut terminal);
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
-    }
-
-    Ok(())
-}
-
-fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-    // we always want to show the last example when scrolling
-    let mut app = App::default().max_scroll_offset((N_EXAMPLES_PER_TAB - 1) * EXAMPLE_HEIGHT);
-
-    loop {
-        terminal.draw(|f| f.render_widget(app, f.size()))?;
-
-        match event::read()? {
-            Event::Key(key) => {
-                use KeyCode::*;
-                match key.code {
-                    Char('q') => break Ok(()),
-                    Char('l') | Right => app.next(),
-                    Char('h') | Left => app.previous(),
-                    Char('j') | Down => app.down(),
-                    Char('k') | Up => app.up(),
-                    _ => (),
-                }
-            }
-            Event::Resize(_, _) => {
-                terminal.clear()?;
-            }
-            _ => {}
-        }
-    }
-}
-
 #[derive(Default, Clone, Copy)]
 struct App {
     selected_example: ExampleSelection,
     scroll_offset: u16,
     max_scroll_offset: u16,
+    state: AppState,
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+enum AppState {
+    #[default]
+    Running,
+    Quit,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Example {
+    constraints: Vec<Constraint>,
+    description: String,
+    flex: Flex,
+}
+
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
+enum ExampleSelection {
+    #[default]
+    StretchLast,
+    Stretch,
+    Start,
+    Center,
+    End,
+    SpaceAround,
+    SpaceBetween,
+}
+
+fn main() -> Result<()> {
+    init_error_hooks()?;
+    let terminal = init_terminal()?;
+
+    // always show the last example when scrolling
+    let max_scroll_offset = (N_EXAMPLES_PER_TAB - 1) * EXAMPLE_HEIGHT;
+    App::with_max_scroll_offset(max_scroll_offset).run(terminal)?;
+
+    restore_terminal()?;
+    Ok(())
 }
 
 impl App {
-    fn max_scroll_offset(mut self, max_scroll_offset: u16) -> Self {
-        self.max_scroll_offset = max_scroll_offset;
-        self
+    fn with_max_scroll_offset(max_scroll_offset: u16) -> Self {
+        Self {
+            max_scroll_offset,
+            ..Default::default()
+        }
     }
+
+    fn run(&mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
+        self.draw(&mut terminal)?;
+        while self.is_running() {
+            self.handle_events()?;
+            self.draw(&mut terminal)?;
+        }
+        Ok(())
+    }
+
+    fn is_running(&self) -> bool {
+        self.state == AppState::Running
+    }
+
+    fn draw(self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+        terminal.draw(|frame| frame.render_widget(self, frame.size()))?;
+        Ok(())
+    }
+
+    fn handle_events(&mut self) -> Result<()> {
+        use KeyCode::*;
+        match event::read()? {
+            Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
+                Char('q') => self.quit(),
+                Char('l') | Right => self.next(),
+                Char('h') | Left => self.previous(),
+                Char('j') | Down => self.down(),
+                Char('k') | Up => self.up(),
+                _ => (),
+            },
+            _ => {}
+        }
+        Ok(())
+    }
+
     fn next(&mut self) {
         self.selected_example = self.selected_example.next();
     }
+
     fn previous(&mut self) {
         self.selected_example = self.selected_example.previous();
     }
+
     fn up(&mut self) {
         self.scroll_offset = self.scroll_offset.saturating_sub(1)
     }
+
     fn down(&mut self) {
         self.scroll_offset = self
             .scroll_offset
@@ -112,18 +140,25 @@ impl App {
             .min(self.max_scroll_offset)
     }
 
-    fn render_tabs_and_axis(&self, area: Rect, buf: &mut Buffer) {
-        let [tabs, axis] = area.split(&Layout::vertical([
-            Constraint::Fixed(3),
-            Constraint::Fixed(3),
-        ]));
+    fn quit(&mut self) {
+        self.state = AppState::Quit;
+    }
+}
+
+impl Widget for App {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let layout = Layout::vertical([Fixed(3), Fixed(3), Proportional(0)]);
+        let [tabs, axis, demo] = area.split(&layout);
         self.render_tabs(tabs, buf);
         self.render_axis(axis, buf);
+        self.render_demo(demo, buf);
     }
+}
 
+impl App {
+    /// renders a bar like `<----- 80 px ----->`
     fn render_axis(&self, area: Rect, buf: &mut Buffer) {
         let width = area.width as usize;
-        // a bar like `<----- 80 px ----->`
         let width_label = format!("{} px", width);
         let width_bar = format!(
             "<{width_label:-^width$}>",
@@ -141,6 +176,9 @@ impl App {
     }
 
     fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
+        let block = Block::new()
+            .title(Title::from("Flex Layouts ".bold()))
+            .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll");
         Tabs::new(
             [
                 ExampleSelection::StretchLast,
@@ -154,16 +192,34 @@ impl App {
             .into_iter()
             .map(Line::from),
         )
-        .block(
-            Block::new()
-                .title(Title::from("Flex Layouts ".bold()))
-                .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll"),
-        )
+        .block(block)
         .highlight_style(Style::default().bold())
         .select(self.selected_example.selected())
         .divider(" ")
         .padding("", "")
         .render(area, buf);
+    }
+
+    fn render_demo(self, demo_area: Rect, buf: &mut Buffer) {
+        // render demo content into a separate buffer so all examples fit
+        let mut demo_buf = Buffer::empty(Rect {
+            height: N_EXAMPLES_PER_TAB * EXAMPLE_HEIGHT,
+            ..demo_area
+        });
+        self.selected_example.render(demo_buf.area, &mut demo_buf);
+
+        // Splice the demo_buffer into the main buffer
+        // NOTE: You shouldn't do this in a production app
+        let start = buf.index_of(demo_area.x, demo_area.y);
+        let end = demo_area.area() as usize; // this crashes right now - TODO
+        buf.content.splice(
+            start..end,
+            demo_buf
+                .content
+                .into_iter()
+                .skip((buf.area.width * self.scroll_offset) as usize)
+                .take(demo_area.area() as usize),
+        );
     }
 }
 
@@ -188,52 +244,6 @@ impl From<ExampleSelection> for Line<'static> {
             SpaceBetween => " SpaceBetween ".bg(space_between).into(),
         }
     }
-}
-
-impl Widget for App {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let [tabs_and_axis_area, demo_area] =
-            area.split(&Layout::vertical([Fixed(6), Proportional(0)]));
-
-        // render demo content into a separate buffer so all examples fit
-        let mut demo_buf = Buffer::empty(Rect::new(
-            0,
-            0,
-            buf.area.width,
-            N_EXAMPLES_PER_TAB * EXAMPLE_HEIGHT,
-        ));
-
-        self.selected_example.render(demo_buf.area, &mut demo_buf);
-
-        // render tabs into a separate buffer
-        let mut tabs_and_axis_buf = Buffer::empty(tabs_and_axis_area);
-        self.render_tabs_and_axis(tabs_and_axis_area, &mut tabs_and_axis_buf);
-
-        // Assemble both buffers
-        // NOTE: You shouldn't do this in a production app
-        buf.content = tabs_and_axis_buf.content;
-        buf.content.append(
-            &mut demo_buf
-                .content
-                .into_iter()
-                .skip((buf.area.width * self.scroll_offset) as usize)
-                .take(demo_area.area() as usize)
-                .collect(),
-        );
-        buf.resize(buf.area);
-    }
-}
-
-#[derive(Default, Debug, Copy, Clone)]
-enum ExampleSelection {
-    #[default]
-    StretchLast,
-    Stretch,
-    Start,
-    Center,
-    End,
-    SpaceAround,
-    SpaceBetween,
 }
 
 impl ExampleSelection {
@@ -339,12 +349,6 @@ impl ExampleSelection {
     }
 }
 
-struct Example {
-    constraints: Vec<Constraint>,
-    description: String,
-    flex: Flex,
-}
-
 impl Example {
     fn new<C>(constraints: C, description: String) -> Self
     where
@@ -411,4 +415,39 @@ impl Example {
             .alignment(Alignment::Center)
             .block(block)
     }
+}
+
+fn init_error_hooks() -> Result<()> {
+    let (panic, error) = HookBuilder::default().into_hooks();
+    let panic = panic.into_panic_hook();
+    let error = error.into_eyre_hook();
+    color_eyre::eyre::set_hook(Box::new(move |e| {
+        let _ = restore_terminal();
+        error(e)
+    }))?;
+    std::panic::set_hook(Box::new(move |info| {
+        let _ = restore_terminal();
+        panic(info)
+    }));
+    Ok(())
+}
+
+fn init_terminal() -> Result<Terminal<impl Backend>> {
+    enable_raw_mode()?;
+    stdout().execute(EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout());
+    let terminal = Terminal::new(backend)?;
+
+    // Each line in the example is a layout
+    // so EXAMPLE_HEIGHT * N_EXAMPLES_PER_TAB = 55 currently
+    // Plus additional layout for tabs ...
+    Layout::init_cache(50);
+
+    Ok(terminal)
+}
+
+fn restore_terminal() -> Result<()> {
+    disable_raw_mode()?;
+    stdout().execute(LeaveAlternateScreen)?;
+    Ok(())
 }
