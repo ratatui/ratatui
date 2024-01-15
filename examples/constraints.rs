@@ -1,11 +1,13 @@
-use std::{error::Error, io};
+use std::io::{self, stdout};
 
+use color_eyre::{config::HookBuilder, Result};
 use crossterm::{
     event::{self, Event, KeyCode},
-    execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    ExecutableCommand,
 };
 use ratatui::{layout::Constraint::*, prelude::*, style::palette::tailwind, widgets::*};
+use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 const SPACER_HEIGHT: u16 = 0;
 const ILLUSTRATION_HEIGHT: u16 = 4;
@@ -23,83 +25,109 @@ const RATIO_COLOR: Color = tailwind::SLATE.c900;
 // priority 4
 const PROPORTIONAL_COLOR: Color = tailwind::SLATE.c950;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+#[derive(Default, Clone, Copy)]
+struct App {
+    selected_tab: SelectedTab,
+    scroll_offset: u16,
+    max_scroll_offset: u16,
+    state: AppState,
+}
 
-    // Each line in the example is a layout
-    // There is on average 4 row per example
-    // 4 row * 7 example = 28
-    // Plus additional layout for tabs ...
-    // Examples might also grow in a very near future
-    Layout::init_cache(50);
+/// Tabs for the different examples
+///
+/// The order of the variants is the order in which they are displayed.
+#[derive(Default, Debug, Copy, Clone, Display, FromRepr, EnumIter, PartialEq, Eq)]
+enum SelectedTab {
+    #[default]
+    Fixed,
+    Min,
+    Max,
+    Length,
+    Percentage,
+    Ratio,
+    Proportional,
+}
 
-    // create app and run it
-    let res = run_app(&mut terminal);
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+enum AppState {
+    #[default]
+    Running,
+    Quit,
+}
 
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
+fn main() -> Result<()> {
+    init_error_hooks()?;
+    let terminal = init_terminal()?;
 
-    if let Err(err) = res {
-        println!("{err:?}");
-    }
+    // increase the cache size to avoid flickering for indeterminate layouts
+    Layout::init_cache(100);
+
+    App::default().run(terminal)?;
+
+    restore_terminal()?;
 
     Ok(())
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-    let mut app = App::default();
-    app.update_max_scroll_offset();
+impl App {
+    fn run(&mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
+        self.update_max_scroll_offset();
+        while self.is_running() {
+            self.draw(&mut terminal)?;
+            self.handle_events()?;
+        }
+        Ok(())
+    }
 
-    loop {
-        terminal.draw(|f| f.render_widget(app, f.size()))?;
+    fn update_max_scroll_offset(&mut self) {
+        self.max_scroll_offset = (self.selected_tab.get_example_count() - 1) * EXAMPLE_HEIGHT;
+    }
 
-        if let Event::Key(key) = event::read()? {
+    fn is_running(&self) -> bool {
+        self.state == AppState::Running
+    }
+
+    fn draw(self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+        terminal.draw(|frame| frame.render_widget(self, frame.size()))?;
+        Ok(())
+    }
+
+    fn handle_events(&mut self) -> Result<()> {
+        Ok(if let Event::Key(key) = event::read()? {
             use KeyCode::*;
             match key.code {
-                Char('q') => break Ok(()),
-                Char('l') | Right => app.next(),
-                Char('h') | Left => app.previous(),
-                Char('j') | Down => app.down(),
-                Char('k') | Up => app.up(),
-                Char('g') | Home => app.top(),
-                Char('G') | End => app.bottom(),
+                Char('q') | Esc => self.quit(),
+                Char('l') | Right => self.next(),
+                Char('h') | Left => self.previous(),
+                Char('j') | Down => self.down(),
+                Char('k') | Up => self.up(),
+                Char('g') | Home => self.top(),
+                Char('G') | End => self.bottom(),
                 _ => (),
             }
-        }
+        })
     }
-}
 
-#[derive(Default, Clone, Copy)]
-struct App {
-    selected_example: ExampleSelection,
-    scroll_offset: u16,
-    max_scroll_offset: u16,
-}
-
-impl App {
-    fn update_max_scroll_offset(&mut self) {
-        self.max_scroll_offset = (self.selected_example.get_example_count() - 1) * EXAMPLE_HEIGHT;
+    fn quit(&mut self) {
+        self.state = AppState::Quit;
     }
+
     fn next(&mut self) {
-        self.selected_example = self.selected_example.next();
+        self.selected_tab = self.selected_tab.next();
         self.update_max_scroll_offset();
         self.scroll_offset = 0;
     }
+
     fn previous(&mut self) {
-        self.selected_example = self.selected_example.previous();
+        self.selected_tab = self.selected_tab.previous();
         self.update_max_scroll_offset();
         self.scroll_offset = 0;
     }
+
     fn up(&mut self) {
         self.scroll_offset = self.scroll_offset.saturating_sub(1)
     }
+
     fn down(&mut self) {
         self.scroll_offset = self
             .scroll_offset
@@ -114,14 +142,35 @@ impl App {
     fn bottom(&mut self) {
         self.scroll_offset = self.max_scroll_offset;
     }
+}
 
-    fn render_tabs_and_axis(&self, area: Rect, buf: &mut Buffer) {
-        let [tabs, axis] = area.split(&Layout::vertical([
+impl Widget for App {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let [tabs, axis, demo] = area.split(&Layout::vertical([
             Constraint::Fixed(3),
             Constraint::Fixed(3),
+            Proportional(0),
         ]));
+
         self.render_tabs(tabs, buf);
         self.render_axis(axis, buf);
+        self.render_demo(demo, buf);
+    }
+}
+
+impl App {
+    fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
+        let titles = SelectedTab::iter().map(SelectedTab::to_tab_title);
+        let block = Block::new()
+            .title("Constraints ".bold())
+            .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll");
+        Tabs::new(titles)
+            .block(block)
+            .highlight_style(Modifier::REVERSED)
+            .select(self.selected_tab as usize)
+            .padding("", "")
+            .divider(" ")
+            .render(area, buf);
     }
 
     fn render_axis(&self, area: Rect, buf: &mut Buffer) {
@@ -143,137 +192,46 @@ impl App {
             .render(area, buf);
     }
 
-    fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
-        Tabs::new(
-            [
-                ExampleSelection::Fixed,
-                ExampleSelection::Min,
-                ExampleSelection::Max,
-                ExampleSelection::Length,
-                ExampleSelection::Percentage,
-                ExampleSelection::Ratio,
-                ExampleSelection::Proportional,
-            ]
-            .into_iter()
-            .map(Line::from),
-        )
-        .block(
-            Block::new()
-                .title("Constraints ".bold())
-                .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll"),
-        )
-        .highlight_style(Modifier::REVERSED)
-        .select(self.selected_example.selected())
-        .padding("", "")
-        .divider(" ")
-        .render(area, buf);
-    }
-}
-
-impl From<ExampleSelection> for Line<'static> {
-    fn from(example: ExampleSelection) -> Self {
-        use ExampleSelection::*;
-
-        match example {
-            Fixed => "  Fixed  ".white().bg(FIXED_COLOR).into(),
-            Length => "  Length  ".white().bg(LENGTH_COLOR).into(),
-            Percentage => "  Percentage  ".white().bg(PERCENTAGE_COLOR).into(),
-            Ratio => "  Ratio  ".white().bg(RATIO_COLOR).into(),
-            Proportional => "  Proportional  ".white().bg(PROPORTIONAL_COLOR).into(),
-            Min => "  Min  ".white().bg(MIN_COLOR).into(),
-            Max => "  Max  ".white().bg(MAX_COLOR).into(),
-        }
-    }
-}
-
-impl Widget for App {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let [tabs_and_axis_area, demo_area] =
-            area.split(&Layout::vertical([Fixed(6), Proportional(0)]));
-
+    /// Render the demo content
+    ///
+    /// This function renders the demo content into a separate buffer and then splices the buffer
+    /// into the main buffer. This is done to make it possible to handle scrolling easily.
+    fn render_demo(&self, area: Rect, buf: &mut Buffer) {
         // render demo content into a separate buffer so all examples fit
-        let mut demo_buf = Buffer::empty(Rect::new(
-            0,
-            0,
-            buf.area.width,
-            self.selected_example.get_example_count() * EXAMPLE_HEIGHT + tabs_and_axis_area.height,
-        ));
+        let height = self.selected_tab.get_example_count() * EXAMPLE_HEIGHT;
+        let mut demo_buf = Buffer::empty(Rect { height, ..area });
+        self.selected_tab.render(demo_buf.area, &mut demo_buf);
 
-        self.selected_example.render(demo_buf.area, &mut demo_buf);
+        // Splice the visible area into the main buffer
+        let start = buf.index_of(area.left(), area.top());
+        let end = buf.content.len().saturating_sub(area.area() as usize);
 
-        // render tabs into a separate buffer
-        let mut tabs_and_axis_buf = Buffer::empty(tabs_and_axis_area);
-        self.render_tabs_and_axis(tabs_and_axis_area, &mut tabs_and_axis_buf);
-
-        // Assemble both buffers
-        // NOTE: You shouldn't do this in a production app
-        buf.content = tabs_and_axis_buf.content;
-        buf.content.append(
-            &mut demo_buf
-                .content
-                .into_iter()
-                .skip((buf.area.width * self.scroll_offset) as usize)
-                .take(demo_area.area() as usize)
-                .collect(),
-        );
-        buf.resize(buf.area);
+        let visible_content = demo_buf
+            .content
+            .into_iter()
+            .skip((buf.area.width * self.scroll_offset) as usize)
+            .take(area.area() as usize);
+        buf.content.splice(start..end, visible_content);
     }
 }
 
-#[derive(Default, Debug, Copy, Clone)]
-enum ExampleSelection {
-    #[default]
-    Fixed,
-    Length,
-    Percentage,
-    Ratio,
-    Proportional,
-    Min,
-    Max,
-}
-
-impl ExampleSelection {
+impl SelectedTab {
+    /// Get the previous tab, if there is no previous tab return the current tab.
     fn previous(&self) -> Self {
-        use ExampleSelection::*;
-        match *self {
-            Fixed => Fixed,
-            Length => Fixed,
-            Percentage => Length,
-            Ratio => Percentage,
-            Proportional => Ratio,
-            Min => Proportional,
-            Max => Min,
-        }
+        let current_index: usize = *self as usize;
+        let previous_index = current_index.saturating_sub(1);
+        Self::from_repr(previous_index).unwrap_or(*self)
     }
 
+    /// Get the next tab, if there is no next tab return the current tab.
     fn next(&self) -> Self {
-        use ExampleSelection::*;
-        match *self {
-            Fixed => Length,
-            Length => Percentage,
-            Percentage => Ratio,
-            Ratio => Proportional,
-            Proportional => Min,
-            Min => Max,
-            Max => Max,
-        }
-    }
-
-    fn selected(&self) -> usize {
-        use ExampleSelection::*;
-        match self {
-            Fixed => 0,
-            Length => 1,
-            Percentage => 2,
-            Ratio => 3,
-            Proportional => 4,
-            Min => 5,
-            Max => 6,
-        }
+        let current_index = *self as usize;
+        let next_index = current_index.saturating_add(1);
+        Self::from_repr(next_index).unwrap_or(*self)
     }
 
     fn get_example_count(&self) -> u16 {
-        use ExampleSelection::*;
+        use SelectedTab::*;
         match self {
             Fixed => 4,
             Length => 4,
@@ -284,34 +242,46 @@ impl ExampleSelection {
             Max => 5,
         }
     }
+
+    fn to_tab_title(value: SelectedTab) -> Line<'static> {
+        use SelectedTab::*;
+        let text = format!("  {value}  ");
+        let color = match value {
+            Fixed => FIXED_COLOR,
+            Length => LENGTH_COLOR,
+            Percentage => PERCENTAGE_COLOR,
+            Ratio => RATIO_COLOR,
+            Proportional => PROPORTIONAL_COLOR,
+            Min => MIN_COLOR,
+            Max => MAX_COLOR,
+        };
+        text.fg(tailwind::SLATE.c200).bg(color).into()
+    }
 }
 
-impl Widget for ExampleSelection {
+impl Widget for SelectedTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         match self {
-            ExampleSelection::Fixed => self.render_fixed_example(area, buf),
-            ExampleSelection::Length => self.render_length_example(area, buf),
-            ExampleSelection::Percentage => self.render_percentage_example(area, buf),
-            ExampleSelection::Ratio => self.render_ratio_example(area, buf),
-            ExampleSelection::Proportional => self.render_proportional_example(area, buf),
-            ExampleSelection::Min => self.render_min_example(area, buf),
-            ExampleSelection::Max => self.render_max_example(area, buf),
+            SelectedTab::Fixed => self.render_fixed_example(area, buf),
+            SelectedTab::Length => self.render_length_example(area, buf),
+            SelectedTab::Percentage => self.render_percentage_example(area, buf),
+            SelectedTab::Ratio => self.render_ratio_example(area, buf),
+            SelectedTab::Proportional => self.render_proportional_example(area, buf),
+            SelectedTab::Min => self.render_min_example(area, buf),
+            SelectedTab::Max => self.render_max_example(area, buf),
         }
     }
 }
 
-impl ExampleSelection {
+impl SelectedTab {
     fn render_fixed_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, _] =
             area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 5]));
 
-        Example::new([Fixed(40), Proportional(0)]).render(example1, buf);
-
-        Example::new([Fixed(20), Fixed(20), Proportional(0)]).render(example2, buf);
-
-        Example::new([Fixed(20), Min(20), Max(20)]).render(example3, buf);
-
-        Example::new([
+        Example::new(&[Fixed(40), Proportional(0)]).render(example1, buf);
+        Example::new(&[Fixed(20), Fixed(20), Proportional(0)]).render(example2, buf);
+        Example::new(&[Fixed(20), Min(20), Max(20)]).render(example3, buf);
+        Example::new(&[
             Length(20),
             Percentage(20),
             Ratio(1, 5),
@@ -325,79 +295,60 @@ impl ExampleSelection {
         let [example1, example2, example3, example4, _] =
             area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 5]));
 
-        Example::new([Length(20), Fixed(20)]).render(example1, buf);
-
-        Example::new([Length(20), Length(20)]).render(example2, buf);
-
-        Example::new([Length(20), Min(20)]).render(example3, buf);
-
-        Example::new([Length(20), Max(20)]).render(example4, buf);
+        Example::new(&[Length(20), Fixed(20)]).render(example1, buf);
+        Example::new(&[Length(20), Length(20)]).render(example2, buf);
+        Example::new(&[Length(20), Min(20)]).render(example3, buf);
+        Example::new(&[Length(20), Max(20)]).render(example4, buf);
     }
 
     fn render_percentage_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, example5, _] =
             area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 6]));
 
-        Example::new([Percentage(75), Proportional(0)]).render(example1, buf);
-
-        Example::new([Percentage(25), Proportional(0)]).render(example2, buf);
-
-        Example::new([Percentage(50), Min(20)]).render(example3, buf);
-
-        Example::new([Percentage(0), Max(0)]).render(example4, buf);
-
-        Example::new([Percentage(0), Proportional(0)]).render(example5, buf);
+        Example::new(&[Percentage(75), Proportional(0)]).render(example1, buf);
+        Example::new(&[Percentage(25), Proportional(0)]).render(example2, buf);
+        Example::new(&[Percentage(50), Min(20)]).render(example3, buf);
+        Example::new(&[Percentage(0), Max(0)]).render(example4, buf);
+        Example::new(&[Percentage(0), Proportional(0)]).render(example5, buf);
     }
 
     fn render_ratio_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, _] =
             area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 5]));
 
-        Example::new([Ratio(1, 2); 2]).render(example1, buf);
-
-        Example::new([Ratio(1, 4); 4]).render(example2, buf);
-
-        Example::new([Ratio(1, 2), Ratio(1, 3), Ratio(1, 4)]).render(example3, buf);
-
-        Example::new([Ratio(1, 2), Percentage(25), Length(10)]).render(example4, buf);
+        Example::new(&[Ratio(1, 2); 2]).render(example1, buf);
+        Example::new(&[Ratio(1, 4); 4]).render(example2, buf);
+        Example::new(&[Ratio(1, 2), Ratio(1, 3), Ratio(1, 4)]).render(example3, buf);
+        Example::new(&[Ratio(1, 2), Percentage(25), Length(10)]).render(example4, buf);
     }
 
     fn render_proportional_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, _] = area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 3]));
 
-        Example::new([Proportional(1), Proportional(2), Proportional(3)]).render(example1, buf);
-
-        Example::new([Proportional(1), Percentage(50), Proportional(1)]).render(example2, buf);
+        Example::new(&[Proportional(1), Proportional(2), Proportional(3)]).render(example1, buf);
+        Example::new(&[Proportional(1), Percentage(50), Proportional(1)]).render(example2, buf);
     }
 
     fn render_min_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, example5, _] =
             area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 6]));
 
-        Example::new([Percentage(100), Min(0)]).render(example1, buf);
-
-        Example::new([Percentage(100), Min(20)]).render(example2, buf);
-
-        Example::new([Percentage(100), Min(40)]).render(example3, buf);
-
-        Example::new([Percentage(100), Min(60)]).render(example4, buf);
-
-        Example::new([Percentage(100), Min(80)]).render(example5, buf);
+        Example::new(&[Percentage(100), Min(0)]).render(example1, buf);
+        Example::new(&[Percentage(100), Min(20)]).render(example2, buf);
+        Example::new(&[Percentage(100), Min(40)]).render(example3, buf);
+        Example::new(&[Percentage(100), Min(60)]).render(example4, buf);
+        Example::new(&[Percentage(100), Min(80)]).render(example5, buf);
     }
 
     fn render_max_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, example5, _] =
             area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 6]));
 
-        Example::new([Percentage(0), Max(0)]).render(example1, buf);
-
-        Example::new([Percentage(0), Max(20)]).render(example2, buf);
-
-        Example::new([Percentage(0), Max(40)]).render(example3, buf);
-
-        Example::new([Percentage(0), Max(60)]).render(example4, buf);
-
-        Example::new([Percentage(0), Max(80)]).render(example5, buf);
+        Example::new(&[Percentage(0), Max(0)]).render(example1, buf);
+        Example::new(&[Percentage(0), Max(20)]).render(example2, buf);
+        Example::new(&[Percentage(0), Max(40)]).render(example3, buf);
+        Example::new(&[Percentage(0), Max(60)]).render(example4, buf);
+        Example::new(&[Percentage(0), Max(80)]).render(example5, buf);
     }
 }
 
@@ -406,10 +357,7 @@ struct Example {
 }
 
 impl Example {
-    fn new<C>(constraints: C) -> Self
-    where
-        C: Into<Vec<Constraint>>,
-    {
+    fn new(constraints: &[Constraint]) -> Self {
         Self {
             constraints: constraints.into(),
         }
@@ -433,15 +381,16 @@ impl Widget for Example {
 
 impl Example {
     fn illustration(&self, constraint: Constraint, width: u16) -> Paragraph {
-        let (color, fg) = match constraint {
-            Constraint::Fixed(_) => (FIXED_COLOR, Color::White),
-            Constraint::Length(_) => (LENGTH_COLOR, Color::White),
-            Constraint::Percentage(_) => (PERCENTAGE_COLOR, Color::White),
-            Constraint::Ratio(_, _) => (RATIO_COLOR, Color::White),
-            Constraint::Proportional(_) => (PROPORTIONAL_COLOR, Color::White),
-            Constraint::Min(_) => (MIN_COLOR, Color::White),
-            Constraint::Max(_) => (MAX_COLOR, Color::White),
+        let color = match constraint {
+            Constraint::Fixed(_) => FIXED_COLOR,
+            Constraint::Length(_) => LENGTH_COLOR,
+            Constraint::Percentage(_) => PERCENTAGE_COLOR,
+            Constraint::Ratio(_, _) => RATIO_COLOR,
+            Constraint::Proportional(_) => PROPORTIONAL_COLOR,
+            Constraint::Min(_) => MIN_COLOR,
+            Constraint::Max(_) => MAX_COLOR,
         };
+        let fg = Color::White;
         let title = format!("{constraint}");
         let content = format!("{width} px");
         let text = format!("{title}\n{content}");
@@ -453,4 +402,33 @@ impl Example {
             .alignment(Alignment::Center)
             .block(block)
     }
+}
+
+fn init_error_hooks() -> Result<()> {
+    let (panic, error) = HookBuilder::default().into_hooks();
+    let panic = panic.into_panic_hook();
+    let error = error.into_eyre_hook();
+    color_eyre::eyre::set_hook(Box::new(move |e| {
+        let _ = restore_terminal();
+        error(e)
+    }))?;
+    std::panic::set_hook(Box::new(move |info| {
+        let _ = restore_terminal();
+        panic(info)
+    }));
+    Ok(())
+}
+
+fn init_terminal() -> Result<Terminal<impl Backend>> {
+    enable_raw_mode()?;
+    stdout().execute(EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout());
+    let terminal = Terminal::new(backend)?;
+    Ok(terminal)
+}
+
+fn restore_terminal() -> Result<()> {
+    disable_raw_mode()?;
+    stdout().execute(LeaveAlternateScreen)?;
+    Ok(())
 }

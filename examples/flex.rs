@@ -125,7 +125,7 @@ impl App {
         use KeyCode::*;
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
-                Char('q') => self.quit(),
+                Char('q') | Esc => self.quit(),
                 Char('l') | Right => self.next(),
                 Char('h') | Left => self.previous(),
                 Char('j') | Down => self.down(),
@@ -230,26 +230,24 @@ impl App {
             }))
     }
 
-    fn render_demo(self, demo_area: Rect, buf: &mut Buffer) {
-        // render demo content into a separate buffer so all examples fit
-        let mut demo_buf = Buffer::empty(Rect {
-            height: example_height(),
-            ..demo_area
-        });
+    /// Render the demo content
+    ///
+    /// This function renders the demo content into a separate buffer and then splices the buffer
+    /// into the main buffer. This is done to make it possible to handle scrolling easily.
+    fn render_demo(self, area: Rect, buf: &mut Buffer) {
+        let height = example_height();
+        let mut demo_buf = Buffer::empty(Rect { height, ..area });
         self.selected_tab.render(demo_buf.area, &mut demo_buf);
 
-        // Splice the demo_buffer into the main buffer
-        // NOTE: You shouldn't do this in a production app
-        let start = buf.index_of(demo_area.x, demo_area.y);
-        let end = buf.content.len().saturating_sub(demo_area.area() as usize);
-        buf.content.splice(
-            start..end,
-            demo_buf
-                .content
-                .into_iter()
-                .skip((buf.area.width * self.scroll_offset) as usize)
-                .take(demo_area.area() as usize),
-        );
+        // Splice the visible area into the main buffer
+        let start = buf.index_of(area.left(), area.top());
+        let end = buf.content.len().saturating_sub(area.area() as usize);
+        let visible_content = demo_buf
+            .content
+            .into_iter()
+            .skip((buf.area.width * self.scroll_offset) as usize)
+            .take(area.area() as usize);
+        buf.content.splice(start..end, visible_content);
     }
 }
 
