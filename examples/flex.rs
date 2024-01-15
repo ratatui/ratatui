@@ -9,36 +9,50 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
+
 use ratatui::{
     layout::{Constraint::*, Flex},
     prelude::*,
     style::palette::tailwind,
     widgets::{block::Title, *},
 };
-use strum::FromRepr;
+use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
-const SPACER_HEIGHT: u16 = 1;
-const ILLUSTRATION_HEIGHT: u16 = 4;
-const EXAMPLE_HEIGHT: u16 = ILLUSTRATION_HEIGHT + SPACER_HEIGHT;
-const N_EXAMPLES_PER_TAB: u16 = 11;
-
-// priority 1
-const FIXED_COLOR: Color = tailwind::RED.c900;
-// priority 2
-const MIN_COLOR: Color = tailwind::BLUE.c900;
-const MAX_COLOR: Color = tailwind::BLUE.c800;
-// priority 3
-const LENGTH_COLOR: Color = tailwind::SLATE.c700;
-const PERCENTAGE_COLOR: Color = tailwind::SLATE.c800;
-const RATIO_COLOR: Color = tailwind::SLATE.c900;
-// priority 4
-const PROPORTIONAL_COLOR: Color = tailwind::SLATE.c950;
+const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
+    ("Min(20) takes excess space", &[Fixed(20), Min(20), Max(20)]),
+    (
+        "",
+        &[Length(20), Percentage(20), Ratio(1, 5), Proportional(1)],
+    ),
+    ("", &[Length(20), Fixed(20), Percentage(20)]),
+    ("", &[Fixed(20), Percentage(20), Length(20)]),
+    ("", &[Percentage(20), Length(20), Fixed(20)]),
+    ("", &[Length(20), Length(15)]),
+    ("", &[Length(20), Fixed(20)]),
+    ("", &[Min(20), Max(20)]),
+    ("", &[Max(20)]),
+    ("", &[Min(20), Max(20), Length(20), Fixed(20)]),
+    ("", &[Proportional(0), Proportional(0)]),
+    (
+        "",
+        &[Proportional(1), Proportional(1), Length(20), Fixed(20)],
+    ),
+    (
+        "",
+        &[
+            Min(10),
+            Proportional(3),
+            Proportional(2),
+            Length(15),
+            Fixed(15),
+        ],
+    ),
+];
 
 #[derive(Default, Clone, Copy)]
 struct App {
     selected_tab: SelectedTab,
     scroll_offset: u16,
-    max_scroll_offset: u16,
     state: AppState,
 }
 
@@ -56,7 +70,12 @@ struct Example {
     flex: Flex,
 }
 
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, FromRepr)]
+/// Tabs for the different layouts
+///
+/// Note: the order of the variants will determine the order of the tabs this uses several derive
+/// macros from the `strum` crate to make it easier to iterate over the variants.
+/// (`FromRepr`,`Display`,`EnumIter`).
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, FromRepr, Display, EnumIter)]
 enum SelectedTab {
     #[default]
     StretchLast,
@@ -72,22 +91,18 @@ fn main() -> Result<()> {
     init_error_hooks()?;
     let terminal = init_terminal()?;
 
-    // always show the last example when scrolling
-    let max_scroll_offset = (N_EXAMPLES_PER_TAB - 1) * EXAMPLE_HEIGHT;
-    App::with_max_scroll_offset(max_scroll_offset).run(terminal)?;
+    // Each line in the example is a layout
+    // so EXAMPLE_HEIGHT * N_EXAMPLES_PER_TAB = 55 currently
+    // Plus additional layout for tabs ...
+    Layout::init_cache(100);
+
+    App::default().run(terminal)?;
 
     restore_terminal()?;
     Ok(())
 }
 
 impl App {
-    fn with_max_scroll_offset(max_scroll_offset: u16) -> Self {
-        Self {
-            max_scroll_offset,
-            ..Default::default()
-        }
-    }
-
     fn run(&mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
         self.draw(&mut terminal)?;
         while self.is_running() {
@@ -138,12 +153,31 @@ impl App {
         self.scroll_offset = self
             .scroll_offset
             .saturating_add(1)
-            .min(self.max_scroll_offset)
+            .min(max_scroll_offset())
     }
 
     fn quit(&mut self) {
         self.state = AppState::Quit;
     }
+}
+
+// when scrolling, make sure we don't scroll past the last example
+fn max_scroll_offset() -> u16 {
+    example_height()
+        - EXAMPLE_DATA
+            .last()
+            .map(|(desc, _)| if desc.is_empty() { 4 } else { 5 })
+            .unwrap_or(0)
+}
+
+/// The height of all examples combined
+///
+/// Each may or may not have a title so we need to account for that.
+fn example_height() -> u16 {
+    EXAMPLE_DATA
+        .iter()
+        .map(|(desc, _)| if desc.is_empty() { 4 } else { 5 })
+        .sum()
 }
 
 impl Widget for App {
@@ -158,24 +192,14 @@ impl Widget for App {
 
 impl App {
     fn tabs(&self) -> impl Widget {
-        let titles = [
-            SelectedTab::StretchLast,
-            SelectedTab::Stretch,
-            SelectedTab::Start,
-            SelectedTab::Center,
-            SelectedTab::End,
-            SelectedTab::SpaceAround,
-            SelectedTab::SpaceBetween,
-        ]
-        .into_iter()
-        .map(Line::from);
+        let tab_titles = SelectedTab::iter().map(SelectedTab::to_tab_title);
         let block = Block::new()
             .title(Title::from("Flex Layouts ".bold()))
             .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll");
-        Tabs::new(titles)
+        Tabs::new(tab_titles)
             .block(block)
-            .highlight_style(Style::default().bold())
-            .select(self.selected_tab.selected())
+            .highlight_style(Modifier::REVERSED)
+            .select(self.selected_tab as usize)
             .divider(" ")
             .padding("", "")
     }
@@ -199,7 +223,7 @@ impl App {
     fn render_demo(self, demo_area: Rect, buf: &mut Buffer) {
         // render demo content into a separate buffer so all examples fit
         let mut demo_buf = Buffer::empty(Rect {
-            height: N_EXAMPLES_PER_TAB * EXAMPLE_HEIGHT,
+            height: example_height(),
             ..demo_area
         });
         self.selected_tab.render(demo_buf.area, &mut demo_buf);
@@ -219,67 +243,36 @@ impl App {
     }
 }
 
-impl From<SelectedTab> for Line<'static> {
-    fn from(example: SelectedTab) -> Self {
-        use SelectedTab::*;
-        let [stretch_last, stretch, start, center, end, space_around, space_between] = [
-            "#28410b", "#3b520a", "#40041b", "#52051f", "#630826", "#313073", "#071b24",
-        ]
-        .iter()
-        .map(|c| Color::from_str(c).unwrap())
-        .collect::<Vec<Color>>()
-        .try_into()
-        .unwrap();
-        match example {
-            StretchLast => " StretchLast ".bg(stretch_last).into(),
-            Stretch => " Stretch ".bg(stretch).into(),
-            Start => " Start ".bg(start).into(),
-            Center => " Center ".bg(center).into(),
-            End => " End ".bg(end).into(),
-            SpaceAround => " SpaceAround ".bg(space_around).into(),
-            SpaceBetween => " SpaceBetween ".bg(space_between).into(),
-        }
-    }
-}
-
 impl SelectedTab {
+    /// Get the previous tab, if there is no previous tab return the current tab.
     fn previous(&self) -> Self {
-        use SelectedTab::*;
-        match *self {
-            StretchLast => StretchLast,
-            Stretch => StretchLast,
-            Start => Stretch,
-            Center => Start,
-            End => Center,
-            SpaceAround => End,
-            SpaceBetween => SpaceAround,
-        }
+        let current_index: usize = *self as usize;
+        let previous_index = current_index.saturating_sub(1);
+        Self::from_repr(previous_index).unwrap_or(*self)
     }
 
+    /// Get the next tab, if there is no next tab return the current tab.
     fn next(&self) -> Self {
-        use SelectedTab::*;
-        match *self {
-            StretchLast => Stretch,
-            Stretch => Start,
-            Start => Center,
-            Center => End,
-            End => SpaceAround,
-            SpaceAround => SpaceBetween,
-            SpaceBetween => SpaceBetween,
-        }
+        let current_index = *self as usize;
+        let next_index = current_index.saturating_add(1);
+        Self::from_repr(next_index).unwrap_or(*self)
     }
 
-    fn selected(&self) -> usize {
+    /// Convert a `SelectedTab` into a `Line` to display it by the `Tabs` widget.
+    fn to_tab_title(value: SelectedTab) -> Line<'static> {
+        use tailwind::*;
         use SelectedTab::*;
-        match self {
-            StretchLast => 0,
-            Stretch => 1,
-            Start => 2,
-            Center => 3,
-            End => 4,
-            SpaceAround => 5,
-            SpaceBetween => 6,
-        }
+        let text = value.to_string();
+        let color = match value {
+            StretchLast => ORANGE.c400,
+            Stretch => ORANGE.c300,
+            Start => SKY.c400,
+            Center => SKY.c300,
+            End => SKY.c200,
+            SpaceAround => INDIGO.c400,
+            SpaceBetween => INDIGO.c300,
+        };
+        format!(" {text} ").fg(Color::Black).bg(color).into()
     }
 }
 
@@ -299,117 +292,74 @@ impl Widget for SelectedTab {
 
 impl SelectedTab {
     fn render_example(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
-        let areas = &Layout::vertical([Fixed(EXAMPLE_HEIGHT); N_EXAMPLES_PER_TAB as usize])
-            .flex(Flex::Start)
-            .split(area);
-
-        let examples = [
-            (
-                vec![Fixed(20), Min(20), Max(20)],
-                "Min(20) takes excess space.",
-            ),
-            (
-                vec![Length(20), Percentage(20), Ratio(1, 5), Proportional(1)],
-                "",
-            ),
-            (vec![Length(20), Fixed(20), Percentage(20)], ""),
-            (vec![Fixed(20), Percentage(20), Length(20)], ""),
-            (vec![Percentage(20), Length(20), Fixed(20)], ""),
-            (vec![Length(20), Length(15)], ""),
-            (vec![Length(20), Fixed(20)], ""),
-            (vec![Min(20), Max(20)], ""),
-            (vec![Max(20)], ""),
-            (vec![Min(20), Max(20), Length(20), Fixed(20)], ""),
-            (vec![Proportional(0), Proportional(0)], ""),
-            (
-                vec![Proportional(1), Proportional(1), Length(20), Fixed(20)],
-                "",
-            ),
-            (
-                vec![
-                    Min(10),
-                    Proportional(3),
-                    Proportional(2),
-                    Length(15),
-                    Fixed(15),
-                ],
-                "",
-            ),
-        ];
-
-        for (area, (constraints, description)) in areas.iter().zip(examples) {
-            Example::new(constraints, description.into())
-                .flex(flex)
-                .render(*area, buf);
+        let heights = EXAMPLE_DATA
+            .iter()
+            .map(|(desc, _)| if desc.is_empty() { 4 } else { 5 });
+        let areas = Layout::vertical(heights).flex(flex).split(area);
+        for (area, (description, constraints)) in areas.iter().zip(EXAMPLE_DATA.iter()) {
+            Example::new(constraints, description, flex).render(*area, buf);
         }
     }
 }
 
 impl Example {
-    fn new<C>(constraints: C, description: String) -> Self
-    where
-        C: Into<Vec<Constraint>>,
-    {
+    fn new(constraints: &[Constraint], description: &str, flex: Flex) -> Self {
         Self {
             constraints: constraints.into(),
-            description,
-            flex: Flex::default(),
+            description: description.into(),
+            flex,
         }
-    }
-
-    fn flex(mut self, flex: Flex) -> Self {
-        self.flex = flex;
-        self
     }
 }
 
 impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        if !self.description.is_empty() {
-            let [title, _] = area.split(&Layout::vertical([Fixed(1), Proportional(0)]));
-            Paragraph::new(
-                format!("// {}", self.description)
-                    .italic()
-                    .fg(Color::from_str("#908caa").unwrap()),
-            )
-            .render(title, buf)
-        }
+        let title_height = if self.description.is_empty() { 0 } else { 1 };
+        let layout = Layout::vertical([Fixed(title_height), Proportional(0)]);
+        let [title, illustrations] = area.split(&layout);
         let blocks = Layout::horizontal(&self.constraints)
             .flex(self.flex)
-            .split(area);
+            .split(illustrations);
+
+        format!("// {}", self.description)
+            .italic()
+            .fg(Color::from_str("#908caa").unwrap())
+            .render(title, buf);
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
-            let [_, block] = block.split(&Layout::vertical([
-                Fixed(SPACER_HEIGHT),
-                Fixed(ILLUSTRATION_HEIGHT),
-            ]));
             self.illustration(*constraint, block.width)
-                .render(block, buf);
+                .render(*block, buf);
         }
     }
 }
 
 impl Example {
     fn illustration(&self, constraint: Constraint, width: u16) -> Paragraph {
-        let (color, fg) = match constraint {
-            Constraint::Fixed(_) => (FIXED_COLOR, Color::White),
-            Constraint::Length(_) => (LENGTH_COLOR, Color::White),
-            Constraint::Percentage(_) => (PERCENTAGE_COLOR, Color::White),
-            Constraint::Ratio(_, _) => (RATIO_COLOR, Color::White),
-            Constraint::Proportional(_) => (PROPORTIONAL_COLOR, Color::White),
-            Constraint::Min(_) => (MIN_COLOR, Color::White),
-            Constraint::Max(_) => (MAX_COLOR, Color::White),
-        };
+        let main_color = color_for_constraint(constraint);
+        let fg_color = Color::White;
         let title = format!("{constraint}");
         let content = format!("{width} px");
         let text = format!("{title}\n{content}");
         let block = Block::bordered()
             .border_set(symbols::border::QUADRANT_OUTSIDE)
-            .border_style(Style::reset().fg(color).reversed())
-            .style(Style::default().fg(fg).bg(color));
+            .border_style(Style::reset().fg(main_color).reversed())
+            .style(Style::default().fg(fg_color).bg(main_color));
         Paragraph::new(text)
             .alignment(Alignment::Center)
             .block(block)
+    }
+}
+
+fn color_for_constraint(constraint: Constraint) -> Color {
+    use tailwind::*;
+    match constraint {
+        Constraint::Fixed(_) => RED.c900,
+        Constraint::Min(_) => BLUE.c900,
+        Constraint::Max(_) => BLUE.c800,
+        Constraint::Length(_) => SLATE.c700,
+        Constraint::Percentage(_) => SLATE.c800,
+        Constraint::Ratio(_, _) => SLATE.c900,
+        Constraint::Proportional(_) => SLATE.c950,
     }
 }
 
@@ -433,12 +383,6 @@ fn init_terminal() -> Result<Terminal<impl Backend>> {
     stdout().execute(EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout());
     let terminal = Terminal::new(backend)?;
-
-    // Each line in the example is a layout
-    // so EXAMPLE_HEIGHT * N_EXAMPLES_PER_TAB = 55 currently
-    // Plus additional layout for tabs ...
-    Layout::init_cache(50);
-
     Ok(terminal)
 }
 
