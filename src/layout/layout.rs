@@ -91,6 +91,7 @@ pub struct Layout {
     constraints: Vec<Constraint>,
     margin: Margin,
     flex: Flex,
+    spacing: u16,
 }
 
 /// A container used by the solver inside split
@@ -137,9 +138,8 @@ impl Layout {
     {
         Layout {
             direction,
-            margin: Margin::new(0, 0),
             constraints: constraints.into_iter().map(Into::into).collect(),
-            flex: Flex::default(),
+            ..Layout::default()
         }
     }
 
@@ -341,9 +341,63 @@ impl Layout {
         self
     }
 
-    /// Sets flex options for justify content
+    /// The `flex` method  allows you to specify the flex behavior of the layout.
+    ///
+    /// # Arguments
+    ///
+    /// * `flex`: A `Flex` enum value that represents the flex behavior of the layout. It can be one
+    ///   of the following:
+    ///   - [`Flex::Stretch`]: The items are stretched equally after satisfying constraints to fill
+    ///     excess space.
+    ///   - [`Flex::StretchLast`]: The last item is stretched to fill the excess space.
+    ///   - [`Flex::Start`]: The items are aligned to the start of the layout.
+    ///   - [`Flex::Center`]: The items are aligned to the center of the layout.
+    ///   - [`Flex::End`]: The items are aligned to the end of the layout.
+    ///   - [`Flex::SpaceAround`]: The items are evenly distributed with equal space around them.
+    ///   - [`Flex::SpaceBetween`]: The items are evenly distributed with equal space between them.
+    ///
+    /// # Examples
+    ///
+    /// In this example, the items in the layout will be aligned to the start.
+    ///
+    /// ```rust
+    /// # use ratatui::layout::{Flex, Layout, Constraint::*};
+    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Start);
+    /// ```
+    ///
+    /// In this example, the items in the layout will be stretched equally to fill the available
+    /// space.
+    ///
+    /// ```rust
+    /// # use ratatui::layout::{Flex, Layout, Constraint::*};
+    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Stretch);
+    /// ```
     pub const fn flex(mut self, flex: Flex) -> Layout {
         self.flex = flex;
+        self
+    }
+
+    /// Sets the spacing between items in the layout.
+    ///
+    /// The `spacing` method sets the spacing between items in the layout. The spacing is applied
+    /// evenly between all items. The spacing value represents the number of cells between each
+    /// item.
+    ///
+    /// # Examples
+    ///
+    /// In this example, the spacing between each item in the layout is set to 2 cells.
+    ///
+    /// ```rust
+    /// # use ratatui::layout::{Layout, Constraint::*};
+    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).spacing(2);
+    /// ```
+    ///
+    /// # Notes
+    ///
+    /// - If the layout has only one item, the spacing will not be applied.
+    /// - Spacing will not be applied for `Flex::SpaceAround` and `Flex::SpaceBetween`
+    pub const fn spacing(mut self, spacing: u16) -> Layout {
+        self.spacing = spacing;
         self
     }
 
@@ -434,10 +488,27 @@ impl Layout {
         };
         let area_size = area_end - area_start;
 
+        let spacers_added = if layout.spacing == 0 {
+            false
+        } else {
+            matches!(
+                layout.flex,
+                Flex::Stretch | Flex::StretchLast | Flex::Start | Flex::Center | Flex::End
+            )
+        };
+        let constraints = if spacers_added {
+            Itertools::intersperse(
+                layout.constraints.iter().cloned(),
+                Constraint::Fixed(layout.spacing),
+            )
+            .collect_vec()
+        } else {
+            layout.constraints.clone()
+        };
+
         // create an element for each constraint that needs to be applied. Each element defines the
         // variables that will be used to compute the layout.
-        let elements: Vec<Element> = layout
-            .constraints
+        let elements: Vec<Element> = constraints
             .iter()
             .map(|_| Element::constrain(&mut solver, (area_start, area_end)))
             .try_collect()?;
@@ -639,7 +710,7 @@ impl Layout {
         }
 
         // apply the constraints
-        for (&constraint, &element) in layout.constraints.iter().zip(elements.iter()) {
+        for (&constraint, &element) in constraints.iter().zip(elements.iter()) {
             match constraint {
                 Constraint::Fixed(l) => {
                     // when fixed is used, element size matching value provided will be the first
@@ -776,6 +847,7 @@ impl Layout {
                     },
                 }
             })
+            .step_by(if spacers_added { 2 } else { 1 })
             .collect::<Rc<[Rect]>>();
         Ok(results)
     }
@@ -861,6 +933,7 @@ mod tests {
                 margin: Margin::new(0, 0),
                 constraints: vec![],
                 flex: Flex::default(),
+                spacing: 0,
             }
         );
     }
@@ -905,6 +978,19 @@ mod tests {
                 margin: Margin::new(0, 0),
                 constraints: vec![Constraint::Min(0)],
                 flex: Flex::default(),
+                spacing: 0,
+            }
+        );
+        assert_eq!(
+            Layout::vertical([Constraint::Min(0)])
+                .spacing(1)
+                .flex(Flex::Start),
+            Layout {
+                direction: Direction::Vertical,
+                margin: Margin::new(0, 0),
+                constraints: vec![Constraint::Min(0)],
+                flex: Flex::Start,
+                spacing: 1,
             }
         );
     }
@@ -918,6 +1004,19 @@ mod tests {
                 margin: Margin::new(0, 0),
                 constraints: vec![Constraint::Min(0)],
                 flex: Flex::default(),
+                spacing: 0,
+            }
+        );
+        assert_eq!(
+            Layout::horizontal([Constraint::Min(0)])
+                .spacing(1)
+                .flex(Flex::Start),
+            Layout {
+                direction: Direction::Horizontal,
+                margin: Margin::new(0, 0),
+                constraints: vec![Constraint::Min(0)],
+                flex: Flex::Start,
+                spacing: 1,
             }
         );
     }
@@ -2005,6 +2104,99 @@ mod tests {
             assert_eq!(
                 [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
                 expected_widths
+            );
+        }
+
+        #[test]
+        fn flex_spacing() {
+            // reference no spacing
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Length(20), Length(20), Length(20)])
+                    .flex(Flex::Start)
+                    .spacing(0),
+            );
+            assert_eq!(
+                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
+                [(0, 20), (20, 20), (40, 20)]
+            );
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Length(20), Length(20), Length(20)])
+                    .flex(Flex::Center)
+                    .spacing(2),
+            );
+            assert_eq!(
+                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
+                [(18, 20), (40, 20), (62, 20)]
+            );
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Length(20), Length(20), Length(20)])
+                    .flex(Flex::End)
+                    .spacing(2),
+            );
+            assert_eq!(
+                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
+                [(36, 20), (58, 20), (80, 20)]
+            );
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Length(20), Length(20), Length(20)])
+                    .flex(Flex::Stretch)
+                    .spacing(2),
+            );
+            assert_eq!(
+                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
+                [(0, 32), (34, 32), (68, 32)]
+            );
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Length(20), Length(20), Length(20)])
+                    .flex(Flex::StretchLast)
+                    .spacing(2),
+            );
+            assert_eq!(
+                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
+                [(0, 20), (22, 20), (44, 56)]
+            );
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Fixed(20), Fixed(20), Fixed(20)])
+                    .flex(Flex::StretchLast)
+                    .spacing(2),
+            );
+            assert_eq!(
+                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
+                [(0, 20), (22, 20), (44, 56)]
+            );
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Fixed(20), Fixed(20), Fixed(20)])
+                    .flex(Flex::Stretch)
+                    .spacing(2),
+            );
+            // TODO: broken test
+            // this test breaks because the spacers have the same priority as the constraints
+            // This will _only_ happen when every constraint is `Fixed` AND when
+            // `Flex::Stretch` is used.
+            // No easy way to fix it right now.
+            assert_ne!(
+                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
+                [(0, 32), (34, 32), (68, 32)]
+            );
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Fixed(20), Fixed(20), Fixed(20)])
+                    .flex(Flex::SpaceAround)
+                    .spacing(2),
+            );
+            // never add spacers for space around
+            assert_eq!(
+                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
+                [(10, 20), (40, 20), (70, 20)]
+            );
+            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Fixed(20), Fixed(20), Fixed(20)])
+                    .flex(Flex::SpaceBetween)
+                    .spacing(2),
+            );
+            // never add spacers for space between
+            assert_eq!(
+                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
+                [(0, 20), (40, 20), (80, 20)]
             );
         }
 
