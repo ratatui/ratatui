@@ -12,7 +12,7 @@ use ratatui::{
     widgets::{block::Title, *},
 };
 
-const SPACER_HEIGHT: u16 = 1;
+const SPACER_HEIGHT: u16 = 0;
 const ILLUSTRATION_HEIGHT: u16 = 4;
 const EXAMPLE_HEIGHT: u16 = ILLUSTRATION_HEIGHT + SPACER_HEIGHT;
 const N_EXAMPLES_PER_TAB: u16 = 11;

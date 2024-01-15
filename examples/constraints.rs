@@ -7,7 +7,7 @@ use crossterm::{
 };
 use ratatui::{layout::Constraint::*, prelude::*, style::palette::tailwind, widgets::*};
 
-const SPACER_HEIGHT: u16 = 1;
+const SPACER_HEIGHT: u16 = 0;
 const ILLUSTRATION_HEIGHT: u16 = 3;
 const EXAMPLE_HEIGHT: u16 = ILLUSTRATION_HEIGHT + SPACER_HEIGHT;
 
