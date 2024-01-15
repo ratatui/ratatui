@@ -1,4 +1,4 @@
-use std::{error::Error, io};
+use std::{error::Error, io, str::FromStr};
 
 use crossterm::{
     event::{self, Event, KeyCode},
@@ -8,13 +8,26 @@ use crossterm::{
 use ratatui::{
     layout::{Constraint::*, Flex},
     prelude::*,
+    style::palette::tailwind,
     widgets::{block::Title, *},
 };
 
 const SPACER_HEIGHT: u16 = 1;
-const ILLUSTRATION_HEIGHT: u16 = 3;
+const ILLUSTRATION_HEIGHT: u16 = 4;
 const EXAMPLE_HEIGHT: u16 = ILLUSTRATION_HEIGHT + SPACER_HEIGHT;
 const N_EXAMPLES_PER_TAB: u16 = 11;
+
+// priority 1
+const FIXED_COLOR: Color = tailwind::RED.c900;
+// priority 2
+const MIN_COLOR: Color = tailwind::BLUE.c900;
+const MAX_COLOR: Color = tailwind::BLUE.c800;
+// priority 3
+const LENGTH_COLOR: Color = tailwind::SLATE.c700;
+const PERCENTAGE_COLOR: Color = tailwind::SLATE.c800;
+const RATIO_COLOR: Color = tailwind::SLATE.c900;
+// priority 4
+const PROPORTIONAL_COLOR: Color = tailwind::SLATE.c950;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // setup terminal
@@ -124,39 +137,50 @@ impl App {
     fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
         Tabs::new(
             [
-                ExampleSelection::Stretch,
                 ExampleSelection::StretchLast,
+                ExampleSelection::Stretch,
                 ExampleSelection::Start,
                 ExampleSelection::Center,
                 ExampleSelection::End,
                 ExampleSelection::SpaceAround,
                 ExampleSelection::SpaceBetween,
             ]
-            .iter()
-            .enumerate()
-            .map(|(i, e)| {
-                format!(
-                    "{indicator}{e:?}",
-                    indicator = {
-                        if i == self.selected_example.selected() {
-                            " \u{2022} "
-                        } else {
-                            "   "
-                        }
-                    }
-                )
-            }),
+            .into_iter()
+            .map(Line::from),
         )
         .block(
-            Block::bordered()
+            Block::new()
                 .title(Title::from("Flex Layouts ".bold()))
-                .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll".bold()),
+                .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll"),
         )
-        .highlight_style(Style::default().yellow().bold())
+        .highlight_style(Style::default().bold())
         .select(self.selected_example.selected())
-        .divider("")
+        .divider(" ")
         .padding("", "")
         .render(area, buf);
+    }
+}
+
+impl From<ExampleSelection> for Line<'static> {
+    fn from(example: ExampleSelection) -> Self {
+        use ExampleSelection::*;
+        let [stretch_last, stretch, start, center, end, space_around, space_between] = [
+            "#28410b", "#3b520a", "#40041b", "#52051f", "#630826", "#313073", "#071b24",
+        ]
+        .iter()
+        .map(|c| Color::from_str(c).unwrap())
+        .collect::<Vec<Color>>()
+        .try_into()
+        .unwrap();
+        match example {
+            StretchLast => "  StretchLast  ".bg(stretch_last).into(),
+            Stretch => "  Stretch  ".bg(stretch).into(),
+            Start => "  Start  ".bg(start).into(),
+            Center => "  Center  ".bg(center).into(),
+            End => "  End  ".bg(end).into(),
+            SpaceAround => " SpaceAround  ".bg(space_around).into(),
+            SpaceBetween => "  SpaceBetween  ".bg(space_between).into(),
+        }
     }
 }
 
@@ -197,8 +221,8 @@ impl Widget for App {
 #[derive(Default, Debug, Copy, Clone)]
 enum ExampleSelection {
     #[default]
-    Stretch,
     StretchLast,
+    Stretch,
     Start,
     Center,
     End,
@@ -210,9 +234,9 @@ impl ExampleSelection {
     fn previous(&self) -> Self {
         use ExampleSelection::*;
         match *self {
-            Stretch => Stretch,
-            StretchLast => Stretch,
-            Start => StretchLast,
+            StretchLast => StretchLast,
+            Stretch => StretchLast,
+            Start => Stretch,
             Center => Start,
             End => Center,
             SpaceAround => End,
@@ -223,8 +247,8 @@ impl ExampleSelection {
     fn next(&self) -> Self {
         use ExampleSelection::*;
         match *self {
-            Stretch => StretchLast,
-            StretchLast => Start,
+            StretchLast => Stretch,
+            Stretch => Start,
             Start => Center,
             Center => End,
             End => SpaceAround,
@@ -236,8 +260,8 @@ impl ExampleSelection {
     fn selected(&self) -> usize {
         use ExampleSelection::*;
         match self {
-            Stretch => 0,
-            StretchLast => 1,
+            StretchLast => 0,
+            Stretch => 1,
             Start => 2,
             Center => 3,
             End => 4,
@@ -250,8 +274,8 @@ impl ExampleSelection {
 impl Widget for ExampleSelection {
     fn render(self, area: Rect, buf: &mut Buffer) {
         match self {
-            ExampleSelection::Stretch => self.render_example(area, buf, Flex::Stretch),
             ExampleSelection::StretchLast => self.render_example(area, buf, Flex::StretchLast),
+            ExampleSelection::Stretch => self.render_example(area, buf, Flex::Stretch),
             ExampleSelection::Start => self.render_example(area, buf, Flex::Start),
             ExampleSelection::Center => self.render_example(area, buf, Flex::Center),
             ExampleSelection::End => self.render_example(area, buf, Flex::End),
@@ -268,6 +292,8 @@ impl ExampleSelection {
             .split(area);
 
         let examples = [
+            vec![Fixed(20), Min(20), Max(20)],
+            vec![Length(20), Percentage(20), Ratio(1, 5), Proportional(1)],
             vec![Length(20), Fixed(20), Percentage(20)],
             vec![Fixed(20), Percentage(20), Length(20)],
             vec![Percentage(20), Length(20), Fixed(20)],
@@ -334,24 +360,24 @@ impl Widget for Example {
 
 impl Example {
     fn illustration(&self, constraint: Constraint, width: u16) -> Paragraph {
-        let fg = match constraint {
-            Constraint::Ratio(_, _) => Color::Indexed(1),
-            Constraint::Percentage(_) => Color::Indexed(2),
-            Constraint::Max(_) => Color::Indexed(3),
-            Constraint::Min(_) => Color::Indexed(4),
-            Constraint::Length(_) => Color::Indexed(5),
-            Constraint::Fixed(_) => Color::Indexed(6),
-            Constraint::Proportional(_) => Color::Indexed(7),
+        let (color, fg) = match constraint {
+            Constraint::Fixed(_) => (FIXED_COLOR, Color::White),
+            Constraint::Length(_) => (LENGTH_COLOR, Color::White),
+            Constraint::Percentage(_) => (PERCENTAGE_COLOR, Color::White),
+            Constraint::Ratio(_, _) => (RATIO_COLOR, Color::White),
+            Constraint::Proportional(_) => (PROPORTIONAL_COLOR, Color::White),
+            Constraint::Min(_) => (MIN_COLOR, Color::White),
+            Constraint::Max(_) => (MAX_COLOR, Color::White),
         };
-        let title = format!("{constraint}").fg(fg);
+        let title = format!("{constraint}");
         let content = format!("{width} px");
-        Paragraph::new(content)
-            .style(Color::DarkGray)
+        let text = format!("{title}\n{content}");
+        let block = Block::bordered()
+            .border_set(symbols::border::QUADRANT_OUTSIDE)
+            .border_style(Style::reset().fg(color).reversed())
+            .style(Style::default().fg(fg).bg(color));
+        Paragraph::new(text)
             .alignment(Alignment::Center)
-            .block(
-                Block::bordered()
-                    .style(Style::default().fg(Color::DarkGray))
-                    .title(block::Title::from(title).alignment(Alignment::Center)),
-            )
+            .block(block)
     }
 }
