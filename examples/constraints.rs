@@ -136,7 +136,19 @@ impl App {
                 ExampleSelection::Max,
             ]
             .iter()
-            .map(|e| format!("{:?}", e)),
+            .enumerate()
+            .map(|(i, e)| {
+                format!(
+                    "{indicator}{e:?}",
+                    indicator = {
+                        if i == self.selected_example.selected() {
+                            " \u{2022} "
+                        } else {
+                            "   "
+                        }
+                    }
+                )
+            }),
         )
         .block(
             Block::bordered()
@@ -145,7 +157,8 @@ impl App {
         )
         .highlight_style(Style::default().yellow().bold())
         .select(self.selected_example.selected())
-        .padding("  ", "  ")
+        .divider("")
+        .padding("", "")
         .render(area, buf);
     }
 }
