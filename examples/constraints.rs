@@ -197,19 +197,22 @@ impl App {
     /// This function renders the demo content into a separate buffer and then splices the buffer
     /// into the main buffer. This is done to make it possible to handle scrolling easily.
     fn render_demo(&self, area: Rect, buf: &mut Buffer) {
-        // render demo content into a separate buffer so all examples fit
-        let height = self.selected_tab.get_example_count() * EXAMPLE_HEIGHT;
-        let mut demo_buf = Buffer::empty(Rect { height, ..area });
-        self.selected_tab.render(demo_buf.area, &mut demo_buf);
+        // render demo content into a separate buffer so all examples fit we add an extra
+        // area.height to make sure the last example is fully visible even when the scroll offset is
+        // at the max
+        let height = self.selected_tab.get_example_count() * EXAMPLE_HEIGHT + area.height;
+        let demo_area = Rect::new(0, 0, area.width, height);
+        let mut demo_buf = Buffer::empty(demo_area);
+        self.selected_tab.render(demo_area, &mut demo_buf);
 
         // Splice the visible area into the main buffer
         let start = buf.index_of(area.left(), area.top());
-        let end = buf.content.len().saturating_sub(area.area() as usize);
+        let end = buf.content.len().min(start + area.area() as usize);
 
         let visible_content = demo_buf
             .content
             .into_iter()
-            .skip((buf.area.width * self.scroll_offset) as usize)
+            .skip((demo_area.width * self.scroll_offset) as usize)
             .take(area.area() as usize);
         buf.content.splice(start..end, visible_content);
     }
