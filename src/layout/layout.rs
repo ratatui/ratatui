@@ -385,7 +385,7 @@ impl Layout {
     ///
     /// # Examples
     ///
-    /// In this example, the spacing between each item in the layout is set to 2 pixels.
+    /// In this example, the spacing between each item in the layout is set to 2 cells.
     ///
     /// ```rust
     /// # use ratatui::layout::{Layout, Constraint::*};
