@@ -341,13 +341,61 @@ impl Layout {
         self
     }
 
-    /// Sets flex options for justify content
+    /// The `flex` method  allows you to specify the flex behavior of the layout.
+    ///
+    /// # Arguments
+    ///
+    /// * `flex`: A `Flex` enum value that represents the flex behavior of the layout. It can be one
+    ///   of the following:
+    ///   - [`Flex::Stretch`]: The items are stretched equally after satisfying constraints to fill
+    ///     excess space.
+    ///   - [`Flex::StretchLast`]: The last item is stretched to fill the excess space.
+    ///   - [`Flex::Start`]: The items are aligned to the start of the layout.
+    ///   - [`Flex::Center`]: The items are aligned to the center of the layout.
+    ///   - [`Flex::End`]: The items are aligned to the end of the layout.
+    ///   - [`Flex::SpaceAround`]: The items are evenly distributed with equal space around them.
+    ///   - [`Flex::SpaceBetween`]: The items are evenly distributed with equal space between them.
+    ///
+    /// # Examples
+    ///
+    /// In this example, the items in the layout will be aligned to the start.
+    ///
+    /// ```rust
+    /// # use ratatui::layout::{Flex, Layout, Constraint::*};
+    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Start);
+    /// ```
+    ///
+    /// In this example, the items in the layout will be stretched equally to fill the available
+    /// space.
+    ///
+    /// ```rust
+    /// # use ratatui::layout::{Flex, Layout, Constraint::*};
+    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Stretch);
+    /// ```
     pub const fn flex(mut self, flex: Flex) -> Layout {
         self.flex = flex;
         self
     }
 
-    /// Sets spacing options for adding padding
+    /// Sets the spacing between items in the layout.
+    ///
+    /// The `spacing` method sets the spacing between items in the layout. The spacing is applied
+    /// evenly between all items. The spacing value represents the number of pixels between each
+    /// item.
+    ///
+    /// # Examples
+    ///
+    /// In this example, the spacing between each item in the layout is set to 2 pixels.
+    ///
+    /// ```rust
+    /// # use ratatui::layout::{Layout, Constraint::*};
+    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).spacing(2);
+    /// ```
+    ///
+    /// # Notes
+    ///
+    /// - If the layout has only one item, the spacing will not be applied.
+    /// - Spacing will not be applied for `Flex::SpaceAround` and `Flex::SpaceBetween`
     pub const fn spacing(mut self, spacing: u16) -> Layout {
         self.spacing = spacing;
         self
