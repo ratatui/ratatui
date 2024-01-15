@@ -179,13 +179,13 @@ impl From<ExampleSelection> for Line<'static> {
         .try_into()
         .unwrap();
         match example {
-            StretchLast => "  StretchLast  ".bg(stretch_last).into(),
-            Stretch => "  Stretch  ".bg(stretch).into(),
-            Start => "  Start  ".bg(start).into(),
-            Center => "  Center  ".bg(center).into(),
-            End => "  End  ".bg(end).into(),
-            SpaceAround => " SpaceAround  ".bg(space_around).into(),
-            SpaceBetween => "  SpaceBetween  ".bg(space_between).into(),
+            StretchLast => " StretchLast ".bg(stretch_last).into(),
+            Stretch => " Stretch ".bg(stretch).into(),
+            Start => " Start ".bg(start).into(),
+            Center => " Center ".bg(center).into(),
+            End => " End ".bg(end).into(),
+            SpaceAround => " SpaceAround ".bg(space_around).into(),
+            SpaceBetween => " SpaceBetween ".bg(space_between).into(),
         }
     }
 }
