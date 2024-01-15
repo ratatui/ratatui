@@ -2123,8 +2123,9 @@ mod tests {
             );
             // TODO: broken test
             // this test breaks because the spacers have the same priority as the constraints
-            // This will _only_ happen when every constraint is `Fixed`.
-            // No easy way to solve it right now
+            // This will _only_ happen when every constraint is `Fixed` AND when
+            // `Flex::Stretch` is used.
+            // No easy way to fix it right now.
             assert_ne!(
                 [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
                 [(0, 32), (34, 32), (68, 32)]
