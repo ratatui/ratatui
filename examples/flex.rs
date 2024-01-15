@@ -279,19 +279,19 @@ impl SelectedTab {
 impl Widget for SelectedTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         match self {
-            SelectedTab::StretchLast => self.render_example(area, buf, Flex::StretchLast),
-            SelectedTab::Stretch => self.render_example(area, buf, Flex::Stretch),
-            SelectedTab::Start => self.render_example(area, buf, Flex::Start),
-            SelectedTab::Center => self.render_example(area, buf, Flex::Center),
-            SelectedTab::End => self.render_example(area, buf, Flex::End),
-            SelectedTab::SpaceAround => self.render_example(area, buf, Flex::SpaceAround),
-            SelectedTab::SpaceBetween => self.render_example(area, buf, Flex::SpaceBetween),
+            SelectedTab::StretchLast => self.render_examples(area, buf, Flex::StretchLast),
+            SelectedTab::Stretch => self.render_examples(area, buf, Flex::Stretch),
+            SelectedTab::Start => self.render_examples(area, buf, Flex::Start),
+            SelectedTab::Center => self.render_examples(area, buf, Flex::Center),
+            SelectedTab::End => self.render_examples(area, buf, Flex::End),
+            SelectedTab::SpaceAround => self.render_examples(area, buf, Flex::SpaceAround),
+            SelectedTab::SpaceBetween => self.render_examples(area, buf, Flex::SpaceBetween),
         }
     }
 }
 
 impl SelectedTab {
-    fn render_example(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
+    fn render_examples(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
         let heights = EXAMPLE_DATA
             .iter()
             .map(|(desc, _)| if desc.is_empty() { 4 } else { 5 });
@@ -321,10 +321,12 @@ impl Widget for Example {
             .flex(self.flex)
             .split(illustrations);
 
-        format!("// {}", self.description)
-            .italic()
-            .fg(Color::from_str("#908caa").unwrap())
-            .render(title, buf);
+        if !self.description.is_empty() {
+            format!("// {}", self.description)
+                .italic()
+                .fg(Color::from_str("#908caa").unwrap())
+                .render(title, buf);
+        }
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
             self.illustration(*constraint, block.width)
