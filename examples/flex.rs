@@ -321,7 +321,6 @@ impl Widget for Example {
 
 impl Example {
     fn illustration(&self, constraint: Constraint, width: u16) -> Paragraph {
-        let text = format!("{} px", width);
         let fg = match constraint {
             Constraint::Ratio(_, _) => Color::Indexed(1),
             Constraint::Percentage(_) => Color::Indexed(2),
@@ -332,7 +331,7 @@ impl Example {
             Constraint::Proportional(_) => Color::Indexed(7),
         };
         let title = format!("{constraint}").fg(fg);
-        let content = format!("{text}");
+        let content = format!("{width} px");
         Paragraph::new(content)
             .style(Color::DarkGray)
             .alignment(Alignment::Center)
