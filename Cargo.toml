@@ -18,3 +18,7 @@ ratatui = "0.26.0-alpha.1"
 
 [dev-dependencies]
 trybuild = { version = "1.0.88", features = ["diff"] }
+cargo-husky = { version = "1.5.0", features = ["user-hooks"] }
+
+
+
