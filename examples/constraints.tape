@@ -4,7 +4,7 @@ Output "target/constraints.gif"
 Set Theme "Aardvark Blue"
 Set FontSize 18
 Set Width 1200
-Set Height 1200
+Set Height 700
 Hide
 Type "cargo run --example=constraints --features=crossterm"
 Enter

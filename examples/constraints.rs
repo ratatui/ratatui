@@ -8,7 +8,7 @@ use crossterm::{
 use ratatui::{layout::Constraint::*, prelude::*, style::palette::tailwind, widgets::*};
 
 const SPACER_HEIGHT: u16 = 0;
-const ILLUSTRATION_HEIGHT: u16 = 3;
+const ILLUSTRATION_HEIGHT: u16 = 4;
 const EXAMPLE_HEIGHT: u16 = ILLUSTRATION_HEIGHT + SPACER_HEIGHT;
 
 // priority 1
@@ -68,6 +68,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
                 Char('h') | Left => app.previous(),
                 Char('j') | Down => app.down(),
                 Char('k') | Up => app.up(),
+                Char('g') | Home => app.top(),
+                Char('G') | End => app.bottom(),
                 _ => (),
             }
         }
@@ -103,6 +105,14 @@ impl App {
             .scroll_offset
             .saturating_add(1)
             .min(self.max_scroll_offset)
+    }
+
+    fn top(&mut self) {
+        self.scroll_offset = 0;
+    }
+
+    fn bottom(&mut self) {
+        self.scroll_offset = self.max_scroll_offset;
     }
 
     fn render_tabs_and_axis(&self, area: Rect, buf: &mut Buffer) {
@@ -152,7 +162,7 @@ impl App {
                 .title("Constraints ".bold())
                 .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll"),
         )
-        .highlight_style(Style::default().bold())
+        .highlight_style(Modifier::REVERSED)
         .select(self.selected_example.selected())
         .padding("", "")
         .divider(" ")

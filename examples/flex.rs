@@ -92,9 +92,9 @@ fn main() -> Result<()> {
     let terminal = init_terminal()?;
 
     // Each line in the example is a layout
-    // so EXAMPLE_HEIGHT * N_EXAMPLES_PER_TAB = 55 currently
+    // so 13 examples * 7 = 91 currently
     // Plus additional layout for tabs ...
-    Layout::init_cache(100);
+    Layout::init_cache(120);
 
     App::default().run(terminal)?;
 
@@ -130,6 +130,8 @@ impl App {
                 Char('h') | Left => self.previous(),
                 Char('j') | Down => self.down(),
                 Char('k') | Up => self.up(),
+                Char('g') | Home => self.top(),
+                Char('G') | End => self.bottom(),
                 _ => (),
             },
             _ => {}
@@ -154,6 +156,14 @@ impl App {
             .scroll_offset
             .saturating_add(1)
             .min(max_scroll_offset())
+    }
+
+    fn top(&mut self) {
+        self.scroll_offset = 0;
+    }
+
+    fn bottom(&mut self) {
+        self.scroll_offset = max_scroll_offset();
     }
 
     fn quit(&mut self) {
