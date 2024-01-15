@@ -381,6 +381,15 @@ impl Widget for Line<'_> {
     }
 }
 
+impl std::fmt::Display for Line<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for span in &self.spans {
+            write!(f, "{span}")?;
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -563,6 +572,34 @@ mod tests {
                 StyledGrapheme::new("!", BLUE_ON_WHITE),
             ],
         );
+    }
+
+    #[test]
+    fn display_line_from_vec() {
+        let line_from_vec = Line::from(vec![Span::raw("Hello,"), Span::raw(" world!")]);
+
+        assert_eq!(format!("{line_from_vec}"), "Hello, world!");
+    }
+
+    #[test]
+    fn display_line_from_str() {
+        let line_from_str = Line::from("Hello, world!");
+
+        assert_eq!(format!("{line_from_str}"), "Hello, world!");
+    }
+
+    #[test]
+    fn display_line_from_string() {
+        let line_from_string = Line::from(String::from("Hello, world!"));
+
+        assert_eq!(format!("{line_from_string}"), "Hello, world!");
+    }
+
+    #[test]
+    fn display_line_from_span() {
+        let line_from_span = Line::from(Span::raw("Hello, world!"));
+
+        assert_eq!(format!("{line_from_span}"), "Hello, world!");
     }
 
     mod widget {

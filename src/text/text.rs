@@ -225,6 +225,19 @@ where
     }
 }
 
+impl std::fmt::Display for Text<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let vec_len = self.lines.len();
+        for (i, line) in self.lines.iter().enumerate() {
+            write!(f, "{line}")?;
+            if (i + 1) != vec_len {
+                writeln!(f)?
+            }
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -409,6 +422,53 @@ mod tests {
                 Line::from("The third line"),
                 Line::from("The fourth line"),
             ]
+        );
+    }
+
+    #[test]
+    fn display_text() {
+        let text = Text::raw("The first line\nThe second line");
+
+        assert_eq!(format!("{text}"), "The first line\nThe second line");
+    }
+
+    #[test]
+    fn display_styled_text() {
+        let styled_text = Text::styled(
+            "The first line\nThe second line",
+            Style::new().yellow().italic(),
+        );
+
+        assert_eq!(format!("{styled_text}"), "The first line\nThe second line");
+    }
+
+    #[test]
+    fn display_text_from_vec() {
+        let text_from_vec = Text::from(vec![
+            Line::from("The first line"),
+            Line::from("The second line"),
+        ]);
+
+        assert_eq!(
+            format!("{text_from_vec}"),
+            "The first line\nThe second line"
+        );
+    }
+
+    #[test]
+    fn display_extended_text() {
+        let mut text = Text::from("The first line\nThe second line");
+
+        assert_eq!(format!("{text}"), "The first line\nThe second line");
+
+        text.extend(vec![
+            Line::from("The third line"),
+            Line::from("The fourth line"),
+        ]);
+
+        assert_eq!(
+            format!("{text}"),
+            "The first line\nThe second line\nThe third line\nThe fourth line"
         );
     }
 }
