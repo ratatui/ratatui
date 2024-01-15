@@ -15,6 +15,7 @@ use ratatui::{
     style::palette::tailwind,
     widgets::{block::Title, *},
 };
+use strum::FromRepr;
 
 const SPACER_HEIGHT: u16 = 1;
 const ILLUSTRATION_HEIGHT: u16 = 4;
@@ -35,7 +36,7 @@ const PROPORTIONAL_COLOR: Color = tailwind::SLATE.c950;
 
 #[derive(Default, Clone, Copy)]
 struct App {
-    selected_example: ExampleSelection,
+    selected_tab: SelectedTab,
     scroll_offset: u16,
     max_scroll_offset: u16,
     state: AppState,
@@ -55,8 +56,8 @@ struct Example {
     flex: Flex,
 }
 
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
-enum ExampleSelection {
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, FromRepr)]
+enum SelectedTab {
     #[default]
     StretchLast,
     Stretch,
@@ -122,11 +123,11 @@ impl App {
     }
 
     fn next(&mut self) {
-        self.selected_example = self.selected_example.next();
+        self.selected_tab = self.selected_tab.next();
     }
 
     fn previous(&mut self) {
-        self.selected_example = self.selected_example.previous();
+        self.selected_tab = self.selected_tab.previous();
     }
 
     fn up(&mut self) {
@@ -149,21 +150,42 @@ impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::vertical([Fixed(3), Fixed(3), Proportional(0)]);
         let [tabs, axis, demo] = area.split(&layout);
-        self.render_tabs(tabs, buf);
-        self.render_axis(axis, buf);
+        self.tabs().render(tabs, buf);
+        self.axis(axis.width).render(axis, buf);
         self.render_demo(demo, buf);
     }
 }
 
 impl App {
-    /// renders a bar like `<----- 80 px ----->`
-    fn render_axis(&self, area: Rect, buf: &mut Buffer) {
-        let width = area.width as usize;
-        let width_label = format!("{} px", width);
-        let width_bar = format!(
-            "<{width_label:-^width$}>",
-            width = width - width_label.len() / 2
-        );
+    fn tabs(&self) -> impl Widget {
+        let titles = [
+            SelectedTab::StretchLast,
+            SelectedTab::Stretch,
+            SelectedTab::Start,
+            SelectedTab::Center,
+            SelectedTab::End,
+            SelectedTab::SpaceAround,
+            SelectedTab::SpaceBetween,
+        ]
+        .into_iter()
+        .map(Line::from);
+        let block = Block::new()
+            .title(Title::from("Flex Layouts ".bold()))
+            .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll");
+        Tabs::new(titles)
+            .block(block)
+            .highlight_style(Style::default().bold())
+            .select(self.selected_tab.selected())
+            .divider(" ")
+            .padding("", "")
+    }
+
+    /// a bar like `<----- 80 px ----->`
+    fn axis(&self, width: u16) -> impl Widget {
+        let width = width as usize;
+        let label = format!("{} px", width);
+        let bar_width = width - label.len() / 2;
+        let width_bar = format!("<{label:-^bar_width$}>",);
         Paragraph::new(width_bar.dark_gray())
             .alignment(Alignment::Center)
             .block(Block::default().padding(Padding {
@@ -172,32 +194,6 @@ impl App {
                 top: 1,
                 bottom: 0,
             }))
-            .render(area, buf);
-    }
-
-    fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
-        let block = Block::new()
-            .title(Title::from("Flex Layouts ".bold()))
-            .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll");
-        Tabs::new(
-            [
-                ExampleSelection::StretchLast,
-                ExampleSelection::Stretch,
-                ExampleSelection::Start,
-                ExampleSelection::Center,
-                ExampleSelection::End,
-                ExampleSelection::SpaceAround,
-                ExampleSelection::SpaceBetween,
-            ]
-            .into_iter()
-            .map(Line::from),
-        )
-        .block(block)
-        .highlight_style(Style::default().bold())
-        .select(self.selected_example.selected())
-        .divider(" ")
-        .padding("", "")
-        .render(area, buf);
     }
 
     fn render_demo(self, demo_area: Rect, buf: &mut Buffer) {
@@ -206,12 +202,12 @@ impl App {
             height: N_EXAMPLES_PER_TAB * EXAMPLE_HEIGHT,
             ..demo_area
         });
-        self.selected_example.render(demo_buf.area, &mut demo_buf);
+        self.selected_tab.render(demo_buf.area, &mut demo_buf);
 
         // Splice the demo_buffer into the main buffer
         // NOTE: You shouldn't do this in a production app
         let start = buf.index_of(demo_area.x, demo_area.y);
-        let end = demo_area.area() as usize; // this crashes right now - TODO
+        let end = buf.content.len().saturating_sub(demo_area.area() as usize);
         buf.content.splice(
             start..end,
             demo_buf
@@ -223,9 +219,9 @@ impl App {
     }
 }
 
-impl From<ExampleSelection> for Line<'static> {
-    fn from(example: ExampleSelection) -> Self {
-        use ExampleSelection::*;
+impl From<SelectedTab> for Line<'static> {
+    fn from(example: SelectedTab) -> Self {
+        use SelectedTab::*;
         let [stretch_last, stretch, start, center, end, space_around, space_between] = [
             "#28410b", "#3b520a", "#40041b", "#52051f", "#630826", "#313073", "#071b24",
         ]
@@ -246,9 +242,9 @@ impl From<ExampleSelection> for Line<'static> {
     }
 }
 
-impl ExampleSelection {
+impl SelectedTab {
     fn previous(&self) -> Self {
-        use ExampleSelection::*;
+        use SelectedTab::*;
         match *self {
             StretchLast => StretchLast,
             Stretch => StretchLast,
@@ -261,7 +257,7 @@ impl ExampleSelection {
     }
 
     fn next(&self) -> Self {
-        use ExampleSelection::*;
+        use SelectedTab::*;
         match *self {
             StretchLast => Stretch,
             Stretch => Start,
@@ -274,7 +270,7 @@ impl ExampleSelection {
     }
 
     fn selected(&self) -> usize {
-        use ExampleSelection::*;
+        use SelectedTab::*;
         match self {
             StretchLast => 0,
             Stretch => 1,
@@ -287,21 +283,21 @@ impl ExampleSelection {
     }
 }
 
-impl Widget for ExampleSelection {
+impl Widget for SelectedTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         match self {
-            ExampleSelection::StretchLast => self.render_example(area, buf, Flex::StretchLast),
-            ExampleSelection::Stretch => self.render_example(area, buf, Flex::Stretch),
-            ExampleSelection::Start => self.render_example(area, buf, Flex::Start),
-            ExampleSelection::Center => self.render_example(area, buf, Flex::Center),
-            ExampleSelection::End => self.render_example(area, buf, Flex::End),
-            ExampleSelection::SpaceAround => self.render_example(area, buf, Flex::SpaceAround),
-            ExampleSelection::SpaceBetween => self.render_example(area, buf, Flex::SpaceBetween),
+            SelectedTab::StretchLast => self.render_example(area, buf, Flex::StretchLast),
+            SelectedTab::Stretch => self.render_example(area, buf, Flex::Stretch),
+            SelectedTab::Start => self.render_example(area, buf, Flex::Start),
+            SelectedTab::Center => self.render_example(area, buf, Flex::Center),
+            SelectedTab::End => self.render_example(area, buf, Flex::End),
+            SelectedTab::SpaceAround => self.render_example(area, buf, Flex::SpaceAround),
+            SelectedTab::SpaceBetween => self.render_example(area, buf, Flex::SpaceBetween),
         }
     }
 }
 
-impl ExampleSelection {
+impl SelectedTab {
     fn render_example(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
         let areas = &Layout::vertical([Fixed(EXAMPLE_HEIGHT); N_EXAMPLES_PER_TAB as usize])
             .flex(Flex::Start)
