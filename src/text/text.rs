@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use itertools::{Itertools, Position};
+
 use crate::prelude::*;
 
 /// A string split over multiple lines where each line is composed of several clusters, each with
@@ -225,6 +227,19 @@ where
     }
 }
 
+impl std::fmt::Display for Text<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (position, line) in self.lines.iter().with_position() {
+            if position == Position::Last {
+                write!(f, "{line}")?;
+            } else {
+                writeln!(f, "{line}")?;
+            }
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -409,6 +424,53 @@ mod tests {
                 Line::from("The third line"),
                 Line::from("The fourth line"),
             ]
+        );
+    }
+
+    #[test]
+    fn display_raw_text() {
+        let text = Text::raw("The first line\nThe second line");
+
+        assert_eq!(format!("{text}"), "The first line\nThe second line");
+    }
+
+    #[test]
+    fn display_styled_text() {
+        let styled_text = Text::styled(
+            "The first line\nThe second line",
+            Style::new().yellow().italic(),
+        );
+
+        assert_eq!(format!("{styled_text}"), "The first line\nThe second line");
+    }
+
+    #[test]
+    fn display_text_from_vec() {
+        let text_from_vec = Text::from(vec![
+            Line::from("The first line"),
+            Line::from("The second line"),
+        ]);
+
+        assert_eq!(
+            format!("{text_from_vec}"),
+            "The first line\nThe second line"
+        );
+    }
+
+    #[test]
+    fn display_extended_text() {
+        let mut text = Text::from("The first line\nThe second line");
+
+        assert_eq!(format!("{text}"), "The first line\nThe second line");
+
+        text.extend(vec![
+            Line::from("The third line"),
+            Line::from("The fourth line"),
+        ]);
+
+        assert_eq!(
+            format!("{text}"),
+            "The first line\nThe second line\nThe third line\nThe fourth line"
         );
     }
 }
