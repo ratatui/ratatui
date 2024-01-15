@@ -330,12 +330,17 @@ impl Widget for Example {
 
 impl Example {
     fn illustration(&self, constraint: Constraint, text: String, fg: Color) -> Paragraph {
-        Paragraph::new(format!("{:?}", constraint))
+        Paragraph::new(format!(" {constraint} ").fg(fg))
+            .style(Color::DarkGray)
             .alignment(Alignment::Center)
             .block(
                 Block::bordered()
-                    .style(Style::default().fg(fg))
-                    .title(block::Title::from(text).alignment(Alignment::Center)),
+                    .style(Style::default().fg(Color::DarkGray))
+                    .title(
+                        block::Title::from(format!("{text}"))
+                            .alignment(Alignment::Right)
+                            .position(block::Position::Bottom),
+                    ),
             )
     }
 }
