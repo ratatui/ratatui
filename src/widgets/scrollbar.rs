@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 use strum::{Display, EnumString};
 
 use super::StatefulWidget;
@@ -6,7 +7,11 @@ use crate::{
     symbols::scrollbar::{Set, DOUBLE_HORIZONTAL, DOUBLE_VERTICAL},
 };
 
-/// An enum representing the direction of scrolling in a Scrollbar widget.
+/// An enum representing a scrolling direction.
+///
+/// This is used with [`ScrollbarState::scroll`].
+///
+/// It is useful for example when you want to store in which direction to scroll.
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum ScrollDirection {
     /// Forward scroll direction, usually corresponds to scrolling downwards or rightwards.
@@ -44,37 +49,52 @@ pub enum ScrollDirection {
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ScrollbarState {
-    // The total length of the scrollable content.
+    /// The total length of the scrollable content.
     content_length: usize,
-    // The current position within the scrollable content.
+    /// The current position within the scrollable content.
     position: usize,
-    // The length of content in current viewport.
+    /// The length of content in current viewport.
     viewport_content_length: usize,
 }
 
 impl ScrollbarState {
     /// Constructs a new ScrollbarState with the specified content length.
+    ///
+    /// `content_length` is the total number of element, that can be scrolled. See
+    /// [`ScrollbarState`] for more details.
     pub fn new(content_length: usize) -> Self {
         Self {
             content_length,
             ..Default::default()
         }
     }
-    /// Sets the scroll position of the scrollbar and returns the modified ScrollbarState.
+
+    /// Sets the scroll position of the scrollbar.
+    ///
+    /// This represents the number of scrolled items.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn position(mut self, position: usize) -> Self {
         self.position = position;
         self
     }
 
-    /// Sets the length of the scrollable content and returns the modified ScrollbarState.
+    /// Sets the length of the scrollable content.
+    ///
+    /// This is the number of scrollable items. If items have a length of one, then this is the
+    /// same as the number of scrollable cells.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn content_length(mut self, content_length: usize) -> Self {
         self.content_length = content_length;
         self
     }
 
-    /// Sets the length of the viewport content and returns the modified ScrollbarState.
+    /// Sets the items' size.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn viewport_content_length(mut self, viewport_content_length: usize) -> Self {
         self.viewport_content_length = viewport_content_length;
@@ -91,7 +111,7 @@ impl ScrollbarState {
         self.position = self
             .position
             .saturating_add(1)
-            .clamp(0, self.content_length.saturating_sub(1))
+            .min(self.content_length.saturating_sub(1))
     }
 
     /// Sets the scroll position to the start of the scrollable content.
@@ -104,7 +124,7 @@ impl ScrollbarState {
         self.position = self.content_length.saturating_sub(1)
     }
 
-    /// Changes the scroll position based on the provided ScrollDirection.
+    /// Changes the scroll position based on the provided [`ScrollDirection`].
     pub fn scroll(&mut self, direction: ScrollDirection) {
         match direction {
             ScrollDirection::Forward => {
@@ -117,19 +137,33 @@ impl ScrollbarState {
     }
 }
 
-/// Scrollbar Orientation
+/// This is the position of the scrollbar around a given area.
+///
+/// ```plain
+///           HorizontalTop
+///             ┌───────┐
+/// VerticalLeft│       │VerticalRight
+///             └───────┘
+///          HorizontalBottom
+/// ```
 #[derive(Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
 pub enum ScrollbarOrientation {
+    /// Positions the scrollbar on the right, scrolling vertically
     #[default]
     VerticalRight,
+    /// Positions the scrollbar on the left, scrolling vertically
     VerticalLeft,
+    /// Positions the scrollbar on the bottom, scrolling horizontally
     HorizontalBottom,
+    /// Positions the scrollbar on the top, scrolling horizontally
     HorizontalTop,
 }
 
 /// A widget to display a scrollbar
 ///
-/// The following components of the scrollbar are customizable in symbol and style.
+/// The following components of the scrollbar are customizable in symbol and style. Note the
+/// scrollbar is represented horizontally but it can also be set vertically (which is actually the
+/// default).
 ///
 /// ```text
 /// <--▮------->
@@ -146,7 +180,6 @@ pub enum ScrollbarOrientation {
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// # fn render_paragraph_with_scrollbar(frame: &mut Frame, area: Rect) {
-///
 /// let vertical_scroll = 0; // from app state
 ///
 /// let items = vec![
@@ -158,20 +191,23 @@ pub enum ScrollbarOrientation {
 ///     .scroll((vertical_scroll as u16, 0))
 ///     .block(Block::new().borders(Borders::RIGHT)); // to show a background for the scrollbar
 ///
-/// let scrollbar = Scrollbar::default()
-///     .orientation(ScrollbarOrientation::VerticalRight)
+/// let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
 ///     .begin_symbol(Some("↑"))
 ///     .end_symbol(Some("↓"));
-/// let mut scrollbar_state = ScrollbarState::new(items.iter().len()).position(vertical_scroll);
+///
+/// let mut scrollbar_state = ScrollbarState::new(items.len()).position(vertical_scroll);
 ///
 /// let area = frame.size();
+/// // Note we render the paragraph
 /// frame.render_widget(paragraph, area);
+/// // and the scrollbar, those are separate widgets
 /// frame.render_stateful_widget(
 ///     scrollbar,
 ///     area.inner(&Margin {
+///         // using an inner vertical margin of 1 unit makes the scrollbar inside the block
 ///         vertical: 1,
 ///         horizontal: 0,
-///     }), // using a inner vertical margin of 1 unit makes the scrollbar inside the block
+///     }),
 ///     &mut scrollbar_state,
 /// );
 /// # }
@@ -206,12 +242,22 @@ impl<'a> Default for Scrollbar<'a> {
 }
 
 impl<'a> Scrollbar<'a> {
+    /// Creates a new scrollbar with the given position.
+    ///
+    /// Most of the time you'll want [`ScrollbarOrientation::VerticalLeft`] or
+    /// [`ScrollbarOrientation::HorizontalBottom`]. See [`ScrollbarOrientation`] for more options.
     pub fn new(orientation: ScrollbarOrientation) -> Self {
         Self::default().orientation(orientation)
     }
 
-    /// Sets the orientation of the scrollbar.
-    /// Resets the symbols to [`DOUBLE_VERTICAL`] or [`DOUBLE_HORIZONTAL`] based on orientation
+    /// Sets the position of the scrollbar.
+    ///
+    /// The orientation of the scrollbar is the position it will take around a [`Rect`]. See
+    /// [`ScrollbarOrientation`] for more details.
+    ///
+    /// Resets the symbols to [`DOUBLE_VERTICAL`] or [`DOUBLE_HORIZONTAL`] based on orientation.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn orientation(mut self, orientation: ScrollbarOrientation) -> Self {
         self.orientation = orientation;
@@ -224,6 +270,11 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the orientation and symbols for the scrollbar from a [`Set`].
+    ///
+    /// This has the same effect as calling [`Scrollbar::orientation`] and then
+    /// [`Scrollbar::symbols`]. See those for more details.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn orientation_and_symbol(mut self, orientation: ScrollbarOrientation, set: Set) -> Self {
         self.orientation = orientation;
@@ -231,16 +282,26 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the symbol that represents the thumb of the scrollbar.
+    ///
+    /// The thumb is the handle representing the progression on the scrollbar. See [`Scrollbar`]
+    /// for a visual example of what this represents.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn thumb_symbol(mut self, thumb_symbol: &'a str) -> Self {
         self.thumb_symbol = thumb_symbol;
         self
     }
 
-    /// Sets the style that represents the thumb of the scrollbar.
+    /// Sets the style on the scrollbar thumb.
+    ///
+    /// The thumb is the handle representing the progression on the scrollbar. See [`Scrollbar`]
+    /// for a visual example of what this represents.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn thumb_style<S: Into<Style>>(mut self, thumb_style: S) -> Self {
         self.thumb_style = thumb_style.into();
@@ -248,6 +309,10 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the symbol that represents the track of the scrollbar.
+    ///
+    /// See [`Scrollbar`] for a visual example of what this represents.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn track_symbol(mut self, track_symbol: Option<&'a str>) -> Self {
         self.track_symbol = track_symbol;
@@ -256,8 +321,12 @@ impl<'a> Scrollbar<'a> {
 
     /// Sets the style that is used for the track of the scrollbar.
     ///
+    /// See [`Scrollbar`] for a visual example of what this represents.
+    ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn track_style<S: Into<Style>>(mut self, track_style: S) -> Self {
         self.track_style = track_style.into();
@@ -265,6 +334,10 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the symbol that represents the beginning of the scrollbar.
+    ///
+    /// See [`Scrollbar`] for a visual example of what this represents.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn begin_symbol(mut self, begin_symbol: Option<&'a str>) -> Self {
         self.begin_symbol = begin_symbol;
@@ -273,8 +346,12 @@ impl<'a> Scrollbar<'a> {
 
     /// Sets the style that is used for the beginning of the scrollbar.
     ///
+    /// See [`Scrollbar`] for a visual example of what this represents.
+    ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn begin_style<S: Into<Style>>(mut self, begin_style: S) -> Self {
         self.begin_style = begin_style.into();
@@ -282,6 +359,10 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Sets the symbol that represents the end of the scrollbar.
+    ///
+    /// See [`Scrollbar`] for a visual example of what this represents.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn end_symbol(mut self, end_symbol: Option<&'a str>) -> Self {
         self.end_symbol = end_symbol;
@@ -290,8 +371,12 @@ impl<'a> Scrollbar<'a> {
 
     /// Sets the style that is used for the end of the scrollbar.
     ///
+    /// See [`Scrollbar`] for a visual example of what this represents.
+    ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn end_style<S: Into<Style>>(mut self, end_style: S) -> Self {
         self.end_style = end_style.into();
@@ -310,7 +395,10 @@ impl<'a> Scrollbar<'a> {
     /// ```
     ///
     /// Only sets begin_symbol, end_symbol and track_symbol if they already contain a value.
-    /// If they were set to `None` explicitly, this function will respect that choice.
+    /// If they were set to `None` explicitly, this function will respect that choice. Use their
+    /// respective setters to change their value.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn symbols(mut self, symbol: Set) -> Self {
         self.thumb_symbol = symbol.thumb;
@@ -339,6 +427,8 @@ impl<'a> Scrollbar<'a> {
     /// │  └──────── thumb
     /// └─────────── begin
     /// ```
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         let style = style.into();
