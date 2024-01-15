@@ -12,7 +12,7 @@ use ratatui::{
     widgets::{block::Title, *},
 };
 
-const SPACER_HEIGHT: u16 = 0;
+const SPACER_HEIGHT: u16 = 1;
 const ILLUSTRATION_HEIGHT: u16 = 4;
 const EXAMPLE_HEIGHT: u16 = ILLUSTRATION_HEIGHT + SPACER_HEIGHT;
 const N_EXAMPLES_PER_TAB: u16 = 11;
@@ -64,16 +64,22 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     loop {
         terminal.draw(|f| f.render_widget(app, f.size()))?;
 
-        if let Event::Key(key) = event::read()? {
-            use KeyCode::*;
-            match key.code {
-                Char('q') => break Ok(()),
-                Char('l') | Right => app.next(),
-                Char('h') | Left => app.previous(),
-                Char('j') | Down => app.down(),
-                Char('k') | Up => app.up(),
-                _ => (),
+        match event::read()? {
+            Event::Key(key) => {
+                use KeyCode::*;
+                match key.code {
+                    Char('q') => break Ok(()),
+                    Char('l') | Right => app.next(),
+                    Char('h') | Left => app.previous(),
+                    Char('j') | Down => app.down(),
+                    Char('k') | Up => app.up(),
+                    _ => (),
+                }
             }
+            Event::Resize(_, _) => {
+                terminal.clear()?;
+            }
+            _ => {}
         }
     }
 }
@@ -292,45 +298,61 @@ impl ExampleSelection {
             .split(area);
 
         let examples = [
-            vec![Fixed(20), Min(20), Max(20)],
-            vec![Length(20), Percentage(20), Ratio(1, 5), Proportional(1)],
-            vec![Length(20), Fixed(20), Percentage(20)],
-            vec![Fixed(20), Percentage(20), Length(20)],
-            vec![Percentage(20), Length(20), Fixed(20)],
-            vec![Length(20), Length(15)],
-            vec![Length(20), Fixed(20)],
-            vec![Min(20), Max(20)],
-            vec![Max(20)],
-            vec![Min(20), Max(20), Length(20), Fixed(20)],
-            vec![Proportional(0), Proportional(0)],
-            vec![Proportional(1), Proportional(1), Length(20), Fixed(20)],
-            vec![
-                Min(10),
-                Proportional(3),
-                Proportional(2),
-                Length(15),
-                Fixed(15),
-            ],
+            (
+                vec![Fixed(20), Min(20), Max(20)],
+                "Min(20) takes excess space.",
+            ),
+            (
+                vec![Length(20), Percentage(20), Ratio(1, 5), Proportional(1)],
+                "",
+            ),
+            (vec![Length(20), Fixed(20), Percentage(20)], ""),
+            (vec![Fixed(20), Percentage(20), Length(20)], ""),
+            (vec![Percentage(20), Length(20), Fixed(20)], ""),
+            (vec![Length(20), Length(15)], ""),
+            (vec![Length(20), Fixed(20)], ""),
+            (vec![Min(20), Max(20)], ""),
+            (vec![Max(20)], ""),
+            (vec![Min(20), Max(20), Length(20), Fixed(20)], ""),
+            (vec![Proportional(0), Proportional(0)], ""),
+            (
+                vec![Proportional(1), Proportional(1), Length(20), Fixed(20)],
+                "",
+            ),
+            (
+                vec![
+                    Min(10),
+                    Proportional(3),
+                    Proportional(2),
+                    Length(15),
+                    Fixed(15),
+                ],
+                "",
+            ),
         ];
 
-        for (area, constraints) in areas.iter().zip(examples) {
-            Example::new(constraints).flex(flex).render(*area, buf);
+        for (area, (constraints, description)) in areas.iter().zip(examples) {
+            Example::new(constraints, description.into())
+                .flex(flex)
+                .render(*area, buf);
         }
     }
 }
 
 struct Example {
     constraints: Vec<Constraint>,
+    description: String,
     flex: Flex,
 }
 
 impl Example {
-    fn new<C>(constraints: C) -> Self
+    fn new<C>(constraints: C, description: String) -> Self
     where
         C: Into<Vec<Constraint>>,
     {
         Self {
             constraints: constraints.into(),
+            description,
             flex: Flex::default(),
         }
     }
@@ -343,14 +365,23 @@ impl Example {
 
 impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        if !self.description.is_empty() {
+            let [title, _] = area.split(&Layout::vertical([Fixed(1), Proportional(0)]));
+            Paragraph::new(
+                format!("// {}", self.description)
+                    .italic()
+                    .fg(Color::from_str("#908caa").unwrap()),
+            )
+            .render(title, buf)
+        }
         let blocks = Layout::horizontal(&self.constraints)
             .flex(self.flex)
             .split(area);
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
-            let [block, _] = block.split(&Layout::vertical([
-                Fixed(ILLUSTRATION_HEIGHT),
+            let [_, block] = block.split(&Layout::vertical([
                 Fixed(SPACER_HEIGHT),
+                Fixed(ILLUSTRATION_HEIGHT),
             ]));
             self.illustration(*constraint, block.width)
                 .render(block, buf);
