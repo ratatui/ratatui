@@ -192,7 +192,12 @@ impl CalendarEventStore {
     /// your own type that implements [`Into<Style>`]).
     pub fn today<S: Into<Style>>(style: S) -> Self {
         let mut res = Self::default();
-        res.add(OffsetDateTime::now_local().unwrap().date(), style.into());
+        res.add(
+            OffsetDateTime::now_local()
+                .unwrap_or(OffsetDateTime::now_utc())
+                .date(),
+            style.into(),
+        );
         res
     }
 
@@ -259,5 +264,10 @@ mod tests {
             b.1,
             "Date added to styler should return the provided style"
         );
+    }
+
+    #[test]
+    fn test_today() {
+        CalendarEventStore::today(Style::default());
     }
 }
