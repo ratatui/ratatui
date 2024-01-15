@@ -64,7 +64,7 @@ fn assert_buffer(state: &mut AppState, expected: &Buffer) {
 
             let table = Table::new(
                 items.iter().map(|i| Row::new(vec![*i])),
-                [Constraint::Length(10); 5],
+                [Constraint::Length(10); 1],
             )
             .highlight_symbol(">>");
             f.render_stateful_widget(table, layout[1], &mut state.table_state);

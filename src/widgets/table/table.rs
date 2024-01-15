@@ -1,5 +1,3 @@
-use std::iter;
-
 use itertools::Itertools;
 
 use super::*;
@@ -727,30 +725,23 @@ impl Table<'_> {
                 .map(|r| r.cells.len())
                 .max()
                 .unwrap_or(0);
-            // There are `col_count - 1` spaces between the columns
-            let total_space =
-                max_width.saturating_sub(self.column_spacing * col_count.saturating_sub(1) as u16);
-            // Divide the remaining space between each column equally
-            vec![Constraint::Length(total_space / col_count.max(1) as u16); col_count]
+            // Divide the space between each column equally
+            vec![Constraint::Length(max_width / col_count.max(1) as u16); col_count]
         } else {
             self.widths.to_vec()
         };
-        let constraints = iter::once(Constraint::Length(selection_width))
-            .chain(Itertools::intersperse(
-                widths.iter().cloned(),
-                Constraint::Length(self.column_spacing),
-            ))
-            .collect_vec();
+        // this will always allocate a selection area
+        let [_selection_area, columns_area] =
+            Rect::new(0, 0, max_width, 1).split(&Layout::horizontal([
+                Constraint::Fixed(selection_width),
+                Constraint::Proportional(0),
+            ]));
         #[allow(deprecated)]
-        let layout = Layout::horizontal(constraints)
+        let rects = Layout::horizontal(widths)
             .segment_size(self.segment_size)
-            .split(Rect::new(0, 0, max_width, 1));
-        layout
-            .iter()
-            .skip(1) // skip selection column
-            .step_by(2) // skip spacing between columns
-            .map(|c| (c.x, c.width))
-            .collect()
+            .spacing(self.column_spacing)
+            .split(columns_area);
+        rects.iter().map(|c| (c.x, c.width)).collect()
     }
 
     fn get_row_bounds(
@@ -1248,12 +1239,17 @@ mod tests {
             );
 
             // with selection, less than needed width
+            // <--------7px-------->
+            // ┌────────┐x┌────────┐
+            // │ (3, 3) │x│ (7, 0) │
+            // └────────┘x└────────┘
+            // column spacing (i.e. `x`) is always prioritized
             test(
                 &[Length(4), Length(4)],
                 SegmentSize::None,
                 7,
                 3,
-                &[(3, 4), (7, 0)],
+                &[(3, 3), (7, 0)],
             );
         }
 
@@ -1321,23 +1317,23 @@ mod tests {
             );
 
             // without selection, less than needed width
-            // allocates no spacer
+            // allocates spacer
             test(
                 &[Min(4), Min(4)],
                 SegmentSize::None,
                 7,
                 0,
-                &[(0, 4), (4, 3)],
+                &[(0, 4), (5, 2)],
             );
 
             // with selection, less than needed width
-            // allocates no selection and no spacer
+            // always allocates selection and spacer
             test(
                 &[Min(4), Min(4)],
                 SegmentSize::None,
                 7,
                 3,
-                &[(0, 4), (4, 3)],
+                &[(3, 3), (7, 0)],
             );
         }
 
@@ -1358,7 +1354,7 @@ mod tests {
                 SegmentSize::None,
                 20,
                 3,
-                &[(3, 6), (10, 6)],
+                &[(3, 5), (9, 5)],
             );
 
             // without selection, less than needed width
@@ -1378,7 +1374,7 @@ mod tests {
                 SegmentSize::None,
                 7,
                 3,
-                &[(3, 2), (6, 1)],
+                &[(3, 1), (5, 1)],
             );
         }
 
@@ -1401,7 +1397,7 @@ mod tests {
                 SegmentSize::None,
                 20,
                 3,
-                &[(3, 7), (11, 6)],
+                &[(3, 6), (10, 5)],
             );
 
             // without selection, less than needed width
@@ -1421,7 +1417,7 @@ mod tests {
                 SegmentSize::None,
                 7,
                 3,
-                &[(3, 2), (6, 1)],
+                &[(3, 1), (5, 2)],
             );
         }
 
