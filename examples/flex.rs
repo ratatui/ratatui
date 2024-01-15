@@ -309,38 +309,37 @@ impl Widget for Example {
             .split(area);
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
-            let text = format!("{} px", block.width);
-            let fg = match constraint {
-                Constraint::Ratio(_, _) => Color::Indexed(1),
-                Constraint::Percentage(_) => Color::Indexed(2),
-                Constraint::Max(_) => Color::Indexed(3),
-                Constraint::Min(_) => Color::Indexed(4),
-                Constraint::Length(_) => Color::Indexed(5),
-                Constraint::Fixed(_) => Color::Indexed(6),
-                Constraint::Proportional(_) => Color::Indexed(7),
-            };
             let [block, _] = block.split(&Layout::vertical([
                 Fixed(ILLUSTRATION_HEIGHT),
                 Fixed(SPACER_HEIGHT),
             ]));
-            self.illustration(*constraint, text, fg).render(block, buf);
+            self.illustration(*constraint, block.width)
+                .render(block, buf);
         }
     }
 }
 
 impl Example {
-    fn illustration(&self, constraint: Constraint, text: String, fg: Color) -> Paragraph {
-        Paragraph::new(format!(" {constraint} ").fg(fg))
+    fn illustration(&self, constraint: Constraint, width: u16) -> Paragraph {
+        let text = format!("{} px", width);
+        let fg = match constraint {
+            Constraint::Ratio(_, _) => Color::Indexed(1),
+            Constraint::Percentage(_) => Color::Indexed(2),
+            Constraint::Max(_) => Color::Indexed(3),
+            Constraint::Min(_) => Color::Indexed(4),
+            Constraint::Length(_) => Color::Indexed(5),
+            Constraint::Fixed(_) => Color::Indexed(6),
+            Constraint::Proportional(_) => Color::Indexed(7),
+        };
+        let title = format!("{constraint}").fg(fg);
+        let content = format!("{text}");
+        Paragraph::new(content)
             .style(Color::DarkGray)
             .alignment(Alignment::Center)
             .block(
                 Block::bordered()
                     .style(Style::default().fg(Color::DarkGray))
-                    .title(
-                        block::Title::from(format!("{text}"))
-                            .alignment(Alignment::Right)
-                            .position(block::Position::Bottom),
-                    ),
+                    .title(block::Title::from(title).alignment(Alignment::Center)),
             )
     }
 }
