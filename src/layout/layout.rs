@@ -380,7 +380,7 @@ impl Layout {
     /// Sets the spacing between items in the layout.
     ///
     /// The `spacing` method sets the spacing between items in the layout. The spacing is applied
-    /// evenly between all items. The spacing value represents the number of pixels between each
+    /// evenly between all items. The spacing value represents the number of cells between each
     /// item.
     ///
     /// # Examples
