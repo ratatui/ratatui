@@ -455,7 +455,7 @@ impl Layout {
             )
             .collect_vec()
         } else {
-            layout.constraints.iter().cloned().collect_vec()
+            layout.constraints.clone()
         };
 
         // create an element for each constraint that needs to be applied. Each element defines the
