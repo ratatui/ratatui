@@ -18,23 +18,35 @@ use ratatui::{
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
-    ("Min(20) takes excess space", &[Fixed(20), Min(20), Max(20)]),
     (
-        "",
+        "Min(u16) takes any excess space when using `Stretch` or `StretchLast`",
+        &[Fixed(20), Min(20), Max(20)],
+    ),
+    (
+        "Proportional(u16) takes any excess space in all `Flex` layouts",
         &[Length(20), Percentage(20), Ratio(1, 5), Proportional(1)],
     ),
-    ("", &[Length(20), Fixed(20), Percentage(20)]),
+    (
+        "In `StretchLast`, last constraint of lowest priority takes excess space",
+        &[Length(20), Fixed(20), Percentage(20)],
+    ),
     ("", &[Fixed(20), Percentage(20), Length(20)]),
     ("", &[Percentage(20), Length(20), Fixed(20)]),
     ("", &[Length(20), Length(15)]),
     ("", &[Length(20), Fixed(20)]),
-    ("", &[Min(20), Max(20)]),
-    ("", &[Max(20)]),
-    ("", &[Min(20), Max(20), Length(20), Fixed(20)]),
-    ("", &[Proportional(0), Proportional(0)]),
     (
-        "",
-        &[Proportional(1), Proportional(1), Length(20), Fixed(20)],
+        "When not using `Flex::Stretch` or `Flex::StretchLast`,\n`Min(u16)` and `Max(u16)` collapse to their lowest values",
+        &[Min(20), Max(20)],
+    ),
+    (
+        "`SpaceBetween` stretches when there's only one constraint",
+        &[Max(20)],
+    ),
+    ("", &[Min(20), Max(20), Length(20), Fixed(20)]),
+    ("`Proportional(u16)` always fills up space in every `Flex` layout", &[Proportional(0), Proportional(0)]),
+    (
+        "`Proportional()` can be to scale with respect to other `Proportional()`",
+        &[Proportional(1), Proportional(2), Length(20), Fixed(20)],
     ),
     (
         "",
@@ -175,7 +187,7 @@ fn max_scroll_offset() -> u16 {
     example_height()
         - EXAMPLE_DATA
             .last()
-            .map(|(desc, _)| if desc.is_empty() { 4 } else { 5 })
+            .map(|(desc, _)| get_description_height(desc) + 4)
             .unwrap_or(0)
 }
 
@@ -185,7 +197,7 @@ fn max_scroll_offset() -> u16 {
 fn example_height() -> u16 {
     EXAMPLE_DATA
         .iter()
-        .map(|(desc, _)| if desc.is_empty() { 4 } else { 5 })
+        .map(|(desc, _)| get_description_height(desc) + 4)
         .sum()
 }
 
@@ -301,7 +313,7 @@ impl SelectedTab {
             SpaceAround => INDIGO.c400,
             SpaceBetween => INDIGO.c300,
         };
-        format!(" {text} ").fg(Color::Black).bg(color).into()
+        format!(" {text} ").fg(color).bg(Color::Black).into()
     }
 }
 
@@ -323,7 +335,7 @@ impl SelectedTab {
     fn render_examples(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
         let heights = EXAMPLE_DATA
             .iter()
-            .map(|(desc, _)| if desc.is_empty() { 4 } else { 5 });
+            .map(|(desc, _)| get_description_height(desc) + 4);
         let areas = Layout::vertical(heights).flex(Flex::Start).split(area);
         for (area, (description, constraints)) in areas.iter().zip(EXAMPLE_DATA.iter()) {
             Example::new(constraints, description, flex).render(*area, buf);
@@ -343,7 +355,7 @@ impl Example {
 
 impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let title_height = if self.description.is_empty() { 0 } else { 1 };
+        let title_height = get_description_height(&self.description);
         let layout = Layout::vertical([Fixed(title_height), Proportional(0)]);
         let [title, illustrations] = area.split(&layout);
         let blocks = Layout::horizontal(&self.constraints)
@@ -351,10 +363,18 @@ impl Widget for Example {
             .split(illustrations);
 
         if !self.description.is_empty() {
-            format!("// {}", self.description)
-                .italic()
-                .fg(Color::from_str("#908caa").unwrap())
-                .render(title, buf);
+            Paragraph::new(
+                self.description
+                    .split('\n')
+                    .map(|s| {
+                        format!("// {}", s)
+                            .italic()
+                            .fg(Color::from_str("#908caa").unwrap())
+                    })
+                    .map(Line::from)
+                    .collect::<Vec<Line>>(),
+            )
+            .render(title, buf);
         }
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
@@ -421,4 +441,12 @@ fn restore_terminal() -> Result<()> {
     disable_raw_mode()?;
     stdout().execute(LeaveAlternateScreen)?;
     Ok(())
+}
+
+fn get_description_height(s: &str) -> u16 {
+    if s.is_empty() {
+        0
+    } else {
+        s.split('\n').count() as u16
+    }
 }
