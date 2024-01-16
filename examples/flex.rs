@@ -364,11 +364,7 @@ impl Widget for Example {
             Paragraph::new(
                 self.description
                     .split('\n')
-                    .map(|s| {
-                        format!("// {}", s)
-                            .italic()
-                            .fg(Color::from_str("#908caa").unwrap())
-                    })
+                    .map(|s| format!("// {}", s).italic().fg(tailwind::SLATE.c400))
                     .map(Line::from)
                     .collect::<Vec<Line>>(),
             )
