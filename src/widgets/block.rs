@@ -127,7 +127,8 @@ impl BorderType {
 /// Padding::uniform(1);
 /// Padding::horizontal(2);
 /// Padding::left(3);
-/// Padding::pretty(4);
+/// Padding::proportional(4);
+/// Padding::symmetric(5, 6);
 /// ```
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Padding {
@@ -204,12 +205,24 @@ impl Padding {
     ///
     /// Doubles the value then
     /// defines [`left`](Padding::left) and [`right`](Padding::right) padding.
-    pub const fn pretty(value: u16) -> Self {
+    pub const fn proportional(value: u16) -> Self {
         Padding {
             left: 2 * value,
             right: 2 * value,
             top: value,
             bottom: value,
+        }
+    }
+
+    /// Defines the [`left`](Padding::left) and [`right`](Padding::right) padding with x value.
+    ///
+    /// defines [`top`](Padding::top) and [`bottom`](Padding::bottom) padding with y value.
+    pub const fn symmetric(x: u16, y: u16) -> Self {
+        Padding {
+            left: x,
+            right: x,
+            top: y,
+            bottom: y,
         }
     }
 
@@ -1145,7 +1158,8 @@ mod tests {
         assert_eq!(Padding::horizontal(1), Padding::new(1, 1, 0, 0));
         assert_eq!(Padding::vertical(1), Padding::new(0, 0, 1, 1));
         assert_eq!(Padding::uniform(1), Padding::new(1, 1, 1, 1));
-        assert_eq!(Padding::pretty(1), Padding::new(2, 2, 1, 1));
+        assert_eq!(Padding::proportional(1), Padding::new(2, 2, 1, 1));
+        assert_eq!(Padding::symmetric(1, 2), Padding::new(1, 1, 2, 2));
         assert_eq!(Padding::left(1), Padding::new(1, 0, 0, 0));
         assert_eq!(Padding::right(1), Padding::new(0, 1, 0, 0));
         assert_eq!(Padding::top(1), Padding::new(0, 0, 1, 0));
@@ -1159,7 +1173,8 @@ mod tests {
         const _NO_PADDING: Padding = Padding::zero();
         const _HORIZONTAL: Padding = Padding::horizontal(1);
         const _VERTICAL: Padding = Padding::vertical(1);
-        const _PRETTY: Padding = Padding::pretty(1);
+        const _PROPORTIONAL: Padding = Padding::proportional(1);
+        const _SYMMETRIC: Padding = Padding::symmetric(1, 1);
         const _LEFT: Padding = Padding::left(1);
         const _RIGHT: Padding = Padding::right(1);
         const _TOP: Padding = Padding::top(1);
