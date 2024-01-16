@@ -126,6 +126,8 @@ impl BorderType {
 ///
 /// Padding::uniform(1);
 /// Padding::horizontal(2);
+/// Padding::left(3);
+/// Padding::pretty(4);
 /// ```
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Padding {
@@ -192,6 +194,69 @@ impl Padding {
             left: value,
             right: value,
             top: value,
+            bottom: value,
+        }
+    }
+
+    /// To make horizontal and vertical padding seem equal
+    ///
+    /// Defines the [`top`](Padding::top) and [`bottom`](Padding::bottom) padding.
+    ///
+    /// Doubles the value then
+    /// defines [`left`](Padding::left) and [`right`](Padding::right) padding.
+    pub const fn pretty(value: u16) -> Self {
+        Padding {
+            left: 2 * value,
+            right: 2 * value,
+            top: value,
+            bottom: value,
+        }
+    }
+
+    /// Defines the [`left`](Padding::left) padding.
+    ///
+    /// This leaves others to `0`.
+    pub const fn left(value: u16) -> Self {
+        Padding {
+            left: value,
+            right: 0,
+            top: 0,
+            bottom: 0,
+        }
+    }
+
+    /// Defines the [`right`](Padding::right) padding.
+    ///
+    /// This leaves others to `0`.
+    pub const fn right(value: u16) -> Self {
+        Padding {
+            left: 0,
+            right: value,
+            top: 0,
+            bottom: 0,
+        }
+    }
+
+    /// Defines the [`top`](Padding::top) padding.
+    ///
+    /// This leaves others to `0`.
+    pub const fn top(value: u16) -> Self {
+        Padding {
+            left: 0,
+            right: 0,
+            top: value,
+            bottom: 0,
+        }
+    }
+
+    /// Defines the [`bottom`](Padding::bottom) padding.
+    ///
+    /// This leaves others to `0`.
+    pub const fn bottom(value: u16) -> Self {
+        Padding {
+            left: 0,
+            right: 0,
+            top: 0,
             bottom: value,
         }
     }
@@ -1080,6 +1145,11 @@ mod tests {
         assert_eq!(Padding::horizontal(1), Padding::new(1, 1, 0, 0));
         assert_eq!(Padding::vertical(1), Padding::new(0, 0, 1, 1));
         assert_eq!(Padding::uniform(1), Padding::new(1, 1, 1, 1));
+        assert_eq!(Padding::pretty(1), Padding::new(2, 2, 1, 1));
+        assert_eq!(Padding::left(1), Padding::new(1, 0, 0, 0));
+        assert_eq!(Padding::right(1), Padding::new(0, 1, 0, 0));
+        assert_eq!(Padding::top(1), Padding::new(0, 0, 1, 0));
+        assert_eq!(Padding::bottom(1), Padding::new(0, 0, 0, 1));
     }
 
     #[test]
@@ -1089,6 +1159,11 @@ mod tests {
         const _NO_PADDING: Padding = Padding::zero();
         const _HORIZONTAL: Padding = Padding::horizontal(1);
         const _VERTICAL: Padding = Padding::vertical(1);
+        const _PRETTY: Padding = Padding::pretty(1);
+        const _LEFT: Padding = Padding::left(1);
+        const _RIGHT: Padding = Padding::right(1);
+        const _TOP: Padding = Padding::top(1);
+        const _BOTTOM: Padding = Padding::bottom(1);
     }
 
     #[test]
