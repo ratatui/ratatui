@@ -200,21 +200,37 @@ impl App {
         // render demo content into a separate buffer so all examples fit we add an extra
         // area.height to make sure the last example is fully visible even when the scroll offset is
         // at the max
-        let height = self.selected_tab.get_example_count() * EXAMPLE_HEIGHT + area.height;
-        let demo_area = Rect::new(0, 0, area.width, height);
+        let height = self.selected_tab.get_example_count() * EXAMPLE_HEIGHT;
+        let demo_area = Rect::new(0, 0, area.width, height + area.height);
         let mut demo_buf = Buffer::empty(demo_area);
-        self.selected_tab.render(demo_area, &mut demo_buf);
 
-        // Splice the visible area into the main buffer
-        let start = buf.index_of(area.left(), area.top());
-        let end = buf.content.len().min(start + area.area() as usize);
+        let scrollbar_needed = self.scroll_offset != 0 || height > area.height;
+        let content_area = if scrollbar_needed {
+            Rect {
+                width: demo_area.width - 1,
+                ..demo_area
+            }
+        } else {
+            demo_area
+        };
+        self.selected_tab.render(content_area, &mut demo_buf);
 
         let visible_content = demo_buf
             .content
             .into_iter()
             .skip((demo_area.width * self.scroll_offset) as usize)
             .take(area.area() as usize);
-        buf.content.splice(start..end, visible_content);
+        for (i, cell) in visible_content.enumerate() {
+            let x = i as u16 % area.width;
+            let y = i as u16 / area.width;
+            *buf.get_mut(area.x + x, area.y + y) = cell;
+        }
+
+        if scrollbar_needed {
+            let mut state = ScrollbarState::new(self.max_scroll_offset as usize)
+                .position(self.scroll_offset as usize);
+            Scrollbar::new(ScrollbarOrientation::VerticalRight).render(area, buf, &mut state);
+        }
     }
 }
 
