@@ -2201,6 +2201,29 @@ mod tests {
         }
 
         #[test]
+        fn flex_spacing_with_proportional() {
+            Layout::init_cache(1);
+            let [a, _, b] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Proportional(1), Fixed(2), Proportional(1)])
+                    .flex(Flex::StretchLast)
+                    .spacing(0),
+            );
+            assert_eq!([(a.x, a.width), (b.x, b.width)], [(0, 49), (51, 49)]);
+
+            // println!("----------------------------------------------------");
+
+            // TODO: broken test
+            // this should be identical to the previous results
+            Layout::init_cache(1);
+            let [a, b] = Rect::new(0, 0, 100, 1).split(
+                &Layout::horizontal([Proportional(1), Proportional(1)])
+                    .flex(Flex::StretchLast)
+                    .spacing(2),
+            );
+            assert_ne!([(a.x, a.width), (b.x, b.width)], [(0, 49), (51, 49)]);
+        }
+
+        #[test]
         fn flex() {
             // length should be spaced around
             let [a, _b, c] = Rect::new(0, 0, 100, 1).split(
