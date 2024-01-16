@@ -30,6 +30,7 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     ("", &[Fixed(20), Percentage(20), Length(20)]),
     ("", &[Percentage(20), Length(20), Fixed(20)]),
     ("", &[Length(20), Length(15)]),
+    ("Spacing has no effect in `SpaceAround` and `SpaceBetween`", &[Proportional(1), Proportional(1)]),
     ("", &[Length(20), Fixed(20)]),
     (
         "When not using `Flex::Stretch` or `Flex::StretchLast`,\n`Min(u16)` and `Max(u16)` collapse to their lowest values",
@@ -59,6 +60,7 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
 struct App {
     selected_tab: SelectedTab,
     scroll_offset: u16,
+    spacing: u16,
     state: AppState,
 }
 
@@ -74,6 +76,7 @@ struct Example {
     constraints: Vec<Constraint>,
     description: String,
     flex: Flex,
+    spacing: u16,
 }
 
 /// Tabs for the different layouts
@@ -94,6 +97,8 @@ enum SelectedTab {
 }
 
 fn main() -> Result<()> {
+    // assuming the user changes spacing about a 100 times or so
+    Layout::init_cache(EXAMPLE_DATA.len() * SelectedTab::iter().len() * 100);
     init_error_hooks()?;
     let terminal = init_terminal()?;
 
@@ -138,6 +143,8 @@ impl App {
                 Char('k') | Up => self.up(),
                 Char('g') | Home => self.top(),
                 Char('G') | End => self.bottom(),
+                Char('+') => self.increment_spacing(),
+                Char('-') => self.decrement_spacing(),
                 _ => (),
             },
             _ => {}
@@ -172,6 +179,14 @@ impl App {
         self.scroll_offset = max_scroll_offset();
     }
 
+    fn increment_spacing(&mut self) {
+        self.spacing = self.spacing.saturating_add(1);
+    }
+
+    fn decrement_spacing(&mut self) {
+        self.spacing = self.spacing.saturating_sub(1);
+    }
+
     fn quit(&mut self) {
         self.state = AppState::Quit;
     }
@@ -198,11 +213,16 @@ fn example_height() -> u16 {
 
 impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::vertical([Fixed(3), Fixed(3), Proportional(0)]);
+        let layout = Layout::vertical([Fixed(3), Fixed(1), Proportional(0)]);
         let [tabs, axis, demo] = area.split(&layout);
         self.tabs().render(tabs, buf);
-        self.axis(axis.width).render(axis, buf);
-        self.render_demo(demo, buf);
+        let scroll_needed = self.render_demo(demo, buf);
+        let axis_width = if scroll_needed {
+            axis.width - 1
+        } else {
+            axis.width
+        };
+        self.axis(axis_width, self.spacing).render(axis, buf);
     }
 }
 
@@ -211,7 +231,7 @@ impl App {
         let tab_titles = SelectedTab::iter().map(SelectedTab::to_tab_title);
         let block = Block::new()
             .title(Title::from("Flex Layouts ".bold()))
-            .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll");
+            .title(" Use ◄ ► to change tab, ▲ ▼  to scroll, - + to change spacing ");
         Tabs::new(tab_titles)
             .block(block)
             .highlight_style(Modifier::REVERSED)
@@ -220,27 +240,27 @@ impl App {
             .padding("", "")
     }
 
-    /// a bar like `<----- 80 px ----->`
-    fn axis(&self, width: u16) -> impl Widget {
+    /// a bar like `<----- 80 px (gap: 2 px)? ----->`
+    fn axis(&self, width: u16, spacing: u16) -> impl Widget {
         let width = width as usize;
-        let label = format!("{} px", width);
-        let bar_width = width - label.len() / 2;
-        let width_bar = format!("<{label:-^bar_width$}>",);
-        Paragraph::new(width_bar.dark_gray())
-            .alignment(Alignment::Center)
-            .block(Block::default().padding(Padding {
-                left: 0,
-                right: 0,
-                top: 1,
-                bottom: 0,
-            }))
+        // only show gap when spacing is not zero
+        let label = if spacing != 0 {
+            format!("{} px (gap: {} px)", width, spacing)
+        } else {
+            format!("{} px", width)
+        };
+        let bar_width = width - 2; // we want to `<` and `>` at the ends
+        let width_bar = format!("<{label:-^bar_width$}>");
+        Paragraph::new(width_bar.dark_gray()).alignment(Alignment::Center)
     }
 
     /// Render the demo content
     ///
     /// This function renders the demo content into a separate buffer and then splices the buffer
     /// into the main buffer. This is done to make it possible to handle scrolling easily.
-    fn render_demo(self, area: Rect, buf: &mut Buffer) {
+    ///
+    /// Returns bool indicating whether scroll was needed
+    fn render_demo(self, area: Rect, buf: &mut Buffer) -> bool {
         // render demo content into a separate buffer so all examples fit we add an extra
         // area.height to make sure the last example is fully visible even when the scroll offset is
         // at the max
@@ -257,7 +277,10 @@ impl App {
         } else {
             demo_area
         };
-        self.selected_tab.render(content_area, &mut demo_buf);
+
+        let mut spacing = self.spacing;
+        self.selected_tab
+            .render(content_area, &mut demo_buf, &mut spacing);
 
         let visible_content = demo_buf
             .content
@@ -276,6 +299,7 @@ impl App {
                 .position(self.scroll_offset as usize);
             Scrollbar::new(ScrollbarOrientation::VerticalRight).render(area, buf, &mut state);
         }
+        scrollbar_needed
     }
 }
 
@@ -312,38 +336,43 @@ impl SelectedTab {
     }
 }
 
-impl Widget for SelectedTab {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl StatefulWidget for SelectedTab {
+    type State = u16;
+    fn render(self, area: Rect, buf: &mut Buffer, spacing: &mut Self::State) {
+        let spacing = *spacing;
         match self {
-            SelectedTab::StretchLast => self.render_examples(area, buf, Flex::StretchLast),
-            SelectedTab::Stretch => self.render_examples(area, buf, Flex::Stretch),
-            SelectedTab::Start => self.render_examples(area, buf, Flex::Start),
-            SelectedTab::Center => self.render_examples(area, buf, Flex::Center),
-            SelectedTab::End => self.render_examples(area, buf, Flex::End),
-            SelectedTab::SpaceAround => self.render_examples(area, buf, Flex::SpaceAround),
-            SelectedTab::SpaceBetween => self.render_examples(area, buf, Flex::SpaceBetween),
+            SelectedTab::StretchLast => self.render_examples(area, buf, Flex::StretchLast, spacing),
+            SelectedTab::Stretch => self.render_examples(area, buf, Flex::Stretch, spacing),
+            SelectedTab::Start => self.render_examples(area, buf, Flex::Start, spacing),
+            SelectedTab::Center => self.render_examples(area, buf, Flex::Center, spacing),
+            SelectedTab::End => self.render_examples(area, buf, Flex::End, spacing),
+            SelectedTab::SpaceAround => self.render_examples(area, buf, Flex::SpaceAround, spacing),
+            SelectedTab::SpaceBetween => {
+                self.render_examples(area, buf, Flex::SpaceBetween, spacing)
+            }
         }
     }
 }
 
 impl SelectedTab {
-    fn render_examples(&self, area: Rect, buf: &mut Buffer, flex: Flex) {
+    fn render_examples(&self, area: Rect, buf: &mut Buffer, flex: Flex, spacing: u16) {
         let heights = EXAMPLE_DATA
             .iter()
             .map(|(desc, _)| get_description_height(desc) + 4);
         let areas = Layout::vertical(heights).flex(Flex::Start).split(area);
         for (area, (description, constraints)) in areas.iter().zip(EXAMPLE_DATA.iter()) {
-            Example::new(constraints, description, flex).render(*area, buf);
+            Example::new(constraints, description, flex, spacing).render(*area, buf);
         }
     }
 }
 
 impl Example {
-    fn new(constraints: &[Constraint], description: &str, flex: Flex) -> Self {
+    fn new(constraints: &[Constraint], description: &str, flex: Flex, spacing: u16) -> Self {
         Self {
             constraints: constraints.into(),
             description: description.into(),
             flex,
+            spacing,
         }
     }
 }
@@ -355,6 +384,7 @@ impl Widget for Example {
         let [title, illustrations] = area.split(&layout);
         let blocks = Layout::horizontal(&self.constraints)
             .flex(self.flex)
+            .spacing(self.spacing)
             .split(illustrations);
 
         if !self.description.is_empty() {
