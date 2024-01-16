@@ -45,17 +45,15 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     ("", &[Min(20), Max(20), Length(20), Fixed(20)]),
     ("`Proportional(u16)` always fills up space in every `Flex` layout", &[Proportional(0), Proportional(0)]),
     (
-        "`Proportional()` can be to scale with respect to other `Proportional()`",
-        &[Proportional(1), Proportional(2), Length(20), Fixed(20)],
+        "`Proportional(1)` can be to scale with respect to other `Proportional(2)`",
+        &[Proportional(1), Proportional(2)],
     ),
     (
-        "",
+        "`Proportional(0)` collapses if there are other non-zero `Proportional(_)`\nconstraints. e.g. `[Proportional(0), Proportional(0), Proportional(1)]`:",
         &[
-            Min(10),
-            Proportional(3),
-            Proportional(2),
-            Length(15),
-            Fixed(15),
+            Proportional(0),
+            Proportional(0),
+            Proportional(1),
         ],
     ),
 ];
