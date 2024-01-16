@@ -10,6 +10,7 @@ use ratatui::{
     layout::{Constraint::*, Flex},
     prelude::*,
     style::palette::tailwind,
+    symbols::line,
     widgets::{block::Title, *},
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
@@ -17,11 +18,15 @@ use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     (
         "Min(u16) takes any excess space when using `Stretch` or `StretchLast`",
-        &[Fixed(20), Min(20), Max(20)],
+        &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10), Proportional(1)],
     ),
     (
-        "Proportional(u16) takes any excess space in all `Flex` layouts",
+        "Proportional(u16) takes any excess space if available",
         &[Length(20), Percentage(20), Ratio(1, 5), Proportional(1)],
+    ),
+    (
+        "",
+        &[Percentage(50), Percentage(25), Ratio(1, 8), Proportional(1), Proportional(1)],
     ),
     (
         "In `StretchLast`, last constraint of lowest priority takes excess space",
@@ -30,21 +35,25 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     ("", &[Fixed(20), Percentage(20), Length(20)]),
     ("", &[Percentage(20), Length(20), Fixed(20)]),
     ("", &[Length(20), Length(15)]),
-    ("Spacing has no effect in `SpaceAround` and `SpaceBetween`", &[Proportional(1), Proportional(1)]),
+    ("`Proportional(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Proportional will only have widths in Flex::Stretch and Flex::StretchLast", &[Proportional(1), Proportional(1)]),
     ("", &[Length(20), Fixed(20)]),
     (
         "When not using `Flex::Stretch` or `Flex::StretchLast`,\n`Min(u16)` and `Max(u16)` collapse to their lowest values",
         &[Min(20), Max(20)],
     ),
     (
-        "`SpaceBetween` stretches when there's only one constraint",
+        "",
         &[Max(20)],
     ),
     ("", &[Min(20), Max(20), Length(20), Fixed(20)]),
-    ("`Proportional(u16)` always fills up space in every `Flex` layout", &[Proportional(0), Proportional(0)]),
+    ("", &[Proportional(0), Proportional(0)]),
     (
         "`Proportional(1)` can be to scale with respect to other `Proportional(2)`",
         &[Proportional(1), Proportional(2)],
+    ),
+    (
+        "",
+        &[Proportional(1), Min(10), Max(10), Proportional(2)],
     ),
     (
         "`Proportional(0)` collapses if there are other non-zero `Proportional(_)`\nconstraints. e.g. `[Proportional(0), Proportional(0), Proportional(1)]`:",
@@ -98,15 +107,9 @@ enum SelectedTab {
 
 fn main() -> Result<()> {
     // assuming the user changes spacing about a 100 times or so
-    Layout::init_cache(EXAMPLE_DATA.len() * SelectedTab::iter().len() * 100);
+    Layout::init_cache(1);
     init_error_hooks()?;
     let terminal = init_terminal()?;
-
-    // Each line in the example is a layout
-    // so 13 examples * 7 = 91 currently
-    // Plus additional layout for tabs ...
-    Layout::init_cache(120);
-
     App::default().run(terminal)?;
 
     restore_terminal()?;
@@ -249,7 +252,7 @@ impl App {
         } else {
             format!("{} px", width)
         };
-        let bar_width = width - 2; // we want to `<` and `>` at the ends
+        let bar_width = width.saturating_sub(2); // we want to `<` and `>` at the ends
         let width_bar = format!("<{label:-^bar_width$}>");
         Paragraph::new(width_bar.dark_gray()).alignment(Alignment::Center)
     }
@@ -382,10 +385,11 @@ impl Widget for Example {
         let title_height = get_description_height(&self.description);
         let layout = Layout::vertical([Fixed(title_height), Proportional(0)]);
         let [title, illustrations] = area.split(&layout);
-        let blocks = Layout::horizontal(&self.constraints)
+
+        let (blocks, spacers) = Layout::horizontal(&self.constraints)
             .flex(self.flex)
             .spacing(self.spacing)
-            .split(illustrations);
+            .split_with_spacers(illustrations);
 
         if !self.description.is_empty() {
             Paragraph::new(
@@ -402,10 +406,42 @@ impl Widget for Example {
             self.illustration(*constraint, block.width)
                 .render(*block, buf);
         }
+
+        let corners_only = symbols::border::Set {
+            top_left: line::NORMAL.top_left,
+            top_right: line::NORMAL.top_right,
+            bottom_left: line::NORMAL.bottom_left,
+            bottom_right: line::NORMAL.bottom_right,
+            vertical_left: " ",
+            vertical_right: " ",
+            horizontal_top: " ",
+            horizontal_bottom: " ",
+        };
+        for spacer in spacers.iter() {
+            Block::bordered()
+                .border_set(corners_only)
+                .border_style(Style::reset().dark_gray())
+                .render(*spacer, buf);
+            self.spacer(spacer.width).render(*spacer, buf);
+        }
     }
 }
 
 impl Example {
+    fn spacer(&self, width: u16) -> Paragraph {
+        let label = format!("{width} px");
+        // let bar_width = (width as usize).saturating_sub(2); // we want to `<` and `>` at the ends
+        // let width_bar = format!("<{label:-^bar_width$}>");
+        let text = Text::from(vec![
+            Line::raw(""),
+            Line::raw(""),
+            Line::styled(label, Style::reset().dark_gray()),
+        ]);
+        Paragraph::new(text)
+            .style(Style::reset().dark_gray())
+            .alignment(Alignment::Center)
+    }
+
     fn illustration(&self, constraint: Constraint, width: u16) -> Paragraph {
         let main_color = color_for_constraint(constraint);
         let fg_color = Color::White;

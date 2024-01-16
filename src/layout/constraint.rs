@@ -15,8 +15,10 @@ use itertools::Itertools;
 ///
 /// 1. [`Constraint::Fixed`]
 /// 2. [`Constraint::Min`] / [`Constraint::Max`]
-/// 3. [`Constraint::Length`] / [`Constraint::Percentage`] / [`Constraint::Ratio`]
-/// 4. [`Constraint::Proportional`]
+/// 3. [`Constraint::Length`]
+/// 4. [`Constraint::Percentage`]
+/// 5. [`Constraint::Ratio`]
+/// 6. [`Constraint::Proportional`]
 ///
 /// # Examples
 ///
@@ -363,6 +365,18 @@ impl Constraint {
             .into_iter()
             .map(Constraint::Proportional)
             .collect_vec()
+    }
+
+    pub fn rank(&self) -> usize {
+        match self {
+            Constraint::Fixed(_) => 0,
+            Constraint::Min(_) => 1,
+            Constraint::Max(_) => 2,
+            Constraint::Length(_) => 3,
+            Constraint::Percentage(_) => 4,
+            Constraint::Ratio(_, _) => 5,
+            Constraint::Proportional(_) => 6,
+        }
     }
 }
 
