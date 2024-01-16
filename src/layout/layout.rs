@@ -543,7 +543,7 @@ impl Layout {
         // If we changed our default layout to use `Flex::Start`, there is a case to be made for
         // this to do `Flex::Start` as well.
         //
-        let flex = if layout.constraints.len() == 1 && layout.flex == Flex::SpaceBetween {
+        let flex = if constraints.len() == 1 && layout.flex == Flex::SpaceBetween {
             Flex::Stretch
         } else {
             layout.flex
@@ -770,8 +770,7 @@ impl Layout {
         // └──────┘└────────────┘
         //
         // size == base_element * scaling_factor
-        for ((&l_constraint, &l_element), (&r_constraint, &r_element)) in layout
-            .constraints
+        for ((&l_constraint, &l_element), (&r_constraint, &r_element)) in constraints
             .iter()
             .zip(elements.iter())
             .filter(|(c, _)| matches!(c, Constraint::Proportional(_)))
@@ -2210,17 +2209,13 @@ mod tests {
             );
             assert_eq!([(a.x, a.width), (b.x, b.width)], [(0, 49), (51, 49)]);
 
-            // println!("----------------------------------------------------");
-
-            // TODO: broken test
-            // this should be identical to the previous results
             Layout::init_cache(1);
             let [a, b] = Rect::new(0, 0, 100, 1).split(
                 &Layout::horizontal([Proportional(1), Proportional(1)])
                     .flex(Flex::StretchLast)
                     .spacing(2),
             );
-            assert_ne!([(a.x, a.width), (b.x, b.width)], [(0, 49), (51, 49)]);
+            assert_eq!([(a.x, a.width), (b.x, b.width)], [(0, 49), (51, 49)]);
         }
 
         #[test]
