@@ -1,7 +1,4 @@
-use std::{
-    io::{self, stdout},
-    str::FromStr,
-};
+use std::io::{self, stdout};
 
 use color_eyre::{config::HookBuilder, Result};
 use crossterm::{
