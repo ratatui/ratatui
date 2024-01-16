@@ -1197,21 +1197,15 @@ mod tests {
         #[test]
         fn length_constraint() {
             // without selection, more than needed width
-            let table = Table::default()
-                .widths([Length(4), Length(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(table.get_columns_widths(20, 0), [(0, 4), (5, 4)]);
 
             // with selection, more than needed width
-            let table = Table::default()
-                .widths([Length(4), Length(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(table.get_columns_widths(20, 3), [(3, 4), (8, 4)]);
 
             // without selection, less than needed width
-            let table = Table::default()
-                .widths([Length(4), Length(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
 
             // with selection, less than needed width
@@ -1220,36 +1214,26 @@ mod tests {
             // │ (3, 3) │x│ (7, 0) │
             // └────────┘x└────────┘
             // column spacing (i.e. `x`) is always prioritized
-            let table = Table::default()
-                .widths([Length(4), Length(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Length(4), Length(4)]);
             assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
         }
 
         #[test]
         fn max_constraint() {
             // without selection, more than needed width
-            let table = Table::default()
-                .widths([Max(4), Max(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(table.get_columns_widths(20, 0), [(0, 4), (5, 4)]);
 
             // with selection, more than needed width
-            let table = Table::default()
-                .widths([Max(4), Max(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(table.get_columns_widths(20, 3), [(3, 4), (8, 4)]);
 
             // without selection, less than needed width
-            let table = Table::default()
-                .widths([Max(4), Max(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
 
             // with selection, less than needed width
-            let table = Table::default()
-                .widths([Max(4), Max(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Max(4), Max(4)]);
             assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
         }
 
@@ -1260,58 +1244,42 @@ mod tests {
             // constraint and not split it with all available constraints
 
             // without selection, more than needed width
-            let table = Table::default()
-                .widths([Min(4), Min(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(table.get_columns_widths(20, 0), [(0, 4), (5, 4)]);
 
             // with selection, more than needed width
-            let table = Table::default()
-                .widths([Min(4), Min(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(table.get_columns_widths(20, 3), [(3, 4), (8, 4)]);
 
             // without selection, less than needed width
             // allocates spacer
-            let table = Table::default()
-                .widths([Min(4), Min(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
 
             // with selection, less than needed width
             // always allocates selection and spacer
-            let table = Table::default()
-                .widths([Min(4), Min(4)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Min(4), Min(4)]);
             assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
         }
 
         #[test]
         fn percentage_constraint() {
             // without selection, more than needed width
-            let table = Table::default()
-                .widths([Percentage(30), Percentage(30)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(table.get_columns_widths(20, 0), [(0, 6), (7, 6)]);
 
             // with selection, more than needed width
-            let table = Table::default()
-                .widths([Percentage(30), Percentage(30)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(table.get_columns_widths(20, 3), [(3, 5), (9, 5)]);
 
             // without selection, less than needed width
             // rounds from positions: [0.0, 0.0, 2.1, 3.1, 5.2, 7.0]
-            let table = Table::default()
-                .widths([Percentage(30), Percentage(30)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(table.get_columns_widths(7, 0), [(0, 2), (3, 2)]);
 
             // with selection, less than needed width
             // rounds from positions: [0.0, 3.0, 5.1, 6.1, 7.0, 7.0]
-            let table = Table::default()
-                .widths([Percentage(30), Percentage(30)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Percentage(30), Percentage(30)]);
             assert_eq!(table.get_columns_widths(7, 3), [(3, 1), (5, 1)]);
         }
 
@@ -1319,39 +1287,29 @@ mod tests {
         fn ratio_constraint() {
             // without selection, more than needed width
             // rounds from positions: [0.00, 0.00, 6.67, 7.67, 14.33]
-            let table = Table::default()
-                .widths([Ratio(1, 3), Ratio(1, 3)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(table.get_columns_widths(20, 0), [(0, 7), (8, 6)]);
 
             // with selection, more than needed width
             // rounds from positions: [0.00, 3.00, 10.67, 17.33, 20.00]
-            let table = Table::default()
-                .widths([Ratio(1, 3), Ratio(1, 3)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(table.get_columns_widths(20, 3), [(3, 6), (10, 5)]);
 
             // without selection, less than needed width
             // rounds from positions: [0.00, 2.33, 3.33, 5.66, 7.00]
-            let table = Table::default()
-                .widths([Ratio(1, 3), Ratio(1, 3)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(table.get_columns_widths(7, 0), [(0, 2), (3, 3)]);
 
             // with selection, less than needed width
             // rounds from positions: [0.00, 3.00, 5.33, 6.33, 7.00, 7.00]
-            let table = Table::default()
-                .widths([Ratio(1, 3), Ratio(1, 3)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
             assert_eq!(table.get_columns_widths(7, 3), [(3, 1), (5, 2)]);
         }
 
         /// When more width is available than requested, the behavior is controlled by segment_size
         #[test]
         fn underconstrained() {
-            let table = Table::default()
-                .widths([Min(10), Min(10), Min(1)])
-                .segment_size(SegmentSize::None);
+            let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
                 table.get_columns_widths(62, 0),
                 &[(0, 10), (11, 10), (22, 1)]
