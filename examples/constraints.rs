@@ -93,7 +93,7 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        Ok(if let Event::Key(key) = event::read()? {
+        if let Event::Key(key) = event::read()? {
             use KeyCode::*;
             match key.code {
                 Char('q') | Esc => self.quit(),
@@ -105,7 +105,8 @@ impl App {
                 Char('G') | End => self.bottom(),
                 _ => (),
             }
-        })
+        }
+        Ok(())
     }
 
     fn quit(&mut self) {
