@@ -198,8 +198,14 @@ fn run_app<B: Backend>(
 
 fn ui(f: &mut Frame, app: &mut App) {
     // Create two chunks with equal horizontal screen space
-    let horizontal = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
-    let [item_list_area, event_list_area] = f.size().split(&horizontal);
+    let horizontal = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(50), 
+            Constraint::Percentage(50)
+        ])
+        .split(f.size());
+    let [item_list_area, event_list_area] = [horizontal[0], horizontal[1];
 
     // Iterate through all elements in the `items` app and append some debug text to it.
     let items: Vec<ListItem> = app
