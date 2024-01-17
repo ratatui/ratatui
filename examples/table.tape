@@ -2,7 +2,7 @@
 # To run this script, install vhs and run `vhs ./examples/table.tape`
 Output "target/table.gif"
 Set Width 1600
-Set Height 896
+Set Height 864
 Hide
 Type "cargo run --example=table --features=crossterm"
 Enter
