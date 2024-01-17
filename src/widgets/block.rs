@@ -15,7 +15,6 @@ use crate::{
 };
 
 mod padding;
-#[path = "../title.rs"]
 pub mod title;
 
 pub use padding::Padding;
