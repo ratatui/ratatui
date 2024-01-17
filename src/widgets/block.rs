@@ -520,7 +520,25 @@ impl<'a> Block<'a> {
         self.padding = padding;
         self
     }
+}
 
+impl Widget for Block<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        (&self).render(area, buf);
+    }
+}
+
+impl Widget for &Block<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if area.is_empty() {
+            return;
+        }
+        self.render_borders(area, buf);
+        self.render_titles(area, buf);
+    }
+}
+
+impl Block<'_> {
     fn render_borders(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
         let symbols = self.border_set;
@@ -703,13 +721,24 @@ impl<'a> Block<'a> {
     }
 }
 
-impl<'a> Widget for Block<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        if area.area() == 0 {
-            return;
+/// An extension trait for [`Block`] that provides some convenience methods.
+///
+/// This is pub(crate) for now because it is not clear if this is the best way to do this.
+pub(crate) trait BlockExt {
+    /// Render the block if it is `Some` and update the area to the inner area of the block.
+    /// Otherwise, do nothing.
+    ///
+    /// This is useful for widgets that have a block as a field and want to render it if it is
+    /// `Some` and update the area to the inner area of the block.
+    fn render(&self, area: &mut Rect, buf: &mut Buffer);
+}
+
+impl BlockExt for Option<Block<'_>> {
+    fn render(&self, area: &mut Rect, buf: &mut Buffer) {
+        if let Some(block) = self {
+            block.render(*area, buf);
+            *area = block.inner(*area);
         }
-        self.render_borders(area, buf);
-        self.render_titles(area, buf);
     }
 }
 

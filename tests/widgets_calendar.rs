@@ -11,6 +11,7 @@ use ratatui::{
 };
 use time::{Date, Month};
 
+#[track_caller]
 fn test_render<W: Widget>(widget: W, expected: Buffer, size: (u16, u16)) {
     let backend = TestBackend::new(size.0, size.1);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -63,7 +64,7 @@ fn show_month_header() {
     )
     .show_month_header(Style::default());
     let expected = Buffer::with_lines(vec![
-        "     January 2023    ",
+        "    January 2023     ",
         "  1  2  3  4  5  6  7",
         "  8  9 10 11 12 13 14",
         " 15 16 17 18 19 20 21",
@@ -101,7 +102,7 @@ fn show_combo() {
     .show_month_header(Style::default())
     .show_surrounding(Style::default());
     let expected = Buffer::with_lines(vec![
-        "     January 2023    ",
+        "    January 2023     ",
         " Su Mo Tu We Th Fr Sa",
         "  1  2  3  4  5  6  7",
         "  8  9 10 11 12 13 14",

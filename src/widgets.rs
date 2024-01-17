@@ -53,7 +53,24 @@ pub use self::{
 };
 use crate::{buffer::Buffer, layout::Rect};
 
-/// Base requirements for a Widget
+/// A `Widget` is a type that can be drawn on a [`Buffer`] in a given [`Rect`].
+///
+/// Widgets are created for each frame as they are consumed after rendered. They are not meant to be
+/// stored but used as *commands* to draw common figures in the UI.
+///
+/// ## Examples
+///
+/// ```rust,no_run
+/// use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+///
+/// # let backend = TestBackend::new(5, 5);
+/// # let mut terminal = Terminal::new(backend).unwrap();
+///
+/// terminal.draw(|frame| {
+///     // A widget can be rendered by simply calling its `render` method.
+///     frame.render_widget(Clear, frame.size());
+/// });
+/// ```
 pub trait Widget {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.

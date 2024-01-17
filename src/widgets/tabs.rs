@@ -1,7 +1,7 @@
 #![deny(missing_docs)]
 use crate::{
     prelude::*,
-    widgets::{Block, Widget},
+    widgets::{block::BlockExt, Block, Widget},
 };
 
 const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVERSED);
@@ -249,25 +249,29 @@ impl<'a> Styled for Tabs<'a> {
     }
 }
 
-impl<'a> Widget for Tabs<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
-        let tabs_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
+impl Widget for Tabs<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        (&self).render(area, buf);
+    }
+}
 
-        if tabs_area.height < 1 {
+impl Widget for &Tabs<'_> {
+    fn render(self, mut area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
+        self.block.render(&mut area, buf);
+        self.render_tabs(area, buf);
+    }
+}
+
+impl Tabs<'_> {
+    fn render_tabs(&self, tabs_area: Rect, buf: &mut Buffer) {
+        if tabs_area.is_empty() {
             return;
         }
 
         let mut x = tabs_area.left();
         let titles_length = self.titles.len();
-        for (i, title) in self.titles.into_iter().enumerate() {
+        for (i, title) in self.titles.iter().enumerate() {
             let last_title = titles_length - 1 == i;
             let remaining_width = tabs_area.right().saturating_sub(x);
 
@@ -284,7 +288,7 @@ impl<'a> Widget for Tabs<'a> {
             }
 
             // Title
-            let pos = buf.set_line(x, tabs_area.top(), &title, remaining_width);
+            let pos = buf.set_line(x, tabs_area.top(), title, remaining_width);
             if i == self.selected {
                 buf.set_style(
                     Rect {
