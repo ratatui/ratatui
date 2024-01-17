@@ -1386,7 +1386,7 @@ mod tests {
         }
 
         #[test]
-        fn spacers_priority_when_excess_column_width_available() {
+        fn excess_area_highlight_symbol_and_column_spacing_allocation() {
             // no highlight_symbol rendered ever
             assert_buffer_eq!(
                 test_table_with_selection(
@@ -1497,7 +1497,7 @@ mod tests {
         }
 
         #[test]
-        fn spacers_priority_and_spacing_when_excess_column_width_available() {
+        fn insufficient_area_highlight_symbol_and_column_spacing_allocation() {
             // column spacing is prioritized over every other constraint
             assert_buffer_eq!(
                 test_table_with_selection(
@@ -1598,14 +1598,10 @@ mod tests {
             let area = Rect::new(0, 0, 10, 3);
             let mut buf = Buffer::empty(area);
             Widget::render(table, area, &mut buf);
+            // highlight_symbol and spacing are prioritized but columns are evenly distributed
             assert_buffer_eq!(
                 buf,
-                Buffer::with_lines(vec![
-                    "   ABC 123", /* highlight_symbol and spacing are prioritized but columns
-                                   * are evenly distributed */
-                    "          ", // row 2
-                    "          ", // row 3
-                ])
+                Buffer::with_lines(vec!["   ABC 123", "          ", "          ",])
             );
 
             assert_buffer_eq!(
@@ -1617,8 +1613,8 @@ mod tests {
                 ),
                 Buffer::with_lines(vec![
                     "ABCDE 1234", // spacing is prioritized
-                    "          ", // row 2
-                    "          ", // row 3
+                    "          ",
+                    "          ",
                 ])
             );
 
@@ -1652,7 +1648,7 @@ mod tests {
         }
 
         #[test]
-        fn spacers_priority_constrained_without_column_spacing() {
+        fn insufficient_area_highlight_symbol_allocation_with_no_column_spacing() {
             assert_buffer_eq!(
                 test_table_with_selection(
                     HighlightSpacing::Never,
