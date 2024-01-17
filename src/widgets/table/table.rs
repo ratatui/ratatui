@@ -1,5 +1,3 @@
-use std::iter;
-
 use itertools::Itertools;
 
 use super::*;
@@ -373,7 +371,7 @@ impl<'a> Table<'a> {
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
     /// let table = Table::default().widths([Constraint::Length(5), Constraint::Length(5)]);
-    /// let table = Table::default().widths(&[Constraint::Length(5), Constraint::Length(5)]);
+    /// let table = Table::default().widths(vec![Constraint::Length(5); 2]);
     ///
     /// // widths could also be computed at runtime
     /// let widths = [10, 10, 20].into_iter().map(|c| Constraint::Length(c));
@@ -727,30 +725,23 @@ impl Table<'_> {
                 .map(|r| r.cells.len())
                 .max()
                 .unwrap_or(0);
-            // There are `col_count - 1` spaces between the columns
-            let total_space =
-                max_width.saturating_sub(self.column_spacing * col_count.saturating_sub(1) as u16);
-            // Divide the remaining space between each column equally
-            vec![Constraint::Length(total_space / col_count.max(1) as u16); col_count]
+            // Divide the space between each column equally
+            vec![Constraint::Length(max_width / col_count.max(1) as u16); col_count]
         } else {
             self.widths.to_vec()
         };
-        let constraints = iter::once(Constraint::Length(selection_width))
-            .chain(Itertools::intersperse(
-                widths.iter().cloned(),
-                Constraint::Length(self.column_spacing),
-            ))
-            .collect_vec();
+        // this will always allocate a selection area
+        let [_selection_area, columns_area] =
+            Rect::new(0, 0, max_width, 1).split(&Layout::horizontal([
+                Constraint::Fixed(selection_width),
+                Constraint::Proportional(0),
+            ]));
         #[allow(deprecated)]
-        let layout = Layout::horizontal(constraints)
+        let rects = Layout::horizontal(widths)
             .segment_size(self.segment_size)
-            .split(Rect::new(0, 0, max_width, 1));
-        layout
-            .iter()
-            .skip(1) // skip selection column
-            .step_by(2) // skip spacing between columns
-            .map(|c| (c.x, c.width))
-            .collect()
+            .spacing(self.column_spacing)
+            .split(columns_area);
+        rects.iter().map(|c| (c.x, c.width)).collect()
     }
 
     fn get_row_bounds(
@@ -1201,99 +1192,49 @@ mod tests {
     // test how constraints interact with table column width allocation
     mod column_widths {
         use super::*;
-
-        /// Construct a a new table with the given constraints, available and selection widths and
-        /// tests that the widths match the expected list of (x, width) tuples.
-        #[track_caller]
-        fn test(
-            constraints: &[Constraint],
-            segment_size: SegmentSize,
-            available_width: u16,
-            selection_width: u16,
-            expected: &[(u16, u16)],
-        ) {
-            let table = Table::new(Vec::<Row>::new(), constraints).segment_size(segment_size);
-
-            let widths = table.get_columns_widths(available_width, selection_width);
-            assert_eq!(widths, expected);
-        }
+        use crate::assert_buffer_eq;
 
         #[test]
         fn length_constraint() {
             // without selection, more than needed width
-            test(
-                &[Length(4), Length(4)],
-                SegmentSize::None,
-                20,
-                0,
-                &[(0, 4), (5, 4)],
-            );
+            let table = Table::default().widths([Length(4), Length(4)]);
+            assert_eq!(table.get_columns_widths(20, 0), [(0, 4), (5, 4)]);
 
             // with selection, more than needed width
-            test(
-                &[Length(4), Length(4)],
-                SegmentSize::None,
-                20,
-                3,
-                &[(3, 4), (8, 4)],
-            );
+            let table = Table::default().widths([Length(4), Length(4)]);
+            assert_eq!(table.get_columns_widths(20, 3), [(3, 4), (8, 4)]);
 
             // without selection, less than needed width
-            test(
-                &[Length(4), Length(4)],
-                SegmentSize::None,
-                7,
-                0,
-                &[(0, 4), (5, 2)],
-            );
+            let table = Table::default().widths([Length(4), Length(4)]);
+            assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
 
             // with selection, less than needed width
-            test(
-                &[Length(4), Length(4)],
-                SegmentSize::None,
-                7,
-                3,
-                &[(3, 4), (7, 0)],
-            );
+            // <--------7px-------->
+            // ┌────────┐x┌────────┐
+            // │ (3, 3) │x│ (7, 0) │
+            // └────────┘x└────────┘
+            // column spacing (i.e. `x`) is always prioritized
+            let table = Table::default().widths([Length(4), Length(4)]);
+            assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
         }
 
         #[test]
         fn max_constraint() {
             // without selection, more than needed width
-            test(
-                &[Max(4), Max(4)],
-                SegmentSize::None,
-                20,
-                0,
-                &[(0, 4), (5, 4)],
-            );
+            let table = Table::default().widths([Max(4), Max(4)]);
+            assert_eq!(table.get_columns_widths(20, 0), [(0, 4), (5, 4)]);
 
             // with selection, more than needed width
-            test(
-                &[Max(4), Max(4)],
-                SegmentSize::None,
-                20,
-                3,
-                &[(3, 4), (8, 4)],
-            );
+            let table = Table::default().widths([Max(4), Max(4)]);
+            assert_eq!(table.get_columns_widths(20, 3), [(3, 4), (8, 4)]);
 
             // without selection, less than needed width
-            test(
-                &[Max(4), Max(4)],
-                SegmentSize::None,
-                7,
-                0,
-                &[(0, 4), (5, 2)],
-            );
+            let table = Table::default().widths([Max(4), Max(4)]);
+            assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
 
             // with selection, less than needed width
-            test(
-                &[Max(4), Max(4)],
-                SegmentSize::None,
-                7,
-                3,
-                &[(3, 3), (7, 0)],
-            );
+            let table = Table::default().widths([Max(4), Max(4)]);
+            assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
         }
 
         #[test]
@@ -1303,152 +1244,91 @@ mod tests {
             // constraint and not split it with all available constraints
 
             // without selection, more than needed width
-            test(
-                &[Min(4), Min(4)],
-                SegmentSize::None,
-                20,
-                0,
-                &[(0, 4), (5, 4)],
-            );
+            let table = Table::default().widths([Min(4), Min(4)]);
+            assert_eq!(table.get_columns_widths(20, 0), [(0, 4), (5, 4)]);
 
             // with selection, more than needed width
-            test(
-                &[Min(4), Min(4)],
-                SegmentSize::None,
-                20,
-                3,
-                &[(3, 4), (8, 4)],
-            );
+            let table = Table::default().widths([Min(4), Min(4)]);
+            assert_eq!(table.get_columns_widths(20, 3), [(3, 4), (8, 4)]);
 
             // without selection, less than needed width
-            // allocates no spacer
-            test(
-                &[Min(4), Min(4)],
-                SegmentSize::None,
-                7,
-                0,
-                &[(0, 4), (4, 3)],
-            );
+            // allocates spacer
+            let table = Table::default().widths([Min(4), Min(4)]);
+            assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
 
             // with selection, less than needed width
-            // allocates no selection and no spacer
-            test(
-                &[Min(4), Min(4)],
-                SegmentSize::None,
-                7,
-                3,
-                &[(0, 4), (4, 3)],
-            );
+            // always allocates selection and spacer
+            let table = Table::default().widths([Min(4), Min(4)]);
+            assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
         }
 
         #[test]
         fn percentage_constraint() {
             // without selection, more than needed width
-            test(
-                &[Percentage(30), Percentage(30)],
-                SegmentSize::None,
-                20,
-                0,
-                &[(0, 6), (7, 6)],
-            );
+            let table = Table::default().widths([Percentage(30), Percentage(30)]);
+            assert_eq!(table.get_columns_widths(20, 0), [(0, 6), (7, 6)]);
 
             // with selection, more than needed width
-            test(
-                &[Percentage(30), Percentage(30)],
-                SegmentSize::None,
-                20,
-                3,
-                &[(3, 6), (10, 6)],
-            );
+            let table = Table::default().widths([Percentage(30), Percentage(30)]);
+            assert_eq!(table.get_columns_widths(20, 3), [(3, 5), (9, 5)]);
 
             // without selection, less than needed width
             // rounds from positions: [0.0, 0.0, 2.1, 3.1, 5.2, 7.0]
-            test(
-                &[Percentage(30), Percentage(30)],
-                SegmentSize::None,
-                7,
-                0,
-                &[(0, 2), (3, 2)],
-            );
+            let table = Table::default().widths([Percentage(30), Percentage(30)]);
+            assert_eq!(table.get_columns_widths(7, 0), [(0, 2), (3, 2)]);
 
             // with selection, less than needed width
             // rounds from positions: [0.0, 3.0, 5.1, 6.1, 7.0, 7.0]
-            test(
-                &[Percentage(30), Percentage(30)],
-                SegmentSize::None,
-                7,
-                3,
-                &[(3, 2), (6, 1)],
-            );
+            let table = Table::default().widths([Percentage(30), Percentage(30)]);
+            assert_eq!(table.get_columns_widths(7, 3), [(3, 1), (5, 1)]);
         }
 
         #[test]
         fn ratio_constraint() {
             // without selection, more than needed width
             // rounds from positions: [0.00, 0.00, 6.67, 7.67, 14.33]
-            test(
-                &[Ratio(1, 3), Ratio(1, 3)],
-                SegmentSize::None,
-                20,
-                0,
-                &[(0, 7), (8, 6)],
-            );
+            let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
+            assert_eq!(table.get_columns_widths(20, 0), [(0, 7), (8, 6)]);
 
             // with selection, more than needed width
             // rounds from positions: [0.00, 3.00, 10.67, 17.33, 20.00]
-            test(
-                &[Ratio(1, 3), Ratio(1, 3)],
-                SegmentSize::None,
-                20,
-                3,
-                &[(3, 7), (11, 6)],
-            );
+            let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
+            assert_eq!(table.get_columns_widths(20, 3), [(3, 6), (10, 5)]);
 
             // without selection, less than needed width
             // rounds from positions: [0.00, 2.33, 3.33, 5.66, 7.00]
-            test(
-                &[Ratio(1, 3), Ratio(1, 3)],
-                SegmentSize::None,
-                7,
-                0,
-                &[(0, 2), (3, 3)],
-            );
+            let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
+            assert_eq!(table.get_columns_widths(7, 0), [(0, 2), (3, 3)]);
 
             // with selection, less than needed width
             // rounds from positions: [0.00, 3.00, 5.33, 6.33, 7.00, 7.00]
-            test(
-                &[Ratio(1, 3), Ratio(1, 3)],
-                SegmentSize::None,
-                7,
-                3,
-                &[(3, 2), (6, 1)],
-            );
+            let table = Table::default().widths([Ratio(1, 3), Ratio(1, 3)]);
+            assert_eq!(table.get_columns_widths(7, 3), [(3, 1), (5, 2)]);
         }
 
         /// When more width is available than requested, the behavior is controlled by segment_size
         #[test]
         fn underconstrained() {
-            let widths = [Min(10), Min(10), Min(1)];
-            test(
-                &widths[..],
-                SegmentSize::None,
-                62,
-                0,
-                &[(0, 10), (11, 10), (22, 1)],
+            let table = Table::default().widths([Min(10), Min(10), Min(1)]);
+            assert_eq!(
+                table.get_columns_widths(62, 0),
+                &[(0, 10), (11, 10), (22, 1)]
             );
-            test(
-                &widths[..],
-                SegmentSize::LastTakesRemainder,
-                62,
-                0,
-                &[(0, 10), (11, 10), (22, 40)],
+
+            let table = Table::default()
+                .widths([Min(10), Min(10), Min(1)])
+                .segment_size(SegmentSize::LastTakesRemainder);
+            assert_eq!(
+                table.get_columns_widths(62, 0),
+                &[(0, 10), (11, 10), (22, 40)]
             );
-            test(
-                &widths[..],
-                SegmentSize::EvenDistribution,
-                62,
-                0,
-                &[(0, 20), (21, 20), (42, 20)],
+
+            let table = Table::default()
+                .widths([Min(10), Min(10), Min(1)])
+                .segment_size(SegmentSize::EvenDistribution);
+            assert_eq!(
+                table.get_columns_widths(62, 0),
+                &[(0, 20), (21, 20), (42, 20)]
             );
         }
 
@@ -1475,7 +1355,7 @@ mod tests {
                 .rows(vec![])
                 .header(Row::new(vec!["f", "g"]))
                 .column_spacing(0);
-            assert_eq!(table.get_columns_widths(10, 0), &[(0, 5), (5, 5)])
+            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)])
         }
 
         #[test]
@@ -1484,7 +1364,373 @@ mod tests {
                 .rows(vec![])
                 .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
-            assert_eq!(table.get_columns_widths(10, 0), &[(0, 5), (5, 5)])
+            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)])
+        }
+
+        fn test_table_with_selection(
+            highlight_spacing: HighlightSpacing,
+            columns: u16,
+            spacing: u16,
+            selection: Option<usize>,
+        ) -> Buffer {
+            let table = Table::default()
+                .rows(vec![Row::new(vec!["ABCDE", "12345"])])
+                .highlight_spacing(highlight_spacing)
+                .highlight_symbol(">>>")
+                .column_spacing(spacing);
+            let area = Rect::new(0, 0, columns, 3);
+            let mut buf = Buffer::empty(area);
+            let mut state = TableState::default().with_selected(selection);
+            StatefulWidget::render(table, area, &mut buf, &mut state);
+            buf
+        }
+
+        #[test]
+        fn excess_area_highlight_symbol_and_column_spacing_allocation() {
+            // no highlight_symbol rendered ever
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Never,
+                    15,   // width
+                    0,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "ABCDE  12345   ", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ])
+            );
+
+            let table = Table::default()
+                .rows(vec![Row::new(vec!["ABCDE", "12345"])])
+                .widths([5, 5])
+                .column_spacing(0);
+            let area = Rect::new(0, 0, 15, 3);
+            let mut buf = Buffer::empty(area);
+            Widget::render(table, area, &mut buf);
+            assert_buffer_eq!(
+                buf,
+                Buffer::with_lines(vec![
+                    "ABCDE12345     ", /* As reference, this is what happens when you manually
+                                        * specify widths */
+                    "               ", // row 2
+                    "               ", // row 3
+                ])
+            );
+
+            // no highlight_symbol rendered ever
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Never,
+                    15,      // width
+                    0,       // spacing
+                    Some(0), // selection
+                ),
+                Buffer::with_lines(vec![
+                    "ABCDE  12345   ", // row 1
+                    "               ", // row 2
+                    "               ", // row 3
+                ])
+            );
+
+            // no highlight_symbol rendered because no selection is made
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::WhenSelected,
+                    15,   // width
+                    0,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "ABCDE  12345   ", // row 1
+                    "               ", // row 2
+                    "               ", // row 3
+                ])
+            );
+            // highlight_symbol rendered because selection is made
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::WhenSelected,
+                    15,      // width
+                    0,       // spacing
+                    Some(0), // selection
+                ),
+                Buffer::with_lines(vec![
+                    ">>>ABCDE  12345", // row 1
+                    "               ", // row 2
+                    "               ", // row 3
+                ])
+            );
+
+            // highlight_symbol always rendered even no selection is made
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Always,
+                    15,   // width
+                    0,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "   ABCDE  12345", // row 1
+                    "               ", // row 2
+                    "               ", // row 3
+                ])
+            );
+
+            // no highlight_symbol rendered because no selection is made
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Always,
+                    15,      // width
+                    0,       // spacing
+                    Some(0), // selection
+                ),
+                Buffer::with_lines(vec![
+                    ">>>ABCDE  12345", // row 1
+                    "               ", // row 2
+                    "               ", // row 3
+                ])
+            );
+        }
+
+        #[test]
+        fn insufficient_area_highlight_symbol_and_column_spacing_allocation() {
+            // column spacing is prioritized over every other constraint
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Never,
+                    10,   // width
+                    1,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "ABCDE 1234", // spacing is prioritized and column is cut
+                    "          ", // row 2
+                    "          ", // row 3
+                ])
+            );
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::WhenSelected,
+                    10,   // width
+                    1,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "ABCDE 1234", // spacing is prioritized and column is cut
+                    "          ", // row 2
+                    "          ", // row 3
+                ])
+            );
+
+            // this test checks that space for highlight_symbol space is always allocated.
+            // this test also checks that space for column is allocated.
+            //
+            // Space for highlight_symbol is allocated first by splitting horizontal space
+            // into highlight_symbol area and column area.
+            // Then in a separate step, column widths are calculated.
+            // column spacing is prioritized when column widths are calculated and last column here
+            // ends up with just 1 wide
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Always,
+                    10,   // width
+                    1,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "   ABCDE 1", // highlight_symbol and spacing are prioritized
+                    "          ", // row 2
+                    "          ", // row 3
+                ])
+            );
+
+            // the following are specification tests
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Always,
+                    9,    // width
+                    1,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "   ABCD 1", // highlight_symbol and spacing are prioritized
+                    "         ", // row 2
+                    "         ", // row 3
+                ])
+            );
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Always,
+                    8,    // width
+                    1,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "   ABCD ", // highlight_symbol and spacing are prioritized
+                    "        ", // row 2
+                    "        ", // row 3
+                ])
+            );
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Always,
+                    7,    // width
+                    1,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "   ABC ", // highlight_symbol and spacing are prioritized
+                    "       ", // row 2
+                    "       ", // row 3
+                ])
+            );
+
+            let table = Table::default()
+                .rows(vec![Row::new(vec!["ABCDE", "12345"])])
+                .highlight_spacing(HighlightSpacing::Always)
+                .segment_size(SegmentSize::EvenDistribution)
+                .highlight_symbol(">>>")
+                .column_spacing(1);
+            let area = Rect::new(0, 0, 10, 3);
+            let mut buf = Buffer::empty(area);
+            Widget::render(table, area, &mut buf);
+            // highlight_symbol and spacing are prioritized but columns are evenly distributed
+            assert_buffer_eq!(
+                buf,
+                Buffer::with_lines(vec!["   ABC 123", "          ", "          ",])
+            );
+
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Never,
+                    10,      // width
+                    1,       // spacing
+                    Some(0), // selection
+                ),
+                Buffer::with_lines(vec![
+                    "ABCDE 1234", // spacing is prioritized
+                    "          ",
+                    "          ",
+                ])
+            );
+
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::WhenSelected,
+                    10,      // width
+                    1,       // spacing
+                    Some(0), // selection
+                ),
+                Buffer::with_lines(vec![
+                    ">>>ABCDE 1", // row 1
+                    "          ", // row 2
+                    "          ", // row 3
+                ])
+            );
+
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Always,
+                    10,      // width
+                    1,       // spacing
+                    Some(0), // selection
+                ),
+                Buffer::with_lines(vec![
+                    ">>>ABCDE 1", // highlight column and spacing are prioritized
+                    "          ", // row 2
+                    "          ", // row 3
+                ])
+            );
+        }
+
+        #[test]
+        fn insufficient_area_highlight_symbol_allocation_with_no_column_spacing() {
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Never,
+                    10,   // width
+                    0,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "ABCDE12345", // row 1
+                    "          ", // row 2
+                    "          ", // row 3
+                ])
+            );
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::WhenSelected,
+                    10,   // width
+                    0,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "ABCDE12345", // row 1
+                    "          ", // row 2
+                    "          ", // row 3
+                ])
+            );
+            // highlight symbol spacing is prioritized over all constraints
+            // even if the constraints are fixed length
+            // this is because highlight_symbol column is separated _before_ any of the constraint
+            // widths are calculated
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Always,
+                    10,   // width
+                    0,    // spacing
+                    None, // selection
+                ),
+                Buffer::with_lines(vec![
+                    "   ABCDE12", // highlight column and spacing are prioritized
+                    "          ", // row 2
+                    "          ", // row 3
+                ])
+            );
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Never,
+                    10,      // width
+                    0,       // spacing
+                    Some(0), // selection
+                ),
+                Buffer::with_lines(vec![
+                    "ABCDE12345", // row 1
+                    "          ", // row 2
+                    "          ", // row 3
+                ])
+            );
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::WhenSelected,
+                    10,      // width
+                    0,       // spacing
+                    Some(0), // selection
+                ),
+                Buffer::with_lines(vec![
+                    ">>>ABCDE12", // highlight column and spacing are prioritized
+                    "          ", // row 2
+                    "          ", // row 3
+                ])
+            );
+            assert_buffer_eq!(
+                test_table_with_selection(
+                    HighlightSpacing::Always,
+                    10,      // width
+                    0,       // spacing
+                    Some(0), // selection
+                ),
+                Buffer::with_lines(vec![
+                    ">>>ABCDE12", // highlight column and spacing are prioritized
+                    "          ", // row 2
+                    "          ", // row 3
+                ])
+            );
         }
     }
 
