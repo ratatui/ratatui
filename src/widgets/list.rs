@@ -169,6 +169,10 @@ impl ListState {
 /// This [`Style`] will be combined with the [`Style`] of the inner [`Text`]. The [`Style`]
 /// of the [`Text`] will be added to the [`Style`] of the [`ListItem`].
 ///
+/// You can also align a `ListItem` by aligning its underlying [`Text`] and [`Line`]s. For that,
+/// see [`Text::alignment`] and [`Line::alignment`]. On a multiline `Text`, one `Line` can override
+/// the alignment by setting it explicitly.
+///
 /// # Examples
 ///
 /// You can create [`ListItem`]s from simple `&str`
@@ -201,6 +205,13 @@ impl ListState {
 /// let mut text = Text::default();
 /// text.extend(["Item".blue(), Span::raw(" "), "1".bold().red()]);
 /// let item = ListItem::new(text);
+/// ```
+///
+/// A right-aligned `ListItem`
+///
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// ListItem::new(Text::from("foo").alignment(Alignment::Right));
 /// ```
 ///
 /// [`Stylize`]: crate::style::Stylize
@@ -338,11 +349,13 @@ where
 ///
 /// A list is a collection of [`ListItem`]s.
 ///
-/// This is different from a [`Table`] because it does not handle columns or headers and the item's
-/// height is automatically determined. A `List` can also be put in reverse order (i.e. *bottom to
-/// top*) whereas a [`Table`] cannot.
+/// This is different from a [`Table`] because it does not handle columns, headers or footers and
+/// the item's height is automatically determined. A `List` can also be put in reverse order (i.e.
+/// *bottom to top*) whereas a [`Table`] cannot.
 ///
 /// [`Table`]: crate::widgets::Table
+///
+/// List items can be aligned using [`Text::alignment`], for more details see [`ListItem`].
 ///
 /// [`List`] implements [`Widget`] and so it can be drawn using
 /// [`Frame::render_widget`](crate::terminal::Frame::render_widget).
@@ -810,17 +823,32 @@ impl<'a> StatefulWidget for List<'a> {
                 current_height += item.height() as u16;
                 pos
             };
-            let area = Rect {
+
+            let row_area = Rect {
                 x,
                 y,
                 width: list_area.width,
                 height: item.height() as u16,
             };
+
             let item_style = self.style.patch(item.style);
-            buf.set_style(area, item_style);
+            buf.set_style(row_area, item_style);
 
             let is_selected = state.selected.map_or(false, |s| s == i);
-            for (j, line) in item.content.lines.iter().enumerate() {
+
+            let item_area = if selection_spacing {
+                let highlight_symbol_width = self.highlight_symbol.unwrap_or("").len() as u16;
+                Rect {
+                    x: row_area.x + highlight_symbol_width,
+                    width: row_area.width - highlight_symbol_width,
+                    ..row_area
+                }
+            } else {
+                row_area
+            };
+            item.content.clone().render(item_area, buf);
+
+            for j in 0..item.content.height() {
                 // if the item is selected, we need to display the highlight symbol:
                 // - either for the first line of the item only,
                 // - or for each line of the item if the appropriate option is set
@@ -829,29 +857,19 @@ impl<'a> StatefulWidget for List<'a> {
                 } else {
                     &blank_symbol
                 };
-                let (elem_x, max_element_width) = if selection_spacing {
-                    let (elem_x, _) = buf.set_stringn(
+                if selection_spacing {
+                    buf.set_stringn(
                         x,
                         y + j as u16,
                         symbol,
                         list_area.width as usize,
                         item_style,
                     );
-                    (elem_x, (list_area.width - (elem_x - x)))
-                } else {
-                    (x, list_area.width)
-                };
-                let x_offset = match line.alignment {
-                    Some(Alignment::Center) => {
-                        (area.width / 2).saturating_sub(line.width() as u16 / 2)
-                    }
-                    Some(Alignment::Right) => area.width.saturating_sub(line.width() as u16),
-                    _ => 0,
-                };
-                buf.set_line(elem_x + x_offset, y + j as u16, line, max_element_width);
+                }
             }
+
             if is_selected {
-                buf.set_style(area, self.highlight_style);
+                buf.set_style(row_area, self.highlight_style);
             }
         }
     }
@@ -1845,14 +1863,11 @@ mod tests {
 
     #[test]
     fn test_render_list_alignment_line_less_than_width() {
-        let items = [Line::from("Small").alignment(Alignment::Center)]
-            .into_iter()
-            .map(ListItem::new)
-            .collect::<Vec<ListItem>>();
+        let items = [Line::from("Small").alignment(Alignment::Center)];
         let list = List::new(items);
         let buffer = render_widget(list, 10, 5);
         let expected = Buffer::with_lines(vec![
-            "   Small  ",
+            "  Small   ",
             "          ",
             "          ",
             "          ",
