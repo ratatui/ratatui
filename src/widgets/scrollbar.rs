@@ -446,12 +446,32 @@ impl<'a> Scrollbar<'a> {
         }
     }
 
-    fn get_track_start_end(&self, area: Rect) -> (u16, u16) {
-        if self.is_vertical() {
-            (area.y, (area.y + area.height))
+    fn get_track_info(&self, area: Rect) -> (u16, u16, u16, u16) {
+        let (mut track_start, mut track_end, mut track_size, viewport_size) = if self.is_vertical()
+        {
+            (
+                area.y,
+                (area.y + area.height.saturating_sub(1)),
+                area.height,
+                area.height,
+            )
         } else {
-            (area.x, (area.x + area.width))
-        }
+            (
+                area.x,
+                (area.x + area.width.saturating_sub(1)),
+                area.width,
+                area.width,
+            )
+        };
+        if let Some(s) = self.begin_symbol {
+            track_size = track_size.saturating_sub(s.len() as u16);
+            track_start = track_start.saturating_add(1);
+        };
+        if let Some(s) = self.end_symbol {
+            track_size = track_size.saturating_sub(s.len() as u16);
+            track_end = track_end.saturating_sub(1);
+        };
+        (track_start, track_end, track_size, viewport_size)
     }
 
     fn get_track_axis(&self, area: Rect) -> u16 {
@@ -463,35 +483,28 @@ impl<'a> Scrollbar<'a> {
     }
 
     fn get_thumb_start_end(&self, area: Rect, state: &mut ScrollbarState) -> (u16, u16) {
-        let (mut track_start, track_end) = self.get_track_start_end(area);
-        let mut track_size = track_end.saturating_sub(track_start);
-        let viewport_size = track_size as f64;
-
-        if let Some(s) = self.begin_symbol {
-            track_size = track_size.saturating_sub(s.len() as u16);
-            track_start = track_start.saturating_add(1);
-        }
-        if let Some(s) = self.end_symbol {
-            track_size = track_size.saturating_sub(s.len() as u16);
-        }
+        let (track_start, track_end, track_size, viewport_size) = self.get_track_info(area);
+        let viewport_size = viewport_size as f64;
 
         let track_size = track_size as f64;
-        let content_size = state.content_length as f64 + viewport_size;
-        let scroll_offset = state.position.clamp(0, state.content_length) as f64;
-        let max_scroll_offset = scroll_offset + viewport_size;
+        let content_size = state.content_length as f64;
+        let position = state.position as f64;
 
-        // Calculate the ratio of viewport size to content size
-        let thumb_ratio = viewport_size / content_size;
+        let (thumb_position, thumb_size) = if content_size == 0.0 {
+            let thumb_position = 0;
+            let thumb_size = track_size as u16;
+            (thumb_position, thumb_size)
+        } else {
+            let scroll_ratio = position / content_size;
+            let thumb_position = (scroll_ratio * track_size).round() as u16;
 
-        // Calculate the thumb size by multiplying the ratio with the track size
-        let thumb_size = (thumb_ratio * track_size) as u16;
+            let thumb_ratio = viewport_size / (content_size + viewport_size);
+            let thumb_size = (thumb_ratio * track_size).round() as u16;
+            (thumb_position, thumb_size)
+        };
 
-        // Calculate the thumb position based on the scroll offset
-        let thumb_position = ((scroll_offset / max_scroll_offset) * track_size) as u16;
-
-        let thumb_start = (track_start + thumb_position) as u16;
-
-        let thumb_end = thumb_start + thumb_size;
+        let thumb_start = (track_start + thumb_position).min(track_end.saturating_sub(thumb_size));
+        let thumb_end = (thumb_start + thumb_size).min(track_end);
 
         (thumb_start, thumb_end)
     }
@@ -499,10 +512,10 @@ impl<'a> Scrollbar<'a> {
     //          1234567890
     // Renders: ·════════·
     fn render_track(&self, area: Rect, buf: &mut Buffer) {
-        let (track_start, track_end) = self.get_track_start_end(area);
+        let (track_start, track_end, _, _) = self.get_track_info(area);
         let track_axis = self.get_track_axis(area);
 
-        for i in track_start..track_end {
+        for i in track_start..=track_end {
             let (symbol, style) = if let Some(track_symbol) = self.track_symbol {
                 (track_symbol, self.track_style)
             } else {
@@ -521,7 +534,7 @@ impl<'a> Scrollbar<'a> {
     fn render_thumb(&self, area: Rect, buf: &mut Buffer, state: &mut ScrollbarState) {
         let track_axis = self.get_track_axis(area);
         let (thumb_start, thumb_end) = self.get_thumb_start_end(area, state);
-        for i in thumb_start..thumb_end {
+        for i in thumb_start..=thumb_end {
             let (style, symbol) = (self.thumb_style, self.thumb_symbol);
             if self.is_vertical() {
                 buf.set_string(track_axis, i, symbol, style);
@@ -535,19 +548,29 @@ impl<'a> Scrollbar<'a> {
     // Renders: ◄██══════►
     fn render_arrowheads(&self, area: Rect, buf: &mut Buffer) {
         let track_axis = self.get_track_axis(area);
-        let (track_start, track_end) = self.get_track_start_end(area);
+        let (track_start, track_end, _, _) = self.get_track_info(area);
         if let Some(s) = self.begin_symbol {
             if self.is_vertical() {
-                buf.set_string(track_axis, track_start, s, self.begin_style);
+                buf.set_string(
+                    track_axis,
+                    track_start.saturating_sub(1),
+                    s,
+                    self.begin_style,
+                );
             } else {
-                buf.set_string(track_start, track_axis, s, self.begin_style);
+                buf.set_string(
+                    track_start.saturating_sub(1),
+                    track_axis,
+                    s,
+                    self.begin_style,
+                );
             }
         };
         if let Some(s) = self.end_symbol {
             if self.is_vertical() {
-                buf.set_string(track_axis, track_end.saturating_sub(1), s, self.end_style);
+                buf.set_string(track_axis, track_end.saturating_add(1), s, self.end_style);
             } else {
-                buf.set_string(track_end.saturating_sub(1), track_axis, s, self.end_style);
+                buf.set_string(track_end.saturating_add(1), track_axis, s, self.end_style);
             }
         }
     }
@@ -565,10 +588,28 @@ impl<'a> StatefulWidget for Scrollbar<'a> {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn test_debug() {
+        let content_length = 100;
+        for p in 0..content_length {
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 50, 1));
+            let mut state = ScrollbarState::default()
+                .position(p)
+                .content_length(content_length);
+            Scrollbar::default()
+                .orientation(ScrollbarOrientation::HorizontalBottom)
+                .begin_symbol(None)
+                .end_symbol(None)
+                .render(buffer.area, &mut buffer, &mut state);
+            println!("{:?}", buffer);
+        }
+    }
+
     #[test]
     fn test_rendering_empty() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
-        let mut state = ScrollbarState::default().position(0).content_length(2);
+        let mut state = ScrollbarState::default().position(0).content_length(0);
         Scrollbar::default()
             .orientation(ScrollbarOrientation::HorizontalBottom)
             .render(buffer.area, &mut buffer, &mut state);
@@ -655,7 +696,7 @@ mod tests {
             .begin_symbol(None)
             .end_symbol(None)
             .render(buffer.area, &mut buffer, &mut state);
-        let expected = "═════════════════════════████████████████═════════";
+        let expected = "════════════════████████████████══════════════════";
         assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
     }
 
