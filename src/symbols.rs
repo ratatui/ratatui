@@ -425,8 +425,9 @@ pub mod border {
         horizontal_bottom: ONE_EIGHTH_BOTTOM_EIGHT,
     };
 
-    /// Wide proportional border with using set of quadrants.
-    /// The border is created using half blocks for top and bottom, and full
+    /// Wide proportional (visually equal width and height) border with using set of quadrants.
+    ///
+    /// The border is created by using half blocks for top and bottom, and full
     /// blocks for right and left sides to make horizontal and vertical borders seem equal.
     ///
     /// ```text
@@ -446,9 +447,10 @@ pub mod border {
         horizontal_bottom: QUADRANT_TOP_HALF,
     };
 
-    /// Tall proportional border with using set of quadrants.
-    /// The border is created using full blocks for all sides, except for the top and bottom,
-    /// which use half blocks to make horizontal and vertical borders seem equal
+    /// Tall proportional (visually equal width and height) border with using set of quadrants.
+    ///
+    /// The border is created by using full blocks for all sides, except for the top and bottom,
+    /// which use half blocks to make horizontal and vertical borders seem equal.
     ///
     /// ```text
     /// ▕█▀▀█
