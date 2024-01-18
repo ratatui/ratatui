@@ -81,10 +81,11 @@ thread_local! {
 /// See the `layout`, `flex`, and `constraints` examples in the [Examples] folder for more details
 /// about how to use layouts.
 ///
-/// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md ![layout
+/// ![layout
 /// example](https://camo.githubusercontent.com/77d22f3313b782a81e5e033ef82814bb48d786d2598699c27f8e757ccee62021/68747470733a2f2f7668732e636861726d2e73682f7668732d315a4e6f4e4c4e6c4c746b4a58706767396e435635652e676966)
 ///
 /// [`cassowary-rs`]: https://crates.io/crates/cassowary
+/// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,

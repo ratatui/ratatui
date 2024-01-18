@@ -1,5 +1,8 @@
 # Examples
 
+This folder contains unreleased code. View the [examples for the latest release
+(0.25.0)](https://github.com/ratatui-org/ratatui/tree/v0.25.0/examples) instead.
+
 > [!WARNING]
 >
 > There are backwards incompatible changes in these examples, as they are designed to compile
