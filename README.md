@@ -74,9 +74,10 @@ for more info.
 
 The following example demonstrates the minimal amount of code necessary to setup a terminal and
 render "Hello World!". The full code for this example which contains a little more detail is in
-[hello_world.rs]. For more guidance on different ways to structure your application see the
-[Application Patterns] and [Hello World tutorial] sections in the [Ratatui Website] and the various
-[Examples]. There are also several starter templates in the [templates] repository.
+the [Examples] directory. For more guidance on different ways to structure your application see
+the [Application Patterns] and [Hello World tutorial] sections in the [Ratatui Website] and the
+various [Examples]. There are also several starter templates available in the [templates]
+repository.
 
 Every application built with `ratatui` needs to implement the following steps:
 
@@ -289,8 +290,8 @@ Running this example produces the following output:
 [Handling Events]: https://ratatui.rs/concepts/event-handling/
 [Layout]: https://ratatui.rs/how-to/layout/
 [Styling Text]: https://ratatui.rs/how-to/render/style-text/
-[templates]: https://github.com/ratatui-org/templates
-[Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples
+[templates]: https://github.com/ratatui-org/templates/
+[Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples/README.md
 [Report a bug]: https://github.com/ratatui-org/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
 [Request a Feature]: https://github.com/ratatui-org/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
 [Create a Pull Request]: https://github.com/ratatui-org/ratatui/compare
@@ -321,7 +322,6 @@ Running this example produces the following output:
 [Termion]: https://crates.io/crates/termion
 [Termwiz]: https://crates.io/crates/termwiz
 [tui-rs]: https://crates.io/crates/tui
-[hello_world.rs]: https://github.com/ratatui-org/ratatui/blob/main/examples/hello_world.rs
 [Crate Badge]: https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square
 [License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square
 [CI Badge]:
@@ -387,9 +387,8 @@ The library comes with the following
 - [Table](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Table.html)
 - [Tabs](https://docs.rs/ratatui/latest/ratatui/widgets/struct.Tabs.html)
 
-Each widget has an associated example which can be found in the [examples](./examples/) folder. Run
-each examples with cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by
-pressing `q`.
+Each widget has an associated example which can be found in the [Examples] folder. Run each example
+with cargo (e.g. to run the gauge example `cargo run --example gauge`), and quit by pressing `q`.
 
 You can also run all examples by running `cargo make run-examples` (requires `cargo-make` that can
 be installed with `cargo install cargo-make`).

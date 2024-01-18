@@ -52,14 +52,14 @@ use crate::{
 /// # std::result::Result::Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 ///
-/// See the the [examples] directory for more examples. See the [`backend`] module documentation
+/// See the the [Examples] directory for more examples. See the [`backend`] module documentation
 /// for more details on raw mode and alternate screen.
 ///
 /// [`backend`]: crate::backend
 /// [`Terminal`]: crate::terminal::Terminal
 /// [`BufferedTerminal`]: termwiz::terminal::buffered::BufferedTerminal
 /// [Termwiz]: https://crates.io/crates/termwiz
-/// [examples]: https://github.com/ratatui-org/ratatui/tree/main/examples#readme
+/// [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples/README.md
 pub struct TermwizBackend {
     buffered_terminal: BufferedTerminal<SystemTerminal>,
 }

@@ -21,10 +21,10 @@ use crate::{
 /// [`offset`]: ListState::offset()
 /// [`selected`]: ListState::selected()
 ///
-/// See the [list example] for a more in depth example of the various configuration options and
-/// for how to handle state.
+/// See the list in the [Examples] directory for a more in depth example of the various
+/// configuration options and for how to handle state.
 ///
-/// [list example]: https://github.com/ratatui-org/ratatui/blob/main/examples/list.rs
+/// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 ///
 /// # Example
 ///
@@ -364,10 +364,10 @@ where
 /// the user to [scroll](ListState::offset) through items and [select](ListState::select) one of
 /// them.
 ///
-/// See the [list example] for a more in depth example of the various configuration options and for
-/// how to handle state.
+/// See the list in the [Examples] directory for a more in depth example of the various
+/// configuration options and for how to handle state.
 ///
-/// [list example]: https://github.com/ratatui-org/ratatui/blob/main/examples/list.rs
+/// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 ///
 /// # Fluent setters
 ///
