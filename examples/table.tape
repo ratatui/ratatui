@@ -12,8 +12,9 @@ Show
 Sleep 2s
 Set TypingSpeed 1s
 Down 3
-Up 5
-Down 2
+Up 6
+Sleep 1s
+Down 3
 Sleep 1s
 Right 1
 Sleep 1s

@@ -6,14 +6,14 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use itertools::Itertools;
-use ratatui::{prelude::*, style::palette::material::AccentedPalette, widgets::*};
-use style::palette::material;
+use ratatui::{prelude::*, widgets::*};
+use style::palette::tailwind;
 
-const PALETTES: [material::AccentedPalette; 4] = [
-    material::BLUE,
-    material::RED,
-    material::GREEN,
-    material::ORANGE,
+const PALETTES: [tailwind::Palette; 4] = [
+    tailwind::BLUE,
+    tailwind::EMERALD,
+    tailwind::INDIGO,
+    tailwind::RED,
 ];
 const INFO_TEXT: &str =
     "(Esc) quit | (↑) move up | (↓) move down | (→) next color | (←) previous color";
@@ -25,20 +25,22 @@ struct TableColors {
     header_bg: Color,
     header_fg: Color,
     row_fg: Color,
+    selected_style_fg: Color,
     normal_row_color: Color,
     alt_row_color: Color,
     footer_border_color: Color,
 }
 
 impl TableColors {
-    fn new(color: AccentedPalette) -> Self {
+    fn new(color: &tailwind::Palette) -> Self {
         Self {
-            buffer_bg: color.c900,
+            buffer_bg: tailwind::SLATE.c950,
             header_bg: color.c900,
-            header_fg: material::WHITE,
-            row_fg: material::GRAY.c100,
-            normal_row_color: color.c600,
-            alt_row_color: color.c400,
+            header_fg: tailwind::SLATE.c200,
+            row_fg: tailwind::SLATE.c200,
+            selected_style_fg: color.c400,
+            normal_row_color: tailwind::SLATE.c950,
+            alt_row_color: tailwind::SLATE.c900,
             footer_border_color: color.c400,
         }
     }
@@ -58,7 +60,7 @@ impl App {
         App {
             state: TableState::default().with_selected(0),
             scroll_state: ScrollbarState::new((items.len() - 1) * ITEM_HEIGHT),
-            colors: TableColors::new(PALETTES[0]),
+            colors: TableColors::new(&PALETTES[0]),
             color_index: 0,
             items,
         }
@@ -103,7 +105,7 @@ impl App {
     }
 
     pub fn set_colors(&mut self) {
-        self.colors = TableColors::new(PALETTES[self.color_index])
+        self.colors = TableColors::new(&PALETTES[self.color_index])
     }
 }
 
@@ -191,7 +193,9 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
     let header_style = Style::default()
         .fg(app.colors.header_fg)
         .bg(app.colors.header_bg);
-    let selected_style = Style::default().add_modifier(Modifier::REVERSED);
+    let selected_style = Style::default()
+        .add_modifier(Modifier::REVERSED)
+        .fg(app.colors.selected_style_fg);
 
     let header = ["Name", "Address", "Email"]
         .iter()
@@ -285,4 +289,29 @@ fn render_footer(f: &mut Frame, app: &mut App, area: Rect) {
                 .border_type(BorderType::Double),
         );
     f.render_widget(info_footer, area);
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn constraint_len_calculator() {
+        let test_data = vec![
+            vec![
+                "Emirhan Tala".to_string(),
+                "Cambridgelaan 6XX\n3584 XX Utrecht".to_string(),
+                "tala.emirhan@gmail.com".to_string(),
+            ],
+            vec![
+                "thistextis26characterslong".to_string(),
+                "this line is 31 characters long\nbottom line is 33 characters long".to_string(),
+                "thisemailis40caharacterslong@ratatui.com".to_string(),
+            ],
+        ];
+        let (longest_name_len, longest_address_len, longest_email_len) =
+            crate::constraint_len_calculator(&test_data);
+
+        assert_eq!(26, longest_name_len);
+        assert_eq!(33, longest_address_len);
+        assert_eq!(40, longest_email_len);
+    }
 }
