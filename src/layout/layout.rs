@@ -34,9 +34,9 @@ thread_local! {
 /// many of the constraints as possible.
 ///
 /// By default, the last chunk of the computed layout is expanded to fill the remaining space. To
-/// avoid this behavior, add an unused `Constraint::Min(0)` as the last constraint. There is also
-/// an unstable API to prefer equal chunks if other constraints are all satisfied, see
-/// [`SegmentSize`] for more info.
+/// avoid this behavior, add an unused `Constraint::Min(0)` as the last constraint. There is also an
+/// unstable API to prefer equal chunks if other constraints are all satisfied, see [`SegmentSize`]
+/// for more info.
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
 /// calls with the same parameters are faster. The cache is a simple HashMap, and grows
@@ -78,10 +78,10 @@ thread_local! {
 /// }
 /// ```
 ///
-/// The [`layout.rs` example](https://github.com/ratatui-org/ratatui/blob/main/examples/layout.rs)
-/// shows the effect of combining constraints:
+/// See the `layout`, `flex`, and `constraints` examples in the [Examples] folder for more details
+/// about how to use layouts.
 ///
-/// ![layout
+/// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md ![layout
 /// example](https://camo.githubusercontent.com/77d22f3313b782a81e5e033ef82814bb48d786d2598699c27f8e757ccee62021/68747470733a2f2f7668732e636861726d2e73682f7668732d315a4e6f4e4c4e6c4c746b4a58706767396e435635652e676966)
 ///
 /// [`cassowary-rs`]: https://crates.io/crates/cassowary
