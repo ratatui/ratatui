@@ -6,22 +6,49 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, style::palette::material::AccentedPalette, widgets::*};
 use style::palette::material;
 
-const EXAMPLE_TABLE_COLORS: [material::AccentedPalette; 4] = [
+const PALETTES: [material::AccentedPalette; 4] = [
+    material::BLUE,
     material::RED,
     material::GREEN,
-    material::BLUE,
     material::ORANGE,
 ];
 const INFO_TEXT: &str =
-    "(q) to quit / (j, ↑) to go up / (k, ↓) to go down / (l, →) for next color / (h, ←) for previous color";
+    "(Esc) quit | (↑) move up | (↓) move down | (→) next color | (←) previous color";
+
+const ITEM_HEIGHT: usize = 4;
+
+struct TableColors {
+    buffer_bg: Color,
+    header_bg: Color,
+    header_fg: Color,
+    row_fg: Color,
+    normal_row_color: Color,
+    alt_row_color: Color,
+    footer_border_color: Color,
+}
+
+impl TableColors {
+    fn new(color: AccentedPalette) -> Self {
+        Self {
+            buffer_bg: color.c900,
+            header_bg: color.c900,
+            header_fg: material::WHITE,
+            row_fg: material::GRAY.c100,
+            normal_row_color: color.c600,
+            alt_row_color: color.c400,
+            footer_border_color: color.c400,
+        }
+    }
+}
 
 struct App {
     state: TableState,
     items: Vec<Vec<String>>,
     scroll_state: ScrollbarState,
+    colors: TableColors,
     color_index: usize,
 }
 
@@ -30,7 +57,8 @@ impl App {
         let items = generate_fake_names();
         App {
             state: TableState::default().with_selected(0),
-            scroll_state: ScrollbarState::new((items.len() - 1) * 4),
+            scroll_state: ScrollbarState::new((items.len() - 1) * ITEM_HEIGHT),
+            colors: TableColors::new(PALETTES[0]),
             color_index: 0,
             items,
         }
@@ -47,7 +75,7 @@ impl App {
             None => 0,
         };
         self.state.select(Some(i));
-        self.scroll_state = self.scroll_state.position(i * 4);
+        self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
     pub fn previous(&mut self) {
@@ -62,23 +90,20 @@ impl App {
             None => 0,
         };
         self.state.select(Some(i));
-        self.scroll_state = self.scroll_state.position(i * 4);
+        self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
     pub fn next_color(&mut self) {
-        if self.color_index >= EXAMPLE_TABLE_COLORS.len() - 1 {
-            self.color_index = 0;
-        } else {
-            self.color_index += 1;
-        }
+        self.color_index = (self.color_index + 1) % PALETTES.len();
     }
 
     pub fn previous_color(&mut self) {
-        if self.color_index == 0 {
-            self.color_index = EXAMPLE_TABLE_COLORS.len() - 1;
-        } else {
-            self.color_index -= 1
-        }
+        let count = PALETTES.len();
+        self.color_index = (self.color_index + count - 1) % count;
+    }
+
+    pub fn set_colors(&mut self) {
+        self.colors = TableColors::new(PALETTES[self.color_index])
     }
 }
 
@@ -136,12 +161,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
+                use KeyCode::*;
                 match key.code {
-                    KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Down | KeyCode::Char('j') => app.next(),
-                    KeyCode::Up | KeyCode::Char('k') => app.previous(),
-                    KeyCode::Right | KeyCode::Char('l') => app.next_color(),
-                    KeyCode::Left | KeyCode::Char('h') => app.previous_color(),
+                    Char('q') | Esc => return Ok(()),
+                    Char('j') | Down => app.next(),
+                    Char('k') | Up => app.previous(),
+                    Char('l') | Right => app.next_color(),
+                    Char('h') | Left => app.previous_color(),
                     _ => {}
                 }
             }
@@ -150,22 +176,22 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui(f: &mut Frame, app: &mut App) {
-    let rects = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5), Constraint::Length(3)])
-        .split(f.size());
+    let rects = Layout::vertical([Constraint::Min(5), Constraint::Length(3)]).split(f.size());
 
-    let curr_color = EXAMPLE_TABLE_COLORS[app.color_index];
+    app.set_colors();
 
-    let buffer_bg = curr_color.c900;
-    let header_bg = curr_color.c900;
-    let header_fg = material::WHITE;
-    let header_style = Style::default().fg(header_fg).bg(header_bg);
-    let row_fg = material::GRAY.c100;
-    let normal_row_color = curr_color.c600;
-    let alt_row_color = curr_color.c400;
+    render_table(f, app, rects[0]);
+
+    render_scrollbar(f, app, rects[0]);
+
+    render_footer(f, app, rects[1]);
+}
+
+fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
+    let header_style = Style::default()
+        .fg(app.colors.header_fg)
+        .bg(app.colors.header_bg);
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
-    let footer_border_color = curr_color.c400;
 
     let header = ["Name", "Address", "Email"]
         .iter()
@@ -176,23 +202,26 @@ fn ui(f: &mut Frame, app: &mut App) {
         .height(1);
     let rows = app.items.iter().enumerate().map(|(i, item)| {
         let color = match i % 2 {
-            0 => normal_row_color,
-            _ => alt_row_color,
+            0 => app.colors.normal_row_color,
+            _ => app.colors.alt_row_color,
         };
         item.iter()
             .cloned()
             .map(|content| Cell::from(Text::from(format!("\n{}\n", content))))
             .collect::<Row>()
-            .style(Style::new().fg(row_fg).bg(color))
+            .style(Style::new().fg(app.colors.row_fg).bg(color))
             .height(4)
     });
     let bar = " █ ";
+    let (longest_name_len, longest_address_len, longest_email_len) =
+        constraint_len_calculator(&app.items);
     let t = Table::new(
         rows,
         [
-            Constraint::Length(25),
-            Constraint::Min(40),
-            Constraint::Min(30),
+            // + 1 is for padding.
+            Constraint::Length(longest_name_len + 1),
+            Constraint::Min(longest_address_len + 1),
+            Constraint::Min(longest_email_len + 1),
         ],
     )
     .header(header)
@@ -203,29 +232,57 @@ fn ui(f: &mut Frame, app: &mut App) {
         bar.into(),
         "".into(),
     ]))
-    .bg(buffer_bg)
+    .bg(app.colors.buffer_bg)
     .highlight_spacing(HighlightSpacing::Always);
-    f.render_stateful_widget(t, rects[0], &mut app.state);
+    f.render_stateful_widget(t, area, &mut app.state);
+}
+
+fn constraint_len_calculator(items: &[Vec<String>]) -> (u16, u16, u16) {
+    let len_vec = items
+        .iter()
+        .map(|row| {
+            (
+                row[0].chars().count() as u16,
+                row[1]
+                    .split('\n')
+                    .map(|address_line| address_line.chars().count())
+                    .max()
+                    .unwrap() as u16,
+                row[2].chars().count() as u16,
+            )
+        })
+        .collect::<Vec<(u16, u16, u16)>>();
+
+    let longest_name_len = len_vec.iter().map(|row| row.0).max().unwrap();
+    let longest_address_len = len_vec.iter().map(|row| row.1).max().unwrap();
+    let longest_email_len = len_vec.iter().map(|row| row.2).max().unwrap();
+
+    (longest_name_len, longest_address_len, longest_email_len)
+}
+
+fn render_scrollbar(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_stateful_widget(
         Scrollbar::default()
             .orientation(ScrollbarOrientation::VerticalRight)
             .begin_symbol(None)
             .end_symbol(None),
-        rects[0].inner(&Margin {
+        area.inner(&Margin {
             vertical: 1,
             horizontal: 1,
         }),
         &mut app.scroll_state,
     );
+}
 
+fn render_footer(f: &mut Frame, app: &mut App, area: Rect) {
     let info_footer = Paragraph::new(Line::from(INFO_TEXT))
-        .style(Style::new().fg(row_fg).bg(buffer_bg))
+        .style(Style::new().fg(app.colors.row_fg).bg(app.colors.buffer_bg))
         .alignment(Alignment::Center)
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::new().fg(footer_border_color))
+                .border_style(Style::new().fg(app.colors.footer_border_color))
                 .border_type(BorderType::Double),
         );
-    f.render_widget(info_footer, rects[1]);
+    f.render_widget(info_footer, area);
 }
