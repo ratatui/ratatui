@@ -539,8 +539,6 @@ impl<'a> Table<'a> {
         self
     }
 
-    /// NOTE: segment_size is deprecated. Use flex method instead.
-    ///
     /// Set how extra space is distributed amongst columns.
     ///
     /// This determines how the space is distributed when the constraints are satisfied. By default,
@@ -566,7 +564,7 @@ impl<'a> Table<'a> {
         reason = "The name for this feature is not final and may change in the future",
         issue = "https://github.com/ratatui-org/ratatui/issues/536"
     )]
-    #[deprecated(note = "please use flex instead of segment_size")]
+    #[deprecated(since = "0.26.0", note = "You should use Table::flex instead.")]
     pub const fn segment_size(self, segment_size: SegmentSize) -> Self {
         let translated_to_flex = match segment_size {
             SegmentSize::None => Flex::Start,
@@ -589,13 +587,15 @@ impl<'a> Table<'a> {
     ///
     /// Create a table that needs at least 30 columns to display.  Any extra space will be assigned
     /// to the last column.
-    #[cfg_attr(feature = "unstable", doc = " ```")]
-    #[cfg_attr(not(feature = "unstable"), doc = " ```ignore")]
+    /// ```
     /// # use ratatui::layout::{Constraint, Flex};
     /// # use ratatui::widgets::{Table, Row};
-    /// let widths = [Constraint::Min(10), Constraint::Min(10), Constraint::Min(10)];
-    /// let table = Table::new(Vec::<Row>::new(), widths)
-    ///     .flex(Flex::StretchLast);
+    /// let widths = [
+    ///     Constraint::Min(10),
+    ///     Constraint::Min(10),
+    ///     Constraint::Min(10),
+    /// ];
+    /// let table = Table::new(Vec::<Row>::new(), widths).flex(Flex::StretchLast);
     /// ```
     pub const fn flex(mut self, flex: Flex) -> Self {
         self.flex = flex;
