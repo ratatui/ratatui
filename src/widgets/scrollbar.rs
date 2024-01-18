@@ -446,44 +446,61 @@ impl<'a> Scrollbar<'a> {
         }
     }
 
-    fn get_track_size(&self, area: Rect) -> u16 {
-        let mut track_size = if self.is_vertical() {
-            area.height
+    fn get_track_start_end(&self, area: Rect) -> (u16, u16) {
+        if self.is_vertical() {
+            (area.y, (area.y + area.height))
         } else {
-            area.width
-        };
+            (area.x, (area.x + area.width))
+        }
+    }
+
+    fn get_track_axis(&self, area: Rect) -> u16 {
+        if self.is_vertical() {
+            area.x
+        } else {
+            area.y
+        }
+    }
+
+    fn get_thumb_start_end(&self, area: Rect, state: &mut ScrollbarState) -> (u16, u16) {
+        let (mut track_start, track_end) = self.get_track_start_end(area);
+        let mut track_size = track_end.saturating_sub(track_start);
+        let viewport_size = track_size as f64;
+
         if let Some(s) = self.begin_symbol {
             track_size = track_size.saturating_sub(s.len() as u16);
+            track_start = track_start.saturating_add(1);
         }
         if let Some(s) = self.end_symbol {
             track_size = track_size.saturating_sub(s.len() as u16);
         }
-        track_size
-    }
 
-    fn get_thumb_start_end(&self, area: Rect, state: &mut ScrollbarState) -> (u16, u16) {
-        let track_size = self.get_track_size(area) as f64;
-        let thumb_start =
-            ((state.position) as f64 / (state.content_length) as f64 * track_size).round() as u16;
+        let track_size = track_size as f64;
+        let content_size = state.content_length as f64 + viewport_size;
+        let scroll_offset = state.position.clamp(0, state.content_length) as f64;
+        let max_scroll_offset = scroll_offset + viewport_size;
 
-        let thumb_size = (track_size - (state.content_length as f64 / track_size)).max(0.0) as u16;
+        // Calculate the ratio of viewport size to content size
+        let thumb_ratio = viewport_size / content_size;
+
+        // Calculate the thumb size by multiplying the ratio with the track size
+        let thumb_size = (thumb_ratio * track_size) as u16;
+
+        // Calculate the thumb position based on the scroll offset
+        let thumb_position = ((scroll_offset / max_scroll_offset) * track_size) as u16;
+
+        let thumb_start = (track_start + thumb_position) as u16;
 
         let thumb_end = thumb_start + thumb_size;
 
         (thumb_start, thumb_end)
     }
 
-    fn get_track_start_end_axis(&self, area: Rect) -> (u16, u16, u16) {
-        if self.is_vertical() {
-            (area.y, (area.y + area.height).saturating_sub(1), area.x)
-        } else {
-            (area.x, (area.x + area.width).saturating_sub(1), area.y)
-        }
-    }
-
-    // Renders: ══════════
+    //          1234567890
+    // Renders: ·════════·
     fn render_track(&self, area: Rect, buf: &mut Buffer) {
-        let (track_start, track_end, track_axis) = self.get_track_start_end_axis(area);
+        let (track_start, track_end) = self.get_track_start_end(area);
+        let track_axis = self.get_track_axis(area);
 
         for i in track_start..track_end {
             let (symbol, style) = if let Some(track_symbol) = self.track_symbol {
@@ -499,9 +516,10 @@ impl<'a> Scrollbar<'a> {
         }
     }
 
-    // Renders: ██════════
-    fn render_thumbs(&self, area: Rect, buf: &mut Buffer, state: &mut ScrollbarState) {
-        let (_track_start, _track_end, track_axis) = self.get_track_start_end_axis(area);
+    //          1234567890
+    // Renders: ·██══════·
+    fn render_thumb(&self, area: Rect, buf: &mut Buffer, state: &mut ScrollbarState) {
+        let track_axis = self.get_track_axis(area);
         let (thumb_start, thumb_end) = self.get_thumb_start_end(area, state);
         for i in thumb_start..thumb_end {
             let (style, symbol) = (self.thumb_style, self.thumb_symbol);
@@ -513,9 +531,11 @@ impl<'a> Scrollbar<'a> {
         }
     }
 
-    // Renders: ◄████████►
-    fn render_symbols(&self, area: Rect, buf: &mut Buffer) {
-        let (track_start, track_end, track_axis) = self.get_track_start_end_axis(area);
+    //          1234567890
+    // Renders: ◄██══════►
+    fn render_arrowheads(&self, area: Rect, buf: &mut Buffer) {
+        let track_axis = self.get_track_axis(area);
+        let (track_start, track_end) = self.get_track_start_end(area);
         if let Some(s) = self.begin_symbol {
             if self.is_vertical() {
                 buf.set_string(track_axis, track_start, s, self.begin_style);
@@ -525,9 +545,9 @@ impl<'a> Scrollbar<'a> {
         };
         if let Some(s) = self.end_symbol {
             if self.is_vertical() {
-                buf.set_string(track_axis, track_end, s, self.end_style);
+                buf.set_string(track_axis, track_end.saturating_sub(1), s, self.end_style);
             } else {
-                buf.set_string(track_end, track_axis, s, self.end_style);
+                buf.set_string(track_end.saturating_sub(1), track_axis, s, self.end_style);
             }
         }
     }
@@ -537,28 +557,167 @@ impl<'a> StatefulWidget for Scrollbar<'a> {
     type State = ScrollbarState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        // do not render scrollbar
-        if state.content_length == 0 {
-            return;
-        }
-
         self.render_track(area, buf);
-        self.render_thumbs(area, buf, state);
-        self.render_symbols(area, buf);
+        self.render_thumb(area, buf, state);
+        self.render_arrowheads(area, buf);
     }
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
-    fn test_rendering_example() {
+    fn test_rendering_empty() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
-        let mut state = ScrollbarState::default().position(0).content_length(1);
+        let mut state = ScrollbarState::default().position(0).content_length(2);
         Scrollbar::default()
             .orientation(ScrollbarOrientation::HorizontalBottom)
             .render(buffer.area, &mut buffer, &mut state);
-        println!("{:?}", buffer);
+        let expected = "◄████████►";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
     }
+
+    #[test]
+    fn test_rendering_thumb_half_with_symbols() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        let mut state = ScrollbarState::default().position(0).content_length(10);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(Some(" "))
+            .end_symbol(Some(" "))
+            .render(buffer.area, &mut buffer, &mut state);
+        //             "1234567890"
+        let expected = " ████════ ";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        let mut state = ScrollbarState::default().position(5).content_length(10);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(Some(" "))
+            .end_symbol(Some(" "))
+            .render(buffer.area, &mut buffer, &mut state);
+        let expected = " ══████══ ";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        let mut state = ScrollbarState::default().position(10).content_length(10);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(Some(" "))
+            .end_symbol(Some(" "))
+            .render(buffer.area, &mut buffer, &mut state);
+        let expected = " ════████ ";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+    }
+
+    #[test]
+    fn test_rendering_thumb_half() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        let mut state = ScrollbarState::default().position(0).content_length(10);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        //             "1234567890"
+        let expected = "█████═════";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        let mut state = ScrollbarState::default().position(5).content_length(10);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        //             "1234567890"
+        let expected = "═══█████══";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        let mut state = ScrollbarState::default().position(10).content_length(10);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        //             "1234567890"
+        let expected = "═════█████";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+    }
+
+    #[test]
+    fn test_rendering_thumb_third() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 50, 1));
+        let mut state = ScrollbarState::default().position(50).content_length(100);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        let expected = "═════════════════════════████████████████═════════";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+    }
+
+    #[test]
+    fn test_rendering_thumb_quarter() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        let mut state = ScrollbarState::default().position(0).content_length(50);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        //             "1234567890"
+        let expected = "██════════";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+        let mut state = ScrollbarState::default().position(10).content_length(50);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        //             "1234567890"
+        let expected = "══██══════";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+        let mut state = ScrollbarState::default().position(20).content_length(50);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        //             "1234567890"
+        let expected = "═══██═════";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+        let mut state = ScrollbarState::default().position(30).content_length(50);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        //             "1234567890"
+        let expected = "═════██═══";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+        let mut state = ScrollbarState::default().position(40).content_length(50);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        //             "1234567890"
+        let expected = "═══════██═";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+        let mut state = ScrollbarState::default().position(50).content_length(50);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        //             "1234567890"
+        let expected = "════════██";
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+    }
+
     use strum::ParseError;
 
     use super::*;
@@ -940,7 +1099,6 @@ mod tests {
                 .begin_symbol(Some(DOUBLE_HORIZONTAL.begin))
                 .end_symbol(Some(DOUBLE_HORIZONTAL.end))
                 .render(buffer.area, &mut buffer, &mut state);
-            dbg!(i);
             let expected = if i <= 1 {
                 vec!["        ", "◄█═════►"]
             } else if i <= 4 {
