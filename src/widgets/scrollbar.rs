@@ -708,29 +708,34 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_renders_empty_with_content_length_is_zero() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 8));
-        let mut state = ScrollbarState::default().position(0);
+    #[rstest]
+    #[case("        ", 0)]
+    #[case("████████", 1)]
+    #[case("████████", 2)]
+    #[case("████████", 3)]
+    #[case("████████", 4)]
+    #[case("████████", 5)]
+    #[case("████████", 6)]
+    #[case("████████", 7)]
+    #[case("████████", 8)]
+    fn test_renders_empty_with_content_length_is_zero(
+        #[case] expected: &str,
+        #[case] content_length: usize,
+    ) {
+        let size = expected.width();
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, size as u16));
+        let mut state = ScrollbarState::new(content_length).position(0);
         Scrollbar::default()
             .begin_symbol(None)
             .end_symbol(None)
             .render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec!["  ", "  ", "  ", "  ", "  ", "  ", "  ", "  "])
-        );
-
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 8));
-        let mut state = ScrollbarState::new(8).position(0);
-        Scrollbar::default()
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![" █", " █", " █", " █", " █", " █", " █", " █"])
-        );
+        let empty_string: String = " ".repeat(size);
+        let bar = empty_string
+            .chars()
+            .zip(expected.chars())
+            .map(|(a, b)| format!("{a}{b}"))
+            .collect_vec();
+        assert_buffer_eq!(buffer, Buffer::with_lines(bar));
     }
 
     #[test]
