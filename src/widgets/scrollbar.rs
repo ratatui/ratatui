@@ -485,8 +485,8 @@ impl<'a> Scrollbar<'a> {
     /// ```
     fn get_track_axis(&self, area: Rect) -> u16 {
         match self.orientation {
-            ScrollbarOrientation::VerticalRight => area.x,
-            ScrollbarOrientation::VerticalLeft => area.x + area.width.saturating_sub(1),
+            ScrollbarOrientation::VerticalRight => area.x + area.width.saturating_sub(1),
+            ScrollbarOrientation::VerticalLeft => area.x,
             ScrollbarOrientation::HorizontalBottom => area.y + area.height.saturating_sub(1),
             ScrollbarOrientation::HorizontalTop => area.y,
         }
@@ -976,5 +976,117 @@ mod tests {
             "{}",
             assertion_message,
         );
+    }
+
+    #[rstest]
+    #[case("█████═════", 0, 10, "position_0")]
+    #[case("═█████════", 1, 10, "position_1")]
+    #[case("═█████════", 2, 10, "position_2")]
+    #[case("══█████═══", 3, 10, "position_3")]
+    #[case("══█████═══", 4, 10, "position_4")]
+    #[case("═══█████══", 5, 10, "position_5")]
+    #[case("═══█████══", 6, 10, "position_6")]
+    #[case("════█████═", 7, 10, "position_7")]
+    #[case("════█████═", 8, 10, "position_8")]
+    #[case("═════█████", 9, 10, "position_9")]
+    #[case("═════█████", 100, 10, "position_out_of_bounds")]
+    fn render_scrollbar_twoline_horizontal(
+        #[case] expected: &str,
+        #[case] position: usize,
+        #[case] content_length: usize,
+        #[case] assertion_message: &str,
+    ) {
+        let size = expected.width() as u16;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, size, 2));
+        let mut state = ScrollbarState::default()
+            .position(position)
+            .content_length(content_length);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        let empty_string: String = " ".repeat(size as usize);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![&empty_string, expected]),
+            "{}",
+            assertion_message
+        );
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, size, 2));
+        let mut state = ScrollbarState::default()
+            .position(position)
+            .content_length(content_length);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalTop)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        let empty_string: String = " ".repeat(size as usize);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![expected, &empty_string]),
+            "{}",
+            assertion_message
+        );
+    }
+
+    #[rstest]
+    #[case("<####---->", 0, 10, "position_0")]
+    #[case("<#####--->", 1, 10, "position_1")]
+    #[case("<-####--->", 2, 10, "position_2")]
+    #[case("<-####--->", 3, 10, "position_3")]
+    #[case("<--####-->", 4, 10, "position_4")]
+    #[case("<--####-->", 5, 10, "position_5")]
+    #[case("<---####->", 6, 10, "position_6")]
+    #[case("<---####->", 7, 10, "position_7")]
+    #[case("<---#####>", 8, 10, "position_8")]
+    #[case("<----####>", 9, 10, "position_9")]
+    #[case("<----####>", 10, 10, "position_one_out_of_bounds")]
+    fn render_scrollbar_twoline_vertical(
+        #[case] expected: &str,
+        #[case] position: usize,
+        #[case] content_length: usize,
+        #[case] assertion_message: &str,
+    ) {
+        let size = expected.width() as u16;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, size));
+        let mut state = ScrollbarState::default()
+            .position(position)
+            .content_length(content_length);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("<"))
+            .end_symbol(Some(">"))
+            .track_symbol(Some("-"))
+            .thumb_symbol("#")
+            .render(buffer.area, &mut buffer, &mut state);
+        let empty_string: String = " ".repeat(size as usize);
+        let bar = empty_string
+            .chars()
+            .zip(expected.chars())
+            .map(|(a, b)| format!("{a}{b}"))
+            .collect_vec();
+        assert_eq!(buffer, Buffer::with_lines(bar), "{}", assertion_message);
+
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, size));
+        let mut state = ScrollbarState::default()
+            .position(position)
+            .content_length(content_length);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::VerticalLeft)
+            .begin_symbol(Some("<"))
+            .end_symbol(Some(">"))
+            .track_symbol(Some("-"))
+            .thumb_symbol("#")
+            .render(buffer.area, &mut buffer, &mut state);
+        let empty_string: String = " ".repeat(size as usize);
+        let bar = expected
+            .chars()
+            .zip(empty_string.chars())
+            .map(|(a, b)| format!("{a}{b}"))
+            .collect_vec();
+        assert_eq!(buffer, Buffer::with_lines(bar), "{}", assertion_message);
     }
 }
