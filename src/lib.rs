@@ -86,7 +86,8 @@
 //!
 //! The drawing logic is delegated to a closure that takes a [`Frame`] instance as argument. The
 //! [`Frame`] provides the size of the area to draw to and allows the app to render any [`Widget`]
-//! using the provided [`render_widget`] method. See the [Widgets] section of the [Ratatui Website]
+//! using the provided [`render_widget`] method. After this closure returns, a diff is performed and
+//! only the changes are drawn to the terminal. See the [Widgets] section of the [Ratatui Website]
 //! for more info.
 //!
 //! ### Handling events

@@ -16,7 +16,7 @@ use crate::{backend::ClearType, prelude::*};
 /// When the widgets are drawn, the changes are accumulated in the current buffer.
 /// At the end of each draw pass, the two buffers are compared, and only the changes
 /// between these buffers are written to the terminal, avoiding any redundant operations.
-/// After flushing these changes, the buffers are swapped to prepare for the next draw cycle./
+/// After flushing these changes, the buffers are swapped to prepare for the next draw cycle.
 ///
 /// The terminal also has a viewport which is the area of the terminal that is currently visible to
 /// the user. It can be either fullscreen, inline or fixed. See [`Viewport`] for more information.
@@ -238,6 +238,10 @@ where
     /// and prepares for the next draw call.
     ///
     /// This is the main entry point for drawing to the terminal.
+    ///
+    /// The changes drawn to the frame are applied only to the current [`Buffer`]. After the closure
+    /// returns, the current buffer is compared to the previous buffer and only the changes are
+    /// applied to the terminal.
     ///
     /// # Examples
     ///
