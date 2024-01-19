@@ -14,6 +14,7 @@ use ratatui::{prelude::*, widgets::*};
 struct StatefulList<T> {
     state: ListState,
     items: Vec<T>,
+    last_selected: Option<usize>,
 }
 
 impl<T> StatefulList<T> {
@@ -21,6 +22,7 @@ impl<T> StatefulList<T> {
         StatefulList {
             state: ListState::default(),
             items,
+            last_selected: None,
         }
     }
 
@@ -33,7 +35,7 @@ impl<T> StatefulList<T> {
                     i + 1
                 }
             }
-            None => 0,
+            None => self.last_selected.unwrap_or(0),
         };
         self.state.select(Some(i));
     }
@@ -47,13 +49,16 @@ impl<T> StatefulList<T> {
                     i - 1
                 }
             }
-            None => 0,
+            None => self.last_selected.unwrap_or(0),
         };
         self.state.select(Some(i));
     }
 
     fn unselect(&mut self) {
+        let offset = self.state.offset();
+        self.last_selected = self.state.selected();
         self.state.select(None);
+        *self.state.offset_mut() = offset;
     }
 }
 
