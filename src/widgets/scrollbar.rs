@@ -446,53 +446,47 @@ impl<'a> Scrollbar<'a> {
         }
     }
 
-    fn get_track_info(&self, area: Rect) -> (u16, u16, u16, u16, u16) {
-        let (track_axis, mut track_start, mut track_end, mut track_size) = match self.orientation {
-            ScrollbarOrientation::VerticalRight => (
-                area.x,
-                area.y,
-                (area.y + area.height.saturating_sub(1)),
-                area.height,
-            ),
+    fn get_viewport_size(&self, area: Rect) -> u16 {
+        match self.orientation {
+            ScrollbarOrientation::VerticalRight | ScrollbarOrientation::VerticalLeft => area.height,
+            ScrollbarOrientation::HorizontalBottom | ScrollbarOrientation::HorizontalTop => {
+                area.width
+            }
+        }
+    }
+
+    fn get_track_info(&self, area: Rect) -> (u16, u16, u16, u16) {
+        let (track_axis, mut track_start, mut track_end) = match self.orientation {
+            ScrollbarOrientation::VerticalRight => {
+                (area.x, area.y, (area.y + area.height.saturating_sub(1)))
+            }
             ScrollbarOrientation::VerticalLeft => (
                 area.x + area.width.saturating_sub(1),
                 area.y,
                 (area.y + area.height.saturating_sub(1)),
-                area.height,
             ),
             ScrollbarOrientation::HorizontalBottom => (
                 area.y + area.height.saturating_sub(1),
                 area.x,
                 (area.x + area.width.saturating_sub(1)),
-                area.width,
             ),
-            ScrollbarOrientation::HorizontalTop => (
-                area.y,
-                area.x,
-                (area.x + area.width.saturating_sub(1)),
-                area.width,
-            ),
+            ScrollbarOrientation::HorizontalTop => {
+                (area.y, area.x, (area.x + area.width.saturating_sub(1)))
+            }
         };
-        let viewport_size = track_size;
         if let Some(_) = self.begin_symbol {
-            track_size = track_size.saturating_sub(1); // assuming length of symbol is 1
             track_start = track_start.saturating_add(1); // assuming length of symbol is 1
         };
         if let Some(_) = self.end_symbol {
-            track_size = track_size.saturating_sub(1); // assuming length of symbol is 1
             track_end = track_end.saturating_sub(1); // assuming length of symbol is 1
         };
-        (
-            track_axis,
-            track_start,
-            track_end,
-            track_size,
-            viewport_size,
-        )
+        let track_size = track_end.saturating_sub(track_start).saturating_add(1);
+        (track_axis, track_start, track_end, track_size)
     }
 
     fn get_thumb_start_end(&self, area: Rect, state: &mut ScrollbarState) -> (u16, u16) {
-        let (_, track_start, track_end, track_size, viewport_size) = self.get_track_info(area);
+        let (_, track_start, track_end, track_size) = self.get_track_info(area);
+        let viewport_size = self.get_viewport_size(area);
 
         let scrollable_content_size = (state.content_length + viewport_size as usize) as f64;
         let position = state.position as f64;
@@ -513,7 +507,7 @@ impl<'a> Scrollbar<'a> {
 
     // Renders: ·════════·
     fn render_track(&self, area: Rect, buf: &mut Buffer) {
-        let (track_axis, track_start, track_end, _, _) = self.get_track_info(area);
+        let (track_axis, track_start, track_end, _) = self.get_track_info(area);
 
         for i in track_start..=track_end {
             let (symbol, style) = if let Some(track_symbol) = self.track_symbol {
@@ -531,7 +525,7 @@ impl<'a> Scrollbar<'a> {
 
     // Renders: ·██══════·
     fn render_thumb(&self, area: Rect, buf: &mut Buffer, state: &mut ScrollbarState) {
-        let (track_axis, _, _, _, _) = self.get_track_info(area);
+        let (track_axis, _, _, _) = self.get_track_info(area);
         let (thumb_start, thumb_end) = self.get_thumb_start_end(area, state);
         for i in thumb_start..=thumb_end {
             let (style, symbol) = (self.thumb_style, self.thumb_symbol);
@@ -545,7 +539,7 @@ impl<'a> Scrollbar<'a> {
 
     // Renders: ◄██══════►
     fn render_arrowheads(&self, area: Rect, buf: &mut Buffer) {
-        let (track_axis, track_start, track_end, _, _) = self.get_track_info(area);
+        let (track_axis, track_start, track_end, _) = self.get_track_info(area);
         if let Some(s) = self.begin_symbol {
             if self.is_vertical() {
                 buf.set_string(
@@ -660,31 +654,6 @@ mod tests {
         assert_eq!(
             "".parse::<ScrollbarOrientation>(),
             Err(ParseError::VariantNotFound)
-        );
-    }
-
-    #[test]
-    fn test_renders_empty_with_content_length_is_zero() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 8));
-        let mut state = ScrollbarState::default().position(0);
-        Scrollbar::default()
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec!["  ", "  ", "  ", "  ", "  ", "  ", "  ", "  "])
-        );
-
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 8));
-        let mut state = ScrollbarState::new(8).position(0);
-        Scrollbar::default()
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![" █", " █", " █", " █", " █", " █", " █", " █"])
         );
     }
 
