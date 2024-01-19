@@ -103,7 +103,13 @@ struct Element {
 }
 
 impl Layout {
-    pub const DEFAULT_CACHE_SIZE: usize = 16;
+    /// This is a somewhat arbitrary size for the layout cache based on adding the columns and rows
+    /// on my laptop's terminal (171+51 = 222) and doubling it for good measure and then adding a
+    /// bit more to make it a round number. This gives enough entries to store a layout for every
+    /// row and every column, twice over, which should be enough for most apps. For those that need
+    /// more, the cache size can be set with [`Layout::init_cache()`].
+    pub const DEFAULT_CACHE_SIZE: usize = 500;
+
     /// Creates a new layout with default values.
     ///
     /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
