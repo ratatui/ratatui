@@ -514,13 +514,13 @@ impl<'a> Scrollbar<'a> {
     /// - the end track part
     ///
     /// ```plain
-    ///         ┌──────────── thumb_len
-    ///       vvvvv
-    ///    ═══█████═══════
-    ///    ^^^     ^^^^^^^
-    ///     │         └────── track_end_len
-    ///     │
-    ///     └──────────────── track_start_len
+    ///       ┌──────────── thumb_len
+    ///     vvvvv
+    /// <═══█████═══════>
+    ///  ^^^     ^^^^^^^
+    ///   │         └────── track_end_len
+    ///   │
+    ///   └──────────────── track_start_len
     /// ```
     ///
     /// This method returns the length of each part together as a tuple.
