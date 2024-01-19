@@ -1,6 +1,7 @@
 #![warn(missing_docs)]
 use std::iter;
 
+use itertools::Itertools;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
@@ -574,6 +575,80 @@ impl<'a> Scrollbar<'a> {
 
         (track_start_len, thumb_len, track_end_len)
     }
+
+    fn bar_builder(&self, area: Rect, state: &mut ScrollbarState) -> Vec<(u16, u16, &str, Style)> {
+        // ```plain
+        // ________________ <── track_axis
+        // ^^^^^^^^^^^^^^^^
+        //       └───────────── track_len
+        // ```
+        let track_axis = self.get_track_axis(area);
+
+        let (track_start_len, thumb_len, track_end_len) = self.get_track_lens(area, state);
+
+        let track = self.track_symbol.map(|s| (s, self.track_style));
+        let thumb = Some((self.thumb_symbol, self.thumb_style));
+
+        let begin = self.begin_symbol.map(|s| (s, self.begin_style));
+        let end = self.end_symbol.map(|s| (s, self.end_style));
+
+        iter::once(begin)
+            // Current state of the iterator
+            //
+            // ```plain
+            // ┌─────────────────── begin
+            // v
+            // <________________
+            // ```
+            .chain(iter::repeat(track).take(track_start_len))
+            // Current state of the iterator
+            //
+            // ```plain
+            // <═══_____________
+            //  ^^^
+            //   └──────────────── track_start_len
+            // ```
+            .chain(iter::repeat(thumb).take(thumb_len))
+            // Current state of the iterator
+            //
+            // ```plain
+            // <═══█████═══════_
+            //     ^^^^^
+            //       └──────────── thumb_len
+            // ```
+            .chain(iter::repeat(track).take(track_end_len))
+            // Current state of the iterator
+            //
+            // ```plain
+            // <═══█████═══════_
+            //          ^^^^^^^
+            //             └────── track_end_len
+            // ```
+            .chain(iter::once(end))
+            // Current state of the iterator
+            //
+            // ```plain
+            // <═══█████═══════>
+            //                 ^
+            //                 └── end
+            // ```
+            .flatten() // We want to skip any values that are `None`
+            .enumerate() // gives each element an index that maps to buf location on track
+            // TODO: is there a way to check that iterator len matches the `area.len` here?
+            .map(|(i, (symbol, style))| {
+                // convert index to coordinate system
+                if self.is_vertical() {
+                    let y = i as u16;
+                    let x = track_axis;
+                    (x, y, symbol, style)
+                } else {
+                    let x = i as u16;
+                    let y = track_axis;
+                    (x, y, symbol, style)
+                }
+            })
+            .collect_vec()
+    }
 }
 
 impl<'a> StatefulWidget for Scrollbar<'a> {
@@ -584,30 +659,21 @@ impl<'a> StatefulWidget for Scrollbar<'a> {
             return;
         }
 
-        let track_axis = self.get_track_axis(area);
+        let bar = self.bar_builder(area, state);
 
-        let (track_start_len, thumb_len, track_end_len) = self.get_track_lens(area, state);
+        let len = if self.is_vertical() {
+            area.height
+        } else {
+            area.width
+        };
 
-        let begin = (self.begin_symbol, self.begin_style);
-        let track = (self.track_symbol, self.track_style);
-        let thumb = (Some(self.thumb_symbol), self.thumb_style);
-        let end = (self.end_symbol, self.end_style);
-        let bar = iter::once(begin)
-            .chain(iter::repeat(track).take(track_start_len))
-            .chain(iter::repeat(thumb).take(thumb_len))
-            .chain(iter::repeat(track).take(track_end_len))
-            .chain(iter::once(end));
+        if bar.len() as u16 != len {
+            // something went wrong here with the construction of bar
+            return;
+        };
 
-        let mut i = 0;
-        for (symbol, style) in bar {
-            if let Some(s) = symbol {
-                if self.is_vertical() {
-                    buf.set_string(track_axis, i, s, style);
-                } else {
-                    buf.set_string(i, track_axis, s, style);
-                }
-                i += 1;
-            }
+        for (x, y, symbol, style) in bar {
+            buf.set_string(x, y, symbol, style);
         }
     }
 }
