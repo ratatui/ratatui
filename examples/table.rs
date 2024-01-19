@@ -8,6 +8,7 @@ use crossterm::{
 use itertools::Itertools;
 use ratatui::{prelude::*, widgets::*};
 use style::palette::tailwind;
+use unicode_width::UnicodeWidthStr;
 
 const PALETTES: [tailwind::Palette; 4] = [
     tailwind::BLUE,
@@ -46,9 +47,22 @@ impl TableColors {
     }
 }
 
+struct Data {
+    name: String,
+    address: String,
+    email: String,
+}
+
+impl Data {
+    fn ref_array(&self) -> [&String; 3] {
+        [&self.name, &self.address, &self.email]
+    }
+}
+
 struct App {
     state: TableState,
-    items: Vec<Vec<String>>,
+    items: Vec<Data>,
+    longest_item_lens: (u16, u16, u16), // order is (name, address, email)
     scroll_state: ScrollbarState,
     colors: TableColors,
     color_index: usize,
@@ -56,13 +70,14 @@ struct App {
 
 impl App {
     fn new() -> App {
-        let items = generate_fake_names();
+        let data_vec = generate_fake_names();
         App {
             state: TableState::default().with_selected(0),
-            scroll_state: ScrollbarState::new((items.len() - 1) * ITEM_HEIGHT),
+            longest_item_lens: constraint_len_calculator(&data_vec),
+            scroll_state: ScrollbarState::new((data_vec.len() - 1) * ITEM_HEIGHT),
             colors: TableColors::new(&PALETTES[0]),
             color_index: 0,
-            items,
+            items: data_vec,
         }
     }
     pub fn next(&mut self) {
@@ -109,7 +124,7 @@ impl App {
     }
 }
 
-fn generate_fake_names() -> Vec<Vec<String>> {
+fn generate_fake_names() -> Vec<Data> {
     use fakeit::{address, contact, name};
 
     (0..20)
@@ -123,9 +138,14 @@ fn generate_fake_names() -> Vec<Vec<String>> {
                 address::zip()
             );
             let email = contact::email();
-            vec![name, address, email]
+
+            Data {
+                name,
+                address,
+                email,
+            }
         })
-        .sorted_by(|a, b| a[0].cmp(&b[0]))
+        .sorted_by(|a, b| a.name.cmp(&b.name))
         .collect_vec()
 }
 
@@ -204,11 +224,12 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
         .collect::<Row>()
         .style(header_style)
         .height(1);
-    let rows = app.items.iter().enumerate().map(|(i, item)| {
+    let rows = app.items.iter().enumerate().map(|(i, data)| {
         let color = match i % 2 {
             0 => app.colors.normal_row_color,
             _ => app.colors.alt_row_color,
         };
+        let item = data.ref_array();
         item.iter()
             .cloned()
             .map(|content| Cell::from(Text::from(format!("\n{}\n", content))))
@@ -217,15 +238,13 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
             .height(4)
     });
     let bar = " █ ";
-    let (longest_name_len, longest_address_len, longest_email_len) =
-        constraint_len_calculator(&app.items);
     let t = Table::new(
         rows,
         [
             // + 1 is for padding.
-            Constraint::Length(longest_name_len + 1),
-            Constraint::Min(longest_address_len + 1),
-            Constraint::Min(longest_email_len + 1),
+            Constraint::Length(app.longest_item_lens.0 + 1),
+            Constraint::Min(app.longest_item_lens.1 + 1),
+            Constraint::Min(app.longest_item_lens.2),
         ],
     )
     .header(header)
@@ -241,27 +260,23 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_stateful_widget(t, area, &mut app.state);
 }
 
-fn constraint_len_calculator(items: &[Vec<String>]) -> (u16, u16, u16) {
-    let len_vec = items
+fn constraint_len_calculator(items: &[Data]) -> (u16, u16, u16) {
+    items
         .iter()
         .map(|row| {
             (
-                row[0].chars().count() as u16,
-                row[1]
-                    .split('\n')
-                    .map(|address_line| address_line.chars().count())
+                UnicodeWidthStr::width(row.name.as_str()) as u16,
+                row.address
+                    .lines()
+                    .map(UnicodeWidthStr::width)
                     .max()
-                    .unwrap() as u16,
-                row[2].chars().count() as u16,
+                    .unwrap_or(0) as u16,
+                UnicodeWidthStr::width(row.email.as_str()) as u16,
             )
         })
-        .collect::<Vec<(u16, u16, u16)>>();
-
-    let longest_name_len = len_vec.iter().map(|row| row.0).max().unwrap();
-    let longest_address_len = len_vec.iter().map(|row| row.1).max().unwrap();
-    let longest_email_len = len_vec.iter().map(|row| row.2).max().unwrap();
-
-    (longest_name_len, longest_address_len, longest_email_len)
+        .fold((0, 0, 0), |acc, row| {
+            (acc.0.max(row.0), acc.1.max(row.1), acc.2.max(row.2))
+        })
 }
 
 fn render_scrollbar(f: &mut Frame, app: &mut App, area: Rect) {
@@ -293,19 +308,22 @@ fn render_footer(f: &mut Frame, app: &mut App, area: Rect) {
 
 #[cfg(test)]
 mod tests {
+    use crate::Data;
+
     #[test]
     fn constraint_len_calculator() {
         let test_data = vec![
-            vec![
-                "Emirhan Tala".to_string(),
-                "Cambridgelaan 6XX\n3584 XX Utrecht".to_string(),
-                "tala.emirhan@gmail.com".to_string(),
-            ],
-            vec![
-                "thistextis26characterslong".to_string(),
-                "this line is 31 characters long\nbottom line is 33 characters long".to_string(),
-                "thisemailis40caharacterslong@ratatui.com".to_string(),
-            ],
+            Data {
+                name: "Emirhan Tala".to_string(),
+                address: "Cambridgelaan 6XX\n3584 XX Utrecht".to_string(),
+                email: "tala.emirhan@gmail.com".to_string(),
+            },
+            Data {
+                name: "thistextis26characterslong".to_string(),
+                address: "this line is 31 characters long\nbottom line is 33 characters long"
+                    .to_string(),
+                email: "thisemailis40caharacterslong@ratatui.com".to_string(),
+            },
         ];
         let (longest_name_len, longest_address_len, longest_email_len) =
             crate::constraint_len_calculator(&test_data);
