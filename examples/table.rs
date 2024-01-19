@@ -57,6 +57,18 @@ impl Data {
     fn ref_array(&self) -> [&String; 3] {
         [&self.name, &self.address, &self.email]
     }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn address(&self) -> &str {
+        &self.address
+    }
+
+    fn email(&self) -> &str {
+        &self.email
+    }
 }
 
 struct App {
@@ -261,22 +273,27 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
 }
 
 fn constraint_len_calculator(items: &[Data]) -> (u16, u16, u16) {
-    items
+    let name_len = items
         .iter()
-        .map(|row| {
-            (
-                UnicodeWidthStr::width(row.name.as_str()) as u16,
-                row.address
-                    .lines()
-                    .map(UnicodeWidthStr::width)
-                    .max()
-                    .unwrap_or(0) as u16,
-                UnicodeWidthStr::width(row.email.as_str()) as u16,
-            )
-        })
-        .fold((0, 0, 0), |acc, row| {
-            (acc.0.max(row.0), acc.1.max(row.1), acc.2.max(row.2))
-        })
+        .map(Data::name)
+        .map(UnicodeWidthStr::width)
+        .max()
+        .unwrap_or(0);
+    let address_len = items
+        .iter()
+        .map(Data::address)
+        .flat_map(str::lines)
+        .map(UnicodeWidthStr::width)
+        .max()
+        .unwrap_or(0);
+    let email_len = items
+        .iter()
+        .map(Data::email)
+        .map(UnicodeWidthStr::width)
+        .max()
+        .unwrap_or(0);
+
+    (name_len as u16, address_len as u16, email_len as u16)
 }
 
 fn render_scrollbar(f: &mut Frame, app: &mut App, area: Rect) {
