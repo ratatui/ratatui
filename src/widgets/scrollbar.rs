@@ -475,7 +475,7 @@ impl<'a> Scrollbar<'a> {
         }
     }
 
-    /// Calculates length of the track without excluding the arrow heads
+    /// Calculates length of the track excluding the arrow heads
     /// ```plain
     ///        ┌────────── track_length
     ///  vvvvvvvvvvvvvvv
@@ -485,25 +485,15 @@ impl<'a> Scrollbar<'a> {
     /// # Returns
     ///
     /// `(track_length)`
-    fn get_track_length(&self, area: Rect) -> u16 {
-        let (mut track_start, mut track_end) = match self.orientation {
-            ScrollbarOrientation::VerticalRight => (area.y, (area.y + area.height)),
-            ScrollbarOrientation::VerticalLeft => (area.y, (area.y + area.height)),
-            ScrollbarOrientation::HorizontalBottom => (area.x, (area.x + area.width)),
-            ScrollbarOrientation::HorizontalTop => (area.x, (area.x + area.width)),
-        };
-        // if scrollbar has begin and end symbols:
-        //
-        // <═══█████═══════>
-        //
-        // then increment and decrement track_start and track_end respectively
-        if let Some(s) = self.begin_symbol {
-            track_start = track_start.saturating_add(s.width() as u16);
-        };
-        if let Some(s) = self.end_symbol {
-            track_end = track_end.saturating_sub(s.width() as u16);
-        };
-        track_end.saturating_sub(track_start)
+    fn track_length(&self, area: Rect) -> u16 {
+        let start_len = self.begin_symbol.map(|s| s.width() as u16).unwrap_or(0);
+        let end_len = self.end_symbol.map(|s| s.width() as u16).unwrap_or(0);
+        let arrows_len = start_len + end_len;
+        if self.orientation.is_vertical() {
+            area.height.saturating_sub(arrows_len)
+        } else {
+            area.width.saturating_sub(arrows_len)
+        }
     }
 
     /// Returns the lengths of the parts of a scrollbar
