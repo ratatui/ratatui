@@ -535,7 +535,7 @@ impl<'a> Scrollbar<'a> {
     ///     │
     ///     └──────────────── track_start_len
     /// ```
-    fn get_track_lens(&self, area: Rect, state: &mut ScrollbarState) -> (usize, usize, usize) {
+    fn get_part_lengths(&self, area: Rect, state: &mut ScrollbarState) -> (usize, usize, usize) {
         let (mut track_start, mut track_end) = match self.orientation {
             ScrollbarOrientation::VerticalRight => (area.y, (area.y + area.height)),
             ScrollbarOrientation::VerticalLeft => (area.y, (area.y + area.height)),
