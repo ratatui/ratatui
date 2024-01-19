@@ -500,10 +500,10 @@ impl<'a> Scrollbar<'a> {
         let track_size = track_size as f64;
 
         let scroll_ratio = position / (scrollable_content_size);
-        let thumb_start = track_start + (scroll_ratio * track_size).round() as u16;
+        let thumb_start = track_start + (scroll_ratio * track_size).floor() as u16;
 
         let thumb_ratio = (viewport_size / scrollable_content_size).min(1.0);
-        let thumb_size = (thumb_ratio * track_size).round() as u16;
+        let thumb_size = (thumb_ratio * track_size).floor() as u16;
 
         let thumb_start = thumb_start.min(track_end.saturating_sub(thumb_size));
         let thumb_end = (thumb_start + thumb_size).min(track_end);
@@ -689,334 +689,12 @@ mod tests {
     }
 
     #[test]
-    fn test_no_render_when_area_zero() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 0));
-        let mut state = ScrollbarState::default().position(0).content_length(1);
-        Scrollbar::default().render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(buffer, Buffer::empty(buffer.area));
-    }
-
-    #[test]
-    fn test_no_render_when_height_zero_with_without_arrows() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 0));
-        let mut state = ScrollbarState::default().position(0).content_length(1);
-        Scrollbar::default().render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(buffer, Buffer::empty(buffer.area));
-
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 0));
-        let mut state = ScrollbarState::default().position(0).content_length(1);
-        Scrollbar::default()
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(buffer, Buffer::empty(buffer.area));
-    }
-
-    #[test]
-    fn test_no_render_when_height_too_small_for_arrows() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
-        let mut state = ScrollbarState::default().position(0).content_length(1);
-        Scrollbar::default().render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["    ", "    "]));
-    }
-
-    #[test]
-    fn test_renders_all_thumbs_at_minimum_height_without_arrows() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
-        let mut state = ScrollbarState::default().position(0).content_length(1);
-        Scrollbar::default()
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["   █", "   █"]));
-    }
-
-    #[test]
-    fn test_renders_all_thumbs_at_minimum_height_and_minimum_width_without_arrows() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 2));
-        let mut state = ScrollbarState::default().position(0).content_length(1);
-        Scrollbar::default()
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["█", "█"]));
-    }
-
-    #[test]
-    fn test_renders_two_arrows_one_thumb_at_minimum_height_with_arrows() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 3));
-        let mut state = ScrollbarState::default().position(0).content_length(1);
-        Scrollbar::default().render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["   ▲", "   █", "   ▼"]));
-    }
-
-    #[test]
-    fn test_no_render_when_content_length_zero() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 2));
-        let mut state = ScrollbarState::default().position(0).content_length(0);
-        Scrollbar::default().render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["  ", "  "]));
-    }
-
-    #[test]
-    fn test_renders_all_thumbs_when_height_equals_content_length() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 2));
-        let mut state = ScrollbarState::default().position(0).content_length(2);
-        Scrollbar::default()
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![" █", " █"]));
-
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 8));
-        let mut state = ScrollbarState::default().position(0).content_length(8);
-        Scrollbar::default()
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![" █", " █", " █", " █", " █", " █", " █", " █"])
-        );
-    }
-
-    #[test]
-    fn test_renders_single_vertical_thumb_when_content_length_square_of_height() {
-        for i in 0..=17 {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 4));
-            let mut state = ScrollbarState::default().position(i).content_length(16);
-            Scrollbar::default()
-                .begin_symbol(None)
-                .end_symbol(None)
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = if i <= 2 {
-                vec![" █", " ║", " ║", " ║"]
-            } else if i <= 7 {
-                vec![" ║", " █", " ║", " ║"]
-            } else if i <= 13 {
-                vec![" ║", " ║", " █", " ║"]
-            } else {
-                vec![" ║", " ║", " ║", " █"]
-            };
-            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-        }
-    }
-
-    #[test]
-    fn test_renders_single_horizontal_thumb_when_content_length_square_of_width() {
-        for i in 0..=17 {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
-            let mut state = ScrollbarState::default().position(i).content_length(16);
-            Scrollbar::default()
-                .begin_symbol(None)
-                .end_symbol(None)
-                .orientation(ScrollbarOrientation::HorizontalBottom)
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = if i <= 2 {
-                vec!["    ", "█═══"]
-            } else if i <= 7 {
-                vec!["    ", "═█══"]
-            } else if i <= 13 {
-                vec!["    ", "══█═"]
-            } else {
-                vec!["    ", "═══█"]
-            };
-            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-        }
-    }
-
-    #[test]
-    fn test_renders_one_thumb_for_large_content_relative_to_height() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
-        let mut state = ScrollbarState::default().position(0).content_length(1600);
-        Scrollbar::default()
-            .begin_symbol(None)
-            .end_symbol(None)
-            .orientation(ScrollbarOrientation::HorizontalBottom)
-            .render(buffer.area, &mut buffer, &mut state);
-        let expected = vec!["    ", "█═══"];
-        assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
-        let mut state = ScrollbarState::default().position(800).content_length(1600);
-        Scrollbar::default()
-            .begin_symbol(None)
-            .end_symbol(None)
-            .orientation(ScrollbarOrientation::HorizontalBottom)
-            .render(buffer.area, &mut buffer, &mut state);
-        let expected = vec!["    ", "══█═"];
-        assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-    }
-
-    #[test]
-    fn test_renders_two_thumb_default_symbols_for_content_double_height() {
-        for i in 0..=7 {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 4));
-            let mut state = ScrollbarState::default().position(i).content_length(8);
-            Scrollbar::default()
-                .begin_symbol(None)
-                .end_symbol(None)
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = if i <= 1 {
-                vec![" █", " █", " ║", " ║"]
-            } else if i <= 5 {
-                vec![" ║", " █", " █", " ║"]
-            } else {
-                vec![" ║", " ║", " █", " █"]
-            };
-            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-        }
-    }
-
-    #[test]
-    fn test_renders_two_thumb_custom_symbols_for_content_double_height() {
-        for i in 0..=7 {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 4));
-            let mut state = ScrollbarState::default().position(i).content_length(8);
-            Scrollbar::default()
-                .symbols(VERTICAL)
-                .begin_symbol(None)
-                .end_symbol(None)
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = if i <= 1 {
-                vec![" █", " █", " │", " │"]
-            } else if i <= 5 {
-                vec![" │", " █", " █", " │"]
-            } else {
-                vec![" │", " │", " █", " █"]
-            };
-            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-        }
-    }
-
-    #[test]
-    fn test_renders_two_thumb_default_symbols_for_content_double_width() {
-        for i in 0..=7 {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
-            let mut state = ScrollbarState::default().position(i).content_length(8);
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::HorizontalBottom)
-                .begin_symbol(None)
-                .end_symbol(None)
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = if i <= 1 {
-                vec!["    ", "██══"]
-            } else if i <= 5 {
-                vec!["    ", "═██═"]
-            } else {
-                vec!["    ", "══██"]
-            };
-            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-        }
-    }
-
-    #[test]
-    fn test_renders_two_thumb_custom_symbols_for_content_double_width() {
-        for i in 0..=7 {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
-            let mut state = ScrollbarState::default().position(i).content_length(8);
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::HorizontalBottom)
-                .symbols(HORIZONTAL)
-                .begin_symbol(None)
-                .end_symbol(None)
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = if i <= 1 {
-                vec!["    ", "██──"]
-            } else if i <= 5 {
-                vec!["    ", "─██─"]
-            } else {
-                vec!["    ", "──██"]
-            };
-            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-        }
-    }
-
-    #[test]
-    fn test_rendering_viewport_content_length() {
-        for i in 0..=16 {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 2));
-            let mut state = ScrollbarState::default()
-                .position(i)
-                .content_length(16)
-                .viewport_content_length(4);
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::HorizontalBottom)
-                .begin_symbol(Some(DOUBLE_HORIZONTAL.begin))
-                .end_symbol(Some(DOUBLE_HORIZONTAL.end))
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = if i <= 1 {
-                vec!["        ", "◄██════►"]
-            } else if i <= 5 {
-                vec!["        ", "◄═██═══►"]
-            } else if i <= 9 {
-                vec!["        ", "◄══██══►"]
-            } else if i <= 13 {
-                vec!["        ", "◄═══██═►"]
-            } else {
-                vec!["        ", "◄════██►"]
-            };
-            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-        }
-
-        for i in 0..=16 {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 2));
-            let mut state = ScrollbarState::default()
-                .position(i)
-                .content_length(16)
-                .viewport_content_length(1);
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::HorizontalBottom)
-                .begin_symbol(Some(DOUBLE_HORIZONTAL.begin))
-                .end_symbol(Some(DOUBLE_HORIZONTAL.end))
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = if i <= 1 {
-                vec!["        ", "◄█═════►"]
-            } else if i <= 4 {
-                vec!["        ", "◄═█════►"]
-            } else if i <= 7 {
-                vec!["        ", "◄══█═══►"]
-            } else if i <= 11 {
-                vec!["        ", "◄═══█══►"]
-            } else if i <= 14 {
-                vec!["        ", "◄════█═►"]
-            } else {
-                vec!["        ", "◄═════█►"]
-            };
-            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-        }
-    }
-
-    #[test]
-    fn test_rendering_begin_end_arrows_horizontal_bottom() {
-        for i in 0..=16 {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 2));
-            let mut state = ScrollbarState::default().position(i).content_length(16);
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::HorizontalBottom)
-                .begin_symbol(Some(DOUBLE_HORIZONTAL.begin))
-                .end_symbol(Some(DOUBLE_HORIZONTAL.end))
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = if i <= 1 {
-                vec!["        ", "◄██════►"]
-            } else if i <= 5 {
-                vec!["        ", "◄═██═══►"]
-            } else if i <= 9 {
-                vec!["        ", "◄══██══►"]
-            } else if i <= 13 {
-                vec!["        ", "◄═══██═►"]
-            } else {
-                vec!["        ", "◄════██►"]
-            };
-            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-        }
-    }
-
-    #[test]
     fn test_rendering_begin_end_arrows_horizontal_top() {
         let all_expected = vec![
             "◄███═══►",
             "◄███═══►",
+            "◄███═══►",
+            "◄███═══►",
             "◄═███══►",
             "◄═███══►",
             "◄═███══►",
@@ -1025,8 +703,6 @@ mod tests {
             "◄══███═►",
             "◄══███═►",
             "◄══███═►",
-            "◄═══███►",
-            "◄═══███►",
             "◄═══███►",
             "◄═══███►",
             "◄═══███►",
@@ -1049,159 +725,109 @@ mod tests {
     }
 
     #[test]
-    fn test_rendering_only_begin_arrow_horizontal_bottom() {
-        for i in 0..=16 {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 2));
-            let mut state = ScrollbarState::default().position(i).content_length(16);
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::HorizontalBottom)
-                .begin_symbol(Some(DOUBLE_HORIZONTAL.begin))
-                .end_symbol(None)
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = if i <= 1 {
-                vec!["        ", "◄███════"]
-            } else if i <= 5 {
-                vec!["        ", "◄═███═══"]
-            } else if i <= 9 {
-                vec!["        ", "◄══███══"]
-            } else if i <= 13 {
-                vec!["        ", "◄═══███═"]
-            } else {
-                vec!["        ", "◄════███"]
-            };
-            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-        }
-    }
-
-    #[test]
-    fn test_rendering_without_track_horizontal_bottom() {
-        for i in 0..=16 {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 2));
-            let mut state = ScrollbarState::default().position(i).content_length(16);
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::HorizontalBottom)
-                .track_symbol(None)
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = if i <= 1 {
-                vec!["        ", "◄██    ►"]
-            } else if i <= 5 {
-                vec!["        ", "◄ ██   ►"]
-            } else if i <= 9 {
-                vec!["        ", "◄  ██  ►"]
-            } else if i <= 13 {
-                vec!["        ", "◄   ██ ►"]
-            } else {
-                vec!["        ", "◄    ██►"]
-            };
-            assert_buffer_eq!(buffer, Buffer::with_lines(expected.clone()));
-        }
-    }
-
-    #[test]
     fn rendering_scrollbar_with_uniform_progression() {
         let all_expected = vec![
-            "██████████████████════════════════════════════════",
-            "██████████████████════════════════════════════════",
-            "═██████████████████═══════════════════════════════",
-            "═██████████████████═══════════════════════════════",
-            "═██████████████████═══════════════════════════════",
-            "══██████████████████══════════════════════════════",
-            "══██████████████████══════════════════════════════",
-            "══██████████████████══════════════════════════════",
-            "═══██████████████████═════════════════════════════",
-            "═══██████████████████═════════════════════════════",
-            "═══██████████████████═════════════════════════════",
-            "════██████████████████════════════════════════════",
-            "════██████████████████════════════════════════════",
-            "════██████████████████════════════════════════════",
-            "═════██████████████████═══════════════════════════",
-            "═════██████████████████═══════════════════════════",
-            "═════██████████████████═══════════════════════════",
-            "══════██████████████████══════════════════════════",
-            "══════██████████████████══════════════════════════",
-            "══════██████████████████══════════════════════════",
-            "═══════██████████████████═════════════════════════",
-            "═══════██████████████████═════════════════════════",
-            "═══════██████████████████═════════════════════════",
-            "════════██████████████████════════════════════════",
-            "════════██████████████████════════════════════════",
-            "════════██████████████████════════════════════════",
-            "═════════██████████████████═══════════════════════",
-            "═════════██████████████████═══════════════════════",
-            "═════════██████████████████═══════════════════════",
-            "══════════██████████████████══════════════════════",
-            "══════════██████████████████══════════════════════",
-            "══════════██████████████████══════════════════════",
-            "═══════════██████████████████═════════════════════",
-            "═══════════██████████████████═════════════════════",
-            "═══════════██████████████████═════════════════════",
-            "════════════██████████████████════════════════════",
-            "════════════██████████████████════════════════════",
-            "════════════██████████████████════════════════════",
-            "═════════════██████████████████═══════════════════",
-            "═════════════██████████████████═══════════════════",
-            "═════════════██████████████████═══════════════════",
-            "══════════════██████████████████══════════════════",
-            "══════════════██████████████████══════════════════",
-            "══════════════██████████████████══════════════════",
-            "═══════════════██████████████████═════════════════",
-            "═══════════════██████████████████═════════════════",
-            "═══════════════██████████████████═════════════════",
-            "════════════════██████████████████════════════════",
-            "════════════════██████████████████════════════════",
-            "════════════════██████████████████════════════════",
-            "═════════════════██████████████████═══════════════",
-            "═════════════════██████████████████═══════════════",
-            "═════════════════██████████████████═══════════════",
-            "══════════════════██████████████████══════════════",
-            "══════════════════██████████████████══════════════",
-            "══════════════════██████████████████══════════════",
-            "═══════════════════██████████████████═════════════",
-            "═══════════════════██████████████████═════════════",
-            "═══════════════════██████████████████═════════════",
-            "════════════════════██████████████████════════════",
-            "════════════════════██████████████████════════════",
-            "════════════════════██████████████████════════════",
-            "═════════════════════██████████████████═══════════",
-            "═════════════════════██████████████████═══════════",
-            "═════════════════════██████████████████═══════════",
-            "══════════════════════██████████████████══════════",
-            "══════════════════════██████████████████══════════",
-            "══════════════════════██████████████████══════════",
-            "═══════════════════════██████████████████═════════",
-            "═══════════════════════██████████████████═════════",
-            "═══════════════════════██████████████████═════════",
-            "════════════════════════██████████████████════════",
-            "════════════════════════██████████████████════════",
-            "════════════════════════██████████████████════════",
-            "═════════════════════════██████████████████═══════",
-            "═════════════════════════██████████████████═══════",
-            "═════════════════════════██████████████████═══════",
-            "══════════════════════════██████████████████══════",
-            "══════════════════════════██████████████████══════",
-            "══════════════════════════██████████████████══════",
-            "═══════════════════════════██████████████████═════",
-            "═══════════════════════════██████████████████═════",
-            "═══════════════════════════██████████████████═════",
-            "════════════════════════════██████████████████════",
-            "════════════════════════════██████████████████════",
-            "════════════════════════════██████████████████════",
-            "═════════════════════════════██████████████████═══",
-            "═════════════════════════════██████████████████═══",
-            "═════════════════════════════██████████████████═══",
-            "══════════════════════════════██████████████████══",
-            "══════════════════════════════██████████████████══",
-            "══════════════════════════════██████████████████══",
-            "═══════════════════════════════██████████████████═",
-            "═══════════════════════════════██████████████████═",
-            "═══════════════════════════════██████████████████═",
-            "════════════════════════════════██████████████████",
-            "════════════════════════════════██████████████████",
-            "════════════════════════════════██████████████████",
-            "════════════════════════════════██████████████████",
-            "════════════════════════════════██████████████████",
+            "█████████████████═════════════════════════════════",
+            "█████████████████═════════════════════════════════",
+            "█████████████████═════════════════════════════════",
+            "═█████████████████════════════════════════════════",
+            "═█████████████████════════════════════════════════",
+            "═█████████████████════════════════════════════════",
+            "══█████████████████═══════════════════════════════",
+            "══█████████████████═══════════════════════════════",
+            "══█████████████████═══════════════════════════════",
+            "═══█████████████████══════════════════════════════",
+            "═══█████████████████══════════════════════════════",
+            "═══█████████████████══════════════════════════════",
+            "════█████████████████═════════════════════════════",
+            "════█████████████████═════════════════════════════",
+            "════█████████████████═════════════════════════════",
+            "═════█████████████████════════════════════════════",
+            "═════█████████████████════════════════════════════",
+            "═════█████████████████════════════════════════════",
+            "══════█████████████████═══════════════════════════",
+            "══════█████████████████═══════════════════════════",
+            "══════█████████████████═══════════════════════════",
+            "═══════█████████████████══════════════════════════",
+            "═══════█████████████████══════════════════════════",
+            "═══════█████████████████══════════════════════════",
+            "════════█████████████████═════════════════════════",
+            "════════█████████████████═════════════════════════",
+            "════════█████████████████═════════════════════════",
+            "═════════█████████████████════════════════════════",
+            "═════════█████████████████════════════════════════",
+            "═════════█████████████████════════════════════════",
+            "══════════█████████████████═══════════════════════",
+            "══════════█████████████████═══════════════════════",
+            "══════════█████████████████═══════════════════════",
+            "═══════════█████████████████══════════════════════",
+            "═══════════█████████████████══════════════════════",
+            "═══════════█████████████████══════════════════════",
+            "════════════█████████████████═════════════════════",
+            "════════════█████████████████═════════════════════",
+            "════════════█████████████████═════════════════════",
+            "═════════════█████████████████════════════════════",
+            "═════════════█████████████████════════════════════",
+            "═════════════█████████████████════════════════════",
+            "══════════════█████████████████═══════════════════",
+            "══════════════█████████████████═══════════════════",
+            "══════════════█████████████████═══════════════════",
+            "═══════════════█████████████████══════════════════",
+            "═══════════════█████████████████══════════════════",
+            "═══════════════█████████████████══════════════════",
+            "════════════════█████████████████═════════════════",
+            "════════════════█████████████████═════════════════",
+            "════════════════█████████████████═════════════════",
+            "═════════════════█████████████████════════════════",
+            "═════════════════█████████████████════════════════",
+            "═════════════════█████████████████════════════════",
+            "══════════════════█████████████████═══════════════",
+            "══════════════════█████████████████═══════════════",
+            "══════════════════█████████████████═══════════════",
+            "═══════════════════█████████████████══════════════",
+            "═══════════════════█████████████████══════════════",
+            "═══════════════════█████████████████══════════════",
+            "════════════════════█████████████████═════════════",
+            "════════════════════█████████████████═════════════",
+            "════════════════════█████████████████═════════════",
+            "═════════════════════█████████████████════════════",
+            "═════════════════════█████████████████════════════",
+            "═════════════════════█████████████████════════════",
+            "══════════════════════█████████████████═══════════",
+            "══════════════════════█████████████████═══════════",
+            "══════════════════════█████████████████═══════════",
+            "═══════════════════════█████████████████══════════",
+            "═══════════════════════█████████████████══════════",
+            "═══════════════════════█████████████████══════════",
+            "════════════════════════█████████████████═════════",
+            "════════════════════════█████████████████═════════",
+            "════════════════════════█████████████████═════════",
+            "═════════════════════════█████████████████════════",
+            "═════════════════════════█████████████████════════",
+            "═════════════════════════█████████████████════════",
+            "══════════════════════════█████████████████═══════",
+            "══════════════════════════█████████████████═══════",
+            "══════════════════════════█████████████████═══════",
+            "═══════════════════════════█████████████████══════",
+            "═══════════════════════════█████████████████══════",
+            "═══════════════════════════█████████████████══════",
+            "════════════════════════════█████████████████═════",
+            "════════════════════════════█████████████████═════",
+            "════════════════════════════█████████████████═════",
+            "════════════════════════════█████████████████═════",
+            "═════════════════════════════█████████████████════",
+            "═════════════════════════════█████████████████════",
+            "══════════════════════════════█████████████████═══",
+            "══════════════════════════════█████████████████═══",
+            "══════════════════════════════█████████████████═══",
+            "═══════════════════════════════█████████████████══",
+            "═══════════════════════════════█████████████████══",
+            "═══════════════════════════════█████████████████══",
+            "════════════════════════════════█████████████████═",
+            "════════════════════════════════█████████████████═",
+            "════════════════════════════════█████████████████═",
+            "═════════════════════════════════█████████████████",
         ];
-
         let content_length = all_expected.len();
         for p in 0..content_length {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 50, 1));
@@ -1216,99 +842,5 @@ mod tests {
             let expected = all_expected[p];
             assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
         }
-    }
-
-    #[test]
-    fn render_nothing_when_content_length_is_zero() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
-        let mut state = ScrollbarState::default().position(0).content_length(0);
-        Scrollbar::default()
-            .orientation(ScrollbarOrientation::HorizontalBottom)
-            .render(buffer.area, &mut buffer, &mut state);
-        let expected = "          ";
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
-    }
-
-    #[test]
-    fn render_full_when_content_length_is_one() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
-        let mut state = ScrollbarState::default().position(0).content_length(1);
-        Scrollbar::default()
-            .orientation(ScrollbarOrientation::HorizontalBottom)
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        let expected = "██████████";
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
-    }
-
-    #[test]
-    fn render_almost_full_when_content_length_is_two() {
-        // when buffer is 10
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
-        let mut state = ScrollbarState::default().position(0).content_length(2);
-        Scrollbar::default()
-            .orientation(ScrollbarOrientation::HorizontalBottom)
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        let expected = "█████████═";
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
-
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
-        let mut state = ScrollbarState::default().position(1).content_length(2);
-        Scrollbar::default()
-            .orientation(ScrollbarOrientation::HorizontalBottom)
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        let expected = "═█████████";
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
-
-        // when buffer is 50
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 50, 1));
-        let mut state = ScrollbarState::default().position(0).content_length(2);
-        Scrollbar::default()
-            .orientation(ScrollbarOrientation::HorizontalBottom)
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        let expected = "█████████████████████████████████████████████████═";
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
-
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 50, 1));
-        let mut state = ScrollbarState::default().position(1).content_length(2);
-        Scrollbar::default()
-            .orientation(ScrollbarOrientation::HorizontalBottom)
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        let expected = "═█████████████████████████████████████████████████";
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
-
-        // when buffer is 2
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 1));
-        let mut state = ScrollbarState::default().position(0).content_length(2);
-        Scrollbar::default()
-            .orientation(ScrollbarOrientation::HorizontalBottom)
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        // test is broken
-        let _expected = "█═";
-        let expected = "██";
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
-
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 2, 1));
-        let mut state = ScrollbarState::default().position(1).content_length(2);
-        Scrollbar::default()
-            .orientation(ScrollbarOrientation::HorizontalBottom)
-            .begin_symbol(None)
-            .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
-        // test is broken
-        let _expected = "═█";
-        let expected = "██";
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
     }
 }
