@@ -519,7 +519,7 @@ impl<'a> Scrollbar<'a> {
         let thumb_track_size = (viewport_size * track_size) / scrollable_content_size;
         let before_thumb_track_size = thumb_start.saturating_sub(track_start);
         let after_thumb_track_size =
-            track_end.saturating_sub(before_thumb_track_size + thumb_track_size);
+            track_size.saturating_sub(before_thumb_track_size + thumb_track_size);
 
         (
             track_axis,
@@ -571,7 +571,6 @@ mod tests {
     use unicode_width::UnicodeWidthStr;
 
     use super::*;
-    use crate::assert_buffer_eq;
 
     #[test]
     fn scroll_direction_to_string() {
@@ -640,21 +639,22 @@ mod tests {
     }
 
     #[rstest]
-    #[case::position_0(0, 10, "█████═════")]
-    #[case::position_1(1, 10, "═█████════")]
-    #[case::position_2(2, 10, "═█████════")]
-    #[case::position_3(3, 10, "══█████═══")]
-    #[case::position_4(4, 10, "══█████═══")]
-    #[case::position_5(5, 10, "═══█████══")]
-    #[case::position_6(6, 10, "═══█████══")]
-    #[case::position_7(7, 10, "════█████═")]
-    #[case::position_8(8, 10, "════█████═")]
-    #[case::position_9(9, 10, "═════█████")]
-    #[case::position_out_of_bounds(100, 10, "═════█████")]
-    fn render_scrollbar(
+    #[case("█████═════", 0, 10, "position_0")]
+    #[case("═█████════", 1, 10, "position_1")]
+    #[case("═█████════", 2, 10, "position_2")]
+    #[case("══█████═══", 3, 10, "position_3")]
+    #[case("══█████═══", 4, 10, "position_4")]
+    #[case("═══█████══", 5, 10, "position_5")]
+    #[case("═══█████══", 6, 10, "position_6")]
+    #[case("════█████═", 7, 10, "position_7")]
+    #[case("════█████═", 8, 10, "position_8")]
+    #[case("═════█████", 9, 10, "position_9")]
+    #[case("═════█████", 100, 10, "position_out_of_bounds")]
+    fn render_scrollbar_without_symbols(
+        #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] expected: &str,
+        #[case] _assertion_message: &str,
     ) {
         let size = expected.width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
@@ -666,6 +666,38 @@ mod tests {
             .begin_symbol(None)
             .end_symbol(None)
             .render(buffer.area, &mut buffer, &mut state);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+        assert_eq!(buffer, Buffer::with_lines(vec![expected]));
+    }
+
+    #[rstest]
+    #[case("<0000|||||>", 0, 10, "position_0")]
+    #[case("<0000|||||>", 1, 10, "position_1")]
+    #[case("<|0000||||>", 2, 10, "position_2")]
+    #[case("<|0000||||>", 3, 10, "position_3")]
+    #[case("<||0000|||>", 4, 10, "position_4")]
+    #[case("<||0000|||>", 5, 10, "position_5")]
+    #[case("<|||0000||>", 6, 10, "position_6")]
+    #[case("<|||0000||>", 7, 10, "position_7")]
+    #[case("<|||0000||>", 8, 10, "position_8")]
+    #[case("<||||0000|>", 9, 10, "position_9")]
+    fn render_scrollbar_with_symbols(
+        #[case] expected: &str,
+        #[case] position: usize,
+        #[case] content_length: usize,
+        #[case] _assertion_message: &str,
+    ) {
+        let size = expected.width() as u16;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
+        let mut state = ScrollbarState::default()
+            .position(position)
+            .content_length(content_length);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalTop)
+            .begin_symbol(Some("<"))
+            .end_symbol(Some(">"))
+            .track_symbol(Some("|"))
+            .thumb_symbol("0")
+            .render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(buffer, Buffer::with_lines(vec![expected]));
     }
 }
