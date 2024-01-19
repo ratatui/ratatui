@@ -1,4 +1,6 @@
 #![warn(missing_docs)]
+use std::iter;
+
 use strum::{Display, EnumString};
 
 use super::StatefulWidget;
@@ -455,115 +457,76 @@ impl<'a> Scrollbar<'a> {
         }
     }
 
-    fn get_track_info(&self, area: Rect) -> (u16, u16, u16, u16) {
+    /// Returns information about scrollbar track
+    ///
+    /// For ScrollbarOrientation::VerticalRight
+    ///
+    ///                   ┌───────── track_axis
+    ///                   v
+    ///   ┌───────────────┐
+    ///   │               ║<──────── track_start
+    ///   │               █
+    ///   │               █
+    ///   │               ║
+    ///   │               ║<──────── track_end
+    ///   └───────────────┘
+    ///
+    /// For ScrollbarOrientation::HorizontalBottom
+    ///
+    ///   ┌───────────────┐
+    ///   │               │
+    ///   │               │
+    ///   │               │
+    ///   └═══███═════════┘<──────── track_axis
+    ///    ^             ^
+    ///    │             └────────── track_end
+    ///    │
+    ///    └──────────────────────── track_start
+    fn get_track_sizes(
+        &self,
+        area: Rect,
+        state: &mut ScrollbarState,
+    ) -> (u16, usize, usize, usize) {
+        let viewport_size = self.get_viewport_size(area);
         let (track_axis, mut track_start, mut track_end) = match self.orientation {
-            ScrollbarOrientation::VerticalRight => {
-                (area.x, area.y, (area.y + area.height.saturating_sub(1)))
-            }
+            ScrollbarOrientation::VerticalRight => (area.x, area.y, (area.y + area.height)),
             ScrollbarOrientation::VerticalLeft => (
                 area.x + area.width.saturating_sub(1),
                 area.y,
-                (area.y + area.height.saturating_sub(1)),
+                (area.y + area.height),
             ),
             ScrollbarOrientation::HorizontalBottom => (
                 area.y + area.height.saturating_sub(1),
                 area.x,
-                (area.x + area.width.saturating_sub(1)),
+                (area.x + area.width),
             ),
-            ScrollbarOrientation::HorizontalTop => {
-                (area.y, area.x, (area.x + area.width.saturating_sub(1)))
-            }
+            ScrollbarOrientation::HorizontalTop => (area.y, area.x, (area.x + area.width)),
         };
         if let Some(_) = self.begin_symbol {
-            track_start = track_start.saturating_add(1); // assuming length of symbol is 1
+            track_start = track_start.saturating_add(1); // assuming length of begin_symbol is 1
         };
         if let Some(_) = self.end_symbol {
-            track_end = track_end.saturating_sub(1); // assuming length of symbol is 1
+            track_end = track_end.saturating_sub(1); // assuming length of end_symbol is 1
         };
-        let track_size = track_end.saturating_sub(track_start).saturating_add(1);
-        (track_axis, track_start, track_end, track_size)
-    }
+        let track_size = track_end.saturating_sub(track_start);
 
-    fn get_thumb_start_end(&self, area: Rect, state: &mut ScrollbarState) -> (u16, u16) {
-        let (_, track_start, track_end, track_size) = self.get_track_info(area);
-        let viewport_size = self.get_viewport_size(area);
+        let scrollable_content_size = state.content_length as u16 + viewport_size;
+        let position = (state.position as u16 + 1).min(state.content_length as u16);
 
-        let scrollable_content_size = (state.content_length + viewport_size as usize) as f64;
-        let position = state.position as f64;
-        let viewport_size = viewport_size as f64;
-        let track_size = track_size as f64;
+        let scroll_position = (position * track_size) / (scrollable_content_size);
+        let thumb_start = track_start + scroll_position;
 
-        let scroll_ratio = position / (scrollable_content_size);
-        let thumb_start = track_start + (scroll_ratio * track_size).floor() as u16;
+        let thumb_track_size = (viewport_size * track_size) / scrollable_content_size;
+        let before_thumb_track_size = thumb_start.saturating_sub(track_start);
+        let after_thumb_track_size =
+            track_end.saturating_sub(before_thumb_track_size + thumb_track_size);
 
-        let thumb_ratio = (viewport_size / scrollable_content_size).min(1.0);
-        let thumb_size = (thumb_ratio * track_size).floor() as u16;
-
-        let thumb_start = thumb_start.min(track_end.saturating_sub(thumb_size));
-        let thumb_end = (thumb_start + thumb_size).min(track_end);
-
-        (thumb_start, thumb_end)
-    }
-
-    // Renders: ·════════·
-    fn render_track(&self, area: Rect, buf: &mut Buffer) {
-        let (track_axis, track_start, track_end, _) = self.get_track_info(area);
-
-        for i in track_start..=track_end {
-            let (symbol, style) = if let Some(track_symbol) = self.track_symbol {
-                (track_symbol, self.track_style)
-            } else {
-                continue;
-            };
-            if self.is_vertical() {
-                buf.set_string(track_axis, i, symbol, style);
-            } else {
-                buf.set_string(i, track_axis, symbol, style);
-            }
-        }
-    }
-
-    // Renders: ·██══════·
-    fn render_thumb(&self, area: Rect, buf: &mut Buffer, state: &mut ScrollbarState) {
-        let (track_axis, _, _, _) = self.get_track_info(area);
-        let (thumb_start, thumb_end) = self.get_thumb_start_end(area, state);
-        for i in thumb_start..=thumb_end {
-            let (style, symbol) = (self.thumb_style, self.thumb_symbol);
-            if self.is_vertical() {
-                buf.set_string(track_axis, i, symbol, style);
-            } else {
-                buf.set_string(i, track_axis, symbol, style);
-            }
-        }
-    }
-
-    // Renders: ◄██══════►
-    fn render_arrowheads(&self, area: Rect, buf: &mut Buffer) {
-        let (track_axis, track_start, track_end, _) = self.get_track_info(area);
-        if let Some(s) = self.begin_symbol {
-            if self.is_vertical() {
-                buf.set_string(
-                    track_axis,
-                    track_start.saturating_sub(1),
-                    s,
-                    self.begin_style,
-                );
-            } else {
-                buf.set_string(
-                    track_start.saturating_sub(1),
-                    track_axis,
-                    s,
-                    self.begin_style,
-                );
-            }
-        };
-        if let Some(s) = self.end_symbol {
-            if self.is_vertical() {
-                buf.set_string(track_axis, track_end.saturating_add(1), s, self.end_style);
-            } else {
-                buf.set_string(track_end.saturating_add(1), track_axis, s, self.end_style);
-            }
-        }
+        (
+            track_axis,
+            before_thumb_track_size as usize,
+            thumb_track_size as usize,
+            after_thumb_track_size as usize,
+        )
     }
 }
 
@@ -574,22 +537,41 @@ impl<'a> StatefulWidget for Scrollbar<'a> {
         if state.content_length == 0 {
             return;
         }
-        self.render_track(area, buf);
-        self.render_thumb(area, buf, state);
-        self.render_arrowheads(area, buf);
+
+        let (track_axis, before_thumb_track_size, thumb_track_size, after_thumb_track_size) =
+            self.get_track_sizes(area, state);
+
+        let bar = iter::once((self.begin_symbol, self.begin_style))
+            .chain(
+                iter::repeat((self.track_symbol, self.track_style)).take(before_thumb_track_size),
+            )
+            .chain(iter::repeat((Some(self.thumb_symbol), self.thumb_style)).take(thumb_track_size))
+            .chain(iter::repeat((self.track_symbol, self.track_style)).take(after_thumb_track_size))
+            .chain(iter::once((self.end_symbol, self.end_style)));
+
+        let mut i = 0;
+        for (symbol, style) in bar {
+            if let Some(s) = symbol {
+                if self.is_vertical() {
+                    buf.set_string(track_axis, i, s, style);
+                } else {
+                    buf.set_string(i, track_axis, s, style);
+                }
+                i += 1;
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
 
+    use rstest::rstest;
     use strum::ParseError;
+    use unicode_width::UnicodeWidthStr;
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        symbols::scrollbar::{HORIZONTAL, VERTICAL},
-    };
+    use crate::assert_buffer_eq;
 
     #[test]
     fn scroll_direction_to_string() {
@@ -657,159 +639,33 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_rendering_begin_end_arrows_horizontal_top() {
-        let all_expected = vec![
-            "◄███═══►",
-            "◄███═══►",
-            "◄███═══►",
-            "◄███═══►",
-            "◄═███══►",
-            "◄═███══►",
-            "◄═███══►",
-            "◄═███══►",
-            "◄══███═►",
-            "◄══███═►",
-            "◄══███═►",
-            "◄══███═►",
-            "◄═══███►",
-            "◄═══███►",
-            "◄═══███►",
-            "◄═══███►",
-        ];
-        let content_length = all_expected.len();
-        for p in 0..content_length {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 1));
-            let mut state = ScrollbarState::default()
-                .position(p)
-                .content_length(content_length);
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::HorizontalTop)
-                .begin_symbol(Some(DOUBLE_HORIZONTAL.begin))
-                .end_symbol(Some(DOUBLE_HORIZONTAL.end))
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = all_expected[p];
-            assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
-        }
-    }
-
-    #[test]
-    fn rendering_scrollbar_with_uniform_progression() {
-        let all_expected = vec![
-            "█████████████████═════════════════════════════════",
-            "█████████████████═════════════════════════════════",
-            "█████████████████═════════════════════════════════",
-            "═█████████████████════════════════════════════════",
-            "═█████████████████════════════════════════════════",
-            "═█████████████████════════════════════════════════",
-            "══█████████████████═══════════════════════════════",
-            "══█████████████████═══════════════════════════════",
-            "══█████████████████═══════════════════════════════",
-            "═══█████████████████══════════════════════════════",
-            "═══█████████████████══════════════════════════════",
-            "═══█████████████████══════════════════════════════",
-            "════█████████████████═════════════════════════════",
-            "════█████████████████═════════════════════════════",
-            "════█████████████████═════════════════════════════",
-            "═════█████████████████════════════════════════════",
-            "═════█████████████████════════════════════════════",
-            "═════█████████████████════════════════════════════",
-            "══════█████████████████═══════════════════════════",
-            "══════█████████████████═══════════════════════════",
-            "══════█████████████████═══════════════════════════",
-            "═══════█████████████████══════════════════════════",
-            "═══════█████████████████══════════════════════════",
-            "═══════█████████████████══════════════════════════",
-            "════════█████████████████═════════════════════════",
-            "════════█████████████████═════════════════════════",
-            "════════█████████████████═════════════════════════",
-            "═════════█████████████████════════════════════════",
-            "═════════█████████████████════════════════════════",
-            "═════════█████████████████════════════════════════",
-            "══════════█████████████████═══════════════════════",
-            "══════════█████████████████═══════════════════════",
-            "══════════█████████████████═══════════════════════",
-            "═══════════█████████████████══════════════════════",
-            "═══════════█████████████████══════════════════════",
-            "═══════════█████████████████══════════════════════",
-            "════════════█████████████████═════════════════════",
-            "════════════█████████████████═════════════════════",
-            "════════════█████████████████═════════════════════",
-            "═════════════█████████████████════════════════════",
-            "═════════════█████████████████════════════════════",
-            "═════════════█████████████████════════════════════",
-            "══════════════█████████████████═══════════════════",
-            "══════════════█████████████████═══════════════════",
-            "══════════════█████████████████═══════════════════",
-            "═══════════════█████████████████══════════════════",
-            "═══════════════█████████████████══════════════════",
-            "═══════════════█████████████████══════════════════",
-            "════════════════█████████████████═════════════════",
-            "════════════════█████████████████═════════════════",
-            "════════════════█████████████████═════════════════",
-            "═════════════════█████████████████════════════════",
-            "═════════════════█████████████████════════════════",
-            "═════════════════█████████████████════════════════",
-            "══════════════════█████████████████═══════════════",
-            "══════════════════█████████████████═══════════════",
-            "══════════════════█████████████████═══════════════",
-            "═══════════════════█████████████████══════════════",
-            "═══════════════════█████████████████══════════════",
-            "═══════════════════█████████████████══════════════",
-            "════════════════════█████████████████═════════════",
-            "════════════════════█████████████████═════════════",
-            "════════════════════█████████████████═════════════",
-            "═════════════════════█████████████████════════════",
-            "═════════════════════█████████████████════════════",
-            "═════════════════════█████████████████════════════",
-            "══════════════════════█████████████████═══════════",
-            "══════════════════════█████████████████═══════════",
-            "══════════════════════█████████████████═══════════",
-            "═══════════════════════█████████████████══════════",
-            "═══════════════════════█████████████████══════════",
-            "═══════════════════════█████████████████══════════",
-            "════════════════════════█████████████████═════════",
-            "════════════════════════█████████████████═════════",
-            "════════════════════════█████████████████═════════",
-            "═════════════════════════█████████████████════════",
-            "═════════════════════════█████████████████════════",
-            "═════════════════════════█████████████████════════",
-            "══════════════════════════█████████████████═══════",
-            "══════════════════════════█████████████████═══════",
-            "══════════════════════════█████████████████═══════",
-            "═══════════════════════════█████████████████══════",
-            "═══════════════════════════█████████████████══════",
-            "═══════════════════════════█████████████████══════",
-            "════════════════════════════█████████████████═════",
-            "════════════════════════════█████████████████═════",
-            "════════════════════════════█████████████████═════",
-            "════════════════════════════█████████████████═════",
-            "═════════════════════════════█████████████████════",
-            "═════════════════════════════█████████████████════",
-            "══════════════════════════════█████████████████═══",
-            "══════════════════════════════█████████████████═══",
-            "══════════════════════════════█████████████████═══",
-            "═══════════════════════════════█████████████████══",
-            "═══════════════════════════════█████████████████══",
-            "═══════════════════════════════█████████████████══",
-            "════════════════════════════════█████████████████═",
-            "════════════════════════════════█████████████████═",
-            "════════════════════════════════█████████████████═",
-            "═════════════════════════════════█████████████████",
-        ];
-        let content_length = all_expected.len();
-        for p in 0..content_length {
-            let mut buffer = Buffer::empty(Rect::new(0, 0, 50, 1));
-            let mut state = ScrollbarState::default()
-                .position(p)
-                .content_length(content_length);
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::HorizontalBottom)
-                .begin_symbol(None)
-                .end_symbol(None)
-                .render(buffer.area, &mut buffer, &mut state);
-            let expected = all_expected[p];
-            assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
-        }
+    #[rstest]
+    #[case::position_0(0, 10, "█████═════")]
+    #[case::position_1(1, 10, "═█████════")]
+    #[case::position_2(2, 10, "═█████════")]
+    #[case::position_3(3, 10, "══█████═══")]
+    #[case::position_4(4, 10, "══█████═══")]
+    #[case::position_5(5, 10, "═══█████══")]
+    #[case::position_6(6, 10, "═══█████══")]
+    #[case::position_7(7, 10, "════█████═")]
+    #[case::position_8(8, 10, "════█████═")]
+    #[case::position_9(9, 10, "═════█████")]
+    #[case::position_out_of_bounds(100, 10, "═════█████")]
+    fn render_scrollbar(
+        #[case] position: usize,
+        #[case] content_length: usize,
+        #[case] expected: &str,
+    ) {
+        let size = expected.width() as u16;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
+        let mut state = ScrollbarState::default()
+            .position(position)
+            .content_length(content_length);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
     }
 }
