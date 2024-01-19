@@ -492,6 +492,36 @@ impl<'a> Scrollbar<'a> {
         }
     }
 
+    /// Calculates length of the track without excluding the arrow heads
+    /// ```plain
+    ///        ┌────────── track_length
+    ///  vvvvvvvvvvvvvvv
+    /// <═══█████═══════>
+    ///  ^             ^
+    ///  │             └── track_end
+    ///  └──────────────── track_start
+    /// ```
+    fn get_track_length(&self, area: Rect) -> u16 {
+        let (mut track_start, mut track_end) = match self.orientation {
+            ScrollbarOrientation::VerticalRight => (area.y, (area.y + area.height)),
+            ScrollbarOrientation::VerticalLeft => (area.y, (area.y + area.height)),
+            ScrollbarOrientation::HorizontalBottom => (area.x, (area.x + area.width)),
+            ScrollbarOrientation::HorizontalTop => (area.x, (area.x + area.width)),
+        };
+        // if scrollbar has begin and end symbols:
+        //
+        // <═══█████═══════>
+        //
+        // then increment and decrement track_start and track_end respectively
+        if let Some(s) = self.begin_symbol {
+            track_start = track_start.saturating_add(s.width() as u16);
+        };
+        if let Some(s) = self.end_symbol {
+            track_end = track_end.saturating_sub(s.width() as u16);
+        };
+        track_end.saturating_sub(track_start)
+    }
+
     /// Returns length segment information about scrollbar track
     ///
     /// For ScrollbarOrientation::VerticalRight
@@ -536,25 +566,7 @@ impl<'a> Scrollbar<'a> {
     ///     └──────────────── track_start_len
     /// ```
     fn get_part_lengths(&self, area: Rect, state: &mut ScrollbarState) -> (usize, usize, usize) {
-        let (mut track_start, mut track_end) = match self.orientation {
-            ScrollbarOrientation::VerticalRight => (area.y, (area.y + area.height)),
-            ScrollbarOrientation::VerticalLeft => (area.y, (area.y + area.height)),
-            ScrollbarOrientation::HorizontalBottom => (area.x, (area.x + area.width)),
-            ScrollbarOrientation::HorizontalTop => (area.x, (area.x + area.width)),
-        };
-        // if scrollbar has begin and end symbols:
-        //
-        // <═══█████═══════>
-        //
-        // then increment and decrement track_start and track_end respectively
-        if let Some(s) = self.begin_symbol {
-            track_start = track_start.saturating_add(s.width() as u16);
-        };
-        if let Some(s) = self.end_symbol {
-            track_end = track_end.saturating_sub(s.width() as u16);
-        };
-        let track_len = track_end.saturating_sub(track_start) as f64;
-
+        let track_len = self.get_track_length(area) as f64;
         let viewport_len = self.get_viewport_len(area) as f64;
 
         let content_length = state.content_length as f64;
@@ -584,7 +596,7 @@ impl<'a> Scrollbar<'a> {
         // ```
         let track_axis = self.get_track_axis(area);
 
-        let (track_start_len, thumb_len, track_end_len) = self.get_track_lens(area, state);
+        let (track_start_len, thumb_len, track_end_len) = self.get_part_lengths(area, state);
 
         let track = self.track_symbol.map(|s| (s, self.track_style));
         let thumb = Some((self.thumb_symbol, self.thumb_style));
