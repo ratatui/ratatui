@@ -459,39 +459,6 @@ impl<'a> Scrollbar<'a> {
         }
     }
 
-    /// Returns information about scrollbar track
-    ///
-    /// For ScrollbarOrientation::VerticalRight
-    ///
-    /// ```plain
-    ///                   ┌───────── track_axis
-    ///                   v
-    ///   ┌───────────────┐
-    ///   │               ║
-    ///   │               █
-    ///   │               █
-    ///   │               ║
-    ///   └───────────────┘
-    /// ```
-    ///
-    /// For ScrollbarOrientation::HorizontalBottom
-    ///
-    /// ```plain
-    ///   ┌───────────────┐
-    ///   │               │
-    ///   │               │
-    ///   │               │
-    ///   └═══███═════════┘<──────── track_axis
-    /// ```
-    fn get_track_axis(&self, area: Rect) -> u16 {
-        match self.orientation {
-            ScrollbarOrientation::VerticalRight => area.x + area.width.saturating_sub(1),
-            ScrollbarOrientation::VerticalLeft => area.x,
-            ScrollbarOrientation::HorizontalBottom => area.y + area.height.saturating_sub(1),
-            ScrollbarOrientation::HorizontalTop => area.y,
-        }
-    }
-
     /// Calculates length of the track without excluding the arrow heads
     /// ```plain
     ///        ┌────────── track_length
@@ -579,22 +546,28 @@ impl<'a> Scrollbar<'a> {
         let thumb_start = position * track_len / scrollable_content_len;
         let thumb_end = (position + viewport_len) * track_len / scrollable_content_len;
 
-        // round() as usize gives closest int, as opposed to `floor` or `ceil`
+        // `.round() as usize` gives closest int, as opposed to `floor` or `ceil`
+        //
+        // we intentionally round just the positions, and sizes are calculated from integer
+        // positions. Rounding the sizes can lead to subtle off by 1 errors.
+        // e.g. 6.4 (position) +3.4 (length) = 9.8 which rounds to 10, but 6 (rounded position) + 3
+        // (rounded length) = 9.
         let track_start_len = thumb_start.round() as usize;
         let thumb_end = thumb_end.round() as usize;
+
         let thumb_len = thumb_end.saturating_sub(track_start_len);
         let track_end_len = track_len as usize - track_start_len - thumb_len;
 
         (track_start_len, thumb_len, track_end_len)
     }
 
-    fn bar_builder(&self, area: Rect, state: &mut ScrollbarState) -> Vec<(u16, u16, &str, Style)> {
+    fn bar_builder(&self, area: Rect, state: &mut ScrollbarState) -> Vec<(&str, Style)> {
+        // We start with an empty area
+        //
         // ```plain
-        // ________________ <── track_axis
+        // ________________
         // ^^^^^^^^^^^^^^^^
-        //       └───────────── track_len
         // ```
-        let track_axis = self.get_track_axis(area);
 
         let (track_start_len, thumb_len, track_end_len) = self.get_part_lengths(area, state);
 
@@ -645,21 +618,25 @@ impl<'a> Scrollbar<'a> {
             //                 └── end
             // ```
             .flatten() // We want to skip any values that are `None`
-            .enumerate() // gives each element an index that maps to buf location on track
             // TODO: is there a way to check that iterator len matches the `area.len` here?
-            .map(|(i, (symbol, style))| {
-                // convert index to coordinate system
-                if self.is_vertical() {
-                    let y = i as u16;
-                    let x = track_axis;
-                    (x, y, symbol, style)
-                } else {
-                    let x = i as u16;
-                    let y = track_axis;
-                    (x, y, symbol, style)
-                }
-            })
             .collect_vec()
+    }
+
+    fn get_scollbar_area(&self, area: Rect) -> Rect {
+        match self.orientation {
+            ScrollbarOrientation::VerticalLeft => Rect { width: 1, ..area },
+            ScrollbarOrientation::VerticalRight => Rect {
+                x: area.right().saturating_sub(1),
+                width: 1,
+                ..area
+            },
+            ScrollbarOrientation::HorizontalTop => Rect { height: 1, ..area },
+            ScrollbarOrientation::HorizontalBottom => Rect {
+                y: area.bottom().saturating_sub(1),
+                height: 1,
+                ..area
+            },
+        }
     }
 }
 
@@ -671,21 +648,15 @@ impl<'a> StatefulWidget for Scrollbar<'a> {
             return;
         }
 
-        let bar = self.bar_builder(area, state);
+        let mut bar = self.bar_builder(area, state).into_iter();
 
-        let len = if self.is_vertical() {
-            area.height
-        } else {
-            area.width
-        };
-
-        if bar.len() as u16 != len {
-            // something went wrong here with the construction of bar
-            return;
-        };
-
-        for (x, y, symbol, style) in bar {
-            buf.set_string(x, y, symbol, style);
+        let area = self.get_scollbar_area(area);
+        for x in area.left()..area.right() {
+            for y in area.top()..area.bottom() {
+                if let Some((symbol, style)) = bar.next() {
+                    buf.set_string(x, y, symbol, style);
+                }
+            }
         }
     }
 }
