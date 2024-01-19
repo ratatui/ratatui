@@ -451,11 +451,27 @@ impl<'a> Scrollbar<'a> {
     }
 
     fn get_viewport_len(&self, area: Rect) -> u16 {
+        if self.is_vertical() {
+            area.height
+        } else {
+            area.width
+        }
+    }
+
+    fn get_scollbar_area(&self, area: Rect) -> Rect {
         match self.orientation {
-            ScrollbarOrientation::VerticalRight | ScrollbarOrientation::VerticalLeft => area.height,
-            ScrollbarOrientation::HorizontalBottom | ScrollbarOrientation::HorizontalTop => {
-                area.width
-            }
+            ScrollbarOrientation::VerticalLeft => Rect { width: 1, ..area },
+            ScrollbarOrientation::VerticalRight => Rect {
+                x: area.right().saturating_sub(1),
+                width: 1,
+                ..area
+            },
+            ScrollbarOrientation::HorizontalTop => Rect { height: 1, ..area },
+            ScrollbarOrientation::HorizontalBottom => Rect {
+                y: area.bottom().saturating_sub(1),
+                height: 1,
+                ..area
+            },
         }
     }
 
@@ -464,10 +480,11 @@ impl<'a> Scrollbar<'a> {
     ///        ┌────────── track_length
     ///  vvvvvvvvvvvvvvv
     /// <═══█████═══════>
-    ///  ^             ^
-    ///  │             └── track_end
-    ///  └──────────────── track_start
     /// ```
+    ///
+    /// # Returns
+    ///
+    /// `(track_length)`
     fn get_track_length(&self, area: Rect) -> u16 {
         let (mut track_start, mut track_end) = match self.orientation {
             ScrollbarOrientation::VerticalRight => (area.y, (area.y + area.height)),
@@ -489,39 +506,12 @@ impl<'a> Scrollbar<'a> {
         track_end.saturating_sub(track_start)
     }
 
-    /// Returns length segment information about scrollbar track
+    /// Returns the lengths of the parts of a scrollbar
     ///
-    /// For ScrollbarOrientation::VerticalRight
-    ///
-    /// ```plain
-    ///   ┌───────────────┐
-    ///   │               ║<──────── track_start
-    ///   │               █<──────── thumb_end
-    ///   │               █
-    ///   │               █<──────── thumb_start
-    ///   │               ║<──────── track_end
-    ///   └───────────────┘
-    /// ```
-    ///
-    /// For ScrollbarOrientation::HorizontalBottom
-    ///
-    /// ```plain
-    ///   ┌───────────────┐
-    ///   │               │
-    ///   │               │
-    ///   │               │
-    ///   └═══█████═══════┘
-    ///    ^  ^   ^      ^
-    ///    │  │   │      └────────── track_end
-    ///    │  │   │
-    ///    │  │   └───────────────── thumb_end
-    ///    │  │
-    ///    │  └───────────────────── thumb_start
-    ///    │
-    ///    └──────────────────────── track_start
-    /// ```
-    ///
-    /// Specifically this function returns the lengths of the different segments:
+    /// The scrollbar has 3 parts of note:
+    /// - the beginning track part
+    /// - the thumb part
+    /// - the end track part
     ///
     /// ```plain
     ///         ┌──────────── thumb_len
@@ -532,6 +522,12 @@ impl<'a> Scrollbar<'a> {
     ///     │
     ///     └──────────────── track_start_len
     /// ```
+    ///
+    /// This method returns the length of each part together as a tuple.
+    ///
+    /// # Returns
+    ///
+    /// `(track_start_len, thumb_len, track_end_len)`
     fn get_part_lengths(&self, area: Rect, state: &mut ScrollbarState) -> (usize, usize, usize) {
         let track_len = self.get_track_length(area) as f64;
         let viewport_len = self.get_viewport_len(area) as f64;
@@ -571,22 +567,21 @@ impl<'a> Scrollbar<'a> {
 
         let (track_start_len, thumb_len, track_end_len) = self.get_part_lengths(area, state);
 
+        let begin = self.begin_symbol.map(|s| (s, self.begin_style));
         let track = self.track_symbol.map(|s| (s, self.track_style));
         let thumb = Some((self.thumb_symbol, self.thumb_style));
-
-        let begin = self.begin_symbol.map(|s| (s, self.begin_style));
         let end = self.end_symbol.map(|s| (s, self.end_style));
 
         iter::once(begin)
-            // Current state of the iterator
+            // Current state of the iterator:
             //
             // ```plain
-            // ┌─────────────────── begin
-            // v
             // <________________
+            // ^
+            // └─────────────────── begin
             // ```
             .chain(iter::repeat(track).take(track_start_len))
-            // Current state of the iterator
+            // Current state of the iterator:
             //
             // ```plain
             // <═══_____________
@@ -594,7 +589,7 @@ impl<'a> Scrollbar<'a> {
             //   └──────────────── track_start_len
             // ```
             .chain(iter::repeat(thumb).take(thumb_len))
-            // Current state of the iterator
+            // Current state of the iterator:
             //
             // ```plain
             // <═══█████═══════_
@@ -602,7 +597,7 @@ impl<'a> Scrollbar<'a> {
             //       └──────────── thumb_len
             // ```
             .chain(iter::repeat(track).take(track_end_len))
-            // Current state of the iterator
+            // Current state of the iterator:
             //
             // ```plain
             // <═══█████═══════_
@@ -610,7 +605,7 @@ impl<'a> Scrollbar<'a> {
             //             └────── track_end_len
             // ```
             .chain(iter::once(end))
-            // Current state of the iterator
+            // Current state of the iterator:
             //
             // ```plain
             // <═══█████═══════>
@@ -620,23 +615,6 @@ impl<'a> Scrollbar<'a> {
             .flatten() // We want to skip any values that are `None`
             // TODO: is there a way to check that iterator len matches the `area.len` here?
             .collect_vec()
-    }
-
-    fn get_scollbar_area(&self, area: Rect) -> Rect {
-        match self.orientation {
-            ScrollbarOrientation::VerticalLeft => Rect { width: 1, ..area },
-            ScrollbarOrientation::VerticalRight => Rect {
-                x: area.right().saturating_sub(1),
-                width: 1,
-                ..area
-            },
-            ScrollbarOrientation::HorizontalTop => Rect { height: 1, ..area },
-            ScrollbarOrientation::HorizontalBottom => Rect {
-                y: area.bottom().saturating_sub(1),
-                height: 1,
-                ..area
-            },
-        }
     }
 }
 
