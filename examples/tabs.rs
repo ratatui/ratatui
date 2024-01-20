@@ -8,16 +8,14 @@ use crossterm::{
 use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
-const TABS_COUNT: usize = 4;
-
-const PALETTES: [tailwind::Palette; TABS_COUNT] = [
+const PALETTES: &[tailwind::Palette] = &[
     tailwind::BLUE,
     tailwind::EMERALD,
     tailwind::INDIGO,
     tailwind::RED,
 ];
 
-const BORDER_TYPES: [BorderType; TABS_COUNT] = [
+const BORDER_TYPES: &[BorderType] = &[
     BorderType::Rounded,
     BorderType::Plain,
     BorderType::Double,
@@ -47,6 +45,8 @@ impl SelectedTab {
         let next_index = current_index.saturating_add(1);
         Self::from_repr(next_index).unwrap_or(*self)
     }
+
+    /// Return enum name as a styled `Line` with two spaces both left and right.
     fn tab_title(value: SelectedTab) -> Line<'static> {
         let text = format!("  {value}  ");
         let palette = &PALETTES[value as usize];
@@ -130,14 +130,14 @@ fn ui(f: &mut Frame, app: &App) {
 }
 
 fn render_tabs(f: &mut Frame, app: &App, area: Rect) {
-    let titles = SelectedTab::iter().map(SelectedTab::tab_title);
     let block = Block::new()
         .title("Tabs Example".bold())
         .title("Use h l or ◄ ► to change tab")
         .title_alignment(Alignment::Center)
-        .padding(Padding::top(1));
+        .padding(Padding::top(1)); // padding to separate tabs from block title.
 
     let selected_tab_index = app.selected_tab as usize;
+    let titles = SelectedTab::iter().map(SelectedTab::tab_title);
     let tabs = Tabs::new(titles)
         .block(block)
         .highlight_style(
