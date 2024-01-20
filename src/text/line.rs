@@ -218,6 +218,57 @@ impl<'a> Line<'a> {
         }
     }
 
+    /// Left-aligns this line of text.
+    ///
+    /// Convenience shortcut for `Line::alignment(Alignment::Left)`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut line = Line::from("Hi, what's up?");
+    /// assert_eq!(None, line.alignment);
+    /// assert_eq!(Some(Alignment::Left), line.left_aligned().alignment);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn left_aligned(self) -> Self {
+        self.alignment(Alignment::Left)
+    }
+
+    /// Center-aligns this line of text.
+    ///
+    /// Convenience shortcut for `Line::alignment(Alignment::Center)`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut line = Line::from("Hi, what's up?");
+    /// assert_eq!(None, line.alignment);
+    /// assert_eq!(Some(Alignment::Center), line.centered().alignment);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn centered(self) -> Self {
+        self.alignment(Alignment::Center)
+    }
+
+    /// Right-aligns this line of text.
+    ///
+    /// Convenience shortcut for `Line::alignment(Alignment::Right)`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut line = Line::from("Hi, what's up?");
+    /// assert_eq!(None, line.alignment);
+    /// assert_eq!(Some(Alignment::Right), line.right_aligned().alignment);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn right_aligned(self) -> Self {
+        self.alignment(Alignment::Right)
+    }
+
     /// Returns the width of the underlying string.
     ///
     /// # Examples
@@ -664,5 +715,23 @@ mod tests {
             expected.set_style(Rect::new(9, 0, 6, 1), GREEN);
             assert_buffer_eq!(buf, expected);
         }
+    }
+
+    #[test]
+    fn left_aligned() {
+        let line = Line::from("Hello, world!").left_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let line = Line::from("Hello, world!").centered();
+        assert_eq!(line.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let line = Line::from("Hello, world!").right_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Right));
     }
 }
