@@ -24,6 +24,26 @@ use crate::{prelude::*, widgets::Widget};
 /// Usually apps will use the [`Paragraph`] widget instead of rendering a `Text` directly as it
 /// provides more functionality.
 ///
+/// # Constructor Methods
+///
+/// - [`Text::default`] creates a `Text` with empty content and the default style.
+/// - [`Text::raw`] creates a `Text` (potentially multiple lines) with no style.
+/// - [`Text::styled`] creates a `Text` (potentially multiple lines) with a style.
+///
+/// # Setter Methods
+///
+/// These methods are fluent setters. They return a `Text` with the property set.
+///
+/// - [`Text::style`] sets the style of this `Text`.
+/// - [`Text::alignment`] sets the alignment for this `Text`.
+///
+/// # Other Methods
+///
+/// - [`Text::width`] returns the max width of all the lines.
+/// - [`Text::height`] returns the height.
+/// - [`Text::patch_style`] patches the style of this `Text`, adding modifiers from the given style.
+/// - [`Text::reset_style`] resets the style of the `Text`.
+///
 /// [`Paragraph`]: crate::widgets::Paragraph
 /// [`Widget`]: crate::widgets::Widget
 ///
