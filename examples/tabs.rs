@@ -45,12 +45,15 @@ impl SelectedTab {
         let next_index = current_index.saturating_add(1);
         Self::from_repr(next_index).unwrap_or(*self)
     }
+}
 
+impl From<SelectedTab> for Line<'_> {
     /// Return enum name as a styled `Line` with two spaces both left and right.
-    fn tab_title(value: SelectedTab) -> Line<'static> {
-        let text = format!("  {value}  ");
-        let palette = &PALETTES[value as usize];
-        text.fg(tailwind::SLATE.c200).bg(palette.c900).into()
+    fn from(value: SelectedTab) -> Self {
+        format!("  {value}  ")
+            .fg(tailwind::SLATE.c200)
+            .bg(PALETTES[value as usize].c900)
+            .into()
     }
 }
 
@@ -137,8 +140,8 @@ fn render_tabs(f: &mut Frame, app: &App, area: Rect) {
         .padding(Padding::top(1)); // padding to separate tabs from block title.
 
     let selected_tab_index = app.selected_tab as usize;
-    let titles = SelectedTab::iter().map(SelectedTab::tab_title);
-    let tabs = Tabs::new(titles)
+    // Gets tab titles from `SelectedTab::iter()`
+    let tabs = Tabs::new(SelectedTab::iter())
         .block(block)
         .highlight_style(
             Style::new()
