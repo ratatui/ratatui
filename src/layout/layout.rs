@@ -1033,20 +1033,7 @@ impl Layout {
     /// assert_eq!(layout[..], [Rect::new(0, 0, 3, 2), Rect::new(3, 0, 6, 2)]);
     /// ```
     pub fn split(&self, area: Rect) -> Rects {
-        LAYOUT_CACHE
-            .with(|c| {
-                c.get_or_init(|| {
-                    RefCell::new(LruCache::new(
-                        NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap(),
-                    ))
-                })
-                .borrow_mut()
-                .get_or_insert((area, self.clone()), || {
-                    Self::try_split(area, self).expect("failed to split")
-                })
-                .clone()
-            })
-            .0
+        self.split_with_spacers(area).0
     }
 
     pub fn split_with_spacers(&self, area: Rect) -> (Rects, Rects) {
