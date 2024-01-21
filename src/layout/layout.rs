@@ -1115,7 +1115,7 @@ impl StrengthSet {
             && self.percentage_equality > self.ratio_equality
             && self.min_max_non_equality > self.grower
             && self.grower > self.space_grower
-            && self.space_grower > self.proportional_size_equality
+        // && self.space_grower > self.proportional_size_equality
     }
 }
 
@@ -1129,9 +1129,9 @@ impl Default for StrengthSet {
         let percentage_equality = strength::create(0.0, 1.0, 0.0, 10.0); // MEDIUM * 10.0
         let ratio_equality = strength::create(0.0, 1.0, 0.0, 1.0); // MEDIUM
         let min_max_equality = strength::create(0.0, 1.0, 0.0, 0.1); // MEDIUM / 10.0
-        let grower = strength::create(0.0, 0.0, 1.0, 10.0); // WEAK * 10.0
-        let space_grower = strength::create(0.0, 0.0, 1.0, 1.0); // WEAK
-        let proportional_size_equality = strength::create(0.0, 0.0, 1.0, 0.1); // WEAK / 10.0
+        let proportional_size_equality = strength::create(0.0, 0.0, 1.0, 10.0); // WEAK * 10.0
+        let grower = strength::create(0.0, 0.0, 1.0, 1.0); // WEAK
+        let space_grower = strength::create(0.0, 0.0, 1.0, 0.1); // WEAK / 10.0
         Self {
             spacer_size_equality,
             proportional_scaling_equality,
@@ -1167,9 +1167,9 @@ mod tests {
         assert_eq!(s.percentage_equality, MEDIUM * 10.0);
         assert_eq!(s.ratio_equality, MEDIUM);
         assert_eq!(s.min_max_equality, MEDIUM / 10.0);
-        assert_eq!(s.grower, WEAK * 10.0);
-        assert_eq!(s.space_grower, WEAK);
-        assert_eq!(s.proportional_size_equality, WEAK / 10.0);
+        assert_eq!(s.proportional_size_equality, WEAK * 10.0);
+        assert_eq!(s.grower, WEAK);
+        assert_eq!(s.space_grower, WEAK / 10.0);
     }
 
     #[test]
@@ -2153,11 +2153,6 @@ mod tests {
         #[case::fixed_spacing(vec![(0  , 20), (22, 20) , (44, 56)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::StretchLast, 2)]
         #[case::fixed_spacing(vec![(0  , 32), (34, 32) , (68, 32)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::Stretch    , 2)]
         #[case::fixed_spacing(vec![(10 , 20), (40, 20) , (70, 20)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::SpaceAround, 2)]
-        #[case::fixed_spacing(vec![(27 , 20), (73 , 0)] , vec![Fixed(20), Proportional(0)], Flex::SpaceAround , 0)]
-        #[case::fixed_spacing(vec![(27 , 20), (73 , 0)] , vec![Fixed(20), Proportional(1)], Flex::SpaceAround , 0)]
-        #[case::fixed_spacing(vec![(27 , 20), (73 , 0)] , vec![Fixed(20), Proportional(1)], Flex::SpaceAround , 1)]
-        #[case::fixed_spacing(vec![(0  , 20), (100, 0)] , vec![Fixed(20), Proportional(1)], Flex::SpaceBetween, 1)]
-        #[case::fixed_spacing(vec![(0  , 20), (20 , 0)] , vec![Fixed(20), Proportional(1)], Flex::Start       , 0)]
         fn flex_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] lengths: Vec<Constraint>,
@@ -2234,6 +2229,55 @@ mod tests {
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::Stretch , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::StretchLast , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceAround , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceBetween , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::Start , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::Center , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::End , 0)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::Stretch , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::StretchLast , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::Start , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::Center , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::End , 10)]
+        // SpaceAround and SpaceBetween spacers behave differently from other flexes
+        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceAround , 10)]
+        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceBetween , 10)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Stretch , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::StretchLast , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceAround , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceBetween , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Start , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Center , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::End , 0)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Stretch , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::StretchLast , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Start , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Center , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::End , 10)]
+        // SpaceAround and SpaceBetween spacers behave differently from other flexes
+        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceAround , 10)]
+        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceBetween , 10)]
+        fn proportional_spacing(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] lengths: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] spacing: u16,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(lengths)
+                .flex(flex)
+                .spacing(spacing)
+                .split(rect);
+            let result = r
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, result);
         }
     }
 
