@@ -46,6 +46,45 @@ enum SelectedTab {
     Tab3,
 }
 
+impl Widget for SelectedTab {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        match self {
+            SelectedTab::Tab0 => self.render_tab0(area, buf),
+            SelectedTab::Tab1 => self.render_tab1(area, buf),
+            SelectedTab::Tab2 => self.render_tab2(area, buf),
+            SelectedTab::Tab3 => self.render_tab3(area, buf),
+        }
+    }
+}
+
+impl SelectedTab {
+    fn render_tab0(&self, area: Rect, buf: &mut Buffer) {
+        SelectedTab::inner_block(0).render(area, buf)
+    }
+
+    fn render_tab1(&self, area: Rect, buf: &mut Buffer) {
+        SelectedTab::inner_block(1).render(area, buf)
+    }
+
+    fn render_tab2(&self, area: Rect, buf: &mut Buffer) {
+        SelectedTab::inner_block(2).render(area, buf)
+    }
+
+    fn render_tab3(&self, area: Rect, buf: &mut Buffer) {
+        SelectedTab::inner_block(3).render(area, buf)
+    }
+
+    /// Get the generated inner for the current tab.
+    fn inner_block(index: usize) -> Block<'static> {
+        let inner_block = Block::default()
+            .title(format!("Inner {index}"))
+            .borders(Borders::ALL)
+            .border_type(BORDER_TYPES[index])
+            .border_style(Style::new().fg(PALETTES[index].c600));
+        inner_block
+    }
+}
+
 impl SelectedTab {
     /// Get the previous tab, if there is no previous tab return the current tab.
     fn previous(&self) -> Self {
@@ -76,6 +115,16 @@ struct App {
     pub selected_tab: SelectedTab,
 }
 
+impl Widget for &App {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let vertical = Layout::vertical([Constraint::Length(4), Constraint::Min(3)]);
+        let [tabs_area, inner_area] = area.split(&vertical);
+
+        self.render_tabs(tabs_area, buf);
+        self.render_inner(inner_area, buf);
+    }
+}
+
 impl App {
     fn new() -> App {
         App {
@@ -89,6 +138,37 @@ impl App {
 
     pub fn previous(&mut self) {
         self.selected_tab = self.selected_tab.previous();
+    }
+
+    fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
+        let block = Block::new()
+            .title("Tabs Example".bold())
+            .title("Use h l or ◄ ► to change tab")
+            .title_alignment(Alignment::Center)
+            .padding(Padding::top(1)); // padding to separate tabs from block title.
+
+        let selected_tab_index = self.selected_tab as usize;
+        // Gets tab titles from `SelectedTab::iter()`
+        Tabs::new(SelectedTab::iter())
+            .block(block)
+            .highlight_style(
+                Style::new()
+                    .bg(PALETTES[selected_tab_index].c600)
+                    .underlined(),
+            )
+            .select(selected_tab_index)
+            .padding("", "")
+            .divider(" | ")
+            .render(area, buf);
+    }
+
+    fn render_inner(&self, area: Rect, buf: &mut Buffer) {
+        self.selected_tab.render(area, buf);
+    }
+
+    fn draw(&self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+        terminal.draw(|f| f.render_widget(self, f.size()))?;
+        Ok(())
     }
 }
 
@@ -122,7 +202,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
-        terminal.draw(|f| ui(f, &app))?;
+        app.draw(terminal)?;
 
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
@@ -135,48 +215,4 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
             }
         }
     }
-}
-
-fn ui(f: &mut Frame, app: &App) {
-    let area = f.size();
-    let vertical = Layout::vertical([Constraint::Length(4), Constraint::Min(3)]);
-    let [tabs_area, inner_area] = area.split(&vertical);
-
-    render_tabs(f, app, tabs_area);
-
-    render_inner(f, app, inner_area);
-}
-
-fn render_tabs(f: &mut Frame, app: &App, area: Rect) {
-    let block = Block::new()
-        .title("Tabs Example".bold())
-        .title("Use h l or ◄ ► to change tab")
-        .title_alignment(Alignment::Center)
-        .padding(Padding::top(1)); // padding to separate tabs from block title.
-
-    let selected_tab_index = app.selected_tab as usize;
-    // Gets tab titles from `SelectedTab::iter()`
-    let tabs = Tabs::new(SelectedTab::iter())
-        .block(block)
-        .highlight_style(
-            Style::new()
-                .bg(PALETTES[selected_tab_index].c600)
-                .underlined(),
-        )
-        .select(selected_tab_index)
-        .padding("", "")
-        .divider(" | ");
-
-    f.render_widget(tabs, area);
-}
-
-fn render_inner(f: &mut Frame, app: &App, area: Rect) {
-    let index = app.selected_tab as usize;
-    let inner_block = Block::default()
-        .title(format!("Inner {index}"))
-        .borders(Borders::ALL)
-        .border_type(BORDER_TYPES[index])
-        .border_style(Style::new().fg(PALETTES[index].c600));
-
-    f.render_widget(inner_block, area);
 }
