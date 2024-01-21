@@ -9,7 +9,15 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
+
+const TODO_HEADER_BG: Color = tailwind::BLUE.c950;
+const BG: Color = tailwind::SLATE.c950;
+const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
+const ALT_ROW_COLOR: Color = tailwind::SLATE.c900;
+const SELECTED_STYLE_FG: Color = tailwind::BLUE.c300;
+const TEXT_COLOR: Color = tailwind::SLATE.c200;
+const COMPLETED_TEXT_COLOR: Color = tailwind::GREEN.c600;
 
 struct StatefulList<T> {
     state: ListState,
@@ -69,76 +77,52 @@ impl<T> StatefulList<T> {
 /// Check the event handling at the bottom to see how to change the state on incoming events.
 /// Check the drawing logic for items on how to specify the highlighting style for selected items.
 struct App<'a> {
-    items: StatefulList<(&'a str, usize)>,
-    events: Vec<(&'a str, &'a str)>,
+    items: StatefulList<(&'a str, &'a str, bool)>,
+    events: Vec<String>,
 }
 
 impl<'a> App<'a> {
     fn new() -> App<'a> {
         App {
             items: StatefulList::with_items(vec![
-                ("Item0", 1),
-                ("Item1", 2),
-                ("Item2", 1),
-                ("Item3", 3),
-                ("Item4", 1),
-                ("Item5", 4),
-                ("Item6", 1),
-                ("Item7", 3),
-                ("Item8", 1),
-                ("Item9", 6),
-                ("Item10", 1),
-                ("Item11", 3),
-                ("Item12", 1),
-                ("Item13", 2),
-                ("Item14", 1),
-                ("Item15", 1),
-                ("Item16", 4),
-                ("Item17", 1),
-                ("Item18", 5),
-                ("Item19", 4),
-                ("Item20", 1),
-                ("Item21", 2),
-                ("Item22", 1),
-                ("Item23", 3),
-                ("Item24", 1),
+                ("Rewrite everything with Rust!", "I can't hold my inner voice. He tells me to rewrite the complete universe with Rust", false),
+                ("Rewrite all of your tui apps with Ratatui", "Yes, you heard that right. Go and replace your tui with Ratatui.", true),
+                ("Pet your cat", "Minnak loves to be pet by you! Don't forget to pet and give some treats!", false),
+                ("Walk with your dog", "Max is bored, go walk with him!", false),
+                ("Pay the bills", "Pay the train subscription!!!", true),
+                ("Refactor list example", "If you see this info that means I completed this task!", true),
             ]),
-            events: vec![
-                ("Event1", "INFO"),
-                ("Event2", "INFO"),
-                ("Event3", "CRITICAL"),
-                ("Event4", "ERROR"),
-                ("Event5", "INFO"),
-                ("Event6", "INFO"),
-                ("Event7", "WARNING"),
-                ("Event8", "INFO"),
-                ("Event9", "INFO"),
-                ("Event10", "INFO"),
-                ("Event11", "CRITICAL"),
-                ("Event12", "INFO"),
-                ("Event13", "INFO"),
-                ("Event14", "INFO"),
-                ("Event15", "INFO"),
-                ("Event16", "INFO"),
-                ("Event17", "ERROR"),
-                ("Event18", "ERROR"),
-                ("Event19", "INFO"),
-                ("Event20", "INFO"),
-                ("Event21", "WARNING"),
-                ("Event22", "INFO"),
-                ("Event23", "INFO"),
-                ("Event24", "WARNING"),
-                ("Event25", "INFO"),
-                ("Event26", "INFO"),
-            ],
+            events: Self::create_random_events()
         }
     }
 
-    /// Rotate through the event list.
+    /// Changes the satis of the item list
+    fn change_status(&mut self) {
+        if let Some(i) = self.items.state.selected() {
+            self.items.items[i].2 = !&self.items.items[i].2
+        }
+    }
+
     /// This only exists to simulate some kind of "progress"
     fn on_tick(&mut self) {
         let event = self.events.remove(0);
         self.events.push(event);
+    }
+
+    fn create_random_events() -> Vec<String> {
+        let mut events_vec = vec![];
+        for _ in 0..50 {
+            let event = match rand::random::<u8>() % 5 {
+                0 => "INFO".into(),
+                1 => "CRITICAL".into(),
+                2 => "WARNING".into(),
+                3 => "PANIC!".into(),
+                4 => "ERROR".into(),
+                _ => unreachable!(),
+            };
+            events_vec.push(event)
+        }
+        events_vec
     }
 }
 
@@ -184,11 +168,13 @@ fn run_app<B: Backend>(
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
+                    use KeyCode::*;
                     match key.code {
-                        KeyCode::Char('q') => return Ok(()),
-                        KeyCode::Left | KeyCode::Char('h') => app.items.unselect(),
-                        KeyCode::Down | KeyCode::Char('j') => app.items.next(),
-                        KeyCode::Up | KeyCode::Char('k') => app.items.previous(),
+                        Char('q') | Esc => return Ok(()),
+                        Char('h') | Left => app.items.unselect(),
+                        Char('j') | Down => app.items.next(),
+                        Char('k') | Up => app.items.previous(),
+                        Char('l') | Right | Enter => app.change_status(),
                         _ => {}
                     }
                 }
@@ -202,80 +188,159 @@ fn run_app<B: Backend>(
 }
 
 fn ui(f: &mut Frame, app: &mut App) {
-    // Create two chunks with equal horizontal screen space
-    let horizontal = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
-    let [item_list_area, event_list_area] = f.size().split(&horizontal);
+    // Create a space for header
+    let vertical = Layout::vertical([Constraint::Length(2), Constraint::Percentage(100)]);
+    let [header_area, rest_area] = f.size().split(&vertical);
 
-    // Iterate through all elements in the `items` app and append some debug text to it.
+    // Create two chunks with equal horizontal screen space
+    let horizontal = Layout::horizontal([Constraint::Percentage(50), Constraint::Max(15)]);
+    let [item_list_area, event_list_area] = rest_area.split(&horizontal);
+
+    // Create two chunks with equal vertical screen space. One for the list and the other for the
+    // info block.
+    let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
+    let [upper_item_list_area, lower_item_list_area] = item_list_area.split(&vertical);
+
+    let header = Block::default()
+        .title("Use j k or ↓ ↑ to move, h or ← to unselect, l → to change status.")
+        .title_alignment(Alignment::Center);
+    f.render_widget(header, header_area);
+
+    render_todo(f, app, &[upper_item_list_area, lower_item_list_area]);
+
+    render_events_list(f, app, event_list_area)
+}
+
+// Renders todo list and info part
+fn render_todo(f: &mut Frame, app: &mut App, area: &[Rect; 2]) {
+    // We create two blocks, one is for the header (outer) and the other is for list (inner).
+    let outer_block = Block::default()
+        .borders(Borders::NONE)
+        .fg(TEXT_COLOR)
+        .bg(TODO_HEADER_BG)
+        .title("TODO List")
+        .title_alignment(Alignment::Center);
+    let inner_block = Block::default()
+        .borders(Borders::NONE)
+        .fg(TEXT_COLOR)
+        .bg(NORMAL_ROW_COLOR);
+
+    // We get the inner area from outer_block. We'll use this area later to render the table.
+    let outer_area = area[0];
+    let inner_area = outer_block.inner(outer_area);
+
+    // We can render the header in outer_area.
+    f.render_widget(outer_block, outer_area);
+
+    // Iterate through all elements in the `items` and stylize them.
     let items: Vec<ListItem> = app
         .items
         .items
         .iter()
-        .map(|i| {
-            let mut lines = vec![Line::from(i.0.bold()).centered()];
-            for _ in 0..i.1 {
-                lines.push(
-                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-                        .italic()
-                        .into(),
-                );
-            }
-            ListItem::new(lines).style(Style::default().fg(Color::Black).bg(Color::White))
+        .enumerate()
+        .map(|(i, (todo, _info, status))| {
+            let bg_color = match i % 2 {
+                0 => NORMAL_ROW_COLOR,
+                _ => ALT_ROW_COLOR,
+            };
+            let (style, todo_str) = match status {
+                true => (
+                    Style::default().fg(COMPLETED_TEXT_COLOR).bg(bg_color),
+                    " ✓ ".to_string() + todo,
+                ),
+                false => (
+                    Style::default().fg(TEXT_COLOR).bg(bg_color),
+                    " ☐ ".to_string() + todo,
+                ),
+            };
+            ListItem::new(Line::from(todo_str)).style(style)
         })
         .collect();
 
     // Create a List from all list items and highlight the currently selected one
     let items = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title("List"))
+        .block(inner_block)
         .highlight_style(
             Style::default()
-                .bg(Color::LightGreen)
-                .add_modifier(Modifier::BOLD),
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::REVERSED)
+                .fg(SELECTED_STYLE_FG),
         )
-        .highlight_symbol(">> ");
+        .highlight_symbol(">");
 
     // We can now render the item list
-    f.render_stateful_widget(items, item_list_area, &mut app.items.state);
+    f.render_stateful_widget(items, inner_area, &mut app.items.state);
 
-    // Let's do the same for the events.
-    // The event list doesn't have any state and only displays the current state of the list.
+    let info = if let Some(i) = app.items.state.selected() {
+        match app.items.items[i].2 {
+            true => "✓ DONE: ".to_string() + app.items.items[i].1,
+            false => "TODO: ".to_string() + app.items.items[i].1,
+        }
+    } else {
+        "Nothing to see here...".to_string()
+    };
+
+    // We show the list item's info under the list in this paragraph
+    let outer_info_block = Block::default()
+        .borders(Borders::NONE)
+        .fg(TEXT_COLOR)
+        .bg(TODO_HEADER_BG)
+        .title("TODO Info")
+        .title_alignment(Alignment::Center);
+    let inner_info_block = Block::default()
+        .borders(Borders::NONE)
+        .bg(NORMAL_ROW_COLOR)
+        .padding(Padding::horizontal(1));
+
+    // This is a similar process to what we did for list. outer_info_area will be used for header
+    // inner_info_area will be used for the list info.
+    let outer_info_area = area[1];
+    let inner_info_area = outer_info_block.inner(outer_info_area);
+
+    // We can render the header. Inner info will be rendered later
+    f.render_widget(outer_info_block, outer_info_area);
+
+    let info_paragraph = Paragraph::new(info)
+        .block(inner_info_block)
+        .fg(TEXT_COLOR)
+        .wrap(Wrap { trim: false });
+
+    // We can now render the item info
+    f.render_widget(info_paragraph, inner_info_area);
+}
+
+// Renders event list
+fn render_events_list(f: &mut Frame, app: &App, area: Rect) {
     let events: Vec<ListItem> = app
         .events
         .iter()
         .rev()
-        .map(|&(event, level)| {
-            // Colorcode the level depending on its type
-            let s = match level {
-                "CRITICAL" => Style::default().fg(Color::Red),
-                "ERROR" => Style::default().fg(Color::Magenta),
-                "WARNING" => Style::default().fg(Color::Yellow),
-                "INFO" => Style::default().fg(Color::Blue),
+        .map(|level| {
+            // sets s to the tailwind color depending on its level
+            let s = match level.as_str() {
+                "CRITICAL" => Style::default().fg(tailwind::RED.c800),
+                "ERROR" => Style::default().fg(tailwind::RED.c600),
+                "WARNING" => Style::default().fg(tailwind::YELLOW.c600),
+                "INFO" => Style::default().fg(tailwind::BLUE.c700),
+                "PANIC!" => Style::default().fg(tailwind::ORANGE.c600),
                 _ => Style::default(),
             };
-            // Add a example datetime and apply proper spacing between them
-            let header = Line::from(vec![
-                Span::styled(format!("{level:<9}"), s),
-                " ".into(),
-                "2020-01-01 10:00:00".italic(),
-            ]);
-            // The event gets its own line
-            let log = Line::from(vec![event.into()]);
 
-            // Here several things happen:
-            // 1. Add a `---` spacing line above the final list entry
-            // 2. Add the Level + datetime
-            // 3. Add a spacer line
-            // 4. Add the actual event
-            ListItem::new(vec![
-                Line::from("-".repeat(event_list_area.width as usize)),
-                header,
-                Line::from(""),
-                log,
-            ])
+            // Creates a list item with styled span
+            ListItem::new(Span::styled(level, s))
         })
         .collect();
     let events_list = List::new(events)
-        .block(Block::default().borders(Borders::ALL).title("List"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .fg(TEXT_COLOR)
+                .bg(BG)
+                .title("Events List")
+                .title_alignment(Alignment::Center),
+        )
         .direction(ListDirection::BottomToTop);
-    f.render_widget(events_list, event_list_area);
+
+    // Renders the event table to the right side of the screen.
+    f.render_widget(events_list, area);
 }
