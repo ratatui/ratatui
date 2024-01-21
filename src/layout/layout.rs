@@ -1526,68 +1526,6 @@ mod tests {
             assert_eq!(target.height, chunks.iter().map(|r| r.height).sum::<u16>());
             chunks.windows(2).for_each(|w| assert!(w[0].y <= w[1].y));
         }
-
-        #[test]
-        fn length_constraints() {
-            // cassowary implementation tends to put excess in last variable
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Length(25),
-                Length(25),
-                Length(25),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [25, 25, 50]);
-
-            // Length is lower priority that breaking Min
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Min(100)]));
-            assert_eq!([a.width, b.width], [0, 100]);
-
-            // Length is higher priority to non binding Min
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Min(0)]));
-            assert_eq!([a.width, b.width], [25, 75]);
-
-            // Length is lower priority that breaking Max
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Max(0)]));
-            assert_eq!([a.width, b.width], [100, 0]);
-
-            // Length is higher priority to non binding Min
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Max(100)]));
-            assert_eq!([a.width, b.width], [25, 75]);
-
-            // Length is equal priority to Percentage
-            // but cassowary modifies last constraint of equal weight to satisfy everything
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Percentage(25)]));
-            assert_eq!([a.width, b.width], [25, 75]);
-
-            // Length is equal priority to Percentage
-            // but cassowary modifies last constraint of equal weight to satisfy everything
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Percentage(25), Length(25)]));
-            assert_eq!([a.width, b.width], [25, 75]);
-
-            // Length is equal priority to Ratio
-            // but cassowary modifies last constraint of equal weight to satisfy everything
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Ratio(1, 4)]));
-            assert_eq!([a.width, b.width], [25, 75]);
-
-            // Length is equal priority to Ratio
-            // but cassowary modifies last constraint of equal weight to satisfy everything
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Ratio(1, 4), Length(25)]));
-            assert_eq!([a.width, b.width], [25, 75]);
-
-            // Length is lower priority to Fixed
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Fixed(25), Length(25)]));
-            assert_eq!([a.width, b.width], [25, 75]);
-
-            // Length is lower priority to Fixed
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Length(25), Fixed(25)]));
-            assert_eq!([a.width, b.width], [75, 25]);
-        }
-
         // these are a few tests that document existing bugs in the layout algorithm
         #[test]
         fn edge_cases() {
@@ -1625,6 +1563,8 @@ mod tests {
 
             // minimal bug from
             // https://github.com/ratatui-org/ratatui/pull/404#issuecomment-1681850644
+            // TODO: check if this bug is now resolved?
+            // NOTE: the end result can be unstable
             let layout = Layout::default()
                 .constraints([Min(1), Length(0), Min(1)])
                 .direction(Direction::Horizontal)
@@ -1638,6 +1578,24 @@ mod tests {
                 ]
             );
 
+            // minimal bug from
+            // https://github.com/ratatui-org/ratatui/pull/404#issuecomment-1681850644
+            // NOTE: the end result is stable
+            let layout = Layout::default()
+                .constraints([Min(1), Fixed(0), Min(1)])
+                .direction(Direction::Horizontal)
+                .split(Rect::new(0, 0, 1, 1));
+            assert_eq!(
+                layout[..],
+                [
+                    Rect::new(0, 0, 1, 1),
+                    Rect::new(1, 0, 0, 1),
+                    Rect::new(1, 0, 0, 1),
+                ]
+            );
+
+            // This stretches the 2nd last length instead of the last min based on ranking
+            // NOTE: the end result can be unstable
             let layout = Layout::default()
                 .constraints([Length(3), Min(4), Length(1), Min(4)])
                 .direction(Direction::Horizontal)
@@ -1653,588 +1611,391 @@ mod tests {
             );
         }
 
-        #[test]
-        fn proportional_fixed() {
-            // fixed doesn't panic when results don't match exactly
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Fixed(33),
-                Fixed(33),
-                Fixed(33),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [33, 33, 34]);
-
-            // cassowary implementation tends to put excess in last variable
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Fixed(25),
-                Fixed(25),
-                Fixed(25),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [25, 25, 50]);
-
-            // fixed with min and max
-            let [a, b, c] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(25), Fixed(25), Max(25)]));
-            assert_eq!([a.width, b.width, c.width], [50, 25, 25]);
-
-            // fixed with percent and ratio
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Percentage(25),
-                Fixed(25),
-                Ratio(1, 4),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [25, 25, 50]);
-
-            // 3 lengths for reference
-            // cassowary implementation tends to put excess in last variable
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Length(25),
-                Length(25),
-                Length(25),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [25, 25, 50]);
-
-            // fixed with length
-            let [_a, _b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Length(25),
-                Length(25),
-                Fixed(25),
-            ]));
-            // this test gives different results when run over and over again
-            //
-            // assert_eq!([a.width, b.width], [25, 50]);
-            // assert_eq!([a.width, b.width], [50, 25]);
-            //
-            // So we check just that the last value is exactly what we want it to be
-            assert_eq!(c.width, 25);
-
-            // ensure that middle width is 1
-            // last length of 100 will not be met
-            let [a, b, c] =
-                Rect::new(0, 0, 50, 1).split(&Layout::horizontal([Min(20), Fixed(1), Length(100)]));
-
-            assert_eq!([a.width, b.width, c.width], [20, 1, 29]);
-
-            // ensure that middle width is 1
-            // first length of 100 will not be met
-            let [a, b, c] =
-                Rect::new(0, 0, 50, 1).split(&Layout::horizontal([Length(100), Fixed(1), Min(20)]));
-            assert_eq!([a.width, b.width, c.width], [29, 1, 20]);
-
-            // middle fixed width is satisfied exactly
-            // left and right are equal to each other
-            let [a, b, c] = Rect::new(0, 0, 50, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Fixed(10),
-                Proportional(1),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [20, 10, a.width]);
-
-            // middle fixed width is satisfied exactly
-            // ratio of left and right is 1 / 2
-            let [a, b, c] = Rect::new(0, 0, 50, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Fixed(10),
-                Proportional(2),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [13, 10, 27]);
-
-            // second width is double all the others
-            let [a, b, c, d] = Rect::new(0, 0, 50, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(2),
-                Proportional(1),
-                Proportional(1),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [10, 20, 10, 10]);
-
-            // second width is still double all the others
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(2),
-                Proportional(1),
-                Proportional(1),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [20, 40, 20, 20]);
-
-            // incremental proportions
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(2),
-                Proportional(3),
-                Proportional(4),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [10, 20, 30, 40]);
-
-            // decremental proportions
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(4),
-                Proportional(3),
-                Proportional(2),
-                Proportional(1),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [40, 30, 20, 10]);
-
-            // randomly ordered proportions
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [10, 30, 20, 40]);
-
-            // randomly ordered proportions with fixed
-            let [a, b, c, d, e] = Rect::new(0, 0, 200, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Fixed(100),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [10, 30, 100, 20, 40]
-            );
-
-            // randomly ordered proportions with length
-            let [a, b, c, d, e] = Rect::new(0, 0, 200, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Length(100),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [10, 30, 100, 20, 40]
-            );
-
-            // randomly ordered proportions with percentage
-            let [a, b, c, d, e] = Rect::new(0, 0, 200, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Percentage(50),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [10, 30, 100, 20, 40]
-            );
-
-            // randomly ordered proportions with min
-            let [a, b, c, d, e] = Rect::new(0, 0, 200, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Min(100),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [10, 30, 100, 20, 40]
-            );
-
-            // randomly ordered proportions with max
-            let [a, b, c, d, e] = Rect::new(0, 0, 200, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(3),
-                Max(100),
-                Proportional(2),
-                Proportional(4),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [10, 30, 100, 20, 40]
-            );
-
-            // first and third widths are zero
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Proportional(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [0, 100, 0]);
-
-            // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Fixed(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
-
-            // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Length(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
-
-            // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Percentage(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
-
-            // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Ratio(1, 100),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
-
-            // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Min(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
-
-            // Proportional always divides proportionally amongst zeros
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Max(1),
-                Proportional(0),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [50, 1, 49]);
-
-            // first and third widths are zero
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Proportional(2),
-                Proportional(0),
-                Proportional(1),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [0, 67, 0, 33]);
-
-            // 0 proportional will fill empty space
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Proportional(2),
-                Percentage(20),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [0, 80, 20]);
-
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(0),
-                Proportional(u16::MAX),
-            ]));
-            assert_eq!([a.width, b.width], [0, 100]);
-
-            // 0 proportional will fill empty space
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Proportional(0), Percentage(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
-
-            // 1 proportional will fill empty spaces
-            let [a, b] = Rect::new(0, 0, 100, 1)
-                .split(&Layout::horizontal([Proportional(1), Percentage(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
-
-            // proportional can be zero because of high scaling factor
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(u16::MAX),
-                Proportional(1),
-                Percentage(20),
-            ]));
-            assert_eq!([a.width, b.width, c.width], [80, 0, 20]);
-
-            // single 0 proportional will fill empty space
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Proportional(0), Length(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
-
-            // single 0 proportional will fill empty space
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Proportional(0), Max(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
-
-            // 1 proportional will fill empty space
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Proportional(1), Max(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
-
-            // 0 min still fills empty space
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Min(0), Percentage(20)]));
-            assert_eq!([a.width, b.width], [80, 20]);
-
-            // percentage constraint doesn't hold against defying `Max`
-            let [a, b] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal([Max(0), Percentage(20)]));
-            assert_eq!([a.width, b.width], [0, 100]);
-
-            // specifying behavior of proportional with min and length
-            let [a, b, c, d, e] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(1),
-                Proportional(1),
-                Min(30),
-                Length(50),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [7, 6, 7, 30, 50]
-            );
-
-            // proportional is lower priority than length
-            let [a, b, c, d, e] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(1),
-                Proportional(1),
-                Length(50),
-                Length(50),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [0, 0, 0, 50, 50]
-            );
-
-            // proportional is lower priority than min and max
-            let [a, b, c, d, e] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(1),
-                Proportional(1),
-                Min(50),
-                Max(50),
-            ]));
-            assert_eq!(
-                [a.width, b.width, c.width, d.width, e.width],
-                [0, 0, 0, 50, 50]
-            );
-
-            // proportional is lower priority than percentage
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(1),
-                Proportional(1),
-                Percentage(100),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [0, 0, 0, 100]);
-
-            // proportional is lower priority than ratio
-            let [a, b, c, d] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([
-                Proportional(1),
-                Proportional(1),
-                Proportional(1),
-                Ratio(1, 1),
-            ]));
-            assert_eq!([a.width, b.width, c.width, d.width], [0, 0, 0, 100]);
+        #[rstest]
+        #[case::length_priority(vec![0, 100], vec![Length(25), Min(100)])]
+        #[case::length_priority(vec![25, 75], vec![Length(25), Min(0)])]
+        #[case::length_priority(vec![100, 0], vec![Length(25), Max(0)])]
+        #[case::length_priority(vec![25, 75], vec![Length(25), Max(100)])]
+        #[case::length_priority(vec![25, 75], vec![Length(25), Percentage(25)])]
+        #[case::length_priority(vec![25, 75], vec![Percentage(25), Length(25)])]
+        #[case::length_priority(vec![25, 75], vec![Length(25), Ratio(1, 4)])]
+        #[case::length_priority(vec![25, 75], vec![Ratio(1, 4), Length(25)])]
+        #[case::length_priority(vec![75, 25], vec![Length(25), Fixed(25)])]
+        #[case::length_priority(vec![25, 75], vec![Fixed(25), Length(25)])]
+        #[case::excess_in_last_variable(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
+        #[case::excess_in_last_variable(vec![15, 35, 50], vec![Length(15), Length(35), Length(25)])]
+        #[case::three_lengths(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
+        fn constraint_length(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
         }
 
         #[rstest]
-        #[case::length_stretches_to_end(Constraint::Length(50), Flex::StretchLast, (0, 100))]
-        #[case::length_stretches(Constraint::Length(50), Flex::Stretch, (0, 100))]
-        #[case::length_left_justified(Constraint::Length(50), Flex::Start, (0, 50))]
-        #[case::length_right_justified(Length(50), Flex::End, (50, 50))]
-        #[case::length_center_justified(Length(50), Flex::Center, (25, 50))]
-        #[case::fixed_stretches_to_end(Fixed(50), Flex::StretchLast, (0, 100))]
-        #[case::fixed_left_justified(Fixed(50), Flex::Start, (0, 50))]
-        #[case::fixed_right_justified(Fixed(50), Flex::End, (50, 50))]
-        #[case::fixed_center_justified(Fixed(50), Flex::Center, (25, 50))]
-        #[case::ratio_stretches_to_end(Ratio(1, 2), Flex::StretchLast, (0, 100))]
-        #[case::ratio_left_justified(Ratio(1, 2), Flex::Start, (0, 50))]
-        #[case::ratio_right_justified(Ratio(1, 2), Flex::End, (50, 50))]
-        #[case::ratio_center_justified(Ratio(1, 2), Flex::Center, (25, 50))]
-        #[case::percent_stretches_to_end(Percentage(50), Flex::StretchLast, (0, 100))]
-        #[case::percent_left_justified(Percentage(50), Flex::Start, (0, 50))]
-        #[case::percent_right_justified(Percentage(50), Flex::End, (50, 50))]
-        #[case::percent_center_justified(Percentage(50), Flex::Center, (25, 50))]
-        #[case::min_stretches_to_end(Min(50), Flex::StretchLast, (0, 100))]
-        #[case::min_left_justified(Min(50), Flex::Start, (0, 50))]
-        #[case::min_right_justified(Min(50), Flex::End, (50, 50))]
-        #[case::min_center_justified(Min(50), Flex::Center, (25, 50))]
-        #[case::max_stretches_to_end(Max(50), Flex::StretchLast, (0, 100))]
-        #[case::max_left_justified(Max(50), Flex::Start, (0, 50))]
-        #[case::max_right_justified(Max(50), Flex::End, (50, 50))]
-        #[case::max_center_justified(Max(50), Flex::Center, (25, 50))]
-        #[case::spacebetween_becomes_stretch(Min(1), Flex::SpaceBetween, (0, 100))]
-        #[case::spacebetween_becomes_stretch_with_max(Max(20), Flex::SpaceBetween, (0, 100))]
-        #[case::spacebetween_becomes_stretch_with_fixed(Fixed(20), Flex::SpaceBetween, (0, 100))]
-        fn flex_one_constraint(
-            #[case] constraint: Constraint,
-            #[case] flex: Flex,
-            #[case] expected_widths: (u16, u16),
+        #[case::table_length_test(vec![Length(4), Length(4)], vec![(0, 4), (5, 2)], 7)]
+        #[case::table_length_test(vec![Length(4), Length(4)], vec![(0, 3), (4, 0)], 4)]
+        fn table_length(
+            #[case] constraints: Vec<Constraint>,
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] width: u16,
         ) {
-            let [a] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal([constraint]).flex(flex));
-            assert_eq!((a.x, a.width), expected_widths);
+            let rect = Rect::new(0, 0, width, 1);
+            let r = Layout::horizontal(constraints)
+                .spacing(1)
+                .flex(Flex::Start)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, r);
         }
 
         #[rstest]
-        #[case::length_stretches_to_end([Length(25), Length(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
-        #[case::splits_equally_to_end([Length(25), Length(25)], Flex::Stretch, [(0, 50), (50, 50)])]
-        #[case::lengths_justify_to_start([Length(25), Length(25)], Flex::Start, [(0, 25), (25, 25)])]
-        #[case::length_justifies_to_center([Length(25), Length(25)], Flex::Center, [(25, 25), (50, 25)])]
-        #[case::length_justifies_to_end([Length(25), Length(25)], Flex::End, [(50, 25), (75, 25)])]
-        #[case::fixed_stretches_to_end_last([Fixed(25), Fixed(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
-        #[case::fixed_stretches_to_end([Fixed(25), Fixed(25)], Flex::Stretch, [(0, 50), (50, 50)])]
-        #[case::fixed_justifies_to_start([Fixed(25), Fixed(25)], Flex::Start, [(0, 25), (25, 25)])]
-        #[case::fixed_justifies_to_center([Fixed(25), Fixed(25)], Flex::Center, [(25, 25), (50, 25)])]
-        #[case::fixed_justifies_to_end([Fixed(25), Fixed(25)], Flex::End, [(50, 25), (75, 25)])]
-        #[case::percentage_stretches_to_end_last([Percentage(25), Percentage(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
-        #[case::percentage_stretches_to_end([Percentage(25), Percentage(25)], Flex::Stretch, [(0, 50), (50, 50)])]
-        #[case::percentage_justifies_to_start([Percentage(25), Percentage(25)], Flex::Start, [(0, 25), (25, 25)])]
-        #[case::percentage_justifies_to_center([Percentage(25), Percentage(25)], Flex::Center, [(25, 25), (50, 25)])]
-        #[case::percentage_justifies_to_end([Percentage(25), Percentage(25)], Flex::End, [(50, 25), (75, 25)])]
-        #[case::min_stretches_to_end([Min(25), Min(25)], Flex::StretchLast, [(0, 25), (25, 75)])]
-        #[case::min_stretches_to_end([Min(25), Min(25)], Flex::Stretch, [(0, 50), (50, 50)])]
-        #[case::min_justifies_to_start([Min(25), Min(25)], Flex::Start, [(0, 25), (25, 25)])]
-        #[case::min_justifies_to_center([Min(25), Min(25)], Flex::Center, [(25, 25), (50, 25)])]
-        #[case::min_justifies_to_end([Min(25), Min(25)], Flex::End, [(50, 25), (75, 25)])]
-        #[case::length_spaced_between([Length(25), Length(25)], Flex::SpaceBetween, [(0, 25), (75, 25)])]
-        #[case::length_spaced_around([Length(25), Length(25)], Flex::SpaceAround, [(17, 25), (58, 25)])]
-        fn flex_two_constraints(
-            #[case] constraints: [Constraint; 2],
-            #[case] flex: Flex,
-            #[case] expected_widths: [(u16, u16); 2],
-        ) {
-            let [a, b] = Rect::new(0, 0, 100, 1).split(&Layout::horizontal(constraints).flex(flex));
-            assert_eq!([(a.x, a.width), (b.x, b.width)], expected_widths);
+        #[case::fixed_is_higher_priority_than_min_max(vec![50, 25, 25], vec![Min(25), Fixed(25), Max(25)])]
+        #[case::fixed_is_higher_priority_than_min_max(vec![25, 25, 50], vec![Max(25), Fixed(25), Min(25)])]
+        #[case::excess_in_lowest_priority(vec![33, 33, 34], vec![Fixed(33), Fixed(33), Fixed(33)])]
+        #[case::excess_in_lowest_priority(vec![25, 25, 50], vec![Fixed(25), Fixed(25), Fixed(25)])]
+        #[case::fixed_higher_priority(vec![25, 25, 50], vec![Percentage(25), Fixed(25), Ratio(1, 4)])]
+        #[case::fixed_higher_priority(vec![25, 25, 50], vec![Fixed(25), Ratio(1, 4), Percentage(25)])]
+        #[case::fixed_higher_priority(vec![25, 25, 50], vec![Ratio(1, 4), Fixed(25), Percentage(25)])]
+        // #[case::fixed_higher_priority(vec![25, 50, 25], vec![Ratio(1, 4), Percentage(25),
+        // Fixed(25)])] // unstable test fails randomly
+        #[case::fixed_higher_priority(vec![79, 1, 20], vec![Length(100), Fixed(1), Min(20)])]
+        #[case::fixed_higher_priority(vec![20, 1, 79], vec![Min(20), Fixed(1), Length(100)])]
+        #[case::fixed_higher_priority(vec![45, 10, 45], vec![Proportional(1), Fixed(10), Proportional(1)])]
+        #[case::fixed_higher_priority(vec![30, 10, 60], vec![Proportional(1), Fixed(10), Proportional(2)])]
+        #[case::fixed_higher_priority(vec![18, 10, 72], vec![Proportional(1), Fixed(10), Proportional(4)])]
+        #[case::fixed_higher_priority(vec![15, 10, 75], vec![Proportional(1), Fixed(10), Proportional(5)])]
+        #[case::three_lengths_reference(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
+        // #[case::previously_unstable_test(vec![25, 50, 25], vec![Length(25), Length(25),
+        // Fixed(25)])] // unstable test fails randomly
+        fn fixed(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
         }
 
         #[rstest]
-        #[case::length_spaced_around([Length(25), Length(25), Length(25)], Flex::SpaceBetween, [(0, 25), (38, 25), (75, 25)])]
-        fn flex_three_constraints(
-            #[case] constraints: [Constraint; 3],
-            #[case] flex: Flex,
-            #[case] expected_widths: [(u16, u16); 3],
+        #[case::excess_in_last_variable(vec![13, 10, 27], vec![Proportional(1), Fixed(10), Proportional(2)])]
+        #[case::excess_in_last_variable(vec![10, 27, 13], vec![Fixed(10), Proportional(2), Proportional(1)])] // might be unstable?
+        fn fixed_with_50_width(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 50, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::multiple_same_proportionals_are_same(vec![20, 40, 20, 20], vec![Proportional(1), Proportional(2), Proportional(1), Proportional(1)])]
+        #[case::incremental(vec![10, 20, 30, 40], vec![Proportional(1), Proportional(2), Proportional(3), Proportional(4)])]
+        #[case::decremental(vec![40, 30, 20, 10], vec![Proportional(4), Proportional(3), Proportional(2), Proportional(1)])]
+        #[case::randomly_ordered(vec![10, 30, 20, 40], vec![Proportional(1), Proportional(3), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Fixed(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Length(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Percentage(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Min(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Max(50), Proportional(2), Proportional(4)])]
+        #[case::zero_width(vec![0, 100, 0], vec![Proportional(0), Proportional(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Fixed(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Length(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Percentage(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Min(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Max(1), Proportional(0)])]
+        #[case::zero_width(vec![0, 67, 0, 33], vec![Proportional(0), Proportional(2), Proportional(0), Proportional(1)])]
+        #[case::space_filler(vec![0, 80, 20], vec![Proportional(0), Proportional(2), Percentage(20)])]
+        #[case::space_filler(vec![40, 40, 20], vec![Proportional(0), Proportional(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Ratio(1, 5)])]
+        #[case::space_filler(vec![0, 100], vec![Proportional(0), Proportional(u16::MAX)])]
+        #[case::space_filler(vec![100, 0], vec![Proportional(u16::MAX), Proportional(0)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(1), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(u16::MAX), Percentage(20)])]
+        #[case::space_filler(vec![80, 0, 20], vec![Proportional(u16::MAX), Proportional(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Fixed(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Length(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Min(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Max(20)])]
+        #[case::proportional_collapses_first(vec![7, 6, 7, 30, 50], vec![Proportional(1), Proportional(1), Proportional(1), Min(30), Length(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 50, 50], vec![Proportional(1), Proportional(1), Proportional(1), Length(50), Length(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 75, 25], vec![Proportional(1), Proportional(1), Proportional(1), Length(75), Length(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 50, 50], vec![Proportional(1), Proportional(1), Proportional(1), Min(50), Max(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 100], vec![Proportional(1), Proportional(1), Proportional(1), Ratio(1, 1)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 100], vec![Proportional(1), Proportional(1), Proportional(1), Percentage(100)])]
+        fn proportional(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::min_percentage(vec![80, 20], vec![Min(0), Percentage(20)])]
+        #[case::max_percentage(vec![0, 100], vec![Max(0), Percentage(20)])]
+        fn percentage_parameterized(
+            #[case] expected: Vec<u16>,
+            #[case] constraints: Vec<Constraint>,
         ) {
-            let [a, b, c] =
-                Rect::new(0, 0, 100, 1).split(&Layout::horizontal(constraints).flex(flex));
-            assert_eq!(
-                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
-                expected_widths
-            );
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
         }
 
-        #[test]
-        fn flex_spacing() {
-            // reference no spacing
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Length(20), Length(20), Length(20)])
-                    .flex(Flex::Start)
-                    .spacing(0),
-            );
-            assert_eq!(
-                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
-                [(0, 20), (20, 20), (40, 20)]
-            );
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Length(20), Length(20), Length(20)])
-                    .flex(Flex::Center)
-                    .spacing(2),
-            );
-            assert_eq!(
-                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
-                [(18, 20), (40, 20), (62, 20)]
-            );
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Length(20), Length(20), Length(20)])
-                    .flex(Flex::End)
-                    .spacing(2),
-            );
-            assert_eq!(
-                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
-                [(36, 20), (58, 20), (80, 20)]
-            );
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Length(20), Length(20), Length(20)])
-                    .flex(Flex::Stretch)
-                    .spacing(2),
-            );
-            assert_eq!(
-                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
-                [(0, 32), (34, 32), (68, 32)]
-            );
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Length(20), Length(20), Length(20)])
-                    .flex(Flex::StretchLast)
-                    .spacing(2),
-            );
-            assert_eq!(
-                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
-                [(0, 20), (22, 20), (44, 56)]
-            );
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Fixed(20), Fixed(20), Fixed(20)])
-                    .flex(Flex::StretchLast)
-                    .spacing(2),
-            );
-            assert_eq!(
-                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
-                [(0, 20), (22, 20), (44, 56)]
-            );
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Fixed(20), Fixed(20), Fixed(20)])
-                    .flex(Flex::Stretch)
-                    .spacing(2),
-            );
-            // TODO: broken test
-            // this test breaks because the spacers have the same priority as the constraints
-            // This will _only_ happen when every constraint is `Fixed` AND when
-            // `Flex::Stretch` is used.
-            // No easy way to fix it right now.
-            assert_ne!(
-                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
-                [(0, 32), (34, 32), (68, 32)]
-            );
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Fixed(20), Fixed(20), Fixed(20)])
-                    .flex(Flex::SpaceAround)
-                    .spacing(2),
-            );
-            // never add spacers for space around
-            assert_eq!(
-                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
-                [(10, 20), (40, 20), (70, 20)]
-            );
-            let [a, b, c] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Fixed(20), Fixed(20), Fixed(20)])
-                    .flex(Flex::SpaceBetween)
-                    .spacing(2),
-            );
-            // never add spacers for space between
-            assert_eq!(
-                [(a.x, a.width), (b.x, b.width), (c.x, c.width)],
-                [(0, 20), (40, 20), (80, 20)]
-            );
+        #[rstest]
+        #[case::min_max_priority(vec![100, 0], vec![Max(100), Min(0)])]
+        #[case::min_max_priority(vec![0, 100], vec![Min(0), Max(100)])]
+        #[case::min_max_priority(vec![90, 10], vec![Length(u16::MAX), Min(10)])]
+        #[case::min_max_priority(vec![10, 90], vec![Min(10), Length(u16::MAX)])]
+        #[case::min_max_priority(vec![90, 10], vec![Length(0), Max(10)])]
+        #[case::min_max_priority(vec![10, 90], vec![Max(10), Length(0)])]
+        fn min_max(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
         }
 
-        #[test]
-        fn flex_spacing_with_proportional() {
-            Layout::init_cache(1);
-            let [a, _, b] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Proportional(1), Fixed(2), Proportional(1)])
-                    .flex(Flex::StretchLast)
-                    .spacing(0),
-            );
-            assert_eq!([(a.x, a.width), (b.x, b.width)], [(0, 49), (51, 49)]);
-
-            Layout::init_cache(1);
-            let [a, b] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Proportional(1), Proportional(1)])
-                    .flex(Flex::StretchLast)
-                    .spacing(2),
-            );
-            assert_eq!([(a.x, a.width), (b.x, b.width)], [(0, 49), (51, 49)]);
+        #[rstest]
+        #[case::length(vec![(0, 100)], vec![Constraint::Length(50)], Flex::StretchLast)]
+        #[case::length(vec![(0, 100)], vec![Constraint::Length(50)], Flex::Stretch)]
+        #[case::length(vec![(0, 50)], vec![Constraint::Length(50)], Flex::Start)]
+        #[case::length(vec![(50, 50)], vec![Constraint::Length(50)], Flex::End)]
+        #[case::length(vec![(25, 50)], vec![Constraint::Length(50)], Flex::Center)]
+        #[case::fixed(vec![(0, 100)], vec![Fixed(50)], Flex::StretchLast)]
+        #[case::fixed(vec![(0, 100)], vec![Fixed(50)], Flex::Stretch)]
+        #[case::fixed(vec![(0, 50)], vec![Fixed(50)], Flex::Start)]
+        #[case::fixed(vec![(50, 50)], vec![Fixed(50)], Flex::End)]
+        #[case::fixed(vec![(25, 50)], vec![Fixed(50)], Flex::Center)]
+        #[case::ratio(vec![(0, 100)], vec![Ratio(1, 2)], Flex::StretchLast)]
+        #[case::ratio(vec![(0, 100)], vec![Ratio(1, 2)], Flex::Stretch)]
+        #[case::ratio(vec![(0, 50)], vec![Ratio(1, 2)], Flex::Start)]
+        #[case::ratio(vec![(50, 50)], vec![Ratio(1, 2)], Flex::End)]
+        #[case::ratio(vec![(25, 50)], vec![Ratio(1, 2)], Flex::Center)]
+        #[case::percent(vec![(0, 100)], vec![Percentage(50)], Flex::StretchLast)]
+        #[case::percent(vec![(0, 100)], vec![Percentage(50)], Flex::Stretch)]
+        #[case::percent(vec![(0, 50)], vec![Percentage(50)], Flex::Start)]
+        #[case::percent(vec![(50, 50)], vec![Percentage(50)], Flex::End)]
+        #[case::percent(vec![(25, 50)], vec![Percentage(50)], Flex::Center)]
+        #[case::min(vec![(0, 100)], vec![Min(50)], Flex::StretchLast)]
+        #[case::min(vec![(0, 100)], vec![Min(50)], Flex::Stretch)]
+        #[case::min(vec![(0, 50)], vec![Min(50)], Flex::Start)]
+        #[case::min(vec![(50, 50)], vec![Min(50)], Flex::End)]
+        #[case::min(vec![(25, 50)], vec![Min(50)], Flex::Center)]
+        #[case::max(vec![(0, 100)], vec![Max(50)], Flex::StretchLast)]
+        #[case::max(vec![(0, 100)], vec![Max(50)], Flex::Stretch)]
+        #[case::max(vec![(0, 50)], vec![Max(50)], Flex::Start)]
+        #[case::max(vec![(50, 50)], vec![Max(50)], Flex::End)]
+        #[case::max(vec![(25, 50)], vec![Max(50)], Flex::Center)]
+        #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Min(1)], Flex::SpaceBetween)]
+        #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Max(20)], Flex::SpaceBetween)]
+        #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Fixed(20)], Flex::SpaceBetween)]
+        #[case::length(vec![(0, 25), (25, 75)], vec![Length(25), Length(25)], Flex::StretchLast)]
+        #[case::length(vec![(0, 50), (50, 50)], vec![Length(25), Length(25)], Flex::Stretch)]
+        #[case::length(vec![(0, 25), (25, 25)], vec![Length(25), Length(25)], Flex::Start)]
+        #[case::length(vec![(25, 25), (50, 25)], vec![Length(25), Length(25)], Flex::Center)]
+        #[case::length(vec![(50, 25), (75, 25)], vec![Length(25), Length(25)], Flex::End)]
+        #[case::length(vec![(0, 25), (75, 25)], vec![Length(25), Length(25)], Flex::SpaceBetween)]
+        #[case::length(vec![(17, 25), (58, 25)], vec![Length(25), Length(25)], Flex::SpaceAround)]
+        #[case::fixed(vec![(0, 25), (25, 75)], vec![Fixed(25), Fixed(25)], Flex::StretchLast)]
+        #[case::fixed(vec![(0, 50), (50, 50)], vec![Fixed(25), Fixed(25)], Flex::Stretch)]
+        #[case::fixed(vec![(0, 25), (25, 25)], vec![Fixed(25), Fixed(25)], Flex::Start)]
+        #[case::fixed(vec![(25, 25), (50, 25)], vec![Fixed(25), Fixed(25)], Flex::Center)]
+        #[case::fixed(vec![(50, 25), (75, 25)], vec![Fixed(25), Fixed(25)], Flex::End)]
+        #[case::fixed(vec![(0, 25), (75, 25)], vec![Fixed(25), Fixed(25)], Flex::SpaceBetween)]
+        #[case::fixed(vec![(17, 25), (58, 25)], vec![Fixed(25), Fixed(25)], Flex::SpaceAround)]
+        #[case::percentage(vec![(0, 25), (25, 75)], vec![Percentage(25), Percentage(25)], Flex::StretchLast)]
+        #[case::percentage(vec![(0, 50), (50, 50)], vec![Percentage(25), Percentage(25)], Flex::Stretch)]
+        #[case::percentage(vec![(0, 25), (25, 25)], vec![Percentage(25), Percentage(25)], Flex::Start)]
+        #[case::percentage(vec![(25, 25), (50, 25)], vec![Percentage(25), Percentage(25)], Flex::Center)]
+        #[case::percentage(vec![(50, 25), (75, 25)], vec![Percentage(25), Percentage(25)], Flex::End)]
+        #[case::percentage(vec![(0, 25), (75, 25)], vec![Percentage(25), Percentage(25)], Flex::SpaceBetween)]
+        #[case::percentage(vec![(17, 25), (58, 25)], vec![Percentage(25), Percentage(25)], Flex::SpaceAround)]
+        #[case::min(vec![(0, 25), (25, 75)], vec![Min(25), Min(25)], Flex::StretchLast)]
+        #[case::min(vec![(0, 50), (50, 50)], vec![Min(25), Min(25)], Flex::Stretch)]
+        #[case::min(vec![(0, 25), (25, 25)], vec![Min(25), Min(25)], Flex::Start)]
+        #[case::min(vec![(25, 25), (50, 25)], vec![Min(25), Min(25)], Flex::Center)]
+        #[case::min(vec![(50, 25), (75, 25)], vec![Min(25), Min(25)], Flex::End)]
+        #[case::min(vec![(0, 25), (75, 25)], vec![Min(25), Min(25)], Flex::SpaceBetween)]
+        #[case::min(vec![(17, 25), (58, 25)], vec![Min(25), Min(25)], Flex::SpaceAround)]
+        #[case::max(vec![(0, 25), (25, 75)], vec![Max(25), Max(25)], Flex::StretchLast)]
+        #[case::max(vec![(0, 50), (50, 50)], vec![Max(25), Max(25)], Flex::Stretch)]
+        #[case::max(vec![(0, 25), (25, 25)], vec![Max(25), Max(25)], Flex::Start)]
+        #[case::max(vec![(25, 25), (50, 25)], vec![Max(25), Max(25)], Flex::Center)]
+        #[case::max(vec![(50, 25), (75, 25)], vec![Max(25), Max(25)], Flex::End)]
+        #[case::max(vec![(0, 25), (75, 25)], vec![Max(25), Max(25)], Flex::SpaceBetween)]
+        #[case::max(vec![(17, 25), (58, 25)], vec![Max(25), Max(25)], Flex::SpaceAround)]
+        #[case::length_spaced_around(vec![(0, 25), (38, 25), (75, 25)], vec![Length(25), Length(25), Length(25)], Flex::SpaceBetween)]
+        fn flex_constraint(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .flex(flex)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, r);
         }
 
-        #[test]
-        fn flex() {
-            // length should be spaced around
-            let [a, _b, c] = Rect::new(0, 0, 100, 1).split(
-                &Layout::horizontal([Length(25), Length(25), Length(25)]).flex(Flex::SpaceAround),
-            );
-            // TODO: figure out why this fails on occasion
-            // assert!(b.x == 37 || b.x == 38);
-            // assert!(b.width == 26 || b.width == 25);
-            assert_eq!([[a.x, a.width], [c.x, c.width]], [[6, 25], [69, 25]]);
+        #[rstest]
+        #[case::length_spacing(vec![(0 , 20), (20, 20) , (40, 20)], vec![Length(20), Length(20), Length(20)], Flex::Start      , 0)]
+        #[case::length_spacing(vec![(0 , 20), (22, 20) , (44, 20)], vec![Length(20), Length(20), Length(20)], Flex::Start      , 2)]
+        #[case::length_spacing(vec![(18, 20), (40, 20) , (62, 20)], vec![Length(20), Length(20), Length(20)], Flex::Center     , 2)]
+        #[case::length_spacing(vec![(36, 20), (58, 20) , (80, 20)], vec![Length(20), Length(20), Length(20)], Flex::End        , 2)]
+        #[case::length_spacing(vec![(0 , 32), (34, 32) , (68, 32)], vec![Length(20), Length(20), Length(20)], Flex::Stretch    , 2)]
+        #[case::length_spacing(vec![(0 , 20), (22, 20) , (44, 56)], vec![Length(20), Length(20), Length(20)], Flex::StretchLast, 2)]
+        #[case::fixed_spacing(vec![(0  , 20), (22, 20) , (44, 56)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::StretchLast, 2)]
+        #[case::fixed_spacing(vec![(0  , 20), (40, 20) , (80, 20)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::Stretch    , 2)]
+        #[case::fixed_spacing(vec![(10 , 20), (40, 20) , (70, 20)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::SpaceAround, 2)]
+        #[case::fixed_spacing(vec![(0 , 20), (20 , 80)] , vec![Fixed(20), Proportional(0)], Flex::SpaceAround , 0)]
+        #[case::fixed_spacing(vec![(0 , 20), (20 , 80)] , vec![Fixed(20), Proportional(1)], Flex::SpaceAround , 0)]
+        #[case::fixed_spacing(vec![(0 , 20), (20 , 80)] , vec![Fixed(20), Proportional(1)], Flex::SpaceAround , 1)]
+        #[case::fixed_spacing(vec![(0  , 20), (20, 80)] , vec![Fixed(20), Proportional(1)], Flex::SpaceBetween, 1)]
+        #[case::fixed_spacing(vec![(0  , 20), (20, 80)] , vec![Fixed(20), Proportional(1)], Flex::Start       , 0)]
+        fn flex_spacing(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] lengths: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] spacing: u16,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(lengths)
+                .flex(flex)
+                .spacing(spacing)
+                .split(rect);
+            let result = r
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, result);
         }
+
+        #[rstest]
+        #[case::a(vec![(0, 25), (25, 75)], vec![Fixed(25), Length(25)])]
+        #[case::b(vec![(0, 75), (75, 25)], vec![Length(25), Fixed(25)])]
+        #[case::c(vec![(0, 25), (25, 75)], vec![Length(25), Percentage(25)])]
+        #[case::d(vec![(0, 25), (25, 75)], vec![Percentage(25), Length(25)])]
+        #[case::e(vec![(0, 75), (75, 25)], vec![Min(25), Percentage(25)])]
+        #[case::f(vec![(0, 25), (25, 75)], vec![Percentage(25), Min(25)])]
+        #[case::g(vec![(0, 25), (25, 75)], vec![Min(25), Percentage(100)])]
+        #[case::h(vec![(0, 75), (75, 25)], vec![Percentage(100), Min(25)])]
+        #[case::i(vec![(0, 25), (25, 75)], vec![Max(75), Percentage(75)])]
+        #[case::j(vec![(0, 75), (75, 25)], vec![Percentage(75), Max(75)])]
+        #[case::k(vec![(0, 25), (25, 75)], vec![Max(25), Percentage(25)])]
+        #[case::l(vec![(0, 75), (75, 25)], vec![Percentage(25), Max(25)])]
+        #[case::m(vec![(0, 25), (25, 75)], vec![Length(25), Ratio(1, 4)])]
+        #[case::n(vec![(0, 25), (25, 75)], vec![Ratio(1, 4), Length(25)])]
+        #[case::o(vec![(0, 25), (25, 75)], vec![Percentage(25), Ratio(1, 4)])]
+        #[case::p(vec![(0, 25), (25, 75)], vec![Ratio(1, 4), Percentage(25)])]
+        #[case::q(vec![(0, 25), (25, 75)], vec![Ratio(1, 4), Proportional(25)])]
+        #[case::r(vec![(0, 75), (75, 25)], vec![Proportional(25), Ratio(1, 4)])]
+        fn constraint_specification_tests_for_priority(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::a(vec![(0, 20), (20, 20), (40, 20)], vec![Length(20), Length(20), Length(20)], Flex::Start, 0)]
+        #[case::b(vec![(18, 20), (40, 20), (62, 20)], vec![Length(20), Length(20), Length(20)], Flex::Center, 2)]
+        #[case::c(vec![(36, 20), (58, 20), (80, 20)], vec![Length(20), Length(20), Length(20)], Flex::End, 2)]
+        #[case::d(vec![(0, 32), (34, 32), (68, 32)], vec![Length(20), Length(20), Length(20)], Flex::Stretch, 2)]
+        #[case::e(vec![(0, 20), (22, 20), (44, 56)], vec![Length(20), Length(20), Length(20)], Flex::StretchLast, 2)]
+        #[case::f(vec![(0, 20), (22, 20), (44, 56)], vec![Fixed(20), Fixed(20), Fixed(20)], Flex::StretchLast, 2)]
+        #[case::g(vec![(0, 20), (40, 20), (80, 20)], vec![Fixed(20), Fixed(20), Fixed(20)], Flex::Stretch, 2)] // unstable
+        #[case::h(vec![(10, 20), (40, 20), (70, 20)], vec![Fixed(20), Fixed(20), Fixed(20)], Flex::SpaceAround, 2)]
+        fn constraint_specification_tests_for_priority_with_spacing(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] spacing: u16,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .spacing(spacing)
+                .flex(flex)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, r);
+        }
+    }
+
+    #[test]
+    fn test_solver() {
+        use super::*;
+
+        let mut solver = Solver::new();
+        let x = Variable::new();
+        let y = Variable::new();
+
+        solver.add_constraint((x + y) | EQ(4.0) | 5.0).unwrap();
+        solver.add_constraint(x | EQ(1.0) | 2.0).unwrap();
+        for _ in 0..5 {
+            solver.add_constraint(y | EQ(1.0) | 2.0).unwrap();
+        }
+
+        let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
+        let x = changes.get(&x).unwrap_or(&0.0).round() as u16;
+        let y = changes.get(&y).unwrap_or(&0.0).round() as u16;
+        assert_eq!(x, 3);
+        assert_eq!(y, 2);
+
+        let mut solver = Solver::new();
+        let x = Variable::new();
+        let y = Variable::new();
+
+        solver.add_constraint((x + y) | EQ(4.0) | 5.0).unwrap();
+        solver.add_constraint(y | EQ(1.0) | 2.0).unwrap();
+        for _ in 0..5 {
+            solver.add_constraint(x | EQ(1.0) | 2.0).unwrap();
+        }
+
+        let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
+        let x = changes.get(&x).unwrap_or(&0.0).round() as u16;
+        let y = changes.get(&y).unwrap_or(&0.0).round() as u16;
+        assert_eq!(x, 2);
+        assert_eq!(y, 3);
     }
 }
