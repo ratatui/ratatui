@@ -5,31 +5,75 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
+use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
-struct App<'a> {
-    pub titles: Vec<&'a str>,
-    pub index: usize,
+const PALETTES: &[tailwind::Palette] = &[
+    tailwind::BLUE,
+    tailwind::EMERALD,
+    tailwind::INDIGO,
+    tailwind::RED,
+];
+
+const BORDER_TYPES: &[BorderType] = &[
+    BorderType::Rounded,
+    BorderType::Plain,
+    BorderType::Double,
+    BorderType::Thick,
+];
+
+#[derive(Default, Clone, Copy, Display, FromRepr, EnumIter)]
+enum SelectedTab {
+    #[default]
+    Tab0,
+    Tab1,
+    Tab2,
+    Tab3,
 }
 
-impl<'a> App<'a> {
-    fn new() -> App<'a> {
+impl SelectedTab {
+    /// Get the previous tab, if there is no previous tab return the current tab.
+    fn previous(&self) -> Self {
+        let current_index: usize = *self as usize;
+        let previous_index = current_index.saturating_sub(1);
+        Self::from_repr(previous_index).unwrap_or(*self)
+    }
+
+    /// Get the next tab, if there is no next tab return the current tab.
+    fn next(&self) -> Self {
+        let current_index = *self as usize;
+        let next_index = current_index.saturating_add(1);
+        Self::from_repr(next_index).unwrap_or(*self)
+    }
+}
+
+impl From<SelectedTab> for Line<'_> {
+    /// Return enum name as a styled `Line` with two spaces both left and right.
+    fn from(value: SelectedTab) -> Self {
+        format!("  {value}  ")
+            .fg(tailwind::SLATE.c200)
+            .bg(PALETTES[value as usize].c900)
+            .into()
+    }
+}
+
+struct App {
+    pub selected_tab: SelectedTab,
+}
+
+impl App {
+    fn new() -> App {
         App {
-            titles: vec!["Tab0", "Tab1", "Tab2", "Tab3"],
-            index: 0,
+            selected_tab: SelectedTab::default(),
         }
     }
 
     pub fn next(&mut self) {
-        self.index = (self.index + 1) % self.titles.len();
+        self.selected_tab = self.selected_tab.next();
     }
 
     pub fn previous(&mut self) {
-        if self.index > 0 {
-            self.index -= 1;
-        } else {
-            self.index = self.titles.len() - 1;
-        }
+        self.selected_tab = self.selected_tab.previous();
     }
 }
 
@@ -68,9 +112,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
                 match key.code {
-                    KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Right | KeyCode::Char('l') => app.next(),
-                    KeyCode::Left | KeyCode::Char('h') => app.previous(),
+                    KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                    KeyCode::Char('l') | KeyCode::Right => app.next(),
+                    KeyCode::Char('h') | KeyCode::Left => app.previous(),
                     _ => {}
                 }
             }
@@ -80,30 +124,44 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 
 fn ui(f: &mut Frame, app: &App) {
     let area = f.size();
-    let vertical = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]);
+    let vertical = Layout::vertical([Constraint::Length(4), Constraint::Min(3)]);
     let [tabs_area, inner_area] = area.split(&vertical);
 
-    let block = Block::default().on_white().black();
-    f.render_widget(block, area);
-    let tabs = app
-        .titles
-        .iter()
-        .map(|t| {
-            let (first, rest) = t.split_at(1);
-            Line::from(vec![first.yellow(), rest.green()])
-        })
-        .collect::<Tabs>()
-        .block(Block::default().borders(Borders::ALL).title("Tabs"))
-        .select(app.index)
-        .style(Style::default().cyan().on_gray())
-        .highlight_style(Style::default().bold().on_black());
-    f.render_widget(tabs, tabs_area);
-    let inner = match app.index {
-        0 => Block::default().title("Inner 0").borders(Borders::ALL),
-        1 => Block::default().title("Inner 1").borders(Borders::ALL),
-        2 => Block::default().title("Inner 2").borders(Borders::ALL),
-        3 => Block::default().title("Inner 3").borders(Borders::ALL),
-        _ => unreachable!(),
-    };
-    f.render_widget(inner, inner_area);
+    render_tabs(f, app, tabs_area);
+
+    render_inner(f, app, inner_area);
+}
+
+fn render_tabs(f: &mut Frame, app: &App, area: Rect) {
+    let block = Block::new()
+        .title("Tabs Example".bold())
+        .title("Use h l or ◄ ► to change tab")
+        .title_alignment(Alignment::Center)
+        .padding(Padding::top(1)); // padding to separate tabs from block title.
+
+    let selected_tab_index = app.selected_tab as usize;
+    // Gets tab titles from `SelectedTab::iter()`
+    let tabs = Tabs::new(SelectedTab::iter())
+        .block(block)
+        .highlight_style(
+            Style::new()
+                .bg(PALETTES[selected_tab_index].c600)
+                .underlined(),
+        )
+        .select(selected_tab_index)
+        .padding("", "")
+        .divider(" | ");
+
+    f.render_widget(tabs, area);
+}
+
+fn render_inner(f: &mut Frame, app: &App, area: Rect) {
+    let index = app.selected_tab as usize;
+    let inner_block = Block::default()
+        .title(format!("Inner {index}"))
+        .borders(Borders::ALL)
+        .border_type(BORDER_TYPES[index])
+        .border_style(Style::new().fg(PALETTES[index].c600));
+
+    f.render_widget(inner_block, area);
 }
