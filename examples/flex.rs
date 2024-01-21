@@ -21,7 +21,7 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
         &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10), Proportional(1)],
     ),
     (
-        "Proportional(u16) takes any excess space if available",
+        "Proportional(u16) takes any excess space always",
         &[Length(20), Percentage(20), Ratio(1, 5), Proportional(1)],
     ),
     (
@@ -33,6 +33,8 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
         &[Length(20), Fixed(20), Percentage(20)],
     ),
     ("", &[Fixed(20), Percentage(20), Length(20)]),
+    ("", &[Proportional(1), Percentage(20), Proportional(2)]),
+    ("", &[Ratio(1, 3), Percentage(20), Ratio(2, 3)]),
     ("", &[Percentage(20), Length(20), Fixed(20)]),
     ("", &[Length(20), Length(15)]),
     ("`Proportional(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Proportional will only have widths in Flex::Stretch and Flex::StretchLast", &[Proportional(1), Proportional(1)]),
