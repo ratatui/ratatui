@@ -82,6 +82,13 @@ struct App<'a> {
 }
 
 impl<'a> App<'a> {
+    /// Changes the status of the selected list item
+    fn change_status(&mut self) {
+        if let Some(i) = self.items.state.selected() {
+            self.items.items[i].2 = !&self.items.items[i].2
+        }
+    }
+
     fn new() -> App<'a> {
         App {
             items: StatefulList::with_items(vec![
@@ -93,13 +100,6 @@ impl<'a> App<'a> {
                 ("Refactor list example", "If you see this info that means I completed this task!", true),
             ]),
             events: Self::create_random_events()
-        }
-    }
-
-    /// Changes the satis of the item list
-    fn change_status(&mut self) {
-        if let Some(i) = self.items.state.selected() {
-            self.items.items[i].2 = !&self.items.items[i].2
         }
     }
 
@@ -316,8 +316,8 @@ fn render_events_list(f: &mut Frame, app: &App, area: Rect) {
         .iter()
         .rev()
         .map(|level| {
-            // sets s to the tailwind color depending on its level
-            let s = match level.as_str() {
+            // sets event_style to the tailwind color depending on its level
+            let event_style = match level.as_str() {
                 "CRITICAL" => Style::default().fg(tailwind::RED.c800),
                 "ERROR" => Style::default().fg(tailwind::RED.c600),
                 "WARNING" => Style::default().fg(tailwind::YELLOW.c600),
@@ -327,7 +327,7 @@ fn render_events_list(f: &mut Frame, app: &App, area: Rect) {
             };
 
             // Creates a list item with styled span
-            ListItem::new(Span::styled(level, s))
+            ListItem::new(Span::styled(level, event_style))
         })
         .collect();
     let events_list = List::new(events)
