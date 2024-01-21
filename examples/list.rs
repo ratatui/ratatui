@@ -14,10 +14,15 @@ const SELECTED_STYLE_FG: Color = tailwind::BLUE.c300;
 const TEXT_COLOR: Color = tailwind::SLATE.c200;
 const COMPLETED_TEXT_COLOR: Color = tailwind::GREEN.c600;
 
+enum Status {
+    Todo,
+    Completed,
+}
+
 struct TodoItem {
     todo: String,
     info: String,
-    status: bool,
+    status: Status,
 }
 
 impl TodoItem {
@@ -27,11 +32,11 @@ impl TodoItem {
             _ => ALT_ROW_COLOR,
         };
         let (style, todo_str) = match self.status {
-            true => (
+            Status::Completed => (
                 Style::default().fg(COMPLETED_TEXT_COLOR).bg(bg_color),
                 " ✓ ".to_string() + &self.todo,
             ),
-            false => (
+            Status::Todo => (
                 Style::default().fg(TEXT_COLOR).bg(bg_color),
                 " ☐ ".to_string() + &self.todo,
             ),
@@ -39,7 +44,7 @@ impl TodoItem {
         ListItem::new(Line::from(todo_str)).style(style)
     }
 
-    fn from_vec(vec: Vec<(&str, &str, bool)>) -> Vec<Self> {
+    fn from_vec(vec: Vec<(&str, &str, Status)>) -> Vec<Self> {
         let mut result_vec = vec![];
         for item in vec {
             result_vec.push(TodoItem {
@@ -117,19 +122,22 @@ impl App {
     /// Changes the status of the selected list item
     fn change_status(&mut self) {
         if let Some(i) = self.items.state.selected() {
-            self.items.items[i].status = !&self.items.items[i].status
+            self.items.items[i].status = match self.items.items[i].status {
+                Status::Completed => Status::Todo,
+                Status::Todo => Status::Completed,
+            }
         }
     }
 
     fn new() -> App {
         App {
             items: StatefulList::with_items(TodoItem::from_vec(vec![
-                ("Rewrite everything with Rust!", "I can't hold my inner voice. He tells me to rewrite the complete universe with Rust", false),
-                ("Rewrite all of your tui apps with Ratatui", "Yes, you heard that right. Go and replace your tui with Ratatui.", true),
-                ("Pet your cat", "Minnak loves to be pet by you! Don't forget to pet and give some treats!", false),
-                ("Walk with your dog", "Max is bored, go walk with him!", false),
-                ("Pay the bills", "Pay the train subscription!!!", true),
-                ("Refactor list example", "If you see this info that means I completed this task!", true),
+                ("Rewrite everything with Rust!", "I can't hold my inner voice. He tells me to rewrite the complete universe with Rust", Status::Todo),
+                ("Rewrite all of your tui apps with Ratatui", "Yes, you heard that right. Go and replace your tui with Ratatui.", Status::Completed),
+                ("Pet your cat", "Minnak loves to be pet by you! Don't forget to pet and give some treats!", Status::Todo),
+                ("Walk with your dog", "Max is bored, go walk with him!", Status::Todo),
+                ("Pay the bills", "Pay the train subscription!!!", Status::Completed),
+                ("Refactor list example", "If you see this info that means I completed this task!", Status::Completed),
             ])),
         }
     }
@@ -253,8 +261,8 @@ fn render_info(f: &mut Frame, app: &mut App, area: Rect) {
     // We get the info depending on the item's state.
     let info = if let Some(i) = app.items.state.selected() {
         match app.items.items[i].status {
-            true => "✓ DONE: ".to_string() + &app.items.items[i].info,
-            false => "TODO: ".to_string() + &app.items.items[i].info,
+            Status::Completed => "✓ DONE: ".to_string() + &app.items.items[i].info,
+            Status::Todo => "TODO: ".to_string() + &app.items.items[i].info,
         }
     } else {
         "Nothing to see here...".to_string()
