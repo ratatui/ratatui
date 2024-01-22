@@ -325,14 +325,14 @@ impl TodoItem<'_> {
             _ => ALT_ROW_COLOR,
         };
         let line = match self.status {
-            Status::Todo => Line::styled(format!(" ☐ {}", self.todo), (TEXT_COLOR, bg_color)),
+            Status::Todo => Line::styled(format!(" ☐ {}", self.todo), TEXT_COLOR),
             Status::Completed => Line::styled(
                 format!(" ✓ {}", self.todo),
                 (COMPLETED_TEXT_COLOR, bg_color),
             ),
         };
 
-        ListItem::new(line)
+        ListItem::new(line).bg(bg_color)
     }
 }
 
