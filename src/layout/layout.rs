@@ -1119,6 +1119,7 @@ impl StrengthSet {
             && self.min_max_inequality > self.length_equality
             && self.length_equality > self.percentage_equality
             && self.percentage_equality > self.ratio_equality
+            && self.ratio_equality > self.min_max_equality
             && self.min_max_inequality > self.proportional_grower
             && self.proportional_grower > self.grower
             && self.grower > self.space_grower
