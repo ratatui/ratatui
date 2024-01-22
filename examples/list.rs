@@ -149,16 +149,13 @@ impl App<'_> {
 
 impl Widget for &mut App<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        // Create a space for header, todo list and the footer. I want to took your attention
-        // to the third constraint and the rect. I put them as a dead space for better look
-        // purposes. Yes with this way there is a line wasted but this looks better in front.
+        // Create a space for header, todo list and the footer.
         let vertical = Layout::vertical([
             Constraint::Length(2),
             Constraint::Min(0),
-            Constraint::Length(1),
-            Constraint::Length(1),
+            Constraint::Length(2),
         ]);
-        let [header_area, rest_area, _dead_space, footer_area] = area.split(&vertical);
+        let [header_area, rest_area, footer_area] = area.split(&vertical);
 
         // Create two chunks with equal vertical screen space. One for the list and the other for
         // the info block.
@@ -268,9 +265,11 @@ impl App<'_> {
     }
 
     fn render_footer(&self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new("Use ↓↑ to move, ← to unselect, → to change status, g/G to go top/bottom.")
-            .alignment(Alignment::Center)
-            .render(area, buf);
+        Paragraph::new(
+            "\nUse ↓↑ to move, ← to unselect, → to change status, g/G to go top/bottom.",
+        )
+        .alignment(Alignment::Center)
+        .render(area, buf);
     }
 }
 
