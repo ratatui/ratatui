@@ -417,31 +417,47 @@ impl Widget for Example {
                 .render(*block, buf);
         }
 
-        let corners_only = symbols::border::Set {
-            top_left: line::NORMAL.top_left,
-            top_right: line::NORMAL.top_right,
-            bottom_left: line::NORMAL.bottom_left,
-            bottom_right: line::NORMAL.bottom_right,
-            vertical_left: " ",
-            vertical_right: " ",
-            horizontal_top: " ",
-            horizontal_bottom: " ",
-        };
         for spacer in spacers.iter() {
-            Block::bordered()
-                .border_set(corners_only)
-                .border_style(Style::reset().dark_gray())
-                .render(*spacer, buf);
-            self.spacer(spacer.width).render(*spacer, buf);
+            self.render_spacer(*spacer, buf);
         }
     }
 }
 
 impl Example {
-    fn spacer(&self, width: u16) -> Paragraph {
-        let label = format!("{width} px");
-        // let bar_width = (width as usize).saturating_sub(2); // we want to `<` and `>` at the ends
-        // let width_bar = format!("<{label:-^bar_width$}>");
+    fn render_spacer(&self, spacer: Rect, buf: &mut Buffer) {
+        if spacer.width > 1 {
+            let corners_only = symbols::border::Set {
+                top_left: line::NORMAL.top_left,
+                top_right: line::NORMAL.top_right,
+                bottom_left: line::NORMAL.bottom_left,
+                bottom_right: line::NORMAL.bottom_right,
+                vertical_left: " ",
+                vertical_right: " ",
+                horizontal_top: " ",
+                horizontal_bottom: " ",
+            };
+            Block::bordered()
+                .border_set(corners_only)
+                .border_style(Style::reset().dark_gray())
+                .render(spacer, buf);
+        } else {
+            Paragraph::new(Text::from(vec![
+                Line::from(""),
+                Line::from("│"),
+                Line::from("│"),
+                Line::from(""),
+            ]))
+            .style(Style::reset().dark_gray())
+            .render(spacer, buf);
+        }
+        let width = spacer.width;
+        let label = if width > 4 {
+            format!("{width} px")
+        } else if width > 2 {
+            format!("{width}")
+        } else {
+            "".to_string()
+        };
         let text = Text::from(vec![
             Line::raw(""),
             Line::raw(""),
@@ -450,6 +466,7 @@ impl Example {
         Paragraph::new(text)
             .style(Style::reset().dark_gray())
             .alignment(Alignment::Center)
+            .render(spacer, buf);
     }
 
     fn illustration(&self, constraint: Constraint, width: u16) -> Paragraph {
