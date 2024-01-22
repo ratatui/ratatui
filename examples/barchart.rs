@@ -185,7 +185,7 @@ fn create_groups<'a>(app: &'a App, combine_values_and_labels: bool) -> Vec<BarGr
                 })
                 .collect();
             BarGroup::default()
-                .label(Line::from(month).alignment(Alignment::Center))
+                .label(Line::from(month).centered())
                 .bars(&bars)
         })
         .collect()

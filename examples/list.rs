@@ -212,7 +212,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         .items
         .iter()
         .map(|i| {
-            let mut lines = vec![Line::from(i.0.bold()).alignment(Alignment::Center)];
+            let mut lines = vec![Line::from(i.0.bold()).centered()];
             for _ in 0..i.1 {
                 lines.push(
                     "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
