@@ -3,7 +3,7 @@
 Output "target/list.gif"
 Set Theme "Aardvark Blue"
 Set Width 1200
-Set Height 550
+Set Height 580
 Hide
 Type "cargo run --example=list --features=crossterm"
 Enter
