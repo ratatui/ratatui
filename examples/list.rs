@@ -13,7 +13,7 @@ const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
 const ALT_ROW_COLOR: Color = tailwind::SLATE.c900;
 const SELECTED_STYLE_FG: Color = tailwind::BLUE.c300;
 const TEXT_COLOR: Color = tailwind::SLATE.c200;
-const COMPLETED_TEXT_COLOR: Color = tailwind::GREEN.c600;
+const COMPLETED_TEXT_COLOR: Color = tailwind::GREEN.c500;
 
 #[derive(Copy, Clone)]
 enum Status {
