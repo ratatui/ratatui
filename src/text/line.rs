@@ -198,6 +198,8 @@ impl<'a> Line<'a> {
     /// Sets the target alignment for this line of text.
     ///
     /// Defaults to: [`None`], meaning the alignment is determined by the rendering widget.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget.
     ///
     /// # Examples
     ///
@@ -221,14 +223,14 @@ impl<'a> Line<'a> {
     /// Left-aligns this line of text.
     ///
     /// Convenience shortcut for `Line::alignment(Alignment::Left)`.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget, with the default alignment being inherited from the parent.
     ///
     /// # Examples
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let mut line = Line::from("Hi, what's up?");
-    /// assert_eq!(None, line.alignment);
-    /// assert_eq!(Some(Alignment::Left), line.left_aligned().alignment);
+    /// let line = Line::from("Hi, what's up?").left_aligned();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn left_aligned(self) -> Self {
@@ -238,14 +240,14 @@ impl<'a> Line<'a> {
     /// Center-aligns this line of text.
     ///
     /// Convenience shortcut for `Line::alignment(Alignment::Center)`.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget, with the default alignment being inherited from the parent.
     ///
     /// # Examples
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let mut line = Line::from("Hi, what's up?");
-    /// assert_eq!(None, line.alignment);
-    /// assert_eq!(Some(Alignment::Center), line.centered().alignment);
+    /// let line = Line::from("Hi, what's up?").centered();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn centered(self) -> Self {
@@ -255,14 +257,14 @@ impl<'a> Line<'a> {
     /// Right-aligns this line of text.
     ///
     /// Convenience shortcut for `Line::alignment(Alignment::Right)`.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget, with the default alignment being inherited from the parent.
     ///
     /// # Examples
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let mut line = Line::from("Hi, what's up?");
-    /// assert_eq!(None, line.alignment);
-    /// assert_eq!(Some(Alignment::Right), line.right_aligned().alignment);
+    /// let line = Line::from("Hi, what's up?").right_aligned();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn right_aligned(self) -> Self {
