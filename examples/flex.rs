@@ -223,11 +223,19 @@ impl Widget for App {
         self.tabs().render(tabs, buf);
         let scroll_needed = self.render_demo(demo, buf);
         let axis_width = if scroll_needed {
-            axis.width - 1
+            axis.width.saturating_sub(1)
         } else {
             axis.width
         };
-        self.axis(axis_width, self.spacing).render(axis, buf);
+        let spacing = if matches!(
+            self.selected_tab,
+            SelectedTab::SpaceBetween | SelectedTab::SpaceAround
+        ) {
+            0
+        } else {
+            self.spacing
+        };
+        self.axis(axis_width, spacing).render(axis, buf);
     }
 }
 
