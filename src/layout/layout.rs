@@ -719,6 +719,8 @@ impl Layout {
                 //      │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
                 // └   ┘└──────────────────┘     └──────────────────┘     └──────────────────┘└   ┘
                 if let (Some(first_spacer), Some(last_spacer)) = (spacers.first(), spacers.last()) {
+                    // we use `grower` strength instead of `spacer_grower` here to make user defined
+                    // spacing take priority over flex spacers
                     solver.add_constraints(&[
                         first_spacer.size() | EQ(strengths.grower) | area_size,
                         first_spacer.start | EQ(REQUIRED) | area_start,
@@ -748,6 +750,8 @@ impl Layout {
                     solver.add_constraint(first_segment.start | EQ(REQUIRED) | area_start)?;
                 }
                 if let (Some(last_segment), Some(last_spacer)) = (segments.last(), spacers.last()) {
+                    // we use `grower` strength instead of `spacer_grower` here to make user defined
+                    // spacing take priority over flex spacers
                     solver.add_constraints(&[
                         last_segment.end | EQ(REQUIRED) | last_spacer.start,
                         last_spacer.end | EQ(REQUIRED) | area_end,
@@ -772,6 +776,8 @@ impl Layout {
                 if let (Some(first_segment), Some(first_spacer)) =
                     (segments.first(), spacers.first())
                 {
+                    // we use `grower` strength instead of `spacer_grower` here to make user defined
+                    // spacing take priority over flex spacers
                     solver.add_constraints(&[
                         first_segment.start | EQ(REQUIRED) | first_spacer.end,
                         first_spacer.start | EQ(REQUIRED) | area_start,
@@ -816,13 +822,13 @@ impl Layout {
                 )?,
                 Constraint::Max(m) => {
                     solver.add_constraints(&[
-                        element.size() | LE(strengths.min_max_non_equality) | f64::from(m),
+                        element.size() | LE(strengths.min_max_inequality) | f64::from(m),
                         element.size() | EQ(strengths.min_max_equality) | f64::from(m),
                     ])?;
                 }
                 Constraint::Min(m) => {
                     solver.add_constraints(&[
-                        element.size() | GE(strengths.min_max_non_equality) | f64::from(m),
+                        element.size() | GE(strengths.min_max_inequality) | f64::from(m),
                         element.size() | EQ(strengths.min_max_equality) | f64::from(m),
                     ])?;
                 }
@@ -845,7 +851,7 @@ impl Layout {
                 Constraint::Proportional(_) => {
                     // given no other constraints, this segment will grow as much as possible.
                     solver.add_constraint(
-                        element.size() | EQ(strengths.proportional_size_equality) | area_size,
+                        element.size() | EQ(strengths.proportional_grower) | area_size,
                     )?;
                 }
             }
@@ -1094,56 +1100,104 @@ struct StrengthSet {
     pub spacer_size_equality: f64,
     pub proportional_scaling_equality: f64,
     pub fixed_value_equality: f64,
-    pub min_max_non_equality: f64,
+    pub min_max_inequality: f64,
     pub length_equality: f64,
     pub percentage_equality: f64,
     pub ratio_equality: f64,
     pub min_max_equality: f64,
+    pub proportional_grower: f64,
     pub grower: f64,
     pub space_grower: f64,
-    pub proportional_size_equality: f64,
 }
 
 impl StrengthSet {
     pub fn is_valid(&self) -> bool {
         self.spacer_size_equality > self.fixed_value_equality
             && self.proportional_scaling_equality > self.fixed_value_equality
-            && self.fixed_value_equality > self.min_max_non_equality
-            && self.min_max_non_equality > self.min_max_equality
-            && self.min_max_non_equality > self.length_equality
+            && self.fixed_value_equality > self.min_max_inequality
+            && self.min_max_inequality > self.min_max_equality
+            && self.min_max_inequality > self.length_equality
             && self.length_equality > self.percentage_equality
             && self.percentage_equality > self.ratio_equality
-            && self.min_max_non_equality > self.grower
+            && self.min_max_inequality > self.proportional_grower
+            && self.proportional_grower > self.grower
             && self.grower > self.space_grower
-        // && self.space_grower > self.proportional_size_equality
     }
 }
 
 impl Default for StrengthSet {
     fn default() -> Self {
-        let spacer_size_equality = strength::create(1000.0, 1000.0, 999.0, 1.0); // REQUIRED - 1.0
-        let proportional_scaling_equality = strength::create(1000.0, 1000.0, 999.0, 1.0); // REQUIRED - 1.0
-        let fixed_value_equality = strength::create(1000.0, 1000.0, 1000.0, 0.1); // REQUIRED / 10.0
-        let min_max_non_equality = strength::create(1.0, 0.0, 0.0, 10.0); // STRONG * 10.0
-        let length_equality = strength::create(1.0, 0.0, 0.0, 0.1); // STRONG / 10.0
-        let percentage_equality = strength::create(0.0, 1.0, 0.0, 10.0); // MEDIUM * 10.0
-        let ratio_equality = strength::create(0.0, 1.0, 0.0, 1.0); // MEDIUM
-        let min_max_equality = strength::create(0.0, 1.0, 0.0, 0.1); // MEDIUM / 10.0
-        let proportional_size_equality = strength::create(0.0, 0.0, 1.0, 10.0); // WEAK * 10.0
-        let grower = strength::create(0.0, 0.0, 1.0, 1.0); // WEAK
-        let space_grower = strength::create(0.0, 0.0, 1.0, 0.1); // WEAK / 10.0
+        let (
+            // ┌     ┐┌───┐┌     ┐┌───┐┌     ┐
+            //   ==x  │   │  ==x  │   │  ==x
+            // └     ┘└───┘└     ┘└───┘└     ┘
+            spacer_size_equality,
+            // ┌───────────────┐┌───────────────┐
+            // │Proportional(x)││Proportional(x)│
+            // └───────────────┘└───────────────┘
+            proportional_scaling_equality,
+            // ┌──────────┐
+            // │Fixed(==x)│
+            // └──────────┘
+            fixed_value_equality,
+            // ┌────────┐┌────────┐
+            // │Min(>=x)││Max(<=x)│
+            // └────────┘└────────┘
+            min_max_inequality,
+            // ┌───────────┐
+            // │Length(==x)│
+            // └───────────┘
+            length_equality,
+            // ┌───────────────┐
+            // │Percentage(==x)│
+            // └───────────────┘
+            percentage_equality,
+            // ┌────────────┐
+            // │Ratio(==x,y)│
+            // └────────────┘
+            ratio_equality,
+            // ┌────────┐┌────────┐
+            // │Min(==x)││Max(==x)│
+            // └────────┘└────────┘
+            min_max_equality,
+            // ┌─────────────────────┐
+            // │<= Proportional(x) =>│
+            // └─────────────────────┘
+            proportional_grower,
+            // ┌────────────┐
+            // │<= Min(x) =>│
+            // └────────────┘
+            grower,
+            // ┌       ┐
+            //  <= x =>
+            // └       ┘
+            space_grower,
+        ) = (
+            strength::create(1000.0, 1000.0, 999.0, 1.0), // REQUIRED - 1.0
+            strength::create(1000.0, 1000.0, 999.0, 1.0), // REQUIRED - 1.0
+            strength::create(1000.0, 1000.0, 1000.0, 0.1), // REQUIRED / 10.0
+            strength::create(1.0, 0.0, 0.0, 10.0),        // STRONG * 10.0
+            strength::create(1.0, 0.0, 0.0, 0.1),         // STRONG / 10.0
+            strength::create(0.0, 1.0, 0.0, 10.0),        // MEDIUM * 10.0
+            strength::create(0.0, 1.0, 0.0, 1.0),         // MEDIUM
+            strength::create(0.0, 1.0, 0.0, 0.1),         // MEDIUM / 10.0
+            strength::create(0.0, 0.0, 1.0, 10.0),        // WEAK * 10.0
+            strength::create(0.0, 0.0, 1.0, 1.0),         // WEAK
+            strength::create(0.0, 0.0, 1.0, 0.1),         // WEAK / 10.0
+        );
+
         Self {
             spacer_size_equality,
             proportional_scaling_equality,
             fixed_value_equality,
-            min_max_non_equality,
+            min_max_inequality,
             length_equality,
             percentage_equality,
             ratio_equality,
             min_max_equality,
             grower,
             space_grower,
-            proportional_size_equality,
+            proportional_grower,
         }
     }
 }
@@ -1162,12 +1216,12 @@ mod tests {
         assert_eq!(s.spacer_size_equality, REQUIRED - 1.0);
         assert_eq!(s.proportional_scaling_equality, REQUIRED - 1.0);
         assert_eq!(s.fixed_value_equality, REQUIRED / 10.0);
-        assert_eq!(s.min_max_non_equality, STRONG * 10.0);
+        assert_eq!(s.min_max_inequality, STRONG * 10.0);
         assert_eq!(s.length_equality, STRONG / 10.0);
         assert_eq!(s.percentage_equality, MEDIUM * 10.0);
         assert_eq!(s.ratio_equality, MEDIUM);
         assert_eq!(s.min_max_equality, MEDIUM / 10.0);
-        assert_eq!(s.proportional_size_equality, WEAK * 10.0);
+        assert_eq!(s.proportional_grower, WEAK * 10.0);
         assert_eq!(s.grower, WEAK);
         assert_eq!(s.space_grower, WEAK / 10.0);
     }
@@ -2288,6 +2342,26 @@ mod tests {
         #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceAround , 10)]
         #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceBetween , 10)]
         fn proportional_spacing(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] lengths: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] spacing: u16,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(lengths)
+                .flex(flex)
+                .spacing(spacing)
+                .split(rect);
+            let result = r
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, result);
+        }
+
+        #[rstest]
+        #[case::flex_fixed10(vec![(0, 10), (90, 10)], vec![Length(10), Length(10)], Flex::Center, 80)]
+        fn flex_spacing_lower_priority_than_user_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] lengths: Vec<Constraint>,
             #[case] flex: Flex,
