@@ -1857,9 +1857,10 @@ mod tests {
             assert_eq!(target.height, chunks.iter().map(|r| r.height).sum::<u16>());
             chunks.windows(2).for_each(|w| assert!(w[0].y <= w[1].y));
         }
-        // these are a few tests that document existing bugs in the layout algorithm
+
         #[test]
-        fn edge_cases() {
+        fn old_edge_cases() {
+            // stretches into last
             let layout = Layout::default()
                 .constraints([
                     Constraint::Percentage(50),
@@ -1876,6 +1877,7 @@ mod tests {
                 ]
             );
 
+            // stretches into last
             let layout = Layout::default()
                 .constraints([
                     Constraint::Max(1),
@@ -1895,7 +1897,7 @@ mod tests {
             // minimal bug from
             // https://github.com/ratatui-org/ratatui/pull/404#issuecomment-1681850644
             // TODO: check if this bug is now resolved?
-            // NOTE: the end result can be unstable
+            // NOTE: May be UNSTABLE
             let layout = Layout::default()
                 .constraints([Min(1), Length(0), Min(1)])
                 .direction(Direction::Horizontal)
@@ -1909,9 +1911,7 @@ mod tests {
                 ]
             );
 
-            // minimal bug from
-            // https://github.com/ratatui-org/ratatui/pull/404#issuecomment-1681850644
-            // NOTE: the end result is stable
+            // NOTE: always STABLE, this test is provided here as reference
             let layout = Layout::default()
                 .constraints([Min(1), Fixed(0), Min(1)])
                 .direction(Direction::Horizontal)
