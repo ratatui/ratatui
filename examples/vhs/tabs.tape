@@ -3,13 +3,13 @@
 Output "target/tabs.gif"
 Set Theme "Aardvark Blue"
 Set Width 1200
-Set Height 332
+Set Height 368
 Hide
 Type "cargo run --example=tabs --features=crossterm"
 Enter
-Sleep 1s
+Sleep 2s
 Show
 Sleep 1s
-Right@1s 3
-Left@1s 3
-Sleep 1s
+Right@2.5s 3
+Left@2.5s 3
+Sleep 2s
