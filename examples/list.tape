@@ -3,13 +3,22 @@
 Output "target/list.gif"
 Set Theme "Aardvark Blue"
 Set Width 1200
-Set Height 600
+Set Height 612
 Hide
 Type "cargo run --example=list --features=crossterm"
 Enter
-Sleep 1s
+Sleep 10s
 Show
-Down@1s 4
-Up@1s 2
+Sleep 2s
+Down@1.5s 3
+Right@1.5s 1
+Sleep 1.5s
+Down@1.5s 3
+Sleep 1.5s
+Up@1s 1
+Sleep 1s
+Right@1.5s 1
+Sleep 1.5s
+Up@1s 4
 Left@1s 1
-Sleep 5s
+Sleep 2s
