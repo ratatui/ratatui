@@ -231,6 +231,8 @@ impl<'a> Text<'a> {
     /// Sets the alignment for this text.
     ///
     /// Defaults to: [`None`], meaning the alignment is determined by the rendering widget.
+    /// Setting the alignment of a Text generally overrides the alignment of its
+    /// parent Widget.
     ///
     /// Alignment can be set individually on each line to override this text's alignment.
     ///
@@ -275,6 +277,63 @@ impl<'a> Text<'a> {
             alignment: Some(alignment),
             ..self
         }
+    }
+
+    /// Left-aligns the whole text.
+    ///
+    /// Convenience shortcut for `Text::alignment(Alignment::Left)`.
+    /// Setting the alignment of a Text generally overrides the alignment of its
+    /// parent Widget, with the default alignment being inherited from the parent.
+    ///
+    /// Alignment can be set individually on each line to override this text's alignment.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let text = Text::from("Hi, what's up?").left_aligned();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn left_aligned(self) -> Self {
+        self.alignment(Alignment::Left)
+    }
+
+    /// Center-aligns the whole text.
+    ///
+    /// Convenience shortcut for `Text::alignment(Alignment::Center)`.
+    /// Setting the alignment of a Text generally overrides the alignment of its
+    /// parent Widget, with the default alignment being inherited from the parent.
+    ///
+    /// Alignment can be set individually on each line to override this text's alignment.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let text = Text::from("Hi, what's up?").centered();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn centered(self) -> Self {
+        self.alignment(Alignment::Center)
+    }
+
+    /// Right-aligns the whole text.
+    ///
+    /// Convenience shortcut for `Text::alignment(Alignment::Right)`.
+    /// Setting the alignment of a Text generally overrides the alignment of its
+    /// parent Widget, with the default alignment being inherited from the parent.
+    ///
+    /// Alignment can be set individually on each line to override this text's alignment.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let text = Text::from("Hi, what's up?").right_aligned();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn right_aligned(self) -> Self {
+        self.alignment(Alignment::Right)
     }
 }
 
@@ -718,5 +777,23 @@ mod tests {
 
             assert_buffer_eq!(buf, expected);
         }
+    }
+
+    #[test]
+    fn left_aligned() {
+        let text = Text::from("Hello, world!").left_aligned();
+        assert_eq!(text.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let text = Text::from("Hello, world!").centered();
+        assert_eq!(text.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let text = Text::from("Hello, world!").right_aligned();
+        assert_eq!(text.alignment, Some(Alignment::Right));
     }
 }
