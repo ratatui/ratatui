@@ -3,10 +3,12 @@
 Output "target/gauge.gif"
 Set Theme "Aardvark Blue"
 Set Width 1200
-Set Height 550
+Set Height 850
 Hide
 Type "cargo run --example=gauge --features=crossterm"
 Enter
-Sleep 1s
+Sleep 2s
 Show
+Sleep 2s
+Enter 1
 Sleep 20s
