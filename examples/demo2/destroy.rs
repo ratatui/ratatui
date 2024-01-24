@@ -1,6 +1,6 @@
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
-use ratatui::{buffer::Cell, layout::Flex, prelude::*, widgets::*};
+use ratatui::{buffer::Cell, layout::Flex, prelude::*};
 use unicode_width::UnicodeWidthStr;
 
 use crate::big_text::{BigTextBuilder, PixelSize};

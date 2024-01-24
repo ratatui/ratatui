@@ -75,7 +75,7 @@ impl App {
     /// Handle events from the terminal.
     ///
     /// This function is called once per frame, The events are polled from the stdin with timeout of
-    /// 1/50th of a second. This was chosen to try to match the default frame rate of a GIF.
+    /// 1/50th of a second. This was chosen to try to match the default frame rate of a GIF in VHS.
     fn handle_events(&mut self) -> Result<()> {
         let timeout = Duration::from_secs_f64(1.0 / 50.0);
         match term::next_event(timeout)? {
@@ -132,7 +132,7 @@ impl App {
     }
 }
 
-/// Implement RefWidget for &App rather than for App as we would otherwise have to clone or copy the
+/// Implement Widget for &App rather than for App as we would otherwise have to clone or copy the
 /// entire app state on every frame. For this example, the app state is small enough that it doesn't
 /// matter, but for larger apps this can be a significant performance improvement.
 impl Widget for &App {
@@ -195,7 +195,7 @@ impl App {
             })
             .collect_vec();
         Line::from(spans)
-            .alignment(Alignment::Center)
+            .centered()
             .style((Color::Indexed(236), Color::Indexed(232)))
             .render(area, buf);
     }
