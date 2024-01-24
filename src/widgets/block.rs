@@ -524,6 +524,16 @@ impl Widget for Block<'_> {
     }
 }
 
+/// Implement [`Widget`] for [`Option<Block>`] to simplify the common case of having an optional
+/// [`Block`] field in a widget.
+impl Widget for &Option<Block<'_>> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(block) = self {
+            block.render(area, buf);
+        }
+    }
+}
+
 impl Widget for &Block<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         if area.is_empty() {
@@ -722,11 +732,6 @@ impl Block<'_> {
 /// This is implemented for [`Option<Block>`](Option) to simplify the common case of having a
 /// widget with an optional block.
 pub trait BlockExt {
-    /// Render the block if it is `Some`. Otherwise, do nothing.
-    ///
-    /// This is a useful convenience method for widgets that have an `Option<Block>` field
-    fn render(&self, area: Rect, buf: &mut Buffer);
-
     /// Return the inner area of the block if it is `Some`. Otherwise, returns `area`.
     ///
     /// This is a useful convenience method for widgets that have an `Option<Block>` field
@@ -734,12 +739,6 @@ pub trait BlockExt {
 }
 
 impl BlockExt for Option<Block<'_>> {
-    fn render(&self, area: Rect, buf: &mut Buffer) {
-        if let Some(block) = self {
-            block.render(area, buf);
-        }
-    }
-
     fn inner(&self, area: Rect) -> Rect {
         self.as_ref().map_or(area, |block| block.inner(area))
     }

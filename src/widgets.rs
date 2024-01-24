@@ -60,21 +60,51 @@ use crate::{buffer::Buffer, layout::Rect};
 /// draw common figures in the UI.
 ///
 /// Starting with Ratatui 0.26.0, the `Widget` trait was more universally implemented on &T instead
-/// of just T. This means that widgets can be stored and reused across frames. This allows widgets
-/// to be stored in a struct and reused across frames by ref.
+/// of just T. This means that widgets can be stored and reused across frames without having to
+/// clone or recreate them.
 ///
-/// ## Examples
+/// # Examples
 ///
 /// ```rust,no_run
 /// use ratatui::{backend::TestBackend, prelude::*, widgets::*};
-///
 /// # let backend = TestBackend::new(5, 5);
 /// # let mut terminal = Terminal::new(backend).unwrap();
 ///
 /// terminal.draw(|frame| {
-///     // A widget can be rendered by simply calling its `render` method.
 ///     frame.render_widget(Clear, frame.size());
 /// });
+/// ```
+///
+/// Rendering a widget by reference:
+///
+/// ```rust
+/// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+/// # let backend = TestBackend::new(5, 5);
+/// # let mut terminal = Terminal::new(backend).unwrap();
+/// // this variable could instead be a value stored in a struct and reused across frames
+/// let paragraph = Paragraph::new("Hello world!");
+///
+/// terminal.draw(|frame| {
+///     frame.render_widget(&paragraph, frame.size());
+/// });
+/// ```
+///
+/// It's common to render widgets inside other widgets:
+///
+/// ```rust
+/// use ratatui::{prelude::*, widgets::*};
+///
+/// struct MyWidget;
+///
+/// impl Widget for &MyWidget {
+///     fn render(self, area: Rect, buf: &mut Buffer) {
+///         Block::default()
+///             .title("My Widget")
+///             .borders(Borders::ALL)
+///             .render(area, buf);
+///         // ...
+///     }
+/// }
 /// ```
 pub trait Widget {
     /// Draws the current state of the widget in the given buffer. That is the only method required
