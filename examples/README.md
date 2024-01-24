@@ -328,7 +328,7 @@ Links to images to make them easier to update in bulk. Use the following script 
 the examples to the images branch. (Requires push access to the branch).
 
 ```shell
-examples/generate.bash
+examples/vhs/generate.bash
 ```
 -->
 
