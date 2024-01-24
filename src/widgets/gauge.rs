@@ -165,7 +165,7 @@ impl Widget for &Gauge<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
         self.block.render(area, buf);
-        let inner = self.block.inner(area);
+        let inner = self.block.inner_if_some(area);
         self.render_gague(inner, buf);
     }
 }
@@ -360,7 +360,7 @@ impl Widget for &LineGauge<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
         self.block.render(area, buf);
-        let gauge_area = self.block.inner(area);
+        let gauge_area = self.block.inner_if_some(area);
         if gauge_area.is_empty() {
             return;
         }

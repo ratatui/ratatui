@@ -631,7 +631,7 @@ impl StatefulWidget for &Table<'_> {
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
         self.block.render(area, buf);
-        let table_area = self.block.inner(area);
+        let table_area = self.block.inner_if_some(area);
         if table_area.is_empty() {
             return;
         }

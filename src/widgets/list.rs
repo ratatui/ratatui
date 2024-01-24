@@ -840,7 +840,7 @@ impl StatefulWidget for &List<'_> {
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
         self.block.render(area, buf);
-        let list_area = self.block.inner(area);
+        let list_area = self.block.inner_if_some(area);
 
         if list_area.is_empty() || self.items.is_empty() {
             return;

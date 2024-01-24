@@ -927,7 +927,7 @@ impl Widget for &Chart<'_> {
         buf.set_style(area, self.style);
 
         self.block.render(area, buf);
-        let chart_area = self.block.inner(area);
+        let chart_area = self.block.inner_if_some(area);
         if chart_area.is_empty() {
             return;
         }

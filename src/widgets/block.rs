@@ -735,11 +735,11 @@ pub trait BlockExt {
     /// Return the inner area of the block if it is `Some`. Otherwise, returns `area`.
     ///
     /// This is a useful convenience method for widgets that have an `Option<Block>` field
-    fn inner(&self, area: Rect) -> Rect;
+    fn inner_if_some(&self, area: Rect) -> Rect;
 }
 
 impl BlockExt for Option<Block<'_>> {
-    fn inner(&self, area: Rect) -> Rect {
+    fn inner_if_some(&self, area: Rect) -> Rect {
         self.as_ref().map_or(area, |block| block.inner(area))
     }
 }

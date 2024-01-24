@@ -583,7 +583,7 @@ impl Widget for BarChart<'_> {
         buf.set_style(area, self.style);
 
         self.block.render(area, buf);
-        let inner = self.block.inner(area);
+        let inner = self.block.inner_if_some(area);
 
         if inner.is_empty() || self.data.is_empty() || self.bar_width == 0 {
             return;

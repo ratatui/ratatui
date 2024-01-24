@@ -702,7 +702,7 @@ where
 {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.block.render(area, buf);
-        let canvas_area = self.block.inner(area);
+        let canvas_area = self.block.inner_if_some(area);
         if canvas_area.is_empty() {
             return;
         }

@@ -162,7 +162,7 @@ impl Widget for Sparkline<'_> {
 impl Widget for &Sparkline<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.block.render(area, buf);
-        let inner = self.block.inner(area);
+        let inner = self.block.inner_if_some(area);
         self.render_sparkline(inner, buf);
     }
 }

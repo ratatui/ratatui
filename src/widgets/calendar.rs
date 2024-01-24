@@ -123,7 +123,7 @@ impl<DS: DateStyler> Widget for Monthly<'_, DS> {
 impl<DS: DateStyler> Widget for &Monthly<'_, DS> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.block.render(area, buf);
-        let inner = self.block.inner(area);
+        let inner = self.block.inner_if_some(area);
         self.render_monthly(inner, buf);
     }
 }
