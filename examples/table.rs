@@ -313,7 +313,7 @@ fn render_scrollbar(f: &mut Frame, app: &mut App, area: Rect) {
 fn render_footer(f: &mut Frame, app: &mut App, area: Rect) {
     let info_footer = Paragraph::new(Line::from(INFO_TEXT))
         .style(Style::new().fg(app.colors.row_fg).bg(app.colors.buffer_bg))
-        .alignment(Alignment::Center)
+        .centered()
         .block(
             Block::default()
                 .borders(Borders::ALL)

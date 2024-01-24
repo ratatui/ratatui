@@ -183,7 +183,7 @@ impl App {
             width = width - width_label.len() / 2
         );
         Paragraph::new(width_bar.dark_gray())
-            .alignment(Alignment::Center)
+            .centered()
             .block(Block::default().padding(Padding {
                 left: 0,
                 right: 0,
@@ -418,9 +418,7 @@ impl Example {
             .border_set(symbols::border::QUADRANT_OUTSIDE)
             .border_style(Style::reset().fg(color).reversed())
             .style(Style::default().fg(fg).bg(color));
-        Paragraph::new(text)
-            .alignment(Alignment::Center)
-            .block(block)
+        Paragraph::new(text).centered().block(block)
     }
 }
 

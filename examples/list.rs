@@ -173,7 +173,7 @@ impl App<'_> {
     fn render_title(&self, area: Rect, buf: &mut Buffer) {
         Paragraph::new("Ratatui List Example")
             .bold()
-            .alignment(Alignment::Center)
+            .centered()
             .render(area, buf);
     }
 
@@ -268,7 +268,7 @@ impl App<'_> {
         Paragraph::new(
             "\nUse ↓↑ to move, ← to unselect, → to change status, g/G to go top/bottom.",
         )
-        .alignment(Alignment::Center)
+        .centered()
         .render(area, buf);
     }
 }

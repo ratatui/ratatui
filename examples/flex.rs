@@ -251,7 +251,7 @@ impl App {
         };
         let bar_width = width - 2; // we want to `<` and `>` at the ends
         let width_bar = format!("<{label:-^bar_width$}>");
-        Paragraph::new(width_bar.dark_gray()).alignment(Alignment::Center)
+        Paragraph::new(width_bar.dark_gray()).centered()
     }
 
     /// Render the demo content
@@ -416,9 +416,7 @@ impl Example {
             .border_set(symbols::border::QUADRANT_OUTSIDE)
             .border_style(Style::reset().fg(main_color).reversed())
             .style(Style::default().fg(fg_color).bg(main_color));
-        Paragraph::new(text)
-            .alignment(Alignment::Center)
-            .block(block)
+        Paragraph::new(text).centered().block(block)
     }
 }
 

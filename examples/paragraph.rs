@@ -132,14 +132,14 @@ fn ui(f: &mut Frame, app: &App) {
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().fg(Color::Gray))
         .block(create_block("Right alignment, with wrap"))
-        .alignment(Alignment::Right)
+        .right_aligned()
         .wrap(Wrap { trim: true });
     f.render_widget(paragraph, layout[2]);
 
     let paragraph = Paragraph::new(text)
         .style(Style::default().fg(Color::Gray))
         .block(create_block("Center alignment, with wrap, with scroll"))
-        .alignment(Alignment::Center)
+        .centered()
         .wrap(Wrap { trim: true })
         .scroll((app.scroll, 0));
     f.render_widget(paragraph, layout[3]);
