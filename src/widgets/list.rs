@@ -21,10 +21,10 @@ use crate::{
 /// [`offset`]: ListState::offset()
 /// [`selected`]: ListState::selected()
 ///
-/// See the [list example] for a more in depth example of the various configuration options and
-/// for how to handle state.
+/// See the list in the [Examples] directory for a more in depth example of the various
+/// configuration options and for how to handle state.
 ///
-/// [list example]: https://github.com/ratatui-org/ratatui/blob/main/examples/list.rs
+/// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 ///
 /// # Example
 ///
@@ -45,6 +45,7 @@ use crate::{
 /// # }
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ListState {
     offset: usize,
     selected: Option<usize>,
@@ -168,6 +169,10 @@ impl ListState {
 /// This [`Style`] will be combined with the [`Style`] of the inner [`Text`]. The [`Style`]
 /// of the [`Text`] will be added to the [`Style`] of the [`ListItem`].
 ///
+/// You can also align a `ListItem` by aligning its underlying [`Text`] and [`Line`]s. For that,
+/// see [`Text::alignment`] and [`Line::alignment`]. On a multiline `Text`, one `Line` can override
+/// the alignment by setting it explicitly.
+///
 /// # Examples
 ///
 /// You can create [`ListItem`]s from simple `&str`
@@ -200,6 +205,13 @@ impl ListState {
 /// let mut text = Text::default();
 /// text.extend(["Item".blue(), Span::raw(" "), "1".bold().red()]);
 /// let item = ListItem::new(text);
+/// ```
+///
+/// A right-aligned `ListItem`
+///
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// ListItem::new(Text::from("foo").alignment(Alignment::Right));
 /// ```
 ///
 /// [`Stylize`]: crate::style::Stylize
@@ -337,11 +349,13 @@ where
 ///
 /// A list is a collection of [`ListItem`]s.
 ///
-/// This is different from a [`Table`] because it does not handle columns or headers and the item's
-/// height is automatically determined. A `List` can also be put in reverse order (i.e. *bottom to
-/// top*) whereas a [`Table`] cannot.
+/// This is different from a [`Table`] because it does not handle columns, headers or footers and
+/// the item's height is automatically determined. A `List` can also be put in reverse order (i.e.
+/// *bottom to top*) whereas a [`Table`] cannot.
 ///
 /// [`Table`]: crate::widgets::Table
+///
+/// List items can be aligned using [`Text::alignment`], for more details see [`ListItem`].
 ///
 /// [`List`] implements [`Widget`] and so it can be drawn using
 /// [`Frame::render_widget`](crate::terminal::Frame::render_widget).
@@ -350,10 +364,10 @@ where
 /// the user to [scroll](ListState::offset) through items and [select](ListState::select) one of
 /// them.
 ///
-/// See the [list example] for a more in depth example of the various configuration options and for
-/// how to handle state.
+/// See the list in the [Examples] directory for a more in depth example of the various
+/// configuration options and for how to handle state.
 ///
-/// [list example]: https://github.com/ratatui-org/ratatui/blob/main/examples/list.rs
+/// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 ///
 /// # Fluent setters
 ///
@@ -399,6 +413,16 @@ where
 ///
 /// frame.render_stateful_widget(list, area, &mut state);
 /// # }
+/// ```
+///
+/// In addition to `List::new`, any iterator whose element is convertible to `ListItem` can be
+/// collected into `List`.
+///
+/// ```
+/// use ratatui::widgets::List;
+///
+/// (0..5).map(|i| format!("Item{i}")).collect::<List>();
+/// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub struct List<'a> {
     block: Option<Block<'a>>,
@@ -714,6 +738,7 @@ impl<'a> List<'a> {
         self.items.is_empty()
     }
 
+    /// Given an offset, calculate which items can fit in a given area
     fn get_items_bounds(
         &self,
         selected: Option<usize>,
@@ -721,35 +746,69 @@ impl<'a> List<'a> {
         max_height: usize,
     ) -> (usize, usize) {
         let offset = offset.min(self.items.len().saturating_sub(1));
-        let mut start = offset;
-        let mut end = offset;
-        let mut height = 0;
+
+        // Note: visible here implies visible in the given area
+        let mut first_visible_index = offset;
+        let mut last_visible_index = offset;
+
+        // Current height of all items in the list to render, beginning at the offset
+        let mut height_from_offset = 0;
+
+        // Calculate the last visible index and total height of the items
+        // that will fit in the available space
         for item in self.items.iter().skip(offset) {
-            if height + item.height() > max_height {
+            if height_from_offset + item.height() > max_height {
                 break;
             }
-            height += item.height();
-            end += 1;
+
+            height_from_offset += item.height();
+
+            last_visible_index += 1;
         }
 
-        let selected = selected.unwrap_or(0).min(self.items.len() - 1);
-        while selected >= end {
-            height = height.saturating_add(self.items[end].height());
-            end += 1;
-            while height > max_height {
-                height = height.saturating_sub(self.items[start].height());
-                start += 1;
+        // Get the selected index, but still honor the offset if nothing is selected
+        // This allows for the list to stay at a position after select()ing None.
+        let index_to_display = selected.unwrap_or(offset).min(self.items.len() - 1);
+
+        // Recall that last_visible_index is the index of what we
+        // can render up to in the given space after the offset
+        // If we have an item selected that is out of the viewable area (or
+        // the offset is still set), we still need to show this item
+        while index_to_display >= last_visible_index {
+            height_from_offset =
+                height_from_offset.saturating_add(self.items[last_visible_index].height());
+
+            last_visible_index += 1;
+
+            // Now we need to hide previous items since we didn't have space
+            // for the selected/offset item
+            while height_from_offset > max_height {
+                height_from_offset =
+                    height_from_offset.saturating_sub(self.items[first_visible_index].height());
+
+                // Remove this item to view by starting at the next item index
+                first_visible_index += 1;
             }
         }
-        while selected < start {
-            start -= 1;
-            height = height.saturating_add(self.items[start].height());
-            while height > max_height {
-                end -= 1;
-                height = height.saturating_sub(self.items[end].height());
+
+        // Here we're doing something similar to what we just did above
+        // If the selected item index is not in the viewable area, let's try to show the item
+        while index_to_display < first_visible_index {
+            first_visible_index -= 1;
+
+            height_from_offset =
+                height_from_offset.saturating_add(self.items[first_visible_index].height());
+
+            // Don't show an item if it is beyond our viewable height
+            while height_from_offset > max_height {
+                last_visible_index -= 1;
+
+                height_from_offset =
+                    height_from_offset.saturating_sub(self.items[last_visible_index].height());
             }
         }
-        (start, end)
+
+        (first_visible_index, last_visible_index)
     }
 }
 
@@ -767,18 +826,19 @@ impl<'a> StatefulWidget for List<'a> {
             None => area,
         };
 
-        if list_area.width < 1 || list_area.height < 1 {
+        if self.items.is_empty() || list_area.is_empty() {
             return;
         }
 
-        if self.items.is_empty() {
-            return;
-        }
         let list_height = list_area.height as usize;
 
-        let (start, end) = self.get_items_bounds(state.selected, state.offset, list_height);
-        state.offset = start;
+        let (first_visible_index, last_visible_index) =
+            self.get_items_bounds(state.selected, state.offset, list_height);
 
+        // Important: this changes the state's offset to be the beginning of the now viewable items
+        state.offset = first_visible_index;
+
+        // Get our set highlighted symbol (if one was set)
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
         let blank_symbol = " ".repeat(highlight_symbol.width());
 
@@ -789,7 +849,7 @@ impl<'a> StatefulWidget for List<'a> {
             .iter_mut()
             .enumerate()
             .skip(state.offset)
-            .take(end - start)
+            .take(last_visible_index - first_visible_index)
         {
             let (x, y) = if self.direction == ListDirection::BottomToTop {
                 current_height += item.height() as u16;
@@ -799,17 +859,32 @@ impl<'a> StatefulWidget for List<'a> {
                 current_height += item.height() as u16;
                 pos
             };
-            let area = Rect {
+
+            let row_area = Rect {
                 x,
                 y,
                 width: list_area.width,
                 height: item.height() as u16,
             };
+
             let item_style = self.style.patch(item.style);
-            buf.set_style(area, item_style);
+            buf.set_style(row_area, item_style);
 
             let is_selected = state.selected.map_or(false, |s| s == i);
-            for (j, line) in item.content.lines.iter().enumerate() {
+
+            let item_area = if selection_spacing {
+                let highlight_symbol_width = self.highlight_symbol.unwrap_or("").len() as u16;
+                Rect {
+                    x: row_area.x + highlight_symbol_width,
+                    width: row_area.width - highlight_symbol_width,
+                    ..row_area
+                }
+            } else {
+                row_area
+            };
+            item.content.clone().render(item_area, buf);
+
+            for j in 0..item.content.height() {
                 // if the item is selected, we need to display the highlight symbol:
                 // - either for the first line of the item only,
                 // - or for each line of the item if the appropriate option is set
@@ -818,29 +893,19 @@ impl<'a> StatefulWidget for List<'a> {
                 } else {
                     &blank_symbol
                 };
-                let (elem_x, max_element_width) = if selection_spacing {
-                    let (elem_x, _) = buf.set_stringn(
+                if selection_spacing {
+                    buf.set_stringn(
                         x,
                         y + j as u16,
                         symbol,
                         list_area.width as usize,
                         item_style,
                     );
-                    (elem_x, (list_area.width - (elem_x - x)))
-                } else {
-                    (x, list_area.width)
-                };
-                let x_offset = match line.alignment {
-                    Some(Alignment::Center) => {
-                        (area.width / 2).saturating_sub(line.width() as u16 / 2)
-                    }
-                    Some(Alignment::Right) => area.width.saturating_sub(line.width() as u16),
-                    _ => 0,
-                };
-                buf.set_line(elem_x + x_offset, y + j as u16, line, max_element_width);
+                }
             }
+
             if is_selected {
-                buf.set_style(area, self.highlight_style);
+                buf.set_style(row_area, self.highlight_style);
             }
         }
     }
@@ -874,6 +939,15 @@ impl<'a> Styled for ListItem<'a> {
 
     fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
         self.style(style)
+    }
+}
+
+impl<'a, Item> FromIterator<Item> for List<'a>
+where
+    Item: Into<ListItem<'a>>,
+{
+    fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
+        List::new(iter)
     }
 }
 
@@ -1328,6 +1402,13 @@ mod tests {
     }
 
     #[test]
+    fn test_collect_list_from_iterator() {
+        let collected: List = (0..3).map(|i| format!("Item{i}")).collect();
+        let expected = List::new(["Item0", "Item1", "Item2"]);
+        assert_eq!(collected, expected);
+    }
+
+    #[test]
     fn test_list_block() {
         let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
         let list = List::new(items).block(Block::default().title("List").borders(Borders::ALL));
@@ -1605,6 +1686,19 @@ mod tests {
     }
 
     #[test]
+    fn test_offset_renders_shifted() {
+        let items = list_items(vec![
+            "Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6",
+        ]);
+        let list = List::new(items);
+        let mut state = ListState::default().with_offset(3);
+        let buffer = render_stateful_widget(list, &mut state, 6, 3);
+
+        let expected = Buffer::with_lines(vec!["Item 3", "Item 4", "Item 5"]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
     fn test_list_long_lines() {
         let items = list_items(vec![
             "Item 0 with a very long line that will be truncated",
@@ -1818,14 +1912,11 @@ mod tests {
 
     #[test]
     fn test_render_list_alignment_line_less_than_width() {
-        let items = [Line::from("Small").alignment(Alignment::Center)]
-            .into_iter()
-            .map(ListItem::new)
-            .collect::<Vec<ListItem>>();
+        let items = [Line::from("Small").alignment(Alignment::Center)];
         let list = List::new(items);
         let buffer = render_widget(list, 10, 5);
         let expected = Buffer::with_lines(vec![
-            "   Small  ",
+            "  Small   ",
             "          ",
             "          ",
             "          ",

@@ -381,6 +381,93 @@ pub mod border {
         horizontal_top: QUADRANT_BOTTOM_HALF,
         horizontal_bottom: QUADRANT_TOP_HALF,
     };
+
+    pub const ONE_EIGHTH_TOP_EIGHT: &str = "▔";
+    pub const ONE_EIGHTH_BOTTOM_EIGHT: &str = "▁";
+    pub const ONE_EIGHTH_LEFT_EIGHT: &str = "▏";
+    pub const ONE_EIGHTH_RIGHT_EIGHT: &str = "▕";
+
+    /// Wide border set based on McGugan box technique
+    ///
+    /// ```text
+    /// ▁▁▁▁▁▁▁
+    /// ▏xxxxx▕
+    /// ▏xxxxx▕
+    /// ▔▔▔▔▔▔▔
+    /// ```
+    pub const ONE_EIGHTH_WIDE: Set = Set {
+        top_right: ONE_EIGHTH_BOTTOM_EIGHT,
+        top_left: ONE_EIGHTH_BOTTOM_EIGHT,
+        bottom_right: ONE_EIGHTH_TOP_EIGHT,
+        bottom_left: ONE_EIGHTH_TOP_EIGHT,
+        vertical_left: ONE_EIGHTH_LEFT_EIGHT,
+        vertical_right: ONE_EIGHTH_RIGHT_EIGHT,
+        horizontal_top: ONE_EIGHTH_BOTTOM_EIGHT,
+        horizontal_bottom: ONE_EIGHTH_TOP_EIGHT,
+    };
+
+    /// Tall border set based on McGugan box technique
+    ///
+    /// ```text
+    /// ▕▔▔▏
+    /// ▕xx▏
+    /// ▕xx▏
+    /// ▕▁▁▏
+    /// ```
+    pub const ONE_EIGHTH_TALL: Set = Set {
+        top_right: ONE_EIGHTH_LEFT_EIGHT,
+        top_left: ONE_EIGHTH_RIGHT_EIGHT,
+        bottom_right: ONE_EIGHTH_LEFT_EIGHT,
+        bottom_left: ONE_EIGHTH_RIGHT_EIGHT,
+        vertical_left: ONE_EIGHTH_RIGHT_EIGHT,
+        vertical_right: ONE_EIGHTH_LEFT_EIGHT,
+        horizontal_top: ONE_EIGHTH_TOP_EIGHT,
+        horizontal_bottom: ONE_EIGHTH_BOTTOM_EIGHT,
+    };
+
+    /// Wide proportional (visually equal width and height) border with using set of quadrants.
+    ///
+    /// The border is created by using half blocks for top and bottom, and full
+    /// blocks for right and left sides to make horizontal and vertical borders seem equal.
+    ///
+    /// ```text
+    /// ▄▄▄▄
+    /// █xx█
+    /// █xx█
+    /// ▀▀▀▀
+    /// ```
+    pub const PROPORTIONAL_WIDE: Set = Set {
+        top_right: QUADRANT_BOTTOM_HALF,
+        top_left: QUADRANT_BOTTOM_HALF,
+        bottom_right: QUADRANT_TOP_HALF,
+        bottom_left: QUADRANT_TOP_HALF,
+        vertical_left: QUADRANT_BLOCK,
+        vertical_right: QUADRANT_BLOCK,
+        horizontal_top: QUADRANT_BOTTOM_HALF,
+        horizontal_bottom: QUADRANT_TOP_HALF,
+    };
+
+    /// Tall proportional (visually equal width and height) border with using set of quadrants.
+    ///
+    /// The border is created by using full blocks for all sides, except for the top and bottom,
+    /// which use half blocks to make horizontal and vertical borders seem equal.
+    ///
+    /// ```text
+    /// ▕█▀▀█
+    /// ▕█xx█
+    /// ▕█xx█
+    /// ▕█▄▄█
+    /// ```
+    pub const PROPORTIONAL_TALL: Set = Set {
+        top_right: QUADRANT_BLOCK,
+        top_left: QUADRANT_BLOCK,
+        bottom_right: QUADRANT_BLOCK,
+        bottom_left: QUADRANT_BLOCK,
+        vertical_left: QUADRANT_BLOCK,
+        vertical_right: QUADRANT_BLOCK,
+        horizontal_top: QUADRANT_TOP_HALF,
+        horizontal_bottom: QUADRANT_BOTTOM_HALF,
+    };
 }
 
 pub const DOT: &str = "•";

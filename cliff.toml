@@ -30,6 +30,13 @@ body = """
   {{commit.body | indent(prefix="  ") }}
   ````
 {%- endif %}
+{%- for footer in commit.footers %}
+{%- if footer.token != "Signed-off-by" and footer.token != "Co-authored-by" %}
+
+  {{ footer.token | indent(prefix="  ") }}{{ footer.separator }}
+  {{ footer.value | indent(prefix="  ") }}
+{%- endif %}
+{%- endfor %}
 {% endmacro -%}
 
 {% for group, commits in commits | group_by(attribute="group") %}

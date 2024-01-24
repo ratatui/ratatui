@@ -8,7 +8,7 @@ use cassowary::{
 use itertools::Itertools;
 use lru::LruCache;
 
-use super::SegmentSize;
+use super::{Flex, SegmentSize};
 use crate::prelude::*;
 
 type Cache = LruCache<(Rect, Layout), Rc<[Rect]>>;
@@ -34,9 +34,9 @@ thread_local! {
 /// many of the constraints as possible.
 ///
 /// By default, the last chunk of the computed layout is expanded to fill the remaining space. To
-/// avoid this behavior, add an unused `Constraint::Min(0)` as the last constraint. There is also
-/// an unstable API to prefer equal chunks if other constraints are all satisfied, see
-/// [`SegmentSize`] for more info.
+/// avoid this behavior, add an unused `Constraint::Min(0)` as the last constraint. There is also an
+/// unstable API to prefer equal chunks if other constraints are all satisfied, see [`SegmentSize`]
+/// for more info.
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
 /// calls with the same parameters are faster. The cache is a simple HashMap, and grows
@@ -60,8 +60,7 @@ thread_local! {
 /// - [`Layout::margin`]: set the margin of the layout
 /// - [`Layout::horizontal_margin`]: set the horizontal margin of the layout
 /// - [`Layout::vertical_margin`]: set the vertical margin of the layout
-/// - [`Layout::segment_size`]: set the way the space is distributed when the constraints are
-///   satisfied
+/// - [`Layout::flex`]: set the way the space is distributed when the constraints are satisfied
 ///
 /// # Example
 ///
@@ -79,20 +78,21 @@ thread_local! {
 /// }
 /// ```
 ///
-/// The [`layout.rs` example](https://github.com/ratatui-org/ratatui/blob/main/examples/layout.rs)
-/// shows the effect of combining constraints:
+/// See the `layout`, `flex`, and `constraints` examples in the [Examples] folder for more details
+/// about how to use layouts.
 ///
 /// ![layout
 /// example](https://camo.githubusercontent.com/77d22f3313b782a81e5e033ef82814bb48d786d2598699c27f8e757ccee62021/68747470733a2f2f7668732e636861726d2e73682f7668732d315a4e6f4e4c4e6c4c746b4a58706767396e435635652e676966)
 ///
 /// [`cassowary-rs`]: https://crates.io/crates/cassowary
+/// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,
     constraints: Vec<Constraint>,
     margin: Margin,
-    /// option for segment size preferences
-    segment_size: SegmentSize,
+    flex: Flex,
+    spacing: u16,
 }
 
 /// A container used by the solver inside split
@@ -103,7 +103,13 @@ struct Element {
 }
 
 impl Layout {
-    pub const DEFAULT_CACHE_SIZE: usize = 16;
+    /// This is a somewhat arbitrary size for the layout cache based on adding the columns and rows
+    /// on my laptop's terminal (171+51 = 222) and doubling it for good measure and then adding a
+    /// bit more to make it a round number. This gives enough entries to store a layout for every
+    /// row and every column, twice over, which should be enough for most apps. For those that need
+    /// more, the cache size can be set with [`Layout::init_cache()`].
+    pub const DEFAULT_CACHE_SIZE: usize = 500;
+
     /// Creates a new layout with default values.
     ///
     /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
@@ -114,7 +120,7 @@ impl Layout {
     /// Default values for the other fields are:
     ///
     /// - `margin`: 0, 0
-    /// - `segment_size`: SegmentSize::LastTakesRemainder
+    /// - `flex`: Flex::Fill
     ///
     /// # Examples
     ///
@@ -139,9 +145,8 @@ impl Layout {
     {
         Layout {
             direction,
-            margin: Margin::new(0, 0),
             constraints: constraints.into_iter().map(Into::into).collect(),
-            segment_size: SegmentSize::LastTakesRemainder,
+            ..Layout::default()
         }
     }
 
@@ -343,6 +348,66 @@ impl Layout {
         self
     }
 
+    /// The `flex` method  allows you to specify the flex behavior of the layout.
+    ///
+    /// # Arguments
+    ///
+    /// * `flex`: A `Flex` enum value that represents the flex behavior of the layout. It can be one
+    ///   of the following:
+    ///   - [`Flex::Stretch`]: The items are stretched equally after satisfying constraints to fill
+    ///     excess space.
+    ///   - [`Flex::StretchLast`]: The last item is stretched to fill the excess space.
+    ///   - [`Flex::Start`]: The items are aligned to the start of the layout.
+    ///   - [`Flex::Center`]: The items are aligned to the center of the layout.
+    ///   - [`Flex::End`]: The items are aligned to the end of the layout.
+    ///   - [`Flex::SpaceAround`]: The items are evenly distributed with equal space around them.
+    ///   - [`Flex::SpaceBetween`]: The items are evenly distributed with equal space between them.
+    ///
+    /// # Examples
+    ///
+    /// In this example, the items in the layout will be aligned to the start.
+    ///
+    /// ```rust
+    /// # use ratatui::layout::{Flex, Layout, Constraint::*};
+    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Start);
+    /// ```
+    ///
+    /// In this example, the items in the layout will be stretched equally to fill the available
+    /// space.
+    ///
+    /// ```rust
+    /// # use ratatui::layout::{Flex, Layout, Constraint::*};
+    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Stretch);
+    /// ```
+    pub const fn flex(mut self, flex: Flex) -> Layout {
+        self.flex = flex;
+        self
+    }
+
+    /// Sets the spacing between items in the layout.
+    ///
+    /// The `spacing` method sets the spacing between items in the layout. The spacing is applied
+    /// evenly between all items. The spacing value represents the number of cells between each
+    /// item.
+    ///
+    /// # Examples
+    ///
+    /// In this example, the spacing between each item in the layout is set to 2 cells.
+    ///
+    /// ```rust
+    /// # use ratatui::layout::{Layout, Constraint::*};
+    /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).spacing(2);
+    /// ```
+    ///
+    /// # Notes
+    ///
+    /// - If the layout has only one item, the spacing will not be applied.
+    /// - Spacing will not be applied for `Flex::SpaceAround` and `Flex::SpaceBetween`
+    pub const fn spacing(mut self, spacing: u16) -> Layout {
+        self.spacing = spacing;
+        self
+    }
+
     /// Set whether chunks should be of equal size.
     ///
     /// This determines how the space is distributed when the constraints are satisfied. By default,
@@ -350,19 +415,25 @@ impl Layout {
     /// equal chunks or to not distribute extra space at all (which is the default used for laying
     /// out the columns for [`Table`] widgets).
     ///
-    /// Note: If you're using this feature please help us come up with a good name. See [Issue
-    /// #536](https://github.com/ratatui-org/ratatui/issues/536) for more information.
+    /// This function exists for backwards compatibility reasons. Use [`Layout::flex`] instead.
     ///
-    /// [`Table`]: crate::widgets::Table
+    /// - `Flex::StretchLast` does now what `SegmentSize::LastTakesRemainder` did (default).
+    /// - `Flex::Stretch` does now what `SegmentSize::EvenDistribution` did.
+    /// - `Flex::Start` does now what `SegmentSize::None` did.
     #[stability::unstable(
         feature = "segment-size",
         reason = "The name for this feature is not final and may change in the future",
         issue = "https://github.com/ratatui-org/ratatui/issues/536"
     )]
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn segment_size(mut self, segment_size: SegmentSize) -> Layout {
-        self.segment_size = segment_size;
-        self
+    #[deprecated(since = "0.26.0", note = "You should use `Layout::flex` instead.")]
+    pub const fn segment_size(self, segment_size: SegmentSize) -> Layout {
+        let flex = match segment_size {
+            SegmentSize::None => Flex::Start,
+            SegmentSize::LastTakesRemainder => Flex::StretchLast,
+            SegmentSize::EvenDistribution => Flex::Stretch,
+        };
+        self.flex(flex)
     }
 
     /// Wrapper function around the cassowary-rs solver to be able to split a given area into
@@ -424,50 +495,235 @@ impl Layout {
         };
         let area_size = area_end - area_start;
 
+        let spacers_added = if layout.spacing == 0 {
+            false
+        } else {
+            matches!(
+                layout.flex,
+                Flex::Stretch | Flex::StretchLast | Flex::Start | Flex::Center | Flex::End
+            )
+        };
+        let constraints = if spacers_added {
+            Itertools::intersperse(
+                layout.constraints.iter().cloned(),
+                Constraint::Fixed(layout.spacing),
+            )
+            .collect_vec()
+        } else {
+            layout.constraints.clone()
+        };
+
         // create an element for each constraint that needs to be applied. Each element defines the
         // variables that will be used to compute the layout.
-        let elements = layout
-            .constraints
+        let elements: Vec<Element> = constraints
             .iter()
-            .map(|_| Element::new())
-            .collect::<Vec<Element>>();
+            .map(|_| Element::constrain(&mut solver, (area_start, area_end)))
+            .try_collect()?;
 
-        // ensure that all the elements are inside the area
-        for element in &elements {
-            solver.add_constraints(&[
-                element.start | GE(REQUIRED) | area_start,
-                element.end | LE(REQUIRED) | area_end,
-                element.start | LE(REQUIRED) | element.end,
-            ])?;
-        }
-        // ensure there are no gaps between the elements
-        for pair in elements.windows(2) {
-            solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
-        }
-        // ensure the first element touches the left/top edge of the area
-        if let Some(first) = elements.first() {
-            solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
-        }
-        if layout.segment_size != SegmentSize::None {
-            // ensure the last element touches the right/bottom edge of the area
-            if let Some(last) = elements.last() {
-                solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
+        // If there's just one constraint, it doesn't make sense to use `SpaceBetween`.
+        // However, if the user chooses to use `SpaceBetween` we choose `Stretch` instead.
+        //
+        // Choosing `Stretch` will do this:
+        //
+        // <---~------80 px------~--->
+        // ┌─~────────80 px────────~─┐
+        // │         Max(20)         │
+        // └─~─────────────────────~─┘
+        //
+        // In CSS the default when you use `flex` is justify to the start. So when there's just one
+        // element that's what they do.
+        //
+        // For us, our default is `Stretch`.
+        //
+        // Additionally, there's two reasons I think `SpaceBetween` should be `Stretch`.
+        //
+        // 1. The way to think about it is that we are telling the solver that we want to add a
+        //    spacer between adjacent elements but make the start of the first element at the start
+        //    of the area and make the end of the last element at the end of the area. When there's
+        //    just one element, there's no spacers added, and now the start and ends of the element
+        //    should match the start and end of the area.
+        // 2. This above point is exactly is what constraints are added in the `SpaceBetween` match
+        //    but we are using `tuple_combinations` and `windows` so when there's just one element
+        //    and no spacers, it doesn't do anything. If we make that code work for one element,
+        //    it'll end up doing the same thing as `Stretch`.
+        //
+        // If we changed our default layout to use `Flex::Start`, there is a case to be made for
+        // this to do `Flex::Start` as well.
+        //
+        let flex = if constraints.len() == 1 && layout.flex == Flex::SpaceBetween {
+            Flex::Stretch
+        } else {
+            layout.flex
+        };
+
+        match flex {
+            Flex::SpaceBetween => {
+                let spacers: Vec<Element> = std::iter::repeat_with(|| {
+                    Element::constrain(&mut solver, (area_start, area_end))
+                })
+                .take(elements.len().saturating_sub(1)) // one less than the number of elements
+                .try_collect()?;
+                // spacers growing should be the lowest priority
+                for spacer in spacers.iter() {
+                    solver.add_constraint(spacer.size() | EQ(WEAK) | area_size)?;
+                }
+                // Spacers should all be similar in size
+                // these constraints should not be stronger than existing constraints
+                // but if they are weaker `Min` and `Max` won't be pushed to their desired values
+                // I found using `STRONG` gives the most desirable behavior
+                for (left, right) in spacers.iter().tuple_combinations() {
+                    solver.add_constraint(left.size() | EQ(STRONG) | right.size())?;
+                }
+                // interleave elements and spacers
+                // for `SpaceBetween` we want the following
+                // `[element, spacer, element, spacer, ..., element]`
+                // this is why we use one less spacer than elements
+                for pair in Itertools::interleave(elements.iter(), spacers.iter())
+                    .collect::<Vec<&Element>>()
+                    .windows(2)
+                {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+                }
+            }
+            Flex::SpaceAround => {
+                let spacers: Vec<Element> = std::iter::repeat_with(|| {
+                    Element::constrain(&mut solver, (area_start, area_end))
+                })
+                .take(elements.len().saturating_add(1)) // one more than number of elements
+                .try_collect()?;
+                // spacers growing should be the lowest priority
+                for spacer in spacers.iter() {
+                    solver.add_constraint(spacer.size() | EQ(WEAK) | area_size)?;
+                }
+                // Spacers should all be similar in size
+                // these constraints should not be stronger than existing constraints
+                // but if they are weaker `Min` and `Max` won't be pushed to their desired values
+                // I found using `STRONG` gives the most desirable behavior
+                for (left, right) in spacers.iter().tuple_combinations() {
+                    solver.add_constraint(left.size() | EQ(STRONG) | right.size())?;
+                }
+                // interleave spacers and elements
+                // for `SpaceAround` we want the following
+                // `[spacer, element, spacer, element, ..., element, spacer]`
+                // this is why we use one more spacer than elements
+                for pair in Itertools::interleave(spacers.iter(), elements.iter())
+                    .collect::<Vec<&Element>>()
+                    .windows(2)
+                {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+                }
+            }
+            Flex::StretchLast => {
+                // this is the default behavior
+                // by default cassowary tends to put excess into the last constraint of the lowest
+                // priority.
+                if let Some(first) = elements.first() {
+                    solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
+                }
+                if let Some(last) = elements.last() {
+                    solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
+                }
+                // ensure there are no gaps between the elements
+                for pair in elements.windows(2) {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+                }
+            }
+            Flex::Stretch => {
+                // this is the same as `StretchLast`
+                // however, we add one additional constraint to take priority over cassowary's
+                // default behavior.
+                // We prefer equal elements if other constraints are all satisfied.
+                for (left, right) in elements.iter().tuple_combinations() {
+                    solver.add_constraint(left.size() | EQ(WEAK) | right.size())?;
+                }
+                if let Some(first) = elements.first() {
+                    solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
+                }
+                if let Some(last) = elements.last() {
+                    solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
+                }
+                // ensure there are no gaps between the elements
+                for pair in elements.windows(2) {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+                }
+            }
+            Flex::Center => {
+                // for center, we add two flex elements, one at the beginning and one at the end.
+                // this frees up inner constraints to be their true size
+                let flex_start_element = Element::constrain(&mut solver, (area_start, area_end))?;
+                let flex_end_element = Element::constrain(&mut solver, (area_start, area_end))?;
+                // the start flex element must be before the users constraint
+                if let Some(first) = elements.first() {
+                    solver.add_constraints(&[
+                        flex_start_element.start | EQ(REQUIRED) | area_start,
+                        first.start | EQ(REQUIRED) | flex_start_element.end,
+                    ])?;
+                }
+                // the end flex element must be after the users constraint
+                if let Some(last) = elements.last() {
+                    solver.add_constraints(&[
+                        last.end | EQ(REQUIRED) | flex_end_element.start,
+                        flex_end_element.end | EQ(REQUIRED) | area_end,
+                    ])?;
+                }
+                // finally we ask for a strong preference to make the starting flex and ending flex
+                // the same size, and this results in the remaining constraints being centered
+                solver.add_constraint(
+                    flex_start_element.size() | EQ(STRONG) | flex_end_element.size(),
+                )?;
+                // ensure there are no gaps between the elements
+                for pair in elements.windows(2) {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+                }
+            }
+            Flex::Start => {
+                // for start, we add one flex element one at the end.
+                // this frees up the end constraints and allows inner constraints to be aligned to
+                // the start
+                let flex_end_element = Element::constrain(&mut solver, (area_start, area_end))?;
+                if let Some(first) = elements.first() {
+                    solver.add_constraint(first.start | EQ(REQUIRED) | area_start)?;
+                }
+                if let Some(last) = elements.last() {
+                    solver.add_constraints(&[
+                        last.end | EQ(REQUIRED) | flex_end_element.start,
+                        flex_end_element.end | EQ(REQUIRED) | area_end,
+                    ])?;
+                }
+                // ensure there are no gaps between the elements
+                for pair in elements.windows(2) {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+                }
+            }
+            Flex::End => {
+                // for end, we add one flex element one at the start.
+                // this frees up the start constraints and allows inner constraints to be aligned to
+                // the end
+                let flex_start_element = Element::constrain(&mut solver, (area_start, area_end))?;
+                if let Some(first) = elements.first() {
+                    solver.add_constraints(&[
+                        flex_start_element.start | EQ(REQUIRED) | area_start,
+                        first.start | EQ(REQUIRED) | flex_start_element.end,
+                    ])?;
+                }
+                if let Some(last) = elements.last() {
+                    solver.add_constraint(last.end | EQ(REQUIRED) | area_end)?;
+                }
+                // ensure there are no gaps between the elements
+                for pair in elements.windows(2) {
+                    solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+                }
             }
         }
+
         // apply the constraints
-        for (&constraint, &element) in layout.constraints.iter().zip(elements.iter()) {
+        for (&constraint, &element) in constraints.iter().zip(elements.iter()) {
             match constraint {
-                Constraint::Percentage(p) => {
-                    let percent = f64::from(p) / 100.00;
-                    solver.add_constraint(element.size() | EQ(STRONG) | (area_size * percent))?;
-                }
-                Constraint::Ratio(n, d) => {
-                    // avoid division by zero by using 1 when denominator is 0
-                    let ratio = f64::from(n) / f64::from(d.max(1));
-                    solver.add_constraint(element.size() | EQ(STRONG) | (area_size * ratio))?;
-                }
-                Constraint::Length(l) => {
-                    solver.add_constraint(element.size() | EQ(STRONG) | f64::from(l))?
+                Constraint::Fixed(l) => {
+                    // when fixed is used, element size matching value provided will be the first
+                    // priority. We use `REQUIRED - 1` instead `REQUIRED` because we don't want
+                    // it to panic in cases when it cannot.
+                    solver.add_constraint(element.size() | EQ(REQUIRED - 1.0) | f64::from(l))?
                 }
                 Constraint::Max(m) => {
                     solver.add_constraints(&[
@@ -481,12 +737,84 @@ impl Layout {
                         element.size() | EQ(MEDIUM) | f64::from(m),
                     ])?;
                 }
+                Constraint::Length(l) => {
+                    solver.add_constraint(element.size() | EQ(STRONG) | f64::from(l))?
+                }
+                Constraint::Percentage(p) => {
+                    let percent = f64::from(p) / 100.00;
+                    solver.add_constraint(element.size() | EQ(STRONG) | (area_size * percent))?;
+                }
+                Constraint::Ratio(n, d) => {
+                    // avoid division by zero by using 1 when denominator is 0
+                    let ratio = f64::from(n) / f64::from(d.max(1));
+                    solver.add_constraint(element.size() | EQ(STRONG) | (area_size * ratio))?;
+                }
+                Constraint::Proportional(_) => {
+                    // given no other constraints, this segment will grow as much as possible.
+                    //
+                    // We want proportional constraints to behave the same as they do without
+                    // spacers but we also want them to be fill excess space
+                    // before a spacer fills excess space. This means we want
+                    // Proportional to be stronger than a spacer constraint but weaker than all the
+                    // other constraints.
+                    // In my tests, I found choosing an order of magnitude weaker than a `MEDIUM`
+                    // constraint did the trick.
+                    solver.add_constraint(element.size() | EQ(MEDIUM / 10.0) | area_size)?;
+                }
             }
         }
-        // prefer equal chunks if other constraints are all satisfied
-        if layout.segment_size == SegmentSize::EvenDistribution {
-            for (left, right) in elements.iter().tuple_combinations() {
-                solver.add_constraint(left.size() | EQ(WEAK) | right.size())?;
+        // Make every `Proportional` constraint proportionally equal to each other
+        // This will make it fill up empty spaces equally
+        //
+        // [Proportional(1), Proportional(1)]
+        // ┌──────┐┌──────┐
+        // │abcdef││abcdef│
+        // └──────┘└──────┘
+        //
+        // [Proportional(1), Proportional(2)]
+        // ┌──────┐┌────────────┐
+        // │abcdef││abcdefabcdef│
+        // └──────┘└────────────┘
+        //
+        // size == base_element * scaling_factor
+        for ((&l_constraint, &l_element), (&r_constraint, &r_element)) in constraints
+            .iter()
+            .zip(elements.iter())
+            .filter(|(c, _)| matches!(c, Constraint::Proportional(_)))
+            .tuple_combinations()
+        {
+            // `Proportional` will only expand into _excess_ available space. You can think of
+            // `Proportional` element sizes as starting from `0` and incrementally
+            // increasing while proportionally matching other `Proportional` spaces AND
+            // also meeting all other constraints.
+            if let (
+                Constraint::Proportional(l_scaling_factor),
+                Constraint::Proportional(r_scaling_factor),
+            ) = (l_constraint, r_constraint)
+            {
+                // because of the way cassowary works, we need to use `*` instead of `/`
+                // l_size / l_scaling_factor == l_size / l_scaling_factor
+                // ≡
+                // l_size * r_scaling_factor == r_size * r_scaling_factor
+                //
+                // we make `0` act as `1e-6`.
+                // this gives us a numerically stable solution and more consistent behavior along
+                // the number line
+                //
+                // I choose `1e-6` because we want a value that is as close to `0.0` as possible
+                // without causing it to behave like `0.0`. `1e-9` for example gives the same
+                // results as true `0.0`.
+                // I found `1e-6` worked well in all the various combinations of constraints I
+                // experimented with.
+                let (l_scaling_factor, r_scaling_factor) = (
+                    f64::from(l_scaling_factor).max(1e-6),
+                    f64::from(r_scaling_factor).max(1e-6),
+                );
+                solver.add_constraint(
+                    (r_scaling_factor * l_element.size())
+                        | EQ(REQUIRED - 1.0)
+                        | (l_scaling_factor * r_element.size()),
+                )?;
             }
         }
 
@@ -525,17 +853,35 @@ impl Layout {
                     },
                 }
             })
+            .step_by(if spacers_added { 2 } else { 1 })
             .collect::<Rc<[Rect]>>();
         Ok(results)
     }
 }
 
 impl Element {
-    fn new() -> Element {
-        Element {
+    #[allow(dead_code)]
+    fn new() -> Self {
+        Self {
             start: Variable::new(),
             end: Variable::new(),
         }
+    }
+
+    fn constrain(
+        solver: &mut Solver,
+        (area_start, area_end): (f64, f64),
+    ) -> Result<Self, AddConstraintError> {
+        let e = Element {
+            start: Variable::new(),
+            end: Variable::new(),
+        };
+        solver.add_constraints(&[
+            e.start | GE(REQUIRED) | area_start,
+            e.end | LE(REQUIRED) | area_end,
+            e.start | LE(REQUIRED) | e.end,
+        ])?;
+        Ok(e)
     }
 
     fn size(&self) -> Expression {
@@ -592,7 +938,8 @@ mod tests {
                 direction: Direction::Vertical,
                 margin: Margin::new(0, 0),
                 constraints: vec![],
-                segment_size: SegmentSize::LastTakesRemainder,
+                flex: Flex::default(),
+                spacing: 0,
             }
         );
     }
@@ -636,7 +983,20 @@ mod tests {
                 direction: Direction::Vertical,
                 margin: Margin::new(0, 0),
                 constraints: vec![Constraint::Min(0)],
-                segment_size: SegmentSize::LastTakesRemainder,
+                flex: Flex::default(),
+                spacing: 0,
+            }
+        );
+        assert_eq!(
+            Layout::vertical([Constraint::Min(0)])
+                .spacing(1)
+                .flex(Flex::Start),
+            Layout {
+                direction: Direction::Vertical,
+                margin: Margin::new(0, 0),
+                constraints: vec![Constraint::Min(0)],
+                flex: Flex::Start,
+                spacing: 1,
             }
         );
     }
@@ -649,7 +1009,20 @@ mod tests {
                 direction: Direction::Horizontal,
                 margin: Margin::new(0, 0),
                 constraints: vec![Constraint::Min(0)],
-                segment_size: SegmentSize::LastTakesRemainder,
+                flex: Flex::default(),
+                spacing: 0,
+            }
+        );
+        assert_eq!(
+            Layout::horizontal([Constraint::Min(0)])
+                .spacing(1)
+                .flex(Flex::Start),
+            Layout {
+                direction: Direction::Horizontal,
+                margin: Margin::new(0, 0),
+                constraints: vec![Constraint::Min(0)],
+                flex: Flex::Start,
+                spacing: 1,
             }
         );
     }
@@ -749,24 +1122,28 @@ mod tests {
     }
 
     #[test]
+    fn flex_default() {
+        assert_eq!(Layout::default().flex, Flex::StretchLast);
+    }
+
+    #[test]
+    #[allow(deprecated)]
     fn segment_size() {
         assert_eq!(
             Layout::default()
                 .segment_size(SegmentSize::EvenDistribution)
-                .segment_size,
-            SegmentSize::EvenDistribution
+                .flex,
+            Flex::Stretch
         );
         assert_eq!(
             Layout::default()
                 .segment_size(SegmentSize::LastTakesRemainder)
-                .segment_size,
-            SegmentSize::LastTakesRemainder
+                .flex,
+            Flex::StretchLast
         );
         assert_eq!(
-            Layout::default()
-                .segment_size(SegmentSize::None)
-                .segment_size,
-            SegmentSize::None
+            Layout::default().segment_size(SegmentSize::None).flex,
+            Flex::Start
         );
     }
 
@@ -789,9 +1166,11 @@ mod tests {
     /// - overflow: constraint is for more than the full space
     mod split {
         use pretty_assertions::assert_eq;
+        use rstest::rstest;
 
         use crate::{
             assert_buffer_eq,
+            layout::flex::Flex,
             prelude::{Constraint::*, *},
             widgets::{Paragraph, Widget},
         };
@@ -1147,7 +1526,6 @@ mod tests {
             assert_eq!(target.height, chunks.iter().map(|r| r.height).sum::<u16>());
             chunks.windows(2).for_each(|w| assert!(w[0].y <= w[1].y));
         }
-
         // these are a few tests that document existing bugs in the layout algorithm
         #[test]
         fn edge_cases() {
@@ -1185,6 +1563,8 @@ mod tests {
 
             // minimal bug from
             // https://github.com/ratatui-org/ratatui/pull/404#issuecomment-1681850644
+            // TODO: check if this bug is now resolved?
+            // NOTE: the end result can be unstable
             let layout = Layout::default()
                 .constraints([Min(1), Length(0), Min(1)])
                 .direction(Direction::Horizontal)
@@ -1198,6 +1578,24 @@ mod tests {
                 ]
             );
 
+            // minimal bug from
+            // https://github.com/ratatui-org/ratatui/pull/404#issuecomment-1681850644
+            // NOTE: the end result is stable
+            let layout = Layout::default()
+                .constraints([Min(1), Fixed(0), Min(1)])
+                .direction(Direction::Horizontal)
+                .split(Rect::new(0, 0, 1, 1));
+            assert_eq!(
+                layout[..],
+                [
+                    Rect::new(0, 0, 1, 1),
+                    Rect::new(1, 0, 0, 1),
+                    Rect::new(1, 0, 0, 1),
+                ]
+            );
+
+            // This stretches the 2nd last length instead of the last min based on ranking
+            // NOTE: the end result can be unstable
             let layout = Layout::default()
                 .constraints([Length(3), Min(4), Length(1), Min(4)])
                 .direction(Direction::Horizontal)
@@ -1212,5 +1610,392 @@ mod tests {
                 ]
             );
         }
+
+        #[rstest]
+        #[case::length_priority(vec![0, 100], vec![Length(25), Min(100)])]
+        #[case::length_priority(vec![25, 75], vec![Length(25), Min(0)])]
+        #[case::length_priority(vec![100, 0], vec![Length(25), Max(0)])]
+        #[case::length_priority(vec![25, 75], vec![Length(25), Max(100)])]
+        #[case::length_priority(vec![25, 75], vec![Length(25), Percentage(25)])]
+        #[case::length_priority(vec![25, 75], vec![Percentage(25), Length(25)])]
+        #[case::length_priority(vec![25, 75], vec![Length(25), Ratio(1, 4)])]
+        #[case::length_priority(vec![25, 75], vec![Ratio(1, 4), Length(25)])]
+        #[case::length_priority(vec![75, 25], vec![Length(25), Fixed(25)])]
+        #[case::length_priority(vec![25, 75], vec![Fixed(25), Length(25)])]
+        #[case::excess_in_last_variable(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
+        #[case::excess_in_last_variable(vec![15, 35, 50], vec![Length(15), Length(35), Length(25)])]
+        #[case::three_lengths(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
+        fn constraint_length(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::table_length_test(vec![Length(4), Length(4)], vec![(0, 4), (5, 2)], 7)]
+        #[case::table_length_test(vec![Length(4), Length(4)], vec![(0, 3), (4, 0)], 4)]
+        fn table_length(
+            #[case] constraints: Vec<Constraint>,
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] width: u16,
+        ) {
+            let rect = Rect::new(0, 0, width, 1);
+            let r = Layout::horizontal(constraints)
+                .spacing(1)
+                .flex(Flex::Start)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::fixed_is_higher_priority_than_min_max(vec![50, 25, 25], vec![Min(25), Fixed(25), Max(25)])]
+        #[case::fixed_is_higher_priority_than_min_max(vec![25, 25, 50], vec![Max(25), Fixed(25), Min(25)])]
+        #[case::excess_in_lowest_priority(vec![33, 33, 34], vec![Fixed(33), Fixed(33), Fixed(33)])]
+        #[case::excess_in_lowest_priority(vec![25, 25, 50], vec![Fixed(25), Fixed(25), Fixed(25)])]
+        #[case::fixed_higher_priority(vec![25, 25, 50], vec![Percentage(25), Fixed(25), Ratio(1, 4)])]
+        #[case::fixed_higher_priority(vec![25, 25, 50], vec![Fixed(25), Ratio(1, 4), Percentage(25)])]
+        #[case::fixed_higher_priority(vec![25, 25, 50], vec![Ratio(1, 4), Fixed(25), Percentage(25)])]
+        // #[case::fixed_higher_priority(vec![25, 50, 25], vec![Ratio(1, 4), Percentage(25),
+        // Fixed(25)])] // unstable test fails randomly
+        #[case::fixed_higher_priority(vec![79, 1, 20], vec![Length(100), Fixed(1), Min(20)])]
+        #[case::fixed_higher_priority(vec![20, 1, 79], vec![Min(20), Fixed(1), Length(100)])]
+        #[case::fixed_higher_priority(vec![45, 10, 45], vec![Proportional(1), Fixed(10), Proportional(1)])]
+        #[case::fixed_higher_priority(vec![30, 10, 60], vec![Proportional(1), Fixed(10), Proportional(2)])]
+        #[case::fixed_higher_priority(vec![18, 10, 72], vec![Proportional(1), Fixed(10), Proportional(4)])]
+        #[case::fixed_higher_priority(vec![15, 10, 75], vec![Proportional(1), Fixed(10), Proportional(5)])]
+        #[case::three_lengths_reference(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
+        // #[case::previously_unstable_test(vec![25, 50, 25], vec![Length(25), Length(25),
+        // Fixed(25)])] // unstable test fails randomly
+        fn fixed(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::excess_in_last_variable(vec![13, 10, 27], vec![Proportional(1), Fixed(10), Proportional(2)])]
+        #[case::excess_in_last_variable(vec![10, 27, 13], vec![Fixed(10), Proportional(2), Proportional(1)])] // might be unstable?
+        fn fixed_with_50_width(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 50, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::multiple_same_proportionals_are_same(vec![20, 40, 20, 20], vec![Proportional(1), Proportional(2), Proportional(1), Proportional(1)])]
+        #[case::incremental(vec![10, 20, 30, 40], vec![Proportional(1), Proportional(2), Proportional(3), Proportional(4)])]
+        #[case::decremental(vec![40, 30, 20, 10], vec![Proportional(4), Proportional(3), Proportional(2), Proportional(1)])]
+        #[case::randomly_ordered(vec![10, 30, 20, 40], vec![Proportional(1), Proportional(3), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Fixed(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Length(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Percentage(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Min(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Max(50), Proportional(2), Proportional(4)])]
+        #[case::zero_width(vec![0, 100, 0], vec![Proportional(0), Proportional(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Fixed(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Length(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Percentage(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Min(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Max(1), Proportional(0)])]
+        #[case::zero_width(vec![0, 67, 0, 33], vec![Proportional(0), Proportional(2), Proportional(0), Proportional(1)])]
+        #[case::space_filler(vec![0, 80, 20], vec![Proportional(0), Proportional(2), Percentage(20)])]
+        #[case::space_filler(vec![40, 40, 20], vec![Proportional(0), Proportional(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Ratio(1, 5)])]
+        #[case::space_filler(vec![0, 100], vec![Proportional(0), Proportional(u16::MAX)])]
+        #[case::space_filler(vec![100, 0], vec![Proportional(u16::MAX), Proportional(0)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(1), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(u16::MAX), Percentage(20)])]
+        #[case::space_filler(vec![80, 0, 20], vec![Proportional(u16::MAX), Proportional(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Fixed(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Length(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Min(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Max(20)])]
+        #[case::proportional_collapses_first(vec![7, 6, 7, 30, 50], vec![Proportional(1), Proportional(1), Proportional(1), Min(30), Length(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 50, 50], vec![Proportional(1), Proportional(1), Proportional(1), Length(50), Length(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 75, 25], vec![Proportional(1), Proportional(1), Proportional(1), Length(75), Length(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 50, 50], vec![Proportional(1), Proportional(1), Proportional(1), Min(50), Max(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 100], vec![Proportional(1), Proportional(1), Proportional(1), Ratio(1, 1)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 100], vec![Proportional(1), Proportional(1), Proportional(1), Percentage(100)])]
+        fn proportional(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::min_percentage(vec![80, 20], vec![Min(0), Percentage(20)])]
+        #[case::max_percentage(vec![0, 100], vec![Max(0), Percentage(20)])]
+        fn percentage_parameterized(
+            #[case] expected: Vec<u16>,
+            #[case] constraints: Vec<Constraint>,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::min_max_priority(vec![100, 0], vec![Max(100), Min(0)])]
+        #[case::min_max_priority(vec![0, 100], vec![Min(0), Max(100)])]
+        #[case::min_max_priority(vec![90, 10], vec![Length(u16::MAX), Min(10)])]
+        #[case::min_max_priority(vec![10, 90], vec![Min(10), Length(u16::MAX)])]
+        #[case::min_max_priority(vec![90, 10], vec![Length(0), Max(10)])]
+        #[case::min_max_priority(vec![10, 90], vec![Max(10), Length(0)])]
+        fn min_max(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::length(vec![(0, 100)], vec![Constraint::Length(50)], Flex::StretchLast)]
+        #[case::length(vec![(0, 100)], vec![Constraint::Length(50)], Flex::Stretch)]
+        #[case::length(vec![(0, 50)], vec![Constraint::Length(50)], Flex::Start)]
+        #[case::length(vec![(50, 50)], vec![Constraint::Length(50)], Flex::End)]
+        #[case::length(vec![(25, 50)], vec![Constraint::Length(50)], Flex::Center)]
+        #[case::fixed(vec![(0, 100)], vec![Fixed(50)], Flex::StretchLast)]
+        #[case::fixed(vec![(0, 100)], vec![Fixed(50)], Flex::Stretch)]
+        #[case::fixed(vec![(0, 50)], vec![Fixed(50)], Flex::Start)]
+        #[case::fixed(vec![(50, 50)], vec![Fixed(50)], Flex::End)]
+        #[case::fixed(vec![(25, 50)], vec![Fixed(50)], Flex::Center)]
+        #[case::ratio(vec![(0, 100)], vec![Ratio(1, 2)], Flex::StretchLast)]
+        #[case::ratio(vec![(0, 100)], vec![Ratio(1, 2)], Flex::Stretch)]
+        #[case::ratio(vec![(0, 50)], vec![Ratio(1, 2)], Flex::Start)]
+        #[case::ratio(vec![(50, 50)], vec![Ratio(1, 2)], Flex::End)]
+        #[case::ratio(vec![(25, 50)], vec![Ratio(1, 2)], Flex::Center)]
+        #[case::percent(vec![(0, 100)], vec![Percentage(50)], Flex::StretchLast)]
+        #[case::percent(vec![(0, 100)], vec![Percentage(50)], Flex::Stretch)]
+        #[case::percent(vec![(0, 50)], vec![Percentage(50)], Flex::Start)]
+        #[case::percent(vec![(50, 50)], vec![Percentage(50)], Flex::End)]
+        #[case::percent(vec![(25, 50)], vec![Percentage(50)], Flex::Center)]
+        #[case::min(vec![(0, 100)], vec![Min(50)], Flex::StretchLast)]
+        #[case::min(vec![(0, 100)], vec![Min(50)], Flex::Stretch)]
+        #[case::min(vec![(0, 50)], vec![Min(50)], Flex::Start)]
+        #[case::min(vec![(50, 50)], vec![Min(50)], Flex::End)]
+        #[case::min(vec![(25, 50)], vec![Min(50)], Flex::Center)]
+        #[case::max(vec![(0, 100)], vec![Max(50)], Flex::StretchLast)]
+        #[case::max(vec![(0, 100)], vec![Max(50)], Flex::Stretch)]
+        #[case::max(vec![(0, 50)], vec![Max(50)], Flex::Start)]
+        #[case::max(vec![(50, 50)], vec![Max(50)], Flex::End)]
+        #[case::max(vec![(25, 50)], vec![Max(50)], Flex::Center)]
+        #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Min(1)], Flex::SpaceBetween)]
+        #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Max(20)], Flex::SpaceBetween)]
+        #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Fixed(20)], Flex::SpaceBetween)]
+        #[case::length(vec![(0, 25), (25, 75)], vec![Length(25), Length(25)], Flex::StretchLast)]
+        #[case::length(vec![(0, 50), (50, 50)], vec![Length(25), Length(25)], Flex::Stretch)]
+        #[case::length(vec![(0, 25), (25, 25)], vec![Length(25), Length(25)], Flex::Start)]
+        #[case::length(vec![(25, 25), (50, 25)], vec![Length(25), Length(25)], Flex::Center)]
+        #[case::length(vec![(50, 25), (75, 25)], vec![Length(25), Length(25)], Flex::End)]
+        #[case::length(vec![(0, 25), (75, 25)], vec![Length(25), Length(25)], Flex::SpaceBetween)]
+        #[case::length(vec![(17, 25), (58, 25)], vec![Length(25), Length(25)], Flex::SpaceAround)]
+        #[case::fixed(vec![(0, 25), (25, 75)], vec![Fixed(25), Fixed(25)], Flex::StretchLast)]
+        #[case::fixed(vec![(0, 50), (50, 50)], vec![Fixed(25), Fixed(25)], Flex::Stretch)]
+        #[case::fixed(vec![(0, 25), (25, 25)], vec![Fixed(25), Fixed(25)], Flex::Start)]
+        #[case::fixed(vec![(25, 25), (50, 25)], vec![Fixed(25), Fixed(25)], Flex::Center)]
+        #[case::fixed(vec![(50, 25), (75, 25)], vec![Fixed(25), Fixed(25)], Flex::End)]
+        #[case::fixed(vec![(0, 25), (75, 25)], vec![Fixed(25), Fixed(25)], Flex::SpaceBetween)]
+        #[case::fixed(vec![(17, 25), (58, 25)], vec![Fixed(25), Fixed(25)], Flex::SpaceAround)]
+        #[case::percentage(vec![(0, 25), (25, 75)], vec![Percentage(25), Percentage(25)], Flex::StretchLast)]
+        #[case::percentage(vec![(0, 50), (50, 50)], vec![Percentage(25), Percentage(25)], Flex::Stretch)]
+        #[case::percentage(vec![(0, 25), (25, 25)], vec![Percentage(25), Percentage(25)], Flex::Start)]
+        #[case::percentage(vec![(25, 25), (50, 25)], vec![Percentage(25), Percentage(25)], Flex::Center)]
+        #[case::percentage(vec![(50, 25), (75, 25)], vec![Percentage(25), Percentage(25)], Flex::End)]
+        #[case::percentage(vec![(0, 25), (75, 25)], vec![Percentage(25), Percentage(25)], Flex::SpaceBetween)]
+        #[case::percentage(vec![(17, 25), (58, 25)], vec![Percentage(25), Percentage(25)], Flex::SpaceAround)]
+        #[case::min(vec![(0, 25), (25, 75)], vec![Min(25), Min(25)], Flex::StretchLast)]
+        #[case::min(vec![(0, 50), (50, 50)], vec![Min(25), Min(25)], Flex::Stretch)]
+        #[case::min(vec![(0, 25), (25, 25)], vec![Min(25), Min(25)], Flex::Start)]
+        #[case::min(vec![(25, 25), (50, 25)], vec![Min(25), Min(25)], Flex::Center)]
+        #[case::min(vec![(50, 25), (75, 25)], vec![Min(25), Min(25)], Flex::End)]
+        #[case::min(vec![(0, 25), (75, 25)], vec![Min(25), Min(25)], Flex::SpaceBetween)]
+        #[case::min(vec![(17, 25), (58, 25)], vec![Min(25), Min(25)], Flex::SpaceAround)]
+        #[case::max(vec![(0, 25), (25, 75)], vec![Max(25), Max(25)], Flex::StretchLast)]
+        #[case::max(vec![(0, 50), (50, 50)], vec![Max(25), Max(25)], Flex::Stretch)]
+        #[case::max(vec![(0, 25), (25, 25)], vec![Max(25), Max(25)], Flex::Start)]
+        #[case::max(vec![(25, 25), (50, 25)], vec![Max(25), Max(25)], Flex::Center)]
+        #[case::max(vec![(50, 25), (75, 25)], vec![Max(25), Max(25)], Flex::End)]
+        #[case::max(vec![(0, 25), (75, 25)], vec![Max(25), Max(25)], Flex::SpaceBetween)]
+        #[case::max(vec![(17, 25), (58, 25)], vec![Max(25), Max(25)], Flex::SpaceAround)]
+        #[case::length_spaced_around(vec![(0, 25), (38, 25), (75, 25)], vec![Length(25), Length(25), Length(25)], Flex::SpaceBetween)]
+        fn flex_constraint(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .flex(flex)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::length_spacing(vec![(0 , 20), (20, 20) , (40, 20)], vec![Length(20), Length(20), Length(20)], Flex::Start      , 0)]
+        #[case::length_spacing(vec![(0 , 20), (22, 20) , (44, 20)], vec![Length(20), Length(20), Length(20)], Flex::Start      , 2)]
+        #[case::length_spacing(vec![(18, 20), (40, 20) , (62, 20)], vec![Length(20), Length(20), Length(20)], Flex::Center     , 2)]
+        #[case::length_spacing(vec![(36, 20), (58, 20) , (80, 20)], vec![Length(20), Length(20), Length(20)], Flex::End        , 2)]
+        #[case::length_spacing(vec![(0 , 32), (34, 32) , (68, 32)], vec![Length(20), Length(20), Length(20)], Flex::Stretch    , 2)]
+        #[case::length_spacing(vec![(0 , 20), (22, 20) , (44, 56)], vec![Length(20), Length(20), Length(20)], Flex::StretchLast, 2)]
+        #[case::fixed_spacing(vec![(0  , 20), (22, 20) , (44, 56)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::StretchLast, 2)]
+        #[case::fixed_spacing(vec![(0  , 20), (40, 20) , (80, 20)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::Stretch    , 2)]
+        #[case::fixed_spacing(vec![(10 , 20), (40, 20) , (70, 20)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::SpaceAround, 2)]
+        #[case::fixed_spacing(vec![(0 , 20), (20 , 80)] , vec![Fixed(20), Proportional(0)], Flex::SpaceAround , 0)]
+        #[case::fixed_spacing(vec![(0 , 20), (20 , 80)] , vec![Fixed(20), Proportional(1)], Flex::SpaceAround , 0)]
+        #[case::fixed_spacing(vec![(0 , 20), (20 , 80)] , vec![Fixed(20), Proportional(1)], Flex::SpaceAround , 1)]
+        #[case::fixed_spacing(vec![(0  , 20), (20, 80)] , vec![Fixed(20), Proportional(1)], Flex::SpaceBetween, 1)]
+        #[case::fixed_spacing(vec![(0  , 20), (20, 80)] , vec![Fixed(20), Proportional(1)], Flex::Start       , 0)]
+        fn flex_spacing(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] lengths: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] spacing: u16,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(lengths)
+                .flex(flex)
+                .spacing(spacing)
+                .split(rect);
+            let result = r
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, result);
+        }
+
+        #[rstest]
+        #[case::a(vec![(0, 25), (25, 75)], vec![Fixed(25), Length(25)])]
+        #[case::b(vec![(0, 75), (75, 25)], vec![Length(25), Fixed(25)])]
+        #[case::c(vec![(0, 25), (25, 75)], vec![Length(25), Percentage(25)])]
+        #[case::d(vec![(0, 25), (25, 75)], vec![Percentage(25), Length(25)])]
+        #[case::e(vec![(0, 75), (75, 25)], vec![Min(25), Percentage(25)])]
+        #[case::f(vec![(0, 25), (25, 75)], vec![Percentage(25), Min(25)])]
+        #[case::g(vec![(0, 25), (25, 75)], vec![Min(25), Percentage(100)])]
+        #[case::h(vec![(0, 75), (75, 25)], vec![Percentage(100), Min(25)])]
+        #[case::i(vec![(0, 25), (25, 75)], vec![Max(75), Percentage(75)])]
+        #[case::j(vec![(0, 75), (75, 25)], vec![Percentage(75), Max(75)])]
+        #[case::k(vec![(0, 25), (25, 75)], vec![Max(25), Percentage(25)])]
+        #[case::l(vec![(0, 75), (75, 25)], vec![Percentage(25), Max(25)])]
+        #[case::m(vec![(0, 25), (25, 75)], vec![Length(25), Ratio(1, 4)])]
+        #[case::n(vec![(0, 25), (25, 75)], vec![Ratio(1, 4), Length(25)])]
+        #[case::o(vec![(0, 25), (25, 75)], vec![Percentage(25), Ratio(1, 4)])]
+        #[case::p(vec![(0, 25), (25, 75)], vec![Ratio(1, 4), Percentage(25)])]
+        #[case::q(vec![(0, 25), (25, 75)], vec![Ratio(1, 4), Proportional(25)])]
+        #[case::r(vec![(0, 75), (75, 25)], vec![Proportional(25), Ratio(1, 4)])]
+        fn constraint_specification_tests_for_priority(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::a(vec![(0, 20), (20, 20), (40, 20)], vec![Length(20), Length(20), Length(20)], Flex::Start, 0)]
+        #[case::b(vec![(18, 20), (40, 20), (62, 20)], vec![Length(20), Length(20), Length(20)], Flex::Center, 2)]
+        #[case::c(vec![(36, 20), (58, 20), (80, 20)], vec![Length(20), Length(20), Length(20)], Flex::End, 2)]
+        #[case::d(vec![(0, 32), (34, 32), (68, 32)], vec![Length(20), Length(20), Length(20)], Flex::Stretch, 2)]
+        #[case::e(vec![(0, 20), (22, 20), (44, 56)], vec![Length(20), Length(20), Length(20)], Flex::StretchLast, 2)]
+        #[case::f(vec![(0, 20), (22, 20), (44, 56)], vec![Fixed(20), Fixed(20), Fixed(20)], Flex::StretchLast, 2)]
+        #[case::g(vec![(0, 20), (40, 20), (80, 20)], vec![Fixed(20), Fixed(20), Fixed(20)], Flex::Stretch, 2)] // unstable
+        #[case::h(vec![(10, 20), (40, 20), (70, 20)], vec![Fixed(20), Fixed(20), Fixed(20)], Flex::SpaceAround, 2)]
+        fn constraint_specification_tests_for_priority_with_spacing(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] spacing: u16,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .spacing(spacing)
+                .flex(flex)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, r);
+        }
+    }
+
+    #[test]
+    fn test_solver() {
+        use super::*;
+
+        let mut solver = Solver::new();
+        let x = Variable::new();
+        let y = Variable::new();
+
+        solver.add_constraint((x + y) | EQ(4.0) | 5.0).unwrap();
+        solver.add_constraint(x | EQ(1.0) | 2.0).unwrap();
+        for _ in 0..5 {
+            solver.add_constraint(y | EQ(1.0) | 2.0).unwrap();
+        }
+
+        let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
+        let x = changes.get(&x).unwrap_or(&0.0).round() as u16;
+        let y = changes.get(&y).unwrap_or(&0.0).round() as u16;
+        assert_eq!(x, 3);
+        assert_eq!(y, 2);
+
+        let mut solver = Solver::new();
+        let x = Variable::new();
+        let y = Variable::new();
+
+        solver.add_constraint((x + y) | EQ(4.0) | 5.0).unwrap();
+        solver.add_constraint(y | EQ(1.0) | 2.0).unwrap();
+        for _ in 0..5 {
+            solver.add_constraint(x | EQ(1.0) | 2.0).unwrap();
+        }
+
+        let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
+        let x = changes.get(&x).unwrap_or(&0.0).round() as u16;
+        let y = changes.get(&y).unwrap_or(&0.0).round() as u16;
+        assert_eq!(x, 2);
+        assert_eq!(y, 3);
     }
 }

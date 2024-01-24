@@ -12,11 +12,11 @@
 /// [`offset`]: TableState::offset()
 /// [`selected`]: TableState::selected()
 ///
-/// See the [table example] and the recipe and traceroute tabs in the [demo2 example] for a more in
-/// depth example of the various configuration options and for how to handle state.
+/// See the `table`` example and the `recipe`` and `traceroute`` tabs in the demo2 example in the
+/// [Examples] directory for a more in depth example of the various configuration options and for
+/// how to handle state.
 ///
-/// [table example]: https://github.com/ratatui-org/ratatui/blob/master/examples/table.rs
-/// [demo2 example]: https://github.com/ratatui-org/ratatui/blob/master/examples/demo2/
+/// [Examples]: https://github.com/ratatui-org/ratatui/blob/master/examples/README.md
 ///
 /// # Example
 ///
@@ -45,6 +45,7 @@
 /// [`Table::widths`]: crate::widgets::Table::widths
 /// [`Frame::render_stateful_widget`]: crate::Frame::render_stateful_widget
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TableState {
     pub(crate) offset: usize,
     pub(crate) selected: Option<usize>,

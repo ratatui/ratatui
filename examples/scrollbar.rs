@@ -62,22 +62,22 @@ fn run_app<B: Backend>(
             if let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Char('j') => {
+                    KeyCode::Char('j') | KeyCode::Down => {
                         app.vertical_scroll = app.vertical_scroll.saturating_add(1);
                         app.vertical_scroll_state =
                             app.vertical_scroll_state.position(app.vertical_scroll);
                     }
-                    KeyCode::Char('k') => {
+                    KeyCode::Char('k') | KeyCode::Up => {
                         app.vertical_scroll = app.vertical_scroll.saturating_sub(1);
                         app.vertical_scroll_state =
                             app.vertical_scroll_state.position(app.vertical_scroll);
                     }
-                    KeyCode::Char('h') => {
+                    KeyCode::Char('h') | KeyCode::Left => {
                         app.horizontal_scroll = app.horizontal_scroll.saturating_sub(1);
                         app.horizontal_scroll_state =
                             app.horizontal_scroll_state.position(app.horizontal_scroll);
                     }
-                    KeyCode::Char('l') => {
+                    KeyCode::Char('l') | KeyCode::Right => {
                         app.horizontal_scroll = app.horizontal_scroll.saturating_add(1);
                         app.horizontal_scroll_state =
                             app.horizontal_scroll_state.position(app.horizontal_scroll);
@@ -99,9 +99,6 @@ fn ui(f: &mut Frame, app: &mut App) {
     let s = "Veeeeeeeeeeeeeeeery    loooooooooooooooooong   striiiiiiiiiiiiiiiiiiiiiiiiiing.   ";
     let mut long_line = s.repeat(usize::from(size.width) / s.len() + 4);
     long_line.push('\n');
-
-    let block = Block::default().black();
-    f.render_widget(block, size);
 
     let chunks = Layout::vertical([
         Constraint::Min(1),
@@ -143,18 +140,10 @@ fn ui(f: &mut Frame, app: &mut App) {
     app.vertical_scroll_state = app.vertical_scroll_state.content_length(text.len());
     app.horizontal_scroll_state = app.horizontal_scroll_state.content_length(long_line.len());
 
-    let create_block = |title| {
-        Block::default()
-            .borders(Borders::ALL)
-            .gray()
-            .title(Span::styled(
-                title,
-                Style::default().add_modifier(Modifier::BOLD),
-            ))
-    };
+    let create_block = |title: &'static str| Block::bordered().gray().title(title.bold());
 
     let title = Block::default()
-        .title("Use h j k l to scroll ◄ ▲ ▼ ►")
+        .title("Use h j k l or ◄ ▲ ▼ ► to scroll ".bold())
         .title_alignment(Alignment::Center);
     f.render_widget(title, chunks[0]);
 

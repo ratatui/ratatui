@@ -127,6 +127,18 @@ pub enum Color {
     Indexed(u8),
 }
 
+impl Color {
+    /// Convert a u32 to a Color
+    ///
+    /// The u32 should be in the format 0x00RRGGBB.
+    pub const fn from_u32(u: u32) -> Color {
+        let r = (u >> 16) as u8;
+        let g = (u >> 8) as u8;
+        let b = u as u8;
+        Color::Rgb(r, g, b)
+    }
+}
+
 #[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for Color {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -404,6 +416,15 @@ mod tests {
         // Test with S and L values below the lower bound
         let color = Color::from_hsl(60.0, -20.0, -10.0);
         assert_eq!(color, Color::Rgb(0, 0, 0));
+    }
+
+    #[test]
+    fn from_u32() {
+        assert_eq!(Color::from_u32(0x000000), Color::Rgb(0, 0, 0));
+        assert_eq!(Color::from_u32(0xFF0000), Color::Rgb(255, 0, 0));
+        assert_eq!(Color::from_u32(0x00FF00), Color::Rgb(0, 255, 0));
+        assert_eq!(Color::from_u32(0x0000FF), Color::Rgb(0, 0, 255));
+        assert_eq!(Color::from_u32(0xFFFFFF), Color::Rgb(255, 255, 255));
     }
 
     #[test]

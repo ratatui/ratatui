@@ -198,6 +198,8 @@ impl<'a> Line<'a> {
     /// Sets the target alignment for this line of text.
     ///
     /// Defaults to: [`None`], meaning the alignment is determined by the rendering widget.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget.
     ///
     /// # Examples
     ///
@@ -216,6 +218,57 @@ impl<'a> Line<'a> {
             alignment: Some(alignment),
             ..self
         }
+    }
+
+    /// Left-aligns this line of text.
+    ///
+    /// Convenience shortcut for `Line::alignment(Alignment::Left)`.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget, with the default alignment being inherited from the parent.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let line = Line::from("Hi, what's up?").left_aligned();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn left_aligned(self) -> Self {
+        self.alignment(Alignment::Left)
+    }
+
+    /// Center-aligns this line of text.
+    ///
+    /// Convenience shortcut for `Line::alignment(Alignment::Center)`.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget, with the default alignment being inherited from the parent.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let line = Line::from("Hi, what's up?").centered();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn centered(self) -> Self {
+        self.alignment(Alignment::Center)
+    }
+
+    /// Right-aligns this line of text.
+    ///
+    /// Convenience shortcut for `Line::alignment(Alignment::Right)`.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget, with the default alignment being inherited from the parent.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let line = Line::from("Hi, what's up?").right_aligned();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn right_aligned(self) -> Self {
+        self.alignment(Alignment::Right)
     }
 
     /// Returns the width of the underlying string.
@@ -269,11 +322,11 @@ impl<'a> Line<'a> {
             .flat_map(move |span| span.styled_graphemes(style))
     }
 
-    /// Patches the style of each Span in an existing Line, adding modifiers from the given style.
+    /// Patches the style of this Line, adding modifiers from the given style.
     ///
     /// This is useful for when you want to apply a style to a line that already has some styling.
     /// In contrast to [`Line::style`], this method will not overwrite the existing style, but
-    /// instead will add the given style's modifiers to the existing style of each `Span`.
+    /// instead will add the given style's modifiers to this Line's style.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
@@ -296,7 +349,7 @@ impl<'a> Line<'a> {
         self
     }
 
-    /// Resets the style of each Span in the Line.
+    /// Resets the style of this Line.
     ///
     /// Equivalent to calling `patch_style(Style::reset())`.
     ///
@@ -369,7 +422,7 @@ impl Widget for Line<'_> {
             let span_width = span.width() as u16;
             let span_area = Rect {
                 x,
-                width: span_width,
+                width: span_width.min(area.right() - x),
                 ..area
             };
             span.render(span_area, buf);
@@ -378,6 +431,15 @@ impl Widget for Line<'_> {
                 break;
             }
         }
+    }
+}
+
+impl std::fmt::Display for Line<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for span in &self.spans {
+            write!(f, "{span}")?;
+        }
+        Ok(())
     }
 }
 
@@ -565,6 +627,28 @@ mod tests {
         );
     }
 
+    #[test]
+    fn display_line_from_vec() {
+        let line_from_vec = Line::from(vec![Span::raw("Hello,"), Span::raw(" world!")]);
+
+        assert_eq!(format!("{line_from_vec}"), "Hello, world!");
+    }
+
+    #[test]
+    fn display_styled_line() {
+        let styled_line = Line::styled("Hello, world!", Style::new().green().italic());
+
+        assert_eq!(format!("{styled_line}"), "Hello, world!");
+    }
+
+    #[test]
+    fn display_line_from_styled_span() {
+        let styled_span = Span::styled("Hello, world!", Style::new().green().italic());
+        let line_from_styled_span = Line::from(styled_span);
+
+        assert_eq!(format!("{line_from_styled_span}"), "Hello, world!");
+    }
+
     mod widget {
         use super::*;
         use crate::assert_buffer_eq;
@@ -604,11 +688,9 @@ mod tests {
 
         #[test]
         fn render_truncates() {
-            let mut buf = Buffer::empty(Rect::new(0, 0, 11, 1));
-            hello_world().render(Rect::new(0, 0, 11, 1), &mut buf);
-            let mut expected = Buffer::with_lines(vec!["Hello world"]);
-            expected.set_style(Rect::new(0, 0, 6, 1), BLUE.italic());
-            expected.set_style(Rect::new(6, 0, 5, 1), GREEN.italic());
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
+            Line::from("Hello world!").render(Rect::new(0, 0, 5, 1), &mut buf);
+            let expected = Buffer::with_lines(vec!["Hello     "]);
             assert_buffer_eq!(buf, expected);
         }
 
@@ -635,5 +717,23 @@ mod tests {
             expected.set_style(Rect::new(9, 0, 6, 1), GREEN);
             assert_buffer_eq!(buf, expected);
         }
+    }
+
+    #[test]
+    fn left_aligned() {
+        let line = Line::from("Hello, world!").left_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let line = Line::from("Hello, world!").centered();
+        assert_eq!(line.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let line = Line::from("Hello, world!").right_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Right));
     }
 }

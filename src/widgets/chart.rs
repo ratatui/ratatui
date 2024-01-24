@@ -6,10 +6,9 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     buffer::Buffer,
-    layout::{Alignment, Constraint, Rect},
-    style::{Color, Style, Styled},
+    layout::Flex,
+    prelude::*,
     symbols,
-    text::{Line, Span},
     widgets::{
         canvas::{Canvas, Line as CanvasLine, Points},
         Block, Borders, Widget,
@@ -745,17 +744,17 @@ impl<'a> Chart<'a> {
             if let Some(inner_width) = legends.clone().max() {
                 let legend_width = inner_width + 2;
                 let legend_height = legends.count() as u16 + 2;
-                let max_legend_width = self
-                    .hidden_legend_constraints
-                    .0
-                    .apply(layout.graph_area.width);
-                let max_legend_height = self
-                    .hidden_legend_constraints
-                    .1
-                    .apply(layout.graph_area.height);
+
+                let [max_legend_width] = layout.graph_area.split(
+                    &Layout::horizontal([self.hidden_legend_constraints.0]).flex(Flex::Start),
+                );
+                let [max_legend_height] = layout
+                    .graph_area
+                    .split(&Layout::vertical([self.hidden_legend_constraints.1]).flex(Flex::Start));
+
                 if inner_width > 0
-                    && legend_width <= max_legend_width
-                    && legend_height <= max_legend_height
+                    && legend_width <= max_legend_width.width
+                    && legend_height <= max_legend_height.height
                 {
                     layout.legend_area = legend_position.layout(
                         layout.graph_area,

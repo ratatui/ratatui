@@ -70,14 +70,14 @@ use crate::{
 /// # std::io::Result::Ok(())
 /// ```
 ///
-/// See the the [examples] directory for more examples. See the [`backend`] module documentation
+/// See the the [Examples] directory for more examples. See the [`backend`] module documentation
 /// for more details on raw mode and alternate screen.
 ///
 /// [`Write`]: std::io::Write
 /// [`Terminal`]: crate::terminal::Terminal
 /// [`backend`]: crate::backend
 /// [Crossterm]: https://crates.io/crates/crossterm
-/// [examples]: https://github.com/ratatui-org/ratatui/tree/main/examples#examples
+/// [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct CrosstermBackend<W: Write> {
     /// The writer used to send commands to the terminal.

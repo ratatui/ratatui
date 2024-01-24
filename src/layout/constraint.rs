@@ -2,97 +2,216 @@ use std::fmt::{self, Display};
 
 use itertools::Itertools;
 
-/// A constraint that can be applied to a layout
+/// A constraint that defines the size of a layout element.
 ///
-/// Constraints are used to define the size of a layout. They can be used to define a fixed size, a
-/// percentage of the available space, a ratio of the available space, or a minimum or maximum size.
+/// Constraints can be used to specify a fixed size, a percentage of the available space, a ratio of
+/// the available space, a minimum or maximum size or a proportional value for a layout element.
 ///
 /// Relative constraints (percentage, ratio) are calculated relative to the entire space being
-/// split, not the space available after applying the more fixed constraints (min, max, length).
+/// divided, rather than the space available after applying more fixed constraints (min, max,
+/// length).
+///
+/// Constraints are prioritized in the following order:
+///
+/// 1. [`Constraint::Fixed`]
+/// 2. [`Constraint::Min`] / [`Constraint::Max`]
+/// 3. [`Constraint::Length`] / [`Constraint::Percentage`] / [`Constraint::Ratio`]
+/// 4. [`Constraint::Proportional`]
 ///
 /// # Examples
 ///
-/// `Constraint` has some helper methods to create lists of constraints from anything that can be
-/// converted into an iterator of u16s ((u16, u16) for ratios).
+/// `Constraint` provides helper methods to create lists of constraints from various input formats.
 ///
 /// ```rust
 /// # use ratatui::prelude::*;
-/// // a fixed layout
+/// // Create a layout with specified lengths for each element
 /// let constraints = Constraint::from_lengths([10, 20, 10]);
 ///
-/// // a centered layout
+/// // Create a layout with specified fixed lengths for each element
+/// let constraints = Constraint::from_fixed_lengths([10, 20, 10]);
+///
+/// // Create a centered layout using ratio or percentage constraints
 /// let constraints = Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]);
 /// let constraints = Constraint::from_percentages([25, 50, 25]);
 ///
-/// // a centered layout with a minimum size
+/// // Create a centered layout with a minimum size constraint for specific elements
 /// let constraints = Constraint::from_mins([0, 100, 0]);
 ///
-/// // a sidebar layout specifying maximum sizes of the columns
+/// // Create a sidebar layout specifying maximum sizes for the columns
 /// let constraints = Constraint::from_maxes([30, 170]);
+///
+/// // Create a layout with proportional sizes for each element
+/// let constraints = Constraint::from_proportional_lengths([1, 2, 1]);
 /// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Constraint {
-    /// Apply a percentage to a given amount
+    /// Applies a percentage of the available space to the element
     ///
-    /// Converts the given percentage to a f32, and then converts it back, trimming off the decimal
-    /// point (effectively rounding down)
+    /// Converts the given percentage to a floating-point value and multiplies that with area.
+    /// This value is rounded back to a integer as part of the layout split calculation.
+    ///
+    /// # Examples
+    ///
+    /// `[Percentage(75), Proportional(1)]`
+    ///
+    /// ```plain
+    /// ┌────────────────────────────────────┐┌──────────┐
+    /// │                38 px               ││   12 px  │
+    /// └────────────────────────────────────┘└──────────┘
     /// ```
-    /// # use ratatui::prelude::*;
-    /// assert_eq!(0, Constraint::Percentage(50).apply(0));
-    /// assert_eq!(2, Constraint::Percentage(50).apply(4));
-    /// assert_eq!(5, Constraint::Percentage(50).apply(10));
-    /// assert_eq!(5, Constraint::Percentage(50).apply(11));
+    ///
+    /// `[Percentage(50), Proportional(1)]`
+    ///
+    /// ```plain
+    /// ┌───────────────────────┐┌───────────────────────┐
+    /// │         25 px         ││         25 px         │
+    /// └───────────────────────┘└───────────────────────┘
     /// ```
     Percentage(u16),
-    /// Apply a ratio
+    /// Applies a ratio of the available space to the element
     ///
-    /// Converts the given numbers to a f32, and then converts it back, trimming off the decimal
-    /// point (effectively rounding down)
+    /// Converts the given ratio to a floating-point value and multiplies that with area.
+    /// This value is rounded back to a integer as part of the layout split calculation.
+    ///
+    /// # Examples
+    ///
+    /// `[Ratio(1, 2) ; 2]`
+    ///
+    /// ```plain
+    /// ┌───────────────────────┐┌───────────────────────┐
+    /// │         25 px         ││         25 px         │
+    /// └───────────────────────┘└───────────────────────┘
     /// ```
-    /// # use ratatui::prelude::*;
-    /// assert_eq!(0, Constraint::Ratio(4, 3).apply(0));
-    /// assert_eq!(4, Constraint::Ratio(4, 3).apply(4));
-    /// assert_eq!(10, Constraint::Ratio(4, 3).apply(10));
-    /// assert_eq!(100, Constraint::Ratio(4, 3).apply(100));
     ///
-    /// assert_eq!(0, Constraint::Ratio(3, 4).apply(0));
-    /// assert_eq!(3, Constraint::Ratio(3, 4).apply(4));
-    /// assert_eq!(7, Constraint::Ratio(3, 4).apply(10));
-    /// assert_eq!(75, Constraint::Ratio(3, 4).apply(100));
+    /// `[Ratio(1, 4) ; 4]`
+    ///
+    /// ```plain
+    /// ┌───────────┐┌──────────┐┌───────────┐┌──────────┐
+    /// │   13 px   ││   12 px  ││   13 px   ││   12 px  │
+    /// └───────────┘└──────────┘└───────────┘└──────────┘
     /// ```
     Ratio(u32, u32),
-    /// Apply no more than the given amount (currently roughly equal to [Constraint::Max], but less
-    /// consistent)
+    /// Applies a fixed size to the element
+    ///
+    /// The element size is set to the specified amount.
+    /// [`Constraint::Fixed`] will take precedence over all other constraints.
+    ///
+    /// # Examples
+    ///
+    /// `[Fixed(40), Proportional(1)]`
+    ///
+    /// ```plain
+    /// ┌──────────────────────────────────────┐┌────────┐
+    /// │                 40 px                ││  10 px │
+    /// └──────────────────────────────────────┘└────────┘
     /// ```
-    /// # use ratatui::prelude::*;
-    /// assert_eq!(0, Constraint::Length(4).apply(0));
-    /// assert_eq!(4, Constraint::Length(4).apply(4));
-    /// assert_eq!(4, Constraint::Length(4).apply(10));
+    ///
+    /// `[Fixed(20), Fixed(20), Proportional(1)]`
+    ///
+    /// ```plain
+    /// ┌──────────────────┐┌──────────────────┐┌────────┐
+    /// │       20 px      ││       20 px      ││  10 px │
+    /// └──────────────────┘└──────────────────┘└────────┘
+    /// ```
+    Fixed(u16),
+    /// Applies a length constraint to the element
+    ///
+    /// The element size is set to the specified amount.
+    ///
+    /// # Examples
+    ///
+    /// `[Length(20), Fixed(20)]`
+    ///
+    /// ```plain
+    /// ┌────────────────────────────┐┌──────────────────┐
+    /// │            30 px           ││       20 px      │
+    /// └────────────────────────────┘└──────────────────┘
+    /// ```
+    ///
+    /// `[Length(20), Length(20)]`
+    ///
+    /// ```plain
+    /// ┌──────────────────┐┌────────────────────────────┐
+    /// │       20 px      ││            30 px           │
+    /// └──────────────────┘└────────────────────────────┘
     /// ```
     Length(u16),
-    /// Apply at most the given amount
+    /// Applies the scaling factor proportional to all other [`Constraint::Proportional`] elements
+    /// to fill excess space
     ///
-    /// also see [std::cmp::min]
+    /// The element will only expand into excess available space, proportionally matching other
+    /// [`Constraint::Proportional`] elements while satisfying all other constraints.
+    ///
+    /// # Examples
+    ///
+    ///
+    /// `[Proportional(1), Proportional(2), Proportional(3)]`
+    ///
+    /// ```plain
+    /// ┌──────┐┌───────────────┐┌───────────────────────┐
+    /// │ 8 px ││     17 px     ││         25 px         │
+    /// └──────┘└───────────────┘└───────────────────────┘
     /// ```
-    /// # use ratatui::prelude::*;
-    /// assert_eq!(0, Constraint::Max(4).apply(0));
-    /// assert_eq!(4, Constraint::Max(4).apply(4));
-    /// assert_eq!(4, Constraint::Max(4).apply(10));
+    ///
+    /// `[Proportional(1), Percentage(50), Proportional(1)]`
+    ///
+    /// ```plain
+    /// ┌───────────┐┌───────────────────────┐┌──────────┐
+    /// │   13 px   ││         25 px         ││   12 px  │
+    /// └───────────┘└───────────────────────┘└──────────┘
+    /// ```
+    Proportional(u16),
+    /// Applies a maximum size constraint to the element
+    ///
+    /// The element size is set to at most the specified amount.
+    ///
+    /// # Examples
+    ///
+    /// `[Percentage(100), Min(20)]`
+    ///
+    /// ```plain
+    /// ┌────────────────────────────┐┌──────────────────┐
+    /// │            30 px           ││       20 px      │
+    /// └────────────────────────────┘└──────────────────┘
+    /// ```
+    ///
+    /// `[Percentage(100), Min(10)]`
+    ///
+    /// ```plain
+    /// ┌──────────────────────────────────────┐┌────────┐
+    /// │                 40 px                ││  10 px │
+    /// └──────────────────────────────────────┘└────────┘
     /// ```
     Max(u16),
-    /// Apply at least the given amount
+    /// Applies a minimum size constraint to the element
     ///
-    /// also see [std::cmp::max]
+    /// The element size is set to at least the specified amount.
+    ///
+    /// # Examples
+    ///
+    /// `[Percentage(100), Min(20)]`
+    ///
+    /// ```plain
+    /// ┌────────────────────────────┐┌──────────────────┐
+    /// │            30 px           ││       20 px      │
+    /// └────────────────────────────┘└──────────────────┘
     /// ```
-    /// # use ratatui::prelude::*;
-    /// assert_eq!(4, Constraint::Min(4).apply(0));
-    /// assert_eq!(4, Constraint::Min(4).apply(4));
-    /// assert_eq!(10, Constraint::Min(4).apply(10));
+    ///
+    /// `[Percentage(100), Min(10)]`
+    ///
+    /// ```plain
+    /// ┌──────────────────────────────────────┐┌────────┐
+    /// │                 40 px                ││  10 px │
+    /// └──────────────────────────────────────┘└────────┘
     /// ```
     Min(u16),
 }
 
 impl Constraint {
+    #[deprecated(
+        since = "0.26.0",
+        note = "This field will be hidden in the next minor version."
+    )]
     pub fn apply(&self, length: u16) -> u16 {
         match *self {
             Constraint::Percentage(p) => {
@@ -108,6 +227,8 @@ impl Constraint {
                 (percentage * length).min(length) as u16
             }
             Constraint::Length(l) => length.min(l),
+            Constraint::Fixed(l) => length.min(l),
+            Constraint::Proportional(l) => length.min(l),
             Constraint::Max(m) => length.min(m),
             Constraint::Min(m) => length.max(m),
         }
@@ -128,6 +249,26 @@ impl Constraint {
         T: IntoIterator<Item = u16>,
     {
         lengths.into_iter().map(Constraint::Length).collect_vec()
+    }
+
+    /// Convert an iterator of fixed lengths into a vector of constraints
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # let area = Rect::default();
+    /// let constraints = Constraint::from_fixed_lengths([1, 2, 3]);
+    /// let layout = Layout::default().constraints(constraints).split(area);
+    /// ```
+    pub fn from_fixed_lengths<T>(fixed_lengths: T) -> Vec<Constraint>
+    where
+        T: IntoIterator<Item = u16>,
+    {
+        fixed_lengths
+            .into_iter()
+            .map(Constraint::Fixed)
+            .collect_vec()
     }
 
     /// Convert an iterator of ratios into a vector of constraints
@@ -203,6 +344,26 @@ impl Constraint {
     {
         mins.into_iter().map(Constraint::Min).collect_vec()
     }
+
+    /// Convert an iterator of proportional factors into a vector of constraints
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # let area = Rect::default();
+    /// let constraints = Constraint::from_mins([1, 2, 3]);
+    /// let layout = Layout::default().constraints(constraints).split(area);
+    /// ```
+    pub fn from_proportional_lengths<T>(proportional_lengths: T) -> Vec<Constraint>
+    where
+        T: IntoIterator<Item = u16>,
+    {
+        proportional_lengths
+            .into_iter()
+            .map(Constraint::Proportional)
+            .collect_vec()
+    }
 }
 
 impl From<u16> for Constraint {
@@ -249,6 +410,8 @@ impl Display for Constraint {
             Constraint::Percentage(p) => write!(f, "Percentage({})", p),
             Constraint::Ratio(n, d) => write!(f, "Ratio({}, {})", n, d),
             Constraint::Length(l) => write!(f, "Length({})", l),
+            Constraint::Fixed(l) => write!(f, "Fixed({})", l),
+            Constraint::Proportional(l) => write!(f, "Proportional({})", l),
             Constraint::Max(m) => write!(f, "Max({})", m),
             Constraint::Min(m) => write!(f, "Min({})", m),
         }
@@ -282,6 +445,17 @@ mod tests {
         ];
         assert_eq!(Constraint::from_lengths([1, 2, 3]), expected);
         assert_eq!(Constraint::from_lengths(vec![1, 2, 3]), expected);
+    }
+
+    #[test]
+    fn from_fixed_lengths() {
+        let expected = [
+            Constraint::Fixed(1),
+            Constraint::Fixed(2),
+            Constraint::Fixed(3),
+        ];
+        assert_eq!(Constraint::from_fixed_lengths([1, 2, 3]), expected);
+        assert_eq!(Constraint::from_fixed_lengths(vec![1, 2, 3]), expected);
     }
 
     #[test]
@@ -324,6 +498,21 @@ mod tests {
     }
 
     #[test]
+    fn from_proportional_lengths() {
+        let expected = [
+            Constraint::Proportional(1),
+            Constraint::Proportional(2),
+            Constraint::Proportional(3),
+        ];
+        assert_eq!(Constraint::from_proportional_lengths([1, 2, 3]), expected);
+        assert_eq!(
+            Constraint::from_proportional_lengths(vec![1, 2, 3]),
+            expected
+        );
+    }
+
+    #[test]
+    #[allow(deprecated)]
     fn apply() {
         assert_eq!(Constraint::Percentage(0).apply(100), 0);
         assert_eq!(Constraint::Percentage(50).apply(100), 50);

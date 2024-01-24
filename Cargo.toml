@@ -40,6 +40,7 @@ unicode-width = "0.1"
 document-features = { version = "0.2.7", optional = true }
 lru = "0.12.0"
 stability = "0.1.1"
+compact_str = "0.7.1"
 
 [dev-dependencies]
 anyhow = "1.0.71"
@@ -50,11 +51,15 @@ cargo-husky = { version = "1.5.0", default-features = false, features = [
 ] }
 color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
+derive_builder = "0.12.0"
 fakeit = "1.1"
+font8x8 = "0.3.1"
 palette = "0.7.3"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
+rand_chacha = "0.3.1"
 rstest = "0.18.2"
+serde_json = "1.0.109"
 
 [features]
 #! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
@@ -74,7 +79,7 @@ termwiz = ["dep:termwiz"]
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [Serde crate].
 ## This is useful if you want to save themes to a file.
-serde = ["dep:serde", "bitflags/serde"]
+serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 
 ## enables the [`border!`] macro.
 macros = []
@@ -209,6 +214,16 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
+name = "constraints"
+required-features = ["crossterm"]
+doc-scrape-examples = false
+
+[[example]]
+name = "flex"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
 name = "list"
 required-features = ["crossterm"]
 doc-scrape-examples = true
@@ -268,3 +283,7 @@ doc-scrape-examples = true
 name = "inline"
 required-features = ["crossterm"]
 doc-scrape-examples = true
+
+[[test]]
+name = "state_serde"
+required-features = ["serde"]

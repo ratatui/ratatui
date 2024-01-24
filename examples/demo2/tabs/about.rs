@@ -117,6 +117,7 @@ pub fn render_logo(selected_row: usize, area: Rect, buf: &mut Buffer) {
                 ('█', '█') => {
                     cell.set_char('█');
                     cell.fg = rat_color;
+                    cell.bg = rat_color;
                 }
                 ('█', ' ') => {
                     cell.set_char('▀');

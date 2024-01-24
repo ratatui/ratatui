@@ -58,8 +58,7 @@ fn ui(frame: &mut Frame) {
     // title
     frame.render_widget(
         Paragraph::new(vec![
-            Line::from("Horizontal Layout Example. Press q to quit".dark_gray())
-                .alignment(Alignment::Center),
+            Line::from("Horizontal Layout Example. Press q to quit".dark_gray()).centered(),
             Line::from("Each line has 2 constraints, plus Min(0) to fill the remaining space."),
             Line::from("E.g. the second line of the Len/Min box is [Length(2), Min(2), Min(0)]"),
             Line::from("Note: constraint labels that don't fit are truncated"),
@@ -203,6 +202,8 @@ fn constraint_label(constraint: Constraint) -> String {
         Min(n) => format!("{n}"),
         Max(n) => format!("{n}"),
         Percentage(n) => format!("{n}"),
+        Proportional(n) => format!("{n}"),
+        Fixed(n) => format!("{n}"),
         Ratio(a, b) => format!("{a}:{b}"),
     }
 }

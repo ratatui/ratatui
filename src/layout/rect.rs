@@ -4,10 +4,11 @@ use std::{
     fmt,
 };
 
+use layout::{Position, Size};
+
 use crate::prelude::*;
 
 mod offset;
-
 pub use offset::*;
 
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
@@ -325,6 +326,41 @@ impl Rect {
             current_column: self.x,
         }
     }
+
+    /// Returns a [`Position`] with the same coordinates as this rect.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::prelude::*;
+    /// let rect = Rect::new(1, 2, 3, 4);
+    /// let position = rect.as_position();
+    /// ````
+    pub fn as_position(self) -> Position {
+        Position {
+            x: self.x,
+            y: self.y,
+        }
+    }
+
+    /// Converts the rect into a size struct.
+    pub fn as_size(self) -> Size {
+        Size {
+            width: self.width,
+            height: self.height,
+        }
+    }
+}
+
+impl From<(Position, Size)> for Rect {
+    fn from((position, size): (Position, Size)) -> Self {
+        Rect {
+            x: position.x,
+            y: position.y,
+            width: size.width,
+            height: size.height,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -548,7 +584,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rows() {
+    fn rows() {
         let area = Rect::new(0, 0, 3, 2);
         let rows: Vec<Rect> = area.rows().collect();
 
@@ -558,7 +594,7 @@ mod tests {
     }
 
     #[test]
-    fn test_columns() {
+    fn columns() {
         let area = Rect::new(0, 0, 3, 2);
         let columns: Vec<Rect> = area.columns().collect();
 
@@ -569,5 +605,42 @@ mod tests {
         ];
 
         assert_eq!(columns, expected_columns);
+    }
+
+    #[test]
+    fn as_position() {
+        let rect = Rect::new(1, 2, 3, 4);
+        let position = rect.as_position();
+        assert_eq!(position.x, 1);
+        assert_eq!(position.y, 2);
+    }
+
+    #[test]
+    fn as_size() {
+        assert_eq!(
+            Rect::new(1, 2, 3, 4).as_size(),
+            Size {
+                width: 3,
+                height: 4
+            }
+        );
+    }
+
+    #[test]
+    fn from_position_and_size() {
+        let position = Position { x: 1, y: 2 };
+        let size = Size {
+            width: 3,
+            height: 4,
+        };
+        assert_eq!(
+            Rect::from((position, size)),
+            Rect {
+                x: 1,
+                y: 2,
+                width: 3,
+                height: 4
+            }
+        );
     }
 }

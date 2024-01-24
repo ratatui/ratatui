@@ -143,8 +143,7 @@ impl Default for Fps {
 
 impl<'a> AppWidget<'a> {
     fn new(app: &'a App) -> Self {
-        let title =
-            Paragraph::new("colors_rgb example. Press q to quit").alignment(Alignment::Center);
+        let title = Paragraph::new("colors_rgb example. Press q to quit").centered();
         Self {
             title,
             fps_widget: FpsWidget { fps: &app.fps },

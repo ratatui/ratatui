@@ -35,7 +35,7 @@ use crate::{buffer::Cell, prelude::*};
 ///     "string",
 ///     Style::default().fg(Color::Red).bg(Color::White),
 /// );
-/// let cell = buf.get_mut(5, 0);
+/// let cell = buf.get(5, 0);
 /// assert_eq!(cell.symbol(), "r");
 /// assert_eq!(cell.fg, Color::Red);
 /// assert_eq!(cell.bg, Color::White);

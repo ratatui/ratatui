@@ -38,7 +38,7 @@
 //! # std::io::Result::Ok(())
 //! ```
 //!
-//! See the the [examples] directory for more examples.
+//! See the the [Examples] directory for more examples.
 //!
 //! # Raw Mode
 //!
@@ -96,7 +96,7 @@
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
 //! [Termwiz]: https://crates.io/crates/termwiz
-//! [examples]: https://github.com/ratatui-org/ratatui/tree/main/examples#readme
+//! [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples/README.md
 //! [Backend Comparison]:
 //!     https://ratatui.rs/concepts/backends/comparison/
 //! [Ratatui Website]: https://ratatui-org.github.io/ratatui-book

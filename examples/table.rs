@@ -5,38 +5,91 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use itertools::Itertools;
 use ratatui::{prelude::*, widgets::*};
+use style::palette::tailwind;
+use unicode_width::UnicodeWidthStr;
 
-struct App<'a> {
-    state: TableState,
-    items: Vec<Vec<&'a str>>,
+const PALETTES: [tailwind::Palette; 4] = [
+    tailwind::BLUE,
+    tailwind::EMERALD,
+    tailwind::INDIGO,
+    tailwind::RED,
+];
+const INFO_TEXT: &str =
+    "(Esc) quit | (↑) move up | (↓) move down | (→) next color | (←) previous color";
+
+const ITEM_HEIGHT: usize = 4;
+
+struct TableColors {
+    buffer_bg: Color,
+    header_bg: Color,
+    header_fg: Color,
+    row_fg: Color,
+    selected_style_fg: Color,
+    normal_row_color: Color,
+    alt_row_color: Color,
+    footer_border_color: Color,
 }
 
-impl<'a> App<'a> {
-    fn new() -> App<'a> {
+impl TableColors {
+    fn new(color: &tailwind::Palette) -> Self {
+        Self {
+            buffer_bg: tailwind::SLATE.c950,
+            header_bg: color.c900,
+            header_fg: tailwind::SLATE.c200,
+            row_fg: tailwind::SLATE.c200,
+            selected_style_fg: color.c400,
+            normal_row_color: tailwind::SLATE.c950,
+            alt_row_color: tailwind::SLATE.c900,
+            footer_border_color: color.c400,
+        }
+    }
+}
+
+struct Data {
+    name: String,
+    address: String,
+    email: String,
+}
+
+impl Data {
+    fn ref_array(&self) -> [&String; 3] {
+        [&self.name, &self.address, &self.email]
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn address(&self) -> &str {
+        &self.address
+    }
+
+    fn email(&self) -> &str {
+        &self.email
+    }
+}
+
+struct App {
+    state: TableState,
+    items: Vec<Data>,
+    longest_item_lens: (u16, u16, u16), // order is (name, address, email)
+    scroll_state: ScrollbarState,
+    colors: TableColors,
+    color_index: usize,
+}
+
+impl App {
+    fn new() -> App {
+        let data_vec = generate_fake_names();
         App {
-            state: TableState::default(),
-            items: vec![
-                vec!["Row11", "Row12", "Row13"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row31", "Row32", "Row33"],
-                vec!["Row41", "Row42", "Row43"],
-                vec!["Row51", "Row52", "Row53"],
-                vec!["Row61", "Row62\nTest", "Row63"],
-                vec!["Row71", "Row72", "Row73"],
-                vec!["Row81", "Row82", "Row83"],
-                vec!["Row91", "Row92", "Row93"],
-                vec!["Row101", "Row102", "Row103"],
-                vec!["Row111", "Row112", "Row113"],
-                vec!["Row121", "Row122", "Row123"],
-                vec!["Row131", "Row132", "Row133"],
-                vec!["Row141", "Row142", "Row143"],
-                vec!["Row151", "Row152", "Row153"],
-                vec!["Row161", "Row162", "Row163"],
-                vec!["Row171", "Row172", "Row173"],
-                vec!["Row181", "Row182", "Row183"],
-                vec!["Row191", "Row192", "Row193"],
-            ],
+            state: TableState::default().with_selected(0),
+            longest_item_lens: constraint_len_calculator(&data_vec),
+            scroll_state: ScrollbarState::new((data_vec.len() - 1) * ITEM_HEIGHT),
+            colors: TableColors::new(&PALETTES[0]),
+            color_index: 0,
+            items: data_vec,
         }
     }
     pub fn next(&mut self) {
@@ -51,6 +104,7 @@ impl<'a> App<'a> {
             None => 0,
         };
         self.state.select(Some(i));
+        self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
     pub fn previous(&mut self) {
@@ -65,7 +119,46 @@ impl<'a> App<'a> {
             None => 0,
         };
         self.state.select(Some(i));
+        self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
+
+    pub fn next_color(&mut self) {
+        self.color_index = (self.color_index + 1) % PALETTES.len();
+    }
+
+    pub fn previous_color(&mut self) {
+        let count = PALETTES.len();
+        self.color_index = (self.color_index + count - 1) % count;
+    }
+
+    pub fn set_colors(&mut self) {
+        self.colors = TableColors::new(&PALETTES[self.color_index])
+    }
+}
+
+fn generate_fake_names() -> Vec<Data> {
+    use fakeit::{address, contact, name};
+
+    (0..20)
+        .map(|_| {
+            let name = name::full();
+            let address = format!(
+                "{}\n{}, {} {}",
+                address::street(),
+                address::city(),
+                address::state(),
+                address::zip()
+            );
+            let email = contact::email();
+
+            Data {
+                name,
+                address,
+                email,
+            }
+        })
+        .sorted_by(|a, b| a.name.cmp(&b.name))
+        .collect_vec()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -102,10 +195,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
+                use KeyCode::*;
                 match key.code {
-                    KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Down | KeyCode::Char('j') => app.next(),
-                    KeyCode::Up | KeyCode::Char('k') => app.previous(),
+                    Char('q') | Esc => return Ok(()),
+                    Char('j') | Down => app.next(),
+                    Char('k') | Up => app.previous(),
+                    Char('l') | Right => app.next_color(),
+                    Char('h') | Left => app.previous_color(),
                     _ => {}
                 }
             }
@@ -114,49 +210,143 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui(f: &mut Frame, app: &mut App) {
-    let rects = Layout::vertical([Constraint::Percentage(100)]).split(f.size());
+    let rects = Layout::vertical([Constraint::Min(5), Constraint::Length(3)]).split(f.size());
 
-    let selected_style = Style::default().add_modifier(Modifier::REVERSED);
-    let normal_style = Style::default().bg(Color::Blue);
-    let header = ["Header1", "Header2", "Header3"]
+    app.set_colors();
+
+    render_table(f, app, rects[0]);
+
+    render_scrollbar(f, app, rects[0]);
+
+    render_footer(f, app, rects[1]);
+}
+
+fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
+    let header_style = Style::default()
+        .fg(app.colors.header_fg)
+        .bg(app.colors.header_bg);
+    let selected_style = Style::default()
+        .add_modifier(Modifier::REVERSED)
+        .fg(app.colors.selected_style_fg);
+
+    let header = ["Name", "Address", "Email"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Red)))
+        .cloned()
+        .map(Cell::from)
         .collect::<Row>()
-        .style(normal_style)
-        .height(1)
-        .bottom_margin(1);
-    let footer = ["Footer1", "Footer2", "Footer3"]
-        .iter()
-        .map(|f| Cell::from(*f).style(Style::default().fg(Color::Yellow)))
-        .collect::<Row>()
-        .style(normal_style)
-        .height(1)
-        .top_margin(1);
-    let rows = app.items.iter().map(|item| {
-        let height = item
-            .iter()
-            .map(|content| content.chars().filter(|c| *c == '\n').count())
-            .max()
-            .unwrap_or(0)
-            + 1;
+        .style(header_style)
+        .height(1);
+    let rows = app.items.iter().enumerate().map(|(i, data)| {
+        let color = match i % 2 {
+            0 => app.colors.normal_row_color,
+            _ => app.colors.alt_row_color,
+        };
+        let item = data.ref_array();
         item.iter()
             .cloned()
+            .map(|content| Cell::from(Text::from(format!("\n{}\n", content))))
             .collect::<Row>()
-            .height(height as u16)
-            .bottom_margin(1)
+            .style(Style::new().fg(app.colors.row_fg).bg(color))
+            .height(4)
     });
+    let bar = " █ ";
     let t = Table::new(
         rows,
         [
-            Constraint::Percentage(50),
-            Constraint::Max(30),
-            Constraint::Min(10),
+            // + 1 is for padding.
+            Constraint::Length(app.longest_item_lens.0 + 1),
+            Constraint::Min(app.longest_item_lens.1 + 1),
+            Constraint::Min(app.longest_item_lens.2),
         ],
     )
     .header(header)
-    .footer(footer)
-    .block(Block::default().borders(Borders::ALL).title("Table"))
     .highlight_style(selected_style)
-    .highlight_symbol(">> ");
-    f.render_stateful_widget(t, rects[0], &mut app.state);
+    .highlight_symbol(Text::from(vec![
+        "".into(),
+        bar.into(),
+        bar.into(),
+        "".into(),
+    ]))
+    .bg(app.colors.buffer_bg)
+    .highlight_spacing(HighlightSpacing::Always);
+    f.render_stateful_widget(t, area, &mut app.state);
+}
+
+fn constraint_len_calculator(items: &[Data]) -> (u16, u16, u16) {
+    let name_len = items
+        .iter()
+        .map(Data::name)
+        .map(UnicodeWidthStr::width)
+        .max()
+        .unwrap_or(0);
+    let address_len = items
+        .iter()
+        .map(Data::address)
+        .flat_map(str::lines)
+        .map(UnicodeWidthStr::width)
+        .max()
+        .unwrap_or(0);
+    let email_len = items
+        .iter()
+        .map(Data::email)
+        .map(UnicodeWidthStr::width)
+        .max()
+        .unwrap_or(0);
+
+    (name_len as u16, address_len as u16, email_len as u16)
+}
+
+fn render_scrollbar(f: &mut Frame, app: &mut App, area: Rect) {
+    f.render_stateful_widget(
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(None)
+            .end_symbol(None),
+        area.inner(&Margin {
+            vertical: 1,
+            horizontal: 1,
+        }),
+        &mut app.scroll_state,
+    );
+}
+
+fn render_footer(f: &mut Frame, app: &mut App, area: Rect) {
+    let info_footer = Paragraph::new(Line::from(INFO_TEXT))
+        .style(Style::new().fg(app.colors.row_fg).bg(app.colors.buffer_bg))
+        .centered()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::new().fg(app.colors.footer_border_color))
+                .border_type(BorderType::Double),
+        );
+    f.render_widget(info_footer, area);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Data;
+
+    #[test]
+    fn constraint_len_calculator() {
+        let test_data = vec![
+            Data {
+                name: "Emirhan Tala".to_string(),
+                address: "Cambridgelaan 6XX\n3584 XX Utrecht".to_string(),
+                email: "tala.emirhan@gmail.com".to_string(),
+            },
+            Data {
+                name: "thistextis26characterslong".to_string(),
+                address: "this line is 31 characters long\nbottom line is 33 characters long"
+                    .to_string(),
+                email: "thisemailis40caharacterslong@ratatui.com".to_string(),
+            },
+        ];
+        let (longest_name_len, longest_address_len, longest_email_len) =
+            crate::constraint_len_calculator(&test_data);
+
+        assert_eq!(26, longest_name_len);
+        assert_eq!(33, longest_address_len);
+        assert_eq!(40, longest_email_len);
+    }
 }

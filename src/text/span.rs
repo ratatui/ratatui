@@ -331,6 +331,12 @@ impl Widget for Span<'_> {
     }
 }
 
+impl std::fmt::Display for Span<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.content)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -449,6 +455,19 @@ mod tests {
         assert_eq!(stylized.content, Cow::Borrowed("test content"));
         assert_eq!(stylized.style, Style::new().green().on_yellow().bold());
     }
+    #[test]
+    fn display_span() {
+        let span = Span::raw("test content");
+
+        assert_eq!(format!("{span}"), "test content");
+    }
+
+    #[test]
+    fn display_styled_span() {
+        let stylized_span = Span::styled("stylized test content", Style::new().green());
+
+        assert_eq!(format!("{stylized_span}"), "stylized test content");
+    }
 
     mod widget {
         use super::*;
@@ -474,11 +493,13 @@ mod tests {
         fn render_truncates_too_long_content() {
             let style = Style::new().green().on_yellow();
             let span = Span::styled("test content", style);
-            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
-            span.render(buf.area, &mut buf);
 
-            let expected =
-                Buffer::with_lines(vec![Line::from(vec!["test conte".green().on_yellow()])]);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
+            span.render(Rect::new(0, 0, 5, 1), &mut buf);
+
+            let mut expected = Buffer::with_lines(vec![Line::from("test      ")]);
+            expected.set_style(Rect::new(0, 0, 5, 1), (Color::Green, Color::Yellow));
+
             assert_buffer_eq!(buf, expected);
         }
 
