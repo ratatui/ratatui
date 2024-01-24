@@ -25,12 +25,12 @@ set -o pipefail
 # ensure that running each example doesn't have to wait for the build
 cargo build --examples --features=crossterm,all-widgets
 
-for tape in examples/*.tape; do
-    gif=${tape/examples\//}
-    gif=${gif/.tape/.gif}
-    ~/go/bin/vhs $tape --quiet
+for tape_path in examples/vhs/*.tape; do
+    tape_file=${tape_path/examples\/vhs\//} # strip the examples/vhs/ prefix
+    gif_file=${tape_file/.tape/.gif}        # replace the .tape suffix with .gif
+    ~/go/bin/vhs $tape_path --quiet
     # this can be pasted into the examples README.md
-    echo "[${gif}]: https://github.com/ratatui-org/ratatui/blob/images/examples/${gif}?raw=true"
+    echo "[${gif_file}]: https://github.com/ratatui-org/ratatui/blob/images/examples/${gif_file}?raw=true"
 done
 git switch images
 git pull --rebase upstream images
