@@ -73,7 +73,7 @@ fn ui(f: &mut Frame, app: &App) {
         "Press p to show the popup"
     };
     let paragraph = Paragraph::new(text.slow_blink())
-        .alignment(Alignment::Center)
+        .centered()
         .wrap(Wrap { trim: true });
     f.render_widget(paragraph, instructions);
 

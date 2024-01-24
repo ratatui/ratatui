@@ -194,7 +194,7 @@ impl<'a> Paragraph<'a> {
     /// Set the text alignment for the given paragraph
     ///
     /// The alignment is a variant of the [`Alignment`] enum which can be one of Left, Right, or
-    /// Center.
+    /// Center. If no alignment is specified, the text in a paragraph will be left-aligned.
     ///
     /// # Example
     ///
@@ -206,6 +206,51 @@ impl<'a> Paragraph<'a> {
     pub fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {
         self.alignment = alignment;
         self
+    }
+
+    /// Left-aligns the text in the given paragraph.
+    ///
+    /// Convenience shortcut for `Paragraph::alignment(Alignment::Left)`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let paragraph = Paragraph::new("Hello World").left_aligned();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn left_aligned(self) -> Self {
+        self.alignment(Alignment::Left)
+    }
+
+    /// Center-aligns the text in the given paragraph.
+    ///
+    /// Convenience shortcut for `Paragraph::alignment(Alignment::Center)`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let paragraph = Paragraph::new("Hello World").centered();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn centered(self) -> Self {
+        self.alignment(Alignment::Center)
+    }
+
+    /// Right-aligns the text in the given paragraph.
+    ///
+    /// Convenience shortcut for `Paragraph::alignment(Alignment::Right)`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let paragraph = Paragraph::new("Hello World").right_aligned();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn right_aligned(self) -> Self {
+        self.alignment(Alignment::Right)
     }
 
     /// Calculates the number of lines needed to fully render.
@@ -921,5 +966,23 @@ mod test {
         assert_eq!(paragraph.line_width(), 1200);
         let paragraph = paragraph.wrap(Wrap { trim: true });
         assert_eq!(paragraph.line_width(), 1200);
+    }
+
+    #[test]
+    fn left_aligned() {
+        let p = Paragraph::new("Hello, world!").left_aligned();
+        assert_eq!(p.alignment, Alignment::Left);
+    }
+
+    #[test]
+    fn centered() {
+        let p = Paragraph::new("Hello, world!").centered();
+        assert_eq!(p.alignment, Alignment::Center);
+    }
+
+    #[test]
+    fn right_aligned() {
+        let p = Paragraph::new("Hello, world!").right_aligned();
+        assert_eq!(p.alignment, Alignment::Right);
     }
 }

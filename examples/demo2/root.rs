@@ -71,7 +71,7 @@ impl Root<'_> {
             })
             .collect_vec();
         Paragraph::new(Line::from(spans))
-            .alignment(Alignment::Center)
+            .centered()
             .fg(Color::Indexed(236))
             .bg(Color::Indexed(232))
             .render(area, buf);
