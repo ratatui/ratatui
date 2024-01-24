@@ -412,6 +412,16 @@ impl Widget for Line<'_> {
     }
 }
 
+/// Implement [`Widget`] for [`Option<Line>`] to simplify the common case of having an optional
+/// [`Line`] field in a widget.
+impl Widget for &Option<Line<'_>> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(line) = self {
+            line.render(area, buf);
+        }
+    }
+}
+
 impl Widget for &Line<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);

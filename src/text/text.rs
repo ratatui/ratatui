@@ -420,6 +420,16 @@ impl Widget for Text<'_> {
     }
 }
 
+/// Implement [`Widget`] for [`Option<Text>`] to simplify the common case of having an optional
+/// [`Text`] field in a widget.
+impl Widget for &Option<Text<'_>> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(text) = self {
+            text.render(area, buf);
+        }
+    }
+}
+
 impl Widget for &Text<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);

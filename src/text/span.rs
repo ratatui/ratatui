@@ -304,6 +304,16 @@ impl Widget for Span<'_> {
     }
 }
 
+/// Implement [`Widget`] for [`Option<Span>`] to simplify the common case of having an optional
+/// [`Span`] field in a widget.
+impl Widget for &Option<Span<'_>> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(span) = self {
+            span.render(area, buf);
+        }
+    }
+}
+
 impl Widget for &Span<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let Rect {
