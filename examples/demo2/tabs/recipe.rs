@@ -84,16 +84,20 @@ const INGREDIENTS: &[Ingredient] = &[
     },
 ];
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct RecipeTab {
-    selected_row: usize,
+    row_index: usize,
 }
 
 impl RecipeTab {
-    pub fn new(selected_row: usize) -> Self {
-        Self {
-            selected_row: selected_row % INGREDIENTS.len(),
-        }
+    /// Select the previous item in the ingredients list (with wrap around)
+    pub fn prev(&mut self) {
+        self.row_index = self.row_index.saturating_add(INGREDIENTS.len() - 1) % INGREDIENTS.len();
+    }
+
+    /// Select the next item in the ingredients list (with wrap around)
+    pub fn next(&mut self) {
+        self.row_index = self.row_index.saturating_add(1) % INGREDIENTS.len();
     }
 }
 
@@ -117,7 +121,7 @@ impl Widget for RecipeTab {
             height: area.height - 3,
             ..area
         };
-        render_scrollbar(self.selected_row, scrollbar_area, buf);
+        render_scrollbar(self.row_index, scrollbar_area, buf);
 
         let area = area.inner(&Margin {
             horizontal: 2,
@@ -129,7 +133,7 @@ impl Widget for RecipeTab {
         ]));
 
         render_recipe(recipe, buf);
-        render_ingredients(self.selected_row, ingredients, buf);
+        render_ingredients(self.row_index, ingredients, buf);
     }
 }
 
