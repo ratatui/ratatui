@@ -8,11 +8,7 @@
 
 use strum::{Display, EnumString};
 
-use crate::{
-    prelude::*,
-    symbols::border,
-    widgets::{Borders, Widget},
-};
+use crate::{prelude::*, symbols::border, widgets::Borders};
 
 mod padding;
 pub mod title;
@@ -524,7 +520,7 @@ impl<'a> Block<'a> {
 
 impl Widget for Block<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        (&self).render(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
@@ -723,22 +719,29 @@ impl Block<'_> {
 
 /// An extension trait for [`Block`] that provides some convenience methods.
 ///
-/// This is pub(crate) for now because it is not clear if this is the best way to do this.
-pub(crate) trait BlockExt {
-    /// Render the block if it is `Some` and update the area to the inner area of the block.
-    /// Otherwise, do nothing.
+/// This is implemented for [`Option<Block>`](Option) to simplify the common case of having a
+/// widget with an optional block.
+pub trait BlockExt {
+    /// Render the block if it is `Some`. Otherwise, do nothing.
     ///
-    /// This is useful for widgets that have a block as a field and want to render it if it is
-    /// `Some` and update the area to the inner area of the block.
-    fn render(&self, area: &mut Rect, buf: &mut Buffer);
+    /// This is a useful convenience method for widgets that have an `Option<Block>` field
+    fn render(&self, area: Rect, buf: &mut Buffer);
+
+    /// Return the inner area of the block if it is `Some`. Otherwise, returns `area`.
+    ///
+    /// This is a useful convenience method for widgets that have an `Option<Block>` field
+    fn inner(&self, area: Rect) -> Rect;
 }
 
 impl BlockExt for Option<Block<'_>> {
-    fn render(&self, area: &mut Rect, buf: &mut Buffer) {
+    fn render(&self, area: Rect, buf: &mut Buffer) {
         if let Some(block) = self {
-            block.render(*area, buf);
-            *area = block.inner(*area);
+            block.render(area, buf);
         }
+    }
+
+    fn inner(&self, area: Rect) -> Rect {
+        self.as_ref().map_or(area, |block| block.inner(area))
     }
 }
 

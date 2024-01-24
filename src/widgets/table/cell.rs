@@ -1,4 +1,4 @@
-use crate::{prelude::*, widgets::Widget};
+use crate::prelude::*;
 
 /// A [`Cell`] contains the [`Text`] to be displayed in a [`Row`] of a [`Table`].
 ///

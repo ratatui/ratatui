@@ -414,10 +414,16 @@ impl std::fmt::Display for Text<'_> {
     }
 }
 
-impl<'a> Widget for Text<'a> {
+impl Widget for Text<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+impl Widget for &Text<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        for (line, row) in self.lines.into_iter().zip(area.rows()) {
+        for (line, row) in self.lines.iter().zip(area.rows()) {
             let line_width = line.width() as u16;
 
             let x_offset = match (self.alignment, line.alignment) {

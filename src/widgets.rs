@@ -55,8 +55,13 @@ use crate::{buffer::Buffer, layout::Rect};
 
 /// A `Widget` is a type that can be drawn on a [`Buffer`] in a given [`Rect`].
 ///
-/// Widgets are created for each frame as they are consumed after rendered. They are not meant to be
-/// stored but used as *commands* to draw common figures in the UI.
+/// Prior to Ratatui 0.26.0, widgets generally were created for each frame as they were consumed
+/// during rendering. This meant that they were not meant to be stored but used as *commands* to
+/// draw common figures in the UI.
+///
+/// Starting with Ratatui 0.26.0, the `Widget` trait was more universally implemented on &T instead
+/// of just T. This means that widgets can be stored and reused across frames. This allows widgets
+/// to be stored in a struct and reused across frames by ref.
 ///
 /// ## Examples
 ///

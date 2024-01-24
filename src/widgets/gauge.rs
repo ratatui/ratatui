@@ -1,13 +1,6 @@
 #![deny(missing_docs)]
-use super::block::BlockExt;
-use crate::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Color, Style, Styled},
-    symbols,
-    text::{Line, Span},
-    widgets::{Block, Widget},
-};
+
+use crate::{prelude::*, widgets::Block};
 
 /// A widget to display a progress bar.
 ///
@@ -164,15 +157,16 @@ impl<'a> Gauge<'a> {
 
 impl Widget for Gauge<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        (&self).render(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
 impl Widget for &Gauge<'_> {
-    fn render(self, mut area: Rect, buf: &mut Buffer) {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        self.block.render(&mut area, buf);
-        self.render_gague(area, buf);
+        self.block.render(area, buf);
+        let inner = self.block.inner(area);
+        self.render_gague(inner, buf);
     }
 }
 
@@ -356,32 +350,25 @@ impl<'a> LineGauge<'a> {
     }
 }
 
-impl<'a> Widget for LineGauge<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
-        let gauge_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
+impl Widget for LineGauge<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
 
-        if gauge_area.height < 1 {
+impl Widget for &LineGauge<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
+        self.block.render(area, buf);
+        let gauge_area = self.block.inner(area);
+        if gauge_area.is_empty() {
             return;
         }
 
         let ratio = self.ratio;
-        let label = self
-            .label
-            .unwrap_or_else(move || Line::from(format!("{:.0}%", ratio * 100.0)));
-        let (col, row) = buf.set_line(
-            gauge_area.left(),
-            gauge_area.top(),
-            &label,
-            gauge_area.width,
-        );
+        let default_label = Line::from(format!("{:.0}%", ratio * 100.0));
+        let label = self.label.as_ref().unwrap_or(&default_label);
+        let (col, row) = buf.set_line(gauge_area.left(), gauge_area.top(), label, gauge_area.width);
         let start = col + 1;
         if start >= gauge_area.right() {
             return;

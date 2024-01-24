@@ -4,10 +4,7 @@ use super::block::BlockExt;
 use crate::{
     prelude::*,
     text::StyledGrapheme,
-    widgets::{
-        reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine},
-        Block, Widget,
-    },
+    widgets::{reflow::*, Block},
 };
 
 fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
@@ -328,15 +325,16 @@ impl<'a> Paragraph<'a> {
 
 impl Widget for Paragraph<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        (&self).render(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
 impl Widget for &Paragraph<'_> {
-    fn render(self, mut area: Rect, buf: &mut Buffer) {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        self.block.render(&mut area, buf);
-        self.render_paragraph(area, buf);
+        self.block.render(area, buf);
+        let inner = self.block.inner(area);
+        self.render_paragraph(inner, buf);
     }
 }
 

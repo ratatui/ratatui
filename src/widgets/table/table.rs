@@ -4,7 +4,7 @@ use super::*;
 use crate::{
     layout::{Flex, SegmentSize},
     prelude::*,
-    widgets::{Block, StatefulWidget, Widget},
+    widgets::Block,
 };
 
 /// A widget to display data in formatted columns.
@@ -610,16 +610,32 @@ impl Widget for Table<'_> {
     }
 }
 
+impl Widget for &Table<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let mut state = TableState::default();
+        StatefulWidget::render(self, area, buf, &mut state);
+    }
+}
+
 impl StatefulWidget for Table<'_> {
     type State = TableState;
 
-    fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        buf.set_style(area, self.style);
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        StatefulWidget::render(&self, area, buf, state);
+    }
+}
 
-        let table_area = self.render_block(area, buf);
+impl StatefulWidget for &Table<'_> {
+    type State = TableState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        buf.set_style(area, self.style);
+        self.block.render(area, buf);
+        let table_area = self.block.inner(area);
         if table_area.is_empty() {
             return;
         }
+
         let selection_width = self.selection_width(state);
         let columns_widths = self.get_columns_widths(table_area.width, selection_width);
         let (header_area, rows_area, footer_area) = self.layout(table_area);
@@ -661,16 +677,6 @@ impl Table<'_> {
         .split(area);
         let (header_area, rows_area, footer_area) = (layout[1], layout[3], layout[5]);
         (header_area, rows_area, footer_area)
-    }
-
-    fn render_block(&mut self, area: Rect, buf: &mut Buffer) -> Rect {
-        if let Some(block) = self.block.take() {
-            let inner_area = block.inner(area);
-            block.render(area, buf);
-            inner_area
-        } else {
-            area
-        }
     }
 
     fn render_header(&self, area: Rect, buf: &mut Buffer, column_widths: &[(u16, u16)]) {

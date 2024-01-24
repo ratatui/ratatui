@@ -54,11 +54,7 @@ impl Shape for Rectangle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        prelude::*,
-        widgets::{canvas::Canvas, Widget},
-    };
+    use crate::{assert_buffer_eq, prelude::*, widgets::canvas::Canvas};
 
     #[test]
     fn draw_block_lines() {

@@ -12,11 +12,7 @@ use std::collections::HashMap;
 
 use time::{Date, Duration, OffsetDateTime};
 
-use super::block::BlockExt;
-use crate::{
-    prelude::*,
-    widgets::{Block, Widget},
-};
+use crate::{prelude::*, widgets::Block};
 
 /// Display a month calendar for the month containing `display_date`
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -120,14 +116,15 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
 
 impl<DS: DateStyler> Widget for Monthly<'_, DS> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        (&self).render(area, buf);
+        Widget::render(&self, area, buf);
     }
 }
 
 impl<DS: DateStyler> Widget for &Monthly<'_, DS> {
-    fn render(self, mut area: Rect, buf: &mut Buffer) {
-        self.block.render(&mut area, buf);
-        self.render_monthly(area, buf);
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.block.render(area, buf);
+        let inner = self.block.inner(area);
+        self.render_monthly(inner, buf);
     }
 }
 

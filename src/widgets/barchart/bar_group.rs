@@ -1,9 +1,5 @@
 use super::Bar;
-use crate::{
-    prelude::{Alignment, Buffer, Rect},
-    style::Style,
-    text::Line,
-};
+use crate::prelude::*;
 
 /// A group of bars to be shown by the Barchart.
 ///

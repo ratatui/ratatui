@@ -300,6 +300,12 @@ impl<'a> Styled for Span<'a> {
 
 impl Widget for Span<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+impl Widget for &Span<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let Rect {
             x: mut current_x,
             y,
