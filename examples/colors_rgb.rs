@@ -23,7 +23,7 @@ use crossterm::{
     ExecutableCommand,
 };
 use palette::{convert::FromColorUnclamped, Okhsv, Srgb};
-use ratatui::{prelude::*, widgets::*};
+use ratatui::prelude::*;
 
 #[derive(Debug, Default)]
 struct App {

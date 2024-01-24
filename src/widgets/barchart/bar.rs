@@ -115,24 +115,21 @@ impl<'a> Bar<'a> {
     /// bar width, then the value is split into 2 parts. the first part is rendered in the bar
     /// using value_style. The second part is rendered outside the bar using bar_style
     pub(super) fn render_value_with_different_styles(
-        self,
+        &self,
         buf: &mut Buffer,
         area: Rect,
         bar_length: usize,
         default_value_style: Style,
         bar_style: Style,
     ) {
-        let text = if let Some(text) = self.text_value {
-            text
-        } else {
-            self.value.to_string()
-        };
+        let value = self.value.to_string();
+        let text = self.text_value.as_ref().unwrap_or(&value);
 
         if !text.is_empty() {
             let style = default_value_style.patch(self.value_style);
             // Since the value may be longer than the bar itself, we need to use 2 different styles
             // while rendering. Render the first part with the default value style
-            buf.set_stringn(area.x, area.y, &text, bar_length, style);
+            buf.set_stringn(area.x, area.y, text, bar_length, style);
             // render the second part with the bar_style
             if text.len() > bar_length {
                 let (first, second) = text.split_at(bar_length);

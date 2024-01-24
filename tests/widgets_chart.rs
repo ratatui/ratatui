@@ -8,6 +8,7 @@ use ratatui::{
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType::Line},
     Terminal,
 };
+use rstest::rstest;
 
 fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {
     labels.iter().map(|l| Span::from(*l)).collect()
@@ -30,38 +31,36 @@ where
     terminal.backend().assert_buffer(&expected);
 }
 
-#[test]
-fn widgets_chart_can_render_on_small_areas() {
-    let test_case = |width, height| {
-        let backend = TestBackend::new(width, height);
-        let mut terminal = Terminal::new(backend).unwrap();
-        terminal
-            .draw(|f| {
-                let datasets = vec![Dataset::default()
-                    .marker(symbols::Marker::Braille)
-                    .style(Style::default().fg(Color::Magenta))
-                    .data(&[(0.0, 0.0)])];
-                let chart = Chart::new(datasets)
-                    .block(Block::default().title("Plot").borders(Borders::ALL))
-                    .x_axis(
-                        Axis::default()
-                            .bounds([0.0, 0.0])
-                            .labels(create_labels(&["0.0", "1.0"])),
-                    )
-                    .y_axis(
-                        Axis::default()
-                            .bounds([0.0, 0.0])
-                            .labels(create_labels(&["0.0", "1.0"])),
-                    );
-                f.render_widget(chart, f.size());
-            })
-            .unwrap();
-    };
-    test_case(0, 0);
-    test_case(0, 1);
-    test_case(1, 0);
-    test_case(1, 1);
-    test_case(2, 2);
+#[rstest]
+#[case(0, 0)]
+#[case(0, 1)]
+#[case(1, 0)]
+#[case(1, 1)]
+#[case(2, 2)]
+fn widgets_chart_can_render_on_small_areas(#[case] width: u16, #[case] height: u16) {
+    let backend = TestBackend::new(width, height);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let datasets = vec![Dataset::default()
+                .marker(symbols::Marker::Braille)
+                .style(Style::default().fg(Color::Magenta))
+                .data(&[(0.0, 0.0)])];
+            let chart = Chart::new(datasets)
+                .block(Block::default().title("Plot").borders(Borders::ALL))
+                .x_axis(
+                    Axis::default()
+                        .bounds([0.0, 0.0])
+                        .labels(create_labels(&["0.0", "1.0"])),
+                )
+                .y_axis(
+                    Axis::default()
+                        .bounds([0.0, 0.0])
+                        .labels(create_labels(&["0.0", "1.0"])),
+                );
+            f.render_widget(chart, f.size());
+        })
+        .unwrap();
 }
 
 #[test]

@@ -53,7 +53,59 @@ pub use self::{
 };
 use crate::{buffer::Buffer, layout::Rect};
 
-/// Base requirements for a Widget
+/// A `Widget` is a type that can be drawn on a [`Buffer`] in a given [`Rect`].
+///
+/// Prior to Ratatui 0.26.0, widgets generally were created for each frame as they were consumed
+/// during rendering. This meant that they were not meant to be stored but used as *commands* to
+/// draw common figures in the UI.
+///
+/// Starting with Ratatui 0.26.0, the `Widget` trait was more universally implemented on &T instead
+/// of just T. This means that widgets can be stored and reused across frames without having to
+/// clone or recreate them.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+/// # let backend = TestBackend::new(5, 5);
+/// # let mut terminal = Terminal::new(backend).unwrap();
+///
+/// terminal.draw(|frame| {
+///     frame.render_widget(Clear, frame.size());
+/// });
+/// ```
+///
+/// Rendering a widget by reference:
+///
+/// ```rust
+/// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+/// # let backend = TestBackend::new(5, 5);
+/// # let mut terminal = Terminal::new(backend).unwrap();
+/// // this variable could instead be a value stored in a struct and reused across frames
+/// let paragraph = Paragraph::new("Hello world!");
+///
+/// terminal.draw(|frame| {
+///     frame.render_widget(&paragraph, frame.size());
+/// });
+/// ```
+///
+/// It's common to render widgets inside other widgets:
+///
+/// ```rust
+/// use ratatui::{prelude::*, widgets::*};
+///
+/// struct MyWidget;
+///
+/// impl Widget for &MyWidget {
+///     fn render(self, area: Rect, buf: &mut Buffer) {
+///         Block::default()
+///             .title("My Widget")
+///             .borders(Borders::ALL)
+///             .render(area, buf);
+///         // ...
+///     }
+/// }
+/// ```
 pub trait Widget {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.

@@ -4,7 +4,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     prelude::*,
-    widgets::{Block, HighlightSpacing, StatefulWidget, Widget},
+    widgets::{Block, HighlightSpacing},
 };
 
 /// State of the [`List`] widget
@@ -812,21 +812,37 @@ impl<'a> List<'a> {
     }
 }
 
-impl<'a> StatefulWidget for List<'a> {
+impl Widget for List<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let mut state = ListState::default();
+        StatefulWidget::render(&self, area, buf, &mut state);
+    }
+}
+
+impl Widget for &List<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let mut state = ListState::default();
+        StatefulWidget::render(self, area, buf, &mut state);
+    }
+}
+
+impl StatefulWidget for List<'_> {
     type State = ListState;
 
-    fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        buf.set_style(area, self.style);
-        let list_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        StatefulWidget::render(&self, area, buf, state);
+    }
+}
 
-        if self.items.is_empty() || list_area.is_empty() {
+impl StatefulWidget for &List<'_> {
+    type State = ListState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        buf.set_style(area, self.style);
+        self.block.render(area, buf);
+        let list_area = self.block.inner_if_some(area);
+
+        if list_area.is_empty() || self.items.is_empty() {
             return;
         }
 
@@ -846,7 +862,7 @@ impl<'a> StatefulWidget for List<'a> {
         let selection_spacing = self.highlight_spacing.should_add(state.selected.is_some());
         for (i, item) in self
             .items
-            .iter_mut()
+            .iter()
             .enumerate()
             .skip(state.offset)
             .take(last_visible_index - first_visible_index)
@@ -911,13 +927,6 @@ impl<'a> StatefulWidget for List<'a> {
     }
 }
 
-impl<'a> Widget for List<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut state = ListState::default();
-        StatefulWidget::render(self, area, buf, &mut state);
-    }
-}
-
 impl<'a> Styled for List<'a> {
     type Item = List<'a>;
 
@@ -961,7 +970,7 @@ mod tests {
         prelude::Alignment,
         style::{Color, Modifier, Stylize},
         text::{Line, Span},
-        widgets::{Borders, StatefulWidget, Widget},
+        widgets::Borders,
     };
 
     #[test]

@@ -414,10 +414,26 @@ impl std::fmt::Display for Text<'_> {
     }
 }
 
-impl<'a> Widget for Text<'a> {
+impl Widget for Text<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+/// Implement [`Widget`] for [`Option<Text>`] to simplify the common case of having an optional
+/// [`Text`] field in a widget.
+impl Widget for &Option<Text<'_>> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(text) = self {
+            text.render(area, buf);
+        }
+    }
+}
+
+impl Widget for &Text<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        for (line, row) in self.lines.into_iter().zip(area.rows()) {
+        for (line, row) in self.lines.iter().zip(area.rows()) {
             let line_width = line.width() as u16;
 
             let x_offset = match (self.alignment, line.alignment) {

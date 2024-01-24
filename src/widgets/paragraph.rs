@@ -1,12 +1,10 @@
 use unicode_width::UnicodeWidthStr;
 
+use super::block::BlockExt;
 use crate::{
     prelude::*,
     text::StyledGrapheme,
-    widgets::{
-        reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine},
-        Block, Widget,
-    },
+    widgets::{reflow::*, Block},
 };
 
 fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
@@ -325,19 +323,24 @@ impl<'a> Paragraph<'a> {
     }
 }
 
-impl<'a> Widget for Paragraph<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
-        let text_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
+impl Widget for Paragraph<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
 
-        if text_area.height < 1 {
+impl Widget for &Paragraph<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
+        self.block.render(area, buf);
+        let inner = self.block.inner_if_some(area);
+        self.render_paragraph(inner, buf);
+    }
+}
+
+impl Paragraph<'_> {
+    fn render_paragraph(&self, text_area: Rect, buf: &mut Buffer) {
+        if text_area.is_empty() {
             return;
         }
 

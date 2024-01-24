@@ -1,7 +1,4 @@
-use crate::{
-    prelude::*,
-    widgets::{StatefulWidget, Widget},
-};
+use crate::prelude::*;
 
 /// A consistent view into the terminal state for rendering a single frame.
 ///
@@ -74,10 +71,7 @@ impl Frame<'_> {
     /// ```
     ///
     /// [`Layout`]: crate::layout::Layout
-    pub fn render_widget<W>(&mut self, widget: W, area: Rect)
-    where
-        W: Widget,
-    {
+    pub fn render_widget<W: Widget>(&mut self, widget: W, area: Rect) {
         widget.render(area, self.buffer);
     }
 

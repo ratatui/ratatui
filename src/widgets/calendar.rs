@@ -12,10 +12,7 @@ use std::collections::HashMap;
 
 use time::{Date, Duration, OffsetDateTime};
 
-use crate::{
-    prelude::*,
-    widgets::{Block, Widget},
-};
+use crate::{prelude::*, widgets::Block};
 
 /// Display a month calendar for the month containing `display_date`
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -117,36 +114,42 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     }
 }
 
-impl<'a, DS: DateStyler> Widget for Monthly<'a, DS> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
-        // Block is used for borders and such
-        // Draw that first, and use the blank area inside the block for our own purposes
-        let mut area = match self.block.take() {
-            None => area,
-            Some(b) => {
-                let inner = b.inner(area);
-                b.render(area, buf);
-                inner
-            }
-        };
+impl<DS: DateStyler> Widget for Monthly<'_, DS> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+impl<DS: DateStyler> Widget for &Monthly<'_, DS> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.block.render(area, buf);
+        let inner = self.block.inner_if_some(area);
+        self.render_monthly(inner, buf);
+    }
+}
+
+impl<DS: DateStyler> Monthly<'_, DS> {
+    fn render_monthly(&self, area: Rect, buf: &mut Buffer) {
+        let layout = Layout::vertical([
+            Constraint::Length(self.show_month.is_some().into()),
+            Constraint::Length(self.show_weekday.is_some().into()),
+            Constraint::Proportional(1),
+        ]);
+        let [month_header, days_header, days_area] = area.split(&layout);
 
         // Draw the month name and year
         if let Some(style) = self.show_month {
-            let line = Span::styled(
+            Line::styled(
                 format!("{} {}", self.display_date.month(), self.display_date.year()),
                 style,
-            );
-            // cal is 21 cells wide, so hard code the 11
-            let x_off = 11_u16.saturating_sub(line.width() as u16 / 2);
-            buf.set_line(area.x + x_off, area.y, &line.into(), area.width);
-            area.y += 1
+            )
+            .alignment(Alignment::Center)
+            .render(month_header, buf);
         }
 
         // Draw days of week
         if let Some(style) = self.show_weekday {
-            let days = String::from(" Su Mo Tu We Th Fr Sa");
-            buf.set_string(area.x, area.y, days, style);
-            area.y += 1;
+            Span::styled(" Su Mo Tu We Th Fr Sa", style).render(days_header, buf);
         }
 
         // Set the start of the calendar to the Sunday before the 1st (or the sunday of the first)
@@ -154,6 +157,7 @@ impl<'a, DS: DateStyler> Widget for Monthly<'a, DS> {
         let offset = Duration::days(first_of_month.weekday().number_days_from_sunday().into());
         let mut curr_day = first_of_month - offset;
 
+        let mut y = days_area.y;
         // go through all the weeks containing a day in the target month.
         while curr_day.month() as u8 != self.display_date.month().next() as u8 {
             let mut spans = Vec::with_capacity(14);
@@ -168,8 +172,8 @@ impl<'a, DS: DateStyler> Widget for Monthly<'a, DS> {
                 spans.push(self.format_date(curr_day));
                 curr_day += Duration::DAY;
             }
-            buf.set_line(area.x, area.y, &spans.into(), area.width);
-            area.y += 1;
+            buf.set_line(days_area.x, y, &spans.into(), area.width);
+            y += 1;
         }
     }
 }
