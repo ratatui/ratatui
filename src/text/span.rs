@@ -275,6 +275,46 @@ impl<'a> Span<'a> {
             .filter(|g| *g != "\n")
             .map(move |g| StyledGrapheme { symbol: g, style })
     }
+
+    /// Converts this Span into a left-aligned [`Line`]
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let span = Span::styled("Test Content", Style::new().green().italic());
+    /// assert_eq!(span.left_aligned().alignment, Some(Alignment::Left));
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn left_aligned(self) -> Line<'a> {
+        Line::from(self).left_aligned()
+    }
+
+    /// Converts this Span into a center-aligned [`Line`]
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let span = Span::styled("Test Content", Style::new().green().italic());
+    /// assert_eq!(span.centered().alignment, Some(Alignment::Center));
+    /// ```
+    pub fn centered(self) -> Line<'a> {
+        Line::from(self).centered()
+    }
+
+    /// Converts this Span into a right-aligned [`Line`]
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let span = Span::styled("Test Content", Style::new().green().italic());
+    /// assert_eq!(span.right_aligned().alignment, Some(Alignment::Right));
+    /// ```
+    pub fn right_aligned(self) -> Line<'a> {
+        Line::from(self).right_aligned()
+    }
 }
 
 impl<'a, T> From<T> for Span<'a>
@@ -584,5 +624,26 @@ mod tests {
             ])]);
             assert_buffer_eq!(buf, expected);
         }
+    }
+
+    #[test]
+    fn left_aligned() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.left_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.centered();
+        assert_eq!(line.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.right_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Right));
     }
 }
