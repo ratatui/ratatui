@@ -483,6 +483,8 @@ impl Layout {
         segments: &[Element],
     ) -> Result<Vec<Element>, AddConstraintError> {
         let (area_start, area_end, _area_size) = layout.get_start_end_size(area);
+        // We add spacer element before and after every segment element.
+        //
         // <------------------------------------80 px------------------------------------->
         // ┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐
         //      │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
@@ -491,13 +493,29 @@ impl Layout {
             std::iter::repeat_with(|| Element::constrain(solver, (area_start, area_end)))
                 .take(segments.len().saturating_add(1))
                 .try_collect()?;
-        // interleave with spacers first
+        assert_eq!(segments.len() + 1, spacers.len());
         for pair in Itertools::interleave(spacers.iter(), segments.iter())
             .collect::<Vec<&Element>>()
             .windows(2)
         {
+            // we ensure that spacers and segments are sequentially placed
+            //
+            // ┌   ┐┌────┐
+            //      │    │
+            // └   ┘└────┘
+            //     ^^
+            //     │└────── pair[1].start
+            //     └─────── pair[0].end
             solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
         }
+
+        if let (Some(first_spacer), Some(last_spacer)) = (spacers.first(), spacers.last()) {
+            solver.add_constraints(&[
+                first_spacer.start | EQ(REQUIRED) | area_start,
+                last_spacer.end | EQ(REQUIRED) | area_end,
+            ])?;
+        }
+
         Ok(spacers)
     }
 
@@ -550,7 +568,7 @@ impl Layout {
                         .add_constraint(spacer.size() | EQ(strengths.space_grower) | area_size)?;
                 }
             }
-            // For `SpaceAround`, we want the spacers to be as equal to each other as possible,
+            // For `SpaceBetween`, we want the spacers to be as equal to each other as possible,
             // within reason. We also want spacers to grow and fill excess space.
             // The `layout.spacing` does not have any effect in `SpaceBetween`
             //
@@ -560,7 +578,11 @@ impl Layout {
             // └──────────────────┘└        ┘└──────────────────┘└        ┘└──────────────────┘
             //
             // The only difference between `SpaceAround` and `SpaceBetween` is that we skip adding
-            // any constraints for the first and last spacer
+            // any constraints for the first and last spacer, i.e.:
+            //
+            // ```
+            // spacers.iter().skip(1).rev().skip(1)
+            // ```
             Flex::SpaceBetween => {
                 for (left, right) in spacers.iter().skip(1).rev().skip(1).tuple_combinations() {
                     solver.add_constraint(
@@ -576,22 +598,32 @@ impl Layout {
             // the value in `layout.spacing`
             //
             // <------------------------------80 px (gap: 5 px)------------------------------->
+            // StretchLast / Stretch
             // ┌──────────────────┐┌   ┐┌────────────────────────────┐┌   ┐┌──────────────────┐
             // │     Fixed(20)    │     │           Min(20)          │     │      Max(20)     │
             // └──────────────────┘└   ┘└────────────────────────────┘└   ┘└──────────────────┘
+            // Start
             // ┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐
             // │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
             // └──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘
+            // Center
             //     ┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐
             //     │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
             //     └──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘
+            // End
             //           ┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐
             //           │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
             //           └──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘
             //
-            // We want this to be higher priority than all user provided constraints.
+            // We want these to be higher priority than all user provided constraints.
             // If we don't do this, then `layout.spacing` will take effect in some instance and will
             // not take effect in others, which can be unintuitive.
+            //
+            // Like `SpaceBetween`, we skip adding any constraints for the first and last spacers
+            //
+            // ```
+            // spacers.iter().skip(1).rev().skip(1)
+            // ```
             Flex::StretchLast | Flex::Stretch | Flex::Start | Flex::Center | Flex::End => {
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
                     solver.add_constraint(
@@ -645,15 +677,9 @@ impl Layout {
         let (area_start, area_end, area_size) = layout.get_start_end_size(area);
 
         match layout.flex {
-            Flex::SpaceAround => {
-                if let (Some(first_spacer), Some(last_spacer)) = (spacers.first(), spacers.last()) {
-                    solver.add_constraints(&[
-                        first_spacer.start | EQ(REQUIRED) | area_start,
-                        last_spacer.end | EQ(REQUIRED) | area_end,
-                    ])?;
-                }
-            }
-            Flex::SpaceBetween => {
+            Flex::SpaceBetween | Flex::Stretch | Flex::StretchLast => {
+                // we want the first and last segments to stick to the extremes of the available
+                // area
                 if let (Some(first_segment), Some(last_segment)) =
                     (segments.first(), segments.last())
                 {
@@ -663,24 +689,37 @@ impl Layout {
                     ])?;
                 }
             }
+            Flex::Start => {
+                if let Some(first_segment) = segments.first() {
+                    solver.add_constraint(first_segment.start | EQ(REQUIRED) | area_start)?;
+                }
+            }
+            Flex::End => {
+                if let Some(last_segment) = segments.last() {
+                    solver.add_constraint(last_segment.end | EQ(REQUIRED) | area_end)?;
+                }
+            }
+            _ => {}
+        }
+
+        match layout.flex {
+            Flex::SpaceAround => {}
+            Flex::SpaceBetween => {}
             Flex::StretchLast => {
-                // this is the default behavior
-                // by default cassowary tends to put excess into the last constraint of the lowest
-                // priority.
-                if let (Some(first_segment), Some(last_segment)) =
-                    (segments.first(), segments.last())
-                {
-                    solver.add_constraints(&[
-                        first_segment.start | EQ(REQUIRED) | area_start,
-                        last_segment.end | EQ(REQUIRED) | area_end,
-                    ])?;
-                }
+                // by default cassowary tends to put violate the last lowest priority constraint.
+                // however this is an implementation detail and is not guaranteed.
+                // We can make cassowary `StretchLast` more consistency by adding the following
+                // constraint to grow the segment in size.
+                // This should be one of the weakest constraints, since we want it to only happen
+                // when all other conditions are satisfied.
+
                 // If [Length(10), Length(10), Fixed(10)] is passed in by the user,
-                // we should add this constraint on Length and not Fixed.
+                // we should add this constraint on `Length` and not `Fixed`.
                 // i.e. we want to add the following constraint to the last lowest priority
                 // constraint.
 
-                // TODO: should we ALWAYS stretchlast based on lowest priority?
+                // TODO: should we ALWAYS add the following constraint regardless of `Flex`
+                // always adding it will result in more stable solutions.
                 if let Some((segment, _)) = segments
                     .iter()
                     .zip(&layout.constraints)
@@ -691,28 +730,19 @@ impl Layout {
                 }
             }
             Flex::Stretch => {
-                // this is the same as `StretchLast`
-                if let (Some(first_segment), Some(last_segment)) =
-                    (segments.first(), segments.last())
-                {
-                    solver.add_constraints(&[
-                        first_segment.start | EQ(REQUIRED) | area_start,
-                        last_segment.end | EQ(REQUIRED) | area_end,
-                    ])?;
-                }
-                // however, we add one additional constraint to take priority over cassowary's
-                // default behavior.
-                // We prefer equal segments if other constraints are all satisfied.
+                // We add one additional constraint to take priority over cassowary's default
+                // behavior. We prefer equal segments if other constraints are all
+                // satisfied.
                 for (left, right) in segments.iter().tuple_combinations() {
                     solver.add_constraint(left.size() | EQ(strengths.grower) | right.size())?;
                 }
             }
             Flex::Center => {
-                // for `Flex::Center`, we add two flex segments, one at the beginning and one at the
-                // end. this frees up inner constraints to be their true size.
+                // for `Flex::Center`, we allow the first and last spacer elements to grow. This
+                // frees up inner spacers and segments to be their smallest size.
                 //
-                // These flex segments are like spacers from earlier but are only constrained to
-                // each other in size.
+                // These spacers are also constrained to match each other in size, to get the
+                // remaining segments to be centered.
                 //
                 // <------------------------------80 px (gap: 5 px)------------------------------->
                 // ┌   ┐┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐┌   ┐
@@ -723,9 +753,7 @@ impl Layout {
                     // spacing take priority over flex spacers
                     solver.add_constraints(&[
                         first_spacer.size() | EQ(strengths.grower) | area_size,
-                        first_spacer.start | EQ(REQUIRED) | area_start,
                         last_spacer.size() | EQ(strengths.grower) | area_size,
-                        last_spacer.end | EQ(REQUIRED) | area_end,
                         // finally we ask for a strong preference to make the starting flex and
                         // ending flex the same size, and this results in the remaining constraints
                         // being centered
@@ -736,11 +764,8 @@ impl Layout {
                 }
             }
             Flex::Start => {
-                // for start, we add one flex element one at the end.
-                // this frees up the end constraints and allows inner constraints to be aligned to
-                // the start.
-                //
-                // This flex segment is like a spacer but with no constraints on its size.
+                // for start, we make end spacer grow. This allows inner spacers and segments to be
+                // aligned to the start and to be their smallest size.
                 //
                 // <------------------------------80 px (gap: 5 px)------------------------------->
                 // ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐┌        ┐
@@ -749,22 +774,15 @@ impl Layout {
                 if let Some(first_segment) = segments.first() {
                     solver.add_constraint(first_segment.start | EQ(REQUIRED) | area_start)?;
                 }
-                if let (Some(last_segment), Some(last_spacer)) = (segments.last(), spacers.last()) {
+                if let Some(last_spacer) = spacers.last() {
                     // we use `grower` strength instead of `spacer_grower` here to make user defined
                     // spacing take priority over flex spacers
-                    solver.add_constraints(&[
-                        last_segment.end | EQ(REQUIRED) | last_spacer.start,
-                        last_spacer.end | EQ(REQUIRED) | area_end,
-                        last_spacer.size() | EQ(strengths.grower) | area_size,
-                    ])?;
+                    solver.add_constraint(last_spacer.size() | EQ(strengths.grower) | area_size)?;
                 }
             }
             Flex::End => {
-                // for end, we add one flex element one at the start.
-                // this frees up the start constraints and allows inner constraints to be aligned to
-                // the end.
-                //
-                // This flex segment is like a spacer but with no constraints on its size.
+                // for end, we make the start spacer grow. This allows the inner spacers and
+                // segments to be aligned to the end and to be their smallest size.
                 //
                 // <------------------------------80 px (gap: 5 px)------------------------------->
                 // ┌        ┐┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
@@ -773,16 +791,11 @@ impl Layout {
                 if let Some(last_segment) = segments.last() {
                     solver.add_constraint(last_segment.end | EQ(REQUIRED) | area_end)?;
                 }
-                if let (Some(first_segment), Some(first_spacer)) =
-                    (segments.first(), spacers.first())
-                {
+                if let Some(first_spacer) = spacers.first() {
                     // we use `grower` strength instead of `spacer_grower` here to make user defined
                     // spacing take priority over flex spacers
-                    solver.add_constraints(&[
-                        first_segment.start | EQ(REQUIRED) | first_spacer.end,
-                        first_spacer.start | EQ(REQUIRED) | area_start,
-                        first_spacer.size() | EQ(strengths.grower) | area_size,
-                    ])?;
+                    solver
+                        .add_constraint(first_spacer.size() | EQ(strengths.grower) | area_size)?;
                 }
             }
         }
