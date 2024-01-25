@@ -12,6 +12,17 @@ use super::{Flex, SegmentSize};
 use crate::prelude::*;
 
 type Rects = Rc<[Rect]>;
+// The solution to a Layout solve contains two `Rects`, where `Rects` is effectively a `[Rect]`.
+//
+// 1. `[Rect]` that contains positions for the segments corresponding to user provided constraints
+// 2. `[Rect]` that contains spacers around the user provided constraints
+//
+// <------------------------------------80 px------------------------------------->
+// ┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐
+//   1  │        a         │  2  │         b        │  3  │         c        │  4
+// └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
+//
+// Number of spacers will always be one more than number of segments.
 type Cache = LruCache<(Rect, Layout), (Rects, Rects)>;
 
 thread_local! {
@@ -62,6 +73,7 @@ thread_local! {
 /// - [`Layout::horizontal_margin`]: set the horizontal margin of the layout
 /// - [`Layout::vertical_margin`]: set the vertical margin of the layout
 /// - [`Layout::flex`]: set the way the space is distributed when the constraints are satisfied
+/// - [`Layout::spacing`]: sets the gap between the constraints of the layout
 ///
 /// # Example
 ///
@@ -114,7 +126,8 @@ impl Layout {
     /// Default values for the other fields are:
     ///
     /// - `margin`: 0, 0
-    /// - `flex`: Flex::Fill
+    /// - `flex`: Flex::StretchLast
+    /// - `spacing`: 0
     ///
     /// # Examples
     ///
