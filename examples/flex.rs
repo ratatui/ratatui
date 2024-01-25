@@ -18,25 +18,36 @@ use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     (
         "Min(u16) takes any excess space when using `Stretch` or `StretchLast`",
-        &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10), Proportional(1)],
+        &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10)],
     ),
     (
         "Proportional(u16) takes any excess space always",
         &[Length(20), Percentage(20), Ratio(1, 5), Proportional(1)],
     ),
     (
-        "",
-        &[Percentage(50), Percentage(25), Ratio(1, 8), Proportional(1), Proportional(1)],
+        "Here's all constraints in one line",
+        &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10), Proportional(1)],
     ),
     (
-        "In `StretchLast`, last constraint of lowest priority takes excess space",
+        "",
+        &[Percentage(50), Percentage(25), Ratio(1, 8), Min(10)],
+    ),
+    (
+        "In `StretchLast`, the last constraint of lowest priority takes excess space",
         &[Length(20), Fixed(20), Percentage(20)],
     ),
     ("", &[Fixed(20), Percentage(20), Length(20)]),
-    ("", &[Proportional(1), Percentage(20), Proportional(2)]),
+    ("A lowest priority constraint will be broken before a high priority constraint", &[Ratio(1,4), Percentage(20)]),
+    ("`Length` is higher priority than `Percentage`", &[Percentage(20), Length(10)]),
+    ("`Min/Max` is higher priority than `Length`", &[Length(10), Max(20)]),
+    ("", &[Length(100), Min(20)]),
+    ("`Fixed` is higher priority than `Min/Max`", &[Max(20), Fixed(10)]),
+    ("", &[Min(20), Fixed(90)]),
+    ("Proportional is the lowest priority and will fill any excess space", &[Proportional(1), Ratio(1, 4)]),
+    ("Proportional can be used to scale proportionally with other Proportional blocks", &[Proportional(1), Percentage(20), Proportional(2)]),
     ("", &[Ratio(1, 3), Percentage(20), Ratio(2, 3)]),
-    ("", &[Percentage(20), Length(20), Fixed(20)]),
-    ("", &[Length(20), Length(15)]),
+    ("StretchLast will stretch the last lowest priority constraint\nStretch will only stretch equal weighted constraints", &[Length(20), Length(15)]),
+    ("", &[Percentage(20), Length(15)]),
     ("`Proportional(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Proportional will only have widths in Flex::Stretch and Flex::StretchLast", &[Proportional(1), Proportional(1)]),
     ("", &[Length(20), Fixed(20)]),
     (
