@@ -453,15 +453,16 @@ impl Layout {
         (area_start, area_end, area_size)
     }
 
+    /// Builds a vector of [`Element`]s corresponding to user provided constraints.
+    ///
     /// ```plain
     /// <----------------------------80 px (spacer: 10 px)----------------------------->
     /// ┌──────────────────┐┌        ┐┌──────────────────┐┌        ┐┌──────────────────┐
     /// │     Fixed(20)    │          │      Min(20)     │          │      Max(20)     │
-    /// │       20 px      │   10 px  │       20 px      │   10 px  │       20 px      │
     /// └──────────────────┘└        ┘└──────────────────┘└        ┘└──────────────────┘
     /// ^^^^^^^^^^^^^^^^^^^^          ^^^^^^^^^^^^^^^^^^^^          ^^^^^^^^^^^^^^^^^^^^
     ///          │                              │                             │
-    ///          └──────────────────────────────└───────────────────────────Segments
+    ///          └──────────────────────────────┴───────────────────────────Segments
     /// ```
     fn build_segment_elements(
         solver: &mut Solver,
@@ -479,15 +480,16 @@ impl Layout {
         Ok(segments)
     }
 
+    /// Builds a vector of [`Element`]s corresponding to spacers around user provided constraints.
+    ///
     /// ```plain
-    /// <----------------------------80 px (spacer: 10 px)----------------------------->
-    /// ┌──────────────────┐┌        ┐┌──────────────────┐┌        ┐┌──────────────────┐
-    /// │     Fixed(20)    │          │      Min(20)     │          │      Max(20)     │
-    /// │       20 px      │   10 px  │       20 px      │   10 px  │       20 px      │
-    /// └──────────────────┘└        ┘└──────────────────┘└        ┘└──────────────────┘
-    ///                     ^^^^^^^^^^                    ^^^^^^^^^^
-    ///                          │                              │
-    ///                          └───────────────────────────Spacers
+    /// <------------------------------------80 px------------------------------------->
+    /// ┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐
+    ///      │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
+    /// └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
+    /// ^^^^^                    ^^^^^                    ^^^^^                    ^^^^^
+    ///   │                        │                        │                        │
+    ///   └────────────────────────┴────────────────────────┴─────────────────────Spacers
     /// ```
     fn build_spacer_elements(
         solver: &mut Solver,
@@ -500,12 +502,13 @@ impl Layout {
         //
         // <------------------------------------80 px------------------------------------->
         // ┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐
-        //      │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
+        //   1  │         a        │  2  │         b        │  3  │         c        │  4
         // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
         let spacers: Vec<Element> =
             std::iter::repeat_with(|| Element::constrain(solver, (area_start, area_end)))
                 .take(segments.len().saturating_add(1))
                 .try_collect()?;
+        // number of spacers is always one more than number of segments
         assert_eq!(segments.len() + 1, spacers.len());
         for pair in Itertools::interleave(spacers.iter(), segments.iter())
             .collect::<Vec<&Element>>()
@@ -523,6 +526,15 @@ impl Layout {
         }
 
         if let (Some(first_spacer), Some(last_spacer)) = (spacers.first(), spacers.last()) {
+            // ┌─────────── area_start                                    area_end ───────────┐
+            // v                                                                              v
+            // <------------------------------------80 px------------------------------------->
+            // ┌   ┐                                                                      ┌   ┐
+            //
+            // └   ┘                                                                      └   ┘
+            // ^                                                                              ^
+            // └─────────── first_spacer.start                     last_spacer.end ───────────┘
+            //
             solver.add_constraints(&[
                 first_spacer.start | EQ(REQUIRED) | area_start,
                 last_spacer.end | EQ(REQUIRED) | area_end,
@@ -544,8 +556,6 @@ impl Layout {
     /// * `solver` - A mutable reference to a `Solver` instance.
     /// * `area` - The rectangular area to which the constraints are applied.
     /// * `layout` - The layout containing information about positioning and sizing.
-    /// * `flex` - The flex mode determining the behavior of the spacers.
-    /// * `segments` - An array of elements representing the segments in the layout.
     /// * `spacers` - An array of elements representing the spacers in the layout.
     ///
     /// # Returns
@@ -671,8 +681,8 @@ impl Layout {
     /// * `solver` - A mutable reference to the solver for adding constraints.
     /// * `area` - The area in which the layout segments are to be placed.
     /// * `layout` - The layout containing information about the start, end, and size of the area.
-    /// * `flex` - The flex mode specifying how the segments should be adjusted within the area.
-    /// * `segments` - The vector of layout segments to which the flex constraints will be applied.
+    /// * `segments` - The vector of segment elements to which the flex constraints will be applied.
+    /// * `spacers` - The vector of spacer elements representing the spacers in the layout.
     ///
     /// The function handles each flex mode as follows:
     /// * [`Flex::SpaceBetween`] or `Flex::SpaceAround`]: No specific additional constraints are
