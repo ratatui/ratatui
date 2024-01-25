@@ -555,8 +555,10 @@ impl Layout {
             //
             // <------------------------------------80 px------------------------------------->
             // ┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐
-            //      │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
+            //   1  │     Fixed(20)    │  2  │      Min(20)     │  3  │      Max(20)     │  4
             // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
+            //
+            // Number of spacers with size restricted is number of constraints + 1.
             Flex::SpaceAround => {
                 for (left, right) in spacers.iter().tuple_combinations() {
                     solver.add_constraint(
@@ -574,7 +576,7 @@ impl Layout {
             //
             // <------------------------------------80 px------------------------------------->
             // ┌──────────────────┐┌        ┐┌──────────────────┐┌        ┐┌──────────────────┐
-            // │     Fixed(20)    │          │      Min(20)     │          │      Max(20)     │
+            // │     Fixed(20)    │    1     │      Min(20)     │    2     │      Max(20)     │
             // └──────────────────┘└        ┘└──────────────────┘└        ┘└──────────────────┘
             //
             // The only difference between `SpaceAround` and `SpaceBetween` is that we skip adding
@@ -583,6 +585,8 @@ impl Layout {
             // ```
             // spacers.iter().skip(1).rev().skip(1)
             // ```
+            //
+            // Therefore, number of spacers with size restricted is number of constraints - 1.
             Flex::SpaceBetween => {
                 for (left, right) in spacers.iter().skip(1).rev().skip(1).tuple_combinations() {
                     solver.add_constraint(
@@ -602,22 +606,30 @@ impl Layout {
             // ┌──────────────────┐┌   ┐┌────────────────────────────┐┌   ┐┌──────────────────┐
             // │     Fixed(20)    │     │           Min(20)          │     │      Max(20)     │
             // └──────────────────┘└   ┘└────────────────────────────┘└   ┘└──────────────────┘
+            //                     ^^^^^                              ^^^^^
+            //                       └──────────────────────────────────┴───────────────Spacers
             // Start
             // ┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐
             // │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
             // └──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘
+            //                     ^^^^^                    ^^^^^
+            //                       └────────────────────────┴─────────────────────────Spacers
             // Center
             //     ┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐
             //     │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
             //     └──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘
+            //                         ^^^^^                    ^^^^^
+            //                           └────────────────────────┴─────────────────────Spacers
             // End
             //           ┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐
             //           │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
             //           └──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘
+            //                               ^^^^^                    ^^^^^
+            //                                 └────────────────────────┴───────────────Spacers
             //
             // We want these to be higher priority than all user provided constraints.
-            // If we don't do this, then `layout.spacing` will take effect in some instance and will
-            // not take effect in others, which can be unintuitive.
+            // If we don't do this, then `layout.spacing` will take effect in some instances and
+            // not in others, which can be unintuitive.
             //
             // Like `SpaceBetween`, we skip adding any constraints for the first and last spacers
             //
@@ -748,6 +760,8 @@ impl Layout {
                 // ┌   ┐┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐┌   ┐
                 //      │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
                 // └   ┘└──────────────────┘     └──────────────────┘     └──────────────────┘└   ┘
+                // ^^^^^                                                                      ^^^^^
+                //   └─────────────────────────────Spacers──────────────────────────────────────┘
                 if let (Some(first_spacer), Some(last_spacer)) = (spacers.first(), spacers.last()) {
                     // we use `grower` strength instead of `spacer_grower` here to make user defined
                     // spacing take priority over flex spacers
@@ -771,6 +785,8 @@ impl Layout {
                 // ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐┌        ┐
                 // │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
                 // └──────────────────┘     └──────────────────┘     └──────────────────┘└        ┘
+                //                                                                       ^^^^^^^^^^
+                //                                  Spacer───────────────────────────────────┘
                 if let Some(first_segment) = segments.first() {
                     solver.add_constraint(first_segment.start | EQ(REQUIRED) | area_start)?;
                 }
@@ -788,6 +804,8 @@ impl Layout {
                 // ┌        ┐┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
                 //           │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
                 // └        ┘└──────────────────┘     └──────────────────┘     └──────────────────┘
+                // ^^^^^^^^^^
+                //      └──────────────────────────Spacer
                 if let Some(last_segment) = segments.last() {
                     solver.add_constraint(last_segment.end | EQ(REQUIRED) | area_end)?;
                 }
