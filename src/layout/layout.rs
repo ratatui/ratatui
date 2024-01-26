@@ -1054,18 +1054,57 @@ impl Element {
 
 mod strengths {
     use cassowary::strength::{MEDIUM, REQUIRED, STRONG, WEAK};
+    /// ┌     ┐┌───┐┌     ┐┌───┐┌     ┐
+    ///   ==x  │   │  ==x  │   │  ==x
+    /// └     ┘└───┘└     ┘└───┘└     ┘
     pub const SPACER_SIZE_EQ: f64 = REQUIRED - 1.0;
+    /// ┌───────────────┐┌───────────────┐
+    /// │Proportional(x)││Proportional(x)│
+    /// └───────────────┘└───────────────┘
     pub const PROPORTIONAL_SCALING_EQ: f64 = REQUIRED - 1.0;
+    /// ┌──────────┐
+    /// │Fixed(==x)│
+    /// └──────────┘
     pub const FIXED_SIZE_EQ: f64 = REQUIRED / 10.0;
+    /// ┌────────┐┌────────┐
+    /// │Min(>=x)││Max(<=x)│
+    /// └────────┘└────────┘
     pub const MIN_SIZE_GE: f64 = STRONG * 10.0;
+    /// ┌────────┐┌────────┐
+    /// │Min(>=x)││Max(<=x)│
+    /// └────────┘└────────┘
     pub const MAX_SIZE_LE: f64 = STRONG * 10.0;
+    /// ┌───────────┐
+    /// │Length(==x)│
+    /// └───────────┘
     pub const LENGTH_SIZE_EQ: f64 = STRONG / 10.0;
+    /// ┌───────────────┐
+    /// │Percentage(==x)│
+    /// └───────────────┘
     pub const PERCENTAGE_SIZE_EQ: f64 = MEDIUM * 10.0;
+    /// ┌────────────┐
+    /// │Ratio(==x,y)│
+    /// └────────────┘
     pub const RATIO_SIZE_EQ: f64 = MEDIUM;
+    /// ┌────────┐┌────────┐
+    /// │Min(==x)││Max(==x)│
+    /// └────────┘└────────┘
     pub const MIN_SIZE_EQ: f64 = MEDIUM / 10.0;
+    /// ┌────────┐┌────────┐
+    /// │Min(==x)││Max(==x)│
+    /// └────────┘└────────┘
     pub const MAX_SIZE_EQ: f64 = MEDIUM / 10.0;
+    /// ┌─────────────────────┐
+    /// │<= Proportional(x) =>│
+    /// └─────────────────────┘
     pub const PROPORTIONAL_GROWER: f64 = WEAK * 10.0;
+    /// ┌────────────┐
+    /// │<= Min(x) =>│
+    /// └────────────┘
     pub const GROWER: f64 = WEAK;
+    /// ┌       ┐
+    ///  <= x =>
+    /// └       ┘
     pub const SPACE_GROWER: f64 = WEAK / 10.0;
 }
 
