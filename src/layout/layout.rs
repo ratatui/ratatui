@@ -443,16 +443,6 @@ impl Layout {
         self.flex(flex)
     }
 
-    fn get_start_end_size(&self, area: Rect) -> (f64, f64, f64) {
-        let inner = area.inner(&self.margin);
-        let (area_start, area_end) = match self.direction {
-            Direction::Horizontal => (f64::from(inner.x), f64::from(inner.right())),
-            Direction::Vertical => (f64::from(inner.y), f64::from(inner.bottom())),
-        };
-        let area_size = area_end - area_start;
-        (area_start, area_end, area_size)
-    }
-
     /// Builds a vector of [`Element`]s corresponding to user provided constraints.
     ///
     /// ```plain
@@ -469,14 +459,20 @@ impl Layout {
         area: Rect,
         layout: &Layout,
     ) -> Result<Vec<Element>, AddConstraintError> {
-        let (area_start, area_end, _area_size) = layout.get_start_end_size(area);
-        // create an element for each constraint that needs to be applied. Each element defines the
-        // variables that will be used to compute the layout.
-        let segments: Vec<Element> = layout
-            .constraints
-            .iter()
-            .map(|_| Element::constrain(solver, (area_start, area_end)))
-            .try_collect()?;
+        let (start, end, _size) = layout.start_end_size(area);
+
+        let segments = std::iter::repeat_with(Element::new)
+            .take(layout.constraints.len())
+            .collect_vec();
+
+        for segment in segments.iter() {
+            solver.add_constraints(&[
+                segment.start | GE(REQUIRED) | start,
+                segment.end | LE(REQUIRED) | end,
+                segment.start | LE(REQUIRED) | segment.end,
+            ])?;
+        }
+
         Ok(segments)
     }
 
@@ -497,22 +493,29 @@ impl Layout {
         layout: &Layout,
         segments: &[Element],
     ) -> Result<Vec<Element>, AddConstraintError> {
-        let (area_start, area_end, _area_size) = layout.get_start_end_size(area);
+        let (start, end, _size) = layout.start_end_size(area);
         // We add spacer element before and after every segment element.
         //
         // <------------------------------------80 px------------------------------------->
         // ┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐
         //   1  │         a        │  2  │         b        │  3  │         c        │  4
         // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
-        let spacers: Vec<Element> =
-            std::iter::repeat_with(|| Element::constrain(solver, (area_start, area_end)))
-                .take(segments.len().saturating_add(1))
-                .try_collect()?;
+        let spacers: Vec<Element> = std::iter::repeat_with(Element::new)
+            .take(layout.constraints.len().saturating_add(1))
+            .collect();
+
+        for spacer in spacers.iter() {
+            solver.add_constraints(&[
+                spacer.start | GE(REQUIRED) | start,
+                spacer.end | LE(REQUIRED) | end,
+                spacer.start | LE(REQUIRED) | spacer.end,
+            ])?;
+        }
+
         // number of spacers is always one more than number of segments
         assert_eq!(segments.len() + 1, spacers.len());
-        for pair in Itertools::interleave(spacers.iter(), segments.iter())
-            .collect::<Vec<&Element>>()
-            .windows(2)
+
+        for (left, right) in Itertools::interleave(spacers.iter(), segments.iter()).tuple_windows()
         {
             // we ensure that spacers and segments are sequentially placed
             //
@@ -520,9 +523,9 @@ impl Layout {
             //      │    │
             // └   ┘└────┘
             //     ^^
-            //     │└────── pair[1].start
-            //     └─────── pair[0].end
-            solver.add_constraint(pair[0].end | EQ(REQUIRED) | pair[1].start)?;
+            //     │└────── left.start
+            //     └─────── right.end
+            solver.add_constraint(left.end | EQ(REQUIRED) | right.start)?;
         }
 
         if let (Some(first_spacer), Some(last_spacer)) = (spacers.first(), spacers.last()) {
@@ -536,8 +539,8 @@ impl Layout {
             // └─────────── first_spacer.start                     last_spacer.end ───────────┘
             //
             solver.add_constraints(&[
-                first_spacer.start | EQ(REQUIRED) | area_start,
-                last_spacer.end | EQ(REQUIRED) | area_end,
+                first_spacer.start | EQ(REQUIRED) | start,
+                last_spacer.end | EQ(REQUIRED) | end,
             ])?;
         }
 
@@ -569,7 +572,7 @@ impl Layout {
         layout: &Layout,
         spacers: &[Element],
     ) -> Result<(), AddConstraintError> {
-        let (_area_start, _area_end, area_size) = layout.get_start_end_size(area);
+        let (_area_start, _area_end, area_size) = layout.start_end_size(area);
 
         match layout.flex {
             // For `SpaceAround`, we want the spacers to be as equal to each other as possible,
@@ -709,7 +712,7 @@ impl Layout {
         segments: &[Element],
         spacers: &[Element],
     ) -> Result<(), AddConstraintError> {
-        let (area_start, area_end, area_size) = layout.get_start_end_size(area);
+        let (area_start, area_end, area_size) = layout.start_end_size(area);
 
         match layout.flex {
             Flex::SpaceBetween | Flex::Stretch | Flex::StretchLast => {
@@ -810,9 +813,6 @@ impl Layout {
                 // └──────────────────┘     └──────────────────┘     └──────────────────┘└        ┘
                 //                                                                       ^^^^^^^^^^
                 //                                  Spacer───────────────────────────────────┘
-                if let Some(first_segment) = segments.first() {
-                    solver.add_constraint(first_segment.start | EQ(REQUIRED) | area_start)?;
-                }
                 if let Some(last_spacer) = spacers.last() {
                     // we use `grower` strength instead of `spacer_grower` here to make user defined
                     // spacing take priority over flex spacers
@@ -829,9 +829,6 @@ impl Layout {
                 // └        ┘└──────────────────┘     └──────────────────┘     └──────────────────┘
                 // ^^^^^^^^^^
                 //      └──────────────────────────Spacer
-                if let Some(last_segment) = segments.last() {
-                    solver.add_constraint(last_segment.end | EQ(REQUIRED) | area_end)?;
-                }
                 if let Some(first_spacer) = spacers.first() {
                     // we use `grower` strength instead of `spacer_grower` here to make user defined
                     // spacing take priority over flex spacers
@@ -866,7 +863,7 @@ impl Layout {
         layout: &Layout,
         segments: &[Element],
     ) -> Result<(), AddConstraintError> {
-        let (_area_start, _area_end, area_size) = layout.get_start_end_size(area);
+        let (_area_start, _area_end, area_size) = layout.start_end_size(area);
 
         // apply the constraints
         for (&constraint, &element) in layout.constraints.iter().zip(segments.iter()) {
@@ -1110,6 +1107,16 @@ impl Layout {
             .clone()
         })
     }
+
+    fn start_end_size(&self, area: Rect) -> (f64, f64, f64) {
+        let inner = area.inner(&self.margin);
+        let (area_start, area_end) = match self.direction {
+            Direction::Horizontal => (f64::from(inner.x), f64::from(inner.right())),
+            Direction::Vertical => (f64::from(inner.y), f64::from(inner.bottom())),
+        };
+        let area_size = area_end - area_start;
+        (area_start, area_end, area_size)
+    }
 }
 
 /// A container used by the solver inside split
@@ -1126,22 +1133,6 @@ impl Element {
             start: Variable::new(),
             end: Variable::new(),
         }
-    }
-
-    fn constrain(
-        solver: &mut Solver,
-        (area_start, area_end): (f64, f64),
-    ) -> Result<Self, AddConstraintError> {
-        let e = Element {
-            start: Variable::new(),
-            end: Variable::new(),
-        };
-        solver.add_constraints(&[
-            e.start | GE(REQUIRED) | area_start,
-            e.end | LE(REQUIRED) | area_end,
-            e.start | LE(REQUIRED) | e.end,
-        ])?;
-        Ok(e)
     }
 
     fn size(&self) -> Expression {
@@ -1584,6 +1575,22 @@ mod tests {
             assert_buffer_eq!(buffer, expected);
         }
 
+        #[track_caller]
+        fn test_with_stretch(area: Rect, constraints: &[Constraint], expected: &str) {
+            let layout = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints(constraints)
+                .flex(Flex::Stretch)
+                .split(area);
+            let mut buffer = Buffer::empty(area);
+            for (i, c) in ('a'..='z').take(constraints.len()).enumerate() {
+                let s: String = c.to_string().repeat(area.width as usize);
+                Paragraph::new(s).render(layout[i], &mut buffer);
+            }
+            let expected = Buffer::with_lines(vec![expected]);
+            assert_buffer_eq!(buffer, expected);
+        }
+
         #[test]
         fn length() {
             test(Rect::new(0, 0, 1, 1), &[Length(0)], "a"); // zero
@@ -1600,6 +1607,7 @@ mod tests {
             test(Rect::new(0, 0, 1, 1), &[Length(0), Length(2)], "b"); // zero, overflow
             test(Rect::new(0, 0, 1, 1), &[Length(1), Length(0)], "a"); // exact, zero
             test(Rect::new(0, 0, 1, 1), &[Length(1), Length(1)], "b"); // exact, exact with stretchlast
+            test_with_stretch(Rect::new(0, 0, 1, 1), &[Length(1), Length(1)], "a"); // exact, exact
             test(Rect::new(0, 0, 1, 1), &[Length(1), Length(2)], "b"); // exact, overflow with stretchlast
             test(Rect::new(0, 0, 1, 1), &[Length(2), Length(0)], "a"); // overflow, zero
             test(Rect::new(0, 0, 1, 1), &[Length(2), Length(1)], "b"); // overflow, exact with stretch last
