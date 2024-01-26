@@ -516,6 +516,9 @@ impl Layout {
         Ok(spacers)
     }
 
+    /// Applies flex constraints to the given layout segments based on the specified flex mode.
+    /// The function adjusts the layout segments within the provided area according to the specified
+    /// Flex mode.
     fn add_flex_constraints(
         solver: &mut Solver,
         area: Rect,
@@ -534,6 +537,12 @@ impl Layout {
                 }
             }
             Flex::SpaceBetween => {
+                // The difference between `SpaceAround` is that we skip
+                // adding any constraints for the first and last spacer, i.e. we use the following:
+                //
+                // ```
+                // spacers.iter().skip(1).rev().skip(1)
+                // ```
                 for (left, right) in spacers.iter().skip(1).rev().skip(1).tuple_combinations() {
                     solver.add_constraint(left.equals_size_of(right, strengths::SPACER_SIZE_EQ))?
                 }
@@ -546,14 +555,14 @@ impl Layout {
                 if let Some(last_segment) = segments.last() {
                     solver.add_constraint(last_segment.end_sticks_to(end))?
                 }
-                // solver.add_constraint(segments.first().map(|e| e.stick_start_to(start)).ok_or(
-                //     AddConstraintError::InternalSolverError("Unable to get first segment"),
-                // )?)?;
-                // solver.add_constraint(segments.last().map(|e| e.stick_end_to(end)).ok_or(
-                //     AddConstraintError::InternalSolverError("Unable to get last segment"),
-                // )?)?;
             }
             Flex::StretchLast => {
+                // The difference between `SpaceAround` is that we skip
+                // adding any constraints for the first and last spacer, i.e. we use the following:
+                //
+                // ```
+                // spacers.iter().skip(1).rev().skip(1)
+                // ```
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
                     solver.add_constraint(
                         spacer.equals_size_to(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
@@ -565,6 +574,16 @@ impl Layout {
                 if let Some(last_segment) = segments.last() {
                     solver.add_constraint(last_segment.end_sticks_to(end))?
                 }
+                // by default cassowary tends to violate the last lowest priority constraint.
+                // however this is an implementation detail and is not guaranteed.
+                // We can make cassowary `StretchLast` more consistent by adding the following
+                // constraint to grow the last lowest priority segment in size.
+                // This should be of a weak strength, since we want it to only happen
+                // when all other conditions are satisfied.
+                // The reason we sort the constraints is that if for example [Length(10),
+                // Length(10), Fixed(10)] is passed in by the user, we should add
+                // this constraint on `Length` and not `Fixed`. i.e. we want to add
+                // the following constraint to the last lowest priority constraint.
                 if let Some((segment, _)) = segments
                     .iter()
                     .zip(&layout.constraints)
@@ -575,6 +594,12 @@ impl Layout {
                 }
             }
             Flex::Stretch => {
+                // The difference between `SpaceAround` is that we skip
+                // adding any constraints for the first and last spacer, i.e. we use the following:
+                //
+                // ```
+                // spacers.iter().skip(1).rev().skip(1)
+                // ```
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
                     solver.add_constraint(
                         spacer.equals_size_to(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
@@ -591,6 +616,12 @@ impl Layout {
                 }
             }
             Flex::Start => {
+                // The difference between `SpaceAround` is that we skip
+                // adding any constraints for the first and last spacer, i.e. we use the following:
+                //
+                // ```
+                // spacers.iter().skip(1).rev().skip(1)
+                // ```
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
                     solver.add_constraint(
                         spacer.equals_size_to(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
@@ -604,6 +635,12 @@ impl Layout {
                 }
             }
             Flex::Center => {
+                // The difference between `SpaceAround` is that we skip
+                // adding any constraints for the first and last spacer, i.e. we use the following:
+                //
+                // ```
+                // spacers.iter().skip(1).rev().skip(1)
+                // ```
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
                     solver.add_constraint(
                         spacer.equals_size_to(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
@@ -622,6 +659,12 @@ impl Layout {
                 }
             }
             Flex::End => {
+                // The difference between `SpaceAround` is that we skip
+                // adding any constraints for the first and last spacer, i.e. we use the following:
+                //
+                // ```
+                // spacers.iter().skip(1).rev().skip(1)
+                // ```
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
                     solver.add_constraint(
                         spacer.equals_size_to(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
