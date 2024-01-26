@@ -762,37 +762,6 @@ impl Layout {
         Ok(())
     }
 
-    fn get_results(
-        changes: &HashMap<Variable, f64>,
-        area: Rect,
-        layout: &Layout,
-        elements: &[Element],
-    ) -> Rects {
-        // convert to Rects
-        elements
-            .iter()
-            .map(|element| {
-                let start = changes.get(&element.start).unwrap_or(&0.0).round() as u16;
-                let end = changes.get(&element.end).unwrap_or(&0.0).round() as u16;
-                let size = end.saturating_sub(start);
-                match layout.direction {
-                    Direction::Horizontal => Rect {
-                        x: start,
-                        y: area.y,
-                        width: size,
-                        height: area.height,
-                    },
-                    Direction::Vertical => Rect {
-                        x: area.x,
-                        y: start,
-                        width: area.width,
-                        height: size,
-                    },
-                }
-            })
-            .collect::<Rects>()
-    }
-
     fn try_split(area: Rect, layout: &Layout) -> Result<(Rects, Rects), AddConstraintError> {
         // To take advantage of all of cassowary features, we would want to store the `Solver` in
         // one of the fields of the Layout struct. And we would want to set it up such that we could
@@ -843,6 +812,37 @@ impl Layout {
         Ok((segment_rects, spacer_rects))
     }
 
+    fn get_results(
+        changes: &HashMap<Variable, f64>,
+        area: Rect,
+        layout: &Layout,
+        elements: &[Element],
+    ) -> Rects {
+        // convert to Rects
+        elements
+            .iter()
+            .map(|element| {
+                let start = changes.get(&element.start).unwrap_or(&0.0).round() as u16;
+                let end = changes.get(&element.end).unwrap_or(&0.0).round() as u16;
+                let size = end.saturating_sub(start);
+                match layout.direction {
+                    Direction::Horizontal => Rect {
+                        x: start,
+                        y: area.y,
+                        width: size,
+                        height: area.height,
+                    },
+                    Direction::Vertical => Rect {
+                        x: area.x,
+                        y: start,
+                        width: area.width,
+                        height: size,
+                    },
+                }
+            })
+            .collect::<Rects>()
+    }
+
     /// Wrapper function around the cassowary-rs solver to be able to split a given area into
     /// smaller ones based on the preferred widths or heights and the direction.
     ///
@@ -881,6 +881,51 @@ impl Layout {
         self.split_with_spacers(area).0
     }
 
+    /// Wrapper function around the cassowary-r solver that splits the given area into smaller ones
+    /// based on the preferred widths or heights and the direction, with the ability to include
+    /// spacers between the areas.
+    ///
+    /// This method is similar to `split`, but it returns two sets of rectangles: one for the areas
+    /// and one for the spacers.
+    ///
+    /// This method stores the result of the computation in a thread-local cache keyed on the layout
+    /// and area, so that subsequent calls with the same parameters are faster. The cache is a
+    /// LruCache, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
+    /// is initialized with the [Layout::init_cache()] grows until the initialized cache size.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::prelude::*;
+    /// let (areas, spacers) = Layout::default()
+    ///     .direction(Direction::Vertical)
+    ///     .constraints([Constraint::Length(5), Constraint::Min(0)])
+    ///     .split_with_spacers(Rect::new(2, 2, 10, 10));
+    /// assert_eq!(areas[..], [Rect::new(2, 2, 10, 5), Rect::new(2, 7, 10, 5)]);
+    /// assert_eq!(
+    ///     spacers[..],
+    ///     [
+    ///         Rect::new(2, 2, 10, 0),
+    ///         Rect::new(2, 7, 10, 0),
+    ///         Rect::new(2, 12, 10, 0)
+    ///     ]
+    /// );
+    ///
+    /// let (areas, spacers) = Layout::default()
+    ///     .direction(Direction::Horizontal)
+    ///     .spacing(1)
+    ///     .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
+    ///     .split_with_spacers(Rect::new(0, 0, 10, 2));
+    /// assert_eq!(areas[..], [Rect::new(0, 0, 2, 2), Rect::new(3, 0, 7, 2)]);
+    /// assert_eq!(
+    ///     spacers[..],
+    ///     [
+    ///         Rect::new(0, 0, 0, 2),
+    ///         Rect::new(2, 0, 1, 2),
+    ///         Rect::new(10, 0, 0, 2)
+    ///     ]
+    /// );
+    /// ```
     pub fn split_with_spacers(&self, area: Rect) -> (Rects, Rects) {
         LAYOUT_CACHE.with(|c| {
             c.get_or_init(|| {
