@@ -1106,13 +1106,49 @@ mod strengths {
     ///  <= x =>
     /// └       ┘
     pub const SPACE_GROWER: f64 = WEAK / 10.0;
+
+    #[allow(dead_code)]
+    pub fn is_valid() -> bool {
+        SPACER_SIZE_EQ > FIXED_SIZE_EQ
+            && PROPORTIONAL_SCALING_EQ > FIXED_SIZE_EQ
+            && FIXED_SIZE_EQ > MIN_SIZE_GE
+            && MIN_SIZE_GE > MIN_SIZE_EQ
+            && MAX_SIZE_LE > MAX_SIZE_EQ
+            && MIN_SIZE_EQ == MAX_SIZE_EQ
+            && MIN_SIZE_GE == MAX_SIZE_LE
+            && MAX_SIZE_LE > LENGTH_SIZE_EQ
+            && LENGTH_SIZE_EQ > PERCENTAGE_SIZE_EQ
+            && PERCENTAGE_SIZE_EQ > RATIO_SIZE_EQ
+            && RATIO_SIZE_EQ > MAX_SIZE_EQ
+            && MIN_SIZE_GE > PROPORTIONAL_GROWER
+            && PROPORTIONAL_GROWER > GROWER
+            && GROWER > SPACE_GROWER
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use std::iter;
 
+    use cassowary::strength::{MEDIUM, REQUIRED, STRONG, WEAK};
+
     use super::*;
+
+    #[test]
+    fn strength() {
+        assert!(strengths::is_valid());
+        assert_eq!(strengths::SPACER_SIZE_EQ, REQUIRED - 1.0);
+        assert_eq!(strengths::PROPORTIONAL_SCALING_EQ, REQUIRED - 1.0);
+        assert_eq!(strengths::FIXED_SIZE_EQ, REQUIRED / 10.0);
+        assert_eq!(strengths::MIN_SIZE_GE, STRONG * 10.0);
+        assert_eq!(strengths::LENGTH_SIZE_EQ, STRONG / 10.0);
+        assert_eq!(strengths::PERCENTAGE_SIZE_EQ, MEDIUM * 10.0);
+        assert_eq!(strengths::RATIO_SIZE_EQ, MEDIUM);
+        assert_eq!(strengths::MIN_SIZE_EQ, MEDIUM / 10.0);
+        assert_eq!(strengths::PROPORTIONAL_GROWER, WEAK * 10.0);
+        assert_eq!(strengths::GROWER, WEAK);
+        assert_eq!(strengths::SPACE_GROWER, WEAK / 10.0);
+    }
 
     #[test]
     fn custom_cache_size() {
