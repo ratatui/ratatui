@@ -3,12 +3,16 @@ use crate::{
     widgets::canvas::{Painter, Shape},
 };
 
-/// Shape to draw a circle with a given center and radius and with the given color
+/// A circle with a given center and radius and with a given color
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Circle {
+    /// `x` coordinate of the circle's center
     pub x: f64,
+    /// `y` coordinate of the circle's center
     pub y: f64,
+    /// Radius of the circle
     pub radius: f64,
+    /// Color of the circle
     pub color: Color,
 }
 

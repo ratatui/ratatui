@@ -216,7 +216,12 @@ pub trait Widget {
 /// }
 /// ```
 pub trait StatefulWidget {
+    /// State associated with the stateful widget.
+    ///
+    /// If you don't need this then you probably want to implement [`Widget`] instead.
     type State;
+    /// Draws the current state of the widget in the given buffer. That is the only method required
+    /// to implement a custom stateful widget.
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
 }
 
@@ -291,6 +296,8 @@ pub trait StatefulWidget {
 /// ```
 #[stability::unstable(feature = "widget-ref")]
 pub trait WidgetRef {
+    /// Draws the current state of the widget in the given buffer. That is the only method required
+    /// to implement a custom widget.
     fn render_ref(&self, area: Rect, buf: &mut Buffer);
 }
 
@@ -386,7 +393,12 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 /// ```
 #[stability::unstable(feature = "widget-ref")]
 pub trait StatefulWidgetRef {
+    /// State associated with the stateful widget.
+    ///
+    /// If you don't need this then you probably want to implement [`WidgetRef`] instead.
     type State;
+    /// Draws the current state of the widget in the given buffer. That is the only method required
+    /// to implement a custom stateful widget.
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
 }
 
