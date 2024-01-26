@@ -508,8 +508,8 @@ impl Layout {
 
         if let (Some(first_spacer), Some(last_spacer)) = (spacers.first(), spacers.last()) {
             solver.add_constraints(&[
-                first_spacer.sticks_start_to(start),
-                last_spacer.sticks_end_to(end),
+                first_spacer.start_sticks_to(start),
+                last_spacer.end_sticks_to(end),
             ])?;
         }
 
@@ -541,10 +541,10 @@ impl Layout {
                     solver.add_constraint(spacer.equals_size_to(size, strengths::SPACE_GROWER))?;
                 }
                 if let Some(first_segment) = segments.first() {
-                    solver.add_constraint(first_segment.sticks_start_to(start))?
+                    solver.add_constraint(first_segment.start_sticks_to(start))?
                 }
                 if let Some(last_segment) = segments.last() {
-                    solver.add_constraint(last_segment.sticks_end_to(end))?
+                    solver.add_constraint(last_segment.end_sticks_to(end))?
                 }
                 // solver.add_constraint(segments.first().map(|e| e.stick_start_to(start)).ok_or(
                 //     AddConstraintError::InternalSolverError("Unable to get first segment"),
@@ -560,10 +560,10 @@ impl Layout {
                     )?;
                 }
                 if let Some(first_segment) = segments.first() {
-                    solver.add_constraint(first_segment.sticks_start_to(start))?
+                    solver.add_constraint(first_segment.start_sticks_to(start))?
                 }
                 if let Some(last_segment) = segments.last() {
-                    solver.add_constraint(last_segment.sticks_end_to(end))?
+                    solver.add_constraint(last_segment.end_sticks_to(end))?
                 }
                 if let Some((segment, _)) = segments
                     .iter()
@@ -581,10 +581,10 @@ impl Layout {
                     )?;
                 }
                 if let Some(first_segment) = segments.first() {
-                    solver.add_constraint(first_segment.sticks_start_to(start))?
+                    solver.add_constraint(first_segment.start_sticks_to(start))?
                 }
                 if let Some(last_segment) = segments.last() {
-                    solver.add_constraint(last_segment.sticks_end_to(end))?
+                    solver.add_constraint(last_segment.end_sticks_to(end))?
                 }
                 for (left, right) in segments.iter().tuple_combinations() {
                     solver.add_constraint(left.equals_size_of(right, strengths::GROWER))?;
@@ -597,7 +597,7 @@ impl Layout {
                     )?;
                 }
                 if let Some(first_segment) = segments.first() {
-                    solver.add_constraint(first_segment.sticks_start_to(start))?
+                    solver.add_constraint(first_segment.start_sticks_to(start))?
                 }
                 if let Some(last_spacer) = spacers.last() {
                     solver.add_constraint(last_spacer.grows_to(size))?;
@@ -628,7 +628,7 @@ impl Layout {
                     )?;
                 }
                 if let Some(last_segment) = segments.last() {
-                    solver.add_constraint(last_segment.sticks_end_to(end))?
+                    solver.add_constraint(last_segment.end_sticks_to(end))?
                 }
                 if let Some(first_spacer) = spacers.first() {
                     solver.add_constraint(first_spacer.grows_to(size))?;
@@ -943,11 +943,11 @@ impl Element {
         self.size() | EQ(strength) | other.size()
     }
 
-    fn sticks_start_to(&self, value: f64) -> cassowary::Constraint {
+    fn start_sticks_to(&self, value: f64) -> cassowary::Constraint {
         self.start | EQ(REQUIRED) | value
     }
 
-    fn sticks_end_to(&self, value: f64) -> cassowary::Constraint {
+    fn end_sticks_to(&self, value: f64) -> cassowary::Constraint {
         self.end | EQ(REQUIRED) | value
     }
 
