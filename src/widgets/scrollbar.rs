@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 use std::iter;
 
 use strum::{Display, EnumString};

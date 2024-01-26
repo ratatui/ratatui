@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 use std::cmp::max;
 
 use strum::{Display, EnumString};

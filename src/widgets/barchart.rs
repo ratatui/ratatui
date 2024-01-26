@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 use crate::{prelude::*, widgets::Block};
 
 mod bar;

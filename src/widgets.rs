@@ -1,3 +1,4 @@
+#![warn(missing_docs)]
 //! `widgets` is a collection of types that implement [`Widget`] or [`StatefulWidget`] or both.
 //!
 //! Widgets are created for each frame as they are consumed after rendered.

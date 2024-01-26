@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
