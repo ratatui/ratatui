@@ -14,11 +14,12 @@ use itertools::Itertools;
 /// Constraints are prioritized in the following order:
 ///
 /// 1. [`Constraint::Fixed`]
-/// 2. [`Constraint::Min`] / [`Constraint::Max`]
-/// 3. [`Constraint::Length`]
-/// 4. [`Constraint::Percentage`]
-/// 5. [`Constraint::Ratio`]
-/// 6. [`Constraint::Proportional`]
+/// 2. [`Constraint::Min`]
+/// 3. [`Constraint::Max`]
+/// 4. [`Constraint::Length`]
+/// 5. [`Constraint::Percentage`]
+/// 6. [`Constraint::Ratio`]
+/// 7. [`Constraint::Proportional`]
 ///
 /// # Examples
 ///
