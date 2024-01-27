@@ -69,7 +69,7 @@ impl App {
         Ok(())
     }
 
-    fn draw(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
+    fn draw(&self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
         terminal.draw(|f| f.render_widget(self, f.size()))?;
         Ok(())
     }
@@ -118,7 +118,7 @@ impl App {
     }
 }
 
-impl Widget for &mut App {
+impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         use Constraint::*;
         let layout = Layout::vertical([Length(2), Min(0), Length(1)]);
