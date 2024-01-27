@@ -120,7 +120,7 @@ enum SelectedTab {
 
 fn main() -> Result<()> {
     // assuming the user changes spacing about a 100 times or so
-    Layout::init_cache(1);
+    Layout::init_cache(EXAMPLE_DATA.len() * SelectedTab::iter().len() * 100);
     init_error_hooks()?;
     let terminal = init_terminal()?;
     App::default().run(terminal)?;
