@@ -108,11 +108,7 @@ fn draw_line_high(painter: &mut Painter, x1: usize, y1: usize, x2: usize, y2: us
 #[cfg(test)]
 mod tests {
     use super::Line;
-    use crate::{
-        assert_buffer_eq,
-        prelude::*,
-        widgets::{canvas::Canvas, Widget},
-    };
+    use crate::{assert_buffer_eq, prelude::*, widgets::canvas::Canvas};
 
     #[track_caller]
     fn test(line: Line, expected_lines: Vec<&str>) {

@@ -8,13 +8,20 @@ use time::OffsetDateTime;
 
 use crate::{color_from_oklab, RgbSwatch, THEME};
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct WeatherTab {
-    pub selected_row: usize,
+    pub download_progress: usize,
 }
 
 impl WeatherTab {
-    pub fn new(selected_row: usize) -> Self {
-        Self { selected_row }
+    /// Simulate a download indicator by decrementing the row index.
+    pub fn prev(&mut self) {
+        self.download_progress = self.download_progress.saturating_sub(1);
+    }
+
+    /// Simulate a download indicator by incrementing the row index.
+    pub fn next(&mut self) {
+        self.download_progress = self.download_progress.saturating_add(1);
     }
 }
 
@@ -49,7 +56,7 @@ impl Widget for WeatherTab {
         render_calendar(calendar, buf);
         render_simple_barchart(simple, buf);
         render_horizontal_barchart(horizontal, buf);
-        render_gauge(self.selected_row, gauges, buf);
+        render_gauge(self.download_progress, gauges, buf);
     }
 }
 

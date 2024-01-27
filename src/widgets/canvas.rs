@@ -16,14 +16,7 @@ pub use self::{
     points::Points,
     rectangle::Rectangle,
 };
-use crate::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Color, Style},
-    symbols,
-    text::Line as TextLine,
-    widgets::{Block, Widget},
-};
+use crate::{prelude::*, symbols, text::Line as TextLine, widgets::Block};
 
 /// Interface for all shapes that may be drawn on a Canvas widget.
 pub trait Shape {
@@ -694,19 +687,25 @@ where
     }
 }
 
-impl<'a, F> Widget for Canvas<'a, F>
+impl<F> Widget for Canvas<'_, F>
 where
     F: Fn(&mut Context),
 {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
-        let canvas_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+impl<F> Widget for &Canvas<'_, F>
+where
+    F: Fn(&mut Context),
+{
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.block.render(area, buf);
+        let canvas_area = self.block.inner_if_some(area);
+        if canvas_area.is_empty() {
+            return;
+        }
 
         buf.set_style(canvas_area, Style::default().bg(self.background_color));
 

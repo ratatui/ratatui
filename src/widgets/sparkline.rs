@@ -3,10 +3,7 @@ use std::cmp::min;
 
 use strum::{Display, EnumString};
 
-use crate::{
-    prelude::*,
-    widgets::{Block, Widget},
-};
+use crate::{prelude::*, widgets::Block};
 
 /// Widget to render a sparkline over one or more lines.
 ///
@@ -156,18 +153,23 @@ impl<'a> Styled for Sparkline<'a> {
     }
 }
 
-impl<'a> Widget for Sparkline<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
-        let spark_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
+impl Widget for Sparkline<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
 
-        if spark_area.height < 1 {
+impl Widget for &Sparkline<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.block.render(area, buf);
+        let inner = self.block.inner_if_some(area);
+        self.render_sparkline(inner, buf);
+    }
+}
+
+impl Sparkline<'_> {
+    fn render_sparkline(&self, spark_area: Rect, buf: &mut Buffer) {
+        if spark_area.is_empty() {
             return;
         }
 

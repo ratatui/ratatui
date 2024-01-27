@@ -408,6 +408,22 @@ impl<'a> From<Line<'a>> for String {
 
 impl Widget for Line<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+/// Implement [`Widget`] for [`Option<Line>`] to simplify the common case of having an optional
+/// [`Line`] field in a widget.
+impl Widget for &Option<Line<'_>> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(line) = self {
+            line.render(area, buf);
+        }
+    }
+}
+
+impl Widget for &Line<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
         let width = self.width() as u16;
@@ -418,7 +434,7 @@ impl Widget for Line<'_> {
             None => 0,
         };
         let mut x = area.left().saturating_add(offset);
-        for span in self.spans {
+        for span in self.spans.iter() {
             let span_width = span.width() as u16;
             let span_area = Rect {
                 x,

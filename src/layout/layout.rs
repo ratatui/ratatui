@@ -1172,7 +1172,7 @@ mod tests {
             assert_buffer_eq,
             layout::flex::Flex,
             prelude::{Constraint::*, *},
-            widgets::{Paragraph, Widget},
+            widgets::Paragraph,
         };
 
         /// Test that the given constraints applied to the given area result in the expected layout.

@@ -1,13 +1,11 @@
 #![warn(missing_docs)]
-use crate::prelude::*;
+use crate::{prelude::*, widgets::Block};
 
 mod bar;
 mod bar_group;
 
 pub use bar::Bar;
 pub use bar_group::BarGroup;
-
-use super::{Block, Widget};
 
 /// A chart showing values as [bars](Bar).
 ///
@@ -35,6 +33,9 @@ use super::{Block, Widget};
 ///
 /// The chart can have a [`Direction`] (by default the bars are [`Vertical`](Direction::Vertical)).
 /// This is set using [`BarChart::direction`].
+///
+/// Note: this is the only widget that doesn't implement `Widget` for `&T` because the current
+/// implementation modifies the internal state of self. This will be fixed in the future.
 ///
 /// # Examples
 ///
@@ -391,15 +392,6 @@ impl<'a> BarChart<'a> {
         }
     }
 
-    /// renders the block if there is one and updates the area to the inner area
-    fn render_block(&mut self, area: &mut Rect, buf: &mut Buffer) {
-        if let Some(block) = self.block.take() {
-            let inner_area = block.inner(*area);
-            block.render(*area, buf);
-            *area = inner_area
-        }
-    }
-
     fn render_horizontal(self, buf: &mut Buffer, area: Rect) {
         // get the longest label
         let label_size = self
@@ -586,19 +578,20 @@ impl<'a> BarChart<'a> {
     }
 }
 
-impl<'a> Widget for BarChart<'a> {
-    fn render(mut self, mut area: Rect, buf: &mut Buffer) {
+impl Widget for BarChart<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
 
-        self.render_block(&mut area, buf);
+        self.block.render(area, buf);
+        let inner = self.block.inner_if_some(area);
 
-        if area.is_empty() || self.data.is_empty() || self.bar_width == 0 {
+        if inner.is_empty() || self.data.is_empty() || self.bar_width == 0 {
             return;
         }
 
         match self.direction {
-            Direction::Horizontal => self.render_horizontal(buf, area),
-            Direction::Vertical => self.render_vertical(buf, area),
+            Direction::Horizontal => self.render_horizontal(buf, inner),
+            Direction::Vertical => self.render_vertical(buf, inner),
         }
     }
 }

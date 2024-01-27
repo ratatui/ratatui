@@ -8,11 +8,7 @@
 
 use strum::{Display, EnumString};
 
-use crate::{
-    prelude::*,
-    symbols::border,
-    widgets::{Borders, Widget},
-};
+use crate::{prelude::*, symbols::border, widgets::Borders};
 
 mod padding;
 pub mod title;
@@ -520,7 +516,35 @@ impl<'a> Block<'a> {
         self.padding = padding;
         self
     }
+}
 
+impl Widget for Block<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+/// Implement [`Widget`] for [`Option<Block>`] to simplify the common case of having an optional
+/// [`Block`] field in a widget.
+impl Widget for &Option<Block<'_>> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(block) = self {
+            block.render(area, buf);
+        }
+    }
+}
+
+impl Widget for &Block<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if area.is_empty() {
+            return;
+        }
+        self.render_borders(area, buf);
+        self.render_titles(area, buf);
+    }
+}
+
+impl Block<'_> {
     fn render_borders(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
         let symbols = self.border_set;
@@ -703,13 +727,20 @@ impl<'a> Block<'a> {
     }
 }
 
-impl<'a> Widget for Block<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        if area.area() == 0 {
-            return;
-        }
-        self.render_borders(area, buf);
-        self.render_titles(area, buf);
+/// An extension trait for [`Block`] that provides some convenience methods.
+///
+/// This is implemented for [`Option<Block>`](Option) to simplify the common case of having a
+/// widget with an optional block.
+pub trait BlockExt {
+    /// Return the inner area of the block if it is `Some`. Otherwise, returns `area`.
+    ///
+    /// This is a useful convenience method for widgets that have an `Option<Block>` field
+    fn inner_if_some(&self, area: Rect) -> Rect;
+}
+
+impl BlockExt for Option<Block<'_>> {
+    fn inner_if_some(&self, area: Rect) -> Rect {
+        self.as_ref().map_or(area, |block| block.inner(area))
     }
 }
 

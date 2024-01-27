@@ -4,14 +4,14 @@ use std::cmp::max;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
+use super::block::BlockExt;
 use crate::{
-    buffer::Buffer,
     layout::Flex,
     prelude::*,
     symbols,
     widgets::{
         canvas::{Canvas, Line as CanvasLine, Points},
-        Block, Borders, Widget,
+        Block, Borders,
     },
 };
 
@@ -809,7 +809,7 @@ impl<'a> Chart<'a> {
     }
 
     fn render_x_labels(
-        &mut self,
+        &self,
         buf: &mut Buffer,
         layout: &ChartLayout,
         chart_area: Rect,
@@ -892,7 +892,7 @@ impl<'a> Chart<'a> {
     }
 
     fn render_y_labels(
-        &mut self,
+        &self,
         buf: &mut Buffer,
         layout: &ChartLayout,
         chart_area: Rect,
@@ -916,25 +916,26 @@ impl<'a> Chart<'a> {
     }
 }
 
-impl<'a> Widget for Chart<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
-        if area.area() == 0 {
+impl Widget for Chart<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+impl Widget for &Chart<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
+
+        self.block.render(area, buf);
+        let chart_area = self.block.inner_if_some(area);
+        if chart_area.is_empty() {
             return;
         }
-        buf.set_style(area, self.style);
+
         // Sample the style of the entire widget. This sample will be used to reset the style of
         // the cells that are part of the components put on top of the grah area (i.e legend and
         // axis names).
         let original_style = buf.get(area.left(), area.top()).style();
-
-        let chart_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
 
         let layout = self.layout(chart_area);
         let graph_area = layout.graph_area;
@@ -996,7 +997,7 @@ impl<'a> Widget for Chart<'a> {
         }
 
         if let Some((x, y)) = layout.title_x {
-            let title = self.x_axis.title.unwrap();
+            let title = self.x_axis.title.as_ref().unwrap();
             let width = graph_area
                 .right()
                 .saturating_sub(x)
@@ -1010,11 +1011,11 @@ impl<'a> Widget for Chart<'a> {
                 },
                 original_style,
             );
-            buf.set_line(x, y, &title, width);
+            buf.set_line(x, y, title, width);
         }
 
         if let Some((x, y)) = layout.title_y {
-            let title = self.y_axis.title.unwrap();
+            let title = self.y_axis.title.as_ref().unwrap();
             let width = graph_area
                 .right()
                 .saturating_sub(x)
@@ -1028,7 +1029,7 @@ impl<'a> Widget for Chart<'a> {
                 },
                 original_style,
             );
-            buf.set_line(x, y, &title, width);
+            buf.set_line(x, y, title, width);
         }
 
         if let Some(legend_area) = layout.legend_area {

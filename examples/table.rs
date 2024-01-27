@@ -1,3 +1,18 @@
+//! # [Ratatui] Table example
+//!
+//! The latest version of this example is available in the [examples] folder in the repository.
+//!
+//! Please note that the examples are designed to be run against the `main` branch of the Github
+//! repository. This means that you may not be able to compile with the latest release version on
+//! crates.io, or the one that you have installed locally.
+//!
+//! See the [examples readme] for more information on finding examples that match the version of the
+//! library you are using.
+//!
+//! [Ratatui]: https://github.com/ratatui-org/ratatui
+//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+
 use std::{error::Error, io};
 
 use crossterm::{
@@ -313,7 +328,7 @@ fn render_scrollbar(f: &mut Frame, app: &mut App, area: Rect) {
 fn render_footer(f: &mut Frame, app: &mut App, area: Rect) {
     let info_footer = Paragraph::new(Line::from(INFO_TEXT))
         .style(Style::new().fg(app.colors.row_fg).bg(app.colors.buffer_bg))
-        .alignment(Alignment::Center)
+        .centered()
         .block(
             Block::default()
                 .borders(Borders::ALL)

@@ -38,13 +38,18 @@ const RATATUI_LOGO: [&str; 32] = [
     "  █xxxxxxxxxxxxxxxxxxxxx█ █     ",
 ];
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct AboutTab {
-    selected_row: usize,
+    row_index: usize,
 }
 
 impl AboutTab {
-    pub fn new(selected_row: usize) -> Self {
-        Self { selected_row }
+    pub fn prev_row(&mut self) {
+        self.row_index = self.row_index.saturating_sub(1);
+    }
+
+    pub fn next_row(&mut self) {
+        self.row_index = self.row_index.saturating_add(1);
     }
 }
 
@@ -54,7 +59,7 @@ impl Widget for AboutTab {
         let horizontal = Layout::horizontal([Constraint::Length(34), Constraint::Min(0)]);
         let [description, logo] = area.split(&horizontal);
         render_crate_description(description, buf);
-        render_logo(self.selected_row, logo, buf);
+        render_logo(self.row_index, logo, buf);
     }
 }
 
