@@ -2241,6 +2241,32 @@ mod tests {
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, result);
         }
+
+        #[rstest]
+        #[case::proportional( vec![25, 50, 25],       vec![Min(1), Min(2), Min(1)])]
+        #[case::proportional( vec![25, 50, 25],       vec![Max(1), Max(2), Max(1)])]
+        #[case::proportional( vec![25, 50, 25],       vec![Length(1), Length(2), Length(1)])]
+        #[case::proportional( vec![25, 50, 25],       vec![Percentage(1), Percentage(2), Percentage(1)])]
+        #[case::proportional( vec![25, 50, 25],       vec![Length(1), Length(2), Length(1)])]
+        #[case::proportional( vec![25, 50, 25],       vec![Ratio(1, 4), Ratio(1, 2), Ratio(1, 4)])]
+        #[case::proportional( vec![32, 65, 1, 2],     vec![Min(1), Min(2), Length(1), Length(2)])]
+        #[case::proportional( vec![32, 65, 1, 2],     vec![Percentage(1), Percentage(2), Length(1), Length(2)])]
+        #[case::proportional( vec![32, 65, 1, 2],     vec![Ratio(1, 4), Ratio(1, 2), Length(1), Length(2)])]
+        #[case::proportional( vec![25, 50, 0, 0, 25], vec![Length(1), Length(2), Length(0), Length(0), Length(1)])]
+        #[case::proportional( vec![1, 2, 96, 1],      vec![Length(1), Length(2), Min(0), Length(1)])]
+        #[case::proportional( vec![1, 2, 48, 48, 1],  vec![Length(1), Length(2), Min(0), Min(0), Length(1)])]
+        #[case::proportional( vec![1, 2, 96, 0, 1],   vec![Length(1), Length(2), Min(1), Min(0), Length(1)])]
+        #[case::proportional( vec![1, 2, 91, 5, 1],   vec![Length(1), Length(2), Min(20), Min(1), Length(1)])]
+        fn proportional(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
     }
 
     #[test]
