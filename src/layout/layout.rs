@@ -699,7 +699,7 @@ fn configure_constraints(
             }
             Constraint::Proportional(_) => {
                 // given no other constraints, this segment will grow as much as possible.
-                solver.add_constraint(element.grows_to(area, PROPORTIONAL_GROWER))?;
+                solver.add_constraint(element.has_size(area, PROPORTIONAL_GROWER))?;
             }
         }
     }
@@ -724,7 +724,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?
             }
             for spacer in spacers.iter() {
-                solver.add_constraint(spacer.grows_to(area, SPACE_GROWER))?;
+                solver.add_constraint(spacer.has_size(area, SPACE_GROWER))?;
             }
         }
 
@@ -735,7 +735,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?
             }
             for spacer in spacers.iter() {
-                solver.add_constraint(spacer.grows_to(area, SPACE_GROWER))?;
+                solver.add_constraint(spacer.has_size(area, SPACE_GROWER))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.has_size(0.0, REQUIRED - 1.0))?;
@@ -756,7 +756,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
             }
             for (left, right) in segments.iter().tuple_combinations() {
-                solver.add_constraint(left.grows_to(right, GROWER))?;
+                solver.add_constraint(left.has_size(right, GROWER))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.has_size(0.0, REQUIRED - 1.0))?;
@@ -769,7 +769,7 @@ fn configure_flex_constraints(
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.has_size(0.0, REQUIRED - 1.0))?;
-                solver.add_constraint(last.grows_to(area, strengths::GROWER))?;
+                solver.add_constraint(last.has_size(area, strengths::GROWER))?;
             }
         }
         Flex::Center => {
@@ -777,8 +777,8 @@ fn configure_flex_constraints(
                 solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
-                solver.add_constraint(first.grows_to(area, strengths::GROWER))?;
-                solver.add_constraint(last.grows_to(area, strengths::GROWER))?;
+                solver.add_constraint(first.has_size(area, strengths::GROWER))?;
+                solver.add_constraint(last.has_size(area, strengths::GROWER))?;
                 solver.add_constraint(first.has_size(last, SPACER_SIZE_EQ))?;
             }
         }
@@ -788,7 +788,7 @@ fn configure_flex_constraints(
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(last.has_size(0.0, REQUIRED - 1.0))?;
-                solver.add_constraint(first.grows_to(area, strengths::GROWER))?;
+                solver.add_constraint(first.has_size(area, strengths::GROWER))?;
             }
         }
     }
@@ -941,10 +941,6 @@ impl Element {
     }
 
     fn has_size<E: Into<Expression>>(&self, size: E, strength: f64) -> cassowary::Constraint {
-        self.size() | EQ(strength) | size.into()
-    }
-
-    fn grows_to<E: Into<Expression>>(&self, size: E, strength: f64) -> cassowary::Constraint {
         self.size() | EQ(strength) | size.into()
     }
 }
