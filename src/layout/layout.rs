@@ -574,24 +574,6 @@ impl Layout {
                 if let Some(last_segment) = segments.last() {
                     solver.add_constraint(last_segment.end_sticks_to(end))?
                 }
-                // by default cassowary tends to violate the last lowest priority constraint.
-                // however this is an implementation detail and is not guaranteed.
-                // We can make cassowary `StretchLast` more consistent by adding the following
-                // constraint to grow the last lowest priority segment in size.
-                // This should be of a weak strength, since we want it to only happen
-                // when all other conditions are satisfied.
-                // The reason we sort the constraints is that if for example [Length(10),
-                // Length(10), Fixed(10)] is passed in by the user, we should add
-                // this constraint on `Length` and not `Fixed`. i.e. we want to add
-                // the following constraint to the last lowest priority constraint.
-                if let Some((segment, _)) = segments
-                    .iter()
-                    .zip(&layout.constraints)
-                    .sorted_by(|(_, c1), (_, c2)| Ord::cmp(&c1.rank(), &c2.rank()))
-                    .next_back()
-                {
-                    solver.add_constraint(segment.grows_to(size))?;
-                }
             }
             Flex::Stretch => {
                 // We skip adding any constraints for the first and last spacer, i.e. we use the
@@ -958,12 +940,12 @@ impl Layout {
     ///     .spacing(1)
     ///     .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
     ///     .split_with_spacers(Rect::new(0, 0, 10, 2));
-    /// assert_eq!(areas[..], [Rect::new(0, 0, 2, 2), Rect::new(3, 0, 7, 2)]);
+    /// assert_eq!(areas[..], [Rect::new(0, 0, 3, 2), Rect::new(4, 0, 6, 2)]);
     /// assert_eq!(
     ///     spacers[..],
     ///     [
     ///         Rect::new(0, 0, 0, 2),
-    ///         Rect::new(2, 0, 1, 2),
+    ///         Rect::new(3, 0, 1, 2),
     ///         Rect::new(10, 0, 0, 2)
     ///     ]
     /// );
@@ -1487,12 +1469,12 @@ mod tests {
             test(Rect::new(0, 0, 1, 1), &[Length(0), Length(1)], "b"); // zero, exact
             test(Rect::new(0, 0, 1, 1), &[Length(0), Length(2)], "b"); // zero, overflow
             test(Rect::new(0, 0, 1, 1), &[Length(1), Length(0)], "a"); // exact, zero
-            test(Rect::new(0, 0, 1, 1), &[Length(1), Length(1)], "b"); // exact, exact with stretchlast
+            test(Rect::new(0, 0, 1, 1), &[Length(1), Length(1)], "a"); // exact, exact
             test_with_stretch(Rect::new(0, 0, 1, 1), &[Length(1), Length(1)], "a"); // exact, exact
-            test(Rect::new(0, 0, 1, 1), &[Length(1), Length(2)], "b"); // exact, overflow with stretchlast
+            test(Rect::new(0, 0, 1, 1), &[Length(1), Length(2)], "a"); // exact, overflow
             test(Rect::new(0, 0, 1, 1), &[Length(2), Length(0)], "a"); // overflow, zero
-            test(Rect::new(0, 0, 1, 1), &[Length(2), Length(1)], "b"); // overflow, exact with stretch last
-            test(Rect::new(0, 0, 1, 1), &[Length(2), Length(2)], "b"); // overflow, overflow with stretch last
+            test(Rect::new(0, 0, 1, 1), &[Length(2), Length(1)], "a"); // overflow, exact
+            test(Rect::new(0, 0, 1, 1), &[Length(2), Length(2)], "a"); // overflow, overflow
 
             test(Rect::new(0, 0, 2, 1), &[Length(0), Length(0)], "bb"); // zero, zero
             test(Rect::new(0, 0, 2, 1), &[Length(0), Length(1)], "bb"); // zero, underflow
@@ -1500,18 +1482,18 @@ mod tests {
             test(Rect::new(0, 0, 2, 1), &[Length(0), Length(3)], "bb"); // zero, overflow
             test(Rect::new(0, 0, 2, 1), &[Length(1), Length(0)], "ab"); // underflow, zero
             test(Rect::new(0, 0, 2, 1), &[Length(1), Length(1)], "ab"); // underflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Length(1), Length(2)], "bb"); // underflow, exact with stretchlast
-            test(Rect::new(0, 0, 2, 1), &[Length(1), Length(3)], "bb"); // underflow, overflow with stretchlast
+            test(Rect::new(0, 0, 2, 1), &[Length(1), Length(2)], "ab"); // underflow, exact with stretchlast
+            test(Rect::new(0, 0, 2, 1), &[Length(1), Length(3)], "ab"); // underflow, overflow with stretchlast
             test(Rect::new(0, 0, 2, 1), &[Length(2), Length(0)], "aa"); // exact, zero
-            test(Rect::new(0, 0, 2, 1), &[Length(2), Length(1)], "ab"); // exact, underflow with stretch last
-            test(Rect::new(0, 0, 2, 1), &[Length(2), Length(2)], "bb"); // exact, exact with stretchlast
-            test(Rect::new(0, 0, 2, 1), &[Length(2), Length(3)], "bb"); // exact, overflow with stretchlast
+            test(Rect::new(0, 0, 2, 1), &[Length(2), Length(1)], "aa"); // exact, underflow
+            test(Rect::new(0, 0, 2, 1), &[Length(2), Length(2)], "aa"); // exact, exact
+            test(Rect::new(0, 0, 2, 1), &[Length(2), Length(3)], "aa"); // exact, overflow
             test(Rect::new(0, 0, 2, 1), &[Length(3), Length(0)], "aa"); // overflow, zero
-            test(Rect::new(0, 0, 2, 1), &[Length(3), Length(1)], "ab"); // overflow, underflow with stretchlast
-            test(Rect::new(0, 0, 2, 1), &[Length(3), Length(2)], "bb"); // overflow, exact with stretchlast
-            test(Rect::new(0, 0, 2, 1), &[Length(3), Length(3)], "bb"); // overflow, overflow with stretchlast
+            test(Rect::new(0, 0, 2, 1), &[Length(3), Length(1)], "aa"); // overflow, underflow
+            test(Rect::new(0, 0, 2, 1), &[Length(3), Length(2)], "aa"); // overflow, exact
+            test(Rect::new(0, 0, 2, 1), &[Length(3), Length(3)], "aa"); // overflow, overflow
 
-            test(Rect::new(0, 0, 3, 1), &[Length(2), Length(2)], "abb"); // with stretchlast
+            test(Rect::new(0, 0, 3, 1), &[Length(2), Length(2)], "aab"); // with stretchlast
         }
 
         #[test]
@@ -1529,11 +1511,11 @@ mod tests {
             test(Rect::new(0, 0, 1, 1), &[Max(0), Max(1)], "b"); // zero, exact
             test(Rect::new(0, 0, 1, 1), &[Max(0), Max(2)], "b"); // zero, overflow
             test(Rect::new(0, 0, 1, 1), &[Max(1), Max(0)], "a"); // exact, zero
-            test(Rect::new(0, 0, 1, 1), &[Max(1), Max(1)], "b"); // exact, exact with stretchlast
-            test(Rect::new(0, 0, 1, 1), &[Max(1), Max(2)], "b"); // exact, overflow with stretchlast
+            test(Rect::new(0, 0, 1, 1), &[Max(1), Max(1)], "a"); // exact, exact
+            test(Rect::new(0, 0, 1, 1), &[Max(1), Max(2)], "a"); // exact, overflow
             test(Rect::new(0, 0, 1, 1), &[Max(2), Max(0)], "a"); // overflow, zero
-            test(Rect::new(0, 0, 1, 1), &[Max(2), Max(1)], "b"); // overflow, exact with stretchlast
-            test(Rect::new(0, 0, 1, 1), &[Max(2), Max(2)], "b"); // overflow, overflow with stretchlast
+            test(Rect::new(0, 0, 1, 1), &[Max(2), Max(1)], "a"); // overflow, exact
+            test(Rect::new(0, 0, 1, 1), &[Max(2), Max(2)], "a"); // overflow, overflow
 
             test(Rect::new(0, 0, 2, 1), &[Max(0), Max(0)], "bb"); // zero, zero
             test(Rect::new(0, 0, 2, 1), &[Max(0), Max(1)], "bb"); // zero, underflow
@@ -1541,18 +1523,18 @@ mod tests {
             test(Rect::new(0, 0, 2, 1), &[Max(0), Max(3)], "bb"); // zero, overflow
             test(Rect::new(0, 0, 2, 1), &[Max(1), Max(0)], "ab"); // underflow, zero
             test(Rect::new(0, 0, 2, 1), &[Max(1), Max(1)], "ab"); // underflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Max(1), Max(2)], "bb"); // underflow, exact with stretchlast
-            test(Rect::new(0, 0, 2, 1), &[Max(1), Max(3)], "bb"); // underflow, overflow with stretchlast
+            test(Rect::new(0, 0, 2, 1), &[Max(1), Max(2)], "ab"); // underflow, exact
+            test(Rect::new(0, 0, 2, 1), &[Max(1), Max(3)], "ab"); // underflow, overflow
             test(Rect::new(0, 0, 2, 1), &[Max(2), Max(0)], "aa"); // exact, zero
-            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(1)], "ab"); // exact, underflow
-            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(2)], "bb"); // exact, exact
-            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(3)], "bb"); // exact, overflow
+            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(1)], "aa"); // exact, underflow
+            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(2)], "aa"); // exact, exact
+            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(3)], "aa"); // exact, overflow
             test(Rect::new(0, 0, 2, 1), &[Max(3), Max(0)], "aa"); // overflow, zero
-            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(1)], "ab"); // overflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(2)], "bb"); // overflow, exact
-            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(3)], "bb"); // overflow, overflow
+            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(1)], "aa"); // overflow, underflow
+            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(2)], "aa"); // overflow, exact
+            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(3)], "aa"); // overflow, overflow
 
-            test(Rect::new(0, 0, 3, 1), &[Max(2), Max(2)], "abb");
+            test(Rect::new(0, 0, 3, 1), &[Max(2), Max(2)], "aab");
         }
 
         #[test]
@@ -1561,11 +1543,11 @@ mod tests {
             test(Rect::new(0, 0, 1, 1), &[Min(0), Min(1)], "b"); // zero, exact
             test(Rect::new(0, 0, 1, 1), &[Min(0), Min(2)], "b"); // zero, overflow
             test(Rect::new(0, 0, 1, 1), &[Min(1), Min(0)], "a"); // exact, zero
-            test(Rect::new(0, 0, 1, 1), &[Min(1), Min(1)], "b"); // exact, exact with stretchlast
-            test(Rect::new(0, 0, 1, 1), &[Min(1), Min(2)], "b"); // exact, overflow with stretchlast
+            test(Rect::new(0, 0, 1, 1), &[Min(1), Min(1)], "a"); // exact, exact
+            test(Rect::new(0, 0, 1, 1), &[Min(1), Min(2)], "a"); // exact, overflow
             test(Rect::new(0, 0, 1, 1), &[Min(2), Min(0)], "a"); // overflow, zero
-            test(Rect::new(0, 0, 1, 1), &[Min(2), Min(1)], "b"); // overflow, exact with stretchlast
-            test(Rect::new(0, 0, 1, 1), &[Min(2), Min(2)], "b"); // overflow, overflow with stretchlast
+            test(Rect::new(0, 0, 1, 1), &[Min(2), Min(1)], "a"); // overflow, exact
+            test(Rect::new(0, 0, 1, 1), &[Min(2), Min(2)], "a"); // overflow, overflow
 
             test(Rect::new(0, 0, 2, 1), &[Min(0), Min(0)], "bb"); // zero, zero
             test(Rect::new(0, 0, 2, 1), &[Min(0), Min(1)], "bb"); // zero, underflow
@@ -1573,18 +1555,18 @@ mod tests {
             test(Rect::new(0, 0, 2, 1), &[Min(0), Min(3)], "bb"); // zero, overflow
             test(Rect::new(0, 0, 2, 1), &[Min(1), Min(0)], "ab"); // underflow, zero
             test(Rect::new(0, 0, 2, 1), &[Min(1), Min(1)], "ab"); // underflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(2)], "bb"); // underflow, exact with stretchlast
-            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(3)], "bb"); // underflow, overflow with stretchlast
+            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(2)], "ab"); // underflow, exact
+            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(3)], "ab"); // underflow, overflow
             test(Rect::new(0, 0, 2, 1), &[Min(2), Min(0)], "aa"); // exact, zero
-            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(1)], "ab"); // exact, underflow with stretchlast
-            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(2)], "bb"); // exact, exact
-            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(3)], "bb"); // exact, overflow
+            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(1)], "aa"); // exact, underflow
+            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(2)], "aa"); // exact, exact
+            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(3)], "aa"); // exact, overflow
             test(Rect::new(0, 0, 2, 1), &[Min(3), Min(0)], "aa"); // overflow, zero
-            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(1)], "ab"); // overflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(2)], "bb"); // overflow, exact
-            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(3)], "bb"); // overflow, overflow
+            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(1)], "aa"); // overflow, underflow
+            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(2)], "aa"); // overflow, exact
+            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(3)], "aa"); // overflow, overflow
 
-            test(Rect::new(0, 0, 3, 1), &[Min(2), Min(2)], "abb");
+            test(Rect::new(0, 0, 3, 1), &[Min(2), Min(2)], "aab");
         }
 
         #[test]
@@ -1634,18 +1616,18 @@ mod tests {
 
             test(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a");
             test(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[HALF, FULL], "b"); // with stretchlast
-            test(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "b"); // with stretchlast
+            test(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a");
+            test(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a");
 
             test(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a");
             test(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "b"); // with stretchlast
-            test(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "b"); // with stretchlast
+            test(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a");
+            test(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a");
 
             test(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a");
             test(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[FULL, FULL], "b");
-            test(Rect::new(0, 0, 1, 1), &[FULL, DOUBLE], "b");
+            test(Rect::new(0, 0, 1, 1), &[FULL, FULL], "a");
+            test(Rect::new(0, 0, 1, 1), &[FULL, DOUBLE], "a");
 
             test(Rect::new(0, 0, 2, 1), &[ZERO, ZERO], "bb");
             test(Rect::new(0, 0, 2, 1), &[ZERO, QUARTER], "bb");
@@ -1662,21 +1644,21 @@ mod tests {
             test(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab");
             test(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab");
             test(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "bb");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab");
 
             test(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab");
             test(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab");
             test(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "bb");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab");
 
             test(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab");
             test(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[HALF, FULL], "bb");
+            test(Rect::new(0, 0, 2, 1), &[HALF, FULL], "ab");
             test(Rect::new(0, 0, 2, 1), &[FULL, ZERO], "aa");
-            test(Rect::new(0, 0, 2, 1), &[FULL, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[FULL, FULL], "bb");
+            test(Rect::new(0, 0, 2, 1), &[FULL, HALF], "aa");
+            test(Rect::new(0, 0, 2, 1), &[FULL, FULL], "aa");
 
             test(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "abb");
             test(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "abb");
@@ -1729,18 +1711,18 @@ mod tests {
 
             test(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a");
             test(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[HALF, FULL], "b"); // with stretchlast
-            test(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "b"); // with stretchlast
+            test(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a");
+            test(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a");
 
             test(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a");
             test(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "b");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "b");
+            test(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a");
+            test(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a");
 
             test(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a");
             test(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[FULL, FULL], "b");
-            test(Rect::new(0, 0, 1, 1), &[FULL, DOUBLE], "b");
+            test(Rect::new(0, 0, 1, 1), &[FULL, FULL], "a");
+            test(Rect::new(0, 0, 1, 1), &[FULL, DOUBLE], "a");
 
             test(Rect::new(0, 0, 2, 1), &[ZERO, ZERO], "bb");
             test(Rect::new(0, 0, 2, 1), &[ZERO, QUARTER], "bb");
@@ -1757,21 +1739,21 @@ mod tests {
             test(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab");
             test(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab");
             test(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "bb");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab");
+            test(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab");
 
             test(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab");
             test(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab");
             test(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "bb");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab");
+            test(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab");
 
             test(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab");
             test(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[HALF, FULL], "bb");
+            test(Rect::new(0, 0, 2, 1), &[HALF, FULL], "ab");
             test(Rect::new(0, 0, 2, 1), &[FULL, ZERO], "aa");
-            test(Rect::new(0, 0, 2, 1), &[FULL, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[FULL, FULL], "bb");
+            test(Rect::new(0, 0, 2, 1), &[FULL, HALF], "aa");
+            test(Rect::new(0, 0, 2, 1), &[FULL, FULL], "aa");
 
             test(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "abb");
             test(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "abb");
@@ -1803,7 +1785,7 @@ mod tests {
         }
 
         #[test]
-        fn old_edge_cases() {
+        fn edge_cases() {
             // stretches into last
             let layout = Layout::default()
                 .constraints([
@@ -1841,7 +1823,6 @@ mod tests {
             // minimal bug from
             // https://github.com/ratatui-org/ratatui/pull/404#issuecomment-1681850644
             // TODO: check if this bug is now resolved?
-            // NOTE: May be UNSTABLE
             let layout = Layout::default()
                 .constraints([Min(1), Length(0), Min(1)])
                 .direction(Direction::Horizontal)
@@ -1855,7 +1836,6 @@ mod tests {
                 ]
             );
 
-            // NOTE: always STABLE, this test is provided here as reference
             let layout = Layout::default()
                 .constraints([Min(1), Fixed(0), Min(1)])
                 .direction(Direction::Horizontal)
@@ -1863,14 +1843,13 @@ mod tests {
             assert_eq!(
                 layout[..],
                 [
-                    Rect::new(0, 0, 0, 1),
-                    Rect::new(0, 0, 0, 1),
                     Rect::new(0, 0, 1, 1),
+                    Rect::new(1, 0, 0, 1),
+                    Rect::new(1, 0, 0, 1),
                 ]
             );
 
             // This stretches the 2nd last length instead of the last min based on ranking
-            // NOTE: the end result can be unstable
             let layout = Layout::default()
                 .constraints([Length(3), Min(4), Length(1), Min(4)])
                 .direction(Direction::Horizontal)
@@ -1947,7 +1926,8 @@ mod tests {
         #[case::fixed_higher_priority(vec![18, 10, 72], vec![Proportional(1), Fixed(10), Proportional(4)])]
         #[case::fixed_higher_priority(vec![15, 10, 75], vec![Proportional(1), Fixed(10), Proportional(5)])]
         #[case::three_lengths_reference(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
-        #[case::previously_unstable_test(vec![25, 50, 25], vec![Length(25), Length(25), Fixed(25)])]
+        // #[case::previously_unstable_test(vec![25, 50, 25], vec![Length(25), Length(25),
+        // Fixed(25)])]
         fn fixed(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)

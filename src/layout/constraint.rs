@@ -367,18 +367,6 @@ impl Constraint {
             .map(Constraint::Proportional)
             .collect_vec()
     }
-
-    pub(super) fn rank(&self) -> usize {
-        match self {
-            Constraint::Fixed(_) => 0,
-            Constraint::Min(_) => 1,
-            Constraint::Max(_) => 2,
-            Constraint::Length(_) => 3,
-            Constraint::Percentage(_) => 4,
-            Constraint::Ratio(_, _) => 5,
-            Constraint::Proportional(_) => 6,
-        }
-    }
 }
 
 impl From<u16> for Constraint {
@@ -562,32 +550,5 @@ mod tests {
         assert_eq!(Constraint::Min(100).apply(100), 100);
         assert_eq!(Constraint::Min(200).apply(100), 200);
         assert_eq!(Constraint::Min(u16::MAX).apply(100), u16::MAX);
-    }
-
-    #[test]
-    fn rank() {
-        use super::Constraint::*;
-        assert!(Fixed(10).rank() < Min(10).rank());
-        assert!(Min(10).rank() < Max(10).rank());
-        assert!(Min(10).rank() <= Max(10).rank());
-        assert!(Max(10).rank() < Length(10).rank());
-        assert!(Length(10).rank() < Percentage(10).rank());
-        assert!(Percentage(10).rank() < Ratio(1, 2).rank());
-        assert!(Ratio(1, 2).rank() < Proportional(10).rank());
-        let constraints = vec![
-            Fixed(10),
-            Min(10),
-            Max(10),
-            Length(10),
-            Percentage(10),
-            Ratio(1, 2),
-            Proportional(1),
-        ];
-        let sorted = constraints
-            .iter()
-            .cloned()
-            .sorted_by(|c1, c2| Ord::cmp(&c1.rank(), &c2.rank()))
-            .collect::<Vec<Constraint>>();
-        assert_eq!(constraints, sorted);
     }
 }
