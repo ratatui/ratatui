@@ -91,7 +91,7 @@ mod tests {
                 vec![Percentage(50), Min(10), Percentage(50)],
                 target
             ),
-            [(100, 40), (140, 10), (150, 50)]
+            [(100, 45), (145, 10), (155, 45)]
         );
         assert_eq!(
             get_x_width_with_segment_size(
@@ -112,7 +112,7 @@ mod tests {
                 vec![Percentage(30), Max(10), Percentage(30)],
                 target
             ),
-            [(100, 30), (130, 10), (140, 60)]
+            [(100, 45), (145, 10), (155, 45)]
         );
         assert_eq!(
             get_x_width_with_segment_size(
@@ -133,7 +133,7 @@ mod tests {
                 vec![Percentage(50), Length(10), Percentage(50)],
                 target
             ),
-            [(100, 40), (140, 10), (150, 50)]
+            [(100, 45), (145, 10), (155, 45)]
         );
         assert_eq!(
             get_x_width_with_segment_size(
