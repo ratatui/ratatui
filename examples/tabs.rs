@@ -203,20 +203,9 @@ impl SelectedTab {
 
     /// A block surrounding the tab's content
     fn block(&self) -> Block<'static> {
-        // a custom border set for the inner block that renders
-        let border_set = symbols::border::Set {
-            top_left: symbols::block::FULL,
-            top_right: symbols::block::FULL,
-            bottom_left: symbols::block::FULL,
-            bottom_right: symbols::block::FULL,
-            vertical_left: symbols::block::FULL,
-            vertical_right: symbols::block::FULL,
-            horizontal_top: symbols::border::QUADRANT_TOP_HALF,
-            horizontal_bottom: symbols::border::QUADRANT_BOTTOM_HALF,
-        };
         Block::default()
             .borders(Borders::ALL)
-            .border_set(border_set)
+            .border_set(symbols::border::PROPORTIONAL_TALL)
             .padding(Padding::horizontal(1))
             .border_style(self.palette().c700)
     }
