@@ -10,7 +10,7 @@ use lru::LruCache;
 
 use self::strengths::{
     FIXED_SIZE_EQ, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ, MIN_SIZE_GE,
-    PERCENTAGE_SIZE_EQ, PROPORTIONAL_GROWER, RATIO_SIZE_EQ, *,
+    PERCENTAGE_SIZE_EQ, PROPORTIONAL_GROW, RATIO_SIZE_EQ, *,
 };
 use super::{Flex, SegmentSize};
 use crate::prelude::*;
@@ -699,7 +699,7 @@ fn configure_constraints(
             }
             Constraint::Proportional(_) => {
                 // given no other constraints, this segment will grow as much as possible.
-                solver.add_constraint(element.has_size(area, PROPORTIONAL_GROWER))?;
+                solver.add_constraint(element.has_size(area, PROPORTIONAL_GROW))?;
             }
         }
     }
@@ -724,7 +724,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?
             }
             for spacer in spacers.iter() {
-                solver.add_constraint(spacer.has_size(area, SPACE_GROWER))?;
+                solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
         }
 
@@ -735,7 +735,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?
             }
             for spacer in spacers.iter() {
-                solver.add_constraint(spacer.has_size(area, SPACE_GROWER))?;
+                solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
@@ -756,7 +756,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
             }
             for (left, right) in segments.iter().tuple_combinations() {
-                solver.add_constraint(left.has_size(right, GROWER))?;
+                solver.add_constraint(left.has_size(right, GROW))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
@@ -769,7 +769,7 @@ fn configure_flex_constraints(
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
-                solver.add_constraint(last.has_size(area, strengths::GROWER))?;
+                solver.add_constraint(last.has_size(area, GROW))?;
             }
         }
         Flex::Center => {
@@ -777,8 +777,8 @@ fn configure_flex_constraints(
                 solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
-                solver.add_constraint(first.has_size(area, strengths::GROWER))?;
-                solver.add_constraint(last.has_size(area, strengths::GROWER))?;
+                solver.add_constraint(first.has_size(area, GROW))?;
+                solver.add_constraint(last.has_size(area, GROW))?;
                 solver.add_constraint(first.has_size(last, SPACER_SIZE_EQ))?;
             }
         }
@@ -788,7 +788,7 @@ fn configure_flex_constraints(
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(last.is_empty())?;
-                solver.add_constraint(first.has_size(area, strengths::GROWER))?;
+                solver.add_constraint(first.has_size(area, GROW))?;
             }
         }
     }
@@ -849,7 +849,7 @@ fn configure_proportional_constraints(
             );
             solver.add_constraint(
                 (r_scaling_factor * l_element.size())
-                    | EQ(strengths::PROPORTIONAL_SCALING_EQ)
+                    | EQ(PROPORTIONAL_SCALING_EQ)
                     | (l_scaling_factor * r_element.size()),
             )?;
         }
@@ -1008,15 +1008,15 @@ mod strengths {
     /// ┌─────────────────────┐
     /// │<= Proportional(x) =>│
     /// └─────────────────────┘
-    pub const PROPORTIONAL_GROWER: f64 = WEAK * 10.0;
+    pub const PROPORTIONAL_GROW: f64 = WEAK * 10.0;
     /// ┌────────────┐
     /// │<= Min(x) =>│
     /// └────────────┘
-    pub const GROWER: f64 = WEAK;
+    pub const GROW: f64 = WEAK;
     /// ┌       ┐
     ///  <= x =>
     /// └       ┘
-    pub const SPACE_GROWER: f64 = WEAK / 10.0;
+    pub const SPACE_GROW: f64 = WEAK / 10.0;
 
     #[allow(dead_code)]
     pub fn is_valid() -> bool {
@@ -1031,9 +1031,9 @@ mod strengths {
             && LENGTH_SIZE_EQ > PERCENTAGE_SIZE_EQ
             && PERCENTAGE_SIZE_EQ > RATIO_SIZE_EQ
             && RATIO_SIZE_EQ > MAX_SIZE_EQ
-            && MIN_SIZE_GE > PROPORTIONAL_GROWER
-            && PROPORTIONAL_GROWER > GROWER
-            && GROWER > SPACE_GROWER
+            && MIN_SIZE_GE > PROPORTIONAL_GROW
+            && PROPORTIONAL_GROW > GROW
+            && GROW > SPACE_GROW
     }
 }
 
@@ -1056,9 +1056,9 @@ mod tests {
         assert_eq!(strengths::PERCENTAGE_SIZE_EQ, MEDIUM * 10.0);
         assert_eq!(strengths::RATIO_SIZE_EQ, MEDIUM);
         assert_eq!(strengths::MIN_SIZE_EQ, MEDIUM / 10.0);
-        assert_eq!(strengths::PROPORTIONAL_GROWER, WEAK * 10.0);
-        assert_eq!(strengths::GROWER, WEAK);
-        assert_eq!(strengths::SPACE_GROWER, WEAK / 10.0);
+        assert_eq!(strengths::PROPORTIONAL_GROW, WEAK * 10.0);
+        assert_eq!(strengths::GROW, WEAK);
+        assert_eq!(strengths::SPACE_GROW, WEAK / 10.0);
     }
 
     #[test]
