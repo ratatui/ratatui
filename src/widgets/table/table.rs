@@ -768,8 +768,8 @@ impl Table<'_> {
         // this will always allocate a selection area
         let [_selection_area, columns_area] =
             Rect::new(0, 0, max_width, 1).split(&Layout::horizontal([
-                Constraint::Fixed(selection_width),
-                Constraint::Proportional(0),
+                Constraint::Length(selection_width),
+                Constraint::Min(0),
             ]));
         #[allow(deprecated)]
         let rects = Layout::horizontal(widths)
@@ -1355,7 +1355,7 @@ mod tests {
                 .flex(Flex::StretchLast);
             assert_eq!(
                 table.get_columns_widths(62, 0),
-                &[(0, 10), (11, 10), (22, 40)]
+                &[(0, 29), (30, 28), (59, 3)]
             );
 
             let table = Table::default()
@@ -1382,7 +1382,7 @@ mod tests {
                 .segment_size(SegmentSize::LastTakesRemainder);
             assert_eq!(
                 table.get_columns_widths(62, 0),
-                &[(0, 10), (11, 10), (22, 40)]
+                &[(0, 29), (30, 28), (59, 3)]
             );
 
             let table = Table::default()

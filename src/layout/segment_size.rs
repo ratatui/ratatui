@@ -74,7 +74,7 @@ mod tests {
         let target = Rect::new(100, 200, 10, 10);
         assert_eq!(
             get_x_width_with_segment_size(LastTakesRemainder, vec![Min(2), Min(2), Min(0)], target),
-            [(100, 2), (102, 2), (104, 6)]
+            [(100, 5), (105, 5), (110, 0)]
         );
         assert_eq!(
             get_x_width_with_segment_size(EvenDistribution, vec![Min(2), Min(2), Min(0)], target),

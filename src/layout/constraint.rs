@@ -13,13 +13,11 @@ use itertools::Itertools;
 ///
 /// Constraints are prioritized in the following order:
 ///
-/// 1. [`Constraint::Fixed`]
-/// 2. [`Constraint::Min`]
-/// 3. [`Constraint::Max`]
-/// 4. [`Constraint::Length`]
-/// 5. [`Constraint::Percentage`]
-/// 6. [`Constraint::Ratio`]
-/// 7. [`Constraint::Proportional`]
+/// 1. [`Constraint::Min`]
+/// 2. [`Constraint::Max`]
+/// 3. [`Constraint::Length`]
+/// 4. [`Constraint::Percentage`]
+/// 5. [`Constraint::Ratio`]
 ///
 /// # Examples
 ///
@@ -30,9 +28,6 @@ use itertools::Itertools;
 /// // Create a layout with specified lengths for each element
 /// let constraints = Constraint::from_lengths([10, 20, 10]);
 ///
-/// // Create a layout with specified fixed lengths for each element
-/// let constraints = Constraint::from_fixed_lengths([10, 20, 10]);
-///
 /// // Create a centered layout using ratio or percentage constraints
 /// let constraints = Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]);
 /// let constraints = Constraint::from_percentages([25, 50, 25]);
@@ -42,35 +37,9 @@ use itertools::Itertools;
 ///
 /// // Create a sidebar layout specifying maximum sizes for the columns
 /// let constraints = Constraint::from_maxes([30, 170]);
-///
-/// // Create a layout with proportional sizes for each element
-/// let constraints = Constraint::from_proportional_lengths([1, 2, 1]);
 /// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Constraint {
-    /// Applies a fixed size to the element
-    ///
-    /// The element size is set to the specified amount.
-    /// [`Constraint::Fixed`] will take precedence over all other constraints.
-    ///
-    /// # Examples
-    ///
-    /// `[Fixed(40), Proportional(1)]`
-    ///
-    /// ```plain
-    /// ┌──────────────────────────────────────┐┌────────┐
-    /// │                 40 px                ││  10 px │
-    /// └──────────────────────────────────────┘└────────┘
-    /// ```
-    ///
-    /// `[Fixed(20), Fixed(20), Proportional(1)]`
-    ///
-    /// ```plain
-    /// ┌──────────────────┐┌──────────────────┐┌────────┐
-    /// │       20 px      ││       20 px      ││  10 px │
-    /// └──────────────────┘└──────────────────┘└────────┘
-    /// ```
-    Fixed(u16),
     /// Applies a minimum size constraint to the element
     ///
     /// The element size is set to at least the specified amount.
@@ -121,7 +90,7 @@ pub enum Constraint {
     ///
     /// # Examples
     ///
-    /// `[Length(20), Fixed(20)]`
+    /// `[Length(20), Length(20)]`
     ///
     /// ```plain
     /// ┌────────────────────────────┐┌──────────────────┐
@@ -144,7 +113,7 @@ pub enum Constraint {
     ///
     /// # Examples
     ///
-    /// `[Percentage(75), Proportional(1)]`
+    /// `[Percentage(75), Min(1)]`
     ///
     /// ```plain
     /// ┌────────────────────────────────────┐┌──────────┐
@@ -152,7 +121,7 @@ pub enum Constraint {
     /// └────────────────────────────────────┘└──────────┘
     /// ```
     ///
-    /// `[Percentage(50), Proportional(1)]`
+    /// `[Percentage(50), Min(1)]`
     ///
     /// ```plain
     /// ┌───────────────────────┐┌───────────────────────┐
@@ -183,31 +152,6 @@ pub enum Constraint {
     /// └───────────┘└──────────┘└───────────┘└──────────┘
     /// ```
     Ratio(u32, u32),
-    /// Applies the scaling factor proportional to all other [`Constraint::Proportional`] elements
-    /// to fill excess space
-    ///
-    /// The element will only expand into excess available space, proportionally matching other
-    /// [`Constraint::Proportional`] elements while satisfying all other constraints.
-    ///
-    /// # Examples
-    ///
-    ///
-    /// `[Proportional(1), Proportional(2), Proportional(3)]`
-    ///
-    /// ```plain
-    /// ┌──────┐┌───────────────┐┌───────────────────────┐
-    /// │ 8 px ││     17 px     ││         25 px         │
-    /// └──────┘└───────────────┘└───────────────────────┘
-    /// ```
-    ///
-    /// `[Proportional(1), Percentage(50), Proportional(1)]`
-    ///
-    /// ```plain
-    /// ┌───────────┐┌───────────────────────┐┌──────────┐
-    /// │   13 px   ││         25 px         ││   12 px  │
-    /// └───────────┘└───────────────────────┘└──────────┘
-    /// ```
-    Proportional(u16),
 }
 
 impl Constraint {
@@ -230,8 +174,6 @@ impl Constraint {
                 (percentage * length).min(length) as u16
             }
             Constraint::Length(l) => length.min(l),
-            Constraint::Fixed(l) => length.min(l),
-            Constraint::Proportional(l) => length.min(l),
             Constraint::Max(m) => length.min(m),
             Constraint::Min(m) => length.max(m),
         }
@@ -252,26 +194,6 @@ impl Constraint {
         T: IntoIterator<Item = u16>,
     {
         lengths.into_iter().map(Constraint::Length).collect_vec()
-    }
-
-    /// Convert an iterator of fixed lengths into a vector of constraints
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// # let area = Rect::default();
-    /// let constraints = Constraint::from_fixed_lengths([1, 2, 3]);
-    /// let layout = Layout::default().constraints(constraints).split(area);
-    /// ```
-    pub fn from_fixed_lengths<T>(fixed_lengths: T) -> Vec<Constraint>
-    where
-        T: IntoIterator<Item = u16>,
-    {
-        fixed_lengths
-            .into_iter()
-            .map(Constraint::Fixed)
-            .collect_vec()
     }
 
     /// Convert an iterator of ratios into a vector of constraints
@@ -347,26 +269,6 @@ impl Constraint {
     {
         mins.into_iter().map(Constraint::Min).collect_vec()
     }
-
-    /// Convert an iterator of proportional factors into a vector of constraints
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// # let area = Rect::default();
-    /// let constraints = Constraint::from_mins([1, 2, 3]);
-    /// let layout = Layout::default().constraints(constraints).split(area);
-    /// ```
-    pub fn from_proportional_lengths<T>(proportional_lengths: T) -> Vec<Constraint>
-    where
-        T: IntoIterator<Item = u16>,
-    {
-        proportional_lengths
-            .into_iter()
-            .map(Constraint::Proportional)
-            .collect_vec()
-    }
 }
 
 impl From<u16> for Constraint {
@@ -413,8 +315,6 @@ impl Display for Constraint {
             Constraint::Percentage(p) => write!(f, "Percentage({})", p),
             Constraint::Ratio(n, d) => write!(f, "Ratio({}, {})", n, d),
             Constraint::Length(l) => write!(f, "Length({})", l),
-            Constraint::Fixed(l) => write!(f, "Fixed({})", l),
-            Constraint::Proportional(l) => write!(f, "Proportional({})", l),
             Constraint::Max(m) => write!(f, "Max({})", m),
             Constraint::Min(m) => write!(f, "Min({})", m),
         }
@@ -448,17 +348,6 @@ mod tests {
         ];
         assert_eq!(Constraint::from_lengths([1, 2, 3]), expected);
         assert_eq!(Constraint::from_lengths(vec![1, 2, 3]), expected);
-    }
-
-    #[test]
-    fn from_fixed_lengths() {
-        let expected = [
-            Constraint::Fixed(1),
-            Constraint::Fixed(2),
-            Constraint::Fixed(3),
-        ];
-        assert_eq!(Constraint::from_fixed_lengths([1, 2, 3]), expected);
-        assert_eq!(Constraint::from_fixed_lengths(vec![1, 2, 3]), expected);
     }
 
     #[test]
@@ -498,20 +387,6 @@ mod tests {
         let expected = [Constraint::Min(1), Constraint::Min(2), Constraint::Min(3)];
         assert_eq!(Constraint::from_mins([1, 2, 3]), expected);
         assert_eq!(Constraint::from_mins(vec![1, 2, 3]), expected);
-    }
-
-    #[test]
-    fn from_proportional_lengths() {
-        let expected = [
-            Constraint::Proportional(1),
-            Constraint::Proportional(2),
-            Constraint::Proportional(3),
-        ];
-        assert_eq!(Constraint::from_proportional_lengths([1, 2, 3]), expected);
-        assert_eq!(
-            Constraint::from_proportional_lengths(vec![1, 2, 3]),
-            expected
-        );
     }
 
     #[test]
