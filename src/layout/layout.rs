@@ -503,7 +503,7 @@ impl Layout {
 
         for (left, right) in Itertools::interleave(spacers.iter(), segments.iter()).tuple_windows()
         {
-            solver.add_constraint(left.end | EQ(REQUIRED) | right.start)?;
+            solver.add_constraint(left.precedes(right))?;
         }
 
         if let (Some(first_spacer), Some(last_spacer)) = (spacers.first(), spacers.last()) {
@@ -530,10 +530,10 @@ impl Layout {
         match layout.flex {
             Flex::SpaceAround => {
                 for (left, right) in spacers.iter().tuple_combinations() {
-                    solver.add_constraint(left.equals_size_of(right, strengths::SPACER_SIZE_EQ))?
+                    solver.add_constraint(left.has_size_of(right, strengths::SPACER_SIZE_EQ))?
                 }
                 for spacer in spacers.iter() {
-                    solver.add_constraint(spacer.equals_size_to(size, strengths::SPACE_GROWER))?;
+                    solver.add_constraint(spacer.has_size(size, strengths::SPACE_GROWER))?;
                 }
             }
             Flex::SpaceBetween => {
@@ -544,10 +544,10 @@ impl Layout {
                 // spacers.iter().skip(1).rev().skip(1)
                 // ```
                 for (left, right) in spacers.iter().skip(1).rev().skip(1).tuple_combinations() {
-                    solver.add_constraint(left.equals_size_of(right, strengths::SPACER_SIZE_EQ))?
+                    solver.add_constraint(left.has_size_of(right, strengths::SPACER_SIZE_EQ))?
                 }
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
-                    solver.add_constraint(spacer.equals_size_to(size, strengths::SPACE_GROWER))?;
+                    solver.add_constraint(spacer.has_size(size, strengths::SPACE_GROWER))?;
                 }
                 if let Some(first_segment) = segments.first() {
                     solver.add_constraint(first_segment.start_sticks_to(start))?
@@ -565,7 +565,7 @@ impl Layout {
                 // ```
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
                     solver.add_constraint(
-                        spacer.equals_size_to(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
+                        spacer.has_size(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
                     )?;
                 }
                 if let Some(first_segment) = segments.first() {
@@ -602,7 +602,7 @@ impl Layout {
                 // ```
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
                     solver.add_constraint(
-                        spacer.equals_size_to(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
+                        spacer.has_size(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
                     )?;
                 }
                 if let Some(first_segment) = segments.first() {
@@ -612,7 +612,7 @@ impl Layout {
                     solver.add_constraint(last_segment.end_sticks_to(end))?
                 }
                 for (left, right) in segments.iter().tuple_combinations() {
-                    solver.add_constraint(left.equals_size_of(right, strengths::GROWER))?;
+                    solver.add_constraint(left.has_size_of(right, strengths::GROWER))?;
                 }
             }
             Flex::Start => {
@@ -624,7 +624,7 @@ impl Layout {
                 // ```
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
                     solver.add_constraint(
-                        spacer.equals_size_to(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
+                        spacer.has_size(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
                     )?;
                 }
                 if let Some(first_segment) = segments.first() {
@@ -643,7 +643,7 @@ impl Layout {
                 // ```
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
                     solver.add_constraint(
-                        spacer.equals_size_to(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
+                        spacer.has_size(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
                     )?;
                 }
                 if let Some(first_spacer) = spacers.first() {
@@ -654,7 +654,7 @@ impl Layout {
                 }
                 if let (Some(first_spacer), Some(last_spacer)) = (spacers.first(), spacers.last()) {
                     solver.add_constraint(
-                        first_spacer.equals_size_of(last_spacer, strengths::SPACER_SIZE_EQ),
+                        first_spacer.has_size_of(last_spacer, strengths::SPACER_SIZE_EQ),
                     )?;
                 }
             }
@@ -667,7 +667,7 @@ impl Layout {
                 // ```
                 for spacer in spacers.iter().skip(1).rev().skip(1) {
                     solver.add_constraint(
-                        spacer.equals_size_to(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
+                        spacer.has_size(f64::from(layout.spacing), strengths::SPACER_SIZE_EQ),
                     )?;
                 }
                 if let Some(last_segment) = segments.last() {
@@ -712,36 +712,35 @@ impl Layout {
                     .add_constraint(element.size() | EQ(strengths::FIXED_SIZE_EQ) | f64::from(l))?,
                 Constraint::Max(m) => {
                     solver.add_constraints(&[
-                        element.less_than(f64::from(m), strengths::MAX_SIZE_LE),
-                        element.equals_size_to(f64::from(m), strengths::MAX_SIZE_EQ),
+                        element.has_maximum_size(f64::from(m), strengths::MAX_SIZE_LE),
+                        element.has_size(f64::from(m), strengths::MAX_SIZE_EQ),
                     ])?;
                 }
                 Constraint::Min(m) => {
                     solver.add_constraints(&[
-                        element.greater_than(f64::from(m), strengths::MIN_SIZE_GE),
-                        element.equals_size_to(f64::from(m), strengths::MIN_SIZE_EQ),
+                        element.has_minimum_size(f64::from(m), strengths::MIN_SIZE_GE),
+                        element.has_size(f64::from(m), strengths::MIN_SIZE_EQ),
                     ])?;
                 }
-                Constraint::Length(l) => solver.add_constraint(
-                    element.equals_size_to(f64::from(l), strengths::LENGTH_SIZE_EQ),
-                )?,
+                Constraint::Length(l) => solver
+                    .add_constraint(element.has_size(f64::from(l), strengths::LENGTH_SIZE_EQ))?,
                 Constraint::Percentage(p) => {
                     let percent = f64::from(p) / 100.00;
                     solver.add_constraint(
-                        element.equals_size_to(area_size * percent, strengths::PERCENTAGE_SIZE_EQ),
+                        element.has_size(area_size * percent, strengths::PERCENTAGE_SIZE_EQ),
                     )?;
                 }
                 Constraint::Ratio(n, d) => {
                     // avoid division by zero by using 1 when denominator is 0
                     let ratio = f64::from(n) / f64::from(d.max(1));
                     solver.add_constraint(
-                        element.equals_size_to(area_size * ratio, strengths::RATIO_SIZE_EQ),
+                        element.has_size(area_size * ratio, strengths::RATIO_SIZE_EQ),
                     )?;
                 }
                 Constraint::Proportional(_) => {
                     // given no other constraints, this segment will grow as much as possible.
                     solver.add_constraint(
-                        element.equals_size_to(area_size, strengths::PROPORTIONAL_GROWER),
+                        element.has_size(area_size, strengths::PROPORTIONAL_GROWER),
                     )?;
                 }
             }
@@ -1015,19 +1014,19 @@ impl Element {
         self.end - self.start
     }
 
-    fn less_than(&self, size: f64, strength: f64) -> cassowary::Constraint {
+    fn has_maximum_size(&self, size: f64, strength: f64) -> cassowary::Constraint {
         self.size() | LE(strength) | size
     }
 
-    fn greater_than(&self, size: f64, strength: f64) -> cassowary::Constraint {
+    fn has_minimum_size(&self, size: f64, strength: f64) -> cassowary::Constraint {
         self.size() | GE(strength) | size
     }
 
-    fn equals_size_to(&self, size: f64, strength: f64) -> cassowary::Constraint {
+    fn has_size(&self, size: f64, strength: f64) -> cassowary::Constraint {
         self.size() | EQ(strength) | size
     }
 
-    fn equals_size_of(&self, other: &Element, strength: f64) -> cassowary::Constraint {
+    fn has_size_of(&self, other: &Element, strength: f64) -> cassowary::Constraint {
         self.size() | EQ(strength) | other.size()
     }
 
@@ -1037,6 +1036,10 @@ impl Element {
 
     fn end_sticks_to(&self, value: f64) -> cassowary::Constraint {
         self.end | EQ(REQUIRED) | value
+    }
+
+    fn precedes(&self, other: &Element) -> cassowary::Constraint {
+        self.end | EQ(REQUIRED) | other.start
     }
 
     fn between(&self, start: f64, end: f64) -> Vec<cassowary::Constraint> {
