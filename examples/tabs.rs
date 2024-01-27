@@ -122,8 +122,8 @@ impl Widget for &App {
         let vertical = Layout::vertical([Length(1), Min(0), Length(1)]);
         let [header_area, inner_area, footer_area] = area.split(&vertical);
 
-        let horizontal = Layout::horizontal([Length(22), Min(0)]);
-        let [title_area, tabs_area] = header_area.split(&horizontal);
+        let horizontal = Layout::horizontal([Min(0), Length(20)]);
+        let [tabs_area, title_area] = header_area.split(&horizontal);
 
         self.render_title(title_area, buf);
         self.render_tabs(tabs_area, buf);
