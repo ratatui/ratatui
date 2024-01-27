@@ -1,6 +1,7 @@
 use std::fmt::{self, Display};
 
 use itertools::Itertools;
+use strum::EnumIs;
 
 /// A constraint that defines the size of a layout element.
 ///
@@ -46,7 +47,7 @@ use itertools::Itertools;
 /// // Create a layout with proportional sizes for each element
 /// let constraints = Constraint::from_proportional_lengths([1, 2, 1]);
 /// ```
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, EnumIs)]
 pub enum Constraint {
     /// Applies a fixed size to the element
     ///
