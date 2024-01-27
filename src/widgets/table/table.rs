@@ -777,7 +777,6 @@ impl Table<'_> {
                 Constraint::Fixed(selection_width),
                 Constraint::Proportional(0),
             ]));
-        #[allow(deprecated)]
         let rects = Layout::horizontal(widths)
             .flex(self.flex)
             .spacing(self.column_spacing)
