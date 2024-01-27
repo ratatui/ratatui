@@ -738,8 +738,8 @@ fn configure_flex_constraints(
                 solver.add_constraint(spacer.has_size(area, SPACE_GROWER))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
-                solver.add_constraint(first.has_size(0.0, REQUIRED - 1.0))?;
-                solver.add_constraint(last.has_size(0.0, REQUIRED - 1.0))?;
+                solver.add_constraint(first.is_empty())?;
+                solver.add_constraint(last.is_empty())?;
             }
         }
         Flex::StretchLast => {
@@ -747,8 +747,8 @@ fn configure_flex_constraints(
                 solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
-                solver.add_constraint(first.has_size(0.0, REQUIRED - 1.0))?;
-                solver.add_constraint(last.has_size(0.0, REQUIRED - 1.0))?;
+                solver.add_constraint(first.is_empty())?;
+                solver.add_constraint(last.is_empty())?;
             }
         }
         Flex::Stretch => {
@@ -759,8 +759,8 @@ fn configure_flex_constraints(
                 solver.add_constraint(left.has_size(right, GROWER))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
-                solver.add_constraint(first.has_size(0.0, REQUIRED - 1.0))?;
-                solver.add_constraint(last.has_size(0.0, REQUIRED - 1.0))?;
+                solver.add_constraint(first.is_empty())?;
+                solver.add_constraint(last.is_empty())?;
             }
         }
         Flex::Start => {
@@ -768,7 +768,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
-                solver.add_constraint(first.has_size(0.0, REQUIRED - 1.0))?;
+                solver.add_constraint(first.is_empty())?;
                 solver.add_constraint(last.has_size(area, strengths::GROWER))?;
             }
         }
@@ -787,7 +787,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
-                solver.add_constraint(last.has_size(0.0, REQUIRED - 1.0))?;
+                solver.add_constraint(last.is_empty())?;
                 solver.add_constraint(first.has_size(area, strengths::GROWER))?;
             }
         }
@@ -942,6 +942,10 @@ impl Element {
 
     fn has_size<E: Into<Expression>>(&self, size: E, strength: f64) -> cassowary::Constraint {
         self.size() | EQ(strength) | size.into()
+    }
+
+    fn is_empty(&self) -> cassowary::Constraint {
+        self.size() | EQ(REQUIRED - 1.0) | 0.0
     }
 }
 
