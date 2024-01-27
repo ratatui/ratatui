@@ -962,54 +962,92 @@ impl From<&Element> for Expression {
 
 mod strengths {
     use cassowary::strength::{MEDIUM, REQUIRED, STRONG, WEAK};
+    /// The strength to apply to Spacers to ensure that their sizes are equal.
+    ///
     /// ┌     ┐┌───┐┌     ┐┌───┐┌     ┐
     ///   ==x  │   │  ==x  │   │  ==x
     /// └     ┘└───┘└     ┘└───┘└     ┘
     pub const SPACER_SIZE_EQ: f64 = REQUIRED - 1.0;
+
+    /// The strength to apply to Proportional constraints so that their sizes are proportional.
+    ///
     /// ┌───────────────┐┌───────────────┐
     /// │Proportional(x)││Proportional(x)│
     /// └───────────────┘└───────────────┘
     pub const PROPORTIONAL_SCALING_EQ: f64 = REQUIRED - 1.0;
+
+    /// The strength to apply to Fixed constraints.
+    ///
     /// ┌──────────┐
     /// │Fixed(==x)│
     /// └──────────┘
     pub const FIXED_SIZE_EQ: f64 = REQUIRED / 10.0;
-    /// ┌────────┐┌────────┐
-    /// │Min(>=x)││Max(<=x)│
-    /// └────────┘└────────┘
+
+    /// The strength to apply to Min inequality constraints.
+    ///
+    /// ┌────────┐
+    /// │Min(>=x)│
+    /// └────────┘
     pub const MIN_SIZE_GE: f64 = STRONG * 10.0;
-    /// ┌────────┐┌────────┐
-    /// │Min(>=x)││Max(<=x)│
-    /// └────────┘└────────┘
+
+    /// The strength to apply to Max inequality constraints.
+    ///
+    /// ┌────────┐
+    /// │Max(<=x)│
+    /// └────────┘
     pub const MAX_SIZE_LE: f64 = STRONG * 10.0;
+
+    /// The strength to apply to Length constraints.
+    ///
     /// ┌───────────┐
     /// │Length(==x)│
     /// └───────────┘
     pub const LENGTH_SIZE_EQ: f64 = STRONG / 10.0;
+
+    /// The strength to apply to Percentage constraints.
+    ///
     /// ┌───────────────┐
     /// │Percentage(==x)│
     /// └───────────────┘
     pub const PERCENTAGE_SIZE_EQ: f64 = MEDIUM * 10.0;
+
+    /// The strength to apply to Ratio constraints.
+    ///
     /// ┌────────────┐
     /// │Ratio(==x,y)│
     /// └────────────┘
     pub const RATIO_SIZE_EQ: f64 = MEDIUM;
-    /// ┌────────┐┌────────┐
-    /// │Min(==x)││Max(==x)│
-    /// └────────┘└────────┘
+
+    /// The strength to apply to Min equality constraints.
+    ///
+    /// ┌────────┐
+    /// │Min(==x)│
+    /// └────────┘
     pub const MIN_SIZE_EQ: f64 = MEDIUM / 10.0;
-    /// ┌────────┐┌────────┐
-    /// │Min(==x)││Max(==x)│
-    /// └────────┘└────────┘
+
+    /// The strength to apply to Max equality constraints.
+    ///
+    /// ┌────────┐
+    /// │Max(==x)│
+    /// └────────┘
     pub const MAX_SIZE_EQ: f64 = MEDIUM / 10.0;
+
+    /// The strength to apply to Proportional growing constraints.
+    ///
     /// ┌─────────────────────┐
     /// │<= Proportional(x) =>│
     /// └─────────────────────┘
     pub const PROPORTIONAL_GROW: f64 = WEAK * 10.0;
+
+    /// The strength to apply to growing constraints.
+    ///
     /// ┌────────────┐
     /// │<= Min(x) =>│
     /// └────────────┘
     pub const GROW: f64 = WEAK;
+
+    /// The strength to apply to Spacer growing constraints.
+    ///
     /// ┌       ┐
     ///  <= x =>
     /// └       ┘
