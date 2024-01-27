@@ -1,11 +1,6 @@
-use std::{
-    error::Error,
-    io::{self, stdout},
-    time::Duration,
-};
+use std::{io::stdout, time::Duration};
 
-use anyhow::Result;
-use color_eyre::config::HookBuilder;
+use color_eyre::{config::HookBuilder, Result};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -23,99 +18,98 @@ const GAUGE3_COLOR: Color = tailwind::BLUE.c800;
 const CUSTOM_LABEL_COLOR: Color = tailwind::SLATE.c200;
 const GAUGE4_COLOR: Color = tailwind::ORANGE.c800;
 
+#[derive(Debug, Default, Clone, Copy)]
 struct App {
     state: AppState,
-    start: bool,
-}
-
-#[derive(Debug, Default, Clone, Copy)]
-struct AppState {
     progress1: u16,
     progress2: u16,
     progress3: f64,
     progress4: u16,
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+enum AppState {
+    #[default]
+    Running,
+    Started,
+    Quitting,
+}
+
+fn main() -> Result<()> {
     init_error_hooks()?;
     let terminal = init_terminal()?;
-
-    // create app and run it
-    App::new().run(terminal)?;
-
+    App::default().run(terminal)?;
     restore_terminal()?;
-
     Ok(())
 }
 
 impl App {
-    fn new() -> App {
-        App {
-            state: AppState::default(),
-            start: false,
+    fn run(&mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
+        while self.state != AppState::Quitting {
+            self.draw(&mut terminal)?;
+            self.update();
+            self.handle_events()?;
         }
+        Ok(())
+    }
+
+    fn draw(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
+        terminal.draw(|f| f.render_widget(self, f.size()))?;
+        Ok(())
     }
 
     fn update(&mut self) {
-        self.state.progress1 = (self.state.progress1 + 4).min(100);
-        self.state.progress2 = (self.state.progress2 + 3).min(100);
-        self.state.progress3 = (self.state.progress3 + 0.02).min(1.0);
-        self.state.progress4 = (self.state.progress4 + 1).min(100);
+        if self.state != AppState::Started {
+            return;
+        }
+        self.progress1 = (self.progress1 + 4).min(100);
+        self.progress2 = (self.progress2 + 3).min(100);
+        self.progress3 = (self.progress3 + 0.02).min(1.0);
+        self.progress4 = (self.progress4 + 1).min(100);
     }
-}
 
-impl App {
-    fn run(&mut self, mut terminal: Terminal<impl Backend>) -> io::Result<()> {
+    fn handle_events(&mut self) -> Result<()> {
         let timeout = Duration::from_secs_f32(1.0 / 10.0);
-
-        loop {
-            self.draw(&mut terminal)?;
-            if self.start {
-                self.update();
-            }
-
-            if event::poll(timeout)? {
-                if let Event::Key(key) = event::read()? {
-                    if key.kind == KeyEventKind::Press {
-                        use KeyCode::*;
-                        match key.code {
-                            Char('q') | Esc => return Ok(()),
-                            Enter => self.start = true,
-                            _ => {}
-                        }
+        if event::poll(timeout)? {
+            if let Event::Key(key) = event::read()? {
+                if key.kind == KeyEventKind::Press {
+                    use KeyCode::*;
+                    match key.code {
+                        Char(' ') | Enter => self.start(),
+                        Char('q') | Esc => self.quit(),
+                        _ => {}
                     }
                 }
             }
         }
+        Ok(())
     }
 
-    fn draw(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
-        terminal.draw(|f| f.render_widget(self, f.size()))?;
-        Ok(())
+    fn start(&mut self) {
+        self.state = AppState::Started;
+    }
+
+    fn quit(&mut self) {
+        self.state = AppState::Quitting;
     }
 }
 
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::vertical([
-            Constraint::Length(2),
-            Constraint::Min(0),
-            Constraint::Length(1),
-        ]);
+        use Constraint::*;
+        let layout = Layout::vertical([Length(2), Min(0), Length(1)]);
         let [header_area, gauge_area, footer_area] = area.split(&layout);
 
-        let layout = Layout::vertical([Constraint::Ratio(1, 4); 4]);
+        let layout = Layout::vertical([Ratio(1, 4); 4]);
         let [gauge1_area, gauge2_area, gauge3_area, gauge4_area] = gauge_area.split(&layout);
 
         self.render_header(header_area, buf);
-
-        self.render_gauge1(gauge1_area, buf, self.state.progress1);
-        self.render_gauge2(gauge2_area, buf, self.state.progress2);
-        self.render_gauge3(gauge3_area, buf, self.state.progress3);
-        self.render_gauge4(gauge4_area, buf, self.state.progress4);
-
         self.render_footer(footer_area, buf);
+
+        self.render_gauge1(gauge1_area, buf);
+        self.render_gauge2(gauge2_area, buf);
+        self.render_gauge3(gauge3_area, buf);
+        self.render_gauge4(gauge4_area, buf);
     }
 }
 
@@ -128,53 +122,6 @@ impl App {
             .render(area, buf);
     }
 
-    fn render_gauge1(&self, area: Rect, buf: &mut Buffer, progress: u16) {
-        let title = Self::title_block("Gauge with percentage progress");
-        Gauge::default()
-            .block(title)
-            .gauge_style(GAUGE1_COLOR)
-            .percent(progress)
-            .render(area, buf);
-    }
-
-    fn render_gauge2(&self, area: Rect, buf: &mut Buffer, progress: u16) {
-        let title = Self::title_block("Gauge with percentage progress and custom label");
-        let label = format!("{}/100", progress);
-        Gauge::default()
-            .block(title)
-            .gauge_style(GAUGE2_COLOR)
-            .percent(progress)
-            .label(label)
-            .render(area, buf);
-    }
-
-    fn render_gauge3(&self, area: Rect, buf: &mut Buffer, progress: f64) {
-        let title =
-            Self::title_block("Gauge with ratio progress, custom label with style, and unicode");
-        let label = Span::styled(
-            format!("{:.2}%", progress * 100.0),
-            Style::new().italic().bold().fg(CUSTOM_LABEL_COLOR),
-        );
-        Gauge::default()
-            .block(title)
-            .gauge_style(GAUGE3_COLOR)
-            .ratio(progress)
-            .label(label)
-            .use_unicode(true)
-            .render(area, buf);
-    }
-
-    fn render_gauge4(&self, area: Rect, buf: &mut Buffer, progress: u16) {
-        let title = Self::title_block("Gauge with percentage progress and label");
-        let label = format!("{}/100", progress);
-        Gauge::default()
-            .block(title)
-            .gauge_style(GAUGE4_COLOR)
-            .percent(progress)
-            .label(label)
-            .render(area, buf);
-    }
-
     fn render_footer(&self, area: Rect, buf: &mut Buffer) {
         Paragraph::new("Press ENTER to start")
             .alignment(Alignment::Center)
@@ -183,14 +130,60 @@ impl App {
             .render(area, buf);
     }
 
-    fn title_block(title: &str) -> Block {
-        let title = Title::from(title).alignment(Alignment::Center);
-        Block::default()
-            .title(title)
-            .borders(Borders::NONE)
-            .fg(CUSTOM_LABEL_COLOR)
-            .padding(Padding::vertical(1))
+    fn render_gauge1(&self, area: Rect, buf: &mut Buffer) {
+        let title = title_block("Gauge with percentage progress");
+        Gauge::default()
+            .block(title)
+            .gauge_style(GAUGE1_COLOR)
+            .percent(self.progress1)
+            .render(area, buf);
     }
+
+    fn render_gauge2(&self, area: Rect, buf: &mut Buffer) {
+        let title = title_block("Gauge with percentage progress and custom label");
+        let label = format!("{}/100", self.progress2);
+        Gauge::default()
+            .block(title)
+            .gauge_style(GAUGE2_COLOR)
+            .percent(self.progress2)
+            .label(label)
+            .render(area, buf);
+    }
+
+    fn render_gauge3(&self, area: Rect, buf: &mut Buffer) {
+        let title = title_block("Gauge with ratio progress, custom label with style, and unicode");
+        let label = Span::styled(
+            format!("{:.2}%", self.progress3 * 100.0),
+            Style::new().italic().bold().fg(CUSTOM_LABEL_COLOR),
+        );
+        Gauge::default()
+            .block(title)
+            .gauge_style(GAUGE3_COLOR)
+            .ratio(self.progress3)
+            .label(label)
+            .use_unicode(true)
+            .render(area, buf);
+    }
+
+    fn render_gauge4(&self, area: Rect, buf: &mut Buffer) {
+        let title = title_block("Gauge with percentage progress and label");
+        let label = format!("{}/100", self.progress4);
+        Gauge::default()
+            .block(title)
+            .gauge_style(GAUGE4_COLOR)
+            .percent(self.progress4)
+            .label(label)
+            .render(area, buf);
+    }
+}
+
+fn title_block(title: &str) -> Block {
+    let title = Title::from(title).alignment(Alignment::Center);
+    Block::default()
+        .title(title)
+        .borders(Borders::NONE)
+        .fg(CUSTOM_LABEL_COLOR)
+        .padding(Padding::vertical(1))
 }
 
 fn init_error_hooks() -> color_eyre::Result<()> {
