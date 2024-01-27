@@ -13,37 +13,91 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{error::Error, io};
+use std::{io, io::stdout};
 
+use color_eyre::{config::HookBuilder, Result};
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
-    execute,
+    event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    ExecutableCommand,
 };
 use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
-const PALETTES: &[tailwind::Palette] = &[
-    tailwind::BLUE,
-    tailwind::EMERALD,
-    tailwind::INDIGO,
-    tailwind::RED,
-];
+#[derive(Default)]
+struct App {
+    state: AppState,
+    selected_tab: SelectedTab,
+}
 
-const BORDER_TYPES: &[BorderType] = &[
-    BorderType::Rounded,
-    BorderType::Plain,
-    BorderType::Double,
-    BorderType::Thick,
-];
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
+enum AppState {
+    #[default]
+    Running,
+    Quitting,
+}
 
 #[derive(Default, Clone, Copy, Display, FromRepr, EnumIter)]
 enum SelectedTab {
     #[default]
-    Tab0,
+    #[strum(to_string = "Tab 1")]
     Tab1,
+    #[strum(to_string = "Tab 2")]
     Tab2,
+    #[strum(to_string = "Tab 3")]
     Tab3,
+    #[strum(to_string = "Tab 4")]
+    Tab4,
+}
+
+fn main() -> Result<()> {
+    init_error_hooks()?;
+    let mut terminal = init_terminal()?;
+    App::default().run(&mut terminal)?;
+    restore_terminal()?;
+    Ok(())
+}
+
+impl App {
+    fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
+        while self.state == AppState::Running {
+            self.draw(terminal)?;
+            self.handle_events()?;
+        }
+        Ok(())
+    }
+
+    fn draw(&self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
+        terminal.draw(|frame| frame.render_widget(self, frame.size()))?;
+        Ok(())
+    }
+
+    fn handle_events(&mut self) -> Result<(), io::Error> {
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press {
+                use KeyCode::*;
+                match key.code {
+                    Char('l') | Right => self.next_tab(),
+                    Char('h') | Left => self.previous_tab(),
+                    Char('q') | Esc => self.quit(),
+                    _ => {}
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn next_tab(&mut self) {
+        self.selected_tab = self.selected_tab.next();
+    }
+
+    pub fn previous_tab(&mut self) {
+        self.selected_tab = self.selected_tab.previous();
+    }
+
+    pub fn quit(&mut self) {
+        self.state = AppState::Quitting;
+    }
 }
 
 impl SelectedTab {
@@ -62,121 +116,135 @@ impl SelectedTab {
     }
 }
 
-impl From<SelectedTab> for Line<'_> {
-    /// Return enum name as a styled `Line` with two spaces both left and right.
-    fn from(value: SelectedTab) -> Self {
-        format!("  {value}  ")
-            .fg(tailwind::SLATE.c200)
-            .bg(PALETTES[value as usize].c900)
-            .into()
-    }
-}
+impl Widget for &App {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        use Constraint::*;
+        let vertical = Layout::vertical([Length(1), Min(0), Length(1)]);
+        let [header_area, inner_area, footer_area] = area.split(&vertical);
 
-struct App {
-    pub selected_tab: SelectedTab,
+        let horizontal = Layout::horizontal([Min(0), Length(20)]);
+        let [tabs_area, title_area] = header_area.split(&horizontal);
+
+        self.render_title(title_area, buf);
+        self.render_tabs(tabs_area, buf);
+        self.selected_tab.render(inner_area, buf);
+        self.render_footer(footer_area, buf);
+    }
 }
 
 impl App {
-    fn new() -> App {
-        App {
-            selected_tab: SelectedTab::default(),
-        }
+    fn render_title(&self, area: Rect, buf: &mut Buffer) {
+        "Ratatui Tabs Example".bold().render(area, buf);
     }
 
-    pub fn next(&mut self) {
-        self.selected_tab = self.selected_tab.next();
+    fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
+        let titles = SelectedTab::iter().map(|tab| tab.title());
+        let highlight_style = (Color::default(), self.selected_tab.palette().c700);
+        let selected_tab_index = self.selected_tab as usize;
+        Tabs::new(titles)
+            .highlight_style(highlight_style)
+            .select(selected_tab_index)
+            .padding("", "")
+            .divider(" ")
+            .render(area, buf);
     }
 
-    pub fn previous(&mut self) {
-        self.selected_tab = self.selected_tab.previous();
+    fn render_footer(&self, area: Rect, buf: &mut Buffer) {
+        Line::raw("◄ ► to change tab | Press q to quit")
+            .centered()
+            .render(area, buf);
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+impl Widget for SelectedTab {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        // in a real app these might be separate widgets
+        match self {
+            SelectedTab::Tab1 => self.render_tab0(area, buf),
+            SelectedTab::Tab2 => self.render_tab1(area, buf),
+            SelectedTab::Tab3 => self.render_tab2(area, buf),
+            SelectedTab::Tab4 => self.render_tab3(area, buf),
+        }
+    }
+}
 
-    // create app and run it
-    let app = App::new();
-    let res = run_app(&mut terminal, app);
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
+impl SelectedTab {
+    /// Return tab's name as a styled `Line`
+    fn title(&self) -> Line<'static> {
+        format!("  {self}  ")
+            .fg(tailwind::SLATE.c200)
+            .bg(self.palette().c900)
+            .into()
     }
 
+    fn render_tab0(&self, area: Rect, buf: &mut Buffer) {
+        Paragraph::new("Hello, World!")
+            .block(self.block())
+            .render(area, buf)
+    }
+
+    fn render_tab1(&self, area: Rect, buf: &mut Buffer) {
+        Paragraph::new("Welcome to the Ratatui tabs example!")
+            .block(self.block())
+            .render(area, buf)
+    }
+
+    fn render_tab2(&self, area: Rect, buf: &mut Buffer) {
+        Paragraph::new("Look! I'm different than others!")
+            .block(self.block())
+            .render(area, buf)
+    }
+
+    fn render_tab3(&self, area: Rect, buf: &mut Buffer) {
+        Paragraph::new("I know, these are some basic changes. But I think you got the main idea.")
+            .block(self.block())
+            .render(area, buf)
+    }
+
+    /// A block surrounding the tab's content
+    fn block(&self) -> Block<'static> {
+        Block::default()
+            .borders(Borders::ALL)
+            .border_set(symbols::border::PROPORTIONAL_TALL)
+            .padding(Padding::horizontal(1))
+            .border_style(self.palette().c700)
+    }
+
+    fn palette(&self) -> tailwind::Palette {
+        match self {
+            SelectedTab::Tab1 => tailwind::BLUE,
+            SelectedTab::Tab2 => tailwind::EMERALD,
+            SelectedTab::Tab3 => tailwind::INDIGO,
+            SelectedTab::Tab4 => tailwind::RED,
+        }
+    }
+}
+
+fn init_error_hooks() -> color_eyre::Result<()> {
+    let (panic, error) = HookBuilder::default().into_hooks();
+    let panic = panic.into_panic_hook();
+    let error = error.into_eyre_hook();
+    color_eyre::eyre::set_hook(Box::new(move |e| {
+        let _ = restore_terminal();
+        error(e)
+    }))?;
+    std::panic::set_hook(Box::new(move |info| {
+        let _ = restore_terminal();
+        panic(info)
+    }));
     Ok(())
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
-    loop {
-        terminal.draw(|f| ui(f, &app))?;
-
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-                    KeyCode::Char('l') | KeyCode::Right => app.next(),
-                    KeyCode::Char('h') | KeyCode::Left => app.previous(),
-                    _ => {}
-                }
-            }
-        }
-    }
+fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
+    enable_raw_mode()?;
+    stdout().execute(EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout());
+    let terminal = Terminal::new(backend)?;
+    Ok(terminal)
 }
 
-fn ui(f: &mut Frame, app: &App) {
-    let area = f.size();
-    let vertical = Layout::vertical([Constraint::Length(4), Constraint::Min(3)]);
-    let [tabs_area, inner_area] = area.split(&vertical);
-
-    render_tabs(f, app, tabs_area);
-
-    render_inner(f, app, inner_area);
-}
-
-fn render_tabs(f: &mut Frame, app: &App, area: Rect) {
-    let block = Block::new()
-        .title("Tabs Example".bold())
-        .title("Use h l or ◄ ► to change tab")
-        .title_alignment(Alignment::Center)
-        .padding(Padding::top(1)); // padding to separate tabs from block title.
-
-    let selected_tab_index = app.selected_tab as usize;
-    // Gets tab titles from `SelectedTab::iter()`
-    let tabs = Tabs::new(SelectedTab::iter())
-        .block(block)
-        .highlight_style(
-            Style::new()
-                .bg(PALETTES[selected_tab_index].c600)
-                .underlined(),
-        )
-        .select(selected_tab_index)
-        .padding("", "")
-        .divider(" | ");
-
-    f.render_widget(tabs, area);
-}
-
-fn render_inner(f: &mut Frame, app: &App, area: Rect) {
-    let index = app.selected_tab as usize;
-    let inner_block = Block::default()
-        .title(format!("Inner {index}"))
-        .borders(Borders::ALL)
-        .border_type(BORDER_TYPES[index])
-        .border_style(Style::new().fg(PALETTES[index].c600));
-
-    f.render_widget(inner_block, area);
+fn restore_terminal() -> color_eyre::Result<()> {
+    disable_raw_mode()?;
+    stdout().execute(LeaveAlternateScreen)?;
+    Ok(())
 }
