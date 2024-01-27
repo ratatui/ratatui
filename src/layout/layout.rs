@@ -593,7 +593,6 @@ impl Layout {
         //                ┗━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━Segments━━━━━━━━┛
         // ```
 
-        let area = Element::new();
         let variable_count = self.constraints.len() * 2 + 2;
         let variables = iter::repeat_with(Variable::new)
             .take(variable_count)
@@ -614,10 +613,11 @@ impl Layout {
         let spacing = self.spacing;
         let constraints = &self.constraints;
 
-        configure_area(&mut solver, area, area_start, area_end)?;
-        configure_variable_constraints(&mut solver, &variables, area)?;
-        configure_flex_constraints(&mut solver, area, &spacers, &segments, flex, spacing)?;
-        configure_constraints(&mut solver, area, &segments, constraints)?;
+        let area_size = Element::from((*variables.first().unwrap(), *variables.last().unwrap()));
+        configure_area(&mut solver, area_size, area_start, area_end)?;
+        configure_variable_constraints(&mut solver, &variables, area_size)?;
+        configure_flex_constraints(&mut solver, area_size, &spacers, &segments, flex, spacing)?;
+        configure_constraints(&mut solver, area_size, &segments, constraints)?;
         configure_proportional_constraints(&mut solver, &segments, constraints)?;
 
         // `solver.fetch_changes()` can only be called once per solve
@@ -658,11 +658,6 @@ fn configure_variable_constraints(
         solver.add_constraint(left | LE(REQUIRED) | right)?;
     }
 
-    // the first and last variables are at the start and end of the area
-    if let (Some(&first), Some(&last)) = (variables.first(), variables.last()) {
-        solver.add_constraint(first | EQ(REQUIRED) | area.start)?;
-        solver.add_constraint(last | EQ(REQUIRED) | area.end)?;
-    }
     Ok(())
 }
 
