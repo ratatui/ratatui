@@ -537,8 +537,8 @@ impl Layout {
                 }
             }
             Flex::SpaceBetween => {
-                // The difference between `SpaceAround` is that we skip
-                // adding any constraints for the first and last spacer, i.e. we use the following:
+                // We skip adding any constraints for the first and last spacer, i.e. we use the
+                // following:
                 //
                 // ```
                 // spacers.iter().skip(1).rev().skip(1)
@@ -557,8 +557,8 @@ impl Layout {
                 }
             }
             Flex::StretchLast => {
-                // The difference between `SpaceAround` is that we skip
-                // adding any constraints for the first and last spacer, i.e. we use the following:
+                // We skip adding any constraints for the first and last spacer, i.e. we use the
+                // following:
                 //
                 // ```
                 // spacers.iter().skip(1).rev().skip(1)
@@ -594,8 +594,8 @@ impl Layout {
                 }
             }
             Flex::Stretch => {
-                // The difference between `SpaceAround` is that we skip
-                // adding any constraints for the first and last spacer, i.e. we use the following:
+                // We skip adding any constraints for the first and last spacer, i.e. we use the
+                // following:
                 //
                 // ```
                 // spacers.iter().skip(1).rev().skip(1)
@@ -616,8 +616,8 @@ impl Layout {
                 }
             }
             Flex::Start => {
-                // The difference between `SpaceAround` is that we skip
-                // adding any constraints for the first and last spacer, i.e. we use the following:
+                // We skip adding any constraints for the first and last spacer, i.e. we use the
+                // following:
                 //
                 // ```
                 // spacers.iter().skip(1).rev().skip(1)
@@ -635,8 +635,8 @@ impl Layout {
                 }
             }
             Flex::Center => {
-                // The difference between `SpaceAround` is that we skip
-                // adding any constraints for the first and last spacer, i.e. we use the following:
+                // We skip adding any constraints for the first and last spacer, i.e. we use the
+                // following:
                 //
                 // ```
                 // spacers.iter().skip(1).rev().skip(1)
@@ -659,8 +659,8 @@ impl Layout {
                 }
             }
             Flex::End => {
-                // The difference between `SpaceAround` is that we skip
-                // adding any constraints for the first and last spacer, i.e. we use the following:
+                // We skip adding any constraints for the first and last spacer, i.e. we use the
+                // following:
                 //
                 // ```
                 // spacers.iter().skip(1).rev().skip(1)
