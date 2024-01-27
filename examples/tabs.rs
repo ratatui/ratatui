@@ -139,7 +139,7 @@ impl App {
 
     fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
         let titles = SelectedTab::iter().map(|tab| tab.title());
-        let highlight_style = (Color::default(), self.selected_tab.palette().c800);
+        let highlight_style = (Color::default(), self.selected_tab.palette().c700);
         let selected_tab_index = self.selected_tab as usize;
         Tabs::new(titles)
             .highlight_style(highlight_style)
@@ -173,7 +173,7 @@ impl SelectedTab {
     fn title(&self) -> Line<'static> {
         format!("  {self}  ")
             .fg(tailwind::SLATE.c200)
-            .bg(self.palette().c950)
+            .bg(self.palette().c900)
             .into()
     }
 
@@ -218,7 +218,7 @@ impl SelectedTab {
             .borders(Borders::ALL)
             .border_set(border_set)
             .padding(Padding::horizontal(1))
-            .border_style(self.palette().c800)
+            .border_style(self.palette().c700)
     }
 
     fn palette(&self) -> tailwind::Palette {
