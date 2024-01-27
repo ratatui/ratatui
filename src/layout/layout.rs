@@ -16,6 +16,8 @@ use super::{Flex, SegmentSize};
 use crate::prelude::*;
 
 type Rects = Rc<[Rect]>;
+type Segments = Rects;
+type Spacers = Rects;
 // The solution to a Layout solve contains two `Rects`, where `Rects` is effectively a `[Rect]`.
 //
 // 1. `[Rect]` that contains positions for the segments corresponding to user provided constraints
@@ -27,7 +29,7 @@ type Rects = Rc<[Rect]>;
 // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
 //
 // Number of spacers will always be one more than number of segments.
-type Cache = LruCache<(Rect, Layout), (Rects, Rects)>;
+type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 
 thread_local! {
     static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = OnceLock::new();
@@ -530,7 +532,7 @@ impl Layout {
     ///     ]
     /// );
     /// ```
-    pub fn split_with_spacers(&self, area: Rect) -> (Rects, Rects) {
+    pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
         LAYOUT_CACHE.with(|c| {
             c.get_or_init(|| {
                 RefCell::new(LruCache::new(
@@ -545,7 +547,7 @@ impl Layout {
         })
     }
 
-    fn try_split(&self, area: Rect) -> Result<(Rects, Rects), AddConstraintError> {
+    fn try_split(&self, area: Rect) -> Result<(Segments, Spacers), AddConstraintError> {
         // To take advantage of all of cassowary features, we would want to store the `Solver` in
         // one of the fields of the Layout struct. And we would want to set it up such that we could
         // add or remove constraints as and when needed.
