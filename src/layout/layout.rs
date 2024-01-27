@@ -448,7 +448,7 @@ impl Layout {
     /// ```plain
     /// <----------------------------80 px (spacer: 10 px)----------------------------->
     /// ┌──────────────────┐┌        ┐┌──────────────────┐┌        ┐┌──────────────────┐
-    /// │    Length(20)    │          │      Min(20)     │          │      Max(20)     │
+    /// │     Fixed(20)    │          │      Min(20)     │          │      Max(20)     │
     /// └──────────────────┘└        ┘└──────────────────┘└        ┘└──────────────────┘
     /// ^^^^^^^^^^^^^^^^^^^^          ^^^^^^^^^^^^^^^^^^^^          ^^^^^^^^^^^^^^^^^^^^
     ///          │                              │                             │
@@ -477,7 +477,7 @@ impl Layout {
     /// ```plain
     /// <------------------------------------80 px------------------------------------->
     /// ┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐
-    ///      │    Length(20)    │     │      Min(20)     │     │      Max(20)     │
+    ///      │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
     /// └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
     /// ^^^^^                    ^^^^^                    ^^^^^                    ^^^^^
     ///   │                        │                        │                        │
@@ -643,52 +643,6 @@ impl Layout {
                         ))?;
                     }
                 }
-                // Make max proportional
-                for ((&l_constraint, &l_element), (&r_constraint, &r_element)) in layout
-                    .constraints
-                    .iter()
-                    .zip(segments.iter())
-                    .filter(|(c, _)| matches!(c, Constraint::Max(_)))
-                    .tuple_combinations()
-                {
-                    if let (Constraint::Max(l_scaling_factor), Constraint::Max(r_scaling_factor)) =
-                        (l_constraint, r_constraint)
-                    {
-                        let (l_scaling_factor, r_scaling_factor) = (
-                            f64::from(l_scaling_factor).max(1e-6),
-                            f64::from(r_scaling_factor).max(1e-6),
-                        );
-                        solver.add_constraint(l_element.has_proportional_size_to(
-                            &r_element,
-                            l_scaling_factor,
-                            r_scaling_factor,
-                            strengths::PROPORTIONAL_SCALING_EQ,
-                        ))?;
-                    }
-                }
-                // Make min proportional
-                for ((&l_constraint, &l_element), (&r_constraint, &r_element)) in layout
-                    .constraints
-                    .iter()
-                    .zip(segments.iter())
-                    .filter(|(c, _)| matches!(c, Constraint::Min(_)))
-                    .tuple_combinations()
-                {
-                    if let (Constraint::Min(l_scaling_factor), Constraint::Min(r_scaling_factor)) =
-                        (l_constraint, r_constraint)
-                    {
-                        let (l_scaling_factor, r_scaling_factor) = (
-                            f64::from(l_scaling_factor).max(1e-6),
-                            f64::from(r_scaling_factor).max(1e-6),
-                        );
-                        solver.add_constraint(l_element.has_proportional_size_to(
-                            &r_element,
-                            l_scaling_factor,
-                            r_scaling_factor,
-                            strengths::PROPORTIONAL_SCALING_EQ,
-                        ))?;
-                    }
-                }
             }
             Flex::Stretch => {
                 // We skip adding any constraints for the first and last spacer, i.e. we use the
@@ -783,12 +737,17 @@ impl Layout {
     /// type of constraint.
     ///
     /// The constraints when applied are resolved in the following order of priority:
-    /// 1. [`Constraint::Min`]: The size must be at least the specified minimum value.
-    /// 2. [`Constraint::Max`]: The size must be at most the specified maximum value.
+    /// 1. [`Constraint::Fixed`]: The size of the element must match the provided fixed value.
+    /// 2. [`Constraint::Max`] / [`Constraint::Min`]: The size must be at most the specified maximum
+    ///    value / at least the specified minimum value.
     /// 3. [`Constraint::Length`]: The size must be equal to the specified length.
     /// 4. [`Constraint::Percentage`]: The size is a percentage of the total area size.
     /// 5. [`Constraint::Ratio`]: The size must be a ratio of the total area size, with special
     ///    handling to avoid division by zero.
+    /// 6. [`Constraint::Proportional`]: These segments will grow to fill excess space, but with a
+    ///    lower priority than other constraints. Proportional constraints filled up empty spaces
+    ///    equally by making them proportionally equal to each other. This ensures a consistent
+    ///    proportional distribution of space among Proportional segments.
     fn add_segment_constraints(
         solver: &mut Solver,
         area: Rect,
@@ -800,6 +759,8 @@ impl Layout {
         // apply the constraints
         for (&constraint, &element) in layout.constraints.iter().zip(segments.iter()) {
             match constraint {
+                Constraint::Fixed(l) => solver
+                    .add_constraint(element.size() | EQ(strengths::FIXED_SIZE_EQ) | f64::from(l))?,
                 Constraint::Max(m) => {
                     solver.add_constraints(&[
                         element.has_maximum_size(f64::from(m), strengths::MAX_SIZE_LE),
@@ -827,9 +788,71 @@ impl Layout {
                         element.has_size(area_size * ratio, strengths::RATIO_SIZE_EQ),
                     )?;
                 }
+                Constraint::Proportional(_) => {
+                    // given no other constraints, this segment will grow as much as possible.
+                    solver.add_constraint(
+                        element.has_size(area_size, strengths::PROPORTIONAL_GROWER),
+                    )?;
+                }
             }
         }
 
+        // Make every `Proportional` constraint proportionally equal to each other
+        // This will make it fill up empty spaces equally
+        //
+        // [Proportional(1), Proportional(1)]
+        // ┌──────┐┌──────┐
+        // │abcdef││abcdef│
+        // └──────┘└──────┘
+        //
+        // [Proportional(1), Proportional(2)]
+        // ┌──────┐┌────────────┐
+        // │abcdef││abcdefabcdef│
+        // └──────┘└────────────┘
+        //
+        // size == base_element * scaling_factor
+        for ((&l_constraint, &l_element), (&r_constraint, &r_element)) in layout
+            .constraints
+            .iter()
+            .zip(segments.iter())
+            .filter(|(c, _)| matches!(c, Constraint::Proportional(_)))
+            .tuple_combinations()
+        {
+            // `Proportional` will only expand into _excess_ available space. You can think of
+            // `Proportional` element sizes as starting from `0` and incrementally
+            // increasing while proportionally matching other `Proportional` spaces AND
+            // also meeting all other constraints.
+            if let (
+                Constraint::Proportional(l_scaling_factor),
+                Constraint::Proportional(r_scaling_factor),
+            ) = (l_constraint, r_constraint)
+            {
+                // because of the way cassowary works, we need to use `*` instead of `/`
+                // l_size / l_scaling_factor == l_size / l_scaling_factor
+                // ≡
+                // l_size * r_scaling_factor == r_size * r_scaling_factor
+                //
+                // we make `0` act as `1e-6`.
+                // this gives us a numerically stable solution and more consistent behavior along
+                // the number line
+                //
+                // I choose `1e-6` because we want a value that is as close to `0.0` as possible
+                // without causing it to behave like `0.0`. `1e-9` for example gives the same
+                // results as true `0.0`.
+                // I found `1e-6` worked well in all the various combinations of constraints I
+                // experimented with.
+                let (l_scaling_factor, r_scaling_factor) = (
+                    f64::from(l_scaling_factor).max(1e-6),
+                    f64::from(r_scaling_factor).max(1e-6),
+                );
+                solver.add_constraint(l_element.has_proportional_size_to(
+                    &r_element,
+                    l_scaling_factor,
+                    r_scaling_factor,
+                    strengths::PROPORTIONAL_SCALING_EQ,
+                ))?;
+            }
+        }
         Ok(())
     }
 
@@ -987,12 +1010,12 @@ impl Layout {
     ///     .spacing(1)
     ///     .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)])
     ///     .split_with_spacers(Rect::new(0, 0, 10, 2));
-    /// assert_eq!(areas[..], [Rect::new(0, 0, 3, 2), Rect::new(4, 0, 6, 2)]);
+    /// assert_eq!(areas[..], [Rect::new(0, 0, 2, 2), Rect::new(3, 0, 7, 2)]);
     /// assert_eq!(
     ///     spacers[..],
     ///     [
     ///         Rect::new(0, 0, 0, 2),
-    ///         Rect::new(3, 0, 1, 2),
+    ///         Rect::new(2, 0, 1, 2),
     ///         Rect::new(10, 0, 0, 2)
     ///     ]
     /// );
@@ -1564,67 +1587,64 @@ mod tests {
             test(Rect::new(0, 0, 2, 1), &[Max(2)], "aa"); // exact
             test(Rect::new(0, 0, 2, 1), &[Max(3)], "aa"); // overflow
 
-            test(Rect::new(0, 0, 1, 1), &[Max(0), Max(0)], "a"); // zero, zero
+            test(Rect::new(0, 0, 1, 1), &[Max(0), Max(0)], "b"); // zero, zero
             test(Rect::new(0, 0, 1, 1), &[Max(0), Max(1)], "b"); // zero, exact
             test(Rect::new(0, 0, 1, 1), &[Max(0), Max(2)], "b"); // zero, overflow
             test(Rect::new(0, 0, 1, 1), &[Max(1), Max(0)], "a"); // exact, zero
             test(Rect::new(0, 0, 1, 1), &[Max(1), Max(1)], "a"); // exact, exact
-            test(Rect::new(0, 0, 1, 1), &[Max(1), Max(2)], "b"); // exact, overflow
+            test(Rect::new(0, 0, 1, 1), &[Max(1), Max(2)], "a"); // exact, overflow
             test(Rect::new(0, 0, 1, 1), &[Max(2), Max(0)], "a"); // overflow, zero
             test(Rect::new(0, 0, 1, 1), &[Max(2), Max(1)], "a"); // overflow, exact
             test(Rect::new(0, 0, 1, 1), &[Max(2), Max(2)], "a"); // overflow, overflow
 
-            test(Rect::new(0, 0, 2, 1), &[Max(0), Max(0)], "ab"); // zero, zero
+            test(Rect::new(0, 0, 2, 1), &[Max(0), Max(0)], "bb"); // zero, zero
             test(Rect::new(0, 0, 2, 1), &[Max(0), Max(1)], "bb"); // zero, underflow
             test(Rect::new(0, 0, 2, 1), &[Max(0), Max(2)], "bb"); // zero, exact
             test(Rect::new(0, 0, 2, 1), &[Max(0), Max(3)], "bb"); // zero, overflow
-            test(Rect::new(0, 0, 2, 1), &[Max(1), Max(0)], "aa"); // underflow, zero
+            test(Rect::new(0, 0, 2, 1), &[Max(1), Max(0)], "ab"); // underflow, zero
             test(Rect::new(0, 0, 2, 1), &[Max(1), Max(1)], "ab"); // underflow, underflow
             test(Rect::new(0, 0, 2, 1), &[Max(1), Max(2)], "ab"); // underflow, exact
             test(Rect::new(0, 0, 2, 1), &[Max(1), Max(3)], "ab"); // underflow, overflow
             test(Rect::new(0, 0, 2, 1), &[Max(2), Max(0)], "aa"); // exact, zero
-            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(1)], "ab"); // exact, underflow
-            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(2)], "ab"); // exact, exact
-            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(3)], "ab"); // exact, overflow
+            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(1)], "aa"); // exact, underflow
+            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(2)], "aa"); // exact, exact
+            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(3)], "aa"); // exact, overflow
             test(Rect::new(0, 0, 2, 1), &[Max(3), Max(0)], "aa"); // overflow, zero
             test(Rect::new(0, 0, 2, 1), &[Max(3), Max(1)], "aa"); // overflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(2)], "ab"); // overflow, exact
-            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(3)], "ab"); // overflow, overflow
+            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(2)], "aa"); // overflow, exact
+            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(3)], "aa"); // overflow, overflow
 
             test(Rect::new(0, 0, 3, 1), &[Max(2), Max(2)], "aab");
         }
 
         #[test]
         fn min() {
-            test(Rect::new(0, 0, 1, 1), &[Min(0), Min(0)], "a"); // zero, zero
+            test(Rect::new(0, 0, 1, 1), &[Min(0), Min(0)], "b"); // zero, zero
             test(Rect::new(0, 0, 1, 1), &[Min(0), Min(1)], "b"); // zero, exact
             test(Rect::new(0, 0, 1, 1), &[Min(0), Min(2)], "b"); // zero, overflow
             test(Rect::new(0, 0, 1, 1), &[Min(1), Min(0)], "a"); // exact, zero
             test(Rect::new(0, 0, 1, 1), &[Min(1), Min(1)], "a"); // exact, exact
-            test(Rect::new(0, 0, 1, 1), &[Min(1), Min(2)], "b"); // exact, overflow
+            test(Rect::new(0, 0, 1, 1), &[Min(1), Min(2)], "a"); // exact, overflow
             test(Rect::new(0, 0, 1, 1), &[Min(2), Min(0)], "a"); // overflow, zero
             test(Rect::new(0, 0, 1, 1), &[Min(2), Min(1)], "a"); // overflow, exact
             test(Rect::new(0, 0, 1, 1), &[Min(2), Min(2)], "a"); // overflow, overflow
 
-            test(Rect::new(0, 0, 2, 1), &[Min(0), Min(0)], "ab"); // zero, zero
+            test(Rect::new(0, 0, 2, 1), &[Min(0), Min(0)], "bb"); // zero, zero
             test(Rect::new(0, 0, 2, 1), &[Min(0), Min(1)], "bb"); // zero, underflow
             test(Rect::new(0, 0, 2, 1), &[Min(0), Min(2)], "bb"); // zero, exact
             test(Rect::new(0, 0, 2, 1), &[Min(0), Min(3)], "bb"); // zero, overflow
-            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(0)], "aa"); // underflow, zero
+            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(0)], "ab"); // underflow, zero
             test(Rect::new(0, 0, 2, 1), &[Min(1), Min(1)], "ab"); // underflow, underflow
             test(Rect::new(0, 0, 2, 1), &[Min(1), Min(2)], "ab"); // underflow, exact
-            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(3)], "ab"); // underflow, overflow // unstable
-
-            // Sometimes results in this test(Rect::new(0, 0, 2, 1), &[Min(1), Min(3)], " b");
-
+            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(3)], "ab"); // underflow, overflow
             test(Rect::new(0, 0, 2, 1), &[Min(2), Min(0)], "aa"); // exact, zero
-            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(1)], "ab"); // exact, underflow
-            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(2)], "ab"); // exact, exact
-            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(3)], "ab"); // exact, overflow
+            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(1)], "aa"); // exact, underflow
+            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(2)], "aa"); // exact, exact
+            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(3)], "aa"); // exact, overflow
             test(Rect::new(0, 0, 2, 1), &[Min(3), Min(0)], "aa"); // overflow, zero
             test(Rect::new(0, 0, 2, 1), &[Min(3), Min(1)], "aa"); // overflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(2)], "ab"); // overflow, exact
-            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(3)], "ab"); // overflow, overflow
+            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(2)], "aa"); // overflow, exact
+            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(3)], "aa"); // overflow, overflow
 
             test(Rect::new(0, 0, 3, 1), &[Min(2), Min(2)], "aab");
         }
@@ -1897,6 +1917,20 @@ mod tests {
                 ]
             );
 
+            // NOTE: always STABLE, this test is provided here as reference
+            let layout = Layout::default()
+                .constraints([Min(1), Fixed(0), Min(1)])
+                .direction(Direction::Horizontal)
+                .split(Rect::new(0, 0, 1, 1));
+            assert_eq!(
+                layout[..],
+                [
+                    Rect::new(0, 0, 1, 1),
+                    Rect::new(1, 0, 0, 1),
+                    Rect::new(1, 0, 0, 1),
+                ]
+            );
+
             // This stretches the 2nd last length instead of the last min based on ranking
             // NOTE: the end result can be unstable
             let layout = Layout::default()
@@ -1923,6 +1957,8 @@ mod tests {
         #[case::length_priority(vec![75, 25], vec![Percentage(25), Length(25)])]
         #[case::length_priority(vec![25, 75], vec![Length(25), Ratio(1, 4)])]
         #[case::length_priority(vec![75, 25], vec![Ratio(1, 4), Length(25)])]
+        #[case::length_priority(vec![75, 25], vec![Length(25), Fixed(25)])]
+        #[case::length_priority(vec![25, 75], vec![Fixed(25), Length(25)])]
         #[case::stretch_proportionally(vec![33, 34, 33], vec![Length(25), Length(25), Length(25)])]
         #[case::stretch_proportionally(vec![20, 47, 33], vec![Length(15), Length(35), Length(25)])]
         #[case::stretch_proportionally(vec![0, 0, 100], vec![Length(0), Length(0), Length(25)])]
@@ -1954,6 +1990,98 @@ mod tests {
                 .cloned()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::fixed_is_higher_priority_than_min_max(vec![50, 25, 25], vec![Min(25), Fixed(25), Max(25)])]
+        #[case::fixed_is_higher_priority_than_min_max(vec![25, 25, 50], vec![Max(25), Fixed(25), Min(25)])]
+        #[case::excess_in_lowest_priority(vec![33, 33, 34], vec![Fixed(33), Fixed(33), Fixed(33)])]
+        #[case::excess_in_lowest_priority(vec![25, 25, 50], vec![Fixed(25), Fixed(25), Fixed(25)])]
+        #[case::fixed_higher_priority(vec![25, 25, 50], vec![Percentage(25), Fixed(25), Ratio(1, 4)])]
+        #[case::fixed_higher_priority(vec![25, 50, 25], vec![Fixed(25), Ratio(1, 4), Percentage(25)])]
+        #[case::fixed_higher_priority(vec![50, 25, 25], vec![Ratio(1, 4), Fixed(25), Percentage(25)])]
+        #[case::fixed_higher_priority(vec![50, 25, 25], vec![Ratio(1, 4), Percentage(25), Fixed(25)])]
+        #[case::fixed_higher_priority(vec![79, 1, 20], vec![Length(100), Fixed(1), Min(20)])]
+        #[case::fixed_higher_priority(vec![20, 1, 79], vec![Min(20), Fixed(1), Length(100)])]
+        #[case::fixed_higher_priority(vec![45, 10, 45], vec![Proportional(1), Fixed(10), Proportional(1)])]
+        #[case::fixed_higher_priority(vec![30, 10, 60], vec![Proportional(1), Fixed(10), Proportional(2)])]
+        #[case::fixed_higher_priority(vec![18, 10, 72], vec![Proportional(1), Fixed(10), Proportional(4)])]
+        #[case::fixed_higher_priority(vec![15, 10, 75], vec![Proportional(1), Fixed(10), Proportional(5)])]
+        #[case::three_lengths_reference(vec![33, 34, 33], vec![Length(25), Length(25), Length(25)])]
+        #[case::previously_unstable_test(vec![38, 37, 25], vec![Length(25), Length(25), Fixed(25)])]
+        #[case::previously_unstable_test(vec![38, 37, 25], vec![Percentage(25), Percentage(25), Fixed(25)])]
+        #[case::previously_unstable_test(vec![38, 37, 25], vec![Ratio(1, 4), Ratio(1, 4), Fixed(25)])]
+        #[case::fixed_still_stretches_last(vec![25, 25, 50], vec![Fixed(25), Fixed(25), Fixed(25)])]
+        fn fixed(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::excess_in_last_variable(vec![13, 10, 27], vec![Proportional(1), Fixed(10), Proportional(2)])]
+        #[case::excess_in_last_variable(vec![10, 27, 13], vec![Fixed(10), Proportional(2), Proportional(1)])] // might be unstable?
+        fn fixed_with_50_width(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 50, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::multiple_same_proportionals_are_same(vec![20, 40, 20, 20], vec![Proportional(1), Proportional(2), Proportional(1), Proportional(1)])]
+        #[case::incremental(vec![10, 20, 30, 40], vec![Proportional(1), Proportional(2), Proportional(3), Proportional(4)])]
+        #[case::decremental(vec![40, 30, 20, 10], vec![Proportional(4), Proportional(3), Proportional(2), Proportional(1)])]
+        #[case::randomly_ordered(vec![10, 30, 20, 40], vec![Proportional(1), Proportional(3), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Fixed(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Length(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Percentage(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Min(50), Proportional(2), Proportional(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Max(50), Proportional(2), Proportional(4)])]
+        #[case::zero_width(vec![0, 100, 0], vec![Proportional(0), Proportional(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Fixed(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Length(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Percentage(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Min(1), Proportional(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Max(1), Proportional(0)])]
+        #[case::zero_width(vec![0, 67, 0, 33], vec![Proportional(0), Proportional(2), Proportional(0), Proportional(1)])]
+        #[case::space_filler(vec![0, 80, 20], vec![Proportional(0), Proportional(2), Percentage(20)])]
+        #[case::space_filler(vec![40, 40, 20], vec![Proportional(0), Proportional(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Ratio(1, 5)])]
+        #[case::space_filler(vec![0, 100], vec![Proportional(0), Proportional(u16::MAX)])]
+        #[case::space_filler(vec![100, 0], vec![Proportional(u16::MAX), Proportional(0)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(1), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(u16::MAX), Percentage(20)])]
+        #[case::space_filler(vec![80, 0, 20], vec![Proportional(u16::MAX), Proportional(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Fixed(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Length(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Min(20)])]
+        #[case::space_filler(vec![80, 20], vec![Proportional(0), Max(20)])]
+        #[case::proportional_collapses_first(vec![7, 6, 7, 30, 50], vec![Proportional(1), Proportional(1), Proportional(1), Min(30), Length(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 50, 50], vec![Proportional(1), Proportional(1), Proportional(1), Length(50), Length(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 60, 40], vec![Proportional(1), Proportional(1), Proportional(1), Length(75), Length(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 50, 50], vec![Proportional(1), Proportional(1), Proportional(1), Min(50), Max(50)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 100], vec![Proportional(1), Proportional(1), Proportional(1), Ratio(1, 1)])]
+        #[case::proportional_collapses_first(vec![0, 0, 0, 100], vec![Proportional(1), Proportional(1), Proportional(1), Percentage(100)])]
+        fn proportional(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
             assert_eq!(expected, r);
         }
 
@@ -1998,6 +2126,11 @@ mod tests {
         #[case::length(vec![(0, 50)], vec![Constraint::Length(50)], Flex::Start)]
         #[case::length(vec![(50, 50)], vec![Constraint::Length(50)], Flex::End)]
         #[case::length(vec![(25, 50)], vec![Constraint::Length(50)], Flex::Center)]
+        #[case::fixed(vec![(0, 100)], vec![Fixed(50)], Flex::StretchLast)]
+        #[case::fixed(vec![(0, 100)], vec![Fixed(50)], Flex::Stretch)]
+        #[case::fixed(vec![(0, 50)], vec![Fixed(50)], Flex::Start)]
+        #[case::fixed(vec![(50, 50)], vec![Fixed(50)], Flex::End)]
+        #[case::fixed(vec![(25, 50)], vec![Fixed(50)], Flex::Center)]
         #[case::ratio(vec![(0, 100)], vec![Ratio(1, 2)], Flex::StretchLast)]
         #[case::ratio(vec![(0, 100)], vec![Ratio(1, 2)], Flex::Stretch)]
         #[case::ratio(vec![(0, 50)], vec![Ratio(1, 2)], Flex::Start)]
@@ -2020,6 +2153,7 @@ mod tests {
         #[case::max(vec![(25, 50)], vec![Max(50)], Flex::Center)]
         #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Min(1)], Flex::SpaceBetween)]
         #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Max(20)], Flex::SpaceBetween)]
+        #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Fixed(20)], Flex::SpaceBetween)]
         #[case::length(vec![(0, 50), (50, 50)], vec![Length(25), Length(25)], Flex::StretchLast)]
         #[case::length(vec![(0, 50), (50, 50)], vec![Length(25), Length(25)], Flex::Stretch)]
         #[case::length(vec![(0, 25), (25, 25)], vec![Length(25), Length(25)], Flex::Start)]
@@ -2027,6 +2161,13 @@ mod tests {
         #[case::length(vec![(50, 25), (75, 25)], vec![Length(25), Length(25)], Flex::End)]
         #[case::length(vec![(0, 25), (75, 25)], vec![Length(25), Length(25)], Flex::SpaceBetween)]
         #[case::length(vec![(17, 25), (58, 25)], vec![Length(25), Length(25)], Flex::SpaceAround)]
+        #[case::fixed(vec![(0, 25), (25, 75)], vec![Fixed(25), Fixed(25)], Flex::StretchLast)]
+        #[case::fixed(vec![(0, 50), (50, 50)], vec![Fixed(25), Fixed(25)], Flex::Stretch)]
+        #[case::fixed(vec![(0, 25), (25, 25)], vec![Fixed(25), Fixed(25)], Flex::Start)]
+        #[case::fixed(vec![(25, 25), (50, 25)], vec![Fixed(25), Fixed(25)], Flex::Center)]
+        #[case::fixed(vec![(50, 25), (75, 25)], vec![Fixed(25), Fixed(25)], Flex::End)]
+        #[case::fixed(vec![(0, 25), (75, 25)], vec![Fixed(25), Fixed(25)], Flex::SpaceBetween)]
+        #[case::fixed(vec![(17, 25), (58, 25)], vec![Fixed(25), Fixed(25)], Flex::SpaceAround)]
         #[case::percentage(vec![(0, 50), (50, 50)], vec![Percentage(25), Percentage(25)], Flex::StretchLast)]
         #[case::percentage(vec![(0, 50), (50, 50)], vec![Percentage(25), Percentage(25)], Flex::Stretch)]
         #[case::percentage(vec![(0, 25), (25, 25)], vec![Percentage(25), Percentage(25)], Flex::Start)]
@@ -2034,14 +2175,14 @@ mod tests {
         #[case::percentage(vec![(50, 25), (75, 25)], vec![Percentage(25), Percentage(25)], Flex::End)]
         #[case::percentage(vec![(0, 25), (75, 25)], vec![Percentage(25), Percentage(25)], Flex::SpaceBetween)]
         #[case::percentage(vec![(17, 25), (58, 25)], vec![Percentage(25), Percentage(25)], Flex::SpaceAround)]
-        #[case::min(vec![(0, 50), (50, 50)], vec![Min(25), Min(25)], Flex::StretchLast)]
+        #[case::min(vec![(0, 25), (25, 75)], vec![Min(25), Min(25)], Flex::StretchLast)]
         #[case::min(vec![(0, 50), (50, 50)], vec![Min(25), Min(25)], Flex::Stretch)]
         #[case::min(vec![(0, 25), (25, 25)], vec![Min(25), Min(25)], Flex::Start)]
         #[case::min(vec![(25, 25), (50, 25)], vec![Min(25), Min(25)], Flex::Center)]
         #[case::min(vec![(50, 25), (75, 25)], vec![Min(25), Min(25)], Flex::End)]
         #[case::min(vec![(0, 25), (75, 25)], vec![Min(25), Min(25)], Flex::SpaceBetween)]
         #[case::min(vec![(17, 25), (58, 25)], vec![Min(25), Min(25)], Flex::SpaceAround)]
-        #[case::max(vec![(0, 50), (50, 50)], vec![Max(25), Max(25)], Flex::StretchLast)]
+        #[case::max(vec![(0, 25), (25, 75)], vec![Max(25), Max(25)], Flex::StretchLast)]
         #[case::max(vec![(0, 50), (50, 50)], vec![Max(25), Max(25)], Flex::Stretch)]
         #[case::max(vec![(0, 25), (25, 25)], vec![Max(25), Max(25)], Flex::Start)]
         #[case::max(vec![(25, 25), (50, 25)], vec![Max(25), Max(25)], Flex::Center)]
@@ -2072,6 +2213,9 @@ mod tests {
         #[case::length_spacing(vec![(36, 20), (58, 20) , (80, 20)], vec![Length(20), Length(20), Length(20)], Flex::End        , 2)]
         #[case::length_spacing(vec![(0 , 32), (34, 32) , (68, 32)], vec![Length(20), Length(20), Length(20)], Flex::Stretch    , 2)]
         #[case::length_spacing(vec![(0 , 32), (34, 32) , (68, 32)], vec![Length(20), Length(20), Length(20)], Flex::StretchLast, 2)]
+        #[case::fixed_spacing(vec![(0  , 20), (22, 20) , (44, 56)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::StretchLast, 2)]
+        #[case::fixed_spacing(vec![(0  , 32), (34, 32) , (68, 32)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::Stretch    , 2)]
+        #[case::fixed_spacing(vec![(10 , 20), (40, 20) , (70, 20)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::SpaceAround, 2)]
         fn flex_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2091,6 +2235,8 @@ mod tests {
         }
 
         #[rstest]
+        #[case::a(vec![(0, 25), (25, 75)], vec![Fixed(25), Length(25)])]
+        #[case::b(vec![(0, 75), (75, 25)], vec![Length(25), Fixed(25)])]
         #[case::c(vec![(0, 25), (25, 75)], vec![Length(25), Percentage(25)])]
         #[case::d(vec![(0, 75), (75, 25)], vec![Percentage(25), Length(25)])]
         #[case::e(vec![(0, 75), (75, 25)], vec![Min(25), Percentage(25)])]
@@ -2105,6 +2251,8 @@ mod tests {
         #[case::n(vec![(0, 75), (75, 25)], vec![Ratio(1, 4), Length(25)])]
         #[case::o(vec![(0, 25), (25, 75)], vec![Percentage(25), Ratio(1, 4)])]
         #[case::p(vec![(0, 75), (75, 25)], vec![Ratio(1, 4), Percentage(25)])]
+        #[case::q(vec![(0, 25), (25, 75)], vec![Ratio(1, 4), Proportional(25)])]
+        #[case::r(vec![(0, 75), (75, 25)], vec![Proportional(25), Ratio(1, 4)])]
         fn constraint_specification_tests_for_priority(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2125,6 +2273,9 @@ mod tests {
         #[case::c(vec![(36, 20), (58, 20), (80, 20)], vec![Length(20), Length(20), Length(20)], Flex::End, 2)]
         #[case::d(vec![(0, 32), (34, 32), (68, 32)], vec![Length(20), Length(20), Length(20)], Flex::Stretch, 2)]
         #[case::e(vec![(0, 32), (34, 32), (68, 32)], vec![Length(20), Length(20), Length(20)], Flex::StretchLast, 2)]
+        #[case::f(vec![(0, 20), (22, 20), (44, 56)], vec![Fixed(20), Fixed(20), Fixed(20)], Flex::StretchLast, 2)]
+        #[case::g(vec![(0, 32), (34, 32), (68, 32)], vec![Fixed(20), Fixed(20), Fixed(20)], Flex::Stretch, 2)]
+        #[case::h(vec![(10, 20), (40, 20), (70, 20)], vec![Fixed(20), Fixed(20), Fixed(20)], Flex::SpaceAround, 2)]
         fn constraint_specification_tests_for_priority_with_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2141,6 +2292,80 @@ mod tests {
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::prop(vec![(0 , 10), (10, 80), (90 , 10)] , vec![Fixed(10), Proportional(1), Fixed(10)], Flex::Stretch)]
+        #[case::flex(vec![(0 , 10), (90 , 10)] , vec![Fixed(10), Fixed(10)], Flex::SpaceBetween)]
+        #[case::prop(vec![(0 , 27), (27, 10), (37, 26), (63, 10), (73, 27)] , vec![Proportional(1), Fixed(10), Proportional(1), Fixed(10), Proportional(1)], Flex::Stretch)]
+        #[case::flex(vec![(27 , 10), (63, 10)] , vec![Fixed(10), Fixed(10)], Flex::SpaceAround)]
+        #[case::prop(vec![(0 , 10), (10, 10), (20 , 80)] , vec![Fixed(10), Fixed(10), Proportional(1)], Flex::Stretch)]
+        #[case::flex(vec![(0 , 10), (10, 10)] , vec![Fixed(10), Fixed(10)], Flex::Start)]
+        #[case::prop(vec![(0 , 80), (80 , 10), (90, 10)] , vec![Proportional(1), Fixed(10), Fixed(10)], Flex::Stretch)]
+        #[case::flex(vec![(80 , 10), (90, 10)] , vec![Fixed(10), Fixed(10)], Flex::End)]
+        #[case::prop(vec![(0 , 40), (40, 10), (50, 10), (60, 40)] , vec![Proportional(1), Fixed(10), Fixed(10), Proportional(1)], Flex::Stretch)]
+        #[case::flex(vec![(40 , 10), (50, 10)] , vec![Fixed(10), Fixed(10)], Flex::Center)]
+        fn proportional_vs_flex(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints).flex(flex).split(rect);
+            let result = r
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, result);
+        }
+
+        #[rstest]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::Stretch , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::StretchLast , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceAround , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceBetween , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::Start , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::Center , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::End , 0)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::Stretch , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::StretchLast , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::Start , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::Center , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::End , 10)]
+        // SpaceAround and SpaceBetween spacers behave differently from other flexes
+        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceAround , 10)]
+        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceBetween , 10)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Stretch , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::StretchLast , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceAround , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceBetween , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Start , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Center , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::End , 0)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Stretch , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::StretchLast , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Start , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Center , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::End , 10)]
+        // SpaceAround and SpaceBetween spacers behave differently from other flexes
+        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceAround , 10)]
+        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceBetween , 10)]
+        fn proportional_spacing(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+            #[case] spacing: u16,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints)
+                .flex(flex)
+                .spacing(spacing)
+                .split(rect);
+            let result = r
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, result);
         }
 
         #[rstest]

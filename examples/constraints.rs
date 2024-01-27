@@ -13,6 +13,8 @@ const SPACER_HEIGHT: u16 = 0;
 const ILLUSTRATION_HEIGHT: u16 = 4;
 const EXAMPLE_HEIGHT: u16 = ILLUSTRATION_HEIGHT + SPACER_HEIGHT;
 
+// priority 1
+const FIXED_COLOR: Color = tailwind::RED.c900;
 // priority 2
 const MIN_COLOR: Color = tailwind::BLUE.c900;
 const MAX_COLOR: Color = tailwind::BLUE.c800;
@@ -20,6 +22,8 @@ const MAX_COLOR: Color = tailwind::BLUE.c800;
 const LENGTH_COLOR: Color = tailwind::SLATE.c700;
 const PERCENTAGE_COLOR: Color = tailwind::SLATE.c800;
 const RATIO_COLOR: Color = tailwind::SLATE.c900;
+// priority 4
+const PROPORTIONAL_COLOR: Color = tailwind::SLATE.c950;
 
 #[derive(Default, Clone, Copy)]
 struct App {
@@ -35,11 +39,13 @@ struct App {
 #[derive(Default, Debug, Copy, Clone, Display, FromRepr, EnumIter, PartialEq, Eq)]
 enum SelectedTab {
     #[default]
+    Fixed,
     Min,
     Max,
     Length,
     Percentage,
     Ratio,
+    Proportional,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -142,9 +148,9 @@ impl App {
 impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let [tabs, axis, demo] = area.split(&Layout::vertical([
-            Constraint::Length(3),
-            Constraint::Length(3),
-            Constraint::Min(0),
+            Constraint::Fixed(3),
+            Constraint::Fixed(3),
+            Proportional(0),
         ]));
 
         self.render_tabs(tabs, buf);
@@ -247,9 +253,11 @@ impl SelectedTab {
     fn get_example_count(&self) -> u16 {
         use SelectedTab::*;
         match self {
+            Fixed => 4,
             Length => 4,
             Percentage => 5,
             Ratio => 4,
+            Proportional => 2,
             Min => 5,
             Max => 5,
         }
@@ -259,9 +267,11 @@ impl SelectedTab {
         use SelectedTab::*;
         let text = format!("  {value}  ");
         let color = match value {
+            Fixed => FIXED_COLOR,
             Length => LENGTH_COLOR,
             Percentage => PERCENTAGE_COLOR,
             Ratio => RATIO_COLOR,
+            Proportional => PROPORTIONAL_COLOR,
             Min => MIN_COLOR,
             Max => MAX_COLOR,
         };
@@ -272,9 +282,11 @@ impl SelectedTab {
 impl Widget for SelectedTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         match self {
+            SelectedTab::Fixed => self.render_fixed_example(area, buf),
             SelectedTab::Length => self.render_length_example(area, buf),
             SelectedTab::Percentage => self.render_percentage_example(area, buf),
             SelectedTab::Ratio => self.render_ratio_example(area, buf),
+            SelectedTab::Proportional => self.render_proportional_example(area, buf),
             SelectedTab::Min => self.render_min_example(area, buf),
             SelectedTab::Max => self.render_max_example(area, buf),
         }
@@ -282,11 +294,28 @@ impl Widget for SelectedTab {
 }
 
 impl SelectedTab {
+    fn render_fixed_example(&self, area: Rect, buf: &mut Buffer) {
+        let [example1, example2, example3, example4, _] =
+            area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 5]));
+
+        Example::new(&[Fixed(40), Proportional(0)]).render(example1, buf);
+        Example::new(&[Fixed(20), Fixed(20), Proportional(0)]).render(example2, buf);
+        Example::new(&[Fixed(20), Min(20), Max(20)]).render(example3, buf);
+        Example::new(&[
+            Length(20),
+            Percentage(20),
+            Ratio(1, 5),
+            Proportional(1),
+            Fixed(15),
+        ])
+        .render(example4, buf);
+    }
+
     fn render_length_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, _] =
-            area.split(&Layout::vertical([Length(EXAMPLE_HEIGHT); 5]));
+            area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 5]));
 
-        Example::new(&[Length(20), Percentage(20)]).render(example1, buf);
+        Example::new(&[Length(20), Fixed(20)]).render(example1, buf);
         Example::new(&[Length(20), Length(20)]).render(example2, buf);
         Example::new(&[Length(20), Min(20)]).render(example3, buf);
         Example::new(&[Length(20), Max(20)]).render(example4, buf);
@@ -294,18 +323,18 @@ impl SelectedTab {
 
     fn render_percentage_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, example5, _] =
-            area.split(&Layout::vertical([Length(EXAMPLE_HEIGHT); 6]));
+            area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 6]));
 
-        Example::new(&[Percentage(75), Min(0)]).render(example1, buf);
-        Example::new(&[Percentage(25), Min(0)]).render(example2, buf);
+        Example::new(&[Percentage(75), Proportional(0)]).render(example1, buf);
+        Example::new(&[Percentage(25), Proportional(0)]).render(example2, buf);
         Example::new(&[Percentage(50), Min(20)]).render(example3, buf);
         Example::new(&[Percentage(0), Max(0)]).render(example4, buf);
-        Example::new(&[Percentage(0), Min(0)]).render(example5, buf);
+        Example::new(&[Percentage(0), Proportional(0)]).render(example5, buf);
     }
 
     fn render_ratio_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, _] =
-            area.split(&Layout::vertical([Length(EXAMPLE_HEIGHT); 5]));
+            area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 5]));
 
         Example::new(&[Ratio(1, 2); 2]).render(example1, buf);
         Example::new(&[Ratio(1, 4); 4]).render(example2, buf);
@@ -313,9 +342,16 @@ impl SelectedTab {
         Example::new(&[Ratio(1, 2), Percentage(25), Length(10)]).render(example4, buf);
     }
 
+    fn render_proportional_example(&self, area: Rect, buf: &mut Buffer) {
+        let [example1, example2, _] = area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 3]));
+
+        Example::new(&[Proportional(1), Proportional(2), Proportional(3)]).render(example1, buf);
+        Example::new(&[Proportional(1), Percentage(50), Proportional(1)]).render(example2, buf);
+    }
+
     fn render_min_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, example5, _] =
-            area.split(&Layout::vertical([Length(EXAMPLE_HEIGHT); 6]));
+            area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 6]));
 
         Example::new(&[Percentage(100), Min(0)]).render(example1, buf);
         Example::new(&[Percentage(100), Min(20)]).render(example2, buf);
@@ -326,7 +362,7 @@ impl SelectedTab {
 
     fn render_max_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, example5, _] =
-            area.split(&Layout::vertical([Length(EXAMPLE_HEIGHT); 6]));
+            area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 6]));
 
         Example::new(&[Percentage(0), Max(0)]).render(example1, buf);
         Example::new(&[Percentage(0), Max(20)]).render(example2, buf);
@@ -351,8 +387,8 @@ impl Example {
 impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let [area, _] = area.split(&Layout::vertical([
-            Length(ILLUSTRATION_HEIGHT),
-            Length(SPACER_HEIGHT),
+            Fixed(ILLUSTRATION_HEIGHT),
+            Fixed(SPACER_HEIGHT),
         ]));
         let blocks = Layout::horizontal(&self.constraints).split(area);
 
@@ -366,9 +402,11 @@ impl Widget for Example {
 impl Example {
     fn illustration(&self, constraint: Constraint, width: u16) -> Paragraph {
         let color = match constraint {
+            Constraint::Fixed(_) => FIXED_COLOR,
             Constraint::Length(_) => LENGTH_COLOR,
             Constraint::Percentage(_) => PERCENTAGE_COLOR,
             Constraint::Ratio(_, _) => RATIO_COLOR,
+            Constraint::Proportional(_) => PROPORTIONAL_COLOR,
             Constraint::Min(_) => MIN_COLOR,
             Constraint::Max(_) => MAX_COLOR,
         };

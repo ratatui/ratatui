@@ -24,11 +24,10 @@ pub enum Flex {
     /// The following examples illustrate the allocation of excess in various combinations of
     /// constraints. As a refresher, the priorities of constraints are as follows:
     ///
-    /// 1. [`Constraint::Min`]
-    /// 2. [`Constraint::Max`]
-    /// 3. [`Constraint::Length`]
-    /// 4. [`Constraint::Percentage`]
-    /// 5. [`Constraint::Ratio`]
+    /// 1. [`Constraint::Fixed`]
+    /// 2. [`Constraint::Min`] / [`Constraint::Max`]
+    /// 3. [`Constraint::Length`] / [`Constraint::Percentage`] / [`Constraint::Ratio`]
+    /// 4. [`Constraint::Proportional`]
     ///
     /// When every constraint is `Length`, the last element gets the excess.
     ///
