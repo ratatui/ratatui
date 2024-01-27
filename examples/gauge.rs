@@ -30,16 +30,17 @@ use ratatui::{
 const GAUGE1_COLOR: Color = tailwind::RED.c800;
 const GAUGE2_COLOR: Color = tailwind::GREEN.c800;
 const GAUGE3_COLOR: Color = tailwind::BLUE.c800;
-const CUSTOM_LABEL_COLOR: Color = tailwind::SLATE.c200;
 const GAUGE4_COLOR: Color = tailwind::ORANGE.c800;
+const CUSTOM_LABEL_COLOR: Color = tailwind::SLATE.c200;
 
 #[derive(Debug, Default, Clone, Copy)]
 struct App {
     state: AppState,
+    progress_columns: u16,
     progress1: u16,
-    progress2: u16,
+    progress2: f64,
     progress3: f64,
-    progress4: u16,
+    progress4: f64,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -62,8 +63,8 @@ impl App {
     fn run(&mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
         while self.state != AppState::Quitting {
             self.draw(&mut terminal)?;
-            self.update();
             self.handle_events()?;
+            self.update(terminal.size()?.width);
         }
         Ok(())
     }
@@ -73,18 +74,26 @@ impl App {
         Ok(())
     }
 
-    fn update(&mut self) {
+    fn update(&mut self, terminal_width: u16) {
         if self.state != AppState::Started {
             return;
         }
-        self.progress1 = (self.progress1 + 4).min(100);
-        self.progress2 = (self.progress2 + 3).min(100);
-        self.progress3 = (self.progress3 + 0.02).min(1.0);
-        self.progress4 = (self.progress4 + 1).min(100);
+
+        // progress1 and progress2 help show the difference between ratio and percentage measuring
+        // the same thing, but converting to either a u16 or f64. Effectively, we're showing the
+        // difference between how a continuous gauge acts for floor and rounded values.
+        self.progress_columns = (self.progress_columns + 1).clamp(0, terminal_width);
+        self.progress1 = self.progress_columns * 100 / terminal_width;
+        self.progress2 = self.progress_columns as f64 * 100.0 / terminal_width as f64;
+
+        // progress3 and progress4 similarly show the difference between unicode and non-unicode
+        // gauges measuring the same thing.
+        self.progress3 = (self.progress3 + 0.1).clamp(40.0, 100.0);
+        self.progress4 = (self.progress4 + 0.1).clamp(40.0, 100.0);
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        let timeout = Duration::from_secs_f32(1.0 / 10.0);
+        let timeout = Duration::from_secs_f32(1.0 / 20.0);
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
@@ -146,7 +155,7 @@ impl App {
     }
 
     fn render_gauge1(&self, area: Rect, buf: &mut Buffer) {
-        let title = title_block("Gauge with percentage progress");
+        let title = title_block("Gauge with percentage");
         Gauge::default()
             .block(title)
             .gauge_style(GAUGE1_COLOR)
@@ -155,39 +164,39 @@ impl App {
     }
 
     fn render_gauge2(&self, area: Rect, buf: &mut Buffer) {
-        let title = title_block("Gauge with percentage progress and custom label");
-        let label = format!("{}/100", self.progress2);
+        let title = title_block("Gauge with ratio and custom label");
+        let label = Span::styled(
+            format!("{:.1}/100", self.progress2),
+            Style::new().italic().bold().fg(CUSTOM_LABEL_COLOR),
+        );
         Gauge::default()
             .block(title)
             .gauge_style(GAUGE2_COLOR)
-            .percent(self.progress2)
+            .ratio(self.progress2 / 100.0)
             .label(label)
             .render(area, buf);
     }
 
     fn render_gauge3(&self, area: Rect, buf: &mut Buffer) {
-        let title = title_block("Gauge with ratio progress, custom label with style, and unicode");
-        let label = Span::styled(
-            format!("{:.2}%", self.progress3 * 100.0),
-            Style::new().italic().bold().fg(CUSTOM_LABEL_COLOR),
-        );
+        let title = title_block("Gauge with ratio (no unicode)");
+        let label = format!("{:.1}%", self.progress3);
         Gauge::default()
             .block(title)
             .gauge_style(GAUGE3_COLOR)
-            .ratio(self.progress3)
+            .ratio(self.progress3 / 100.0)
             .label(label)
-            .use_unicode(true)
             .render(area, buf);
     }
 
     fn render_gauge4(&self, area: Rect, buf: &mut Buffer) {
-        let title = title_block("Gauge with percentage progress and label");
-        let label = format!("{}/100", self.progress4);
+        let title = title_block("Gauge with ratio (unicode)");
+        let label = format!("{:.1}%", self.progress3);
         Gauge::default()
             .block(title)
             .gauge_style(GAUGE4_COLOR)
-            .percent(self.progress4)
+            .ratio(self.progress4 / 100.0)
             .label(label)
+            .use_unicode(true)
             .render(area, buf);
     }
 }

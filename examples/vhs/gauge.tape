@@ -11,4 +11,4 @@ Sleep 2s
 Show
 Sleep 2s
 Enter 1
-Sleep 20s
+Sleep 15s
