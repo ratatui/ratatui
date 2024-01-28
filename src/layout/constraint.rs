@@ -6,7 +6,8 @@ use strum::EnumIs;
 /// A constraint that defines the size of a layout element.
 ///
 /// Constraints can be used to specify a fixed size, a percentage of the available space, a ratio of
-/// the available space, a minimum or maximum size or a proportional value for a layout element.
+/// the available space, a minimum or maximum size or a fill proportional value for a layout
+/// element.
 ///
 /// Relative constraints (percentage, ratio) are calculated relative to the entire space being
 /// divided, rather than the space available after applying more fixed constraints (min, max,
@@ -20,7 +21,7 @@ use strum::EnumIs;
 /// 4. [`Constraint::Length`]
 /// 5. [`Constraint::Percentage`]
 /// 6. [`Constraint::Ratio`]
-/// 7. [`Constraint::Proportional`]
+/// 7. [`Constraint::Fill`]
 ///
 /// # Examples
 ///
@@ -44,8 +45,8 @@ use strum::EnumIs;
 /// // Create a sidebar layout specifying maximum sizes for the columns
 /// let constraints = Constraint::from_maxes([30, 170]);
 ///
-/// // Create a layout with proportional sizes for each element
-/// let constraints = Constraint::from_proportional_lengths([1, 2, 1]);
+/// // Create a layout with fill proportional sizes for each element
+/// let constraints = Constraint::from_fills([1, 2, 1]);
 /// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, EnumIs)]
 pub enum Constraint {
@@ -56,7 +57,7 @@ pub enum Constraint {
     ///
     /// # Examples
     ///
-    /// `[Fixed(40), Proportional(1)]`
+    /// `[Fixed(40), Fill(1)]`
     ///
     /// ```plain
     /// ┌──────────────────────────────────────┐┌────────┐
@@ -64,7 +65,7 @@ pub enum Constraint {
     /// └──────────────────────────────────────┘└────────┘
     /// ```
     ///
-    /// `[Fixed(20), Fixed(20), Proportional(1)]`
+    /// `[Fixed(20), Fixed(20), Fill(1)]`
     ///
     /// ```plain
     /// ┌──────────────────┐┌──────────────────┐┌────────┐
@@ -145,7 +146,7 @@ pub enum Constraint {
     ///
     /// # Examples
     ///
-    /// `[Percentage(75), Proportional(1)]`
+    /// `[Percentage(75), Fill(1)]`
     ///
     /// ```plain
     /// ┌────────────────────────────────────┐┌──────────┐
@@ -153,7 +154,7 @@ pub enum Constraint {
     /// └────────────────────────────────────┘└──────────┘
     /// ```
     ///
-    /// `[Percentage(50), Proportional(1)]`
+    /// `[Percentage(50), Fill(1)]`
     ///
     /// ```plain
     /// ┌───────────────────────┐┌───────────────────────┐
@@ -184,16 +185,16 @@ pub enum Constraint {
     /// └───────────┘└──────────┘└───────────┘└──────────┘
     /// ```
     Ratio(u32, u32),
-    /// Applies the scaling factor proportional to all other [`Constraint::Proportional`] elements
+    /// Applies the scaling factor proportional to all other [`Constraint::Fill`] elements
     /// to fill excess space
     ///
-    /// The element will only expand into excess available space, proportionally matching other
-    /// [`Constraint::Proportional`] elements while satisfying all other constraints.
+    /// The element will only expand or fill into excess available space, proportionally matching
+    /// other [`Constraint::Fill`] elements while satisfying all other constraints.
     ///
     /// # Examples
     ///
     ///
-    /// `[Proportional(1), Proportional(2), Proportional(3)]`
+    /// `[Fill(1), Fill(2), Fill(3)]`
     ///
     /// ```plain
     /// ┌──────┐┌───────────────┐┌───────────────────────┐
@@ -201,14 +202,14 @@ pub enum Constraint {
     /// └──────┘└───────────────┘└───────────────────────┘
     /// ```
     ///
-    /// `[Proportional(1), Percentage(50), Proportional(1)]`
+    /// `[Fill(1), Percentage(50), Fill(1)]`
     ///
     /// ```plain
     /// ┌───────────┐┌───────────────────────┐┌──────────┐
     /// │   13 px   ││         25 px         ││   12 px  │
     /// └───────────┘└───────────────────────┘└──────────┘
     /// ```
-    Proportional(u16),
+    Fill(u16),
 }
 
 impl Constraint {
@@ -232,7 +233,7 @@ impl Constraint {
             }
             Constraint::Length(l) => length.min(l),
             Constraint::Fixed(l) => length.min(l),
-            Constraint::Proportional(l) => length.min(l),
+            Constraint::Fill(l) => length.min(l),
             Constraint::Max(m) => length.min(m),
             Constraint::Min(m) => length.max(m),
         }
@@ -359,13 +360,13 @@ impl Constraint {
     /// let constraints = Constraint::from_mins([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_proportional_lengths<T>(proportional_lengths: T) -> Vec<Constraint>
+    pub fn from_fills<T>(proportional_factors: T) -> Vec<Constraint>
     where
         T: IntoIterator<Item = u16>,
     {
-        proportional_lengths
+        proportional_factors
             .into_iter()
-            .map(Constraint::Proportional)
+            .map(Constraint::Fill)
             .collect_vec()
     }
 }
@@ -415,7 +416,7 @@ impl Display for Constraint {
             Constraint::Ratio(n, d) => write!(f, "Ratio({}, {})", n, d),
             Constraint::Length(l) => write!(f, "Length({})", l),
             Constraint::Fixed(l) => write!(f, "Fixed({})", l),
-            Constraint::Proportional(l) => write!(f, "Proportional({})", l),
+            Constraint::Fill(l) => write!(f, "Fill({})", l),
             Constraint::Max(m) => write!(f, "Max({})", m),
             Constraint::Min(m) => write!(f, "Min({})", m),
         }
@@ -502,17 +503,14 @@ mod tests {
     }
 
     #[test]
-    fn from_proportional_lengths() {
+    fn from_fills() {
         let expected = [
-            Constraint::Proportional(1),
-            Constraint::Proportional(2),
-            Constraint::Proportional(3),
+            Constraint::Fill(1),
+            Constraint::Fill(2),
+            Constraint::Fill(3),
         ];
-        assert_eq!(Constraint::from_proportional_lengths([1, 2, 3]), expected);
-        assert_eq!(
-            Constraint::from_proportional_lengths(vec![1, 2, 3]),
-            expected
-        );
+        assert_eq!(Constraint::from_fills([1, 2, 3]), expected);
+        assert_eq!(Constraint::from_fills(vec![1, 2, 3]), expected);
     }
 
     #[test]

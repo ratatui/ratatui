@@ -38,7 +38,7 @@ const LENGTH_COLOR: Color = tailwind::SLATE.c700;
 const PERCENTAGE_COLOR: Color = tailwind::SLATE.c800;
 const RATIO_COLOR: Color = tailwind::SLATE.c900;
 // priority 4
-const PROPORTIONAL_COLOR: Color = tailwind::SLATE.c950;
+const FILL_COLOR: Color = tailwind::SLATE.c950;
 
 #[derive(Default, Clone, Copy)]
 struct App {
@@ -60,7 +60,7 @@ enum SelectedTab {
     Length,
     Percentage,
     Ratio,
-    Proportional,
+    Fill,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -165,7 +165,7 @@ impl Widget for App {
         let [tabs, axis, demo] = area.split(&Layout::vertical([
             Constraint::Fixed(3),
             Constraint::Fixed(3),
-            Proportional(0),
+            Fill(0),
         ]));
 
         self.render_tabs(tabs, buf);
@@ -272,7 +272,7 @@ impl SelectedTab {
             Length => 4,
             Percentage => 5,
             Ratio => 4,
-            Proportional => 2,
+            Fill => 2,
             Min => 5,
             Max => 5,
         }
@@ -286,7 +286,7 @@ impl SelectedTab {
             Length => LENGTH_COLOR,
             Percentage => PERCENTAGE_COLOR,
             Ratio => RATIO_COLOR,
-            Proportional => PROPORTIONAL_COLOR,
+            Fill => FILL_COLOR,
             Min => MIN_COLOR,
             Max => MAX_COLOR,
         };
@@ -301,7 +301,7 @@ impl Widget for SelectedTab {
             SelectedTab::Length => self.render_length_example(area, buf),
             SelectedTab::Percentage => self.render_percentage_example(area, buf),
             SelectedTab::Ratio => self.render_ratio_example(area, buf),
-            SelectedTab::Proportional => self.render_proportional_example(area, buf),
+            SelectedTab::Fill => self.render_fill_example(area, buf),
             SelectedTab::Min => self.render_min_example(area, buf),
             SelectedTab::Max => self.render_max_example(area, buf),
         }
@@ -313,17 +313,11 @@ impl SelectedTab {
         let [example1, example2, example3, example4, _] =
             area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 5]));
 
-        Example::new(&[Fixed(40), Proportional(0)]).render(example1, buf);
-        Example::new(&[Fixed(20), Fixed(20), Proportional(0)]).render(example2, buf);
+        Example::new(&[Fixed(40), Fill(0)]).render(example1, buf);
+        Example::new(&[Fixed(20), Fixed(20), Fill(0)]).render(example2, buf);
         Example::new(&[Fixed(20), Min(20), Max(20)]).render(example3, buf);
-        Example::new(&[
-            Length(20),
-            Percentage(20),
-            Ratio(1, 5),
-            Proportional(1),
-            Fixed(15),
-        ])
-        .render(example4, buf);
+        Example::new(&[Length(20), Percentage(20), Ratio(1, 5), Fill(1), Fixed(15)])
+            .render(example4, buf);
     }
 
     fn render_length_example(&self, area: Rect, buf: &mut Buffer) {
@@ -340,11 +334,11 @@ impl SelectedTab {
         let [example1, example2, example3, example4, example5, _] =
             area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 6]));
 
-        Example::new(&[Percentage(75), Proportional(0)]).render(example1, buf);
-        Example::new(&[Percentage(25), Proportional(0)]).render(example2, buf);
+        Example::new(&[Percentage(75), Fill(0)]).render(example1, buf);
+        Example::new(&[Percentage(25), Fill(0)]).render(example2, buf);
         Example::new(&[Percentage(50), Min(20)]).render(example3, buf);
         Example::new(&[Percentage(0), Max(0)]).render(example4, buf);
-        Example::new(&[Percentage(0), Proportional(0)]).render(example5, buf);
+        Example::new(&[Percentage(0), Fill(0)]).render(example5, buf);
     }
 
     fn render_ratio_example(&self, area: Rect, buf: &mut Buffer) {
@@ -357,11 +351,11 @@ impl SelectedTab {
         Example::new(&[Ratio(1, 2), Percentage(25), Length(10)]).render(example4, buf);
     }
 
-    fn render_proportional_example(&self, area: Rect, buf: &mut Buffer) {
+    fn render_fill_example(&self, area: Rect, buf: &mut Buffer) {
         let [example1, example2, _] = area.split(&Layout::vertical([Fixed(EXAMPLE_HEIGHT); 3]));
 
-        Example::new(&[Proportional(1), Proportional(2), Proportional(3)]).render(example1, buf);
-        Example::new(&[Proportional(1), Percentage(50), Proportional(1)]).render(example2, buf);
+        Example::new(&[Fill(1), Fill(2), Fill(3)]).render(example1, buf);
+        Example::new(&[Fill(1), Percentage(50), Fill(1)]).render(example2, buf);
     }
 
     fn render_min_example(&self, area: Rect, buf: &mut Buffer) {
@@ -421,7 +415,7 @@ impl Example {
             Constraint::Length(_) => LENGTH_COLOR,
             Constraint::Percentage(_) => PERCENTAGE_COLOR,
             Constraint::Ratio(_, _) => RATIO_COLOR,
-            Constraint::Proportional(_) => PROPORTIONAL_COLOR,
+            Constraint::Fill(_) => FILL_COLOR,
             Constraint::Min(_) => MIN_COLOR,
             Constraint::Max(_) => MAX_COLOR,
         };

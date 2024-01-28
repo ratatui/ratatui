@@ -36,12 +36,12 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
         &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10)],
     ),
     (
-        "Proportional(u16) takes any excess space always",
-        &[Length(20), Percentage(20), Ratio(1, 5), Proportional(1)],
+        "Fill(u16) takes any excess space always",
+        &[Length(20), Percentage(20), Ratio(1, 5), Fill(1)],
     ),
     (
         "Here's all constraints in one line",
-        &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10), Proportional(1)],
+        &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10), Fill(1)],
     ),
     (
         "",
@@ -58,12 +58,12 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     ("", &[Length(100), Min(20)]),
     ("`Fixed` is higher priority than `Min/Max`", &[Max(20), Fixed(10)]),
     ("", &[Min(20), Fixed(90)]),
-    ("Proportional is the lowest priority and will fill any excess space", &[Proportional(1), Ratio(1, 4)]),
-    ("Proportional can be used to scale proportionally with other Proportional blocks", &[Proportional(1), Percentage(20), Proportional(2)]),
+    ("Fill is the lowest priority and will fill any excess space", &[Fill(1), Ratio(1, 4)]),
+    ("Fill can be used to scale proportionally with other Fill blocks", &[Fill(1), Percentage(20), Fill(2)]),
     ("", &[Ratio(1, 3), Percentage(20), Ratio(2, 3)]),
     ("StretchLast will stretch the last lowest priority constraint\nStretch will only stretch equal weighted constraints", &[Length(20), Length(15)]),
     ("", &[Percentage(20), Length(15)]),
-    ("`Proportional(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Proportional will only have widths in Flex::Stretch and Flex::StretchLast", &[Proportional(1), Proportional(1)]),
+    ("`Fill(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Fill will only have widths in Flex::Stretch and Flex::StretchLast", &[Fill(1), Fill(1)]),
     ("", &[Length(20), Fixed(20)]),
     (
         "When not using `Flex::Stretch` or `Flex::StretchLast`,\n`Min(u16)` and `Max(u16)` collapse to their lowest values",
@@ -74,21 +74,21 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
         &[Max(20)],
     ),
     ("", &[Min(20), Max(20), Length(20), Fixed(20)]),
-    ("", &[Proportional(0), Proportional(0)]),
+    ("", &[Fill(0), Fill(0)]),
     (
-        "`Proportional(1)` can be to scale with respect to other `Proportional(2)`",
-        &[Proportional(1), Proportional(2)],
+        "`Fill(1)` can be to scale with respect to other `Fill(2)`",
+        &[Fill(1), Fill(2)],
     ),
     (
         "",
-        &[Proportional(1), Min(10), Max(10), Proportional(2)],
+        &[Fill(1), Min(10), Max(10), Fill(2)],
     ),
     (
-        "`Proportional(0)` collapses if there are other non-zero `Proportional(_)`\nconstraints. e.g. `[Proportional(0), Proportional(0), Proportional(1)]`:",
+        "`Fill(0)` collapses if there are other non-zero `Fill(_)`\nconstraints. e.g. `[Fill(0), Fill(0), Fill(1)]`:",
         &[
-            Proportional(0),
-            Proportional(0),
-            Proportional(1),
+            Fill(0),
+            Fill(0),
+            Fill(1),
         ],
     ),
 ];
@@ -244,7 +244,7 @@ fn example_height() -> u16 {
 
 impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::vertical([Fixed(3), Fixed(1), Proportional(0)]);
+        let layout = Layout::vertical([Fixed(3), Fixed(1), Fill(0)]);
         let [tabs, axis, demo] = area.split(&layout);
         self.tabs().render(tabs, buf);
         let scroll_needed = self.render_demo(demo, buf);
@@ -419,7 +419,7 @@ impl Example {
 impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title_height = get_description_height(&self.description);
-        let layout = Layout::vertical([Fixed(title_height), Proportional(0)]);
+        let layout = Layout::vertical([Fixed(title_height), Fill(0)]);
         let [title, illustrations] = area.split(&layout);
 
         let (blocks, spacers) = Layout::horizontal(&self.constraints)
@@ -518,7 +518,7 @@ fn color_for_constraint(constraint: Constraint) -> Color {
         Constraint::Length(_) => SLATE.c700,
         Constraint::Percentage(_) => SLATE.c800,
         Constraint::Ratio(_, _) => SLATE.c900,
-        Constraint::Proportional(_) => SLATE.c950,
+        Constraint::Fill(_) => SLATE.c950,
     }
 }
 
