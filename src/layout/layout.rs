@@ -1385,10 +1385,11 @@ mod tests {
         /// compare against each other. E.g. `"abc"` is much more concise than `[Rect::new(0, 0, 1,
         /// 1), Rect::new(1, 0, 1, 1), Rect::new(2, 0, 1, 1)]`.
         #[track_caller]
-        fn test(area: Rect, constraints: &[Constraint], expected: &str) {
+        fn letters(area: Rect, constraints: &[Constraint], expected: &str, flex: Flex) {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints(constraints)
+                .flex(flex)
                 .split(area);
             let mut buffer = Buffer::empty(area);
             for (i, c) in ('a'..='z').take(constraints.len()).enumerate() {
@@ -1399,143 +1400,128 @@ mod tests {
             assert_buffer_eq!(buffer, expected);
         }
 
-        #[track_caller]
-        fn test_with_stretch(area: Rect, constraints: &[Constraint], expected: &str) {
-            let layout = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints(constraints)
-                .flex(Flex::Stretch)
-                .split(area);
-            let mut buffer = Buffer::empty(area);
-            for (i, c) in ('a'..='z').take(constraints.len()).enumerate() {
-                let s: String = c.to_string().repeat(area.width as usize);
-                Paragraph::new(s).render(layout[i], &mut buffer);
-            }
-            let expected = Buffer::with_lines(vec![expected]);
-            assert_buffer_eq!(buffer, expected);
+        #[rstest]
+        #[case(Rect::new(0, 0, 1, 1), &[Length(1), Length(1)], "a")] // exact, exact
+        fn length_stretch(
+            #[case] area: Rect,
+            #[case] constraints: &[Constraint],
+            #[case] expected: &str,
+        ) {
+            letters(area, constraints, expected, Flex::Stretch)
         }
 
-        #[test]
-        fn length() {
-            test(Rect::new(0, 0, 1, 1), &[Length(0)], "a"); // zero
-            test(Rect::new(0, 0, 1, 1), &[Length(1)], "a"); // exact
-            test(Rect::new(0, 0, 1, 1), &[Length(2)], "a"); // overflow
-
-            test(Rect::new(0, 0, 2, 1), &[Length(0)], "aa"); // zero
-            test(Rect::new(0, 0, 2, 1), &[Length(1)], "aa"); // underflow
-            test(Rect::new(0, 0, 2, 1), &[Length(2)], "aa"); // exact
-            test(Rect::new(0, 0, 2, 1), &[Length(3)], "aa"); // overflow
-
-            test(Rect::new(0, 0, 1, 1), &[Length(0), Length(0)], "b"); // zero, zero
-            test(Rect::new(0, 0, 1, 1), &[Length(0), Length(1)], "b"); // zero, exact
-            test(Rect::new(0, 0, 1, 1), &[Length(0), Length(2)], "b"); // zero, overflow
-            test(Rect::new(0, 0, 1, 1), &[Length(1), Length(0)], "a"); // exact, zero
-            test(Rect::new(0, 0, 1, 1), &[Length(1), Length(1)], "a"); // exact, exact
-            test_with_stretch(Rect::new(0, 0, 1, 1), &[Length(1), Length(1)], "a"); // exact, exact
-            test(Rect::new(0, 0, 1, 1), &[Length(1), Length(2)], "a"); // exact, overflow
-            test(Rect::new(0, 0, 1, 1), &[Length(2), Length(0)], "a"); // overflow, zero
-            test(Rect::new(0, 0, 1, 1), &[Length(2), Length(1)], "a"); // overflow, exact
-            test(Rect::new(0, 0, 1, 1), &[Length(2), Length(2)], "a"); // overflow, overflow
-
-            test(Rect::new(0, 0, 2, 1), &[Length(0), Length(0)], "bb"); // zero, zero
-            test(Rect::new(0, 0, 2, 1), &[Length(0), Length(1)], "bb"); // zero, underflow
-            test(Rect::new(0, 0, 2, 1), &[Length(0), Length(2)], "bb"); // zero, exact
-            test(Rect::new(0, 0, 2, 1), &[Length(0), Length(3)], "bb"); // zero, overflow
-            test(Rect::new(0, 0, 2, 1), &[Length(1), Length(0)], "ab"); // underflow, zero
-            test(Rect::new(0, 0, 2, 1), &[Length(1), Length(1)], "ab"); // underflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Length(1), Length(2)], "ab"); // underflow, exact with stretchlast
-            test(Rect::new(0, 0, 2, 1), &[Length(1), Length(3)], "ab"); // underflow, overflow with stretchlast
-            test(Rect::new(0, 0, 2, 1), &[Length(2), Length(0)], "aa"); // exact, zero
-            test(Rect::new(0, 0, 2, 1), &[Length(2), Length(1)], "aa"); // exact, underflow
-            test(Rect::new(0, 0, 2, 1), &[Length(2), Length(2)], "aa"); // exact, exact
-            test(Rect::new(0, 0, 2, 1), &[Length(2), Length(3)], "aa"); // exact, overflow
-            test(Rect::new(0, 0, 2, 1), &[Length(3), Length(0)], "aa"); // overflow, zero
-            test(Rect::new(0, 0, 2, 1), &[Length(3), Length(1)], "aa"); // overflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Length(3), Length(2)], "aa"); // overflow, exact
-            test(Rect::new(0, 0, 2, 1), &[Length(3), Length(3)], "aa"); // overflow, overflow
-
-            test(Rect::new(0, 0, 3, 1), &[Length(2), Length(2)], "aab"); // with stretchlast
+        #[rstest]
+        #[case(Rect::new(0, 0, 1, 1), &[Length(0)], "a")] // zero
+        #[case(Rect::new(0, 0, 1, 1), &[Length(1)], "a")] // exact
+        #[case(Rect::new(0, 0, 1, 1), &[Length(2)], "a")] // overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Length(0)], "aa")] // zero
+        #[case(Rect::new(0, 0, 2, 1), &[Length(1)], "aa")] // underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Length(2)], "aa")] // exact
+        #[case(Rect::new(0, 0, 2, 1), &[Length(3)], "aa")] // overflow
+        #[case(Rect::new(0, 0, 1, 1), &[Length(0), Length(0)], "b")] // zero, zero
+        #[case(Rect::new(0, 0, 1, 1), &[Length(0), Length(1)], "b")] // zero, exact
+        #[case(Rect::new(0, 0, 1, 1), &[Length(0), Length(2)], "b")] // zero, overflow
+        #[case(Rect::new(0, 0, 1, 1), &[Length(1), Length(0)], "a")] // exact, zero
+        #[case(Rect::new(0, 0, 1, 1), &[Length(1), Length(1)], "a")] // exact, exact
+        #[case(Rect::new(0, 0, 1, 1), &[Length(1), Length(2)], "a")] // exact, overflow
+        #[case(Rect::new(0, 0, 1, 1), &[Length(2), Length(0)], "a")] // overflow, zero
+        #[case(Rect::new(0, 0, 1, 1), &[Length(2), Length(1)], "a")] // overflow, exact
+        #[case(Rect::new(0, 0, 1, 1), &[Length(2), Length(2)], "a")] // overflow, overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Length(0), Length(0)], "bb")] // zero, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Length(0), Length(1)], "bb")] // zero, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Length(0), Length(2)], "bb")] // zero, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Length(0), Length(3)], "bb")] // zero, overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(0)], "ab")] // underflow, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(1)], "ab")] // underflow, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(2)], "ab")] // underflow, exact with stretchlast
+        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(3)], "ab")] // underflow, overflow with stretchlast
+        #[case(Rect::new(0, 0, 2, 1), &[Length(2), Length(0)], "aa")] // exact, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Length(2), Length(1)], "aa")] // exact, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Length(2), Length(2)], "aa")] // exact, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Length(2), Length(3)], "aa")] // exact, overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Length(3), Length(0)], "aa")] // overflow, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Length(3), Length(1)], "aa")] // overflow, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Length(3), Length(2)], "aa")] // overflow, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Length(3), Length(3)], "aa")] // overflow, overflow
+        #[case(Rect::new(0, 0, 3, 1), &[Length(2), Length(2)], "aab")] // with stretchlast
+        fn length(#[case] area: Rect, #[case] constraints: &[Constraint], #[case] expected: &str) {
+            letters(area, constraints, expected, Flex::StretchLast)
         }
 
-        #[test]
-        fn max() {
-            test(Rect::new(0, 0, 1, 1), &[Max(0)], "a"); // zero
-            test(Rect::new(0, 0, 1, 1), &[Max(1)], "a"); // exact
-            test(Rect::new(0, 0, 1, 1), &[Max(2)], "a"); // overflow
-
-            test(Rect::new(0, 0, 2, 1), &[Max(0)], "aa"); // zero
-            test(Rect::new(0, 0, 2, 1), &[Max(1)], "aa"); // underflow
-            test(Rect::new(0, 0, 2, 1), &[Max(2)], "aa"); // exact
-            test(Rect::new(0, 0, 2, 1), &[Max(3)], "aa"); // overflow
-
-            test(Rect::new(0, 0, 1, 1), &[Max(0), Max(0)], "b"); // zero, zero
-            test(Rect::new(0, 0, 1, 1), &[Max(0), Max(1)], "b"); // zero, exact
-            test(Rect::new(0, 0, 1, 1), &[Max(0), Max(2)], "b"); // zero, overflow
-            test(Rect::new(0, 0, 1, 1), &[Max(1), Max(0)], "a"); // exact, zero
-            test(Rect::new(0, 0, 1, 1), &[Max(1), Max(1)], "a"); // exact, exact
-            test(Rect::new(0, 0, 1, 1), &[Max(1), Max(2)], "a"); // exact, overflow
-            test(Rect::new(0, 0, 1, 1), &[Max(2), Max(0)], "a"); // overflow, zero
-            test(Rect::new(0, 0, 1, 1), &[Max(2), Max(1)], "a"); // overflow, exact
-            test(Rect::new(0, 0, 1, 1), &[Max(2), Max(2)], "a"); // overflow, overflow
-
-            test(Rect::new(0, 0, 2, 1), &[Max(0), Max(0)], "bb"); // zero, zero
-            test(Rect::new(0, 0, 2, 1), &[Max(0), Max(1)], "bb"); // zero, underflow
-            test(Rect::new(0, 0, 2, 1), &[Max(0), Max(2)], "bb"); // zero, exact
-            test(Rect::new(0, 0, 2, 1), &[Max(0), Max(3)], "bb"); // zero, overflow
-            test(Rect::new(0, 0, 2, 1), &[Max(1), Max(0)], "ab"); // underflow, zero
-            test(Rect::new(0, 0, 2, 1), &[Max(1), Max(1)], "ab"); // underflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Max(1), Max(2)], "ab"); // underflow, exact
-            test(Rect::new(0, 0, 2, 1), &[Max(1), Max(3)], "ab"); // underflow, overflow
-            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(0)], "aa"); // exact, zero
-            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(1)], "aa"); // exact, underflow
-            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(2)], "aa"); // exact, exact
-            test(Rect::new(0, 0, 2, 1), &[Max(2), Max(3)], "aa"); // exact, overflow
-            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(0)], "aa"); // overflow, zero
-            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(1)], "aa"); // overflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(2)], "aa"); // overflow, exact
-            test(Rect::new(0, 0, 2, 1), &[Max(3), Max(3)], "aa"); // overflow, overflow
-
-            test(Rect::new(0, 0, 3, 1), &[Max(2), Max(2)], "aab");
+        #[rstest]
+        #[case(Rect::new(0, 0, 1, 1), &[Max(0)], "a")] // zero
+        #[case(Rect::new(0, 0, 1, 1), &[Max(1)], "a")] // exact
+        #[case(Rect::new(0, 0, 1, 1), &[Max(2)], "a")] // overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Max(0)], "aa")] // zero
+        #[case(Rect::new(0, 0, 2, 1), &[Max(1)], "aa")] // underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Max(2)], "aa")] // exact
+        #[case(Rect::new(0, 0, 2, 1), &[Max(3)], "aa")] // overflow
+        #[case(Rect::new(0, 0, 1, 1), &[Max(0), Max(0)], "b")] // zero, zero
+        #[case(Rect::new(0, 0, 1, 1), &[Max(0), Max(1)], "b")] // zero, exact
+        #[case(Rect::new(0, 0, 1, 1), &[Max(0), Max(2)], "b")] // zero, overflow
+        #[case(Rect::new(0, 0, 1, 1), &[Max(1), Max(0)], "a")] // exact, zero
+        #[case(Rect::new(0, 0, 1, 1), &[Max(1), Max(1)], "a")] // exact, exact
+        #[case(Rect::new(0, 0, 1, 1), &[Max(1), Max(2)], "a")] // exact, overflow
+        #[case(Rect::new(0, 0, 1, 1), &[Max(2), Max(0)], "a")] // overflow, zero
+        #[case(Rect::new(0, 0, 1, 1), &[Max(2), Max(1)], "a")] // overflow, exact
+        #[case(Rect::new(0, 0, 1, 1), &[Max(2), Max(2)], "a")] // overflow, overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Max(0), Max(0)], "bb")] // zero, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Max(0), Max(1)], "bb")] // zero, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Max(0), Max(2)], "bb")] // zero, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Max(0), Max(3)], "bb")] // zero, overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Max(1), Max(0)], "ab")] // underflow, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Max(1), Max(1)], "ab")] // underflow, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Max(1), Max(2)], "ab")] // underflow, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Max(1), Max(3)], "ab")] // underflow, overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Max(2), Max(0)], "aa")] // exact, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Max(2), Max(1)], "aa")] // exact, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Max(2), Max(2)], "aa")] // exact, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Max(2), Max(3)], "aa")] // exact, overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Max(3), Max(0)], "aa")] // overflow, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Max(3), Max(1)], "aa")] // overflow, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Max(3), Max(2)], "aa")] // overflow, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Max(3), Max(3)], "aa")] // overflow, overflow
+        #[case(Rect::new(0, 0, 3, 1), &[Max(2), Max(2)], "aab")]
+        fn max(#[case] area: Rect, #[case] constraints: &[Constraint], #[case] expected: &str) {
+            letters(area, constraints, expected, Flex::StretchLast)
         }
 
-        #[test]
-        fn min() {
-            test(Rect::new(0, 0, 1, 1), &[Min(0), Min(0)], "b"); // zero, zero
-            test(Rect::new(0, 0, 1, 1), &[Min(0), Min(1)], "b"); // zero, exact
-            test(Rect::new(0, 0, 1, 1), &[Min(0), Min(2)], "b"); // zero, overflow
-            test(Rect::new(0, 0, 1, 1), &[Min(1), Min(0)], "a"); // exact, zero
-            test(Rect::new(0, 0, 1, 1), &[Min(1), Min(1)], "a"); // exact, exact
-            test(Rect::new(0, 0, 1, 1), &[Min(1), Min(2)], "a"); // exact, overflow
-            test(Rect::new(0, 0, 1, 1), &[Min(2), Min(0)], "a"); // overflow, zero
-            test(Rect::new(0, 0, 1, 1), &[Min(2), Min(1)], "a"); // overflow, exact
-            test(Rect::new(0, 0, 1, 1), &[Min(2), Min(2)], "a"); // overflow, overflow
-
-            test(Rect::new(0, 0, 2, 1), &[Min(0), Min(0)], "bb"); // zero, zero
-            test(Rect::new(0, 0, 2, 1), &[Min(0), Min(1)], "bb"); // zero, underflow
-            test(Rect::new(0, 0, 2, 1), &[Min(0), Min(2)], "bb"); // zero, exact
-            test(Rect::new(0, 0, 2, 1), &[Min(0), Min(3)], "bb"); // zero, overflow
-            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(0)], "ab"); // underflow, zero
-            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(1)], "ab"); // underflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(2)], "ab"); // underflow, exact
-            test(Rect::new(0, 0, 2, 1), &[Min(1), Min(3)], "ab"); // underflow, overflow
-            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(0)], "aa"); // exact, zero
-            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(1)], "aa"); // exact, underflow
-            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(2)], "aa"); // exact, exact
-            test(Rect::new(0, 0, 2, 1), &[Min(2), Min(3)], "aa"); // exact, overflow
-            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(0)], "aa"); // overflow, zero
-            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(1)], "aa"); // overflow, underflow
-            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(2)], "aa"); // overflow, exact
-            test(Rect::new(0, 0, 2, 1), &[Min(3), Min(3)], "aa"); // overflow, overflow
-
-            test(Rect::new(0, 0, 3, 1), &[Min(2), Min(2)], "aab");
+        #[rstest]
+        #[case(Rect::new(0, 0, 1, 1), &[Min(0), Min(0)], "b")] // zero, zero
+        #[case(Rect::new(0, 0, 1, 1), &[Min(0), Min(1)], "b")] // zero, exact
+        #[case(Rect::new(0, 0, 1, 1), &[Min(0), Min(2)], "b")] // zero, overflow
+        #[case(Rect::new(0, 0, 1, 1), &[Min(1), Min(0)], "a")] // exact, zero
+        #[case(Rect::new(0, 0, 1, 1), &[Min(1), Min(1)], "a")] // exact, exact
+        #[case(Rect::new(0, 0, 1, 1), &[Min(1), Min(2)], "a")] // exact, overflow
+        #[case(Rect::new(0, 0, 1, 1), &[Min(2), Min(0)], "a")] // overflow, zero
+        #[case(Rect::new(0, 0, 1, 1), &[Min(2), Min(1)], "a")] // overflow, exact
+        #[case(Rect::new(0, 0, 1, 1), &[Min(2), Min(2)], "a")] // overflow, overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Min(0), Min(0)], "bb")] // zero, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Min(0), Min(1)], "bb")] // zero, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Min(0), Min(2)], "bb")] // zero, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Min(0), Min(3)], "bb")] // zero, overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Min(1), Min(0)], "ab")] // underflow, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Min(1), Min(1)], "ab")] // underflow, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Min(1), Min(2)], "ab")] // underflow, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Min(1), Min(3)], "ab")] // underflow, overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Min(2), Min(0)], "aa")] // exact, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Min(2), Min(1)], "aa")] // exact, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Min(2), Min(2)], "aa")] // exact, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Min(2), Min(3)], "aa")] // exact, overflow
+        #[case(Rect::new(0, 0, 2, 1), &[Min(3), Min(0)], "aa")] // overflow, zero
+        #[case(Rect::new(0, 0, 2, 1), &[Min(3), Min(1)], "aa")] // overflow, underflow
+        #[case(Rect::new(0, 0, 2, 1), &[Min(3), Min(2)], "aa")] // overflow, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Min(3), Min(3)], "aa")] // overflow, overflow
+        #[case(Rect::new(0, 0, 3, 1), &[Min(2), Min(2)], "aab")]
+        fn min(#[case] area: Rect, #[case] constraints: &[Constraint], #[case] expected: &str) {
+            letters(area, constraints, expected, Flex::StretchLast)
         }
 
-        #[test]
-        fn percentage() {
-            // choose some percentages that will result in several different rounding behaviors
-            // when applied to the given area. E.g. we want to test things that will end up exactly
-            // integers, things that will round up, and things that will round down. We also want
-            // to test when rounding occurs both in the position and the size.
+        mod percentage {
+            use rstest::rstest;
+
+            use super::*;
+
             const ZERO: Constraint = Percentage(0);
             const TEN: Constraint = Percentage(10);
             const QUARTER: Constraint = Percentage(25);
@@ -1546,91 +1532,86 @@ mod tests {
             const FULL: Constraint = Percentage(100);
             const DOUBLE: Constraint = Percentage(200);
 
-            test(Rect::new(0, 0, 1, 1), &[ZERO], "a");
-            test(Rect::new(0, 0, 1, 1), &[QUARTER], "a");
-            test(Rect::new(0, 0, 1, 1), &[HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[NINETY], "a");
-            test(Rect::new(0, 0, 1, 1), &[FULL], "a");
-            test(Rect::new(0, 0, 1, 1), &[DOUBLE], "a");
-
-            test(Rect::new(0, 0, 2, 1), &[ZERO], "aa");
-            test(Rect::new(0, 0, 2, 1), &[TEN], "aa");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER], "aa");
-            test(Rect::new(0, 0, 2, 1), &[HALF], "aa");
-            test(Rect::new(0, 0, 2, 1), &[TWO_THIRDS], "aa");
-            test(Rect::new(0, 0, 2, 1), &[FULL], "aa");
-            test(Rect::new(0, 0, 2, 1), &[DOUBLE], "aa");
-
-            test(Rect::new(0, 0, 1, 1), &[ZERO, ZERO], "b");
-            test(Rect::new(0, 0, 1, 1), &[ZERO, TEN], "b");
-            test(Rect::new(0, 0, 1, 1), &[ZERO, HALF], "b");
-            test(Rect::new(0, 0, 1, 1), &[ZERO, NINETY], "b");
-            test(Rect::new(0, 0, 1, 1), &[ZERO, FULL], "b");
-            test(Rect::new(0, 0, 1, 1), &[ZERO, DOUBLE], "b");
-
-            test(Rect::new(0, 0, 1, 1), &[TEN, ZERO], "b");
-            test(Rect::new(0, 0, 1, 1), &[TEN, TEN], "b");
-            test(Rect::new(0, 0, 1, 1), &[TEN, HALF], "b");
-            test(Rect::new(0, 0, 1, 1), &[TEN, NINETY], "b");
-            test(Rect::new(0, 0, 1, 1), &[TEN, FULL], "b");
-            test(Rect::new(0, 0, 1, 1), &[TEN, DOUBLE], "b");
-
-            test(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a");
-            test(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a");
-            test(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a");
-
-            test(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a");
-
-            test(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a");
-            test(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[FULL, FULL], "a");
-            test(Rect::new(0, 0, 1, 1), &[FULL, DOUBLE], "a");
-
-            test(Rect::new(0, 0, 2, 1), &[ZERO, ZERO], "bb");
-            test(Rect::new(0, 0, 2, 1), &[ZERO, QUARTER], "bb");
-            test(Rect::new(0, 0, 2, 1), &[ZERO, HALF], "bb");
-            test(Rect::new(0, 0, 2, 1), &[ZERO, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[ZERO, DOUBLE], "bb");
-
-            test(Rect::new(0, 0, 2, 1), &[TEN, ZERO], "bb");
-            test(Rect::new(0, 0, 2, 1), &[TEN, QUARTER], "bb");
-            test(Rect::new(0, 0, 2, 1), &[TEN, HALF], "bb");
-            test(Rect::new(0, 0, 2, 1), &[TEN, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[TEN, DOUBLE], "bb");
-
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab");
-
-            test(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab");
-
-            test(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab");
-            test(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[HALF, FULL], "ab");
-            test(Rect::new(0, 0, 2, 1), &[FULL, ZERO], "aa");
-            test(Rect::new(0, 0, 2, 1), &[FULL, HALF], "aa");
-            test(Rect::new(0, 0, 2, 1), &[FULL, FULL], "aa");
-
-            test(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "abb");
-            test(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "abb");
+            #[rstest]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[QUARTER], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[DOUBLE], "a")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[HALF], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[TWO_THIRDS], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[FULL], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[DOUBLE], "aa")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, ZERO], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, TEN], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, HALF], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, NINETY], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, FULL], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, DOUBLE], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, ZERO], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, TEN], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, HALF], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, NINETY], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, FULL], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, DOUBLE], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[FULL, FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[FULL, DOUBLE], "a")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO, ZERO], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO, QUARTER], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO, HALF], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO, FULL], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO, DOUBLE], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN, ZERO], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN, QUARTER], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN, HALF], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN, FULL], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN, DOUBLE], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[HALF, FULL], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[FULL, ZERO], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[FULL, HALF], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[FULL, FULL], "aa")]
+            #[case(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "abb")]
+            #[case(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "abb")]
+            fn percentage(
+                #[case] area: Rect,
+                #[case] constraints: &[Constraint],
+                #[case] expected: &str,
+            ) {
+                letters(area, constraints, expected, Flex::StretchLast)
+            }
         }
 
-        #[test]
-        fn ratio() {
-            // choose some ratios that will result in several different rounding behaviors
-            // when applied to the given area. E.g. we want to test things that will end up exactly
-            // integers, things that will round up, and things that will round down. We also want
-            // to test when rounding occurs both in the position and the size.
+        mod ratio {
+            use rstest::rstest;
+
+            use super::*;
+
             const ZERO: Constraint = Ratio(0, 1);
             const TEN: Constraint = Ratio(1, 10);
             const QUARTER: Constraint = Ratio(1, 4);
@@ -1640,84 +1621,79 @@ mod tests {
             const NINETY: Constraint = Ratio(9, 10);
             const FULL: Constraint = Ratio(1, 1);
             const DOUBLE: Constraint = Ratio(2, 1);
-
-            test(Rect::new(0, 0, 1, 1), &[ZERO], "a");
-            test(Rect::new(0, 0, 1, 1), &[QUARTER], "a");
-            test(Rect::new(0, 0, 1, 1), &[HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[NINETY], "a");
-            test(Rect::new(0, 0, 1, 1), &[FULL], "a");
-            test(Rect::new(0, 0, 1, 1), &[DOUBLE], "a");
-
-            test(Rect::new(0, 0, 2, 1), &[ZERO], "aa");
-            test(Rect::new(0, 0, 2, 1), &[TEN], "aa");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER], "aa");
-            test(Rect::new(0, 0, 2, 1), &[HALF], "aa");
-            test(Rect::new(0, 0, 2, 1), &[TWO_THIRDS], "aa");
-            test(Rect::new(0, 0, 2, 1), &[FULL], "aa");
-            test(Rect::new(0, 0, 2, 1), &[DOUBLE], "aa");
-
-            test(Rect::new(0, 0, 1, 1), &[ZERO, ZERO], "b");
-            test(Rect::new(0, 0, 1, 1), &[ZERO, TEN], "b");
-            test(Rect::new(0, 0, 1, 1), &[ZERO, HALF], "b");
-            test(Rect::new(0, 0, 1, 1), &[ZERO, NINETY], "b");
-            test(Rect::new(0, 0, 1, 1), &[ZERO, FULL], "b");
-            test(Rect::new(0, 0, 1, 1), &[ZERO, DOUBLE], "b");
-
-            test(Rect::new(0, 0, 1, 1), &[TEN, ZERO], "b");
-            test(Rect::new(0, 0, 1, 1), &[TEN, TEN], "b");
-            test(Rect::new(0, 0, 1, 1), &[TEN, HALF], "b");
-            test(Rect::new(0, 0, 1, 1), &[TEN, NINETY], "b");
-            test(Rect::new(0, 0, 1, 1), &[TEN, FULL], "b");
-            test(Rect::new(0, 0, 1, 1), &[TEN, DOUBLE], "b");
-
-            test(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a");
-            test(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a");
-            test(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a");
-
-            test(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a");
-            test(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a");
-
-            test(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a");
-            test(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a");
-            test(Rect::new(0, 0, 1, 1), &[FULL, FULL], "a");
-            test(Rect::new(0, 0, 1, 1), &[FULL, DOUBLE], "a");
-
-            test(Rect::new(0, 0, 2, 1), &[ZERO, ZERO], "bb");
-            test(Rect::new(0, 0, 2, 1), &[ZERO, QUARTER], "bb");
-            test(Rect::new(0, 0, 2, 1), &[ZERO, HALF], "bb");
-            test(Rect::new(0, 0, 2, 1), &[ZERO, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[ZERO, DOUBLE], "bb");
-
-            test(Rect::new(0, 0, 2, 1), &[TEN, ZERO], "bb");
-            test(Rect::new(0, 0, 2, 1), &[TEN, QUARTER], "bb");
-            test(Rect::new(0, 0, 2, 1), &[TEN, HALF], "bb");
-            test(Rect::new(0, 0, 2, 1), &[TEN, FULL], "bb");
-            test(Rect::new(0, 0, 2, 1), &[TEN, DOUBLE], "bb");
-
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab");
-            test(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab");
-
-            test(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab");
-            test(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab");
-
-            test(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab");
-            test(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab");
-            test(Rect::new(0, 0, 2, 1), &[HALF, FULL], "ab");
-            test(Rect::new(0, 0, 2, 1), &[FULL, ZERO], "aa");
-            test(Rect::new(0, 0, 2, 1), &[FULL, HALF], "aa");
-            test(Rect::new(0, 0, 2, 1), &[FULL, FULL], "aa");
-
-            test(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "abb");
-            test(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "abb");
+            #[rstest]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[QUARTER], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[DOUBLE], "a")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[HALF], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[TWO_THIRDS], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[FULL], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[DOUBLE], "aa")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, ZERO], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, TEN], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, HALF], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, NINETY], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, FULL], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[ZERO, DOUBLE], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, ZERO], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, TEN], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, HALF], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, NINETY], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, FULL], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[TEN, DOUBLE], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[FULL, FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[FULL, DOUBLE], "a")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO, ZERO], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO, QUARTER], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO, HALF], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO, FULL], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[ZERO, DOUBLE], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN, ZERO], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN, QUARTER], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN, HALF], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN, FULL], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[TEN, DOUBLE], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[HALF, FULL], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[FULL, ZERO], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[FULL, HALF], "aa")]
+            #[case(Rect::new(0, 0, 2, 1), &[FULL, FULL], "aa")]
+            #[case(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "abb")]
+            #[case(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "abb")]
+            fn ratio(
+                #[case] area: Rect,
+                #[case] constraints: &[Constraint],
+                #[case] expected: &str,
+            ) {
+                letters(area, constraints, expected, Flex::StretchLast)
+            }
         }
 
         #[test]
