@@ -133,7 +133,7 @@ impl<DS: DateStyler> Monthly<'_, DS> {
         let layout = Layout::vertical([
             Constraint::Length(self.show_month.is_some().into()),
             Constraint::Length(self.show_weekday.is_some().into()),
-            Constraint::Proportional(1),
+            Constraint::Fill(1),
         ]);
         let [month_header, days_header, days_area] = area.split(&layout);
 

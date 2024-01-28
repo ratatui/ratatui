@@ -775,7 +775,7 @@ impl Table<'_> {
         let [_selection_area, columns_area] =
             Rect::new(0, 0, max_width, 1).split(&Layout::horizontal([
                 Constraint::Fixed(selection_width),
-                Constraint::Proportional(0),
+                Constraint::Fill(0),
             ]));
         let rects = Layout::horizontal(widths)
             .flex(self.flex)

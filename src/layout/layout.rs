@@ -9,8 +9,8 @@ use itertools::Itertools;
 use lru::LruCache;
 
 use self::strengths::{
-    FIXED_SIZE_EQ, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ, MIN_SIZE_GE,
-    PERCENTAGE_SIZE_EQ, PROPORTIONAL_GROW, RATIO_SIZE_EQ, *,
+    FILL_GROW, FIXED_SIZE_EQ, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ, MIN_SIZE_GE,
+    PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, *,
 };
 use super::{Flex, SegmentSize};
 use crate::prelude::*;
@@ -620,7 +620,7 @@ impl Layout {
         configure_variable_constraints(&mut solver, &variables, area_size)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, &segments, flex, spacing)?;
         configure_constraints(&mut solver, area_size, &segments, constraints)?;
-        configure_proportional_constraints(&mut solver, &segments, constraints)?;
+        configure_fill_constraints(&mut solver, &segments, constraints)?;
 
         // `solver.fetch_changes()` can only be called once per solve
         let changes: HashMap<Variable, f64> = solver.fetch_changes().iter().copied().collect();
@@ -694,9 +694,9 @@ fn configure_constraints(
                 let size = area.size() * f64::from(num) / f64::from(den.max(1));
                 solver.add_constraint(element.has_size(size, RATIO_SIZE_EQ))?;
             }
-            Constraint::Proportional(_) => {
+            Constraint::Fill(_) => {
                 // given no other constraints, this segment will grow as much as possible.
-                solver.add_constraint(element.has_size(area, PROPORTIONAL_GROW))?;
+                solver.add_constraint(element.has_size(area, FILL_GROW))?;
             }
         }
     }
@@ -792,21 +792,21 @@ fn configure_flex_constraints(
     Ok(())
 }
 
-/// Make every `Proportional` constraint proportionally equal to each other
+/// Make every `Fill` constraint proportionally equal to each other
 /// This will make it fill up empty spaces equally
 ///
-/// [Proportional(1), Proportional(1)]
+/// [Fill(1), Fill(1)]
 /// ┌──────┐┌──────┐
 /// │abcdef││abcdef│
 /// └──────┘└──────┘
 ///
-/// [Proportional(1), Proportional(2)]
+/// [Fill(1), Fill(2)]
 /// ┌──────┐┌────────────┐
 /// │abcdef││abcdefabcdef│
 /// └──────┘└────────────┘
 ///
 /// size == base_element * scaling_factor
-fn configure_proportional_constraints(
+fn configure_fill_constraints(
     solver: &mut Solver,
     segments: &[Element],
     constraints: &[Constraint],
@@ -814,17 +814,15 @@ fn configure_proportional_constraints(
     for ((&l_constraint, &l_element), (&r_constraint, &r_element)) in constraints
         .iter()
         .zip(segments.iter())
-        .filter(|(c, _)| c.is_proportional())
+        .filter(|(c, _)| c.is_fill())
         .tuple_combinations()
     {
-        // `Proportional` will only expand into _excess_ available space. You can think of
-        // `Proportional` element sizes as starting from `0` and incrementally
-        // increasing while proportionally matching other `Proportional` spaces AND
+        // `Fill` will only expand into _excess_ available space. You can think of
+        // `Fill` element sizes as starting from `0` and incrementally
+        // increasing while proportionally matching other `Fill` spaces AND
         // also meeting all other constraints.
-        if let (
-            Constraint::Proportional(l_scaling_factor),
-            Constraint::Proportional(r_scaling_factor),
-        ) = (l_constraint, r_constraint)
+        if let (Constraint::Fill(l_scaling_factor), Constraint::Fill(r_scaling_factor)) =
+            (l_constraint, r_constraint)
         {
             // because of the way cassowary works, we need to use `*` instead of `/`
             // l_size / l_scaling_factor == l_size / l_scaling_factor
@@ -846,7 +844,7 @@ fn configure_proportional_constraints(
             );
             solver.add_constraint(
                 (r_scaling_factor * l_element.size())
-                    | EQ(PROPORTIONAL_SCALING_EQ)
+                    | EQ(FILL_SCALING_EQ)
                     | (l_scaling_factor * r_element.size()),
             )?;
         }
@@ -969,12 +967,12 @@ mod strengths {
     /// └     ┘└───┘└     ┘└───┘└     ┘
     pub const SPACER_SIZE_EQ: f64 = REQUIRED - 1.0;
 
-    /// The strength to apply to Proportional constraints so that their sizes are proportional.
+    /// The strength to apply to Fill constraints so that their sizes are proportional.
     ///
     /// ┌───────────────┐┌───────────────┐
-    /// │Proportional(x)││Proportional(x)│
+    /// │    Fill(x)    ││    Fill(x)    │
     /// └───────────────┘└───────────────┘
-    pub const PROPORTIONAL_SCALING_EQ: f64 = REQUIRED - 1.0;
+    pub const FILL_SCALING_EQ: f64 = REQUIRED - 1.0;
 
     /// The strength to apply to Fixed constraints.
     ///
@@ -1032,12 +1030,12 @@ mod strengths {
     /// └────────┘
     pub const MAX_SIZE_EQ: f64 = MEDIUM / 10.0;
 
-    /// The strength to apply to Proportional growing constraints.
+    /// The strength to apply to Fill growing constraints.
     ///
     /// ┌─────────────────────┐
-    /// │<= Proportional(x) =>│
+    /// │<=     Fill(x)     =>│
     /// └─────────────────────┘
-    pub const PROPORTIONAL_GROW: f64 = WEAK * 10.0;
+    pub const FILL_GROW: f64 = WEAK * 10.0;
 
     /// The strength to apply to growing constraints.
     ///
@@ -1056,7 +1054,7 @@ mod strengths {
     #[allow(dead_code)]
     pub fn is_valid() -> bool {
         SPACER_SIZE_EQ > FIXED_SIZE_EQ
-            && PROPORTIONAL_SCALING_EQ > FIXED_SIZE_EQ
+            && FILL_SCALING_EQ > FIXED_SIZE_EQ
             && FIXED_SIZE_EQ > MIN_SIZE_GE
             && MIN_SIZE_GE > MIN_SIZE_EQ
             && MAX_SIZE_LE > MAX_SIZE_EQ
@@ -1066,8 +1064,8 @@ mod strengths {
             && LENGTH_SIZE_EQ > PERCENTAGE_SIZE_EQ
             && PERCENTAGE_SIZE_EQ > RATIO_SIZE_EQ
             && RATIO_SIZE_EQ > MAX_SIZE_EQ
-            && MIN_SIZE_GE > PROPORTIONAL_GROW
-            && PROPORTIONAL_GROW > GROW
+            && MIN_SIZE_GE > FILL_GROW
+            && FILL_GROW > GROW
             && GROW > SPACE_GROW
     }
 }
@@ -1084,14 +1082,14 @@ mod tests {
     fn strength() {
         assert!(strengths::is_valid());
         assert_eq!(strengths::SPACER_SIZE_EQ, REQUIRED - 1.0);
-        assert_eq!(strengths::PROPORTIONAL_SCALING_EQ, REQUIRED - 1.0);
+        assert_eq!(strengths::FILL_SCALING_EQ, REQUIRED - 1.0);
         assert_eq!(strengths::FIXED_SIZE_EQ, REQUIRED / 10.0);
         assert_eq!(strengths::MIN_SIZE_GE, STRONG * 10.0);
         assert_eq!(strengths::LENGTH_SIZE_EQ, STRONG / 10.0);
         assert_eq!(strengths::PERCENTAGE_SIZE_EQ, MEDIUM * 10.0);
         assert_eq!(strengths::RATIO_SIZE_EQ, MEDIUM);
         assert_eq!(strengths::MIN_SIZE_EQ, MEDIUM / 10.0);
-        assert_eq!(strengths::PROPORTIONAL_GROW, WEAK * 10.0);
+        assert_eq!(strengths::FILL_GROW, WEAK * 10.0);
         assert_eq!(strengths::GROW, WEAK);
         assert_eq!(strengths::SPACE_GROW, WEAK / 10.0);
     }
@@ -1858,10 +1856,10 @@ mod tests {
         #[case::fixed_higher_priority(vec![50, 25, 25], vec![Ratio(1, 4), Percentage(25), Fixed(25)])]
         #[case::fixed_higher_priority(vec![79, 1, 20], vec![Length(100), Fixed(1), Min(20)])]
         #[case::fixed_higher_priority(vec![20, 1, 79], vec![Min(20), Fixed(1), Length(100)])]
-        #[case::fixed_higher_priority(vec![45, 10, 45], vec![Proportional(1), Fixed(10), Proportional(1)])]
-        #[case::fixed_higher_priority(vec![30, 10, 60], vec![Proportional(1), Fixed(10), Proportional(2)])]
-        #[case::fixed_higher_priority(vec![18, 10, 72], vec![Proportional(1), Fixed(10), Proportional(4)])]
-        #[case::fixed_higher_priority(vec![15, 10, 75], vec![Proportional(1), Fixed(10), Proportional(5)])]
+        #[case::fixed_higher_priority(vec![45, 10, 45], vec![Fill(1), Fixed(10), Fill(1)])]
+        #[case::fixed_higher_priority(vec![30, 10, 60], vec![Fill(1), Fixed(10), Fill(2)])]
+        #[case::fixed_higher_priority(vec![18, 10, 72], vec![Fill(1), Fixed(10), Fill(4)])]
+        #[case::fixed_higher_priority(vec![15, 10, 75], vec![Fill(1), Fixed(10), Fill(5)])]
         #[case::three_lengths_reference(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
         // #[case::previously_unstable_test(vec![25, 50, 25], vec![Length(25), Length(25),
         // Fixed(25)])]
@@ -1877,8 +1875,8 @@ mod tests {
         }
 
         #[rstest]
-        #[case::excess_in_last_variable(vec![13, 10, 27], vec![Proportional(1), Fixed(10), Proportional(2)])]
-        #[case::excess_in_last_variable(vec![10, 27, 13], vec![Fixed(10), Proportional(2), Proportional(1)])] // might be unstable?
+        #[case::excess_in_last_variable(vec![13, 10, 27], vec![Fill(1), Fixed(10), Fill(2)])]
+        #[case::excess_in_last_variable(vec![10, 27, 13], vec![Fixed(10), Fill(2), Fill(1)])] // might be unstable?
         fn fixed_with_50_width(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
             let rect = Rect::new(0, 0, 50, 1);
             let r = Layout::horizontal(constraints)
@@ -1891,42 +1889,42 @@ mod tests {
         }
 
         #[rstest]
-        #[case::multiple_same_proportionals_are_same(vec![20, 40, 20, 20], vec![Proportional(1), Proportional(2), Proportional(1), Proportional(1)])]
-        #[case::incremental(vec![10, 20, 30, 40], vec![Proportional(1), Proportional(2), Proportional(3), Proportional(4)])]
-        #[case::decremental(vec![40, 30, 20, 10], vec![Proportional(4), Proportional(3), Proportional(2), Proportional(1)])]
-        #[case::randomly_ordered(vec![10, 30, 20, 40], vec![Proportional(1), Proportional(3), Proportional(2), Proportional(4)])]
-        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Fixed(50), Proportional(2), Proportional(4)])]
-        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Length(50), Proportional(2), Proportional(4)])]
-        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Percentage(50), Proportional(2), Proportional(4)])]
-        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Min(50), Proportional(2), Proportional(4)])]
-        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Proportional(1), Proportional(3), Max(50), Proportional(2), Proportional(4)])]
-        #[case::zero_width(vec![0, 100, 0], vec![Proportional(0), Proportional(1), Proportional(0)])]
-        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Fixed(1), Proportional(0)])]
-        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Length(1), Proportional(0)])]
-        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Percentage(1), Proportional(0)])]
-        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Min(1), Proportional(0)])]
-        #[case::zero_width(vec![50, 1, 49], vec![Proportional(0), Max(1), Proportional(0)])]
-        #[case::zero_width(vec![0, 67, 0, 33], vec![Proportional(0), Proportional(2), Proportional(0), Proportional(1)])]
-        #[case::space_filler(vec![0, 80, 20], vec![Proportional(0), Proportional(2), Percentage(20)])]
-        #[case::space_filler(vec![40, 40, 20], vec![Proportional(0), Proportional(0), Percentage(20)])]
-        #[case::space_filler(vec![80, 20], vec![Proportional(0), Ratio(1, 5)])]
-        #[case::space_filler(vec![0, 100], vec![Proportional(0), Proportional(u16::MAX)])]
-        #[case::space_filler(vec![100, 0], vec![Proportional(u16::MAX), Proportional(0)])]
-        #[case::space_filler(vec![80, 20], vec![Proportional(0), Percentage(20)])]
-        #[case::space_filler(vec![80, 20], vec![Proportional(1), Percentage(20)])]
-        #[case::space_filler(vec![80, 20], vec![Proportional(u16::MAX), Percentage(20)])]
-        #[case::space_filler(vec![80, 0, 20], vec![Proportional(u16::MAX), Proportional(0), Percentage(20)])]
-        #[case::space_filler(vec![80, 20], vec![Proportional(0), Fixed(20)])]
-        #[case::space_filler(vec![80, 20], vec![Proportional(0), Length(20)])]
-        #[case::space_filler(vec![80, 20], vec![Proportional(0), Min(20)])]
-        #[case::space_filler(vec![80, 20], vec![Proportional(0), Max(20)])]
-        #[case::proportional_collapses_first(vec![7, 6, 7, 30, 50], vec![Proportional(1), Proportional(1), Proportional(1), Min(30), Length(50)])]
-        #[case::proportional_collapses_first(vec![0, 0, 0, 50, 50], vec![Proportional(1), Proportional(1), Proportional(1), Length(50), Length(50)])]
-        #[case::proportional_collapses_first(vec![0, 0, 0, 75, 25], vec![Proportional(1), Proportional(1), Proportional(1), Length(75), Length(50)])]
-        #[case::proportional_collapses_first(vec![0, 0, 0, 50, 50], vec![Proportional(1), Proportional(1), Proportional(1), Min(50), Max(50)])]
-        #[case::proportional_collapses_first(vec![0, 0, 0, 100], vec![Proportional(1), Proportional(1), Proportional(1), Ratio(1, 1)])]
-        #[case::proportional_collapses_first(vec![0, 0, 0, 100], vec![Proportional(1), Proportional(1), Proportional(1), Percentage(100)])]
-        fn proportional(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+        #[case::multiple_same_fill_are_same(vec![20, 40, 20, 20], vec![Fill(1), Fill(2), Fill(1), Fill(1)])]
+        #[case::incremental(vec![10, 20, 30, 40], vec![Fill(1), Fill(2), Fill(3), Fill(4)])]
+        #[case::decremental(vec![40, 30, 20, 10], vec![Fill(4), Fill(3), Fill(2), Fill(1)])]
+        #[case::randomly_ordered(vec![10, 30, 20, 40], vec![Fill(1), Fill(3), Fill(2), Fill(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Fixed(50), Fill(2), Fill(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Length(50), Fill(2), Fill(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Percentage(50), Fill(2), Fill(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Min(50), Fill(2), Fill(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Max(50), Fill(2), Fill(4)])]
+        #[case::zero_width(vec![0, 100, 0], vec![Fill(0), Fill(1), Fill(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Fixed(1), Fill(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Length(1), Fill(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Percentage(1), Fill(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Min(1), Fill(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Max(1), Fill(0)])]
+        #[case::zero_width(vec![0, 67, 0, 33], vec![Fill(0), Fill(2), Fill(0), Fill(1)])]
+        #[case::space_filler(vec![0, 80, 20], vec![Fill(0), Fill(2), Percentage(20)])]
+        #[case::space_filler(vec![40, 40, 20], vec![Fill(0), Fill(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Fill(0), Ratio(1, 5)])]
+        #[case::space_filler(vec![0, 100], vec![Fill(0), Fill(u16::MAX)])]
+        #[case::space_filler(vec![100, 0], vec![Fill(u16::MAX), Fill(0)])]
+        #[case::space_filler(vec![80, 20], vec![Fill(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Fill(1), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Fill(u16::MAX), Percentage(20)])]
+        #[case::space_filler(vec![80, 0, 20], vec![Fill(u16::MAX), Fill(0), Percentage(20)])]
+        #[case::space_filler(vec![80, 20], vec![Fill(0), Fixed(20)])]
+        #[case::space_filler(vec![80, 20], vec![Fill(0), Length(20)])]
+        #[case::space_filler(vec![80, 20], vec![Fill(0), Min(20)])]
+        #[case::space_filler(vec![80, 20], vec![Fill(0), Max(20)])]
+        #[case::fill_collapses_first(vec![7, 6, 7, 30, 50], vec![Fill(1), Fill(1), Fill(1), Min(30), Length(50)])]
+        #[case::fill_collapses_first(vec![0, 0, 0, 50, 50], vec![Fill(1), Fill(1), Fill(1), Length(50), Length(50)])]
+        #[case::fill_collapses_first(vec![0, 0, 0, 75, 25], vec![Fill(1), Fill(1), Fill(1), Length(75), Length(50)])]
+        #[case::fill_collapses_first(vec![0, 0, 0, 50, 50], vec![Fill(1), Fill(1), Fill(1), Min(50), Max(50)])]
+        #[case::fill_collapses_first(vec![0, 0, 0, 100], vec![Fill(1), Fill(1), Fill(1), Ratio(1, 1)])]
+        #[case::fill_collapses_first(vec![0, 0, 0, 100], vec![Fill(1), Fill(1), Fill(1), Percentage(100)])]
+        fn fill(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
                 .split(rect)
@@ -2103,8 +2101,8 @@ mod tests {
         #[case::n(vec![(0, 75), (75, 25)], vec![Ratio(1, 4), Length(25)])]
         #[case::o(vec![(0, 25), (25, 75)], vec![Percentage(25), Ratio(1, 4)])]
         #[case::p(vec![(0, 75), (75, 25)], vec![Ratio(1, 4), Percentage(25)])]
-        #[case::q(vec![(0, 25), (25, 75)], vec![Ratio(1, 4), Proportional(25)])]
-        #[case::r(vec![(0, 75), (75, 25)], vec![Proportional(25), Ratio(1, 4)])]
+        #[case::q(vec![(0, 25), (25, 75)], vec![Ratio(1, 4), Fill(25)])]
+        #[case::r(vec![(0, 75), (75, 25)], vec![Fill(25), Ratio(1, 4)])]
         fn constraint_specification_tests_for_priority(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2147,17 +2145,17 @@ mod tests {
         }
 
         #[rstest]
-        #[case::prop(vec![(0 , 10), (10, 80), (90 , 10)] , vec![Fixed(10), Proportional(1), Fixed(10)], Flex::Stretch)]
+        #[case::prop(vec![(0 , 10), (10, 80), (90 , 10)] , vec![Fixed(10), Fill(1), Fixed(10)], Flex::Stretch)]
         #[case::flex(vec![(0 , 10), (90 , 10)] , vec![Fixed(10), Fixed(10)], Flex::SpaceBetween)]
-        #[case::prop(vec![(0 , 27), (27, 10), (37, 26), (63, 10), (73, 27)] , vec![Proportional(1), Fixed(10), Proportional(1), Fixed(10), Proportional(1)], Flex::Stretch)]
+        #[case::prop(vec![(0 , 27), (27, 10), (37, 26), (63, 10), (73, 27)] , vec![Fill(1), Fixed(10), Fill(1), Fixed(10), Fill(1)], Flex::Stretch)]
         #[case::flex(vec![(27 , 10), (63, 10)] , vec![Fixed(10), Fixed(10)], Flex::SpaceAround)]
-        #[case::prop(vec![(0 , 10), (10, 10), (20 , 80)] , vec![Fixed(10), Fixed(10), Proportional(1)], Flex::Stretch)]
+        #[case::prop(vec![(0 , 10), (10, 10), (20 , 80)] , vec![Fixed(10), Fixed(10), Fill(1)], Flex::Stretch)]
         #[case::flex(vec![(0 , 10), (10, 10)] , vec![Fixed(10), Fixed(10)], Flex::Start)]
-        #[case::prop(vec![(0 , 80), (80 , 10), (90, 10)] , vec![Proportional(1), Fixed(10), Fixed(10)], Flex::Stretch)]
+        #[case::prop(vec![(0 , 80), (80 , 10), (90, 10)] , vec![Fill(1), Fixed(10), Fixed(10)], Flex::Stretch)]
         #[case::flex(vec![(80 , 10), (90, 10)] , vec![Fixed(10), Fixed(10)], Flex::End)]
-        #[case::prop(vec![(0 , 40), (40, 10), (50, 10), (60, 40)] , vec![Proportional(1), Fixed(10), Fixed(10), Proportional(1)], Flex::Stretch)]
+        #[case::prop(vec![(0 , 40), (40, 10), (50, 10), (60, 40)] , vec![Fill(1), Fixed(10), Fixed(10), Fill(1)], Flex::Stretch)]
         #[case::flex(vec![(40 , 10), (50, 10)] , vec![Fixed(10), Fixed(10)], Flex::Center)]
-        fn proportional_vs_flex(
+        fn fill_vs_flex(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
@@ -2172,37 +2170,37 @@ mod tests {
         }
 
         #[rstest]
-        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::Stretch , 0)]
-        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::StretchLast , 0)]
-        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceAround , 0)]
-        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceBetween , 0)]
-        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::Start , 0)]
-        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::Center , 0)]
-        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::End , 0)]
-        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::Stretch , 10)]
-        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::StretchLast , 10)]
-        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::Start , 10)]
-        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::Center , 10)]
-        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Proportional(1), Proportional(1)], Flex::End , 10)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Stretch , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::StretchLast , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Start , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::Center , 0)]
+        #[case::flex0(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::End , 0)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::Stretch , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::StretchLast , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::Start , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::Center , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::End , 10)]
         // SpaceAround and SpaceBetween spacers behave differently from other flexes
-        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceAround , 10)]
-        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Proportional(1), Proportional(1)], Flex::SpaceBetween , 10)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Stretch , 0)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::StretchLast , 0)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceAround , 0)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceBetween , 0)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Start , 0)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Center , 0)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::End , 0)]
-        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Stretch , 10)]
-        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::StretchLast , 10)]
-        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Start , 10)]
-        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::Center , 10)]
-        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::End , 10)]
+        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 10)]
+        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , 10)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Stretch , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::StretchLast , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::SpaceAround , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::SpaceBetween , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Start , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Center , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::End , 0)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Stretch , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::StretchLast , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Start , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Center , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::End , 10)]
         // SpaceAround and SpaceBetween spacers behave differently from other flexes
-        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceAround , 10)]
-        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Proportional(1), Fixed(10), Proportional(1)], Flex::SpaceBetween , 10)]
-        fn proportional_spacing(
+        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::SpaceAround , 10)]
+        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::SpaceBetween , 10)]
+        fn fill_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
             #[case] flex: Flex,
