@@ -228,7 +228,7 @@ impl Rect {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::prelude::*;
+    /// # use ratatui::{prelude::*, layout::Position};
     /// let rect = Rect::new(1, 2, 3, 4);
     /// assert!(rect.contains(Position { x: 1, y: 2 }));
     /// ````
