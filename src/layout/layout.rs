@@ -796,30 +796,26 @@ fn configure_fill_constraints(
     segments: &[Element],
     constraints: &[Constraint],
 ) -> Result<(), AddConstraintError> {
-    for ((&l_constraint, &l_element), (&r_constraint, &r_element)) in constraints
+    for ((&left_constraint, &left_element), (&right_constraint, &right_element)) in constraints
         .iter()
         .zip(segments.iter())
         .filter(|(c, _)| c.is_fill() || c.is_min())
         .tuple_combinations()
     {
-        let (l_scaling_factor, r_scaling_factor) = match (l_constraint, r_constraint) {
-            (Constraint::Fill(l_scaling_factor), Constraint::Fill(r_scaling_factor)) => (
-                f64::from(l_scaling_factor).max(1e-6),
-                f64::from(r_scaling_factor).max(1e-6),
-            ),
-            (Constraint::Min(_), Constraint::Fill(r_scaling_factor)) => {
-                (1.0, f64::from(r_scaling_factor).max(1e-6))
-            }
-            (Constraint::Fill(l_scaling_factor), Constraint::Min(_)) => {
-                (f64::from(l_scaling_factor).max(1e-6), 1.0)
-            }
-            (Constraint::Min(_), Constraint::Min(_)) => (1.0, 1.0),
-            (_, _) => continue,
+        let left_scaling_factor = match left_constraint {
+            Constraint::Fill(scale) => f64::from(scale).max(1e-6),
+            Constraint::Min(_) => 1.0,
+            _ => unreachable!(),
+        };
+        let right_scaling_factor = match right_constraint {
+            Constraint::Fill(scale) => f64::from(scale).max(1e-6),
+            Constraint::Min(_) => 1.0,
+            _ => unreachable!(),
         };
         solver.add_constraint(
-            (r_scaling_factor * l_element.size())
+            (right_scaling_factor * left_element.size())
                 | EQ(GROW)
-                | (l_scaling_factor * r_element.size()),
+                | (left_scaling_factor * right_element.size()),
         )?;
     }
     Ok(())
