@@ -1,4 +1,4 @@
-use strum::{Display, EnumString};
+use strum::{Display, EnumIs, EnumString};
 
 #[allow(unused_imports)]
 use super::constraint::Constraint;
@@ -14,7 +14,7 @@ use super::constraint::Constraint;
 /// - `Center`: Centers items within the container.
 /// - `SpaceBetween`: Adds excess space between each element.
 /// - `SpaceAround`: Adds excess space around each element.
-#[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash, EnumIs)]
 pub enum Flex {
     /// Fills the available space within the container, putting excess space into the last
     /// constraint of the lowest priority. This matches the default behavior of ratatui and tui

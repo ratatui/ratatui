@@ -614,7 +614,7 @@ impl Layout {
         configure_variable_constraints(&mut solver, &variables, area_size)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
         configure_constraints(&mut solver, area_size, &segments, constraints, flex)?;
-        if !matches!(flex, Flex::Legacy) {
+        if !flex.is_legacy() {
             configure_fill_constraints(&mut solver, &segments, constraints)?;
         }
 
@@ -674,7 +674,7 @@ fn configure_constraints(
             }
             Constraint::Min(min) => {
                 solver.add_constraint(element.has_min_size(min, MIN_SIZE_GE))?;
-                if matches!(flex, Flex::Legacy) {
+                if flex.is_legacy() {
                     solver.add_constraint(element.has_int_size(min, MIN_SIZE_EQ))?;
                 } else {
                     solver.add_constraint(element.has_size(area, FILL_GROW))?;
@@ -711,6 +711,15 @@ fn configure_flex_constraints(
     let spacers_except_first_and_last = spacers.get(1..spacers.len() - 1).unwrap_or(&[]);
     let spacing = f64::from(spacing);
     match flex {
+        Flex::Legacy => {
+            for spacer in spacers_except_first_and_last.iter() {
+                solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
+            }
+            if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
+                solver.add_constraint(first.is_empty())?;
+                solver.add_constraint(last.is_empty())?;
+            }
+        }
         // all spacers are the same size and will grow to fill any remaining space after the
         // constraints are satisfied
         Flex::SpaceAround => {
@@ -730,15 +739,6 @@ fn configure_flex_constraints(
             }
             for spacer in spacers.iter() {
                 solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
-            }
-            if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
-                solver.add_constraint(first.is_empty())?;
-                solver.add_constraint(last.is_empty())?;
-            }
-        }
-        Flex::Legacy => {
-            for spacer in spacers_except_first_and_last.iter() {
-                solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
