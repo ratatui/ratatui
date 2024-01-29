@@ -54,7 +54,7 @@ thread_local! {
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
 /// calls with the same parameters are faster. The cache is a LruCache, and the size of the cache
-/// can be configured.
+/// can be configured using [`Layout::init_cache()`].
 ///
 /// # Constructors
 ///
