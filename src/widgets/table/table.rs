@@ -774,7 +774,7 @@ impl Table<'_> {
         // this will always allocate a selection area
         let [_selection_area, columns_area] =
             Rect::new(0, 0, max_width, 1).split(&Layout::horizontal([
-                Constraint::Fixed(selection_width),
+                Constraint::Length(selection_width),
                 Constraint::Fill(0),
             ]));
         let rects = Layout::horizontal(widths)

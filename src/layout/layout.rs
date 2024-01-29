@@ -9,7 +9,7 @@ use itertools::Itertools;
 use lru::LruCache;
 
 use self::strengths::{
-    FILL_GROW, FIXED_SIZE_EQ, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ, MIN_SIZE_GE,
+    FILL_GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ, MIN_SIZE_GE,
     PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, *,
 };
 use super::{Flex, SegmentSize};
@@ -578,7 +578,7 @@ impl Layout {
         // │    │                   │    │                   │    │                   │    │
         // V    V                   V    V                   V    V                   V    V
         // ┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐┌──────────────────┐┌   ┐
-        //      │     Fixed(20)    │     │      Min(20)     │     │      Max(20)     │
+        //      │     Max(20)      │     │      Max(20)     │     │      Max(20)     │
         // └   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘└──────────────────┘└   ┘
         // ^    ^                   ^    ^                   ^    ^                   ^    ^
         // │    │                   │    │                   │    │                   │    │
@@ -668,9 +668,6 @@ fn configure_constraints(
 ) -> Result<(), AddConstraintError> {
     for (&constraint, &element) in constraints.iter().zip(segments.iter()) {
         match constraint {
-            Constraint::Fixed(length) => {
-                solver.add_constraint(element.has_int_size(length, FIXED_SIZE_EQ))?
-            }
             Constraint::Max(max) => {
                 solver.add_constraint(element.has_max_size(max, MAX_SIZE_LE))?;
                 solver.add_constraint(element.has_int_size(max, MAX_SIZE_EQ))?;
@@ -943,13 +940,6 @@ mod strengths {
     /// └     ┘└───┘└     ┘└───┘└     ┘
     pub const SPACER_SIZE_EQ: f64 = REQUIRED - 1.0;
 
-    /// The strength to apply to Fixed constraints.
-    ///
-    /// ┌──────────┐
-    /// │Fixed(==x)│
-    /// └──────────┘
-    pub const FIXED_SIZE_EQ: f64 = REQUIRED / 10.0;
-
     /// The strength to apply to Min inequality constraints.
     ///
     /// ┌────────┐
@@ -1022,8 +1012,7 @@ mod strengths {
 
     #[allow(dead_code)]
     pub fn is_valid() -> bool {
-        SPACER_SIZE_EQ > FIXED_SIZE_EQ
-            && FIXED_SIZE_EQ > MIN_SIZE_GE
+        SPACER_SIZE_EQ > MAX_SIZE_LE
             && MAX_SIZE_LE > MAX_SIZE_EQ
             && MIN_SIZE_GE == MAX_SIZE_LE
             && MAX_SIZE_LE > LENGTH_SIZE_EQ
@@ -1048,7 +1037,6 @@ mod tests {
     fn strength() {
         assert!(strengths::is_valid());
         assert_eq!(strengths::SPACER_SIZE_EQ, REQUIRED - 1.0);
-        assert_eq!(strengths::FIXED_SIZE_EQ, REQUIRED / 10.0);
         assert_eq!(strengths::MIN_SIZE_GE, STRONG * 10.0);
         assert_eq!(strengths::LENGTH_SIZE_EQ, STRONG / 10.0);
         assert_eq!(strengths::PERCENTAGE_SIZE_EQ, MEDIUM * 10.0);
@@ -1735,19 +1723,6 @@ mod tests {
                 ]
             );
 
-            let layout = Layout::default()
-                .constraints([Min(1), Fixed(0), Min(1)])
-                .direction(Direction::Horizontal)
-                .split(Rect::new(0, 0, 1, 1));
-            assert_eq!(
-                layout[..],
-                [
-                    Rect::new(0, 0, 1, 1),
-                    Rect::new(1, 0, 0, 1),
-                    Rect::new(1, 0, 0, 1),
-                ]
-            );
-
             // This stretches the 2nd last length instead of the last min based on ranking
             let layout = Layout::default()
                 .constraints([Length(3), Min(4), Length(1), Min(4)])
@@ -1773,8 +1748,7 @@ mod tests {
         #[case::length_priority(vec![75, 25], vec![Percentage(25), Length(25)])]
         #[case::length_priority(vec![25, 75], vec![Length(25), Ratio(1, 4)])]
         #[case::length_priority(vec![75, 25], vec![Ratio(1, 4), Length(25)])]
-        #[case::length_priority(vec![75, 25], vec![Length(25), Fixed(25)])]
-        #[case::length_priority(vec![25, 75], vec![Fixed(25), Length(25)])]
+        #[case::length_priority(vec![25, 75], vec![Length(25), Length(25)])]
         #[case::excess_in_last_variable(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
         #[case::excess_in_last_variable(vec![15, 35, 50], vec![Length(15), Length(35), Length(25)])]
         #[case::three_lengths(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
@@ -1810,24 +1784,27 @@ mod tests {
         }
 
         #[rstest]
-        #[case::fixed_is_higher_priority_than_min_max(vec![50, 25, 25], vec![Min(25), Fixed(25), Max(25)])]
-        #[case::fixed_is_higher_priority_than_min_max(vec![25, 25, 50], vec![Max(25), Fixed(25), Min(25)])]
-        #[case::excess_in_lowest_priority(vec![33, 33, 34], vec![Fixed(33), Fixed(33), Fixed(33)])]
-        #[case::excess_in_lowest_priority(vec![25, 25, 50], vec![Fixed(25), Fixed(25), Fixed(25)])]
-        #[case::fixed_higher_priority(vec![25, 25, 50], vec![Percentage(25), Fixed(25), Ratio(1, 4)])]
-        #[case::fixed_higher_priority(vec![25, 50, 25], vec![Fixed(25), Ratio(1, 4), Percentage(25)])]
-        #[case::fixed_higher_priority(vec![50, 25, 25], vec![Ratio(1, 4), Fixed(25), Percentage(25)])]
-        #[case::fixed_higher_priority(vec![50, 25, 25], vec![Ratio(1, 4), Percentage(25), Fixed(25)])]
-        #[case::fixed_higher_priority(vec![79, 1, 20], vec![Length(100), Fixed(1), Min(20)])]
-        #[case::fixed_higher_priority(vec![20, 1, 79], vec![Min(20), Fixed(1), Length(100)])]
-        #[case::fixed_higher_priority(vec![45, 10, 45], vec![Fill(1), Fixed(10), Fill(1)])]
-        #[case::fixed_higher_priority(vec![30, 10, 60], vec![Fill(1), Fixed(10), Fill(2)])]
-        #[case::fixed_higher_priority(vec![18, 10, 72], vec![Fill(1), Fixed(10), Fill(4)])]
-        #[case::fixed_higher_priority(vec![15, 10, 75], vec![Fill(1), Fixed(10), Fill(5)])]
+        #[case::fixed_is_higher_priority_than_min_max(vec![50, 25, 25], vec![Min(25), Length(25), Max(25)])]
+        #[case::fixed_is_higher_priority_than_min_max(vec![25, 25, 50], vec![Max(25), Length(25), Min(25)])]
+        #[case::excess_in_lowest_priority(vec![33, 33, 34], vec![Length(33), Length(33), Length(33)])]
+        #[case::excess_in_lowest_priority(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
+        #[case::fixed_higher_priority(vec![25, 25, 50], vec![Percentage(25), Length(25), Ratio(1, 4)])]
+        #[case::fixed_higher_priority(vec![25, 50, 25], vec![Length(25), Ratio(1, 4), Percentage(25)])]
+        #[case::fixed_higher_priority(vec![50, 25, 25], vec![Ratio(1, 4), Length(25), Percentage(25)])]
+        #[case::fixed_higher_priority(vec![50, 25, 25], vec![Ratio(1, 4), Percentage(25), Length(25)])]
+        #[case::fixed_higher_priority(vec![79, 1, 20], vec![Length(100), Length(1), Min(20)])]
+        #[case::fixed_higher_priority(vec![20, 1, 79], vec![Min(20), Length(1), Length(100)])]
+        #[case::fixed_higher_priority(vec![45, 10, 45], vec![Fill(1), Length(10), Fill(1)])]
+        #[case::fixed_higher_priority(vec![30, 10, 60], vec![Fill(1), Length(10), Fill(2)])]
+        #[case::fixed_higher_priority(vec![18, 10, 72], vec![Fill(1), Length(10), Fill(4)])]
+        #[case::fixed_higher_priority(vec![15, 10, 75], vec![Fill(1), Length(10), Fill(5)])]
         #[case::three_lengths_reference(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
         // #[case::previously_unstable_test(vec![25, 50, 25], vec![Length(25), Length(25),
-        // Fixed(25)])]
-        fn fixed(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
+        // Length(25)])]
+        fn length_instead_of_fixed_todo_pick_better_name_here(
+            #[case] expected: Vec<u16>,
+            #[case] constraints: Vec<Constraint>,
+        ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
                 .split(rect)
@@ -1839,8 +1816,8 @@ mod tests {
         }
 
         #[rstest]
-        #[case::excess_in_last_variable(vec![13, 10, 27], vec![Fill(1), Fixed(10), Fill(2)])]
-        #[case::excess_in_last_variable(vec![10, 27, 13], vec![Fixed(10), Fill(2), Fill(1)])] // might be unstable?
+        #[case::excess_in_last_variable(vec![13, 10, 27], vec![Fill(1), Length(10), Fill(2)])]
+        #[case::excess_in_last_variable(vec![10, 27, 13], vec![Length(10), Fill(2), Fill(1)])] // might be unstable?
         fn fixed_with_50_width(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
             let rect = Rect::new(0, 0, 50, 1);
             let r = Layout::horizontal(constraints)
@@ -1857,13 +1834,13 @@ mod tests {
         #[case::incremental(vec![10, 20, 30, 40], vec![Fill(1), Fill(2), Fill(3), Fill(4)])]
         #[case::decremental(vec![40, 30, 20, 10], vec![Fill(4), Fill(3), Fill(2), Fill(1)])]
         #[case::randomly_ordered(vec![10, 30, 20, 40], vec![Fill(1), Fill(3), Fill(2), Fill(4)])]
-        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Fixed(50), Fill(2), Fill(4)])]
+        #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Length(50), Fill(2), Fill(4)])]
         #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Length(50), Fill(2), Fill(4)])]
         #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Percentage(50), Fill(2), Fill(4)])]
         #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Min(50), Fill(2), Fill(4)])]
         #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Max(50), Fill(2), Fill(4)])]
         #[case::zero_width(vec![0, 100, 0], vec![Fill(0), Fill(1), Fill(0)])]
-        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Fixed(1), Fill(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Length(1), Fill(0)])]
         #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Length(1), Fill(0)])]
         #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Percentage(1), Fill(0)])]
         #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Min(1), Fill(0)])]
@@ -1878,7 +1855,7 @@ mod tests {
         #[case::space_filler(vec![80, 20], vec![Fill(1), Percentage(20)])]
         #[case::space_filler(vec![80, 20], vec![Fill(u16::MAX), Percentage(20)])]
         #[case::space_filler(vec![80, 0, 20], vec![Fill(u16::MAX), Fill(0), Percentage(20)])]
-        #[case::space_filler(vec![80, 20], vec![Fill(0), Fixed(20)])]
+        #[case::space_filler(vec![80, 20], vec![Fill(0), Length(20)])]
         #[case::space_filler(vec![80, 20], vec![Fill(0), Length(20)])]
         #[case::space_filler(vec![80, 20], vec![Fill(0), Min(20)])]
         #[case::space_filler(vec![80, 20], vec![Fill(0), Max(20)])]
@@ -1939,10 +1916,10 @@ mod tests {
         #[case::length(vec![(0, 50)], vec![Constraint::Length(50)], Flex::Start)]
         #[case::length(vec![(50, 50)], vec![Constraint::Length(50)], Flex::End)]
         #[case::length(vec![(25, 50)], vec![Constraint::Length(50)], Flex::Center)]
-        #[case::fixed(vec![(0, 100)], vec![Fixed(50)], Flex::Legacy)]
-        #[case::fixed(vec![(0, 50)], vec![Fixed(50)], Flex::Start)]
-        #[case::fixed(vec![(50, 50)], vec![Fixed(50)], Flex::End)]
-        #[case::fixed(vec![(25, 50)], vec![Fixed(50)], Flex::Center)]
+        #[case::fixed(vec![(0, 100)], vec![Length(50)], Flex::Legacy)]
+        #[case::fixed(vec![(0, 50)], vec![Length(50)], Flex::Start)]
+        #[case::fixed(vec![(50, 50)], vec![Length(50)], Flex::End)]
+        #[case::fixed(vec![(25, 50)], vec![Length(50)], Flex::Center)]
         #[case::ratio(vec![(0, 100)], vec![Ratio(1, 2)], Flex::Legacy)]
         #[case::ratio(vec![(0, 50)], vec![Ratio(1, 2)], Flex::Start)]
         #[case::ratio(vec![(50, 50)], vec![Ratio(1, 2)], Flex::End)]
@@ -1961,19 +1938,19 @@ mod tests {
         #[case::max(vec![(25, 50)], vec![Max(50)], Flex::Center)]
         #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Min(1)], Flex::SpaceBetween)]
         #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Max(20)], Flex::SpaceBetween)]
-        #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Fixed(20)], Flex::SpaceBetween)]
+        #[case::spacebetween_becomes_stretch(vec![(0, 100)], vec![Length(20)], Flex::SpaceBetween)]
         #[case::length(vec![(0, 25), (25, 75)], vec![Length(25), Length(25)], Flex::Legacy)]
         #[case::length(vec![(0, 25), (25, 25)], vec![Length(25), Length(25)], Flex::Start)]
         #[case::length(vec![(25, 25), (50, 25)], vec![Length(25), Length(25)], Flex::Center)]
         #[case::length(vec![(50, 25), (75, 25)], vec![Length(25), Length(25)], Flex::End)]
         #[case::length(vec![(0, 25), (75, 25)], vec![Length(25), Length(25)], Flex::SpaceBetween)]
         #[case::length(vec![(17, 25), (58, 25)], vec![Length(25), Length(25)], Flex::SpaceAround)]
-        #[case::fixed(vec![(0, 25), (25, 75)], vec![Fixed(25), Fixed(25)], Flex::Legacy)]
-        #[case::fixed(vec![(0, 25), (25, 25)], vec![Fixed(25), Fixed(25)], Flex::Start)]
-        #[case::fixed(vec![(25, 25), (50, 25)], vec![Fixed(25), Fixed(25)], Flex::Center)]
-        #[case::fixed(vec![(50, 25), (75, 25)], vec![Fixed(25), Fixed(25)], Flex::End)]
-        #[case::fixed(vec![(0, 25), (75, 25)], vec![Fixed(25), Fixed(25)], Flex::SpaceBetween)]
-        #[case::fixed(vec![(17, 25), (58, 25)], vec![Fixed(25), Fixed(25)], Flex::SpaceAround)]
+        #[case::fixed(vec![(0, 25), (25, 75)], vec![Length(25), Length(25)], Flex::Legacy)]
+        #[case::fixed(vec![(0, 25), (25, 25)], vec![Length(25), Length(25)], Flex::Start)]
+        #[case::fixed(vec![(25, 25), (50, 25)], vec![Length(25), Length(25)], Flex::Center)]
+        #[case::fixed(vec![(50, 25), (75, 25)], vec![Length(25), Length(25)], Flex::End)]
+        #[case::fixed(vec![(0, 25), (75, 25)], vec![Length(25), Length(25)], Flex::SpaceBetween)]
+        #[case::fixed(vec![(17, 25), (58, 25)], vec![Length(25), Length(25)], Flex::SpaceAround)]
         #[case::percentage(vec![(0, 25), (25, 75)], vec![Percentage(25), Percentage(25)], Flex::Legacy)]
         #[case::percentage(vec![(0, 25), (25, 25)], vec![Percentage(25), Percentage(25)], Flex::Start)]
         #[case::percentage(vec![(25, 25), (50, 25)], vec![Percentage(25), Percentage(25)], Flex::Center)]
@@ -2015,8 +1992,8 @@ mod tests {
         #[case::length_spacing(vec![(18, 20), (40, 20) , (62, 20)], vec![Length(20), Length(20), Length(20)], Flex::Center     , 2)]
         #[case::length_spacing(vec![(36, 20), (58, 20) , (80, 20)], vec![Length(20), Length(20), Length(20)], Flex::End        , 2)]
         #[case::length_spacing(vec![(0 , 20), (22, 20) , (44, 56)], vec![Length(20), Length(20), Length(20)], Flex::Legacy, 2)]
-        #[case::fixed_spacing(vec![(0  , 20), (22, 20) , (44, 56)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::Legacy, 2)]
-        #[case::fixed_spacing(vec![(10 , 20), (40, 20) , (70, 20)], vec![Fixed(20) , Fixed(20) , Fixed(20)] , Flex::SpaceAround, 2)]
+        #[case::fixed_spacing(vec![(0  , 20), (22, 20) , (44, 56)], vec![Length(20) , Length(20) , Length(20)] , Flex::Legacy, 2)]
+        #[case::fixed_spacing(vec![(10 , 20), (40, 20) , (70, 20)], vec![Length(20) , Length(20) , Length(20)] , Flex::SpaceAround, 2)]
         fn flex_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2036,8 +2013,8 @@ mod tests {
         }
 
         #[rstest]
-        #[case::a(vec![(0, 25), (25, 75)], vec![Fixed(25), Length(25)])]
-        #[case::b(vec![(0, 75), (75, 25)], vec![Length(25), Fixed(25)])]
+        #[case::a(vec![(0, 25), (25, 75)], vec![Length(25), Length(25)])]
+        #[case::b(vec![(0, 75), (75, 25)], vec![Length(25), Length(25)])]
         #[case::c(vec![(0, 25), (25, 75)], vec![Length(25), Percentage(25)])]
         #[case::d(vec![(0, 75), (75, 25)], vec![Percentage(25), Length(25)])]
         #[case::e(vec![(0, 75), (75, 25)], vec![Min(25), Percentage(25)])]
@@ -2073,8 +2050,8 @@ mod tests {
         #[case::b(vec![(18, 20), (40, 20), (62, 20)], vec![Length(20), Length(20), Length(20)], Flex::Center, 2)]
         #[case::c(vec![(36, 20), (58, 20), (80, 20)], vec![Length(20), Length(20), Length(20)], Flex::End, 2)]
         #[case::d(vec![(0, 20), (22, 20), (44, 56)], vec![Length(20), Length(20), Length(20)], Flex::Legacy, 2)]
-        #[case::e(vec![(0, 20), (22, 20), (44, 56)], vec![Fixed(20), Fixed(20), Fixed(20)], Flex::Legacy, 2)]
-        #[case::f(vec![(10, 20), (40, 20), (70, 20)], vec![Fixed(20), Fixed(20), Fixed(20)], Flex::SpaceAround, 2)]
+        #[case::e(vec![(0, 20), (22, 20), (44, 56)], vec![Length(20), Length(20), Length(20)], Flex::Legacy, 2)]
+        #[case::f(vec![(10, 20), (40, 20), (70, 20)], vec![Length(20), Length(20), Length(20)], Flex::SpaceAround, 2)]
         fn constraint_specification_tests_for_priority_with_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2094,16 +2071,16 @@ mod tests {
         }
 
         #[rstest]
-        #[case::prop(vec![(0 , 10), (10, 80), (90 , 10)] , vec![Fixed(10), Fill(1), Fixed(10)], Flex::Legacy)]
-        #[case::flex(vec![(0 , 10), (90 , 10)] , vec![Fixed(10), Fixed(10)], Flex::SpaceBetween)]
-        #[case::prop(vec![(0 , 27), (27, 10), (37, 26), (63, 10), (73, 27)] , vec![Fill(1), Fixed(10), Fill(1), Fixed(10), Fill(1)], Flex::Legacy)]
-        #[case::flex(vec![(27 , 10), (63, 10)] , vec![Fixed(10), Fixed(10)], Flex::SpaceAround)]
-        #[case::prop(vec![(0 , 10), (10, 10), (20 , 80)] , vec![Fixed(10), Fixed(10), Fill(1)], Flex::Legacy)]
-        #[case::flex(vec![(0 , 10), (10, 10)] , vec![Fixed(10), Fixed(10)], Flex::Start)]
-        #[case::prop(vec![(0 , 80), (80 , 10), (90, 10)] , vec![Fill(1), Fixed(10), Fixed(10)], Flex::Legacy)]
-        #[case::flex(vec![(80 , 10), (90, 10)] , vec![Fixed(10), Fixed(10)], Flex::End)]
-        #[case::prop(vec![(0 , 40), (40, 10), (50, 10), (60, 40)] , vec![Fill(1), Fixed(10), Fixed(10), Fill(1)], Flex::Legacy)]
-        #[case::flex(vec![(40 , 10), (50, 10)] , vec![Fixed(10), Fixed(10)], Flex::Center)]
+        #[case::prop(vec![(0 , 10), (10, 80), (90 , 10)] , vec![Length(10), Fill(1), Length(10)], Flex::Legacy)]
+        #[case::flex(vec![(0 , 10), (90 , 10)] , vec![Length(10), Length(10)], Flex::SpaceBetween)]
+        #[case::prop(vec![(0 , 27), (27, 10), (37, 26), (63, 10), (73, 27)] , vec![Fill(1), Length(10), Fill(1), Length(10), Fill(1)], Flex::Legacy)]
+        #[case::flex(vec![(27 , 10), (63, 10)] , vec![Length(10), Length(10)], Flex::SpaceAround)]
+        #[case::prop(vec![(0 , 10), (10, 10), (20 , 80)] , vec![Length(10), Length(10), Fill(1)], Flex::Legacy)]
+        #[case::flex(vec![(0 , 10), (10, 10)] , vec![Length(10), Length(10)], Flex::Start)]
+        #[case::prop(vec![(0 , 80), (80 , 10), (90, 10)] , vec![Fill(1), Length(10), Length(10)], Flex::Legacy)]
+        #[case::flex(vec![(80 , 10), (90, 10)] , vec![Length(10), Length(10)], Flex::End)]
+        #[case::prop(vec![(0 , 40), (40, 10), (50, 10), (60, 40)] , vec![Fill(1), Length(10), Length(10), Fill(1)], Flex::Legacy)]
+        #[case::flex(vec![(40 , 10), (50, 10)] , vec![Length(10), Length(10)], Flex::Center)]
         fn fill_vs_flex(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2132,19 +2109,19 @@ mod tests {
         // SpaceAround and SpaceBetween spacers behave differently from other flexes
         #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 10)]
         #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , 10)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Legacy , 0)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::SpaceAround , 0)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::SpaceBetween , 0)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Start , 0)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Center , 0)]
-        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::End , 0)]
-        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Legacy , 10)]
-        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Start , 10)]
-        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::Center , 10)]
-        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::End , 10)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , 0)]
+        #[case::flex_fixed0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , 0)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , 10)]
+        #[case::flex_fixed10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , 10)]
         // SpaceAround and SpaceBetween spacers behave differently from other flexes
-        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::SpaceAround , 10)]
-        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Fixed(10), Fill(1)], Flex::SpaceBetween , 10)]
+        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 10)]
+        #[case::flex_fixed10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 10)]
         fn fill_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
