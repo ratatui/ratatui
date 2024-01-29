@@ -42,6 +42,8 @@ jobs:
           components: rustfmt
       - name: Install cargo-make
         uses: taiki-e/install-action@cargo-make
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
       - name: Check formatting
         run: cargo make lint-format
       - name: Check documentation
@@ -67,6 +69,8 @@ jobs:
           components: clippy
       - name: Install cargo-make
         uses: taiki-e/install-action@cargo-make
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
       - name: Run cargo make clippy-all
         run: cargo make clippy
 
@@ -83,6 +87,8 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov,cargo-make
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
       - name: Generate coverage
         run: cargo make coverage
       - name: Upload to codecov.io
@@ -95,8 +101,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
-        toolchain: [ "1.70.0", "stable" ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        toolchain: ["1.70.0", "stable"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -107,6 +113,8 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
       - name: Install cargo-make
         uses: taiki-e/install-action@cargo-make
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
       - name: Run cargo make check
         run: cargo make check
         env:
@@ -116,7 +124,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -125,6 +133,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-make
         uses: taiki-e/install-action@cargo-make
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
       - name: Test docs
         run: cargo make test-doc
         env:
@@ -134,9 +144,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
-        toolchain: [ "1.70.0", "stable" ]
-        backend: [ crossterm, termion, termwiz ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        toolchain: ["1.70.0", "stable"]
+        backend: [crossterm, termion, termwiz]
         exclude:
           # termion is not supported on windows
           - os: windows-latest
@@ -153,6 +163,8 @@ jobs:
         uses: taiki-e/install-action@cargo-make
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
       - name: Test ${{ matrix.backend }}
         run: cargo make test-backend ${{ matrix.backend }}
         env:
