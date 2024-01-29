@@ -224,6 +224,14 @@ impl Rect {
     /// Returns true if the given position is inside the rect.
     ///
     /// The position is considered inside the rect if it is on the rect's border.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let rect = Rect::new(1, 2, 3, 4);
+    /// assert!(rect.contains(Position { x: 1, y: 2 }));
+    /// ````
     pub const fn contains(self, position: Position) -> bool {
         position.x >= self.x
             && position.x < self.right()
