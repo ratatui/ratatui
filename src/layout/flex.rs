@@ -9,7 +9,6 @@ use super::constraint::Constraint;
 ///
 /// - `StretchLast`: Fills the available space within the container, putting excess space into the
 ///   last element.
-/// - `Stretch`: Always fills the available space within the container.
 /// - `Start`: Aligns items to the start of the container.
 /// - `End`: Aligns items to the end of the container.
 /// - `Center`: Centers items within the container.
@@ -17,29 +16,6 @@ use super::constraint::Constraint;
 /// - `SpaceAround`: Adds excess space around each element.
 #[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
 pub enum Flex {
-    /// Always fills the available space within the container.
-    ///
-    /// # Examples
-    ///
-    /// ```plain
-    /// <------------------------------------80 px------------------------------------->
-    /// ┌────16 px─────┐┌──────────────────44 px───────────────────┐┌──────20 px───────┐
-    /// │Percentage(20)││                Length(20)                ││     Fixed(20)    │
-    /// └──────────────┘└──────────────────────────────────────────┘└──────────────────┘
-    ///
-    /// <------------------------------------80 px------------------------------------->
-    /// ┌──────────────────────────60 px───────────────────────────┐┌──────20 px───────┐
-    /// │                          Min(20)                         ││      Max(20)     │
-    /// └──────────────────────────────────────────────────────────┘└──────────────────┘
-    ///
-    /// <------------------------------------80 px------------------------------------->
-    /// ┌────────────────────────────────────80 px─────────────────────────────────────┐
-    /// │                                    Max(20)                                   │
-    /// └──────────────────────────────────────────────────────────────────────────────┘
-    /// ```
-    #[default]
-    Stretch,
-
     /// Fills the available space within the container, putting excess space into the last
     /// constraint of the lowest priority. This matches the default behavior of ratatui and tui
     /// applications without [`Flex`]
@@ -136,7 +112,7 @@ pub enum Flex {
     /// │                                    Max(20)                                   │
     /// └──────────────────────────────────────────────────────────────────────────────┘
     /// ```
-    StretchLast,
+    Legacy,
 
     /// Aligns items to the start of the container.
     ///
@@ -158,6 +134,7 @@ pub enum Flex {
     /// │      Max(20)     │
     /// └──────────────────┘
     /// ```
+    #[default]
     Start,
 
     /// Aligns items to the end of the container.

@@ -32,7 +32,7 @@ use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     (
-        "Min(u16) takes any excess space when using `Stretch` or `StretchLast`",
+        "Min(u16) takes any excess space always",
         &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10)],
     ),
     (
@@ -44,11 +44,11 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
         &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10), Fill(1)],
     ),
     (
-        "",
-        &[Percentage(50), Percentage(25), Ratio(1, 8), Min(10)],
+        "Min grows always but also allows Fill to grow",
+        &[Percentage(50), Fill(1), Fill(2), Min(50)],
     ),
     (
-        "In `StretchLast`, the last constraint of lowest priority takes excess space",
+        "In `Legacy`, the last constraint of lowest priority takes excess space",
         &[Length(20), Fixed(20), Percentage(20)],
     ),
     ("", &[Fixed(20), Percentage(20), Length(20)]),
@@ -61,12 +61,12 @@ const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     ("Fill is the lowest priority and will fill any excess space", &[Fill(1), Ratio(1, 4)]),
     ("Fill can be used to scale proportionally with other Fill blocks", &[Fill(1), Percentage(20), Fill(2)]),
     ("", &[Ratio(1, 3), Percentage(20), Ratio(2, 3)]),
-    ("StretchLast will stretch the last lowest priority constraint\nStretch will only stretch equal weighted constraints", &[Length(20), Length(15)]),
+    ("Legacy will stretch the last lowest priority constraint\nStretch will only stretch equal weighted constraints", &[Length(20), Length(15)]),
     ("", &[Percentage(20), Length(15)]),
-    ("`Fill(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Fill will only have widths in Flex::Stretch and Flex::StretchLast", &[Fill(1), Fill(1)]),
+    ("`Fill(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Fill will only have widths in Flex::Stretch and Flex::Legacy", &[Fill(1), Fill(1)]),
     ("", &[Length(20), Fixed(20)]),
     (
-        "When not using `Flex::Stretch` or `Flex::StretchLast`,\n`Min(u16)` and `Max(u16)` collapse to their lowest values",
+        "When not using `Flex::Stretch` or `Flex::Legacy`,\n`Min(u16)` and `Max(u16)` collapse to their lowest values",
         &[Min(20), Max(20)],
     ),
     (
@@ -124,8 +124,7 @@ struct Example {
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, FromRepr, Display, EnumIter)]
 enum SelectedTab {
     #[default]
-    StretchLast,
-    Stretch,
+    Legacy,
     Start,
     Center,
     End,
@@ -363,8 +362,7 @@ impl SelectedTab {
         use SelectedTab::*;
         let text = value.to_string();
         let color = match value {
-            StretchLast => ORANGE.c400,
-            Stretch => ORANGE.c300,
+            Legacy => ORANGE.c400,
             Start => SKY.c400,
             Center => SKY.c300,
             End => SKY.c200,
@@ -380,8 +378,7 @@ impl StatefulWidget for SelectedTab {
     fn render(self, area: Rect, buf: &mut Buffer, spacing: &mut Self::State) {
         let spacing = *spacing;
         match self {
-            SelectedTab::StretchLast => self.render_examples(area, buf, Flex::StretchLast, spacing),
-            SelectedTab::Stretch => self.render_examples(area, buf, Flex::Stretch, spacing),
+            SelectedTab::Legacy => self.render_examples(area, buf, Flex::Legacy, spacing),
             SelectedTab::Start => self.render_examples(area, buf, Flex::Start, spacing),
             SelectedTab::Center => self.render_examples(area, buf, Flex::Center, spacing),
             SelectedTab::End => self.render_examples(area, buf, Flex::End, spacing),

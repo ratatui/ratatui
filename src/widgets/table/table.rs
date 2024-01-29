@@ -568,8 +568,8 @@ impl<'a> Table<'a> {
     pub const fn segment_size(self, segment_size: SegmentSize) -> Self {
         let translated_to_flex = match segment_size {
             SegmentSize::None => Flex::Start,
-            SegmentSize::EvenDistribution => Flex::Stretch,
-            SegmentSize::LastTakesRemainder => Flex::StretchLast,
+            SegmentSize::EvenDistribution => Flex::Legacy,
+            SegmentSize::LastTakesRemainder => Flex::Legacy,
         };
 
         self.flex(translated_to_flex)
@@ -1357,7 +1357,7 @@ mod tests {
 
             let table = Table::default()
                 .widths([Min(10), Min(10), Min(1)])
-                .flex(Flex::StretchLast);
+                .flex(Flex::Legacy);
             assert_eq!(
                 table.get_columns_widths(62, 0),
                 &[(0, 10), (11, 10), (22, 40)]
@@ -1365,7 +1365,7 @@ mod tests {
 
             let table = Table::default()
                 .widths([Min(10), Min(10), Min(1)])
-                .flex(Flex::Stretch);
+                .flex(Flex::Legacy);
             assert_eq!(
                 table.get_columns_widths(62, 0),
                 &[(0, 20), (21, 20), (42, 20)]
@@ -1659,7 +1659,7 @@ mod tests {
             let table = Table::default()
                 .rows(vec![Row::new(vec!["ABCDE", "12345"])])
                 .highlight_spacing(HighlightSpacing::Always)
-                .flex(Flex::Stretch)
+                .flex(Flex::Legacy)
                 .highlight_symbol(">>>")
                 .column_spacing(1);
             let area = Rect::new(0, 0, 10, 3);
