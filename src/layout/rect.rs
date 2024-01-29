@@ -221,6 +221,16 @@ impl Rect {
             && self.bottom() > other.y
     }
 
+    /// Returns true if the given position is inside the rect.
+    ///
+    /// The position is considered inside the rect if it is on the rect's border.
+    pub const fn contains(self, position: Position) -> bool {
+        position.x >= self.x
+            && position.x < self.right()
+            && position.y >= self.y
+            && position.y < self.bottom()
+    }
+
     /// Split the rect into a number of sub-rects according to the given [`Layout`]`.
     ///
     /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
@@ -488,6 +498,26 @@ mod tests {
     fn intersects() {
         assert!(Rect::new(1, 2, 3, 4).intersects(Rect::new(2, 3, 4, 5)));
         assert!(!Rect::new(1, 2, 3, 4).intersects(Rect::new(5, 6, 7, 8)));
+    }
+
+    // the bounds of this rect are x: [1..=3], y: [2..=5]
+    #[rstest]
+    #[case::inside_top_left(Rect::new(1, 2, 3, 4), Position { x: 1, y: 2 }, true)]
+    #[case::inside_top_right(Rect::new(1, 2, 3, 4), Position { x: 3, y: 2 }, true)]
+    #[case::inside_bottom_left(Rect::new(1, 2, 3, 4), Position { x: 1, y: 5 }, true)]
+    #[case::inside_bottom_right(Rect::new(1, 2, 3, 4), Position { x: 3, y: 5 }, true)]
+    #[case::outside_left(Rect::new(1, 2, 3, 4), Position { x: 0, y: 2 }, false)]
+    #[case::outside_right(Rect::new(1, 2, 3, 4), Position { x: 4, y: 2 }, false)]
+    #[case::outside_top(Rect::new(1, 2, 3, 4), Position { x: 1, y: 1 }, false)]
+    #[case::outside_bottom(Rect::new(1, 2, 3, 4), Position { x: 1, y: 6 }, false)]
+    #[case::outside_top_left(Rect::new(1, 2, 3, 4), Position { x: 0, y: 1 }, false)]
+    #[case::outside_bottom_right(Rect::new(1, 2, 3, 4), Position { x: 4, y: 6 }, false)]
+    fn contains(#[case] rect: Rect, #[case] position: Position, #[case] expected: bool) {
+        assert_eq!(
+            rect.contains(position),
+            expected,
+            "rect: {rect:?}, position: {position:?}",
+        );
     }
 
     #[test]
