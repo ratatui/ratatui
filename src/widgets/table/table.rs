@@ -1,11 +1,7 @@
 use itertools::Itertools;
 
 use super::*;
-use crate::{
-    layout::{Flex, SegmentSize},
-    prelude::*,
-    widgets::Block,
-};
+use crate::{layout::Flex, prelude::*, widgets::Block};
 
 /// A widget to display data in formatted columns.
 ///
@@ -551,42 +547,6 @@ impl<'a> Table<'a> {
     ///
     /// Create a table that needs at least 30 columns to display.  Any extra space will be assigned
     /// to the last column.
-    #[cfg_attr(feature = "unstable", doc = " ```")]
-    #[cfg_attr(not(feature = "unstable"), doc = " ```ignore")]
-    /// # use ratatui::layout::{Constraint, SegmentSize};
-    /// # use ratatui::widgets::{Table, Row};
-    /// let widths = [Constraint::Min(10), Constraint::Min(10), Constraint::Min(10)];
-    /// let table = Table::new(Vec::<Row>::new(), widths)
-    ///     .segment_size(SegmentSize::LastTakesRemainder);
-    /// ```
-    #[stability::unstable(
-        feature = "segment-size",
-        reason = "The name for this feature is not final and may change in the future",
-        issue = "https://github.com/ratatui-org/ratatui/issues/536"
-    )]
-    #[deprecated(since = "0.26.0", note = "You should use Table::flex instead.")]
-    pub const fn segment_size(self, segment_size: SegmentSize) -> Self {
-        let translated_to_flex = match segment_size {
-            SegmentSize::None => Flex::Start,
-            SegmentSize::EvenDistribution => Flex::Stretch,
-            SegmentSize::LastTakesRemainder => Flex::StretchLast,
-        };
-
-        self.flex(translated_to_flex)
-    }
-
-    /// Set how extra space is distributed amongst columns.
-    ///
-    /// This determines how the space is distributed when the constraints are satisfied. By default,
-    /// the extra space is not distributed at all.  But this can be changed to distribute all extra
-    /// space to the last column or to distribute it equally.
-    ///
-    /// This is a fluent setter method which must be chained or used as it consumes self
-    ///
-    /// # Examples
-    ///
-    /// Create a table that needs at least 30 columns to display.  Any extra space will be assigned
-    /// to the last column.
     /// ```
     /// # use ratatui::layout::{Constraint, Flex};
     /// # use ratatui::widgets::{Table, Row};
@@ -595,7 +555,7 @@ impl<'a> Table<'a> {
     ///     Constraint::Min(10),
     ///     Constraint::Min(10),
     /// ];
-    /// let table = Table::new(Vec::<Row>::new(), widths).flex(Flex::StretchLast);
+    /// let table = Table::new(Vec::<Row>::new(), widths).flex(Flex::Legacy);
     /// ```
     pub const fn flex(mut self, flex: Flex) -> Self {
         self.flex = flex;
@@ -774,7 +734,7 @@ impl Table<'_> {
         // this will always allocate a selection area
         let [_selection_area, columns_area] =
             Rect::new(0, 0, max_width, 1).split(&Layout::horizontal([
-                Constraint::Fixed(selection_width),
+                Constraint::Length(selection_width),
                 Constraint::Fill(0),
             ]));
         let rects = Layout::horizontal(widths)
@@ -1246,16 +1206,16 @@ mod tests {
 
             // without selection, less than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
+            assert_eq!(table.get_columns_widths(7, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             // <--------7px-------->
             // ┌────────┐x┌────────┐
-            // │ (3, 3) │x│ (7, 0) │
+            // │ (3, 2) │x│ (6, 1) │
             // └────────┘x└────────┘
             // column spacing (i.e. `x`) is always prioritized
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
+            assert_eq!(table.get_columns_widths(7, 3), [(3, 2), (6, 1)]);
         }
 
         #[test]
@@ -1270,11 +1230,11 @@ mod tests {
 
             // without selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
+            assert_eq!(table.get_columns_widths(7, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
+            assert_eq!(table.get_columns_widths(7, 3), [(3, 2), (6, 1)]);
         }
 
         #[test]
@@ -1285,21 +1245,21 @@ mod tests {
 
             // without selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(20, 0), [(0, 4), (5, 4)]);
+            assert_eq!(table.get_columns_widths(20, 0), [(0, 10), (11, 9)]);
 
             // with selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(20, 3), [(3, 4), (8, 4)]);
+            assert_eq!(table.get_columns_widths(20, 3), [(3, 8), (12, 8)]);
 
             // without selection, less than needed width
             // allocates spacer
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
+            assert_eq!(table.get_columns_widths(7, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             // always allocates selection and spacer
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
+            assert_eq!(table.get_columns_widths(7, 3), [(3, 2), (6, 1)]);
         }
 
         #[test]
@@ -1352,12 +1312,12 @@ mod tests {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
                 table.get_columns_widths(62, 0),
-                &[(0, 10), (11, 10), (22, 1)]
+                &[(0, 20), (21, 20), (42, 20)]
             );
 
             let table = Table::default()
                 .widths([Min(10), Min(10), Min(1)])
-                .flex(Flex::StretchLast);
+                .flex(Flex::Legacy);
             assert_eq!(
                 table.get_columns_widths(62, 0),
                 &[(0, 10), (11, 10), (22, 40)]
@@ -1365,10 +1325,10 @@ mod tests {
 
             let table = Table::default()
                 .widths([Min(10), Min(10), Min(1)])
-                .flex(Flex::Stretch);
+                .flex(Flex::SpaceBetween);
             assert_eq!(
                 table.get_columns_widths(62, 0),
-                &[(0, 20), (21, 20), (42, 20)]
+                &[(0, 21), (21, 20), (41, 21)]
             );
         }
 
@@ -1379,23 +1339,15 @@ mod tests {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
                 table.get_columns_widths(62, 0),
-                &[(0, 10), (11, 10), (22, 1)]
+                &[(0, 20), (21, 20), (42, 20)]
             );
 
             let table = Table::default()
                 .widths([Min(10), Min(10), Min(1)])
-                .segment_size(SegmentSize::LastTakesRemainder);
+                .flex(Flex::Legacy);
             assert_eq!(
                 table.get_columns_widths(62, 0),
                 &[(0, 10), (11, 10), (22, 40)]
-            );
-
-            let table = Table::default()
-                .widths([Min(10), Min(10), Min(1)])
-                .segment_size(SegmentSize::EvenDistribution);
-            assert_eq!(
-                table.get_columns_widths(62, 0),
-                &[(0, 20), (21, 20), (42, 20)]
             );
         }
 
@@ -1526,7 +1478,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE  12345", // row 1
+                    ">>>ABCDE 12345 ", // row 1
                     "               ", // row 2
                     "               ", // row 3
                 ])
@@ -1541,7 +1493,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABCDE  12345", // row 1
+                    "   ABCDE 12345 ", // row 1
                     "               ", // row 2
                     "               ", // row 3
                 ])
@@ -1556,7 +1508,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE  12345", // row 1
+                    ">>>ABCDE 12345 ", // row 1
                     "               ", // row 2
                     "               ", // row 3
                 ])
@@ -1609,7 +1561,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABCDE 1", // highlight_symbol and spacing are prioritized
+                    "   ABC 123", // highlight_symbol and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
                 ])
@@ -1624,7 +1576,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABCD 1", // highlight_symbol and spacing are prioritized
+                    "   ABC 12", // highlight_symbol and spacing are prioritized
                     "         ", // row 2
                     "         ", // row 3
                 ])
@@ -1637,7 +1589,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABCD ", // highlight_symbol and spacing are prioritized
+                    "   AB 12", // highlight_symbol and spacing are prioritized
                     "        ", // row 2
                     "        ", // row 3
                 ])
@@ -1650,7 +1602,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABC ", // highlight_symbol and spacing are prioritized
+                    "   AB 1", // highlight_symbol and spacing are prioritized
                     "       ", // row 2
                     "       ", // row 3
                 ])
@@ -1659,7 +1611,22 @@ mod tests {
             let table = Table::default()
                 .rows(vec![Row::new(vec!["ABCDE", "12345"])])
                 .highlight_spacing(HighlightSpacing::Always)
-                .flex(Flex::Stretch)
+                .flex(Flex::Legacy)
+                .highlight_symbol(">>>")
+                .column_spacing(1);
+            let area = Rect::new(0, 0, 10, 3);
+            let mut buf = Buffer::empty(area);
+            Widget::render(table, area, &mut buf);
+            // highlight_symbol and spacing are prioritized but columns are evenly distributed
+            assert_buffer_eq!(
+                buf,
+                Buffer::with_lines(vec!["   ABCDE 1", "          ", "          ",])
+            );
+
+            let table = Table::default()
+                .rows(vec![Row::new(vec!["ABCDE", "12345"])])
+                .highlight_spacing(HighlightSpacing::Always)
+                .flex(Flex::Start)
                 .highlight_symbol(">>>")
                 .column_spacing(1);
             let area = Rect::new(0, 0, 10, 3);
@@ -1693,7 +1660,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE 1", // row 1
+                    ">>>ABC 123", // row 1
                     "          ", // row 2
                     "          ", // row 3
                 ])
@@ -1707,7 +1674,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE 1", // highlight column and spacing are prioritized
+                    ">>>ABC 123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
                 ])
@@ -1754,7 +1721,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABCDE12", // highlight column and spacing are prioritized
+                    "   ABCD123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
                 ])
@@ -1780,7 +1747,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE12", // highlight column and spacing are prioritized
+                    ">>>ABCD123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
                 ])
@@ -1793,7 +1760,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE12", // highlight column and spacing are prioritized
+                    ">>>ABCD123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
                 ])

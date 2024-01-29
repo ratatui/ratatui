@@ -15,13 +15,12 @@ use strum::EnumIs;
 ///
 /// Constraints are prioritized in the following order:
 ///
-/// 1. [`Constraint::Fixed`]
-/// 2. [`Constraint::Min`]
-/// 3. [`Constraint::Max`]
-/// 4. [`Constraint::Length`]
-/// 5. [`Constraint::Percentage`]
-/// 6. [`Constraint::Ratio`]
-/// 7. [`Constraint::Fill`]
+/// 1. [`Constraint::Min`]
+/// 2. [`Constraint::Max`]
+/// 3. [`Constraint::Length`]
+/// 4. [`Constraint::Percentage`]
+/// 5. [`Constraint::Ratio`]
+/// 6. [`Constraint::Fill`]
 ///
 /// # Examples
 ///
@@ -31,9 +30,6 @@ use strum::EnumIs;
 /// # use ratatui::prelude::*;
 /// // Create a layout with specified lengths for each element
 /// let constraints = Constraint::from_lengths([10, 20, 10]);
-///
-/// // Create a layout with specified fixed lengths for each element
-/// let constraints = Constraint::from_fixed_lengths([10, 20, 10]);
 ///
 /// // Create a centered layout using ratio or percentage constraints
 /// let constraints = Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]);
@@ -50,29 +46,6 @@ use strum::EnumIs;
 /// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, EnumIs)]
 pub enum Constraint {
-    /// Applies a fixed size to the element
-    ///
-    /// The element size is set to the specified amount.
-    /// [`Constraint::Fixed`] will take precedence over all other constraints.
-    ///
-    /// # Examples
-    ///
-    /// `[Fixed(40), Fill(1)]`
-    ///
-    /// ```plain
-    /// ┌──────────────────────────────────────┐┌────────┐
-    /// │                 40 px                ││  10 px │
-    /// └──────────────────────────────────────┘└────────┘
-    /// ```
-    ///
-    /// `[Fixed(20), Fixed(20), Fill(1)]`
-    ///
-    /// ```plain
-    /// ┌──────────────────┐┌──────────────────┐┌────────┐
-    /// │       20 px      ││       20 px      ││  10 px │
-    /// └──────────────────┘└──────────────────┘└────────┘
-    /// ```
-    Fixed(u16),
     /// Applies a minimum size constraint to the element
     ///
     /// The element size is set to at least the specified amount.
@@ -95,6 +68,7 @@ pub enum Constraint {
     /// └──────────────────────────────────────┘└────────┘
     /// ```
     Min(u16),
+
     /// Applies a maximum size constraint to the element
     ///
     /// The element size is set to at most the specified amount.
@@ -117,21 +91,22 @@ pub enum Constraint {
     /// └──────────────────────────────────────┘└────────┘
     /// ```
     Max(u16),
+
     /// Applies a length constraint to the element
     ///
     /// The element size is set to the specified amount.
     ///
     /// # Examples
     ///
-    /// `[Length(20), Fixed(20)]`
+    /// `[Length(20), Length(20)]`
     ///
     /// ```plain
-    /// ┌────────────────────────────┐┌──────────────────┐
-    /// │            30 px           ││       20 px      │
-    /// └────────────────────────────┘└──────────────────┘
+    /// ┌──────────────────┐┌──────────────────┐
+    /// │       20 px      ││       20 px      │
+    /// └──────────────────┘└──────────────────┘
     /// ```
     ///
-    /// `[Length(20), Length(20)]`
+    /// `[Length(20), Length(30)]`
     ///
     /// ```plain
     /// ┌──────────────────┐┌────────────────────────────┐
@@ -139,6 +114,7 @@ pub enum Constraint {
     /// └──────────────────┘└────────────────────────────┘
     /// ```
     Length(u16),
+
     /// Applies a percentage of the available space to the element
     ///
     /// Converts the given percentage to a floating-point value and multiplies that with area.
@@ -162,6 +138,7 @@ pub enum Constraint {
     /// └───────────────────────┘└───────────────────────┘
     /// ```
     Percentage(u16),
+
     /// Applies a ratio of the available space to the element
     ///
     /// Converts the given ratio to a floating-point value and multiplies that with area.
@@ -185,6 +162,7 @@ pub enum Constraint {
     /// └───────────┘└──────────┘└───────────┘└──────────┘
     /// ```
     Ratio(u32, u32),
+
     /// Applies the scaling factor proportional to all other [`Constraint::Fill`] elements
     /// to fill excess space
     ///
@@ -232,7 +210,6 @@ impl Constraint {
                 (percentage * length).min(length) as u16
             }
             Constraint::Length(l) => length.min(l),
-            Constraint::Fixed(l) => length.min(l),
             Constraint::Fill(l) => length.min(l),
             Constraint::Max(m) => length.min(m),
             Constraint::Min(m) => length.max(m),
@@ -254,26 +231,6 @@ impl Constraint {
         T: IntoIterator<Item = u16>,
     {
         lengths.into_iter().map(Constraint::Length).collect_vec()
-    }
-
-    /// Convert an iterator of fixed lengths into a vector of constraints
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// # let area = Rect::default();
-    /// let constraints = Constraint::from_fixed_lengths([1, 2, 3]);
-    /// let layout = Layout::default().constraints(constraints).split(area);
-    /// ```
-    pub fn from_fixed_lengths<T>(fixed_lengths: T) -> Vec<Constraint>
-    where
-        T: IntoIterator<Item = u16>,
-    {
-        fixed_lengths
-            .into_iter()
-            .map(Constraint::Fixed)
-            .collect_vec()
     }
 
     /// Convert an iterator of ratios into a vector of constraints
@@ -415,7 +372,6 @@ impl Display for Constraint {
             Constraint::Percentage(p) => write!(f, "Percentage({})", p),
             Constraint::Ratio(n, d) => write!(f, "Ratio({}, {})", n, d),
             Constraint::Length(l) => write!(f, "Length({})", l),
-            Constraint::Fixed(l) => write!(f, "Fixed({})", l),
             Constraint::Fill(l) => write!(f, "Fill({})", l),
             Constraint::Max(m) => write!(f, "Max({})", m),
             Constraint::Min(m) => write!(f, "Min({})", m),
@@ -450,17 +406,6 @@ mod tests {
         ];
         assert_eq!(Constraint::from_lengths([1, 2, 3]), expected);
         assert_eq!(Constraint::from_lengths(vec![1, 2, 3]), expected);
-    }
-
-    #[test]
-    fn from_fixed_lengths() {
-        let expected = [
-            Constraint::Fixed(1),
-            Constraint::Fixed(2),
-            Constraint::Fixed(3),
-        ];
-        assert_eq!(Constraint::from_fixed_lengths([1, 2, 3]), expected);
-        assert_eq!(Constraint::from_fixed_lengths(vec![1, 2, 3]), expected);
     }
 
     #[test]

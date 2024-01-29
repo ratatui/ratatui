@@ -1,4 +1,4 @@
-use strum::{Display, EnumString};
+use strum::{Display, EnumIs, EnumString};
 
 #[allow(unused_imports)]
 use super::constraint::Constraint;
@@ -7,15 +7,14 @@ use super::constraint::Constraint;
 ///
 /// This enumeration controls the distribution of space when layout constraints are met.
 ///
-/// - `StretchLast`: Fills the available space within the container, putting excess space into the
-///   last element.
-/// - `Stretch`: Always fills the available space within the container.
+/// - `Legacy`: Fills the available space within the container, putting excess space into the last
+///   element.
 /// - `Start`: Aligns items to the start of the container.
 /// - `End`: Aligns items to the end of the container.
 /// - `Center`: Centers items within the container.
 /// - `SpaceBetween`: Adds excess space between each element.
 /// - `SpaceAround`: Adds excess space around each element.
-#[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash, EnumIs)]
 pub enum Flex {
     /// Fills the available space within the container, putting excess space into the last
     /// constraint of the lowest priority. This matches the default behavior of ratatui and tui
@@ -24,13 +23,12 @@ pub enum Flex {
     /// The following examples illustrate the allocation of excess in various combinations of
     /// constraints. As a refresher, the priorities of constraints are as follows:
     ///
-    /// 1. [`Constraint::Fixed`]
-    /// 2. [`Constraint::Min`]
-    /// 3. [`Constraint::Max`]
-    /// 4. [`Constraint::Length`]
-    /// 5. [`Constraint::Percentage`]
-    /// 6. [`Constraint::Ratio`]
-    /// 7. [`Constraint::Fill`]
+    /// 1. [`Constraint::Min`]
+    /// 2. [`Constraint::Max`]
+    /// 3. [`Constraint::Length`]
+    /// 4. [`Constraint::Percentage`]
+    /// 5. [`Constraint::Ratio`]
+    /// 6. [`Constraint::Fill`]
     ///
     /// When every constraint is `Length`, the last element gets the excess.
     ///
@@ -42,55 +40,13 @@ pub enum Flex {
     ///                                         ^^^^^^^^^^^^^^^^ EXCESS ^^^^^^^^^^^^^^^^
     /// ```
     ///
-    /// If we replace the constraint at the end with a `Fixed`, because it has a
-    /// higher priority, the last constraint with the lowest priority, i.e. the last
-    /// `Length` gets the excess.
-    ///
-    /// ```plain
-    /// <----------------------------------- 80 px ------------------------------------>
-    /// ┌──────20 px───────┐┌────────────────40 px─────────────────┐┌──────20 px───────┐
-    /// │    Length(20)    ││              Length(20)              ││     Fixed(20)    │
-    /// └──────────────────┘└──────────────────────────────────────┘└──────────────────┘
-    ///                     ^^^^^^^^^^^^^^^^ EXCESS ^^^^^^^^^^^^^^^^
-    /// ```
-    ///
-    /// Violating a `Max` is lower priority than `Fixed` but higher
-    /// than `Length`.
-    ///
-    /// ```plain
-    /// <----------------------------------- 80 px ------------------------------------>
-    /// ┌────────────────40 px─────────────────┐┌──────20 px───────┐┌──────20 px───────┐
-    /// │              Length(20)              ││      Max(20)     ││     Fixed(20)    │
-    /// └──────────────────────────────────────┘└──────────────────┘└──────────────────┘
-    /// ^^^^^^^^^^^^^^^^ EXCESS ^^^^^^^^^^^^^^^^
-    /// ```
-    ///
-    /// It's important to note that while not violating a `Min` or `Max` constraint is
-    /// prioritized higher than a `Length`, `Min` and `Max` constraints allow for a range
-    /// of values and excess can (and will) be dumped into these ranges first, if possible,
-    /// even if it not the last constraint.
-    ///
-    /// ```plain
-    /// <----------------------------------- 80 px ------------------------------------>
-    /// ┌──────20 px───────┐┌────────────────40 px─────────────────┐┌──────20 px───────┐
-    /// │    Length(20)    ││                Min(20)               ││     Fixed(20)    │
-    /// └──────────────────┘└──────────────────────────────────────┘└──────────────────┘
-    ///                     ^^^^^^^^^^^^^^^^ EXCESS ^^^^^^^^^^^^^^^^
-    ///
-    /// <----------------------------------- 80 px ------------------------------------>
-    /// ┌────────────────40 px─────────────────┐┌──────20 px───────┐┌──────20 px───────┐
-    /// │                Min(20)               ││    Length(20)    ││     Fixed(20)    │
-    /// └──────────────────────────────────────┘└──────────────────┘└──────────────────┘
-    /// ^^^^^^^^^^^^^^^^ EXCESS ^^^^^^^^^^^^^^^^
-    /// ```
-    ///
     /// Fill constraints have the lowest priority amongst all the constraints and hence
     /// will always take up any excess space available.
     ///
     /// ```plain
     /// <----------------------------------- 80 px ------------------------------------>
     /// ┌──────20 px───────┐┌──────20 px───────┐┌──────20 px───────┐┌──────20 px───────┐
-    /// │      Fill(0)     ││      Min(20)     ││    Length(20)    ││     Fixed(20)    │
+    /// │      Fill(0)     ││      Max(20)     ││    Length(20)    ││     Length(20)   │
     /// └──────────────────┘└──────────────────┘└──────────────────┘└──────────────────┘
     /// ^^^^^^ EXCESS ^^^^^^
     /// ```
@@ -99,11 +55,6 @@ pub enum Flex {
     ///
     /// ```plain
     /// <------------------------------------80 px------------------------------------->
-    /// ┌───────────30 px────────────┐┌───────────30 px────────────┐┌──────20 px───────┐
-    /// │       Percentage(20)       ││         Length(20)         ││     Fixed(20)    │
-    /// └────────────────────────────┘└────────────────────────────┘└──────────────────┘
-    ///
-    /// <------------------------------------80 px------------------------------------->
     /// ┌──────────────────────────60 px───────────────────────────┐┌──────20 px───────┐
     /// │                          Min(20)                         ││      Max(20)     │
     /// └──────────────────────────────────────────────────────────┘└──────────────────┘
@@ -113,30 +64,7 @@ pub enum Flex {
     /// │                                    Max(20)                                   │
     /// └──────────────────────────────────────────────────────────────────────────────┘
     /// ```
-    #[default]
-    StretchLast,
-
-    /// Always fills the available space within the container.
-    ///
-    /// # Examples
-    ///
-    /// ```plain
-    /// <------------------------------------80 px------------------------------------->
-    /// ┌────16 px─────┐┌──────────────────44 px───────────────────┐┌──────20 px───────┐
-    /// │Percentage(20)││                Length(20)                ││     Fixed(20)    │
-    /// └──────────────┘└──────────────────────────────────────────┘└──────────────────┘
-    ///
-    /// <------------------------------------80 px------------------------------------->
-    /// ┌──────────────────────────60 px───────────────────────────┐┌──────20 px───────┐
-    /// │                          Min(20)                         ││      Max(20)     │
-    /// └──────────────────────────────────────────────────────────┘└──────────────────┘
-    ///
-    /// <------------------------------------80 px------------------------------------->
-    /// ┌────────────────────────────────────80 px─────────────────────────────────────┐
-    /// │                                    Max(20)                                   │
-    /// └──────────────────────────────────────────────────────────────────────────────┘
-    /// ```
-    Stretch,
+    Legacy,
 
     /// Aligns items to the start of the container.
     ///
@@ -150,7 +78,7 @@ pub enum Flex {
     ///
     /// <------------------------------------80 px------------------------------------->
     /// ┌──────20 px───────┐┌──────20 px───────┐
-    /// │      Min(20)     ││      Max(20)     │
+    /// │      Max(20)     ││      Max(20)     │
     /// └──────────────────┘└──────────────────┘
     ///
     /// <------------------------------------80 px------------------------------------->
@@ -158,6 +86,7 @@ pub enum Flex {
     /// │      Max(20)     │
     /// └──────────────────┘
     /// ```
+    #[default]
     Start,
 
     /// Aligns items to the end of the container.
@@ -167,12 +96,12 @@ pub enum Flex {
     /// ```plain
     /// <------------------------------------80 px------------------------------------->
     ///                         ┌────16 px─────┐┌──────20 px───────┐┌──────20 px───────┐
-    ///                         │Percentage(20)││    Length(20)    ││     Fixed(20)    │
+    ///                         │Percentage(20)││    Length(20)    ││     Length(20)   │
     ///                         └──────────────┘└──────────────────┘└──────────────────┘
     ///
     /// <------------------------------------80 px------------------------------------->
     ///                                         ┌──────20 px───────┐┌──────20 px───────┐
-    ///                                         │      Min(20)     ││      Max(20)     │
+    ///                                         │      Max(20)     ││      Max(20)     │
     ///                                         └──────────────────┘└──────────────────┘
     ///
     /// <------------------------------------80 px------------------------------------->
@@ -189,12 +118,12 @@ pub enum Flex {
     /// ```plain
     /// <------------------------------------80 px------------------------------------->
     ///             ┌────16 px─────┐┌──────20 px───────┐┌──────20 px───────┐
-    ///             │Percentage(20)││    Length(20)    ││     Fixed(20)    │
+    ///             │Percentage(20)││    Length(20)    ││     Length(20)   │
     ///             └──────────────┘└──────────────────┘└──────────────────┘
     ///
     /// <------------------------------------80 px------------------------------------->
     ///                     ┌──────20 px───────┐┌──────20 px───────┐
-    ///                     │      Min(20)     ││      Max(20)     │
+    ///                     │      Max(20)     ││      Max(20)     │
     ///                     └──────────────────┘└──────────────────┘
     ///
     /// <------------------------------------80 px------------------------------------->
@@ -211,12 +140,12 @@ pub enum Flex {
     /// ```plain
     /// <------------------------------------80 px------------------------------------->
     /// ┌────16 px─────┐            ┌──────20 px───────┐            ┌──────20 px───────┐
-    /// │Percentage(20)│            │    Length(20)    │            │     Fixed(20)    │
+    /// │Percentage(20)│            │    Length(20)    │            │     Length(20)   │
     /// └──────────────┘            └──────────────────┘            └──────────────────┘
     ///
     /// <------------------------------------80 px------------------------------------->
     /// ┌──────20 px───────┐                                        ┌──────20 px───────┐
-    /// │      Min(20)     │                                        │      Max(20)     │
+    /// │      Max(20)     │                                        │      Max(20)     │
     /// └──────────────────┘                                        └──────────────────┘
     ///
     /// <------------------------------------80 px------------------------------------->
@@ -233,12 +162,12 @@ pub enum Flex {
     /// ```plain
     /// <------------------------------------80 px------------------------------------->
     ///       ┌────16 px─────┐      ┌──────20 px───────┐      ┌──────20 px───────┐
-    ///       │Percentage(20)│      │    Length(20)    │      │     Fixed(20)    │
+    ///       │Percentage(20)│      │    Length(20)    │      │     Length(20)   │
     ///       └──────────────┘      └──────────────────┘      └──────────────────┘
     ///
     /// <------------------------------------80 px------------------------------------->
     ///              ┌──────20 px───────┐              ┌──────20 px───────┐
-    ///              │      Min(20)     │              │      Max(20)     │
+    ///              │      Max(20)     │              │      Max(20)     │
     ///              └──────────────────┘              └──────────────────┘
     ///
     /// <------------------------------------80 px------------------------------------->
