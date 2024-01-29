@@ -33,7 +33,7 @@ cassowary = "0.3"
 indoc = "2.0"
 itertools = "0.12"
 paste = "1.0.2"
-strum = { version = "0.25", features = ["derive"] }
+strum = { version = "0.26", features = ["derive"] }
 time = { version = "0.3.11", optional = true, features = ["local-offset"] }
 unicode-segmentation = "1.10"
 unicode-width = "0.1"
