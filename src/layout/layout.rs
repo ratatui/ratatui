@@ -40,20 +40,21 @@ thread_local! {
 ///
 /// A layout is composed of:
 /// - a direction (horizontal or vertical)
-/// - a set of constraints (length, ratio, percentage, min, max)
+/// - a set of constraints (length, ratio, percentage, fill, min, max)
 /// - a margin (horizontal and vertical), the space between the edge of the main area and the split
 ///   areas
-/// - extra options for segment size preferences
+/// - a flex option
+/// - a spacing option
 ///
 /// The algorithm used to compute the layout is based on the [`cassowary-rs`] solver. It is a simple
 /// linear solver that can be used to solve linear equations and inequalities. In our case, we
 /// define a set of constraints that are applied to split the provided area into Rects aligned in a
 /// single direction, and the solver computes the values of the position and sizes that satisfy as
-/// many of the constraints as possible.
+/// many of the constraints in order of their priorities.
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
-/// calls with the same parameters are faster. The cache is a simple HashMap, and grows
-/// indefinitely. (See <https://github.com/ratatui-org/ratatui/issues/402> for more information)
+/// calls with the same parameters are faster. The cache is a LruCache, and the size of the cache
+/// can be configured.
 ///
 /// # Constructors
 ///
@@ -2247,6 +2248,27 @@ mod tests {
                 .split_with_spacers(rect);
             assert_eq!(s.len(), constraints.len() + 1);
             let result = s
+                .iter()
+                .map(|r| (r.x, r.width))
+                .collect::<Vec<(u16, u16)>>();
+            assert_eq!(expected, result);
+        }
+
+        #[rstest]
+        #[case::compare(vec![(0, 90), (90, 10)], vec![Min(10), Length(10)], Flex::Legacy)]
+        #[case::compare(vec![(0, 90), (90, 10)], vec![Min(10), Length(10)], Flex::Start)]
+        #[case::compare(vec![(0, 10), (10, 90)], vec![Min(10), Percentage(100)], Flex::Legacy)]
+        #[case::compare(vec![(0, 10), (10, 90)], vec![Min(10), Percentage(100)], Flex::Start)]
+        #[case::compare(vec![(0, 50), (50, 50)], vec![Percentage(50), Percentage(50)], Flex::Legacy)]
+        #[case::compare(vec![(0, 50), (50, 50)], vec![Percentage(50), Percentage(50)], Flex::Start)]
+        fn legacy_vs_default(
+            #[case] expected: Vec<(u16, u16)>,
+            #[case] constraints: Vec<Constraint>,
+            #[case] flex: Flex,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(constraints).flex(flex).split(rect);
+            let result = r
                 .iter()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
