@@ -12,7 +12,7 @@ use self::strengths::{
     FILL_GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ, MIN_SIZE_GE,
     PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, *,
 };
-use super::{Flex, SegmentSize};
+use super::Flex;
 use crate::prelude::*;
 
 type Rects = Rc<[Rect]>;
@@ -50,11 +50,6 @@ thread_local! {
 /// define a set of constraints that are applied to split the provided area into Rects aligned in a
 /// single direction, and the solver computes the values of the position and sizes that satisfy as
 /// many of the constraints as possible.
-///
-/// By default, the last chunk of the computed layout is expanded to fill the remaining space. To
-/// avoid this behavior, add an unused `Constraint::Min(0)` as the last constraint. There is also an
-/// unstable API to prefer equal chunks if other constraints are all satisfied, see [`SegmentSize`]
-/// for more info.
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
 /// calls with the same parameters are faster. The cache is a simple HashMap, and grows
@@ -417,30 +412,6 @@ impl Layout {
     pub const fn spacing(mut self, spacing: u16) -> Layout {
         self.spacing = spacing;
         self
-    }
-
-    /// Set whether chunks should be of equal size.
-    ///
-    /// This determines how the space is distributed when the constraints are satisfied. By default,
-    /// the last chunk is expanded to fill the remaining space, but this can be changed to prefer
-    /// equal chunks or to not distribute extra space at all (which is the default used for laying
-    /// out the columns for [`Table`] widgets).
-    ///
-    /// This function exists for backwards compatibility reasons. Use [`Layout::flex`] instead.
-    #[stability::unstable(
-        feature = "segment-size",
-        reason = "The name for this feature is not final and may change in the future",
-        issue = "https://github.com/ratatui-org/ratatui/issues/536"
-    )]
-    #[must_use = "method moves the value of self and returns the modified value"]
-    #[deprecated(since = "0.26.0", note = "You should use `Layout::flex` instead.")]
-    pub const fn segment_size(self, segment_size: SegmentSize) -> Layout {
-        let flex = match segment_size {
-            SegmentSize::None => Flex::Start,
-            SegmentSize::LastTakesRemainder => Flex::Legacy,
-            SegmentSize::EvenDistribution => Flex::Legacy,
-        };
-        self.flex(flex)
     }
 
     /// Wrapper function around the cassowary-rs solver to be able to split a given area into
@@ -1276,27 +1247,6 @@ mod tests {
     #[test]
     fn flex_default() {
         assert_eq!(Layout::default().flex, Flex::Start);
-    }
-
-    #[test]
-    #[allow(deprecated)]
-    fn segment_size() {
-        assert_eq!(
-            Layout::default()
-                .segment_size(SegmentSize::EvenDistribution)
-                .flex,
-            Flex::Legacy
-        );
-        assert_eq!(
-            Layout::default()
-                .segment_size(SegmentSize::LastTakesRemainder)
-                .flex,
-            Flex::Legacy
-        );
-        assert_eq!(
-            Layout::default().segment_size(SegmentSize::None).flex,
-            Flex::Start
-        );
     }
 
     /// Tests for the `Layout::split()` function.
