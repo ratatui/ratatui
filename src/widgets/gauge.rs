@@ -1,12 +1,6 @@
 #![deny(missing_docs)]
-use crate::{
-    buffer::Buffer,
-    layout::Rect,
-    style::{Color, Style, Styled},
-    symbols,
-    text::{Line, Span},
-    widgets::{Block, Widget},
-};
+
+use crate::{prelude::*, widgets::Block};
 
 /// A widget to display a progress bar.
 ///
@@ -161,28 +155,33 @@ impl<'a> Gauge<'a> {
     }
 }
 
-impl<'a> Widget for Gauge<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
+impl Widget for Gauge<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+impl Widget for &Gauge<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        let gauge_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
-        buf.set_style(gauge_area, self.gauge_style);
-        if gauge_area.height < 1 {
+        self.block.render(area, buf);
+        let inner = self.block.inner_if_some(area);
+        self.render_gague(inner, buf);
+    }
+}
+
+impl Gauge<'_> {
+    fn render_gague(&self, gauge_area: Rect, buf: &mut Buffer) {
+        if gauge_area.is_empty() {
             return;
         }
 
+        buf.set_style(gauge_area, self.gauge_style);
+
         // compute label value and its position
         // label is put at the center of the gauge_area
-        let label = {
-            let pct = f64::round(self.ratio * 100.0);
-            self.label.unwrap_or_else(|| Span::from(format!("{pct}%")))
-        };
+        let default_label = Span::raw(format!("{}%", f64::round(self.ratio * 100.0)));
+        let label = self.label.as_ref().unwrap_or(&default_label);
         let clamped_label_width = gauge_area.width.min(label.width() as u16);
         let label_col = gauge_area.left() + (gauge_area.width - clamped_label_width) / 2;
         let label_row = gauge_area.top() + gauge_area.height / 2;
@@ -217,7 +216,7 @@ impl<'a> Widget for Gauge<'a> {
             }
         }
         // render the label
-        buf.set_span(label_col, label_row, &label, clamped_label_width);
+        buf.set_span(label_col, label_row, label, clamped_label_width);
     }
 }
 
@@ -351,32 +350,25 @@ impl<'a> LineGauge<'a> {
     }
 }
 
-impl<'a> Widget for LineGauge<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
-        let gauge_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
+impl Widget for LineGauge<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
 
-        if gauge_area.height < 1 {
+impl Widget for &LineGauge<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, self.style);
+        self.block.render(area, buf);
+        let gauge_area = self.block.inner_if_some(area);
+        if gauge_area.is_empty() {
             return;
         }
 
         let ratio = self.ratio;
-        let label = self
-            .label
-            .unwrap_or_else(move || Line::from(format!("{:.0}%", ratio * 100.0)));
-        let (col, row) = buf.set_line(
-            gauge_area.left(),
-            gauge_area.top(),
-            &label,
-            gauge_area.width,
-        );
+        let default_label = Line::from(format!("{:.0}%", ratio * 100.0));
+        let label = self.label.as_ref().unwrap_or(&default_label);
+        let (col, row) = buf.set_line(gauge_area.left(), gauge_area.top(), label, gauge_area.width);
         let start = col + 1;
         if start >= gauge_area.right() {
             return;

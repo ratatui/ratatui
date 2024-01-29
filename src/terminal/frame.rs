@@ -1,16 +1,13 @@
-use crate::{
-    prelude::*,
-    widgets::{StatefulWidget, Widget},
-};
+use crate::prelude::*;
 
 /// A consistent view into the terminal state for rendering a single frame.
 ///
 /// This is obtained via the closure argument of [`Terminal::draw`]. It is used to render widgets
 /// to the terminal and control the cursor position.
 ///
-/// The changes drawn to the frame are applied only to the current [`Buffer`].
-/// After the closure returns, the current buffer is compared to the previous
-/// buffer and only the changes are applied to the terminal.
+/// The changes drawn to the frame are applied only to the current [`Buffer`]. After the closure
+/// returns, the current buffer is compared to the previous buffer and only the changes are applied
+/// to the terminal. This avoids drawing redundant cells.
 ///
 /// [`Buffer`]: crate::buffer::Buffer
 #[derive(Debug, Hash)]
@@ -74,10 +71,7 @@ impl Frame<'_> {
     /// ```
     ///
     /// [`Layout`]: crate::layout::Layout
-    pub fn render_widget<W>(&mut self, widget: W, area: Rect)
-    where
-        W: Widget,
-    {
+    pub fn render_widget<W: Widget>(&mut self, widget: W, area: Rect) {
         widget.render(area, self.buffer);
     }
 

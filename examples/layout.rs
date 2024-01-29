@@ -1,3 +1,18 @@
+//! # [Ratatui] Layout example
+//!
+//! The latest version of this example is available in the [examples] folder in the repository.
+//!
+//! Please note that the examples are designed to be run against the `main` branch of the Github
+//! repository. This means that you may not be able to compile with the latest release version on
+//! crates.io, or the one that you have installed locally.
+//!
+//! See the [examples readme] for more information on finding examples that match the version of the
+//! library you are using.
+//!
+//! [Ratatui]: https://github.com/ratatui-org/ratatui
+//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+
 use std::{error::Error, io};
 
 use crossterm::{
@@ -58,8 +73,7 @@ fn ui(frame: &mut Frame) {
     // title
     frame.render_widget(
         Paragraph::new(vec![
-            Line::from("Horizontal Layout Example. Press q to quit".dark_gray())
-                .alignment(Alignment::Center),
+            Line::from("Horizontal Layout Example. Press q to quit".dark_gray()).centered(),
             Line::from("Each line has 2 constraints, plus Min(0) to fill the remaining space."),
             Line::from("E.g. the second line of the Len/Min box is [Length(2), Min(2), Min(0)]"),
             Line::from("Note: constraint labels that don't fit are truncated"),
@@ -203,7 +217,7 @@ fn constraint_label(constraint: Constraint) -> String {
         Min(n) => format!("{n}"),
         Max(n) => format!("{n}"),
         Percentage(n) => format!("{n}"),
-        Proportional(n) => format!("{n}"),
+        Fill(n) => format!("{n}"),
         Fixed(n) => format!("{n}"),
         Ratio(a, b) => format!("{a}:{b}"),
     }

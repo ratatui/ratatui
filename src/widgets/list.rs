@@ -4,7 +4,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     prelude::*,
-    widgets::{Block, HighlightSpacing, StatefulWidget, Widget},
+    widgets::{Block, HighlightSpacing},
 };
 
 /// State of the [`List`] widget
@@ -738,6 +738,7 @@ impl<'a> List<'a> {
         self.items.is_empty()
     }
 
+    /// Given an offset, calculate which items can fit in a given area
     fn get_items_bounds(
         &self,
         selected: Option<usize>,
@@ -745,64 +746,115 @@ impl<'a> List<'a> {
         max_height: usize,
     ) -> (usize, usize) {
         let offset = offset.min(self.items.len().saturating_sub(1));
-        let mut start = offset;
-        let mut end = offset;
-        let mut height = 0;
+
+        // Note: visible here implies visible in the given area
+        let mut first_visible_index = offset;
+        let mut last_visible_index = offset;
+
+        // Current height of all items in the list to render, beginning at the offset
+        let mut height_from_offset = 0;
+
+        // Calculate the last visible index and total height of the items
+        // that will fit in the available space
         for item in self.items.iter().skip(offset) {
-            if height + item.height() > max_height {
+            if height_from_offset + item.height() > max_height {
                 break;
             }
-            height += item.height();
-            end += 1;
+
+            height_from_offset += item.height();
+
+            last_visible_index += 1;
         }
 
-        let selected = selected.unwrap_or(0).min(self.items.len() - 1);
-        while selected >= end {
-            height = height.saturating_add(self.items[end].height());
-            end += 1;
-            while height > max_height {
-                height = height.saturating_sub(self.items[start].height());
-                start += 1;
+        // Get the selected index, but still honor the offset if nothing is selected
+        // This allows for the list to stay at a position after select()ing None.
+        let index_to_display = selected.unwrap_or(offset).min(self.items.len() - 1);
+
+        // Recall that last_visible_index is the index of what we
+        // can render up to in the given space after the offset
+        // If we have an item selected that is out of the viewable area (or
+        // the offset is still set), we still need to show this item
+        while index_to_display >= last_visible_index {
+            height_from_offset =
+                height_from_offset.saturating_add(self.items[last_visible_index].height());
+
+            last_visible_index += 1;
+
+            // Now we need to hide previous items since we didn't have space
+            // for the selected/offset item
+            while height_from_offset > max_height {
+                height_from_offset =
+                    height_from_offset.saturating_sub(self.items[first_visible_index].height());
+
+                // Remove this item to view by starting at the next item index
+                first_visible_index += 1;
             }
         }
-        while selected < start {
-            start -= 1;
-            height = height.saturating_add(self.items[start].height());
-            while height > max_height {
-                end -= 1;
-                height = height.saturating_sub(self.items[end].height());
+
+        // Here we're doing something similar to what we just did above
+        // If the selected item index is not in the viewable area, let's try to show the item
+        while index_to_display < first_visible_index {
+            first_visible_index -= 1;
+
+            height_from_offset =
+                height_from_offset.saturating_add(self.items[first_visible_index].height());
+
+            // Don't show an item if it is beyond our viewable height
+            while height_from_offset > max_height {
+                last_visible_index -= 1;
+
+                height_from_offset =
+                    height_from_offset.saturating_sub(self.items[last_visible_index].height());
             }
         }
-        (start, end)
+
+        (first_visible_index, last_visible_index)
     }
 }
 
-impl<'a> StatefulWidget for List<'a> {
+impl Widget for List<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let mut state = ListState::default();
+        StatefulWidget::render(&self, area, buf, &mut state);
+    }
+}
+
+impl Widget for &List<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let mut state = ListState::default();
+        StatefulWidget::render(self, area, buf, &mut state);
+    }
+}
+
+impl StatefulWidget for List<'_> {
     type State = ListState;
 
-    fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        StatefulWidget::render(&self, area, buf, state);
+    }
+}
+
+impl StatefulWidget for &List<'_> {
+    type State = ListState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
-        let list_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
+        self.block.render(area, buf);
+        let list_area = self.block.inner_if_some(area);
 
-        if list_area.width < 1 || list_area.height < 1 {
+        if list_area.is_empty() || self.items.is_empty() {
             return;
         }
 
-        if self.items.is_empty() {
-            return;
-        }
         let list_height = list_area.height as usize;
 
-        let (start, end) = self.get_items_bounds(state.selected, state.offset, list_height);
-        state.offset = start;
+        let (first_visible_index, last_visible_index) =
+            self.get_items_bounds(state.selected, state.offset, list_height);
 
+        // Important: this changes the state's offset to be the beginning of the now viewable items
+        state.offset = first_visible_index;
+
+        // Get our set highlighted symbol (if one was set)
         let highlight_symbol = self.highlight_symbol.unwrap_or("");
         let blank_symbol = " ".repeat(highlight_symbol.width());
 
@@ -810,10 +862,10 @@ impl<'a> StatefulWidget for List<'a> {
         let selection_spacing = self.highlight_spacing.should_add(state.selected.is_some());
         for (i, item) in self
             .items
-            .iter_mut()
+            .iter()
             .enumerate()
             .skip(state.offset)
-            .take(end - start)
+            .take(last_visible_index - first_visible_index)
         {
             let (x, y) = if self.direction == ListDirection::BottomToTop {
                 current_height += item.height() as u16;
@@ -875,13 +927,6 @@ impl<'a> StatefulWidget for List<'a> {
     }
 }
 
-impl<'a> Widget for List<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut state = ListState::default();
-        StatefulWidget::render(self, area, buf, &mut state);
-    }
-}
-
 impl<'a> Styled for List<'a> {
     type Item = List<'a>;
 
@@ -925,7 +970,7 @@ mod tests {
         prelude::Alignment,
         style::{Color, Modifier, Stylize},
         text::{Line, Span},
-        widgets::{Borders, StatefulWidget, Widget},
+        widgets::Borders,
     };
 
     #[test]
@@ -1646,6 +1691,19 @@ mod tests {
         let list = List::new(items);
         let buffer = render_widget(list, 10, 3);
         let expected = Buffer::with_lines(vec!["Item 0    ", "Item 1    ", "Item 2    "]);
+        assert_buffer_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_offset_renders_shifted() {
+        let items = list_items(vec![
+            "Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6",
+        ]);
+        let list = List::new(items);
+        let mut state = ListState::default().with_offset(3);
+        let buffer = render_stateful_widget(list, &mut state, 6, 3);
+
+        let expected = Buffer::with_lines(vec!["Item 3", "Item 4", "Item 5"]);
         assert_buffer_eq!(buffer, expected);
     }
 

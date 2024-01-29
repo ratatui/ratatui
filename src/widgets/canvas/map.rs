@@ -46,11 +46,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        prelude::*,
-        widgets::{canvas::Canvas, Widget},
-    };
+    use crate::{assert_buffer_eq, prelude::*, widgets::canvas::Canvas};
 
     #[test]
     fn map_resolution_to_string() {

@@ -198,6 +198,8 @@ impl<'a> Line<'a> {
     /// Sets the target alignment for this line of text.
     ///
     /// Defaults to: [`None`], meaning the alignment is determined by the rendering widget.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget.
     ///
     /// # Examples
     ///
@@ -216,6 +218,57 @@ impl<'a> Line<'a> {
             alignment: Some(alignment),
             ..self
         }
+    }
+
+    /// Left-aligns this line of text.
+    ///
+    /// Convenience shortcut for `Line::alignment(Alignment::Left)`.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget, with the default alignment being inherited from the parent.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let line = Line::from("Hi, what's up?").left_aligned();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn left_aligned(self) -> Self {
+        self.alignment(Alignment::Left)
+    }
+
+    /// Center-aligns this line of text.
+    ///
+    /// Convenience shortcut for `Line::alignment(Alignment::Center)`.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget, with the default alignment being inherited from the parent.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let line = Line::from("Hi, what's up?").centered();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn centered(self) -> Self {
+        self.alignment(Alignment::Center)
+    }
+
+    /// Right-aligns this line of text.
+    ///
+    /// Convenience shortcut for `Line::alignment(Alignment::Right)`.
+    /// Setting the alignment of a Line generally overrides the alignment of its
+    /// parent Text or Widget, with the default alignment being inherited from the parent.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let line = Line::from("Hi, what's up?").right_aligned();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn right_aligned(self) -> Self {
+        self.alignment(Alignment::Right)
     }
 
     /// Returns the width of the underlying string.
@@ -355,6 +408,22 @@ impl<'a> From<Line<'a>> for String {
 
 impl Widget for Line<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+/// Implement [`Widget`] for [`Option<Line>`] to simplify the common case of having an optional
+/// [`Line`] field in a widget.
+impl Widget for &Option<Line<'_>> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(line) = self {
+            line.render(area, buf);
+        }
+    }
+}
+
+impl Widget for &Line<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
         let width = self.width() as u16;
@@ -365,7 +434,7 @@ impl Widget for Line<'_> {
             None => 0,
         };
         let mut x = area.left().saturating_add(offset);
-        for span in self.spans {
+        for span in self.spans.iter() {
             let span_width = span.width() as u16;
             let span_area = Rect {
                 x,
@@ -664,5 +733,23 @@ mod tests {
             expected.set_style(Rect::new(9, 0, 6, 1), GREEN);
             assert_buffer_eq!(buf, expected);
         }
+    }
+
+    #[test]
+    fn left_aligned() {
+        let line = Line::from("Hello, world!").left_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let line = Line::from("Hello, world!").centered();
+        assert_eq!(line.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let line = Line::from("Hello, world!").right_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Right));
     }
 }

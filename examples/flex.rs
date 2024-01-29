@@ -1,3 +1,18 @@
+//! # [Ratatui] Flex example
+//!
+//! The latest version of this example is available in the [examples] folder in the repository.
+//!
+//! Please note that the examples are designed to be run against the `main` branch of the Github
+//! repository. This means that you may not be able to compile with the latest release version on
+//! crates.io, or the one that you have installed locally.
+//!
+//! See the [examples readme] for more information on finding examples that match the version of the
+//! library you are using.
+//!
+//! [Ratatui]: https://github.com/ratatui-org/ratatui
+//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+
 use std::io::{self, stdout};
 
 use color_eyre::{config::HookBuilder, Result};
@@ -10,6 +25,7 @@ use ratatui::{
     layout::{Constraint::*, Flex},
     prelude::*,
     style::palette::tailwind,
+    symbols::line,
     widgets::{block::Title, *},
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
@@ -17,41 +33,62 @@ use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 const EXAMPLE_DATA: &[(&str, &[Constraint])] = &[
     (
         "Min(u16) takes any excess space when using `Stretch` or `StretchLast`",
-        &[Fixed(20), Min(20), Max(20)],
+        &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10)],
     ),
     (
-        "Proportional(u16) takes any excess space in all `Flex` layouts",
-        &[Length(20), Percentage(20), Ratio(1, 5), Proportional(1)],
+        "Fill(u16) takes any excess space always",
+        &[Length(20), Percentage(20), Ratio(1, 5), Fill(1)],
     ),
     (
-        "In `StretchLast`, last constraint of lowest priority takes excess space",
+        "Here's all constraints in one line",
+        &[Fixed(10), Min(10), Max(10), Percentage(10), Ratio(1,10), Fill(1)],
+    ),
+    (
+        "",
+        &[Percentage(50), Percentage(25), Ratio(1, 8), Min(10)],
+    ),
+    (
+        "In `StretchLast`, the last constraint of lowest priority takes excess space",
         &[Length(20), Fixed(20), Percentage(20)],
     ),
     ("", &[Fixed(20), Percentage(20), Length(20)]),
-    ("", &[Percentage(20), Length(20), Fixed(20)]),
-    ("", &[Length(20), Length(15)]),
-    ("Spacing has no effect in `SpaceAround` and `SpaceBetween`", &[Proportional(1), Proportional(1)]),
+    ("A lowest priority constraint will be broken before a high priority constraint", &[Ratio(1,4), Percentage(20)]),
+    ("`Length` is higher priority than `Percentage`", &[Percentage(20), Length(10)]),
+    ("`Min/Max` is higher priority than `Length`", &[Length(10), Max(20)]),
+    ("", &[Length(100), Min(20)]),
+    ("`Fixed` is higher priority than `Min/Max`", &[Max(20), Fixed(10)]),
+    ("", &[Min(20), Fixed(90)]),
+    ("Fill is the lowest priority and will fill any excess space", &[Fill(1), Ratio(1, 4)]),
+    ("Fill can be used to scale proportionally with other Fill blocks", &[Fill(1), Percentage(20), Fill(2)]),
+    ("", &[Ratio(1, 3), Percentage(20), Ratio(2, 3)]),
+    ("StretchLast will stretch the last lowest priority constraint\nStretch will only stretch equal weighted constraints", &[Length(20), Length(15)]),
+    ("", &[Percentage(20), Length(15)]),
+    ("`Fill(u16)` fills up excess space, but is lower priority to spacers.\ni.e. Fill will only have widths in Flex::Stretch and Flex::StretchLast", &[Fill(1), Fill(1)]),
     ("", &[Length(20), Fixed(20)]),
     (
         "When not using `Flex::Stretch` or `Flex::StretchLast`,\n`Min(u16)` and `Max(u16)` collapse to their lowest values",
         &[Min(20), Max(20)],
     ),
     (
-        "`SpaceBetween` stretches when there's only one constraint",
+        "",
         &[Max(20)],
     ),
     ("", &[Min(20), Max(20), Length(20), Fixed(20)]),
-    ("`Proportional(u16)` always fills up space in every `Flex` layout", &[Proportional(0), Proportional(0)]),
+    ("", &[Fill(0), Fill(0)]),
     (
-        "`Proportional(1)` can be to scale with respect to other `Proportional(2)`",
-        &[Proportional(1), Proportional(2)],
+        "`Fill(1)` can be to scale with respect to other `Fill(2)`",
+        &[Fill(1), Fill(2)],
     ),
     (
-        "`Proportional(0)` collapses if there are other non-zero `Proportional(_)`\nconstraints. e.g. `[Proportional(0), Proportional(0), Proportional(1)]`:",
+        "",
+        &[Fill(1), Min(10), Max(10), Fill(2)],
+    ),
+    (
+        "`Fill(0)` collapses if there are other non-zero `Fill(_)`\nconstraints. e.g. `[Fill(0), Fill(0), Fill(1)]`:",
         &[
-            Proportional(0),
-            Proportional(0),
-            Proportional(1),
+            Fill(0),
+            Fill(0),
+            Fill(1),
         ],
     ),
 ];
@@ -101,12 +138,6 @@ fn main() -> Result<()> {
     Layout::init_cache(EXAMPLE_DATA.len() * SelectedTab::iter().len() * 100);
     init_error_hooks()?;
     let terminal = init_terminal()?;
-
-    // Each line in the example is a layout
-    // so 13 examples * 7 = 91 currently
-    // Plus additional layout for tabs ...
-    Layout::init_cache(120);
-
     App::default().run(terminal)?;
 
     restore_terminal()?;
@@ -213,16 +244,24 @@ fn example_height() -> u16 {
 
 impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = Layout::vertical([Fixed(3), Fixed(1), Proportional(0)]);
+        let layout = Layout::vertical([Fixed(3), Fixed(1), Fill(0)]);
         let [tabs, axis, demo] = area.split(&layout);
         self.tabs().render(tabs, buf);
         let scroll_needed = self.render_demo(demo, buf);
         let axis_width = if scroll_needed {
-            axis.width - 1
+            axis.width.saturating_sub(1)
         } else {
             axis.width
         };
-        self.axis(axis_width, self.spacing).render(axis, buf);
+        let spacing = if matches!(
+            self.selected_tab,
+            SelectedTab::SpaceBetween | SelectedTab::SpaceAround
+        ) {
+            0
+        } else {
+            self.spacing
+        };
+        self.axis(axis_width, spacing).render(axis, buf);
     }
 }
 
@@ -249,9 +288,9 @@ impl App {
         } else {
             format!("{} px", width)
         };
-        let bar_width = width - 2; // we want to `<` and `>` at the ends
+        let bar_width = width.saturating_sub(2); // we want to `<` and `>` at the ends
         let width_bar = format!("<{label:-^bar_width$}>");
-        Paragraph::new(width_bar.dark_gray()).alignment(Alignment::Center)
+        Paragraph::new(width_bar.dark_gray()).centered()
     }
 
     /// Render the demo content
@@ -380,12 +419,13 @@ impl Example {
 impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title_height = get_description_height(&self.description);
-        let layout = Layout::vertical([Fixed(title_height), Proportional(0)]);
+        let layout = Layout::vertical([Fixed(title_height), Fill(0)]);
         let [title, illustrations] = area.split(&layout);
-        let blocks = Layout::horizontal(&self.constraints)
+
+        let (blocks, spacers) = Layout::horizontal(&self.constraints)
             .flex(self.flex)
             .spacing(self.spacing)
-            .split(illustrations);
+            .split_with_spacers(illustrations);
 
         if !self.description.is_empty() {
             Paragraph::new(
@@ -402,10 +442,59 @@ impl Widget for Example {
             self.illustration(*constraint, block.width)
                 .render(*block, buf);
         }
+
+        for spacer in spacers.iter() {
+            self.render_spacer(*spacer, buf);
+        }
     }
 }
 
 impl Example {
+    fn render_spacer(&self, spacer: Rect, buf: &mut Buffer) {
+        if spacer.width > 1 {
+            let corners_only = symbols::border::Set {
+                top_left: line::NORMAL.top_left,
+                top_right: line::NORMAL.top_right,
+                bottom_left: line::NORMAL.bottom_left,
+                bottom_right: line::NORMAL.bottom_right,
+                vertical_left: " ",
+                vertical_right: " ",
+                horizontal_top: " ",
+                horizontal_bottom: " ",
+            };
+            Block::bordered()
+                .border_set(corners_only)
+                .border_style(Style::reset().dark_gray())
+                .render(spacer, buf);
+        } else {
+            Paragraph::new(Text::from(vec![
+                Line::from(""),
+                Line::from("│"),
+                Line::from("│"),
+                Line::from(""),
+            ]))
+            .style(Style::reset().dark_gray())
+            .render(spacer, buf);
+        }
+        let width = spacer.width;
+        let label = if width > 4 {
+            format!("{width} px")
+        } else if width > 2 {
+            format!("{width}")
+        } else {
+            "".to_string()
+        };
+        let text = Text::from(vec![
+            Line::raw(""),
+            Line::raw(""),
+            Line::styled(label, Style::reset().dark_gray()),
+        ]);
+        Paragraph::new(text)
+            .style(Style::reset().dark_gray())
+            .alignment(Alignment::Center)
+            .render(spacer, buf);
+    }
+
     fn illustration(&self, constraint: Constraint, width: u16) -> Paragraph {
         let main_color = color_for_constraint(constraint);
         let fg_color = Color::White;
@@ -416,9 +505,7 @@ impl Example {
             .border_set(symbols::border::QUADRANT_OUTSIDE)
             .border_style(Style::reset().fg(main_color).reversed())
             .style(Style::default().fg(fg_color).bg(main_color));
-        Paragraph::new(text)
-            .alignment(Alignment::Center)
-            .block(block)
+        Paragraph::new(text).centered().block(block)
     }
 }
 
@@ -431,7 +518,7 @@ fn color_for_constraint(constraint: Constraint) -> Color {
         Constraint::Length(_) => SLATE.c700,
         Constraint::Percentage(_) => SLATE.c800,
         Constraint::Ratio(_, _) => SLATE.c900,
-        Constraint::Proportional(_) => SLATE.c950,
+        Constraint::Fill(_) => SLATE.c950,
     }
 }
 

@@ -6,16 +6,20 @@ use ratatui::{
 
 use crate::{RgbSwatch, THEME};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TracerouteTab {
-    selected_row: usize,
+    row_index: usize,
 }
 
 impl TracerouteTab {
-    pub fn new(selected_row: usize) -> Self {
-        Self {
-            selected_row: selected_row % HOPS.len(),
-        }
+    /// Select the previous row (with wrap around).
+    pub fn prev_row(&mut self) {
+        self.row_index = self.row_index.saturating_add(HOPS.len() - 1) % HOPS.len();
+    }
+
+    /// Select the next row (with wrap around).
+    pub fn next_row(&mut self) {
+        self.row_index = self.row_index.saturating_add(1) % HOPS.len();
     }
 }
 
@@ -33,9 +37,9 @@ impl Widget for TracerouteTab {
         let [left, map] = area.split(&horizontal);
         let [hops, pings] = left.split(&vertical);
 
-        render_hops(self.selected_row, hops, buf);
-        render_ping(self.selected_row, pings, buf);
-        render_map(self.selected_row, map, buf);
+        render_hops(self.row_index, hops, buf);
+        render_ping(self.row_index, pings, buf);
+        render_map(self.row_index, map, buf);
     }
 }
 

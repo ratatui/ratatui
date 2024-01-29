@@ -54,14 +54,6 @@ describes the nature of the problem that the commit is solving and any unintuiti
 change. It's rare that code changes can easily communicate intent, so make sure this is clearly
 documented.
 
-### Clean up your commits
-
-The final version of your PR that will be committed to the repository should be rebased and tested
-against main. Every commit will end up as a line in the changelog, so please squash commits that are
-only formatting or incremental fixes to things brought up as part of the PR review. Aim for a single
-commit (unless there is a strong reason to stack the commits). See [Git Best Practices - On Sausage
-Making](https://sethrobertson.github.io/GitBestPractices/#sausage) for more on this.
-
 ### Run CI tests before pushing a PR
 
 We're using [cargo-husky](https://github.com/rhysd/cargo-husky) to automatically run git hooks,

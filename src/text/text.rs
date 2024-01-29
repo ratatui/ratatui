@@ -24,6 +24,26 @@ use crate::{prelude::*, widgets::Widget};
 /// Usually apps will use the [`Paragraph`] widget instead of rendering a `Text` directly as it
 /// provides more functionality.
 ///
+/// # Constructor Methods
+///
+/// - [`Text::default`] creates a `Text` with empty content and the default style.
+/// - [`Text::raw`] creates a `Text` (potentially multiple lines) with no style.
+/// - [`Text::styled`] creates a `Text` (potentially multiple lines) with a style.
+///
+/// # Setter Methods
+///
+/// These methods are fluent setters. They return a `Text` with the property set.
+///
+/// - [`Text::style`] sets the style of this `Text`.
+/// - [`Text::alignment`] sets the alignment for this `Text`.
+///
+/// # Other Methods
+///
+/// - [`Text::width`] returns the max width of all the lines.
+/// - [`Text::height`] returns the height.
+/// - [`Text::patch_style`] patches the style of this `Text`, adding modifiers from the given style.
+/// - [`Text::reset_style`] resets the style of the `Text`.
+///
 /// [`Paragraph`]: crate::widgets::Paragraph
 /// [`Widget`]: crate::widgets::Widget
 ///
@@ -211,6 +231,8 @@ impl<'a> Text<'a> {
     /// Sets the alignment for this text.
     ///
     /// Defaults to: [`None`], meaning the alignment is determined by the rendering widget.
+    /// Setting the alignment of a Text generally overrides the alignment of its
+    /// parent Widget.
     ///
     /// Alignment can be set individually on each line to override this text's alignment.
     ///
@@ -255,6 +277,63 @@ impl<'a> Text<'a> {
             alignment: Some(alignment),
             ..self
         }
+    }
+
+    /// Left-aligns the whole text.
+    ///
+    /// Convenience shortcut for `Text::alignment(Alignment::Left)`.
+    /// Setting the alignment of a Text generally overrides the alignment of its
+    /// parent Widget, with the default alignment being inherited from the parent.
+    ///
+    /// Alignment can be set individually on each line to override this text's alignment.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let text = Text::from("Hi, what's up?").left_aligned();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn left_aligned(self) -> Self {
+        self.alignment(Alignment::Left)
+    }
+
+    /// Center-aligns the whole text.
+    ///
+    /// Convenience shortcut for `Text::alignment(Alignment::Center)`.
+    /// Setting the alignment of a Text generally overrides the alignment of its
+    /// parent Widget, with the default alignment being inherited from the parent.
+    ///
+    /// Alignment can be set individually on each line to override this text's alignment.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let text = Text::from("Hi, what's up?").centered();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn centered(self) -> Self {
+        self.alignment(Alignment::Center)
+    }
+
+    /// Right-aligns the whole text.
+    ///
+    /// Convenience shortcut for `Text::alignment(Alignment::Right)`.
+    /// Setting the alignment of a Text generally overrides the alignment of its
+    /// parent Widget, with the default alignment being inherited from the parent.
+    ///
+    /// Alignment can be set individually on each line to override this text's alignment.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let text = Text::from("Hi, what's up?").right_aligned();
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn right_aligned(self) -> Self {
+        self.alignment(Alignment::Right)
     }
 }
 
@@ -335,10 +414,26 @@ impl std::fmt::Display for Text<'_> {
     }
 }
 
-impl<'a> Widget for Text<'a> {
+impl Widget for Text<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        Widget::render(&self, area, buf);
+    }
+}
+
+/// Implement [`Widget`] for [`Option<Text>`] to simplify the common case of having an optional
+/// [`Text`] field in a widget.
+impl Widget for &Option<Text<'_>> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        if let Some(text) = self {
+            text.render(area, buf);
+        }
+    }
+}
+
+impl Widget for &Text<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        for (line, row) in self.lines.into_iter().zip(area.rows()) {
+        for (line, row) in self.lines.iter().zip(area.rows()) {
             let line_width = line.width() as u16;
 
             let x_offset = match (self.alignment, line.alignment) {
@@ -698,5 +793,23 @@ mod tests {
 
             assert_buffer_eq!(buf, expected);
         }
+    }
+
+    #[test]
+    fn left_aligned() {
+        let text = Text::from("Hello, world!").left_aligned();
+        assert_eq!(text.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let text = Text::from("Hello, world!").centered();
+        assert_eq!(text.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let text = Text::from("Hello, world!").right_aligned();
+        assert_eq!(text.alignment, Some(Alignment::Right));
     }
 }

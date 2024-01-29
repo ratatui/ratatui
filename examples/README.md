@@ -328,7 +328,7 @@ Links to images to make them easier to update in bulk. Use the following script 
 the examples to the images branch. (Requires push access to the branch).
 
 ```shell
-examples/generate.bash
+examples/vhs/generate.bash
 ```
 -->
 
@@ -353,7 +353,7 @@ examples/generate.bash
 [ratatui-logo.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/ratatui-logo.gif?raw=true
 [scrollbar.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/scrollbar.gif?raw=true
 [sparkline.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/sparkline.gif?raw=true
-[table.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/table.gif?raw=true
+[table.gif]:  https://vhs.charm.sh/vhs-6njXBytDf0rwPufUtmSSpI.gif
 [tabs.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/tabs.gif?raw=true
 [user_input.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/user_input.gif?raw=true
 

@@ -40,6 +40,7 @@ unicode-width = "0.1"
 document-features = { version = "0.2.7", optional = true }
 lru = "0.12.0"
 stability = "0.1.1"
+compact_str = "0.7.1"
 
 [dev-dependencies]
 anyhow = "1.0.71"
@@ -78,7 +79,7 @@ termwiz = ["dep:termwiz"]
 #! The following optional features are available for all backends:
 ## enables serialization and deserialization of style and color types using the [Serde crate].
 ## This is useful if you want to save themes to a file.
-serde = ["dep:serde", "bitflags/serde"]
+serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 
 ## enables the [`border!`] macro.
 macros = []

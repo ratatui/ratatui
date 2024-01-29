@@ -6,6 +6,7 @@ mod flex;
 #[allow(clippy::module_inception)]
 mod layout;
 mod margin;
+mod position;
 mod rect;
 mod segment_size;
 mod size;
@@ -17,6 +18,7 @@ pub use direction::Direction;
 pub use flex::Flex;
 pub use layout::Layout;
 pub use margin::Margin;
+pub use position::Position;
 pub use rect::*;
 #[cfg(feature = "unstable-segment-size")]
 pub use segment_size::SegmentSize;

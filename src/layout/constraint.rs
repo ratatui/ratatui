@@ -1,11 +1,13 @@
 use std::fmt::{self, Display};
 
 use itertools::Itertools;
+use strum::EnumIs;
 
 /// A constraint that defines the size of a layout element.
 ///
 /// Constraints can be used to specify a fixed size, a percentage of the available space, a ratio of
-/// the available space, a minimum or maximum size or a proportional value for a layout element.
+/// the available space, a minimum or maximum size or a fill proportional value for a layout
+/// element.
 ///
 /// Relative constraints (percentage, ratio) are calculated relative to the entire space being
 /// divided, rather than the space available after applying more fixed constraints (min, max,
@@ -14,9 +16,12 @@ use itertools::Itertools;
 /// Constraints are prioritized in the following order:
 ///
 /// 1. [`Constraint::Fixed`]
-/// 2. [`Constraint::Min`] / [`Constraint::Max`]
-/// 3. [`Constraint::Length`] / [`Constraint::Percentage`] / [`Constraint::Ratio`]
-/// 4. [`Constraint::Proportional`]
+/// 2. [`Constraint::Min`]
+/// 3. [`Constraint::Max`]
+/// 4. [`Constraint::Length`]
+/// 5. [`Constraint::Percentage`]
+/// 6. [`Constraint::Ratio`]
+/// 7. [`Constraint::Fill`]
 ///
 /// # Examples
 ///
@@ -40,11 +45,100 @@ use itertools::Itertools;
 /// // Create a sidebar layout specifying maximum sizes for the columns
 /// let constraints = Constraint::from_maxes([30, 170]);
 ///
-/// // Create a layout with proportional sizes for each element
-/// let constraints = Constraint::from_proportional_lengths([1, 2, 1]);
+/// // Create a layout with fill proportional sizes for each element
+/// let constraints = Constraint::from_fills([1, 2, 1]);
 /// ```
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, EnumIs)]
 pub enum Constraint {
+    /// Applies a fixed size to the element
+    ///
+    /// The element size is set to the specified amount.
+    /// [`Constraint::Fixed`] will take precedence over all other constraints.
+    ///
+    /// # Examples
+    ///
+    /// `[Fixed(40), Fill(1)]`
+    ///
+    /// ```plain
+    /// ┌──────────────────────────────────────┐┌────────┐
+    /// │                 40 px                ││  10 px │
+    /// └──────────────────────────────────────┘└────────┘
+    /// ```
+    ///
+    /// `[Fixed(20), Fixed(20), Fill(1)]`
+    ///
+    /// ```plain
+    /// ┌──────────────────┐┌──────────────────┐┌────────┐
+    /// │       20 px      ││       20 px      ││  10 px │
+    /// └──────────────────┘└──────────────────┘└────────┘
+    /// ```
+    Fixed(u16),
+    /// Applies a minimum size constraint to the element
+    ///
+    /// The element size is set to at least the specified amount.
+    ///
+    /// # Examples
+    ///
+    /// `[Percentage(100), Min(20)]`
+    ///
+    /// ```plain
+    /// ┌────────────────────────────┐┌──────────────────┐
+    /// │            30 px           ││       20 px      │
+    /// └────────────────────────────┘└──────────────────┘
+    /// ```
+    ///
+    /// `[Percentage(100), Min(10)]`
+    ///
+    /// ```plain
+    /// ┌──────────────────────────────────────┐┌────────┐
+    /// │                 40 px                ││  10 px │
+    /// └──────────────────────────────────────┘└────────┘
+    /// ```
+    Min(u16),
+    /// Applies a maximum size constraint to the element
+    ///
+    /// The element size is set to at most the specified amount.
+    ///
+    /// # Examples
+    ///
+    /// `[Percentage(100), Min(20)]`
+    ///
+    /// ```plain
+    /// ┌────────────────────────────┐┌──────────────────┐
+    /// │            30 px           ││       20 px      │
+    /// └────────────────────────────┘└──────────────────┘
+    /// ```
+    ///
+    /// `[Percentage(100), Min(10)]`
+    ///
+    /// ```plain
+    /// ┌──────────────────────────────────────┐┌────────┐
+    /// │                 40 px                ││  10 px │
+    /// └──────────────────────────────────────┘└────────┘
+    /// ```
+    Max(u16),
+    /// Applies a length constraint to the element
+    ///
+    /// The element size is set to the specified amount.
+    ///
+    /// # Examples
+    ///
+    /// `[Length(20), Fixed(20)]`
+    ///
+    /// ```plain
+    /// ┌────────────────────────────┐┌──────────────────┐
+    /// │            30 px           ││       20 px      │
+    /// └────────────────────────────┘└──────────────────┘
+    /// ```
+    ///
+    /// `[Length(20), Length(20)]`
+    ///
+    /// ```plain
+    /// ┌──────────────────┐┌────────────────────────────┐
+    /// │       20 px      ││            30 px           │
+    /// └──────────────────┘└────────────────────────────┘
+    /// ```
+    Length(u16),
     /// Applies a percentage of the available space to the element
     ///
     /// Converts the given percentage to a floating-point value and multiplies that with area.
@@ -52,7 +146,7 @@ pub enum Constraint {
     ///
     /// # Examples
     ///
-    /// `[Percentage(75), Proportional(1)]`
+    /// `[Percentage(75), Fill(1)]`
     ///
     /// ```plain
     /// ┌────────────────────────────────────┐┌──────────┐
@@ -60,7 +154,7 @@ pub enum Constraint {
     /// └────────────────────────────────────┘└──────────┘
     /// ```
     ///
-    /// `[Percentage(50), Proportional(1)]`
+    /// `[Percentage(50), Fill(1)]`
     ///
     /// ```plain
     /// ┌───────────────────────┐┌───────────────────────┐
@@ -91,61 +185,16 @@ pub enum Constraint {
     /// └───────────┘└──────────┘└───────────┘└──────────┘
     /// ```
     Ratio(u32, u32),
-    /// Applies a fixed size to the element
-    ///
-    /// The element size is set to the specified amount.
-    /// [`Constraint::Fixed`] will take precedence over all other constraints.
-    ///
-    /// # Examples
-    ///
-    /// `[Fixed(40), Proportional(1)]`
-    ///
-    /// ```plain
-    /// ┌──────────────────────────────────────┐┌────────┐
-    /// │                 40 px                ││  10 px │
-    /// └──────────────────────────────────────┘└────────┘
-    /// ```
-    ///
-    /// `[Fixed(20), Fixed(20), Proportional(1)]`
-    ///
-    /// ```plain
-    /// ┌──────────────────┐┌──────────────────┐┌────────┐
-    /// │       20 px      ││       20 px      ││  10 px │
-    /// └──────────────────┘└──────────────────┘└────────┘
-    /// ```
-    Fixed(u16),
-    /// Applies a length constraint to the element
-    ///
-    /// The element size is set to the specified amount.
-    ///
-    /// # Examples
-    ///
-    /// `[Length(20), Fixed(20)]`
-    ///
-    /// ```plain
-    /// ┌────────────────────────────┐┌──────────────────┐
-    /// │            30 px           ││       20 px      │
-    /// └────────────────────────────┘└──────────────────┘
-    /// ```
-    ///
-    /// `[Length(20), Length(20)]`
-    ///
-    /// ```plain
-    /// ┌──────────────────┐┌────────────────────────────┐
-    /// │       20 px      ││            30 px           │
-    /// └──────────────────┘└────────────────────────────┘
-    /// ```
-    Length(u16),
-    /// Applies the scaling factor proportional to all other [`Constraint::Proportional`] elements
+    /// Applies the scaling factor proportional to all other [`Constraint::Fill`] elements
     /// to fill excess space
     ///
-    /// The element will only expand into excess available space, proportionally matching other
-    /// [`Constraint::Proportional`] elements while satisfying all other constraints.
+    /// The element will only expand or fill into excess available space, proportionally matching
+    /// other [`Constraint::Fill`] elements while satisfying all other constraints.
     ///
     /// # Examples
     ///
     ///
-    /// `[Proportional(1), Proportional(2), Proportional(3)]`
+    /// `[Fill(1), Fill(2), Fill(3)]`
     ///
     /// ```plain
     /// ┌──────┐┌───────────────┐┌───────────────────────┐
@@ -153,58 +202,14 @@ pub enum Constraint {
     /// └──────┘└───────────────┘└───────────────────────┘
     /// ```
     ///
-    /// `[Proportional(1), Percentage(50), Proportional(1)]`
+    /// `[Fill(1), Percentage(50), Fill(1)]`
     ///
     /// ```plain
     /// ┌───────────┐┌───────────────────────┐┌──────────┐
     /// │   13 px   ││         25 px         ││   12 px  │
     /// └───────────┘└───────────────────────┘└──────────┘
     /// ```
-    Proportional(u16),
-    /// Applies a maximum size constraint to the element
-    ///
-    /// The element size is set to at most the specified amount.
-    ///
-    /// # Examples
-    ///
-    /// `[Percentage(100), Min(20)]`
-    ///
-    /// ```plain
-    /// ┌────────────────────────────┐┌──────────────────┐
-    /// │            30 px           ││       20 px      │
-    /// └────────────────────────────┘└──────────────────┘
-    /// ```
-    ///
-    /// `[Percentage(100), Min(10)]`
-    ///
-    /// ```plain
-    /// ┌──────────────────────────────────────┐┌────────┐
-    /// │                 40 px                ││  10 px │
-    /// └──────────────────────────────────────┘└────────┘
-    /// ```
-    Max(u16),
-    /// Applies a minimum size constraint to the element
-    ///
-    /// The element size is set to at least the specified amount.
-    ///
-    /// # Examples
-    ///
-    /// `[Percentage(100), Min(20)]`
-    ///
-    /// ```plain
-    /// ┌────────────────────────────┐┌──────────────────┐
-    /// │            30 px           ││       20 px      │
-    /// └────────────────────────────┘└──────────────────┘
-    /// ```
-    ///
-    /// `[Percentage(100), Min(10)]`
-    ///
-    /// ```plain
-    /// ┌──────────────────────────────────────┐┌────────┐
-    /// │                 40 px                ││  10 px │
-    /// └──────────────────────────────────────┘└────────┘
-    /// ```
-    Min(u16),
+    Fill(u16),
 }
 
 impl Constraint {
@@ -228,7 +233,7 @@ impl Constraint {
             }
             Constraint::Length(l) => length.min(l),
             Constraint::Fixed(l) => length.min(l),
-            Constraint::Proportional(l) => length.min(l),
+            Constraint::Fill(l) => length.min(l),
             Constraint::Max(m) => length.min(m),
             Constraint::Min(m) => length.max(m),
         }
@@ -355,13 +360,13 @@ impl Constraint {
     /// let constraints = Constraint::from_mins([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_proportional_lengths<T>(proportional_lengths: T) -> Vec<Constraint>
+    pub fn from_fills<T>(proportional_factors: T) -> Vec<Constraint>
     where
         T: IntoIterator<Item = u16>,
     {
-        proportional_lengths
+        proportional_factors
             .into_iter()
-            .map(Constraint::Proportional)
+            .map(Constraint::Fill)
             .collect_vec()
     }
 }
@@ -411,7 +416,7 @@ impl Display for Constraint {
             Constraint::Ratio(n, d) => write!(f, "Ratio({}, {})", n, d),
             Constraint::Length(l) => write!(f, "Length({})", l),
             Constraint::Fixed(l) => write!(f, "Fixed({})", l),
-            Constraint::Proportional(l) => write!(f, "Proportional({})", l),
+            Constraint::Fill(l) => write!(f, "Fill({})", l),
             Constraint::Max(m) => write!(f, "Max({})", m),
             Constraint::Min(m) => write!(f, "Min({})", m),
         }
@@ -498,17 +503,14 @@ mod tests {
     }
 
     #[test]
-    fn from_proportional_lengths() {
+    fn from_fills() {
         let expected = [
-            Constraint::Proportional(1),
-            Constraint::Proportional(2),
-            Constraint::Proportional(3),
+            Constraint::Fill(1),
+            Constraint::Fill(2),
+            Constraint::Fill(3),
         ];
-        assert_eq!(Constraint::from_proportional_lengths([1, 2, 3]), expected);
-        assert_eq!(
-            Constraint::from_proportional_lengths(vec![1, 2, 3]),
-            expected
-        );
+        assert_eq!(Constraint::from_fills([1, 2, 3]), expected);
+        assert_eq!(Constraint::from_fills(vec![1, 2, 3]), expected);
     }
 
     #[test]

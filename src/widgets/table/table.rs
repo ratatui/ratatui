@@ -2,9 +2,9 @@ use itertools::Itertools;
 
 use super::*;
 use crate::{
-    layout::SegmentSize,
+    layout::{Flex, SegmentSize},
     prelude::*,
-    widgets::{Block, StatefulWidget, Widget},
+    widgets::Block,
 };
 
 /// A widget to display data in formatted columns.
@@ -221,7 +221,7 @@ pub struct Table<'a> {
     highlight_spacing: HighlightSpacing,
 
     /// Controls how to distribute extra space among the columns
-    segment_size: SegmentSize,
+    flex: Flex,
 }
 
 impl<'a> Default for Table<'a> {
@@ -237,7 +237,7 @@ impl<'a> Default for Table<'a> {
             highlight_style: Default::default(),
             highlight_symbol: Default::default(),
             highlight_spacing: Default::default(),
-            segment_size: SegmentSize::None,
+            flex: Flex::Start,
         }
     }
 }
@@ -564,8 +564,41 @@ impl<'a> Table<'a> {
         reason = "The name for this feature is not final and may change in the future",
         issue = "https://github.com/ratatui-org/ratatui/issues/536"
     )]
-    pub const fn segment_size(mut self, segment_size: SegmentSize) -> Self {
-        self.segment_size = segment_size;
+    #[deprecated(since = "0.26.0", note = "You should use Table::flex instead.")]
+    pub const fn segment_size(self, segment_size: SegmentSize) -> Self {
+        let translated_to_flex = match segment_size {
+            SegmentSize::None => Flex::Start,
+            SegmentSize::EvenDistribution => Flex::Stretch,
+            SegmentSize::LastTakesRemainder => Flex::StretchLast,
+        };
+
+        self.flex(translated_to_flex)
+    }
+
+    /// Set how extra space is distributed amongst columns.
+    ///
+    /// This determines how the space is distributed when the constraints are satisfied. By default,
+    /// the extra space is not distributed at all.  But this can be changed to distribute all extra
+    /// space to the last column or to distribute it equally.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// Create a table that needs at least 30 columns to display.  Any extra space will be assigned
+    /// to the last column.
+    /// ```
+    /// # use ratatui::layout::{Constraint, Flex};
+    /// # use ratatui::widgets::{Table, Row};
+    /// let widths = [
+    ///     Constraint::Min(10),
+    ///     Constraint::Min(10),
+    ///     Constraint::Min(10),
+    /// ];
+    /// let table = Table::new(Vec::<Row>::new(), widths).flex(Flex::StretchLast);
+    /// ```
+    pub const fn flex(mut self, flex: Flex) -> Self {
+        self.flex = flex;
         self
     }
 }
@@ -577,16 +610,32 @@ impl Widget for Table<'_> {
     }
 }
 
+impl Widget for &Table<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let mut state = TableState::default();
+        StatefulWidget::render(self, area, buf, &mut state);
+    }
+}
+
 impl StatefulWidget for Table<'_> {
     type State = TableState;
 
-    fn render(mut self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        buf.set_style(area, self.style);
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        StatefulWidget::render(&self, area, buf, state);
+    }
+}
 
-        let table_area = self.render_block(area, buf);
+impl StatefulWidget for &Table<'_> {
+    type State = TableState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        buf.set_style(area, self.style);
+        self.block.render(area, buf);
+        let table_area = self.block.inner_if_some(area);
         if table_area.is_empty() {
             return;
         }
+
         let selection_width = self.selection_width(state);
         let columns_widths = self.get_columns_widths(table_area.width, selection_width);
         let (header_area, rows_area, footer_area) = self.layout(table_area);
@@ -628,16 +677,6 @@ impl Table<'_> {
         .split(area);
         let (header_area, rows_area, footer_area) = (layout[1], layout[3], layout[5]);
         (header_area, rows_area, footer_area)
-    }
-
-    fn render_block(&mut self, area: Rect, buf: &mut Buffer) -> Rect {
-        if let Some(block) = self.block.take() {
-            let inner_area = block.inner(area);
-            block.render(area, buf);
-            inner_area
-        } else {
-            area
-        }
     }
 
     fn render_header(&self, area: Rect, buf: &mut Buffer, column_widths: &[(u16, u16)]) {
@@ -736,11 +775,10 @@ impl Table<'_> {
         let [_selection_area, columns_area] =
             Rect::new(0, 0, max_width, 1).split(&Layout::horizontal([
                 Constraint::Fixed(selection_width),
-                Constraint::Proportional(0),
+                Constraint::Fill(0),
             ]));
-        #[allow(deprecated)]
         let rects = Layout::horizontal(widths)
-            .segment_size(self.segment_size)
+            .flex(self.flex)
             .spacing(self.column_spacing)
             .split(columns_area);
         rects.iter().map(|c| (c.x, c.width)).collect()
@@ -860,7 +898,7 @@ mod tests {
         assert_eq!(table.highlight_style, Style::default());
         assert_eq!(table.highlight_symbol, Text::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
-        assert_eq!(table.segment_size, SegmentSize::None);
+        assert_eq!(table.flex, Flex::Start);
     }
 
     #[test]
@@ -876,7 +914,7 @@ mod tests {
         assert_eq!(table.highlight_style, Style::default());
         assert_eq!(table.highlight_symbol, Text::default());
         assert_eq!(table.highlight_spacing, HighlightSpacing::WhenSelected);
-        assert_eq!(table.segment_size, SegmentSize::None);
+        assert_eq!(table.flex, Flex::Start);
     }
 
     #[test]
@@ -1308,9 +1346,36 @@ mod tests {
             assert_eq!(table.get_columns_widths(7, 3), [(3, 1), (5, 2)]);
         }
 
-        /// When more width is available than requested, the behavior is controlled by segment_size
+        /// When more width is available than requested, the behavior is controlled by flex
         #[test]
-        fn underconstrained() {
+        fn underconstrained_flex() {
+            let table = Table::default().widths([Min(10), Min(10), Min(1)]);
+            assert_eq!(
+                table.get_columns_widths(62, 0),
+                &[(0, 10), (11, 10), (22, 1)]
+            );
+
+            let table = Table::default()
+                .widths([Min(10), Min(10), Min(1)])
+                .flex(Flex::StretchLast);
+            assert_eq!(
+                table.get_columns_widths(62, 0),
+                &[(0, 10), (11, 10), (22, 40)]
+            );
+
+            let table = Table::default()
+                .widths([Min(10), Min(10), Min(1)])
+                .flex(Flex::Stretch);
+            assert_eq!(
+                table.get_columns_widths(62, 0),
+                &[(0, 20), (21, 20), (42, 20)]
+            );
+        }
+
+        /// NOTE: segment_size is deprecated use flex instead!
+        #[allow(deprecated)]
+        #[test]
+        fn underconstrained_segment_size() {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
                 table.get_columns_widths(62, 0),
@@ -1594,7 +1659,7 @@ mod tests {
             let table = Table::default()
                 .rows(vec![Row::new(vec!["ABCDE", "12345"])])
                 .highlight_spacing(HighlightSpacing::Always)
-                .segment_size(SegmentSize::EvenDistribution)
+                .flex(Flex::Stretch)
                 .highlight_symbol(">>>")
                 .column_spacing(1);
             let area = Rect::new(0, 0, 10, 3);

@@ -25,9 +25,12 @@ pub enum Flex {
     /// constraints. As a refresher, the priorities of constraints are as follows:
     ///
     /// 1. [`Constraint::Fixed`]
-    /// 2. [`Constraint::Min`] / [`Constraint::Max`]
-    /// 3. [`Constraint::Length`] / [`Constraint::Percentage`] / [`Constraint::Ratio`]
-    /// 4. [`Constraint::Proportional`]
+    /// 2. [`Constraint::Min`]
+    /// 3. [`Constraint::Max`]
+    /// 4. [`Constraint::Length`]
+    /// 5. [`Constraint::Percentage`]
+    /// 6. [`Constraint::Ratio`]
+    /// 7. [`Constraint::Fill`]
     ///
     /// When every constraint is `Length`, the last element gets the excess.
     ///
@@ -81,13 +84,13 @@ pub enum Flex {
     /// ^^^^^^^^^^^^^^^^ EXCESS ^^^^^^^^^^^^^^^^
     /// ```
     ///
-    /// Proportional constraints have the lowest priority amongst all the constraints and hence
+    /// Fill constraints have the lowest priority amongst all the constraints and hence
     /// will always take up any excess space available.
     ///
     /// ```plain
     /// <----------------------------------- 80 px ------------------------------------>
     /// ┌──────20 px───────┐┌──────20 px───────┐┌──────20 px───────┐┌──────20 px───────┐
-    /// │  Proportional(0) ││      Min(20)     ││    Length(20)    ││     Fixed(20)    │
+    /// │      Fill(0)     ││      Min(20)     ││    Length(20)    ││     Fixed(20)    │
     /// └──────────────────┘└──────────────────┘└──────────────────┘└──────────────────┘
     /// ^^^^^^ EXCESS ^^^^^^
     /// ```
@@ -206,7 +209,6 @@ pub enum Flex {
     /// # Examples
     ///
     /// ```plain
-    /// 
     /// <------------------------------------80 px------------------------------------->
     /// ┌────16 px─────┐            ┌──────20 px───────┐            ┌──────20 px───────┐
     /// │Percentage(20)│            │    Length(20)    │            │     Fixed(20)    │
