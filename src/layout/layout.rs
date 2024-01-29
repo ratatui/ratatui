@@ -1495,12 +1495,110 @@ mod tests {
             #[case(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "bbb")]
             #[case(Rect::new(0, 0, 4, 1), &[THIRD, THIRD], "abbb")]
             #[case(Rect::new(0, 0, 4, 1), &[THIRD, TWO_THIRDS], "abbb")]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, ZERO],       "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, HALF],       "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, FULL],       "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, DOUBLE],     "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, ZERO],        "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, HALF],        "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, FULL],        "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, DOUBLE],      "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, ZERO],      "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, HALF],      "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, FULL],      "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, DOUBLE],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, ZERO],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, HALF],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, FULL],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, ZERO],       "aaaaaaaaaa" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, HALF],       "aaaaaaaaaa" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, FULL],       "aaaaaaaaaa" )]
             fn percentage(
                 #[case] area: Rect,
                 #[case] constraints: &[Constraint],
                 #[case] expected: &str,
             ) {
                 letters(area, constraints, expected, Flex::Legacy)
+            }
+
+            #[rstest]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, ZERO],       "          " )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "bb        " )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, HALF],       "bbbbb     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, FULL],       "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, DOUBLE],     "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, ZERO],        "a         " )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "abb       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, HALF],        "abbbbb    " )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, FULL],        "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, DOUBLE],      "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aa        " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aabbb     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aabbbbb   " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, ZERO],      "aaa       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaabb     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, HALF],      "aaabbbbb  " )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, FULL],      "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, DOUBLE],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, ZERO],       "aaaaa     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, HALF],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, FULL],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, ZERO],       "aaaaaaaaaa" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, HALF],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, FULL],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, DOUBLE],     "aaaaabbbbb" )]
+            fn percentage_start(
+                #[case] area: Rect,
+                #[case] constraints: &[Constraint],
+                #[case] expected: &str,
+            ) {
+                letters(area, constraints, expected, Flex::Start)
+            }
+
+            #[rstest]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, ZERO],       "          " )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "       bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, HALF],       "     bbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, FULL],       "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, DOUBLE],     "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, ZERO],        "a         " )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "a      bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, HALF],        "a    bbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, FULL],        "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, DOUBLE],      "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aa        " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aa     bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aa   bbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, ZERO],      "aaa       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaa    bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, HALF],      "aaa  bbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, FULL],      "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, DOUBLE],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, ZERO],       "aaaaa     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, HALF],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, FULL],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, ZERO],       "aaaaaaaaaa" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, HALF],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, FULL],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, DOUBLE],     "aaaaabbbbb" )]
+            fn percentage_spacebetween(
+                #[case] area: Rect,
+                #[case] constraints: &[Constraint],
+                #[case] expected: &str,
+            ) {
+                letters(area, constraints, expected, Flex::SpaceBetween)
             }
         }
 
@@ -1591,6 +1689,78 @@ mod tests {
                 #[case] expected: &str,
             ) {
                 letters(area, constraints, expected, Flex::Legacy)
+            }
+
+            #[rstest]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, ZERO],       "          " )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "bb        " )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, HALF],       "bbbbb     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, FULL],       "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, DOUBLE],     "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, ZERO],        "a         " )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "abb       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, HALF],        "abbbbb    " )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, FULL],        "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, DOUBLE],      "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aa        " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aabbb     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aabbbbb   " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, ZERO],      "aaa       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaabb     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, HALF],      "aaabbbbb  " )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, FULL],      "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, DOUBLE],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, ZERO],       "aaaaa     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, HALF],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, FULL],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, ZERO],       "aaaaaaaaaa" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, HALF],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, FULL],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, DOUBLE],     "aaaaabbbbb" )]
+            fn ratio_start(
+                #[case] area: Rect,
+                #[case] constraints: &[Constraint],
+                #[case] expected: &str,
+            ) {
+                letters(area, constraints, expected, Flex::Start)
+            }
+
+            #[rstest]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, ZERO],       "          " )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "       bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, HALF],       "     bbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, FULL],       "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, DOUBLE],     "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, ZERO],        "a         " )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "a      bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, HALF],        "a    bbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, FULL],        "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, DOUBLE],      "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aa        " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aa     bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aa   bbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, ZERO],      "aaa       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaa    bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, HALF],      "aaa  bbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, FULL],      "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, DOUBLE],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, ZERO],       "aaaaa     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, HALF],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, FULL],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, ZERO],       "aaaaaaaaaa" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, HALF],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, FULL],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, DOUBLE],     "aaaaabbbbb" )]
+            fn ratio_spacebetween(
+                #[case] area: Rect,
+                #[case] constraints: &[Constraint],
+                #[case] expected: &str,
+            ) {
+                letters(area, constraints, expected, Flex::SpaceBetween)
             }
         }
 
