@@ -7,8 +7,8 @@ use super::constraint::Constraint;
 ///
 /// This enumeration controls the distribution of space when layout constraints are met.
 ///
-/// - `StretchLast`: Fills the available space within the container, putting excess space into the
-///   last element.
+/// - `Legacy`: Fills the available space within the container, putting excess space into the last
+///   element.
 /// - `Start`: Aligns items to the start of the container.
 /// - `End`: Aligns items to the end of the container.
 /// - `Center`: Centers items within the container.

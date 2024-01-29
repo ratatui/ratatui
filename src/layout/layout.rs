@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, iter, num::NonZeroUsize, rc::Rc, sync::OnceLock};
 
 use cassowary::{
-    strength::REQUIRED,
+    strength::{REQUIRED, WEAK},
     AddConstraintError, Expression, Solver, Variable,
     WeightedRelation::{EQ, GE, LE},
 };
@@ -614,8 +614,12 @@ impl Layout {
         configure_variable_constraints(&mut solver, &variables, area_size)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
         configure_constraints(&mut solver, area_size, &segments, constraints, flex)?;
+        configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
+
         if !flex.is_legacy() {
-            configure_fill_constraints(&mut solver, &segments, constraints)?;
+            for (left, right) in segments.iter().tuple_windows() {
+                solver.add_constraint(left.has_size(right, WEAK / 100.0))?;
+            }
         }
 
         // `solver.fetch_changes()` can only be called once per solve
@@ -785,7 +789,7 @@ fn configure_flex_constraints(
 /// │abcdef││abcdef│
 /// └──────┘└──────┘
 ///
-/// [Fill(1), Fill(2)]
+/// [Min(0), Fill(2)]
 /// ┌──────┐┌────────────┐
 /// │abcdef││abcdefabcdef│
 /// └──────┘└────────────┘
@@ -795,11 +799,12 @@ fn configure_fill_constraints(
     solver: &mut Solver,
     segments: &[Element],
     constraints: &[Constraint],
+    flex: Flex,
 ) -> Result<(), AddConstraintError> {
     for ((&left_constraint, &left_element), (&right_constraint, &right_element)) in constraints
         .iter()
         .zip(segments.iter())
-        .filter(|(c, _)| c.is_fill() || c.is_min())
+        .filter(|(c, _)| c.is_fill() || (!flex.is_legacy() && c.is_min()))
         .tuple_combinations()
     {
         let left_scaling_factor = match left_constraint {
@@ -1270,7 +1275,7 @@ mod tests {
 
     #[test]
     fn flex_default() {
-        assert_eq!(Layout::default().flex, Flex::Legacy);
+        assert_eq!(Layout::default().flex, Flex::Start);
     }
 
     #[test]
@@ -1379,8 +1384,8 @@ mod tests {
         #[case(Rect::new(0, 0, 2, 1), &[Length(0), Length(3)], "bb")] // zero, overflow
         #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(0)], "ab")] // underflow, zero
         #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(1)], "ab")] // underflow, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(2)], "ab")] // underflow, exact with stretchlast
-        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(3)], "ab")] // underflow, overflow with stretchlast
+        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(2)], "ab")] // underflow, exact
+        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(3)], "ab")] // underflow, overflow
         #[case(Rect::new(0, 0, 2, 1), &[Length(2), Length(0)], "aa")] // exact, zero
         #[case(Rect::new(0, 0, 2, 1), &[Length(2), Length(1)], "aa")] // exact, underflow
         #[case(Rect::new(0, 0, 2, 1), &[Length(2), Length(2)], "aa")] // exact, exact
@@ -1751,6 +1756,7 @@ mod tests {
         fn constraint_length(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
+                .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
                 .cloned()
@@ -1760,8 +1766,8 @@ mod tests {
         }
 
         #[rstest]
-        #[case::table_length_test(vec![Length(4), Length(4)], vec![(0, 4), (5, 2)], 7)]
-        #[case::table_length_test(vec![Length(4), Length(4)], vec![(0, 3), (4, 0)], 4)]
+        #[case::table_length_test(vec![Length(4), Length(4)], vec![(0, 3), (4, 3)], 7)]
+        #[case::table_length_test(vec![Length(4), Length(4)], vec![(0, 2), (3, 1)], 4)]
         fn table_length(
             #[case] constraints: Vec<Constraint>,
             #[case] expected: Vec<(u16, u16)>,
@@ -1780,29 +1786,100 @@ mod tests {
         }
 
         #[rstest]
-        #[case::fixed_is_higher_priority_than_min_max(vec![50, 25, 25], vec![Min(25), Length(25), Max(25)])]
-        #[case::fixed_is_higher_priority_than_min_max(vec![25, 25, 50], vec![Max(25), Length(25), Min(25)])]
+        #[case::length_is_higher_priority_than_min_max(vec![50, 25, 25], vec![Min(25), Length(25), Max(25)])]
+        #[case::length_is_higher_priority_than_min_max(vec![25, 25, 50], vec![Max(25), Length(25), Min(25)])]
         #[case::excess_in_lowest_priority(vec![33, 33, 34], vec![Length(33), Length(33), Length(33)])]
         #[case::excess_in_lowest_priority(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
-        #[case::fixed_higher_priority(vec![25, 25, 50], vec![Percentage(25), Length(25), Ratio(1, 4)])]
-        #[case::fixed_higher_priority(vec![25, 50, 25], vec![Length(25), Ratio(1, 4), Percentage(25)])]
-        #[case::fixed_higher_priority(vec![50, 25, 25], vec![Ratio(1, 4), Length(25), Percentage(25)])]
-        #[case::fixed_higher_priority(vec![50, 25, 25], vec![Ratio(1, 4), Percentage(25), Length(25)])]
-        #[case::fixed_higher_priority(vec![79, 1, 20], vec![Length(100), Length(1), Min(20)])]
-        #[case::fixed_higher_priority(vec![20, 1, 79], vec![Min(20), Length(1), Length(100)])]
-        #[case::fixed_higher_priority(vec![45, 10, 45], vec![Fill(1), Length(10), Fill(1)])]
-        #[case::fixed_higher_priority(vec![30, 10, 60], vec![Fill(1), Length(10), Fill(2)])]
-        #[case::fixed_higher_priority(vec![18, 10, 72], vec![Fill(1), Length(10), Fill(4)])]
-        #[case::fixed_higher_priority(vec![15, 10, 75], vec![Fill(1), Length(10), Fill(5)])]
+        #[case::length_higher_priority(vec![25, 25, 50], vec![Percentage(25), Length(25), Ratio(1, 4)])]
+        #[case::length_higher_priority(vec![25, 50, 25], vec![Length(25), Ratio(1, 4), Percentage(25)])]
+        #[case::length_higher_priority(vec![50, 25, 25], vec![Ratio(1, 4), Length(25), Percentage(25)])]
+        #[case::length_higher_priority(vec![50, 25, 25], vec![Ratio(1, 4), Percentage(25), Length(25)])]
+        #[case::length_higher_priority(vec![80, 0, 20], vec![Length(100), Length(1), Min(20)])]
+        #[case::length_higher_priority(vec![20, 1, 79], vec![Min(20), Length(1), Length(100)])]
+        #[case::length_higher_priority(vec![45, 10, 45], vec![Fill(1), Length(10), Fill(1)])]
+        #[case::length_higher_priority(vec![30, 10, 60], vec![Fill(1), Length(10), Fill(2)])]
+        #[case::length_higher_priority(vec![18, 10, 72], vec![Fill(1), Length(10), Fill(4)])]
+        #[case::length_higher_priority(vec![15, 10, 75], vec![Fill(1), Length(10), Fill(5)])]
         #[case::three_lengths_reference(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
-        // #[case::previously_unstable_test(vec![25, 50, 25], vec![Length(25), Length(25),
-        // Length(25)])]
-        fn length_instead_of_fixed_todo_pick_better_name_here(
+        #[case::previously_unstable_test(vec![25, 25, 50], vec![Length(25), Length(25), Length(25)])]
+        fn length_is_higher_priority(
             #[case] expected: Vec<u16>,
             #[case] constraints: Vec<Constraint>,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
+                .flex(Flex::Legacy)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+        }
+
+        #[rstest]
+        #[case::length_is_higher_priority_than_min_max(vec![50, 25, 25], vec![Min(25), Length(25), Max(25)])]
+        #[case::length_is_higher_priority_than_min_max(vec![25, 25, 50], vec![Max(25), Length(25), Min(25)])]
+        #[case::excess_in_lowest_priority(vec![33, 33, 33], vec![Length(33), Length(33), Length(33)])]
+        #[case::excess_in_lowest_priority(vec![25, 25, 25], vec![Length(25), Length(25), Length(25)])]
+        #[case::length_higher_priority(vec![25, 25, 25], vec![Percentage(25), Length(25), Ratio(1, 4)])]
+        #[case::length_higher_priority(vec![25, 25, 25], vec![Length(25), Ratio(1, 4), Percentage(25)])]
+        #[case::length_higher_priority(vec![25, 25, 25], vec![Ratio(1, 4), Length(25), Percentage(25)])]
+        #[case::length_higher_priority(vec![25, 25, 25], vec![Ratio(1, 4), Percentage(25), Length(25)])]
+        #[case::length_higher_priority(vec![79, 1, 20], vec![Length(100), Length(1), Min(20)])]
+        #[case::length_higher_priority(vec![20, 1, 79], vec![Min(20), Length(1), Length(100)])]
+        #[case::length_higher_priority(vec![45, 10, 45], vec![Fill(1), Length(10), Fill(1)])]
+        #[case::length_higher_priority(vec![30, 10, 60], vec![Fill(1), Length(10), Fill(2)])]
+        #[case::length_higher_priority(vec![18, 10, 72], vec![Fill(1), Length(10), Fill(4)])]
+        #[case::length_higher_priority(vec![15, 10, 75], vec![Fill(1), Length(10), Fill(5)])]
+        #[case::previously_unstable_test(vec![25, 25, 25], vec![Length(25), Length(25), Length(25)])]
+        fn length_is_higher_priority_in_flex(
+            #[case] expected: Vec<u16>,
+            #[case] constraints: Vec<Constraint>,
+        ) {
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(&constraints)
+                .flex(Flex::Start)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(&constraints)
+                .flex(Flex::Center)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(&constraints)
+                .flex(Flex::End)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(&constraints)
+                .flex(Flex::SpaceAround)
+                .split(rect)
+                .iter()
+                .cloned()
+                .map(|r| r.width)
+                .collect::<Vec<u16>>();
+            assert_eq!(expected, r);
+
+            let rect = Rect::new(0, 0, 100, 1);
+            let r = Layout::horizontal(&constraints)
+                .flex(Flex::SpaceBetween)
                 .split(rect)
                 .iter()
                 .cloned()
@@ -1817,6 +1894,7 @@ mod tests {
         fn fixed_with_50_width(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
             let rect = Rect::new(0, 0, 50, 1);
             let r = Layout::horizontal(constraints)
+                .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
                 .cloned()
@@ -1864,6 +1942,7 @@ mod tests {
         fn fill(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
+                .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
                 .cloned()
@@ -1881,6 +1960,7 @@ mod tests {
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
+                .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
                 .cloned()
@@ -1899,6 +1979,7 @@ mod tests {
         fn min_max(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
+                .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
                 .cloned()
@@ -1925,9 +2006,9 @@ mod tests {
         #[case::percent(vec![(50, 50)], vec![Percentage(50)], Flex::End)]
         #[case::percent(vec![(25, 50)], vec![Percentage(50)], Flex::Center)]
         #[case::min(vec![(0, 100)], vec![Min(50)], Flex::Legacy)]
-        #[case::min(vec![(0, 50)], vec![Min(50)], Flex::Start)]
-        #[case::min(vec![(50, 50)], vec![Min(50)], Flex::End)]
-        #[case::min(vec![(25, 50)], vec![Min(50)], Flex::Center)]
+        #[case::min(vec![(0, 100)], vec![Min(50)], Flex::Start)]
+        #[case::min(vec![(0, 100)], vec![Min(50)], Flex::End)]
+        #[case::min(vec![(0, 100)], vec![Min(50)], Flex::Center)]
         #[case::max(vec![(0, 100)], vec![Max(50)], Flex::Legacy)]
         #[case::max(vec![(0, 50)], vec![Max(50)], Flex::Start)]
         #[case::max(vec![(50, 50)], vec![Max(50)], Flex::End)]
@@ -1954,11 +2035,11 @@ mod tests {
         #[case::percentage(vec![(0, 25), (75, 25)], vec![Percentage(25), Percentage(25)], Flex::SpaceBetween)]
         #[case::percentage(vec![(17, 25), (58, 25)], vec![Percentage(25), Percentage(25)], Flex::SpaceAround)]
         #[case::min(vec![(0, 25), (25, 75)], vec![Min(25), Min(25)], Flex::Legacy)]
-        #[case::min(vec![(0, 25), (25, 25)], vec![Min(25), Min(25)], Flex::Start)]
-        #[case::min(vec![(25, 25), (50, 25)], vec![Min(25), Min(25)], Flex::Center)]
-        #[case::min(vec![(50, 25), (75, 25)], vec![Min(25), Min(25)], Flex::End)]
-        #[case::min(vec![(0, 25), (75, 25)], vec![Min(25), Min(25)], Flex::SpaceBetween)]
-        #[case::min(vec![(17, 25), (58, 25)], vec![Min(25), Min(25)], Flex::SpaceAround)]
+        #[case::min(vec![(0, 50), (50, 50)], vec![Min(25), Min(25)], Flex::Start)]
+        #[case::min(vec![(0, 50), (50, 50)], vec![Min(25), Min(25)], Flex::Center)]
+        #[case::min(vec![(0, 50), (50, 50)], vec![Min(25), Min(25)], Flex::End)]
+        #[case::min(vec![(0, 50), (50, 50)], vec![Min(25), Min(25)], Flex::SpaceBetween)]
+        #[case::min(vec![(0, 50), (50, 50)], vec![Min(25), Min(25)], Flex::SpaceAround)]
         #[case::max(vec![(0, 25), (25, 75)], vec![Max(25), Max(25)], Flex::Legacy)]
         #[case::max(vec![(0, 25), (25, 25)], vec![Max(25), Max(25)], Flex::Start)]
         #[case::max(vec![(25, 25), (50, 25)], vec![Max(25), Max(25)], Flex::Center)]
@@ -2010,29 +2091,29 @@ mod tests {
 
         #[rstest]
         #[case::a(vec![(0, 25), (25, 75)], vec![Length(25), Length(25)])]
-        #[case::b(vec![(0, 75), (75, 25)], vec![Length(25), Length(25)])]
-        #[case::c(vec![(0, 25), (25, 75)], vec![Length(25), Percentage(25)])]
-        #[case::d(vec![(0, 75), (75, 25)], vec![Percentage(25), Length(25)])]
-        #[case::e(vec![(0, 75), (75, 25)], vec![Min(25), Percentage(25)])]
-        #[case::f(vec![(0, 25), (25, 75)], vec![Percentage(25), Min(25)])]
-        #[case::g(vec![(0, 25), (25, 75)], vec![Min(25), Percentage(100)])]
-        #[case::h(vec![(0, 75), (75, 25)], vec![Percentage(100), Min(25)])]
-        #[case::i(vec![(0, 25), (25, 75)], vec![Max(75), Percentage(75)])]
-        #[case::j(vec![(0, 75), (75, 25)], vec![Percentage(75), Max(75)])]
-        #[case::k(vec![(0, 25), (25, 75)], vec![Max(25), Percentage(25)])]
-        #[case::l(vec![(0, 75), (75, 25)], vec![Percentage(25), Max(25)])]
-        #[case::m(vec![(0, 25), (25, 75)], vec![Length(25), Ratio(1, 4)])]
-        #[case::n(vec![(0, 75), (75, 25)], vec![Ratio(1, 4), Length(25)])]
-        #[case::o(vec![(0, 25), (25, 75)], vec![Percentage(25), Ratio(1, 4)])]
-        #[case::p(vec![(0, 75), (75, 25)], vec![Ratio(1, 4), Percentage(25)])]
-        #[case::q(vec![(0, 25), (25, 75)], vec![Ratio(1, 4), Fill(25)])]
-        #[case::r(vec![(0, 75), (75, 25)], vec![Fill(25), Ratio(1, 4)])]
+        #[case::b(vec![(0, 25), (25, 75)], vec![Length(25), Percentage(25)])]
+        #[case::c(vec![(0, 75), (75, 25)], vec![Percentage(25), Length(25)])]
+        #[case::d(vec![(0, 75), (75, 25)], vec![Min(25), Percentage(25)])]
+        #[case::e(vec![(0, 25), (25, 75)], vec![Percentage(25), Min(25)])]
+        #[case::f(vec![(0, 25), (25, 75)], vec![Min(25), Percentage(100)])]
+        #[case::g(vec![(0, 75), (75, 25)], vec![Percentage(100), Min(25)])]
+        #[case::h(vec![(0, 25), (25, 75)], vec![Max(75), Percentage(75)])]
+        #[case::i(vec![(0, 75), (75, 25)], vec![Percentage(75), Max(75)])]
+        #[case::j(vec![(0, 25), (25, 75)], vec![Max(25), Percentage(25)])]
+        #[case::k(vec![(0, 75), (75, 25)], vec![Percentage(25), Max(25)])]
+        #[case::l(vec![(0, 25), (25, 75)], vec![Length(25), Ratio(1, 4)])]
+        #[case::m(vec![(0, 75), (75, 25)], vec![Ratio(1, 4), Length(25)])]
+        #[case::n(vec![(0, 25), (25, 75)], vec![Percentage(25), Ratio(1, 4)])]
+        #[case::o(vec![(0, 75), (75, 25)], vec![Ratio(1, 4), Percentage(25)])]
+        #[case::p(vec![(0, 25), (25, 75)], vec![Ratio(1, 4), Fill(25)])]
+        #[case::q(vec![(0, 75), (75, 25)], vec![Fill(25), Ratio(1, 4)])]
         fn constraint_specification_tests_for_priority(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
         ) {
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(constraints)
+                .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
                 .cloned()

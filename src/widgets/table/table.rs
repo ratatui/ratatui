@@ -595,7 +595,7 @@ impl<'a> Table<'a> {
     ///     Constraint::Min(10),
     ///     Constraint::Min(10),
     /// ];
-    /// let table = Table::new(Vec::<Row>::new(), widths).flex(Flex::StretchLast);
+    /// let table = Table::new(Vec::<Row>::new(), widths).flex(Flex::Legacy);
     /// ```
     pub const fn flex(mut self, flex: Flex) -> Self {
         self.flex = flex;
@@ -1246,16 +1246,16 @@ mod tests {
 
             // without selection, less than needed width
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
+            assert_eq!(table.get_columns_widths(7, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             // <--------7px-------->
             // ┌────────┐x┌────────┐
-            // │ (3, 3) │x│ (7, 0) │
+            // │ (3, 2) │x│ (6, 1) │
             // └────────┘x└────────┘
             // column spacing (i.e. `x`) is always prioritized
             let table = Table::default().widths([Length(4), Length(4)]);
-            assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
+            assert_eq!(table.get_columns_widths(7, 3), [(3, 2), (6, 1)]);
         }
 
         #[test]
@@ -1270,11 +1270,11 @@ mod tests {
 
             // without selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
+            assert_eq!(table.get_columns_widths(7, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             let table = Table::default().widths([Max(4), Max(4)]);
-            assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
+            assert_eq!(table.get_columns_widths(7, 3), [(3, 2), (6, 1)]);
         }
 
         #[test]
@@ -1285,21 +1285,21 @@ mod tests {
 
             // without selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(20, 0), [(0, 4), (5, 4)]);
+            assert_eq!(table.get_columns_widths(20, 0), [(0, 10), (11, 9)]);
 
             // with selection, more than needed width
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(20, 3), [(3, 4), (8, 4)]);
+            assert_eq!(table.get_columns_widths(20, 3), [(3, 8), (12, 8)]);
 
             // without selection, less than needed width
             // allocates spacer
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(7, 0), [(0, 4), (5, 2)]);
+            assert_eq!(table.get_columns_widths(7, 0), [(0, 3), (4, 3)]);
 
             // with selection, less than needed width
             // always allocates selection and spacer
             let table = Table::default().widths([Min(4), Min(4)]);
-            assert_eq!(table.get_columns_widths(7, 3), [(3, 3), (7, 0)]);
+            assert_eq!(table.get_columns_widths(7, 3), [(3, 2), (6, 1)]);
         }
 
         #[test]
@@ -1352,7 +1352,7 @@ mod tests {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
                 table.get_columns_widths(62, 0),
-                &[(0, 10), (11, 10), (22, 1)]
+                &[(0, 20), (21, 20), (42, 20)]
             );
 
             let table = Table::default()
@@ -1365,10 +1365,10 @@ mod tests {
 
             let table = Table::default()
                 .widths([Min(10), Min(10), Min(1)])
-                .flex(Flex::Legacy);
+                .flex(Flex::SpaceBetween);
             assert_eq!(
                 table.get_columns_widths(62, 0),
-                &[(0, 20), (21, 20), (42, 20)]
+                &[(0, 21), (21, 20), (41, 21)]
             );
         }
 
@@ -1379,7 +1379,7 @@ mod tests {
             let table = Table::default().widths([Min(10), Min(10), Min(1)]);
             assert_eq!(
                 table.get_columns_widths(62, 0),
-                &[(0, 10), (11, 10), (22, 1)]
+                &[(0, 20), (21, 20), (42, 20)]
             );
 
             let table = Table::default()
@@ -1390,13 +1390,13 @@ mod tests {
                 &[(0, 10), (11, 10), (22, 40)]
             );
 
-            let table = Table::default()
-                .widths([Min(10), Min(10), Min(1)])
-                .segment_size(SegmentSize::EvenDistribution);
-            assert_eq!(
-                table.get_columns_widths(62, 0),
-                &[(0, 20), (21, 20), (42, 20)]
-            );
+            // let table = Table::default()
+            //     .widths([Min(10), Min(10), Min(1)])
+            //     .segment_size(SegmentSize::EvenDistribution);
+            // assert_eq!(
+            //     table.get_columns_widths(62, 0),
+            //     &[(0, 20), (21, 20), (42, 20)]
+            // );
         }
 
         #[test]
@@ -1526,7 +1526,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE  12345", // row 1
+                    ">>>ABCDE 12345 ", // row 1
                     "               ", // row 2
                     "               ", // row 3
                 ])
@@ -1541,7 +1541,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABCDE  12345", // row 1
+                    "   ABCDE 12345 ", // row 1
                     "               ", // row 2
                     "               ", // row 3
                 ])
@@ -1556,7 +1556,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE  12345", // row 1
+                    ">>>ABCDE 12345 ", // row 1
                     "               ", // row 2
                     "               ", // row 3
                 ])
@@ -1609,7 +1609,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABCDE 1", // highlight_symbol and spacing are prioritized
+                    "   ABC 123", // highlight_symbol and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
                 ])
@@ -1624,7 +1624,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABCD 1", // highlight_symbol and spacing are prioritized
+                    "   ABC 12", // highlight_symbol and spacing are prioritized
                     "         ", // row 2
                     "         ", // row 3
                 ])
@@ -1637,7 +1637,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABCD ", // highlight_symbol and spacing are prioritized
+                    "   AB 12", // highlight_symbol and spacing are prioritized
                     "        ", // row 2
                     "        ", // row 3
                 ])
@@ -1650,7 +1650,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABC ", // highlight_symbol and spacing are prioritized
+                    "   AB 1", // highlight_symbol and spacing are prioritized
                     "       ", // row 2
                     "       ", // row 3
                 ])
@@ -1660,6 +1660,21 @@ mod tests {
                 .rows(vec![Row::new(vec!["ABCDE", "12345"])])
                 .highlight_spacing(HighlightSpacing::Always)
                 .flex(Flex::Legacy)
+                .highlight_symbol(">>>")
+                .column_spacing(1);
+            let area = Rect::new(0, 0, 10, 3);
+            let mut buf = Buffer::empty(area);
+            Widget::render(table, area, &mut buf);
+            // highlight_symbol and spacing are prioritized but columns are evenly distributed
+            assert_buffer_eq!(
+                buf,
+                Buffer::with_lines(vec!["   ABCDE 1", "          ", "          ",])
+            );
+
+            let table = Table::default()
+                .rows(vec![Row::new(vec!["ABCDE", "12345"])])
+                .highlight_spacing(HighlightSpacing::Always)
+                .flex(Flex::Start)
                 .highlight_symbol(">>>")
                 .column_spacing(1);
             let area = Rect::new(0, 0, 10, 3);
@@ -1693,7 +1708,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE 1", // row 1
+                    ">>>ABC 123", // row 1
                     "          ", // row 2
                     "          ", // row 3
                 ])
@@ -1707,7 +1722,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE 1", // highlight column and spacing are prioritized
+                    ">>>ABC 123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
                 ])
@@ -1754,7 +1769,7 @@ mod tests {
                     None, // selection
                 ),
                 Buffer::with_lines(vec![
-                    "   ABCDE12", // highlight column and spacing are prioritized
+                    "   ABCD123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
                 ])
@@ -1780,7 +1795,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE12", // highlight column and spacing are prioritized
+                    ">>>ABCD123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
                 ])
@@ -1793,7 +1808,7 @@ mod tests {
                     Some(0), // selection
                 ),
                 Buffer::with_lines(vec![
-                    ">>>ABCDE12", // highlight column and spacing are prioritized
+                    ">>>ABCD123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
                 ])
