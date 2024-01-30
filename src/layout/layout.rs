@@ -34,7 +34,7 @@ type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 // Multiplier that decides floating point precision when rounding.
 // The number of zeros in this number is the precision for the rounding of f64 to u16 in layout
 // calculations.
-const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
+const FLOAT_PRECISION_MULTIPLIER: u16 = 100;
 
 thread_local! {
     static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = OnceLock::new();
@@ -544,12 +544,12 @@ impl Layout {
         let inner_area = area.inner(&self.margin);
         let (area_start, area_end) = match self.direction {
             Direction::Horizontal => (
-                f64::from(inner_area.x) * FLOAT_PRECISION_MULTIPLIER,
-                f64::from(inner_area.right()) * FLOAT_PRECISION_MULTIPLIER,
+                f64::from(inner_area.x * FLOAT_PRECISION_MULTIPLIER),
+                f64::from(inner_area.right() * FLOAT_PRECISION_MULTIPLIER),
             ),
             Direction::Vertical => (
-                f64::from(inner_area.y) * FLOAT_PRECISION_MULTIPLIER,
-                f64::from(inner_area.bottom()) * FLOAT_PRECISION_MULTIPLIER,
+                f64::from(inner_area.y * FLOAT_PRECISION_MULTIPLIER),
+                f64::from(inner_area.bottom() * FLOAT_PRECISION_MULTIPLIER),
             ),
         };
 
@@ -690,7 +690,7 @@ fn configure_flex_constraints(
     spacing: u16,
 ) -> Result<(), AddConstraintError> {
     let spacers_except_first_and_last = spacers.get(1..spacers.len() - 1).unwrap_or(&[]);
-    let spacing = f64::from(spacing) * FLOAT_PRECISION_MULTIPLIER;
+    let spacing = f64::from(spacing * FLOAT_PRECISION_MULTIPLIER);
     match flex {
         Flex::Legacy => {
             for spacer in spacers_except_first_and_last.iter() {
@@ -815,8 +815,8 @@ fn changes_to_rects(
         .map(|element| {
             let start = changes.get(&element.start).unwrap_or(&0.0);
             let end = changes.get(&element.end).unwrap_or(&0.0);
-            let start = (start.round() / FLOAT_PRECISION_MULTIPLIER).round() as u16;
-            let end = (end.round() / FLOAT_PRECISION_MULTIPLIER).round() as u16;
+            let start = (start.round() as u16) / FLOAT_PRECISION_MULTIPLIER;
+            let end = (end.round() as u16) / FLOAT_PRECISION_MULTIPLIER;
             let size = end.saturating_sub(start);
             match direction {
                 Direction::Horizontal => Rect {
@@ -877,15 +877,15 @@ impl Element {
     }
 
     fn has_max_size(&self, size: u16, strength: f64) -> cassowary::Constraint {
-        self.size() | LE(strength) | (f64::from(size) * FLOAT_PRECISION_MULTIPLIER)
+        self.size() | LE(strength) | (f64::from(size * FLOAT_PRECISION_MULTIPLIER))
     }
 
     fn has_min_size(&self, size: u16, strength: f64) -> cassowary::Constraint {
-        self.size() | GE(strength) | (f64::from(size) * FLOAT_PRECISION_MULTIPLIER)
+        self.size() | GE(strength) | (f64::from(size * FLOAT_PRECISION_MULTIPLIER))
     }
 
     fn has_int_size(&self, size: u16, strength: f64) -> cassowary::Constraint {
-        self.size() | EQ(strength) | (f64::from(size) * FLOAT_PRECISION_MULTIPLIER)
+        self.size() | EQ(strength) | (f64::from(size * FLOAT_PRECISION_MULTIPLIER))
     }
 
     fn has_size<E: Into<Expression>>(&self, size: E, strength: f64) -> cassowary::Constraint {
