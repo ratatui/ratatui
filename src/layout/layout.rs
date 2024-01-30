@@ -802,8 +802,10 @@ fn changes_to_rects(
     elements
         .iter()
         .map(|element| {
-            let start = changes.get(&element.start).unwrap_or(&0.0).round() as u16;
-            let end = changes.get(&element.end).unwrap_or(&0.0).round() as u16;
+            let start = changes.get(&element.start).unwrap_or(&0.0);
+            let end = changes.get(&element.end).unwrap_or(&0.0);
+            let start = (start * 100.0).round() as u16 / 100;
+            let end = (end * 100.0).round() as u16 / 100;
             let size = end.saturating_sub(start);
             match direction {
                 Direction::Horizontal => Rect {
