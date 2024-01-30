@@ -495,7 +495,7 @@ impl Scrollbar<'_> {
     /// - `    █████        `: thumb part part
     /// - `         ═══════ `: track end part
     ///
-    /// This method returns the length of the start, thunb, and end as a tuple.
+    /// This method returns the length of the start, thumb, and end as a tuple.
     fn part_lengths(&self, area: Rect, state: &mut ScrollbarState) -> (usize, usize, usize) {
         let track_len = self.track_length_excluding_arrow_heads(area) as f64;
         let viewport_len = self.viewport_length(area) as f64;
