@@ -119,7 +119,7 @@ pub enum ScrollbarOrientation {
 /// ```
 ///
 /// If you don't have multi-line content, you can leave the `viewport_content_length` set to the
-/// default of 0 and it'll use the track size as a `viewport_content_length`.
+/// default and it'll use the track size as a `viewport_content_length`.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ScrollbarState {
@@ -128,7 +128,7 @@ pub struct ScrollbarState {
     /// The current position within the scrollable content.
     position: usize,
     /// The length of content in current viewport.
-    viewport_content_length: usize,
+    viewport_content_length: Option<usize>,
 }
 
 /// An enum representing a scrolling direction.
@@ -399,8 +399,8 @@ impl ScrollbarState {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn viewport_content_length(mut self, viewport_content_length: usize) -> Self {
-        self.viewport_content_length = viewport_content_length;
+    pub fn viewport_content_length<T: Into<Option<usize>>>(mut self, length: T) -> Self {
+        self.viewport_content_length = length.into();
         self
     }
 
@@ -498,7 +498,7 @@ impl Scrollbar<'_> {
     /// This method returns the length of the start, thumb, and end as a tuple.
     fn part_lengths(&self, area: Rect, state: &mut ScrollbarState) -> (usize, usize, usize) {
         let track_len = self.track_length_excluding_arrow_heads(area) as f64;
-        let viewport_len = self.viewport_length(area) as f64;
+        let viewport_len = self.viewport_length(state, area) as f64;
 
         let content_length = state.content_length as f64;
         // Clamp the position to show at least one line of the content, even if the content is
@@ -548,7 +548,10 @@ impl Scrollbar<'_> {
         }
     }
 
-    fn viewport_length(&self, area: Rect) -> u16 {
+    fn viewport_length(&self, state: &ScrollbarState, area: Rect) -> u16 {
+        if let Some(length) = state.viewport_content_length {
+            return length as u16;
+        }
         if self.orientation.is_vertical() {
             area.height
         } else {
@@ -943,5 +946,34 @@ mod tests {
             .render(buffer.area, &mut buffer, &mut state);
         let bar = expected.chars().map(|c| format!("    {c}")).collect_vec();
         assert_eq!(buffer, Buffer::with_lines(bar), "{description}");
+    }
+
+    #[rstest]
+    #[case("##--------", 0, 10, "position_0")]
+    #[case("-##-------", 1, 10, "position_1")]
+    #[case("--##------", 2, 10, "position_2")]
+    #[case("---##-----", 3, 10, "position_3")]
+    #[case("----#-----", 4, 10, "position_4")]
+    #[case("-----#----", 5, 10, "position_5")]
+    #[case("-----##---", 6, 10, "position_6")]
+    #[case("------##--", 7, 10, "position_7")]
+    #[case("-------##-", 8, 10, "position_8")]
+    #[case("--------##", 9, 10, "position_9")]
+    #[case("--------##", 10, 10, "position_one_out_of_bounds")]
+    fn custom_viewport_length(
+        #[case] expected: &str,
+        #[case] position: usize,
+        #[case] content_length: usize,
+        #[case] description: &str,
+        scrollbar_no_arrows: Scrollbar,
+    ) {
+        let size = expected.width() as u16;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
+        let mut state = ScrollbarState::default()
+            .position(position)
+            .content_length(content_length)
+            .viewport_content_length(2);
+        scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}");
     }
 }
