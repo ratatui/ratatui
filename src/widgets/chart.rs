@@ -298,10 +298,7 @@ impl LegendPosition {
 ///     .red();
 /// ```
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct Dataset<'a, I>
-where
-    I: Default,
-{
+pub struct Dataset<'a, I> {
     /// Name of the dataset (used in the legend if shown)
     name: Option<Line<'a>>,
     /// A reference to the actual data
@@ -314,10 +311,7 @@ where
     style: Style,
 }
 
-impl<'a, I> Dataset<'a, I>
-where
-    I: Default,
-{
+impl<'a, I> Dataset<'a, I> {
     /// Sets the name of the dataset
     ///
     /// The dataset's name is used when displaying the chart legend. Datasets don't require a name
@@ -494,10 +488,7 @@ struct ChartLayout {
 ///     .y_axis(y_axis);
 /// ```
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct Chart<'a, I>
-where
-    I: Default,
-{
+pub struct Chart<'a, I> {
     /// A block to display around the widget eventually
     block: Option<Block<'a>>,
     /// The horizontal axis
@@ -515,10 +506,7 @@ where
     legend_position: Option<LegendPosition>,
 }
 
-impl<'a, I> Chart<'a, I>
-where
-    I: Default,
-{
+impl<'a, I> Chart<'a, I> {
     /// Creates a chart with the given [datasets](Dataset)
     ///
     /// A chart can render multiple datasets.
@@ -941,7 +929,7 @@ where
 
 impl<'a, I> Widget for Chart<'a, I>
 where
-    I: Iterator<Item = &'a (f64, f64)> + Clone + Default,
+    I: Iterator<Item = &'a (f64, f64)> + Clone,
 {
     fn render(self, area: Rect, buf: &mut Buffer) {
         Widget::render(&self, area, buf);
@@ -950,7 +938,7 @@ where
 
 impl<'a, I> Widget for &Chart<'a, I>
 where
-    I: Iterator<Item = &'a (f64, f64)> + Clone + Default,
+    I: Iterator<Item = &'a (f64, f64)> + Clone,
 {
     fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
@@ -1104,10 +1092,7 @@ impl<'a> Styled for Axis<'a> {
     }
 }
 
-impl<'a, I> Styled for Dataset<'a, I>
-where
-    I: Default,
-{
+impl<'a, I> Styled for Dataset<'a, I> {
     type Item = Self;
 
     fn style(&self) -> Style {
@@ -1119,10 +1104,7 @@ where
     }
 }
 
-impl<'a, I> Styled for Chart<'a, I>
-where
-    I: Default,
-{
+impl<'a, I> Styled for Chart<'a, I> {
     type Item = Self;
 
     fn style(&self) -> Style {
