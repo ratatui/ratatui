@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, iter, num::NonZeroUsize, rc::Rc, sync::OnceLock};
 
 use cassowary::{
-    strength::REQUIRED,
+    strength::{REQUIRED, WEAK},
     AddConstraintError, Expression, Solver, Variable,
     WeightedRelation::{EQ, GE, LE},
 };
@@ -9,8 +9,8 @@ use itertools::Itertools;
 use lru::LruCache;
 
 use self::strengths::{
-    ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
-    MIN_SIZE_GE, PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, SPACER_SIZE_EQ, SPACE_GROW,
+    FILL_GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ, MIN_SIZE_GE,
+    PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, *,
 };
 use super::Flex;
 use crate::prelude::*;
@@ -592,15 +592,16 @@ impl Layout {
         let spacing = self.spacing;
         let constraints = &self.constraints;
 
-        let area_size = area_end - area_start;
-        configure_variable_constraints(&mut solver, &variables, area_start, area_end)?;
+        let area_size = Element::from((*variables.first().unwrap(), *variables.last().unwrap()));
+        configure_area(&mut solver, area_size, area_start, area_end)?;
+        configure_variable_constraints(&mut solver, &variables, area_size)?;
         configure_flex_constraints(&mut solver, area_size, &spacers, flex, spacing)?;
         configure_constraints(&mut solver, area_size, &segments, constraints, flex)?;
         configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
 
         if !flex.is_legacy() {
-            for (left, right) in segments.iter().tuple_combinations() {
-                solver.add_constraint(left.has_size(right, ALL_SEGMENT_GROW))?;
+            for (left, right) in segments.iter().tuple_windows() {
+                solver.add_constraint(left.has_size(right, WEAK / 100.0))?;
             }
         }
 
@@ -615,16 +616,26 @@ impl Layout {
     }
 }
 
-fn configure_variable_constraints(
+fn configure_area(
     solver: &mut Solver,
-    variables: &[Variable],
+    area: Element,
     area_start: f64,
     area_end: f64,
 ) -> Result<(), AddConstraintError> {
+    solver.add_constraint(area.start | EQ(REQUIRED) | area_start)?;
+    solver.add_constraint(area.end | EQ(REQUIRED) | area_end)?;
+    Ok(())
+}
+
+fn configure_variable_constraints(
+    solver: &mut Solver,
+    variables: &[Variable],
+    area: Element,
+) -> Result<(), AddConstraintError> {
     // all variables are in the range [area.start, area.end]
     for &variable in variables.iter() {
-        solver.add_constraint(variable | GE(REQUIRED) | area_start)?;
-        solver.add_constraint(variable | LE(REQUIRED) | area_end)?;
+        solver.add_constraint(variable | GE(REQUIRED) | area.start)?;
+        solver.add_constraint(variable | LE(REQUIRED) | area.end)?;
     }
 
     // all variables are in ascending order
@@ -632,17 +643,12 @@ fn configure_variable_constraints(
         solver.add_constraint(left | LE(REQUIRED) | right)?;
     }
 
-    if let (Some(first), Some(last)) = (variables.first(), variables.last()) {
-        solver.add_constraint(*first | EQ(REQUIRED) | area_start)?;
-        solver.add_constraint(*last | EQ(REQUIRED) | area_end)?;
-    }
-
     Ok(())
 }
 
 fn configure_constraints(
     solver: &mut Solver,
-    area_size: f64,
+    area: Element,
     segments: &[Element],
     constraints: &[Constraint],
     flex: Flex,
@@ -658,24 +664,24 @@ fn configure_constraints(
                 if flex.is_legacy() {
                     solver.add_constraint(element.has_int_size(min, MIN_SIZE_EQ))?;
                 } else {
-                    solver.add_constraint(element.has_size(area_size, FILL_GROW))?;
+                    solver.add_constraint(element.has_size(area, FILL_GROW))?;
                 }
             }
             Constraint::Length(length) => {
                 solver.add_constraint(element.has_int_size(length, LENGTH_SIZE_EQ))?
             }
             Constraint::Percentage(p) => {
-                let size = area_size * f64::from(p) / 100.00;
+                let size = area.size() * f64::from(p) / 100.00;
                 solver.add_constraint(element.has_size(size, PERCENTAGE_SIZE_EQ))?;
             }
             Constraint::Ratio(num, den) => {
                 // avoid division by zero by using 1 when denominator is 0
-                let size = area_size * f64::from(num) / f64::from(den.max(1));
+                let size = area.size() * f64::from(num) / f64::from(den.max(1));
                 solver.add_constraint(element.has_size(size, RATIO_SIZE_EQ))?;
             }
             Constraint::Fill(_) => {
                 // given no other constraints, this segment will grow as much as possible.
-                solver.add_constraint(element.has_size(area_size, FILL_GROW))?;
+                solver.add_constraint(element.has_size(area, FILL_GROW))?;
             }
         }
     }
@@ -684,7 +690,7 @@ fn configure_constraints(
 
 fn configure_flex_constraints(
     solver: &mut Solver,
-    area_size: f64,
+    area: Element,
     spacers: &[Element],
     flex: Flex,
     spacing: u16,
@@ -708,7 +714,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?
             }
             for spacer in spacers.iter() {
-                solver.add_constraint(spacer.has_size(area_size, SPACE_GROW))?;
+                solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
         }
 
@@ -719,7 +725,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?
             }
             for spacer in spacers.iter() {
-                solver.add_constraint(spacer.has_size(area_size, SPACE_GROW))?;
+                solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
@@ -732,7 +738,7 @@ fn configure_flex_constraints(
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
-                solver.add_constraint(last.has_size(area_size, GROW))?;
+                solver.add_constraint(last.has_size(area, GROW))?;
             }
         }
         Flex::Center => {
@@ -740,8 +746,8 @@ fn configure_flex_constraints(
                 solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
-                solver.add_constraint(first.has_size(area_size, GROW))?;
-                solver.add_constraint(last.has_size(area_size, GROW))?;
+                solver.add_constraint(first.has_size(area, GROW))?;
+                solver.add_constraint(last.has_size(area, GROW))?;
                 solver.add_constraint(first.has_size(last, SPACER_SIZE_EQ))?;
             }
         }
@@ -751,7 +757,7 @@ fn configure_flex_constraints(
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(last.is_empty())?;
-                solver.add_constraint(first.has_size(area_size, GROW))?;
+                solver.add_constraint(first.has_size(area, GROW))?;
             }
         }
     }
@@ -925,77 +931,70 @@ mod strengths {
     /// ┌────────┐
     /// │Min(>=x)│
     /// └────────┘
-    pub const MIN_SIZE_GE: f64 = STRONG * 100.0;
+    pub const MIN_SIZE_GE: f64 = STRONG * 10.0;
 
     /// The strength to apply to Max inequality constraints.
     ///
     /// ┌────────┐
     /// │Max(<=x)│
     /// └────────┘
-    pub const MAX_SIZE_LE: f64 = STRONG * 100.0;
+    pub const MAX_SIZE_LE: f64 = STRONG * 10.0;
 
     /// The strength to apply to Length constraints.
     ///
     /// ┌───────────┐
     /// │Length(==x)│
     /// └───────────┘
-    pub const LENGTH_SIZE_EQ: f64 = STRONG * 10.0;
+    pub const LENGTH_SIZE_EQ: f64 = STRONG / 10.0;
 
     /// The strength to apply to Percentage constraints.
     ///
     /// ┌───────────────┐
     /// │Percentage(==x)│
     /// └───────────────┘
-    pub const PERCENTAGE_SIZE_EQ: f64 = STRONG;
+    pub const PERCENTAGE_SIZE_EQ: f64 = MEDIUM * 10.0;
 
     /// The strength to apply to Ratio constraints.
     ///
     /// ┌────────────┐
     /// │Ratio(==x,y)│
     /// └────────────┘
-    pub const RATIO_SIZE_EQ: f64 = STRONG / 10.0;
-
-    /// The strength to apply to Min equality constraints.
-    ///
-    /// ┌────────┐
-    /// │Min(==x)│
-    /// └────────┘
-    pub const MIN_SIZE_EQ: f64 = MEDIUM * 10.0;
+    pub const RATIO_SIZE_EQ: f64 = MEDIUM;
 
     /// The strength to apply to Max equality constraints.
     ///
     /// ┌────────┐
     /// │Max(==x)│
     /// └────────┘
-    pub const MAX_SIZE_EQ: f64 = MEDIUM * 10.0;
+    pub const MAX_SIZE_EQ: f64 = MEDIUM / 10.0;
+
+    /// The strength to apply to Min equality constraints.
+    ///
+    /// ┌────────┐
+    /// │Min(==x)│
+    /// └────────┘
+    pub const MIN_SIZE_EQ: f64 = MEDIUM / 10.0;
 
     /// The strength to apply to Fill growing constraints.
     ///
     /// ┌─────────────────────┐
     /// │<=     Fill(x)     =>│
     /// └─────────────────────┘
-    pub const FILL_GROW: f64 = MEDIUM;
+    pub const FILL_GROW: f64 = WEAK * 10.0;
 
     /// The strength to apply to growing constraints.
     ///
     /// ┌────────────┐
     /// │<= Min(x) =>│
     /// └────────────┘
-    pub const GROW: f64 = MEDIUM / 10.0;
+    pub const GROW: f64 = WEAK;
 
     /// The strength to apply to Spacer growing constraints.
     ///
     /// ┌       ┐
     ///  <= x =>
     /// └       ┘
-    pub const SPACE_GROW: f64 = WEAK * 10.0;
-
-    /// The strength to apply to growing the size of all segments equally.
-    ///
-    /// ┌───────┐
-    /// │<= x =>│
-    /// └───────┘
-    pub const ALL_SEGMENT_GROW: f64 = WEAK;
+    pub const SPACE_GROW: f64 = WEAK / 10.0;
 
     #[allow(dead_code)]
     pub fn is_valid() -> bool {
@@ -1009,7 +1008,6 @@ mod strengths {
             && MIN_SIZE_GE > FILL_GROW
             && FILL_GROW > GROW
             && GROW > SPACE_GROW
-            && SPACE_GROW > ALL_SEGMENT_GROW
     }
 }
 
@@ -1017,11 +1015,21 @@ mod strengths {
 mod tests {
     use std::iter;
 
+    use cassowary::strength::{MEDIUM, REQUIRED, STRONG, WEAK};
+
     use super::*;
 
     #[test]
     fn strength() {
         assert!(strengths::is_valid());
+        assert_eq!(strengths::SPACER_SIZE_EQ, REQUIRED - 1.0);
+        assert_eq!(strengths::MIN_SIZE_GE, STRONG * 10.0);
+        assert_eq!(strengths::LENGTH_SIZE_EQ, STRONG / 10.0);
+        assert_eq!(strengths::PERCENTAGE_SIZE_EQ, MEDIUM * 10.0);
+        assert_eq!(strengths::RATIO_SIZE_EQ, MEDIUM);
+        assert_eq!(strengths::FILL_GROW, WEAK * 10.0);
+        assert_eq!(strengths::GROW, WEAK);
+        assert_eq!(strengths::SPACE_GROW, WEAK / 10.0);
     }
 
     #[test]
@@ -2000,7 +2008,7 @@ mod tests {
                 .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
-            assert_eq!(expected, r, "area: {rect:?}, constraints: {constraints:?}");
+            assert_eq!(expected, r);
 
             let rect = Rect::new(0, 0, 100, 1);
             let r = Layout::horizontal(&constraints)
