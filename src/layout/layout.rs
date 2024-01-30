@@ -981,9 +981,9 @@ mod strengths {
 
     /// The strength to apply to growing the size of all segments equally.
     ///
-    /// ┌       ┐
-    ///  <= x =>
-    /// └       ┘
+    /// ┌───────┐
+    /// │<= x =>│
+    /// └───────┘
     pub const ALL_SEGMENT_GROW: f64 = WEAK;
 
     #[allow(dead_code)]
