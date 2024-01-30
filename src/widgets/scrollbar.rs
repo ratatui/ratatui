@@ -129,7 +129,7 @@ pub struct ScrollbarState {
     position: usize,
     /// The length of content in current viewport.
     ///
-    /// FIXME: this should be Option<usize>, but it will break serialization to change it.
+    /// FIXME: this should be `Option<usize>`, but it will break serialization to change it.
     viewport_content_length: usize,
 }
 
