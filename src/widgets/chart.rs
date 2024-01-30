@@ -298,11 +298,14 @@ impl LegendPosition {
 ///     .red();
 /// ```
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct Dataset<'a> {
+pub struct Dataset<'a, I>
+where
+    I: Default,
+{
     /// Name of the dataset (used in the legend if shown)
     name: Option<Line<'a>>,
     /// A reference to the actual data
-    data: &'a [(f64, f64)],
+    data: I,
     /// Symbol used for each points of this dataset
     marker: symbols::Marker,
     /// Determines graph type used for drawing points
@@ -311,7 +314,10 @@ pub struct Dataset<'a> {
     style: Style,
 }
 
-impl<'a> Dataset<'a> {
+impl<'a, I> Dataset<'a, I>
+where
+    I: Default,
+{
     /// Sets the name of the dataset
     ///
     /// The dataset's name is used when displaying the chart legend. Datasets don't require a name
@@ -323,7 +329,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn name<S>(mut self, name: S) -> Dataset<'a>
+    pub fn name<S>(mut self, name: S) -> Self
     where
         S: Into<Line<'a>>,
     {
@@ -342,8 +348,11 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn data(mut self, data: &'a [(f64, f64)]) -> Dataset<'a> {
-        self.data = data;
+    pub fn data<T>(mut self, data: T) -> Self
+    where
+        T: IntoIterator<Item = &'a (f64, f64), IntoIter = I>,
+    {
+        self.data = data.into_iter();
         self
     }
 
@@ -357,7 +366,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn marker(mut self, marker: symbols::Marker) -> Dataset<'a> {
+    pub fn marker(mut self, marker: symbols::Marker) -> Self {
         self.marker = marker;
         self
     }
@@ -370,7 +379,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn graph_type(mut self, graph_type: GraphType) -> Dataset<'a> {
+    pub fn graph_type(mut self, graph_type: GraphType) -> Self {
         self.graph_type = graph_type;
         self
     }
@@ -392,10 +401,11 @@ impl<'a> Dataset<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let dataset = Dataset::default().red();
+    /// # use std::slice::Iter;
+    /// let dataset: Dataset<'_, Iter<'_, (f64, f64)>> = Dataset::default().red();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Dataset<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -484,7 +494,10 @@ struct ChartLayout {
 ///     .y_axis(y_axis);
 /// ```
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct Chart<'a> {
+pub struct Chart<'a, I>
+where
+    I: Default,
+{
     /// A block to display around the widget eventually
     block: Option<Block<'a>>,
     /// The horizontal axis
@@ -492,7 +505,7 @@ pub struct Chart<'a> {
     /// The vertical axis
     y_axis: Axis<'a>,
     /// A reference to the datasets
-    datasets: Vec<Dataset<'a>>,
+    datasets: Vec<Dataset<'a, I>>,
     /// The widget base style
     style: Style,
     /// Constraints used to determine whether the legend should be shown or not
@@ -502,7 +515,10 @@ pub struct Chart<'a> {
     legend_position: Option<LegendPosition>,
 }
 
-impl<'a> Chart<'a> {
+impl<'a, I> Chart<'a, I>
+where
+    I: Default,
+{
     /// Creates a chart with the given [datasets](Dataset)
     ///
     /// A chart can render multiple datasets.
@@ -528,7 +544,7 @@ impl<'a> Chart<'a> {
     ///     Dataset::default().data(&data_points2),
     /// ]);
     /// ```
-    pub fn new(datasets: Vec<Dataset<'a>>) -> Chart<'a> {
+    pub fn new(datasets: Vec<Dataset<'a, I>>) -> Self {
         Chart {
             block: None,
             x_axis: Axis::default(),
@@ -544,7 +560,7 @@ impl<'a> Chart<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> Chart<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -558,7 +574,7 @@ impl<'a> Chart<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Chart<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -573,7 +589,8 @@ impl<'a> Chart<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let chart = Chart::new(vec![]).x_axis(
+    /// # use std::slice::Iter;
+    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> = Chart::new(vec![]).x_axis(
     ///     Axis::default()
     ///         .title("X Axis")
     ///         .bounds([0.0, 20.0])
@@ -581,7 +598,7 @@ impl<'a> Chart<'a> {
     /// );
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn x_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
+    pub fn x_axis(mut self, axis: Axis<'a>) -> Self {
         self.x_axis = axis;
         self
     }
@@ -596,7 +613,8 @@ impl<'a> Chart<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let chart = Chart::new(vec![]).y_axis(
+    /// # use std::slice::Iter;
+    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> = Chart::new(vec![]).y_axis(
     ///     Axis::default()
     ///         .title("Y Axis")
     ///         .bounds([0.0, 20.0])
@@ -604,7 +622,7 @@ impl<'a> Chart<'a> {
     /// );
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn y_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
+    pub fn y_axis(mut self, axis: Axis<'a>) -> Self {
         self.y_axis = axis;
         self
     }
@@ -627,8 +645,9 @@ impl<'a> Chart<'a> {
     ///
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
+    /// # use std::slice::Iter;
     /// let constraints = (Constraint::Ratio(1, 3), Constraint::Ratio(1, 4));
-    /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
+    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     ///
     /// Always show the legend, note the second constraint doesn't matter in this case since the
@@ -636,8 +655,9 @@ impl<'a> Chart<'a> {
     ///
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
+    /// # use std::slice::Iter;
     /// let constraints = (Constraint::Min(0), Constraint::Ratio(1, 4));
-    /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
+    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     ///
     /// Always hide the legend. Note this can be accomplished more exclicitely by passing `None` to
@@ -645,11 +665,12 @@ impl<'a> Chart<'a> {
     ///
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
+    /// # use std::slice::Iter;
     /// let constraints = (Constraint::Length(0), Constraint::Ratio(1, 4));
-    /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
+    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn hidden_legend_constraints(mut self, constraints: (Constraint, Constraint)) -> Chart<'a> {
+    pub fn hidden_legend_constraints(mut self, constraints: (Constraint, Constraint)) -> Self {
         self.hidden_legend_constraints = constraints;
         self
     }
@@ -674,17 +695,19 @@ impl<'a> Chart<'a> {
     ///
     /// ```
     /// # use ratatui::widgets::{Chart, LegendPosition};
-    /// let chart: Chart = Chart::new(vec![]).legend_position(Some(LegendPosition::TopLeft));
+    /// # use std::slice::Iter;
+    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> = Chart::new(vec![]).legend_position(Some(LegendPosition::TopLeft));
     /// ```
     ///
     /// Hide the legend altogether
     ///
     /// ```
     /// # use ratatui::widgets::{Chart, LegendPosition};
-    /// let chart = Chart::new(vec![]).legend_position(None);
+    /// # use std::slice::Iter;
+    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> = Chart::new(vec![]).legend_position(None);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn legend_position(mut self, position: Option<LegendPosition>) -> Chart<'a> {
+    pub fn legend_position(mut self, position: Option<LegendPosition>) -> Self {
         self.legend_position = position;
         self
     }
@@ -916,13 +939,19 @@ impl<'a> Chart<'a> {
     }
 }
 
-impl Widget for Chart<'_> {
+impl<'a, I> Widget for Chart<'a, I>
+where
+    I: Iterator<Item = &'a (f64, f64)> + Clone + Default,
+{
     fn render(self, area: Rect, buf: &mut Buffer) {
         Widget::render(&self, area, buf);
     }
 }
 
-impl Widget for &Chart<'_> {
+impl<'a, I> Widget for &Chart<'a, I>
+where
+    I: Iterator<Item = &'a (f64, f64)> + Clone + Default,
+{
     fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
 
@@ -978,18 +1007,22 @@ impl Widget for &Chart<'_> {
                 .marker(dataset.marker)
                 .paint(|ctx| {
                     ctx.draw(&Points {
-                        coords: dataset.data,
+                        coords: dataset.data.clone(),
                         color: dataset.style.fg.unwrap_or(Color::Reset),
                     });
                     if let GraphType::Line = dataset.graph_type {
-                        for data in dataset.data.windows(2) {
-                            ctx.draw(&CanvasLine {
-                                x1: data[0].0,
-                                y1: data[0].1,
-                                x2: data[1].0,
-                                y2: data[1].1,
-                                color: dataset.style.fg.unwrap_or(Color::Reset),
-                            });
+                        let mut iter = dataset.data.clone();
+                        if let Some(mut prev) = iter.next() {
+                            for current in iter {
+                                ctx.draw(&CanvasLine {
+                                    x1: prev.0,
+                                    y1: prev.1,
+                                    x2: current.0,
+                                    y2: current.1,
+                                    color: dataset.style.fg.unwrap_or(Color::Reset),
+                                });
+                                prev = current;
+                            }
                         }
                     }
                 })
@@ -1071,8 +1104,11 @@ impl<'a> Styled for Axis<'a> {
     }
 }
 
-impl<'a> Styled for Dataset<'a> {
-    type Item = Dataset<'a>;
+impl<'a, I> Styled for Dataset<'a, I>
+where
+    I: Default,
+{
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -1083,8 +1119,11 @@ impl<'a> Styled for Dataset<'a> {
     }
 }
 
-impl<'a> Styled for Chart<'a> {
-    type Item = Chart<'a>;
+impl<'a, I> Styled for Chart<'a, I>
+where
+    I: Default,
+{
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -1097,6 +1136,7 @@ impl<'a> Styled for Chart<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::slice::Iter;
     use strum::ParseError;
 
     use super::*;
@@ -1157,7 +1197,12 @@ mod tests {
     #[test]
     fn dataset_can_be_stylized() {
         assert_eq!(
-            Dataset::default().black().on_white().bold().not_dim().style,
+            Dataset::<Iter<'_, (f64, f64)>>::default()
+                .black()
+                .on_white()
+                .bold()
+                .not_dim()
+                .style,
             Style::default()
                 .fg(Color::Black)
                 .bg(Color::White)
@@ -1169,7 +1214,12 @@ mod tests {
     #[test]
     fn chart_can_be_stylized() {
         assert_eq!(
-            Chart::new(vec![]).black().on_white().bold().not_dim().style,
+            Chart::<'_, Iter<'_, (f64, f64)>>::new(vec![])
+                .black()
+                .on_white()
+                .bold()
+                .not_dim()
+                .style,
             Style::default()
                 .fg(Color::Black)
                 .bg(Color::White)
@@ -1193,7 +1243,7 @@ mod tests {
 
     #[test]
     fn it_does_not_panic_if_title_is_wider_than_buffer() {
-        let widget = Chart::default()
+        let widget = Chart::<'_, Iter<'_, (f64, f64)>>::default()
             .y_axis(Axis::default().title("xxxxxxxxxxxxxxxx"))
             .x_axis(Axis::default().title("xxxxxxxxxxxxxxxx"));
         let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 4));
@@ -1204,7 +1254,7 @@ mod tests {
 
     #[test]
     fn datasets_without_name_dont_contribute_to_legend_height() {
-        let data_named_1 = Dataset::default().name("data1"); // must occupy a row in legend
+        let data_named_1 = Dataset::<'_, Iter<'_, (f64, f64)>>::default().name("data1"); // must occupy a row in legend
         let data_named_2 = Dataset::default().name(""); // must occupy a row in legend, even if name is empty
         let data_unnamed = Dataset::default(); // must not occupy a row in legend
         let widget = Chart::new(vec![data_named_1, data_unnamed, data_named_2]);
@@ -1217,7 +1267,7 @@ mod tests {
 
     #[test]
     fn no_legend_if_no_named_datasets() {
-        let dataset = Dataset::default();
+        let dataset = Dataset::<'_, Iter<'_, (f64, f64)>>::default();
         let widget = Chart::new(vec![dataset; 3]);
         let buffer = Buffer::empty(Rect::new(0, 0, 50, 25));
         let layout = widget.layout(buffer.area);
@@ -1227,7 +1277,8 @@ mod tests {
 
     #[test]
     fn dataset_legend_style_is_patched() {
-        let long_dataset_name = Dataset::default().name("Very long name");
+        let long_dataset_name =
+            Dataset::<'_, Iter<'_, (f64, f64)>>::default().name("Very long name");
         let short_dataset =
             Dataset::default().name(Line::from("Short name").alignment(Alignment::Right));
         let widget = Chart::new(vec![long_dataset_name, short_dataset])
@@ -1248,7 +1299,7 @@ mod tests {
 
     #[test]
     fn test_chart_have_a_topleft_legend() {
-        let chart = Chart::new(vec![Dataset::default().name("Ds1")])
+        let chart = Chart::<'_, Iter<'_, (f64, f64)>>::new(vec![Dataset::default().name("Ds1")])
             .legend_position(Some(LegendPosition::TopLeft));
 
         let area = Rect::new(0, 0, 30, 20);
@@ -1284,7 +1335,7 @@ mod tests {
 
     #[test]
     fn test_chart_have_a_long_y_axis_title_overlapping_legend() {
-        let chart = Chart::new(vec![Dataset::default().name("Ds1")])
+        let chart = Chart::<'_, Iter<'_, (f64, f64)>>::new(vec![Dataset::default().name("Ds1")])
             .y_axis(Axis::default().title("The title overlap a legend."));
 
         let area = Rect::new(0, 0, 30, 20);
@@ -1320,7 +1371,7 @@ mod tests {
 
     #[test]
     fn test_chart_have_overflowed_y_axis() {
-        let chart = Chart::new(vec![Dataset::default().name("Ds1")])
+        let chart = Chart::<'_, Iter<'_, (f64, f64)>>::new(vec![Dataset::default().name("Ds1")])
             .y_axis(Axis::default().title("The title overlap a legend."));
 
         let area = Rect::new(0, 0, 10, 10);
@@ -1347,7 +1398,7 @@ mod tests {
     #[test]
     fn test_legend_area_can_fit_same_chart_area() {
         let name = "Data";
-        let chart = Chart::new(vec![Dataset::default().name(name)])
+        let chart = Chart::<'_, Iter<'_, (f64, f64)>>::new(vec![Dataset::default().name(name)])
             .hidden_legend_constraints((Constraint::Percentage(100), Constraint::Percentage(100)));
 
         let area = Rect::new(0, 0, name.len() as u16 + 2, 3);
@@ -1377,8 +1428,12 @@ mod tests {
     #[test]
     fn test_legend_of_chart_have_odd_margin_size() {
         let name = "Data";
-        let base_chart = Chart::new(vec![Dataset::default().name(name)])
-            .hidden_legend_constraints((Constraint::Percentage(100), Constraint::Percentage(100)));
+        let base_chart =
+            Chart::<'_, Iter<'_, (f64, f64)>>::new(vec![Dataset::default().name(name)])
+                .hidden_legend_constraints((
+                    Constraint::Percentage(100),
+                    Constraint::Percentage(100),
+                ));
 
         let area = Rect::new(0, 0, name.len() as u16 + 2 + 3, 3 + 3);
         let mut buffer = Buffer::empty(area);

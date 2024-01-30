@@ -9,6 +9,7 @@ use ratatui::{
     Terminal,
 };
 use rstest::rstest;
+use std::slice::Iter;
 
 fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {
     labels.iter().map(|l| Span::from(*l)).collect()
@@ -22,7 +23,9 @@ where
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let chart = Chart::new(vec![]).x_axis(x_axis).y_axis(y_axis);
+            let chart = Chart::<'_, Iter<'_, (f64, f64)>>::new(vec![])
+                .x_axis(x_axis)
+                .y_axis(y_axis);
             f.render_widget(chart, f.size());
         })
         .unwrap();
