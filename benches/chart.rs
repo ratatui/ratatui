@@ -51,7 +51,7 @@ fn render_live(bencher: &mut Bencher, data_count: &usize) {
     let mut buffer = Buffer::empty(Rect::new(0, 0, 200, 50));
 
     bencher.iter(|| {
-        for i in 0..1000 {
+        for i in 0..5 {
             // Very bad because it has the time complexity O(n) where n is the length of the data vector.
             // Therefore, the usage of a ring buffer is recommended.
             data.remove(0);
@@ -67,7 +67,7 @@ fn render_live_ringbuf(bencher: &mut Bencher, data_count: &usize) {
     let mut buffer = Buffer::empty(Rect::new(0, 0, 200, 50));
 
     bencher.iter(|| {
-        for i in 0..1000 {
+        for i in 0..5 {
             data.push_overwrite((i as f64, i as f64));
         }
         Chart::new(vec![Dataset::default().data(data.iter())]).render(buffer.area, &mut buffer);
