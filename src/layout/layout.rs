@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, iter, num::NonZeroUsize, rc::Rc, sync::OnceLock};
 
 use cassowary::{
-    strength::{REQUIRED, WEAK},
+    strength::REQUIRED,
     AddConstraintError, Expression, Solver, Variable,
     WeightedRelation::{EQ, GE, LE},
 };
@@ -9,8 +9,8 @@ use itertools::Itertools;
 use lru::LruCache;
 
 use self::strengths::{
-    FILL_GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ, MIN_SIZE_GE,
-    PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, *,
+    ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
+    MIN_SIZE_GE, PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, SPACER_SIZE_EQ, SPACE_GROW,
 };
 use super::Flex;
 use crate::prelude::*;
@@ -601,7 +601,7 @@ impl Layout {
 
         if !flex.is_legacy() {
             for (left, right) in segments.iter().tuple_windows() {
-                solver.add_constraint(left.has_size(right, WEAK / 100.0))?;
+                solver.add_constraint(left.has_size(right, ALL_SEGMENT_GROW))?;
             }
         }
 
@@ -931,70 +931,77 @@ mod strengths {
     /// ┌────────┐
     /// │Min(>=x)│
     /// └────────┘
-    pub const MIN_SIZE_GE: f64 = STRONG * 10.0;
+    pub const MIN_SIZE_GE: f64 = STRONG * 100.0;
 
     /// The strength to apply to Max inequality constraints.
     ///
     /// ┌────────┐
     /// │Max(<=x)│
     /// └────────┘
-    pub const MAX_SIZE_LE: f64 = STRONG * 10.0;
+    pub const MAX_SIZE_LE: f64 = STRONG * 100.0;
 
     /// The strength to apply to Length constraints.
     ///
     /// ┌───────────┐
     /// │Length(==x)│
     /// └───────────┘
-    pub const LENGTH_SIZE_EQ: f64 = STRONG / 10.0;
+    pub const LENGTH_SIZE_EQ: f64 = STRONG * 10.0;
 
     /// The strength to apply to Percentage constraints.
     ///
     /// ┌───────────────┐
     /// │Percentage(==x)│
     /// └───────────────┘
-    pub const PERCENTAGE_SIZE_EQ: f64 = MEDIUM * 10.0;
+    pub const PERCENTAGE_SIZE_EQ: f64 = STRONG;
 
     /// The strength to apply to Ratio constraints.
     ///
     /// ┌────────────┐
     /// │Ratio(==x,y)│
     /// └────────────┘
-    pub const RATIO_SIZE_EQ: f64 = MEDIUM;
-
-    /// The strength to apply to Max equality constraints.
-    ///
-    /// ┌────────┐
-    /// │Max(==x)│
-    /// └────────┘
-    pub const MAX_SIZE_EQ: f64 = MEDIUM / 10.0;
+    pub const RATIO_SIZE_EQ: f64 = STRONG / 10.0;
 
     /// The strength to apply to Min equality constraints.
     ///
     /// ┌────────┐
     /// │Min(==x)│
     /// └────────┘
-    pub const MIN_SIZE_EQ: f64 = MEDIUM / 10.0;
+    pub const MIN_SIZE_EQ: f64 = MEDIUM * 10.0;
+
+    /// The strength to apply to Max equality constraints.
+    ///
+    /// ┌────────┐
+    /// │Max(==x)│
+    /// └────────┘
+    pub const MAX_SIZE_EQ: f64 = MEDIUM * 10.0;
 
     /// The strength to apply to Fill growing constraints.
     ///
     /// ┌─────────────────────┐
     /// │<=     Fill(x)     =>│
     /// └─────────────────────┘
-    pub const FILL_GROW: f64 = WEAK * 10.0;
+    pub const FILL_GROW: f64 = MEDIUM;
 
     /// The strength to apply to growing constraints.
     ///
     /// ┌────────────┐
     /// │<= Min(x) =>│
     /// └────────────┘
-    pub const GROW: f64 = WEAK;
+    pub const GROW: f64 = MEDIUM / 10.0;
 
     /// The strength to apply to Spacer growing constraints.
     ///
     /// ┌       ┐
     ///  <= x =>
     /// └       ┘
-    pub const SPACE_GROW: f64 = WEAK / 10.0;
+    pub const SPACE_GROW: f64 = WEAK * 10.0;
+
+    /// The strength to apply to growing the size of all segments equally.
+    ///
+    /// ┌───────┐
+    /// │<= x =>│
+    /// └───────┘
+    pub const ALL_SEGMENT_GROW: f64 = WEAK;
 
     #[allow(dead_code)]
     pub fn is_valid() -> bool {
@@ -1008,6 +1015,7 @@ mod strengths {
             && MIN_SIZE_GE > FILL_GROW
             && FILL_GROW > GROW
             && GROW > SPACE_GROW
+            && SPACE_GROW > ALL_SEGMENT_GROW
     }
 }
 
@@ -1015,21 +1023,11 @@ mod strengths {
 mod tests {
     use std::iter;
 
-    use cassowary::strength::{MEDIUM, REQUIRED, STRONG, WEAK};
-
     use super::*;
 
     #[test]
     fn strength() {
         assert!(strengths::is_valid());
-        assert_eq!(strengths::SPACER_SIZE_EQ, REQUIRED - 1.0);
-        assert_eq!(strengths::MIN_SIZE_GE, STRONG * 10.0);
-        assert_eq!(strengths::LENGTH_SIZE_EQ, STRONG / 10.0);
-        assert_eq!(strengths::PERCENTAGE_SIZE_EQ, MEDIUM * 10.0);
-        assert_eq!(strengths::RATIO_SIZE_EQ, MEDIUM);
-        assert_eq!(strengths::FILL_GROW, WEAK * 10.0);
-        assert_eq!(strengths::GROW, WEAK);
-        assert_eq!(strengths::SPACE_GROW, WEAK / 10.0);
     }
 
     #[test]
