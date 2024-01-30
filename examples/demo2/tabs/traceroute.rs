@@ -131,11 +131,11 @@ fn render_map(selected_row: usize, area: Rect, buf: &mut Buffer) {
                 ));
                 context.draw(&Points {
                     color: theme.source,
-                    coords: &[path.0.location], // sydney
+                    coords: [path.0.location].iter(), // sydney
                 });
                 context.draw(&Points {
                     color: theme.destination,
-                    coords: &[path.1.location], // perth
+                    coords: [path.1.location].iter(), // perth
                 });
             }
         })
