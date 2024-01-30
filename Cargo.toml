@@ -58,6 +58,7 @@ palette = "0.7.3"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
+ringbuf = "0.3.3"
 rstest = "0.18.2"
 serde_json = "1.0.109"
 
@@ -119,6 +120,10 @@ name = "barchart"
 harness = false
 
 [[bench]]
+name = "chart"
+harness = false
+
+[[bench]]
 name = "block"
 harness = false
 
@@ -136,7 +141,6 @@ harness = false
 [[bench]]
 name = "sparkline"
 harness = false
-
 
 [[example]]
 name = "barchart"
