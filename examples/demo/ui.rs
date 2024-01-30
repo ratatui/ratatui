@@ -2,6 +2,7 @@ use ratatui::{
     prelude::*,
     widgets::{canvas::*, *},
 };
+use ringbuf::Rb;
 
 use crate::app::App;
 
@@ -62,10 +63,12 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
         .ratio(app.progress);
     f.render_widget(gauge, chunks[0]);
 
+    // TODO: Prevent collecting after making `Sparkline` generic over the data like `Chart`.
+    let sparkline_data = app.sparkline.points.iter().copied().collect::<Vec<_>>();
     let sparkline = Sparkline::default()
         .block(Block::default().title("Sparkline:"))
         .style(Style::default().fg(Color::Green))
-        .data(&app.sparkline.points)
+        .data(&sparkline_data)
         .bar_set(if app.enhanced_graphics {
             symbols::bar::NINE_LEVELS
         } else {
@@ -180,7 +183,7 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
                 .name("data2")
                 .marker(symbols::Marker::Dot)
                 .style(Style::default().fg(Color::Cyan))
-                .data(&app.signals.sin1.points),
+                .data(app.signals.sin1.points.iter()),
             Dataset::default()
                 .name("data3")
                 .marker(if app.enhanced_graphics {
@@ -189,7 +192,7 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
                     symbols::Marker::Dot
                 })
                 .style(Style::default().fg(Color::Yellow))
-                .data(&app.signals.sin2.points),
+                .data(app.signals.sin2.points.iter()),
         ];
         let chart = Chart::new(datasets)
             .block(
