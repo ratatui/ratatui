@@ -52,6 +52,8 @@ fn render_live(bencher: &mut Bencher, data_count: &usize) {
 
     bencher.iter(|| {
         for i in 0..1000 {
+            // Very bad because it has the time complexity O(n) where n is the length of the data vector.
+            // Therefore, the usage of a ring buffer is recommended.
             data.remove(0);
             data.push((i as f64, i as f64));
         }
