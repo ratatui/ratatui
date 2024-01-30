@@ -128,7 +128,9 @@ pub struct ScrollbarState {
     /// The current position within the scrollable content.
     position: usize,
     /// The length of content in current viewport.
-    viewport_content_length: Option<usize>,
+    ///
+    /// FIXME: this should be Option<usize>, but it will break serialization to change it.
+    viewport_content_length: usize,
 }
 
 /// An enum representing a scrolling direction.
@@ -399,8 +401,8 @@ impl ScrollbarState {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn viewport_content_length<T: Into<Option<usize>>>(mut self, length: T) -> Self {
-        self.viewport_content_length = length.into();
+    pub fn viewport_content_length(mut self, viewport_content_length: usize) -> Self {
+        self.viewport_content_length = viewport_content_length;
         self
     }
 
@@ -549,8 +551,8 @@ impl Scrollbar<'_> {
     }
 
     fn viewport_length(&self, state: &ScrollbarState, area: Rect) -> u16 {
-        if let Some(length) = state.viewport_content_length {
-            return length as u16;
+        if state.viewport_content_length != 0 {
+            return state.viewport_content_length as u16;
         }
         if self.orientation.is_vertical() {
             area.height
