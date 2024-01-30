@@ -16,6 +16,7 @@
 use std::{
     error::Error,
     io,
+    mem::MaybeUninit,
     time::{Duration, Instant},
 };
 
@@ -28,6 +29,10 @@ use ratatui::{
     prelude::*,
     widgets::{block::Title, *},
 };
+use ringbuf::{LocalRb, Rb};
+
+type Ring<T> = LocalRb<T, Vec<MaybeUninit<T>>>;
+type ChartData = Ring<(f64, f64)>;
 
 #[derive(Clone)]
 pub struct SinSignal {
@@ -59,9 +64,9 @@ impl Iterator for SinSignal {
 
 struct App {
     signal1: SinSignal,
-    data1: Vec<(f64, f64)>,
+    data1: ChartData,
     signal2: SinSignal,
-    data2: Vec<(f64, f64)>,
+    data2: ChartData,
     window: [f64; 2],
 }
 
@@ -69,8 +74,13 @@ impl App {
     fn new() -> App {
         let mut signal1 = SinSignal::new(0.2, 3.0, 18.0);
         let mut signal2 = SinSignal::new(0.1, 2.0, 10.0);
-        let data1 = signal1.by_ref().take(200).collect::<Vec<(f64, f64)>>();
-        let data2 = signal2.by_ref().take(200).collect::<Vec<(f64, f64)>>();
+
+        let n = 200;
+        let mut data1 = ChartData::new(n);
+        let mut data2 = ChartData::new(n);
+        data1.push_iter(&mut signal1);
+        data2.push_iter(&mut signal2);
+
         App {
             signal1,
             data1,
@@ -81,14 +91,10 @@ impl App {
     }
 
     fn on_tick(&mut self) {
-        for _ in 0..5 {
-            self.data1.remove(0);
-        }
-        self.data1.extend(self.signal1.by_ref().take(5));
-        for _ in 0..10 {
-            self.data2.remove(0);
-        }
-        self.data2.extend(self.signal2.by_ref().take(10));
+        self.data1
+            .push_iter_overwrite(self.signal1.by_ref().take(5));
+        self.data2
+            .push_iter_overwrite(self.signal2.by_ref().take(10));
         self.window[0] += 1.0;
         self.window[1] += 1.0;
     }
@@ -177,12 +183,12 @@ fn render_chart1(f: &mut Frame, area: Rect, app: &App) {
             .name("data2")
             .marker(symbols::Marker::Dot)
             .style(Style::default().fg(Color::Cyan))
-            .data(&app.data1),
+            .data(app.data1.iter()),
         Dataset::default()
             .name("data3")
             .marker(symbols::Marker::Braille)
             .style(Style::default().fg(Color::Yellow))
-            .data(&app.data2),
+            .data(app.data2.iter()),
     ];
 
     let chart = Chart::new(datasets)
