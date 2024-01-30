@@ -1262,6 +1262,7 @@ mod tests {
     /// - underflow: constraint is for less than the full space
     /// - overflow: constraint is for more than the full space
     mod split {
+        use pretty_assertions::assert_eq;
         use rstest::rstest;
 
         use crate::{
@@ -1453,14 +1454,14 @@ mod tests {
             #[case(Rect::new(0, 0, 1, 1), &[TEN, NINETY], "b")]
             #[case(Rect::new(0, 0, 1, 1), &[TEN, FULL], "b")]
             #[case(Rect::new(0, 0, 1, 1), &[TEN, DOUBLE], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, HALF], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, FULL], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a")]
             #[case(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a")]
             #[case(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a")]
             #[case(Rect::new(0, 0, 1, 1), &[FULL, FULL], "a")]
@@ -1475,24 +1476,24 @@ mod tests {
             #[case(Rect::new(0, 0, 2, 1), &[TEN, HALF], "bb")]
             #[case(Rect::new(0, 0, 2, 1), &[TEN, FULL], "bb")]
             #[case(Rect::new(0, 0, 2, 1), &[TEN, DOUBLE], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab")]
             #[case(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab")]
             #[case(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab")]
             #[case(Rect::new(0, 0, 2, 1), &[HALF, FULL], "ab")]
             #[case(Rect::new(0, 0, 2, 1), &[FULL, ZERO], "aa")]
             #[case(Rect::new(0, 0, 2, 1), &[FULL, HALF], "aa")]
             #[case(Rect::new(0, 0, 2, 1), &[FULL, FULL], "aa")]
-            #[case(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "bbb")]
-            #[case(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "bbb")]
+            #[case(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "abb")]
+            #[case(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "abb")]
             #[case(Rect::new(0, 0, 4, 1), &[THIRD, THIRD], "abbb")]
             #[case(Rect::new(0, 0, 4, 1), &[THIRD, TWO_THIRDS], "abbb")]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, ZERO],       "bbbbbbbbbb" )]
@@ -1505,11 +1506,11 @@ mod tests {
             #[case(Rect::new(0, 0, 10, 1), &[TEN, HALF],        "abbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, FULL],        "abbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, DOUBLE],      "abbbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aabbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aabbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aabbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aabbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aaabbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, ZERO],      "aaabbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaabbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, HALF],      "aaabbbbbbb" )]
@@ -1531,22 +1532,22 @@ mod tests {
 
             #[rstest]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, ZERO],       "          " )]
-            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "bb        " )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "bbb       " )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, HALF],       "bbbbb     " )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, FULL],       "bbbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, DOUBLE],     "bbbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, ZERO],        "a         " )]
-            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "abb       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "abbb      " )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, HALF],        "abbbbb    " )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, FULL],        "abbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, DOUBLE],      "abbbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aa        " )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aabbb     " )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aabbbbb   " )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aabbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aaa       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aaabb     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aaabbbbb  " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aaabbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, ZERO],      "aaa       " )]
-            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaabb     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaabbb    " )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, HALF],      "aaabbbbb  " )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, FULL],      "aaabbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, DOUBLE],    "aaabbbbbbb" )]
@@ -1567,22 +1568,22 @@ mod tests {
 
             #[rstest]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, ZERO],       "          " )]
-            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "       bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "        bb" )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, HALF],       "     bbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, FULL],       "bbbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, DOUBLE],     "bbbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, ZERO],        "a         " )]
-            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "a      bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "a       bb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, HALF],        "a    bbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, FULL],        "abbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, DOUBLE],      "abbbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aa        " )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aa     bbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aa   bbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aabbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aaa       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aaa     bb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aaa  bbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aaabbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, ZERO],      "aaa       " )]
-            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaa    bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaa     bb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, HALF],      "aaa  bbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, FULL],      "aaabbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, DOUBLE],    "aaabbbbbbb" )]
@@ -1616,7 +1617,6 @@ mod tests {
             const NINETY: Constraint = Ratio(9, 10);
             const FULL: Constraint = Ratio(1, 1);
             const DOUBLE: Constraint = Ratio(2, 1);
-
             #[rstest]
             #[case(Rect::new(0, 0, 1, 1), &[ZERO], "a")]
             #[case(Rect::new(0, 0, 1, 1), &[QUARTER], "a")]
@@ -1643,14 +1643,14 @@ mod tests {
             #[case(Rect::new(0, 0, 1, 1), &[TEN, NINETY], "b")]
             #[case(Rect::new(0, 0, 1, 1), &[TEN, FULL], "b")]
             #[case(Rect::new(0, 0, 1, 1), &[TEN, DOUBLE], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, HALF], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, FULL], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "b")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a")]
+            #[case(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a")]
             #[case(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a")]
             #[case(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a")]
             #[case(Rect::new(0, 0, 1, 1), &[FULL, FULL], "a")]
@@ -1665,16 +1665,16 @@ mod tests {
             #[case(Rect::new(0, 0, 2, 1), &[TEN, HALF], "bb")]
             #[case(Rect::new(0, 0, 2, 1), &[TEN, FULL], "bb")]
             #[case(Rect::new(0, 0, 2, 1), &[TEN, DOUBLE], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "bb")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab")]
+            #[case(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab")]
             #[case(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab")]
             #[case(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab")]
             #[case(Rect::new(0, 0, 2, 1), &[HALF, FULL], "ab")]
@@ -1683,6 +1683,32 @@ mod tests {
             #[case(Rect::new(0, 0, 2, 1), &[FULL, FULL], "aa")]
             #[case(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "abb")]
             #[case(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "abb")]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, ZERO],       "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, HALF],       "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, FULL],       "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, DOUBLE],     "bbbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, ZERO],        "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, HALF],        "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, FULL],        "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, DOUBLE],      "abbbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, ZERO],      "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, HALF],      "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, FULL],      "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, DOUBLE],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, ZERO],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, HALF],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[HALF, FULL],       "aaaaabbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, ZERO],       "aaaaaaaaaa" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, HALF],       "aaaaaaaaaa" )]
+            #[case(Rect::new(0, 0, 10, 1), &[FULL, FULL],       "aaaaaaaaaa" )]
             fn ratio(
                 #[case] area: Rect,
                 #[case] constraints: &[Constraint],
@@ -1693,22 +1719,22 @@ mod tests {
 
             #[rstest]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, ZERO],       "          " )]
-            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "bb        " )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "bbb       " )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, HALF],       "bbbbb     " )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, FULL],       "bbbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, DOUBLE],     "bbbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, ZERO],        "a         " )]
-            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "abb       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "abbb      " )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, HALF],        "abbbbb    " )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, FULL],        "abbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, DOUBLE],      "abbbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aa        " )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aabbb     " )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aabbbbb   " )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aabbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aaa       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aaabb     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aaabbbbb  " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aaabbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, ZERO],      "aaa       " )]
-            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaabb     " )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaabbb    " )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, HALF],      "aaabbbbb  " )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, FULL],      "aaabbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, DOUBLE],    "aaabbbbbbb" )]
@@ -1729,22 +1755,22 @@ mod tests {
 
             #[rstest]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, ZERO],       "          " )]
-            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "       bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[ZERO, QUARTER],    "        bb" )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, HALF],       "     bbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, FULL],       "bbbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[ZERO, DOUBLE],     "bbbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, ZERO],        "a         " )]
-            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "a      bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[TEN, QUARTER],     "a       bb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, HALF],        "a    bbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, FULL],        "abbbbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[TEN, DOUBLE],      "abbbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aa        " )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aa     bbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aa   bbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aabbbbbbbb" )]
-            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aabbbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, ZERO],    "aaa       " )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, QUARTER], "aaa     bb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, HALF],    "aaa  bbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, FULL],    "aaabbbbbbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[QUARTER, DOUBLE],  "aaabbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, ZERO],      "aaa       " )]
-            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaa    bbb" )]
+            #[case(Rect::new(0, 0, 10, 1), &[THIRD, QUARTER],   "aaa     bb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, HALF],      "aaa  bbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, FULL],      "aaabbbbbbb" )]
             #[case(Rect::new(0, 0, 10, 1), &[THIRD, DOUBLE],    "aaabbbbbbb" )]
@@ -1791,6 +1817,7 @@ mod tests {
 
         #[test]
         fn edge_cases() {
+            // stretches into last
             let layout = Layout::default()
                 .constraints([
                     Constraint::Percentage(50),
@@ -1801,12 +1828,13 @@ mod tests {
             assert_eq!(
                 layout[..],
                 [
-                    Rect::new(0, 0, 1, 0),
                     Rect::new(0, 0, 1, 1),
+                    Rect::new(0, 1, 1, 0),
                     Rect::new(0, 1, 1, 0)
                 ]
             );
 
+            // stretches into last
             let layout = Layout::default()
                 .constraints([
                     Constraint::Max(1),
@@ -1833,12 +1861,13 @@ mod tests {
             assert_eq!(
                 layout[..],
                 [
-                    Rect::new(0, 0, 0, 1),
-                    Rect::new(0, 0, 0, 1),
                     Rect::new(0, 0, 1, 1),
+                    Rect::new(1, 0, 0, 1),
+                    Rect::new(1, 0, 0, 1),
                 ]
             );
 
+            // This stretches the 2nd last length instead of the last min based on ranking
             let layout = Layout::default()
                 .constraints([Length(3), Min(4), Length(1), Min(4)])
                 .direction(Direction::Horizontal)
@@ -1847,9 +1876,9 @@ mod tests {
                 layout[..],
                 [
                     Rect::new(0, 0, 0, 1),
-                    Rect::new(0, 0, 3, 1),
-                    Rect::new(3, 0, 0, 1),
-                    Rect::new(3, 0, 4, 1),
+                    Rect::new(0, 0, 4, 1),
+                    Rect::new(4, 0, 0, 1),
+                    Rect::new(4, 0, 3, 1),
                 ]
             );
         }
@@ -1881,7 +1910,7 @@ mod tests {
 
         #[rstest]
         #[case::table_length_test(vec![Length(4), Length(4)], vec![(0, 3), (4, 3)], 7)]
-        #[case::table_length_test(vec![Length(4), Length(4)], vec![(0, 1), (2, 2)], 4)]
+        #[case::table_length_test(vec![Length(4), Length(4)], vec![(0, 2), (3, 1)], 4)]
         fn table_length(
             #[case] constraints: Vec<Constraint>,
             #[case] expected: Vec<(u16, u16)>,
@@ -2004,7 +2033,7 @@ mod tests {
 
         #[rstest]
         #[case::excess_in_last_variable(vec![13, 10, 27], vec![Fill(1), Length(10), Fill(2)])]
-        #[case::excess_in_last_variable(vec![10, 26, 14], vec![Length(10), Fill(2), Fill(1)])] // might be unstable?
+        #[case::excess_in_last_variable(vec![10, 27, 13], vec![Length(10), Fill(2), Fill(1)])] // might be unstable?
         fn fixed_with_50_width(#[case] expected: Vec<u16>, #[case] constraints: Vec<Constraint>) {
             let rect = Rect::new(0, 0, 50, 1);
             let r = Layout::horizontal(constraints)
@@ -2028,12 +2057,12 @@ mod tests {
         #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Min(50), Fill(2), Fill(4)])]
         #[case::randomly_ordered(vec![5, 15, 50, 10, 20], vec![Fill(1), Fill(3), Max(50), Fill(2), Fill(4)])]
         #[case::zero_width(vec![0, 100, 0], vec![Fill(0), Fill(1), Fill(0)])]
-        #[case::zero_width(vec![49, 1, 50], vec![Fill(0), Length(1), Fill(0)])]
-        #[case::zero_width(vec![49, 1, 50], vec![Fill(0), Length(1), Fill(0)])]
-        #[case::zero_width(vec![49, 1, 50], vec![Fill(0), Percentage(1), Fill(0)])]
-        #[case::zero_width(vec![49, 1, 50], vec![Fill(0), Min(1), Fill(0)])]
-        #[case::zero_width(vec![49, 1, 50], vec![Fill(0), Max(1), Fill(0)])]
-        #[case::zero_width(vec![0, 66, 0, 34], vec![Fill(0), Fill(2), Fill(0), Fill(1)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Length(1), Fill(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Length(1), Fill(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Percentage(1), Fill(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Min(1), Fill(0)])]
+        #[case::zero_width(vec![50, 1, 49], vec![Fill(0), Max(1), Fill(0)])]
+        #[case::zero_width(vec![0, 67, 0, 33], vec![Fill(0), Fill(2), Fill(0), Fill(1)])]
         #[case::space_filler(vec![0, 80, 20], vec![Fill(0), Fill(2), Percentage(20)])]
         #[case::space_filler(vec![40, 40, 20], vec![Fill(0), Fill(0), Percentage(20)])]
         #[case::space_filler(vec![80, 20], vec![Fill(0), Ratio(1, 5)])]
@@ -2047,7 +2076,7 @@ mod tests {
         #[case::space_filler(vec![80, 20], vec![Fill(0), Length(20)])]
         #[case::space_filler(vec![80, 20], vec![Fill(0), Min(20)])]
         #[case::space_filler(vec![80, 20], vec![Fill(0), Max(20)])]
-        #[case::fill_collapses_first(vec![6, 7, 7, 30, 50], vec![Fill(1), Fill(1), Fill(1), Min(30), Length(50)])]
+        #[case::fill_collapses_first(vec![7, 6, 7, 30, 50], vec![Fill(1), Fill(1), Fill(1), Min(30), Length(50)])]
         #[case::fill_collapses_first(vec![0, 0, 0, 50, 50], vec![Fill(1), Fill(1), Fill(1), Length(50), Length(50)])]
         #[case::fill_collapses_first(vec![0, 0, 0, 75, 25], vec![Fill(1), Fill(1), Fill(1), Length(75), Length(50)])]
         #[case::fill_collapses_first(vec![0, 0, 0, 50, 50], vec![Fill(1), Fill(1), Fill(1), Min(50), Max(50)])]
@@ -2131,13 +2160,13 @@ mod tests {
         #[case::length(vec![(25, 25), (50, 25)], vec![Length(25), Length(25)], Flex::Center)]
         #[case::length(vec![(50, 25), (75, 25)], vec![Length(25), Length(25)], Flex::End)]
         #[case::length(vec![(0, 25), (75, 25)], vec![Length(25), Length(25)], Flex::SpaceBetween)]
-        #[case::length(vec![(16, 25), (58, 25)], vec![Length(25), Length(25)], Flex::SpaceAround)]
+        #[case::length(vec![(17, 25), (58, 25)], vec![Length(25), Length(25)], Flex::SpaceAround)]
         #[case::percentage(vec![(0, 25), (25, 75)], vec![Percentage(25), Percentage(25)], Flex::Legacy)]
         #[case::percentage(vec![(0, 25), (25, 25)], vec![Percentage(25), Percentage(25)], Flex::Start)]
         #[case::percentage(vec![(25, 25), (50, 25)], vec![Percentage(25), Percentage(25)], Flex::Center)]
         #[case::percentage(vec![(50, 25), (75, 25)], vec![Percentage(25), Percentage(25)], Flex::End)]
         #[case::percentage(vec![(0, 25), (75, 25)], vec![Percentage(25), Percentage(25)], Flex::SpaceBetween)]
-        #[case::percentage(vec![(16, 25), (58, 25)], vec![Percentage(25), Percentage(25)], Flex::SpaceAround)]
+        #[case::percentage(vec![(17, 25), (58, 25)], vec![Percentage(25), Percentage(25)], Flex::SpaceAround)]
         #[case::min(vec![(0, 25), (25, 75)], vec![Min(25), Min(25)], Flex::Legacy)]
         #[case::min(vec![(0, 50), (50, 50)], vec![Min(25), Min(25)], Flex::Start)]
         #[case::min(vec![(0, 50), (50, 50)], vec![Min(25), Min(25)], Flex::Center)]
@@ -2149,8 +2178,8 @@ mod tests {
         #[case::max(vec![(25, 25), (50, 25)], vec![Max(25), Max(25)], Flex::Center)]
         #[case::max(vec![(50, 25), (75, 25)], vec![Max(25), Max(25)], Flex::End)]
         #[case::max(vec![(0, 25), (75, 25)], vec![Max(25), Max(25)], Flex::SpaceBetween)]
-        #[case::max(vec![(16, 25), (58, 25)], vec![Max(25), Max(25)], Flex::SpaceAround)]
-        #[case::length_spaced_around(vec![(0, 25), (37, 25), (75, 25)], vec![Length(25), Length(25), Length(25)], Flex::SpaceBetween)]
+        #[case::max(vec![(17, 25), (58, 25)], vec![Max(25), Max(25)], Flex::SpaceAround)]
+        #[case::length_spaced_around(vec![(0, 25), (38, 25), (75, 25)], vec![Length(25), Length(25), Length(25)], Flex::SpaceBetween)]
         fn flex_constraint(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2254,8 +2283,8 @@ mod tests {
         #[rstest]
         #[case::prop(vec![(0 , 10), (10, 80), (90 , 10)] , vec![Length(10), Fill(1), Length(10)], Flex::Legacy)]
         #[case::flex(vec![(0 , 10), (90 , 10)] , vec![Length(10), Length(10)], Flex::SpaceBetween)]
-        #[case::prop(vec![(0 , 26), (26, 10), (36, 27), (63, 10), (73, 27)] , vec![Fill(1), Length(10), Fill(1), Length(10), Fill(1)], Flex::Legacy)]
-        #[case::flex(vec![(26 , 10), (63, 10)] , vec![Length(10), Length(10)], Flex::SpaceAround)]
+        #[case::prop(vec![(0 , 27), (27, 10), (37, 26), (63, 10), (73, 27)] , vec![Fill(1), Length(10), Fill(1), Length(10), Fill(1)], Flex::Legacy)]
+        #[case::flex(vec![(27 , 10), (63, 10)] , vec![Length(10), Length(10)], Flex::SpaceAround)]
         #[case::prop(vec![(0 , 10), (10, 10), (20 , 80)] , vec![Length(10), Length(10), Fill(1)], Flex::Legacy)]
         #[case::flex(vec![(0 , 10), (10, 10)] , vec![Length(10), Length(10)], Flex::Start)]
         #[case::prop(vec![(0 , 80), (80 , 10), (90, 10)] , vec![Fill(1), Length(10), Length(10)], Flex::Legacy)]
@@ -2344,7 +2373,7 @@ mod tests {
         #[rstest]
         #[case::spacers(vec![(0, 0), (10, 0), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy)]
         #[case::spacers(vec![(0, 0), (10, 80), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween)]
-        #[case::spacers(vec![(0, 26), (36, 27), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceAround)]
+        #[case::spacers(vec![(0, 27), (37, 26), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceAround)]
         #[case::spacers(vec![(0, 0), (10, 0), (20, 80)], vec![Length(10), Length(10)], Flex::Start)]
         #[case::spacers(vec![(0, 40), (50, 0), (60, 40)], vec![Length(10), Length(10)], Flex::Center)]
         #[case::spacers(vec![(0, 80), (90, 0), (100, 0)], vec![Length(10), Length(10)], Flex::End)]
@@ -2368,9 +2397,9 @@ mod tests {
         #[rstest]
         #[case::spacers(vec![(0, 0), (10, 5), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, 5)]
         #[case::spacers(vec![(0, 0), (10, 80), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 5)]
-        #[case::spacers(vec![(0, 26), (36, 27), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceAround, 5)]
+        #[case::spacers(vec![(0, 27), (37, 26), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceAround, 5)]
         #[case::spacers(vec![(0, 0), (10, 5), (25, 75)], vec![Length(10), Length(10)], Flex::Start, 5)]
-        #[case::spacers(vec![(0, 37), (47, 5), (62, 38)], vec![Length(10), Length(10)], Flex::Center, 5)]
+        #[case::spacers(vec![(0, 38), (48, 5), (63, 37)], vec![Length(10), Length(10)], Flex::Center, 5)]
         #[case::spacers(vec![(0, 75), (85, 5), (100, 0)], vec![Length(10), Length(10)], Flex::End, 5)]
         fn split_with_spacers_and_spacing(
             #[case] expected: Vec<(u16, u16)>,
@@ -2394,7 +2423,7 @@ mod tests {
         #[rstest]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, 200)]
         #[case::spacers(vec![(0, 0), (10, 80), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 200)]
-        #[case::spacers(vec![(0, 26), (36, 27), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceAround, 200)]
+        #[case::spacers(vec![(0, 27), (37, 26), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceAround, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Start, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Center, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::End, 200)]
