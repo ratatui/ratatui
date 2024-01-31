@@ -124,6 +124,12 @@ impl App {
             Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
                 Char('q') | Esc => self.exit(),
                 Char('s') | Enter => self.toggle_edit(),
+                Char('1') => self.swap_constraint(ConstraintName::Min),
+                Char('2') => self.swap_constraint(ConstraintName::Max),
+                Char('3') => self.swap_constraint(ConstraintName::Length),
+                Char('4') => self.swap_constraint(ConstraintName::Percentage),
+                Char('5') => self.swap_constraint(ConstraintName::Ratio),
+                Char('6') => self.swap_constraint(ConstraintName::Fill),
                 _ => self.handle_mode_events(key),
             },
             _ => {}
@@ -238,6 +244,20 @@ impl App {
         }
     }
 
+    fn swap_constraint(&mut self, name: ConstraintName) {
+        // save the editor state
+        let constraint = match name {
+            ConstraintName::Length => Length(self.value),
+            ConstraintName::Percentage => Percentage(self.value),
+            ConstraintName::Min => Min(self.value),
+            ConstraintName::Max => Max(self.value),
+            ConstraintName::Fill => Fill(self.value),
+            ConstraintName::Ratio => Ratio(1, self.value as u32),
+        };
+        self.constraints[self.selected_index] = constraint;
+        self.mode = AppMode::Select;
+    }
+
     // edits if in select mode, selects if in edit mode
     fn toggle_edit(&mut self) {
         if self.constraints.is_empty() {
@@ -341,7 +361,7 @@ impl App {
             Length(1),
         ]));
 
-        format!("{:?}", flex).bold().render(label, buf);
+        format!("Flex::{:?}", flex).bold().render(label, buf);
 
         let (blocks, spacers) = Layout::horizontal(&self.constraints)
             .flex(flex)
