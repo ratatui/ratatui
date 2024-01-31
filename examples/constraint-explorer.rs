@@ -33,7 +33,10 @@ use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 #[derive(Default)]
 struct App {
     mode: AppMode,
-    layout_blocks: LayoutBlocks,
+    spacing: u16,
+    constraints: Vec<Constraint>,
+    selected_index: usize,
+    value: u16,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -47,8 +50,7 @@ enum AppMode {
 #[derive(Debug, Default, PartialEq, Eq)]
 struct ConstraintEditor {
     constraint_type: ConstraintName,
-    value1: String,
-    value2: String,
+    value: String,
 }
 
 /// A variant of [`Constraint`] that can be rendered as a tab.
@@ -61,16 +63,6 @@ enum ConstraintName {
     Min,
     Max,
     Fill,
-}
-
-/// A widget that renders a set of [`ConstraintBlock`]s and [`SpacerBlock`]s with an axis that shows
-/// the width of the layout. E.g.: `<----- 80 px (gap: 2 px) ----->`
-#[derive(Debug, Default, Clone)]
-struct LayoutBlocks {
-    constraints: Vec<Constraint>,
-    flex: Flex,
-    spacing: u16,
-    selected_index: usize,
 }
 
 /// A widget that renders a [`Constraint`] as a block. E.g.:
@@ -104,6 +96,12 @@ fn main() -> Result<()> {
 // App behaviour
 impl App {
     fn run(&mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
+        self.constraints = vec![
+            Constraint::Length(20),
+            Constraint::Length(20),
+            Constraint::Length(20),
+        ];
+        self.value = 20;
         while self.is_running() {
             self.draw(&mut terminal)?;
             self.handle_events()?;
@@ -125,20 +123,110 @@ impl App {
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
                 Char('q') | Esc => self.exit(),
-                Char('e') | Enter => self.toggle_edit(),
-                _ => self.handle_child_events(key),
+                Char('s') | Enter => self.toggle_edit(),
+                _ => self.handle_mode_events(key),
             },
             _ => {}
         }
         Ok(())
     }
 
-    fn handle_child_events(&mut self, key: KeyEvent) {
+    fn handle_mode_events(&mut self, key: KeyEvent) {
         match &mut self.mode {
-            AppMode::Select => self.layout_blocks.handle_key_event(key),
+            AppMode::Select => self.handle_select_event(key),
             AppMode::Edit(editor) => editor.handle_key_event(key),
             AppMode::Quit => {}
         }
+    }
+
+    fn handle_select_event(&mut self, key: KeyEvent) {
+        use KeyCode::*;
+        match key.code {
+            Char('+') => self.increment_spacing(),
+            Char('-') => self.decrement_spacing(),
+            Char('x') => self.delete_block(),
+            Char('a') => self.insert_block(),
+            Up | Char('k') => self.increment_value(),
+            Down | Char('j') => self.decrement_value(),
+            Left | Char('h') => self.prev_block(),
+            Right | Char('l') => self.next_block(),
+            _ => (),
+        }
+    }
+
+    /// select the next block with wrap around
+    fn increment_value(&mut self) {
+        if self.constraints.is_empty() {
+            return;
+        }
+        self.constraints[self.selected_index] = match self.constraints[self.selected_index] {
+            Constraint::Length(v) => Constraint::Length(v.saturating_add(1)),
+            Constraint::Min(v) => Constraint::Min(v.saturating_add(1)),
+            Constraint::Max(v) => Constraint::Max(v.saturating_add(1)),
+            Constraint::Fill(v) => Constraint::Fill(v.saturating_add(1)),
+            Constraint::Percentage(v) => Constraint::Percentage(v.saturating_add(1)),
+            Constraint::Ratio(n, d) => Constraint::Ratio(n, d.saturating_add(1)),
+        };
+    }
+
+    fn decrement_value(&mut self) {
+        if self.constraints.is_empty() {
+            return;
+        }
+        self.constraints[self.selected_index] = match self.constraints[self.selected_index] {
+            Constraint::Length(v) => Constraint::Length(v.saturating_sub(1)),
+            Constraint::Min(v) => Constraint::Min(v.saturating_sub(1)),
+            Constraint::Max(v) => Constraint::Max(v.saturating_sub(1)),
+            Constraint::Fill(v) => Constraint::Fill(v.saturating_sub(1)),
+            Constraint::Percentage(v) => Constraint::Percentage(v.saturating_sub(1)),
+            Constraint::Ratio(n, d) => Constraint::Ratio(n, d.saturating_sub(1)),
+        };
+    }
+
+    /// select the next block with wrap around
+    fn next_block(&mut self) {
+        if self.constraints.is_empty() {
+            return;
+        }
+        let len = self.constraints.len();
+        self.selected_index = (self.selected_index + 1) % len;
+    }
+
+    /// select the previous block with wrap around
+    fn prev_block(&mut self) {
+        if self.constraints.is_empty() {
+            return;
+        }
+        let len = self.constraints.len();
+        self.selected_index = (self.selected_index + self.constraints.len() - 1) % len;
+    }
+
+    /// delete the selected block
+    fn delete_block(&mut self) {
+        if self.constraints.is_empty() {
+            return;
+        }
+        self.constraints.remove(self.selected_index);
+        self.selected_index = self.selected_index.saturating_sub(1);
+    }
+
+    /// insert a block after the selected block
+    fn insert_block(&mut self) {
+        let index = self
+            .selected_index
+            .saturating_add(1)
+            .min(self.constraints.len());
+        let constraint = Constraint::Length(self.value);
+        self.constraints.insert(index, constraint);
+        self.selected_index = index;
+    }
+
+    fn increment_spacing(&mut self) {
+        self.spacing = self.spacing.saturating_add(1);
+    }
+
+    fn decrement_spacing(&mut self) {
+        self.spacing = self.spacing.saturating_sub(1);
     }
 
     // exits edit mode or the app
@@ -152,19 +240,20 @@ impl App {
 
     // edits if in select mode, selects if in edit mode
     fn toggle_edit(&mut self) {
-        if self.layout_blocks.constraints.is_empty() {
+        if self.constraints.is_empty() {
             return;
         }
         match &self.mode {
             AppMode::Select => {
                 // move into edit mode
-                let selected = self.layout_blocks.selected_constraint().unwrap().clone();
+                let selected = *self.selected_constraint().unwrap();
                 self.mode = AppMode::Edit(ConstraintEditor::from(selected));
             }
             AppMode::Edit(editor) => {
                 // save the editor state
                 let constraint = Constraint::from(editor);
-                self.layout_blocks.constraints[self.layout_blocks.selected_index] = constraint;
+                self.constraints[self.selected_index] = constraint;
+                self.mode = AppMode::Select;
             }
             AppMode::Quit => {}
         }
@@ -202,17 +291,20 @@ impl From<Constraint> for ConstraintName {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [header_area, instructions_area, blocks_area, editor_area] =
+        let [header_area, instructions_area, axis_area, blocks_area, editor_area] =
             area.split(&Layout::vertical([
                 Length(1),
                 Length(1),
-                Length(6),
-                Fill(0),
+                Length(1),
+                Length(6 * 5),
+                Length(3),
             ]));
 
         self.header().render(header_area, buf);
         self.instructions().render(instructions_area, buf);
-        self.layout_blocks.render(blocks_area, buf);
+
+        self.axis(axis_area.width).render(axis_area, buf);
+        self.render_layout_blocks(blocks_area, buf);
         if let AppMode::Edit(editor) = &self.mode {
             editor.render(editor_area, buf);
         }
@@ -223,29 +315,38 @@ impl Widget for &App {
 impl App {
     const HEADER_COLOR: Color = SLATE.c200;
     const TEXT_COLOR: Color = SLATE.c400;
+    const AXIS_COLOR: Color = SLATE.c300;
 
-    fn header(&self) -> impl Widget {
-        let text = "Constraint Explorer";
-        text.bold().fg(Self::HEADER_COLOR).to_centered_line()
+    fn render_layout_blocks(&self, area: Rect, buf: &mut Buffer) {
+        let [start, center, end, space_around, space_between] = area.split(&Layout::vertical([
+            Length(6),
+            Length(6),
+            Length(6),
+            Length(6),
+            Length(6),
+        ]));
+
+        self.render_layout_block(Flex::Start, start, buf);
+        self.render_layout_block(Flex::Center, center, buf);
+        self.render_layout_block(Flex::End, end, buf);
+        self.render_layout_block(Flex::SpaceAround, space_around, buf);
+        self.render_layout_block(Flex::SpaceBetween, space_between, buf)
     }
 
-    fn instructions(&self) -> impl Widget {
-        let text = "◄ ►: select constraint, e: edit, i: insert, d: delete, q: quit";
-        text.fg(Self::TEXT_COLOR).to_centered_line()
-    }
-}
+    fn render_layout_block(&self, flex: Flex, area: Rect, buf: &mut Buffer) {
+        let [_, label, layout, cursor] = area.split(&Layout::vertical([
+            Length(1),
+            Length(1),
+            Length(3),
+            Length(1),
+        ]));
 
-impl Widget for &LayoutBlocks {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let [axis_area, layout_area, arrows] =
-            area.split(&Layout::vertical([Length(1), Fill(0), Length(1)]));
-
-        self.axis(axis_area.width).render(axis_area, buf);
+        format!("{:?}", flex).bold().render(label, buf);
 
         let (blocks, spacers) = Layout::horizontal(&self.constraints)
-            .flex(self.flex)
+            .flex(flex)
             .spacing(self.spacing)
-            .split_with_spacers(layout_area);
+            .split_with_spacers(layout);
 
         for (area, constraint) in blocks.iter().zip(self.constraints.iter()) {
             ConstraintBlock::new(*constraint).render(*area, buf);
@@ -258,75 +359,22 @@ impl Widget for &LayoutBlocks {
         if let Some(block) = blocks.get(self.selected_index) {
             let arrow_area = Rect {
                 x: block.x,
-                y: arrows.y,
+                y: cursor.y,
                 width: block.width,
-                height: arrows.height,
+                height: cursor.height,
             };
-            LayoutBlocks::cursor(block.width).render(arrow_area, buf);
+            self.cursor(block.width).render(arrow_area, buf);
         }
     }
-}
 
-impl LayoutBlocks {
-    const AXIS_COLOR: Color = SLATE.c300;
-
-    fn handle_key_event(&mut self, key: KeyEvent) {
-        use KeyCode::*;
-        match key.code {
-            Char('+') => self.increment_spacing(),
-            Char('-') => self.decrement_spacing(),
-            Left => self.prev_block(),
-            Right => self.next_block(),
-            Char('d') => self.delete_block(),
-            // TODO does this belong in the app so that we can edit the selected block?
-            Char('i') => self.insert_block(),
-            _ => (),
-        }
-    }
-    /// select the next block with wrap around
-    fn next_block(&mut self) {
-        if self.constraints.is_empty() {
-            return;
-        }
-        let len = self.constraints.len();
-        self.selected_index = (self.selected_index + 1) % len;
+    fn header(&self) -> impl Widget {
+        let text = "Constraint Explorer";
+        text.bold().fg(Self::HEADER_COLOR).to_centered_line()
     }
 
-    /// select the previous block with wrap around
-    fn prev_block(&mut self) {
-        if self.constraints.is_empty() {
-            return;
-        }
-        let len = self.constraints.len();
-        self.selected_index = (self.selected_index + self.constraints.len() - 1) % len;
-    }
-
-    /// delete the selected block
-    fn delete_block(&mut self) {
-        if self.constraints.is_empty() {
-            return;
-        }
-        self.constraints.remove(self.selected_index);
-        self.selected_index = self.selected_index.saturating_sub(1);
-    }
-
-    /// insert a block after the selected block
-    fn insert_block(&mut self) {
-        let index = self
-            .selected_index
-            .saturating_add(1)
-            .min(self.constraints.len());
-        let constraint = Constraint::Length(12);
-        self.constraints.insert(index, constraint);
-        self.selected_index = index;
-    }
-
-    fn increment_spacing(&mut self) {
-        self.spacing = self.spacing.saturating_add(1);
-    }
-
-    fn decrement_spacing(&mut self) {
-        self.spacing = self.spacing.saturating_sub(1);
+    fn instructions(&self) -> impl Widget {
+        let text = "◄ ►: select, ▲ ▼: edit, s: swap, a: add, x: delete, q: quit";
+        text.fg(Self::TEXT_COLOR).to_centered_line()
     }
 
     /// A bar like `<----- 80 px (gap: 2 px) ----->`
@@ -344,9 +392,9 @@ impl LayoutBlocks {
     }
 
     /// A cursor like `└─────┘` that points to the selected block
-    fn cursor(width: u16) -> impl Widget {
+    fn cursor(&self, width: u16) -> impl Widget {
         let cursor = format!("└{}┘", "─".repeat(width.saturating_sub(2) as usize));
-        Paragraph::new(cursor).fg(LayoutBlocks::AXIS_COLOR)
+        Paragraph::new(cursor).fg(Self::AXIS_COLOR)
     }
 
     fn selected_constraint(&self) -> Option<&Constraint> {
@@ -399,7 +447,7 @@ impl Widget for SpacerBlock {
         } else {
             Self::line().render(area, buf);
         }
-        let row = area.rows().nth(2).unwrap_or_default();
+        let row = area.rows().nth(1).unwrap_or_default();
         Self::label(area.width).render(row, buf);
     }
 }
@@ -452,35 +500,31 @@ impl Widget for &ConstraintEditor {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let [labels, values] = area.split(&Layout::horizontal([Length(17), Fill(0)]));
 
-        let vertical = Layout::vertical([Length(1), Length(1), Length(1)]);
+        let vertical = Layout::vertical([Length(1), Length(1)]);
 
         // labels
-        let [constraint_type, value1, value2] = labels.split(&vertical);
+        let [constraint_type, value] = labels.split(&vertical);
         Line::from("Constraint Type:").render(constraint_type, buf);
         match self.constraint_type {
             ConstraintName::Ratio => {
-                Line::from("Numerator:").render(value1, buf);
-                Line::from("Denominator:").render(value2, buf);
+                Line::from("Denominator:").render(value, buf);
             }
-            _ => Line::from("Length:").render(value1, buf),
+            _ => Line::from("Length:").render(value, buf),
         }
 
         // values
-        let [constraint_type, value1, value2] = values.split(&vertical);
+        let [constraint_type, value] = values.split(&vertical);
         self.constraint_types().render(constraint_type, buf);
         match self.constraint_type {
             ConstraintName::Ratio => {
-                Paragraph::new(self.value1.as_str())
+                Paragraph::new(self.value.as_str())
                     .style(ConstraintEditor::TEXT_COLOR)
-                    .render(value1, buf);
-                Paragraph::new(self.value2.as_str())
-                    .style(ConstraintEditor::TEXT_COLOR)
-                    .render(value2, buf);
+                    .render(value, buf);
             }
             _ => {
-                Paragraph::new(self.value1.as_str())
+                Paragraph::new(self.value.as_str())
                     .style(ConstraintEditor::TEXT_COLOR)
-                    .render(value1, buf);
+                    .render(value, buf);
             }
         }
     }
@@ -524,19 +568,14 @@ impl From<Constraint> for ConstraintEditor {
         let value = match constraint {
             Length(value) => value.to_string(),
             Percentage(value) => value.to_string(),
-            Ratio(value, _) => value.to_string(),
+            Ratio(_, value) => value.to_string(),
             Min(value) => value.to_string(),
             Max(value) => value.to_string(),
             Fill(value) => value.to_string(),
         };
-        let value2 = match constraint {
-            Ratio(_, value) => value.to_string(),
-            _ => "".to_string(),
-        };
         Self {
             constraint_type: constraint_name,
-            value1: value,
-            value2,
+            value,
         }
     }
 }
@@ -546,12 +585,10 @@ impl From<&ConstraintEditor> for Constraint {
         use Constraint::*;
         if editor.constraint_type == ConstraintName::Ratio {
             // ratio uses u32 values
-            Ratio(
-                editor.value1.parse().unwrap_or_default(),
-                editor.value2.parse().unwrap_or_default(),
-            )
+            // assume use input is always denominator
+            Ratio(1, editor.value.parse().unwrap_or_default())
         } else {
-            let value = editor.value1.parse().unwrap_or_default();
+            let value = editor.value.parse().unwrap_or_default();
             match editor.constraint_type {
                 ConstraintName::Length => Length(value),
                 ConstraintName::Percentage => Percentage(value),
