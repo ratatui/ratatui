@@ -232,6 +232,9 @@ impl App {
     }
 
     fn swap_constraint(&mut self, name: ConstraintName) {
+        if self.constraints.is_empty() {
+            return;
+        }
         // save the editor state
         let constraint = match name {
             ConstraintName::Length => Length(self.value),
@@ -239,7 +242,7 @@ impl App {
             ConstraintName::Min => Min(self.value),
             ConstraintName::Max => Max(self.value),
             ConstraintName::Fill => Fill(self.value),
-            ConstraintName::Ratio => Ratio(1, self.value as u32),
+            ConstraintName::Ratio => Ratio(1, self.value as u32 / 4), // for balance
         };
         self.constraints[self.selected_index] = constraint;
     }
@@ -294,9 +297,13 @@ impl App {
             .selected_constraint()
             .map(|c| c.to_string())
             .unwrap_or("None".to_string());
+        let color = self
+            .selected_constraint()
+            .map(|c| ConstraintName::from(*c).color())
+            .unwrap_or_default();
         Line::from(vec![
             "Selected Block: ".into(),
-            format!("{value}").bg(RED.c900).fg(SLATE.c200),
+            format!("  {value}  ").fg(SLATE.c200).bg(color),
         ])
     }
 
@@ -385,7 +392,11 @@ impl App {
 impl Widget for ConstraintBlock {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let main_color = ConstraintName::from(self.constraint).color();
-        let border_color = if self.selected { RED.c900 } else { main_color };
+        let border_color = if self.selected {
+            ConstraintName::from(self.constraint).lighter_color()
+        } else {
+            main_color
+        };
         let label = self.label(area.width);
         let block = Block::bordered()
             .border_set(symbols::border::QUADRANT_OUTSIDE)
@@ -435,15 +446,20 @@ impl Widget for SpacerBlock {
         } else {
             Self::line().render(area, buf);
         }
+
         let row = area.rows().nth(1).unwrap_or_default();
+        Self::spacer_label(area.width).render(row, buf);
+
+        let row = area.rows().nth(2).unwrap_or_default();
         Self::label(area.width).render(row, buf);
     }
 }
 
 impl SpacerBlock {
-    const TEXT_COLOR: Color = SLATE.c400;
+    const TEXT_COLOR: Color = SLATE.c500;
     const BORDER_COLOR: Color = SLATE.c600;
 
+    /// A block with a corner borders
     fn block() -> impl Widget {
         let corners_only = symbols::border::Set {
             top_left: line::NORMAL.top_left,
@@ -460,6 +476,7 @@ impl SpacerBlock {
             .border_style(Self::BORDER_COLOR)
     }
 
+    /// A vertical line used if there is not enough space to render the block
     fn line() -> impl Widget {
         Paragraph::new(Text::from(vec![
             Line::from(""),
@@ -470,6 +487,13 @@ impl SpacerBlock {
         .style(Self::BORDER_COLOR)
     }
 
+    /// A label that says "Spacer" if there is enough space
+    fn spacer_label(width: u16) -> impl Widget {
+        let label = if width >= 6 { "Spacer" } else { "" };
+        label.fg(SpacerBlock::TEXT_COLOR).to_centered_line()
+    }
+
+    /// A label that says "8 px" if there is enough space
     fn label(width: u16) -> impl Widget {
         let long_label = format!("{width} px");
         let short_label = format!("{width}");
@@ -493,6 +517,17 @@ impl ConstraintName {
             Self::Fill => SLATE.c950,
             Self::Min => BLUE.c900,
             Self::Max => BLUE.c800,
+        }
+    }
+
+    fn lighter_color(&self) -> Color {
+        match self {
+            Self::Length => SLATE.c500,
+            Self::Percentage => SLATE.c600,
+            Self::Ratio => SLATE.c700,
+            Self::Fill => SLATE.c800,
+            Self::Min => BLUE.c700,
+            Self::Max => BLUE.c600,
         }
     }
 }
