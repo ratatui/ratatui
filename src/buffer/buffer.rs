@@ -243,7 +243,7 @@ impl Buffer {
     pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, width: u16) -> (u16, u16) {
         let mut remaining_width = width;
         let mut x = x;
-        for span in &line.spans {
+        for span in line {
             if remaining_width == 0 {
                 break;
             }
