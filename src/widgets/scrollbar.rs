@@ -578,7 +578,6 @@ impl ScrollbarOrientation {
 mod tests {
     use std::str::FromStr;
 
-    use itertools::Itertools;
     use rstest::{fixture, rstest};
     use strum::ParseError;
     use unicode_width::UnicodeWidthStr;
@@ -912,7 +911,7 @@ mod tests {
             .track_symbol(Some("-"))
             .thumb_symbol("#")
             .render(buffer.area, &mut buffer, &mut state);
-        let bar = expected.chars().map(|c| format!("{c}    ")).collect_vec();
+        let bar = expected.chars().map(|c| format!("{c}    "));
         assert_eq!(buffer, Buffer::with_lines(bar), "{description}");
     }
 
@@ -946,7 +945,7 @@ mod tests {
             .track_symbol(Some("-"))
             .thumb_symbol("#")
             .render(buffer.area, &mut buffer, &mut state);
-        let bar = expected.chars().map(|c| format!("    {c}")).collect_vec();
+        let bar = expected.chars().map(|c| format!("    {c}"));
         assert_eq!(buffer, Buffer::with_lines(bar), "{description}");
     }
 

@@ -71,9 +71,10 @@ impl Buffer {
     }
 
     /// Returns a Buffer containing the given lines
-    pub fn with_lines<'a, S>(lines: Vec<S>) -> Buffer
+    pub fn with_lines<'a, Iter>(lines: Iter) -> Buffer
     where
-        S: Into<Line<'a>>,
+        Iter: IntoIterator,
+        Iter::Item: Into<Line<'a>>,
     {
         let lines = lines.into_iter().map(Into::into).collect::<Vec<_>>();
         let height = lines.len() as u16;

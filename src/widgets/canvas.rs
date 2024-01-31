@@ -807,7 +807,7 @@ mod tests {
             .x_bounds([0.0, 10.0])
             .y_bounds([0.0, 10.0])
             .render(area, &mut buf);
-        assert_eq!(buf, Buffer::with_lines(expected.lines().collect()));
+        assert_eq!(buf, Buffer::with_lines(expected.lines()));
     }
 
     #[test]
