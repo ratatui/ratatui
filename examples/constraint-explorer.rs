@@ -288,7 +288,10 @@ impl App {
 
     fn instructions(&self) -> impl Widget {
         let text = "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q: quit, + -: spacing";
-        Paragraph::new(text.fg(Self::TEXT_COLOR).to_centered_line()).wrap(Wrap { trim: false })
+        Paragraph::new(text)
+            .fg(Self::TEXT_COLOR)
+            .centered()
+            .wrap(Wrap { trim: false })
     }
 
     fn legend(&self) -> impl Widget {
