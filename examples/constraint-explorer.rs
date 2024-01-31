@@ -28,7 +28,7 @@ use ratatui::{
     symbols::line,
     widgets::*,
 };
-use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
+use strum::{Display, EnumIter, FromRepr};
 
 #[derive(Default)]
 struct App {
@@ -43,7 +43,6 @@ struct App {
 enum AppMode {
     #[default]
     Select,
-    Edit(ConstraintEditor),
     Quit,
 }
 
@@ -123,7 +122,6 @@ impl App {
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
                 Char('q') | Esc => self.exit(),
-                Char('s') | Enter => self.toggle_edit(),
                 Char('1') => self.swap_constraint(ConstraintName::Min),
                 Char('2') => self.swap_constraint(ConstraintName::Max),
                 Char('3') => self.swap_constraint(ConstraintName::Length),
@@ -140,7 +138,6 @@ impl App {
     fn handle_mode_events(&mut self, key: KeyEvent) {
         match &mut self.mode {
             AppMode::Select => self.handle_select_event(key),
-            AppMode::Edit(editor) => editor.handle_key_event(key),
             AppMode::Quit => {}
         }
     }
@@ -237,11 +234,7 @@ impl App {
 
     // exits edit mode or the app
     fn exit(&mut self) {
-        self.mode = match self.mode {
-            // ignore the editor state and move back to select mode
-            AppMode::Edit(_) => AppMode::Select,
-            _ => AppMode::Quit,
-        }
+        self.mode = AppMode::Quit
     }
 
     fn swap_constraint(&mut self, name: ConstraintName) {
@@ -256,42 +249,6 @@ impl App {
         };
         self.constraints[self.selected_index] = constraint;
         self.mode = AppMode::Select;
-    }
-
-    // edits if in select mode, selects if in edit mode
-    fn toggle_edit(&mut self) {
-        if self.constraints.is_empty() {
-            return;
-        }
-        match &self.mode {
-            AppMode::Select => {
-                // move into edit mode
-                let selected = *self.selected_constraint().unwrap();
-                self.mode = AppMode::Edit(ConstraintEditor::from(selected));
-            }
-            AppMode::Edit(editor) => {
-                // save the editor state
-                let constraint = Constraint::from(editor);
-                self.constraints[self.selected_index] = constraint;
-                self.mode = AppMode::Select;
-            }
-            AppMode::Quit => {}
-        }
-    }
-}
-
-// ConstraintName behaviour
-impl ConstraintName {
-    fn prev(&self) -> Self {
-        let current_index: usize = *self as usize;
-        let previous_index = current_index.saturating_sub(1);
-        Self::from_repr(previous_index).unwrap_or(*self)
-    }
-
-    fn next(&self) -> Self {
-        let current_index = *self as usize;
-        let next_index = current_index.saturating_add(1);
-        Self::from_repr(next_index).unwrap_or(*self)
     }
 }
 
@@ -325,9 +282,7 @@ impl Widget for &App {
 
         self.axis(axis_area.width).render(axis_area, buf);
         self.render_layout_blocks(blocks_area, buf);
-        if let AppMode::Edit(editor) = &self.mode {
-            editor.render(editor_area, buf);
-        }
+        self.render_legend(editor_area, buf);
     }
 }
 
@@ -336,6 +291,36 @@ impl App {
     const HEADER_COLOR: Color = SLATE.c200;
     const TEXT_COLOR: Color = SLATE.c400;
     const AXIS_COLOR: Color = SLATE.c300;
+
+    fn render_legend(&self, area: Rect, buf: &mut Buffer) {
+        let vertical = Layout::vertical([Length(1), Length(1)]);
+
+        let [constraint_type, value] = area.split(&vertical);
+
+        Line::from(vec![
+            "1: ".into(),
+            ConstraintName::to_tab_title(ConstraintName::Min),
+            ", ".into(),
+            "2: ".into(),
+            ConstraintName::to_tab_title(ConstraintName::Max),
+            ", ".into(),
+            "3: ".into(),
+            ConstraintName::to_tab_title(ConstraintName::Length),
+            ", ".into(),
+            "4: ".into(),
+            ConstraintName::to_tab_title(ConstraintName::Percentage),
+            ", ".into(),
+            "5: ".into(),
+            ConstraintName::to_tab_title(ConstraintName::Ratio),
+            ", ".into(),
+            "6: ".into(),
+            ConstraintName::to_tab_title(ConstraintName::Fill),
+        ])
+        .render(constraint_type, buf);
+        if let Some(c) = self.selected_constraint() {
+            Line::from(format!("Value: {:?}", c)).render(value, buf);
+        }
+    }
 
     fn render_layout_blocks(&self, area: Rect, buf: &mut Buffer) {
         let [start, center, end, space_around, space_between] = area.split(&Layout::vertical([
@@ -393,7 +378,7 @@ impl App {
     }
 
     fn instructions(&self) -> impl Widget {
-        let text = "◄ ►: select, ▲ ▼: edit, s: swap, a: add, x: delete, q: quit";
+        let text = "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q: quit, + -: spacing";
         text.fg(Self::TEXT_COLOR).to_centered_line()
     }
 
@@ -516,114 +501,9 @@ impl SpacerBlock {
     }
 }
 
-impl Widget for &ConstraintEditor {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let [labels, values] = area.split(&Layout::horizontal([Length(17), Fill(0)]));
-
-        let vertical = Layout::vertical([Length(1), Length(1)]);
-
-        // labels
-        let [constraint_type, value] = labels.split(&vertical);
-        Line::from("Constraint Type:").render(constraint_type, buf);
-        match self.constraint_type {
-            ConstraintName::Ratio => {
-                Line::from("Denominator:").render(value, buf);
-            }
-            _ => Line::from("Length:").render(value, buf),
-        }
-
-        // values
-        let [constraint_type, value] = values.split(&vertical);
-        self.constraint_types().render(constraint_type, buf);
-        match self.constraint_type {
-            ConstraintName::Ratio => {
-                Paragraph::new(self.value.as_str())
-                    .style(ConstraintEditor::TEXT_COLOR)
-                    .render(value, buf);
-            }
-            _ => {
-                Paragraph::new(self.value.as_str())
-                    .style(ConstraintEditor::TEXT_COLOR)
-                    .render(value, buf);
-            }
-        }
-    }
-}
-
-// TODO handle focus and editing values
-impl ConstraintEditor {
-    const TEXT_COLOR: Color = SLATE.c400;
-
-    fn constraint_types(&self) -> impl Widget {
-        let titles = ConstraintName::iter().map(ConstraintName::to_tab_title);
-        Tabs::new(titles)
-            .highlight_style(Modifier::REVERSED)
-            .select(self.constraint_type as usize)
-            .padding("", "")
-            .divider(" ")
-    }
-
-    fn handle_key_event(&mut self, key: KeyEvent) {
-        use KeyCode::*;
-        match key.code {
-            Left => self.prev_constraint(),
-            Right => self.next_constraint(),
-            _ => (),
-        }
-    }
-
-    fn next_constraint(&mut self) {
-        self.constraint_type = self.constraint_type.next();
-    }
-
-    fn prev_constraint(&mut self) {
-        self.constraint_type = self.constraint_type.prev();
-    }
-}
-
-impl From<Constraint> for ConstraintEditor {
-    fn from(constraint: Constraint) -> Self {
-        use Constraint::*;
-        let constraint_name = ConstraintName::from(constraint);
-        let value = match constraint {
-            Length(value) => value.to_string(),
-            Percentage(value) => value.to_string(),
-            Ratio(_, value) => value.to_string(),
-            Min(value) => value.to_string(),
-            Max(value) => value.to_string(),
-            Fill(value) => value.to_string(),
-        };
-        Self {
-            constraint_type: constraint_name,
-            value,
-        }
-    }
-}
-
-impl From<&ConstraintEditor> for Constraint {
-    fn from(editor: &ConstraintEditor) -> Self {
-        use Constraint::*;
-        if editor.constraint_type == ConstraintName::Ratio {
-            // ratio uses u32 values
-            // assume use input is always denominator
-            Ratio(1, editor.value.parse().unwrap_or_default())
-        } else {
-            let value = editor.value.parse().unwrap_or_default();
-            match editor.constraint_type {
-                ConstraintName::Length => Length(value),
-                ConstraintName::Percentage => Percentage(value),
-                ConstraintName::Min => Min(value),
-                ConstraintName::Max => Max(value),
-                ConstraintName::Fill => Fill(value),
-                _ => unreachable!(),
-            }
-        }
-    }
-}
-
 impl ConstraintName {
-    fn to_tab_title(self) -> Line<'static> {
-        format!("  {self}  ").fg(SLATE.c200).bg(self.color()).into()
+    fn to_tab_title(self) -> Span<'static> {
+        format!("  {self}  ").fg(SLATE.c200).bg(self.color())
     }
 
     fn color(&self) -> Color {
