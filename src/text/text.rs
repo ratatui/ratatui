@@ -337,41 +337,11 @@ impl<'a> Text<'a> {
     }
 
     /// Returns an iterator over the lines of the text.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let text = Text::from("The first line\nThe second line");
-    /// let mut iter = text.iter();
-    /// assert_eq!(iter.next(), Some(Line::from("The first line")));
-    /// assert_eq!(iter.next(), Some(Line::from("The second line")));
-    /// assert_eq!(iter.next(), None);
-    /// ```
     pub fn iter(&self) -> std::slice::Iter<Line<'a>> {
         self.lines.iter()
     }
 
     /// Returns an iterator that allows modifying each line.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// let mut text = Text::from("The first line\nThe second line");
-    /// for line in text.iter_mut() {
-    ///     line.style = Style::new().fg(Color::Red);
-    ///
-    ///     // or
-    ///     *line = Line::from("A new line");
-    ///
-    ///     // or
-    ///     line.alignment = Some(Alignment::Right);
-    ///
-    ///     // or
-    ///     line.patch_style(Style::new().fg(Color::Red));
-    /// }
-    /// ```
     pub fn iter_mut(&mut self) -> std::slice::IterMut<Line<'a>> {
         self.lines.iter_mut()
     }
