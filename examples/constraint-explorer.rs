@@ -541,8 +541,8 @@ impl ConstraintName {
             Self::Percentage => STONE.c600,
             Self::Ratio => STONE.c700,
             Self::Fill => STONE.c800,
-            Self::Min => INDIGO.c500,
-            Self::Max => INDIGO.c600,
+            Self::Min => SKY.c600,
+            Self::Max => SKY.c700,
         }
     }
 }
