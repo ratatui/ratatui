@@ -537,12 +537,12 @@ impl ConstraintName {
 
     fn lighter_color(&self) -> Color {
         match self {
-            Self::Length => SLATE.c500,
-            Self::Percentage => SLATE.c600,
-            Self::Ratio => SLATE.c700,
-            Self::Fill => SLATE.c800,
-            Self::Min => BLUE.c700,
-            Self::Max => BLUE.c600,
+            Self::Length => STONE.c500,
+            Self::Percentage => STONE.c600,
+            Self::Ratio => STONE.c700,
+            Self::Fill => STONE.c800,
+            Self::Min => BLUE.c600,
+            Self::Max => BLUE.c500,
         }
     }
 }
