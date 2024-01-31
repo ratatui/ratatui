@@ -47,12 +47,6 @@ enum AppMode {
     Quit,
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
-struct ConstraintInfo {
-    constraint_type: ConstraintName,
-    value: String,
-}
-
 /// A variant of [`Constraint`] that can be rendered as a tab.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, EnumIter, FromRepr, Display)]
 enum ConstraintName {
@@ -74,6 +68,7 @@ enum ConstraintName {
 /// ```
 struct ConstraintBlock {
     selected: bool,
+    legend: bool,
     constraint: Constraint,
 }
 
@@ -264,17 +259,16 @@ impl From<Constraint> for ConstraintName {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [header_area, info_area, instructions_area, legend_area, blocks_area] =
+        let [header_area, instructions_area, legend_area, _, blocks_area] =
             area.split(&Layout::vertical([
                 Length(2), // header
-                Length(1), // instructions
+                Length(2), // instructions
                 Length(1), // legend
-                Length(2), // info
+                Length(1), // gap
                 Fill(1),
             ]));
 
         self.header().render(header_area, buf);
-        self.info().render(info_area, buf);
         self.instructions().render(instructions_area, buf);
         self.legend().render(legend_area, buf);
         self.render_layout_blocks(blocks_area, buf);
@@ -292,47 +286,35 @@ impl App {
         text.bold().fg(Self::HEADER_COLOR).to_centered_line()
     }
 
-    fn info(&self) -> impl Widget {
-        let value = self
-            .selected_constraint()
-            .map(|c| c.to_string())
-            .unwrap_or("None".to_string());
-        let color = self
-            .selected_constraint()
-            .map(|c| ConstraintName::from(*c).color())
-            .unwrap_or_default();
-        Line::from(vec![
-            "Selected Block: ".into(),
-            format!("  {value}  ").fg(SLATE.c200).bg(color),
-        ])
-    }
-
     fn instructions(&self) -> impl Widget {
         let text = "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q: quit, + -: spacing";
-        text.fg(Self::TEXT_COLOR).to_left_aligned_line()
+        Paragraph::new(text.fg(Self::TEXT_COLOR).to_centered_line()).wrap(Wrap { trim: false })
     }
 
     fn legend(&self) -> impl Widget {
         #[allow(unstable_name_collisions)]
-        Paragraph::new(Line::from(
-            [
-                ConstraintName::Min,
-                ConstraintName::Max,
-                ConstraintName::Length,
-                ConstraintName::Percentage,
-                ConstraintName::Ratio,
-                ConstraintName::Fill,
-            ]
-            .iter()
-            .enumerate()
-            .map(|(i, name)| {
-                format!("  {i}: {name}  ", i = i + 1)
-                    .fg(SLATE.c200)
-                    .bg(name.color())
-            })
-            .intersperse(Span::from(" "))
-            .collect_vec(),
-        ))
+        Paragraph::new(
+            Line::from(
+                [
+                    ConstraintName::Min,
+                    ConstraintName::Max,
+                    ConstraintName::Length,
+                    ConstraintName::Percentage,
+                    ConstraintName::Ratio,
+                    ConstraintName::Fill,
+                ]
+                .iter()
+                .enumerate()
+                .map(|(i, name)| {
+                    format!("  {i}: {name}  ", i = i + 1)
+                        .fg(SLATE.c200)
+                        .bg(name.color())
+                })
+                .intersperse(Span::from(" "))
+                .collect_vec(),
+            )
+            .centered(),
+        )
         .wrap(Wrap { trim: false })
     }
 
@@ -351,6 +333,10 @@ impl App {
     }
 
     fn render_layout_blocks(&self, area: Rect, buf: &mut Buffer) {
+        let [user_constraints, area] = area.split(&Layout::vertical([Length(3), Fill(1)]));
+
+        self.render_user_constraints_legend(user_constraints, buf);
+
         let [start, center, end, space_around, space_between] =
             area.split(&Layout::vertical([Length(7); 5]));
 
@@ -359,6 +345,21 @@ impl App {
         self.render_layout_block(Flex::End, end, buf);
         self.render_layout_block(Flex::SpaceAround, space_around, buf);
         self.render_layout_block(Flex::SpaceBetween, space_between, buf)
+    }
+
+    fn render_user_constraints_legend(&self, area: Rect, buf: &mut Buffer) {
+        let blocks = Layout::horizontal(
+            self.constraints
+                .iter()
+                .map(|_| Constraint::Fill(1))
+                .collect_vec(),
+        )
+        .split(area);
+
+        for (i, (area, constraint)) in blocks.iter().zip(self.constraints.iter()).enumerate() {
+            let selected = self.selected_index == i;
+            ConstraintBlock::new(*constraint, selected, true).render(*area, buf);
+        }
     }
 
     fn render_layout_block(&self, flex: Flex, area: Rect, buf: &mut Buffer) {
@@ -376,50 +377,61 @@ impl App {
 
         for (i, (area, constraint)) in blocks.iter().zip(self.constraints.iter()).enumerate() {
             let selected = self.selected_index == i;
-            ConstraintBlock::new(*constraint, selected).render(*area, buf);
+            ConstraintBlock::new(*constraint, selected, false).render(*area, buf);
         }
 
         for area in spacers.iter() {
             SpacerBlock.render(*area, buf);
         }
     }
-
-    fn selected_constraint(&self) -> Option<&Constraint> {
-        self.constraints.get(self.selected_index)
-    }
 }
 
 impl Widget for ConstraintBlock {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let lighter_color = ConstraintName::from(self.constraint).lighter_color();
         let main_color = ConstraintName::from(self.constraint).color();
-        let border_color = if self.selected {
-            ConstraintName::from(self.constraint).lighter_color()
+        let selected_color = if self.selected {
+            lighter_color
+        } else {
+            main_color
+        };
+        let color = if self.legend {
+            selected_color
         } else {
             main_color
         };
         let label = self.label(area.width);
         let block = Block::bordered()
             .border_set(symbols::border::QUADRANT_OUTSIDE)
-            .border_style(Style::reset().fg(main_color).reversed())
+            .border_style(Style::reset().fg(color).reversed())
             .fg(Self::TEXT_COLOR)
-            .bg(main_color);
+            .bg(color);
         Paragraph::new(label)
             .centered()
             .fg(Self::TEXT_COLOR)
-            .bg(main_color)
+            .bg(color)
             .block(block)
             .render(area, buf);
-        buf.set_style(area.rows().last().unwrap(), border_color);
+
+        if !self.legend {
+            let border_color = if self.selected {
+                lighter_color
+            } else {
+                main_color
+            };
+            buf.set_style(area.rows().last().unwrap(), border_color);
+        }
     }
 }
 
 impl ConstraintBlock {
     const TEXT_COLOR: Color = SLATE.c200;
 
-    fn new(constraint: Constraint, selected: bool) -> Self {
+    fn new(constraint: Constraint, selected: bool, legend: bool) -> Self {
         Self {
             constraint,
             selected,
+            legend,
         }
     }
 
