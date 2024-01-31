@@ -257,18 +257,18 @@ impl From<Constraint> for ConstraintName {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [header_area, instructions_area, legend_area, _, blocks_area] =
+        let [header_area, instructions_area, swap_legend_area, _, blocks_area] =
             area.split(&Layout::vertical([
                 Length(2), // header
                 Length(2), // instructions
-                Length(1), // legend
+                Length(1), // swap key legend
                 Length(1), // gap
                 Fill(1),   // blocks
             ]));
 
         self.header().render(header_area, buf);
         self.instructions().render(instructions_area, buf);
-        self.legend().render(legend_area, buf);
+        self.swap_legend().render(swap_legend_area, buf);
         self.render_layout_blocks(blocks_area, buf);
     }
 }
@@ -292,7 +292,7 @@ impl App {
             .wrap(Wrap { trim: false })
     }
 
-    fn legend(&self) -> impl Widget {
+    fn swap_legend(&self) -> impl Widget {
         #[allow(unstable_name_collisions)]
         Paragraph::new(
             Line::from(
@@ -334,7 +334,8 @@ impl App {
     }
 
     fn render_layout_blocks(&self, area: Rect, buf: &mut Buffer) {
-        let [user_constraints, area] = area.split(&Layout::vertical([Length(3), Fill(1)]));
+        let [user_constraints, area] =
+            area.split(&Layout::vertical([Length(3), Fill(1)]).spacing(1));
 
         self.render_user_constraints_legend(user_constraints, buf);
 
@@ -365,9 +366,11 @@ impl App {
 
     fn render_layout_block(&self, flex: Flex, area: Rect, buf: &mut Buffer) {
         let [label_area, axis_area, blocks_area] =
-            area.split(&Layout::vertical([Length(1), Length(1), Length(4)]));
+            area.split(&Layout::vertical([Length(1), Max(1), Length(4)]));
 
-        format!("Flex::{:?}", flex).bold().render(label_area, buf);
+        if label_area.height > 0 {
+            format!("Flex::{:?}", flex).bold().render(label_area, buf);
+        }
 
         self.axis(area.width).render(axis_area, buf);
 
@@ -389,6 +392,69 @@ impl App {
 
 impl Widget for ConstraintBlock {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        match area.height {
+            1 => self.render_1px(area, buf),
+            2 => self.render_2px(area, buf),
+            _ => self.render_4px(area, buf),
+        }
+    }
+}
+
+impl ConstraintBlock {
+    const TEXT_COLOR: Color = SLATE.c200;
+
+    fn new(constraint: Constraint, selected: bool, legend: bool) -> Self {
+        Self {
+            constraint,
+            selected,
+            legend,
+        }
+    }
+
+    fn label(&self, width: u16) -> String {
+        let long_width = format!("{} px", width);
+        let short_width = format!("{}", width);
+        // border takes up 2 columns
+        let available_space = width.saturating_sub(2) as usize;
+        let width_label = if long_width.len() < available_space {
+            long_width
+        } else if short_width.len() < available_space {
+            short_width
+        } else {
+            "".to_string()
+        };
+        format!("{}\n{}", self.constraint, width_label)
+    }
+
+    fn render_1px(&self, area: Rect, buf: &mut Buffer) {
+        let lighter_color = ConstraintName::from(self.constraint).lighter_color();
+        let main_color = ConstraintName::from(self.constraint).color();
+        let selected_color = if self.selected {
+            lighter_color
+        } else {
+            main_color
+        };
+        Block::default()
+            .fg(Self::TEXT_COLOR)
+            .bg(selected_color)
+            .render(area, buf);
+    }
+
+    fn render_2px(&self, area: Rect, buf: &mut Buffer) {
+        let lighter_color = ConstraintName::from(self.constraint).lighter_color();
+        let main_color = ConstraintName::from(self.constraint).color();
+        let selected_color = if self.selected {
+            lighter_color
+        } else {
+            main_color
+        };
+        Block::bordered()
+            .border_set(symbols::border::QUADRANT_OUTSIDE)
+            .border_style(Style::reset().fg(selected_color).reversed())
+            .render(area, buf);
+    }
+
+    fn render_4px(&self, area: Rect, buf: &mut Buffer) {
         let lighter_color = ConstraintName::from(self.constraint).lighter_color();
         let main_color = ConstraintName::from(self.constraint).color();
         let selected_color = if self.selected {
@@ -420,51 +486,21 @@ impl Widget for ConstraintBlock {
             } else {
                 main_color
             };
-            buf.set_style(area.rows().last().unwrap(), border_color);
+            if let Some(last_row) = area.rows().last() {
+                buf.set_style(last_row, border_color);
+            }
         }
-    }
-}
-
-impl ConstraintBlock {
-    const TEXT_COLOR: Color = SLATE.c200;
-
-    fn new(constraint: Constraint, selected: bool, legend: bool) -> Self {
-        Self {
-            constraint,
-            selected,
-            legend,
-        }
-    }
-
-    fn label(&self, width: u16) -> String {
-        let long_width = format!("{} px", width);
-        let short_width = format!("{}", width);
-        // border takes up 2 columns
-        let available_space = width.saturating_sub(2) as usize;
-        let width_label = if long_width.len() < available_space {
-            long_width
-        } else if short_width.len() < available_space {
-            short_width
-        } else {
-            "".to_string()
-        };
-        format!("{}\n{}", self.constraint, width_label)
     }
 }
 
 impl Widget for SpacerBlock {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        if area.width > 1 {
-            Self::block().render(area, buf);
-        } else {
-            Self::line().render(area, buf);
+        match area.height {
+            1 => (),
+            2 => self.render_2px(area, buf),
+            3 => self.render_3px(area, buf),
+            _ => self.render_4px(area, buf),
         }
-
-        let row = area.rows().nth(1).unwrap_or_default();
-        Self::spacer_label(area.width).render(row, buf);
-
-        let row = area.rows().nth(2).unwrap_or_default();
-        Self::label(area.width).render(row, buf);
     }
 }
 
@@ -518,6 +554,39 @@ impl SpacerBlock {
             "".to_string()
         };
         Line::styled(label, Self::TEXT_COLOR).centered()
+    }
+
+    fn render_2px(&self, area: Rect, buf: &mut Buffer) {
+        if area.width > 1 {
+            Self::block().render(area, buf);
+        } else {
+            Self::line().render(area, buf);
+        }
+    }
+
+    fn render_3px(&self, area: Rect, buf: &mut Buffer) {
+        if area.width > 1 {
+            Self::block().render(area, buf);
+        } else {
+            Self::line().render(area, buf);
+        }
+
+        let row = area.rows().nth(1).unwrap_or_default();
+        Self::spacer_label(area.width).render(row, buf);
+    }
+
+    fn render_4px(&self, area: Rect, buf: &mut Buffer) {
+        if area.width > 1 {
+            Self::block().render(area, buf);
+        } else {
+            Self::line().render(area, buf);
+        }
+
+        let row = area.rows().nth(1).unwrap_or_default();
+        Self::spacer_label(area.width).render(row, buf);
+
+        let row = area.rows().nth(2).unwrap_or_default();
+        Self::label(area.width).render(row, buf);
     }
 }
 
