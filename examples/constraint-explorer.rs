@@ -530,8 +530,8 @@ impl ConstraintName {
             Self::Percentage => SLATE.c800,
             Self::Ratio => SLATE.c900,
             Self::Fill => SLATE.c950,
-            Self::Min => BLUE.c900,
-            Self::Max => BLUE.c800,
+            Self::Min => BLUE.c800,
+            Self::Max => BLUE.c900,
         }
     }
 
@@ -541,8 +541,8 @@ impl ConstraintName {
             Self::Percentage => STONE.c600,
             Self::Ratio => STONE.c700,
             Self::Fill => STONE.c800,
-            Self::Min => INDIGO.c600,
-            Self::Max => INDIGO.c500,
+            Self::Min => INDIGO.c500,
+            Self::Max => INDIGO.c600,
         }
     }
 }
