@@ -355,7 +355,7 @@ mod test {
         text_area_width: u16,
     ) -> (Vec<String>, Vec<u16>, Vec<Alignment>) {
         let text = text.into();
-        let styled_lines = text.lines.iter().map(|line| {
+        let styled_lines = text.iter().map(|line| {
             (
                 line.iter()
                     .flat_map(|span| span.styled_graphemes(Style::default())),
