@@ -220,6 +220,11 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
+name = "constraint-explorer"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
 name = "list"
 required-features = ["crossterm"]
 doc-scrape-examples = true
