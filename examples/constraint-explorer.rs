@@ -257,18 +257,18 @@ impl From<Constraint> for ConstraintName {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [header_area, instructions_area, legend_area, _, blocks_area] =
+        let [header_area, instructions_area, swap_legend_area, _, blocks_area] =
             area.split(&Layout::vertical([
                 Length(2), // header
                 Length(2), // instructions
-                Length(1), // legend
+                Length(1), // swap key legend
                 Length(1), // gap
                 Fill(1),   // blocks
             ]));
 
         self.header().render(header_area, buf);
         self.instructions().render(instructions_area, buf);
-        self.legend().render(legend_area, buf);
+        self.swap_legend().render(swap_legend_area, buf);
         self.render_layout_blocks(blocks_area, buf);
     }
 }
@@ -292,7 +292,7 @@ impl App {
             .wrap(Wrap { trim: false })
     }
 
-    fn legend(&self) -> impl Widget {
+    fn swap_legend(&self) -> impl Widget {
         #[allow(unstable_name_collisions)]
         Paragraph::new(
             Line::from(
@@ -334,7 +334,8 @@ impl App {
     }
 
     fn render_layout_blocks(&self, area: Rect, buf: &mut Buffer) {
-        let [user_constraints, area] = area.split(&Layout::vertical([Length(3), Fill(1)]));
+        let [user_constraints, area] =
+            area.split(&Layout::vertical([Length(3), Fill(1)]).spacing(1));
 
         self.render_user_constraints_legend(user_constraints, buf);
 
