@@ -40,20 +40,26 @@ impl<'a> BarGroup<'a> {
         self.bars.iter().max_by_key(|v| v.value).map(|v| v.value)
     }
 
-    pub(super) fn render_label(self, buf: &mut Buffer, area: Rect, default_label_style: Style) {
-        if let Some(mut label) = self.label {
-            // patch label styles
-            for span in &mut label.spans {
-                span.style = default_label_style.patch(span.style);
-            }
-
-            let x_offset = match label.alignment {
-                Some(Alignment::Center) => area.width.saturating_sub(label.width() as u16) >> 1,
-                Some(Alignment::Right) => area.width.saturating_sub(label.width() as u16),
-                _ => 0,
+    pub(super) fn render_label(&self, buf: &mut Buffer, area: Rect, default_label_style: Style) {
+        if let Some(label) = &self.label {
+            // align the label. Necessary to do it this way as we don't want to set the style
+            // of the whole area, just the label area
+            let width = label.width() as u16;
+            let area = match label.alignment {
+                Some(Alignment::Center) => Rect {
+                    x: area.x + (area.width.saturating_sub(width)) / 2,
+                    width,
+                    ..area
+                },
+                Some(Alignment::Right) => Rect {
+                    x: area.x + area.width.saturating_sub(width),
+                    width,
+                    ..area
+                },
+                _ => Rect { width, ..area },
             };
-
-            buf.set_line(area.x + x_offset, area.y, &label, area.width);
+            buf.set_style(area, default_label_style);
+            label.render(area, buf);
         }
     }
 }

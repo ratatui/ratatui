@@ -147,7 +147,7 @@ impl<'a> Bar<'a> {
     }
 
     pub(super) fn render_value(
-        self,
+        &self,
         buf: &mut Buffer,
         max_width: u16,
         x: u16,
@@ -156,12 +156,8 @@ impl<'a> Bar<'a> {
         ticks: u64,
     ) {
         if self.value != 0 {
-            let value_label = if let Some(text) = self.text_value {
-                text
-            } else {
-                self.value.to_string()
-            };
-
+            let value = self.value.to_string();
+            let value_label = self.text_value.as_ref().unwrap_or(&value);
             let width = value_label.width() as u16;
             const TICKS_PER_LINE: u64 = 8;
             // if we have enough space or the ticks are greater equal than 1 cell (8)
@@ -178,25 +174,29 @@ impl<'a> Bar<'a> {
     }
 
     pub(super) fn render_label(
-        &mut self,
+        &self,
         buf: &mut Buffer,
         max_width: u16,
         x: u16,
         y: u16,
         default_label_style: Style,
     ) {
-        if let Some(label) = &mut self.label {
-            // patch label styles
-            for span in &mut label.spans {
-                span.style = default_label_style.patch(span.style);
-            }
-
-            buf.set_line(
-                x + (max_width.saturating_sub(label.width() as u16) >> 1),
-                y,
-                label,
-                max_width,
-            );
+        // center the label. Necessary to do it this way as we don't want to set the style
+        // of the whole area, just the label area
+        let width = self
+            .label
+            .as_ref()
+            .map_or(0, Line::width)
+            .min(max_width as usize) as u16;
+        let area = Rect {
+            x: x + (max_width.saturating_sub(width)) / 2,
+            y,
+            width,
+            height: 1,
+        };
+        buf.set_style(area, default_label_style);
+        if let Some(label) = &self.label {
+            label.render(area, buf);
         }
     }
 }
