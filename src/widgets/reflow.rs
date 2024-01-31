@@ -357,8 +357,7 @@ mod test {
         let text = text.into();
         let styled_lines = text.lines.iter().map(|line| {
             (
-                line.spans
-                    .iter()
+                line.iter()
                     .flat_map(|span| span.styled_graphemes(Style::default())),
                 line.alignment.unwrap_or(Alignment::Left),
             )
