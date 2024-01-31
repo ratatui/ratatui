@@ -221,7 +221,6 @@ impl App {
         self.spacing = self.spacing.saturating_sub(1);
     }
 
-    // exits edit mode or the app
     fn exit(&mut self) {
         self.mode = AppMode::Quit
     }
@@ -230,7 +229,6 @@ impl App {
         if self.constraints.is_empty() {
             return;
         }
-        // save the editor state
         let constraint = match name {
             ConstraintName::Length => Length(self.value),
             ConstraintName::Percentage => Percentage(self.value),
@@ -265,7 +263,7 @@ impl Widget for &App {
                 Length(2), // instructions
                 Length(1), // legend
                 Length(1), // gap
-                Fill(1),
+                Fill(1),   // blocks
             ]));
 
         self.header().render(header_area, buf);
