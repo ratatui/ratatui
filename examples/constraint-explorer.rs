@@ -73,6 +73,7 @@ enum ConstraintName {
 /// └──────────────┘
 /// ```
 struct ConstraintBlock {
+    selected: bool,
     constraint: Constraint,
 }
 
@@ -293,7 +294,10 @@ impl App {
             .selected_constraint()
             .map(|c| c.to_string())
             .unwrap_or("None".to_string());
-        Line::from(format!("Selected Block: {value}",))
+        Line::from(vec![
+            "Selected Block: ".into(),
+            format!("{value}").bg(RED.c900).fg(SLATE.c200),
+        ])
     }
 
     fn instructions(&self) -> impl Widget {
@@ -351,12 +355,8 @@ impl App {
     }
 
     fn render_layout_block(&self, flex: Flex, area: Rect, buf: &mut Buffer) {
-        let [label_area, axis_area, blocks_area, cursor_area] = area.split(&Layout::vertical([
-            Length(1),
-            Length(1),
-            Length(3),
-            Length(1),
-        ]));
+        let [label_area, axis_area, blocks_area] =
+            area.split(&Layout::vertical([Length(1), Length(1), Length(4)]));
 
         format!("Flex::{:?}", flex).bold().render(label_area, buf);
 
@@ -367,29 +367,14 @@ impl App {
             .spacing(self.spacing)
             .split_with_spacers(blocks_area);
 
-        for (area, constraint) in blocks.iter().zip(self.constraints.iter()) {
-            ConstraintBlock::new(*constraint).render(*area, buf);
+        for (i, (area, constraint)) in blocks.iter().zip(self.constraints.iter()).enumerate() {
+            let selected = self.selected_index == i;
+            ConstraintBlock::new(*constraint, selected).render(*area, buf);
         }
 
         for area in spacers.iter() {
             SpacerBlock.render(*area, buf);
         }
-
-        if let Some(block) = blocks.get(self.selected_index) {
-            let cursor_area = Rect {
-                x: block.x,
-                y: cursor_area.y,
-                width: block.width,
-                height: cursor_area.height,
-            };
-            self.cursor(block.width).render(cursor_area, buf);
-        }
-    }
-
-    /// A cursor like `└─────┘` that points to the selected block
-    fn cursor(&self, width: u16) -> impl Widget {
-        let cursor = format!("└{}┘", "─".repeat(width.saturating_sub(2) as usize));
-        Paragraph::new(cursor).fg(Self::AXIS_COLOR)
     }
 
     fn selected_constraint(&self) -> Option<&Constraint> {
@@ -400,23 +385,31 @@ impl App {
 impl Widget for ConstraintBlock {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let main_color = ConstraintName::from(self.constraint).color();
+        let border_color = if self.selected { RED.c900 } else { main_color };
         let label = self.label(area.width);
         let block = Block::bordered()
             .border_set(symbols::border::QUADRANT_OUTSIDE)
             .border_style(Style::reset().fg(main_color).reversed())
-            .style(Style::default().fg(Self::TEXT_COLOR).bg(main_color));
+            .fg(Self::TEXT_COLOR)
+            .bg(main_color);
         Paragraph::new(label)
             .centered()
+            .fg(Self::TEXT_COLOR)
+            .bg(main_color)
             .block(block)
             .render(area, buf);
+        buf.set_style(area.rows().last().unwrap(), border_color);
     }
 }
 
 impl ConstraintBlock {
     const TEXT_COLOR: Color = SLATE.c200;
 
-    fn new(constraint: Constraint) -> Self {
-        Self { constraint }
+    fn new(constraint: Constraint, selected: bool) -> Self {
+        Self {
+            constraint,
+            selected,
+        }
     }
 
     fn label(&self, width: u16) -> String {
