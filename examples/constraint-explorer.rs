@@ -314,7 +314,11 @@ impl App {
             ]
             .iter()
             .enumerate()
-            .map(|(i, name)| format!("  {i}: {name}  ").fg(SLATE.c200).bg(name.color()))
+            .map(|(i, name)| {
+                format!("  {i}: {name}  ", i = i + 1)
+                    .fg(SLATE.c200)
+                    .bg(name.color())
+            })
             .intersperse(Span::from(" "))
             .collect_vec(),
         ))
