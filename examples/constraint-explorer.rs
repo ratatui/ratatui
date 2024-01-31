@@ -17,10 +17,11 @@ use std::io::{self, stdout};
 
 use color_eyre::{config::HookBuilder, Result};
 use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
+    event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
+use itertools::Itertools;
 use ratatui::{
     layout::{Constraint::*, Flex},
     prelude::*,
@@ -42,12 +43,12 @@ struct App {
 #[derive(Debug, Default, PartialEq, Eq)]
 enum AppMode {
     #[default]
-    Select,
+    Running,
     Quit,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
-struct ConstraintEditor {
+struct ConstraintInfo {
     constraint_type: ConstraintName,
     value: String,
 }
@@ -95,12 +96,8 @@ fn main() -> Result<()> {
 // App behaviour
 impl App {
     fn run(&mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
-        self.constraints = vec![
-            Constraint::Length(20),
-            Constraint::Length(20),
-            Constraint::Length(20),
-        ];
-        self.value = 20;
+        self.insert_test_defaults();
+
         while self.is_running() {
             self.draw(&mut terminal)?;
             self.handle_events()?;
@@ -108,8 +105,18 @@ impl App {
         Ok(())
     }
 
+    // TODO remove these - these are just for testing
+    fn insert_test_defaults(&mut self) {
+        self.constraints = vec![
+            Constraint::Length(20),
+            Constraint::Length(20),
+            Constraint::Length(20),
+        ];
+        self.value = 20;
+    }
+
     fn is_running(&self) -> bool {
-        self.mode != AppMode::Quit
+        self.mode == AppMode::Running
     }
 
     fn draw(&self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
@@ -128,33 +135,19 @@ impl App {
                 Char('4') => self.swap_constraint(ConstraintName::Percentage),
                 Char('5') => self.swap_constraint(ConstraintName::Ratio),
                 Char('6') => self.swap_constraint(ConstraintName::Fill),
-                _ => self.handle_mode_events(key),
+                Char('+') => self.increment_spacing(),
+                Char('-') => self.decrement_spacing(),
+                Char('x') => self.delete_block(),
+                Char('a') => self.insert_block(),
+                Char('k') | Up => self.increment_value(),
+                Char('j') | Down => self.decrement_value(),
+                Char('h') | Left => self.prev_block(),
+                Char('l') | Right => self.next_block(),
+                _ => {}
             },
             _ => {}
         }
         Ok(())
-    }
-
-    fn handle_mode_events(&mut self, key: KeyEvent) {
-        match &mut self.mode {
-            AppMode::Select => self.handle_select_event(key),
-            AppMode::Quit => {}
-        }
-    }
-
-    fn handle_select_event(&mut self, key: KeyEvent) {
-        use KeyCode::*;
-        match key.code {
-            Char('+') => self.increment_spacing(),
-            Char('-') => self.decrement_spacing(),
-            Char('x') => self.delete_block(),
-            Char('a') => self.insert_block(),
-            Up | Char('k') => self.increment_value(),
-            Down | Char('j') => self.decrement_value(),
-            Left | Char('h') => self.prev_block(),
-            Right | Char('l') => self.next_block(),
-            _ => (),
-        }
     }
 
     /// select the next block with wrap around
@@ -248,7 +241,6 @@ impl App {
             ConstraintName::Ratio => Ratio(1, self.value as u32),
         };
         self.constraints[self.selected_index] = constraint;
-        self.mode = AppMode::Select;
     }
 }
 
@@ -268,21 +260,20 @@ impl From<Constraint> for ConstraintName {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [header_area, instructions_area, axis_area, blocks_area, editor_area] =
+        let [header_area, info_area, instructions_area, legend_area, blocks_area] =
             area.split(&Layout::vertical([
-                Length(1),
-                Length(1),
-                Length(1),
-                Length(6 * 5),
-                Length(3),
+                Length(2), // header
+                Length(1), // instructions
+                Length(1), // legend
+                Length(2), // info
+                Fill(1),
             ]));
 
         self.header().render(header_area, buf);
+        self.info().render(info_area, buf);
         self.instructions().render(instructions_area, buf);
-
-        self.axis(axis_area.width).render(axis_area, buf);
+        self.legend().render(legend_area, buf);
         self.render_layout_blocks(blocks_area, buf);
-        self.render_legend(editor_area, buf);
     }
 }
 
@@ -290,96 +281,44 @@ impl Widget for &App {
 impl App {
     const HEADER_COLOR: Color = SLATE.c200;
     const TEXT_COLOR: Color = SLATE.c400;
-    const AXIS_COLOR: Color = SLATE.c300;
-
-    fn render_legend(&self, area: Rect, buf: &mut Buffer) {
-        let vertical = Layout::vertical([Length(1), Length(1)]);
-
-        let [constraint_type, value] = area.split(&vertical);
-
-        Line::from(vec![
-            "1: ".into(),
-            ConstraintName::to_tab_title(ConstraintName::Min),
-            ", ".into(),
-            "2: ".into(),
-            ConstraintName::to_tab_title(ConstraintName::Max),
-            ", ".into(),
-            "3: ".into(),
-            ConstraintName::to_tab_title(ConstraintName::Length),
-            ", ".into(),
-            "4: ".into(),
-            ConstraintName::to_tab_title(ConstraintName::Percentage),
-            ", ".into(),
-            "5: ".into(),
-            ConstraintName::to_tab_title(ConstraintName::Ratio),
-            ", ".into(),
-            "6: ".into(),
-            ConstraintName::to_tab_title(ConstraintName::Fill),
-        ])
-        .render(constraint_type, buf);
-        if let Some(c) = self.selected_constraint() {
-            Line::from(format!("Value: {:?}", c)).render(value, buf);
-        }
-    }
-
-    fn render_layout_blocks(&self, area: Rect, buf: &mut Buffer) {
-        let [start, center, end, space_around, space_between] = area.split(&Layout::vertical([
-            Length(6),
-            Length(6),
-            Length(6),
-            Length(6),
-            Length(6),
-        ]));
-
-        self.render_layout_block(Flex::Start, start, buf);
-        self.render_layout_block(Flex::Center, center, buf);
-        self.render_layout_block(Flex::End, end, buf);
-        self.render_layout_block(Flex::SpaceAround, space_around, buf);
-        self.render_layout_block(Flex::SpaceBetween, space_between, buf)
-    }
-
-    fn render_layout_block(&self, flex: Flex, area: Rect, buf: &mut Buffer) {
-        let [_, label, layout, cursor] = area.split(&Layout::vertical([
-            Length(1),
-            Length(1),
-            Length(3),
-            Length(1),
-        ]));
-
-        format!("Flex::{:?}", flex).bold().render(label, buf);
-
-        let (blocks, spacers) = Layout::horizontal(&self.constraints)
-            .flex(flex)
-            .spacing(self.spacing)
-            .split_with_spacers(layout);
-
-        for (area, constraint) in blocks.iter().zip(self.constraints.iter()) {
-            ConstraintBlock::new(*constraint).render(*area, buf);
-        }
-
-        for area in spacers.iter() {
-            SpacerBlock.render(*area, buf);
-        }
-
-        if let Some(block) = blocks.get(self.selected_index) {
-            let arrow_area = Rect {
-                x: block.x,
-                y: cursor.y,
-                width: block.width,
-                height: cursor.height,
-            };
-            self.cursor(block.width).render(arrow_area, buf);
-        }
-    }
+    const AXIS_COLOR: Color = SLATE.c500;
 
     fn header(&self) -> impl Widget {
         let text = "Constraint Explorer";
         text.bold().fg(Self::HEADER_COLOR).to_centered_line()
     }
 
+    fn info(&self) -> impl Widget {
+        let value = self
+            .selected_constraint()
+            .map(|c| c.to_string())
+            .unwrap_or("None".to_string());
+        Line::from(format!("Selected Block: {value}",))
+    }
+
     fn instructions(&self) -> impl Widget {
         let text = "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q: quit, + -: spacing";
-        text.fg(Self::TEXT_COLOR).to_centered_line()
+        text.fg(Self::TEXT_COLOR).to_left_aligned_line()
+    }
+
+    fn legend(&self) -> impl Widget {
+        #[allow(unstable_name_collisions)]
+        Paragraph::new(Line::from(
+            [
+                ConstraintName::Min,
+                ConstraintName::Max,
+                ConstraintName::Length,
+                ConstraintName::Percentage,
+                ConstraintName::Ratio,
+                ConstraintName::Fill,
+            ]
+            .iter()
+            .enumerate()
+            .map(|(i, name)| format!("  {i}: {name}  ").fg(SLATE.c200).bg(name.color()))
+            .intersperse(Span::from(" "))
+            .collect_vec(),
+        ))
+        .wrap(Wrap { trim: false })
     }
 
     /// A bar like `<----- 80 px (gap: 2 px) ----->`
@@ -394,6 +333,53 @@ impl App {
         let bar_width = width.saturating_sub(2) as usize; // we want to `<` and `>` at the ends
         let width_bar = format!("<{label:-^bar_width$}>");
         Paragraph::new(width_bar).fg(Self::AXIS_COLOR).centered()
+    }
+
+    fn render_layout_blocks(&self, area: Rect, buf: &mut Buffer) {
+        let [start, center, end, space_around, space_between] =
+            area.split(&Layout::vertical([Length(7); 5]));
+
+        self.render_layout_block(Flex::Start, start, buf);
+        self.render_layout_block(Flex::Center, center, buf);
+        self.render_layout_block(Flex::End, end, buf);
+        self.render_layout_block(Flex::SpaceAround, space_around, buf);
+        self.render_layout_block(Flex::SpaceBetween, space_between, buf)
+    }
+
+    fn render_layout_block(&self, flex: Flex, area: Rect, buf: &mut Buffer) {
+        let [label_area, axis_area, blocks_area, cursor_area] = area.split(&Layout::vertical([
+            Length(1),
+            Length(1),
+            Length(3),
+            Length(1),
+        ]));
+
+        format!("Flex::{:?}", flex).bold().render(label_area, buf);
+
+        self.axis(area.width).render(axis_area, buf);
+
+        let (blocks, spacers) = Layout::horizontal(&self.constraints)
+            .flex(flex)
+            .spacing(self.spacing)
+            .split_with_spacers(blocks_area);
+
+        for (area, constraint) in blocks.iter().zip(self.constraints.iter()) {
+            ConstraintBlock::new(*constraint).render(*area, buf);
+        }
+
+        for area in spacers.iter() {
+            SpacerBlock.render(*area, buf);
+        }
+
+        if let Some(block) = blocks.get(self.selected_index) {
+            let cursor_area = Rect {
+                x: block.x,
+                y: cursor_area.y,
+                width: block.width,
+                height: cursor_area.height,
+            };
+            self.cursor(block.width).render(cursor_area, buf);
+        }
     }
 
     /// A cursor like `└─────┘` that points to the selected block
@@ -502,10 +488,6 @@ impl SpacerBlock {
 }
 
 impl ConstraintName {
-    fn to_tab_title(self) -> Span<'static> {
-        format!("  {self}  ").fg(SLATE.c200).bg(self.color())
-    }
-
     fn color(&self) -> Color {
         match self {
             Self::Length => SLATE.c700,
@@ -517,6 +499,7 @@ impl ConstraintName {
         }
     }
 }
+
 fn init_error_hooks() -> Result<()> {
     let (panic, error) = HookBuilder::default().into_hooks();
     let panic = panic.into_panic_hook();
