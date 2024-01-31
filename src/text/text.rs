@@ -79,7 +79,7 @@ pub struct Text<'a> {
 impl<'a> Text<'a> {
     /// Create some text (potentially multiple lines) with no style.
     ///
-    /// ## Examples
+    /// # Examples
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
@@ -125,7 +125,7 @@ impl<'a> Text<'a> {
 
     /// Returns the max width of all the lines.
     ///
-    /// ## Examples
+    /// # Examples
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
@@ -133,12 +133,12 @@ impl<'a> Text<'a> {
     /// assert_eq!(15, text.width());
     /// ```
     pub fn width(&self) -> usize {
-        self.lines.iter().map(Line::width).max().unwrap_or_default()
+        self.iter().map(Line::width).max().unwrap_or_default()
     }
 
     /// Returns the height.
     ///
-    /// ## Examples
+    /// # Examples
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
@@ -211,7 +211,7 @@ impl<'a> Text<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
-    /// ## Examples
+    /// # Examples
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
@@ -335,6 +335,43 @@ impl<'a> Text<'a> {
     pub fn right_aligned(self) -> Self {
         self.alignment(Alignment::Right)
     }
+
+    /// Returns an iterator over the lines of the text.
+    pub fn iter(&self) -> std::slice::Iter<Line<'a>> {
+        self.lines.iter()
+    }
+
+    /// Returns an iterator that allows modifying each line.
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<Line<'a>> {
+        self.lines.iter_mut()
+    }
+}
+
+impl<'a> IntoIterator for Text<'a> {
+    type Item = Line<'a>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.lines.into_iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a Text<'a> {
+    type Item = &'a Line<'a>;
+    type IntoIter = std::slice::Iter<'a, Line<'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut Text<'a> {
+    type Item = &'a mut Line<'a>;
+    type IntoIter = std::slice::IterMut<'a, Line<'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
 }
 
 impl<'a> From<String> for Text<'a> {
@@ -382,15 +419,6 @@ impl<'a> From<Vec<Line<'a>>> for Text<'a> {
     }
 }
 
-impl<'a> IntoIterator for Text<'a> {
-    type Item = Line<'a>;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.lines.into_iter()
-    }
-}
-
 impl<'a, T> Extend<T> for Text<'a>
 where
     T: Into<Line<'a>>,
@@ -403,7 +431,7 @@ where
 
 impl std::fmt::Display for Text<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (position, line) in self.lines.iter().with_position() {
+        for (position, line) in self.iter().with_position() {
             if position == Position::Last {
                 write!(f, "{line}")?;
             } else {
@@ -433,7 +461,7 @@ impl Widget for &Option<Text<'_>> {
 impl Widget for &Text<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        for (line, row) in self.lines.iter().zip(area.rows()) {
+        for (line, row) in self.iter().zip(area.rows()) {
             let line_width = line.width() as u16;
 
             let x_offset = match (self.alignment, line.alignment) {
@@ -468,6 +496,8 @@ impl<'a> Styled for Text<'a> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::{fixture, rstest};
+
     use super::*;
     use crate::style::Stylize;
 
@@ -811,5 +841,93 @@ mod tests {
     fn right_aligned() {
         let text = Text::from("Hello, world!").right_aligned();
         assert_eq!(text.alignment, Some(Alignment::Right));
+    }
+
+    mod iterators {
+        use super::*;
+
+        /// a fixture used in the tests below to avoid repeating the same setup
+        #[fixture]
+        fn hello_world() -> Text<'static> {
+            Text::from(vec![
+                Line::styled("Hello ", Color::Blue),
+                Line::styled("world!", Color::Green),
+            ])
+        }
+
+        #[rstest]
+        fn iter(hello_world: Text<'_>) {
+            let mut iter = hello_world.iter();
+            assert_eq!(iter.next(), Some(&Line::styled("Hello ", Color::Blue)));
+            assert_eq!(iter.next(), Some(&Line::styled("world!", Color::Green)));
+            assert_eq!(iter.next(), None);
+        }
+
+        #[rstest]
+        fn iter_mut(mut hello_world: Text<'_>) {
+            let mut iter = hello_world.iter_mut();
+            assert_eq!(iter.next(), Some(&mut Line::styled("Hello ", Color::Blue)));
+            assert_eq!(iter.next(), Some(&mut Line::styled("world!", Color::Green)));
+            assert_eq!(iter.next(), None);
+        }
+
+        #[rstest]
+        fn into_iter(hello_world: Text<'_>) {
+            let mut iter = hello_world.into_iter();
+            assert_eq!(iter.next(), Some(Line::styled("Hello ", Color::Blue)));
+            assert_eq!(iter.next(), Some(Line::styled("world!", Color::Green)));
+            assert_eq!(iter.next(), None);
+        }
+
+        #[rstest]
+        fn into_iter_ref(hello_world: Text<'_>) {
+            let mut iter = (&hello_world).into_iter();
+            assert_eq!(iter.next(), Some(&Line::styled("Hello ", Color::Blue)));
+            assert_eq!(iter.next(), Some(&Line::styled("world!", Color::Green)));
+            assert_eq!(iter.next(), None);
+        }
+
+        #[test]
+        fn into_iter_mut_ref() {
+            let mut hello_world = Text::from(vec![
+                Line::styled("Hello ", Color::Blue),
+                Line::styled("world!", Color::Green),
+            ]);
+            let mut iter = (&mut hello_world).into_iter();
+            assert_eq!(iter.next(), Some(&mut Line::styled("Hello ", Color::Blue)));
+            assert_eq!(iter.next(), Some(&mut Line::styled("world!", Color::Green)));
+            assert_eq!(iter.next(), None);
+        }
+
+        #[rstest]
+        fn for_loop_ref(hello_world: Text<'_>) {
+            let mut result = String::new();
+            for line in &hello_world {
+                result.push_str(line.to_string().as_ref());
+            }
+            assert_eq!(result, "Hello world!");
+        }
+
+        #[rstest]
+        fn for_loop_mut_ref() {
+            let mut hello_world = Text::from(vec![
+                Line::styled("Hello ", Color::Blue),
+                Line::styled("world!", Color::Green),
+            ]);
+            let mut result = String::new();
+            for line in &mut hello_world {
+                result.push_str(line.to_string().as_ref());
+            }
+            assert_eq!(result, "Hello world!");
+        }
+
+        #[rstest]
+        fn for_loop_into(hello_world: Text<'_>) {
+            let mut result = String::new();
+            for line in hello_world {
+                result.push_str(line.to_string().as_ref());
+            }
+            assert_eq!(result, "Hello world!");
+        }
     }
 }
