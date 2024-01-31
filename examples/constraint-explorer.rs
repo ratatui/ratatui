@@ -339,14 +339,20 @@ impl App {
 
         self.render_user_constraints_legend(user_constraints, buf);
 
-        let [start, center, end, space_around, space_between] =
-            area.split(&Layout::vertical([Length(7); 5]));
+        if area.height > 7 * 5 {
+            let [start, center, end, space_around, space_between] =
+                area.split(&Layout::vertical([Length(7); 5]));
 
-        self.render_layout_block(Flex::Start, start, buf);
-        self.render_layout_block(Flex::Center, center, buf);
-        self.render_layout_block(Flex::End, end, buf);
-        self.render_layout_block(Flex::SpaceAround, space_around, buf);
-        self.render_layout_block(Flex::SpaceBetween, space_between, buf)
+            self.render_layout_block(Flex::Start, start, buf);
+            self.render_layout_block(Flex::Center, center, buf);
+            self.render_layout_block(Flex::End, end, buf);
+            self.render_layout_block(Flex::SpaceAround, space_around, buf);
+            self.render_layout_block(Flex::SpaceBetween, space_between, buf)
+        } else {
+            let [start] = area.split(&Layout::vertical([Length(7)]));
+
+            self.render_layout_block(Flex::Start, start, buf);
+        }
     }
 
     fn render_user_constraints_legend(&self, area: Rect, buf: &mut Buffer) {
