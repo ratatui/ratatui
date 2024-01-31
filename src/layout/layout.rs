@@ -696,11 +696,11 @@ fn configure_flex_constraints(
     spacing: u16,
 ) -> Result<(), AddConstraintError> {
     let spacers_except_first_and_last = spacers.get(1..spacers.len() - 1).unwrap_or(&[]);
-    let spacing = f64::from(spacing) * FLOAT_PRECISION_MULTIPLIER;
+    let spacing_f64 = f64::from(spacing) * FLOAT_PRECISION_MULTIPLIER;
     match flex {
         Flex::Legacy => {
             for spacer in spacers_except_first_and_last.iter() {
-                solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
+                solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
@@ -714,6 +714,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?
             }
             for spacer in spacers.iter() {
+                solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
                 solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
         }
@@ -724,7 +725,10 @@ fn configure_flex_constraints(
             for (left, right) in spacers_except_first_and_last.iter().tuple_combinations() {
                 solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?
             }
-            for spacer in spacers.iter() {
+            for spacer in spacers_except_first_and_last.iter() {
+                solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
+            }
+            for spacer in spacers_except_first_and_last.iter() {
                 solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
@@ -734,7 +738,7 @@ fn configure_flex_constraints(
         }
         Flex::Start => {
             for spacer in spacers_except_first_and_last {
-                solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
+                solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
@@ -743,7 +747,7 @@ fn configure_flex_constraints(
         }
         Flex::Center => {
             for spacer in spacers_except_first_and_last {
-                solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
+                solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.has_size(area, GROW))?;
@@ -753,7 +757,7 @@ fn configure_flex_constraints(
         }
         Flex::End => {
             for spacer in spacers_except_first_and_last {
-                solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
+                solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(last.is_empty())?;
@@ -2329,9 +2333,8 @@ mod tests {
         #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::Start , 10)]
         #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::Center , 10)]
         #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::End , 10)]
-        // SpaceAround and SpaceBetween spacers behave differently from other flexes
-        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 10)]
-        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , 10)]
+        #[case::flex10(vec![(10 , 35), (55 , 35)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , 10)]
         #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , 0)]
         #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 0)]
         #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 0)]
@@ -2342,9 +2345,8 @@ mod tests {
         #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , 10)]
         #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , 10)]
         #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , 10)]
-        // SpaceAround and SpaceBetween spacers behave differently from other flexes
-        #[case::flex_length10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 10)]
-        #[case::flex_length10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 10)]
+        #[case::flex_length10(vec![(10 , 25), (45, 10), (65 , 25)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 10)]
+        #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 10)]
         fn fill_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2435,8 +2437,8 @@ mod tests {
 
         #[rstest]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, 200)]
-        #[case::spacers(vec![(0, 0), (10, 80), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 200)]
-        #[case::spacers(vec![(0, 27), (37, 26), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceAround, 200)]
+        #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 200)]
+        #[case::spacers(vec![(0, 33), (33, 34), (67, 33)], vec![Length(10), Length(10)], Flex::SpaceAround, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Start, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Center, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::End, 200)]

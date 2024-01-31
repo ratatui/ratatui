@@ -1328,7 +1328,7 @@ mod tests {
                 .flex(Flex::SpaceBetween);
             assert_eq!(
                 table.get_columns_widths(62, 0),
-                &[(0, 21), (21, 20), (41, 21)]
+                &[(0, 20), (21, 20), (42, 20)]
             );
         }
 

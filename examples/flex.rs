@@ -264,15 +264,7 @@ impl Widget for App {
         } else {
             axis.width
         };
-        let spacing = if matches!(
-            self.selected_tab,
-            SelectedTab::SpaceBetween | SelectedTab::SpaceAround
-        ) {
-            0
-        } else {
-            self.spacing
-        };
-        self.axis(axis_width, spacing).render(axis, buf);
+        self.axis(axis_width, self.spacing).render(axis, buf);
     }
 }
 
