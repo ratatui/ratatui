@@ -349,9 +349,15 @@ impl App {
             self.render_layout_block(Flex::SpaceAround, space_around, buf);
             self.render_layout_block(Flex::SpaceBetween, space_between, buf)
         } else {
-            let [start] = area.split(&Layout::vertical([Length(7)]));
-
+            let [start, info] =
+                area.split(&Layout::vertical([Length(7), Length(1)]).flex(Flex::SpaceBetween));
             self.render_layout_block(Flex::Start, start, buf);
+            Line::from(
+                "--- Increase height of terminal to see more flex comparisons ---"
+                    .fg(Self::TEXT_COLOR),
+            )
+            .centered()
+            .render(info, buf);
         }
     }
 
