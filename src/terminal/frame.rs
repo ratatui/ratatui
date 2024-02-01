@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, widgets::WidgetRef};
 
 /// A consistent view into the terminal state for rendering a single frame.
 ///
@@ -75,6 +75,26 @@ impl Frame<'_> {
         widget.render(area, self.buffer);
     }
 
+    /// Render a [`WidgetRef`] to the current buffer using [`WidgetRef::render_ref`].
+    ///
+    /// Usually the area argument is the size of the current frame or a sub-area of the current
+    /// frame (which can be obtained using [`Layout`] to split the total area).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::Block};
+    /// # let backend = TestBackend::new(5, 5);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
+    /// # let mut frame = terminal.get_frame();
+    /// let block = Block::default();
+    /// let area = Rect::new(0, 0, 5, 5);
+    /// frame.render_widget_ref(block, area);
+    /// ```
+    pub fn render_widget_ref<W: WidgetRef>(&mut self, widget: W, area: Rect) {
+        widget.render_ref(area, self.buffer);
+    }
+
     /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
     ///
     /// Usually the area argument is the size of the current frame or a sub-area of the current
@@ -83,7 +103,7 @@ impl Frame<'_> {
     /// The last argument should be an instance of the [`StatefulWidget::State`] associated to the
     /// given [`StatefulWidget`].
     ///
-    /// # Examples
+    /// # Example
     ///
     /// ```rust
     /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
@@ -102,6 +122,34 @@ impl Frame<'_> {
         W: StatefulWidget,
     {
         widget.render(area, self.buffer, state);
+    }
+
+    /// Render a [`StatefulWidgetRef`] to the current buffer using
+    /// [`StatefulWidgetRef::render_ref`].
+    ///
+    /// Usually the area argument is the size of the current frame or a sub-area of the current
+    /// frame (which can be obtained using [`Layout`] to split the total area).
+    ///
+    /// The last argument should be an instance of the [`StatefulWidgetRef::State`] associated to
+    /// the given [`StatefulWidgetRef`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
+    /// # let backend = TestBackend::new(5, 5);
+    /// # let mut terminal = Terminal::new(backend).unwrap();
+    /// # let mut frame = terminal.get_frame();
+    /// let mut state = ListState::default().with_selected(Some(1));
+    /// let list = List::new(vec![ListItem::new("Item 1"), ListItem::new("Item 2")]);
+    /// let area = Rect::new(0, 0, 5, 5);
+    /// frame.render_stateful_widget_ref(list, area, &mut state);
+    /// ```
+    pub fn render_stateful_widget_ref<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
+    where
+        W: StatefulWidgetRef,
+    {
+        widget.render_ref(area, self.buffer, state);
     }
 
     /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
