@@ -387,15 +387,20 @@ pub trait StatefulWidgetRef {
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
 }
 
-/// Blanket implementation of `StatefulWidget` for `&W` where `W` implements `StatefulWidgetRef`.
-///
-/// This allows you to render a stateful widget by reference.
-impl<W: StatefulWidgetRef> StatefulWidget for &W {
-    type State = W::State;
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        StatefulWidgetRef::render_ref(self, area, buf, state);
-    }
-}
+// Note: while StatefulWidgetRef is marked as unstable, the blanket implementation of StatefulWidget
+// cannot be implemented as W::State is effectivley pub(crate) and not accessible from outside the
+// crate. Once stabilized, this blanket implementation can be added and the specific implementations
+// on Table and List can be removed.
+//
+// /// Blanket implementation of `StatefulWidget` for `&W` where `W` implements `StatefulWidgetRef`.
+// ///
+// /// This allows you to render a stateful widget by reference.
+// impl<W: StatefulWidgetRef> StatefulWidget for &W {
+//     type State = W::State;
+//     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+//         StatefulWidgetRef::render_ref(self, area, buf, state);
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -509,14 +514,17 @@ mod tests {
         assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
     }
 
-    /// This test is to ensure that the blanket implementation of `StatefulWidget` for `&W` where
-    /// `W` implements `StatefulWidgetRef` works as expected.
-    #[rstest]
-    fn stateful_widget_blanket_render(mut buf: Buffer, mut state: String) {
-        let widget = &PersonalGreeting;
-        widget.render(buf.area, &mut buf, &mut state);
-        assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
-    }
+    // Note this cannot be tested until the blanket implementation of StatefulWidget for &W where W
+    // implements StatefulWidgetRef is added. (see the comment in the blanket implementation for
+    // more).
+    // /// This test is to ensure that the blanket implementation of `StatefulWidget` for `&W` where
+    // /// `W` implements `StatefulWidgetRef` works as expected.
+    // #[rstest]
+    // fn stateful_widget_blanket_render(mut buf: Buffer, mut state: String) {
+    //     let widget = &PersonalGreeting;
+    //     widget.render(buf.area, &mut buf, &mut state);
+    //     assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
+    // }
 
     #[rstest]
     fn stateful_widget_box_render(mut buf: Buffer, mut state: String) {
