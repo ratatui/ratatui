@@ -74,8 +74,8 @@ fn layout(frame: &mut Frame) {
         Constraint::Length(1),
     ]);
     let horizontal = Layout::horizontal([Constraint::Ratio(1, 2); 2]);
-    let [title_bar, main_area, status_bar] = frame.size().split(&vertical);
-    let [left, right] = main_area.split(&horizontal);
+    let [title_bar, main_area, status_bar] = vertical.areas(frame.size());
+    let [left, right] = horizontal.areas(main_area);
 
     frame.render_widget(
         Block::new().borders(Borders::TOP).title("Title Bar"),

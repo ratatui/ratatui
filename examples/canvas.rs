@@ -125,8 +125,8 @@ impl App {
         let horizontal =
             Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
         let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let [map, right] = frame.size().split(&horizontal);
-        let [pong, boxes] = right.split(&vertical);
+        let [map, right] = horizontal.areas(frame.size());
+        let [pong, boxes] = vertical.areas(right);
 
         frame.render_widget(self.map_canvas(), map);
         frame.render_widget(self.pong_canvas(), pong);

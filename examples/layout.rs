@@ -68,7 +68,7 @@ fn ui(frame: &mut Frame) {
         Length(50), // examples
         Min(0),     // fills remaining space
     ]);
-    let [text_area, examples_area, _] = frame.size().split(&vertical);
+    let [text_area, examples_area, _] = vertical.areas(frame.size());
 
     // title
     frame.render_widget(
@@ -205,7 +205,7 @@ fn render_single_example(frame: &mut Frame, area: Rect, constraints: Vec<Constra
     let blue = Paragraph::new(constraint_label(constraints[1])).on_blue();
     let green = Paragraph::new("·".repeat(12)).on_green();
     let horizontal = Layout::horizontal(constraints);
-    let [r, b, g] = area.split(&horizontal);
+    let [r, b, g] = horizontal.areas(area);
     frame.render_widget(red, r);
     frame.render_widget(blue, b);
     frame.render_widget(green, g);

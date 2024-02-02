@@ -237,8 +237,8 @@ fn ui(f: &mut Frame, downloads: &Downloads) {
 
     let vertical = Layout::vertical([Constraint::Length(2), Constraint::Length(4)]).margin(1);
     let horizontal = Layout::horizontal([Constraint::Percentage(20), Constraint::Percentage(80)]);
-    let [progress_area, main] = area.split(&vertical);
-    let [list_area, gauge_area] = main.split(&horizontal);
+    let [progress_area, main] = vertical.areas(area);
+    let [list_area, gauge_area] = horizontal.areas(main);
 
     // total progress
     let done = NUM_DOWNLOADS - downloads.pending.len() - downloads.in_progress.len();

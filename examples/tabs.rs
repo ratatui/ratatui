@@ -120,10 +120,10 @@ impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         use Constraint::*;
         let vertical = Layout::vertical([Length(1), Min(0), Length(1)]);
-        let [header_area, inner_area, footer_area] = area.split(&vertical);
+        let [header_area, inner_area, footer_area] = vertical.areas(area);
 
         let horizontal = Layout::horizontal([Min(0), Length(20)]);
-        let [tabs_area, title_area] = header_area.split(&horizontal);
+        let [tabs_area, title_area] = horizontal.areas(header_area);
 
         self.render_title(title_area, buf);
         self.render_tabs(tabs_area, buf);

@@ -120,7 +120,7 @@ fn ui(frame: &mut Frame) {
 fn calculate_layout(area: Rect) -> (Rect, Vec<Vec<Rect>>) {
     let main_layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     let block_layout = &Layout::vertical([Constraint::Max(4); 9]);
-    let [title_area, main_area] = area.split(&main_layout);
+    let [title_area, main_area] = main_layout.areas(area);
     let main_areas = block_layout
         .split(main_area)
         .iter()

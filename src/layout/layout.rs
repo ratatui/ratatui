@@ -420,6 +420,73 @@ impl Layout {
         self
     }
 
+    /// Split the rect into a number of sub-rects according to the given [`Layout`]`.
+    ///
+    /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
+    /// `Rc<[Rect]>`.
+    ///
+    /// This method requires the number of constraints to be known at compile time. If you don't
+    /// know the number of constraints at compile time, use [`Layout::split`] instead.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of constraints is not equal to the length of the returned array.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # fn render(frame: &mut Frame) {
+    /// let area = frame.size();
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let [top, main] = layout.areas(area);
+    ///
+    /// // or explicitly specify the number of constraints:
+    /// let areas = layout.areas::<2>(area);
+    /// # }
+    pub fn areas<const N: usize>(&self, area: Rect) -> [Rect; N] {
+        self.split(area)
+            .to_vec()
+            .try_into()
+            .expect("invalid number of rects")
+    }
+
+    /// Split the rect into a number of sub-rects according to the given [`Layout`]` and return just
+    /// the spacers between the areas.
+    ///
+    /// This method requires the number of constraints to be known at compile time. If you don't
+    /// know the number of constraints at compile time, use [`Layout::split_with_spacers`] instead.
+    ///
+    /// This method is similar to [`Layout::areas`], and can be called with the same parameters, but
+    /// it returns just the spacers between the areas. The result of calling the `areas` method is
+    /// cached, so this will generally not re-run the solver, but will just return the cached
+    /// result.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of constraints + 1 is not equal to the length of the returned array.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # fn render(frame: &mut Frame) {
+    /// let area = frame.size();
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let [top, main] = layout.areas(area);
+    /// let [before, inbetween, after] = layout.spacers(area);
+    ///
+    /// // or explicitly specify the number of constraints:
+    /// let spacers = layout.spacers::<2>(area);
+    /// # }
+    pub fn spacers<const N: usize>(&self, area: Rect) -> [Rect; N] {
+        let (_, spacers) = self.split_with_spacers(area);
+        spacers
+            .to_vec()
+            .try_into()
+            .expect("invalid number of rects")
+    }
+
     /// Wrapper function around the cassowary-rs solver to be able to split a given area into
     /// smaller ones based on the preferred widths or heights and the direction.
     ///
@@ -433,10 +500,10 @@ impl Layout {
     /// LruCache, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
     /// is initialized with the [Layout::init_cache()] grows until the initialized cache size.
     ///
-    /// There is a helper method on Rect that can be used to split the whole area into smaller ones
-    /// based on the layout: [`Rect::split()`]. That method is a shortcut for calling this method.
-    /// It allows you to destructure the result directly into variables, which is useful when you
-    /// know at compile time the number of areas that will be created.
+    /// There is a helper method that can be used to split the whole area into smaller ones based on
+    /// the layout: [`Layout::areas()`]. That method is a shortcut for calling this method. It
+    /// allows you to destructure the result directly into variables, which is useful when you know
+    /// at compile time the number of areas that will be created.
     ///
     /// # Examples
     ///

@@ -733,10 +733,8 @@ impl Table<'_> {
         };
         // this will always allocate a selection area
         let [_selection_area, columns_area] =
-            Rect::new(0, 0, max_width, 1).split(&Layout::horizontal([
-                Constraint::Length(selection_width),
-                Constraint::Fill(0),
-            ]));
+            Layout::horizontal([Constraint::Length(selection_width), Constraint::Fill(0)])
+                .areas(Rect::new(0, 0, max_width, 1));
         let rects = Layout::horizontal(widths)
             .flex(self.flex)
             .spacing(self.column_spacing)
