@@ -23,9 +23,7 @@ pub use crate::backend::CrosstermBackend;
 pub use crate::backend::TermionBackend;
 #[cfg(feature = "termwiz")]
 pub use crate::backend::TermwizBackend;
-
 pub(crate) use crate::widgets::{StatefulWidgetRef, WidgetRef};
-
 pub use crate::{
     backend::{self, Backend},
     buffer::{self, Buffer},
