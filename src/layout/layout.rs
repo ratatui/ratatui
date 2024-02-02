@@ -445,10 +445,8 @@ impl Layout {
     /// let areas = layout.areas::<2>(area);
     /// # }
     pub fn areas<const N: usize>(&self, area: Rect) -> [Rect; N] {
-        self.split(area)
-            .to_vec()
-            .try_into()
-            .expect("invalid number of rects")
+        let (areas, _) = self.split_with_spacers(area);
+        areas.to_vec().try_into().expect("invalid number of rects")
     }
 
     /// Split the rect into a number of sub-rects according to the given [`Layout`]` and return just
