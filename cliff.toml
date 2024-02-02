@@ -33,8 +33,7 @@ body = """
 {%- for footer in commit.footers %}
 {%- if footer.token != "Signed-off-by" and footer.token != "Co-authored-by" %}
 
-  {{ footer.token | indent(prefix="  ") }}{{ footer.separator }}
-  {{ footer.value | indent(prefix="  ") }}
+  {{ footer.token | indent(prefix="  ") }}{{ footer.separator }}{{ footer.value }}
 {%- endif %}
 {%- endfor %}
 {% endmacro -%}
