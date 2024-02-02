@@ -10,7 +10,7 @@ github with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [v0.26.0 (unreleased)](#v0260-unreleased)
+- [v0.26.0](#v0260)
   - `patch_style` & `reset_style` now consume and return `Self`
   - Removed deprecated `Block::title_on_bottom`
   - `Line` now has an extra `style` field which applies the style to the entire line
@@ -46,7 +46,7 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## v0.26.0 (unreleased)
+## [v0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0)
 
 ### `Flex::Start` is the new default flex mode
 
