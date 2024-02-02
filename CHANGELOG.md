@@ -649,7 +649,7 @@ features expect paragraph which still has a custom implementation.
   this was not enough to render a boxed widget. We now have a new trait
   called `WidgetRef` that allows rendering a widget by reference. This
   trait is useful when you want to store a reference to one or more
-  widgets and render them later. Additionaly this makes it possible to
+  widgets and render them later. Additionally this makes it possible to
   render boxed widgets where the type is not known at compile time (e.g.
   in a composite layout with multiple panes of different types).
 
