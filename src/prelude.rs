@@ -23,6 +23,9 @@ pub use crate::backend::CrosstermBackend;
 pub use crate::backend::TermionBackend;
 #[cfg(feature = "termwiz")]
 pub use crate::backend::TermwizBackend;
+
+pub(crate) use crate::widgets::{StatefulWidgetRef, WidgetRef};
+
 pub use crate::{
     backend::{self, Backend},
     buffer::{self, Buffer},
@@ -31,5 +34,5 @@ pub use crate::{
     symbols::{self, Marker},
     terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport},
     text::{self, Line, Masked, Span, Text},
-    widgets::{block::BlockExt, StatefulWidget, StatefulWidgetRef, Widget, WidgetRef},
+    widgets::{block::BlockExt, StatefulWidget, Widget},
 };
