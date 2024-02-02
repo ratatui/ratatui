@@ -227,8 +227,8 @@ pub trait StatefulWidget {
 /// over the collection and render each widget.
 ///
 /// This trait was introduced in Ratatui 0.26.0 and is implemented for all the internal widgets.
-/// Implemetors should prefer to implement this over the `Widget` trait and add an implementation of
-/// `Widget` that calls `WidgetRef::render_ref` where backwards compatibility is required.
+/// Implementors should prefer to implement this over the `Widget` trait and add an implementation
+/// of `Widget` that calls `WidgetRef::render_ref` where backwards compatibility is required.
 ///
 /// A blanket implementation of `Widget` for `&W` where `W` implements `WidgetRef` is provided.
 ///
