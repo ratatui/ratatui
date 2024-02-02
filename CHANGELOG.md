@@ -640,6 +640,58 @@ features expect paragraph which still has a custom implementation.
   ```
   ````
 
+- [c8dd879](https://github.com/ratatui-org/ratatui/commit/c8dd87918d44fff6d4c3c78e1fc821a3275db1ae)
+  _(uncategorized)_ Add WidgetRef and StatefulWidgetRef traits ([#903](https://github.com/ratatui-org/ratatui/issues/903))
+
+  ````text
+  The Widget trait consumes self, which makes it impossible to use in a
+  boxed context. Previously we implemented the Widget trait for &T, but
+  this was not enough to render a boxed widget. We now have a new trait
+  called `WidgetRef` that allows rendering a widget by reference. This
+  trait is useful when you want to store a reference to one or more
+  widgets and render them later. Additionaly this makes it possible to
+  render boxed widgets where the type is not known at compile time (e.g.
+  in a composite layout with multiple panes of different types).
+
+  This change also adds a new trait called `StatefulWidgetRef` which is
+  the stateful equivalent of `WidgetRef`.
+
+  Both new traits are gated behind the `unstable-widget-ref` feature flag
+  as we may change the exact name / approach a little on this based on
+  further discussion.
+
+  Blanket implementation of `Widget` for `&W` where `W` implements
+  `WidgetRef` and `StatefulWidget` for `&W` where `W` implements
+  `StatefulWidgetRef` is provided. This allows you to render a widget by
+  reference and a stateful widget by reference.
+
+  A blanket implementation of `WidgetRef` for `Option<W>` where `W`
+  implements `WidgetRef` is provided. This makes it easier to render
+  child widgets that are optional without the boilerplate of unwrapping
+  the option. Previously several widgets implemented this manually. This
+  commits expands the pattern to apply to all widgets.
+
+  ```rust
+  struct Parent {
+      child: Option<Child>,
+  }
+
+  impl WidgetRef for Parent {
+      fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+          self.child.render_ref(area, buf);
+      }
+  }
+  ```
+
+  ```rust
+  let widgets: Vec<Box<dyn WidgetRef>> = vec![Box::new(Greeting), Box::new(Farewell)];
+  for widget in widgets {
+      widget.render_ref(buf.area, &mut buf);
+  }
+  assert_eq!(buf, Buffer::with_lines(["Hello        Goodbye"]));
+  ```
+  ````
+
 - [87bf1dd](https://github.com/ratatui-org/ratatui/commit/87bf1dd9dfb8bf2e6c08c488d4a38dac21e14304)
   _(uncategorized)_ Replace Rect::split with Layout::areas and spacers ([#904](https://github.com/ratatui-org/ratatui/issues/904))
 
