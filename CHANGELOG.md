@@ -1648,6 +1648,17 @@ Here is the list of contributors who have contributed to `ratatui` for the first
 * @bblsh
 * @Eeelco
 
+### Sponsors
+
+Shout out to our new sponsors!
+
+* @pythops
+* @DanNixon
+* @ymgyt
+* @plabayo
+* @atuinsh
+* @JeftavanderHorst!
+
 ## [0.25.0](https://github.com/ratatui-org/ratatui/releases/tag/0.25.0) - 2023-12-18
 
 We are thrilled to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭
