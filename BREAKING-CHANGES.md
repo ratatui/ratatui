@@ -11,6 +11,7 @@ github with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.26.0](#v0260)
+  - `Flex::Start` is the new default flex mode for `Layout`
   - `patch_style` & `reset_style` now consume and return `Self`
   - Removed deprecated `Block::title_on_bottom`
   - `Line` now has an extra `style` field which applies the style to the entire line
@@ -48,7 +49,7 @@ This is a quick summary of the sections below:
 
 ## [v0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0)
 
-### `Flex::Start` is the new default flex mode
+### `Flex::Start` is the new default flex mode for `Layout`
 
 [#881]: https://github.com/ratatui-org/ratatui/pull/881
 
