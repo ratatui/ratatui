@@ -118,7 +118,6 @@ impl Frame<'_> {
     /// ```
     ///
     /// [`Layout`]: crate::layout::Layout
-    #[stability::unstable(feature = "widget-ref")]
     pub fn render_stateful_widget<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
     where
         W: StatefulWidget,
@@ -147,6 +146,7 @@ impl Frame<'_> {
     /// let area = Rect::new(0, 0, 5, 5);
     /// frame.render_stateful_widget_ref(list, area, &mut state);
     /// ```
+    #[stability::unstable(feature = "widget-ref")]
     pub fn render_stateful_widget_ref<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
     where
         W: StatefulWidgetRef,
