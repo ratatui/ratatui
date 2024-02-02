@@ -127,10 +127,8 @@ impl Widget for RecipeTab {
             horizontal: 2,
             vertical: 1,
         });
-        let [recipe, ingredients] = area.split(&Layout::horizontal([
-            Constraint::Length(44),
-            Constraint::Min(0),
-        ]));
+        let [recipe, ingredients] =
+            Layout::horizontal([Constraint::Length(44), Constraint::Min(0)]).areas(area);
 
         render_recipe(recipe, buf);
         render_ingredients(self.row_index, ingredients, buf);

@@ -745,12 +745,13 @@ impl<'a> Chart<'a> {
                 let legend_width = inner_width + 2;
                 let legend_height = legends.count() as u16 + 2;
 
-                let [max_legend_width] = layout.graph_area.split(
-                    &Layout::horizontal([self.hidden_legend_constraints.0]).flex(Flex::Start),
-                );
-                let [max_legend_height] = layout
-                    .graph_area
-                    .split(&Layout::vertical([self.hidden_legend_constraints.1]).flex(Flex::Start));
+                let [max_legend_width] = Layout::horizontal([self.hidden_legend_constraints.0])
+                    .flex(Flex::Start)
+                    .areas(layout.graph_area);
+
+                let [max_legend_height] = Layout::vertical([self.hidden_legend_constraints.1])
+                    .flex(Flex::Start)
+                    .areas(layout.graph_area);
 
                 if inner_width > 0
                     && legend_width <= max_legend_width.width

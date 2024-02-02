@@ -152,8 +152,8 @@ fn ui(frame: &mut Frame, app: &App) {
 
     let vertical = Layout::vertical([Constraint::Percentage(40), Constraint::Percentage(60)]);
     let horizontal = Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)]);
-    let [chart1, bottom] = area.split(&vertical);
-    let [line_chart, scatter] = bottom.split(&horizontal);
+    let [chart1, bottom] = vertical.areas(area);
+    let [line_chart, scatter] = horizontal.areas(bottom);
 
     render_chart1(frame, chart1, app);
     render_line_chart(frame, line_chart);

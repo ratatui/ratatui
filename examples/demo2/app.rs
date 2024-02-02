@@ -142,7 +142,7 @@ impl Widget for &App {
             Constraint::Min(0),
             Constraint::Length(1),
         ]);
-        let [title_bar, tab, bottom_bar] = area.split(&vertical);
+        let [title_bar, tab, bottom_bar] = vertical.areas(area);
 
         Block::new().style(THEME.root).render(area, buf);
         self.render_title_bar(title_bar, buf);
@@ -154,7 +154,7 @@ impl Widget for &App {
 impl App {
     fn render_title_bar(&self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::horizontal([Constraint::Min(0), Constraint::Length(43)]);
-        let [title, tabs] = area.split(&layout);
+        let [title, tabs] = layout.areas(area);
 
         Span::styled("Ratatui", THEME.app_title).render(title, buf);
         let titles = Tab::iter().map(|tab| tab.title());

@@ -135,7 +135,7 @@ impl<DS: DateStyler> Monthly<'_, DS> {
             Constraint::Length(self.show_weekday.is_some().into()),
             Constraint::Fill(1),
         ]);
-        let [month_header, days_header, days_area] = area.split(&layout);
+        let [month_header, days_header, days_area] = layout.areas(area);
 
         // Draw the month name and year
         if let Some(style) = self.show_month {

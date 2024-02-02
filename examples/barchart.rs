@@ -152,8 +152,8 @@ fn run_app<B: Backend>(
 fn ui(frame: &mut Frame, app: &App) {
     let vertical = Layout::vertical([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)]);
     let horizontal = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
-    let [top, bottom] = frame.size().split(&vertical);
-    let [left, right] = bottom.split(&horizontal);
+    let [top, bottom] = vertical.areas(frame.size());
+    let [left, right] = horizontal.areas(bottom);
 
     let barchart = BarChart::default()
         .block(Block::default().title("Data1").borders(Borders::ALL))
