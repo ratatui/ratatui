@@ -919,15 +919,15 @@ impl<'a> Chart<'a> {
 
 impl Widget for Chart<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Widget::render(&self, area, buf);
+        self.render_ref(area, buf);
     }
 }
 
-impl Widget for &Chart<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl WidgetRef for Chart<'_> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
 
-        self.block.render(area, buf);
+        self.block.render_ref(area, buf);
         let chart_area = self.block.inner_if_some(area);
         if chart_area.is_empty() {
             return;

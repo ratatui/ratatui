@@ -100,13 +100,17 @@ underline-color = ["dep:crossterm"]
 #! The following features are unstable and may change in the future:
 
 ## Enable all unstable features.
-unstable = ["unstable-rendered-line-info"]
+unstable = ["unstable-rendered-line-info", "unstable-widget-ref"]
 
 ## Enables the [`Paragraph::line_count`](crate::widgets::Paragraph::line_count)
 ## [`Paragraph::line_width`](crate::widgets::Paragraph::line_width) methods
 ## which are experimental and may change in the future.
 ## See [Issue 293](https://github.com/ratatui-org/ratatui/issues/293) for more details.
 unstable-rendered-line-info = []
+
+## Enables the `WidgetRef` and `StatefulWidgetRef` traits which are experimental and may change in
+## the future.
+unstable-widget-ref = []
 
 [package.metadata.docs.rs]
 all-features = true

@@ -565,13 +565,12 @@ impl<'a> Table<'a> {
 
 impl Widget for Table<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut state = TableState::default();
-        StatefulWidget::render(self, area, buf, &mut state);
+        WidgetRef::render_ref(&self, area, buf);
     }
 }
 
-impl Widget for &Table<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl WidgetRef for Table<'_> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let mut state = TableState::default();
         StatefulWidget::render(self, area, buf, &mut state);
     }
@@ -585,12 +584,20 @@ impl StatefulWidget for Table<'_> {
     }
 }
 
+// Note: remove this when StatefulWidgetRef is stabilized and replace with the blanket impl
 impl StatefulWidget for &Table<'_> {
     type State = TableState;
-
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        StatefulWidgetRef::render_ref(self, area, buf, state);
+    }
+}
+
+impl StatefulWidgetRef for Table<'_> {
+    type State = TableState;
+
+    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
-        self.block.render(area, buf);
+        self.block.render_ref(area, buf);
         let table_area = self.block.inner_if_some(area);
         if table_area.is_empty() {
             return;
