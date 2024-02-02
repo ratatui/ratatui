@@ -98,7 +98,9 @@ use crate::{buffer::Buffer, layout::Rect};
 pub trait Widget {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.
-    fn render(self, area: Rect, buf: &mut Buffer);
+    fn render(self, area: Rect, buf: &mut Buffer)
+    where
+        Self: Sized;
 }
 
 /// A `StatefulWidget` is a widget that can take advantage of some local state to remember things
@@ -388,7 +390,7 @@ pub trait StatefulWidgetRef {
 }
 
 // Note: while StatefulWidgetRef is marked as unstable, the blanket implementation of StatefulWidget
-// cannot be implemented as W::State is effectivley pub(crate) and not accessible from outside the
+// cannot be implemented as W::State is effectively pub(crate) and not accessible from outside the
 // crate. Once stabilized, this blanket implementation can be added and the specific implementations
 // on Table and List can be removed.
 //
