@@ -576,15 +576,15 @@ impl BarChart<'_> {
 
 impl Widget for BarChart<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        (&self).render(area, buf);
+        self.render_ref(area, buf);
     }
 }
 
-impl Widget for &BarChart<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl WidgetRef for BarChart<'_> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
 
-        self.block.render(area, buf);
+        self.block.render_ref(area, buf);
         let inner = self.block.inner_if_some(area);
 
         if inner.is_empty() || self.data.is_empty() || self.bar_width == 0 {
