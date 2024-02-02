@@ -48,6 +48,27 @@ This is a quick summary of the sections below:
 
 ## v0.26.0 (unreleased)
 
+### `Flex::Start` is the new default flex mode
+
+[#881]: https://github.com/ratatui-org/ratatui/pull/881
+
+Previously, constraints would stretch to fill all available space, violating constraints if 
+necessary.
+
+With v0.26.0, `Flex` modes are introduced and the default is `Flex::Start`, which will align 
+areas associated with constraints to be beginning of the area. With v0.26.0, additionally, 
+`Min` constraints grow to fill excess space. These changes will allow users to build layouts 
+more easily.
+
+With v0.26.0, users will most likely not need to change what constraints they use to create 
+existing layouts with `Flex::Start`. However, to get old behavior, use `Flex::Legacy`.
+
+```diff
+- let rects = Layout::horizontal([Length(1), Length(2)]).split(area);
+// becomes
++ let rects = Layout::horizontal([Length(1), Length(2)]).flex(Flex::Legacy).split(area);
+```
+
 ### `Table::new()` now accepts `IntoIterator<Item: Into<Row<'a>>>` ([#774])
 
 [#774]: https://github.com/ratatui-org/ratatui/pull/774
