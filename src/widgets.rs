@@ -286,6 +286,7 @@ pub trait StatefulWidget {
 /// }
 /// # }
 /// ```
+#[stability::unstable(feature = "widget-ref")]
 pub trait WidgetRef {
     fn render_ref(&self, area: Rect, buf: &mut Buffer);
 }
@@ -371,7 +372,7 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 ///     type State = String;
 ///     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
 ///         (&self).render_ref(area, buf, state);
-///    }
+///     }
 /// }
 ///
 /// # fn render(area: Rect, buf: &mut Buffer) {
@@ -379,6 +380,8 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 /// let mut state = "world".to_string();
 /// widget.render(area, buf, &mut state);
 /// # }
+/// ```
+#[stability::unstable(feature = "widget-ref")]
 pub trait StatefulWidgetRef {
     type State;
     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
