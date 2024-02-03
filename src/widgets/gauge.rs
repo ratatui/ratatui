@@ -1,5 +1,3 @@
-#![deny(missing_docs)]
-
 use crate::{prelude::*, widgets::Block};
 
 /// A widget to display a progress bar.

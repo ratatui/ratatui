@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 //! Elements related to the `Block` base widget.
 //!
 //! This holds everything needed to display and configure a [`Block`].

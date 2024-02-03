@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 use std::cmp::min;
 
 use strum::{Display, EnumString};

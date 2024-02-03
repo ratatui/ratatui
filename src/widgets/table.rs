@@ -1,5 +1,3 @@
-#![warn(missing_docs)]
-
 use strum::{Display, EnumString};
 
 mod cell;
