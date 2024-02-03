@@ -454,7 +454,7 @@ impl<'a> StatefulWidget for Scrollbar<'a> {
         let area = self.scollbar_area(area);
         for x in area.left()..area.right() {
             for y in area.top()..area.bottom() {
-                if let Some((symbol, style)) = bar.next() {
+                if let Some(Some((symbol, style))) = bar.next() {
                     buf.set_string(x, y, symbol, style);
                 }
             }
@@ -468,23 +468,23 @@ impl Scrollbar<'_> {
         &self,
         area: Rect,
         state: &mut ScrollbarState,
-    ) -> impl Iterator<Item = (&str, Style)> {
+    ) -> impl Iterator<Item = Option<(&str, Style)>> {
         let (track_start_len, thumb_len, track_end_len) = self.part_lengths(area, state);
 
-        let begin = self.begin_symbol.map(|s| (s, self.begin_style));
-        let track = self.track_symbol.map(|s| (s, self.track_style));
-        let thumb = Some((self.thumb_symbol, self.thumb_style));
-        let end = self.end_symbol.map(|s| (s, self.end_style));
+        let begin = self.begin_symbol.map(|s| Some((s, self.begin_style)));
+        let track = Some(self.track_symbol.map(|s| (s, self.track_style)));
+        let thumb = Some(Some((self.thumb_symbol, self.thumb_style)));
+        let end = self.end_symbol.map(|s| Some((s, self.end_style)));
 
-        // `<``
+        // `<`
         iter::once(begin)
             // `<═══`
             .chain(iter::repeat(track).take(track_start_len))
             // `<═══█████`
             .chain(iter::repeat(thumb).take(thumb_len))
-            // `<═══█████═══════``
+            // `<═══█████═══════`
             .chain(iter::repeat(track).take(track_end_len))
-            // `<═══█████═══════>``
+            // `<═══█████═══════>`
             .chain(iter::once(end))
             .flatten()
     }
@@ -758,6 +758,83 @@ mod tests {
             .content_length(content_length);
         Scrollbar::default()
             .orientation(ScrollbarOrientation::HorizontalBottom)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![expected]),
+            "{}",
+            assertion_message
+        );
+    }
+
+    #[rstest]
+    #[case("█████     ", 0, 10, "position_0")]
+    #[case(" █████    ", 1, 10, "position_1")]
+    #[case(" █████    ", 2, 10, "position_2")]
+    #[case("  █████   ", 3, 10, "position_3")]
+    #[case("  █████   ", 4, 10, "position_4")]
+    #[case("   █████  ", 5, 10, "position_5")]
+    #[case("   █████  ", 6, 10, "position_6")]
+    #[case("    █████ ", 7, 10, "position_7")]
+    #[case("    █████ ", 8, 10, "position_8")]
+    #[case("     █████", 9, 10, "position_9")]
+    #[case("     █████", 100, 10, "position_out_of_bounds")]
+    fn render_scrollbar_without_track_symbols(
+        #[case] expected: &str,
+        #[case] position: usize,
+        #[case] content_length: usize,
+        #[case] assertion_message: &str,
+    ) {
+        let size = expected.width() as u16;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
+        let mut state = ScrollbarState::default()
+            .position(position)
+            .content_length(content_length);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .track_symbol(None)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(
+            buffer,
+            Buffer::with_lines(vec![expected]),
+            "{}",
+            assertion_message
+        );
+    }
+
+    #[rstest]
+    #[case("█████-----", 0, 10, "position_0")]
+    #[case("-█████----", 1, 10, "position_1")]
+    #[case("-█████----", 2, 10, "position_2")]
+    #[case("--█████---", 3, 10, "position_3")]
+    #[case("--█████---", 4, 10, "position_4")]
+    #[case("---█████--", 5, 10, "position_5")]
+    #[case("---█████--", 6, 10, "position_6")]
+    #[case("----█████-", 7, 10, "position_7")]
+    #[case("----█████-", 8, 10, "position_8")]
+    #[case("-----█████", 9, 10, "position_9")]
+    #[case("-----█████", 100, 10, "position_out_of_bounds")]
+    fn render_scrollbar_without_track_symbols_over_content(
+        #[case] expected: &str,
+        #[case] position: usize,
+        #[case] content_length: usize,
+        #[case] assertion_message: &str,
+    ) {
+        let size = expected.width() as u16;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
+        let width = buffer.area.width as usize;
+        let s = "";
+        Text::from(format!("{s:-^width$}")).render(buffer.area, &mut buffer);
+        let mut state = ScrollbarState::default()
+            .position(position)
+            .content_length(content_length);
+        Scrollbar::default()
+            .orientation(ScrollbarOrientation::HorizontalBottom)
+            .track_symbol(None)
             .begin_symbol(None)
             .end_symbol(None)
             .render(buffer.area, &mut buffer, &mut state);
