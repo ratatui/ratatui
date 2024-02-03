@@ -31,6 +31,7 @@ const EXAMPLE_HEIGHT: u16 = ILLUSTRATION_HEIGHT + SPACER_HEIGHT;
 // priority 2
 const MIN_COLOR: Color = tailwind::BLUE.c900;
 const MAX_COLOR: Color = tailwind::BLUE.c800;
+const MIN_MAX_COLOR: Color = tailwind::BLUE.c700;
 // priority 3
 const LENGTH_COLOR: Color = tailwind::SLATE.c700;
 const PERCENTAGE_COLOR: Color = tailwind::SLATE.c800;
@@ -54,6 +55,7 @@ enum SelectedTab {
     #[default]
     Min,
     Max,
+    MinMax,
     Length,
     Percentage,
     Ratio,
@@ -268,6 +270,7 @@ impl SelectedTab {
             Fill => 2,
             Min => 5,
             Max => 5,
+            MinMax => 5,
         }
     }
 
@@ -281,6 +284,7 @@ impl SelectedTab {
             Fill => FILL_COLOR,
             Min => MIN_COLOR,
             Max => MAX_COLOR,
+            MinMax => MIN_MAX_COLOR,
         };
         text.fg(tailwind::SLATE.c200).bg(color).into()
     }
@@ -295,6 +299,7 @@ impl Widget for SelectedTab {
             SelectedTab::Fill => self.render_fill_example(area, buf),
             SelectedTab::Min => self.render_min_example(area, buf),
             SelectedTab::Max => self.render_max_example(area, buf),
+            SelectedTab::MinMax => self.render_minmax_example(area, buf),
         }
     }
 }
@@ -358,6 +363,18 @@ impl SelectedTab {
         Example::new(&[Percentage(0), Max(60)]).render(example4, buf);
         Example::new(&[Percentage(0), Max(80)]).render(example5, buf);
     }
+
+    fn render_minmax_example(&self, area: Rect, buf: &mut Buffer) {
+        let [example1, example2, example3, example4, example5, example6] =
+            Layout::vertical([Length(EXAMPLE_HEIGHT); 6]).areas(area);
+
+        Example::new(&[Percentage(100), MinMax(20, 40)]).render(example1, buf);
+        Example::new(&[Percentage(10), MinMax(20, 40)]).render(example2, buf);
+        Example::new(&[Percentage(100), MinMax(40, 60)]).render(example3, buf);
+        Example::new(&[Percentage(10), MinMax(40, 60)]).render(example4, buf);
+        Example::new(&[Percentage(100), MinMax(60, 80)]).render(example5, buf);
+        Example::new(&[Percentage(10), MinMax(60, 80)]).render(example6, buf);
+    }
 }
 
 struct Example {
@@ -394,6 +411,7 @@ impl Example {
             Constraint::Fill(_) => FILL_COLOR,
             Constraint::Min(_) => MIN_COLOR,
             Constraint::Max(_) => MAX_COLOR,
+            Constraint::MinMax(_, _) => MIN_MAX_COLOR,
         };
         let fg = Color::White;
         let title = format!("{constraint}");
