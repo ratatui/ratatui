@@ -16,6 +16,8 @@ pub struct Circle {
     pub radius: f64,
     /// Color of the circle
     pub color: Color,
+    /// Whether the area part of the circle should be filled
+    pub fill: bool,
 }
 
 impl Shape for Circle {
@@ -28,7 +30,8 @@ impl Shape for Circle {
 
         // draw circle line by line
         for y_step in painter.step_points_y((self.y - self.radius)..=(self.y + self.radius)) {
-            // identify all x pixels covered on this line
+            // identify the range of x pixels at this horizontal y overlapping with the circle line
+            // dx_start, dx_end are the absolute distance of the range from the central x line.
             let [dx_start, dx_end] = [y_step.canvas.start, y_step.canvas.end].map(|canvas_y| {
                 // dx_start..dx_end is the range of dx values such that dx^2 + dy^2 = r^2
                 // for all dy contained in y_step.canvas
@@ -42,21 +45,35 @@ impl Shape for Circle {
                 }
             });
 
-            for sign in [-1., 1.] {
-                let canvas_start = self.x + dx_start * sign;
-                let mut grid_start = painter
-                    .get_point_x(canvas_start)
+            if self.fill {
+                let dx = dx_start.max(dx_end);
+                let grid_start = painter
+                    .get_point_x(self.x - dx)
                     .unwrap_or_else(convert::identity);
-
-                let canvas_end = self.x + dx_end * sign;
-                let mut grid_end = painter
-                    .get_point_x(canvas_end)
+                let grid_end = painter
+                    .get_point_x(self.x + dx)
                     .unwrap_or_else(convert::identity);
-
-                swap_sort(&mut grid_start, &mut grid_end);
 
                 for grid_x in grid_start..=grid_end {
                     painter.paint(grid_x, y_step.grid, self.color);
+                }
+            } else {
+                for sign in [-1., 1.] {
+                    let canvas_start = self.x + dx_start * sign;
+                    let mut grid_start = painter
+                        .get_point_x(canvas_start)
+                        .unwrap_or_else(convert::identity);
+
+                    let canvas_end = self.x + dx_end * sign;
+                    let mut grid_end = painter
+                        .get_point_x(canvas_end)
+                        .unwrap_or_else(convert::identity);
+
+                    swap_sort(&mut grid_start, &mut grid_end);
+
+                    for grid_x in grid_start..=grid_end {
+                        painter.paint(grid_x, y_step.grid, self.color);
+                    }
                 }
             }
         }
@@ -77,7 +94,7 @@ mod tests {
     };
 
     #[test]
-    fn test_it_draws_a_circle() {
+    fn test_it_draws_a_circle_line() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
         let canvas = Canvas::default()
             .paint(|ctx| {
@@ -86,6 +103,7 @@ mod tests {
                     y: 2.0,
                     radius: 5.0,
                     color: Color::Reset,
+                    fill: false,
                 });
             })
             .marker(Marker::Braille)
@@ -96,6 +114,33 @@ mod tests {
             "     ⢀⣠⢤⣀ ",
             "    ⢰⠋  ⠈⡇",
             "    ⠘⣆⡀ ⣠⠇",
+            "      ⠉⠉⠁ ",
+            "          ",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn test_it_draws_a_circle_filled() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
+        let canvas = Canvas::default()
+            .paint(|ctx| {
+                ctx.draw(&Circle {
+                    x: 5.0,
+                    y: 2.0,
+                    radius: 5.0,
+                    color: Color::Reset,
+                    fill: true,
+                });
+            })
+            .marker(Marker::Braille)
+            .x_bounds([-10.0, 10.0])
+            .y_bounds([-10.0, 10.0]);
+        canvas.render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines(vec![
+            "     ⢀⣠⣤⣀ ",
+            "    ⢰⣿⣿⣿⣿⡇",
+            "    ⠘⣿⣿⣿⣿⠇",
             "      ⠉⠉⠁ ",
             "          ",
         ]);

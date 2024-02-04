@@ -313,6 +313,7 @@ fn draw_second_tab(f: &mut Frame, app: &mut App, area: Rect) {
                 y: app.servers[2].coords.0,
                 radius: 10.0,
                 color: Color::Green,
+                fill: false,
             });
             for (i, s1) in app.servers.iter().enumerate() {
                 for s2 in &app.servers[i + 1..] {
