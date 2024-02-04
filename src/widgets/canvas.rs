@@ -19,7 +19,11 @@ mod points;
 mod rectangle;
 mod world;
 
-use std::{fmt::Debug, iter::zip, ops};
+use std::{
+    fmt::Debug,
+    iter::{zip, FusedIterator},
+    ops,
+};
 
 use itertools::Itertools;
 
@@ -455,13 +459,19 @@ impl<'a, 'b> Painter<'a, 'b> {
 
     /// Iterates over all canvas X-coordinates within the range that map to a pixel in the output
     /// grid.
-    pub fn step_points_x(&self, range: ops::RangeInclusive<f64>) -> impl Iterator<Item = GridStep> {
+    pub fn step_points_x(
+        &self,
+        range: ops::RangeInclusive<f64>,
+    ) -> impl FusedIterator<Item = GridStep> + Clone {
         self.step_points_component(range, self.context.x_bounds, self.resolution.0, false)
     }
 
     /// Iterates over all canvas Y-coordinates within the range that map to a pixel in the output
     /// grid.
-    pub fn step_points_y(&self, range: ops::RangeInclusive<f64>) -> impl Iterator<Item = GridStep> {
+    pub fn step_points_y(
+        &self,
+        range: ops::RangeInclusive<f64>,
+    ) -> impl FusedIterator<Item = GridStep> + Clone {
         self.step_points_component(range, self.context.y_bounds, self.resolution.1, true)
     }
 
@@ -471,7 +481,7 @@ impl<'a, 'b> Painter<'a, 'b> {
         [bounds_start, bounds_end]: [f64; 2],
         resolution: f64,
         inverted: bool,
-    ) -> impl Iterator<Item = GridStep> {
+    ) -> impl FusedIterator<Item = GridStep> + Clone {
         let canvas_offset = move |input| {
             if inverted {
                 bounds_end - input
@@ -496,7 +506,9 @@ impl<'a, 'b> Painter<'a, 'b> {
                     // scale + bounds_start inverted: grid = (bounds_end -
                     // canvas) * scale <=> canvas = bounds_end - grid / scale
 
-                    (start_grid.min(end_grid)..=start_grid.max(end_grid) + 1)
+                    let grid_range = start_grid.min(end_grid)..=start_grid.max(end_grid) + 1;
+                    grid_range
+                        .clone()
                         .map(move |grid_coord| {
                             let grid_scaled = (grid_coord as f64) / scale;
                             let canvas_coord = if inverted {
@@ -507,9 +519,10 @@ impl<'a, 'b> Painter<'a, 'b> {
                             (canvas_coord, grid_coord)
                         })
                         .tuple_windows()
-                        .map(|(start, end)| GridStep {
+                        .map(move |(start, end)| GridStep {
                             canvas: start.0..end.0,
                             grid: start.1,
+                            is_last: end.1 == *grid_range.end(),
                         })
                 })
             })
@@ -540,6 +553,8 @@ pub struct GridStep {
     pub canvas: ops::Range<f64>,
     /// The grid coordinate of this step.
     pub grid: usize,
+    /// Whether the current step is the last step in range.
+    pub is_last: bool,
 }
 
 impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
@@ -721,6 +736,7 @@ impl<'a> Context<'a> {
 ///             width: 10.0,
 ///             height: 10.0,
 ///             color: Color::Red,
+///             fill: false,
 ///         });
 ///     });
 /// ```

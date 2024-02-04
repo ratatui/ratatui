@@ -307,6 +307,7 @@ fn draw_second_tab(f: &mut Frame, app: &mut App, area: Rect) {
                 width: 10.0,
                 height: 10.0,
                 color: Color::Yellow,
+                fill: false,
             });
             ctx.draw(&Circle {
                 x: app.servers[2].coords.1,
