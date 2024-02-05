@@ -1,13 +1,8 @@
-use std::mem::MaybeUninit;
-
 use rand::{
     distributions::{Distribution, Uniform},
     rngs::ThreadRng,
 };
 use ratatui::widgets::*;
-use ringbuf::{LocalRb, Rb};
-
-type Ring<T> = LocalRb<T, Vec<MaybeUninit<T>>>;
 
 const TASKS: [&str; 24] = [
     "Item1", "Item2", "Item3", "Item4", "Item5", "Item6", "Item7", "Item8", "Item9", "Item10",
@@ -187,7 +182,7 @@ impl<T> StatefulList<T> {
 
 pub struct Signal<S: Iterator> {
     source: S,
-    pub points: Ring<S::Item>,
+    pub points: Vec<S::Item>,
     tick_rate: usize,
 }
 
@@ -196,8 +191,11 @@ where
     S: Iterator,
 {
     fn on_tick(&mut self) {
+        for _ in 0..self.tick_rate {
+            self.points.remove(0);
+        }
         self.points
-            .push_iter_overwrite(self.source.by_ref().take(self.tick_rate));
+            .extend(self.source.by_ref().take(self.tick_rate));
     }
 }
 
@@ -241,17 +239,11 @@ pub struct App<'a> {
 impl<'a> App<'a> {
     pub fn new(title: &'a str, enhanced_graphics: bool) -> App<'a> {
         let mut rand_signal = RandomSignal::new(0, 100);
-        let mut sparkline_points = Ring::new(300);
-        sparkline_points.push_iter(&mut rand_signal);
-
+        let sparkline_points = rand_signal.by_ref().take(300).collect();
         let mut sin_signal = SinSignal::new(0.2, 3.0, 18.0);
-        let mut sin1_points = Ring::new(100);
-        sin1_points.push_iter(&mut sin_signal);
-
+        let sin1_points = sin_signal.by_ref().take(100).collect();
         let mut sin_signal2 = SinSignal::new(0.1, 2.0, 10.0);
-        let mut sin2_points = Ring::new(200);
-        sin2_points.push_iter(&mut sin_signal2);
-
+        let sin2_points = sin_signal2.by_ref().take(200).collect();
         App {
             title,
             should_quit: false,
