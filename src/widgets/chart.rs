@@ -635,7 +635,8 @@ impl<'a, I> Chart<'a, I> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// # use std::slice::Iter;
     /// let constraints = (Constraint::Ratio(1, 3), Constraint::Ratio(1, 4));
-    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> = Chart::new(vec![]).hidden_legend_constraints(constraints);
+    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> =
+    ///     Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     ///
     /// Always show the legend, note the second constraint doesn't matter in this case since the
@@ -645,7 +646,8 @@ impl<'a, I> Chart<'a, I> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// # use std::slice::Iter;
     /// let constraints = (Constraint::Min(0), Constraint::Ratio(1, 4));
-    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> = Chart::new(vec![]).hidden_legend_constraints(constraints);
+    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> =
+    ///     Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     ///
     /// Always hide the legend. Note this can be accomplished more exclicitely by passing `None` to
@@ -655,7 +657,8 @@ impl<'a, I> Chart<'a, I> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// # use std::slice::Iter;
     /// let constraints = (Constraint::Length(0), Constraint::Ratio(1, 4));
-    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> = Chart::new(vec![]).hidden_legend_constraints(constraints);
+    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> =
+    ///     Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn hidden_legend_constraints(mut self, constraints: (Constraint, Constraint)) -> Self {
@@ -684,7 +687,8 @@ impl<'a, I> Chart<'a, I> {
     /// ```
     /// # use ratatui::widgets::{Chart, LegendPosition};
     /// # use std::slice::Iter;
-    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> = Chart::new(vec![]).legend_position(Some(LegendPosition::TopLeft));
+    /// let chart: Chart<'_, Iter<'_, (f64, f64)>> =
+    ///     Chart::new(vec![]).legend_position(Some(LegendPosition::TopLeft));
     /// ```
     ///
     /// Hide the legend altogether
@@ -1119,6 +1123,7 @@ impl<'a, I> Styled for Chart<'a, I> {
 #[cfg(test)]
 mod tests {
     use std::slice::Iter;
+
     use strum::ParseError;
 
     use super::*;

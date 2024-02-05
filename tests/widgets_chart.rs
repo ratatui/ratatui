@@ -1,3 +1,5 @@
+use std::slice::Iter;
+
 use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
@@ -9,7 +11,6 @@ use ratatui::{
     Terminal,
 };
 use rstest::rstest;
-use std::slice::Iter;
 
 fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {
     labels.iter().map(|l| Span::from(*l)).collect()
