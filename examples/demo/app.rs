@@ -191,9 +191,7 @@ where
     S: Iterator,
 {
     fn on_tick(&mut self) {
-        for _ in 0..self.tick_rate {
-            self.points.remove(0);
-        }
+        self.points.drain(0..self.tick_rate);
         self.points
             .extend(self.source.by_ref().take(self.tick_rate));
     }

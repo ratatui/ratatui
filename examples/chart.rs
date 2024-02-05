@@ -81,14 +81,12 @@ impl App {
     }
 
     fn on_tick(&mut self) {
-        for _ in 0..5 {
-            self.data1.remove(0);
-        }
+        self.data1.drain(0..5);
         self.data1.extend(self.signal1.by_ref().take(5));
-        for _ in 0..10 {
-            self.data2.remove(0);
-        }
+
+        self.data2.drain(0..10);
         self.data2.extend(self.signal2.by_ref().take(10));
+
         self.window[0] += 1.0;
         self.window[1] += 1.0;
     }
