@@ -4,7 +4,6 @@ use ratatui::{
     layout::Rect,
     widgets::{Chart, Dataset, Widget},
 };
-use ringbuf::{LocalRb, Rb};
 
 /// Benchmark for rendering a chart.
 pub fn chart(c: &mut Criterion) {
@@ -19,13 +18,6 @@ pub fn chart(c: &mut Criterion) {
             BenchmarkId::new("render_live", data_count),
             &data_count,
             render_live,
-        );
-
-        // Render a live chart with a ring buffer
-        group.bench_with_input(
-            BenchmarkId::new("render_live_ringbuf", data_count),
-            &data_count,
-            render_live_ringbuf,
         );
     }
 
@@ -56,19 +48,6 @@ fn render_live(bencher: &mut Bencher, data_count: &usize) {
             data.push((i as f64, i as f64));
         }
         Chart::new(vec![Dataset::default().data(&data)]).render(buffer.area, &mut buffer);
-    });
-}
-
-fn render_live_ringbuf(bencher: &mut Bencher, data_count: &usize) {
-    let mut data = LocalRb::new(*data_count);
-    data.push_iter(&mut (0..*data_count).map(|i| (i as f64, i as f64)));
-    let mut buffer = Buffer::empty(Rect::new(0, 0, 200, 50));
-
-    bencher.iter(|| {
-        for i in 0..5 {
-            data.push_overwrite((i as f64, i as f64));
-        }
-        Chart::new(vec![Dataset::default().data(data.iter())]).render(buffer.area, &mut buffer);
     });
 }
 
