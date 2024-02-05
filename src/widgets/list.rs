@@ -895,7 +895,7 @@ impl StatefulWidgetRef for List<'_> {
             let is_selected = state.selected.map_or(false, |s| s == i);
 
             let item_area = if selection_spacing {
-                let highlight_symbol_width = self.highlight_symbol.unwrap_or("").len() as u16;
+                let highlight_symbol_width = self.highlight_symbol.unwrap_or("").width() as u16;
                 Rect {
                     x: row_area.x + highlight_symbol_width,
                     width: row_area.width - highlight_symbol_width,
