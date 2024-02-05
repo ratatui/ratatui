@@ -82,7 +82,7 @@ fn ui(f: &mut Frame, app: &App) {
     let area = f.size();
 
     let vertical = Layout::vertical([Constraint::Percentage(20), Constraint::Percentage(80)]);
-    let [instructions, content] = area.split(&vertical);
+    let [instructions, content] = vertical.areas(area);
 
     let text = if app.show_popup {
         "Press p to close the popup"

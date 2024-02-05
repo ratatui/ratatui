@@ -192,7 +192,7 @@ fn ui(f: &mut Frame, app: &App) {
         Constraint::Length(3),
         Constraint::Min(1),
     ]);
-    let [help_area, input_area, messages_area] = f.size().split(&vertical);
+    let [help_area, input_area, messages_area] = vertical.areas(f.size());
 
     let (msg, style) = match app.input_mode {
         InputMode::Normal => (

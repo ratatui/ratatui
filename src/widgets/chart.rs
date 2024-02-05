@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 use std::cmp::max;
 
 use strum::{Display, EnumString};
@@ -745,12 +744,13 @@ impl<'a> Chart<'a> {
                 let legend_width = inner_width + 2;
                 let legend_height = legends.count() as u16 + 2;
 
-                let [max_legend_width] = layout.graph_area.split(
-                    &Layout::horizontal([self.hidden_legend_constraints.0]).flex(Flex::Start),
-                );
-                let [max_legend_height] = layout
-                    .graph_area
-                    .split(&Layout::vertical([self.hidden_legend_constraints.1]).flex(Flex::Start));
+                let [max_legend_width] = Layout::horizontal([self.hidden_legend_constraints.0])
+                    .flex(Flex::Start)
+                    .areas(layout.graph_area);
+
+                let [max_legend_height] = Layout::vertical([self.hidden_legend_constraints.1])
+                    .flex(Flex::Start)
+                    .areas(layout.graph_area);
 
                 if inner_width > 0
                     && legend_width <= max_legend_width.width
@@ -918,15 +918,15 @@ impl<'a> Chart<'a> {
 
 impl Widget for Chart<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Widget::render(&self, area, buf);
+        self.render_ref(area, buf);
     }
 }
 
-impl Widget for &Chart<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl WidgetRef for Chart<'_> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
 
-        self.block.render(area, buf);
+        self.block.render_ref(area, buf);
         let chart_area = self.block.inner_if_some(area);
         if chart_area.is_empty() {
             return;

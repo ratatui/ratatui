@@ -122,10 +122,10 @@ impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         use Constraint::*;
         let layout = Layout::vertical([Length(2), Min(0), Length(1)]);
-        let [header_area, gauge_area, footer_area] = area.split(&layout);
+        let [header_area, gauge_area, footer_area] = layout.areas(area);
 
         let layout = Layout::vertical([Ratio(1, 4); 4]);
-        let [gauge1_area, gauge2_area, gauge3_area, gauge4_area] = gauge_area.split(&layout);
+        let [gauge1_area, gauge2_area, gauge3_area, gauge4_area] = layout.areas(gauge_area);
 
         self.render_header(header_area, buf);
         self.render_footer(footer_area, buf);

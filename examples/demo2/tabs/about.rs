@@ -57,7 +57,7 @@ impl Widget for AboutTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         RgbSwatch.render(area, buf);
         let horizontal = Layout::horizontal([Constraint::Length(34), Constraint::Min(0)]);
-        let [description, logo] = area.split(&horizontal);
+        let [description, logo] = horizontal.areas(area);
         render_crate_description(description, buf);
         render_logo(self.row_index, logo, buf);
     }

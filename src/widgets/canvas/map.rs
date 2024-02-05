@@ -8,10 +8,21 @@ use crate::{
     },
 };
 
+/// Defines how many points are going to be used to draw a [`Map`].
+///
+/// You generally want a [high](MapResolution::High) resolution map.
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum MapResolution {
+    /// A lesser resolution for the [`Map`] [`Shape`].
+    ///
+    /// Contains about 1000 points.
     #[default]
     Low,
+    /// A higher resolution for the [`Map`] [`Shape`].
+    ///
+    /// Contains about 5000 points, you likely want to use [`Marker::Braille`] with this.
+    ///
+    /// [`Marker::Braille`]: (crate::symbols::Marker::Braille)
     High,
 }
 
@@ -24,10 +35,18 @@ impl MapResolution {
     }
 }
 
-/// Shape to draw a world map with the given resolution and color
+/// A world map
+///
+/// A world map can be rendered with different [resolutions](MapResolution) and [colors](Color).
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Map {
+    /// The resolution of the map.
+    ///
+    /// This is the number of points used to draw the map.
     pub resolution: MapResolution,
+    /// Map color
+    ///
+    /// This is the color of the points of the map.
     pub color: Color,
 }
 

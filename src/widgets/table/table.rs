@@ -565,13 +565,12 @@ impl<'a> Table<'a> {
 
 impl Widget for Table<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut state = TableState::default();
-        StatefulWidget::render(self, area, buf, &mut state);
+        WidgetRef::render_ref(&self, area, buf);
     }
 }
 
-impl Widget for &Table<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl WidgetRef for Table<'_> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let mut state = TableState::default();
         StatefulWidget::render(self, area, buf, &mut state);
     }
@@ -585,12 +584,20 @@ impl StatefulWidget for Table<'_> {
     }
 }
 
+// Note: remove this when StatefulWidgetRef is stabilized and replace with the blanket impl
 impl StatefulWidget for &Table<'_> {
     type State = TableState;
-
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        StatefulWidgetRef::render_ref(self, area, buf, state);
+    }
+}
+
+impl StatefulWidgetRef for Table<'_> {
+    type State = TableState;
+
+    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
-        self.block.render(area, buf);
+        self.block.render_ref(area, buf);
         let table_area = self.block.inner_if_some(area);
         if table_area.is_empty() {
             return;
@@ -733,10 +740,8 @@ impl Table<'_> {
         };
         // this will always allocate a selection area
         let [_selection_area, columns_area] =
-            Rect::new(0, 0, max_width, 1).split(&Layout::horizontal([
-                Constraint::Length(selection_width),
-                Constraint::Fill(0),
-            ]));
+            Layout::horizontal([Constraint::Length(selection_width), Constraint::Fill(0)])
+                .areas(Rect::new(0, 0, max_width, 1));
         let rects = Layout::horizontal(widths)
             .flex(self.flex)
             .spacing(self.column_spacing)
@@ -1328,7 +1333,7 @@ mod tests {
                 .flex(Flex::SpaceBetween);
             assert_eq!(
                 table.get_columns_widths(62, 0),
-                &[(0, 21), (21, 20), (41, 21)]
+                &[(0, 20), (21, 20), (42, 20)]
             );
         }
 

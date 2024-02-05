@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 //! Elements related to the `Block` base widget.
 //!
 //! This holds everything needed to display and configure a [`Block`].
@@ -520,22 +519,12 @@ impl<'a> Block<'a> {
 
 impl Widget for Block<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Widget::render(&self, area, buf);
+        self.render_ref(area, buf);
     }
 }
 
-/// Implement [`Widget`] for [`Option<Block>`] to simplify the common case of having an optional
-/// [`Block`] field in a widget.
-impl Widget for &Option<Block<'_>> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        if let Some(block) = self {
-            block.render(area, buf);
-        }
-    }
-}
-
-impl Widget for &Block<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl WidgetRef for Block<'_> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         if area.is_empty() {
             return;
         }

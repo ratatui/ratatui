@@ -71,9 +71,10 @@ impl Buffer {
     }
 
     /// Returns a Buffer containing the given lines
-    pub fn with_lines<'a, S>(lines: Vec<S>) -> Buffer
+    pub fn with_lines<'a, Iter>(lines: Iter) -> Buffer
     where
-        S: Into<Line<'a>>,
+        Iter: IntoIterator,
+        Iter::Item: Into<Line<'a>>,
     {
         let lines = lines.into_iter().map(Into::into).collect::<Vec<_>>();
         let height = lines.len() as u16;
@@ -243,7 +244,7 @@ impl Buffer {
     pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, width: u16) -> (u16, u16) {
         let mut remaining_width = width;
         let mut x = x;
-        for span in &line.spans {
+        for span in line {
             if remaining_width == 0 {
                 break;
             }

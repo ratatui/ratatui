@@ -368,6 +368,43 @@ impl<'a> Line<'a> {
     pub fn reset_style(self) -> Self {
         self.patch_style(Style::reset())
     }
+
+    /// Returns an iterator over the spans of this line.
+    pub fn iter(&self) -> std::slice::Iter<Span<'a>> {
+        self.spans.iter()
+    }
+
+    /// Returns a mutable iterator over the spans of this line.
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<Span<'a>> {
+        self.spans.iter_mut()
+    }
+}
+
+impl<'a> IntoIterator for Line<'a> {
+    type Item = Span<'a>;
+    type IntoIter = std::vec::IntoIter<Span<'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.spans.into_iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a Line<'a> {
+    type Item = &'a Span<'a>;
+    type IntoIter = std::slice::Iter<'a, Span<'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut Line<'a> {
+    type Item = &'a mut Span<'a>;
+    type IntoIter = std::slice::IterMut<'a, Span<'a>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
 }
 
 impl<'a> From<String> for Line<'a> {
@@ -399,7 +436,7 @@ impl<'a> From<Span<'a>> for Line<'a> {
 
 impl<'a> From<Line<'a>> for String {
     fn from(line: Line<'a>) -> String {
-        line.spans.iter().fold(String::new(), |mut acc, s| {
+        line.iter().fold(String::new(), |mut acc, s| {
             acc.push_str(s.content.as_ref());
             acc
         })
@@ -408,22 +445,12 @@ impl<'a> From<Line<'a>> for String {
 
 impl Widget for Line<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Widget::render(&self, area, buf);
+        self.render_ref(area, buf);
     }
 }
 
-/// Implement [`Widget`] for [`Option<Line>`] to simplify the common case of having an optional
-/// [`Line`] field in a widget.
-impl Widget for &Option<Line<'_>> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        if let Some(line) = self {
-            line.render(area, buf);
-        }
-    }
-}
-
-impl Widget for &Line<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl WidgetRef for Line<'_> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
         let width = self.width() as u16;
@@ -461,6 +488,8 @@ impl std::fmt::Display for Line<'_> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::{fixture, rstest};
+
     use super::*;
 
     #[test]
@@ -751,5 +780,93 @@ mod tests {
     fn right_aligned() {
         let line = Line::from("Hello, world!").right_aligned();
         assert_eq!(line.alignment, Some(Alignment::Right));
+    }
+
+    mod iterators {
+        use super::*;
+
+        /// a fixture used in the tests below to avoid repeating the same setup
+        #[fixture]
+        fn hello_world() -> Line<'static> {
+            Line::from(vec![
+                Span::styled("Hello ", Color::Blue),
+                Span::styled("world!", Color::Green),
+            ])
+        }
+
+        #[rstest]
+        fn iter(hello_world: Line<'_>) {
+            let mut iter = hello_world.iter();
+            assert_eq!(iter.next(), Some(&Span::styled("Hello ", Color::Blue)));
+            assert_eq!(iter.next(), Some(&Span::styled("world!", Color::Green)));
+            assert_eq!(iter.next(), None);
+        }
+
+        #[rstest]
+        fn iter_mut(mut hello_world: Line<'_>) {
+            let mut iter = hello_world.iter_mut();
+            assert_eq!(iter.next(), Some(&mut Span::styled("Hello ", Color::Blue)));
+            assert_eq!(iter.next(), Some(&mut Span::styled("world!", Color::Green)));
+            assert_eq!(iter.next(), None);
+        }
+
+        #[rstest]
+        fn into_iter(hello_world: Line<'_>) {
+            let mut iter = hello_world.into_iter();
+            assert_eq!(iter.next(), Some(Span::styled("Hello ", Color::Blue)));
+            assert_eq!(iter.next(), Some(Span::styled("world!", Color::Green)));
+            assert_eq!(iter.next(), None);
+        }
+
+        #[rstest]
+        fn into_iter_ref(hello_world: Line<'_>) {
+            let mut iter = (&hello_world).into_iter();
+            assert_eq!(iter.next(), Some(&Span::styled("Hello ", Color::Blue)));
+            assert_eq!(iter.next(), Some(&Span::styled("world!", Color::Green)));
+            assert_eq!(iter.next(), None);
+        }
+
+        #[test]
+        fn into_iter_mut_ref() {
+            let mut hello_world = Line::from(vec![
+                Span::styled("Hello ", Color::Blue),
+                Span::styled("world!", Color::Green),
+            ]);
+            let mut iter = (&mut hello_world).into_iter();
+            assert_eq!(iter.next(), Some(&mut Span::styled("Hello ", Color::Blue)));
+            assert_eq!(iter.next(), Some(&mut Span::styled("world!", Color::Green)));
+            assert_eq!(iter.next(), None);
+        }
+
+        #[rstest]
+        fn for_loop_ref(hello_world: Line<'_>) {
+            let mut result = String::new();
+            for span in &hello_world {
+                result.push_str(span.content.as_ref());
+            }
+            assert_eq!(result, "Hello world!");
+        }
+
+        #[rstest]
+        fn for_loop_mut_ref() {
+            let mut hello_world = Line::from(vec![
+                Span::styled("Hello ", Color::Blue),
+                Span::styled("world!", Color::Green),
+            ]);
+            let mut result = String::new();
+            for span in &mut hello_world {
+                result.push_str(span.content.as_ref());
+            }
+            assert_eq!(result, "Hello world!");
+        }
+
+        #[rstest]
+        fn for_loop_into(hello_world: Line<'_>) {
+            let mut result = String::new();
+            for span in hello_world {
+                result.push_str(span.content.as_ref());
+            }
+            assert_eq!(result, "Hello world!");
+        }
     }
 }

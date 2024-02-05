@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, iter, num::NonZeroUsize, rc::Rc, sync::OnceLock};
 
 use cassowary::{
-    strength::{REQUIRED, WEAK},
+    strength::REQUIRED,
     AddConstraintError, Expression, Solver, Variable,
     WeightedRelation::{EQ, GE, LE},
 };
@@ -9,8 +9,8 @@ use itertools::Itertools;
 use lru::LruCache;
 
 use self::strengths::{
-    FILL_GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ, MIN_SIZE_GE,
-    PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, *,
+    ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
+    MIN_SIZE_GE, PERCENTAGE_SIZE_EQ, RATIO_SIZE_EQ, SPACER_SIZE_EQ, SPACE_GROW,
 };
 use super::Flex;
 use crate::prelude::*;
@@ -30,6 +30,11 @@ type Spacers = Rects;
 //
 // Number of spacers will always be one more than number of segments.
 type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
+
+// Multiplier that decides floating point precision when rounding.
+// The number of zeros in this number is the precision for the rounding of f64 to u16 in layout
+// calculations.
+const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
 thread_local! {
     static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = OnceLock::new();
@@ -415,6 +420,71 @@ impl Layout {
         self
     }
 
+    /// Split the rect into a number of sub-rects according to the given [`Layout`]`.
+    ///
+    /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
+    /// `Rc<[Rect]>`.
+    ///
+    /// This method requires the number of constraints to be known at compile time. If you don't
+    /// know the number of constraints at compile time, use [`Layout::split`] instead.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of constraints is not equal to the length of the returned array.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # fn render(frame: &mut Frame) {
+    /// let area = frame.size();
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let [top, main] = layout.areas(area);
+    ///
+    /// // or explicitly specify the number of constraints:
+    /// let areas = layout.areas::<2>(area);
+    /// # }
+    pub fn areas<const N: usize>(&self, area: Rect) -> [Rect; N] {
+        let (areas, _) = self.split_with_spacers(area);
+        areas.to_vec().try_into().expect("invalid number of rects")
+    }
+
+    /// Split the rect into a number of sub-rects according to the given [`Layout`]` and return just
+    /// the spacers between the areas.
+    ///
+    /// This method requires the number of constraints to be known at compile time. If you don't
+    /// know the number of constraints at compile time, use [`Layout::split_with_spacers`] instead.
+    ///
+    /// This method is similar to [`Layout::areas`], and can be called with the same parameters, but
+    /// it returns just the spacers between the areas. The result of calling the `areas` method is
+    /// cached, so this will generally not re-run the solver, but will just return the cached
+    /// result.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of constraints + 1 is not equal to the length of the returned array.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # fn render(frame: &mut Frame) {
+    /// let area = frame.size();
+    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
+    /// let [top, main] = layout.areas(area);
+    /// let [before, inbetween, after] = layout.spacers(area);
+    ///
+    /// // or explicitly specify the number of constraints:
+    /// let spacers = layout.spacers::<2>(area);
+    /// # }
+    pub fn spacers<const N: usize>(&self, area: Rect) -> [Rect; N] {
+        let (_, spacers) = self.split_with_spacers(area);
+        spacers
+            .to_vec()
+            .try_into()
+            .expect("invalid number of rects")
+    }
+
     /// Wrapper function around the cassowary-rs solver to be able to split a given area into
     /// smaller ones based on the preferred widths or heights and the direction.
     ///
@@ -428,10 +498,10 @@ impl Layout {
     /// LruCache, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
     /// is initialized with the [Layout::init_cache()] grows until the initialized cache size.
     ///
-    /// There is a helper method on Rect that can be used to split the whole area into smaller ones
-    /// based on the layout: [`Rect::split()`]. That method is a shortcut for calling this method.
-    /// It allows you to destructure the result directly into variables, which is useful when you
-    /// know at compile time the number of areas that will be created.
+    /// There is a helper method that can be used to split the whole area into smaller ones based on
+    /// the layout: [`Layout::areas()`]. That method is a shortcut for calling this method. It
+    /// allows you to destructure the result directly into variables, which is useful when you know
+    /// at compile time the number of areas that will be created.
     ///
     /// # Examples
     ///
@@ -538,8 +608,14 @@ impl Layout {
 
         let inner_area = area.inner(&self.margin);
         let (area_start, area_end) = match self.direction {
-            Direction::Horizontal => (f64::from(inner_area.x), f64::from(inner_area.right())),
-            Direction::Vertical => (f64::from(inner_area.y), f64::from(inner_area.bottom())),
+            Direction::Horizontal => (
+                f64::from(inner_area.x) * FLOAT_PRECISION_MULTIPLIER,
+                f64::from(inner_area.right()) * FLOAT_PRECISION_MULTIPLIER,
+            ),
+            Direction::Vertical => (
+                f64::from(inner_area.y) * FLOAT_PRECISION_MULTIPLIER,
+                f64::from(inner_area.bottom()) * FLOAT_PRECISION_MULTIPLIER,
+            ),
         };
 
         // ```plain
@@ -590,7 +666,7 @@ impl Layout {
 
         if !flex.is_legacy() {
             for (left, right) in segments.iter().tuple_windows() {
-                solver.add_constraint(left.has_size(right, WEAK / 100.0))?;
+                solver.add_constraint(left.has_size(right, ALL_SEGMENT_GROW))?;
             }
         }
 
@@ -685,11 +761,11 @@ fn configure_flex_constraints(
     spacing: u16,
 ) -> Result<(), AddConstraintError> {
     let spacers_except_first_and_last = spacers.get(1..spacers.len() - 1).unwrap_or(&[]);
-    let spacing = f64::from(spacing);
+    let spacing_f64 = f64::from(spacing) * FLOAT_PRECISION_MULTIPLIER;
     match flex {
         Flex::Legacy => {
             for spacer in spacers_except_first_and_last.iter() {
-                solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
+                solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
@@ -703,6 +779,7 @@ fn configure_flex_constraints(
                 solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?
             }
             for spacer in spacers.iter() {
+                solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
                 solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
         }
@@ -713,7 +790,10 @@ fn configure_flex_constraints(
             for (left, right) in spacers_except_first_and_last.iter().tuple_combinations() {
                 solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?
             }
-            for spacer in spacers.iter() {
+            for spacer in spacers_except_first_and_last.iter() {
+                solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
+            }
+            for spacer in spacers_except_first_and_last.iter() {
                 solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
@@ -723,7 +803,7 @@ fn configure_flex_constraints(
         }
         Flex::Start => {
             for spacer in spacers_except_first_and_last {
-                solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
+                solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.is_empty())?;
@@ -732,7 +812,7 @@ fn configure_flex_constraints(
         }
         Flex::Center => {
             for spacer in spacers_except_first_and_last {
-                solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
+                solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(first.has_size(area, GROW))?;
@@ -742,7 +822,7 @@ fn configure_flex_constraints(
         }
         Flex::End => {
             for spacer in spacers_except_first_and_last {
-                solver.add_constraint(spacer.has_size(spacing, SPACER_SIZE_EQ))?;
+                solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
                 solver.add_constraint(last.is_empty())?;
@@ -808,8 +888,10 @@ fn changes_to_rects(
     elements
         .iter()
         .map(|element| {
-            let start = changes.get(&element.start).unwrap_or(&0.0).round() as u16;
-            let end = changes.get(&element.end).unwrap_or(&0.0).round() as u16;
+            let start = changes.get(&element.start).unwrap_or(&0.0);
+            let end = changes.get(&element.end).unwrap_or(&0.0);
+            let start = (start.round() / FLOAT_PRECISION_MULTIPLIER).round() as u16;
+            let end = (end.round() / FLOAT_PRECISION_MULTIPLIER).round() as u16;
             let size = end.saturating_sub(start);
             match direction {
                 Direction::Horizontal => Rect {
@@ -870,15 +952,15 @@ impl Element {
     }
 
     fn has_max_size(&self, size: u16, strength: f64) -> cassowary::Constraint {
-        self.size() | LE(strength) | f64::from(size)
+        self.size() | LE(strength) | (f64::from(size) * FLOAT_PRECISION_MULTIPLIER)
     }
 
     fn has_min_size(&self, size: u16, strength: f64) -> cassowary::Constraint {
-        self.size() | GE(strength) | f64::from(size)
+        self.size() | GE(strength) | (f64::from(size) * FLOAT_PRECISION_MULTIPLIER)
     }
 
     fn has_int_size(&self, size: u16, strength: f64) -> cassowary::Constraint {
-        self.size() | EQ(strength) | f64::from(size)
+        self.size() | EQ(strength) | (f64::from(size) * FLOAT_PRECISION_MULTIPLIER)
     }
 
     fn has_size<E: Into<Expression>>(&self, size: E, strength: f64) -> cassowary::Constraint {
@@ -918,105 +1000,102 @@ mod strengths {
     /// ┌────────┐
     /// │Min(>=x)│
     /// └────────┘
-    pub const MIN_SIZE_GE: f64 = STRONG * 10.0;
+    pub const MIN_SIZE_GE: f64 = STRONG * 100.0;
 
     /// The strength to apply to Max inequality constraints.
     ///
     /// ┌────────┐
     /// │Max(<=x)│
     /// └────────┘
-    pub const MAX_SIZE_LE: f64 = STRONG * 10.0;
+    pub const MAX_SIZE_LE: f64 = STRONG * 100.0;
 
     /// The strength to apply to Length constraints.
     ///
     /// ┌───────────┐
     /// │Length(==x)│
     /// └───────────┘
-    pub const LENGTH_SIZE_EQ: f64 = STRONG / 10.0;
+    pub const LENGTH_SIZE_EQ: f64 = STRONG * 10.0;
 
     /// The strength to apply to Percentage constraints.
     ///
     /// ┌───────────────┐
     /// │Percentage(==x)│
     /// └───────────────┘
-    pub const PERCENTAGE_SIZE_EQ: f64 = MEDIUM * 10.0;
+    pub const PERCENTAGE_SIZE_EQ: f64 = STRONG;
 
     /// The strength to apply to Ratio constraints.
     ///
     /// ┌────────────┐
     /// │Ratio(==x,y)│
     /// └────────────┘
-    pub const RATIO_SIZE_EQ: f64 = MEDIUM;
-
-    /// The strength to apply to Max equality constraints.
-    ///
-    /// ┌────────┐
-    /// │Max(==x)│
-    /// └────────┘
-    pub const MAX_SIZE_EQ: f64 = MEDIUM / 10.0;
+    pub const RATIO_SIZE_EQ: f64 = STRONG / 10.0;
 
     /// The strength to apply to Min equality constraints.
     ///
     /// ┌────────┐
     /// │Min(==x)│
     /// └────────┘
-    pub const MIN_SIZE_EQ: f64 = MEDIUM / 10.0;
+    pub const MIN_SIZE_EQ: f64 = MEDIUM * 10.0;
+
+    /// The strength to apply to Max equality constraints.
+    ///
+    /// ┌────────┐
+    /// │Max(==x)│
+    /// └────────┘
+    pub const MAX_SIZE_EQ: f64 = MEDIUM * 10.0;
 
     /// The strength to apply to Fill growing constraints.
     ///
     /// ┌─────────────────────┐
     /// │<=     Fill(x)     =>│
     /// └─────────────────────┘
-    pub const FILL_GROW: f64 = WEAK * 10.0;
+    pub const FILL_GROW: f64 = MEDIUM;
 
     /// The strength to apply to growing constraints.
     ///
     /// ┌────────────┐
     /// │<= Min(x) =>│
     /// └────────────┘
-    pub const GROW: f64 = WEAK;
+    pub const GROW: f64 = MEDIUM / 10.0;
 
     /// The strength to apply to Spacer growing constraints.
     ///
     /// ┌       ┐
     ///  <= x =>
     /// └       ┘
-    pub const SPACE_GROW: f64 = WEAK / 10.0;
+    pub const SPACE_GROW: f64 = WEAK * 10.0;
 
-    #[allow(dead_code)]
-    pub fn is_valid() -> bool {
-        SPACER_SIZE_EQ > MAX_SIZE_LE
-            && MAX_SIZE_LE > MAX_SIZE_EQ
-            && MIN_SIZE_GE == MAX_SIZE_LE
-            && MAX_SIZE_LE > LENGTH_SIZE_EQ
-            && LENGTH_SIZE_EQ > PERCENTAGE_SIZE_EQ
-            && PERCENTAGE_SIZE_EQ > RATIO_SIZE_EQ
-            && RATIO_SIZE_EQ > MAX_SIZE_EQ
-            && MIN_SIZE_GE > FILL_GROW
-            && FILL_GROW > GROW
-            && GROW > SPACE_GROW
-    }
+    /// The strength to apply to growing the size of all segments equally.
+    ///
+    /// ┌───────┐
+    /// │<= x =>│
+    /// └───────┘
+    pub const ALL_SEGMENT_GROW: f64 = WEAK;
 }
 
 #[cfg(test)]
 mod tests {
     use std::iter;
 
-    use cassowary::strength::{MEDIUM, REQUIRED, STRONG, WEAK};
-
     use super::*;
 
     #[test]
-    fn strength() {
-        assert!(strengths::is_valid());
-        assert_eq!(strengths::SPACER_SIZE_EQ, REQUIRED - 1.0);
-        assert_eq!(strengths::MIN_SIZE_GE, STRONG * 10.0);
-        assert_eq!(strengths::LENGTH_SIZE_EQ, STRONG / 10.0);
-        assert_eq!(strengths::PERCENTAGE_SIZE_EQ, MEDIUM * 10.0);
-        assert_eq!(strengths::RATIO_SIZE_EQ, MEDIUM);
-        assert_eq!(strengths::FILL_GROW, WEAK * 10.0);
-        assert_eq!(strengths::GROW, WEAK);
-        assert_eq!(strengths::SPACE_GROW, WEAK / 10.0);
+    // The compiler will optimize out the comparisons, but this ensures that the constants are
+    // defined in the correct order of priority.
+    #[allow(clippy::assertions_on_constants)]
+    pub fn strength_is_valid() {
+        use strengths::*;
+        assert!(SPACER_SIZE_EQ > MAX_SIZE_LE);
+        assert!(MAX_SIZE_LE > MAX_SIZE_EQ);
+        assert!(MIN_SIZE_GE == MAX_SIZE_LE);
+        assert!(MAX_SIZE_LE > LENGTH_SIZE_EQ);
+        assert!(LENGTH_SIZE_EQ > PERCENTAGE_SIZE_EQ);
+        assert!(PERCENTAGE_SIZE_EQ > RATIO_SIZE_EQ);
+        assert!(RATIO_SIZE_EQ > MAX_SIZE_EQ);
+        assert!(MIN_SIZE_GE > FILL_GROW);
+        assert!(FILL_GROW > GROW);
+        assert!(GROW > SPACE_GROW);
+        assert!(SPACE_GROW > ALL_SEGMENT_GROW);
     }
 
     #[test]
@@ -1111,18 +1190,6 @@ mod tests {
                 spacing: 0,
             }
         );
-        assert_eq!(
-            Layout::vertical([Constraint::Min(0)])
-                .spacing(1)
-                .flex(Flex::Start),
-            Layout {
-                direction: Direction::Vertical,
-                margin: Margin::new(0, 0),
-                constraints: vec![Constraint::Min(0)],
-                flex: Flex::Start,
-                spacing: 1,
-            }
-        );
     }
 
     #[test]
@@ -1135,18 +1202,6 @@ mod tests {
                 constraints: vec![Constraint::Min(0)],
                 flex: Flex::default(),
                 spacing: 0,
-            }
-        );
-        assert_eq!(
-            Layout::horizontal([Constraint::Min(0)])
-                .spacing(1)
-                .flex(Flex::Start),
-            Layout {
-                direction: Direction::Horizontal,
-                margin: Margin::new(0, 0),
-                constraints: vec![Constraint::Min(0)],
-                flex: Flex::Start,
-                spacing: 1,
             }
         );
     }
@@ -1246,8 +1301,15 @@ mod tests {
     }
 
     #[test]
-    fn flex_default() {
+    fn flex() {
         assert_eq!(Layout::default().flex, Flex::Start);
+        assert_eq!(Layout::default().flex(Flex::Center).flex, Flex::Center);
+    }
+
+    #[test]
+    fn spacing() {
+        assert_eq!(Layout::default().spacing(10).spacing, 10);
+        assert_eq!(Layout::default().spacing(0).spacing, 0);
     }
 
     /// Tests for the `Layout::split()` function.
@@ -1287,7 +1349,8 @@ mod tests {
         /// compare against each other. E.g. `"abc"` is much more concise than `[Rect::new(0, 0, 1,
         /// 1), Rect::new(1, 0, 1, 1), Rect::new(2, 0, 1, 1)]`.
         #[track_caller]
-        fn letters(area: Rect, constraints: &[Constraint], expected: &str, flex: Flex) {
+        fn letters(flex: Flex, constraints: &[Constraint], width: u16, expected: &str) {
+            let area = Rect::new(0, 0, width, 1);
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints(constraints)
@@ -1295,7 +1358,7 @@ mod tests {
                 .split(area);
             let mut buffer = Buffer::empty(area);
             for (i, c) in ('a'..='z').take(constraints.len()).enumerate() {
-                let s: String = c.to_string().repeat(area.width as usize);
+                let s = c.to_string().repeat(area.width as usize);
                 Paragraph::new(s).render(layout[i], &mut buffer);
             }
             let expected = Buffer::with_lines(vec![expected]);
@@ -1303,299 +1366,510 @@ mod tests {
         }
 
         #[rstest]
-        #[case(Rect::new(0, 0, 1, 1), &[Length(1), Length(1)], "a")] // exact, exact
-        fn length_stretch(
-            #[case] area: Rect,
+        // flex, width, lengths, expected
+        #[case(Flex::Legacy, 1, &[Length(0)], "a")] // zero
+        #[case(Flex::Legacy, 1, &[Length(1)], "a")] // exact
+        #[case(Flex::Legacy, 1, &[Length(2)], "a")] // overflow
+        #[case(Flex::Legacy, 2, &[Length(0)], "aa")] // zero
+        #[case(Flex::Legacy, 2, &[Length(1)], "aa")] // underflow
+        #[case(Flex::Legacy, 2, &[Length(2)], "aa")] // exact
+        #[case(Flex::Legacy, 2, &[Length(3)], "aa")] // overflow
+        #[case(Flex::Legacy, 1, &[Length(0), Length(0)], "b")] // zero, zero
+        #[case(Flex::Legacy, 1, &[Length(0), Length(1)], "b")] // zero, exact
+        #[case(Flex::Legacy, 1, &[Length(0), Length(2)], "b")] // zero, overflow
+        #[case(Flex::Legacy, 1, &[Length(1), Length(0)], "a")] // exact, zero
+        #[case(Flex::Legacy, 1, &[Length(1), Length(1)], "a")] // exact, exact
+        #[case(Flex::Legacy, 1, &[Length(1), Length(2)], "a")] // exact, overflow
+        #[case(Flex::Legacy, 1, &[Length(2), Length(0)], "a")] // overflow, zero
+        #[case(Flex::Legacy, 1, &[Length(2), Length(1)], "a")] // overflow, exact
+        #[case(Flex::Legacy, 1, &[Length(2), Length(2)], "a")] // overflow, overflow
+        #[case(Flex::Legacy, 2, &[Length(0), Length(0)], "bb")] // zero, zero
+        #[case(Flex::Legacy, 2, &[Length(0), Length(1)], "bb")] // zero, underflow
+        #[case(Flex::Legacy, 2, &[Length(0), Length(2)], "bb")] // zero, exact
+        #[case(Flex::Legacy, 2, &[Length(0), Length(3)], "bb")] // zero, overflow
+        #[case(Flex::Legacy, 2, &[Length(1), Length(0)], "ab")] // underflow, zero
+        #[case(Flex::Legacy, 2, &[Length(1), Length(1)], "ab")] // underflow, underflow
+        #[case(Flex::Legacy, 2, &[Length(1), Length(2)], "ab")] // underflow, exact
+        #[case(Flex::Legacy, 2, &[Length(1), Length(3)], "ab")] // underflow, overflow
+        #[case(Flex::Legacy, 2, &[Length(2), Length(0)], "aa")] // exact, zero
+        #[case(Flex::Legacy, 2, &[Length(2), Length(1)], "aa")] // exact, underflow
+        #[case(Flex::Legacy, 2, &[Length(2), Length(2)], "aa")] // exact, exact
+        #[case(Flex::Legacy, 2, &[Length(2), Length(3)], "aa")] // exact, overflow
+        #[case(Flex::Legacy, 2, &[Length(3), Length(0)], "aa")] // overflow, zero
+        #[case(Flex::Legacy, 2, &[Length(3), Length(1)], "aa")] // overflow, underflow
+        #[case(Flex::Legacy, 2, &[Length(3), Length(2)], "aa")] // overflow, exact
+        #[case(Flex::Legacy, 2, &[Length(3), Length(3)], "aa")] // overflow, overflow
+        #[case(Flex::Legacy, 3, &[Length(2), Length(2)], "aab")] // with stretchlast
+        fn length(
+            #[case] flex: Flex,
+            #[case] width: u16,
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(area, constraints, expected, Flex::Legacy)
+            letters(flex, constraints, width, expected)
         }
 
         #[rstest]
-        #[case(Rect::new(0, 0, 1, 1), &[Length(0)], "a")] // zero
-        #[case(Rect::new(0, 0, 1, 1), &[Length(1)], "a")] // exact
-        #[case(Rect::new(0, 0, 1, 1), &[Length(2)], "a")] // overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Length(0)], "aa")] // zero
-        #[case(Rect::new(0, 0, 2, 1), &[Length(1)], "aa")] // underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Length(2)], "aa")] // exact
-        #[case(Rect::new(0, 0, 2, 1), &[Length(3)], "aa")] // overflow
-        #[case(Rect::new(0, 0, 1, 1), &[Length(0), Length(0)], "b")] // zero, zero
-        #[case(Rect::new(0, 0, 1, 1), &[Length(0), Length(1)], "b")] // zero, exact
-        #[case(Rect::new(0, 0, 1, 1), &[Length(0), Length(2)], "b")] // zero, overflow
-        #[case(Rect::new(0, 0, 1, 1), &[Length(1), Length(0)], "a")] // exact, zero
-        #[case(Rect::new(0, 0, 1, 1), &[Length(1), Length(1)], "a")] // exact, exact
-        #[case(Rect::new(0, 0, 1, 1), &[Length(1), Length(2)], "a")] // exact, overflow
-        #[case(Rect::new(0, 0, 1, 1), &[Length(2), Length(0)], "a")] // overflow, zero
-        #[case(Rect::new(0, 0, 1, 1), &[Length(2), Length(1)], "a")] // overflow, exact
-        #[case(Rect::new(0, 0, 1, 1), &[Length(2), Length(2)], "a")] // overflow, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Length(0), Length(0)], "bb")] // zero, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Length(0), Length(1)], "bb")] // zero, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Length(0), Length(2)], "bb")] // zero, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Length(0), Length(3)], "bb")] // zero, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(0)], "ab")] // underflow, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(1)], "ab")] // underflow, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(2)], "ab")] // underflow, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Length(1), Length(3)], "ab")] // underflow, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Length(2), Length(0)], "aa")] // exact, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Length(2), Length(1)], "aa")] // exact, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Length(2), Length(2)], "aa")] // exact, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Length(2), Length(3)], "aa")] // exact, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Length(3), Length(0)], "aa")] // overflow, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Length(3), Length(1)], "aa")] // overflow, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Length(3), Length(2)], "aa")] // overflow, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Length(3), Length(3)], "aa")] // overflow, overflow
-        #[case(Rect::new(0, 0, 3, 1), &[Length(2), Length(2)], "aab")] // with stretchlast
-        fn length(#[case] area: Rect, #[case] constraints: &[Constraint], #[case] expected: &str) {
-            letters(area, constraints, expected, Flex::Legacy)
+        #[case(Flex::Legacy, 1, &[Max(0)], "a")] // zero
+        #[case(Flex::Legacy, 1, &[Max(1)], "a")] // exact
+        #[case(Flex::Legacy, 1, &[Max(2)], "a")] // overflow
+        #[case(Flex::Legacy, 2, &[Max(0)], "aa")] // zero
+        #[case(Flex::Legacy, 2, &[Max(1)], "aa")] // underflow
+        #[case(Flex::Legacy, 2, &[Max(2)], "aa")] // exact
+        #[case(Flex::Legacy, 2, &[Max(3)], "aa")] // overflow
+        #[case(Flex::Legacy, 1, &[Max(0), Max(0)], "b")] // zero, zero
+        #[case(Flex::Legacy, 1, &[Max(0), Max(1)], "b")] // zero, exact
+        #[case(Flex::Legacy, 1, &[Max(0), Max(2)], "b")] // zero, overflow
+        #[case(Flex::Legacy, 1, &[Max(1), Max(0)], "a")] // exact, zero
+        #[case(Flex::Legacy, 1, &[Max(1), Max(1)], "a")] // exact, exact
+        #[case(Flex::Legacy, 1, &[Max(1), Max(2)], "a")] // exact, overflow
+        #[case(Flex::Legacy, 1, &[Max(2), Max(0)], "a")] // overflow, zero
+        #[case(Flex::Legacy, 1, &[Max(2), Max(1)], "a")] // overflow, exact
+        #[case(Flex::Legacy, 1, &[Max(2), Max(2)], "a")] // overflow, overflow
+        #[case(Flex::Legacy, 2, &[Max(0), Max(0)], "bb")] // zero, zero
+        #[case(Flex::Legacy, 2, &[Max(0), Max(1)], "bb")] // zero, underflow
+        #[case(Flex::Legacy, 2, &[Max(0), Max(2)], "bb")] // zero, exact
+        #[case(Flex::Legacy, 2, &[Max(0), Max(3)], "bb")] // zero, overflow
+        #[case(Flex::Legacy, 2, &[Max(1), Max(0)], "ab")] // underflow, zero
+        #[case(Flex::Legacy, 2, &[Max(1), Max(1)], "ab")] // underflow, underflow
+        #[case(Flex::Legacy, 2, &[Max(1), Max(2)], "ab")] // underflow, exact
+        #[case(Flex::Legacy, 2, &[Max(1), Max(3)], "ab")] // underflow, overflow
+        #[case(Flex::Legacy, 2, &[Max(2), Max(0)], "aa")] // exact, zero
+        #[case(Flex::Legacy, 2, &[Max(2), Max(1)], "aa")] // exact, underflow
+        #[case(Flex::Legacy, 2, &[Max(2), Max(2)], "aa")] // exact, exact
+        #[case(Flex::Legacy, 2, &[Max(2), Max(3)], "aa")] // exact, overflow
+        #[case(Flex::Legacy, 2, &[Max(3), Max(0)], "aa")] // overflow, zero
+        #[case(Flex::Legacy, 2, &[Max(3), Max(1)], "aa")] // overflow, underflow
+        #[case(Flex::Legacy, 2, &[Max(3), Max(2)], "aa")] // overflow, exact
+        #[case(Flex::Legacy, 2, &[Max(3), Max(3)], "aa")] // overflow, overflow
+        #[case(Flex::Legacy, 3, &[Max(2), Max(2)], "aab")]
+        fn max(
+            #[case] flex: Flex,
+            #[case] width: u16,
+            #[case] constraints: &[Constraint],
+            #[case] expected: &str,
+        ) {
+            letters(flex, constraints, width, expected)
         }
 
         #[rstest]
-        #[case(Rect::new(0, 0, 1, 1), &[Max(0)], "a")] // zero
-        #[case(Rect::new(0, 0, 1, 1), &[Max(1)], "a")] // exact
-        #[case(Rect::new(0, 0, 1, 1), &[Max(2)], "a")] // overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Max(0)], "aa")] // zero
-        #[case(Rect::new(0, 0, 2, 1), &[Max(1)], "aa")] // underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Max(2)], "aa")] // exact
-        #[case(Rect::new(0, 0, 2, 1), &[Max(3)], "aa")] // overflow
-        #[case(Rect::new(0, 0, 1, 1), &[Max(0), Max(0)], "b")] // zero, zero
-        #[case(Rect::new(0, 0, 1, 1), &[Max(0), Max(1)], "b")] // zero, exact
-        #[case(Rect::new(0, 0, 1, 1), &[Max(0), Max(2)], "b")] // zero, overflow
-        #[case(Rect::new(0, 0, 1, 1), &[Max(1), Max(0)], "a")] // exact, zero
-        #[case(Rect::new(0, 0, 1, 1), &[Max(1), Max(1)], "a")] // exact, exact
-        #[case(Rect::new(0, 0, 1, 1), &[Max(1), Max(2)], "a")] // exact, overflow
-        #[case(Rect::new(0, 0, 1, 1), &[Max(2), Max(0)], "a")] // overflow, zero
-        #[case(Rect::new(0, 0, 1, 1), &[Max(2), Max(1)], "a")] // overflow, exact
-        #[case(Rect::new(0, 0, 1, 1), &[Max(2), Max(2)], "a")] // overflow, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Max(0), Max(0)], "bb")] // zero, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Max(0), Max(1)], "bb")] // zero, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Max(0), Max(2)], "bb")] // zero, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Max(0), Max(3)], "bb")] // zero, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Max(1), Max(0)], "ab")] // underflow, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Max(1), Max(1)], "ab")] // underflow, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Max(1), Max(2)], "ab")] // underflow, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Max(1), Max(3)], "ab")] // underflow, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Max(2), Max(0)], "aa")] // exact, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Max(2), Max(1)], "aa")] // exact, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Max(2), Max(2)], "aa")] // exact, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Max(2), Max(3)], "aa")] // exact, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Max(3), Max(0)], "aa")] // overflow, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Max(3), Max(1)], "aa")] // overflow, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Max(3), Max(2)], "aa")] // overflow, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Max(3), Max(3)], "aa")] // overflow, overflow
-        #[case(Rect::new(0, 0, 3, 1), &[Max(2), Max(2)], "aab")]
-        fn max(#[case] area: Rect, #[case] constraints: &[Constraint], #[case] expected: &str) {
-            letters(area, constraints, expected, Flex::Legacy)
+        #[case(Flex::Legacy, 1, &[Min(0), Min(0)], "b")] // zero, zero
+        #[case(Flex::Legacy, 1, &[Min(0), Min(1)], "b")] // zero, exact
+        #[case(Flex::Legacy, 1, &[Min(0), Min(2)], "b")] // zero, overflow
+        #[case(Flex::Legacy, 1, &[Min(1), Min(0)], "a")] // exact, zero
+        #[case(Flex::Legacy, 1, &[Min(1), Min(1)], "a")] // exact, exact
+        #[case(Flex::Legacy, 1, &[Min(1), Min(2)], "a")] // exact, overflow
+        #[case(Flex::Legacy, 1, &[Min(2), Min(0)], "a")] // overflow, zero
+        #[case(Flex::Legacy, 1, &[Min(2), Min(1)], "a")] // overflow, exact
+        #[case(Flex::Legacy, 1, &[Min(2), Min(2)], "a")] // overflow, overflow
+        #[case(Flex::Legacy, 2, &[Min(0), Min(0)], "bb")] // zero, zero
+        #[case(Flex::Legacy, 2, &[Min(0), Min(1)], "bb")] // zero, underflow
+        #[case(Flex::Legacy, 2, &[Min(0), Min(2)], "bb")] // zero, exact
+        #[case(Flex::Legacy, 2, &[Min(0), Min(3)], "bb")] // zero, overflow
+        #[case(Flex::Legacy, 2, &[Min(1), Min(0)], "ab")] // underflow, zero
+        #[case(Flex::Legacy, 2, &[Min(1), Min(1)], "ab")] // underflow, underflow
+        #[case(Flex::Legacy, 2, &[Min(1), Min(2)], "ab")] // underflow, exact
+        #[case(Flex::Legacy, 2, &[Min(1), Min(3)], "ab")] // underflow, overflow
+        #[case(Flex::Legacy, 2, &[Min(2), Min(0)], "aa")] // exact, zero
+        #[case(Flex::Legacy, 2, &[Min(2), Min(1)], "aa")] // exact, underflow
+        #[case(Flex::Legacy, 2, &[Min(2), Min(2)], "aa")] // exact, exact
+        #[case(Flex::Legacy, 2, &[Min(2), Min(3)], "aa")] // exact, overflow
+        #[case(Flex::Legacy, 2, &[Min(3), Min(0)], "aa")] // overflow, zero
+        #[case(Flex::Legacy, 2, &[Min(3), Min(1)], "aa")] // overflow, underflow
+        #[case(Flex::Legacy, 2, &[Min(3), Min(2)], "aa")] // overflow, exact
+        #[case(Flex::Legacy, 2, &[Min(3), Min(3)], "aa")] // overflow, overflow
+        #[case(Flex::Legacy, 3, &[Min(2), Min(2)], "aab")]
+        fn min(
+            #[case] flex: Flex,
+            #[case] width: u16,
+            #[case] constraints: &[Constraint],
+            #[case] expected: &str,
+        ) {
+            letters(flex, constraints, width, expected)
+        }
+
+        #[rstest] // flex, width, lengths, expected
+        // One constraint will take all the space (width = 1)
+        #[case(Flex::Legacy, 1, &[Percentage(0)],   "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(25)],  "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(50)],  "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(90)],  "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(100)], "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(200)], "a")]
+        // One constraint will take all the space (width = 2)
+        #[case(Flex::Legacy, 2, &[Percentage(0)],   "aa")]
+        #[case(Flex::Legacy, 2, &[Percentage(10)],  "aa")]
+        #[case(Flex::Legacy, 2, &[Percentage(25)],  "aa")]
+        #[case(Flex::Legacy, 2, &[Percentage(50)],  "aa")]
+        #[case(Flex::Legacy, 2, &[Percentage(66)],  "aa")]
+        #[case(Flex::Legacy, 2, &[Percentage(100)], "aa")]
+        #[case(Flex::Legacy, 2, &[Percentage(200)], "aa")]
+        // One constraint will take all the space (width = 3)
+        #[case(Flex::Legacy, 10, &[Percentage(0)],   "aaaaaaaaaa")]
+        #[case(Flex::Legacy, 10, &[Percentage(10)],  "aaaaaaaaaa")]
+        #[case(Flex::Legacy, 10, &[Percentage(25)],  "aaaaaaaaaa")]
+        #[case(Flex::Legacy, 10, &[Percentage(50)],  "aaaaaaaaaa")]
+        #[case(Flex::Legacy, 10, &[Percentage(66)],  "aaaaaaaaaa")]
+        #[case(Flex::Legacy, 10, &[Percentage(100)], "aaaaaaaaaa")]
+        #[case(Flex::Legacy, 10, &[Percentage(200)], "aaaaaaaaaa")]
+        // 0%/any allocates all the space to the second constraint
+        #[case(Flex::Legacy, 1, &[Percentage(0), Percentage(0)],   "b")]
+        #[case(Flex::Legacy, 1, &[Percentage(0), Percentage(10)],  "b")]
+        #[case(Flex::Legacy, 1, &[Percentage(0), Percentage(50)],  "b")]
+        #[case(Flex::Legacy, 1, &[Percentage(0), Percentage(90)],  "b")]
+        #[case(Flex::Legacy, 1, &[Percentage(0), Percentage(100)], "b")]
+        #[case(Flex::Legacy, 1, &[Percentage(0), Percentage(200)], "b")]
+        // 10%/any allocates all the space to the second constraint (even if it is 0)
+        #[case(Flex::Legacy, 1, &[Percentage(10), Percentage(0)],   "b")]
+        #[case(Flex::Legacy, 1, &[Percentage(10), Percentage(10)],  "b")]
+        #[case(Flex::Legacy, 1, &[Percentage(10), Percentage(50)],  "b")]
+        #[case(Flex::Legacy, 1, &[Percentage(10), Percentage(90)],  "b")]
+        #[case(Flex::Legacy, 1, &[Percentage(10), Percentage(100)], "b")]
+        #[case(Flex::Legacy, 1, &[Percentage(10), Percentage(200)], "b")]
+        // 50%/any allocates all the space to the first constraint
+        #[case(Flex::Legacy, 1, &[Percentage(50), Percentage(0)],   "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(50), Percentage(50)],  "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(50), Percentage(100)], "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(50), Percentage(200)], "a")]
+        // 90%/any allocates all the space to the first constraint
+        #[case(Flex::Legacy, 1, &[Percentage(90), Percentage(0)],   "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(90), Percentage(50)],  "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(90), Percentage(100)], "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(90), Percentage(200)], "a")]
+        // 100%/any allocates all the space to the first constraint
+        #[case(Flex::Legacy, 1, &[Percentage(100), Percentage(0)],   "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(100), Percentage(50)],  "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(100), Percentage(100)], "a")]
+        #[case(Flex::Legacy, 1, &[Percentage(100), Percentage(200)], "a")]
+        // 0%/any allocates all the space to the second constraint
+        #[case(Flex::Legacy, 2, &[Percentage(0), Percentage(0)],   "bb")]
+        #[case(Flex::Legacy, 2, &[Percentage(0), Percentage(25)],  "bb")]
+        #[case(Flex::Legacy, 2, &[Percentage(0), Percentage(50)],  "bb")]
+        #[case(Flex::Legacy, 2, &[Percentage(0), Percentage(100)], "bb")]
+        #[case(Flex::Legacy, 2, &[Percentage(0), Percentage(200)], "bb")]
+        // 10%/any allocates all the space to the second constraint
+        #[case(Flex::Legacy, 2, &[Percentage(10), Percentage(0)],   "bb")]
+        #[case(Flex::Legacy, 2, &[Percentage(10), Percentage(25)],  "bb")]
+        #[case(Flex::Legacy, 2, &[Percentage(10), Percentage(50)],  "bb")]
+        #[case(Flex::Legacy, 2, &[Percentage(10), Percentage(100)], "bb")]
+        #[case(Flex::Legacy, 2, &[Percentage(10), Percentage(200)], "bb")]
+        // 25% * 2 = 0.5, which rounds up to 1, so the first constraint gets 1
+        #[case(Flex::Legacy, 2, &[Percentage(25), Percentage(0)],   "ab")]
+        #[case(Flex::Legacy, 2, &[Percentage(25), Percentage(25)],  "ab")]
+        #[case(Flex::Legacy, 2, &[Percentage(25), Percentage(50)],  "ab")]
+        #[case(Flex::Legacy, 2, &[Percentage(25), Percentage(100)], "ab")]
+        #[case(Flex::Legacy, 2, &[Percentage(25), Percentage(200)], "ab")]
+        // 33% * 2 = 0.66, so the first constraint gets 1
+        #[case(Flex::Legacy, 2, &[Percentage(33), Percentage(0)],   "ab")]
+        #[case(Flex::Legacy, 2, &[Percentage(33), Percentage(25)],  "ab")]
+        #[case(Flex::Legacy, 2, &[Percentage(33), Percentage(50)],  "ab")]
+        #[case(Flex::Legacy, 2, &[Percentage(33), Percentage(100)], "ab")]
+        #[case(Flex::Legacy, 2, &[Percentage(33), Percentage(200)], "ab")]
+        // 50% * 2 = 1, so the first constraint gets 1
+        #[case(Flex::Legacy, 2, &[Percentage(50), Percentage(0)],   "ab")]
+        #[case(Flex::Legacy, 2, &[Percentage(50), Percentage(50)],  "ab")]
+        #[case(Flex::Legacy, 2, &[Percentage(50), Percentage(100)], "ab")]
+        // 100%/any allocates all the space to the first constraint
+        // This is probably not the correct behavior, but it is the current behavior
+        #[case(Flex::Legacy, 2, &[Percentage(100), Percentage(0)],   "aa")]
+        #[case(Flex::Legacy, 2, &[Percentage(100), Percentage(50)],  "aa")]
+        #[case(Flex::Legacy, 2, &[Percentage(100), Percentage(100)], "aa")]
+        // 33%/any allocates 1 to the first constraint the rest to the second
+        #[case(Flex::Legacy, 3, &[Percentage(33), Percentage(33)], "abb")]
+        #[case(Flex::Legacy, 3, &[Percentage(33), Percentage(66)], "abb")]
+        // 33%/any allocates 1.33 = 1 to the first constraint the rest to the second
+        #[case(Flex::Legacy, 4, &[Percentage(33), Percentage(33)], "abbb")]
+        #[case(Flex::Legacy, 4, &[Percentage(33), Percentage(66)], "abbb")]
+        // Longer tests zero allocates everything to the second constraint
+        #[case(Flex::Legacy, 10, &[Percentage(0),   Percentage(0)],   "bbbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(0),   Percentage(25)],  "bbbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(0),   Percentage(50)],  "bbbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(0),   Percentage(100)], "bbbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(0),   Percentage(200)], "bbbbbbbbbb" )]
+        // 10% allocates a single character to the first constraint
+        #[case(Flex::Legacy, 10, &[Percentage(10),  Percentage(0)],   "abbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(10),  Percentage(25)],  "abbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(10),  Percentage(50)],  "abbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(10),  Percentage(100)], "abbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(10),  Percentage(200)], "abbbbbbbbb" )]
+        // 25% allocates 2.5 = 3 characters to the first constraint
+        #[case(Flex::Legacy, 10, &[Percentage(25),  Percentage(0)],   "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(25),  Percentage(25)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(25),  Percentage(50)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(25),  Percentage(100)], "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(25),  Percentage(200)], "aaabbbbbbb" )]
+        // 33% allocates 3.3 = 3 characters to the first constraint
+        #[case(Flex::Legacy, 10, &[Percentage(33),  Percentage(0)],   "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(33),  Percentage(25)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(33),  Percentage(50)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(33),  Percentage(100)], "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(33),  Percentage(200)], "aaabbbbbbb" )]
+        // 50% allocates 5 characters to the first constraint
+        #[case(Flex::Legacy, 10, &[Percentage(50),  Percentage(0)],   "aaaaabbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(50),  Percentage(50)],  "aaaaabbbbb" )]
+        #[case(Flex::Legacy, 10, &[Percentage(50),  Percentage(100)], "aaaaabbbbb" )]
+        // 100% allocates everything to the first constraint
+        #[case(Flex::Legacy, 10, &[Percentage(100), Percentage(0)],   "aaaaaaaaaa" )]
+        #[case(Flex::Legacy, 10, &[Percentage(100), Percentage(50)],  "aaaaaaaaaa" )]
+        #[case(Flex::Legacy, 10, &[Percentage(100), Percentage(100)], "aaaaaaaaaa" )]
+        fn percentage(
+            #[case] flex: Flex,
+            #[case] width: u16,
+            #[case] constraints: &[Constraint],
+            #[case] expected: &str,
+        ) {
+            letters(flex, constraints, width, expected)
         }
 
         #[rstest]
-        #[case(Rect::new(0, 0, 1, 1), &[Min(0), Min(0)], "b")] // zero, zero
-        #[case(Rect::new(0, 0, 1, 1), &[Min(0), Min(1)], "b")] // zero, exact
-        #[case(Rect::new(0, 0, 1, 1), &[Min(0), Min(2)], "b")] // zero, overflow
-        #[case(Rect::new(0, 0, 1, 1), &[Min(1), Min(0)], "a")] // exact, zero
-        #[case(Rect::new(0, 0, 1, 1), &[Min(1), Min(1)], "a")] // exact, exact
-        #[case(Rect::new(0, 0, 1, 1), &[Min(1), Min(2)], "a")] // exact, overflow
-        #[case(Rect::new(0, 0, 1, 1), &[Min(2), Min(0)], "a")] // overflow, zero
-        #[case(Rect::new(0, 0, 1, 1), &[Min(2), Min(1)], "a")] // overflow, exact
-        #[case(Rect::new(0, 0, 1, 1), &[Min(2), Min(2)], "a")] // overflow, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Min(0), Min(0)], "bb")] // zero, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Min(0), Min(1)], "bb")] // zero, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Min(0), Min(2)], "bb")] // zero, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Min(0), Min(3)], "bb")] // zero, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Min(1), Min(0)], "ab")] // underflow, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Min(1), Min(1)], "ab")] // underflow, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Min(1), Min(2)], "ab")] // underflow, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Min(1), Min(3)], "ab")] // underflow, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Min(2), Min(0)], "aa")] // exact, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Min(2), Min(1)], "aa")] // exact, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Min(2), Min(2)], "aa")] // exact, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Min(2), Min(3)], "aa")] // exact, overflow
-        #[case(Rect::new(0, 0, 2, 1), &[Min(3), Min(0)], "aa")] // overflow, zero
-        #[case(Rect::new(0, 0, 2, 1), &[Min(3), Min(1)], "aa")] // overflow, underflow
-        #[case(Rect::new(0, 0, 2, 1), &[Min(3), Min(2)], "aa")] // overflow, exact
-        #[case(Rect::new(0, 0, 2, 1), &[Min(3), Min(3)], "aa")] // overflow, overflow
-        #[case(Rect::new(0, 0, 3, 1), &[Min(2), Min(2)], "aab")]
-        fn min(#[case] area: Rect, #[case] constraints: &[Constraint], #[case] expected: &str) {
-            letters(area, constraints, expected, Flex::Legacy)
+        #[case(Flex::Start, 10, &[Percentage(0),   Percentage(0)],    "          " )]
+        #[case(Flex::Start, 10, &[Percentage(0),   Percentage(25)],  "bbb       " )]
+        #[case(Flex::Start, 10, &[Percentage(0),   Percentage(50)],  "bbbbb     " )]
+        #[case(Flex::Start, 10, &[Percentage(0),   Percentage(100)], "bbbbbbbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(0),   Percentage(200)], "bbbbbbbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(10),  Percentage(0)],   "a         " )]
+        #[case(Flex::Start, 10, &[Percentage(10),  Percentage(25)],  "abbb      " )]
+        #[case(Flex::Start, 10, &[Percentage(10),  Percentage(50)],  "abbbbb    " )]
+        #[case(Flex::Start, 10, &[Percentage(10),  Percentage(100)], "abbbbbbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(10),  Percentage(200)], "abbbbbbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(25),  Percentage(0)],   "aaa       " )]
+        #[case(Flex::Start, 10, &[Percentage(25),  Percentage(25)],  "aaabb     " )]
+        #[case(Flex::Start, 10, &[Percentage(25),  Percentage(50)],  "aaabbbbb  " )]
+        #[case(Flex::Start, 10, &[Percentage(25),  Percentage(100)], "aaabbbbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(25),  Percentage(200)], "aaabbbbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(33),  Percentage(0)],   "aaa       " )]
+        #[case(Flex::Start, 10, &[Percentage(33),  Percentage(25)],  "aaabbb    " )]
+        #[case(Flex::Start, 10, &[Percentage(33),  Percentage(50)],  "aaabbbbb  " )]
+        #[case(Flex::Start, 10, &[Percentage(33),  Percentage(100)], "aaabbbbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(33),  Percentage(200)], "aaabbbbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(50),  Percentage(0)],   "aaaaa     " )]
+        #[case(Flex::Start, 10, &[Percentage(50),  Percentage(50)],  "aaaaabbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(50),  Percentage(100)], "aaaaabbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(100), Percentage(0)],   "aaaaaaaaaa" )]
+        #[case(Flex::Start, 10, &[Percentage(100), Percentage(50)],  "aaaaabbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(100), Percentage(100)], "aaaaabbbbb" )]
+        #[case(Flex::Start, 10, &[Percentage(100), Percentage(200)], "aaaaabbbbb" )]
+        fn percentage_start(
+            #[case] flex: Flex,
+            #[case] width: u16,
+            #[case] constraints: &[Constraint],
+            #[case] expected: &str,
+        ) {
+            letters(flex, constraints, width, expected)
         }
 
-        mod percentage {
-            use rstest::rstest;
-
-            use super::*;
-
-            const ZERO: Constraint = Percentage(0);
-            const TEN: Constraint = Percentage(10);
-            const QUARTER: Constraint = Percentage(25);
-            const THIRD: Constraint = Percentage(33);
-            const HALF: Constraint = Percentage(50);
-            const TWO_THIRDS: Constraint = Percentage(66);
-            const NINETY: Constraint = Percentage(90);
-            const FULL: Constraint = Percentage(100);
-            const DOUBLE: Constraint = Percentage(200);
-
-            #[rstest]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[QUARTER], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[FULL], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[DOUBLE], "a")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[HALF], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[TWO_THIRDS], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[FULL], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[DOUBLE], "aa")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, ZERO], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, TEN], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, HALF], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, NINETY], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, FULL], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, DOUBLE], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, ZERO], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, TEN], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, HALF], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, NINETY], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, FULL], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, DOUBLE], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[FULL, FULL], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[FULL, DOUBLE], "a")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO, ZERO], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO, QUARTER], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO, HALF], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO, FULL], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO, DOUBLE], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN, ZERO], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN, QUARTER], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN, HALF], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN, FULL], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN, DOUBLE], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[HALF, FULL], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[FULL, ZERO], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[FULL, HALF], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[FULL, FULL], "aa")]
-            #[case(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "abb")]
-            #[case(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "abb")]
-            fn percentage(
-                #[case] area: Rect,
-                #[case] constraints: &[Constraint],
-                #[case] expected: &str,
-            ) {
-                letters(area, constraints, expected, Flex::Legacy)
-            }
+        #[rstest]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(0)],   "          " )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(25)],  "        bb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(50)],  "     bbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(100)], "bbbbbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(0),   Percentage(200)], "bbbbbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(0)],   "a         " )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(25)],  "a       bb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(50)],  "a    bbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(100)], "abbbbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(10),  Percentage(200)], "abbbbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(0)],   "aaa       " )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(25)],  "aaa     bb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(50)],  "aaa  bbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(100)], "aaabbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(25),  Percentage(200)], "aaabbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(0)],   "aaa       " )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(25)],  "aaa     bb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(50)],  "aaa  bbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(100)], "aaabbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(33),  Percentage(200)], "aaabbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(50),  Percentage(0)],   "aaaaa     " )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(50),  Percentage(50)],  "aaaaabbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(50),  Percentage(100)], "aaaaabbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(100), Percentage(0)],   "aaaaaaaaaa" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(100), Percentage(50)],  "aaaaabbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(100), Percentage(100)], "aaaaabbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Percentage(100), Percentage(200)], "aaaaabbbbb" )]
+        fn percentage_spacebetween(
+            #[case] flex: Flex,
+            #[case] width: u16,
+            #[case] constraints: &[Constraint],
+            #[case] expected: &str,
+        ) {
+            letters(flex, constraints, width, expected)
         }
 
-        mod ratio {
-            use rstest::rstest;
+        #[rstest]
+        // flex, width, ratios, expected
+        // Just one ratio takes up the whole space
+        #[case(Flex::Legacy, 1, &[Ratio(0, 1)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 4)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 2)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(9, 10)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 1)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(2, 1)], "a")]
+        #[case(Flex::Legacy, 2, &[Ratio(0, 1)], "aa")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 10)], "aa")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 4)], "aa")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 2)], "aa")]
+        #[case(Flex::Legacy, 2, &[Ratio(2, 3)], "aa")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 1)], "aa")]
+        #[case(Flex::Legacy, 2, &[Ratio(2, 1)], "aa")]
+        #[case(Flex::Legacy, 1, &[Ratio(0, 1), Ratio(0, 1)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(0, 1), Ratio(1, 10)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(0, 1), Ratio(1, 2)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(0, 1), Ratio(9, 10)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(0, 1), Ratio(1, 1)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(0, 1), Ratio(2, 1)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 10), Ratio(0, 1)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 10), Ratio(1, 10)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 10), Ratio(1, 2)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 10), Ratio(9, 10)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 10), Ratio(1, 1)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 10), Ratio(2, 1)], "b")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 2), Ratio(0, 1)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 2), Ratio(1, 2)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 2), Ratio(1, 1)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 2), Ratio(2, 1)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(9, 10), Ratio(0, 1)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(9, 10), Ratio(1, 2)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(9, 10), Ratio(1, 1)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(9, 10), Ratio(2, 1)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 1), Ratio(0, 1)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 1), Ratio(1, 2)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 1), Ratio(1, 1)], "a")]
+        #[case(Flex::Legacy, 1, &[Ratio(1, 1), Ratio(2, 1)], "a")]
+        #[case(Flex::Legacy, 2, &[Ratio(0, 1), Ratio(0, 1)], "bb")]
+        #[case(Flex::Legacy, 2, &[Ratio(0, 1), Ratio(1, 4)], "bb")]
+        #[case(Flex::Legacy, 2, &[Ratio(0, 1), Ratio(1, 2)], "bb")]
+        #[case(Flex::Legacy, 2, &[Ratio(0, 1), Ratio(1, 1)], "bb")]
+        #[case(Flex::Legacy, 2, &[Ratio(0, 1), Ratio(2, 1)], "bb")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 10), Ratio(0, 1)], "bb")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 10), Ratio(1, 4)], "bb")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 10), Ratio(1, 2)], "bb")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 10), Ratio(1, 1)], "bb")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 10), Ratio(2, 1)], "bb")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 4), Ratio(0, 1)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 4), Ratio(1, 4)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 4), Ratio(1, 2)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 4), Ratio(1, 1)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 4), Ratio(2, 1)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 3), Ratio(0, 1)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 3), Ratio(1, 4)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 3), Ratio(1, 2)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 3), Ratio(1, 1)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 3), Ratio(2, 1)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 2), Ratio(0, 1)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 2), Ratio(1, 2)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 2), Ratio(1, 1)], "ab")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 1), Ratio(0, 1)], "aa")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 1), Ratio(1, 2)], "aa")]
+        #[case(Flex::Legacy, 2, &[Ratio(1, 1), Ratio(1, 1)], "aa")]
+        #[case(Flex::Legacy, 3, &[Ratio(1, 3), Ratio(1, 3)], "abb")]
+        #[case(Flex::Legacy, 3, &[Ratio(1, 3), Ratio(2,3)], "abb")]
+        #[case(Flex::Legacy, 10, &[Ratio(0, 1), Ratio(0, 1)],  "bbbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(0, 1), Ratio(1, 4)],  "bbbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(0, 1), Ratio(1, 2)],  "bbbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(0, 1), Ratio(1, 1)],  "bbbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(0, 1), Ratio(2, 1)],  "bbbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 10), Ratio(0, 1)], "abbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 10), Ratio(1, 4)], "abbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 10), Ratio(1, 2)], "abbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 10), Ratio(1, 1)], "abbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 10), Ratio(2, 1)], "abbbbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 4), Ratio(0, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 4), Ratio(1, 4)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 4), Ratio(1, 2)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 4), Ratio(1, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 4), Ratio(2, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 3), Ratio(0, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 3), Ratio(1, 4)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 3), Ratio(1, 2)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 3), Ratio(1, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 3), Ratio(2, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 2), Ratio(0, 1)],  "aaaaabbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 2), Ratio(1, 2)],  "aaaaabbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 2), Ratio(1, 1)],  "aaaaabbbbb" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 1), Ratio(0, 1)],  "aaaaaaaaaa" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 1), Ratio(1, 2)],  "aaaaaaaaaa" )]
+        #[case(Flex::Legacy, 10, &[Ratio(1, 1), Ratio(1, 1)],  "aaaaaaaaaa" )]
+        fn ratio(
+            #[case] flex: Flex,
+            #[case] width: u16,
+            #[case] constraints: &[Constraint],
+            #[case] expected: &str,
+        ) {
+            letters(flex, constraints, width, expected)
+        }
 
-            use super::*;
+        #[rstest]
+        #[case(Flex::Start, 10, &[Ratio(0, 1), Ratio(0, 1)],   "          " )]
+        #[case(Flex::Start, 10, &[Ratio(0, 1), Ratio(1, 4)],  "bbb       " )]
+        #[case(Flex::Start, 10, &[Ratio(0, 1), Ratio(1, 2)],  "bbbbb     " )]
+        #[case(Flex::Start, 10, &[Ratio(0, 1), Ratio(1, 1)],  "bbbbbbbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(0, 1), Ratio(2, 1)],  "bbbbbbbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 10), Ratio(0, 1)], "a         " )]
+        #[case(Flex::Start, 10, &[Ratio(1, 10), Ratio(1, 4)], "abbb      " )]
+        #[case(Flex::Start, 10, &[Ratio(1, 10), Ratio(1, 2)], "abbbbb    " )]
+        #[case(Flex::Start, 10, &[Ratio(1, 10), Ratio(1, 1)], "abbbbbbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 10), Ratio(2, 1)], "abbbbbbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 4), Ratio(0, 1)],  "aaa       " )]
+        #[case(Flex::Start, 10, &[Ratio(1, 4), Ratio(1, 4)],  "aaabb     " )]
+        #[case(Flex::Start, 10, &[Ratio(1, 4), Ratio(1, 2)],  "aaabbbbb  " )]
+        #[case(Flex::Start, 10, &[Ratio(1, 4), Ratio(1, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 4), Ratio(2, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 3), Ratio(0, 1)],  "aaa       " )]
+        #[case(Flex::Start, 10, &[Ratio(1, 3), Ratio(1, 4)],  "aaabbb    " )]
+        #[case(Flex::Start, 10, &[Ratio(1, 3), Ratio(1, 2)],  "aaabbbbb  " )]
+        #[case(Flex::Start, 10, &[Ratio(1, 3), Ratio(1, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 3), Ratio(2, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 2), Ratio(0, 1)],  "aaaaa     " )]
+        #[case(Flex::Start, 10, &[Ratio(1, 2), Ratio(1, 2)],  "aaaaabbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 2), Ratio(1, 1)],  "aaaaabbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 1), Ratio(0, 1)],  "aaaaaaaaaa" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 1), Ratio(1, 2)],  "aaaaabbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 1), Ratio(1, 1)],  "aaaaabbbbb" )]
+        #[case(Flex::Start, 10, &[Ratio(1, 1), Ratio(2, 1)],  "aaaaabbbbb" )]
+        fn ratio_start(
+            #[case] flex: Flex,
+            #[case] width: u16,
+            #[case] constraints: &[Constraint],
+            #[case] expected: &str,
+        ) {
+            letters(flex, constraints, width, expected)
+        }
 
-            const ZERO: Constraint = Ratio(0, 1);
-            const TEN: Constraint = Ratio(1, 10);
-            const QUARTER: Constraint = Ratio(1, 4);
-            const THIRD: Constraint = Ratio(1, 3);
-            const HALF: Constraint = Ratio(1, 2);
-            const TWO_THIRDS: Constraint = Ratio(2, 3);
-            const NINETY: Constraint = Ratio(9, 10);
-            const FULL: Constraint = Ratio(1, 1);
-            const DOUBLE: Constraint = Ratio(2, 1);
-            #[rstest]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[QUARTER], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[FULL], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[DOUBLE], "a")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[HALF], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[TWO_THIRDS], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[FULL], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[DOUBLE], "aa")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, ZERO], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, TEN], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, HALF], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, NINETY], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, FULL], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[ZERO, DOUBLE], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, ZERO], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, TEN], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, HALF], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, NINETY], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, FULL], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[TEN, DOUBLE], "b")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, ZERO], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, HALF], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, FULL], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[HALF, DOUBLE], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, ZERO], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, HALF], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, FULL], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[NINETY, DOUBLE], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[FULL, ZERO], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[FULL, HALF], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[FULL, FULL], "a")]
-            #[case(Rect::new(0, 0, 1, 1), &[FULL, DOUBLE], "a")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO, ZERO], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO, QUARTER], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO, HALF], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO, FULL], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[ZERO, DOUBLE], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN, ZERO], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN, QUARTER], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN, HALF], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN, FULL], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[TEN, DOUBLE], "bb")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, ZERO], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, QUARTER], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, HALF], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, FULL], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[QUARTER, DOUBLE], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, ZERO], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, QUARTER], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, HALF], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, FULL], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[THIRD, DOUBLE], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[HALF, ZERO], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[HALF, HALF], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[HALF, FULL], "ab")]
-            #[case(Rect::new(0, 0, 2, 1), &[FULL, ZERO], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[FULL, HALF], "aa")]
-            #[case(Rect::new(0, 0, 2, 1), &[FULL, FULL], "aa")]
-            #[case(Rect::new(0, 0, 3, 1), &[THIRD, THIRD], "abb")]
-            #[case(Rect::new(0, 0, 3, 1), &[THIRD, TWO_THIRDS], "abb")]
-            fn ratio(
-                #[case] area: Rect,
-                #[case] constraints: &[Constraint],
-                #[case] expected: &str,
-            ) {
-                letters(area, constraints, expected, Flex::Legacy)
-            }
+        #[rstest]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(0, 1)],  "          " )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(1, 4)],  "        bb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(1, 2)],  "     bbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(1, 1)],  "bbbbbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(0, 1), Ratio(2, 1)],  "bbbbbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(0, 1)], "a         " )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(1, 4)], "a       bb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(1, 2)], "a    bbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(1, 1)], "abbbbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 10), Ratio(2, 1)], "abbbbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(0, 1)],  "aaa       " )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(1, 4)],  "aaa     bb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(1, 2)],  "aaa  bbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(1, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 4), Ratio(2, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(0, 1)],  "aaa       " )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(1, 4)],  "aaa     bb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(1, 2)],  "aaa  bbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(1, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 3), Ratio(2, 1)],  "aaabbbbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 2), Ratio(0, 1)],  "aaaaa     " )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 2), Ratio(1, 2)],  "aaaaabbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 2), Ratio(1, 1)],  "aaaaabbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 1), Ratio(0, 1)],  "aaaaaaaaaa" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 1), Ratio(1, 2)],  "aaaaabbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 1), Ratio(1, 1)],  "aaaaabbbbb" )]
+        #[case(Flex::SpaceBetween, 10, &[Ratio(1, 1), Ratio(2, 1)],  "aaaaabbbbb" )]
+        fn ratio_spacebetween(
+            #[case] flex: Flex,
+            #[case] width: u16,
+            #[case] constraints: &[Constraint],
+            #[case] expected: &str,
+        ) {
+            letters(flex, constraints, width, expected)
         }
 
         #[test]
@@ -2124,9 +2398,8 @@ mod tests {
         #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::Start , 10)]
         #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::Center , 10)]
         #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::End , 10)]
-        // SpaceAround and SpaceBetween spacers behave differently from other flexes
-        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 10)]
-        #[case::flex10(vec![(0 , 50), (50 , 50)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , 10)]
+        #[case::flex10(vec![(10 , 35), (55 , 35)] , vec![Fill(1), Fill(1)], Flex::SpaceAround , 10)]
+        #[case::flex10(vec![(0 , 45), (55 , 45)] , vec![Fill(1), Fill(1)], Flex::SpaceBetween , 10)]
         #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::Legacy , 0)]
         #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 0)]
         #[case::flex_length0(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 0)]
@@ -2137,9 +2410,8 @@ mod tests {
         #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::Start , 10)]
         #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::Center , 10)]
         #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::End , 10)]
-        // SpaceAround and SpaceBetween spacers behave differently from other flexes
-        #[case::flex_length10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 10)]
-        #[case::flex_length10(vec![(0 , 45), (45, 10), (55 , 45)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 10)]
+        #[case::flex_length10(vec![(10 , 25), (45, 10), (65 , 25)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceAround , 10)]
+        #[case::flex_length10(vec![(0 , 35), (45, 10), (65 , 35)] , vec![Fill(1), Length(10), Fill(1)], Flex::SpaceBetween , 10)]
         fn fill_spacing(
             #[case] expected: Vec<(u16, u16)>,
             #[case] constraints: Vec<Constraint>,
@@ -2230,8 +2502,8 @@ mod tests {
 
         #[rstest]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Legacy, 200)]
-        #[case::spacers(vec![(0, 0), (10, 80), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 200)]
-        #[case::spacers(vec![(0, 27), (37, 26), (73, 27)], vec![Length(10), Length(10)], Flex::SpaceAround, 200)]
+        #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::SpaceBetween, 200)]
+        #[case::spacers(vec![(0, 33), (33, 34), (67, 33)], vec![Length(10), Length(10)], Flex::SpaceAround, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Start, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::Center, 200)]
         #[case::spacers(vec![(0, 0), (0, 100), (100, 0)], vec![Length(10), Length(10)], Flex::End, 200)]

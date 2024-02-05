@@ -192,7 +192,7 @@ fn ui(frame: &mut Frame, states: &[State; 3]) {
         Constraint::Length(1),
         Constraint::Min(0), // ignore remaining space
     ]);
-    let [title, buttons, help, _] = frame.size().split(&vertical);
+    let [title, buttons, help, _] = vertical.areas(frame.size());
 
     frame.render_widget(
         Paragraph::new("Custom Widget Example (mouse enabled)"),
@@ -209,7 +209,7 @@ fn render_buttons(frame: &mut Frame<'_>, area: Rect, states: &[State; 3]) {
         Constraint::Length(15),
         Constraint::Min(0), // ignore remaining space
     ]);
-    let [red, green, blue, _] = area.split(&horizontal);
+    let [red, green, blue, _] = horizontal.areas(area);
 
     frame.render_widget(Button::new("Red").theme(RED).state(states[0]), red);
     frame.render_widget(Button::new("Green").theme(GREEN).state(states[1]), green);

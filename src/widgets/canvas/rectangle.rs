@@ -3,13 +3,25 @@ use crate::{
     widgets::canvas::{Line, Painter, Shape},
 };
 
-/// Shape to draw a rectangle from a `Rect` with the given color
+/// A rectangle to draw on a [`Canvas`](super::Canvas)
+///
+/// Sizes used here are **not** in terminal cell. This is much more similar to the
+/// mathematic coordinate system.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Rectangle {
+    /// The `x` position of the rectangle.
+    ///
+    /// The rectangle is positioned from its bottom left corner.
     pub x: f64,
+    /// The `y` position of the rectangle.
+    ///
+    /// The rectangle is positioned from its bottom left corner.
     pub y: f64,
+    /// The width of the rectangle.
     pub width: f64,
+    /// The height of the rectangle.
     pub height: f64,
+    /// The color of the rectangle.
     pub color: Color,
 }
 

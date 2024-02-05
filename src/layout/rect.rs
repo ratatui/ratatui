@@ -239,37 +239,6 @@ impl Rect {
             && position.y < self.bottom()
     }
 
-    /// Split the rect into a number of sub-rects according to the given [`Layout`]`.
-    ///
-    /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
-    /// `Rc<[Rect]>`.
-    ///
-    /// This method requires the number of constraints to be known at compile time. If you don't
-    /// know the number of constraints at compile time, use [`Layout::split`] instead.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the number of constraints is not equal to the length of the returned array.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::prelude::*;
-    /// # fn render(frame: &mut Frame) {
-    /// let area = frame.size();
-    /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
-    /// let [top, main] = area.split(&layout);
-    /// // or explicitly specify the number of constraints:
-    /// let rects = area.split::<2>(&layout);
-    /// # }
-    pub fn split<const N: usize>(self, layout: &Layout) -> [Rect; N] {
-        layout
-            .split(self)
-            .to_vec()
-            .try_into()
-            .expect("invalid number of rects")
-    }
-
     /// Clamp this rect to fit inside the other rect.
     ///
     /// If the width or height of this rect is larger than the other rect, it will be clamped to the
@@ -590,8 +559,8 @@ mod tests {
 
     #[test]
     fn split() {
-        let layout = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let [a, b] = Rect::new(0, 0, 2, 1).split(&layout);
+        let [a, b] = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .areas(Rect::new(0, 0, 2, 1));
         assert_eq!(a, Rect::new(0, 0, 1, 1));
         assert_eq!(b, Rect::new(1, 0, 1, 1));
     }
@@ -600,7 +569,7 @@ mod tests {
     #[should_panic(expected = "invalid number of rects")]
     fn split_invalid_number_of_recs() {
         let layout = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let [_a, _b, _c] = Rect::new(0, 0, 2, 1).split(&layout);
+        let [_a, _b, _c] = layout.areas(Rect::new(0, 0, 2, 1));
     }
 
     #[rstest]

@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 use std::cmp::min;
 
 use strum::{Display, EnumString};
@@ -155,13 +154,13 @@ impl<'a> Styled for Sparkline<'a> {
 
 impl Widget for Sparkline<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Widget::render(&self, area, buf);
+        self.render_ref(area, buf);
     }
 }
 
-impl Widget for &Sparkline<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        self.block.render(area, buf);
+impl WidgetRef for Sparkline<'_> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        self.block.render_ref(area, buf);
         let inner = self.block.inner_if_some(area);
         self.render_sparkline(inner, buf);
     }

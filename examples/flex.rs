@@ -256,7 +256,7 @@ fn example_height() -> u16 {
 impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::vertical([Length(3), Length(1), Fill(0)]);
-        let [tabs, axis, demo] = area.split(&layout);
+        let [tabs, axis, demo] = layout.areas(area);
         self.tabs().render(tabs, buf);
         let scroll_needed = self.render_demo(demo, buf);
         let axis_width = if scroll_needed {
@@ -264,15 +264,7 @@ impl Widget for App {
         } else {
             axis.width
         };
-        let spacing = if matches!(
-            self.selected_tab,
-            SelectedTab::SpaceBetween | SelectedTab::SpaceAround
-        ) {
-            0
-        } else {
-            self.spacing
-        };
-        self.axis(axis_width, spacing).render(axis, buf);
+        self.axis(axis_width, self.spacing).render(axis, buf);
     }
 }
 
@@ -429,7 +421,7 @@ impl Widget for Example {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title_height = get_description_height(&self.description);
         let layout = Layout::vertical([Length(title_height), Fill(0)]);
-        let [title, illustrations] = area.split(&layout);
+        let [title, illustrations] = layout.areas(area);
 
         let (blocks, spacers) = Layout::horizontal(&self.constraints)
             .flex(self.flex)

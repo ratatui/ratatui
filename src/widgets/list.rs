@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
@@ -814,15 +813,14 @@ impl<'a> List<'a> {
 
 impl Widget for List<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut state = ListState::default();
-        StatefulWidget::render(&self, area, buf, &mut state);
+        WidgetRef::render_ref(&self, area, buf);
     }
 }
 
-impl Widget for &List<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl WidgetRef for List<'_> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let mut state = ListState::default();
-        StatefulWidget::render(self, area, buf, &mut state);
+        StatefulWidgetRef::render_ref(self, area, buf, &mut state);
     }
 }
 
@@ -830,16 +828,24 @@ impl StatefulWidget for List<'_> {
     type State = ListState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        StatefulWidget::render(&self, area, buf, state);
+        StatefulWidgetRef::render_ref(&self, area, buf, state);
     }
 }
 
+// Note: remove this when StatefulWidgetRef is stabilized and replace with the blanket impl
 impl StatefulWidget for &List<'_> {
     type State = ListState;
-
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        StatefulWidgetRef::render_ref(self, area, buf, state);
+    }
+}
+
+impl StatefulWidgetRef for List<'_> {
+    type State = ListState;
+
+    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
-        self.block.render(area, buf);
+        self.block.render_ref(area, buf);
         let list_area = self.block.inner_if_some(area);
 
         if list_area.is_empty() || self.items.is_empty() {

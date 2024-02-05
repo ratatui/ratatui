@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 use crate::{prelude::*, widgets::Block};
 
 mod bar;
@@ -313,7 +312,7 @@ struct LabelInfo {
     height: u16,
 }
 
-impl<'a> BarChart<'a> {
+impl BarChart<'_> {
     /// Returns the visible bars length in ticks. A cell contains 8 ticks.
     /// `available_space` used to calculate how many bars can fit in the space
     /// `bar_max_length` is the maximal length a bar can take.
@@ -392,7 +391,7 @@ impl<'a> BarChart<'a> {
         }
     }
 
-    fn render_horizontal(self, buf: &mut Buffer, area: Rect) {
+    fn render_horizontal(&self, buf: &mut Buffer, area: Rect) {
         // get the longest label
         let label_size = self
             .data
@@ -417,10 +416,8 @@ impl<'a> BarChart<'a> {
 
         // print all visible bars, label and values
         let mut bar_y = bars_area.top();
-        for (ticks_vec, mut group) in group_ticks.into_iter().zip(self.data) {
-            let bars = std::mem::take(&mut group.bars);
-
-            for (ticks, bar) in ticks_vec.into_iter().zip(bars) {
+        for (ticks_vec, group) in group_ticks.into_iter().zip(self.data.iter()) {
+            for (ticks, bar) in ticks_vec.into_iter().zip(group.bars.iter()) {
                 let bar_length = (ticks / 8) as u16;
                 let bar_style = self.bar_style.patch(bar.style);
 
@@ -473,7 +470,7 @@ impl<'a> BarChart<'a> {
         }
     }
 
-    fn render_vertical(self, buf: &mut Buffer, area: Rect) {
+    fn render_vertical(&self, buf: &mut Buffer, area: Rect) {
         let label_info = self.label_info(area.height - 1);
 
         let bars_area = Rect {
@@ -535,7 +532,7 @@ impl<'a> BarChart<'a> {
     }
 
     fn render_labels_and_values(
-        self,
+        &self,
         area: Rect,
         buf: &mut Buffer,
         label_info: LabelInfo,
@@ -544,12 +541,10 @@ impl<'a> BarChart<'a> {
         // print labels and values in one go
         let mut bar_x = area.left();
         let bar_y = area.bottom() - label_info.height - 1;
-        for (mut group, ticks_vec) in self.data.into_iter().zip(group_ticks) {
+        for (group, ticks_vec) in self.data.iter().zip(group_ticks) {
             if group.bars.is_empty() {
                 continue;
             }
-            let bars = std::mem::take(&mut group.bars);
-
             // print group labels under the bars or the previous labels
             if label_info.group_label_visible {
                 let label_max_width =
@@ -564,7 +559,7 @@ impl<'a> BarChart<'a> {
             }
 
             // print the bar values and numbers
-            for (mut bar, ticks) in bars.into_iter().zip(ticks_vec) {
+            for (bar, ticks) in group.bars.iter().zip(ticks_vec) {
                 if label_info.bar_label_visible {
                     bar.render_label(buf, self.bar_width, bar_x, bar_y + 1, self.label_style);
                 }
@@ -580,9 +575,15 @@ impl<'a> BarChart<'a> {
 
 impl Widget for BarChart<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        self.render_ref(area, buf);
+    }
+}
+
+impl WidgetRef for BarChart<'_> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
 
-        self.block.render(area, buf);
+        self.block.render_ref(area, buf);
         let inner = self.block.inner_if_some(area);
 
         if inner.is_empty() || self.data.is_empty() || self.bar_width == 0 {

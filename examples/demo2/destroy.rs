@@ -125,7 +125,7 @@ fn blend(mask_color: Color, cell_color: Color, percentage: f64) -> Color {
 fn centered_rect(area: Rect, width: u16, height: u16) -> Rect {
     let horizontal = Layout::horizontal([width]).flex(Flex::Center);
     let vertical = Layout::vertical([height]).flex(Flex::Center);
-    let [area] = area.split(&vertical);
-    let [area] = area.split(&horizontal);
+    let [area] = vertical.areas(area);
+    let [area] = horizontal.areas(area);
     area
 }

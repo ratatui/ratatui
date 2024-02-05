@@ -277,7 +277,7 @@ impl<'a> Paragraph<'a> {
         }
 
         if let Some(Wrap { trim }) = self.wrap {
-            let styled = self.text.lines.iter().map(|line| {
+            let styled = self.text.iter().map(|line| {
                 let graphemes = line
                     .spans
                     .iter()
@@ -292,7 +292,7 @@ impl<'a> Paragraph<'a> {
             }
             count
         } else {
-            self.text.lines.len()
+            self.text.height()
         }
     }
 
@@ -314,25 +314,20 @@ impl<'a> Paragraph<'a> {
         issue = "https://github.com/ratatui-org/ratatui/issues/293"
     )]
     pub fn line_width(&self) -> usize {
-        self.text
-            .lines
-            .iter()
-            .map(|l| l.width())
-            .max()
-            .unwrap_or_default()
+        self.text.iter().map(Line::width).max().unwrap_or_default()
     }
 }
 
 impl Widget for Paragraph<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Widget::render(&self, area, buf);
+        self.render_ref(area, buf);
     }
 }
 
-impl Widget for &Paragraph<'_> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl WidgetRef for Paragraph<'_> {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        self.block.render(area, buf);
+        self.block.render_ref(area, buf);
         let inner = self.block.inner_if_some(area);
         self.render_paragraph(inner, buf);
     }
@@ -344,9 +339,8 @@ impl Paragraph<'_> {
             return;
         }
 
-        let styled = self.text.lines.iter().map(|line| {
+        let styled = self.text.iter().map(|line| {
             let graphemes = line
-                .spans
                 .iter()
                 .flat_map(|span| span.styled_graphemes(self.style));
             let alignment = line.alignment.unwrap_or(self.alignment);
