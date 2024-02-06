@@ -340,9 +340,7 @@ impl Paragraph<'_> {
         }
 
         let styled = self.text.iter().map(|line| {
-            let graphemes = line
-                .iter()
-                .flat_map(|span| span.styled_graphemes(self.style));
+            let graphemes = line.styled_graphemes(self.style);
             let alignment = line.alignment.unwrap_or(self.alignment);
             (graphemes, alignment)
         });
@@ -591,6 +589,40 @@ mod test {
                 "└───────────┘",
             ]),
         );
+    }
+
+    #[test]
+    fn test_render_line_styled() {
+        let l0 = Line::raw("unformatted");
+        let l1 = Line::styled("bold text", Style::new().bold());
+        let l2 = Line::styled("cyan text", Style::new().cyan());
+        let l3 = Line::styled("dim text", Style::new().dim());
+        let paragraph = Paragraph::new(vec![l0, l1, l2, l3]);
+
+        let mut expected =
+            Buffer::with_lines(vec!["unformatted", "bold text", "cyan text", "dim text"]);
+        expected.set_style(Rect::new(0, 1, 9, 1), Style::new().bold());
+        expected.set_style(Rect::new(0, 2, 9, 1), Style::new().cyan());
+        expected.set_style(Rect::new(0, 3, 8, 1), Style::new().dim());
+
+        test_case(&paragraph, expected);
+    }
+
+    #[test]
+    fn test_render_line_spans_styled() {
+        let l0 = Line::default().spans(vec![
+            Span::styled("bold", Style::new().bold()),
+            Span::raw(" and "),
+            Span::styled("cyan", Style::new().cyan()),
+        ]);
+        let l1 = Line::default().spans(vec![Span::raw("unformatted")]);
+        let paragraph = Paragraph::new(vec![l0, l1]);
+
+        let mut expected = Buffer::with_lines(vec!["bold and cyan", "unformatted"]);
+        expected.set_style(Rect::new(0, 0, 4, 1), Style::new().bold());
+        expected.set_style(Rect::new(9, 0, 4, 1), Style::new().cyan());
+
+        test_case(&paragraph, expected);
     }
 
     #[test]
