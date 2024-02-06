@@ -265,6 +265,24 @@ impl Rect {
         Columns::new(self)
     }
 
+    /// An iterator over the positions within the `Rect`.
+    ///
+    /// The positions are returned in a row-major order (left-to-right, top-to-bottom).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use ratatui::prelude::*;
+    /// fn render(area: Rect, buf: &mut Buffer) {
+    ///     for position in area.positions() {
+    ///         buf.get_mut(position.x, position.y).set_symbol("x");
+    ///     }
+    /// }
+    /// ```
+    pub fn positions(self) -> Positions {
+        Positions::new(self)
+    }
+
     /// Returns a [`Position`] with the same coordinates as this rect.
     ///
     /// # Examples
