@@ -44,6 +44,16 @@ command = [
 ]
 need_stdout = true
 
+[jobs.test-unit]
+command = [
+    "cargo", "test",
+    "--lib",
+    "--all-features",
+    "--color", "always",
+    "--", "--color", "always", # see https://github.com/Canop/bacon/issues/124
+]
+need_stdout = true
+
 [jobs.doc]
 command = [
     "cargo", "+nightly", "doc",
@@ -97,4 +107,6 @@ ctrl-c = "job:check-crossterm"
 ctrl-t = "job:check-termion"
 ctrl-w = "job:check-termwiz"
 v = "job:coverage"
-u = "job:coverage-unit-tests-only"
+ctrl-v = "job:coverage-unit-tests-only"
+u = "job:test-unit"
+n = "job:nextest"

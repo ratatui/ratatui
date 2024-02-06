@@ -253,7 +253,7 @@ impl Buffer {
                 y,
                 span.content.as_ref(),
                 remaining_width as usize,
-                span.style,
+                line.style.patch(span.style),
             );
             let w = pos.0.saturating_sub(x);
             x = pos.0;
@@ -453,6 +453,11 @@ impl Debug for Buffer {
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
+
+    use itertools::Itertools;
+    use rstest::{fixture, rstest};
+
     use super::*;
     use crate::assert_buffer_eq;
 
@@ -614,6 +619,67 @@ mod tests {
         // Only 1 space left.
         buffer.set_string(0, 0, "コンピ", Style::default());
         assert_buffer_eq!(buffer, Buffer::with_lines(vec!["コン "]));
+    }
+
+    #[fixture]
+    fn small_one_line_buffer() -> Buffer {
+        Buffer::empty(Rect::new(0, 0, 5, 1))
+    }
+
+    #[rstest]
+    #[case::empty("", "     ")]
+    #[case::one("1", "1    ")]
+    #[case::full("12345", "12345")]
+    #[case::overflow("123456", "12345")]
+    fn set_line_raw(
+        mut small_one_line_buffer: Buffer,
+        #[case] content: &str,
+        #[case] expected: &str,
+    ) {
+        let line = Line::raw(content);
+        small_one_line_buffer.set_line(0, 0, &line, 5);
+
+        // note: testing with empty / set_string here instead of with_lines because with_lines calls
+        // set_line
+        let mut expected_buffer = Buffer::empty(small_one_line_buffer.area);
+        expected_buffer.set_string(0, 0, expected, Style::default());
+        assert_buffer_eq!(small_one_line_buffer, expected_buffer);
+    }
+
+    #[rstest]
+    #[case::empty("", "     ")]
+    #[case::one("1", "1    ")]
+    #[case::full("12345", "12345")]
+    #[case::overflow("123456", "12345")]
+    fn set_line_styled(
+        mut small_one_line_buffer: Buffer,
+        #[case] content: &str,
+        #[case] expected: &str,
+    ) {
+        let color = Color::Blue;
+        let line = Line::styled(content, color);
+        small_one_line_buffer.set_line(0, 0, &line, 5);
+
+        // note: manually testing the contents here as the Buffer::with_lines calls set_line
+        let actual_contents = small_one_line_buffer
+            .content
+            .iter()
+            .map(|c| c.symbol())
+            .join("");
+        let actual_styles = small_one_line_buffer
+            .content
+            .iter()
+            .map(|c| c.fg)
+            .collect_vec();
+
+        // set_line only sets the style for non-empty cells (unlike Line::render which sets the
+        // style for all cells)
+        let expected_styles = iter::repeat(color)
+            .take(content.len().min(5))
+            .chain(iter::repeat(Color::default()).take(5_usize.saturating_sub(content.len())))
+            .collect_vec();
+        assert_eq!(actual_contents, expected);
+        assert_eq!(actual_styles, expected_styles);
     }
 
     #[test]
