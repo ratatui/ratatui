@@ -1,3 +1,4 @@
+use self::layout::Position;
 use crate::prelude::*;
 
 /// An iterator over rows within a `Rect`.
@@ -68,9 +69,50 @@ impl Iterator for Columns {
     }
 }
 
+/// An iterator over positions within a `Rect`.
+///
+/// The iterator will yield all positions within the `Rect` in a row-major order.
+pub struct Positions {
+    /// The `Rect` associated with the positions.
+    pub rect: Rect,
+    /// The current position within the `Rect`.
+    pub current_position: Position,
+}
+
+impl Positions {
+    /// Creates a new `Positions` iterator.
+    pub fn new(rect: Rect) -> Self {
+        Self {
+            rect,
+            current_position: Position::new(rect.x, rect.y),
+        }
+    }
+}
+
+impl Iterator for Positions {
+    type Item = Position;
+
+    /// Retrieves the next position within the `Rect`.
+    ///
+    /// Returns `None` when there are no more positions to iterate through.
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_position.y >= self.rect.bottom() {
+            return None;
+        }
+        let position = self.current_position;
+        self.current_position.x += 1;
+        if self.current_position.x >= self.rect.right() {
+            self.current_position.x = self.rect.x;
+            self.current_position.y += 1;
+        }
+        Some(position)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::layout::Position;
 
     #[test]
     fn rows() {
@@ -88,5 +130,16 @@ mod tests {
         assert_eq!(columns.next(), Some(Rect::new(0, 0, 1, 2)));
         assert_eq!(columns.next(), Some(Rect::new(1, 0, 1, 2)));
         assert_eq!(columns.next(), None);
+    }
+
+    #[test]
+    fn positions() {
+        let rect = Rect::new(0, 0, 2, 2);
+        let mut positions = Positions::new(rect);
+        assert_eq!(positions.next(), Some(Position::new(0, 0)));
+        assert_eq!(positions.next(), Some(Position::new(1, 0)));
+        assert_eq!(positions.next(), Some(Position::new(0, 1)));
+        assert_eq!(positions.next(), Some(Position::new(1, 1)));
+        assert_eq!(positions.next(), None);
     }
 }
