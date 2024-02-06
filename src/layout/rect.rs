@@ -4,13 +4,14 @@ use std::{
     fmt,
 };
 
-use layout::{Position, Size};
-
+use super::{Position, Size};
 use crate::prelude::*;
 
-mod offset;
-pub use offset::*;
+mod iter;
+pub use iter::*;
 
+/// A Rectangular area.
+///
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
 /// area they are supposed to render to.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
@@ -26,56 +27,17 @@ pub struct Rect {
     pub height: u16,
 }
 
-/// Manages row divisions within a `Rect`.
+/// Amounts by which to move a [`Rect`](super::Rect).
 ///
-/// The `Rows` struct is an iterator that allows iterating through rows of a given `Rect`.
-pub struct Rows {
-    /// The `Rect` associated with the rows.
-    pub rect: Rect,
-    /// The y coordinate of the row within the `Rect`.
-    pub current_row: u16,
-}
-
-impl Iterator for Rows {
-    type Item = Rect;
-
-    /// Retrieves the next row within the `Rect`.
-    ///
-    /// Returns `None` when there are no more rows to iterate through.
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current_row >= self.rect.bottom() {
-            return None;
-        }
-        let row = Rect::new(self.rect.x, self.current_row, self.rect.width, 1);
-        self.current_row += 1;
-        Some(row)
-    }
-}
-
-/// Manages column divisions within a `Rect`.
+/// Positive numbers move to the right/bottom and negative to the left/top.
 ///
-/// The `Columns` struct is an iterator that allows iterating through columns of a given `Rect`.
-pub struct Columns {
-    /// The `Rect` associated with the columns.
-    pub rect: Rect,
-    /// The x coordinate of the column within the `Rect`.
-    pub current_column: u16,
-}
-
-impl Iterator for Columns {
-    type Item = Rect;
-
-    /// Retrieves the next column within the `Rect`.
-    ///
-    /// Returns `None` when there are no more columns to iterate through.
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current_column >= self.rect.right() {
-            return None;
-        }
-        let column = Rect::new(self.current_column, self.rect.y, 1, self.rect.height);
-        self.current_column += 1;
-        Some(column)
-    }
+/// See [`Rect::offset`]
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Offset {
+    /// How much to move on the X axis
+    pub x: i32,
+    /// How much to move on the Y axis
+    pub y: i32,
 }
 
 impl fmt::Display for Rect {
@@ -271,47 +233,36 @@ impl Rect {
         Rect::new(x, y, width, height)
     }
 
-    /// Creates an iterator over rows within the `Rect`.
+    /// An iterator over rows within the `Rect`.
     ///
-    /// This method returns a `Rows` iterator that allows iterating through rows of the `Rect`.
-    ///
-    /// # Examples
+    /// # Example
     ///
     /// ```
-    /// use ratatui::prelude::*;
-    /// let area = Rect::new(0, 0, 10, 5);
-    /// for row in area.rows() {
-    ///     // Perform operations on each row of the area
-    ///     println!("Row: {:?}", row);
+    /// # use ratatui::prelude::*;
+    /// fn render(area: Rect, buf: &mut Buffer) {
+    ///     for row in area.rows() {
+    ///         Line::raw("Hello, world!").render(row, buf);
+    ///     }
     /// }
     /// ```
-    pub fn rows(&self) -> Rows {
-        Rows {
-            rect: *self,
-            current_row: self.y,
-        }
+    pub fn rows(self) -> Rows {
+        Rows::new(self)
     }
 
-    /// Creates an iterator over columns within the `Rect`.
+    /// An iterator over columns within the `Rect`.
     ///
-    /// This method returns a `Columns` iterator that allows iterating through columns of the
-    /// `Rect`.
-    ///
-    /// # Examples
+    /// # Example
     ///
     /// ```
-    /// use ratatui::prelude::*;
-    /// let area = Rect::new(0, 0, 10, 5);
-    /// for column in area.columns() {
-    ///     // Perform operations on each column of the area
-    ///     println!("Column: {:?}", column);
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// fn render(area: Rect, buf: &mut Buffer) {
+    ///     if let Some(left) = area.columns().next() {
+    ///         Block::new().borders(Borders::LEFT).render(left, buf);
+    ///     }
     /// }
     /// ```
-    pub fn columns(&self) -> Columns {
-        Columns {
-            rect: *self,
-            current_column: self.x,
-        }
+    pub fn columns(self) -> Columns {
+        Columns::new(self)
     }
 
     /// Returns a [`Position`] with the same coordinates as this rect.
