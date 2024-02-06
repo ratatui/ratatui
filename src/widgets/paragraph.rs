@@ -609,6 +609,23 @@ mod test {
     }
 
     #[test]
+    fn test_render_line_spans_styled() {
+        let l0 = Line::default().spans(vec![
+            Span::styled("bold", Style::new().bold()),
+            Span::raw(" and "),
+            Span::styled("cyan", Style::new().cyan()),
+        ]);
+        let l1 = Line::default().spans(vec![Span::raw("unformatted")]);
+        let paragraph = Paragraph::new(vec![l0, l1]);
+
+        let mut expected = Buffer::with_lines(vec!["bold and cyan", "unformatted"]);
+        expected.set_style(Rect::new(0, 0, 4, 1), Style::new().bold());
+        expected.set_style(Rect::new(9, 0, 4, 1), Style::new().cyan());
+
+        test_case(&paragraph, expected);
+    }
+
+    #[test]
     fn test_render_paragraph_with_block_with_bottom_title_and_border() {
         let block = Block::default()
             .title("Title")
