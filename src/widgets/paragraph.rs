@@ -340,9 +340,7 @@ impl Paragraph<'_> {
         }
 
         let styled = self.text.iter().map(|line| {
-            let graphemes = line
-                .iter()
-                .flat_map(|span| span.styled_graphemes(self.style));
+            let graphemes = line.styled_graphemes(self.style);
             let alignment = line.alignment.unwrap_or(self.alignment);
             (graphemes, alignment)
         });
