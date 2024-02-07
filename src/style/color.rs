@@ -64,7 +64,6 @@ use std::{
 ///
 /// [ANSI color table]: https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub enum Color {
     /// Resets the foreground or background color
     #[default]
@@ -136,6 +135,16 @@ impl Color {
         let g = (u >> 8) as u8;
         let b = u as u8;
         Color::Rgb(r, g, b)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for Color {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
     }
 }
 
@@ -576,5 +585,29 @@ mod tests {
         let color: Result<_, serde::de::value::Error> =
             Color::deserialize("#00000000".into_deserializer());
         assert!(color.is_err());
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serialize_then_deserialize() -> Result<(), serde_json::Error> {
+        let json_str = serde_json::to_string(&Color::Rgb(0, 0, 0))?;
+        assert_eq!(
+            serde_json::from_str::<Color>(&json_str)?,
+            Color::Rgb(0, 0, 0)
+        );
+
+        let json_str = serde_json::to_string(&Color::Rgb(255, 0, 255))?;
+        assert_eq!(
+            serde_json::from_str::<Color>(&json_str)?,
+            Color::Rgb(255, 0, 255)
+        );
+
+        let json_str = serde_json::to_string(&Color::Indexed(10))?;
+        assert_eq!(
+            serde_json::from_str::<Color>(&json_str)?,
+            Color::Indexed(10)
+        );
+
+        Ok(())
     }
 }
