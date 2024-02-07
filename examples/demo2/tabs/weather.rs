@@ -95,10 +95,10 @@ fn render_simple_barchart(area: Rect, buf: &mut Buffer) {
                 } else {
                     Style::new().fg(Color::DarkGray).bg(Color::Yellow).bold()
                 })
-                .label(label.into())
+                .label(label)
         })
         .collect_vec();
-    let group = BarGroup::default().bars(&data);
+    let group = BarGroup::default().bars(data);
     BarChart::default()
         .data(group)
         .bar_width(3)
@@ -117,7 +117,7 @@ fn render_horizontal_barchart(area: Rect, buf: &mut Buffer) {
             .value(71)
             .value_style(Style::new().bold()), // current season
     ];
-    let group = BarGroup::default().label("GPU".into()).bars(&data);
+    let group = BarGroup::default().label("GPU").bars(data);
     BarChart::default()
         .block(Block::new().padding(Padding::new(0, 0, 2, 0)))
         .direction(Direction::Horizontal)

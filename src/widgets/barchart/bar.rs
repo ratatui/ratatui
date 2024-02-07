@@ -20,7 +20,7 @@ use crate::prelude::*;
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// Bar::default()
-///     .label("Bar 1".into())
+///     .label("Bar 1")
 ///     .value(10)
 ///     .style(Style::default().fg(Color::Red))
 ///     .value_style(Style::default().bg(Color::Red).fg(Color::White))
@@ -41,13 +41,35 @@ pub struct Bar<'a> {
 }
 
 impl<'a> Bar<'a> {
+    /// Creates a new ['Bar'] widget with the given label and value.
+    ///
+    /// The ```label``` parameter accepts any type that is convertible into a [`Line`].
+    /// The ```value``` parameter is the value to be displayed on the bar.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// Bar::new("label", 10);
+    /// ```
+    pub fn new<L>(label: L, value: u64) -> Self
+    where
+        L: Into<Line<'a>>,
+    {
+        Self {
+            value,
+            label: Some(label.into()),
+            ..Default::default()
+        }
+    }
+
     /// Set the value of this bar.
     ///
     /// The value will be displayed inside the bar.
     ///
     /// # See also
     ///
-    /// [`Bar::value_style`] to style the value.  
+    /// [`Bar::value_style`] to style the value.
     /// [`Bar::text_value`] to set the displayed value.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn value(mut self, value: u64) -> Bar<'a> {
@@ -58,13 +80,16 @@ impl<'a> Bar<'a> {
     /// Set the label of the bar.
     ///
     /// For [`Vertical`](crate::layout::Direction::Vertical) bars,
-    /// display the label **under** the bar.  
+    /// display the label **under** the bar.
     /// For [`Horizontal`](crate::layout::Direction::Horizontal) bars,
-    /// display the label **in** the bar.  
+    /// display the label **in** the bar.
     /// See [`BarChart::direction`](crate::widgets::BarChart::direction) to set the direction.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label(mut self, label: Line<'a>) -> Bar<'a> {
-        self.label = Some(label);
+    pub fn label<T>(mut self, label: T) -> Bar<'a>
+    where
+        T: Into<Line<'a>>,
+    {
+        self.label = Some(label.into());
         self
     }
 
@@ -198,5 +223,27 @@ impl<'a> Bar<'a> {
         if let Some(label) = &self.label {
             label.render(area, buf);
         }
+    }
+}
+
+impl<'a> Styled for Bar<'a> {
+    type Item = Bar<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
+        self.style(style)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn can_be_stylized() {
+        let bar = Bar::new("foo", 10).red();
+        assert_eq!(bar.style, Style::default().fg(Color::Red));
     }
 }

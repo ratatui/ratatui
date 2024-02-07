@@ -9,8 +9,8 @@ use crate::prelude::*;
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// BarGroup::default()
-///     .label("Group 1".into())
-///     .bars(&[Bar::default().value(200), Bar::default().value(150)]);
+///     .label("Group 1")
+///     .bars([Bar::default().value(200), Bar::default().value(150)]);
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct BarGroup<'a> {
@@ -21,17 +21,44 @@ pub struct BarGroup<'a> {
 }
 
 impl<'a> BarGroup<'a> {
+    /// Creates a new [`BarGroup`] widget with the given bars and no label.
+    ///
+    /// The `bars` parameter accepts an iterator containing items of type [`Bar`].
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// BarGroup::new([Bar::new("label", 10), Bar::new("label", 10)]);
+    /// ```
+    pub fn new<I>(bars: I) -> Self
+    where
+        I: IntoIterator<Item = Bar<'a>>,
+    {
+        Self {
+            bars: bars.into_iter().collect(),
+            ..Default::default()
+        }
+    }
+
     /// Set the group label
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label(mut self, label: Line<'a>) -> BarGroup<'a> {
-        self.label = Some(label);
+    pub fn label<T>(mut self, label: T) -> BarGroup<'a>
+    where
+        T: Into<Line<'a>>,
+    {
+        self.label = Some(label.into());
         self
     }
 
     /// Set the bars of the group to be shown
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bars(mut self, bars: &[Bar<'a>]) -> BarGroup<'a> {
-        self.bars = bars.to_vec();
+    pub fn bars<I, T>(mut self, bars: I) -> BarGroup<'a>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<Bar<'a>>,
+    {
+        self.bars = bars.into_iter().map(Into::into).collect();
         self
     }
 
@@ -70,7 +97,7 @@ impl<'a> From<&[(&'a str, u64)]> for BarGroup<'a> {
             label: None,
             bars: value
                 .iter()
-                .map(|&(text, v)| Bar::default().value(v).label(text.into()))
+                .map(|&(text, v)| Bar::default().value(v).label(text))
                 .collect(),
         }
     }
