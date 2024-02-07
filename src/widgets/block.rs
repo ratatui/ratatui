@@ -5,6 +5,7 @@
 //! In its simplest form, a `Block` is a [border](Borders) around another widget. It can have a
 //! [title](Block::title) and [padding](Block::padding).
 
+use itertools::Itertools;
 use strum::{Display, EnumString};
 
 use crate::{prelude::*, symbols::border, widgets::Borders};
@@ -147,7 +148,6 @@ pub struct Block<'a> {
     titles_alignment: Alignment,
     /// The default position of the titles that don't have one
     titles_position: Position,
-
     /// Visible borders
     borders: Borders,
     /// Border style
@@ -525,9 +525,11 @@ impl Widget for Block<'_> {
 
 impl WidgetRef for Block<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
         if area.is_empty() {
             return;
         }
+        buf.set_style(area, self.style);
         self.render_borders(area, buf);
         self.render_titles(area, buf);
     }
@@ -535,184 +537,226 @@ impl WidgetRef for Block<'_> {
 
 impl Block<'_> {
     fn render_borders(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
-        let symbols = self.border_set;
+        self.render_left_side(area, buf);
+        self.render_top_side(area, buf);
+        self.render_right_side(area, buf);
+        self.render_bottom_side(area, buf);
 
-        // Sides
-        if self.borders.intersects(Borders::LEFT) {
-            for y in area.top()..area.bottom() {
-                buf.get_mut(area.left(), y)
-                    .set_symbol(symbols.vertical_left)
-                    .set_style(self.border_style);
-            }
-        }
-        if self.borders.intersects(Borders::TOP) {
-            for x in area.left()..area.right() {
-                buf.get_mut(x, area.top())
-                    .set_symbol(symbols.horizontal_top)
-                    .set_style(self.border_style);
-            }
-        }
-        if self.borders.intersects(Borders::RIGHT) {
-            let x = area.right() - 1;
-            for y in area.top()..area.bottom() {
-                buf.get_mut(x, y)
-                    .set_symbol(symbols.vertical_right)
-                    .set_style(self.border_style);
-            }
-        }
-        if self.borders.intersects(Borders::BOTTOM) {
-            let y = area.bottom() - 1;
-            for x in area.left()..area.right() {
-                buf.get_mut(x, y)
-                    .set_symbol(symbols.horizontal_bottom)
-                    .set_style(self.border_style);
-            }
-        }
-
-        // Corners
-        if self.borders.contains(Borders::RIGHT | Borders::BOTTOM) {
-            buf.get_mut(area.right() - 1, area.bottom() - 1)
-                .set_symbol(symbols.bottom_right)
-                .set_style(self.border_style);
-        }
-        if self.borders.contains(Borders::RIGHT | Borders::TOP) {
-            buf.get_mut(area.right() - 1, area.top())
-                .set_symbol(symbols.top_right)
-                .set_style(self.border_style);
-        }
-        if self.borders.contains(Borders::LEFT | Borders::BOTTOM) {
-            buf.get_mut(area.left(), area.bottom() - 1)
-                .set_symbol(symbols.bottom_left)
-                .set_style(self.border_style);
-        }
-        if self.borders.contains(Borders::LEFT | Borders::TOP) {
-            buf.get_mut(area.left(), area.top())
-                .set_symbol(symbols.top_left)
-                .set_style(self.border_style);
-        }
-    }
-
-    /* Titles Rendering */
-    fn get_title_y(&self, position: Position, area: Rect) -> u16 {
-        match position {
-            Position::Bottom => area.bottom() - 1,
-            Position::Top => area.top(),
-        }
-    }
-
-    fn title_filter(&self, title: &Title, alignment: Alignment, position: Position) -> bool {
-        title.alignment.unwrap_or(self.titles_alignment) == alignment
-            && title.position.unwrap_or(self.titles_position) == position
-    }
-
-    fn calculate_title_area_offsets(&self, area: Rect) -> (u16, u16, u16) {
-        let left_border_dx = u16::from(self.borders.intersects(Borders::LEFT));
-        let right_border_dx = u16::from(self.borders.intersects(Borders::RIGHT));
-
-        let title_area_width = area
-            .width
-            .saturating_sub(left_border_dx)
-            .saturating_sub(right_border_dx);
-
-        (left_border_dx, right_border_dx, title_area_width)
-    }
-
-    fn render_left_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
-        let (left_border_dx, _, title_area_width) = self.calculate_title_area_offsets(area);
-
-        let mut current_offset = left_border_dx;
-        self.titles
-            .iter()
-            .filter(|title| self.title_filter(title, Alignment::Left, position))
-            .for_each(|title| {
-                let title_x = current_offset;
-                current_offset += title.content.width() as u16 + 1;
-
-                // Clone the title's content, applying block title style then the title style
-                let mut content = title.content.clone();
-                for span in content.spans.iter_mut() {
-                    span.style = self.titles_style.patch(span.style);
-                }
-
-                buf.set_line(
-                    title_x + area.left(),
-                    self.get_title_y(position, area),
-                    &content,
-                    title_area_width,
-                );
-            });
-    }
-
-    fn render_center_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
-        let (_, _, title_area_width) = self.calculate_title_area_offsets(area);
-
-        let titles = self
-            .titles
-            .iter()
-            .filter(|title| self.title_filter(title, Alignment::Center, position));
-
-        let titles_sum = titles
-            .clone()
-            .fold(-1, |acc, f| acc + f.content.width() as i16 + 1); // First element isn't spaced
-
-        let mut current_offset = area.width.saturating_sub(titles_sum as u16) / 2;
-        titles.for_each(|title| {
-            let title_x = current_offset;
-            current_offset += title.content.width() as u16 + 1;
-
-            // Clone the title's content, applying block title style then the title style
-            let mut content = title.content.clone();
-            for span in content.spans.iter_mut() {
-                span.style = self.titles_style.patch(span.style);
-            }
-
-            buf.set_line(
-                title_x + area.left(),
-                self.get_title_y(position, area),
-                &content,
-                title_area_width,
-            );
-        });
-    }
-
-    fn render_right_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
-        let (_, right_border_dx, title_area_width) = self.calculate_title_area_offsets(area);
-
-        let mut current_offset = right_border_dx;
-        self.titles
-            .iter()
-            .filter(|title| self.title_filter(title, Alignment::Right, position))
-            .rev() // so that the titles appear in the order they have been set
-            .for_each(|title| {
-                current_offset += title.content.width() as u16 + 1;
-                let title_x = current_offset - 1; // First element isn't spaced
-
-                // Clone the title's content, applying block title style then the title style
-                let mut content = title.content.clone();
-                for span in content.spans.iter_mut() {
-                    span.style = self.titles_style.patch(span.style);
-                }
-
-                buf.set_line(
-                    area.width.saturating_sub(title_x) + area.left(),
-                    self.get_title_y(position, area),
-                    &content,
-                    title_area_width,
-                );
-            });
-    }
-
-    fn render_title_position(&self, position: Position, area: Rect, buf: &mut Buffer) {
-        // Note: the order in which these functions are called define the overlapping behavior
-        self.render_right_titles(position, area, buf);
-        self.render_center_titles(position, area, buf);
-        self.render_left_titles(position, area, buf);
+        self.render_bottom_right_corner(buf, area);
+        self.render_top_right_corner(buf, area);
+        self.render_bottom_left_corner(buf, area);
+        self.render_top_left_corner(buf, area);
     }
 
     fn render_titles(&self, area: Rect, buf: &mut Buffer) {
         self.render_title_position(Position::Top, area, buf);
         self.render_title_position(Position::Bottom, area, buf);
+    }
+
+    fn render_title_position(&self, position: Position, area: Rect, buf: &mut Buffer) {
+        // NOTE: the order in which these functions are called defines the overlapping behavior
+        self.render_right_titles(position, area, buf);
+        self.render_center_titles(position, area, buf);
+        self.render_left_titles(position, area, buf);
+    }
+
+    fn render_left_side(&self, area: Rect, buf: &mut Buffer) {
+        if self.borders.contains(Borders::LEFT) {
+            for y in area.top()..area.bottom() {
+                buf.get_mut(area.left(), y)
+                    .set_symbol(self.border_set.vertical_left)
+                    .set_style(self.border_style);
+            }
+        }
+    }
+
+    fn render_top_side(&self, area: Rect, buf: &mut Buffer) {
+        if self.borders.contains(Borders::TOP) {
+            for x in area.left()..area.right() {
+                buf.get_mut(x, area.top())
+                    .set_symbol(self.border_set.horizontal_top)
+                    .set_style(self.border_style);
+            }
+        }
+    }
+
+    fn render_right_side(&self, area: Rect, buf: &mut Buffer) {
+        if self.borders.contains(Borders::RIGHT) {
+            let x = area.right() - 1;
+            for y in area.top()..area.bottom() {
+                buf.get_mut(x, y)
+                    .set_symbol(self.border_set.vertical_right)
+                    .set_style(self.border_style);
+            }
+        }
+    }
+
+    fn render_bottom_side(&self, area: Rect, buf: &mut Buffer) {
+        if self.borders.contains(Borders::BOTTOM) {
+            let y = area.bottom() - 1;
+            for x in area.left()..area.right() {
+                buf.get_mut(x, y)
+                    .set_symbol(self.border_set.horizontal_bottom)
+                    .set_style(self.border_style);
+            }
+        }
+    }
+
+    fn render_bottom_right_corner(&self, buf: &mut Buffer, area: Rect) {
+        if self.borders.contains(Borders::RIGHT | Borders::BOTTOM) {
+            buf.get_mut(area.right() - 1, area.bottom() - 1)
+                .set_symbol(self.border_set.bottom_right)
+                .set_style(self.border_style);
+        }
+    }
+
+    fn render_top_right_corner(&self, buf: &mut Buffer, area: Rect) {
+        if self.borders.contains(Borders::RIGHT | Borders::TOP) {
+            buf.get_mut(area.right() - 1, area.top())
+                .set_symbol(self.border_set.top_right)
+                .set_style(self.border_style);
+        }
+    }
+
+    fn render_bottom_left_corner(&self, buf: &mut Buffer, area: Rect) {
+        if self.borders.contains(Borders::LEFT | Borders::BOTTOM) {
+            buf.get_mut(area.left(), area.bottom() - 1)
+                .set_symbol(self.border_set.bottom_left)
+                .set_style(self.border_style);
+        }
+    }
+
+    fn render_top_left_corner(&self, buf: &mut Buffer, area: Rect) {
+        if self.borders.contains(Borders::LEFT | Borders::TOP) {
+            buf.get_mut(area.left(), area.top())
+                .set_symbol(self.border_set.top_left)
+                .set_style(self.border_style);
+        }
+    }
+
+    /// Render titles aligned to the right of the block
+    ///
+    /// Currently (due to the way lines are truncated), the right side of the leftmost title will
+    /// be cut off if the block is too small to fit all titles. This is not ideal and should be
+    /// the left side of that leftmost that is cut off. This is due to the line being truncated
+    /// incorrectly. See https://github.com/ratatui-org/ratatui/issues/932
+    fn render_right_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
+        let titles = self.filtered_titles(position, Alignment::Right);
+        let mut titles_area = self.titles_area(area, position);
+
+        // render titles in reverse order to align them to the right
+        for title in titles.rev() {
+            if titles_area.is_empty() {
+                break;
+            }
+            let title_width = title.content.width() as u16;
+            let title_area = Rect {
+                x: titles_area
+                    .right()
+                    .saturating_sub(title_width)
+                    .max(titles_area.left()),
+                ..titles_area
+            };
+            buf.set_style(title_area, self.titles_style);
+            title.content.render_ref(title_area, buf);
+
+            // bump the width of the titles area to the left
+            titles_area.width = titles_area
+                .width
+                .saturating_sub(title_width)
+                .saturating_sub(1); // space between titles
+        }
+    }
+
+    /// Render titles in the center of the block
+    ///
+    /// Currently this method aligns the titles to the left inside a centered area. This is not
+    /// ideal and should be fixed in the future to align the titles to the center of the block and
+    /// truncate both sides of the titles if the block is too small to fit all titles.
+    fn render_center_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
+        let titles = self
+            .filtered_titles(position, Alignment::Center)
+            .collect_vec();
+        let total_width = titles
+            .iter()
+            .map(|title| title.content.width() as u16 + 1) // space between titles
+            .sum::<u16>()
+            .saturating_sub(1); // no space for the last title
+
+        let titles_area = self.titles_area(area, position);
+        let mut titles_area = Rect {
+            x: titles_area.left() + (titles_area.width.saturating_sub(total_width) / 2),
+            ..titles_area
+        };
+        for title in titles {
+            if titles_area.is_empty() {
+                break;
+            }
+            let title_width = title.content.width() as u16;
+            let title_area = Rect {
+                width: title_width.min(titles_area.width),
+                ..titles_area
+            };
+            buf.set_style(title_area, self.titles_style);
+            title.content.render_ref(title_area, buf);
+
+            // bump the titles area to the right and reduce its width
+            titles_area.x = titles_area.x.saturating_add(title_width + 1);
+            titles_area.width = titles_area.width.saturating_sub(title_width + 1);
+        }
+    }
+
+    /// Render titles aligned to the left of the block
+    fn render_left_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
+        let titles = self.filtered_titles(position, Alignment::Left);
+        let mut titles_area = self.titles_area(area, position);
+        for title in titles {
+            if titles_area.is_empty() {
+                break;
+            }
+            let title_width = title.content.width() as u16;
+            let title_area = Rect {
+                width: title_width.min(titles_area.width),
+                ..titles_area
+            };
+            buf.set_style(title_area, self.titles_style);
+            title.content.render_ref(title_area, buf);
+
+            // bump the titles area to the right and reduce its width
+            titles_area.x = titles_area.x.saturating_add(title_width + 1);
+            titles_area.width = titles_area.width.saturating_sub(title_width + 1);
+        }
+    }
+
+    /// An iterator over the titles that match the position and alignment
+    fn filtered_titles(
+        &self,
+        position: Position,
+        alignment: Alignment,
+    ) -> impl DoubleEndedIterator<Item = &Title> {
+        self.titles.iter().filter(move |title| {
+            title.position.unwrap_or(self.titles_position) == position
+                && title.alignment.unwrap_or(self.titles_alignment) == alignment
+        })
+    }
+
+    /// An area that is one line tall and spans the width of the block excluding the borders and
+    /// is positioned at the top or bottom of the block.
+    fn titles_area(&self, area: Rect, position: Position) -> Rect {
+        let left_border = u16::from(self.borders.contains(Borders::LEFT));
+        let right_border = u16::from(self.borders.contains(Borders::RIGHT));
+        Rect {
+            x: area.left() + left_border,
+            y: match position {
+                Position::Top => area.top(),
+                Position::Bottom => area.bottom() - 1,
+            },
+            width: area
+                .width
+                .saturating_sub(left_border)
+                .saturating_sub(right_border),
+            height: 1,
+        }
     }
 }
 
@@ -752,7 +796,7 @@ mod tests {
     use super::*;
     use crate::{
         assert_buffer_eq,
-        layout::Rect,
+        layout::{Alignment, Rect},
         style::{Color, Modifier, Stylize},
     };
 
@@ -1118,6 +1162,24 @@ mod tests {
                 .render(buffer.area, &mut buffer);
             assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
         }
+    }
+
+    /// This is a regression test for bug https://github.com/ratatui-org/ratatui/issues/929
+    #[test]
+    fn render_right_aligned_empty_title() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        Block::default()
+            .title("")
+            .title_alignment(Alignment::Right)
+            .render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "               ",
+                "               ",
+                "               ",
+            ])
+        );
     }
 
     #[test]
