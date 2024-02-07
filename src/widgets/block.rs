@@ -554,7 +554,7 @@ impl Block<'_> {
     }
 
     fn render_title_position(&self, position: Position, area: Rect, buf: &mut Buffer) {
-        // Note: the order in which these functions are called defines the overlapping behavior
+        // NOTE: the order in which these functions are called defines the overlapping behavior
         self.render_right_titles(position, area, buf);
         self.render_center_titles(position, area, buf);
         self.render_left_titles(position, area, buf);
