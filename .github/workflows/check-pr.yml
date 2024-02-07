@@ -44,24 +44,6 @@ jobs:
           header: pr-title-lint-error
           delete: true
 
-  check-signed:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      # Check commit signature and add comment if needed
-      - name: Check signed commits in PR
-        uses: 1Password/check-signed-commits-action@v1
-        with:
-          comment: |
-            Thank you for opening this pull request!
-
-            We require commits to be signed and it looks like this PR contains unsigned commits.
-
-            Get help in the [CONTRIBUTING.md](https://github.com/ratatui-org/ratatui/blob/main/CONTRIBUTING.md#sign-your-commits)
-            or on [Github doc](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).
-
   check-breaking-change-label:
     runs-on: ubuntu-latest
     env:
