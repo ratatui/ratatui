@@ -591,14 +591,14 @@ mod tests {
     #[test]
     fn serialize_then_deserialize() -> Result<(), serde_json::Error> {
         let json_rgb = serde_json::to_string(&Color::Rgb(255, 0, 255))?;
-        assert_eq!(json_rgb, "#ff00ff");
+        assert_eq!(json_rgb, "\"#FF00FF\"");
         assert_eq!(
             serde_json::from_str::<Color>(&json_rgb)?,
             Color::Rgb(255, 0, 255)
         );
 
         let json_indexed = serde_json::to_string(&Color::Indexed(10))?;
-        assert_eq!(json_indexed, "10");
+        assert_eq!(json_indexed, "\"10\"");
         assert_eq!(
             serde_json::from_str::<Color>(&json_indexed)?,
             Color::Indexed(10)
