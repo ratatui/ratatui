@@ -194,14 +194,14 @@ fn create_groups<'a>(app: &'a App, combine_values_and_labels: bool) -> Vec<BarGr
                     } else {
                         bar = bar
                             .text_value(format!("{:.1}", (c.revenue[i] as f64) / 1000.))
-                            .label(c.label.into());
+                            .label(c.label);
                     }
                     bar
                 })
                 .collect();
             BarGroup::default()
                 .label(Line::from(month).centered())
-                .bars(&bars)
+                .bars(bars)
         })
         .collect()
 }
