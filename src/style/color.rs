@@ -154,8 +154,28 @@ impl<'de> serde::Deserialize<'de> for Color {
     where
         D: serde::Deserializer<'de>,
     {
-        let s = String::deserialize(deserializer)?;
-        FromStr::from_str(&s).map_err(serde::de::Error::custom)
+        #[derive(serde::Deserialize)]
+        enum ColorWrapper {
+            Rgb(u8, u8, u8),
+            Indexed(u8),
+        }
+
+        #[derive(serde::Deserialize)]
+        #[serde(untagged)]
+        enum MultipleType {
+            String(String),
+            ColorWrapper(ColorWrapper),
+        }
+
+        let multi_type = MultipleType::deserialize(deserializer)
+            .map_err(|_| serde::de::Error::custom("Failed to parse Colors"))?;
+        match multi_type {
+            MultipleType::String(s) => FromStr::from_str(&s).map_err(serde::de::Error::custom),
+            MultipleType::ColorWrapper(color_wrapper) => match color_wrapper {
+                ColorWrapper::Rgb(r, g, b) => Ok(Color::Rgb(r, g, b)),
+                ColorWrapper::Indexed(index) => Ok(Color::Indexed(index)),
+            },
+        }
     }
 }
 
@@ -597,6 +617,9 @@ mod tests {
             Color::Rgb(255, 0, 255)
         );
 
+        let json_white = serde_json::to_string(&Color::White)?;
+        assert_eq!(json_white, "\"White\"");
+
         let json_indexed = serde_json::to_string(&Color::Indexed(10))?;
         assert_eq!(json_indexed, "\"10\"");
         assert_eq!(
@@ -604,6 +627,21 @@ mod tests {
             Color::Indexed(10)
         );
 
+        Ok(())
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn deserialize_with_previous_format() -> Result<(), serde_json::Error> {
+        assert_eq!(Color::White, serde_json::from_str::<Color>("\"White\"")?);
+        assert_eq!(
+            Color::Rgb(255, 0, 255),
+            serde_json::from_str::<Color>("{\"Rgb\":[255,0,255]}")?
+        );
+        assert_eq!(
+            Color::Indexed(10),
+            serde_json::from_str::<Color>("{\"Indexed\":10}")?
+        );
         Ok(())
     }
 }
