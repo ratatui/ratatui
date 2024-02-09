@@ -22,6 +22,20 @@ pub use title::{Position, Title};
 /// [`Title`] using [`Block::title`]. It can also be [styled](Block::style) and
 /// [padded](Block::padding).
 ///
+/// You can call the title methods multiple times to add multiple titles. Each title will be
+/// rendered with a single space separating titles that are in the same position or alignment. When
+/// both centered and non-centered titles are rendered, the centered space is calculated based on
+/// the full width of the block, rather than the leftover width.
+///
+/// Titles are not rendered in the corners of the block unless there is no border on that edge.  
+/// If the block is too small and multiple titles overlap, the border may get cut off at a corner.
+///
+/// ```plain
+/// ┌With at least a left border───
+///
+/// Without left border───
+/// ```
+///
 /// # Examples
 ///
 /// ```
@@ -225,6 +239,62 @@ impl<'a> Block<'a> {
         T: Into<Title<'a>>,
     {
         self.titles.push(title.into());
+        self
+    }
+
+    /// Adds a title to the top of the block.
+    ///
+    /// You can provide any type that can be converted into [`Line`] including: strings, string
+    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](crate::text::Span), or vectors of
+    /// [spans](crate::text::Span) (`Vec<Span>`).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use ratatui::{ prelude::*, widgets::* };
+    /// Block::bordered()
+    ///     .title_top("Left1") // By default in the top left corner
+    ///     .title_top(Line::from("Left2").left_aligned())
+    ///     .title_top(Line::from("Right").right_aligned())
+    ///     .title_top(Line::from("Center").centered());
+    ///
+    /// // Renders
+    /// // ┌Left1─Left2───Center─────────Right┐
+    /// // │                                  │
+    /// // └──────────────────────────────────┘
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn title_top<T: Into<Line<'a>>>(mut self, title: T) -> Self {
+        let title = Title::from(title).position(Position::Top);
+        self.titles.push(title);
+        self
+    }
+
+    /// Adds a title to the bottom of the block.
+    ///
+    /// You can provide any type that can be converted into [`Line`] including: strings, string
+    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](crate::text::Span), or vectors of
+    /// [spans](crate::text::Span) (`Vec<Span>`).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use ratatui::{ prelude::*, widgets::* };
+    /// Block::bordered()
+    ///     .title_bottom("Left1") // By default in the top left corner
+    ///     .title_bottom(Line::from("Left2").left_aligned())
+    ///     .title_bottom(Line::from("Right").right_aligned())
+    ///     .title_bottom(Line::from("Center").centered());
+    ///
+    /// // Renders
+    /// // ┌──────────────────────────────────┐
+    /// // │                                  │
+    /// // └Left1─Left2───Center─────────Right┘
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn title_bottom<T: Into<Line<'a>>>(mut self, title: T) -> Self {
+        let title = Title::from(title).position(Position::Bottom);
+        self.titles.push(title);
         self
     }
 
@@ -655,6 +725,7 @@ impl Block<'_> {
                     .right()
                     .saturating_sub(title_width)
                     .max(titles_area.left()),
+                width: title_width.min(titles_area.width),
                 ..titles_area
             };
             buf.set_style(title_area, self.titles_style);
@@ -1128,6 +1199,50 @@ mod tests {
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
         )
+    }
+
+    #[test]
+    fn title() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        use Alignment::*;
+        use Position::*;
+        Block::bordered()
+            .title(Title::from("A").position(Top).alignment(Left))
+            .title(Title::from("B").position(Top).alignment(Center))
+            .title(Title::from("C").position(Top).alignment(Right))
+            .title(Title::from("D").position(Bottom).alignment(Left))
+            .title(Title::from("E").position(Bottom).alignment(Center))
+            .title(Title::from("F").position(Bottom).alignment(Right))
+            .render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "┌A─────B─────C┐",
+                "│             │",
+                "└D─────E─────F┘",
+            ])
+        );
+    }
+
+    #[test]
+    fn title_top_bottom() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        Block::bordered()
+            .title_top(Line::raw("A").left_aligned())
+            .title_top(Line::raw("B").centered())
+            .title_top(Line::raw("C").right_aligned())
+            .title_bottom(Line::raw("D").left_aligned())
+            .title_bottom(Line::raw("E").centered())
+            .title_bottom(Line::raw("F").right_aligned())
+            .render(buffer.area, &mut buffer);
+        assert_buffer_eq!(
+            buffer,
+            Buffer::with_lines(vec![
+                "┌A─────B─────C┐",
+                "│             │",
+                "└D─────E─────F┘",
+            ])
+        );
     }
 
     #[test]
