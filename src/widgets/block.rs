@@ -16,6 +16,59 @@ pub mod title;
 pub use padding::Padding;
 pub use title::{Position, Title};
 
+/// Base widget to be used to display a box border around all [upper level ones](crate::widgets).
+///
+/// The borders can be configured with [`Block::borders`] and others. A block can have multiple
+/// [`Title`] using [`Block::title`]. It can also be [styled](Block::style) and
+/// [padded](Block::padding).
+///
+/// # Examples
+///
+/// ```
+/// use ratatui::{prelude::*, widgets::*};
+///
+/// Block::default()
+///     .title("Block")
+///     .borders(Borders::LEFT | Borders::RIGHT)
+///     .border_style(Style::default().fg(Color::White))
+///     .border_type(BorderType::Rounded)
+///     .style(Style::default().bg(Color::Black));
+/// ```
+///
+/// You may also use multiple titles like in the following:
+/// ```
+/// use ratatui::{
+///     prelude::*,
+///     widgets::{block::*, *},
+/// };
+///
+/// Block::default()
+///     .title("Title 1")
+///     .title(Title::from("Title 2").position(Position::Bottom));
+/// ```
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+pub struct Block<'a> {
+    /// List of titles
+    titles: Vec<Title<'a>>,
+    /// The style to be patched to all titles of the block
+    titles_style: Style,
+    /// The default alignment of the titles that don't have one
+    titles_alignment: Alignment,
+    /// The default position of the titles that don't have one
+    titles_position: Position,
+    /// Visible borders
+    borders: Borders,
+    /// Border style
+    border_style: Style,
+    /// The symbols used to render the border. The default is plain lines but one can choose to
+    /// have rounded or doubled lines instead or a custom set of symbols
+    border_set: border::Set,
+    /// Widget style
+    style: Style,
+    /// Block padding
+    padding: Padding,
+}
+
 /// The type of border of a [`Block`].
 ///
 /// See the [`borders`](Block::borders) method of `Block` to configure its borders.
@@ -87,78 +140,6 @@ pub enum BorderType {
     /// ▌       ▐
     /// ▙▄▄▄▄▄▄▄▟
     QuadrantOutside,
-}
-
-impl BorderType {
-    /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
-    pub const fn border_symbols(border_type: BorderType) -> border::Set {
-        match border_type {
-            BorderType::Plain => border::PLAIN,
-            BorderType::Rounded => border::ROUNDED,
-            BorderType::Double => border::DOUBLE,
-            BorderType::Thick => border::THICK,
-            BorderType::QuadrantInside => border::QUADRANT_INSIDE,
-            BorderType::QuadrantOutside => border::QUADRANT_OUTSIDE,
-        }
-    }
-
-    /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
-    pub const fn to_border_set(self) -> border::Set {
-        Self::border_symbols(self)
-    }
-}
-
-/// Base widget to be used to display a box border around all [upper level ones](crate::widgets).
-///
-/// The borders can be configured with [`Block::borders`] and others. A block can have multiple
-/// [`Title`] using [`Block::title`]. It can also be [styled](Block::style) and
-/// [padded](Block::padding).
-///
-/// # Examples
-///
-/// ```
-/// use ratatui::{prelude::*, widgets::*};
-///
-/// Block::default()
-///     .title("Block")
-///     .borders(Borders::LEFT | Borders::RIGHT)
-///     .border_style(Style::default().fg(Color::White))
-///     .border_type(BorderType::Rounded)
-///     .style(Style::default().bg(Color::Black));
-/// ```
-///
-/// You may also use multiple titles like in the following:
-/// ```
-/// use ratatui::{
-///     prelude::*,
-///     widgets::{block::*, *},
-/// };
-///
-/// Block::default()
-///     .title("Title 1")
-///     .title(Title::from("Title 2").position(Position::Bottom));
-/// ```
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
-pub struct Block<'a> {
-    /// List of titles
-    titles: Vec<Title<'a>>,
-    /// The style to be patched to all titles of the block
-    titles_style: Style,
-    /// The default alignment of the titles that don't have one
-    titles_alignment: Alignment,
-    /// The default position of the titles that don't have one
-    titles_position: Position,
-    /// Visible borders
-    borders: Borders,
-    /// Border style
-    border_style: Style,
-    /// The symbols used to render the border. The default is plain lines but one can choose to
-    /// have rounded or doubled lines instead or a custom set of symbols
-    border_set: border::Set,
-    /// Widget style
-    style: Style,
-    /// Block padding
-    padding: Padding,
 }
 
 impl<'a> Block<'a> {
@@ -514,6 +495,25 @@ impl<'a> Block<'a> {
     pub const fn padding(mut self, padding: Padding) -> Block<'a> {
         self.padding = padding;
         self
+    }
+}
+
+impl BorderType {
+    /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
+    pub const fn border_symbols(border_type: BorderType) -> border::Set {
+        match border_type {
+            BorderType::Plain => border::PLAIN,
+            BorderType::Rounded => border::ROUNDED,
+            BorderType::Double => border::DOUBLE,
+            BorderType::Thick => border::THICK,
+            BorderType::QuadrantInside => border::QUADRANT_INSIDE,
+            BorderType::QuadrantOutside => border::QUADRANT_OUTSIDE,
+        }
+    }
+
+    /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
+    pub const fn to_border_set(self) -> border::Set {
+        Self::border_symbols(self)
     }
 }
 
