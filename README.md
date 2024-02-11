@@ -26,7 +26,7 @@
 <div align="center">
 
 [![Crate Badge]][Crate] [![Docs Badge]][API Docs] [![CI Badge]][CI Workflow] [![License
-Badge]](./LICENSE)<br>
+Badge]](./LICENSE) [![Sponsors Badge]][GitHub Sponsors]<br>
 [![Codecov Badge]][Codecov] [![Deps.rs Badge]][Deps.rs] [![Discord Badge]][Discord Server]
 [![Matrix Badge]][Matrix]<br>
 
@@ -322,6 +322,7 @@ Running this example produces the following output:
 [Termion]: https://crates.io/crates/termion
 [Termwiz]: https://crates.io/crates/termwiz
 [tui-rs]: https://crates.io/crates/tui
+[GitHub Sponsors]: https://github.com/sponsors/ratatui-org
 [Crate Badge]: https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square
 [License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square
 [CI Badge]:
@@ -339,6 +340,7 @@ Running this example produces the following output:
 [Matrix Badge]:
     https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix
 [Matrix]: https://matrix.to/#/#ratatui:matrix.org
+[Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui-org?logo=github&style=flat-square
 
 <!-- cargo-rdme end -->
 
