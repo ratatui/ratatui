@@ -40,6 +40,9 @@
 //! automatically redrawn on the next frame. See the [Rendering] section of the [Ratatui Website]
 //! for more info.
 //!
+//! You can also watch the [FOSDEM 2024 talk] about Ratatui which gives a brief introduction to
+//! terminal user interfaces and showcases the features of Ratatui, along with a hello world demo.
+//!
 //! ## Other documentation
 //!
 //! - [Ratatui Website] - explains the library's concepts and provides step-by-step tutorials
@@ -299,6 +302,7 @@
 //! [Changelog]: https://github.com/ratatui-org/ratatui/blob/main/CHANGELOG.md
 //! [Contributing]: https://github.com/ratatui-org/ratatui/blob/main/CONTRIBUTING.md
 //! [Breaking Changes]: https://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md
+//! [FOSDEM 2024 talk]: https://www.youtube.com/watch?v=NU0q6NOLJ20
 //! [docsrs-hello]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-hello.png?raw=true
 //! [docsrs-layout]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-layout.png?raw=true
 //! [docsrs-styling]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-styling.png?raw=true
