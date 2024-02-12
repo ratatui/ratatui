@@ -685,48 +685,6 @@ impl<'a> List<'a> {
         self
     }
 
-    /// Defines the list direction (up or down)
-    ///
-    /// Defines if the `List` is displayed *top to bottom* (default) or *bottom to top*. Use
-    /// [`Corner::BottomLeft`] to go *bottom to top*. **Any** other variant will go *top to bottom*.
-    /// If there is too few items to fill the screen, the list will stick to the starting edge.
-    ///
-    /// This is set to [`Corner::TopLeft`] by default.
-    ///
-    /// This is a fluent setter method which must be chained or used as it consumes self
-    ///
-    /// ## Note
-    ///
-    /// Despite its name, this method doesn't change the horizontal alignment, i.e. the `List`
-    /// **won't** start in a corner.
-    ///
-    /// # Example
-    ///
-    /// Same as default, i.e. *top to bottom*. Despite the name implying otherwise.
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = vec!["Item 1"];
-    /// let list = List::new(items).start_corner(Corner::BottomRight);
-    /// ```
-    ///
-    /// Bottom to top
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = vec!["Item 1"];
-    /// let list = List::new(items).start_corner(Corner::BottomLeft);
-    /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
-    #[deprecated(since = "0.25.0", note = "You should use `List::direction` instead.")]
-    pub fn start_corner(self, corner: Corner) -> List<'a> {
-        if corner == Corner::BottomLeft {
-            self.direction(ListDirection::BottomToTop)
-        } else {
-            self.direction(ListDirection::TopToBottom)
-        }
-    }
-
     /// Returns the number of [`ListItem`]s in the list
     pub fn len(&self) -> usize {
         self.items.len()
@@ -1648,38 +1606,6 @@ mod tests {
     fn test_list_direction_bottom_to_top() {
         let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
         let list = List::new(items).direction(ListDirection::BottomToTop);
-        let buffer = render_widget(list, 10, 5);
-        let expected = Buffer::with_lines(vec![
-            "          ",
-            "          ",
-            "Item 2    ",
-            "Item 1    ",
-            "Item 0    ",
-        ]);
-        assert_buffer_eq!(buffer, expected);
-    }
-
-    #[test]
-    fn test_list_start_corner_top_left() {
-        let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
-        #[allow(deprecated)] // For start_corner
-        let list = List::new(items).start_corner(Corner::TopLeft);
-        let buffer = render_widget(list, 10, 5);
-        let expected = Buffer::with_lines(vec![
-            "Item 0    ",
-            "Item 1    ",
-            "Item 2    ",
-            "          ",
-            "          ",
-        ]);
-        assert_buffer_eq!(buffer, expected);
-    }
-
-    #[test]
-    fn test_list_start_corner_bottom_left() {
-        let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
-        #[allow(deprecated)] // For start_corner
-        let list = List::new(items).start_corner(Corner::BottomLeft);
         let buffer = render_widget(list, 10, 5);
         let expected = Buffer::with_lines(vec![
             "          ",
