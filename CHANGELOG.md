@@ -52,8 +52,6 @@ This is a patch release that fixes bugs and adds enhancements, including new ite
   ```
 
   Addresses part of https://github.com/ratatui-org/ratatui/issues/738
-
-  <!-- Please read CONTRIBUTING.md before submitting any pull request. -->
   ````
 
 ### Bug Fixes
@@ -71,7 +69,7 @@ This is a patch release that fixes bugs and adds enhancements, including new ite
     for another example of this.
   ````
 
-  Fixes:https://github.com/ratatui-org/ratatui/pull/929
+  Fixes: https://github.com/ratatui-org/ratatui/pull/929
 
 - [14c67fb](https://github.com/ratatui-org/ratatui/commit/14c67fbb52101d10b2d2e26898c408ab8dd3ec2d)
   *(list)* Highlight symbol when using a  multi-bytes char ([#924](https://github.com/ratatui-org/ratatui/issues/924))
@@ -127,6 +125,9 @@ This is a patch release that fixes bugs and adds enhancements, including new ite
 - [d2d91f7](https://github.com/ratatui-org/ratatui/commit/d2d91f754c87458c6d07863eca20f3ea8ae319ce)
   *(changelog)* Add sponsors section ([#908](https://github.com/ratatui-org/ratatui/issues/908))
 
+- [410d08b](https://github.com/ratatui-org/ratatui/commit/410d08b2b5812d7e29302adc0e8ddf18eb7d1d26)
+  *(uncategorized)* Add link to FOSDEM 2024 talk ([#944](https://github.com/ratatui-org/ratatui/issues/944))
+
 - [1f208ff](https://github.com/ratatui-org/ratatui/commit/1f208ffd0368b4d269854dc0c550686dcd2d1de0)
   *(uncategorized)* Add GitHub Sponsors badge ([#943](https://github.com/ratatui-org/ratatui/issues/943))
 
@@ -136,6 +137,12 @@ This is a patch release that fixes bugs and adds enhancements, including new ite
   *(uncategorized)* Use drain instead of remove in chart examples ([#922](https://github.com/ratatui-org/ratatui/issues/922))
 
 ### Miscellaneous Tasks
+
+- [a4892ad](https://github.com/ratatui-org/ratatui/commit/a4892ad444739d7a760bc45bbd954e728c66b2d2)
+  *(uncategorized)* Fix typo in docsrs example ([#946](https://github.com/ratatui-org/ratatui/issues/946))
+
+- [18870ce](https://github.com/ratatui-org/ratatui/commit/18870ce99063a492674de061441b2cce5dc54c60)
+  *(uncategorized)* Fix the method name for setting the Line style ([#947](https://github.com/ratatui-org/ratatui/issues/947))
 
 - [8fb4630](https://github.com/ratatui-org/ratatui/commit/8fb46301a00b5d065f9b890496f914d3fdc17495)
   *(uncategorized)* Remove github action bot that makes comments nudging commit signing ([#937](https://github.com/ratatui-org/ratatui/issues/937))
