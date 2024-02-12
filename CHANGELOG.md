@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.26.1](https://github.com/ratatui-org/ratatui/releases/tag/0.26.1) - 2024-02-12
 
-This is a patch release that fixes bugs and adds enhancements, including new iterators, title options for blocks, and various rendering improvements.
+This is a patch release that fixes bugs and adds enhancements, including new iterators, title options for blocks, and various rendering improvements. ✨
 
 ### Features
 
@@ -151,6 +151,15 @@ This is a patch release that fixes bugs and adds enhancements, including new ite
   We can consider reverting this commit once this PR is merged:
   https://github.com/1Password/check-signed-commits-action/pull/9
   ````
+
+### Contributors
+
+Thank you so much to everyone that contributed to this release!
+
+Here is the list of contributors who have contributed to `ratatui` for the first time!
+
+* @mo8it
+* @m4rch3n1ng
 
 ## [0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/0.26.0) - 2024-02-02
 
