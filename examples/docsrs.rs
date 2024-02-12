@@ -21,7 +21,7 @@ use crossterm::{
 };
 use ratatui::{prelude::*, widgets::*};
 
-/// Example code for libr.rs
+/// Example code for lib.rs
 ///
 /// When cargo-rdme supports doc comments that import from code, this will be imported
 /// rather than copied to the lib.rs file.
