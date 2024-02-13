@@ -417,6 +417,30 @@ pub trait StatefulWidgetRef {
 //     }
 // }
 
+impl Widget for &str {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.render_ref(area, buf);
+    }
+}
+
+impl WidgetRef for &str {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        buf.set_string(area.x, area.y, self, crate::style::Style::default())
+    }
+}
+
+impl Widget for String {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.render_ref(area, buf);
+    }
+}
+
+impl WidgetRef for String {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        buf.set_string(area.x, area.y, self, crate::style::Style::default())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use rstest::{fixture, rstest};
