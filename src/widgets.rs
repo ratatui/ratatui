@@ -608,77 +608,51 @@ mod tests {
         assert_eq!(buf, Buffer::with_lines(["                    "]));
     }
 
-    fn single_line_buffer() -> Buffer {
-        Buffer::empty(Rect::new(0, 0, 20, 1))
-    }
-
     #[rstest]
-    fn str_render() {
-        let mut buf = single_line_buffer();
+    fn str_render(mut buf: Buffer) {
         "hello world".render(buf.area, &mut buf);
-        assert_eq!(
-            buf,
-            Buffer::with_lines(["hello world         "]),
-            "str.render()"
-        );
-
-        let mut buf = single_line_buffer();
-        "hello world".render_ref(buf.area, &mut buf);
-        assert_eq!(
-            buf,
-            Buffer::with_lines(["hello world         "]),
-            "str.render_ref()"
-        );
-
-        let mut buf = single_line_buffer();
-        Some("hello world").render(buf.area, &mut buf);
-        assert_eq!(
-            buf,
-            Buffer::with_lines(["hello world         "]),
-            "Some(str).render()"
-        );
-
-        let mut buf = single_line_buffer();
-        Some("hello world").render_ref(buf.area, &mut buf);
-        assert_eq!(
-            buf,
-            Buffer::with_lines(["hello world         "]),
-            "Some(str).render_ref()"
-        );
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
 
     #[rstest]
-    fn string_render() {
-        let mut buf = single_line_buffer();
+    fn str_render_ref(mut buf: Buffer) {
+        "hello world".render_ref(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn str_option_render(mut buf: Buffer) {
+        Some("hello world").render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn str_option_render_ref(mut buf: Buffer) {
+        Some("hello world").render_ref(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn string_render(mut buf: Buffer) {
         String::from("hello world").render(buf.area, &mut buf);
-        assert_eq!(
-            buf,
-            Buffer::with_lines(["hello world         "]),
-            "string.render()"
-        );
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
 
-        let mut buf = single_line_buffer();
+    #[rstest]
+    fn string_render_ref(mut buf: Buffer) {
         String::from("hello world").render_ref(buf.area, &mut buf);
-        assert_eq!(
-            buf,
-            Buffer::with_lines(["hello world         "]),
-            "string.render_ref()"
-        );
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
 
-        let mut buf = single_line_buffer();
+    #[rstest]
+    fn string_option_render(mut buf: Buffer) {
         Some(String::from("hello world")).render(buf.area, &mut buf);
-        assert_eq!(
-            buf,
-            Buffer::with_lines(["hello world         "]),
-            "string.render()"
-        );
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
 
-        let mut buf = single_line_buffer();
+    #[rstest]
+    fn string_option_render_ref(mut buf: Buffer) {
         Some(String::from("hello world")).render_ref(buf.area, &mut buf);
-        assert_eq!(
-            buf,
-            Buffer::with_lines(["hello world         "]),
-            "Some(string).render_ref()"
-        );
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]),);
     }
 }
