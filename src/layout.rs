@@ -1,3 +1,5 @@
+#![warn(clippy::missing_const_for_fn)]
+
 mod alignment;
 mod constraint;
 mod corner;

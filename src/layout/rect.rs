@@ -245,7 +245,7 @@ impl Rect {
     ///     }
     /// }
     /// ```
-    pub fn rows(self) -> Rows {
+    pub const fn rows(self) -> Rows {
         Rows::new(self)
     }
 
@@ -261,7 +261,7 @@ impl Rect {
     ///     }
     /// }
     /// ```
-    pub fn columns(self) -> Columns {
+    pub const fn columns(self) -> Columns {
         Columns::new(self)
     }
 
@@ -279,7 +279,7 @@ impl Rect {
     ///     }
     /// }
     /// ```
-    pub fn positions(self) -> Positions {
+    pub const fn positions(self) -> Positions {
         Positions::new(self)
     }
 
@@ -292,7 +292,7 @@ impl Rect {
     /// let rect = Rect::new(1, 2, 3, 4);
     /// let position = rect.as_position();
     /// ````
-    pub fn as_position(self) -> Position {
+    pub const fn as_position(self) -> Position {
         Position {
             x: self.x,
             y: self.y,
@@ -300,7 +300,7 @@ impl Rect {
     }
 
     /// Converts the rect into a size struct.
-    pub fn as_size(self) -> Size {
+    pub const fn as_size(self) -> Size {
         Size {
             width: self.width,
             height: self.height,

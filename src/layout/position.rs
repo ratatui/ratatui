@@ -38,7 +38,7 @@ pub struct Position {
 
 impl Position {
     /// Create a new position
-    pub fn new(x: u16, y: u16) -> Self {
+    pub const fn new(x: u16, y: u16) -> Self {
         Position { x, y }
     }
 }

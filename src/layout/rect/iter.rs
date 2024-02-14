@@ -11,7 +11,7 @@ pub struct Rows {
 
 impl Rows {
     /// Creates a new `Rows` iterator.
-    pub fn new(rect: Rect) -> Self {
+    pub const fn new(rect: Rect) -> Self {
         Self {
             rect,
             current_row: rect.y,
@@ -45,7 +45,7 @@ pub struct Columns {
 
 impl Columns {
     /// Creates a new `Columns` iterator.
-    pub fn new(rect: Rect) -> Self {
+    pub const fn new(rect: Rect) -> Self {
         Self {
             rect,
             current_column: rect.x,
@@ -81,7 +81,7 @@ pub struct Positions {
 
 impl Positions {
     /// Creates a new `Positions` iterator.
-    pub fn new(rect: Rect) -> Self {
+    pub const fn new(rect: Rect) -> Self {
         Self {
             rect,
             current_position: Position::new(rect.x, rect.y),
