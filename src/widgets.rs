@@ -70,6 +70,7 @@ use crate::{buffer::Buffer, layout::Rect};
 /// used where backwards compatibility is required (all the internal widgets use this approach).
 ///
 /// A blanket implementation of `Widget` for `&W` where `W` implements `WidgetRef` is provided.
+/// Widget is also implemented for `&str` and `String` types.
 ///
 /// # Examples
 ///
