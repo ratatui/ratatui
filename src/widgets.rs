@@ -607,41 +607,45 @@ mod tests {
         assert_eq!(buf, Buffer::with_lines(["                    "]));
     }
 
+    fn single_line_buffer() -> Buffer {
+        Buffer::empty(Rect::new(0, 0, 20, 1))
+    }
+
     #[rstest]
-    fn str_render(mut buf: Buffer) {
-        let widget = "hello world";
-        widget.render_ref(buf.area, &mut buf);
+    fn str_render() {
+        let mut buf = single_line_buffer();
+        "hello world".render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
 
-        let widget = "hello world";
-        widget.render(buf.area, &mut buf);
+        let mut buf = single_line_buffer();
+        "hello world".render(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
 
-        let widget = Some("hello world");
-        widget.render(buf.area, &mut buf);
+        let mut buf = single_line_buffer();
+        Some("hello world").render(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
 
-        let widget = Some("hello world");
-        widget.render_ref(buf.area, &mut buf);
+        let mut buf = single_line_buffer();
+        Some("hello world").render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
 
     #[rstest]
-    fn string_render(mut buf: Buffer) {
-        let widget = "hello world".to_string();
-        widget.render_ref(buf.area, &mut buf);
+    fn string_render() {
+        let mut buf = single_line_buffer();
+        String::from("hello world").render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
 
-        let widget = "hello world".to_string();
-        widget.render(buf.area, &mut buf);
+        let mut buf = single_line_buffer();
+        String::from("hello world").render(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
 
-        let widget = Some("hello world".to_string());
-        widget.render(buf.area, &mut buf);
+        let mut buf = single_line_buffer();
+        Some(String::from("hello world")).render(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
 
-        let widget = Some("hello world".to_string());
-        widget.render_ref(buf.area, &mut buf);
+        let mut buf = single_line_buffer();
+        Some(String::from("hello world")).render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
 }
