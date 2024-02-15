@@ -13,11 +13,13 @@ use crate::{
 /// that the selected item is visible. This will modify the [`ListState`] object passed to the
 /// [`Frame::render_stateful_widget`](crate::terminal::Frame::render_stateful_widget) method.
 ///
-/// The state consists of two fields:
+/// The state consists of three fields:
 /// - [`offset`]: the index of the first item to be displayed
+/// - [`padding`]: the number of other items that should be kept visible around the selected item
 /// - [`selected`]: the index of the selected item, which can be `None` if no item is selected
 ///
 /// [`offset`]: ListState::offset()
+/// [`padding`]: ListState::padding()
 /// [`selected`]: ListState::selected()
 ///
 /// See the list in the [Examples] directory for a more in depth example of the various
@@ -38,6 +40,7 @@ use crate::{
 /// let mut state = ListState::default();
 ///
 /// *state.offset_mut() = 1; // display the second item and onwards
+/// *state.padding_mut() = 1; // Keep one item before and after the selected item visible
 /// state.select(Some(3)); // select the forth item (0-indexed)
 ///
 /// frame.render_stateful_widget(list, area, &mut state);
@@ -814,6 +817,16 @@ impl<'a> List<'a> {
 
             last_visible_index += 1;
         }
+
+        // If there isnt enough room for evreything including padding then reduce the padding value
+        // to prevent the list from jumping up and down or pushing the selected item out of the
+        // visible list area
+        let padding = padding.min(
+            last_visible_index
+                .saturating_sub(first_visible_index)
+                .saturating_sub(1)
+                / 2,
+        );
 
         // Get the selected index, but still honor the offset if nothing is selected
         // This allows for the list to stay at a position after select()ing None.
@@ -2054,16 +2067,22 @@ mod tests {
         Buffer::with_lines(vec!["   Item 2 ", "   Item 3 ", ">> Item 4 ", "   Item 5 "])
     )]
     #[case::two_before(
-        2, // Offset
+        0, // Offset
         2, // Padding
         Some(2), // Selected
         Buffer::with_lines(vec!["   Item 0 ", "   Item 1 ", ">> Item 2 ", "   Item 3 "])
     )]
     #[case::two_after(
-        0, // Offset
+        2, // Offset
         2, // Padding
         Some(3), // Selected
         Buffer::with_lines(vec!["   Item 2 ", ">> Item 3 ", "   Item 4 ", "   Item 5 "])
+    )]
+    #[case::keep_selected_visible(
+        0, // Offset
+        4, // Padding
+        Some(1), // Selected
+        Buffer::with_lines(vec!["   Item 0 ", ">> Item 1 ", "   Item 2 ", "   Item 3 "])
     )]
     fn test_padding(
         #[case] offset: usize,
@@ -2097,5 +2116,49 @@ mod tests {
             .unwrap();
 
         terminal.backend().assert_buffer(&expected);
+    }
+
+    /// If there isnt enough room for the selected item and the requested padding the list can jump
+    /// up and down every frame if something isnt done about it. This code tests to make sure that
+    /// isnt currently happening
+    #[test]
+    fn test_padding_flicker() {
+        let backend = backend::TestBackend::new(10, 5);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut state = ListState::default();
+
+        *state.offset_mut() = 2;
+        *state.padding_mut() = 3;
+        state.select(Some(4));
+
+        let items = vec![
+            ListItem::new("Item 0"),
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2"),
+            ListItem::new("Item 3"),
+            ListItem::new("Item 4"),
+            ListItem::new("Item 5"),
+            ListItem::new("Item 6"),
+            ListItem::new("Item 7"),
+        ];
+        let list = List::new(items).highlight_symbol(">> ");
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                f.render_stateful_widget(&list, size, &mut state);
+            })
+            .unwrap();
+
+        let offset_after_render = state.offset();
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                f.render_stateful_widget(&list, size, &mut state);
+            })
+            .unwrap();
+
+        assert_eq!(offset_after_render, state.offset())
     }
 }
