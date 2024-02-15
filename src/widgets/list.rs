@@ -47,6 +47,8 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ListState {
     offset: usize,
+    #[cfg_attr(feature = "serde", serde(default))]
+    padding: usize,
     selected: Option<usize>,
 }
 
@@ -83,6 +85,23 @@ impl ListState {
         self
     }
 
+    /// Sets the padding value
+    ///
+    /// The padding value is how many items before and after the selected item should be visible
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let state = ListState::default().with_padding(1);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn with_padding(mut self, padding: usize) -> Self {
+        self.padding = padding;
+        self
+    }
+
     /// Index of the first item to be displayed
     ///
     /// # Examples
@@ -107,6 +126,36 @@ impl ListState {
     /// ```
     pub fn offset_mut(&mut self) -> &mut usize {
         &mut self.offset
+    }
+
+    /// The Padding value
+    ///
+    /// The padding value is how many items before and after the selected item should be visible
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let state = ListState::default();
+    /// assert_eq!(state.padding(), 0);
+    /// ```
+    pub fn padding(&self) -> usize {
+        self.padding
+    }
+
+    /// Mutable reference to the Padding value
+    ///
+    /// The padding value is how many items before and after the selected item should be visible
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = ListState::default();
+    /// *state.padding_mut() = 1;
+    /// ```
+    pub fn padding_mut(&mut self) -> &mut usize {
+        &mut self.padding
     }
 
     /// Index of the selected item
@@ -742,6 +791,7 @@ impl<'a> List<'a> {
         &self,
         selected: Option<usize>,
         offset: usize,
+        padding: usize,
         max_height: usize,
     ) -> (usize, usize) {
         let offset = offset.min(self.items.len().saturating_sub(1));
@@ -767,7 +817,19 @@ impl<'a> List<'a> {
 
         // Get the selected index, but still honor the offset if nothing is selected
         // This allows for the list to stay at a position after select()ing None.
-        let index_to_display = selected.unwrap_or(offset).min(self.items.len() - 1);
+        // Apply the padding value to the selected index
+        let index_to_display = if let Some(selected) = selected {
+            if selected + padding >= last_visible_index {
+                selected + padding
+            } else if selected.saturating_sub(padding) < first_visible_index {
+                selected.saturating_sub(padding)
+            } else {
+                selected
+            }
+            .min(self.items.len().saturating_sub(1))
+        } else {
+            offset // Min was already applied at the beginning of this function
+        };
 
         // Recall that last_visible_index is the index of what we
         // can render up to in the given space after the offset
@@ -855,7 +917,7 @@ impl StatefulWidgetRef for List<'_> {
         let list_height = list_area.height as usize;
 
         let (first_visible_index, last_visible_index) =
-            self.get_items_bounds(state.selected, state.offset, list_height);
+            self.get_items_bounds(state.selected, state.offset, state.padding, list_height);
 
         // Important: this changes the state's offset to be the beginning of the now viewable items
         state.offset = first_visible_index;
@@ -969,6 +1031,8 @@ where
 #[cfg(test)]
 mod tests {
     use std::borrow::Cow;
+
+    use rstest::rstest;
 
     use super::*;
     use crate::{
@@ -1962,5 +2026,76 @@ mod tests {
         let buffer = render_widget(list, 5, 3);
         let expected = Buffer::with_lines(vec!["Large", "     ", "     "]);
         assert_buffer_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::no_padding(
+        2, // Offset
+        0, // Padding
+        Some(2), // Selected
+        Buffer::with_lines(vec![">> Item 2 ", "   Item 3 ", "   Item 4 ", "   Item 5 "])
+    )]
+    #[case::one_before(
+        2, // Offset
+        1, // Padding
+        Some(2), // Selected
+        Buffer::with_lines(vec!["   Item 1 ", ">> Item 2 ", "   Item 3 ", "   Item 4 "])
+    )]
+    #[case::one_after(
+        1, // Offset
+        1, // Padding
+        Some(4), // Selected
+        Buffer::with_lines(vec!["   Item 2 ", "   Item 3 ", ">> Item 4 ", "   Item 5 "])
+    )]
+    #[case::check_padding_overflow(
+        1, // Offset
+        2, // Padding
+        Some(4), // Selected
+        Buffer::with_lines(vec!["   Item 2 ", "   Item 3 ", ">> Item 4 ", "   Item 5 "])
+    )]
+    #[case::two_before(
+        2, // Offset
+        2, // Padding
+        Some(2), // Selected
+        Buffer::with_lines(vec!["   Item 0 ", "   Item 1 ", ">> Item 2 ", "   Item 3 "])
+    )]
+    #[case::two_after(
+        0, // Offset
+        2, // Padding
+        Some(3), // Selected
+        Buffer::with_lines(vec!["   Item 2 ", ">> Item 3 ", "   Item 4 ", "   Item 5 "])
+    )]
+    fn test_padding(
+        #[case] offset: usize,
+        #[case] padding: usize,
+        #[case] selected: Option<usize>,
+        #[case] expected: Buffer,
+    ) {
+        let backend = backend::TestBackend::new(10, 4);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut state = ListState::default();
+
+        *state.offset_mut() = offset;
+        *state.padding_mut() = padding;
+        state.select(selected);
+
+        let items = vec![
+            ListItem::new("Item 0"),
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2"),
+            ListItem::new("Item 3"),
+            ListItem::new("Item 4"),
+            ListItem::new("Item 5"),
+        ];
+        let list = List::new(items).highlight_symbol(">> ");
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                f.render_stateful_widget(list, size, &mut state);
+            })
+            .unwrap();
+
+        terminal.backend().assert_buffer(&expected);
     }
 }

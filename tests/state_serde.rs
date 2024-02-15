@@ -87,6 +87,7 @@ const DEFAULT_STATE_BUFFER: [&str; 5] = [
 const DEFAULT_STATE_REPR: &str = r#"{
   "list_state": {
     "offset": 0,
+    "padding": 0,
     "selected": null
   },
   "table_state": {
@@ -118,6 +119,31 @@ fn default_state_deserialize() {
     assert_buffer(&mut state, &expected);
 }
 
+const DEFAULT_STATE_NO_PADDING_REPR: &str = r#"{
+  "list_state": {
+    "offset": 0,
+    "selected": null
+  },
+  "table_state": {
+    "offset": 0,
+    "selected": null
+  },
+  "scrollbar_state": {
+    "content_length": 10,
+    "position": 0,
+    "viewport_content_length": 0
+  }
+}"#;
+
+/// Added this test to cover the situation where someone may have saved ['ListState'] before the
+/// padding value was added
+#[test]
+fn default_state_no_padding_deserialize() {
+    let expected = Buffer::with_lines(DEFAULT_STATE_BUFFER);
+    let mut state: AppState = serde_json::from_str(DEFAULT_STATE_NO_PADDING_REPR).unwrap();
+    assert_buffer(&mut state, &expected);
+}
+
 const SELECTED_STATE_BUFFER: [&str; 5] = [
     "  awa    │  awa     ▲",
     ">>banana │>>banana  █",
@@ -128,6 +154,7 @@ const SELECTED_STATE_BUFFER: [&str; 5] = [
 const SELECTED_STATE_REPR: &str = r#"{
   "list_state": {
     "offset": 0,
+    "padding": 0,
     "selected": 1
   },
   "table_state": {
@@ -171,6 +198,7 @@ const SCROLLED_STATE_BUFFER: [&str; 5] = [
 const SCROLLED_STATE_REPR: &str = r#"{
   "list_state": {
     "offset": 4,
+    "padding": 0,
     "selected": 8
   },
   "table_state": {
