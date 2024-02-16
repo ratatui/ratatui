@@ -829,8 +829,6 @@ impl<'a> List<'a> {
             // items to render to be less than we normally would due to the offset pushing us off
             // the end of the list of items. We want to allow the padding value to push us back up
             // to ensure the minimum requested padding items are shown
-            dbg!(last_visible_index);
-            dbg!(self.items.len());
             let mut padding_index = 0;
             while padding_index != padding
                 && last_visible_index == self.items.len()
