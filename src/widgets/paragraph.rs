@@ -7,14 +7,6 @@ use crate::{
     widgets::{reflow::*, Block},
 };
 
-fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
-    match alignment {
-        Alignment::Center => (text_area_width / 2).saturating_sub(line_width / 2),
-        Alignment::Right => text_area_width.saturating_sub(line_width),
-        Alignment::Left => 0,
-    }
-}
-
 /// A widget to display some text.
 ///
 /// # Example
@@ -118,6 +110,16 @@ impl<'a> Paragraph<'a> {
             text: text.into(),
             scroll: (0, 0),
             alignment: Alignment::Left,
+        }
+    }
+
+    /// Helper method for processing [`Paragraph`] lines.
+    ///
+    pub fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
+        match alignment {
+            Alignment::Center => (text_area_width / 2).saturating_sub(line_width / 2),
+            Alignment::Right => text_area_width.saturating_sub(line_width),
+            Alignment::Left => 0,
         }
     }
 
@@ -354,6 +356,47 @@ impl Paragraph<'_> {
             self.render_text(line_composer, text_area, buf);
         }
     }
+
+    ///
+    /// Visits the styled composed lines inside a text area for rendering or other analysis/processing.
+    /// The visitor function indicates it wants the visitor iteration to terminate if it returns false.
+    ///
+    pub fn visit_composed<F: FnMut((&'_ [StyledGrapheme<'_>], u16, Alignment)) -> bool>(&self, text_area: &Rect, mut visitor: F) {
+        if text_area.is_empty() {
+            return;
+        }
+
+        let styled = self.text.iter().map(|line| {
+            let graphemes = line.styled_graphemes(self.style);
+            let alignment = line.alignment.unwrap_or(self.alignment);
+            (graphemes, alignment)
+        });
+
+        if let Some(Wrap { trim }) = self.wrap {
+            let mut line_composer = WordWrapper::new(styled, text_area.width, trim);
+            while let Some(WrappedLine {
+                line,
+                width,
+                alignment,
+            }) = line_composer.next_line() {
+                if !visitor((line, width, alignment)) {
+                    break;
+                }
+            }
+        } else {
+            let mut line_composer = LineTruncator::new(styled, text_area.width);
+            line_composer.set_horizontal_offset(self.scroll.1);
+            while let Some(WrappedLine {
+                line,
+                width,
+                alignment,
+            }) = line_composer.next_line() {
+                if !visitor((line, width, alignment)) {
+                    break;
+                }
+            }
+        }
+    }
 }
 
 impl<'a> Paragraph<'a> {
@@ -366,7 +409,7 @@ impl<'a> Paragraph<'a> {
         }) = composer.next_line()
         {
             if y >= self.scroll.0 {
-                let mut x = get_line_offset(current_line_width, area.width, current_line_alignment);
+                let mut x = Self::get_line_offset(current_line_width, area.width, current_line_alignment);
                 for StyledGrapheme { symbol, style } in current_line {
                     let width = symbol.width();
                     if width == 0 {
