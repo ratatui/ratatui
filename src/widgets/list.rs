@@ -818,20 +818,42 @@ impl<'a> List<'a> {
             last_visible_index += 1;
         }
 
-        // If there isnt enough room for evreything including padding then reduce the padding value
-        // to prevent the list from jumping up and down or pushing the selected item out of the
-        // visible list area
-        let padding = padding.min(
-            last_visible_index
-                .saturating_sub(first_visible_index)
-                .saturating_sub(1)
-                / 2,
-        );
-
         // Get the selected index, but still honor the offset if nothing is selected
         // This allows for the list to stay at a position after select()ing None.
         // Apply the padding value to the selected index
         let index_to_display = if let Some(selected) = selected {
+            let selected = selected.min(self.items.len().saturating_sub(1));
+
+            // If there isnt enough room for evreything including padding then reduce the padding
+            // value to prevent the list from jumping up and down or pushing the
+            // selected item out of the visible list area
+            let mut padding = padding.min(
+                last_visible_index
+                    .saturating_sub(first_visible_index)
+                    .saturating_sub(1)
+                    / 2,
+            );
+
+            // The bellow loop handles situations where the list item sizes may not be consistent.
+            // So while it may have appeared acceptable in the check above, when we actually change
+            // the index_to_display it can change it to an item that's big enough to push the
+            // selected item off the viewable area, or possibly cause the flickering issue again.
+            // So to prevent this we're going to reduce the padding value again
+            while padding > 0 {
+                let mut height_around_selected = 0;
+                for index in selected.saturating_sub(padding)
+                    ..=selected
+                        .saturating_add(padding)
+                        .min(self.items.len().saturating_sub(1))
+                {
+                    height_around_selected += self.items[index].height();
+                }
+                if height_around_selected <= max_height {
+                    break;
+                }
+                padding -= 1;
+            }
+
             if selected + padding >= last_visible_index {
                 selected + padding
             } else if selected.saturating_sub(padding) < first_visible_index {
@@ -2160,5 +2182,39 @@ mod tests {
             .unwrap();
 
         assert_eq!(offset_after_render, state.offset())
+    }
+
+    #[test]
+    fn test_padding_inconsistent_item_sizes() {
+        let backend = backend::TestBackend::new(10, 3);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut state = ListState::default();
+
+        *state.offset_mut() = 0;
+        *state.padding_mut() = 1;
+        state.select(Some(3));
+
+        let items = vec![
+            ListItem::new("Item 0"),
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2"),
+            ListItem::new("Item 3"),
+            ListItem::new("Item 4\nTest\nTest"),
+            ListItem::new("Item 5"),
+        ];
+        let list = List::new(items).highlight_symbol(">> ");
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                f.render_stateful_widget(list, size, &mut state);
+            })
+            .unwrap();
+
+        terminal.backend().assert_buffer(&Buffer::with_lines(vec![
+            "   Item 1 ",
+            "   Item 2 ",
+            ">> Item 3 ",
+        ]));
     }
 }
