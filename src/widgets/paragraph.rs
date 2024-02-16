@@ -336,27 +336,6 @@ impl WidgetRef for Paragraph<'_> {
 }
 
 impl Paragraph<'_> {
-    fn render_paragraph(&self, text_area: Rect, buf: &mut Buffer) {
-        if text_area.is_empty() {
-            return;
-        }
-
-        let styled = self.text.iter().map(|line| {
-            let graphemes = line.styled_graphemes(self.style);
-            let alignment = line.alignment.unwrap_or(self.alignment);
-            (graphemes, alignment)
-        });
-
-        if let Some(Wrap { trim }) = self.wrap {
-            let line_composer = WordWrapper::new(styled, text_area.width, trim);
-            self.render_text(line_composer, text_area, buf);
-        } else {
-            let mut line_composer = LineTruncator::new(styled, text_area.width);
-            line_composer.set_horizontal_offset(self.scroll.1);
-            self.render_text(line_composer, text_area, buf);
-        }
-    }
-
     ///
     /// Visits the styled composed lines inside a text area for rendering or other analysis/processing.
     /// The visitor function indicates it wants the visitor iteration to terminate if it returns false.
@@ -397,17 +376,10 @@ impl Paragraph<'_> {
             }
         }
     }
-}
 
-impl<'a> Paragraph<'a> {
-    fn render_text<C: LineComposer<'a>>(&self, mut composer: C, area: Rect, buf: &mut Buffer) {
+    fn render_paragraph(&self, area: Rect, buf: &mut Buffer) {
         let mut y = 0;
-        while let Some(WrappedLine {
-            line: current_line,
-            width: current_line_width,
-            alignment: current_line_alignment,
-        }) = composer.next_line()
-        {
+        self.visit_composed(&area, |(current_line, current_line_width, current_line_alignment)| {
             if y >= self.scroll.0 {
                 let mut x = Self::get_line_offset(current_line_width, area.width, current_line_alignment);
                 for StyledGrapheme { symbol, style } in current_line {
@@ -425,10 +397,8 @@ impl<'a> Paragraph<'a> {
                 }
             }
             y += 1;
-            if y >= area.height + self.scroll.0 {
-                break;
-            }
-        }
+            y < area.height + self.scroll.0
+        });
     }
 }
 
