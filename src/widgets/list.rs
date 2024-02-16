@@ -822,7 +822,31 @@ impl<'a> List<'a> {
         // This allows for the list to stay at a position after select()ing None.
         // Apply the padding value to the selected index
         let index_to_display = if let Some(selected) = selected {
-            let selected = selected.min(self.items.len().saturating_sub(1));
+            let last_valid_index = self.items.len().saturating_sub(1);
+            let selected = selected.min(last_valid_index);
+
+            // This handles the case where the user has input an offset that reduces the number of
+            // items to render to be less than we normally would due to the offset pushing us off
+            // the end of the list of items. We want to allow the padding value to push us back up
+            // to ensure the minimum requested padding items are shown
+            dbg!(last_visible_index);
+            dbg!(self.items.len());
+            let mut padding_index = 0;
+            while padding_index != padding
+                && last_visible_index == self.items.len()
+                && height_from_offset < max_height
+                && first_visible_index != 0
+            {
+                padding_index += 1;
+                let index = first_visible_index - 1;
+                let item = &self.items[index];
+                if item.height() + height_from_offset <= max_height {
+                    first_visible_index -= 1;
+                    height_from_offset += item.height();
+                } else {
+                    break;
+                }
+            }
 
             // If there isnt enough room for evreything including padding then reduce the padding
             // value to prevent the list from jumping up and down or pushing the
@@ -842,9 +866,7 @@ impl<'a> List<'a> {
             while padding > 0 {
                 let mut height_around_selected = 0;
                 for index in selected.saturating_sub(padding)
-                    ..=selected
-                        .saturating_add(padding)
-                        .min(self.items.len().saturating_sub(1))
+                    ..=selected.saturating_add(padding).min(last_valid_index)
                 {
                     height_around_selected += self.items[index].height();
                 }
@@ -854,14 +876,14 @@ impl<'a> List<'a> {
                 padding -= 1;
             }
 
-            if selected + padding >= last_visible_index {
+            if (selected + padding).min(last_valid_index) >= last_visible_index {
                 selected + padding
             } else if selected.saturating_sub(padding) < first_visible_index {
                 selected.saturating_sub(padding)
             } else {
                 selected
             }
-            .min(self.items.len().saturating_sub(1))
+            .min(last_valid_index)
         } else {
             offset // Min was already applied at the beginning of this function
         };
@@ -2065,54 +2087,66 @@ mod tests {
 
     #[rstest]
     #[case::no_padding(
+        4,
         2, // Offset
         0, // Padding
         Some(2), // Selected
         Buffer::with_lines(vec![">> Item 2 ", "   Item 3 ", "   Item 4 ", "   Item 5 "])
     )]
     #[case::one_before(
+        4,
         2, // Offset
         1, // Padding
         Some(2), // Selected
         Buffer::with_lines(vec!["   Item 1 ", ">> Item 2 ", "   Item 3 ", "   Item 4 "])
     )]
     #[case::one_after(
+        4,
         1, // Offset
         1, // Padding
         Some(4), // Selected
         Buffer::with_lines(vec!["   Item 2 ", "   Item 3 ", ">> Item 4 ", "   Item 5 "])
     )]
     #[case::check_padding_overflow(
+        4,
         1, // Offset
         2, // Padding
         Some(4), // Selected
         Buffer::with_lines(vec!["   Item 2 ", "   Item 3 ", ">> Item 4 ", "   Item 5 "])
     )]
-    #[case::two_before(
-        0, // Offset
-        2, // Padding
-        Some(2), // Selected
-        Buffer::with_lines(vec!["   Item 0 ", "   Item 1 ", ">> Item 2 ", "   Item 3 "])
+    #[case::no_padding_offset_behavior(
+        5, // Render Area Height
+        2, // Offset
+        0, // Padding
+        Some(3), // Selected
+        Buffer::with_lines(
+            vec!["   Item 2 ", ">> Item 3 ", "   Item 4 ", "   Item 5 ", "          "]
+            )
     )]
-    #[case::two_after(
+    #[case::two_before(
+        5, // Render Area Height
         2, // Offset
         2, // Padding
         Some(3), // Selected
-        Buffer::with_lines(vec!["   Item 2 ", ">> Item 3 ", "   Item 4 ", "   Item 5 "])
+        Buffer::with_lines(
+            vec!["   Item 1 ", "   Item 2 ", ">> Item 3 ", "   Item 4 ", "   Item 5 "]
+            )
     )]
     #[case::keep_selected_visible(
+        4,
         0, // Offset
         4, // Padding
         Some(1), // Selected
         Buffer::with_lines(vec!["   Item 0 ", ">> Item 1 ", "   Item 2 ", "   Item 3 "])
     )]
     fn test_padding(
+        #[case] render_height: u16,
         #[case] offset: usize,
         #[case] padding: usize,
         #[case] selected: Option<usize>,
         #[case] expected: Buffer,
     ) {
-        let backend = backend::TestBackend::new(10, 4);
+        let backend = backend::TestBackend::new(10, render_height);
         let mut terminal = Terminal::new(backend).unwrap();
         let mut state = ListState::default();
 
