@@ -340,7 +340,7 @@ impl Paragraph<'_> {
     /// Visits the styled composed lines inside a text area for rendering or other analysis/processing.
     /// The visitor function indicates it wants the visitor iteration to terminate if it returns false.
     ///
-    pub fn visit_composed<F: FnMut((&'_ [StyledGrapheme<'_>], u16, Alignment)) -> bool>(&self, text_area: &Rect, mut visitor: F) {
+    pub fn visit_composed<F: FnMut((&'_ [StyledGrapheme<'_>], u16, Alignment)) -> bool>(&self, text_area: &Rect, visitor: F) {
         if text_area.is_empty() {
             return;
         }
@@ -352,27 +352,23 @@ impl Paragraph<'_> {
         });
 
         if let Some(Wrap { trim }) = self.wrap {
-            let mut line_composer = WordWrapper::new(styled, text_area.width, trim);
-            while let Some(WrappedLine {
-                line,
-                width,
-                alignment,
-            }) = line_composer.next_line() {
-                if !visitor((line, width, alignment)) {
-                    break;
-                }
-            }
+            let line_composer = WordWrapper::new(styled, text_area.width, trim);
+            Self::visit_composed_lines(line_composer, visitor);
         } else {
             let mut line_composer = LineTruncator::new(styled, text_area.width);
             line_composer.set_horizontal_offset(self.scroll.1);
-            while let Some(WrappedLine {
-                line,
-                width,
-                alignment,
-            }) = line_composer.next_line() {
-                if !visitor((line, width, alignment)) {
-                    break;
-                }
+            Self::visit_composed_lines(line_composer, visitor);
+        }
+    }
+
+    fn visit_composed_lines<'a, C: LineComposer<'a>, F: FnMut((&'_ [StyledGrapheme<'_>], u16, Alignment)) -> bool>(mut composer: C, mut visitor: F) {
+        while let Some(WrappedLine {
+            line,
+            width,
+            alignment,
+        }) = composer.next_line() {
+            if !visitor((line, width, alignment)) {
+                break;
             }
         }
     }
