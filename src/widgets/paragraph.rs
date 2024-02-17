@@ -340,7 +340,7 @@ impl Paragraph<'_> {
     /// Visits the styled composed lines inside a text area for rendering or other analysis/processing.
     /// The visitor function indicates it wants the visitor iteration to terminate if it returns false.
     ///
-    pub fn visit_composed<F: FnMut((&'_ [StyledGrapheme<'_>], u16, Alignment)) -> bool>(&self, text_area: &Rect, visitor: F) {
+    pub fn visit_composed<F: FnMut(&'_ WrappedLine) -> bool>(&self, text_area: &Rect, visitor: F) {
         if text_area.is_empty() {
             return;
         }
@@ -361,13 +361,9 @@ impl Paragraph<'_> {
         }
     }
 
-    fn visit_composed_lines<'a, C: LineComposer<'a>, F: FnMut((&'_ [StyledGrapheme<'_>], u16, Alignment)) -> bool>(mut composer: C, mut visitor: F) {
-        while let Some(WrappedLine {
-            line,
-            width,
-            alignment,
-        }) = composer.next_line() {
-            if !visitor((line, width, alignment)) {
+    fn visit_composed_lines<'a, C: LineComposer<'a>, F: FnMut(&'_ WrappedLine) -> bool>(mut composer: C, mut visitor: F) {
+        while let Some(line) = composer.next_line() {
+            if !visitor(&line) {
                 break;
             }
         }
@@ -375,10 +371,10 @@ impl Paragraph<'_> {
 
     fn render_paragraph(&self, area: Rect, buf: &mut Buffer) {
         let mut y = 0;
-        self.visit_composed(&area, |(current_line, current_line_width, current_line_alignment)| {
+        self.visit_composed(&area, |wrapped| {
             if y >= self.scroll.0 {
-                let mut x = Self::get_line_offset(current_line_width, area.width, current_line_alignment);
-                for StyledGrapheme { symbol, style } in current_line {
+                let mut x = Self::get_line_offset(wrapped.width, area.width, wrapped.alignment);
+                for StyledGrapheme { symbol, style } in wrapped.line {
                     let width = symbol.width();
                     if width == 0 {
                         continue;
