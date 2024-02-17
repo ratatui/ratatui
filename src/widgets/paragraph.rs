@@ -336,8 +336,7 @@ impl WidgetRef for Paragraph<'_> {
 }
 
 impl Paragraph<'_> {
-    ///
-    /// Visits the styled composed lines inside a text area for rendering or other analysis/processing.
+    /// Visits the styled wrapped text lines inside a text area for rendering or other analysis/processing.
     /// The visitor function indicates it wants the visitor iteration to terminate if it returns false.
     ///
     pub fn visit_wrapped_text<F: FnMut(&'_ WrappedLine) -> bool>(&self, text_area: &Rect, visitor: F) {
