@@ -501,13 +501,12 @@ impl Scrollbar<'_> {
         let track_len = self.track_length_excluding_arrow_heads(area) as usize;
         let viewport_len = self.viewport_length(state, area) as usize;
 
-        let content_length = state.content_length;
         // Clamp the position to show at least one line of the content
-        // Note: content_length is != 0 because otherwise render() returns immediately
+        // Note: state.content_length is != 0 because otherwise render() returns immediately
         let position = state.position.min(state.content_length - 1);
 
         // vscode style scrolling behavior (allow scrolling past end of content)
-        let scrollable_content_len = content_length + viewport_len - 1;
+        let scrollable_content_len = state.content_length + viewport_len - 1;
 
         // Calculate the thumb start (inclusive) and end (exclusive) positions, with rounding
         // and ensuring there is at least one visible thumb character.
