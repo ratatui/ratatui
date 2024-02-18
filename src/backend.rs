@@ -116,6 +116,13 @@ mod crossterm;
 #[cfg(feature = "crossterm")]
 pub use self::crossterm::CrosstermBackend;
 
+
+#[cfg(feature = "bevy")]
+mod bevy;
+#[cfg(feature = "bevy")]
+pub use self::bevy::BevyBackend;
+
+
 #[cfg(feature = "termwiz")]
 mod termwiz;
 #[cfg(feature = "termwiz")]

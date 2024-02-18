@@ -270,6 +270,10 @@
 )]
 #![cfg_attr(
     feature = "document-features",
+    doc = "[`BevyBackend`]: backend::BevyBackend"
+)]
+#![cfg_attr(
+    feature = "document-features",
     doc = "[`TermionBackend`]: backend::TermionBackend"
 )]
 #![cfg_attr(
