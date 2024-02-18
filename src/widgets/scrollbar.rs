@@ -498,25 +498,30 @@ impl Scrollbar<'_> {
     ///
     /// This method returns the length of the start, thumb, and end as a tuple.
     fn part_lengths(&self, area: Rect, state: &mut ScrollbarState) -> (usize, usize, usize) {
-        let track_len = self.track_length_excluding_arrow_heads(area) as f64;
-        let viewport_len = self.viewport_length(state, area) as f64;
+        let track_len = self.track_length_excluding_arrow_heads(area) as usize;
+        let viewport_len = self.viewport_length(state, area) as usize;
 
-        let content_length = state.content_length as f64;
-        // Clamp the position to show at least one line of the content, even if the content is
-        let position = state.position.min(state.content_length - 1) as f64;
+        let content_length = state.content_length;
+        // Clamp the position to show at least one line of the content
+        // Note: content_length is != 0 because otherwise render() returns immediately
+        let position = state.position.min(state.content_length - 1);
 
         // vscode style scrolling behavior (allow scrolling past end of content)
-        let scrollable_content_len = content_length + viewport_len - 1.0;
-        let thumb_start = position * track_len / scrollable_content_len;
-        let thumb_end = (position + viewport_len) * track_len / scrollable_content_len;
+        let scrollable_content_len = content_length + viewport_len - 1;
 
-        // We round just the positions (instead of floor / ceil), and then calculate the sizes from
-        // those positions. Rounding the sizes instead causes subtle off by 1 errors.
-        let track_start_len = thumb_start.round() as usize;
-        let thumb_end = thumb_end.round() as usize;
+        // Calculate the thumb start (inclusive) and end (exclusive) positions, with rounding
+        // and ensuring there is at least one visible thumb character.
+        let thumb_start =
+            (position * track_len + scrollable_content_len / 2) / scrollable_content_len;
+        let thumb_start = thumb_start.min(track_len.saturating_sub(1));
+        let thumb_end = ((position + viewport_len) * track_len + scrollable_content_len / 2)
+            / scrollable_content_len;
+        let thumb_end = thumb_end.max(thumb_start + 1);
 
-        let thumb_len = thumb_end.saturating_sub(track_start_len);
-        let track_end_len = track_len as usize - track_start_len - thumb_len;
+        // Calculate the length of the tracks and thumb
+        let track_start_len = thumb_start;
+        let thumb_len = thumb_end - thumb_start;
+        let track_end_len = track_len - thumb_start - thumb_len;
 
         (track_start_len, thumb_len, track_end_len)
     }
