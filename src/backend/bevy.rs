@@ -1,461 +1,250 @@
-//! This module provides the [`BevyBackend`] implementation for the [`Backend`] trait. It uses
-//! the [Crossterm] crate to interact with the terminal.
-//!
-//! [Crossterm]: https://crates.io/crates/crossterm
-use std::io::{self, Write};
+//! This module provides the `BevyBackend` implementation for the [`Backend`] trait.
+//! It is used in the integration tests to verify the correctness of the library.
 
-#[cfg(feature = "underline-color")]
-use crossterm::style::SetUnderlineColor;
-use crossterm::{
-    cursor::{Hide, MoveTo, Show},
-    execute, queue,
-    style::{
-        Attribute as CAttribute, Attributes as CAttributes, Color as CColor, ContentStyle, Print,
-        SetAttribute, SetBackgroundColor, SetForegroundColor,
-    },
-    terminal::{self, Clear},
+use std::{
+    fmt::{Display, Write},
+    io,
 };
+
+use unicode_width::UnicodeWidthStr;
 
 use crate::{
     backend::{Backend, ClearType, WindowSize},
-    buffer::Cell,
-    layout::Size,
-    prelude::Rect,
-    style::{Color, Modifier, Style},
+    buffer::{Buffer, Cell},
+    layout::{Rect, Size},
 };
 
-/// A [`Backend`] implementation that uses [Crossterm] to render to the terminal.
-///
-/// The `BevyBackend` struct is a wrapper around a writer implementing [`Write`], which is
-/// used to send commands to the terminal. It provides methods for drawing content, manipulating
-/// the cursor, and clearing the terminal screen.
-///
-/// Most applications should not call the methods on `BevyBackend` directly, but will instead
-/// use the [`Terminal`] struct, which provides a more ergonomic interface.
-///
-/// Usually applications will enable raw mode and switch to alternate screen mode after creating
-/// a `BevyBackend`. This is done by calling [`crossterm::terminal::enable_raw_mode`] and
-/// [`crossterm::terminal::EnterAlternateScreen`] (and the corresponding disable/leave functions
-/// when the application exits). This is not done automatically by the backend because it is
-/// possible that the application may want to use the terminal for other purposes (like showing
-/// help text) before entering alternate screen mode.
-///
-/// # Example
-///
-/// ```rust,no_run
-/// use std::io::{stderr, stdout};
-///
-/// use crossterm::{
-///     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-///     ExecutableCommand,
-/// };
-/// use ratatui::prelude::*;
-///
-/// let mut backend = BevyBackend::new(stdout());
-/// // or
-/// let backend = BevyBackend::new(stderr());
-/// let mut terminal = Terminal::new(backend)?;
-///
-/// enable_raw_mode()?;
-/// stdout().execute(EnterAlternateScreen)?;
-///
-/// terminal.clear()?;
-/// terminal.draw(|frame| {
-///     // -- snip --
-/// })?;
-///
-/// stdout().execute(LeaveAlternateScreen)?;
-/// disable_raw_mode()?;
-///
-/// # std::io::Result::Ok(())
-/// ```
-///
-/// See the the [Examples] directory for more examples. See the [`backend`] module documentation
-/// for more details on raw mode and alternate screen.
-///
-/// [`Write`]: std::io::Write
-/// [`Terminal`]: crate::terminal::Terminal
-/// [`backend`]: crate::backend
-/// [Crossterm]: https://crates.io/crates/crossterm
-/// [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples/README.md
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
-pub struct BevyBackend<W: Write> {
-    /// The writer used to send commands to the terminal.
-    writer: W,
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct BevyBackend {
+    width: u16,
+    buffer: Buffer,
+    height: u16,
+    cursor: bool,
+    pos: (u16, u16),
 }
 
-impl<W> BevyBackend<W>
-where
-    W: Write,
-{
-    /// Creates a new `BevyBackend` with the given writer.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use std::io::stdout;
-    /// # use ratatui::prelude::*;
-    /// let backend = BevyBackend::new(stdout());
-    /// ```
-    pub fn new(writer: W) -> BevyBackend<W> {
-        BevyBackend { writer }
+/// Returns a string representation of the given buffer for debugging purpose.
+///
+/// This function is used to visualize the buffer content in a human-readable format.
+/// It iterates through the buffer content and appends each cell's symbol to the view string.
+/// If a cell is hidden by a multi-width symbol, it is added to the overwritten vector and
+/// displayed at the end of the line.
+fn buffer_view(buffer: &Buffer) -> String {
+    let mut view = String::with_capacity(buffer.content.len() + buffer.area.height as usize * 3);
+    for cells in buffer.content.chunks(buffer.area.width as usize) {
+        let mut overwritten = vec![];
+        let mut skip: usize = 0;
+        view.push('"');
+        for (x, c) in cells.iter().enumerate() {
+            if skip == 0 {
+                view.push_str(c.symbol());
+            } else {
+                overwritten.push((x, c.symbol()));
+            }
+            skip = std::cmp::max(skip, c.symbol().width()).saturating_sub(1);
+        }
+        view.push('"');
+        if !overwritten.is_empty() {
+            write!(&mut view, " Hidden by multi-width symbols: {overwritten:?}").unwrap();
+        }
+        view.push('\n');
+    }
+    view
+}
+
+impl BevyBackend {
+    /// Creates a new BevyBackend with the specified width and height.
+    pub fn new(width: u16, height: u16) -> BevyBackend {
+        BevyBackend {
+            width,
+            height,
+            buffer: Buffer::empty(Rect::new(0, 0, width, height)),
+            cursor: false,
+            pos: (0, 0),
+        }
+    }
+
+    /// Returns a reference to the internal buffer of the BevyBackend.
+    pub fn buffer(&self) -> &Buffer {
+        &self.buffer
+    }
+
+    /// Resizes the BevyBackend to the specified width and height.
+    pub fn resize(&mut self, width: u16, height: u16) {
+        self.buffer.resize(Rect::new(0, 0, width, height));
+        self.width = width;
+        self.height = height;
+    }
+
+    /// Asserts that the BevyBackend's buffer is equal to the expected buffer.
+    /// If the buffers are not equal, a panic occurs with a detailed error message
+    /// showing the differences between the expected and actual buffers.
+    #[track_caller]
+    pub fn assert_buffer(&self, expected: &Buffer) {
+        assert_eq!(expected.area, self.buffer.area);
+        let diff = expected.diff(&self.buffer);
+        if diff.is_empty() {
+            return;
+        }
+
+        let mut debug_info = String::from("Buffers are not equal");
+        debug_info.push('\n');
+        debug_info.push_str("Expected:");
+        debug_info.push('\n');
+        let expected_view = buffer_view(expected);
+        debug_info.push_str(&expected_view);
+        debug_info.push('\n');
+        debug_info.push_str("Got:");
+        debug_info.push('\n');
+        let view = buffer_view(&self.buffer);
+        debug_info.push_str(&view);
+        debug_info.push('\n');
+
+        debug_info.push_str("Diff:");
+        debug_info.push('\n');
+        let nice_diff = diff
+            .iter()
+            .enumerate()
+            .map(|(i, (x, y, cell))| {
+                let expected_cell = expected.get(*x, *y);
+                format!("{i}: at ({x}, {y}) expected {expected_cell:?} got {cell:?}")
+            })
+            .collect::<Vec<String>>()
+            .join("\n");
+        debug_info.push_str(&nice_diff);
+        panic!("{debug_info}");
     }
 }
 
-impl<W> Write for BevyBackend<W>
-where
-    W: Write,
-{
-    /// Writes a buffer of bytes to the underlying buffer.
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.writer.write(buf)
-    }
-
-    /// Flushes the underlying buffer.
-    fn flush(&mut self) -> io::Result<()> {
-        self.writer.flush()
+impl Display for BevyBackend {
+    /// Formats the BevyBackend for display by calling the buffer_view function
+    /// on its internal buffer.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", buffer_view(&self.buffer))
     }
 }
 
-impl<W> Backend for BevyBackend<W>
-where
-    W: Write,
-{
-    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
+impl Backend for BevyBackend {
+    fn draw<'a, I>(&mut self, content: I) -> Result<(), io::Error>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
-        let mut fg = Color::Reset;
-        let mut bg = Color::Reset;
-        #[cfg(feature = "underline-color")]
-        let mut underline_color = Color::Reset;
-        let mut modifier = Modifier::empty();
-        let mut last_pos: Option<(u16, u16)> = None;
-        for (x, y, cell) in content {
-            // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.0 + 1 && y == p.1) {
-                queue!(self.writer, MoveTo(x, y))?;
-            }
-            last_pos = Some((x, y));
-            if cell.modifier != modifier {
-                let diff = ModifierDiff {
-                    from: modifier,
-                    to: cell.modifier,
-                };
-                diff.queue(&mut self.writer)?;
-                modifier = cell.modifier;
-            }
-            if cell.fg != fg {
-                let color = CColor::from(cell.fg);
-                queue!(self.writer, SetForegroundColor(color))?;
-                fg = cell.fg;
-            }
-            if cell.bg != bg {
-                let color = CColor::from(cell.bg);
-                queue!(self.writer, SetBackgroundColor(color))?;
-                bg = cell.bg;
-            }
-            #[cfg(feature = "underline-color")]
-            if cell.underline_color != underline_color {
-                let color = CColor::from(cell.underline_color);
-                queue!(self.writer, SetUnderlineColor(color))?;
-                underline_color = cell.underline_color;
-            }
-
-            queue!(self.writer, Print(cell.symbol()))?;
+        for (x, y, c) in content {
+            let cell = self.buffer.get_mut(x, y);
+            *cell = c.clone();
         }
-
-        #[cfg(feature = "underline-color")]
-        return queue!(
-            self.writer,
-            SetForegroundColor(CColor::Reset),
-            SetBackgroundColor(CColor::Reset),
-            SetUnderlineColor(CColor::Reset),
-            SetAttribute(CAttribute::Reset),
-        );
-        #[cfg(not(feature = "underline-color"))]
-        return queue!(
-            self.writer,
-            SetForegroundColor(CColor::Reset),
-            SetBackgroundColor(CColor::Reset),
-            SetAttribute(CAttribute::Reset),
-        );
+        Ok(())
     }
 
-    fn hide_cursor(&mut self) -> io::Result<()> {
-        execute!(self.writer, Hide)
+    fn hide_cursor(&mut self) -> Result<(), io::Error> {
+        self.cursor = false;
+        Ok(())
     }
 
-    fn show_cursor(&mut self) -> io::Result<()> {
-        execute!(self.writer, Show)
+    fn show_cursor(&mut self) -> Result<(), io::Error> {
+        self.cursor = true;
+        Ok(())
     }
 
-    fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
-        crossterm::cursor::position()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
+    fn get_cursor(&mut self) -> Result<(u16, u16), io::Error> {
+        Ok(self.pos)
     }
 
-    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
-        execute!(self.writer, MoveTo(x, y))
+    fn set_cursor(&mut self, x: u16, y: u16) -> Result<(), io::Error> {
+        self.pos = (x, y);
+        Ok(())
     }
 
-    fn clear(&mut self) -> io::Result<()> {
-        self.clear_region(ClearType::All)
+    fn clear(&mut self) -> Result<(), io::Error> {
+        self.buffer.reset();
+        Ok(())
     }
 
-    fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
-        execute!(
-            self.writer,
-            Clear(match clear_type {
-                ClearType::All => crossterm::terminal::ClearType::All,
-                ClearType::AfterCursor => crossterm::terminal::ClearType::FromCursorDown,
-                ClearType::BeforeCursor => crossterm::terminal::ClearType::FromCursorUp,
-                ClearType::CurrentLine => crossterm::terminal::ClearType::CurrentLine,
-                ClearType::UntilNewLine => crossterm::terminal::ClearType::UntilNewLine,
-            })
-        )
+    fn clear_region(&mut self, clear_type: super::ClearType) -> io::Result<()> {
+        match clear_type {
+            ClearType::All => self.clear()?,
+            ClearType::AfterCursor => {
+                let index = self.buffer.index_of(self.pos.0, self.pos.1) + 1;
+                self.buffer.content[index..].fill(Cell::default());
+            }
+            ClearType::BeforeCursor => {
+                let index = self.buffer.index_of(self.pos.0, self.pos.1);
+                self.buffer.content[..index].fill(Cell::default());
+            }
+            ClearType::CurrentLine => {
+                let line_start_index = self.buffer.index_of(0, self.pos.1);
+                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
+                self.buffer.content[line_start_index..=line_end_index].fill(Cell::default());
+            }
+            ClearType::UntilNewLine => {
+                let index = self.buffer.index_of(self.pos.0, self.pos.1);
+                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
+                self.buffer.content[index..=line_end_index].fill(Cell::default());
+            }
+        }
+        Ok(())
     }
 
+    /// Inserts n line breaks at the current cursor position.
+    ///
+    /// After the insertion, the cursor x position will be incremented by 1 (unless it's already
+    /// at the end of line). This is a common behaviour of terminals in raw mode.
+    ///
+    /// If the number of lines to append is fewer than the number of lines in the buffer after the
+    /// cursor y position then the cursor is moved down by n rows.
+    ///
+    /// If the number of lines to append is greater than the number of lines in the buffer after
+    /// the cursor y position then that number of empty lines (at most the buffer's height in this
+    /// case but this limit is instead replaced with scrolling in most backend implementations) will
+    /// be added after the current position and the cursor will be moved to the last row.
     fn append_lines(&mut self, n: u16) -> io::Result<()> {
-        for _ in 0..n {
-            queue!(self.writer, Print("\n"))?;
-        }
-        self.writer.flush()
-    }
+        let (cur_x, cur_y) = self.get_cursor()?;
 
-    fn size(&self) -> io::Result<Rect> {
-        let (width, height) = terminal::size()?;
-        Ok(Rect::new(0, 0, width, height))
-    }
+        // the next column ensuring that we don't go past the last column
+        let new_cursor_x = cur_x.saturating_add(1).min(self.width.saturating_sub(1));
 
-    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
-        let crossterm::terminal::WindowSize {
-            columns,
-            rows,
-            width,
-            height,
-        } = terminal::window_size()?;
-        Ok(WindowSize {
-            columns_rows: Size {
-                width: columns,
-                height: rows,
-            },
-            pixels: Size { width, height },
-        })
-    }
+        let max_y = self.height.saturating_sub(1);
+        let lines_after_cursor = max_y.saturating_sub(cur_y);
+        if n > lines_after_cursor {
+            let rotate_by = n.saturating_sub(lines_after_cursor).min(max_y);
 
-    fn flush(&mut self) -> io::Result<()> {
-        self.writer.flush()
-    }
-}
-
-impl From<Color> for CColor {
-    fn from(color: Color) -> Self {
-        match color {
-            Color::Reset => CColor::Reset,
-            Color::Black => CColor::Black,
-            Color::Red => CColor::DarkRed,
-            Color::Green => CColor::DarkGreen,
-            Color::Yellow => CColor::DarkYellow,
-            Color::Blue => CColor::DarkBlue,
-            Color::Magenta => CColor::DarkMagenta,
-            Color::Cyan => CColor::DarkCyan,
-            Color::Gray => CColor::Grey,
-            Color::DarkGray => CColor::DarkGrey,
-            Color::LightRed => CColor::Red,
-            Color::LightGreen => CColor::Green,
-            Color::LightBlue => CColor::Blue,
-            Color::LightYellow => CColor::Yellow,
-            Color::LightMagenta => CColor::Magenta,
-            Color::LightCyan => CColor::Cyan,
-            Color::White => CColor::White,
-            Color::Indexed(i) => CColor::AnsiValue(i),
-            Color::Rgb(r, g, b) => CColor::Rgb { r, g, b },
-        }
-    }
-}
-
-impl From<CColor> for Color {
-    fn from(value: CColor) -> Self {
-        match value {
-            CColor::Reset => Self::Reset,
-            CColor::Black => Self::Black,
-            CColor::DarkRed => Self::Red,
-            CColor::DarkGreen => Self::Green,
-            CColor::DarkYellow => Self::Yellow,
-            CColor::DarkBlue => Self::Blue,
-            CColor::DarkMagenta => Self::Magenta,
-            CColor::DarkCyan => Self::Cyan,
-            CColor::Grey => Self::Gray,
-            CColor::DarkGrey => Self::DarkGray,
-            CColor::Red => Self::LightRed,
-            CColor::Green => Self::LightGreen,
-            CColor::Blue => Self::LightBlue,
-            CColor::Yellow => Self::LightYellow,
-            CColor::Magenta => Self::LightMagenta,
-            CColor::Cyan => Self::LightCyan,
-            CColor::White => Self::White,
-            CColor::Rgb { r, g, b } => Self::Rgb(r, g, b),
-            CColor::AnsiValue(v) => Self::Indexed(v),
-        }
-    }
-}
-
-/// The `ModifierDiff` struct is used to calculate the difference between two `Modifier`
-/// values. This is useful when updating the terminal display, as it allows for more
-/// efficient updates by only sending the necessary changes.
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
-struct ModifierDiff {
-    pub from: Modifier,
-    pub to: Modifier,
-}
-
-impl ModifierDiff {
-    fn queue<W>(&self, mut w: W) -> io::Result<()>
-    where
-        W: io::Write,
-    {
-        //use crossterm::Attribute;
-        let removed = self.from - self.to;
-        if removed.contains(Modifier::REVERSED) {
-            queue!(w, SetAttribute(CAttribute::NoReverse))?;
-        }
-        if removed.contains(Modifier::BOLD) {
-            queue!(w, SetAttribute(CAttribute::NormalIntensity))?;
-            if self.to.contains(Modifier::DIM) {
-                queue!(w, SetAttribute(CAttribute::Dim))?;
+            if rotate_by == self.height - 1 {
+                self.clear()?;
             }
-        }
-        if removed.contains(Modifier::ITALIC) {
-            queue!(w, SetAttribute(CAttribute::NoItalic))?;
-        }
-        if removed.contains(Modifier::UNDERLINED) {
-            queue!(w, SetAttribute(CAttribute::NoUnderline))?;
-        }
-        if removed.contains(Modifier::DIM) {
-            queue!(w, SetAttribute(CAttribute::NormalIntensity))?;
-        }
-        if removed.contains(Modifier::CROSSED_OUT) {
-            queue!(w, SetAttribute(CAttribute::NotCrossedOut))?;
-        }
-        if removed.contains(Modifier::SLOW_BLINK) || removed.contains(Modifier::RAPID_BLINK) {
-            queue!(w, SetAttribute(CAttribute::NoBlink))?;
+
+            self.set_cursor(0, rotate_by)?;
+            self.clear_region(ClearType::BeforeCursor)?;
+            self.buffer
+                .content
+                .rotate_left((self.width * rotate_by).into());
         }
 
-        let added = self.to - self.from;
-        if added.contains(Modifier::REVERSED) {
-            queue!(w, SetAttribute(CAttribute::Reverse))?;
-        }
-        if added.contains(Modifier::BOLD) {
-            queue!(w, SetAttribute(CAttribute::Bold))?;
-        }
-        if added.contains(Modifier::ITALIC) {
-            queue!(w, SetAttribute(CAttribute::Italic))?;
-        }
-        if added.contains(Modifier::UNDERLINED) {
-            queue!(w, SetAttribute(CAttribute::Underlined))?;
-        }
-        if added.contains(Modifier::DIM) {
-            queue!(w, SetAttribute(CAttribute::Dim))?;
-        }
-        if added.contains(Modifier::CROSSED_OUT) {
-            queue!(w, SetAttribute(CAttribute::CrossedOut))?;
-        }
-        if added.contains(Modifier::SLOW_BLINK) {
-            queue!(w, SetAttribute(CAttribute::SlowBlink))?;
-        }
-        if added.contains(Modifier::RAPID_BLINK) {
-            queue!(w, SetAttribute(CAttribute::RapidBlink))?;
-        }
+        let new_cursor_y = cur_y.saturating_add(n).min(max_y);
+        self.set_cursor(new_cursor_x, new_cursor_y)?;
 
         Ok(())
     }
-}
 
-impl From<CAttribute> for Modifier {
-    fn from(value: CAttribute) -> Self {
-        // `Attribute*s*` (note the *s*) contains multiple `Attribute`
-        // We convert `Attribute` to `Attribute*s*` (containing only 1 value) to avoid implementing
-        // the conversion again
-        Modifier::from(CAttributes::from(value))
+    fn size(&self) -> Result<Rect, io::Error> {
+        Ok(Rect::new(0, 0, self.width, self.height))
     }
-}
 
-impl From<CAttributes> for Modifier {
-    fn from(value: CAttributes) -> Self {
-        let mut res = Modifier::empty();
-
-        if value.has(CAttribute::Bold) {
-            res |= Modifier::BOLD;
-        }
-        if value.has(CAttribute::Dim) {
-            res |= Modifier::DIM;
-        }
-        if value.has(CAttribute::Italic) {
-            res |= Modifier::ITALIC;
-        }
-        if value.has(CAttribute::Underlined)
-            || value.has(CAttribute::DoubleUnderlined)
-            || value.has(CAttribute::Undercurled)
-            || value.has(CAttribute::Underdotted)
-            || value.has(CAttribute::Underdashed)
-        {
-            res |= Modifier::UNDERLINED;
-        }
-        if value.has(CAttribute::SlowBlink) {
-            res |= Modifier::SLOW_BLINK;
-        }
-        if value.has(CAttribute::RapidBlink) {
-            res |= Modifier::RAPID_BLINK;
-        }
-        if value.has(CAttribute::Reverse) {
-            res |= Modifier::REVERSED;
-        }
-        if value.has(CAttribute::Hidden) {
-            res |= Modifier::HIDDEN;
-        }
-        if value.has(CAttribute::CrossedOut) {
-            res |= Modifier::CROSSED_OUT;
-        }
-
-        res
+    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+        // Some arbitrary window pixel size, probably doesn't need much testing.
+        static WINDOW_PIXEL_SIZE: Size = Size {
+            width: 640,
+            height: 480,
+        };
+        Ok(WindowSize {
+            columns_rows: (self.width, self.height).into(),
+            pixels: WINDOW_PIXEL_SIZE,
+        })
     }
-}
 
-impl From<ContentStyle> for Style {
-    fn from(value: ContentStyle) -> Self {
-        let mut sub_modifier = Modifier::empty();
-
-        if value.attributes.has(CAttribute::NoBold) {
-            sub_modifier |= Modifier::BOLD;
-        }
-        if value.attributes.has(CAttribute::NoItalic) {
-            sub_modifier |= Modifier::ITALIC;
-        }
-        if value.attributes.has(CAttribute::NotCrossedOut) {
-            sub_modifier |= Modifier::CROSSED_OUT;
-        }
-        if value.attributes.has(CAttribute::NoUnderline) {
-            sub_modifier |= Modifier::UNDERLINED;
-        }
-        if value.attributes.has(CAttribute::NoHidden) {
-            sub_modifier |= Modifier::HIDDEN;
-        }
-        if value.attributes.has(CAttribute::NoBlink) {
-            sub_modifier |= Modifier::RAPID_BLINK | Modifier::SLOW_BLINK;
-        }
-        if value.attributes.has(CAttribute::NoReverse) {
-            sub_modifier |= Modifier::REVERSED;
-        }
-
-        Self {
-            fg: value.foreground_color.map(|c| c.into()),
-            bg: value.background_color.map(|c| c.into()),
-            #[cfg(feature = "underline-color")]
-            underline_color: value.underline_color.map(|c| c.into()),
-            add_modifier: value.attributes.into(),
-            sub_modifier,
-        }
+    fn flush(&mut self) -> Result<(), io::Error> {
+        Ok(())
     }
 }
 
@@ -464,210 +253,415 @@ mod tests {
     use super::*;
 
     #[test]
-    fn from_crossterm_color() {
-        assert_eq!(Color::from(CColor::Reset), Color::Reset);
-        assert_eq!(Color::from(CColor::Black), Color::Black);
-        assert_eq!(Color::from(CColor::DarkGrey), Color::DarkGray);
-        assert_eq!(Color::from(CColor::Red), Color::LightRed);
-        assert_eq!(Color::from(CColor::DarkRed), Color::Red);
-        assert_eq!(Color::from(CColor::Green), Color::LightGreen);
-        assert_eq!(Color::from(CColor::DarkGreen), Color::Green);
-        assert_eq!(Color::from(CColor::Yellow), Color::LightYellow);
-        assert_eq!(Color::from(CColor::DarkYellow), Color::Yellow);
-        assert_eq!(Color::from(CColor::Blue), Color::LightBlue);
-        assert_eq!(Color::from(CColor::DarkBlue), Color::Blue);
-        assert_eq!(Color::from(CColor::Magenta), Color::LightMagenta);
-        assert_eq!(Color::from(CColor::DarkMagenta), Color::Magenta);
-        assert_eq!(Color::from(CColor::Cyan), Color::LightCyan);
-        assert_eq!(Color::from(CColor::DarkCyan), Color::Cyan);
-        assert_eq!(Color::from(CColor::White), Color::White);
-        assert_eq!(Color::from(CColor::Grey), Color::Gray);
+    fn new() {
         assert_eq!(
-            Color::from(CColor::Rgb { r: 0, g: 0, b: 0 }),
-            Color::Rgb(0, 0, 0)
+            BevyBackend::new(10, 2),
+            BevyBackend {
+                width: 10,
+                height: 2,
+                buffer: Buffer::with_lines(vec!["          "; 2]),
+                cursor: false,
+                pos: (0, 0),
+            }
         );
-        assert_eq!(
-            Color::from(CColor::Rgb {
-                r: 10,
-                g: 20,
-                b: 30
-            }),
-            Color::Rgb(10, 20, 30)
-        );
-        assert_eq!(Color::from(CColor::AnsiValue(32)), Color::Indexed(32));
-        assert_eq!(Color::from(CColor::AnsiValue(37)), Color::Indexed(37));
     }
-
-    mod modifier {
-        use super::*;
-
-        #[test]
-        fn from_crossterm_attribute() {
-            assert_eq!(Modifier::from(CAttribute::Reset), Modifier::empty());
-            assert_eq!(Modifier::from(CAttribute::Bold), Modifier::BOLD);
-            assert_eq!(Modifier::from(CAttribute::Italic), Modifier::ITALIC);
-            assert_eq!(Modifier::from(CAttribute::Underlined), Modifier::UNDERLINED);
-            assert_eq!(
-                Modifier::from(CAttribute::DoubleUnderlined),
-                Modifier::UNDERLINED
-            );
-            assert_eq!(
-                Modifier::from(CAttribute::Underdotted),
-                Modifier::UNDERLINED
-            );
-            assert_eq!(Modifier::from(CAttribute::Dim), Modifier::DIM);
-            assert_eq!(
-                Modifier::from(CAttribute::NormalIntensity),
-                Modifier::empty()
-            );
-            assert_eq!(
-                Modifier::from(CAttribute::CrossedOut),
-                Modifier::CROSSED_OUT
-            );
-            assert_eq!(Modifier::from(CAttribute::NoUnderline), Modifier::empty());
-            assert_eq!(Modifier::from(CAttribute::OverLined), Modifier::empty());
-            assert_eq!(Modifier::from(CAttribute::SlowBlink), Modifier::SLOW_BLINK);
-            assert_eq!(
-                Modifier::from(CAttribute::RapidBlink),
-                Modifier::RAPID_BLINK
-            );
-            assert_eq!(Modifier::from(CAttribute::Hidden), Modifier::HIDDEN);
-            assert_eq!(Modifier::from(CAttribute::NoHidden), Modifier::empty());
-            assert_eq!(Modifier::from(CAttribute::Reverse), Modifier::REVERSED);
-        }
-
-        #[test]
-        fn from_crossterm_attributes() {
-            assert_eq!(
-                Modifier::from(CAttributes::from(CAttribute::Bold)),
-                Modifier::BOLD
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [CAttribute::Bold, CAttribute::Italic].as_ref()
-                )),
-                Modifier::BOLD | Modifier::ITALIC
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [CAttribute::Bold, CAttribute::NotCrossedOut].as_ref()
-                )),
-                Modifier::BOLD
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [CAttribute::Dim, CAttribute::Underdotted].as_ref()
-                )),
-                Modifier::DIM | Modifier::UNDERLINED
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [CAttribute::Dim, CAttribute::SlowBlink, CAttribute::Italic].as_ref()
-                )),
-                Modifier::DIM | Modifier::SLOW_BLINK | Modifier::ITALIC
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [
-                        CAttribute::Hidden,
-                        CAttribute::NoUnderline,
-                        CAttribute::NotCrossedOut
-                    ]
-                    .as_ref()
-                )),
-                Modifier::HIDDEN
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(CAttribute::Reverse)),
-                Modifier::REVERSED
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(CAttribute::Reset)),
-                Modifier::empty()
-            );
-            assert_eq!(
-                Modifier::from(CAttributes::from(
-                    [CAttribute::RapidBlink, CAttribute::CrossedOut].as_ref()
-                )),
-                Modifier::RAPID_BLINK | Modifier::CROSSED_OUT
-            );
-        }
+    #[test]
+    fn test_buffer_view() {
+        let buffer = Buffer::with_lines(vec!["aaaa"; 2]);
+        assert_eq!(buffer_view(&buffer), "\"aaaa\"\n\"aaaa\"\n");
     }
 
     #[test]
-    fn from_crossterm_content_style() {
-        assert_eq!(Style::from(ContentStyle::default()), Style::default());
+    fn buffer_view_with_overwrites() {
+        let multi_byte_char = "👨‍👩‍👧‍👦"; // renders 8 wide
+        let buffer = Buffer::with_lines(vec![multi_byte_char]);
         assert_eq!(
-            Style::from(ContentStyle {
-                foreground_color: Some(CColor::DarkYellow),
-                ..Default::default()
-            }),
-            Style::default().fg(Color::Yellow)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                background_color: Some(CColor::DarkYellow),
-                ..Default::default()
-            }),
-            Style::default().bg(Color::Yellow)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from(CAttribute::Bold),
-                ..Default::default()
-            }),
-            Style::default().add_modifier(Modifier::BOLD)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from(CAttribute::NoBold),
-                ..Default::default()
-            }),
-            Style::default().remove_modifier(Modifier::BOLD)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from(CAttribute::Italic),
-                ..Default::default()
-            }),
-            Style::default().add_modifier(Modifier::ITALIC)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from(CAttribute::NoItalic),
-                ..Default::default()
-            }),
-            Style::default().remove_modifier(Modifier::ITALIC)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from([CAttribute::Bold, CAttribute::Italic].as_ref()),
-                ..Default::default()
-            }),
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .add_modifier(Modifier::ITALIC)
-        );
-        assert_eq!(
-            Style::from(ContentStyle {
-                attributes: CAttributes::from([CAttribute::NoBold, CAttribute::NoItalic].as_ref()),
-                ..Default::default()
-            }),
-            Style::default()
-                .remove_modifier(Modifier::BOLD)
-                .remove_modifier(Modifier::ITALIC)
+            buffer_view(&buffer),
+            format!(
+                r#""{multi_byte_char}" Hidden by multi-width symbols: [(1, " "), (2, " "), (3, " "), (4, " "), (5, " "), (6, " "), (7, " ")]
+"#,
+                multi_byte_char = multi_byte_char
+            )
         );
     }
 
     #[test]
-    #[cfg(feature = "underline-color")]
-    fn from_crossterm_content_style_underline() {
-        assert_eq!(
-            Style::from(ContentStyle {
-                underline_color: Some(CColor::DarkRed),
-                ..Default::default()
-            }),
-            Style::default().underline_color(Color::Red)
-        )
+    fn buffer() {
+        let backend = BevyBackend::new(10, 2);
+        assert_eq!(backend.buffer(), &Buffer::with_lines(vec!["          "; 2]));
+    }
+
+    #[test]
+    fn resize() {
+        let mut backend = BevyBackend::new(10, 2);
+        backend.resize(5, 5);
+        assert_eq!(backend.buffer(), &Buffer::with_lines(vec!["     "; 5]));
+    }
+
+    #[test]
+    fn assert_buffer() {
+        let backend = BevyBackend::new(10, 2);
+        let buffer = Buffer::with_lines(vec!["          "; 2]);
+        backend.assert_buffer(&buffer);
+    }
+
+    #[test]
+    #[should_panic]
+    fn assert_buffer_panics() {
+        let backend = BevyBackend::new(10, 2);
+        let buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
+        backend.assert_buffer(&buffer);
+    }
+
+    #[test]
+    fn display() {
+        let backend = BevyBackend::new(10, 2);
+        assert_eq!(format!("{}", backend), "\"          \"\n\"          \"\n");
+    }
+
+    #[test]
+    fn draw() {
+        let mut backend = BevyBackend::new(10, 2);
+        let mut cell = Cell::default();
+        cell.set_symbol("a");
+        backend.draw([(0, 0, &cell)].into_iter()).unwrap();
+        backend.draw([(0, 1, &cell)].into_iter()).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec!["a         "; 2]));
+    }
+
+    #[test]
+    fn hide_cursor() {
+        let mut backend = BevyBackend::new(10, 2);
+        backend.hide_cursor().unwrap();
+        assert!(!backend.cursor);
+    }
+
+    #[test]
+    fn show_cursor() {
+        let mut backend = BevyBackend::new(10, 2);
+        backend.show_cursor().unwrap();
+        assert!(backend.cursor);
+    }
+
+    #[test]
+    fn get_cursor() {
+        let mut backend = BevyBackend::new(10, 2);
+        assert_eq!(backend.get_cursor().unwrap(), (0, 0));
+    }
+
+    #[test]
+    fn set_cursor() {
+        let mut backend = BevyBackend::new(10, 10);
+        backend.set_cursor(5, 5).unwrap();
+        assert_eq!(backend.pos, (5, 5));
+    }
+
+    #[test]
+    fn clear() {
+        let mut backend = BevyBackend::new(10, 4);
+        let mut cell = Cell::default();
+        cell.set_symbol("a");
+        backend.draw([(0, 0, &cell)].into_iter()).unwrap();
+        backend.draw([(0, 1, &cell)].into_iter()).unwrap();
+        backend.clear().unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]));
+    }
+
+    #[test]
+    fn clear_region_all() {
+        let mut backend = BevyBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]);
+
+        backend.clear_region(ClearType::All).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]));
+    }
+
+    #[test]
+    fn clear_region_after_cursor() {
+        let mut backend = BevyBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]);
+
+        backend.set_cursor(3, 2).unwrap();
+        backend.clear_region(ClearType::AfterCursor).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaa      ",
+            "          ",
+            "          ",
+        ]));
+    }
+
+    #[test]
+    fn clear_region_before_cursor() {
+        let mut backend = BevyBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]);
+
+        backend.set_cursor(5, 3).unwrap();
+        backend.clear_region(ClearType::BeforeCursor).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "          ",
+            "          ",
+            "          ",
+            "     aaaaa",
+            "aaaaaaaaaa",
+        ]));
+    }
+
+    #[test]
+    fn clear_region_current_line() {
+        let mut backend = BevyBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]);
+
+        backend.set_cursor(3, 1).unwrap();
+        backend.clear_region(ClearType::CurrentLine).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "          ",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]));
+    }
+
+    #[test]
+    fn clear_region_until_new_line() {
+        let mut backend = BevyBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]);
+
+        backend.set_cursor(3, 0).unwrap();
+        backend.clear_region(ClearType::UntilNewLine).unwrap();
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "aaa       ",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+            "aaaaaaaaaa",
+        ]));
+    }
+
+    #[test]
+    fn append_lines_not_at_last_line() {
+        let mut backend = BevyBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
+
+        backend.set_cursor(0, 0).unwrap();
+
+        // If the cursor is not at the last line in the terminal the addition of a
+        // newline simply moves the cursor down and to the right
+
+        backend.append_lines(1).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 1));
+
+        backend.append_lines(1).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (2, 2));
+
+        backend.append_lines(1).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (3, 3));
+
+        backend.append_lines(1).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (4, 4));
+
+        // As such the buffer should remain unchanged
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]));
+    }
+
+    #[test]
+    fn append_lines_at_last_line() {
+        let mut backend = BevyBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
+
+        // If the cursor is at the last line in the terminal the addition of a
+        // newline will scroll the contents of the buffer
+        backend.set_cursor(0, 4).unwrap();
+
+        backend.append_lines(1).unwrap();
+
+        backend.buffer = Buffer::with_lines(vec![
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+            "          ",
+        ]);
+
+        // It also moves the cursor to the right, as is common of the behaviour of
+        // terminals in raw-mode
+        assert_eq!(backend.get_cursor().unwrap(), (1, 4));
+    }
+
+    #[test]
+    fn append_multiple_lines_not_at_last_line() {
+        let mut backend = BevyBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
+
+        backend.set_cursor(0, 0).unwrap();
+
+        // If the cursor is not at the last line in the terminal the addition of multiple
+        // newlines simply moves the cursor n lines down and to the right by 1
+
+        backend.append_lines(4).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 4));
+
+        // As such the buffer should remain unchanged
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]));
+    }
+
+    #[test]
+    fn append_multiple_lines_past_last_line() {
+        let mut backend = BevyBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
+
+        backend.set_cursor(0, 3).unwrap();
+
+        backend.append_lines(3).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 4));
+
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+            "          ",
+            "          ",
+        ]));
+    }
+
+    #[test]
+    fn append_multiple_lines_where_cursor_at_end_appends_height_lines() {
+        let mut backend = BevyBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
+
+        backend.set_cursor(0, 4).unwrap();
+
+        backend.append_lines(5).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 4));
+
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]));
+    }
+
+    #[test]
+    fn append_multiple_lines_where_cursor_appends_height_lines() {
+        let mut backend = BevyBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines(vec![
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
+
+        backend.set_cursor(0, 0).unwrap();
+
+        backend.append_lines(5).unwrap();
+        assert_eq!(backend.get_cursor().unwrap(), (1, 4));
+
+        backend.assert_buffer(&Buffer::with_lines(vec![
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+            "          ",
+        ]));
+    }
+
+    #[test]
+    fn size() {
+        let backend = BevyBackend::new(10, 2);
+        assert_eq!(backend.size().unwrap(), Rect::new(0, 0, 10, 2));
+    }
+
+    #[test]
+    fn flush() {
+        let mut backend = BevyBackend::new(10, 2);
+        backend.flush().unwrap();
     }
 }
