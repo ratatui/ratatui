@@ -498,6 +498,10 @@ impl Scrollbar<'_> {
     ///
     /// This method returns the length of the start, thumb, and end as a tuple.
     fn part_lengths(&self, area: Rect, state: &mut ScrollbarState) -> (usize, usize, usize) {
+        const fn rounded_divide(a: usize, b: usize) -> usize {
+            (a + (b / 2)) / b
+        }
+
         let track_len = self.track_length_excluding_arrow_heads(area) as usize;
         let viewport_len = self.viewport_length(state, area) as usize;
 
@@ -509,12 +513,15 @@ impl Scrollbar<'_> {
         let scrollable_content_len = state.content_length + viewport_len - 1;
 
         // Calculate the thumb start (inclusive) and end (exclusive) positions, with rounding
-        // and ensuring there is at least one visible thumb character.
-        let thumb_start =
-            (position * track_len + scrollable_content_len / 2) / scrollable_content_len;
+        let thumb_start = rounded_divide(position * track_len, scrollable_content_len);
+        let thumb_end = rounded_divide(
+            (position + viewport_len) * track_len,
+            scrollable_content_len,
+        );
+
+        // Ensure there is at least one thumb character by ensuring `thumb_start` has at least one
+        // space after it, and then ensuring `thumb_end` is at least one space after `thumb_start`
         let thumb_start = thumb_start.min(track_len.saturating_sub(1));
-        let thumb_end = ((position + viewport_len) * track_len + scrollable_content_len / 2)
-            / scrollable_content_len;
         let thumb_end = thumb_end.max(thumb_start + 1);
 
         // Calculate the length of the tracks and thumb
