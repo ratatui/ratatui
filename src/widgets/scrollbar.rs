@@ -498,38 +498,32 @@ impl Scrollbar<'_> {
     ///
     /// This method returns the length of the start, thumb, and end as a tuple.
     fn part_lengths(&self, area: Rect, state: &mut ScrollbarState) -> (usize, usize, usize) {
-        const fn rounded_divide(a: usize, b: usize) -> usize {
-            (a + (b / 2)) / b
-        }
+        let track_length = self.track_length_excluding_arrow_heads(area) as f64;
+        let viewport_length = self.viewport_length(state, area) as f64;
 
-        let track_len = self.track_length_excluding_arrow_heads(area) as usize;
-        let viewport_len = self.viewport_length(state, area) as usize;
+        // Ensure that the position of the thumb is within the bounds of the content taking into
+        // account the content and viewport length. When the last line of the content is at the top
+        // of the viewport, the thumb should be at the bottom of the track.
+        let max_position = state.content_length.saturating_sub(1) as f64;
+        let start_position = (state.position as f64).clamp(0.0, max_position);
+        let max_viewport_position = max_position + viewport_length;
+        let end_position = start_position + viewport_length;
 
-        // Clamp the position to show at least one line of the content
-        // Note: state.content_length is != 0 because otherwise render() returns immediately
-        let position = state.position.min(state.content_length - 1);
+        // Calculate the start and end positions of the thumb. The size will be proportional to the
+        // viewport length compared to the total amount of possible visible rows.
+        let thumb_start = start_position * track_length / max_viewport_position;
+        let thumb_end = end_position * track_length / max_viewport_position;
 
-        // vscode style scrolling behavior (allow scrolling past end of content)
-        let scrollable_content_len = state.content_length + viewport_len - 1;
+        // Make sure that the thumb is at least 1 cell long by ensuring that the start of the thumb
+        // is less than the track_len. We use the positions instead of the sizes and use nearest
+        // integer instead of floor / ceil to avoid problems caused by rounding errors.
+        let thumb_start = thumb_start.round().clamp(0.0, track_length - 1.0) as usize;
+        let thumb_end = thumb_end.round().clamp(0.0, track_length) as usize;
 
-        // Calculate the thumb start (inclusive) and end (exclusive) positions, with rounding
-        let thumb_start = rounded_divide(position * track_len, scrollable_content_len);
-        let thumb_end = rounded_divide(
-            (position + viewport_len) * track_len,
-            scrollable_content_len,
-        );
+        let thumb_length = thumb_end.saturating_sub(thumb_start).max(1);
+        let track_end_length = (track_length as usize).saturating_sub(thumb_start + thumb_length);
 
-        // Ensure there is at least one thumb character by ensuring `thumb_start` has at least one
-        // space after it, and then ensuring `thumb_end` is at least one space after `thumb_start`
-        let thumb_start = thumb_start.min(track_len.saturating_sub(1));
-        let thumb_end = thumb_end.max(thumb_start + 1);
-
-        // Calculate the length of the tracks and thumb
-        let track_start_len = thumb_start;
-        let thumb_len = thumb_end - thumb_start;
-        let track_end_len = track_len - thumb_start - thumb_len;
-
-        (track_start_len, thumb_len, track_end_len)
+        (thumb_start, thumb_length, track_end_length)
     }
 
     fn scollbar_area(&self, area: Rect) -> Rect {
@@ -1065,6 +1059,8 @@ mod tests {
         assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}");
     }
 
+    /// Fixes <https://github.com/ratatui-org/ratatui/pull/959> which was a bug that would not
+    /// render a thumb when the viewport was very small in comparison to the content length.
     #[rstest]
     #[case("#----", 0, 100, "position_0")]
     #[case("#----", 10, 100, "position_10")]
