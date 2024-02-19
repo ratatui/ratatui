@@ -1064,4 +1064,33 @@ mod tests {
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}");
     }
+
+    #[rstest]
+    #[case("#----", 0, 100, "position_0")]
+    #[case("#----", 10, 100, "position_10")]
+    #[case("-#---", 20, 100, "position_20")]
+    #[case("-#---", 30, 100, "position_30")]
+    #[case("--#--", 40, 100, "position_40")]
+    #[case("--#--", 50, 100, "position_50")]
+    #[case("---#-", 60, 100, "position_60")]
+    #[case("---#-", 70, 100, "position_70")]
+    #[case("----#", 80, 100, "position_80")]
+    #[case("----#", 90, 100, "position_90")]
+    #[case("----#", 100, 100, "position_one_out_of_bounds")]
+    fn thumb_visible_on_very_small_track(
+        #[case] expected: &str,
+        #[case] position: usize,
+        #[case] content_length: usize,
+        #[case] description: &str,
+        scrollbar_no_arrows: Scrollbar,
+    ) {
+        let size = expected.width() as u16;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
+        let mut state = ScrollbarState::default()
+            .position(position)
+            .content_length(content_length)
+            .viewport_content_length(2);
+        scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}");
+    }
 }
