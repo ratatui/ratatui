@@ -3,10 +3,10 @@
 
 use std::io;
 
-use bevy::prelude::Color as BevyColor;
-use bevy::prelude::*;
-
-use bevy::utils::HashMap;
+use bevy::{
+    prelude::{Color as BevyColor, *},
+    utils::HashMap,
+};
 
 use crate::{
     backend::{Backend, ClearType, WindowSize},
