@@ -1,11 +1,7 @@
 //! This module provides the `BevyBackend` implementation for the [`Backend`] trait.
 //! It is used in the integration tests to verify the correctness of the library.
 
-use std::{
-   
-    io,
-};
-
+use std::io;
 
 use crate::{
     backend::{Backend, ClearType, WindowSize},
@@ -13,48 +9,24 @@ use crate::{
     layout::{Rect, Size},
 };
 
-use bevy::app::Plugin;
 use bevy::app::App;
-
+use bevy::app::Plugin;
 
 pub struct RatatuiPlugin;
 
-impl Plugin for RatatuiPlugin{
-
+impl Plugin for RatatuiPlugin {
     fn build(&self, app: &mut App) {
-
         todo!();
     }
-
-
 }
 
-
-
-
-
-
-
-
-
-
-
-
+///
+///
 
 ///
-/// 
-
 ///
-/// 
 ///
 /// RATATUI SPECIFIC STUFF STARTS HERE
-
-
-
-
-
-
-
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -65,7 +37,6 @@ pub struct BevyBackend {
     cursor: bool,
     pos: (u16, u16),
 }
-
 
 impl BevyBackend {
     /// Creates a new BevyBackend with the specified width and height.
@@ -79,19 +50,13 @@ impl BevyBackend {
         }
     }
 
-    
-
     /// Resizes the BevyBackend to the specified width and height.
     pub fn resize(&mut self, width: u16, height: u16) {
         self.buffer.resize(Rect::new(0, 0, width, height));
         self.width = width;
         self.height = height;
     }
-
-   
 }
-
-
 
 impl Backend for BevyBackend {
     fn draw<'a, I>(&mut self, content: I) -> Result<(), io::Error>
@@ -101,7 +66,7 @@ impl Backend for BevyBackend {
         for (x, y, c) in content {
             let cell = self.buffer.get_mut(x, y);
             *cell = c.clone();
-            println!("{} {}",x,y);
+            println!("{} {}", x, y);
         }
         Ok(())
     }
