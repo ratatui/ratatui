@@ -3,7 +3,10 @@
 
 use std::io;
 
-use bevy::app::{App, Plugin};
+use bevy::prelude::*;
+use bevy::prelude::{Color as BevyColor};
+
+use bevy::utils::HashMap;
 
 use crate::{
     backend::{Backend, ClearType, WindowSize},
@@ -15,10 +18,177 @@ pub struct RatatuiPlugin;
 
 impl Plugin for RatatuiPlugin {
     fn build(&self, app: &mut App) {
-        ()
+        let world = &mut app.world;
+        world.init_resource::<VirtualTerminal>();
+        world.init_resource::<FontHandlers>();
+        app.add_systems(PreStartup, (font_setup));
+        app.add_systems(Startup, init_virtual_cells);
+        app.add_systems(PostStartup, add_render_to_cells);
     }
 }
 
+fn init_virtual_cells(mut commands: Commands, mut terminal_res: ResMut<VirtualTerminal>) {
+    let rows = terminal_res.term_rows;
+    let columns = terminal_res.term_columns;
+
+    for y in 0..rows {
+        for x in 0..columns {
+            let cell = commands.spawn((VirtualCell::new(x, y))).id();
+            terminal_res.entity_map.insert((x, y), cell);
+        }
+    }
+}
+
+fn add_render_to_cells(
+    query_cells: Query<(Entity, &VirtualCell)>,
+    terminal_res: Res<VirtualTerminal>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    font_handlers: Res<FontHandlers>,
+) {
+    let mut fontsize = terminal_res.term_font_size;
+
+    let pixel_shift = fontsize / 2.0;
+
+    for (entity_id, cellii) in query_cells.iter() {
+        commands.entity(entity_id).insert(
+            TextBundle::from_section(
+                // Accepts a `String` or any type that converts into a `String`, such as `&str`
+                &cellii.symbol,
+                TextStyle {
+                    // This font is loaded and will be used instead of the default font.
+                    font: font_handlers.normal.clone(),
+                    font_size: fontsize,
+                    ..default()
+                },
+            ) // Set the justification of the Text
+            .with_text_justify(JustifyText::Center)
+            // Set the style of the TextBundle itself.
+            .with_style(Style {
+                position_type: PositionType::Absolute,
+                bottom: Val::Px(cellii.row as f32 * fontsize),
+                left: Val::Px(cellii.column as f32 * pixel_shift),
+                ..default()
+            }),
+        );
+    }
+}
+
+fn font_setup(asset_server: Res<AssetServer>, mut font_handlers: ResMut<FontHandlers>) {
+    let big_handle: Handle<Font> = asset_server.load("fonts/DejaVuSansMono.ttf");
+    font_handlers.normal = big_handle;
+}
+
+
+#[derive(Resource)]
+struct FontHandlers {
+    normal: Handle<Font>,
+}
+
+impl Default for FontHandlers {
+    fn default() -> Self {
+        FontHandlers {
+            normal: Handle::weak_from_u128(101),
+        }
+    }
+}
+
+// A unit struct to help identify the color-changing Text component
+#[derive(Component)]
+struct VirtualCell {
+    symbol: String,
+    fg: BevyColor,
+    bg: BevyColor,
+    underline_color: Option<BevyColor>,
+    skip: bool,
+    bold: bool,
+    dim: bool,
+    italic: bool,
+    underlined: bool,
+    slow_blink: bool,
+    rapid_blink: bool,
+    reversed: bool,
+    hidden: bool,
+    crossed_out: bool,
+    row: u16,
+    column: u16,
+}
+
+impl VirtualCell {
+    fn new(x: u16, y: u16) -> Self {
+        VirtualCell {
+            symbol: "╬".to_string(),
+            fg: bevy::prelude::Color::TOMATO,
+            bg: bevy::prelude::Color::ORANGE,
+            underline_color: None,
+            skip: false,
+            bold: false,
+            dim: false,
+            italic: false,
+            underlined: false,
+            slow_blink: false,
+            rapid_blink: false,
+            reversed: false,
+            hidden: false,
+            crossed_out: false,
+            row: y,
+            column: x,
+        }
+    }
+}
+
+trait FromVirtualTerminal {
+    fn to_cell(given_terminal: &VirtualTerminal) -> VirtualCell;
+}
+
+impl FromVirtualTerminal for VirtualCell {
+    fn to_cell(given_terminal: &VirtualTerminal) -> VirtualCell {
+        todo!()
+    }
+}
+
+trait FromRatCell {
+    fn to_virtual(&mut self, given_cell: &Cell) ;
+}
+
+impl FromRatCell for VirtualCell {
+    fn to_virtual(&mut self, given_cell: &Cell)  {
+        
+        self.symbol = given_cell.symbol().into();
+
+
+
+
+
+    }
+}
+
+
+
+
+// A unit struct to help identify the FPS UI component, since there may be many Text components
+#[derive(Resource)]
+struct VirtualTerminal {
+    term_rows: u16,
+    term_columns: u16,
+    term_font_size: f32,
+    default_bg: BevyColor,
+    default_fg: BevyColor,
+    entity_map: HashMap<(u16, u16), Entity>,
+}
+
+impl Default for VirtualTerminal {
+    fn default() -> Self {
+        VirtualTerminal {
+            term_rows: 20,
+            term_columns: 10,
+            term_font_size: 40.0,
+            default_bg: bevy::prelude::Color::GRAY,
+            default_fg: bevy::prelude::Color::WHITE,
+            entity_map: HashMap::new(),
+        }
+    }
+}
 ///
 ///
 ///
