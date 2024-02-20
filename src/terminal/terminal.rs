@@ -1,10 +1,9 @@
 use std::io;
 
-use crate::{backend::ClearType, prelude::*};
-
-
 #[cfg(feature = "bevy")]
 use bevy::prelude::Component;
+
+use crate::{backend::ClearType, prelude::*};
 
 /// An interface to interact and draw [`Frame`]s on the user's terminal.
 ///
@@ -54,7 +53,6 @@ use bevy::prelude::Component;
 /// [`Buffer`]: crate::buffer::Buffer
 #[cfg(feature = "bevy")]
 #[derive(Component)]
-
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Terminal<B>
 where
