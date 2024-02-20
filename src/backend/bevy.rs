@@ -165,8 +165,10 @@ fn init_bevy_terminals(world: &mut World) {
     world.run_system_once(clear_virtual_cells);
 
     world.run_system_once(init_virtual_cells);
-    world.run_system_once(add_render_to_cells);
+ //   world.run_system_once(add_render_to_cells);
     world.run_system_once(set_terms_inited);
+    world.run_system_once(update_ents_from_buffer);
+    world.run_system_once(update_ents_from_comp);
 }
 
 fn init_virtual_cells(
@@ -191,43 +193,6 @@ fn init_virtual_cells(
     }
 }
 
-fn add_render_to_cells(
-    query_cells: Query<(Entity, &VirtualCell)>,
-    mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
-    mut commands: Commands,
-    font_handlers: Res<FontHandlers>,
-) {
-    let mut termy = terminal_query
-        .get_single_mut()
-        .expect("More than one terminal with a bevybackend");
-    let termy_backend = termy.backend();
-    let fontsize = termy_backend.term_font_size as f32;
-
-    let pixel_shift = fontsize * termy_backend.font_aspect_ratio;
-
-    for (entity_id, cellii) in query_cells.iter() {
-        commands.entity(entity_id).insert(
-            TextBundle::from_section(
-                // Accepts a `String` or any type that converts into a `String`, such as `&str`
-                &cellii.symbol,
-                TextStyle {
-                    // This font is loaded and will be used instead of the default font.
-                    font: font_handlers.normal.clone(),
-                    font_size: fontsize,
-                    ..default()
-                },
-            ) // Set the justification of the Text
-            .with_text_justify(JustifyText::Center)
-            // Set the style of the TextBundle itself.
-            .with_style(Style {
-                position_type: PositionType::Absolute,
-                top: Val::Px(cellii.row as f32 * fontsize),
-                left: Val::Px(cellii.column as f32 * pixel_shift),
-                ..default()
-            }),
-        );
-    }
-}
 
 fn update_ents_from_buffer(
     mut commands: Commands,
@@ -497,6 +462,7 @@ impl Backend for BevyBackend {
 
             let cell = self.buffer.get_mut(x, y);
             *cell = c.clone();
+       
 
             // println!("{} {}", x, y);
             //  println!("{:?}", c);
@@ -599,13 +565,13 @@ impl Backend for BevyBackend {
 
     fn window_size(&mut self) -> Result<WindowSize, io::Error> {
         // Some arbitrary window pixel size, probably doesn't need much testing.
-        static WINDOW_PIXEL_SIZE: Size = Size {
-            width: 640,
+        let window_pixel_size : Size = Size {
+            width: self.width * self.font_aspect_ratio as u16 * self.term_font_size,
             height: 480,
         };
         Ok(WindowSize {
             columns_rows: (self.width, self.height).into(),
-            pixels: WINDOW_PIXEL_SIZE,
+            pixels: window_pixel_size,
         })
     }
 
