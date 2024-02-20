@@ -20,8 +20,7 @@ use argh::FromArgs;
 mod app;
 #[cfg(feature = "crossterm")]
 mod crossterm;
-#[cfg(feature = "bevy")]
-mod bevy;
+
 #[cfg(feature = "termion")]
 mod termion;
 #[cfg(feature = "termwiz")]
