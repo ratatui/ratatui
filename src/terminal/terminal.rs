@@ -2,6 +2,10 @@ use std::io;
 
 use crate::{backend::ClearType, prelude::*};
 
+
+#[cfg(feature = "bevy")]
+use bevy::prelude::Component;
+
 /// An interface to interact and draw [`Frame`]s on the user's terminal.
 ///
 /// This is the main entry point for Ratatui. It is responsible for drawing and maintaining the
@@ -48,6 +52,9 @@ use crate::{backend::ClearType, prelude::*};
 /// [`backend`]: crate::backend
 /// [`Backend`]: crate::backend::Backend
 /// [`Buffer`]: crate::buffer::Buffer
+#[cfg(feature = "bevy")]
+#[derive(Component)]
+
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Terminal<B>
 where

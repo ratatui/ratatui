@@ -2,13 +2,12 @@
 //! It is used in the integration tests to verify the correctness of the library.
 
 use std::io;
-use std::collections::HashMap;
 
 use bevy::{
     prelude::{Color as BevyColor, *},
-   // utils::HashMap,
+    utils::{HashMap},
 };
-
+use bevy::ecs::system::SystemParam;
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
@@ -24,6 +23,7 @@ impl Plugin for RatatuiPlugin {
         app.add_systems(PreStartup, (font_setup,terminal_setup));
         app.add_systems(Startup, init_virtual_cells);
         app.add_systems(PostStartup, add_render_to_cells);
+        app.add_systems(PreUpdate, (update_ents_from_buffer,update_ents_from_comp));
     }
 }
 
@@ -46,6 +46,71 @@ fn init_virtual_cells(mut commands: Commands, mut terminal_query:  Query<(&mut B
 fn terminal_setup(mut commands: Commands){
 
 commands.spawn({BevyBackend::default()});
+
+}
+
+fn update_ents_from_buffer(mut commands: Commands,
+mut terminal_query:  Query<(&mut BevyBackend)>, ){
+
+    let mut termy = terminal_query.get_single_mut().expect("More than one terminal with a bevybackend");
+  
+    let boop = termy.entity_map.clone();
+    
+
+    while let Some((x,y,vc)) = termy.vcupdate.pop() {
+        let xy = (x,y);
+        let eid = boop.get(&xy).expect("ENTITY MAP IS MISSING THIS ENTITY at {x}{y}");
+
+        commands.entity(eid.clone()).insert(vc);
+
+
+
+
+    }
+
+
+
+
+}
+
+fn update_ents_from_comp(query_cells: Query<(Entity, &VirtualCell),(Changed<VirtualCell>)>, mut commands: Commands, font_handlers: Res<FontHandlers>,terminal_query:  Query<(&BevyBackend)>,){
+    let termy = terminal_query.get_single().expect("More than one terminal with a bevybackend");
+
+    let fontsize = termy.term_font_size as f32;
+
+    let pixel_shift = fontsize  / 2.0;
+
+
+for (entity_id, cellii) in query_cells.iter() {
+   
+
+    commands.entity(entity_id).insert(
+        TextBundle::from_section(
+            // Accepts a `String` or any type that converts into a `String`, such as `&str`
+            &cellii.symbol,
+            TextStyle {
+                // This font is loaded and will be used instead of the default font.
+                font: font_handlers.normal.clone(),
+                font_size: fontsize ,
+                ..default()
+            },
+        ) // Set the justification of the Text
+        .with_text_justify(JustifyText::Center)
+        // Set the style of the TextBundle itself.
+        .with_style(Style {
+            position_type: PositionType::Absolute,
+            bottom: Val::Px(cellii.row as f32 * fontsize ),
+            left: Val::Px(cellii.column as f32 * pixel_shift),
+            ..default()
+        }),
+    );
+
+
+
+
+
+}
+
 
 }
 
@@ -105,7 +170,7 @@ impl Default for FontHandlers {
 }
 
 // A unit struct to help identify the color-changing Text component
-#[derive(Component)]
+#[derive(Component, Debug, Clone,  PartialEq)]
 struct VirtualCell {
     symbol: String,
     fg: BevyColor,
@@ -160,12 +225,15 @@ impl FromRatCell for VirtualCell {
 }
 
 
+
+
+
 ///
 ///
 ///
 /// RATATUI SPECIFIC STUFF STARTS HERE
 
-#[derive(Component, Debug, Clone, Eq, PartialEq)]
+#[derive(Component, Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BevyBackend {
     height: u16,
@@ -173,6 +241,7 @@ pub struct BevyBackend {
     term_font_size: u16,
     entity_map: HashMap<(u16, u16), Entity>,
     buffer: Buffer,
+    vcupdate:Vec<(u16,u16,VirtualCell)>,
    
     cursor: bool,
     cursor_pos: (u16, u16),
@@ -181,11 +250,12 @@ pub struct BevyBackend {
 impl Default for BevyBackend {
     fn default() -> Self {
         BevyBackend {
-            height: 17,
-            width: 3,
-            term_font_size: 40,
+            height: 30,
+            width: 10,
+            term_font_size: 12,
             entity_map: HashMap::new(),
             buffer: Buffer::empty(Rect::new(0, 0, 3, 17)),
+            vcupdate:Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
         }
@@ -201,6 +271,7 @@ impl BevyBackend {
             term_font_size: 40,
             entity_map: HashMap::new(),
             buffer: Buffer::empty(Rect::new(0, 0, width, height)),
+            vcupdate:Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
         }
@@ -220,9 +291,13 @@ impl Backend for BevyBackend {
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
         for (x, y, c) in content {
-            let cell = self.buffer.get_mut(x, y);
-            *cell = c.clone();
+
+            let mut vc = VirtualCell::new(x,y);
+            vc.to_virtual(c);
+            self.vcupdate.push((x,y,vc));
+
             println!("{} {}", x, y);
+            println!("{:?}",c);
         }
         Ok(())
     }
