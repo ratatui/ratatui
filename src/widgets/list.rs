@@ -1087,6 +1087,7 @@ where
 mod tests {
     use std::borrow::Cow;
 
+    use pretty_assertions::assert_eq;
     use rstest::rstest;
 
     use super::*;
@@ -2181,8 +2182,10 @@ mod tests {
         let mut terminal = Terminal::new(backend).unwrap();
         let mut state = ListState::default();
 
+        let padding_value = 3;
+
         *state.offset_mut() = 2;
-        *state.padding_mut() = 3;
+        *state.padding_mut() = padding_value;
         state.select(Some(4));
 
         let items = vec![
@@ -2213,18 +2216,20 @@ mod tests {
             })
             .unwrap();
 
-        assert_eq!(offset_after_render, state.offset())
+        // Offset after rendering twice should remain the same as after once
+        assert_eq!(offset_after_render, state.offset());
+        // Padding value shouldnt be modified
+        assert_eq!(state.padding(), padding_value);
     }
 
     #[test]
     fn test_padding_inconsistent_item_sizes() {
         let backend = backend::TestBackend::new(10, 3);
         let mut terminal = Terminal::new(backend).unwrap();
-        let mut state = ListState::default();
-
-        *state.offset_mut() = 0;
-        *state.padding_mut() = 1;
-        state.select(Some(3));
+        let mut state = ListState::default()
+            .with_offset(0)
+            .with_padding(1)
+            .with_selected(Some(3));
 
         let items = vec![
             ListItem::new("Item 0"),
@@ -2247,6 +2252,41 @@ mod tests {
             "   Item 1 ",
             "   Item 2 ",
             ">> Item 3 ",
+        ]));
+    }
+
+    // Tests to make sure when it's pushing back the first visible index value that it doesnt
+    // include an item that's too large
+    #[test]
+    fn test_padding_offset_pushback_break() {
+        let backend = backend::TestBackend::new(10, 4);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut state = ListState::default();
+
+        *state.offset_mut() = 1;
+        *state.padding_mut() = 2;
+        state.select(Some(2));
+
+        let items = vec![
+            ListItem::new("Item 0\nTest\nTest"),
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2"),
+            ListItem::new("Item 3"),
+        ];
+        let list = List::new(items).highlight_symbol(">> ");
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                f.render_stateful_widget(list, size, &mut state);
+            })
+            .unwrap();
+
+        terminal.backend().assert_buffer(&Buffer::with_lines(vec![
+            "   Item 1 ",
+            ">> Item 2 ",
+            "   Item 3 ",
+            "          ",
         ]));
     }
 }
