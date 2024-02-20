@@ -21,6 +21,8 @@
 pub use crate::backend::BevyBackend;
 #[cfg(feature = "crossterm")]
 pub use crate::backend::CrosstermBackend;
+#[cfg(feature = "bevy")]
+pub use crate::backend::RatatuiPlugin;
 #[cfg(feature = "termion")]
 pub use crate::backend::TermionBackend;
 #[cfg(feature = "termwiz")]

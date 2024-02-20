@@ -16,7 +16,7 @@ pub struct RatatuiPlugin;
 
 impl Plugin for RatatuiPlugin {
     fn build(&self, app: &mut App) {
-        todo!();
+        ()
     }
 }
 

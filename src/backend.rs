@@ -120,6 +120,8 @@ pub use self::crossterm::CrosstermBackend;
 mod bevy;
 #[cfg(feature = "bevy")]
 pub use self::bevy::BevyBackend;
+#[cfg(feature = "bevy")]
+pub use self::bevy::RatatuiPlugin;
 
 #[cfg(feature = "termwiz")]
 mod termwiz;
