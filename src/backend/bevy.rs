@@ -15,7 +15,82 @@ use crate::{
     buffer::{Buffer, Cell},
     layout::{Rect, Size},
     terminal::Terminal,
+    style::{Color as RatColor},
 };
+
+
+trait FromAnsi<u8>  {
+    fn from_ansi(beep: u8) -> BevyColor;
+}
+
+
+impl FromAnsi<u8> for BevyColor{
+
+    fn from_ansi(beep: u8) -> BevyColor {
+
+        BevyColor::rgb_u8(beep,beep,beep)
+
+
+
+
+
+
+
+    }
+}
+
+impl From<RatColor> for BevyColor {
+    fn from(color:RatColor) -> Self {
+        match color {
+           RatColor::Reset => BevyColor::TOMATO,
+           RatColor::Black => BevyColor::BLACK,
+           RatColor::Red => BevyColor::MAROON,
+           RatColor::Green => BevyColor::DARK_GREEN,
+           RatColor::Yellow => BevyColor::GOLD,
+           RatColor::Blue => BevyColor::MIDNIGHT_BLUE,
+           RatColor::Magenta => BevyColor::FUCHSIA,
+           RatColor::Cyan => BevyColor::CYAN,
+           RatColor::Gray => BevyColor::GRAY,
+           RatColor::DarkGray => BevyColor::DARK_GRAY,
+           RatColor::LightRed => BevyColor::RED,
+           RatColor::LightGreen => BevyColor::GREEN,
+           RatColor::LightBlue => BevyColor::BLUE,
+           RatColor::LightYellow => BevyColor::BISQUE,
+           RatColor::LightMagenta => BevyColor::PINK,
+           RatColor::LightCyan => BevyColor::AQUAMARINE,
+           RatColor::White => BevyColor::WHITE,
+           RatColor::Indexed(i) => BevyColor::from_ansi(i),
+           RatColor::Rgb(r, g, b) => BevyColor::rgb_u8( r, g, b ),
+        }
+    }
+}
+
+impl From<BevyColor> for RatColor {
+    fn from(value: BevyColor) -> Self {
+        match value {
+            BevyColor::TOMATO => Self::Reset,
+            BevyColor::BLACK => Self::Black,
+            BevyColor::MAROON => Self::Red,
+            BevyColor::DARK_GRAY => Self::Green,
+            BevyColor::GOLD => Self::Yellow,
+            BevyColor::MIDNIGHT_BLUE => Self::Blue,
+            BevyColor::FUCHSIA => Self::Magenta,
+            BevyColor::CYAN => Self::Cyan,
+            BevyColor::GRAY => Self::Gray,
+            BevyColor::DARK_GRAY => Self::DarkGray,
+            BevyColor::RED => Self::LightRed,
+            BevyColor::GREEN => Self::LightGreen,
+            BevyColor::BLUE => Self::LightBlue,
+            BevyColor::BISQUE => Self::LightYellow,
+            BevyColor::PINK => Self::LightMagenta,
+            BevyColor::AQUAMARINE => Self::LightCyan,
+            BevyColor::WHITE => Self::White,
+            BevyColor::Rgba{ red,green,blue,alpha} => Self::Rgb(red as u8,green as u8,blue as u8),
+            BevyColor::Rgba{ red,green,blue,alpha} => Self::Indexed(red as u8),
+            _ =>Self::Reset,
+        }
+    }
+}
 
 pub struct RatatuiPlugin;
 
@@ -30,6 +105,7 @@ impl Plugin for RatatuiPlugin {
             (init_bevy_terminals.run_if(in_state(AppState::TermNeedsIniting))),
         );
         app.add_systems(First, (query_term_for_init,handle_primary_window_resize));
+        app.add_systems(First, (handle_primary_window_resize));
 
         app.add_systems(PreUpdate, (update_ents_from_buffer, update_ents_from_comp).run_if(in_state(AppState::AllTermsInited)));
     }
@@ -112,6 +188,9 @@ fn update_ents_from_buffer(
 
 
 fn handle_primary_window_resize(mut windows: Query<&mut Window, With<PrimaryWindow>>,terminal_query: Query<(&Terminal<BevyBackend>)>,mut resize_event: EventReader<WindowResized>,) {
+
+for _ in resize_event.read(){
+
     let termy = terminal_query
     .get_single()
     .expect("More than one terminal with a bevybackend");
@@ -126,6 +205,11 @@ let termy_backend = termy.backend();
         window.resolution = WindowResolution::new(w_wid,w_hei);
     }
 }
+
+
+}
+
+ 
 
 
 
@@ -153,14 +237,16 @@ fn update_ents_from_comp(
                     // This font is loaded and will be used instead of the default font.
                     font: font_handlers.normal.clone(),
                     font_size: fontsize,
+                    color:cellii.fg,
                     ..default()
                 },
             ) // Set the justification of the Text
+            .with_background_color(cellii.bg)
             .with_text_justify(JustifyText::Center)
             // Set the style of the TextBundle itself.
             .with_style(Style {
                 position_type: PositionType::Absolute,
-                bottom: Val::Px(cellii.row as f32 * fontsize),
+                top: Val::Px(cellii.row as f32 * fontsize),
                 left: Val::Px(cellii.column as f32 * pixel_shift),
                 ..default()
             }),
@@ -275,6 +361,16 @@ trait FromRatCell {
 impl FromRatCell for VirtualCell {
     fn to_virtual(&mut self, given_cell: &Cell) {
         self.symbol = given_cell.symbol().into();
+        self.fg = BevyColor::from( given_cell.fg);
+        self.bg = BevyColor::from( given_cell.bg);
+        #[cfg(not(feature="underline-color"))]    
+         let beep = given_cell.fg;
+        #[cfg(feature="underline-color")]    
+         let beep = given_cell.underline_color;
+        self.underline_color = Some(BevyColor::from( beep));
+        self.skip = given_cell.skip;
+    
+        
     }
 }
 
