@@ -104,7 +104,7 @@ impl Plugin for RatatuiPlugin {
             First,
             (init_bevy_terminals.run_if(in_state(AppState::TermNeedsIniting))),
         );
-        app.add_systems(First, (query_term_for_init,handle_primary_window_resize));
+        app.add_systems(First, (query_term_for_init));
         app.add_systems(First, (handle_primary_window_resize));
 
         app.add_systems(PreUpdate, (update_ents_from_buffer, update_ents_from_comp).run_if(in_state(AppState::AllTermsInited)));
@@ -176,33 +176,53 @@ fn update_ents_from_buffer(
 
     while let Some((x, y, vc)) = termy_backend.vcupdate.pop() {
         let xy = (x, y);
-        let eid = boop
-            .get(&xy)
-            .expect("ENTITY MAP IS MISSING THIS ENTITY at {x}{y}");
+       match boop.get(&xy){
+
+            Some(wow) =>  {commands.entity(wow.clone()).insert(vc);()},
+            None => (),
+
+
+        };
+            
 
         //commands.entity(eid.clone()).remove::<TextBundle>();
 
-        commands.entity(eid.clone()).insert(vc);
     }
 }
 
 
-fn handle_primary_window_resize(mut windows: Query<&mut Window, With<PrimaryWindow>>,terminal_query: Query<(&Terminal<BevyBackend>)>,mut resize_event: EventReader<WindowResized>,) {
+fn handle_primary_window_resize(mut windows: Query<&mut Window, With<PrimaryWindow>>,mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,mut resize_event: EventReader<WindowResized>,) {
 
-for _ in resize_event.read(){
+for wr in resize_event.read(){
 
-    let termy = terminal_query
-    .get_single()
+    let mut termy = terminal_query
+    .get_single_mut()
     .expect("More than one terminal with a bevybackend");
-let termy_backend = termy.backend();
-    let terminal_width = termy_backend.width;
-    let terminal_height = termy_backend.height;
-    let terminal_font_size = termy_backend.term_font_size;
-    // Query returns one window typically.
+let  termy_backend = termy.backend_mut();
+    
+    let terminal_font_size = termy_backend.term_font_size as f32;
+    let terminal_font_aspect_ratio = termy_backend.font_aspect_ratio as f32;
+
+    let w_wid = (terminal_font_size  * terminal_font_aspect_ratio) ; 
+    let w_hei = terminal_font_size as f32 ; 
+
+    let new_wid = (wr.width / w_wid) as u16;
+    let new_hei = (wr.height / w_hei) as u16 ;
+
+    termy_backend.resize(new_wid as u16, new_hei as u16);
+
+
+    
+
     for mut window in windows.iter_mut() {
-        let w_wid = (terminal_width*terminal_font_size) as f32 * 0.5; 
-        let w_hei = (terminal_height*terminal_font_size) as f32 ; 
-        window.resolution = WindowResolution::new(w_wid,w_hei);
+
+
+        window.resolution = WindowResolution::new(new_wid as f32 *  termy_backend.font_aspect_ratio * terminal_font_size as f32,new_hei as f32 * terminal_font_size as f32);
+    
+   
+    // Query returns one window typically.
+    
+       
     }
 }
 
@@ -226,7 +246,7 @@ fn update_ents_from_comp(
     let termy_backend = termy.backend();
     let fontsize = termy_backend.term_font_size as f32;
 
-    let pixel_shift = fontsize / 2.0;
+    let pixel_shift = fontsize * termy_backend.font_aspect_ratio;
 
     for (entity_id, cellii) in query_cells.iter() {
         commands.entity(entity_id).insert(
@@ -266,7 +286,7 @@ fn add_render_to_cells(
     let termy_backend = termy.backend();
     let fontsize = termy_backend.term_font_size as f32;
 
-    let pixel_shift = fontsize / 2.0;
+    let pixel_shift = fontsize * termy_backend.font_aspect_ratio;
 
     for (entity_id, cellii) in query_cells.iter() {
         commands.entity(entity_id).insert(
@@ -284,7 +304,7 @@ fn add_render_to_cells(
             // Set the style of the TextBundle itself.
             .with_style(Style {
                 position_type: PositionType::Absolute,
-                bottom: Val::Px(cellii.row as f32 * fontsize),
+                top: Val::Px(cellii.row as f32 * fontsize),
                 left: Val::Px(cellii.column as f32 * pixel_shift),
                 ..default()
             }),
@@ -388,6 +408,7 @@ pub struct BevyBackend {
     entity_map: HashMap<(u16, u16), Entity>,
     buffer: Buffer,
     vcupdate: Vec<(u16, u16, VirtualCell)>,
+    font_aspect_ratio:f32,
 
     cursor: bool,
     cursor_pos: (u16, u16),
@@ -401,11 +422,12 @@ impl Default for BevyBackend {
             width: 10,
             term_font_size: 40,
             entity_map: HashMap::new(),
-            buffer: Buffer::empty(Rect::new(0, 0, 3, 17)),
+            buffer: Buffer::empty(Rect::new(0, 0, 10, 30)),
             vcupdate: Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
             bevy_initialized: false,
+            font_aspect_ratio:0.5,
         }
     }
 }
@@ -422,6 +444,7 @@ impl BevyBackend {
             vcupdate: Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
+            font_aspect_ratio:0.5,
             bevy_initialized: false,
         }
     }
@@ -447,8 +470,8 @@ impl Backend for BevyBackend {
             let cell = self.buffer.get_mut(x, y);
             *cell = c.clone();
 
-            println!("{} {}", x, y);
-            println!("{:?}", c);
+           // println!("{} {}", x, y);
+          //  println!("{:?}", c);
         }
         Ok(())
     }
