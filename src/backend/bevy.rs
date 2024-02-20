@@ -3,8 +3,8 @@
 
 use std::io;
 
+use bevy::prelude::Color as BevyColor;
 use bevy::prelude::*;
-use bevy::prelude::{Color as BevyColor};
 
 use bevy::utils::HashMap;
 
@@ -79,7 +79,6 @@ fn font_setup(asset_server: Res<AssetServer>, mut font_handlers: ResMut<FontHand
     font_handlers.normal = big_handle;
 }
 
-
 #[derive(Resource)]
 struct FontHandlers {
     normal: Handle<Font>,
@@ -148,23 +147,14 @@ impl FromVirtualTerminal for VirtualCell {
 }
 
 trait FromRatCell {
-    fn to_virtual(&mut self, given_cell: &Cell) ;
+    fn to_virtual(&mut self, given_cell: &Cell);
 }
 
 impl FromRatCell for VirtualCell {
-    fn to_virtual(&mut self, given_cell: &Cell)  {
-        
+    fn to_virtual(&mut self, given_cell: &Cell) {
         self.symbol = given_cell.symbol().into();
-
-
-
-
-
     }
 }
-
-
-
 
 // A unit struct to help identify the FPS UI component, since there may be many Text components
 #[derive(Resource)]
