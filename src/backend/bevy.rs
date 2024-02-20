@@ -6,6 +6,7 @@ use std::io;
 use bevy::{
     ecs::system::RunSystemOnce,
     prelude::{Color as BevyColor, *},
+    window::{PrimaryWindow,WindowResolution,WindowResized},
     utils::HashMap,
 };
 
@@ -28,15 +29,16 @@ impl Plugin for RatatuiPlugin {
             First,
             (init_bevy_terminals.run_if(in_state(AppState::TermNeedsIniting))),
         );
-        app.add_systems(First, (query_term_for_init));
+        app.add_systems(First, (query_term_for_init,handle_primary_window_resize));
 
-        app.add_systems(PreUpdate, (update_ents_from_buffer, update_ents_from_comp));
+        app.add_systems(PreUpdate, (update_ents_from_buffer, update_ents_from_comp).run_if(in_state(AppState::AllTermsInited)));
     }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
 enum AppState {
     #[default]
+    NoTermsInited,
     AllTermsInited,
     TermNeedsIniting,
 }
@@ -107,6 +109,26 @@ fn update_ents_from_buffer(
         commands.entity(eid.clone()).insert(vc);
     }
 }
+
+
+fn handle_primary_window_resize(mut windows: Query<&mut Window, With<PrimaryWindow>>,terminal_query: Query<(&Terminal<BevyBackend>)>,mut resize_event: EventReader<WindowResized>,) {
+    let termy = terminal_query
+    .get_single()
+    .expect("More than one terminal with a bevybackend");
+let termy_backend = termy.backend();
+    let terminal_width = termy_backend.width;
+    let terminal_height = termy_backend.height;
+    let terminal_font_size = termy_backend.term_font_size;
+    // Query returns one window typically.
+    for mut window in windows.iter_mut() {
+        let w_wid = (terminal_width*terminal_font_size) as f32 * 0.5; 
+        let w_hei = (terminal_height*terminal_font_size) as f32 ; 
+        window.resolution = WindowResolution::new(w_wid,w_hei);
+    }
+}
+
+
+
 
 fn update_ents_from_comp(
     query_cells: Query<(Entity, &VirtualCell), (Changed<VirtualCell>)>,
@@ -281,7 +303,7 @@ impl Default for BevyBackend {
         BevyBackend {
             height: 30,
             width: 10,
-            term_font_size: 12,
+            term_font_size: 40,
             entity_map: HashMap::new(),
             buffer: Buffer::empty(Rect::new(0, 0, 3, 17)),
             vcupdate: Vec::default(),
@@ -294,11 +316,11 @@ impl Default for BevyBackend {
 
 impl BevyBackend {
     /// Creates a new BevyBackend with the specified width and height.
-    pub fn new(width: u16, height: u16) -> BevyBackend {
+    pub fn new(width: u16, height: u16, font_size: u16) -> BevyBackend {
         BevyBackend {
             height: height,
             width: width,
-            term_font_size: 40,
+            term_font_size: font_size,
             entity_map: HashMap::new(),
             buffer: Buffer::empty(Rect::new(0, 0, width, height)),
             vcupdate: Vec::default(),
