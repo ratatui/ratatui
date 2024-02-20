@@ -6,61 +6,50 @@ use std::io;
 use bevy::{
     ecs::system::RunSystemOnce,
     prelude::{Color as BevyColor, *},
-    window::{PrimaryWindow,WindowResolution,WindowResized},
     utils::HashMap,
+    window::{PrimaryWindow, WindowResized, WindowResolution},
 };
 
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
     layout::{Rect, Size},
+    style::Color as RatColor,
     terminal::Terminal,
-    style::{Color as RatColor},
 };
 
-
-trait FromAnsi<u8>  {
+trait FromAnsi<u8> {
     fn from_ansi(beep: u8) -> BevyColor;
 }
 
-
-impl FromAnsi<u8> for BevyColor{
-
+impl FromAnsi<u8> for BevyColor {
     fn from_ansi(beep: u8) -> BevyColor {
-
-        BevyColor::rgb_u8(beep,beep,beep)
-
-
-
-
-
-
-
+        BevyColor::rgb_u8(beep, beep, beep)
     }
 }
 
 impl From<RatColor> for BevyColor {
-    fn from(color:RatColor) -> Self {
+    fn from(color: RatColor) -> Self {
         match color {
-           RatColor::Reset => BevyColor::TOMATO,
-           RatColor::Black => BevyColor::BLACK,
-           RatColor::Red => BevyColor::MAROON,
-           RatColor::Green => BevyColor::DARK_GREEN,
-           RatColor::Yellow => BevyColor::GOLD,
-           RatColor::Blue => BevyColor::MIDNIGHT_BLUE,
-           RatColor::Magenta => BevyColor::FUCHSIA,
-           RatColor::Cyan => BevyColor::CYAN,
-           RatColor::Gray => BevyColor::GRAY,
-           RatColor::DarkGray => BevyColor::DARK_GRAY,
-           RatColor::LightRed => BevyColor::RED,
-           RatColor::LightGreen => BevyColor::GREEN,
-           RatColor::LightBlue => BevyColor::BLUE,
-           RatColor::LightYellow => BevyColor::BISQUE,
-           RatColor::LightMagenta => BevyColor::PINK,
-           RatColor::LightCyan => BevyColor::AQUAMARINE,
-           RatColor::White => BevyColor::WHITE,
-           RatColor::Indexed(i) => BevyColor::from_ansi(i),
-           RatColor::Rgb(r, g, b) => BevyColor::rgb_u8( r, g, b ),
+            RatColor::Reset => BevyColor::TOMATO,
+            RatColor::Black => BevyColor::BLACK,
+            RatColor::Red => BevyColor::MAROON,
+            RatColor::Green => BevyColor::DARK_GREEN,
+            RatColor::Yellow => BevyColor::GOLD,
+            RatColor::Blue => BevyColor::MIDNIGHT_BLUE,
+            RatColor::Magenta => BevyColor::FUCHSIA,
+            RatColor::Cyan => BevyColor::CYAN,
+            RatColor::Gray => BevyColor::GRAY,
+            RatColor::DarkGray => BevyColor::DARK_GRAY,
+            RatColor::LightRed => BevyColor::RED,
+            RatColor::LightGreen => BevyColor::GREEN,
+            RatColor::LightBlue => BevyColor::BLUE,
+            RatColor::LightYellow => BevyColor::BISQUE,
+            RatColor::LightMagenta => BevyColor::PINK,
+            RatColor::LightCyan => BevyColor::AQUAMARINE,
+            RatColor::White => BevyColor::WHITE,
+            RatColor::Indexed(i) => BevyColor::from_ansi(i),
+            RatColor::Rgb(r, g, b) => BevyColor::rgb_u8(r, g, b),
         }
     }
 }
@@ -85,9 +74,19 @@ impl From<BevyColor> for RatColor {
             BevyColor::PINK => Self::LightMagenta,
             BevyColor::AQUAMARINE => Self::LightCyan,
             BevyColor::WHITE => Self::White,
-            BevyColor::Rgba{ red,green,blue,alpha} => Self::Rgb(red as u8,green as u8,blue as u8),
-            BevyColor::Rgba{ red,green,blue,alpha} => Self::Indexed(red as u8),
-            _ =>Self::Reset,
+            BevyColor::Rgba {
+                red,
+                green,
+                blue,
+                alpha,
+            } => Self::Rgb(red as u8, green as u8, blue as u8),
+            BevyColor::Rgba {
+                red,
+                green,
+                blue,
+                alpha,
+            } => Self::Indexed(red as u8),
+            _ => Self::Reset,
         }
     }
 }
@@ -100,14 +99,22 @@ impl Plugin for RatatuiPlugin {
         world.init_resource::<FontHandlers>();
         app.init_state::<AppState>();
         app.add_systems(PreStartup, (font_setup));
+
         app.add_systems(
-            First,
+            Last,
             (init_bevy_terminals.run_if(in_state(AppState::TermNeedsIniting))),
         );
-        app.add_systems(First, (query_term_for_init));
+        app.add_systems(PreUpdate, (query_term_for_init));
         app.add_systems(First, (handle_primary_window_resize));
+        app.add_systems(
+            Update,
+            (update_ents_from_buffer).run_if(in_state(AppState::TermNeedsIniting)),
+        );
 
-        app.add_systems(PreUpdate, (update_ents_from_buffer, update_ents_from_comp).run_if(in_state(AppState::AllTermsInited)));
+        app.add_systems(
+            PostUpdate,
+            (update_ents_from_comp).run_if(in_state(AppState::AllTermsInited)),
+        );
     }
 }
 
@@ -117,25 +124,6 @@ enum AppState {
     NoTermsInited,
     AllTermsInited,
     TermNeedsIniting,
-}
-
-fn init_virtual_cells(
-    mut commands: Commands,
-    mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
-) {
-    let mut termy = terminal_query
-        .get_single_mut()
-        .expect("More than one terminal with a bevybackend");
-    let termy_backend = termy.backend_mut();
-    let rows = termy_backend.height;
-    let columns = termy_backend.width;
-
-    for y in 0..rows {
-        for x in 0..columns {
-            let cell = commands.spawn((VirtualCell::new(x, y))).id();
-            termy_backend.entity_map.insert((x, y), cell);
-        }
-    }
 }
 
 fn query_term_for_init(
@@ -157,14 +145,31 @@ fn set_terms_inited(mut next_game_state: ResMut<NextState<AppState>>) {
     next_game_state.set(AppState::AllTermsInited);
 }
 
+fn clear_virtual_cells(
+    mut commands: Commands,
+    mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
+) {
+    let mut termy = terminal_query
+        .get_single_mut()
+        .expect("More than one terminal with a bevybackend");
+    let mut termy_backend = termy.backend_mut();
+
+    for (_, entity) in termy_backend.entity_map.iter_mut() {
+        commands.entity(*entity).despawn();
+    }
+
+    termy_backend.entity_map = HashMap::new();
+}
+
 fn init_bevy_terminals(world: &mut World) {
-    world.run_system_once(set_terms_inited);
+    world.run_system_once(clear_virtual_cells);
 
     world.run_system_once(init_virtual_cells);
     world.run_system_once(add_render_to_cells);
+    world.run_system_once(set_terms_inited);
 }
 
-fn update_ents_from_buffer(
+fn init_virtual_cells(
     mut commands: Commands,
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
 ) {
@@ -172,105 +177,17 @@ fn update_ents_from_buffer(
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
     let termy_backend = termy.backend_mut();
-    let boop = termy_backend.entity_map.clone();
+    let rows = termy_backend.height;
+    let columns = termy_backend.width;
 
-    while let Some((x, y, vc)) = termy_backend.vcupdate.pop() {
-        let xy = (x, y);
-       match boop.get(&xy){
-
-            Some(wow) =>  {commands.entity(wow.clone()).insert(vc);()},
-            None => (),
-
-
-        };
-            
-
-        //commands.entity(eid.clone()).remove::<TextBundle>();
-
-    }
-}
-
-
-fn handle_primary_window_resize(mut windows: Query<&mut Window, With<PrimaryWindow>>,mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,mut resize_event: EventReader<WindowResized>,) {
-
-for wr in resize_event.read(){
-
-    let mut termy = terminal_query
-    .get_single_mut()
-    .expect("More than one terminal with a bevybackend");
-let  termy_backend = termy.backend_mut();
-    
-    let terminal_font_size = termy_backend.term_font_size as f32;
-    let terminal_font_aspect_ratio = termy_backend.font_aspect_ratio as f32;
-
-    let w_wid = (terminal_font_size  * terminal_font_aspect_ratio) ; 
-    let w_hei = terminal_font_size as f32 ; 
-
-    let new_wid = (wr.width / w_wid) as u16;
-    let new_hei = (wr.height / w_hei) as u16 ;
-
-    termy_backend.resize(new_wid as u16, new_hei as u16);
-
-
-    
-
-    for mut window in windows.iter_mut() {
-
-
-        window.resolution = WindowResolution::new(new_wid as f32 *  termy_backend.font_aspect_ratio * terminal_font_size as f32,new_hei as f32 * terminal_font_size as f32);
-    
-   
-    // Query returns one window typically.
-    
-       
-    }
-}
-
-
-}
-
- 
-
-
-
-
-fn update_ents_from_comp(
-    query_cells: Query<(Entity, &VirtualCell), (Changed<VirtualCell>)>,
-    mut commands: Commands,
-    font_handlers: Res<FontHandlers>,
-    terminal_query: Query<(&Terminal<BevyBackend>)>,
-) {
-    let termy = terminal_query
-        .get_single()
-        .expect("More than one terminal with a bevybackend");
-    let termy_backend = termy.backend();
-    let fontsize = termy_backend.term_font_size as f32;
-
-    let pixel_shift = fontsize * termy_backend.font_aspect_ratio;
-
-    for (entity_id, cellii) in query_cells.iter() {
-        commands.entity(entity_id).insert(
-            TextBundle::from_section(
-                // Accepts a `String` or any type that converts into a `String`, such as `&str`
-                &cellii.symbol,
-                TextStyle {
-                    // This font is loaded and will be used instead of the default font.
-                    font: font_handlers.normal.clone(),
-                    font_size: fontsize,
-                    color:cellii.fg,
-                    ..default()
-                },
-            ) // Set the justification of the Text
-            .with_background_color(cellii.bg)
-            .with_text_justify(JustifyText::Center)
-            // Set the style of the TextBundle itself.
-            .with_style(Style {
-                position_type: PositionType::Absolute,
-                top: Val::Px(cellii.row as f32 * fontsize),
-                left: Val::Px(cellii.column as f32 * pixel_shift),
-                ..default()
-            }),
-        );
+    for y in 0..rows {
+        for x in 0..columns {
+            let ratcell = termy_backend.buffer.get(x, y);
+            let vcell = commands
+                .spawn((VirtualCell::to_virtual(x, y, ratcell)))
+                .id();
+            termy_backend.entity_map.insert((x, y), vcell);
+        }
     }
 }
 
@@ -312,6 +229,106 @@ fn add_render_to_cells(
     }
 }
 
+fn update_ents_from_buffer(
+    mut commands: Commands,
+    mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
+) {
+    let mut termy = terminal_query
+        .get_single_mut()
+        .expect("More than one terminal with a bevybackend");
+    let termy_backend = termy.backend_mut();
+    let boop = termy_backend.entity_map.clone();
+
+    while let Some((x, y, vc)) = termy_backend.vcupdate.pop() {
+        let xy = (x, y);
+        match boop.get(&xy) {
+            Some(wow) => {
+                commands.entity(wow.clone()).insert(vc);
+                ()
+            }
+            None => (),
+        };
+
+        //commands.entity(eid.clone()).remove::<TextBundle>();
+    }
+}
+
+fn handle_primary_window_resize(
+    mut windows: Query<&mut Window, With<PrimaryWindow>>,
+    mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
+    mut resize_event: EventReader<WindowResized>,
+) {
+    for wr in resize_event.read() {
+        let mut termy = terminal_query
+            .get_single_mut()
+            .expect("More than one terminal with a bevybackend");
+        let termy_backend = termy.backend_mut();
+
+        let terminal_font_size = termy_backend.term_font_size as f32;
+        let terminal_font_aspect_ratio = termy_backend.font_aspect_ratio as f32;
+
+        let w_wid = (terminal_font_size * terminal_font_aspect_ratio);
+        let w_hei = terminal_font_size as f32;
+
+        let new_wid = (wr.width / w_wid) as u16;
+        let new_hei = (wr.height / w_hei) as u16;
+
+        termy_backend.resize(new_wid as u16, new_hei as u16);
+        termy_backend.bevy_initialized = false;
+
+        println!("WINDOW IS RESING");
+
+        for mut window in windows.iter_mut() {
+            window.resolution = WindowResolution::new(
+                new_wid as f32 * termy_backend.font_aspect_ratio * terminal_font_size as f32,
+                new_hei as f32 * terminal_font_size as f32,
+            );
+
+            // Query returns one window typically.
+        }
+    }
+}
+
+fn update_ents_from_comp(
+    query_cells: Query<(Entity, &VirtualCell), (Changed<VirtualCell>)>,
+    mut commands: Commands,
+    font_handlers: Res<FontHandlers>,
+    terminal_query: Query<(&Terminal<BevyBackend>)>,
+) {
+    let termy = terminal_query
+        .get_single()
+        .expect("More than one terminal with a bevybackend");
+    let termy_backend = termy.backend();
+    let fontsize = termy_backend.term_font_size as f32;
+
+    let pixel_shift = fontsize * termy_backend.font_aspect_ratio;
+
+    for (entity_id, cellii) in query_cells.iter() {
+        commands.entity(entity_id).insert(
+            TextBundle::from_section(
+                // Accepts a `String` or any type that converts into a `String`, such as `&str`
+                &cellii.symbol,
+                TextStyle {
+                    // This font is loaded and will be used instead of the default font.
+                    font: font_handlers.normal.clone(),
+                    font_size: fontsize,
+                    color: cellii.fg,
+                    ..default()
+                },
+            ) // Set the justification of the Text
+            .with_background_color(cellii.bg)
+            .with_text_justify(JustifyText::Center)
+            // Set the style of the TextBundle itself.
+            .with_style(Style {
+                position_type: PositionType::Absolute,
+                top: Val::Px(cellii.row as f32 * fontsize),
+                left: Val::Px(cellii.column as f32 * pixel_shift),
+                ..default()
+            }),
+        );
+    }
+}
+
 fn font_setup(asset_server: Res<AssetServer>, mut font_handlers: ResMut<FontHandlers>) {
     let big_handle: Handle<Font> = asset_server.load("fonts/DejaVuSansMono.ttf");
     font_handlers.normal = big_handle;
@@ -337,16 +354,19 @@ struct VirtualCell {
     fg: BevyColor,
     bg: BevyColor,
     underline_color: Option<BevyColor>,
+
     skip: bool,
-    bold: bool,
-    dim: bool,
-    italic: bool,
-    underlined: bool,
-    slow_blink: bool,
-    rapid_blink: bool,
-    reversed: bool,
-    hidden: bool,
-    crossed_out: bool,
+    /*
+        bold: bool,
+        dim: bool,
+        italic: bool,
+        underlined: bool,
+        slow_blink: bool,
+        rapid_blink: bool,
+        reversed: bool,
+        hidden: bool,
+        crossed_out: bool,
+    */
     row: u16,
     column: u16,
 }
@@ -359,15 +379,17 @@ impl VirtualCell {
             bg: bevy::prelude::Color::ORANGE,
             underline_color: None,
             skip: false,
-            bold: false,
-            dim: false,
-            italic: false,
-            underlined: false,
-            slow_blink: false,
-            rapid_blink: false,
-            reversed: false,
-            hidden: false,
-            crossed_out: false,
+            /*
+                        bold: false,
+                        dim: false,
+                        italic: false,
+                        underlined: false,
+                        slow_blink: false,
+                        rapid_blink: false,
+                        reversed: false,
+                        hidden: false,
+                        crossed_out: false,
+            */
             row: y,
             column: x,
         }
@@ -375,22 +397,24 @@ impl VirtualCell {
 }
 
 trait FromRatCell {
-    fn to_virtual(&mut self, given_cell: &Cell);
+    fn to_virtual(x: u16, y: u16, given_cell: &Cell) -> VirtualCell;
 }
 
 impl FromRatCell for VirtualCell {
-    fn to_virtual(&mut self, given_cell: &Cell) {
-        self.symbol = given_cell.symbol().into();
-        self.fg = BevyColor::from( given_cell.fg);
-        self.bg = BevyColor::from( given_cell.bg);
-        #[cfg(not(feature="underline-color"))]    
-         let beep = given_cell.fg;
-        #[cfg(feature="underline-color")]    
-         let beep = given_cell.underline_color;
-        self.underline_color = Some(BevyColor::from( beep));
-        self.skip = given_cell.skip;
-    
-        
+    fn to_virtual(x: u16, y: u16, given_cell: &Cell) -> VirtualCell {
+        VirtualCell {
+            symbol: given_cell.symbol().into(),
+            fg: BevyColor::from(given_cell.fg),
+            bg: BevyColor::from(given_cell.bg),
+            #[cfg(not(feature = "underline-color"))]
+            underline_color: Some(BevyColor::from(given_cell.fg)),
+            #[cfg(feature = "underline-color")]
+            underline_color: BevyColor::from(given_cell.underline_color),
+
+            skip: given_cell.skip,
+            row: y,
+            column: x,
+        }
     }
 }
 
@@ -407,8 +431,9 @@ pub struct BevyBackend {
     term_font_size: u16,
     entity_map: HashMap<(u16, u16), Entity>,
     buffer: Buffer,
+    prev_buffer: Buffer,
     vcupdate: Vec<(u16, u16, VirtualCell)>,
-    font_aspect_ratio:f32,
+    font_aspect_ratio: f32,
 
     cursor: bool,
     cursor_pos: (u16, u16),
@@ -423,11 +448,12 @@ impl Default for BevyBackend {
             term_font_size: 40,
             entity_map: HashMap::new(),
             buffer: Buffer::empty(Rect::new(0, 0, 10, 30)),
+            prev_buffer: Buffer::empty(Rect::new(0, 0, 10, 30)),
             vcupdate: Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
             bevy_initialized: false,
-            font_aspect_ratio:0.5,
+            font_aspect_ratio: 0.5,
         }
     }
 }
@@ -441,16 +467,18 @@ impl BevyBackend {
             term_font_size: font_size,
             entity_map: HashMap::new(),
             buffer: Buffer::empty(Rect::new(0, 0, width, height)),
+            prev_buffer: Buffer::empty(Rect::new(0, 0, width, height)),
             vcupdate: Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
-            font_aspect_ratio:0.5,
+            font_aspect_ratio: 0.5,
             bevy_initialized: false,
         }
     }
 
     /// Resizes the BevyBackend to the specified width and height.
     pub fn resize(&mut self, width: u16, height: u16) {
+        self.prev_buffer = self.buffer.clone();
         self.buffer.resize(Rect::new(0, 0, width, height));
         self.width = width;
         self.height = height;
@@ -463,15 +491,15 @@ impl Backend for BevyBackend {
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
         for (x, y, c) in content {
-            let mut vc = VirtualCell::new(x, y);
-            vc.to_virtual(c);
+            let vc = VirtualCell::to_virtual(x, y, c);
+
             self.vcupdate.push((x, y, vc));
 
             let cell = self.buffer.get_mut(x, y);
             *cell = c.clone();
 
-           // println!("{} {}", x, y);
-          //  println!("{:?}", c);
+            // println!("{} {}", x, y);
+            //  println!("{:?}", c);
         }
         Ok(())
     }
