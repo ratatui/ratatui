@@ -22,9 +22,6 @@ impl Plugin for RatatuiPlugin {
 
 ///
 ///
-
-///
-///
 ///
 /// RATATUI SPECIFIC STUFF STARTS HERE
 
