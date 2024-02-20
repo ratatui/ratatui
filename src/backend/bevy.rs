@@ -3,14 +3,13 @@
 
 use std::io;
 
+use bevy::app::{App, Plugin};
+
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
     layout::{Rect, Size},
 };
-
-use bevy::app::App;
-use bevy::app::Plugin;
 
 pub struct RatatuiPlugin;
 
