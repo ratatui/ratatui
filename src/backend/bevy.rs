@@ -7,11 +7,12 @@ use bevy::{
     prelude::{Color as BevyColor, *},
     utils::{HashMap},
 };
-use bevy::ecs::system::SystemParam;
+use bevy::ecs::system::RunSystemOnce;
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
     layout::{Rect, Size},
+    terminal::{Terminal}
 };
 
 pub struct RatatuiPlugin;
@@ -20,44 +21,48 @@ impl Plugin for RatatuiPlugin {
     fn build(&self, app: &mut App) {
         let world = &mut app.world;
         world.init_resource::<FontHandlers>();
-        app.add_systems(PreStartup, (font_setup,terminal_setup));
-        app.add_systems(Startup, init_virtual_cells);
-        app.add_systems(PostStartup, add_render_to_cells);
+        app.add_systems(PreStartup, (font_setup));
+        app.add_systems(PreUpdate,(init_bevy_terminals));
+      
         app.add_systems(PreUpdate, (update_ents_from_buffer,update_ents_from_comp));
     }
 }
 
-fn init_virtual_cells(mut commands: Commands, mut terminal_query:  Query<(&mut BevyBackend)>) {
+fn init_virtual_cells(mut commands: Commands, mut terminal_query:  Query<(&mut Terminal<BevyBackend>)>) {
     let mut termy = terminal_query.get_single_mut().expect("More than one terminal with a bevybackend");
-    let rows = termy.height;
-    let columns = termy.width;
+    let termy_backend = termy.backend_mut();
+    let rows = termy_backend.height;
+    let columns = termy_backend.width;
 
     for y in 0..rows {
         for x in 0..columns {
             let cell = commands.spawn((VirtualCell::new(x, y))).id();
-            termy.entity_map.insert((x, y), cell);
+            termy_backend.entity_map.insert((x, y), cell);
         }
     }
 }
 
 
+fn init_bevy_terminals(world: &mut World, mut terminal_query:  Query<(&mut Terminal<BevyBackend>),(Added<Terminal<BevyBackend>>)>){
 
+    world.run_system_once(init_virtual_cells);
+    world.run_system_once(add_render_to_cells);
+ 
 
-fn terminal_setup(mut commands: Commands){
-
-commands.spawn({BevyBackend::default()});
 
 }
 
+
+
 fn update_ents_from_buffer(mut commands: Commands,
-mut terminal_query:  Query<(&mut BevyBackend)>, ){
+mut terminal_query:  Query<(&mut Terminal<BevyBackend>)>, ){
 
     let mut termy = terminal_query.get_single_mut().expect("More than one terminal with a bevybackend");
-  
-    let boop = termy.entity_map.clone();
+    let termy_backend = termy.backend_mut();
+    let boop = termy_backend.entity_map.clone();
     
 
-    while let Some((x,y,vc)) = termy.vcupdate.pop() {
+    while let Some((x,y,vc)) = termy_backend.vcupdate.pop() {
         let xy = (x,y);
         let eid = boop.get(&xy).expect("ENTITY MAP IS MISSING THIS ENTITY at {x}{y}");
 
@@ -73,10 +78,10 @@ mut terminal_query:  Query<(&mut BevyBackend)>, ){
 
 }
 
-fn update_ents_from_comp(query_cells: Query<(Entity, &VirtualCell),(Changed<VirtualCell>)>, mut commands: Commands, font_handlers: Res<FontHandlers>,terminal_query:  Query<(&BevyBackend)>,){
+fn update_ents_from_comp(query_cells: Query<(Entity, &VirtualCell),(Changed<VirtualCell>)>, mut commands: Commands, font_handlers: Res<FontHandlers>,terminal_query: Query<(&Terminal<BevyBackend>)>,){
     let termy = terminal_query.get_single().expect("More than one terminal with a bevybackend");
-
-    let fontsize = termy.term_font_size as f32;
+    let termy_backend = termy.backend();
+    let fontsize = termy_backend.term_font_size as f32;
 
     let pixel_shift = fontsize  / 2.0;
 
@@ -118,12 +123,13 @@ for (entity_id, cellii) in query_cells.iter() {
 
 fn add_render_to_cells(
     query_cells: Query<(Entity, &VirtualCell)>,
-    mut terminal_query:  Query<(&mut BevyBackend)>,
+    mut terminal_query:   Query<(&mut Terminal<BevyBackend>)>,
     mut commands: Commands,
     font_handlers: Res<FontHandlers>,
 ) {
     let mut termy = terminal_query.get_single_mut().expect("More than one terminal with a bevybackend");
-    let fontsize = termy.term_font_size as f32;
+    let termy_backend = termy.backend();
+    let fontsize = termy_backend.term_font_size as f32;
 
     let pixel_shift = fontsize  / 2.0;
 
@@ -245,6 +251,7 @@ pub struct BevyBackend {
    
     cursor: bool,
     cursor_pos: (u16, u16),
+    bevy_initialized:bool
 }
 
 impl Default for BevyBackend {
@@ -258,6 +265,7 @@ impl Default for BevyBackend {
             vcupdate:Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
+            bevy_initialized:false,
         }
     }
 }
@@ -274,6 +282,7 @@ impl BevyBackend {
             vcupdate:Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
+            bevy_initialized:false,
         }
     }
 
