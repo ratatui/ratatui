@@ -23,11 +23,12 @@ impl Plugin for RatatuiPlugin {
         let world = &mut app.world;
         world.init_resource::<FontHandlers>();
         app.add_systems(PreStartup, (font_setup));
-        app.add_systems(PreUpdate, (init_bevy_terminals));
+        app.add_systems(First, (init_bevy_terminals));
 
         app.add_systems(PreUpdate, (update_ents_from_buffer, update_ents_from_comp));
     }
 }
+
 
 fn init_virtual_cells(
     mut commands: Commands,
@@ -48,10 +49,22 @@ fn init_virtual_cells(
     }
 }
 
+fn query_term_for_init(mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,){
+    let mut termy = terminal_query
+    .get_single_mut()
+    .expect("More than one terminal with a bevybackend");
+let termy_backend = termy.backend_mut();
+}
+
+
 fn init_bevy_terminals(
     world: &mut World,
-    mut terminal_query: Query<(&mut Terminal<BevyBackend>), (Added<Terminal<BevyBackend>>)>,
+
 ) {
+
+
+
+
     world.run_system_once(init_virtual_cells);
     world.run_system_once(add_render_to_cells);
 }
@@ -72,6 +85,8 @@ fn update_ents_from_buffer(
             .get(&xy)
             .expect("ENTITY MAP IS MISSING THIS ENTITY at {x}{y}");
 
+        //commands.entity(eid.clone()).remove::<TextBundle>();
+
         commands.entity(eid.clone()).insert(vc);
     }
 }
@@ -91,6 +106,7 @@ fn update_ents_from_comp(
     let pixel_shift = fontsize / 2.0;
 
     for (entity_id, cellii) in query_cells.iter() {
+
         commands.entity(entity_id).insert(
             TextBundle::from_section(
                 // Accepts a `String` or any type that converts into a `String`, such as `&str`
@@ -293,6 +309,9 @@ impl Backend for BevyBackend {
             let mut vc = VirtualCell::new(x, y);
             vc.to_virtual(c);
             self.vcupdate.push((x, y, vc));
+
+            let cell = self.buffer.get_mut(x, y);
+            *cell = c.clone();
 
             println!("{} {}", x, y);
             println!("{:?}", c);
