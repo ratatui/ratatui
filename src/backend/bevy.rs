@@ -24,16 +24,15 @@ impl Plugin for RatatuiPlugin {
         world.init_resource::<FontHandlers>();
         app.init_state::<AppState>();
         app.add_systems(PreStartup, (font_setup));
-        app.add_systems(First, (init_bevy_terminals.run_if(in_state(AppState::TermNeedsIniting))));
+        app.add_systems(
+            First,
+            (init_bevy_terminals.run_if(in_state(AppState::TermNeedsIniting))),
+        );
         app.add_systems(First, (query_term_for_init));
 
         app.add_systems(PreUpdate, (update_ents_from_buffer, update_ents_from_comp));
     }
 }
-
-
-
-
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
 enum AppState {
@@ -41,9 +40,6 @@ enum AppState {
     AllTermsInited,
     TermNeedsIniting,
 }
-
-
-
 
 fn init_virtual_cells(
     mut commands: Commands,
@@ -64,37 +60,27 @@ fn init_virtual_cells(
     }
 }
 
-fn query_term_for_init(mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,mut app_state: ResMut<NextState<AppState>>){
+fn query_term_for_init(
+    mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
+    mut app_state: ResMut<NextState<AppState>>,
+) {
     let mut termy = terminal_query
-    .get_single_mut()
-    .expect("More than one terminal with a bevybackend");
-let termy_backend = termy.backend_mut();
+        .get_single_mut()
+        .expect("More than one terminal with a bevybackend");
+    let termy_backend = termy.backend_mut();
 
-if (termy_backend.bevy_initialized == false){
-
-    app_state.set(AppState::TermNeedsIniting);
-    termy_backend.bevy_initialized = true;
-
-
-
-
-
-}
+    if (termy_backend.bevy_initialized == false) {
+        app_state.set(AppState::TermNeedsIniting);
+        termy_backend.bevy_initialized = true;
+    }
 }
 
 fn set_terms_inited(mut next_game_state: ResMut<NextState<AppState>>) {
     next_game_state.set(AppState::AllTermsInited);
 }
 
-fn init_bevy_terminals(
-    world: &mut World
-   
-
-) {
-    
-
+fn init_bevy_terminals(world: &mut World) {
     world.run_system_once(set_terms_inited);
-
 
     world.run_system_once(init_virtual_cells);
     world.run_system_once(add_render_to_cells);
@@ -137,7 +123,6 @@ fn update_ents_from_comp(
     let pixel_shift = fontsize / 2.0;
 
     for (entity_id, cellii) in query_cells.iter() {
-
         commands.entity(entity_id).insert(
             TextBundle::from_section(
                 // Accepts a `String` or any type that converts into a `String`, such as `&str`
