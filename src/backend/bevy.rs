@@ -20,33 +20,45 @@ pub struct RatatuiPlugin;
 impl Plugin for RatatuiPlugin {
     fn build(&self, app: &mut App) {
         let world = &mut app.world;
-        world.init_resource::<BevyBackend>();
         world.init_resource::<FontHandlers>();
-        app.add_systems(PreStartup, (font_setup));
+        app.add_systems(PreStartup, (font_setup,terminal_setup));
         app.add_systems(Startup, init_virtual_cells);
         app.add_systems(PostStartup, add_render_to_cells);
     }
 }
 
-fn init_virtual_cells(mut commands: Commands, mut terminal_res: ResMut<BevyBackend>) {
-    let rows = terminal_res.height;
-    let columns = terminal_res.width;
+fn init_virtual_cells(mut commands: Commands, mut terminal_query:  Query<(&mut BevyBackend)>) {
+    let mut termy = terminal_query.get_single_mut().expect("More than one terminal with a bevybackend");
+    let rows = termy.height;
+    let columns = termy.width;
 
     for y in 0..rows {
         for x in 0..columns {
             let cell = commands.spawn((VirtualCell::new(x, y))).id();
-            terminal_res.entity_map.insert((x, y), cell);
+            termy.entity_map.insert((x, y), cell);
         }
     }
 }
 
+
+
+
+fn terminal_setup(mut commands: Commands){
+
+commands.spawn({BevyBackend::default()});
+
+}
+
+
+
 fn add_render_to_cells(
     query_cells: Query<(Entity, &VirtualCell)>,
-    terminal_res: Res<BevyBackend>,
+    mut terminal_query:  Query<(&mut BevyBackend)>,
     mut commands: Commands,
     font_handlers: Res<FontHandlers>,
 ) {
-    let mut fontsize = terminal_res.term_font_size as f32;
+    let mut termy = terminal_query.get_single_mut().expect("More than one terminal with a bevybackend");
+    let fontsize = termy.term_font_size as f32;
 
     let pixel_shift = fontsize  / 2.0;
 
@@ -153,7 +165,7 @@ impl FromRatCell for VirtualCell {
 ///
 /// RATATUI SPECIFIC STUFF STARTS HERE
 
-#[derive(Resource, Debug, Clone, Eq, PartialEq)]
+#[derive(Component, Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BevyBackend {
     height: u16,
