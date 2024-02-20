@@ -13,6 +13,49 @@ use crate::{
     layout::{Rect, Size},
 };
 
+use bevy::app::Plugin;
+use bevy::app::App;
+
+
+pub struct RatatuiPlugin;
+
+impl Plugin for RatatuiPlugin{
+
+    fn build(&self, app: &mut App) {
+
+        todo!();
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+///
+/// 
+
+///
+/// 
+///
+/// RATATUI SPECIFIC STUFF STARTS HERE
+
+
+
+
+
+
+
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BevyBackend {
