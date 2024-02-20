@@ -2,10 +2,11 @@
 //! It is used in the integration tests to verify the correctness of the library.
 
 use std::io;
+use std::collections::HashMap;
 
 use bevy::{
     prelude::{Color as BevyColor, *},
-    utils::HashMap,
+   // utils::HashMap,
 };
 
 use crate::{
@@ -19,7 +20,7 @@ pub struct RatatuiPlugin;
 impl Plugin for RatatuiPlugin {
     fn build(&self, app: &mut App) {
         let world = &mut app.world;
-        world.init_resource::<VirtualTerminal>();
+        world.init_resource::<BevyBackend>();
         world.init_resource::<FontHandlers>();
         app.add_systems(PreStartup, (font_setup));
         app.add_systems(Startup, init_virtual_cells);
@@ -27,9 +28,9 @@ impl Plugin for RatatuiPlugin {
     }
 }
 
-fn init_virtual_cells(mut commands: Commands, mut terminal_res: ResMut<VirtualTerminal>) {
-    let rows = terminal_res.term_rows;
-    let columns = terminal_res.term_columns;
+fn init_virtual_cells(mut commands: Commands, mut terminal_res: ResMut<BevyBackend>) {
+    let rows = terminal_res.height;
+    let columns = terminal_res.width;
 
     for y in 0..rows {
         for x in 0..columns {
@@ -41,14 +42,13 @@ fn init_virtual_cells(mut commands: Commands, mut terminal_res: ResMut<VirtualTe
 
 fn add_render_to_cells(
     query_cells: Query<(Entity, &VirtualCell)>,
-    terminal_res: Res<VirtualTerminal>,
+    terminal_res: Res<BevyBackend>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     font_handlers: Res<FontHandlers>,
 ) {
-    let mut fontsize = terminal_res.term_font_size;
+    let mut fontsize = terminal_res.term_font_size as f32;
 
-    let pixel_shift = fontsize / 2.0;
+    let pixel_shift = fontsize  / 2.0;
 
     for (entity_id, cellii) in query_cells.iter() {
         commands.entity(entity_id).insert(
@@ -58,7 +58,7 @@ fn add_render_to_cells(
                 TextStyle {
                     // This font is loaded and will be used instead of the default font.
                     font: font_handlers.normal.clone(),
-                    font_size: fontsize,
+                    font_size: fontsize ,
                     ..default()
                 },
             ) // Set the justification of the Text
@@ -66,7 +66,7 @@ fn add_render_to_cells(
             // Set the style of the TextBundle itself.
             .with_style(Style {
                 position_type: PositionType::Absolute,
-                bottom: Val::Px(cellii.row as f32 * fontsize),
+                bottom: Val::Px(cellii.row as f32 * fontsize ),
                 left: Val::Px(cellii.column as f32 * pixel_shift),
                 ..default()
             }),
@@ -136,15 +136,6 @@ impl VirtualCell {
     }
 }
 
-trait FromVirtualTerminal {
-    fn to_cell(given_terminal: &VirtualTerminal) -> VirtualCell;
-}
-
-impl FromVirtualTerminal for VirtualCell {
-    fn to_cell(given_terminal: &VirtualTerminal) -> VirtualCell {
-        todo!()
-    }
-}
 
 trait FromRatCell {
     fn to_virtual(&mut self, given_cell: &Cell);
@@ -156,53 +147,50 @@ impl FromRatCell for VirtualCell {
     }
 }
 
-// A unit struct to help identify the FPS UI component, since there may be many Text components
-#[derive(Resource)]
-struct VirtualTerminal {
-    term_rows: u16,
-    term_columns: u16,
-    term_font_size: f32,
-    default_bg: BevyColor,
-    default_fg: BevyColor,
-    entity_map: HashMap<(u16, u16), Entity>,
-}
 
-impl Default for VirtualTerminal {
-    fn default() -> Self {
-        VirtualTerminal {
-            term_rows: 20,
-            term_columns: 10,
-            term_font_size: 40.0,
-            default_bg: bevy::prelude::Color::GRAY,
-            default_fg: bevy::prelude::Color::WHITE,
-            entity_map: HashMap::new(),
-        }
-    }
-}
 ///
 ///
 ///
 /// RATATUI SPECIFIC STUFF STARTS HERE
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Resource, Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BevyBackend {
-    width: u16,
-    buffer: Buffer,
     height: u16,
+    width: u16,
+    term_font_size: u16,
+    entity_map: HashMap<(u16, u16), Entity>,
+    buffer: Buffer,
+   
     cursor: bool,
-    pos: (u16, u16),
+    cursor_pos: (u16, u16),
+}
+
+impl Default for BevyBackend {
+    fn default() -> Self {
+        BevyBackend {
+            height: 17,
+            width: 3,
+            term_font_size: 40,
+            entity_map: HashMap::new(),
+            buffer: Buffer::empty(Rect::new(0, 0, 3, 17)),
+            cursor: false,
+            cursor_pos: (0, 0),
+        }
+    }
 }
 
 impl BevyBackend {
     /// Creates a new BevyBackend with the specified width and height.
     pub fn new(width: u16, height: u16) -> BevyBackend {
         BevyBackend {
-            width,
-            height,
+            height: height,
+            width: width,
+            term_font_size: 40,
+            entity_map: HashMap::new(),
             buffer: Buffer::empty(Rect::new(0, 0, width, height)),
             cursor: false,
-            pos: (0, 0),
+            cursor_pos: (0, 0),
         }
     }
 
@@ -238,11 +226,11 @@ impl Backend for BevyBackend {
     }
 
     fn get_cursor(&mut self) -> Result<(u16, u16), io::Error> {
-        Ok(self.pos)
+        Ok(self.cursor_pos)
     }
 
     fn set_cursor(&mut self, x: u16, y: u16) -> Result<(), io::Error> {
-        self.pos = (x, y);
+        self.cursor_pos = (x, y);
         Ok(())
     }
 
@@ -255,21 +243,21 @@ impl Backend for BevyBackend {
         match clear_type {
             ClearType::All => self.clear()?,
             ClearType::AfterCursor => {
-                let index = self.buffer.index_of(self.pos.0, self.pos.1) + 1;
+                let index = self.buffer.index_of(self.cursor_pos.0, self.cursor_pos.1) + 1;
                 self.buffer.content[index..].fill(Cell::default());
             }
             ClearType::BeforeCursor => {
-                let index = self.buffer.index_of(self.pos.0, self.pos.1);
+                let index = self.buffer.index_of(self.cursor_pos.0, self.cursor_pos.1);
                 self.buffer.content[..index].fill(Cell::default());
             }
             ClearType::CurrentLine => {
-                let line_start_index = self.buffer.index_of(0, self.pos.1);
-                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
+                let line_start_index = self.buffer.index_of(0, self.cursor_pos.1);
+                let line_end_index = self.buffer.index_of(self.width - 1, self.cursor_pos.1);
                 self.buffer.content[line_start_index..=line_end_index].fill(Cell::default());
             }
             ClearType::UntilNewLine => {
-                let index = self.buffer.index_of(self.pos.0, self.pos.1);
-                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
+                let index = self.buffer.index_of(self.cursor_pos.0, self.cursor_pos.1);
+                let line_end_index = self.buffer.index_of(self.width - 1, self.cursor_pos.1);
                 self.buffer.content[index..=line_end_index].fill(Cell::default());
             }
         }
