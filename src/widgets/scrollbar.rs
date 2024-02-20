@@ -498,27 +498,32 @@ impl Scrollbar<'_> {
     ///
     /// This method returns the length of the start, thumb, and end as a tuple.
     fn part_lengths(&self, area: Rect, state: &mut ScrollbarState) -> (usize, usize, usize) {
-        let track_len = self.track_length_excluding_arrow_heads(area) as f64;
-        let viewport_len = self.viewport_length(state, area) as f64;
+        let track_length = self.track_length_excluding_arrow_heads(area) as f64;
+        let viewport_length = self.viewport_length(state, area) as f64;
 
-        let content_length = state.content_length as f64;
-        // Clamp the position to show at least one line of the content, even if the content is
-        let position = state.position.min(state.content_length - 1) as f64;
+        // Ensure that the position of the thumb is within the bounds of the content taking into
+        // account the content and viewport length. When the last line of the content is at the top
+        // of the viewport, the thumb should be at the bottom of the track.
+        let max_position = state.content_length.saturating_sub(1) as f64;
+        let start_position = (state.position as f64).clamp(0.0, max_position);
+        let max_viewport_position = max_position + viewport_length;
+        let end_position = start_position + viewport_length;
 
-        // vscode style scrolling behavior (allow scrolling past end of content)
-        let scrollable_content_len = content_length + viewport_len - 1.0;
-        let thumb_start = position * track_len / scrollable_content_len;
-        let thumb_end = (position + viewport_len) * track_len / scrollable_content_len;
+        // Calculate the start and end positions of the thumb. The size will be proportional to the
+        // viewport length compared to the total amount of possible visible rows.
+        let thumb_start = start_position * track_length / max_viewport_position;
+        let thumb_end = end_position * track_length / max_viewport_position;
 
-        // We round just the positions (instead of floor / ceil), and then calculate the sizes from
-        // those positions. Rounding the sizes instead causes subtle off by 1 errors.
-        let track_start_len = thumb_start.round() as usize;
-        let thumb_end = thumb_end.round() as usize;
+        // Make sure that the thumb is at least 1 cell long by ensuring that the start of the thumb
+        // is less than the track_len. We use the positions instead of the sizes and use nearest
+        // integer instead of floor / ceil to avoid problems caused by rounding errors.
+        let thumb_start = thumb_start.round().clamp(0.0, track_length - 1.0) as usize;
+        let thumb_end = thumb_end.round().clamp(0.0, track_length) as usize;
 
-        let thumb_len = thumb_end.saturating_sub(track_start_len);
-        let track_end_len = track_len as usize - track_start_len - thumb_len;
+        let thumb_length = thumb_end.saturating_sub(thumb_start).max(1);
+        let track_end_length = (track_length as usize).saturating_sub(thumb_start + thumb_length);
 
-        (track_start_len, thumb_len, track_end_len)
+        (thumb_start, thumb_length, track_end_length)
     }
 
     fn scollbar_area(&self, area: Rect) -> Rect {
@@ -1038,6 +1043,37 @@ mod tests {
     #[case("--------##", 9, 10, "position_9")]
     #[case("--------##", 10, 10, "position_one_out_of_bounds")]
     fn custom_viewport_length(
+        #[case] expected: &str,
+        #[case] position: usize,
+        #[case] content_length: usize,
+        #[case] description: &str,
+        scrollbar_no_arrows: Scrollbar,
+    ) {
+        let size = expected.width() as u16;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
+        let mut state = ScrollbarState::default()
+            .position(position)
+            .content_length(content_length)
+            .viewport_content_length(2);
+        scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
+        assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}");
+    }
+
+    /// Fixes <https://github.com/ratatui-org/ratatui/pull/959> which was a bug that would not
+    /// render a thumb when the viewport was very small in comparison to the content length.
+    #[rstest]
+    #[case("#----", 0, 100, "position_0")]
+    #[case("#----", 10, 100, "position_10")]
+    #[case("-#---", 20, 100, "position_20")]
+    #[case("-#---", 30, 100, "position_30")]
+    #[case("--#--", 40, 100, "position_40")]
+    #[case("--#--", 50, 100, "position_50")]
+    #[case("---#-", 60, 100, "position_60")]
+    #[case("---#-", 70, 100, "position_70")]
+    #[case("----#", 80, 100, "position_80")]
+    #[case("----#", 90, 100, "position_90")]
+    #[case("----#", 100, 100, "position_one_out_of_bounds")]
+    fn thumb_visible_on_very_small_track(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
