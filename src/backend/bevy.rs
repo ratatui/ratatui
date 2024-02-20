@@ -14,7 +14,6 @@ use crate::{
     layout::{Rect, Size},
 };
 
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BevyBackend {
