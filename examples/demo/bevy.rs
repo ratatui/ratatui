@@ -18,16 +18,16 @@ use crate::{app::App as RatApp, ui};
 
 #[derive(Resource)]
 struct RatAppCont{
-    rat_app: RatApp,
+    rat_app:&'static Arc<RatApp<'static>>,
     tick_rate:Duration,
 
 
 }
 
 
-pub fn run(tick_rate: Duration, enhanced_graphics: bool)  {
+pub fn run(ticky_rate: Duration, enhanced_graphics: bool)  {
 
-    let meow =     Arc::new(RatAppCont{rat_app:RatApp::new("Crossterm Demo", enhanced_graphics),tick_rate});
+   
 
 
     // create app and run it
@@ -36,12 +36,31 @@ pub fn run(tick_rate: Duration, enhanced_graphics: bool)  {
     BevyApp::new()
     .add_plugins(DefaultPlugins)
     .add_plugins((RatatuiPlugin))
-    .insert_non_send_resource(meow)
+    .add_systems(PreStartup,create_rat_app)
     .add_systems(Startup, camera_setup)
     .add_systems(PreUpdate, terminal_draw)
     .add_systems(Update, (keyboard_input))
     .run();
   
+
+}
+
+
+fn create_rat_app(mut commands: Commands){
+
+    let ratty = Arc::new(RatApp::new("Crossterm Demo", enhanced_graphics));
+
+ 
+
+    let meow: RatAppCont= RatAppCont{rat_app:&ratty.clone(),tick_rate:ticky_rate};
+
+
+    commands.insert_resource(meow);
+
+
+
+
+
 
 }
 
