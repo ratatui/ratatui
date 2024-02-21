@@ -8,7 +8,7 @@ use std::{
 use bevy::app::AppExit;
 use bevy::app::App as BevyApp;
 use bevy::prelude::*;
-
+use std::sync::Mutex;
 use ratatui::prelude::*;
 
 use crate::{app::App as RatApp, ui};
@@ -16,54 +16,46 @@ use crate::{app::App as RatApp, ui};
 
 
 
-#[derive(Resource)]
-struct RatAppCont{
-    rat_app:&'static Arc<RatApp<'static>>,
-    tick_rate:Duration,
+
+pub fn run(ticky_rate: Duration, enhanced_graphics: bool)-> Result<(), Box<dyn Error>>  {
+
+    // create app and run it
+  //  let app = Arc::new(Mutex::new(RatApp::new("Crossterm Demo", enhanced_graphics)));
+
+
+    static mut BAP: RatApp = RatApp::new("Crossterm Demo", true);
+  //  static mut BEEP: Mutex<RatApp> = Mutex::new(BAP);
+  //  static mut BOOP:Arc<Mutex<RatApp>> = Arc::new(BEEP);
+  
+    let res = run_app();
+   
+   // let res = run_app(app.clone().lock().unwrap(), ticky_rate);
+
+    Ok(())
+   
+
 
 
 }
 
 
-pub fn run(ticky_rate: Duration, enhanced_graphics: bool)  {
 
-   
+fn run_app(
+) -> io::Result<()> {
 
-
-    // create app and run it
     
-
+  
     BevyApp::new()
     .add_plugins(DefaultPlugins)
     .add_plugins((RatatuiPlugin))
-    .add_systems(PreStartup,create_rat_app)
     .add_systems(Startup, camera_setup)
     .add_systems(PreUpdate, terminal_draw)
     .add_systems(Update, (keyboard_input))
     .run();
-  
+
+    Ok(())
 
 }
-
-
-fn create_rat_app(mut commands: Commands){
-
-    let ratty = Arc::new(RatApp::new("Crossterm Demo", enhanced_graphics));
-
- 
-
-    let meow: RatAppCont= RatAppCont{rat_app:&ratty.clone(),tick_rate:ticky_rate};
-
-
-    commands.insert_resource(meow);
-
-
-
-
-
-
-}
-
 
 
 
@@ -82,41 +74,41 @@ fn camera_setup(mut commands: Commands) {
     commands.spawn(my_terminal);
 }
 
-fn terminal_draw(mut terminal_query:  Query<(&mut Terminal<BevyBackend>)>, mut rat_app_cont: ResMut<RatAppCont>) {
-    let mut last_tick = Instant::now();
+fn terminal_draw(mut terminal_query:  Query<(&mut Terminal<BevyBackend>)>) {
+
+    let ra = BAP;
 
     let mut rat_term = terminal_query.get_single_mut().expect("More than one terminal with a bevybackend");
 
-    let _ = rat_term.draw(|f| ui::draw(f, &mut rat_app_cont.rat_app));
+    let _ = rat_term.draw(|f| ui::draw(f, &mut *ra));
 
 
-    if last_tick.elapsed() >= rat_app_cont.tick_rate {
-        rat_app_cont.rat_app.on_tick();
-        last_tick = Instant::now();
-    }
+        *ra.on_tick();
+    
 }
 
-fn keyboard_input(keys: Res<ButtonInput<KeyCode>>, mut exit: EventWriter<AppExit>, mut rat_app_cont: ResMut<RatAppCont>) {
+fn keyboard_input(keys: Res<ButtonInput<KeyCode>>, mut exit: EventWriter<AppExit>,) {
+    let ra = BAP;
     if keys.just_pressed(KeyCode::KeyQ) {
         exit.send(AppExit);
     }
     if keys.just_pressed(KeyCode::KeyH) {
-        rat_app_cont.rat_app.on_left();
+        *ra.on_left();
     }
     if keys.just_pressed(KeyCode::KeyK) {
-        rat_app_cont.rat_app.on_up();
+        *ra.on_up();
     }
     if keys.just_pressed(KeyCode::KeyL) {
-        rat_app_cont.rat_app.on_right();
+        *ra.on_right();
     }
     if keys.just_pressed(KeyCode::KeyJ) {
-        rat_app_cont.rat_app.on_down();
+        *ra.on_down();
     }
     if keys.just_pressed(KeyCode::KeyC) {
-        rat_app_cont.rat_app.on_key("c".chars().next().unwrap());
+        *ra.on_key("c".chars().next().unwrap());
     }
     if keys.just_pressed(KeyCode::KeyT) {
-        rat_app_cont.rat_app.on_key("t".chars().next().unwrap());
+        *ra.on_key("t".chars().next().unwrap());
     }
 }
 
