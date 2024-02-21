@@ -13,9 +13,18 @@ use ratatui::prelude::*;
 
 use crate::{app::App as RatApp, ui};
 
+use once_cell::sync::Lazy;
+
+
+static mut BAP: Lazy<RatApp> = Lazy::new(|| {RatApp::new("Crossterm Demo", true)});
 
 
 
+
+unsafe fn get_rap() -> &'static mut RatApp<'static> {
+
+    return &mut BAP;
+}
 
 pub fn run(ticky_rate: Duration, enhanced_graphics: bool)-> Result<(), Box<dyn Error>>  {
 
@@ -23,10 +32,12 @@ pub fn run(ticky_rate: Duration, enhanced_graphics: bool)-> Result<(), Box<dyn E
   //  let app = Arc::new(Mutex::new(RatApp::new("Crossterm Demo", enhanced_graphics)));
 
 
-    static mut BAP: RatApp = RatApp::new("Crossterm Demo", true);
+   
   //  static mut BEEP: Mutex<RatApp> = Mutex::new(BAP);
   //  static mut BOOP:Arc<Mutex<RatApp>> = Arc::new(BEEP);
   
+
+
     let res = run_app();
    
    // let res = run_app(app.clone().lock().unwrap(), ticky_rate);
@@ -41,6 +52,7 @@ pub fn run(ticky_rate: Duration, enhanced_graphics: bool)-> Result<(), Box<dyn E
 
 
 fn run_app(
+    
 ) -> io::Result<()> {
 
     
@@ -74,41 +86,43 @@ fn camera_setup(mut commands: Commands) {
     commands.spawn(my_terminal);
 }
 
-fn terminal_draw(mut terminal_query:  Query<(&mut Terminal<BevyBackend>)>) {
 
-    let ra = BAP;
+
+fn terminal_draw(mut terminal_query:  Query<(&mut Terminal<BevyBackend>)>) {
+ let mut ra = unsafe{get_rap()};
+ 
 
     let mut rat_term = terminal_query.get_single_mut().expect("More than one terminal with a bevybackend");
 
-    let _ = rat_term.draw(|f| ui::draw(f, &mut *ra));
+    let _ = rat_term.draw(|f| ui::draw(f, &mut ra));
 
 
-        *ra.on_tick();
+        ra.on_tick();
     
 }
 
 fn keyboard_input(keys: Res<ButtonInput<KeyCode>>, mut exit: EventWriter<AppExit>,) {
-    let ra = BAP;
+    let ra = unsafe{get_rap()};
     if keys.just_pressed(KeyCode::KeyQ) {
         exit.send(AppExit);
     }
     if keys.just_pressed(KeyCode::KeyH) {
-        *ra.on_left();
+        ra.on_left();
     }
     if keys.just_pressed(KeyCode::KeyK) {
-        *ra.on_up();
+        ra.on_up();
     }
     if keys.just_pressed(KeyCode::KeyL) {
-        *ra.on_right();
+        ra.on_right();
     }
     if keys.just_pressed(KeyCode::KeyJ) {
-        *ra.on_down();
+        ra.on_down();
     }
     if keys.just_pressed(KeyCode::KeyC) {
-        *ra.on_key("c".chars().next().unwrap());
+        ra.on_key("c".chars().next().unwrap());
     }
     if keys.just_pressed(KeyCode::KeyT) {
-        *ra.on_key("t".chars().next().unwrap());
+        ra.on_key("t".chars().next().unwrap());
     }
 }
 
