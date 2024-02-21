@@ -13,13 +13,11 @@ use crate::{
 /// that the selected item is visible. This will modify the [`ListState`] object passed to the
 /// [`Frame::render_stateful_widget`](crate::terminal::Frame::render_stateful_widget) method.
 ///
-/// The state consists of three fields:
+/// The state consists of two fields:
 /// - [`offset`]: the index of the first item to be displayed
-/// - [`padding`]: the number of other items that should be kept visible around the selected item
 /// - [`selected`]: the index of the selected item, which can be `None` if no item is selected
 ///
 /// [`offset`]: ListState::offset()
-/// [`padding`]: ListState::padding()
 /// [`selected`]: ListState::selected()
 ///
 /// See the list in the [Examples] directory for a more in depth example of the various
@@ -40,7 +38,6 @@ use crate::{
 /// let mut state = ListState::default();
 ///
 /// *state.offset_mut() = 1; // display the second item and onwards
-/// *state.padding_mut() = 1; // Keep one item before and after the selected item visible
 /// state.select(Some(3)); // select the forth item (0-indexed)
 ///
 /// frame.render_stateful_widget(list, area, &mut state);
@@ -50,8 +47,6 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ListState {
     offset: usize,
-    #[cfg_attr(feature = "serde", serde(default))]
-    padding: usize,
     selected: Option<usize>,
 }
 
@@ -88,23 +83,6 @@ impl ListState {
         self
     }
 
-    /// Sets the padding value
-    ///
-    /// The padding value is how many items before and after the selected item should be visible
-    /// This is a fluent setter method which must be chained or used as it consumes self
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// let state = ListState::default().with_padding(1);
-    /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn with_padding(mut self, padding: usize) -> Self {
-        self.padding = padding;
-        self
-    }
-
     /// Index of the first item to be displayed
     ///
     /// # Examples
@@ -129,36 +107,6 @@ impl ListState {
     /// ```
     pub fn offset_mut(&mut self) -> &mut usize {
         &mut self.offset
-    }
-
-    /// The Padding value
-    ///
-    /// The padding value is how many items before and after the selected item should be visible
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// let state = ListState::default();
-    /// assert_eq!(state.padding(), 0);
-    /// ```
-    pub fn padding(&self) -> usize {
-        self.padding
-    }
-
-    /// Mutable reference to the Padding value
-    ///
-    /// The padding value is how many items before and after the selected item should be visible
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// let mut state = ListState::default();
-    /// *state.padding_mut() = 1;
-    /// ```
-    pub fn padding_mut(&mut self) -> &mut usize {
-        &mut self.padding
     }
 
     /// Index of the selected item
@@ -490,6 +438,8 @@ pub struct List<'a> {
     repeat_highlight_symbol: bool,
     /// Decides when to allocate spacing for the selection symbol
     highlight_spacing: HighlightSpacing,
+    /// How many items to try to keep visible before and after the selected item
+    scroll_padding: usize,
 }
 
 /// Defines the direction in which the list will be rendered.
@@ -737,6 +687,25 @@ impl<'a> List<'a> {
         self
     }
 
+    /// Sets the number of items around the currently selected item that should be kept visible
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Example
+    ///
+    /// A padding value of 1 will keep 1 item above and 1 item bellow visible if possible
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let items = vec!["Item 1"];
+    /// let list = List::new(items).scroll_padding(1);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn scroll_padding(mut self, padding: usize) -> List<'a> {
+        self.scroll_padding = padding;
+        self
+    }
+
     /// Defines the list direction (up or down)
     ///
     /// Defines if the `List` is displayed *top to bottom* (default) or *bottom to top*. Use
@@ -794,7 +763,6 @@ impl<'a> List<'a> {
         &self,
         selected: Option<usize>,
         offset: usize,
-        padding: usize,
         max_height: usize,
     ) -> (usize, usize) {
         let offset = offset.min(self.items.len().saturating_sub(1));
@@ -829,13 +797,13 @@ impl<'a> List<'a> {
             // items to render to be less than we normally would due to the offset pushing us off
             // the end of the list of items. We want to allow the padding value to push us back up
             // to ensure the minimum requested padding items are shown
-            let mut padding_index = 0;
-            while padding_index != padding
+            let mut scroll_padding_index = 0;
+            while scroll_padding_index != self.scroll_padding
                 && last_visible_index == self.items.len()
                 && height_from_offset < max_height
                 && first_visible_index != 0
             {
-                padding_index += 1;
+                scroll_padding_index += 1;
                 let index = first_visible_index - 1;
                 let item = &self.items[index];
                 if item.height() + height_from_offset <= max_height {
@@ -849,7 +817,7 @@ impl<'a> List<'a> {
             // If there isnt enough room for evreything including padding then reduce the padding
             // value to prevent the list from jumping up and down or pushing the
             // selected item out of the visible list area
-            let mut padding = padding.min(
+            let mut scroll_padding = self.scroll_padding.min(
                 last_visible_index
                     .saturating_sub(first_visible_index)
                     .saturating_sub(1)
@@ -861,23 +829,25 @@ impl<'a> List<'a> {
             // the index_to_display it can change it to an item that's big enough to push the
             // selected item off the viewable area, or possibly cause the flickering issue again.
             // So to prevent this we're going to reduce the padding value again
-            while padding > 0 {
+            while scroll_padding > 0 {
                 let mut height_around_selected = 0;
-                for index in selected.saturating_sub(padding)
-                    ..=selected.saturating_add(padding).min(last_valid_index)
+                for index in selected.saturating_sub(scroll_padding)
+                    ..=selected
+                        .saturating_add(scroll_padding)
+                        .min(last_valid_index)
                 {
                     height_around_selected += self.items[index].height();
                 }
                 if height_around_selected <= max_height {
                     break;
                 }
-                padding -= 1;
+                scroll_padding -= 1;
             }
 
-            if (selected + padding).min(last_valid_index) >= last_visible_index {
-                selected + padding
-            } else if selected.saturating_sub(padding) < first_visible_index {
-                selected.saturating_sub(padding)
+            if (selected + scroll_padding).min(last_valid_index) >= last_visible_index {
+                selected + scroll_padding
+            } else if selected.saturating_sub(scroll_padding) < first_visible_index {
+                selected.saturating_sub(scroll_padding)
             } else {
                 selected
             }
@@ -972,7 +942,7 @@ impl StatefulWidgetRef for List<'_> {
         let list_height = list_area.height as usize;
 
         let (first_visible_index, last_visible_index) =
-            self.get_items_bounds(state.selected, state.offset, state.padding, list_height);
+            self.get_items_bounds(state.selected, state.offset, list_height);
 
         // Important: this changes the state's offset to be the beginning of the now viewable items
         state.offset = first_visible_index;
@@ -2150,7 +2120,6 @@ mod tests {
         let mut state = ListState::default();
 
         *state.offset_mut() = offset;
-        *state.padding_mut() = padding;
         state.select(selected);
 
         let items = vec![
@@ -2161,7 +2130,9 @@ mod tests {
             ListItem::new("Item 4"),
             ListItem::new("Item 5"),
         ];
-        let list = List::new(items).highlight_symbol(">> ");
+        let list = List::new(items)
+            .scroll_padding(padding)
+            .highlight_symbol(">> ");
 
         terminal
             .draw(|f| {
@@ -2182,10 +2153,7 @@ mod tests {
         let mut terminal = Terminal::new(backend).unwrap();
         let mut state = ListState::default();
 
-        let padding_value = 3;
-
         *state.offset_mut() = 2;
-        *state.padding_mut() = padding_value;
         state.select(Some(4));
 
         let items = vec![
@@ -2198,7 +2166,7 @@ mod tests {
             ListItem::new("Item 6"),
             ListItem::new("Item 7"),
         ];
-        let list = List::new(items).highlight_symbol(">> ");
+        let list = List::new(items).scroll_padding(3).highlight_symbol(">> ");
 
         terminal
             .draw(|f| {
@@ -2218,18 +2186,13 @@ mod tests {
 
         // Offset after rendering twice should remain the same as after once
         assert_eq!(offset_after_render, state.offset());
-        // Padding value shouldnt be modified
-        assert_eq!(state.padding(), padding_value);
     }
 
     #[test]
     fn test_padding_inconsistent_item_sizes() {
         let backend = backend::TestBackend::new(10, 3);
         let mut terminal = Terminal::new(backend).unwrap();
-        let mut state = ListState::default()
-            .with_offset(0)
-            .with_padding(1)
-            .with_selected(Some(3));
+        let mut state = ListState::default().with_offset(0).with_selected(Some(3));
 
         let items = vec![
             ListItem::new("Item 0"),
@@ -2239,7 +2202,7 @@ mod tests {
             ListItem::new("Item 4\nTest\nTest"),
             ListItem::new("Item 5"),
         ];
-        let list = List::new(items).highlight_symbol(">> ");
+        let list = List::new(items).scroll_padding(1).highlight_symbol(">> ");
 
         terminal
             .draw(|f| {
@@ -2264,7 +2227,6 @@ mod tests {
         let mut state = ListState::default();
 
         *state.offset_mut() = 1;
-        *state.padding_mut() = 2;
         state.select(Some(2));
 
         let items = vec![
@@ -2273,7 +2235,7 @@ mod tests {
             ListItem::new("Item 2"),
             ListItem::new("Item 3"),
         ];
-        let list = List::new(items).highlight_symbol(">> ");
+        let list = List::new(items).scroll_padding(2).highlight_symbol(">> ");
 
         terminal
             .draw(|f| {
