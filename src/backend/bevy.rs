@@ -54,42 +54,7 @@ impl From<RatColor> for BevyColor {
     }
 }
 
-impl From<BevyColor> for RatColor {
-    fn from(value: BevyColor) -> Self {
-        match value {
-            BevyColor::TOMATO => Self::Reset,
-            BevyColor::BLACK => Self::Black,
-            BevyColor::MAROON => Self::Red,
-            BevyColor::DARK_GRAY => Self::Green,
-            BevyColor::GOLD => Self::Yellow,
-            BevyColor::MIDNIGHT_BLUE => Self::Blue,
-            BevyColor::FUCHSIA => Self::Magenta,
-            BevyColor::CYAN => Self::Cyan,
-            BevyColor::GRAY => Self::Gray,
-            BevyColor::DARK_GRAY => Self::DarkGray,
-            BevyColor::RED => Self::LightRed,
-            BevyColor::GREEN => Self::LightGreen,
-            BevyColor::BLUE => Self::LightBlue,
-            BevyColor::BISQUE => Self::LightYellow,
-            BevyColor::PINK => Self::LightMagenta,
-            BevyColor::AQUAMARINE => Self::LightCyan,
-            BevyColor::WHITE => Self::White,
-            BevyColor::Rgba {
-                red,
-                green,
-                blue,
-                alpha,
-            } => Self::Rgb(red as u8, green as u8, blue as u8),
-            BevyColor::Rgba {
-                red,
-                green,
-                blue,
-                alpha,
-            } => Self::Indexed(red as u8),
-            _ => Self::Reset,
-        }
-    }
-}
+
 
 pub struct RatatuiPlugin;
 
@@ -374,7 +339,7 @@ impl FromRatCell for VirtualCell {
             #[cfg(not(feature = "underline-color"))]
             underline_color: Some(BevyColor::from(given_cell.fg)),
             #[cfg(feature = "underline-color")]
-            underline_color: BevyColor::from(given_cell.underline_color),
+            underline_color: Some(BevyColor::from(given_cell.underline_color)),
 
             skip: given_cell.skip,
             row: y,

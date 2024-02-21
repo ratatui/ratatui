@@ -25,6 +25,8 @@ mod crossterm;
 mod termion;
 #[cfg(feature = "termwiz")]
 mod termwiz;
+#[cfg(feature = "bevy")]
+mod bevy;
 
 mod ui;
 
@@ -44,6 +46,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let tick_rate = Duration::from_millis(cli.tick_rate);
     #[cfg(feature = "crossterm")]
     crate::crossterm::run(tick_rate, cli.enhanced_graphics)?;
+    #[cfg(feature = "bevy")]
+    crate::bevy::run(tick_rate, cli.enhanced_graphics);
     #[cfg(feature = "termion")]
     crate::termion::run(tick_rate, cli.enhanced_graphics)?;
     #[cfg(feature = "termwiz")]

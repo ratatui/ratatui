@@ -1,6 +1,6 @@
 use rand::{
     distributions::{Distribution, Uniform},
-    rngs::ThreadRng,
+    rngs::OsRng ,
 };
 use ratatui::widgets::*;
 
@@ -69,14 +69,14 @@ const EVENTS: [(&str, u64); 24] = [
 #[derive(Clone)]
 pub struct RandomSignal {
     distribution: Uniform<u64>,
-    rng: ThreadRng,
+    rng: OsRng,
 }
 
 impl RandomSignal {
     pub fn new(lower: u64, upper: u64) -> RandomSignal {
         RandomSignal {
             distribution: Uniform::new(lower, upper),
-            rng: rand::thread_rng(),
+            rng: OsRng::default(),
         }
     }
 }
