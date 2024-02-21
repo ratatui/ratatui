@@ -1,6 +1,6 @@
 use rand::{
     distributions::{Distribution, Uniform},
-    rngs::OsRng ,
+    rngs::OsRng,
 };
 use ratatui::widgets::*;
 

@@ -54,8 +54,6 @@ impl From<RatColor> for BevyColor {
     }
 }
 
-
-
 pub struct RatatuiPlugin;
 
 impl Plugin for RatatuiPlugin {
@@ -130,7 +128,7 @@ fn init_bevy_terminals(world: &mut World) {
     world.run_system_once(clear_virtual_cells);
 
     world.run_system_once(init_virtual_cells);
- //   world.run_system_once(add_render_to_cells);
+    //   world.run_system_once(add_render_to_cells);
     world.run_system_once(set_terms_inited);
     world.run_system_once(update_ents_from_buffer);
     world.run_system_once(update_ents_from_comp);
@@ -157,7 +155,6 @@ fn init_virtual_cells(
         }
     }
 }
-
 
 fn update_ents_from_buffer(
     mut commands: Commands,
@@ -427,7 +424,6 @@ impl Backend for BevyBackend {
 
             let cell = self.buffer.get_mut(x, y);
             *cell = c.clone();
-       
 
             // println!("{} {}", x, y);
             //  println!("{:?}", c);
@@ -530,7 +526,7 @@ impl Backend for BevyBackend {
 
     fn window_size(&mut self) -> Result<WindowSize, io::Error> {
         // Some arbitrary window pixel size, probably doesn't need much testing.
-        let window_pixel_size : Size = Size {
+        let window_pixel_size: Size = Size {
             width: self.width * self.font_aspect_ratio as u16 * self.term_font_size,
             height: 480,
         };
