@@ -18,48 +18,6 @@ use crate::{
     terminal::Terminal,
 };
 
-trait FromAnsi<u8> {
-    fn from_ansi(beep: u8) -> BevyColor;
-}
-
-impl FromAnsi<u8> for BevyColor {
-    fn from_ansi(beep: u8) -> BevyColor {
-        BevyColor::rgb_u8(beep, beep, beep)
-    }
-}
-
-trait FromRatColor<RatColor> {
-    fn from_rat_color(color: RatColor, fg: bool) -> BevyColor ;
-
-
-}
-
-
-impl FromRatColor<RatColor> for BevyColor {
-    fn from_rat_color(color: RatColor, fg: bool) -> Self {
-        match color {
-            RatColor::Reset => {if fg {BevyColor::WHITE} else {BevyColor::BLACK}},
-            RatColor::Black => BevyColor::BLACK,
-            RatColor::Red => BevyColor::MAROON,
-            RatColor::Green => BevyColor::DARK_GREEN,
-            RatColor::Yellow => BevyColor::GOLD,
-            RatColor::Blue => BevyColor::MIDNIGHT_BLUE,
-            RatColor::Magenta => BevyColor::FUCHSIA,
-            RatColor::Cyan => BevyColor::CYAN,
-            RatColor::Gray => BevyColor::GRAY,
-            RatColor::DarkGray => BevyColor::DARK_GRAY,
-            RatColor::LightRed => BevyColor::RED,
-            RatColor::LightGreen => BevyColor::GREEN,
-            RatColor::LightBlue => BevyColor::BLUE,
-            RatColor::LightYellow => BevyColor::BISQUE,
-            RatColor::LightMagenta => BevyColor::PINK,
-            RatColor::LightCyan => BevyColor::AQUAMARINE,
-            RatColor::White => BevyColor::WHITE,
-            RatColor::Indexed(i) => BevyColor::from_ansi(i),
-            RatColor::Rgb(r, g, b) => BevyColor::rgb_u8(r, g, b),
-        }
-    }
-}
 
 pub struct RatatuiPlugin;
 
@@ -75,14 +33,14 @@ impl Plugin for RatatuiPlugin {
             (init_bevy_terminals.run_if(in_state(TermState::TermNeedsIniting))),
         );
         app.add_systems(PreUpdate, (query_term_for_init));
-        app.add_systems(First, (handle_primary_window_resize));
+        app.add_systems(First, (handle_primary_window_resize).run_if(on_event::<WindowResized>()));
         app.add_systems(
-            Update,
-            (update_ents_from_buffer).run_if(in_state(TermState::AllTermsInited)),
+            PostUpdate,
+            (update_ents_from_vcupdate).run_if(in_state(TermState::AllTermsInited)),
         );
 
         app.add_systems(
-            PostUpdate,
+            First,
             (update_ents_from_comp).run_if(in_state(TermState::AllTermsInited)),
         );
     }
@@ -92,6 +50,11 @@ impl Plugin for RatatuiPlugin {
 enum TermState {
     #[default]
     NoTermsInited,
+    TermInited,
+    TermHasChangesToVCBuffer,
+    TermResized,
+
+
     AllTermsInited,
     TermNeedsIniting,
 }
@@ -141,7 +104,7 @@ fn init_bevy_terminals(world: &mut World) {
     world.run_system_once(init_virtual_cells);
     //   world.run_system_once(add_render_to_cells);
   
-    world.run_system_once(update_ents_from_buffer);
+    world.run_system_once(update_ents_from_vcupdate);
     world.run_system_once(update_ents_from_comp);
     world.run_system_once(set_terms_inited);
     println!("RUNNING   init_bevy_terminals");
@@ -157,6 +120,7 @@ fn init_virtual_cells(
     let termy_backend = termy.backend_mut();
     let rows = termy_backend.height;
     let columns = termy_backend.width;
+    termy_backend.entity_map = HashMap::new();
 
     for y in 0..rows {
         for x in 0..columns {
@@ -170,7 +134,7 @@ fn init_virtual_cells(
     println!("RUNNING   init_virtual_cells");
 }
 
-fn update_ents_from_buffer(
+fn update_ents_from_vcupdate(
     mut commands: Commands,
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
 ) {
@@ -192,7 +156,7 @@ fn update_ents_from_buffer(
 
         //commands.entity(eid.clone()).remove::<TextBundle>();
     }
-    println!("RUNNING   update_ents_from_buffer");
+    println!("RUNNING   update_ents_from_vcupdate");
 }
 
 fn handle_primary_window_resize(
@@ -232,7 +196,7 @@ fn handle_primary_window_resize(
     println!("RUNNING   handle_primary_window_resize");
 }
 
-fn update_ents_from_comp(
+fn update_ents_from_comp( //this should run after update from vcbuffer
     query_cells: Query<(Entity, &VirtualCell), (Changed<VirtualCell>)>,
     mut commands: Commands,
     font_handlers: Res<FontHandlers>,
@@ -362,6 +326,57 @@ impl FromRatCell for VirtualCell {
         }
     }
 }
+
+
+
+
+impl FromRatColor<RatColor> for BevyColor {
+    fn from_rat_color(color: RatColor, fg: bool) -> Self {
+        match color {
+            RatColor::Reset => {if fg {BevyColor::WHITE} else {BevyColor::BLACK}},
+            RatColor::Black => BevyColor::BLACK,
+            RatColor::Red => BevyColor::MAROON,
+            RatColor::Green => BevyColor::DARK_GREEN,
+            RatColor::Yellow => BevyColor::GOLD,
+            RatColor::Blue => BevyColor::MIDNIGHT_BLUE,
+            RatColor::Magenta => BevyColor::FUCHSIA,
+            RatColor::Cyan => BevyColor::CYAN,
+            RatColor::Gray => BevyColor::GRAY,
+            RatColor::DarkGray => BevyColor::DARK_GRAY,
+            RatColor::LightRed => BevyColor::RED,
+            RatColor::LightGreen => BevyColor::GREEN,
+            RatColor::LightBlue => BevyColor::BLUE,
+            RatColor::LightYellow => BevyColor::BISQUE,
+            RatColor::LightMagenta => BevyColor::PINK,
+            RatColor::LightCyan => BevyColor::AQUAMARINE,
+            RatColor::White => BevyColor::WHITE,
+            RatColor::Indexed(i) => BevyColor::from_ansi(i),
+            RatColor::Rgb(r, g, b) => BevyColor::rgb_u8(r, g, b),
+        }
+    }
+}
+
+
+
+
+trait FromAnsi<u8> {
+    fn from_ansi(beep: u8) -> BevyColor;
+}
+
+impl FromAnsi<u8> for BevyColor {
+    fn from_ansi(beep: u8) -> BevyColor {
+        BevyColor::rgb_u8(beep, beep, beep)
+    }
+}
+
+trait FromRatColor<RatColor> {
+    fn from_rat_color(color: RatColor, fg: bool) -> BevyColor ;
+
+
+}
+
+
+
 
 ///
 ///
