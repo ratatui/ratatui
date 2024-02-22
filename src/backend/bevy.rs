@@ -267,7 +267,7 @@ struct VirtualCell {
     underline_color: Option<BevyColor>,
 
     skip: bool,
-    /*
+    
         bold: bool,
         dim: bool,
         italic: bool,
@@ -277,7 +277,7 @@ struct VirtualCell {
         reversed: bool,
         hidden: bool,
         crossed_out: bool,
-    */
+    
     row: u16,
     column: u16,
 }
@@ -290,7 +290,7 @@ impl VirtualCell {
             bg: bevy::prelude::Color::BLACK,
             underline_color: None,
             skip: false,
-            /*
+            
                         bold: false,
                         dim: false,
                         italic: false,
@@ -300,7 +300,7 @@ impl VirtualCell {
                         reversed: false,
                         hidden: false,
                         crossed_out: false,
-            */
+            
             row: y,
             column: x,
         }
@@ -321,6 +321,15 @@ impl FromRatCell for VirtualCell {
             underline_color: Some(BevyColor::from_rat_color(given_cell.fg, true)),
             #[cfg(feature = "underline-color")]
             underline_color: Some(BevyColor::from_rat_color(given_cell.underline_color, true)),
+            bold: false,
+            dim: false,
+            italic: false,
+            underlined: false,
+            slow_blink: false,
+            rapid_blink: false,
+            reversed: false,
+            hidden: false,
+            crossed_out: false,//FIX THIUS SHOULD NOT BE ALL FALSE
 
             skip: given_cell.skip,
             row: y,
@@ -391,10 +400,14 @@ pub struct BevyBackend {
     prev_buffer: Buffer,
     vcupdate: Vec<(u16, u16, VirtualCell)>,
     font_aspect_ratio: f32,
-
     cursor: bool,
     cursor_pos: (u16, u16),
     bevy_initialized: bool,
+    normal_font_path: String,
+    italic_font_path: String,
+    bold_font_path: String,
+    italicbold_font_path: String,
+
 }
 
 impl Default for BevyBackend {
@@ -411,13 +424,20 @@ impl Default for BevyBackend {
             cursor_pos: (0, 0),
             bevy_initialized: false,
             font_aspect_ratio: 0.5,
+            normal_font_path: "NO FONT PROVIDED".to_string(),
+        italic_font_path: "NO FONT PROVIDED".to_string(),
+         bold_font_path: "NO FONT PROVIDED".to_string(),
+         italicbold_font_path: "NO FONT PROVIDED".to_string(),
         }
     }
 }
 
 impl BevyBackend {
     /// Creates a new BevyBackend with the specified width and height.
-    pub fn new(width: u16, height: u16, font_size: u16) -> BevyBackend {
+    pub fn new(width: u16, height: u16, font_size: u16, font_aspect_ratio:f32,   normal_font_path: &str,
+        italic_font_path: &str,
+        bold_font_path: &str,
+        italicbold_font_path: &str,) -> BevyBackend {
         BevyBackend {
             height: height,
             width: width,
@@ -428,8 +448,12 @@ impl BevyBackend {
             vcupdate: Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
-            font_aspect_ratio: 0.5,
+            font_aspect_ratio: font_aspect_ratio,
             bevy_initialized: false,
+            normal_font_path: normal_font_path.to_string(),
+    italic_font_path: italic_font_path.to_string(),
+    bold_font_path: bold_font_path.to_string(),
+    italicbold_font_path: italicbold_font_path.to_string(),
         }
     }
 
