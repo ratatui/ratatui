@@ -14,7 +14,7 @@ use ratatui::prelude::*;
 
 use crate::{app::App as RatApp, ui};
 
-static mut BAP: Lazy<RatApp> = Lazy::new(|| RatApp::new("Crossterm Demo", true));
+static mut BAP: Lazy<RatApp> = Lazy::new(|| RatApp::new("Crossterm Demo", false));
 
 unsafe fn get_rap() -> &'static mut RatApp<'static> {
     return &mut BAP;
@@ -38,8 +38,10 @@ fn run_app() -> io::Result<()> {
     BevyApp::new()
         .add_plugins(DefaultPlugins)
         .add_plugins((RatatuiPlugin))
+        .insert_resource(Time::<Fixed>::from_hz(10.0))
         .add_systems(Startup, camera_setup)
         .add_systems(PreUpdate, terminal_draw)
+        .add_systems(FixedUpdate, app_tick)
         .add_systems(Update, (keyboard_input))
         .run();
 
@@ -59,15 +61,23 @@ fn camera_setup(mut commands: Commands) {
 }
 
 fn terminal_draw(mut terminal_query: Query<(&mut Terminal<BevyBackend>)>) {
+  
     let mut ra = unsafe { get_rap() };
-
     let mut rat_term = terminal_query
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
 
     let _ = rat_term.draw(|f| ui::draw(f, &mut ra));
 
+  
+}
+
+
+fn app_tick(){
+    let mut ra = unsafe { get_rap() };
     ra.on_tick();
+
+
 }
 
 fn keyboard_input(keys: Res<ButtonInput<KeyCode>>, mut exit: EventWriter<AppExit>) {

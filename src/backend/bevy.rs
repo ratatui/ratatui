@@ -28,10 +28,17 @@ impl FromAnsi<u8> for BevyColor {
     }
 }
 
-impl From<RatColor> for BevyColor {
-    fn from(color: RatColor) -> Self {
+trait FromRatColor<RatColor> {
+    fn from_rat_color(color: RatColor, fg: bool) -> BevyColor ;
+
+
+}
+
+
+impl FromRatColor<RatColor> for BevyColor {
+    fn from_rat_color(color: RatColor, fg: bool) -> Self {
         match color {
-            RatColor::Reset => BevyColor::TOMATO,
+            RatColor::Reset => {if fg {BevyColor::WHITE} else {BevyColor::BLACK}},
             RatColor::Black => BevyColor::BLACK,
             RatColor::Red => BevyColor::MAROON,
             RatColor::Green => BevyColor::DARK_GREEN,
@@ -60,29 +67,29 @@ impl Plugin for RatatuiPlugin {
     fn build(&self, app: &mut App) {
         let world = &mut app.world;
         world.init_resource::<FontHandlers>();
-        app.init_state::<AppState>();
+        app.init_state::<TermState>();
         app.add_systems(PreStartup, (font_setup));
 
         app.add_systems(
             Last,
-            (init_bevy_terminals.run_if(in_state(AppState::TermNeedsIniting))),
+            (init_bevy_terminals.run_if(in_state(TermState::TermNeedsIniting))),
         );
         app.add_systems(PreUpdate, (query_term_for_init));
         app.add_systems(First, (handle_primary_window_resize));
         app.add_systems(
             Update,
-            (update_ents_from_buffer).run_if(in_state(AppState::TermNeedsIniting)),
+            (update_ents_from_buffer).run_if(in_state(TermState::AllTermsInited)),
         );
 
         app.add_systems(
             PostUpdate,
-            (update_ents_from_comp).run_if(in_state(AppState::AllTermsInited)),
+            (update_ents_from_comp).run_if(in_state(TermState::AllTermsInited)),
         );
     }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
-enum AppState {
+enum TermState {
     #[default]
     NoTermsInited,
     AllTermsInited,
@@ -91,7 +98,7 @@ enum AppState {
 
 fn query_term_for_init(
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
-    mut app_state: ResMut<NextState<AppState>>,
+    mut app_state: ResMut<NextState<TermState>>,
 ) {
     let mut termy = terminal_query
         .get_single_mut()
@@ -99,13 +106,16 @@ fn query_term_for_init(
     let termy_backend = termy.backend_mut();
 
     if (termy_backend.bevy_initialized == false) {
-        app_state.set(AppState::TermNeedsIniting);
+        app_state.set(TermState::TermNeedsIniting);
         termy_backend.bevy_initialized = true;
     }
+
+    println!("RUNNING   query_term_for_init");
 }
 
-fn set_terms_inited(mut next_game_state: ResMut<NextState<AppState>>) {
-    next_game_state.set(AppState::AllTermsInited);
+fn set_terms_inited(mut next_game_state: ResMut<NextState<TermState>>) {
+    next_game_state.set(TermState::AllTermsInited);
+    println!("RUNNING   set_terms_inited");
 }
 
 fn clear_virtual_cells(
@@ -122,6 +132,7 @@ fn clear_virtual_cells(
     }
 
     termy_backend.entity_map = HashMap::new();
+    println!("RUNNING   clear_virtual_cells");
 }
 
 fn init_bevy_terminals(world: &mut World) {
@@ -129,9 +140,11 @@ fn init_bevy_terminals(world: &mut World) {
 
     world.run_system_once(init_virtual_cells);
     //   world.run_system_once(add_render_to_cells);
-    world.run_system_once(set_terms_inited);
+  
     world.run_system_once(update_ents_from_buffer);
     world.run_system_once(update_ents_from_comp);
+    world.run_system_once(set_terms_inited);
+    println!("RUNNING   init_bevy_terminals");
 }
 
 fn init_virtual_cells(
@@ -154,6 +167,7 @@ fn init_virtual_cells(
             termy_backend.entity_map.insert((x, y), vcell);
         }
     }
+    println!("RUNNING   init_virtual_cells");
 }
 
 fn update_ents_from_buffer(
@@ -178,6 +192,7 @@ fn update_ents_from_buffer(
 
         //commands.entity(eid.clone()).remove::<TextBundle>();
     }
+    println!("RUNNING   update_ents_from_buffer");
 }
 
 fn handle_primary_window_resize(
@@ -214,6 +229,7 @@ fn handle_primary_window_resize(
             // Query returns one window typically.
         }
     }
+    println!("RUNNING   handle_primary_window_resize");
 }
 
 fn update_ents_from_comp(
@@ -254,11 +270,13 @@ fn update_ents_from_comp(
             }),
         );
     }
+    println!("RUNNING   update_ents_from_comp");
 }
 
 fn font_setup(asset_server: Res<AssetServer>, mut font_handlers: ResMut<FontHandlers>) {
     let big_handle: Handle<Font> = asset_server.load("fonts/DejaVuSansMono.ttf");
     font_handlers.normal = big_handle;
+    println!("RUNNING   font_setup");
 }
 
 #[derive(Resource)]
@@ -302,8 +320,8 @@ impl VirtualCell {
     fn new(x: u16, y: u16) -> Self {
         VirtualCell {
             symbol: "╬".to_string(),
-            fg: bevy::prelude::Color::TOMATO,
-            bg: bevy::prelude::Color::ORANGE,
+            fg: bevy::prelude::Color::WHITE,
+            bg: bevy::prelude::Color::BLACK,
             underline_color: None,
             skip: false,
             /*
@@ -331,12 +349,12 @@ impl FromRatCell for VirtualCell {
     fn to_virtual(x: u16, y: u16, given_cell: &Cell) -> VirtualCell {
         VirtualCell {
             symbol: given_cell.symbol().into(),
-            fg: BevyColor::from(given_cell.fg),
-            bg: BevyColor::from(given_cell.bg),
+            fg: BevyColor::from_rat_color(given_cell.fg, true),
+            bg: BevyColor::from_rat_color(given_cell.bg, false),
             #[cfg(not(feature = "underline-color"))]
-            underline_color: Some(BevyColor::from(given_cell.fg)),
+            underline_color: Some(BevyColor::from_rat_color(given_cell.fg,true)),
             #[cfg(feature = "underline-color")]
-            underline_color: Some(BevyColor::from(given_cell.underline_color)),
+            underline_color: Some(BevyColor::from_rat_color(given_cell.underline_color,true)),
 
             skip: given_cell.skip,
             row: y,
