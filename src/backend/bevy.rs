@@ -23,9 +23,9 @@ pub struct RatatuiPlugin;
 impl Plugin for RatatuiPlugin {
     fn build(&self, app: &mut App) {
         let world = &mut app.world;
-        world.init_resource::<FontHandlers>();
+        
         app.init_state::<TermState>();
-        app.add_systems(PreStartup, (font_setup));
+       
 
         app.add_systems(
             Last,
@@ -63,6 +63,7 @@ enum TermState {
 fn query_term_for_init(
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
     mut app_state: ResMut<NextState<TermState>>,
+    
 ) {
     let mut termy = terminal_query
         .get_single_mut()
@@ -100,6 +101,7 @@ fn clear_virtual_cells(
 }
 
 fn init_bevy_terminals(world: &mut World) {
+    world.run_system_once(font_setup);
     world.run_system_once(clear_virtual_cells);
 
     world.run_system_once(init_virtual_cells);
@@ -201,8 +203,7 @@ fn update_ents_from_comp(
     //this should run after update from vcbuffer
     query_cells: Query<(Entity, &VirtualCell), (Changed<VirtualCell>)>,
     mut commands: Commands,
-    font_handlers: Res<FontHandlers>,
-    terminal_query: Query<(&Terminal<BevyBackend>)>,
+    terminal_query: Query<((&Terminal<BevyBackend>))>,
 ) {
     let termy = terminal_query
         .get_single()
@@ -219,7 +220,7 @@ fn update_ents_from_comp(
                 &cellii.symbol,
                 TextStyle {
                     // This font is loaded and will be used instead of the default font.
-                    font: font_handlers.normal.clone(),
+                    font: termy_backend.normal_handle.clone(),
                     font_size: fontsize,
                     color: cellii.fg,
                     ..default()
@@ -239,24 +240,29 @@ fn update_ents_from_comp(
     debug!("RUNNING   update_ents_from_comp");
 }
 
-fn font_setup(asset_server: Res<AssetServer>, mut font_handlers: ResMut<FontHandlers>) {
-    let big_handle: Handle<Font> = asset_server.load("fonts/unifont.otf");
-    font_handlers.normal = big_handle;
-    debug!("RUNNING   font_setup");
+fn font_setup( mut commands: Commands,asset_server: Res<AssetServer>,mut terminal_query: Query<((Entity,&mut Terminal<BevyBackend>))>) {
+
+ 
+        let  (e,mut termy) = terminal_query
+        .get_single_mut()
+        .expect("More than one terminal with a bevybackend");
+    let mut termy_backend = termy.backend_mut();
+    
+
+
+ 
+
+    termy_backend.normal_handle = asset_server.load(&termy_backend.normal_font_path);
+    termy_backend.italic_handle = asset_server.load(&termy_backend.italic_font_path);
+    termy_backend.bold_handle = asset_server.load(&termy_backend.bold_font_path);
+    termy_backend.italicbold_handle = asset_server.load(&termy_backend.italicbold_font_path);
+       
+        debug!("RUNNING   font_setup");
+
+    
+    
 }
 
-#[derive(Resource)]
-struct FontHandlers {
-    normal: Handle<Font>,
-}
-
-impl Default for FontHandlers {
-    fn default() -> Self {
-        FontHandlers {
-            normal: Handle::weak_from_u128(101),
-        }
-    }
-}
 
 // A unit struct to help identify the color-changing Text component
 #[derive(Component, Debug, Clone, PartialEq)]
@@ -407,6 +413,10 @@ pub struct BevyBackend {
     italic_font_path: String,
     bold_font_path: String,
     italicbold_font_path: String,
+    normal_handle:Handle<Font>,
+    italic_handle:Handle<Font>,
+    bold_handle:Handle<Font>,
+    italicbold_handle:Handle<Font>,
 
 }
 
@@ -428,6 +438,10 @@ impl Default for BevyBackend {
         italic_font_path: "NO FONT PROVIDED".to_string(),
          bold_font_path: "NO FONT PROVIDED".to_string(),
          italicbold_font_path: "NO FONT PROVIDED".to_string(),
+         normal_handle:Handle::weak_from_u128(101),
+         italic_handle:Handle::weak_from_u128(101),
+         bold_handle:Handle::weak_from_u128(101),
+         italicbold_handle:Handle::weak_from_u128(101),
         }
     }
 }
@@ -454,6 +468,10 @@ impl BevyBackend {
     italic_font_path: italic_font_path.to_string(),
     bold_font_path: bold_font_path.to_string(),
     italicbold_font_path: italicbold_font_path.to_string(),
+    normal_handle:Handle::weak_from_u128(101),
+    italic_handle:Handle::weak_from_u128(101),
+    bold_handle:Handle::weak_from_u128(101),
+    italicbold_handle:Handle::weak_from_u128(101),
         }
     }
 
