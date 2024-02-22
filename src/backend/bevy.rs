@@ -66,6 +66,7 @@ fn query_term_for_init(
     mut app_state: ResMut<NextState<TermState>>,
     
 ) {
+    println!("entering   query_term_for_init");
     let mut termy = terminal_query
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
@@ -76,18 +77,21 @@ fn query_term_for_init(
         termy_backend.bevy_initialized = true;
     }
 
-    debug!("RUNNING   query_term_for_init");
+    println!("RUNNING   query_term_for_init");
+    println!("{:?}",termy_backend.bevy_initialized);
 }
 
 fn set_terms_inited(mut next_game_state: ResMut<NextState<TermState>>) {
+    println!("entering   set_terms_inited");
     next_game_state.set(TermState::AllTermsInited);
-    debug!("RUNNING   set_terms_inited");
+    println!("RUNNING   set_terms_inited");
 }
 
 fn clear_virtual_cells(
     mut commands: Commands,
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
 ) {
+    println!("entering   clear_virtual_cells");
     let mut termy = terminal_query
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
@@ -98,27 +102,36 @@ fn clear_virtual_cells(
     }
 
     termy_backend.entity_map = HashMap::new();
-    debug!("RUNNING   clear_virtual_cells");
+    println!("RUNNING   clear_virtual_cells");
 }
 
 fn init_bevy_terminals(world: &mut World) {
-    world.run_system_once(font_setup);
+    println!("entering   init_bevy_terminals");
+    apply_deferred(world);
+    println!("0");
     world.run_system_once(clear_virtual_cells);
-
+    
+    println!("1");
+    world.run_system_once(font_setup);
+    println!("2");
     world.run_system_once(init_virtual_cells);
     //   world.run_system_once(add_render_to_cells);
-
+    println!("3");
     world.run_system_once(update_ents_from_vcupdate);
+    println!("4");
     world.run_system_once(update_ents_from_comp);
+    println!("5");
     world.run_system_once(set_terms_inited);
-    debug!("RUNNING   init_bevy_terminals");
+    println!("RUNNING   init_bevy_terminals");
 }
 
 fn init_virtual_cells(
     mut commands: Commands,
-    mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
+    mut terminal_query: Query<(Entity, &mut Terminal<BevyBackend>)>,
+    
 ) {
-    let mut termy = terminal_query
+    println!("entering   init_virtual_cells");
+    let (e,mut termy) = terminal_query
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
     let termy_backend = termy.backend_mut();
@@ -126,22 +139,38 @@ fn init_virtual_cells(
     let columns = termy_backend.width;
     termy_backend.entity_map = HashMap::new();
 
-    for y in 0..rows {
-        for x in 0..columns {
-            let ratcell = termy_backend.buffer.get(x, y);
-            let vcell = commands
-                .spawn((VirtualCell::to_virtual(x, y, ratcell)))
-                .id();
-            termy_backend.entity_map.insert((x, y), vcell);
+   
+    
+
+    
+
+        
+
+        // left vertical fill (border)
+        for y in 0..rows {
+            for x in 0..columns {
+                let ratcell = termy_backend.buffer.get(x, y);
+                let vcell = commands
+                    .spawn((VirtualCell::to_virtual(x, y, ratcell)))
+                    .id();
+              
+                termy_backend.entity_map.insert((x, y), vcell);
+            }
         }
-    }
-    debug!("RUNNING   init_virtual_cells");
+    
+    
+     //   commands.entity(e).with_children(|parent| { });
+
+
+    
+    println!("RUNNING   init_virtual_cells");
 }
 
 fn update_ents_from_vcupdate(
     mut commands: Commands,
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
 ) {
+    println!("entering   update_ents_from_vcupdate");
     let mut termy = terminal_query
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
@@ -160,7 +189,7 @@ fn update_ents_from_vcupdate(
 
         //commands.entity(eid.clone()).remove::<TextBundle>();
     }
-    debug!("RUNNING   update_ents_from_vcupdate");
+    println!("RUNNING   update_ents_from_vcupdate");
 }
 
 fn handle_primary_window_resize(
@@ -168,6 +197,7 @@ fn handle_primary_window_resize(
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
     mut resize_event: EventReader<WindowResized>,
 ) {
+    println!("entering   handle_primary_window_resize");
     for wr in resize_event.read() {
         let mut termy = terminal_query
             .get_single_mut()
@@ -186,7 +216,7 @@ fn handle_primary_window_resize(
         termy_backend.resize(new_wid as u16, new_hei as u16);
         termy_backend.bevy_initialized = false;
 
-        debug!("WINDOW IS RESING");
+        println!("WINDOW IS RESING");
 
         for mut window in windows.iter_mut() {
             window.resolution = WindowResolution::new(
@@ -197,7 +227,7 @@ fn handle_primary_window_resize(
             // Query returns one window typically.
         }
     }
-    debug!("RUNNING   handle_primary_window_resize");
+    println!("RUNNING   handle_primary_window_resize");
 }
 
 fn update_ents_from_comp(
@@ -206,6 +236,7 @@ fn update_ents_from_comp(
     mut commands: Commands,
     terminal_query: Query<((&Terminal<BevyBackend>))>,
 ) {
+    println!("entering   update_ents_from_comp");
     let termy = terminal_query
         .get_single()
         .expect("More than one terminal with a bevybackend");
@@ -245,25 +276,34 @@ fn update_ents_from_comp(
             .with_text_justify(JustifyText::Center)
             // Set the style of the TextBundle itself.
             .with_style(Style {
+                display:Display::Grid,
                 position_type: PositionType::Absolute,
+                align_items:AlignItems::Stretch,
+                margin:UiRect::ZERO,
+                padding:UiRect::ZERO,
+                border:UiRect::ZERO,
+                grid_auto_flow: GridAutoFlow::Column,
                 top: Val::Px(cellii.row as f32 * fontsize),
                 left: Val::Px(cellii.column as f32 * pixel_shift),
+            //  grid_row: GridPlacement::start(cellii.row as i16 +1),
+            //  grid_column: GridPlacement::start(cellii.column as i16 +1),
                 ..default()
             }),
         );
     }
     }
-    debug!("RUNNING   update_ents_from_comp");
+    println!("RUNNING   update_ents_from_comp");
 }
 
 fn font_setup( mut commands: Commands,asset_server: Res<AssetServer>,mut terminal_query: Query<((Entity,&mut Terminal<BevyBackend>))>) {
 
- 
+    println!("entering   font_setup");
         let  (e,mut termy) = terminal_query
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
     let mut termy_backend = termy.backend_mut();
-    
+
+
 
 
  
@@ -273,7 +313,7 @@ fn font_setup( mut commands: Commands,asset_server: Res<AssetServer>,mut termina
     termy_backend.bold_handle = asset_server.load(&termy_backend.bold_font_path);
     termy_backend.italicbold_handle = asset_server.load(&termy_backend.italicbold_font_path);
        
-        debug!("RUNNING   font_setup");
+        println!("RUNNING   font_setup");
 
     
     
@@ -515,8 +555,8 @@ impl Backend for BevyBackend {
             let cell = self.buffer.get_mut(x, y);
             *cell = c.clone();
 
-            // debug!("{} {}", x, y);
-            //  debug!("{:?}", c);
+            // println!("{} {}", x, y);
+            //  println!("{:?}", c);
         }
         Ok(())
     }
