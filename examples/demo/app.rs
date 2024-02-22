@@ -76,7 +76,7 @@ impl RandomSignal {
     pub fn new(lower: u64, upper: u64) -> RandomSignal {
         RandomSignal {
             distribution: Uniform::new(lower, upper),
-            rng: OsRng::new(),
+            rng: OsRng,
         }
     }
 }
