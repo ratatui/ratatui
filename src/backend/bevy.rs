@@ -14,9 +14,10 @@ use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
     layout::{Rect, Size},
-    style::Color as RatColor,
+    style::{Color as RatColor,Modifier},
     terminal::Terminal,
 };
+
 
 pub struct RatatuiPlugin;
 
@@ -213,14 +214,28 @@ fn update_ents_from_comp(
 
     let pixel_shift = fontsize * termy_backend.font_aspect_ratio;
 
+
     for (entity_id, cellii) in query_cells.iter() {
+
+        if !cellii.skip{
+
+            let mut proper_font = Handle::weak_from_u128(101);
+
+           if (cellii.bold && cellii.italic){proper_font=termy_backend.italicbold_handle.clone();}
+           else if (cellii.bold){proper_font=termy_backend.bold_handle.clone();}
+           else if (cellii.italic){proper_font=termy_backend.italic_handle.clone();}
+           else { proper_font=termy_backend.normal_handle.clone();}
+
+
+
+
         commands.entity(entity_id).insert(
             TextBundle::from_section(
                 // Accepts a `String` or any type that converts into a `String`, such as `&str`
                 &cellii.symbol,
                 TextStyle {
                     // This font is loaded and will be used instead of the default font.
-                    font: termy_backend.normal_handle.clone(),
+                    font: proper_font,
                     font_size: fontsize,
                     color: cellii.fg,
                     ..default()
@@ -236,6 +251,7 @@ fn update_ents_from_comp(
                 ..default()
             }),
         );
+    }
     }
     debug!("RUNNING   update_ents_from_comp");
 }
@@ -319,6 +335,8 @@ trait FromRatCell {
 
 impl FromRatCell for VirtualCell {
     fn to_virtual(x: u16, y: u16, given_cell: &Cell) -> VirtualCell {
+
+     //   println!("AAAAAAAAAA{}",given_cell.modifier.intersects(Modifier::BOLD));
         VirtualCell {
             symbol: given_cell.symbol().into(),
             fg: BevyColor::from_rat_color(given_cell.fg, true),
@@ -327,15 +345,15 @@ impl FromRatCell for VirtualCell {
             underline_color: Some(BevyColor::from_rat_color(given_cell.fg, true)),
             #[cfg(feature = "underline-color")]
             underline_color: Some(BevyColor::from_rat_color(given_cell.underline_color, true)),
-            bold: false,
-            dim: false,
-            italic: false,
-            underlined: false,
-            slow_blink: false,
-            rapid_blink: false,
-            reversed: false,
-            hidden: false,
-            crossed_out: false,//FIX THIUS SHOULD NOT BE ALL FALSE
+            bold: given_cell.modifier.intersects(Modifier::BOLD),
+            dim: given_cell.modifier.intersects(Modifier::DIM),
+            italic: given_cell.modifier.intersects(Modifier::ITALIC),
+            underlined: given_cell.modifier.intersects(Modifier::UNDERLINED),
+            slow_blink: given_cell.modifier.intersects(Modifier::SLOW_BLINK),
+            rapid_blink: given_cell.modifier.intersects(Modifier::RAPID_BLINK),
+            reversed: given_cell.modifier.intersects(Modifier::REVERSED),
+            hidden: given_cell.modifier.intersects(Modifier::HIDDEN),
+            crossed_out: given_cell.modifier.intersects(Modifier::CROSSED_OUT),//FIX THIUS SHOULD NOT BE ALL FALSE
 
             skip: given_cell.skip,
             row: y,
