@@ -18,7 +18,6 @@ use crate::{
     terminal::Terminal,
 };
 
-
 pub struct RatatuiPlugin;
 
 impl Plugin for RatatuiPlugin {
@@ -33,7 +32,10 @@ impl Plugin for RatatuiPlugin {
             (init_bevy_terminals.run_if(in_state(TermState::TermNeedsIniting))),
         );
         app.add_systems(PreUpdate, (query_term_for_init));
-        app.add_systems(First, (handle_primary_window_resize).run_if(on_event::<WindowResized>()));
+        app.add_systems(
+            First,
+            (handle_primary_window_resize).run_if(on_event::<WindowResized>()),
+        );
         app.add_systems(
             PostUpdate,
             (update_ents_from_vcupdate).run_if(in_state(TermState::AllTermsInited)),
@@ -54,7 +56,6 @@ enum TermState {
     TermHasChangesToVCBuffer,
     TermResized,
 
-
     AllTermsInited,
     TermNeedsIniting,
 }
@@ -73,12 +74,12 @@ fn query_term_for_init(
         termy_backend.bevy_initialized = true;
     }
 
-    println!("RUNNING   query_term_for_init");
+    debug!("RUNNING   query_term_for_init");
 }
 
 fn set_terms_inited(mut next_game_state: ResMut<NextState<TermState>>) {
     next_game_state.set(TermState::AllTermsInited);
-    println!("RUNNING   set_terms_inited");
+    debug!("RUNNING   set_terms_inited");
 }
 
 fn clear_virtual_cells(
@@ -95,7 +96,7 @@ fn clear_virtual_cells(
     }
 
     termy_backend.entity_map = HashMap::new();
-    println!("RUNNING   clear_virtual_cells");
+    debug!("RUNNING   clear_virtual_cells");
 }
 
 fn init_bevy_terminals(world: &mut World) {
@@ -103,11 +104,11 @@ fn init_bevy_terminals(world: &mut World) {
 
     world.run_system_once(init_virtual_cells);
     //   world.run_system_once(add_render_to_cells);
-  
+
     world.run_system_once(update_ents_from_vcupdate);
     world.run_system_once(update_ents_from_comp);
     world.run_system_once(set_terms_inited);
-    println!("RUNNING   init_bevy_terminals");
+    debug!("RUNNING   init_bevy_terminals");
 }
 
 fn init_virtual_cells(
@@ -131,7 +132,7 @@ fn init_virtual_cells(
             termy_backend.entity_map.insert((x, y), vcell);
         }
     }
-    println!("RUNNING   init_virtual_cells");
+    debug!("RUNNING   init_virtual_cells");
 }
 
 fn update_ents_from_vcupdate(
@@ -156,7 +157,7 @@ fn update_ents_from_vcupdate(
 
         //commands.entity(eid.clone()).remove::<TextBundle>();
     }
-    println!("RUNNING   update_ents_from_vcupdate");
+    debug!("RUNNING   update_ents_from_vcupdate");
 }
 
 fn handle_primary_window_resize(
@@ -182,7 +183,7 @@ fn handle_primary_window_resize(
         termy_backend.resize(new_wid as u16, new_hei as u16);
         termy_backend.bevy_initialized = false;
 
-        println!("WINDOW IS RESING");
+        debug!("WINDOW IS RESING");
 
         for mut window in windows.iter_mut() {
             window.resolution = WindowResolution::new(
@@ -193,10 +194,11 @@ fn handle_primary_window_resize(
             // Query returns one window typically.
         }
     }
-    println!("RUNNING   handle_primary_window_resize");
+    debug!("RUNNING   handle_primary_window_resize");
 }
 
-fn update_ents_from_comp( //this should run after update from vcbuffer
+fn update_ents_from_comp(
+    //this should run after update from vcbuffer
     query_cells: Query<(Entity, &VirtualCell), (Changed<VirtualCell>)>,
     mut commands: Commands,
     font_handlers: Res<FontHandlers>,
@@ -234,13 +236,13 @@ fn update_ents_from_comp( //this should run after update from vcbuffer
             }),
         );
     }
-    println!("RUNNING   update_ents_from_comp");
+    debug!("RUNNING   update_ents_from_comp");
 }
 
 fn font_setup(asset_server: Res<AssetServer>, mut font_handlers: ResMut<FontHandlers>) {
-    let big_handle: Handle<Font> = asset_server.load("fonts/DejaVuSansMono.ttf");
+    let big_handle: Handle<Font> = asset_server.load("fonts/unifont.otf");
     font_handlers.normal = big_handle;
-    println!("RUNNING   font_setup");
+    debug!("RUNNING   font_setup");
 }
 
 #[derive(Resource)]
@@ -316,9 +318,9 @@ impl FromRatCell for VirtualCell {
             fg: BevyColor::from_rat_color(given_cell.fg, true),
             bg: BevyColor::from_rat_color(given_cell.bg, false),
             #[cfg(not(feature = "underline-color"))]
-            underline_color: Some(BevyColor::from_rat_color(given_cell.fg,true)),
+            underline_color: Some(BevyColor::from_rat_color(given_cell.fg, true)),
             #[cfg(feature = "underline-color")]
-            underline_color: Some(BevyColor::from_rat_color(given_cell.underline_color,true)),
+            underline_color: Some(BevyColor::from_rat_color(given_cell.underline_color, true)),
 
             skip: given_cell.skip,
             row: y,
@@ -327,13 +329,16 @@ impl FromRatCell for VirtualCell {
     }
 }
 
-
-
-
 impl FromRatColor<RatColor> for BevyColor {
     fn from_rat_color(color: RatColor, fg: bool) -> Self {
         match color {
-            RatColor::Reset => {if fg {BevyColor::WHITE} else {BevyColor::BLACK}},
+            RatColor::Reset => {
+                if fg {
+                    BevyColor::WHITE
+                } else {
+                    BevyColor::DARK_GRAY
+                }
+            }
             RatColor::Black => BevyColor::BLACK,
             RatColor::Red => BevyColor::MAROON,
             RatColor::Green => BevyColor::DARK_GREEN,
@@ -356,9 +361,6 @@ impl FromRatColor<RatColor> for BevyColor {
     }
 }
 
-
-
-
 trait FromAnsi<u8> {
     fn from_ansi(beep: u8) -> BevyColor;
 }
@@ -370,13 +372,8 @@ impl FromAnsi<u8> for BevyColor {
 }
 
 trait FromRatColor<RatColor> {
-    fn from_rat_color(color: RatColor, fg: bool) -> BevyColor ;
-
-
+    fn from_rat_color(color: RatColor, fg: bool) -> BevyColor;
 }
-
-
-
 
 ///
 ///
@@ -458,8 +455,8 @@ impl Backend for BevyBackend {
             let cell = self.buffer.get_mut(x, y);
             *cell = c.clone();
 
-            // println!("{} {}", x, y);
-            //  println!("{:?}", c);
+            // debug!("{} {}", x, y);
+            //  debug!("{:?}", c);
         }
         Ok(())
     }
