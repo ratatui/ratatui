@@ -793,42 +793,11 @@ impl<'a> List<'a> {
             let last_valid_index = self.items.len().saturating_sub(1);
             let selected = selected.min(last_valid_index);
 
-            // This handles the case where the user has input an offset that reduces the number of
-            // items to render to be less than we normally would due to the offset pushing us off
-            // the end of the list of items. We want to allow the padding value to push us back up
-            // to ensure the minimum requested padding items are shown
-            let mut scroll_padding_index = 0;
-            while scroll_padding_index != self.scroll_padding
-                && last_visible_index == self.items.len()
-                && height_from_offset < max_height
-                && first_visible_index != 0
-            {
-                scroll_padding_index += 1;
-                let index = first_visible_index - 1;
-                let item = &self.items[index];
-                if item.height() + height_from_offset <= max_height {
-                    first_visible_index -= 1;
-                    height_from_offset += item.height();
-                } else {
-                    break;
-                }
-            }
-
-            // If there isnt enough room for evreything including padding then reduce the padding
-            // value to prevent the list from jumping up and down or pushing the
-            // selected item out of the visible list area
-            let mut scroll_padding = self.scroll_padding.min(
-                last_visible_index
-                    .saturating_sub(first_visible_index)
-                    .saturating_sub(1)
-                    / 2,
-            );
-
-            // The bellow loop handles situations where the list item sizes may not be consistent.
-            // So while it may have appeared acceptable in the check above, when we actually change
-            // the index_to_display it can change it to an item that's big enough to push the
-            // selected item off the viewable area, or possibly cause the flickering issue again.
-            // So to prevent this we're going to reduce the padding value again
+            // The bellow loop handles situations where the list item sizes may not be consistent,
+            // where the offset would have excluded some items that we want to include, or could
+            // cause the offset value to be set to an inconsistent value each time we render.
+            // The padding value will be reduced in case any of these issues would occur
+            let mut scroll_padding = self.scroll_padding;
             while scroll_padding > 0 {
                 let mut height_around_selected = 0;
                 for index in selected.saturating_sub(scroll_padding)
