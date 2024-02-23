@@ -70,6 +70,7 @@ use crate::{prelude::*, symbols::scrollbar::*};
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Scrollbar<'a> {
     orientation: ScrollbarOrientation,
+    include_overscroll: bool,
     thumb_style: Style,
     thumb_symbol: &'a str,
     track_style: Style,
@@ -180,6 +181,7 @@ impl<'a> Scrollbar<'a> {
     const fn new_with_symbols(orientation: ScrollbarOrientation, symbols: &Set) -> Self {
         Self {
             orientation,
+            include_overscroll: true,
             thumb_symbol: symbols.thumb,
             thumb_style: Style::new(),
             track_symbol: Some(symbols.track),
@@ -224,6 +226,22 @@ impl<'a> Scrollbar<'a> {
     ) -> Self {
         self.orientation = orientation;
         self.symbols(symbols)
+    }
+
+    /// Defines whether the scrollbar should visualize the overscroll or not.
+    ///
+    /// When this is true (default) the scrollbar will show that it can scroll past the end of the
+    /// content until only the last element is in view.
+    /// When this is false the scrollbar will end at the last element in view.
+    ///
+    /// Keep in mind that this does not change the scrolling behaviour and only the visualization of
+    /// the scrollbar.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn include_overscroll(mut self, overscroll: bool) -> Self {
+        self.include_overscroll = overscroll;
+        self
     }
 
     /// Sets the symbol that represents the thumb of the scrollbar.
@@ -531,21 +549,33 @@ impl Scrollbar<'_> {
     ///
     /// This method returns the length of the start, thumb, and end as a tuple.
     fn part_lengths(&self, area: Rect, state: &ScrollbarState) -> (usize, usize, usize) {
-        let track_length = f64::from(self.track_length_excluding_arrow_heads(area));
-        let viewport_length = self.viewport_length(state, area) as f64;
+        let track_length_u16 = self.track_length_excluding_arrow_heads(area);
+        let track_length = f64::from(track_length_u16);
+        let viewport_length = self.viewport_length(state, area);
 
-        // Ensure that the position of the thumb is within the bounds of the content taking into
-        // account the content and viewport length. When the last line of the content is at the top
-        // of the viewport, the thumb should be at the bottom of the track.
-        let max_position = state.content_length.saturating_sub(1) as f64;
-        let start_position = (state.position as f64).clamp(0.0, max_position);
-        let max_viewport_position = max_position + viewport_length;
-        let end_position = start_position + viewport_length;
+        // Ensure that the position of the thumb is an index within the content_length.
+        let position = state.position.min(state.content_length.saturating_sub(1));
 
-        // Calculate the start and end positions of the thumb. The size will be proportional to the
-        // viewport length compared to the total amount of possible visible rows.
-        let thumb_start = start_position * track_length / max_viewport_position;
-        let thumb_end = end_position * track_length / max_viewport_position;
+        let content_length = if self.include_overscroll {
+            // The last line of content should still be visible -> viewport - 1
+            let overscroll = viewport_length.saturating_sub(1);
+            state.content_length.saturating_add(overscroll)
+        } else {
+            state.content_length
+        } as f64;
+
+        // Calculate relative positions 0.0..=1.0
+        // end_position without overscroll can be >1.0 -> limit to track_length in the end
+        let start_position = (position as f64) / content_length;
+        let end_position = (position.saturating_add(viewport_length) as f64) / content_length;
+        debug_assert!(
+            (0.0..=1.0).contains(&start_position),
+            "relative thumb start position {start_position:.3} should be in the range 0.0..=1.0"
+        );
+
+        // Calculate the start and end positions of the thumb on the track.
+        let thumb_start = start_position * track_length;
+        let thumb_end = end_position * track_length;
 
         // Make sure that the thumb is at least 1 cell long by ensuring that the start of the thumb
         // is less than the track_len. We use the positions instead of the sizes and use nearest
@@ -554,7 +584,9 @@ impl Scrollbar<'_> {
         let thumb_end = thumb_end.round().clamp(0.0, track_length) as usize;
 
         let thumb_length = thumb_end.saturating_sub(thumb_start).max(1);
-        let track_end_length = (track_length as usize).saturating_sub(thumb_start + thumb_length);
+        let track_end_length = usize::from(track_length_u16)
+            .saturating_sub(thumb_start)
+            .saturating_sub(thumb_length);
 
         (thumb_start, thumb_length, track_end_length)
     }
