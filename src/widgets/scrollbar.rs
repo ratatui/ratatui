@@ -71,6 +71,7 @@ use crate::{prelude::*, symbols::scrollbar::*};
 pub struct Scrollbar<'a> {
     orientation: ScrollbarOrientation,
     include_overscroll: bool,
+    hide_when_not_scrollable: bool,
     thumb_style: Style,
     thumb_symbol: &'a str,
     track_style: Style,
@@ -182,6 +183,7 @@ impl<'a> Scrollbar<'a> {
         Self {
             orientation,
             include_overscroll: true,
+            hide_when_not_scrollable: false,
             thumb_symbol: symbols.thumb,
             thumb_style: Style::new(),
             track_symbol: Some(symbols.track),
@@ -241,6 +243,18 @@ impl<'a> Scrollbar<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn include_overscroll(mut self, overscroll: bool) -> Self {
         self.include_overscroll = overscroll;
+        self
+    }
+
+    /// Defines whether the scrollbar should be hidden when there is no scrollable content.
+    ///
+    /// When this is true the scrollbar is not rendered when it's thumb has full height/width.
+    /// Per default the scrollbar is always rendered.
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn hide_when_not_scrollable(mut self, hide: bool) -> Self {
+        self.hide_when_not_scrollable = hide;
         self
     }
 
@@ -499,6 +513,9 @@ impl<'a> StatefulWidget for Scrollbar<'a> {
         if state.content_length == 0 || self.track_length_excluding_arrow_heads(area) == 0 {
             return;
         }
+        if self.hide_when_not_scrollable && !self.can_scroll(state, area) {
+            return;
+        }
 
         let mut bar = self.bar_symbols(area, state);
         let area = self.scollbar_area(area);
@@ -626,6 +643,15 @@ impl Scrollbar<'_> {
             area.height as usize
         } else {
             area.width as usize
+        }
+    }
+
+    const fn can_scroll(&self, state: &ScrollbarState, area: Rect) -> bool {
+        if self.include_overscroll {
+            state.content_length > 1
+        } else {
+            let viewport_length = self.viewport_length(state, area);
+            state.content_length > viewport_length
         }
     }
 }
