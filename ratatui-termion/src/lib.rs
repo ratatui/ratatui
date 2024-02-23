@@ -80,6 +80,7 @@ where
     W: Write,
 {
     writer: W,
+    last_known_cursor_position: Option<Position>,
 }
 
 impl<W> TermionBackend<W>
@@ -103,7 +104,10 @@ where
     /// let backend = TermionBackend::new(stdout());
     /// ```
     pub const fn new(writer: W) -> Self {
-        Self { writer }
+        Self {
+            writer,
+            last_known_cursor_position: None,
+        }
     }
 
     /// Gets the writer.
@@ -176,14 +180,26 @@ where
         self.writer.flush()
     }
 
+    /// Get the current cursor position.
+    ///
+    /// If termion fails to get the cursor position, it will return the last known cursor position,
+    /// if available. If there is no known cursor position, it will return an error.
     fn get_cursor_position(&mut self) -> io::Result<Position> {
-        termion::cursor::DetectCursorPos::cursor_pos(&mut self.writer)
-            .map(|(x, y)| Position { x: x - 1, y: y - 1 })
+        let position = termion::cursor::DetectCursorPos::cursor_pos(&mut self.writer)
+            .map(|(x, y)| Position::new(x - 1, y - 1))
+            .or_else(|e| self.last_known_cursor_position.ok_or_else(|| e))?;
+        self.last_known_cursor_position = Some(position);
+        Ok(position)
     }
 
+    /// Set the cursor position.
+    ///
+    /// Setting the cursor position will update the last known cursor position.
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
-        let Position { x, y } = position.into();
+        let position = position.into();
+        let Position { x, y } = position;
         write!(self.writer, "{}", termion::cursor::Goto(x + 1, y + 1))?;
+        self.last_known_cursor_position = Some(position);
         self.writer.flush()
     }
 

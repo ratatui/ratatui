@@ -61,3 +61,58 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
 
     Ok(())
 }
+
+/// Retrieving the cursor from an in-memory buffer will fail in
+/// `termion::cursor::DetectCursorPos::cursor_pos()`. If there is no known last cursor, retrieving
+/// the cursor will ulimately fail.
+///
+/// This simulates a usage of `termion` where retrieving the cursor fails in a multi-threaded
+/// environment: [](https://gitlab.redox-os.org/redox-os/termion/-/issues/173)
+#[cfg(feature = "termion")]
+#[test]
+fn backend_termion_should_fail_on_missing_last_known_cursor(
+) -> Result<(), Box<dyn std::error::Error>> {
+    use std::io::{self, Cursor};
+
+    use ratatui::{backend::TermionBackend, Terminal};
+
+    let mut bytes = Vec::new();
+    let mut stdout = Cursor::new(&mut bytes);
+
+    let backend = TermionBackend::new(&mut stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let cursor = terminal.get_cursor_position();
+    let error_kind = cursor.unwrap_err().kind();
+    let expected_kind = io::ErrorKind::Other;
+
+    assert_eq!(error_kind, expected_kind);
+
+    Ok(())
+}
+
+/// Retrieving the cursor from an in-memory buffer will fail in
+/// `termion::cursor::DetectCursorPos::cursor_pos()`. If a cursor was set explicitly, retrieving
+/// the cursor will fallback to its last known position.
+///
+/// This simulates a usage of `termion` where retrieving the cursor fails in a multi-threaded
+/// environment: [](https://gitlab.redox-os.org/redox-os/termion/-/issues/173)
+#[cfg(feature = "termion")]
+#[test]
+fn backend_termion_should_use_last_known_cursor() -> Result<(), Box<dyn std::error::Error>> {
+    use std::io::Cursor;
+
+    use ratatui::{backend::TermionBackend, layout::Position, Terminal};
+
+    let mut bytes = Vec::new();
+    let mut stdout = Cursor::new(&mut bytes);
+
+    let backend = TermionBackend::new(&mut stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    terminal.set_cursor_position(Position::new(13, 12))?;
+
+    assert_eq!(terminal.get_cursor_position()?, Position::new(13, 12));
+
+    Ok(())
+}
