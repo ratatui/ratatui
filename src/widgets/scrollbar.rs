@@ -153,21 +153,32 @@ impl<'a> Default for Scrollbar<'a> {
 }
 
 impl<'a> Scrollbar<'a> {
-    /// Creates a new scrollbar with the given position.
+    /// Creates a new scrollbar with the given orientation.
     ///
-    /// Most of the time you'll want [`ScrollbarOrientation::VerticalLeft`] or
+    /// Most of the time you'll want [`ScrollbarOrientation::VerticalRight`] or
     /// [`ScrollbarOrientation::HorizontalBottom`]. See [`ScrollbarOrientation`] for more options.
     #[must_use = "creates the Scrollbar"]
     pub const fn new(orientation: ScrollbarOrientation) -> Self {
+        let symbols = if orientation.is_vertical() {
+            DOUBLE_VERTICAL
+        } else {
+            DOUBLE_HORIZONTAL
+        };
+        Self::new_with_symbols(orientation, &symbols)
+    }
+
+    /// Creates a new scrollbar with the given orientation and symbol set.
+    #[must_use = "creates the Scrollbar"]
+    const fn new_with_symbols(orientation: ScrollbarOrientation, symbols: &Set) -> Self {
         Self {
             orientation,
-            thumb_symbol: DOUBLE_VERTICAL.thumb,
+            thumb_symbol: symbols.thumb,
             thumb_style: Style::new(),
-            track_symbol: Some(DOUBLE_VERTICAL.track),
+            track_symbol: Some(symbols.track),
             track_style: Style::new(),
-            begin_symbol: Some(DOUBLE_VERTICAL.begin),
+            begin_symbol: Some(symbols.begin),
             begin_style: Style::new(),
-            end_symbol: Some(DOUBLE_VERTICAL.end),
+            end_symbol: Some(symbols.end),
             end_style: Style::new(),
         }
     }
@@ -183,12 +194,12 @@ impl<'a> Scrollbar<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn orientation(mut self, orientation: ScrollbarOrientation) -> Self {
         self.orientation = orientation;
-        let set = if self.orientation.is_vertical() {
+        let symbols = if self.orientation.is_vertical() {
             DOUBLE_VERTICAL
         } else {
             DOUBLE_HORIZONTAL
         };
-        self.symbols(set)
+        self.symbols(symbols)
     }
 
     /// Sets the orientation and symbols for the scrollbar from a [`Set`].
@@ -201,10 +212,10 @@ impl<'a> Scrollbar<'a> {
     pub const fn orientation_and_symbol(
         mut self,
         orientation: ScrollbarOrientation,
-        set: Set,
+        symbols: Set,
     ) -> Self {
         self.orientation = orientation;
-        self.symbols(set)
+        self.symbols(symbols)
     }
 
     /// Sets the symbol that represents the thumb of the scrollbar.
@@ -327,16 +338,16 @@ impl<'a> Scrollbar<'a> {
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[allow(clippy::needless_pass_by_value)] // Breaking change
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn symbols(mut self, symbol: Set) -> Self {
-        self.thumb_symbol = symbol.thumb;
+    pub const fn symbols(mut self, symbols: Set) -> Self {
+        self.thumb_symbol = symbols.thumb;
         if self.track_symbol.is_some() {
-            self.track_symbol = Some(symbol.track);
+            self.track_symbol = Some(symbols.track);
         }
         if self.begin_symbol.is_some() {
-            self.begin_symbol = Some(symbol.begin);
+            self.begin_symbol = Some(symbols.begin);
         }
         if self.end_symbol.is_some() {
-            self.end_symbol = Some(symbol.end);
+            self.end_symbol = Some(symbols.end);
         }
         self
     }
