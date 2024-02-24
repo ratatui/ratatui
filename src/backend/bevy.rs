@@ -102,15 +102,7 @@ fn clear_virtual_cells(
         .expect("More than one terminal with a bevybackend");
     let mut termy_backend = termy.backend_mut();
 
-    commands.entity(e).insert(NodeBundle {
-        style: Style {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            justify_content: JustifyContent::SpaceBetween,
-            ..default()
-        },
-        ..default()
-    });
+  
 
     for (_, entity) in termy_backend.entity_map.iter_mut() {
         commands.entity(*entity).despawn();
@@ -154,7 +146,36 @@ fn init_virtual_cells(
     let columns = termy_backend.width;
     termy_backend.entity_map = HashMap::new();
 
-    
+       // spawn a default node for the terminal to reference
+       commands.entity(e).insert(     TextBundle::from_section(
+        // Accepts a `String` or any type that converts into a `String`, such as `&str`
+        "T",
+        TextStyle {
+            // This font is loaded and will be used instead of the default font.
+            font: termy_backend.normal_handle.clone(),
+            font_size: termy_backend.term_font_size as f32,
+            color: BevyColor::ORANGE,
+            ..default()
+        },
+    ) // Set the justification of the Text
+    .with_background_color(BevyColor::BLUE)
+    .with_text_justify(JustifyText::Center)
+    // Set the style of the TextBundle itself.
+    .with_style(Style {
+        display:Display::Grid,
+        position_type: PositionType::Absolute,
+        align_items:AlignItems::Stretch,
+        margin:UiRect::ZERO,
+        padding:UiRect::ZERO,
+        border:UiRect::ZERO,
+        grid_auto_flow: GridAutoFlow::Column,
+        top: Val::Px(0.0),
+        left: Val::Px(0.0),
+    //  grid_row: GridPlacement::start(cellii.row as i16 +1),
+    //  grid_column: GridPlacement::start(cellii.column as i16 +1),
+        ..default()
+    }));
+
 
     
 
