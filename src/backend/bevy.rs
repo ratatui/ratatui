@@ -29,7 +29,7 @@ impl Plugin for RatatuiPlugin {
        
 
         app.add_systems(
-            Last,
+            First,
             (init_bevy_terminals.run_if(in_state(TermState::TermNeedsIniting))),
         );
         app.add_systems(First, (query_term_for_init));
@@ -38,11 +38,11 @@ impl Plugin for RatatuiPlugin {
             (handle_primary_window_resize).run_if(on_event::<WindowResized>()),
         );
         app.add_systems(
-            PostUpdate,
+            Update,
             (update_ents_from_vcupdate).run_if(in_state(TermState::AllTermsInited)),
         );
         app.add_systems(
-            PostUpdate,
+            Update,
             (debug_entities).run_if(in_state(TermState::AllTermsInited)),
         );
 
@@ -115,11 +115,12 @@ fn clear_virtual_cells(
 fn init_bevy_terminals(world: &mut World) {
     println!("entering   init_bevy_terminals");
     apply_deferred(world);
+    println!("1");
+    world.run_system_once(font_setup);
     println!("0");
     world.run_system_once(clear_virtual_cells);
     
-    println!("1");
-    world.run_system_once(font_setup);
+   
     println!("2");
     world.run_system_once(init_virtual_cells);
     //   world.run_system_once(add_render_to_cells);
@@ -169,8 +170,8 @@ fn init_virtual_cells(
         padding:UiRect::ZERO,
         border:UiRect::ZERO,
         grid_auto_flow: GridAutoFlow::Column,
-        top: Val::Px(0.0),
-        left: Val::Px(0.0),
+        top: Val::Px(-10.0),
+        left: Val::Px(-10.0),
     //  grid_row: GridPlacement::start(cellii.row as i16 +1),
     //  grid_column: GridPlacement::start(cellii.column as i16 +1),
         ..default()
@@ -241,10 +242,14 @@ fn handle_primary_window_resize(
     mut resize_event: EventReader<WindowResized>,
 ) {
     println!("entering   handle_primary_window_resize");
+
+
+    if  let (mut termy, nodik) = terminal_query
+    .get_single_mut()
+    .expect("More than one terminal with a bevybackend") {
+
     for wr in resize_event.read() {
-        let (mut termy, nodik) = terminal_query
-            .get_single_mut()
-            .expect("More than one terminal with a bevybackend");
+       
         let termy_backend = termy.backend_mut();
 
         let terminal_font_size = termy_backend.term_font_size as f32;
@@ -274,7 +279,7 @@ fn handle_primary_window_resize(
 
             // Query returns one window typically.
         }
-    }
+    }}
     println!("RUNNING   handle_primary_window_resize");
 }
 
@@ -529,7 +534,7 @@ pub struct BevyBackend {
     buffer: Buffer,
     prev_buffer: Buffer,
     vcupdate: Vec<(u16, u16, VirtualCell)>,
-    font_aspect_ratio: f32,
+   
     cursor: bool,
     cursor_pos: (u16, u16),
     bevy_initialized: bool,
@@ -557,7 +562,7 @@ impl Default for BevyBackend {
             cursor: false,
             cursor_pos: (0, 0),
             bevy_initialized: false,
-            font_aspect_ratio: 0.5,
+        
             normal_font_path: "NO FONT PROVIDED".to_string(),
         italic_font_path: "NO FONT PROVIDED".to_string(),
          bold_font_path: "NO FONT PROVIDED".to_string(),
@@ -572,7 +577,7 @@ impl Default for BevyBackend {
 
 impl BevyBackend {
     /// Creates a new BevyBackend with the specified width and height.
-    pub fn new(width: u16, height: u16, font_size: u16, font_aspect_ratio:f32,   normal_font_path: &str,
+    pub fn new(width: u16, height: u16, font_size: u16,  normal_font_path: &str,
         italic_font_path: &str,
         bold_font_path: &str,
         italicbold_font_path: &str,) -> BevyBackend {
@@ -586,7 +591,7 @@ impl BevyBackend {
             vcupdate: Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
-            font_aspect_ratio: font_aspect_ratio,
+         
             bevy_initialized: false,
             normal_font_path: normal_font_path.to_string(),
     italic_font_path: italic_font_path.to_string(),
