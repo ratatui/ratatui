@@ -27,26 +27,40 @@ impl Plugin for RatatuiPlugin {
 
         app.init_state::<TermState>();
 
-      
         app.add_systems(
             First,
-            (font_setup.after(query_term_for_init).run_if(in_state(TermState::TermNeedsFont))),
+            (font_setup
+                .after(query_term_for_init)
+                .run_if(in_state(TermState::TermNeedsFont))),
         );
         app.add_systems(
             First,
-            (clear_virtual_cells.after(font_setup).run_if(in_state(TermState::TermNeedsCLearing))),
+            (clear_virtual_cells
+                .after(font_setup)
+                .run_if(in_state(TermState::TermNeedsCLearing))),
         );
         app.add_systems(
             First,
-            (init_virtual_cells.after(clear_virtual_cells).run_if(in_state(TermState::TermNeedsIniting))),
+            (init_virtual_cells
+                .after(clear_virtual_cells)
+                .run_if(in_state(TermState::TermNeedsIniting))),
         );
-    
-      
-     
-       
+        app.add_systems(
+            First,
+            (update_ents_from_vcupdate)
+                .after(init_virtual_cells)
+                .run_if(in_state(TermState::TermNeedsIniting)),
+        );
+        app.add_systems(
+            First,
+            (update_ents_from_comp)
+                .after(update_ents_from_vcupdate)
+                .run_if(in_state(TermState::TermNeedsIniting)),
+        );
+
         app.add_systems(First, (query_term_for_init));
         app.add_systems(
-            First,
+            Last,
             (handle_primary_window_resize).run_if(on_event::<WindowResized>()),
         );
         app.add_systems(
@@ -59,7 +73,7 @@ impl Plugin for RatatuiPlugin {
         );
 
         app.add_systems(
-            PreUpdate,
+            First,
             (update_ents_from_comp)
                 .after(update_ents_from_vcupdate)
                 .run_if(in_state(TermState::AllTermsInited)),
@@ -67,26 +81,19 @@ impl Plugin for RatatuiPlugin {
     }
 }
 
-
-
-
-
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
 enum TermState {
     #[default]
     NoTermsInited,
     TermNeedsFont,
     TermNeedsCLearing,
-   
+
     TermNeedsIniting,
     AllTermsInited,
     TermNeedsNewComp,
     TermNeedsUpdateFromComp,
-    TermNeedsFullBufferUpdate
-    
+    TermNeedsFullBufferUpdate,
 }
-
-
 
 fn query_term_for_init(
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
@@ -107,24 +114,20 @@ fn query_term_for_init(
     println!("{:?}", termy_backend.bevy_initialized);
 }
 
-
 fn clear_virtual_cells(
     mut commands: Commands,
-    mut terminal_query: Query<(Entity, &mut Terminal<BevyBackend>)>,
+    terminal_query: Query<(Entity, &Terminal<BevyBackend>)>,
     mut app_state: ResMut<NextState<TermState>>,
 ) {
     println!("entering   clear_virtual_cells");
-    let (e, mut termy) = terminal_query
-        .get_single_mut()
+    let (e, termy) = terminal_query
+        .get_single()
         .expect("More than one terminal with a bevybackend");
-    let mut termy_backend = termy.backend_mut();
+    let termy_backend = termy.backend();
 
-    for (_, entity) in termy_backend.entity_map.iter_mut() {
+    for (_, entity) in termy_backend.entity_map.iter() {
         commands.entity(*entity).despawn();
     }
-
-    termy_backend.entity_map = HashMap::new();
-
 
     // spawn a default node for the terminal to reference
     commands.entity(e).insert(
@@ -162,10 +165,9 @@ fn clear_virtual_cells(
     println!("RUNNING   clear_virtual_cells");
 }
 
-
 fn init_virtual_cells(
     mut commands: Commands,
-    mut terminal_query: Query<(&Node,Entity, &mut Terminal<BevyBackend>)>,
+    mut terminal_query: Query<(&Node, Entity, &mut Terminal<BevyBackend>)>,
     mut app_state: ResMut<NextState<TermState>>,
 ) {
     println!("entering   init_virtual_cells");
@@ -178,8 +180,6 @@ fn init_virtual_cells(
     termy_backend.entity_map = HashMap::new();
 
     let node_size = nodik.size();
-     
-    
 
     // commands.entity(e).with_children(|parent| {
 
@@ -191,26 +191,18 @@ fn init_virtual_cells(
                 .spawn((
                     VirtualCell::to_virtual(x, y, ratcell),
                     TextBundle::from_section(
-                        // Accepts a `String` or any type that converts into a `String`, such as `&str`
-                        "B",
+                        // Accepts a `String` or any type that converts into a `String`, such as
+                        // `&str`
+                        ratcell.symbol(),
                         TextStyle {
                             font: termy_backend.normal_handle.clone(),
                             font_size: termy_backend.term_font_size as f32,
                             color: BevyColor::ORANGE,
                             // This font is loaded and will be used instead of the default font.
-                         
                             ..default()
                         },
                     ) // Set the justification of the Text
-                  
                     .with_style(Style {
-                        display: Display::Grid,
-                        position_type: PositionType::Absolute,
-                        align_items: AlignItems::Stretch,
-                        margin: UiRect::ZERO,
-                        padding: UiRect::ZERO,
-                        border: UiRect::ZERO,
-                        grid_auto_flow: GridAutoFlow::Column,
                         top: Val::Px(y as f32 * node_size.y),
                         left: Val::Px(x as f32 * node_size.x),
                         //  grid_row: GridPlacement::start(cellii.row as i16 +1),
@@ -235,7 +227,7 @@ fn init_virtual_cells(
 fn update_ents_from_vcupdate(
     mut commands: Commands,
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
- //   mut app_state: ResMut<NextState<TermState>>,
+    //   mut app_state: ResMut<NextState<TermState>>,
 ) {
     println!("entering   update_ents_from_vcupdate");
     let mut termy = terminal_query
@@ -256,55 +248,11 @@ fn update_ents_from_vcupdate(
 
         //commands.entity(eid.clone()).remove::<TextBundle>();
     }
-    //app_state.set(TermState::TermNeedsUpdateFromComp);
 
+    //app_state.set(TermState::TermNeedsUpdateFromComp);
 
     println!("RUNNING   update_ents_from_vcupdate");
 }
-
-fn update_ents_from_full_buffer(
-    mut commands: Commands,
-    mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
-   mut app_state: ResMut<NextState<TermState>>,
-) {
-    println!("entering   update_ents_from_full_buffer");
-    let mut termy = terminal_query
-        .get_single_mut()
-        .expect("More than one terminal with a bevybackend");
-    let termy_backend = termy.backend_mut();
-    let boop = termy_backend.entity_map.clone();
-   // println!("BUFFER WIDTH IS {:?}",termy_backend.buffer.area().width);
-   // println!("BUFFER height IS {:?}",termy_backend.buffer.area().height);
-
-    for x in 0..termy_backend.width{
-        for y in 0..termy_backend.height{
-
-            let vc = VirtualCell::to_virtual(x,y,termy_backend.buffer.get(x,y));
-
-            let xy = (x, y);
-
-            match boop.get(&xy) {
-                Some(wow) => {
-
-                    commands.entity(wow.clone()).insert(vc);
-                    ()
-                }
-                None => (),
-            };
-    
-
-
-        }
-    }
-
-
-    app_state.set(TermState::AllTermsInited);
-
-
-    println!("RUNNING   update_ents_from_full_buffer");
-}
-
-
 
 fn handle_primary_window_resize(
     mut windows: Query<&mut Window, With<PrimaryWindow>>,
@@ -314,10 +262,7 @@ fn handle_primary_window_resize(
 ) {
     println!("entering   handle_primary_window_resize");
 
-
-    if let Ok((mut termy, nodik)) = terminal_query
-    .get_single_mut()
-    {
+    if let Ok((mut termy, nodik)) = terminal_query.get_single_mut() {
         for wr in resize_event.read() {
             let termy_backend = termy.backend_mut();
             let node_size = nodik.size();
@@ -330,7 +275,6 @@ fn handle_primary_window_resize(
 
             termy_backend.resize(new_wid as u16, new_hei as u16);
             app_state.set(TermState::TermNeedsCLearing);
-           
 
             println!("WINDOW IS RESING");
 
@@ -576,7 +520,7 @@ pub struct BevyBackend {
     term_font_size: u16,
     entity_map: HashMap<(u16, u16), Entity>,
     buffer: Buffer,
-    prev_buffer: Buffer,
+
     vcupdate: Vec<(u16, u16, VirtualCell)>,
 
     cursor: bool,
@@ -600,7 +544,7 @@ impl Default for BevyBackend {
             term_font_size: 40,
             entity_map: HashMap::new(),
             buffer: Buffer::empty(Rect::new(0, 0, 10, 30)),
-            prev_buffer: Buffer::empty(Rect::new(0, 0, 10, 30)),
+
             vcupdate: Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
@@ -635,7 +579,7 @@ impl BevyBackend {
             term_font_size: font_size,
             entity_map: HashMap::new(),
             buffer: Buffer::empty(Rect::new(0, 0, width, height)),
-            prev_buffer: Buffer::empty(Rect::new(0, 0, width, height)),
+
             vcupdate: Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
@@ -654,7 +598,6 @@ impl BevyBackend {
 
     /// Resizes the BevyBackend to the specified width and height.
     pub fn resize(&mut self, width: u16, height: u16) {
-        self.prev_buffer = self.buffer.clone();
         self.buffer.resize(Rect::new(0, 0, width, height));
         self.width = width;
         self.height = height;
