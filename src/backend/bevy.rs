@@ -37,7 +37,7 @@ impl Plugin for RatatuiPlugin {
             First,
             (clear_virtual_cells
                 .after(font_setup)
-                .run_if(in_state(TermState::TermNeedsCLearing))),
+                .run_if(in_state(TermState::TermNeedsClearing))),
         );
         app.add_systems(
             First,
@@ -86,7 +86,7 @@ enum TermState {
     #[default]
     NoTermsInited,
     TermNeedsFont,
-    TermNeedsCLearing,
+    TermNeedsClearing,
 
     TermNeedsIniting,
     AllTermsInited,
@@ -274,7 +274,7 @@ fn handle_primary_window_resize(
             let new_hei = (wr.height / w_hei) as u16;
 
             termy_backend.resize(new_wid as u16, new_hei as u16);
-            app_state.set(TermState::TermNeedsCLearing);
+            app_state.set(TermState::TermNeedsClearing);
 
             println!("WINDOW IS RESING");
 
@@ -375,7 +375,7 @@ fn font_setup(
     termy_backend.italic_handle = asset_server.load(&termy_backend.italic_font_path);
     termy_backend.bold_handle = asset_server.load(&termy_backend.bold_font_path);
     termy_backend.italicbold_handle = asset_server.load(&termy_backend.italicbold_font_path);
-    app_state.set(TermState::TermNeedsCLearing);
+    app_state.set(TermState::TermNeedsClearing);
 
     println!("RUNNING   font_setup");
 }
@@ -452,7 +452,7 @@ impl FromRatCell for VirtualCell {
             rapid_blink: given_cell.modifier.intersects(Modifier::RAPID_BLINK),
             reversed: given_cell.modifier.intersects(Modifier::REVERSED),
             hidden: given_cell.modifier.intersects(Modifier::HIDDEN),
-            crossed_out: given_cell.modifier.intersects(Modifier::CROSSED_OUT), /* FIX THIUS SHOULD NOT BE ALL FALSE */
+            crossed_out: given_cell.modifier.intersects(Modifier::CROSSED_OUT), /* FIX this SHOULD NOT BE ALL FALSE */
 
             skip: given_cell.skip,
             row: y,
