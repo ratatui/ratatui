@@ -51,7 +51,16 @@ fn run_app() -> io::Result<()> {
 fn camera_setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 
-    let mut my_terminal = Terminal::new(BevyBackend::new(60, 20,40, "fonts/unifont.otf","fonts/unifont.otf","fonts/unifont.otf","fonts/unifont.otf")).unwrap();
+    let mut my_terminal = Terminal::new(BevyBackend::new(
+        60,
+        20,
+        40,
+        "fonts/unifont.otf",
+        "fonts/unifont.otf",
+        "fonts/unifont.otf",
+        "fonts/unifont.otf",
+    ))
+    .unwrap();
 
     my_terminal.clear();
 
