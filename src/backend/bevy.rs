@@ -9,7 +9,7 @@ use bevy::{
     utils::HashMap,
     window::{PrimaryWindow, WindowResized, WindowResolution},
 };
-
+use bevy::ui::ContentSize;
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
@@ -32,7 +32,7 @@ impl Plugin for RatatuiPlugin {
             Last,
             (init_bevy_terminals.run_if(in_state(TermState::TermNeedsIniting))),
         );
-        app.add_systems(PreUpdate, (query_term_for_init));
+        app.add_systems(First, (query_term_for_init));
         app.add_systems(
             First,
             (handle_primary_window_resize).run_if(on_event::<WindowResized>()),
@@ -41,9 +41,14 @@ impl Plugin for RatatuiPlugin {
             PostUpdate,
             (update_ents_from_vcupdate).run_if(in_state(TermState::AllTermsInited)),
         );
+        app.add_systems(
+            PostUpdate,
+            (debug_entities).run_if(in_state(TermState::AllTermsInited)),
+        );
+
 
         app.add_systems(
-            First,
+            PreUpdate,
             (update_ents_from_comp).run_if(in_state(TermState::AllTermsInited)),
         );
     }
@@ -89,13 +94,23 @@ fn set_terms_inited(mut next_game_state: ResMut<NextState<TermState>>) {
 
 fn clear_virtual_cells(
     mut commands: Commands,
-    mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
+    mut terminal_query: Query<(Entity,&mut Terminal<BevyBackend>)>,
 ) {
     println!("entering   clear_virtual_cells");
-    let mut termy = terminal_query
+    let (e,mut termy) = terminal_query
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
     let mut termy_backend = termy.backend_mut();
+
+    commands.entity(e).insert(NodeBundle {
+        style: Style {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            justify_content: JustifyContent::SpaceBetween,
+            ..default()
+        },
+        ..default()
+    });
 
     for (_, entity) in termy_backend.entity_map.iter_mut() {
         commands.entity(*entity).despawn();
@@ -139,27 +154,32 @@ fn init_virtual_cells(
     let columns = termy_backend.width;
     termy_backend.entity_map = HashMap::new();
 
+    
+
    
     
 
     
 
-        
+   // commands.entity(e).with_children(|parent| {
 
         // left vertical fill (border)
         for y in 0..rows {
             for x in 0..columns {
                 let ratcell = termy_backend.buffer.get(x, y);
                 let vcell = commands
-                    .spawn((VirtualCell::to_virtual(x, y, ratcell)))
+                    .spawn((VirtualCell::to_virtual(x, y, ratcell),NodeBundle{
+                   
+                        ..default()
+                    }) )
                     .id();
-              
+                println!("Spawning a child");
                 termy_backend.entity_map.insert((x, y), vcell);
             }
         }
     
-    
-     //   commands.entity(e).with_children(|parent| { });
+   // });
+     //   
 
 
     
@@ -230,6 +250,19 @@ fn handle_primary_window_resize(
     println!("RUNNING   handle_primary_window_resize");
 }
 
+fn debug_entities(query_cells: Query<(Entity, &Node)>,){
+
+    for (entity_id, cs) in query_cells.iter() {
+
+        
+
+
+        println!("the calculated size is {:?}",cs.size());
+
+    }
+
+}
+
 fn update_ents_from_comp(
     //this should run after update from vcbuffer
     query_cells: Query<(Entity, &VirtualCell), (Changed<VirtualCell>)>,
@@ -244,6 +277,8 @@ fn update_ents_from_comp(
     let fontsize = termy_backend.term_font_size as f32;
 
     let pixel_shift = fontsize * termy_backend.font_aspect_ratio;
+
+   
 
 
     for (entity_id, cellii) in query_cells.iter() {
