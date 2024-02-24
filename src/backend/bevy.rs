@@ -139,8 +139,8 @@ fn init_virtual_cells(
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
     let termy_backend = termy.backend_mut();
-    let rows = termy_backend.height;
-    let columns = termy_backend.width;
+    let rows = termy_backend.buffer.area().height;
+    let columns = termy_backend.buffer.area().width;
     termy_backend.entity_map = HashMap::new();
 
     // spawn a default node for the terminal to reference
@@ -231,13 +231,13 @@ fn handle_primary_window_resize(
 ) {
     println!("entering   handle_primary_window_resize");
 
-    if let (mut termy, nodik) = terminal_query
+    let (mut termy, nodik) = terminal_query
         .get_single_mut()
-        .expect("More than one terminal with a bevybackend")
-    {
-        for wr in resize_event.read() {
-            let termy_backend = termy.backend_mut();
+        .expect("More than one terminal with a bevybackend");
+    let termy_backend = termy.backend_mut();
 
+    if termy_backend.bevy_initialized {
+        for wr in resize_event.read() {
             let node_size = nodik.size();
 
             let w_wid = node_size.x;
@@ -334,7 +334,6 @@ fn update_ents_from_comp(
 }
 
 fn font_setup(
-    mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut terminal_query: Query<((Entity, &mut Terminal<BevyBackend>))>,
 ) {
