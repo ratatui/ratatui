@@ -265,25 +265,28 @@ fn debug_entities(query_cells: Query<(Entity, &Node)>,){
 
 fn update_ents_from_comp(
     //this should run after update from vcbuffer
-    query_cells: Query<(Entity, &VirtualCell), (Changed<VirtualCell>)>,
+    query_cells: Query<(Entity,&Node, &VirtualCell), (Changed<VirtualCell>)>,
     mut commands: Commands,
     terminal_query: Query<((&Terminal<BevyBackend>))>,
 ) {
     println!("entering   update_ents_from_comp");
     let termy = terminal_query
-        .get_single()
-        .expect("More than one terminal with a bevybackend");
-    let termy_backend = termy.backend();
-    let fontsize = termy_backend.term_font_size as f32;
+    .get_single()
+    .expect("More than one terminal with a bevybackend");
+let termy_backend = termy.backend();
+let fontsize = termy_backend.term_font_size as f32;
+    
 
-    let pixel_shift = fontsize * termy_backend.font_aspect_ratio;
+
+    
 
    
 
 
-    for (entity_id, cellii) in query_cells.iter() {
+    for (entity_id, nodik, cellii) in query_cells.iter() {
 
         if !cellii.skip{
+            let node_size = nodik.size();
 
             let mut proper_font = Handle::weak_from_u128(101);
 
@@ -318,8 +321,8 @@ fn update_ents_from_comp(
                 padding:UiRect::ZERO,
                 border:UiRect::ZERO,
                 grid_auto_flow: GridAutoFlow::Column,
-                top: Val::Px(cellii.row as f32 * fontsize),
-                left: Val::Px(cellii.column as f32 * pixel_shift),
+                top: Val::Px(cellii.row as f32 * node_size.y),
+                left: Val::Px(cellii.column as f32 * node_size.x),
             //  grid_row: GridPlacement::start(cellii.row as i16 +1),
             //  grid_column: GridPlacement::start(cellii.column as i16 +1),
                 ..default()
