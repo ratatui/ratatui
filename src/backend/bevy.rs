@@ -123,7 +123,7 @@ fn init_bevy_terminals(world: &mut World) {
    
     println!("2");
     world.run_system_once(init_virtual_cells);
-    //   world.run_system_once(add_render_to_cells);
+  
     println!("3");
     world.run_system_once(update_ents_from_vcupdate);
     println!("4");
@@ -252,7 +252,7 @@ fn handle_primary_window_resize(
        
         let termy_backend = termy.backend_mut();
 
-        let terminal_font_size = termy_backend.term_font_size as f32;
+       
   
         let node_size = nodik.size();
        
@@ -290,7 +290,7 @@ fn debug_entities(query_cells: Query<(Entity, &Node)>,){
         
 
 
-        println!("the calculated size is {:?}",cs.size());
+     //   println!("the calculated size is {:?}",cs.size());
 
     }
 
