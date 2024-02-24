@@ -34,7 +34,7 @@ impl Plugin for RatatuiPlugin {
         );
         app.add_systems(First, (query_term_for_init));
         app.add_systems(
-            First,
+            Last,
             (handle_primary_window_resize).run_if(on_event::<WindowResized>()),
         );
         app.add_systems(
@@ -237,21 +237,26 @@ fn update_ents_from_vcupdate(
 
 fn handle_primary_window_resize(
     mut windows: Query<&mut Window, With<PrimaryWindow>>,
-    mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
+    mut terminal_query: Query<(&mut Terminal<BevyBackend>, &Node)>,
     mut resize_event: EventReader<WindowResized>,
 ) {
     println!("entering   handle_primary_window_resize");
     for wr in resize_event.read() {
-        let mut termy = terminal_query
+        let (mut termy, nodik) = terminal_query
             .get_single_mut()
             .expect("More than one terminal with a bevybackend");
         let termy_backend = termy.backend_mut();
 
         let terminal_font_size = termy_backend.term_font_size as f32;
-        let terminal_font_aspect_ratio = termy_backend.font_aspect_ratio as f32;
+  
+        let node_size = nodik.size();
+       
 
-        let w_wid = (terminal_font_size * terminal_font_aspect_ratio);
-        let w_hei = terminal_font_size as f32;
+      
+
+        let w_wid = node_size.x;
+        let w_hei = node_size.y;
+
 
         let new_wid = (wr.width / w_wid) as u16;
         let new_hei = (wr.height / w_hei) as u16;
@@ -263,8 +268,8 @@ fn handle_primary_window_resize(
 
         for mut window in windows.iter_mut() {
             window.resolution = WindowResolution::new(
-                new_wid as f32 * termy_backend.font_aspect_ratio * terminal_font_size as f32,
-                new_hei as f32 * terminal_font_size as f32,
+                new_wid as f32 * w_wid,
+                new_hei as f32 * w_hei,
             );
 
             // Query returns one window typically.
