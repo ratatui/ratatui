@@ -235,6 +235,7 @@ fn handle_primary_window_resize(
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
     let termy_backend = termy.backend_mut();
+    
 
     if termy_backend.bevy_initialized {
         for wr in resize_event.read() {
