@@ -154,35 +154,7 @@ fn init_virtual_cells(
     let columns = termy_backend.width;
     termy_backend.entity_map = HashMap::new();
 
-    // spawn a default node for the terminal to reference
-    commands.entity(e).insert(     TextBundle::from_section(
-        // Accepts a `String` or any type that converts into a `String`, such as `&str`
-        "T",
-        TextStyle {
-            // This font is loaded and will be used instead of the default font.
-            font: termy_backend.normal_handle.clone(),
-            font_size: termy_backend.term_font_size as f32,
-            color: BevyColor::ORANGE,
-            ..default()
-        },
-    ) // Set the justification of the Text
-    .with_background_color(BevyColor::BLUE)
-    .with_text_justify(JustifyText::Center)
-    // Set the style of the TextBundle itself.
-    .with_style(Style {
-        display:Display::Grid,
-        position_type: PositionType::Absolute,
-        align_items:AlignItems::Stretch,
-        margin:UiRect::ZERO,
-        padding:UiRect::ZERO,
-        border:UiRect::ZERO,
-        grid_auto_flow: GridAutoFlow::Column,
-        top: Val::Px(0.0),
-        left: Val::Px(0.0),
-    //  grid_row: GridPlacement::start(cellii.row as i16 +1),
-    //  grid_column: GridPlacement::start(cellii.column as i16 +1),
-        ..default()
-    }));
+    
 
     
 
@@ -244,24 +216,24 @@ fn update_ents_from_vcupdate(
 
 fn handle_primary_window_resize(
     mut windows: Query<&mut Window, With<PrimaryWindow>>,
-    mut terminal_query: Query<(&mut Terminal<BevyBackend>, &Node)>,
+    mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
     mut resize_event: EventReader<WindowResized>,
 ) {
     println!("entering   handle_primary_window_resize");
     for wr in resize_event.read() {
-        let (mut termy,nodik) = terminal_query
+        let mut termy = terminal_query
             .get_single_mut()
             .expect("More than one terminal with a bevybackend");
         let termy_backend = termy.backend_mut();
 
         let terminal_font_size = termy_backend.term_font_size as f32;
-     
+        let terminal_font_aspect_ratio = termy_backend.font_aspect_ratio as f32;
 
-        let node_size = nodik.size();
-       
+        let w_wid = (terminal_font_size * terminal_font_aspect_ratio);
+        let w_hei = terminal_font_size as f32;
 
-        let new_wid = (wr.width / node_size.x) as u16;
-        let new_hei = (wr.height / node_size.y) as u16;
+        let new_wid = (wr.width / w_wid) as u16;
+        let new_hei = (wr.height / w_hei) as u16;
 
         termy_backend.resize(new_wid as u16, new_hei as u16);
         termy_backend.bevy_initialized = false;
@@ -270,8 +242,8 @@ fn handle_primary_window_resize(
 
         for mut window in windows.iter_mut() {
             window.resolution = WindowResolution::new(
-                new_wid as f32 * node_size.x,
-                new_hei as f32 * node_size.y,
+                new_wid as f32 * termy_backend.font_aspect_ratio * terminal_font_size as f32,
+                new_hei as f32 * terminal_font_size as f32,
             );
 
             // Query returns one window typically.
