@@ -470,7 +470,7 @@ impl<'a> StatefulWidget for Scrollbar<'a> {
     type State = ScrollbarState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        if state.content_length == 0 || area.is_empty() {
+        if state.content_length == 0 || self.track_length_excluding_arrow_heads(area) == 0 {
             return;
         }
 
