@@ -132,7 +132,7 @@ fn do_first_resize(
 
     window
         .resolution
-        .set(node_size.x * rows as f32, node_size.y * columns as f32);
+        .set(node_size.x * columns as f32, node_size.y * rows as f32);
 
     let cursor_cell = commands
         .spawn((TextBundle::from_section(
@@ -245,8 +245,8 @@ fn clear_virtual_cells(
             padding: UiRect::ZERO,
             border: UiRect::ZERO,
             grid_auto_flow: GridAutoFlow::Column,
-            top: Val::Px(10.0),
-            left: Val::Px(10.0),
+            top: Val::Px(-30.0),
+            left: Val::Px(-30.0),
             //  grid_row: GridPlacement::start(cellii.row as i16 +1),
             //  grid_column: GridPlacement::start(cellii.column as i16 +1),
             ..default()
