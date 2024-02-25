@@ -69,7 +69,9 @@ impl Plugin for RatatuiPlugin {
         );
         app.add_systems(
             PostUpdate,
-            (update_ents_from_vcupdate).run_if(in_state(TermState::AllTermsInited)).run_if(on_timer(Duration::from_millis(20))),
+            (update_ents_from_vcupdate)
+                .run_if(in_state(TermState::AllTermsInited))
+                .run_if(on_timer(Duration::from_millis(20))),
         );
         app.add_systems(
             Update,
@@ -133,27 +135,26 @@ fn do_first_resize(
     window
         .resolution
         .set(node_size.x * columns as f32, node_size.y * rows as f32);
-//spawn the cursor
+    //spawn the cursor
     let cursor_cell = commands
         .spawn((TextBundle::from_section(
-        
             " ",
             TextStyle {
                 font: termy_backend.normal_handle.clone(),
                 font_size: termy_backend.term_font_size as f32,
                 color: BevyColor::ORANGE,
-                
+
                 ..default()
             },
-        ) 
+        )
         .with_style(Style {
             top: Val::Px(termy_backend.cursor_pos.1 as f32 * node_size.y),
             left: Val::Px(termy_backend.cursor_pos.0 as f32 * node_size.x),
-         
+
             ..default()
         }),))
         .id();
-   
+
     termy_backend.cursor_ref = cursor_cell;
 
     resize_state.set(TermSizing::TermGood);
@@ -188,7 +189,6 @@ fn query_term_for_init(
     mut app_state: ResMut<NextState<TermState>>,
     mut resize_state: ResMut<NextState<TermSizing>>,
 ) {
-
     let mut termy = terminal_query
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
@@ -199,7 +199,6 @@ fn query_term_for_init(
         resize_state.set(TermSizing::TermNeedsFirstResize);
         termy_backend.bevy_initialized = true;
     }
-
 }
 
 fn clear_virtual_cells(
@@ -207,7 +206,6 @@ fn clear_virtual_cells(
     terminal_query: Query<(Entity, &Terminal<BevyBackend>)>,
     mut app_state: ResMut<NextState<TermState>>,
 ) {
-    
     let (e, termy) = terminal_query
         .get_single()
         .expect("More than one terminal with a bevybackend");
@@ -250,7 +248,6 @@ fn clear_virtual_cells(
     );
 
     app_state.set(TermState::TermNeedsIniting);
-  
 }
 
 fn update_cursor(
@@ -299,7 +296,6 @@ fn init_virtual_cells(
     mut terminal_query: Query<(&Node, Entity, &mut Terminal<BevyBackend>)>,
     mut app_state: ResMut<NextState<TermState>>,
 ) {
-
     let (nodik, e, mut termy) = terminal_query
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
@@ -340,7 +336,7 @@ fn init_virtual_cells(
                     }),
                 ))
                 .id();
-          
+
             termy_backend.entity_map.insert((x, y), vcell);
         }
     }
@@ -349,8 +345,6 @@ fn init_virtual_cells(
     //
 
     app_state.set(TermState::AllTermsInited);
-
- 
 }
 
 fn update_ents_from_vcupdate(
@@ -358,7 +352,6 @@ fn update_ents_from_vcupdate(
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
     //   mut app_state: ResMut<NextState<TermState>>,
 ) {
- 
     let mut termy = terminal_query
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
@@ -379,7 +372,6 @@ fn update_ents_from_vcupdate(
     }
 
     //app_state.set(TermState::TermNeedsUpdateFromComp);
-
 }
 
 fn handle_primary_window_resize(
@@ -388,8 +380,6 @@ fn handle_primary_window_resize(
     mut resize_event: EventReader<WindowResized>,
     mut app_state: ResMut<NextState<TermState>>,
 ) {
-    
-
     if let Ok((mut termy, nodik)) = terminal_query.get_single_mut() {
         for wr in resize_event.read() {
             let termy_backend = termy.backend_mut();
@@ -404,8 +394,6 @@ fn handle_primary_window_resize(
             termy_backend.resize(new_wid as u16, new_hei as u16);
             app_state.set(TermState::TermNeedsClearing);
 
-           
-
             for mut window in windows.iter_mut() {
                 window.resolution =
                     WindowResolution::new(new_wid as f32 * w_wid, new_hei as f32 * w_hei);
@@ -414,7 +402,6 @@ fn handle_primary_window_resize(
             }
         }
     }
-  
 }
 
 fn debug_entities(query_cells: Query<(Entity, &Node)>) {
@@ -439,7 +426,6 @@ fn update_ents_from_comp(
     mut commands: Commands,
     terminal_query: Query<((&Terminal<BevyBackend>))>,
 ) {
-   
     let termy = terminal_query
         .get_single()
         .expect("More than one terminal with a bevybackend");
@@ -544,7 +530,6 @@ fn update_ents_from_comp(
             );
         }
     }
-  
 }
 
 fn font_setup(
@@ -552,7 +537,6 @@ fn font_setup(
     mut terminal_query: Query<((Entity, &mut Terminal<BevyBackend>))>,
     mut app_state: ResMut<NextState<TermState>>,
 ) {
-  
     let (e, mut termy) = terminal_query
         .get_single_mut()
         .expect("More than one terminal with a bevybackend");
@@ -563,7 +547,6 @@ fn font_setup(
     termy_backend.bold_handle = asset_server.load(&termy_backend.bold_font_path);
     termy_backend.italicbold_handle = asset_server.load(&termy_backend.italicbold_font_path);
     app_state.set(TermState::TermNeedsClearing);
-
 }
 
 #[derive(Component, Debug, Clone, PartialEq)]
@@ -641,7 +624,6 @@ trait FromRatCell {
 
 impl FromRatCell for VirtualCell {
     fn to_virtual(x: u16, y: u16, given_cell: &Cell) -> VirtualCell {
-        
         VirtualCell {
             symbol: given_cell.symbol().into(),
             fg: BevyColor::from_rat_color(given_cell.fg, true),
