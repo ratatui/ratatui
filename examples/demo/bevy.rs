@@ -1,9 +1,4 @@
-use std::{
-    error::Error,
-    io,
-    sync::{Arc, Mutex},
-    time::{Duration, Instant},
-};
+use std::{error::Error, time::Duration};
 
 use bevy::{
     app::{App as BevyApp, AppExit},
@@ -21,7 +16,7 @@ unsafe fn get_ratapp() -> &'static mut RatApp<'static> {
 }
 
 pub fn run(ticky_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
-    let ratapp = RatApp::new("WHAT Demo", true);
+    let ratapp = RatApp::new("Bevy Demo", enhanced_graphics);
 
     let mut ra = unsafe { get_ratapp() };
     *ra = ratapp;

@@ -73,6 +73,12 @@ impl Plugin for RatatuiPlugin {
                 .run_if(on_timer(Duration::from_millis(20))),
         );
         app.add_systems(
+            PostUpdate,
+            (update_ents_from_vcupdate)
+                .run_if(in_state(TermState::TermNeedsIniting))
+                .run_if(on_timer(Duration::from_millis(20))),
+        );
+        app.add_systems(
             Update,
             (debug_entities).run_if(in_state(TermState::AllTermsInited)),
         );
@@ -743,10 +749,12 @@ trait FromRatColor<RatColor> {
     fn from_rat_color(color: RatColor, fg: bool) -> BevyColor;
 }
 
+///RATATUI SPECIFIC STUFF STARTS HERE
 ///
 ///
-///
-/// RATATUI SPECIFIC STUFF STARTS HERE
+/// Bevy Backend is created either with default() which uses the built in Bevy font which is VERY
+/// bad and not reccomended, or with new() which takes the height,width font size, and path strings
+/// to fonts to be used for the normal, bold, italic, and bold italic text variants.
 
 #[derive(Component, Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
