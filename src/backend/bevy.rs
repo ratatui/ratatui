@@ -346,8 +346,10 @@ fn update_ents_from_comp(
 
 
             if cellii.dim {
-                proper_fg.set_l(0.1);
-                proper_bg.set_l(0.1);
+                let fg_l = proper_fg.l();
+                let bg_l = proper_bg.l();
+                proper_fg.set_l(fg_l*0.9);
+                proper_bg.set_l(bg_l*0.9);
 
 
             }

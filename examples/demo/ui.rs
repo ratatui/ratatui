@@ -240,7 +240,7 @@ fn draw_text(f: &mut Frame, area: Rect) {
         text::Line::from(vec![
             Span::raw("Oh and if you didn't "),
             Span::styled("notice", Style::default().add_modifier(Modifier::ITALIC)),
-            Span::raw(" you can "),
+            Span::styled(" you can ", Style::default().add_modifier(Modifier::DIM)),
             Span::styled("automatically", Style::default().add_modifier(Modifier::BOLD)),
             Span::raw(" "),
             Span::styled("wrap", Style::default().add_modifier(Modifier::REVERSED)),
