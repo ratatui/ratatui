@@ -215,6 +215,12 @@ name = "hello_world"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
+
+[[example]]
+name = "hello_bevy"
+required-features = ["bevy"]
+doc-scrape-examples = true
+
 [[example]]
 name = "layout"
 required-features = ["crossterm"]

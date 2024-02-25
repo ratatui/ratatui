@@ -142,14 +142,14 @@ fn do_first_resize(
         waat = TextStyle {
             font: termy_backend.normal_handle.clone(),
             font_size: termy_backend.term_font_size as f32,
-            color: BevyColor::ORANGE,
+            color: BevyColor::DARK_GRAY,
 
             ..default()
         }
     } else {
         waat = TextStyle {
             font_size: termy_backend.term_font_size as f32,
-            color: BevyColor::ORANGE,
+            color: BevyColor::DARK_GRAY,
 
             ..default()
         }
@@ -230,14 +230,14 @@ fn clear_virtual_cells(
         waat = TextStyle {
             font: termy_backend.normal_handle.clone(),
             font_size: termy_backend.term_font_size as f32,
-            color: BevyColor::ORANGE,
+            color: BevyColor::DARK_GRAY,
 
             ..default()
         }
     } else {
         waat = TextStyle {
             font_size: termy_backend.term_font_size as f32,
-            color: BevyColor::ORANGE,
+            color: BevyColor::DARK_GRAY,
 
             ..default()
         }
@@ -246,7 +246,7 @@ fn clear_virtual_cells(
     // spawn a default node for the terminal to reference
     commands.entity(e).insert(
         TextBundle::from_section("T", waat) // Set the justification of the Text
-            .with_background_color(BevyColor::ORANGE)
+            .with_background_color(BevyColor::DARK_GRAY)
             .with_text_justify(JustifyText::Center)
             .with_style(Style {
                 display: Display::Grid,
@@ -337,14 +337,14 @@ fn init_virtual_cells(
         waat = TextStyle {
             font: termy_backend.normal_handle.clone(),
             font_size: termy_backend.term_font_size as f32,
-            color: BevyColor::ORANGE,
+            color: BevyColor::DARK_GRAY,
 
             ..default()
         }
     } else {
         waat = TextStyle {
             font_size: termy_backend.term_font_size as f32,
-            color: BevyColor::ORANGE,
+            color: BevyColor::DARK_GRAY,
 
             ..default()
         }
@@ -778,7 +778,7 @@ impl Default for BevyBackend {
             width: 25,
             term_font_size: 40,
             entity_map: HashMap::new(),
-            buffer: Buffer::empty(Rect::new(0, 0, 10, 30)),
+            buffer: Buffer::empty(Rect::new(0, 0, 25, 25)),
 
             vcupdate: Vec::default(),
             cursor: false,
