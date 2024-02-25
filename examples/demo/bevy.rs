@@ -21,24 +21,15 @@ unsafe fn get_ratapp() -> &'static mut RatApp<'static> {
 }
 
 pub fn run(ticky_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
-    // create app and run it
-    //  let app = Arc::new(Mutex::new(RatApp::new("Crossterm Demo", enhanced_graphics)));
+    let ratapp = RatApp::new("WHAT Demo", true);
 
-    //  static mut BEEP: Mutex<RatApp> = Mutex::new(RATAPP);
-    //  static mut BOOP:Arc<Mutex<RatApp>> = Arc::new(BEEP);
+    let mut ra = unsafe { get_ratapp() };
+    *ra = ratapp;
 
-    let res = run_app();
-
-    // let res = run_app(app.clone().lock().unwrap(), ticky_rate);
-
-    Ok(())
-}
-
-fn run_app() -> io::Result<()> {
     BevyApp::new()
         .add_plugins(DefaultPlugins)
         .add_plugins((RatatuiPlugin))
-        .insert_resource(Time::<Fixed>::from_hz(10.0))
+        .insert_resource(Time::<Fixed>::from_duration(ticky_rate))
         .add_systems(Startup, camera_setup)
         .add_systems(PreUpdate, terminal_draw)
         .add_systems(FixedUpdate, app_tick)
@@ -52,6 +43,23 @@ fn camera_setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 
     let mut my_terminal = Terminal::new(BevyBackend::default()).unwrap();
+
+    /*
+    or something like
+
+    let mut my_terminal = Terminal::new(BevyBackend::new(
+        30,
+        30,
+        40,
+        "fonts/Iosevka-Regular.ttf",
+        "fonts/Iosevka-Oblique.ttf",
+        "fonts/Iosevka-Bold.ttf",
+        "fonts/Iosevka-BoldOblique.ttf",
+    )).unwrap();
+
+
+
+     */
 
     my_terminal.clear();
 

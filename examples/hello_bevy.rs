@@ -15,7 +15,7 @@
 
 use bevy::{app::AppExit, prelude::*};
 use ratatui::{
-    prelude::{BevyBackend, Color, RatatuiPlugin, Style, Stylize, Terminal, *},
+    prelude::{BevyBackend, RatatuiPlugin, Terminal, *},
     text::*,
     widgets::*,
 };

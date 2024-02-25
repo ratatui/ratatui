@@ -551,6 +551,7 @@ fn update_ents_from_comp(
             } else {
                 waat = TextStyle {
                     font_size: fontsize,
+                    font: proper_font,
                     color: proper_fg,
                     ..default()
                 };

@@ -191,7 +191,7 @@ doc-scrape-examples = true
 
 [[example]]
 name = "demo"
-optional-features = ["once-cell"]
+
 # this runs for all of the terminal backends, so it can't be built using --all-features or scraped
 doc-scrape-examples = false
 
