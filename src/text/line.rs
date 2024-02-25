@@ -495,6 +495,18 @@ impl std::fmt::Display for Line<'_> {
     }
 }
 
+impl<'a> Styled for Line<'a> {
+    type Item = Line<'a>;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
+        self.style(style)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::iter;
@@ -610,6 +622,16 @@ mod tests {
             Line::styled("foobar", Style::default().yellow().on_red().italic()).reset_style();
 
         assert_eq!(Style::reset(), line.style);
+    }
+
+    #[test]
+    fn stylize() {
+        assert_eq!(Line::default().green().style, Color::Green.into());
+        assert_eq!(
+            Line::default().on_green().style,
+            Style::new().bg(Color::Green)
+        );
+        assert_eq!(Line::default().italic().style, Modifier::ITALIC.into());
     }
 
     #[test]
