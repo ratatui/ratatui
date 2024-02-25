@@ -31,6 +31,7 @@ fn main() {
         .add_systems(Startup, camera_and_terminal_setup)
         .add_systems(PreUpdate, terminal_draw)
         .add_systems(Update, (keyboard_input))
+        .add_systems(Startup, (bevy_draw))
         .run();
 }
 
@@ -39,13 +40,13 @@ fn camera_and_terminal_setup(mut commands: Commands) {
 
     let mut my_terminal = Terminal::new(BevyBackend::default()).unwrap();
 
-    // my_terminal.clear();
+    my_terminal.clear();
 
     commands.spawn(my_terminal);
 }
 
-fn terminal_draw(mut terminal_query: Query<(&mut Terminal<BevyBackend>)>) {
-    let text = "Hello Ratatui! From Bevy with love. :D   (press 'q' to quit)   ";
+fn terminal_draw(mut terminal_query: Query<(&mut Terminal<BevyBackend>)>, mut commands: Commands) {
+    let text = "Hello Bevy! From Ratatui with love. :D   (press 'q' to quit)   ";
 
     let mut rat_term = terminal_query
         .get_single_mut()
@@ -53,6 +54,19 @@ fn terminal_draw(mut terminal_query: Query<(&mut Terminal<BevyBackend>)>) {
     let _ = rat_term.draw(|frame| {
         let area = frame.size();
         frame.render_widget(text::Line::from(text), area);
+    });
+
+    for (pos, e) in rat_term.backend().entity_map.iter() {
+        if pos.1 > 2 {
+            commands.entity(e.clone()).insert(Visibility::Hidden);
+        }
+    }
+}
+
+fn bevy_draw(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn(SpriteBundle {
+        texture: asset_server.load("logo.png"),
+        ..default()
     });
 }
 

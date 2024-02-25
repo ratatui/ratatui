@@ -212,17 +212,18 @@ fn query_term_for_init(
 
 fn clear_virtual_cells(
     mut commands: Commands,
-    terminal_query: Query<(Entity, &Terminal<BevyBackend>)>,
+    mut terminal_query: Query<(Entity, &mut Terminal<BevyBackend>)>,
     mut app_state: ResMut<NextState<TermState>>,
 ) {
-    let (e, termy) = terminal_query
-        .get_single()
+    let (e, mut termy) = terminal_query
+        .get_single_mut()
         .expect("More than one terminal with a bevybackend");
-    let termy_backend = termy.backend();
+    let mut termy_backend = termy.backend_mut();
 
     for (_, entity) in termy_backend.entity_map.iter() {
         commands.entity(*entity).despawn();
     }
+    termy_backend.entity_map = HashMap::new();
 
     let mut waat = TextStyle::default();
 
@@ -752,7 +753,8 @@ pub struct BevyBackend {
     height: u16,
     width: u16,
     term_font_size: u16,
-    entity_map: HashMap<(u16, u16), Entity>,
+    /// HashMap with position tuple index and UI Entity (cell) in that position
+    pub entity_map: HashMap<(u16, u16), Entity>,
     buffer: Buffer,
 
     vcupdate: Vec<(u16, u16, VirtualCell)>,
@@ -775,10 +777,10 @@ impl Default for BevyBackend {
     fn default() -> Self {
         BevyBackend {
             height: 25,
-            width: 25,
+            width: 70,
             term_font_size: 40,
             entity_map: HashMap::new(),
-            buffer: Buffer::empty(Rect::new(0, 0, 25, 25)),
+            buffer: Buffer::empty(Rect::new(0, 0, 70, 25)),
 
             vcupdate: Vec::default(),
             cursor: false,
