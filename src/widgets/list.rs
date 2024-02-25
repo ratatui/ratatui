@@ -438,6 +438,8 @@ pub struct List<'a> {
     repeat_highlight_symbol: bool,
     /// Decides when to allocate spacing for the selection symbol
     highlight_spacing: HighlightSpacing,
+    /// How many items to try to keep visible before and after the selected item
+    scroll_padding: usize,
 }
 
 /// Defines the direction in which the list will be rendered.
@@ -685,6 +687,25 @@ impl<'a> List<'a> {
         self
     }
 
+    /// Sets the number of items around the currently selected item that should be kept visible
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Example
+    ///
+    /// A padding value of 1 will keep 1 item above and 1 item bellow visible if possible
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let items = vec!["Item 1"];
+    /// let list = List::new(items).scroll_padding(1);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn scroll_padding(mut self, padding: usize) -> List<'a> {
+        self.scroll_padding = padding;
+        self
+    }
+
     /// Defines the list direction (up or down)
     ///
     /// Defines if the `List` is displayed *top to bottom* (default) or *bottom to top*. Use
@@ -737,6 +758,52 @@ impl<'a> List<'a> {
         self.items.is_empty()
     }
 
+    /// Applies scroll padding to the selected index, reducing the padding value to keep the
+    /// selected item on screen even with items of inconsistent sizes
+    ///
+    /// This function is sensitive to how the bounds checking function handles item height
+    fn apply_scroll_padding_to_selected_index(
+        &self,
+        selected: Option<usize>,
+        max_height: usize,
+        first_visible_index: usize,
+        last_visible_index: usize,
+    ) -> Option<usize> {
+        let last_valid_index = self.items.len().saturating_sub(1);
+        let selected = selected?.min(last_valid_index);
+
+        // The bellow loop handles situations where the list item sizes may not be consistent,
+        // where the offset would have excluded some items that we want to include, or could
+        // cause the offset value to be set to an inconsistent value each time we render.
+        // The padding value will be reduced in case any of these issues would occur
+        let mut scroll_padding = self.scroll_padding;
+        while scroll_padding > 0 {
+            let mut height_around_selected = 0;
+            for index in selected.saturating_sub(scroll_padding)
+                ..=selected
+                    .saturating_add(scroll_padding)
+                    .min(last_valid_index)
+            {
+                height_around_selected += self.items[index].height();
+            }
+            if height_around_selected <= max_height {
+                break;
+            }
+            scroll_padding -= 1;
+        }
+
+        Some(
+            if (selected + scroll_padding).min(last_valid_index) >= last_visible_index {
+                selected + scroll_padding
+            } else if selected.saturating_sub(scroll_padding) < first_visible_index {
+                selected.saturating_sub(scroll_padding)
+            } else {
+                selected
+            }
+            .min(last_valid_index),
+        )
+    }
+
     /// Given an offset, calculate which items can fit in a given area
     fn get_items_bounds(
         &self,
@@ -765,9 +832,17 @@ impl<'a> List<'a> {
             last_visible_index += 1;
         }
 
-        // Get the selected index, but still honor the offset if nothing is selected
-        // This allows for the list to stay at a position after select()ing None.
-        let index_to_display = selected.unwrap_or(offset).min(self.items.len() - 1);
+        // Get the selected index and apply scroll_padding to it, but still honor the offset if
+        // nothing is selected. This allows for the list to stay at a position after select()ing
+        // None.
+        let index_to_display = self
+            .apply_scroll_padding_to_selected_index(
+                selected,
+                max_height,
+                first_visible_index,
+                last_visible_index,
+            )
+            .unwrap_or(offset);
 
         // Recall that last_visible_index is the index of what we
         // can render up to in the given space after the offset
@@ -969,6 +1044,9 @@ where
 #[cfg(test)]
 mod tests {
     use std::borrow::Cow;
+
+    use pretty_assertions::assert_eq;
+    use rstest::rstest;
 
     use super::*;
     use crate::{
@@ -1962,5 +2040,203 @@ mod tests {
         let buffer = render_widget(list, 5, 3);
         let expected = Buffer::with_lines(vec!["Large", "     ", "     "]);
         assert_buffer_eq!(buffer, expected);
+    }
+
+    #[rstest]
+    #[case::no_padding(
+        4,
+        2, // Offset
+        0, // Padding
+        Some(2), // Selected
+        Buffer::with_lines(vec![">> Item 2 ", "   Item 3 ", "   Item 4 ", "   Item 5 "])
+    )]
+    #[case::one_before(
+        4,
+        2, // Offset
+        1, // Padding
+        Some(2), // Selected
+        Buffer::with_lines(vec!["   Item 1 ", ">> Item 2 ", "   Item 3 ", "   Item 4 "])
+    )]
+    #[case::one_after(
+        4,
+        1, // Offset
+        1, // Padding
+        Some(4), // Selected
+        Buffer::with_lines(vec!["   Item 2 ", "   Item 3 ", ">> Item 4 ", "   Item 5 "])
+    )]
+    #[case::check_padding_overflow(
+        4,
+        1, // Offset
+        2, // Padding
+        Some(4), // Selected
+        Buffer::with_lines(vec!["   Item 2 ", "   Item 3 ", ">> Item 4 ", "   Item 5 "])
+    )]
+    #[case::no_padding_offset_behavior(
+        5, // Render Area Height
+        2, // Offset
+        0, // Padding
+        Some(3), // Selected
+        Buffer::with_lines(
+            vec!["   Item 2 ", ">> Item 3 ", "   Item 4 ", "   Item 5 ", "          "]
+            )
+    )]
+    #[case::two_before(
+        5, // Render Area Height
+        2, // Offset
+        2, // Padding
+        Some(3), // Selected
+        Buffer::with_lines(
+            vec!["   Item 1 ", "   Item 2 ", ">> Item 3 ", "   Item 4 ", "   Item 5 "]
+            )
+    )]
+    #[case::keep_selected_visible(
+        4,
+        0, // Offset
+        4, // Padding
+        Some(1), // Selected
+        Buffer::with_lines(vec!["   Item 0 ", ">> Item 1 ", "   Item 2 ", "   Item 3 "])
+    )]
+    fn test_padding(
+        #[case] render_height: u16,
+        #[case] offset: usize,
+        #[case] padding: usize,
+        #[case] selected: Option<usize>,
+        #[case] expected: Buffer,
+    ) {
+        let backend = backend::TestBackend::new(10, render_height);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut state = ListState::default();
+
+        *state.offset_mut() = offset;
+        state.select(selected);
+
+        let items = vec![
+            ListItem::new("Item 0"),
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2"),
+            ListItem::new("Item 3"),
+            ListItem::new("Item 4"),
+            ListItem::new("Item 5"),
+        ];
+        let list = List::new(items)
+            .scroll_padding(padding)
+            .highlight_symbol(">> ");
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                f.render_stateful_widget(list, size, &mut state);
+            })
+            .unwrap();
+
+        terminal.backend().assert_buffer(&expected);
+    }
+
+    /// If there isnt enough room for the selected item and the requested padding the list can jump
+    /// up and down every frame if something isnt done about it. This code tests to make sure that
+    /// isnt currently happening
+    #[test]
+    fn test_padding_flicker() {
+        let backend = backend::TestBackend::new(10, 5);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut state = ListState::default();
+
+        *state.offset_mut() = 2;
+        state.select(Some(4));
+
+        let items = vec![
+            ListItem::new("Item 0"),
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2"),
+            ListItem::new("Item 3"),
+            ListItem::new("Item 4"),
+            ListItem::new("Item 5"),
+            ListItem::new("Item 6"),
+            ListItem::new("Item 7"),
+        ];
+        let list = List::new(items).scroll_padding(3).highlight_symbol(">> ");
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                f.render_stateful_widget(&list, size, &mut state);
+            })
+            .unwrap();
+
+        let offset_after_render = state.offset();
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                f.render_stateful_widget(&list, size, &mut state);
+            })
+            .unwrap();
+
+        // Offset after rendering twice should remain the same as after once
+        assert_eq!(offset_after_render, state.offset());
+    }
+
+    #[test]
+    fn test_padding_inconsistent_item_sizes() {
+        let backend = backend::TestBackend::new(10, 3);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut state = ListState::default().with_offset(0).with_selected(Some(3));
+
+        let items = vec![
+            ListItem::new("Item 0"),
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2"),
+            ListItem::new("Item 3"),
+            ListItem::new("Item 4\nTest\nTest"),
+            ListItem::new("Item 5"),
+        ];
+        let list = List::new(items).scroll_padding(1).highlight_symbol(">> ");
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                f.render_stateful_widget(list, size, &mut state);
+            })
+            .unwrap();
+
+        terminal.backend().assert_buffer(&Buffer::with_lines(vec![
+            "   Item 1 ",
+            "   Item 2 ",
+            ">> Item 3 ",
+        ]));
+    }
+
+    // Tests to make sure when it's pushing back the first visible index value that it doesnt
+    // include an item that's too large
+    #[test]
+    fn test_padding_offset_pushback_break() {
+        let backend = backend::TestBackend::new(10, 4);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let mut state = ListState::default();
+
+        *state.offset_mut() = 1;
+        state.select(Some(2));
+
+        let items = vec![
+            ListItem::new("Item 0\nTest\nTest"),
+            ListItem::new("Item 1"),
+            ListItem::new("Item 2"),
+            ListItem::new("Item 3"),
+        ];
+        let list = List::new(items).scroll_padding(2).highlight_symbol(">> ");
+
+        terminal
+            .draw(|f| {
+                let size = f.size();
+                f.render_stateful_widget(list, size, &mut state);
+            })
+            .unwrap();
+
+        terminal.backend().assert_buffer(&Buffer::with_lines(vec![
+            "   Item 1 ",
+            ">> Item 2 ",
+            "   Item 3 ",
+            "          ",
+        ]));
     }
 }
