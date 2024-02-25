@@ -2,7 +2,7 @@
 use std::borrow::Cow;
 
 use super::StyledGrapheme;
-use crate::{prelude::*, widgets::Widget};
+use crate::prelude::*;
 
 /// A line of text, consisting of one or more [`Span`]s.
 ///
@@ -443,6 +443,15 @@ impl<'a> From<Line<'a>> for String {
     }
 }
 
+impl<'a, T> FromIterator<T> for Line<'a>
+where
+    T: Into<Span<'a>>,
+{
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        Self::from(iter.into_iter().map(Into::into).collect::<Vec<_>>())
+    }
+}
+
 impl Widget for Line<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.render_ref(area, buf);
@@ -488,6 +497,8 @@ impl std::fmt::Display for Line<'_> {
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
+
     use rstest::{fixture, rstest};
 
     use super::*;
@@ -623,6 +634,32 @@ mod tests {
         ];
         let line = Line::from(spans.clone());
         assert_eq!(spans, line.spans);
+    }
+
+    #[test]
+    fn from_iter() {
+        let line = Line::from_iter(vec!["Hello".blue(), " world!".green()]);
+        assert_eq!(
+            line.spans,
+            vec![
+                Span::styled("Hello", Style::new().blue()),
+                Span::styled(" world!", Style::new().green()),
+            ]
+        );
+    }
+
+    #[test]
+    fn collect() {
+        let line: Line = iter::once("Hello".blue())
+            .chain(iter::once(" world!".green()))
+            .collect();
+        assert_eq!(
+            line.spans,
+            vec![
+                Span::styled("Hello", Style::new().blue()),
+                Span::styled(" world!", Style::new().green()),
+            ]
+        );
     }
 
     #[test]

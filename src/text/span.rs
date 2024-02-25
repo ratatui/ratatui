@@ -4,7 +4,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 use super::StyledGrapheme;
-use crate::{prelude::*, widgets::Widget};
+use crate::prelude::*;
 
 /// Represents a part of a line that is contiguous and where all characters share the same style.
 ///

@@ -419,6 +419,19 @@ impl<'a> From<Vec<Line<'a>>> for Text<'a> {
     }
 }
 
+impl<'a, T> FromIterator<T> for Text<'a>
+where
+    T: Into<Line<'a>>,
+{
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let lines = iter.into_iter().map(Into::into).collect();
+        Text {
+            lines,
+            ..Default::default()
+        }
+    }
+}
+
 impl<'a, T> Extend<T> for Text<'a>
 where
     T: Into<Line<'a>>,
@@ -486,6 +499,8 @@ impl<'a> Styled for Text<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
+
     use rstest::{fixture, rstest};
 
     use super::*;
@@ -595,6 +610,26 @@ mod tests {
             Line::from("The first line"),
             Line::from("The second line"),
         ]);
+        assert_eq!(
+            text.lines,
+            vec![Line::from("The first line"), Line::from("The second line")]
+        );
+    }
+
+    #[test]
+    fn from_iterator() {
+        let text = Text::from_iter(vec!["The first line", "The second line"]);
+        assert_eq!(
+            text.lines,
+            vec![Line::from("The first line"), Line::from("The second line")]
+        );
+    }
+
+    #[test]
+    fn collect() {
+        let text: Text = iter::once("The first line")
+            .chain(iter::once("The second line"))
+            .collect();
         assert_eq!(
             text.lines,
             vec![Line::from("The first line"), Line::from("The second line")]
