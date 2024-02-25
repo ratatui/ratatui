@@ -51,10 +51,8 @@ use crate::{backend::ClearType, prelude::*};
 /// [`backend`]: crate::backend
 /// [`Backend`]: crate::backend::Backend
 /// [`Buffer`]: crate::buffer::Buffer
-
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "bevy", derive(Component))]
-
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Terminal<B>
 where
     B: Backend,

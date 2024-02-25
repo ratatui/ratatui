@@ -4,10 +4,8 @@
 use std::io;
 
 use bevy::{
-    ecs::system::RunSystemOnce,
     prelude::{Color as BevyColor, *},
     time::common_conditions::on_timer,
-    ui::ContentSize,
     utils::{Duration, HashMap},
     window::{PrimaryWindow, WindowResized, WindowResolution},
 };
@@ -20,6 +18,7 @@ use crate::{
     terminal::Terminal,
 };
 
+///Provides Bevy Plugin which creates terminal like window supporting Ratatui
 pub struct RatatuiPlugin;
 
 impl Plugin for RatatuiPlugin {
@@ -136,18 +135,28 @@ fn do_first_resize(
         .resolution
         .set(node_size.x * columns as f32, node_size.y * rows as f32);
     //spawn the cursor
-    let cursor_cell = commands
-        .spawn((TextBundle::from_section(
-            " ",
-            TextStyle {
-                font: termy_backend.normal_handle.clone(),
-                font_size: termy_backend.term_font_size as f32,
-                color: BevyColor::ORANGE,
 
-                ..default()
-            },
-        )
-        .with_style(Style {
+    let mut waat = TextStyle::default();
+
+    if termy_backend.normal_font_path != "" {
+        waat = TextStyle {
+            font: termy_backend.normal_handle.clone(),
+            font_size: termy_backend.term_font_size as f32,
+            color: BevyColor::ORANGE,
+
+            ..default()
+        }
+    } else {
+        waat = TextStyle {
+            font_size: termy_backend.term_font_size as f32,
+            color: BevyColor::ORANGE,
+
+            ..default()
+        }
+    }
+
+    let cursor_cell = commands
+        .spawn((TextBundle::from_section(" ", waat).with_style(Style {
             top: Val::Px(termy_backend.cursor_pos.1 as f32 * node_size.y),
             left: Val::Px(termy_backend.cursor_pos.0 as f32 * node_size.x),
 
@@ -215,36 +224,43 @@ fn clear_virtual_cells(
         commands.entity(*entity).despawn();
     }
 
+    let mut waat = TextStyle::default();
+
+    if termy_backend.normal_font_path != "" {
+        waat = TextStyle {
+            font: termy_backend.normal_handle.clone(),
+            font_size: termy_backend.term_font_size as f32,
+            color: BevyColor::ORANGE,
+
+            ..default()
+        }
+    } else {
+        waat = TextStyle {
+            font_size: termy_backend.term_font_size as f32,
+            color: BevyColor::ORANGE,
+
+            ..default()
+        }
+    }
+
     // spawn a default node for the terminal to reference
     commands.entity(e).insert(
-        TextBundle::from_section(
-            // Accepts a `String` or any type that converts into a `String`, such as `&str`
-            "T",
-            TextStyle {
-                // This font is loaded and will be used instead of the default font.
-                font: termy_backend.normal_handle.clone(),
-                font_size: termy_backend.term_font_size as f32,
-                color: BevyColor::ORANGE,
+        TextBundle::from_section("T", waat) // Set the justification of the Text
+            .with_background_color(BevyColor::ORANGE)
+            .with_text_justify(JustifyText::Center)
+            .with_style(Style {
+                display: Display::Grid,
+                position_type: PositionType::Absolute,
+                align_items: AlignItems::Stretch,
+                margin: UiRect::ZERO,
+                padding: UiRect::ZERO,
+                border: UiRect::ZERO,
+                grid_auto_flow: GridAutoFlow::Column,
+                top: Val::Px(-30.0),
+                left: Val::Px(-30.0),
+
                 ..default()
-            },
-        ) // Set the justification of the Text
-        .with_background_color(BevyColor::ORANGE)
-        .with_text_justify(JustifyText::Center)
-        // Set the style of the TextBundle itself.
-        .with_style(Style {
-            display: Display::Grid,
-            position_type: PositionType::Absolute,
-            align_items: AlignItems::Stretch,
-            margin: UiRect::ZERO,
-            padding: UiRect::ZERO,
-            border: UiRect::ZERO,
-            grid_auto_flow: GridAutoFlow::Column,
-            top: Val::Px(-30.0),
-            left: Val::Px(-30.0),
-            //  grid_row: GridPlacement::start(cellii.row as i16 +1),
-            //  grid_column: GridPlacement::start(cellii.column as i16 +1),
-            ..default()
-        }),
+            }),
     );
 
     app_state.set(TermState::TermNeedsIniting);
@@ -261,19 +277,28 @@ fn update_cursor(
     let termy_backend = termy.backend();
     let node_size = nodik.size();
 
+    let mut waat = TextStyle::default();
+
+    if termy_backend.normal_font_path != "" {
+        waat = TextStyle {
+            font: termy_backend.normal_handle.clone(),
+            font_size: termy_backend.term_font_size as f32,
+            color: BevyColor::GREEN,
+
+            ..default()
+        }
+    } else {
+        waat = TextStyle {
+            font_size: termy_backend.term_font_size as f32,
+            color: BevyColor::GREEN,
+
+            ..default()
+        }
+    }
+
     commands
         .entity(termy_backend.cursor_ref)
-        .insert((TextBundle::from_section(
-            " ",
-            TextStyle {
-                font: termy_backend.normal_handle.clone(),
-                font_size: termy_backend.term_font_size as f32,
-                color: BevyColor::ORANGE,
-
-                ..default()
-            },
-        ) // Set the justification of the Text
-        .with_style(Style {
+        .insert((TextBundle::from_section(" ", waat).with_style(Style {
             top: Val::Px(termy_backend.cursor_pos.1 as f32 * node_size.y),
             left: Val::Px(termy_backend.cursor_pos.0 as f32 * node_size.x),
 
@@ -306,32 +331,35 @@ fn init_virtual_cells(
 
     let node_size = nodik.size();
 
-    // commands.entity(e).with_children(|parent| {
+    let mut waat = TextStyle::default();
 
-    // left vertical fill (border)
+    if termy_backend.normal_font_path != "" {
+        waat = TextStyle {
+            font: termy_backend.normal_handle.clone(),
+            font_size: termy_backend.term_font_size as f32,
+            color: BevyColor::ORANGE,
+
+            ..default()
+        }
+    } else {
+        waat = TextStyle {
+            font_size: termy_backend.term_font_size as f32,
+            color: BevyColor::ORANGE,
+
+            ..default()
+        }
+    }
+
     for y in 0..rows {
         for x in 0..columns {
             let ratcell = termy_backend.buffer.get(x, y);
             let vcell = commands
                 .spawn((
                     VirtualCell::to_virtual(x, y, ratcell),
-                    TextBundle::from_section(
-                        // Accepts a `String` or any type that converts into a `String`, such as
-                        // `&str`
-                        ratcell.symbol(),
-                        TextStyle {
-                            font: termy_backend.normal_handle.clone(),
-                            font_size: termy_backend.term_font_size as f32,
-                            color: BevyColor::ORANGE,
-                            // This font is loaded and will be used instead of the default font.
-                            ..default()
-                        },
-                    ) // Set the justification of the Text
-                    .with_style(Style {
+                    TextBundle::from_section(ratcell.symbol(), waat.clone()).with_style(Style {
                         top: Val::Px(y as f32 * node_size.y),
                         left: Val::Px(x as f32 * node_size.x),
-                        //  grid_row: GridPlacement::start(cellii.row as i16 +1),
-                        //  grid_column: GridPlacement::start(cellii.column as i16 +1),
+
                         ..default()
                     }),
                 ))
@@ -341,16 +369,12 @@ fn init_virtual_cells(
         }
     }
 
-    // });
-    //
-
     app_state.set(TermState::AllTermsInited);
 }
 
 fn update_ents_from_vcupdate(
     mut commands: Commands,
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
-    //   mut app_state: ResMut<NextState<TermState>>,
 ) {
     let mut termy = terminal_query
         .get_single_mut()
@@ -367,11 +391,7 @@ fn update_ents_from_vcupdate(
             }
             None => (),
         };
-
-        //commands.entity(eid.clone()).remove::<TextBundle>();
     }
-
-    //app_state.set(TermState::TermNeedsUpdateFromComp);
 }
 
 fn handle_primary_window_resize(
@@ -438,13 +458,27 @@ fn update_ents_from_comp(
 
             let mut proper_font = Handle::weak_from_u128(101);
 
+            let mut no_font = true;
+
             if (cellii.bold && cellii.italic) {
+                if termy_backend.italicbold_font_path != "" {
+                    no_font = false
+                }
                 proper_font = termy_backend.italicbold_handle.clone();
             } else if (cellii.bold) {
+                if termy_backend.bold_font_path != "" {
+                    no_font = false
+                }
                 proper_font = termy_backend.bold_handle.clone();
             } else if (cellii.italic) {
+                if termy_backend.italic_font_path != "" {
+                    no_font = false
+                }
                 proper_font = termy_backend.italic_handle.clone();
             } else {
+                if termy_backend.normal_font_path != "" {
+                    no_font = false
+                }
                 proper_font = termy_backend.normal_handle.clone();
             }
 
@@ -505,28 +539,32 @@ fn update_ents_from_comp(
                 proper_fg = proper_bg.clone();
             }
 
-            commands.entity(entity_id).insert(
-                TextBundle::from_section(
-                    // Accepts a `String` or any type that converts into a `String`, such as `&str`
-                    proper_value,
-                    TextStyle {
-                        // This font is loaded and will be used instead of the default font.
-                        font: proper_font,
-                        font_size: fontsize,
-                        color: proper_fg,
-                        ..default()
-                    },
-                ) // Set the justification of the Text
-                .with_background_color(proper_bg)
-                .with_text_justify(JustifyText::Center)
-                // Set the style of the TextBundle itself.
-                .with_style(Style {
-                    top: Val::Px(cellii.row as f32 * node_size.y),
-                    left: Val::Px(cellii.column as f32 * node_size.x),
-                    //  grid_row: GridPlacement::start(cellii.row as i16 +1),
-                    //  grid_column: GridPlacement::start(cellii.column as i16 +1),
+            let mut waat = TextStyle::default();
+
+            if no_font {
+                waat = TextStyle {
+                    font_size: fontsize,
+                    color: proper_fg,
                     ..default()
-                }),
+                };
+            } else {
+                waat = TextStyle {
+                    font_size: fontsize,
+                    color: proper_fg,
+                    ..default()
+                };
+            }
+
+            commands.entity(entity_id).insert(
+                TextBundle::from_section(proper_value, waat)
+                    .with_background_color(proper_bg)
+                    .with_text_justify(JustifyText::Center)
+                    .with_style(Style {
+                        top: Val::Px(cellii.row as f32 * node_size.y),
+                        left: Val::Px(cellii.column as f32 * node_size.x),
+
+                        ..default()
+                    }),
             );
         }
     }
@@ -542,10 +580,19 @@ fn font_setup(
         .expect("More than one terminal with a bevybackend");
     let mut termy_backend = termy.backend_mut();
 
-    termy_backend.normal_handle = asset_server.load(&termy_backend.normal_font_path);
-    termy_backend.italic_handle = asset_server.load(&termy_backend.italic_font_path);
-    termy_backend.bold_handle = asset_server.load(&termy_backend.bold_font_path);
-    termy_backend.italicbold_handle = asset_server.load(&termy_backend.italicbold_font_path);
+    if termy_backend.normal_font_path != "" {
+        termy_backend.normal_handle = asset_server.load(&termy_backend.normal_font_path);
+    }
+    if termy_backend.italic_font_path != "" {
+        termy_backend.italic_handle = asset_server.load(&termy_backend.italic_font_path);
+    }
+    if termy_backend.bold_font_path != "" {
+        termy_backend.bold_handle = asset_server.load(&termy_backend.bold_font_path);
+    }
+    if termy_backend.italicbold_font_path != "" {
+        termy_backend.italicbold_handle = asset_server.load(&termy_backend.italicbold_font_path);
+    }
+
     app_state.set(TermState::TermNeedsClearing);
 }
 
@@ -566,7 +613,6 @@ struct RapidBlink {
     true_color: BevyColor,
 }
 
-// A unit struct to help identify the color-changing Text component
 #[derive(Component, Debug, Clone, PartialEq)]
 struct VirtualCell {
     symbol: String,
@@ -728,8 +774,8 @@ pub struct BevyBackend {
 impl Default for BevyBackend {
     fn default() -> Self {
         BevyBackend {
-            height: 30,
-            width: 10,
+            height: 25,
+            width: 25,
             term_font_size: 40,
             entity_map: HashMap::new(),
             buffer: Buffer::empty(Rect::new(0, 0, 10, 30)),
@@ -740,10 +786,10 @@ impl Default for BevyBackend {
             bevy_initialized: false,
             cursor_ref: Entity::PLACEHOLDER,
 
-            normal_font_path: "NO FONT PROVIDED".to_string(),
-            italic_font_path: "NO FONT PROVIDED".to_string(),
-            bold_font_path: "NO FONT PROVIDED".to_string(),
-            italicbold_font_path: "NO FONT PROVIDED".to_string(),
+            normal_font_path: "".to_string(),
+            italic_font_path: "".to_string(),
+            bold_font_path: "".to_string(),
+            italicbold_font_path: "".to_string(),
             normal_handle: Handle::weak_from_u128(101),
             italic_handle: Handle::weak_from_u128(101),
             bold_handle: Handle::weak_from_u128(101),
