@@ -753,7 +753,7 @@ trait FromRatColor<RatColor> {
 ///
 ///
 /// Bevy Backend is created either with default() which uses the built in Bevy font which is VERY
-/// bad and not reccomended, or with new() which takes the height,width font size, and path strings
+/// bad and not recommended, or with new() which takes the height,width font size, and path strings
 /// to fonts to be used for the normal, bold, italic, and bold italic text variants.
 
 #[derive(Component, Debug, Clone)]
