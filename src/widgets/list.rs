@@ -758,6 +758,52 @@ impl<'a> List<'a> {
         self.items.is_empty()
     }
 
+    /// Applies scroll padding to the selected index, reducing the padding value to keep the
+    /// selected item on screen even with items of inconsistent sizes
+    ///
+    /// This function is sensitive to how the bounds checking function handles item height
+    fn apply_scroll_padding_to_selected_index(
+        &self,
+        selected: Option<usize>,
+        max_height: usize,
+        first_visible_index: usize,
+        last_visible_index: usize,
+    ) -> Option<usize> {
+        let last_valid_index = self.items.len().saturating_sub(1);
+        let selected = selected?.min(last_valid_index);
+
+        // The bellow loop handles situations where the list item sizes may not be consistent,
+        // where the offset would have excluded some items that we want to include, or could
+        // cause the offset value to be set to an inconsistent value each time we render.
+        // The padding value will be reduced in case any of these issues would occur
+        let mut scroll_padding = self.scroll_padding;
+        while scroll_padding > 0 {
+            let mut height_around_selected = 0;
+            for index in selected.saturating_sub(scroll_padding)
+                ..=selected
+                    .saturating_add(scroll_padding)
+                    .min(last_valid_index)
+            {
+                height_around_selected += self.items[index].height();
+            }
+            if height_around_selected <= max_height {
+                break;
+            }
+            scroll_padding -= 1;
+        }
+
+        Some(
+            if (selected + scroll_padding).min(last_valid_index) >= last_visible_index {
+                selected + scroll_padding
+            } else if selected.saturating_sub(scroll_padding) < first_visible_index {
+                selected.saturating_sub(scroll_padding)
+            } else {
+                selected
+            }
+            .min(last_valid_index),
+        )
+    }
+
     /// Given an offset, calculate which items can fit in a given area
     fn get_items_bounds(
         &self,
@@ -786,44 +832,17 @@ impl<'a> List<'a> {
             last_visible_index += 1;
         }
 
-        // Get the selected index, but still honor the offset if nothing is selected
-        // This allows for the list to stay at a position after select()ing None.
-        // Apply the padding value to the selected index
-        let index_to_display = if let Some(selected) = selected {
-            let last_valid_index = self.items.len().saturating_sub(1);
-            let selected = selected.min(last_valid_index);
-
-            // The bellow loop handles situations where the list item sizes may not be consistent,
-            // where the offset would have excluded some items that we want to include, or could
-            // cause the offset value to be set to an inconsistent value each time we render.
-            // The padding value will be reduced in case any of these issues would occur
-            let mut scroll_padding = self.scroll_padding;
-            while scroll_padding > 0 {
-                let mut height_around_selected = 0;
-                for index in selected.saturating_sub(scroll_padding)
-                    ..=selected
-                        .saturating_add(scroll_padding)
-                        .min(last_valid_index)
-                {
-                    height_around_selected += self.items[index].height();
-                }
-                if height_around_selected <= max_height {
-                    break;
-                }
-                scroll_padding -= 1;
-            }
-
-            if (selected + scroll_padding).min(last_valid_index) >= last_visible_index {
-                selected + scroll_padding
-            } else if selected.saturating_sub(scroll_padding) < first_visible_index {
-                selected.saturating_sub(scroll_padding)
-            } else {
-                selected
-            }
-            .min(last_valid_index)
-        } else {
-            offset // Min was already applied at the beginning of this function
-        };
+        // Get the selected index and apply scroll_padding to it, but still honor the offset if
+        // nothing is selected. This allows for the list to stay at a position after select()ing
+        // None.
+        let index_to_display = self
+            .apply_scroll_padding_to_selected_index(
+                selected,
+                max_height,
+                first_visible_index,
+                last_visible_index,
+            )
+            .unwrap_or(offset);
 
         // Recall that last_visible_index is the index of what we
         // can render up to in the given space after the offset
