@@ -7,7 +7,8 @@ use bevy::{
     ecs::system::RunSystemOnce,
     prelude::{Color as BevyColor, *},
     ui::ContentSize,
-    utils::HashMap,
+    utils::{Duration,HashMap},
+    time::{common_conditions::on_timer},
     window::{PrimaryWindow, WindowResized, WindowResolution},
 };
 
@@ -26,6 +27,10 @@ impl Plugin for RatatuiPlugin {
         let world = &mut app.world;
 
         app.init_state::<TermState>();
+
+      //  app.insert_resource(Time::<Fixed>::from_seconds(0.5));
+        app.add_systems(First, slow_blink_cells.run_if(on_timer(Duration::from_secs_f32(0.5))));
+        app.add_systems(First, rapid_blink_cells.run_if(on_timer(Duration::from_millis(100))));
 
         app.add_systems(
             First,
@@ -83,6 +88,71 @@ enum TermState {
     TermNeedsUpdateFromComp,
     TermNeedsFullBufferUpdate,
 }
+
+
+
+fn slow_blink_cells(  mut slow_blink_query: Query<((&mut VirtualCell, &mut SlowBlink))>) {
+
+
+    for (mut vc, mut sb) in slow_blink_query.iter_mut(){
+
+        if sb.in_blink{
+
+            sb.in_blink = false;
+            vc.fg = vc.bg.clone();
+        }
+        else {
+
+            sb.in_blink = true;
+            vc.fg = sb.true_color.clone();
+
+
+
+        }
+
+
+
+
+    }
+   
+
+
+
+
+}
+
+
+fn rapid_blink_cells(  mut rapid_blink_query: Query<((&mut VirtualCell, &mut RapidBlink))>) {
+
+
+    for (mut vc, mut rb) in rapid_blink_query.iter_mut(){
+
+        if rb.in_blink{
+
+            rb.in_blink = false;
+            vc.fg = vc.bg.clone();
+        }
+        else {
+
+            rb.in_blink = true;
+            vc.fg = rb.true_color.clone();
+
+
+
+        }
+
+
+
+
+    }
+   
+
+
+
+
+}
+
+
 
 fn query_term_for_init(
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
@@ -287,7 +357,7 @@ fn debug_entities(query_cells: Query<(Entity, &Node)>) {
 
 fn update_ents_from_comp(
     //this should run after update from vcbuffer
-    query_cells: Query<(Entity, &Node, &VirtualCell), (Changed<VirtualCell>)>,
+    query_cells: Query<(Entity, &Node, &VirtualCell, Option<&SlowBlink>,Option<&RapidBlink>), (Changed<VirtualCell>)>,
     mut commands: Commands,
     terminal_query: Query<((&Terminal<BevyBackend>))>,
 ) {
@@ -298,7 +368,7 @@ fn update_ents_from_comp(
     let termy_backend = termy.backend();
     let fontsize = termy_backend.term_font_size as f32;
 
-    for (entity_id, nodik, cellii) in query_cells.iter() {
+    for (entity_id, nodik, cellii, sbo, rbo) in query_cells.iter() {
         if !cellii.skip {
             let node_size = nodik.size();
 
@@ -353,6 +423,36 @@ fn update_ents_from_comp(
 
 
             }
+
+            if let Some(x) = sbo {
+
+                if !cellii.slow_blink {commands.entity(entity_id).remove::<SlowBlink>();}
+
+
+
+            }
+
+            else if cellii.slow_blink {
+
+                commands.entity(entity_id).insert(SlowBlink{in_blink:false,true_color:proper_fg.clone()});
+
+            }
+            else{commands.entity(entity_id).remove::<SlowBlink>();}
+
+            if let Some(x) = rbo {
+
+                if !cellii.rapid_blink {commands.entity(entity_id).remove::<RapidBlink>();}
+
+
+
+            }
+
+            else if cellii.rapid_blink {
+
+                commands.entity(entity_id).insert(RapidBlink{in_blink:false,true_color:proper_fg.clone()});
+
+            }
+            else{commands.entity(entity_id).remove::<RapidBlink>();}
        
 
             commands.entity(entity_id).insert(
@@ -403,6 +503,28 @@ fn font_setup(
 
     println!("RUNNING   font_setup");
 }
+
+
+
+#[derive(Component, Debug, Clone, PartialEq)]
+struct SlowBlink {
+    in_blink: bool,
+    true_color:BevyColor,
+
+
+} 
+
+
+#[derive(Component, Debug, Clone, PartialEq)]
+struct RapidBlink {
+    in_blink: bool,
+    true_color:BevyColor,
+
+
+} 
+
+
+
 
 // A unit struct to help identify the color-changing Text component
 #[derive(Component, Debug, Clone, PartialEq)]
