@@ -238,9 +238,10 @@ fn draw_text(f: &mut Frame, area: Rect) {
             Span::raw("."),
         ]),
         text::Line::from(vec![
-            Span::raw("Oh and if you didn't "),
+            Span::styled("Oh and if you didn't ", Style::default().add_modifier(Modifier::DIM)),
             Span::styled("notice", Style::default().add_modifier(Modifier::ITALIC)),
-            Span::styled(" you can ", Style::default().add_modifier(Modifier::SLOW_BLINK)),
+            Span::styled(" you ", Style::default().add_modifier(Modifier::SLOW_BLINK)),
+            Span::styled("can ", Style::default().add_modifier(Modifier::RAPID_BLINK)),
             Span::styled("automatically", Style::default().add_modifier(Modifier::BOLD)),
             Span::raw(" "),
             Span::styled("wrap", Style::default().add_modifier(Modifier::REVERSED)),

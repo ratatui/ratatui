@@ -6,9 +6,9 @@ use std::io;
 use bevy::{
     ecs::system::RunSystemOnce,
     prelude::{Color as BevyColor, *},
+    time::common_conditions::on_timer,
     ui::ContentSize,
-    utils::{Duration,HashMap},
-    time::{common_conditions::on_timer},
+    utils::{Duration, HashMap},
     window::{PrimaryWindow, WindowResized, WindowResolution},
 };
 
@@ -27,10 +27,17 @@ impl Plugin for RatatuiPlugin {
         let world = &mut app.world;
 
         app.init_state::<TermState>();
+        app.init_state::<TermSizing>();
 
-      //  app.insert_resource(Time::<Fixed>::from_seconds(0.5));
-        app.add_systems(First, slow_blink_cells.run_if(on_timer(Duration::from_secs_f32(0.5))));
-        app.add_systems(First, rapid_blink_cells.run_if(on_timer(Duration::from_millis(100))));
+        //  app.insert_resource(Time::<Fixed>::from_seconds(0.5));
+        app.add_systems(
+            First,
+            slow_blink_cells.run_if(on_timer(Duration::from_secs_f32(0.6))),
+        );
+        app.add_systems(
+            First,
+            rapid_blink_cells.run_if(on_timer(Duration::from_millis(200))),
+        );
 
         app.add_systems(
             First,
@@ -50,9 +57,19 @@ impl Plugin for RatatuiPlugin {
                 .after(clear_virtual_cells)
                 .run_if(in_state(TermState::TermNeedsIniting))),
         );
-  
+
+        app.add_systems(
+            First,
+            (do_first_resize
+            
+                .run_if(in_state(TermState::AllTermsInited))).run_if(in_state(TermSizing::TermNeedsFirstResize)),
+        );
 
         app.add_systems(First, (query_term_for_init));
+
+
+
+
         app.add_systems(
             Last,
             (handle_primary_window_resize).run_if(on_event::<WindowResized>()),
@@ -72,6 +89,13 @@ impl Plugin for RatatuiPlugin {
                 .after(update_ents_from_vcupdate)
                 .run_if(in_state(TermState::AllTermsInited)),
         );
+
+        app.add_systems(
+            Last,
+            (update_cursor)
+                .after(handle_primary_window_resize)
+                .run_if(in_state(TermState::AllTermsInited)).run_if(in_state(TermSizing::TermGood)),
+        );
     }
 }
 
@@ -81,82 +105,108 @@ enum TermState {
     NoTermsInited,
     TermNeedsFont,
     TermNeedsClearing,
+   
 
     TermNeedsIniting,
     AllTermsInited,
-    TermNeedsNewComp,
-    TermNeedsUpdateFromComp,
-    TermNeedsFullBufferUpdate,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
+enum TermSizing {
+    #[default]
+    NoTermsInited,
+   
+    TermNeedsFirstResize,
+    TermGood,
+
+   
 }
 
 
+fn do_first_resize(
+    mut commands: Commands,
+     mut windows: Query<&mut Window>,
+     mut terminal_query: Query<(&Node, Entity, &mut Terminal<BevyBackend>)>,
+     mut resize_state: ResMut<NextState<TermSizing>>,
+) {
+   
 
-fn slow_blink_cells(  mut slow_blink_query: Query<((&mut VirtualCell, &mut SlowBlink))>) {
+    let mut window = windows.single_mut();
+
+    let (nodik, e, mut termy) = terminal_query
+    .get_single_mut()
+    .expect("More than one terminal with a bevybackend");
+let mut termy_backend = termy.backend_mut();
+let rows = termy_backend.height;
+let columns = termy_backend.width;
 
 
-    for (mut vc, mut sb) in slow_blink_query.iter_mut(){
+let node_size = nodik.size();
 
-        if sb.in_blink{
 
+        window.resolution.set(node_size.x * rows  as f32, node_size.y * columns as f32);
+
+
+    let cursor_cell = commands
+    .spawn((
+        TextBundle::from_section(
+            // Accepts a `String` or any type that converts into a `String`, such as
+            // `&str`
+            " ",
+            TextStyle {
+                font: termy_backend.normal_handle.clone(),
+                font_size: termy_backend.term_font_size as f32,
+                color: BevyColor::ORANGE,
+                // This font is loaded and will be used instead of the default font.
+                ..default()
+            },
+        ) // Set the justification of the Text
+        .with_style(Style {
+            top: Val::Px(termy_backend.cursor_pos.1 as f32 * node_size.y),
+            left: Val::Px(termy_backend.cursor_pos.0 as f32 * node_size.x),
+            //  grid_row: GridPlacement::start(cellii.row as i16 +1),
+            //  grid_column: GridPlacement::start(cellii.column as i16 +1),
+            ..default()
+        }),
+    ))
+    .id();
+//    println!("Spawning a child");
+termy_backend.cursor_ref = cursor_cell;
+
+
+
+        resize_state.set(TermSizing::TermGood);
+}
+
+
+fn slow_blink_cells(mut slow_blink_query: Query<((&mut VirtualCell, &mut SlowBlink))>) {
+    for (mut vc, mut sb) in slow_blink_query.iter_mut() {
+        if sb.in_blink {
             sb.in_blink = false;
             vc.fg = vc.bg.clone();
-        }
-        else {
-
+        } else {
             sb.in_blink = true;
             vc.fg = sb.true_color.clone();
-
-
-
         }
-
-
-
-
     }
-   
-
-
-
-
 }
 
-
-fn rapid_blink_cells(  mut rapid_blink_query: Query<((&mut VirtualCell, &mut RapidBlink))>) {
-
-
-    for (mut vc, mut rb) in rapid_blink_query.iter_mut(){
-
-        if rb.in_blink{
-
+fn rapid_blink_cells(mut rapid_blink_query: Query<((&mut VirtualCell, &mut RapidBlink))>) {
+    for (mut vc, mut rb) in rapid_blink_query.iter_mut() {
+        if rb.in_blink {
             rb.in_blink = false;
             vc.fg = vc.bg.clone();
-        }
-        else {
-
+        } else {
             rb.in_blink = true;
             vc.fg = rb.true_color.clone();
-
-
-
         }
-
-
-
-
     }
-   
-
-
-
-
 }
-
-
 
 fn query_term_for_init(
     mut terminal_query: Query<(&mut Terminal<BevyBackend>)>,
     mut app_state: ResMut<NextState<TermState>>,
+    mut resize_state: ResMut<NextState<TermSizing>>,
 ) {
     println!("entering   query_term_for_init");
     let mut termy = terminal_query
@@ -166,12 +216,14 @@ fn query_term_for_init(
 
     if (termy_backend.bevy_initialized == false) {
         app_state.set(TermState::TermNeedsFont);
+        resize_state.set(TermSizing::TermNeedsFirstResize);
         termy_backend.bevy_initialized = true;
     }
 
     println!("RUNNING   query_term_for_init");
     println!("{:?}", termy_backend.bevy_initialized);
 }
+
 
 fn clear_virtual_cells(
     mut commands: Commands,
@@ -187,6 +239,9 @@ fn clear_virtual_cells(
     for (_, entity) in termy_backend.entity_map.iter() {
         commands.entity(*entity).despawn();
     }
+
+
+    
 
     // spawn a default node for the terminal to reference
     commands.entity(e).insert(
@@ -224,11 +279,57 @@ fn clear_virtual_cells(
     println!("RUNNING   clear_virtual_cells");
 }
 
+
+
+
+
+fn update_cursor( terminal_query: Query<(&Node, Entity, &Terminal<BevyBackend>)>,
+
+mut commands: Commands,){
+    let (nodik,e,termy) = terminal_query
+    .get_single()
+    .expect("More than one terminal with a bevybackend");
+let termy_backend = termy.backend();
+let node_size = nodik.size();
+
+commands.entity(termy_backend.cursor_ref).insert((
+    TextBundle::from_section(
+        // Accepts a `String` or any type that converts into a `String`, such as
+        // `&str`
+        " ",
+        TextStyle {
+            font: termy_backend.normal_handle.clone(),
+            font_size: termy_backend.term_font_size as f32,
+            color: BevyColor::ORANGE,
+            // This font is loaded and will be used instead of the default font.
+            ..default()
+        },
+    ) // Set the justification of the Text
+    .with_style(Style {
+        top: Val::Px(termy_backend.cursor_pos.1 as f32 * node_size.y),
+        left: Val::Px(termy_backend.cursor_pos.0 as f32 * node_size.x),
+        //  grid_row: GridPlacement::start(cellii.row as i16 +1),
+        //  grid_column: GridPlacement::start(cellii.column as i16 +1),
+        ..default()
+    }),
+));
+
+
+
+
+}
+
+
+
+
 fn init_virtual_cells(
     mut commands: Commands,
     mut terminal_query: Query<(&Node, Entity, &mut Terminal<BevyBackend>)>,
     mut app_state: ResMut<NextState<TermState>>,
+    
 ) {
+
+
     println!("entering   init_virtual_cells");
     let (nodik, e, mut termy) = terminal_query
         .get_single_mut()
@@ -239,6 +340,9 @@ fn init_virtual_cells(
     termy_backend.entity_map = HashMap::new();
 
     let node_size = nodik.size();
+
+
+
 
     // commands.entity(e).with_children(|parent| {
 
@@ -357,7 +461,16 @@ fn debug_entities(query_cells: Query<(Entity, &Node)>) {
 
 fn update_ents_from_comp(
     //this should run after update from vcbuffer
-    query_cells: Query<(Entity, &Node, &VirtualCell, Option<&SlowBlink>,Option<&RapidBlink>), (Changed<VirtualCell>)>,
+    query_cells: Query<
+        (
+            Entity,
+            &Node,
+            &VirtualCell,
+            Option<&SlowBlink>,
+            Option<&RapidBlink>,
+        ),
+        (Changed<VirtualCell>),
+    >,
     mut commands: Commands,
     terminal_query: Query<((&Terminal<BevyBackend>))>,
 ) {
@@ -384,76 +497,62 @@ fn update_ents_from_comp(
                 proper_font = termy_backend.normal_handle.clone();
             }
 
-            let mut proper_value = cellii.symbol.clone() ;
+            let mut proper_value = cellii.symbol.clone();
 
             if cellii.underlined {
-
-                proper_value =   format!("{}{}", proper_value, '\u{0332}');
-
+                proper_value = format!("{}{}", proper_value, '\u{0332}');
             }
 
             if cellii.crossed_out {
-
-                proper_value =   format!("{}{}", proper_value, '\u{0336}');
-
+                proper_value = format!("{}{}", proper_value, '\u{0336}');
             }
 
-     
-
-          
-
-            let mut proper_fg= cellii.fg;
+            let mut proper_fg = cellii.fg;
 
             let mut proper_bg = cellii.bg;
 
             if cellii.reversed {
-
                 let col_buf = proper_fg.clone();
                 proper_fg = proper_bg;
                 proper_bg = col_buf;
-
             }
-
 
             if cellii.dim {
                 let fg_l = proper_fg.l();
                 let bg_l = proper_bg.l();
-                proper_fg.set_l(fg_l*0.9);
-                proper_bg.set_l(bg_l*0.9);
-
-
+                proper_fg.set_l(fg_l * 0.9);
+                proper_bg.set_l(bg_l * 0.9);
             }
 
             if let Some(x) = sbo {
-
-                if !cellii.slow_blink {commands.entity(entity_id).remove::<SlowBlink>();}
-
-
-
+                if !cellii.slow_blink {
+                    commands.entity(entity_id).remove::<SlowBlink>();
+                }
+            } else if cellii.slow_blink {
+                commands.entity(entity_id).insert(SlowBlink {
+                    in_blink: false,
+                    true_color: proper_fg.clone(),
+                });
+            } else {
+                commands.entity(entity_id).remove::<SlowBlink>();
             }
-
-            else if cellii.slow_blink {
-
-                commands.entity(entity_id).insert(SlowBlink{in_blink:false,true_color:proper_fg.clone()});
-
-            }
-            else{commands.entity(entity_id).remove::<SlowBlink>();}
 
             if let Some(x) = rbo {
-
-                if !cellii.rapid_blink {commands.entity(entity_id).remove::<RapidBlink>();}
-
-
-
+                if !cellii.rapid_blink {
+                    commands.entity(entity_id).remove::<RapidBlink>();
+                }
+            } else if cellii.rapid_blink {
+                commands.entity(entity_id).insert(RapidBlink {
+                    in_blink: false,
+                    true_color: proper_fg.clone(),
+                });
+            } else {
+                commands.entity(entity_id).remove::<RapidBlink>();
             }
 
-            else if cellii.rapid_blink {
-
-                commands.entity(entity_id).insert(RapidBlink{in_blink:false,true_color:proper_fg.clone()});
-
+            if cellii.hidden {
+                proper_fg = proper_bg.clone();
             }
-            else{commands.entity(entity_id).remove::<RapidBlink>();}
-       
 
             commands.entity(entity_id).insert(
                 TextBundle::from_section(
@@ -471,7 +570,6 @@ fn update_ents_from_comp(
                 .with_text_justify(JustifyText::Center)
                 // Set the style of the TextBundle itself.
                 .with_style(Style {
-                 
                     top: Val::Px(cellii.row as f32 * node_size.y),
                     left: Val::Px(cellii.column as f32 * node_size.x),
                     //  grid_row: GridPlacement::start(cellii.row as i16 +1),
@@ -504,27 +602,23 @@ fn font_setup(
     println!("RUNNING   font_setup");
 }
 
-
-
 #[derive(Component, Debug, Clone, PartialEq)]
 struct SlowBlink {
     in_blink: bool,
-    true_color:BevyColor,
+    true_color: BevyColor,
+}
 
-
-} 
+#[derive(Component, Debug, Clone, PartialEq)]
+struct Cursor {
+    pos: (u16,u16)
+}
 
 
 #[derive(Component, Debug, Clone, PartialEq)]
 struct RapidBlink {
     in_blink: bool,
-    true_color:BevyColor,
-
-
-} 
-
-
-
+    true_color: BevyColor,
+}
 
 // A unit struct to help identify the color-changing Text component
 #[derive(Component, Debug, Clone, PartialEq)]
@@ -567,15 +661,13 @@ impl VirtualCell {
             row: y,
             column: x,
 
-
             dim: false,
             reversed: false,
-         
+
             slow_blink: false,
             rapid_blink: false,
-          
+
             hidden: false,
-          
         }
     }
 }
@@ -673,6 +765,7 @@ pub struct BevyBackend {
     buffer: Buffer,
 
     vcupdate: Vec<(u16, u16, VirtualCell)>,
+    cursor_ref:Entity,
 
     cursor: bool,
     cursor_pos: (u16, u16),
@@ -700,6 +793,7 @@ impl Default for BevyBackend {
             cursor: false,
             cursor_pos: (0, 0),
             bevy_initialized: false,
+            cursor_ref: Entity::PLACEHOLDER,
 
             normal_font_path: "NO FONT PROVIDED".to_string(),
             italic_font_path: "NO FONT PROVIDED".to_string(),
@@ -734,6 +828,7 @@ impl BevyBackend {
             vcupdate: Vec::default(),
             cursor: false,
             cursor_pos: (0, 0),
+            cursor_ref: Entity::PLACEHOLDER,
 
             bevy_initialized: false,
             normal_font_path: normal_font_path.to_string(),
