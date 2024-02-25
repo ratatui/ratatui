@@ -55,10 +55,11 @@ fn camera_setup(mut commands: Commands) {
         60,
         20,
         40,
-        "fonts/unifont.otf",
-        "fonts/unifont.otf",
-        "fonts/unifont.otf",
-        "fonts/unifont.otf",
+        "fonts/Iosevka-Regular.ttf",
+        "fonts/Iosevka-Oblique.ttf",
+        "fonts/Iosevka-Bold.ttf",
+       
+        "fonts/Iosevka-BoldOblique.ttf",
     ))
     .unwrap();
 

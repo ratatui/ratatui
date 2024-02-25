@@ -342,13 +342,12 @@ fn update_ents_from_comp(
                 proper_fg = proper_bg;
                 proper_bg = col_buf;
 
-
-
             }
 
+
             if cellii.dim {
-                proper_fg = proper_fg.with_l(0.5);
-                proper_bg = proper_bg.with_l(0.5);
+                proper_fg.set_l(0.1);
+                proper_bg.set_l(0.1);
 
 
             }
@@ -370,13 +369,7 @@ fn update_ents_from_comp(
                 .with_text_justify(JustifyText::Center)
                 // Set the style of the TextBundle itself.
                 .with_style(Style {
-                    display: Display::Grid,
-                    position_type: PositionType::Absolute,
-                    align_items: AlignItems::Stretch,
-                    margin: UiRect::ZERO,
-                    padding: UiRect::ZERO,
-                    border: UiRect::ZERO,
-                    grid_auto_flow: GridAutoFlow::Column,
+                 
                     top: Val::Px(cellii.row as f32 * node_size.y),
                     left: Val::Px(cellii.column as f32 * node_size.x),
                     //  grid_row: GridPlacement::start(cellii.row as i16 +1),
