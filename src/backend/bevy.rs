@@ -45,18 +45,7 @@ impl Plugin for RatatuiPlugin {
                 .after(clear_virtual_cells)
                 .run_if(in_state(TermState::TermNeedsIniting))),
         );
-        app.add_systems(
-            First,
-            (update_ents_from_vcupdate)
-                .after(init_virtual_cells)
-                .run_if(in_state(TermState::TermNeedsIniting)),
-        );
-        app.add_systems(
-            First,
-            (update_ents_from_comp)
-                .after(update_ents_from_vcupdate)
-                .run_if(in_state(TermState::TermNeedsIniting)),
-        );
+  
 
         app.add_systems(First, (query_term_for_init));
         app.add_systems(
@@ -325,19 +314,59 @@ fn update_ents_from_comp(
                 proper_font = termy_backend.normal_handle.clone();
             }
 
+            let mut proper_value = cellii.symbol.clone() ;
+
+            if cellii.underlined {
+
+                proper_value =   format!("{}{}", proper_value, '\u{0332}');
+
+            }
+
+            if cellii.crossed_out {
+
+                proper_value =   format!("{}{}", proper_value, '\u{0336}');
+
+            }
+
+     
+
+          
+
+            let mut proper_fg= cellii.fg;
+
+            let mut proper_bg = cellii.bg;
+
+            if cellii.reversed {
+
+                let col_buf = proper_fg.clone();
+                proper_fg = proper_bg;
+                proper_bg = col_buf;
+
+
+
+            }
+
+            if cellii.dim {
+                proper_fg = proper_fg.with_l(0.5);
+                proper_bg = proper_bg.with_l(0.5);
+
+
+            }
+       
+
             commands.entity(entity_id).insert(
                 TextBundle::from_section(
                     // Accepts a `String` or any type that converts into a `String`, such as `&str`
-                    &cellii.symbol,
+                    proper_value,
                     TextStyle {
                         // This font is loaded and will be used instead of the default font.
                         font: proper_font,
                         font_size: fontsize,
-                        color: cellii.fg,
+                        color: proper_fg,
                         ..default()
                     },
                 ) // Set the justification of the Text
-                .with_background_color(cellii.bg)
+                .with_background_color(proper_bg)
                 .with_text_justify(JustifyText::Center)
                 // Set the style of the TextBundle itself.
                 .with_style(Style {
@@ -386,7 +415,7 @@ struct VirtualCell {
     symbol: String,
     fg: BevyColor,
     bg: BevyColor,
-    underline_color: Option<BevyColor>,
+    underline_color: BevyColor,
 
     skip: bool,
 
@@ -410,21 +439,26 @@ impl VirtualCell {
             symbol: "╬".to_string(),
             fg: bevy::prelude::Color::WHITE,
             bg: bevy::prelude::Color::BLACK,
-            underline_color: None,
+            underline_color: bevy::prelude::Color::WHITE,
             skip: false,
-
-            bold: false,
-            dim: false,
             italic: false,
             underlined: false,
-            slow_blink: false,
-            rapid_blink: false,
-            reversed: false,
-            hidden: false,
+            bold: false,
+
             crossed_out: false,
 
             row: y,
             column: x,
+
+
+            dim: false,
+            reversed: false,
+         
+            slow_blink: false,
+            rapid_blink: false,
+          
+            hidden: false,
+          
         }
     }
 }
@@ -441,9 +475,9 @@ impl FromRatCell for VirtualCell {
             fg: BevyColor::from_rat_color(given_cell.fg, true),
             bg: BevyColor::from_rat_color(given_cell.bg, false),
             #[cfg(not(feature = "underline-color"))]
-            underline_color: Some(BevyColor::from_rat_color(given_cell.fg, true)),
+            underline_color: BevyColor::from_rat_color(given_cell.fg, true),
             #[cfg(feature = "underline-color")]
-            underline_color: Some(BevyColor::from_rat_color(given_cell.underline_color, true)),
+            underline_color: BevyColor::from_rat_color(given_cell.underline_color, true),
             bold: given_cell.modifier.intersects(Modifier::BOLD),
             dim: given_cell.modifier.intersects(Modifier::DIM),
             italic: given_cell.modifier.intersects(Modifier::ITALIC),
