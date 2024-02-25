@@ -10,27 +10,20 @@ use crate::prelude::*;
 /// text. When a [`Line`] is rendered, it is rendered as a single line of text, with each [`Span`]
 /// being rendered in order (left to right).
 ///
-/// [`Line`]s can be created from [`Span`]s, [`String`]s, and [`&str`]s. They can be styled with a
-/// [`Style`], and have an [`Alignment`].
-///
-/// The line's [`Alignment`] is used by the rendering widget to determine how to align the line
-/// within the available space. If the line is longer than the available space, the alignment is
-/// ignored and the line is truncated.
-///
-/// The line's [`Style`] is used by the rendering widget to determine how to style the line. If the
-/// line is longer than the available space, the style is applied to the entire line, and the line
-/// is truncated. Each [`Span`] in the line will be styled with the [`Style`] of the line, and then
-/// with its own [`Style`].
-///
-/// `Line` implements the [`Widget`] trait, which means it can be rendered to a [`Buffer`]. Usually
-/// apps will use the [`Paragraph`] widget instead of rendering a [`Line`] directly as it provides
-/// more functionality.
-///
 /// # Constructor Methods
 ///
 /// - [`Line::default`] creates a line with empty content and the default style.
 /// - [`Line::raw`] creates a line with the given content and the default style.
 /// - [`Line::styled`] creates a line with the given content and style.
+///
+/// # Conversion Methods
+///
+/// - [`Line::from`] creates a `Line` from a [`String`].
+/// - [`Line::from`] creates a `Line` from a [`&str`].
+/// - [`Line::from`] creates a `Line` from a [`Vec`] of [`Span`]s.
+/// - [`Line::from`] creates a `Line` from single [`Span`].
+/// - [`String::from`] converts a line into a [`String`].
+/// - [`Line::from_iter`] creates a line from an iterator of items that are convertible to [`Span`].
 ///
 /// # Setter Methods
 ///
@@ -39,6 +32,15 @@ use crate::prelude::*;
 /// - [`Line::spans`] sets the content of the line.
 /// - [`Line::style`] sets the style of the line.
 /// - [`Line::alignment`] sets the alignment of the line.
+/// - [`Line::left_aligned`] sets the alignment of the line to [`Alignment::Left`].
+/// - [`Line::centered`] sets the alignment of the line to [`Alignment::Center`].
+/// - [`Line::right_aligned`] sets the alignment of the line to [`Alignment::Right`].
+///
+/// # Iteration Methods
+///
+/// - [`Line::iter`] returns an iterator over the spans of this line.
+/// - [`Line::iter_mut`] returns a mutable iterator over the spans of this line.
+/// - [`Line::into_iter`] returns an iterator over the spans of this line.
 ///
 /// # Other Methods
 ///
@@ -56,17 +58,88 @@ use crate::prelude::*;
 ///
 /// # Examples
 ///
+/// ## Creating Lines
+/// [`Line`]s can be created from [`Span`]s, [`String`]s, and [`&str`]s. They can be styled with a
+/// [`Style`].
+///
 /// ```rust
 /// use ratatui::prelude::*;
 ///
-/// Line::raw("unstyled");
-/// Line::styled("yellow text", Style::new().yellow());
-/// Line::from("red text").style(Style::new().red());
-/// Line::from(String::from("unstyled"));
-/// Line::from(vec![
+/// let style = Style::new().yellow();
+/// let line = Line::raw("Hello, world!").style(style);
+/// let line = Line::styled("Hello, world!", style);
+/// let line = Line::styled("Hello, world!", (Color::Yellow, Modifier::BOLD));
+///
+/// let line = Line::from("Hello, world!");
+/// let line = Line::from(String::from("Hello, world!"));
+/// let line = Line::from(vec![
 ///     Span::styled("Hello", Style::new().blue()),
 ///     Span::raw(" world!"),
 /// ]);
+/// ```
+///
+/// ## Styling Lines
+///
+/// The line's [`Style`] is used by the rendering widget to determine how to style the line. Each
+/// [`Span`] in the line will be styled with the [`Style`] of the line, and then with its own
+/// [`Style`]. If the line is longer than the available space, the style is applied to the entire
+/// line, and the line is truncated. `Line` also implements [`Styled`] which means you can use the
+/// methods of the [`Stylize`] trait.
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// let line = Line::from("Hello world!").style(Style::new().yellow().italic());
+/// let line = Line::from("Hello world!").style(Color::Yellow);
+/// let line = Line::from("Hello world!").style((Color::Yellow, Color::Black));
+/// let line = Line::from("Hello world!").style((Color::Yellow, Modifier::ITALIC));
+/// let line = Line::from("Hello world!").yellow().italic();
+/// ```
+///
+/// ## Aligning Lines
+///
+/// The line's [`Alignment`] is used by the rendering widget to determine how to align the line
+/// within the available space. If the line is longer than the available space, the alignment is
+/// ignored and the line is truncated.
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// let line = Line::from("Hello world!").alignment(Alignment::Right);
+/// let line = Line::from("Hello world!").centered();
+/// let line = Line::from("Hello world!").left_aligned();
+/// let line = Line::from("Hello world!").right_aligned();
+/// ```
+///
+/// ## Rendering Lines
+///
+/// `Line` implements the [`Widget`] trait, which means it can be rendered to a [`Buffer`].
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// # fn render(area: Rect, buf: &mut Buffer) {
+/// // in another widget's render method
+/// let line = Line::from("Hello world!").style(Style::new().yellow().italic());
+/// line.render(area, buf);
+/// # }
+///
+/// # fn draw(frame: &mut Frame, area: Rect) {
+/// // in a terminal.draw closure
+/// let line = Line::from("Hello world!").style(Style::new().yellow().italic());
+/// frame.render_widget(line, area);
+/// # }
+/// ```
+/// ## Rendering Lines with a Paragraph widget
+///
+/// Usually apps will use the [`Paragraph`] widget instead of rendering a [`Line`] directly as it
+/// provides more functionality.
+///
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// # fn render(area: Rect, buf: &mut Buffer) {
+/// let line = Line::from("Hello world!").yellow().italic();
+/// Paragraph::new(line)
+///     .wrap(Wrap { trim: true })
+///     .render(area, buf);
+/// # }
 /// ```
 ///
 /// [`Paragraph`]: crate::widgets::Paragraph
