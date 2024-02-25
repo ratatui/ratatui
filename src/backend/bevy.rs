@@ -652,10 +652,10 @@ impl FromRatCell for VirtualCell {
             symbol: given_cell.symbol().into(),
             fg: BevyColor::from_rat_color(given_cell.fg, true),
             bg: BevyColor::from_rat_color(given_cell.bg, false),
-        //    #[cfg(not(feature = "underline-color"))]
+            //    #[cfg(not(feature = "underline-color"))]
             underline_color: BevyColor::from_rat_color(given_cell.fg, true),
-        //    #[cfg(feature = "underline-color")]
-         //   underline_color: BevyColor::from_rat_color(given_cell.underline_color, true),
+            //    #[cfg(feature = "underline-color")]
+            //   underline_color: BevyColor::from_rat_color(given_cell.underline_color, true),
             bold: given_cell.modifier.intersects(Modifier::BOLD),
             dim: given_cell.modifier.intersects(Modifier::DIM),
             italic: given_cell.modifier.intersects(Modifier::ITALIC),
