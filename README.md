@@ -1,4 +1,4 @@
-<details>
+ <details>
 <summary>Table of Contents</summary>
 
 - [Ratatui](#ratatui)
