@@ -15,12 +15,13 @@ use strum::EnumIs;
 ///
 /// Constraints are prioritized in the following order:
 ///
-/// 1. [`Constraint::Min`]
-/// 2. [`Constraint::Max`]
-/// 3. [`Constraint::Length`]
-/// 4. [`Constraint::Percentage`]
-/// 5. [`Constraint::Ratio`]
-/// 6. [`Constraint::Fill`]
+/// 1. [`Constraint::MinMax`]
+/// 2. [`Constraint::Min`]
+/// 3. [`Constraint::Max`]
+/// 4. [`Constraint::Length`]
+/// 5. [`Constraint::Percentage`]
+/// 6. [`Constraint::Ratio`]
+/// 7. [`Constraint::Fill`]
 ///
 /// # Examples
 ///
@@ -46,6 +47,28 @@ use strum::EnumIs;
 /// ```
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, EnumIs)]
 pub enum Constraint {
+    /// Applies a minimum and maximum size constraint to the element
+    ///
+    /// The element size is set to at least the minimum and at most the maximum amount.
+    ///
+    /// # Examples
+    ///
+    /// `[Percentage(100), MinMax(10)]`
+    ///
+    /// ```plain
+    /// ┌──────────────────────────────────────┐┌────────┐
+    /// │                 40 px                ││  10 px │
+    /// └──────────────────────────────────────┘└────────┘
+    /// ```
+    ///
+    /// `[Percentage(0), MinMax(10, 20)]`
+    ///
+    /// ```plain
+    /// ┌────────────────────────────┐┌──────────────────┐
+    /// │            30 px           ││       20 px      │
+    /// └────────────────────────────┘└──────────────────┘
+    /// ```
+    MinMax(u16, u16),
     /// Applies a minimum size constraint to the element
     ///
     /// The element size is set to at least the specified amount.
@@ -213,6 +236,7 @@ impl Constraint {
             Constraint::Fill(l) => length.min(l),
             Constraint::Max(m) => length.min(m),
             Constraint::Min(m) => length.max(m),
+            Constraint::MinMax(min, max) => length.min(max).max(min),
         }
     }
 
@@ -307,6 +331,26 @@ impl Constraint {
         mins.into_iter().map(Constraint::Min).collect_vec()
     }
 
+    /// Convert an iterator of minmaxes into a vector of constraints
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// # let area = Rect::default();
+    /// let constraints = Constraint::from_minmaxes([(1, 2), (3, 4), (5, 6)]);
+    /// let layout = Layout::default().constraints(constraints).split(area);
+    /// ```
+    pub fn from_minmaxes<T>(minmaxes: T) -> Vec<Constraint>
+    where
+        T: IntoIterator<Item = (u16, u16)>,
+    {
+        minmaxes
+            .into_iter()
+            .map(|(min, max)| Constraint::MinMax(min, max))
+            .collect_vec()
+    }
+
     /// Convert an iterator of proportional factors into a vector of constraints
     ///
     /// # Examples
@@ -375,6 +419,7 @@ impl Display for Constraint {
             Constraint::Fill(l) => write!(f, "Fill({})", l),
             Constraint::Max(m) => write!(f, "Max({})", m),
             Constraint::Min(m) => write!(f, "Min({})", m),
+            Constraint::MinMax(min, max) => write!(f, "MinMax({}, {})", min, max),
         }
     }
 }
@@ -395,6 +440,7 @@ mod tests {
         assert_eq!(Constraint::Length(10).to_string(), "Length(10)");
         assert_eq!(Constraint::Max(10).to_string(), "Max(10)");
         assert_eq!(Constraint::Min(10).to_string(), "Min(10)");
+        assert_eq!(Constraint::MinMax(10, 20).to_string(), "MinMax(10, 20)");
     }
 
     #[test]
@@ -448,6 +494,23 @@ mod tests {
     }
 
     #[test]
+    fn from_minmaxes() {
+        let expected = [
+            Constraint::MinMax(1, 2),
+            Constraint::MinMax(3, 4),
+            Constraint::MinMax(5, 6),
+        ];
+        assert_eq!(
+            Constraint::from_minmaxes([(1, 2), (3, 4), (5, 6)]),
+            expected
+        );
+        assert_eq!(
+            Constraint::from_minmaxes(vec![(1, 2), (3, 4), (5, 6)]),
+            expected
+        );
+    }
+
+    #[test]
     fn from_fills() {
         let expected = [
             Constraint::Fill(1),
@@ -494,5 +557,11 @@ mod tests {
         assert_eq!(Constraint::Min(100).apply(100), 100);
         assert_eq!(Constraint::Min(200).apply(100), 200);
         assert_eq!(Constraint::Min(u16::MAX).apply(100), u16::MAX);
+
+        assert_eq!(Constraint::MinMax(50, 100).apply(0), 50);
+        assert_eq!(Constraint::MinMax(50, 100).apply(50), 50);
+        assert_eq!(Constraint::MinMax(50, 100).apply(100), 100);
+        assert_eq!(Constraint::MinMax(50, 100).apply(200), 100);
+        assert_eq!(Constraint::MinMax(50, 100).apply(u16::MAX), 100);
     }
 }

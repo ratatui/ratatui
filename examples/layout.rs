@@ -87,6 +87,7 @@ fn ui(frame: &mut Frame) {
         Length(9),
         Length(9),
         Length(9),
+        Length(9),
         Min(0), // fills remaining space
     ])
     .split(examples_area);
@@ -99,12 +100,13 @@ fn ui(frame: &mut Frame) {
                 Constraint::Length(14),
                 Constraint::Length(14),
                 Constraint::Length(14),
+                Constraint::Length(14),
                 Constraint::Min(0), // fills remaining space
             ])
             .split(*area)
             .iter()
             .copied()
-            .take(5) // ignore Min(0)
+            .take(6) // ignore Min(0)
             .collect_vec()
         })
         .collect_vec();
@@ -130,6 +132,17 @@ fn ui(frame: &mut Frame) {
         (
             "Max",
             vec![Max(0), Max(2), Max(3), Max(6), Max(10), Max(15)],
+        ),
+        (
+            "MinMax",
+            vec![
+                MinMax(0, 2),
+                MinMax(2, 5),
+                MinMax(5, 7),
+                MinMax(7, 10),
+                MinMax(10, 12),
+                MinMax(12, 15),
+            ],
         ),
         (
             "Perc",
@@ -219,5 +232,6 @@ fn constraint_label(constraint: Constraint) -> String {
         Percentage(n) => format!("{n}"),
         Fill(n) => format!("{n}"),
         Ratio(a, b) => format!("{a}:{b}"),
+        MinMax(min, max) => format!("{min}-{max}"),
     }
 }

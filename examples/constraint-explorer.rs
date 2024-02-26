@@ -158,6 +158,7 @@ impl App {
             Constraint::Fill(v) => Constraint::Fill(v.saturating_add(1)),
             Constraint::Percentage(v) => Constraint::Percentage(v.saturating_add(1)),
             Constraint::Ratio(n, d) => Constraint::Ratio(n, d.saturating_add(1)),
+            Constraint::MinMax(_, _) => todo!(),
         };
     }
 
@@ -172,6 +173,7 @@ impl App {
             Constraint::Fill(v) => Constraint::Fill(v.saturating_sub(1)),
             Constraint::Percentage(v) => Constraint::Percentage(v.saturating_sub(1)),
             Constraint::Ratio(n, d) => Constraint::Ratio(n, d.saturating_sub(1)),
+            Constraint::MinMax(_, _) => todo!(),
         };
     }
 
@@ -251,6 +253,7 @@ impl From<Constraint> for ConstraintName {
             Min(_) => ConstraintName::Min,
             Max(_) => ConstraintName::Max,
             Fill(_) => ConstraintName::Fill,
+            MinMax(_, _) => todo!(),
         }
     }
 }

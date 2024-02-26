@@ -515,6 +515,7 @@ fn color_for_constraint(constraint: Constraint) -> Color {
     match constraint {
         Constraint::Min(_) => BLUE.c900,
         Constraint::Max(_) => BLUE.c800,
+        Constraint::MinMax(_, _) => todo!(),
         Constraint::Length(_) => SLATE.c700,
         Constraint::Percentage(_) => SLATE.c800,
         Constraint::Ratio(_, _) => SLATE.c900,

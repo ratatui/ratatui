@@ -720,6 +720,16 @@ fn configure_constraints(
 ) -> Result<(), AddConstraintError> {
     for (&constraint, &element) in constraints.iter().zip(segments.iter()) {
         match constraint {
+            Constraint::MinMax(min, max) => {
+                solver.add_constraint(element.has_min_size(min, MIN_SIZE_GE))?;
+                solver.add_constraint(element.has_max_size(max, MAX_SIZE_LE))?;
+                if flex.is_legacy() {
+                    solver.add_constraint(element.has_int_size(min, MIN_SIZE_EQ))?;
+                } else {
+                    solver.add_constraint(element.has_size(area, FILL_GROW))?;
+                }
+                solver.add_constraint(element.has_int_size(max, MAX_SIZE_EQ))?;
+            }
             Constraint::Max(max) => {
                 solver.add_constraint(element.has_max_size(max, MAX_SIZE_LE))?;
                 solver.add_constraint(element.has_int_size(max, MAX_SIZE_EQ))?;
