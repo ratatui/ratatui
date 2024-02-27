@@ -349,7 +349,7 @@ impl<'a> Dataset<'a> {
     /// Sets the kind of character to use to display this dataset
     ///
     /// You can use dots (`•`), blocks (`█`), bars (`▄`), braille (`⠓`, `⣇`, `⣿`) or half-blocks
-    /// (`█`, `▄`, and `▀`). See [symbols::Marker] for more details.
+    /// (`█`, `▄`, and `▀`). See [`symbols::Marker`] for more details.
     ///
     /// Note [`Marker::Braille`](symbols::Marker::Braille) requires a font that supports Unicode
     /// Braille Patterns.

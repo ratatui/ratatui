@@ -455,7 +455,7 @@ pub struct NonAccentedPalette {
 }
 
 impl AccentedPalette {
-    /// Create a new AccentedPalette from the given variants
+    /// Create a new `AccentedPalette` from the given variants
     ///
     /// The variants should be in the format [0x00RRGGBB, ...]
     pub const fn from_variants(variants: [u32; 14]) -> Self {
@@ -479,7 +479,7 @@ impl AccentedPalette {
 }
 
 impl NonAccentedPalette {
-    /// Create a new NonAccented from the given variants
+    /// Create a new `NonAccented` from the given variants
     ///
     /// The variants should be in the format [0x00RRGGBB, ...]
     pub const fn from_variants(variants: [u32; 10]) -> Self {

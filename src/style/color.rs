@@ -308,7 +308,7 @@ impl Color {
 /// Converts normalized HSL (Hue, Saturation, Lightness) values to RGB (Red, Green, Blue) color
 /// representation. H, S, and L values should be in the range [0, 1].
 ///
-/// Based on https://github.com/killercup/hsl-rs/blob/b8a30e11afd75f262e0550725333293805f4ead0/src/lib.rs
+/// Based on <https://github.com/killercup/hsl-rs/blob/b8a30e11afd75f262e0550725333293805f4ead0/src/lib.rs>
 fn normalized_hsl_to_rgb(h: f64, s: f64, l: f64) -> Color {
     // This function can be made into `const` in the future.
     // This comment contains the relevant information for making it `const`.

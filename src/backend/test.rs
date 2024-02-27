@@ -72,7 +72,7 @@ fn buffer_view(buffer: &Buffer) -> String {
 }
 
 impl TestBackend {
-    /// Creates a new TestBackend with the specified width and height.
+    /// Creates a new `TestBackend` with the specified width and height.
     pub fn new(width: u16, height: u16) -> Self {
         Self {
             width,
@@ -83,19 +83,19 @@ impl TestBackend {
         }
     }
 
-    /// Returns a reference to the internal buffer of the TestBackend.
+    /// Returns a reference to the internal buffer of the `TestBackend`.
     pub const fn buffer(&self) -> &Buffer {
         &self.buffer
     }
 
-    /// Resizes the TestBackend to the specified width and height.
+    /// Resizes the `TestBackend` to the specified width and height.
     pub fn resize(&mut self, width: u16, height: u16) {
         self.buffer.resize(Rect::new(0, 0, width, height));
         self.width = width;
         self.height = height;
     }
 
-    /// Asserts that the TestBackend's buffer is equal to the expected buffer.
+    /// Asserts that the `TestBackend`'s buffer is equal to the expected buffer.
     /// If the buffers are not equal, a panic occurs with a detailed error message
     /// showing the differences between the expected and actual buffers.
     #[track_caller]
@@ -136,7 +136,7 @@ impl TestBackend {
 }
 
 impl Display for TestBackend {
-    /// Formats the TestBackend for display by calling the buffer_view function
+    /// Formats the `TestBackend` for display by calling the `buffer_view` function
     /// on its internal buffer.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", buffer_view(&self.buffer))

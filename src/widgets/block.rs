@@ -709,7 +709,7 @@ impl Block<'_> {
     /// Currently (due to the way lines are truncated), the right side of the leftmost title will
     /// be cut off if the block is too small to fit all titles. This is not ideal and should be
     /// the left side of that leftmost that is cut off. This is due to the line being truncated
-    /// incorrectly. See https://github.com/ratatui-org/ratatui/issues/932
+    /// incorrectly. See <https://github.com/ratatui-org/ratatui/issues/932>
     fn render_right_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Right);
         let mut titles_area = self.titles_area(area, position);
@@ -1144,7 +1144,7 @@ mod tests {
             .padding(_DEFAULT_PADDING);
     }
 
-    /// This test ensures that we have some coverage on the Style::from() implementations
+    /// This test ensures that we have some coverage on the [`Style::from()`] implementations
     #[test]
     fn block_style() {
         // nominal style
@@ -1279,7 +1279,7 @@ mod tests {
         }
     }
 
-    /// This is a regression test for bug https://github.com/ratatui-org/ratatui/issues/929
+    /// This is a regression test for bug <https://github.com/ratatui-org/ratatui/issues/929>
     #[test]
     fn render_right_aligned_empty_title() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));

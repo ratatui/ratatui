@@ -36,7 +36,7 @@ pub struct Bar<'a> {
     pub(super) style: Style,
     /// style of the value printed at the bottom of the bar.
     pub(super) value_style: Style,
-    /// optional text_value to be shown on the bar instead of the actual value
+    /// optional `text_value` to be shown on the bar instead of the actual value
     pub(super) text_value: Option<String>,
 }
 
@@ -96,7 +96,7 @@ impl<'a> Bar<'a> {
 
     /// Set the text value printed in the bar.
     ///
-    /// If `text_value` is not set, then the [ToString] representation of `value` will be shown on
+    /// If `text_value` is not set, then the [`ToString`] representation of `value` will be shown on
     /// the bar.
     ///
     /// # See also
@@ -111,9 +111,9 @@ impl<'a> Bar<'a> {
     /// Render the value of the bar.
     ///
     /// [`text_value`](Bar::text_value) is used if set, otherwise the value is converted to string.
-    /// The value is rendered using value_style. If the value width is greater than the
+    /// The value is rendered using `value_style`. If the value width is greater than the
     /// bar width, then the value is split into 2 parts. the first part is rendered in the bar
-    /// using value_style. The second part is rendered outside the bar using bar_style
+    /// using `value_style`. The second part is rendered outside the bar using `bar_style`
     pub(super) fn render_value_with_different_styles(
         &self,
         buf: &mut Buffer,

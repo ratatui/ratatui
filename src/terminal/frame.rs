@@ -179,7 +179,7 @@ impl Frame<'_> {
     ///
     /// Each time a frame has been rendered, this count is incremented,
     /// providing a consistent way to reference the order and number of frames processed by the
-    /// terminal. When count reaches its maximum value (usize::MAX), it wraps around to zero.
+    /// terminal. When count reaches its maximum value (`usize::MAX`), it wraps around to zero.
     ///
     /// This count is particularly useful when dealing with dynamic content or animations where the
     /// state of the display changes over time. By tracking the frame count, developers can

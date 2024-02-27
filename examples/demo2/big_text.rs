@@ -129,7 +129,7 @@ pub struct BigText<'a> {
 
     /// The size of single glyphs
     ///
-    /// Defaults to `BigTextSize::default()` (=> BigTextSize::Full)
+    /// Defaults to `BigTextSize::default()` (=> `BigTextSize::Full`)
     #[builder(default)]
     pixel_size: PixelSize,
 }

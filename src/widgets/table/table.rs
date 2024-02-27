@@ -787,8 +787,8 @@ impl Table<'_> {
         (start, end)
     }
 
-    /// Returns the width of the selection column if a row is selected, or the highlight_spacing is
-    /// set to show the column always, otherwise 0.
+    /// Returns the width of the selection column if a row is selected, or the `highlight_spacing`
+    /// is set to show the column always, otherwise 0.
     fn selection_width(&self, state: &TableState) -> u16 {
         let has_selection = state.selected().is_some();
         if self.highlight_spacing.should_add(has_selection) {
@@ -1337,7 +1337,7 @@ mod tests {
             );
         }
 
-        /// NOTE: segment_size is deprecated use flex instead!
+        /// NOTE: `segment_size` is deprecated use flex instead!
         #[allow(deprecated)]
         #[test]
         fn underconstrained_segment_size() {

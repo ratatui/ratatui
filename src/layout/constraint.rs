@@ -326,10 +326,10 @@ impl Constraint {
 }
 
 impl From<u16> for Constraint {
-    /// Convert a u16 into a [Constraint::Length]
+    /// Convert a `u16` into a [`Constraint::Length`]
     ///
     /// This is useful when you want to specify a fixed size for a layout, but don't want to
-    /// explicitly create a [Constraint::Length] yourself.
+    /// explicitly create a [`Constraint::Length`] yourself.
     ///
     /// # Examples
     ///
