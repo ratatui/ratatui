@@ -1197,7 +1197,7 @@ mod tests {
 
     /// helper method to take a vector of strings and return a vector of list items
     fn list_items(items: Vec<&str>) -> Vec<ListItem> {
-        items.iter().map(|i| ListItem::new(i.to_string())).collect()
+        items.into_iter().map(ListItem::new).collect()
     }
 
     /// helper method to render a widget to an empty buffer with the default state
