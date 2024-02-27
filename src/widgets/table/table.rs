@@ -618,7 +618,7 @@ impl StatefulWidgetRef for Table<'_> {
             &columns_widths,
         );
 
-        self.render_footer(footer_area, buf, columns_widths);
+        self.render_footer(footer_area, buf, &columns_widths);
     }
 }
 
@@ -655,7 +655,7 @@ impl Table<'_> {
         }
     }
 
-    fn render_footer(&self, area: Rect, buf: &mut Buffer, column_widths: Vec<(u16, u16)>) {
+    fn render_footer(&self, area: Rect, buf: &mut Buffer, column_widths: &[(u16, u16)]) {
         if let Some(ref footer) = self.footer {
             buf.set_style(area, footer.style);
             for ((x, width), cell) in column_widths.iter().zip(footer.cells.iter()) {

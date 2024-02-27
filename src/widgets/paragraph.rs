@@ -416,6 +416,7 @@ mod test {
     /// area and comparing the rendered and expected content.
     /// This can be used for easy testing of varying configured paragraphs with the same expected
     /// buffer or any other test case really.
+    #[allow(clippy::needless_pass_by_value)]
     fn test_case(paragraph: &Paragraph, expected: Buffer) {
         let backend = TestBackend::new(expected.area.width, expected.area.height);
         let mut terminal = Terminal::new(backend).unwrap();
