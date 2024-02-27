@@ -66,6 +66,7 @@ unsafe_code = "forbid"
 [lints.clippy]
 cloned_instead_of_copied = "warn"
 default_trait_access = "warn"
+equatable_if_let = "warn"
 explicit_iter_loop = "warn"
 implicit_clone = "warn"
 inefficient_to_string = "warn"
