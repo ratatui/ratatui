@@ -118,6 +118,7 @@ impl<'a> BarChart<'a> {
     ///     .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
     ///     .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]));
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn data(mut self, data: impl Into<BarGroup<'a>>) -> BarChart<'a> {
         let group: BarGroup = data.into();
         if !group.bars.is_empty() {

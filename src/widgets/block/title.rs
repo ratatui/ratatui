@@ -87,6 +87,7 @@ pub enum Position {
 
 impl<'a> Title<'a> {
     /// Set the title content.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn content<T>(mut self, content: T) -> Title<'a>
     where
         T: Into<Line<'a>>,

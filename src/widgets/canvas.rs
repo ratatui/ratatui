@@ -744,6 +744,7 @@ where
     ///     .marker(symbols::Marker::Block)
     ///     .paint(|ctx| {});
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn marker(mut self, marker: symbols::Marker) -> Canvas<'a, F> {
         self.marker = marker;
         self

@@ -160,6 +160,7 @@ impl<'a> Tabs<'a> {
     /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider("-");
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn divider<T>(mut self, divider: T) -> Tabs<'a>
     where
         T: Into<Span<'a>>,
@@ -184,6 +185,7 @@ impl<'a> Tabs<'a> {
     /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding("", "");
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn padding<T, U>(mut self, left: T, right: U) -> Tabs<'a>
     where
         T: Into<Line<'a>>,
@@ -205,6 +207,7 @@ impl<'a> Tabs<'a> {
     /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_left("->");
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn padding_left<T>(mut self, padding: T) -> Tabs<'a>
     where
         T: Into<Line<'a>>,
@@ -224,6 +227,7 @@ impl<'a> Tabs<'a> {
     /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_right("<-");
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn padding_right<T>(mut self, padding: T) -> Tabs<'a>
     where
         T: Into<Line<'a>>,
