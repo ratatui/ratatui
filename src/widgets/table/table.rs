@@ -223,16 +223,16 @@ pub struct Table<'a> {
 impl<'a> Default for Table<'a> {
     fn default() -> Self {
         Self {
-            rows: Default::default(),
-            header: Default::default(),
-            footer: Default::default(),
-            widths: Default::default(),
+            rows: Vec::new(),
+            header: None,
+            footer: None,
+            widths: Vec::new(),
             column_spacing: 1,
-            block: Default::default(),
-            style: Default::default(),
-            highlight_style: Default::default(),
-            highlight_symbol: Default::default(),
-            highlight_spacing: Default::default(),
+            block: None,
+            style: Style::new(),
+            highlight_style: Style::new(),
+            highlight_symbol: Text::default(),
+            highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
         }
     }

@@ -65,6 +65,7 @@ serde_json = "1.0.109"
 unsafe_code = "forbid"
 [lints.clippy]
 cloned_instead_of_copied = "warn"
+default_trait_access = "warn"
 explicit_iter_loop = "warn"
 implicit_clone = "warn"
 inefficient_to_string = "warn"
