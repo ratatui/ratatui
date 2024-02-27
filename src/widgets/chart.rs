@@ -178,7 +178,7 @@ pub enum LegendPosition {
 
 impl LegendPosition {
     fn layout(
-        &self,
+        self,
         area: Rect,
         legend_width: u16,
         legend_height: u16,

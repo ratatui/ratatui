@@ -69,6 +69,7 @@ explicit_iter_loop = "warn"
 missing_const_for_fn = "warn"
 needless_for_each = "warn"
 semicolon_if_nothing_returned = "warn"
+trivially_copy_pass_by_ref = "warn"
 use_self = "warn"
 
 [features]
