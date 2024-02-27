@@ -31,9 +31,9 @@ impl HighlightSpacing {
     /// Returns true if a selection column should be displayed
     pub(crate) const fn should_add(&self, has_selection: bool) -> bool {
         match self {
-            HighlightSpacing::Always => true,
-            HighlightSpacing::WhenSelected => has_selection,
-            HighlightSpacing::Never => false,
+            Self::Always => true,
+            Self::WhenSelected => has_selection,
+            Self::Never => false,
         }
     }
 }

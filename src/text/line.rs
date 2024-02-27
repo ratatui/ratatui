@@ -435,8 +435,8 @@ impl<'a> From<Span<'a>> for Line<'a> {
 }
 
 impl<'a> From<Line<'a>> for String {
-    fn from(line: Line<'a>) -> String {
-        line.iter().fold(String::new(), |mut acc, s| {
+    fn from(line: Line<'a>) -> Self {
+        line.iter().fold(Self::new(), |mut acc, s| {
             acc.push_str(s.content.as_ref());
             acc
         })

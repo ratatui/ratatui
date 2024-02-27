@@ -84,19 +84,17 @@ impl TermwizBackend {
     /// let backend = TermwizBackend::new()?;
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
-    pub fn new() -> Result<TermwizBackend, Box<dyn Error>> {
+    pub fn new() -> Result<Self, Box<dyn Error>> {
         let mut buffered_terminal =
             BufferedTerminal::new(SystemTerminal::new(Capabilities::new_from_env()?)?)?;
         buffered_terminal.terminal().set_raw_mode()?;
         buffered_terminal.terminal().enter_alternate_screen()?;
-        Ok(TermwizBackend { buffered_terminal })
+        Ok(Self { buffered_terminal })
     }
 
     /// Creates a new Termwiz backend instance with the given buffered terminal.
-    pub const fn with_buffered_terminal(
-        instance: BufferedTerminal<SystemTerminal>,
-    ) -> TermwizBackend {
-        TermwizBackend {
+    pub const fn with_buffered_terminal(instance: BufferedTerminal<SystemTerminal>) -> Self {
+        Self {
             buffered_terminal: instance,
         }
     }
@@ -253,7 +251,7 @@ impl Backend for TermwizBackend {
 
 impl From<CellAttributes> for Style {
     fn from(value: CellAttributes) -> Self {
-        let mut style = Style::new()
+        let mut style = Self::new()
             .add_modifier(value.intensity().into())
             .add_modifier(value.underline().into())
             .add_modifier(value.blink().into());
@@ -285,9 +283,9 @@ impl From<CellAttributes> for Style {
 impl From<Intensity> for Modifier {
     fn from(value: Intensity) -> Self {
         match value {
-            Intensity::Normal => Modifier::empty(),
-            Intensity::Bold => Modifier::BOLD,
-            Intensity::Half => Modifier::DIM,
+            Intensity::Normal => Self::empty(),
+            Intensity::Bold => Self::BOLD,
+            Intensity::Half => Self::DIM,
         }
     }
 }
@@ -295,8 +293,8 @@ impl From<Intensity> for Modifier {
 impl From<Underline> for Modifier {
     fn from(value: Underline) -> Self {
         match value {
-            Underline::None => Modifier::empty(),
-            _ => Modifier::UNDERLINED,
+            Underline::None => Self::empty(),
+            _ => Self::UNDERLINED,
         }
     }
 }
@@ -304,17 +302,17 @@ impl From<Underline> for Modifier {
 impl From<Blink> for Modifier {
     fn from(value: Blink) -> Self {
         match value {
-            Blink::None => Modifier::empty(),
-            Blink::Slow => Modifier::SLOW_BLINK,
-            Blink::Rapid => Modifier::RAPID_BLINK,
+            Blink::None => Self::empty(),
+            Blink::Slow => Self::SLOW_BLINK,
+            Blink::Rapid => Self::RAPID_BLINK,
         }
     }
 }
 
 impl From<Color> for ColorAttribute {
-    fn from(color: Color) -> ColorAttribute {
+    fn from(color: Color) -> Self {
         match color {
-            Color::Reset => ColorAttribute::Default,
+            Color::Reset => Self::Default,
             Color::Black => AnsiColor::Black.into(),
             Color::DarkGray => AnsiColor::Grey.into(),
             Color::Gray => AnsiColor::Silver.into(),
@@ -331,10 +329,8 @@ impl From<Color> for ColorAttribute {
             Color::White => AnsiColor::White.into(),
             Color::Blue => AnsiColor::Navy.into(),
             Color::LightBlue => AnsiColor::Blue.into(),
-            Color::Indexed(i) => ColorAttribute::PaletteIndex(i),
-            Color::Rgb(r, g, b) => {
-                ColorAttribute::TrueColorWithDefaultFallback(SrgbaTuple::from((r, g, b)))
-            }
+            Color::Indexed(i) => Self::PaletteIndex(i),
+            Color::Rgb(r, g, b) => Self::TrueColorWithDefaultFallback(SrgbaTuple::from((r, g, b))),
         }
     }
 }
@@ -342,22 +338,22 @@ impl From<Color> for ColorAttribute {
 impl From<AnsiColor> for Color {
     fn from(value: AnsiColor) -> Self {
         match value {
-            AnsiColor::Black => Color::Black,
-            AnsiColor::Grey => Color::DarkGray,
-            AnsiColor::Silver => Color::Gray,
-            AnsiColor::Maroon => Color::Red,
-            AnsiColor::Red => Color::LightRed,
-            AnsiColor::Green => Color::Green,
-            AnsiColor::Lime => Color::LightGreen,
-            AnsiColor::Olive => Color::Yellow,
-            AnsiColor::Yellow => Color::LightYellow,
-            AnsiColor::Purple => Color::Magenta,
-            AnsiColor::Fuchsia => Color::LightMagenta,
-            AnsiColor::Teal => Color::Cyan,
-            AnsiColor::Aqua => Color::LightCyan,
-            AnsiColor::White => Color::White,
-            AnsiColor::Navy => Color::Blue,
-            AnsiColor::Blue => Color::LightBlue,
+            AnsiColor::Black => Self::Black,
+            AnsiColor::Grey => Self::DarkGray,
+            AnsiColor::Silver => Self::Gray,
+            AnsiColor::Maroon => Self::Red,
+            AnsiColor::Red => Self::LightRed,
+            AnsiColor::Green => Self::Green,
+            AnsiColor::Lime => Self::LightGreen,
+            AnsiColor::Olive => Self::Yellow,
+            AnsiColor::Yellow => Self::LightYellow,
+            AnsiColor::Purple => Self::Magenta,
+            AnsiColor::Fuchsia => Self::LightMagenta,
+            AnsiColor::Teal => Self::Cyan,
+            AnsiColor::Aqua => Self::LightCyan,
+            AnsiColor::White => Self::White,
+            AnsiColor::Navy => Self::Blue,
+            AnsiColor::Blue => Self::LightBlue,
         }
     }
 }
@@ -367,8 +363,8 @@ impl From<ColorAttribute> for Color {
         match value {
             ColorAttribute::TrueColorWithDefaultFallback(srgba)
             | ColorAttribute::TrueColorWithPaletteFallback(srgba, _) => srgba.into(),
-            ColorAttribute::PaletteIndex(i) => Color::Indexed(i),
-            ColorAttribute::Default => Color::Reset,
+            ColorAttribute::PaletteIndex(i) => Self::Indexed(i),
+            ColorAttribute::Default => Self::Reset,
         }
     }
 }
@@ -376,8 +372,8 @@ impl From<ColorAttribute> for Color {
 impl From<ColorSpec> for Color {
     fn from(value: ColorSpec) -> Self {
         match value {
-            ColorSpec::Default => Color::Reset,
-            ColorSpec::PaletteIndex(i) => Color::Indexed(i),
+            ColorSpec::Default => Self::Reset,
+            ColorSpec::PaletteIndex(i) => Self::Indexed(i),
             ColorSpec::TrueColor(srgba) => srgba.into(),
         }
     }
@@ -386,14 +382,14 @@ impl From<ColorSpec> for Color {
 impl From<SrgbaTuple> for Color {
     fn from(value: SrgbaTuple) -> Self {
         let (r, g, b, _) = value.to_srgb_u8();
-        Color::Rgb(r, g, b)
+        Self::Rgb(r, g, b)
     }
 }
 
 impl From<RgbColor> for Color {
     fn from(value: RgbColor) -> Self {
         let (r, g, b) = value.to_tuple_rgb8();
-        Color::Rgb(r, g, b)
+        Self::Rgb(r, g, b)
     }
 }
 

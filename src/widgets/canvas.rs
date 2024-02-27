@@ -119,9 +119,9 @@ struct BrailleGrid {
 impl BrailleGrid {
     /// Create a new BrailleGrid with the given width and height measured in terminal columns and
     /// rows respectively.
-    fn new(width: u16, height: u16) -> BrailleGrid {
+    fn new(width: u16, height: u16) -> Self {
         let length = usize::from(width * height);
-        BrailleGrid {
+        Self {
             width,
             height,
             utf16_code_points: vec![symbols::braille::BLANK; length],
@@ -189,9 +189,9 @@ struct CharGrid {
 impl CharGrid {
     /// Create a new CharGrid with the given width and height measured in terminal columns and
     /// rows respectively.
-    fn new(width: u16, height: u16, cell_char: char) -> CharGrid {
+    fn new(width: u16, height: u16, cell_char: char) -> Self {
         let length = usize::from(width * height);
-        CharGrid {
+        Self {
             width,
             height,
             cells: vec![' '; length],
@@ -265,8 +265,8 @@ struct HalfBlockGrid {
 impl HalfBlockGrid {
     /// Create a new `HalfBlockGrid` with the given width and height measured in terminal columns
     /// and rows respectively.
-    fn new(width: u16, height: u16) -> HalfBlockGrid {
-        HalfBlockGrid {
+    fn new(width: u16, height: u16) -> Self {
+        Self {
             width,
             height,
             pixels: vec![vec![Color::Reset; width as usize]; height as usize * 2],

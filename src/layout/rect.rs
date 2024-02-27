@@ -49,7 +49,7 @@ impl fmt::Display for Rect {
 impl Rect {
     /// Creates a new rect, with width and height limited to keep the area under max u16. If
     /// clipped, aspect ratio will be preserved.
-    pub fn new(x: u16, y: u16, width: u16, height: u16) -> Rect {
+    pub fn new(x: u16, y: u16, width: u16, height: u16) -> Self {
         let max_area = u16::max_value();
         let (clipped_width, clipped_height) =
             if u32::from(width) * u32::from(height) > u32::from(max_area) {
@@ -61,7 +61,7 @@ impl Rect {
             } else {
                 (width, height)
             };
-        Rect {
+        Self {
             x,
             y,
             width: clipped_width,
@@ -109,14 +109,14 @@ impl Rect {
     /// Returns a new rect inside the current one, with the given margin on each side.
     ///
     /// If the margin is larger than the rect, the returned rect will have no area.
-    pub fn inner(self, margin: &Margin) -> Rect {
+    pub fn inner(self, margin: &Margin) -> Self {
         let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
         let doubled_margin_vertical = margin.vertical.saturating_mul(2);
 
         if self.width < doubled_margin_horizontal || self.height < doubled_margin_vertical {
-            Rect::default()
+            Self::default()
         } else {
-            Rect {
+            Self {
                 x: self.x.saturating_add(margin.horizontal),
                 y: self.y.saturating_add(margin.vertical),
                 width: self.width.saturating_sub(doubled_margin_horizontal),
@@ -133,8 +133,8 @@ impl Rect {
     /// - Positive `y` moves the whole `Rect` to the bottom, negative to the top.
     ///
     /// See [`Offset`] for details.
-    pub fn offset(self, offset: Offset) -> Rect {
-        Rect {
+    pub fn offset(self, offset: Offset) -> Self {
+        Self {
             x: i32::from(self.x)
                 .saturating_add(offset.x)
                 .clamp(0, (u16::MAX - self.width) as i32) as u16,
@@ -146,12 +146,12 @@ impl Rect {
     }
 
     /// Returns a new rect that contains both the current one and the given one.
-    pub fn union(self, other: Rect) -> Rect {
+    pub fn union(self, other: Self) -> Self {
         let x1 = min(self.x, other.x);
         let y1 = min(self.y, other.y);
         let x2 = max(self.right(), other.right());
         let y2 = max(self.bottom(), other.bottom());
-        Rect {
+        Self {
             x: x1,
             y: y1,
             width: x2.saturating_sub(x1),
@@ -162,12 +162,12 @@ impl Rect {
     /// Returns a new rect that is the intersection of the current one and the given one.
     ///
     /// If the two rects do not intersect, the returned rect will have no area.
-    pub fn intersection(self, other: Rect) -> Rect {
+    pub fn intersection(self, other: Self) -> Self {
         let x1 = max(self.x, other.x);
         let y1 = max(self.y, other.y);
         let x2 = min(self.right(), other.right());
         let y2 = min(self.bottom(), other.bottom());
-        Rect {
+        Self {
             x: x1,
             y: y1,
             width: x2.saturating_sub(x1),
@@ -176,7 +176,7 @@ impl Rect {
     }
 
     /// Returns true if the two rects intersect.
-    pub const fn intersects(self, other: Rect) -> bool {
+    pub const fn intersects(self, other: Self) -> bool {
         self.x < other.right()
             && self.right() > other.x
             && self.y < other.bottom()
@@ -225,12 +225,12 @@ impl Rect {
     /// let rect = Rect::new(0, 0, 100, 100).clamp(area);
     /// # }
     /// ```
-    pub fn clamp(self, other: Rect) -> Rect {
+    pub fn clamp(self, other: Self) -> Self {
         let width = self.width.min(other.width);
         let height = self.height.min(other.height);
         let x = self.x.clamp(other.x, other.right().saturating_sub(width));
         let y = self.y.clamp(other.y, other.bottom().saturating_sub(height));
-        Rect::new(x, y, width, height)
+        Self::new(x, y, width, height)
     }
 
     /// An iterator over rows within the `Rect`.
@@ -310,7 +310,7 @@ impl Rect {
 
 impl From<(Position, Size)> for Rect {
     fn from((position, size): (Position, Size)) -> Self {
-        Rect {
+        Self {
             x: position.x,
             y: position.y,
             width: size.width,

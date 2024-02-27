@@ -73,8 +73,8 @@ fn buffer_view(buffer: &Buffer) -> String {
 
 impl TestBackend {
     /// Creates a new TestBackend with the specified width and height.
-    pub fn new(width: u16, height: u16) -> TestBackend {
-        TestBackend {
+    pub fn new(width: u16, height: u16) -> Self {
+        Self {
             width,
             height,
             buffer: Buffer::empty(Rect::new(0, 0, width, height)),

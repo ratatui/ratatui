@@ -97,8 +97,8 @@ where
     /// # use ratatui::prelude::*;
     /// let backend = CrosstermBackend::new(stdout());
     /// ```
-    pub const fn new(writer: W) -> CrosstermBackend<W> {
-        CrosstermBackend { writer }
+    pub const fn new(writer: W) -> Self {
+        Self { writer }
     }
 }
 
@@ -252,25 +252,25 @@ where
 impl From<Color> for CColor {
     fn from(color: Color) -> Self {
         match color {
-            Color::Reset => CColor::Reset,
-            Color::Black => CColor::Black,
-            Color::Red => CColor::DarkRed,
-            Color::Green => CColor::DarkGreen,
-            Color::Yellow => CColor::DarkYellow,
-            Color::Blue => CColor::DarkBlue,
-            Color::Magenta => CColor::DarkMagenta,
-            Color::Cyan => CColor::DarkCyan,
-            Color::Gray => CColor::Grey,
-            Color::DarkGray => CColor::DarkGrey,
-            Color::LightRed => CColor::Red,
-            Color::LightGreen => CColor::Green,
-            Color::LightBlue => CColor::Blue,
-            Color::LightYellow => CColor::Yellow,
-            Color::LightMagenta => CColor::Magenta,
-            Color::LightCyan => CColor::Cyan,
-            Color::White => CColor::White,
-            Color::Indexed(i) => CColor::AnsiValue(i),
-            Color::Rgb(r, g, b) => CColor::Rgb { r, g, b },
+            Color::Reset => Self::Reset,
+            Color::Black => Self::Black,
+            Color::Red => Self::DarkRed,
+            Color::Green => Self::DarkGreen,
+            Color::Yellow => Self::DarkYellow,
+            Color::Blue => Self::DarkBlue,
+            Color::Magenta => Self::DarkMagenta,
+            Color::Cyan => Self::DarkCyan,
+            Color::Gray => Self::Grey,
+            Color::DarkGray => Self::DarkGrey,
+            Color::LightRed => Self::Red,
+            Color::LightGreen => Self::Green,
+            Color::LightBlue => Self::Blue,
+            Color::LightYellow => Self::Yellow,
+            Color::LightMagenta => Self::Magenta,
+            Color::LightCyan => Self::Cyan,
+            Color::White => Self::White,
+            Color::Indexed(i) => Self::AnsiValue(i),
+            Color::Rgb(r, g, b) => Self::Rgb { r, g, b },
         }
     }
 }
@@ -377,22 +377,22 @@ impl From<CAttribute> for Modifier {
         // `Attribute*s*` (note the *s*) contains multiple `Attribute`
         // We convert `Attribute` to `Attribute*s*` (containing only 1 value) to avoid implementing
         // the conversion again
-        Modifier::from(CAttributes::from(value))
+        Self::from(CAttributes::from(value))
     }
 }
 
 impl From<CAttributes> for Modifier {
     fn from(value: CAttributes) -> Self {
-        let mut res = Modifier::empty();
+        let mut res = Self::empty();
 
         if value.has(CAttribute::Bold) {
-            res |= Modifier::BOLD;
+            res |= Self::BOLD;
         }
         if value.has(CAttribute::Dim) {
-            res |= Modifier::DIM;
+            res |= Self::DIM;
         }
         if value.has(CAttribute::Italic) {
-            res |= Modifier::ITALIC;
+            res |= Self::ITALIC;
         }
         if value.has(CAttribute::Underlined)
             || value.has(CAttribute::DoubleUnderlined)
@@ -400,22 +400,22 @@ impl From<CAttributes> for Modifier {
             || value.has(CAttribute::Underdotted)
             || value.has(CAttribute::Underdashed)
         {
-            res |= Modifier::UNDERLINED;
+            res |= Self::UNDERLINED;
         }
         if value.has(CAttribute::SlowBlink) {
-            res |= Modifier::SLOW_BLINK;
+            res |= Self::SLOW_BLINK;
         }
         if value.has(CAttribute::RapidBlink) {
-            res |= Modifier::RAPID_BLINK;
+            res |= Self::RAPID_BLINK;
         }
         if value.has(CAttribute::Reverse) {
-            res |= Modifier::REVERSED;
+            res |= Self::REVERSED;
         }
         if value.has(CAttribute::Hidden) {
-            res |= Modifier::HIDDEN;
+            res |= Self::HIDDEN;
         }
         if value.has(CAttribute::CrossedOut) {
-            res |= Modifier::CROSSED_OUT;
+            res |= Self::CROSSED_OUT;
         }
 
         res
