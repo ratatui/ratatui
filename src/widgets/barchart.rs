@@ -38,8 +38,8 @@ pub use bar_group::BarGroup;
 ///
 /// # Examples
 ///
-/// The following example creates a `BarChart` with two groups of bars.  
-/// The first group is added by an array slice (`&[(&str, u64)]`).  
+/// The following example creates a `BarChart` with two groups of bars.
+/// The first group is added by an array slice (`&[(&str, u64)]`).
 /// The second group is added by a [`BarGroup`] instance.
 /// ```
 /// use ratatui::{prelude::*, widgets::*};
@@ -109,7 +109,7 @@ impl<'a> BarChart<'a> {
     ///
     /// # Examples
     ///
-    /// The following example creates a BarChart with two groups of bars.  
+    /// The following example creates a BarChart with two groups of bars.
     /// The first group is added by an array slice (`&[(&str, u64)]`).
     /// The second group is added by a [`BarGroup`] instance.
     /// ```
@@ -186,17 +186,17 @@ impl<'a> BarChart<'a> {
     /// For [`Horizontal`](crate::layout::Direction::Horizontal) bars this becomes the height of
     /// the bar.
     ///
-    /// If not set, this defaults to `1`.  
+    /// If not set, this defaults to `1`.
     /// The bar label also uses this value as its width.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bar_width(mut self, width: u16) -> BarChart<'a> {
+    pub const fn bar_width(mut self, width: u16) -> BarChart<'a> {
         self.bar_width = width;
         self
     }
 
     /// Set the gap between each bar.
     ///
-    /// If not set, this defaults to `1`.  
+    /// If not set, this defaults to `1`.
     /// The bar label will never be larger than the bar itself, even if the gap is sufficient.
     ///
     /// # Example

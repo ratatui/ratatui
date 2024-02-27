@@ -112,7 +112,8 @@ exist to show coverage directly in your editor. E.g.:
 
 ### Documentation
 
-Here are some guidelines for writing documentation in Ratatui.  
+Here are some guidelines for writing documentation in Ratatui.
+
 Every public API **must** be documented.
 
 Keep in mind that Ratatui tends to attract beginner Rust users that may not be familiar with Rust
@@ -125,10 +126,9 @@ the concepts pointing to the various methods. Focus on interaction with various 
 enough information that helps understand why you might want something.
 
 Examples should help users understand a particular usage, not test a feature. They should be as
-simple as possible.  
-Prefer hiding imports and using wildcards to keep things concise. Some imports may still be shown
-to demonstrate a particular non-obvious import (e.g. `Stylize` trait to use style methods).  
-Speaking of `Stylize`, you should use it over the more verbose style setters:
+simple as possible. Prefer hiding imports and using wildcards to keep things concise. Some imports
+may still be shown to demonstrate a particular non-obvious import (e.g. `Stylize` trait to use style
+methods). Speaking of `Stylize`, you should use it over the more verbose style setters:
 
 ```rust
 let style = Style::new().red().bold();
@@ -138,7 +138,7 @@ let style = Style::default().fg(Color::Red).add_modifier(Modifiers::BOLD);
 
 #### Format
 
-- First line is summary, second is blank, third onward is more detail  
+- First line is summary, second is blank, third onward is more detail
 
 ```rust
 /// Summary
@@ -148,10 +148,10 @@ let style = Style::default().fg(Color::Red).add_modifier(Modifiers::BOLD);
 fn foo() {}
 ```
 
-- Max line length is 100 characters  
+- Max line length is 100 characters
 See [vscode rewrap extension](https://marketplace.visualstudio.com/items?itemName=stkb.rewrap)
 
-- Doc comments are above macros  
+- Doc comments are above macros
 i.e.
 
 ```rust
@@ -160,7 +160,7 @@ i.e.
 struct Foo {}
 ```
 
-- Code items should be between backticks  
+- Code items should be between backticks
 i.e. ``[`Block`]``, **NOT** ``[Block]``
 
 ### Deprecation notice
