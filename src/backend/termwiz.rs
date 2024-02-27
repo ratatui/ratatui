@@ -93,14 +93,16 @@ impl TermwizBackend {
     }
 
     /// Creates a new Termwiz backend instance with the given buffered terminal.
-    pub fn with_buffered_terminal(instance: BufferedTerminal<SystemTerminal>) -> TermwizBackend {
+    pub const fn with_buffered_terminal(
+        instance: BufferedTerminal<SystemTerminal>,
+    ) -> TermwizBackend {
         TermwizBackend {
             buffered_terminal: instance,
         }
     }
 
     /// Returns a reference to the buffered terminal used by the backend.
-    pub fn buffered_terminal(&self) -> &BufferedTerminal<SystemTerminal> {
+    pub const fn buffered_terminal(&self) -> &BufferedTerminal<SystemTerminal> {
         &self.buffered_terminal
     }
 

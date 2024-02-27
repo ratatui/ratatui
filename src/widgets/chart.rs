@@ -70,7 +70,7 @@ impl<'a> Axis<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bounds(mut self, bounds: [f64; 2]) -> Axis<'a> {
+    pub const fn bounds(mut self, bounds: [f64; 2]) -> Axis<'a> {
         self.bounds = bounds;
         self
     }
@@ -133,7 +133,7 @@ impl<'a> Axis<'a> {
     ///
     /// On the X axis, this parameter only affects the first label.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn labels_alignment(mut self, alignment: Alignment) -> Axis<'a> {
+    pub const fn labels_alignment(mut self, alignment: Alignment) -> Axis<'a> {
         self.labels_alignment = alignment;
         self
     }
@@ -341,7 +341,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn data(mut self, data: &'a [(f64, f64)]) -> Dataset<'a> {
+    pub const fn data(mut self, data: &'a [(f64, f64)]) -> Dataset<'a> {
         self.data = data;
         self
     }
@@ -356,7 +356,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn marker(mut self, marker: symbols::Marker) -> Dataset<'a> {
+    pub const fn marker(mut self, marker: symbols::Marker) -> Dataset<'a> {
         self.marker = marker;
         self
     }
@@ -369,7 +369,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn graph_type(mut self, graph_type: GraphType) -> Dataset<'a> {
+    pub const fn graph_type(mut self, graph_type: GraphType) -> Dataset<'a> {
         self.graph_type = graph_type;
         self
     }
@@ -648,7 +648,10 @@ impl<'a> Chart<'a> {
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn hidden_legend_constraints(mut self, constraints: (Constraint, Constraint)) -> Chart<'a> {
+    pub const fn hidden_legend_constraints(
+        mut self,
+        constraints: (Constraint, Constraint),
+    ) -> Chart<'a> {
         self.hidden_legend_constraints = constraints;
         self
     }
@@ -683,7 +686,7 @@ impl<'a> Chart<'a> {
     /// let chart = Chart::new(vec![]).legend_position(None);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn legend_position(mut self, position: Option<LegendPosition>) -> Chart<'a> {
+    pub const fn legend_position(mut self, position: Option<LegendPosition>) -> Chart<'a> {
         self.legend_position = position;
         self
     }

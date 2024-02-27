@@ -65,6 +65,7 @@ serde_json = "1.0.109"
 unsafe_code = "forbid"
 [lints.clippy]
 explicit_iter_loop = "warn"
+missing_const_for_fn = "warn"
 needless_for_each = "warn"
 semicolon_if_nothing_returned = "warn"
 

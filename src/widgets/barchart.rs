@@ -163,7 +163,7 @@ impl<'a> BarChart<'a> {
     /// // f b b
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn max(mut self, max: u64) -> BarChart<'a> {
+    pub const fn max(mut self, max: u64) -> BarChart<'a> {
         self.max = Some(max);
         self
     }
@@ -213,7 +213,7 @@ impl<'a> BarChart<'a> {
     /// // f   b
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bar_gap(mut self, gap: u16) -> BarChart<'a> {
+    pub const fn bar_gap(mut self, gap: u16) -> BarChart<'a> {
         self.bar_gap = gap;
         self
     }
@@ -222,7 +222,7 @@ impl<'a> BarChart<'a> {
     ///
     /// If not set, the default is [`bar::NINE_LEVELS`](crate::symbols::bar::NINE_LEVELS).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bar_set(mut self, bar_set: symbols::bar::Set) -> BarChart<'a> {
+    pub const fn bar_set(mut self, bar_set: symbols::bar::Set) -> BarChart<'a> {
         self.bar_set = bar_set;
         self
     }
@@ -263,7 +263,7 @@ impl<'a> BarChart<'a> {
 
     /// Set the gap between [`BarGroup`].
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn group_gap(mut self, gap: u16) -> BarChart<'a> {
+    pub const fn group_gap(mut self, gap: u16) -> BarChart<'a> {
         self.group_gap = gap;
         self
     }
@@ -300,7 +300,7 @@ impl<'a> BarChart<'a> {
     /// █bar██
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn direction(mut self, direction: Direction) -> BarChart<'a> {
+    pub const fn direction(mut self, direction: Direction) -> BarChart<'a> {
         self.direction = direction;
         self
     }

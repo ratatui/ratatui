@@ -1107,7 +1107,7 @@ mod tests {
     }
 
     #[test]
-    fn border_type_can_be_const() {
+    const fn border_type_can_be_const() {
         const _PLAIN: border::Set = BorderType::border_symbols(BorderType::Plain);
     }
 
@@ -1130,7 +1130,7 @@ mod tests {
     }
 
     #[test]
-    fn block_can_be_const() {
+    const fn block_can_be_const() {
         const _DEFAULT_STYLE: Style = Style::new();
         const _DEFAULT_PADDING: Padding = Padding::uniform(1);
         const _DEFAULT_BLOCK: Block = Block::new()

@@ -75,7 +75,7 @@ impl TableState {
     /// let state = TableState::new().with_offset(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn with_offset(mut self, offset: usize) -> Self {
+    pub const fn with_offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
     }
@@ -108,7 +108,7 @@ impl TableState {
     /// let state = TableState::new();
     /// assert_eq!(state.offset(), 0);
     /// ```
-    pub fn offset(&self) -> usize {
+    pub const fn offset(&self) -> usize {
         self.offset
     }
 
@@ -136,7 +136,7 @@ impl TableState {
     /// let state = TableState::new();
     /// assert_eq!(state.selected(), None);
     /// ```
-    pub fn selected(&self) -> Option<usize> {
+    pub const fn selected(&self) -> Option<usize> {
         self.selected
     }
 

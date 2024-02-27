@@ -97,7 +97,7 @@ where
     /// # use ratatui::prelude::*;
     /// let backend = CrosstermBackend::new(stdout());
     /// ```
-    pub fn new(writer: W) -> CrosstermBackend<W> {
+    pub const fn new(writer: W) -> CrosstermBackend<W> {
         CrosstermBackend { writer }
     }
 }

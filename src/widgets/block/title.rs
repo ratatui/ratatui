@@ -97,14 +97,14 @@ impl<'a> Title<'a> {
 
     /// Set the title alignment.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn alignment(mut self, alignment: Alignment) -> Title<'a> {
+    pub const fn alignment(mut self, alignment: Alignment) -> Title<'a> {
         self.alignment = Some(alignment);
         self
     }
 
     /// Set the title position.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn position(mut self, position: Position) -> Title<'a> {
+    pub const fn position(mut self, position: Position) -> Title<'a> {
         self.position = Some(position);
         self
     }

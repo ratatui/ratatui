@@ -400,7 +400,7 @@ impl<'a> Table<'a> {
     /// let table = Table::new(rows, widths).column_spacing(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn column_spacing(mut self, spacing: u16) -> Self {
+    pub const fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self
     }
@@ -530,7 +530,7 @@ impl<'a> Table<'a> {
     /// let table = Table::new(rows, widths).highlight_spacing(HighlightSpacing::Always);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
+    pub const fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
     }

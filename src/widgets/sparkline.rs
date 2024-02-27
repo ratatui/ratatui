@@ -105,7 +105,7 @@ impl<'a> Sparkline<'a> {
     /// # }
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn data(mut self, data: &'a [u64]) -> Sparkline<'a> {
+    pub const fn data(mut self, data: &'a [u64]) -> Sparkline<'a> {
         self.data = data;
         self
     }
@@ -115,7 +115,7 @@ impl<'a> Sparkline<'a> {
     /// Every bar will be scaled accordingly. If no max is given, this will be the max in the
     /// dataset.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn max(mut self, max: u64) -> Sparkline<'a> {
+    pub const fn max(mut self, max: u64) -> Sparkline<'a> {
         self.max = Some(max);
         self
     }
@@ -125,7 +125,7 @@ impl<'a> Sparkline<'a> {
     /// Can be [`symbols::bar::THREE_LEVELS`], [`symbols::bar::NINE_LEVELS`] (default) or a custom
     /// [`Set`](symbols::bar::Set).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bar_set(mut self, bar_set: symbols::bar::Set) -> Sparkline<'a> {
+    pub const fn bar_set(mut self, bar_set: symbols::bar::Set) -> Sparkline<'a> {
         self.bar_set = bar_set;
         self
     }
@@ -134,7 +134,7 @@ impl<'a> Sparkline<'a> {
     ///
     /// [`RenderDirection::LeftToRight`] by default.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn direction(mut self, direction: RenderDirection) -> Sparkline<'a> {
+    pub const fn direction(mut self, direction: RenderDirection) -> Sparkline<'a> {
         self.direction = direction;
         self
     }

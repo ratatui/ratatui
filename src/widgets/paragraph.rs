@@ -7,7 +7,7 @@ use crate::{
     widgets::{reflow::*, Block},
 };
 
-fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
+const fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
     match alignment {
         Alignment::Center => (text_area_width / 2).saturating_sub(line_width / 2),
         Alignment::Right => text_area_width.saturating_sub(line_width),
@@ -167,7 +167,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello, world!").wrap(Wrap { trim: true });
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn wrap(mut self, wrap: Wrap) -> Paragraph<'a> {
+    pub const fn wrap(mut self, wrap: Wrap) -> Paragraph<'a> {
         self.wrap = Some(wrap);
         self
     }
@@ -184,7 +184,7 @@ impl<'a> Paragraph<'a> {
     /// For more information about future scrolling design and concerns, see [RFC: Design of
     /// Scrollable Widgets](https://github.com/ratatui-org/ratatui/issues/174) on GitHub.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn scroll(mut self, offset: (Vertical, Horizontal)) -> Paragraph<'a> {
+    pub const fn scroll(mut self, offset: (Vertical, Horizontal)) -> Paragraph<'a> {
         self.scroll = offset;
         self
     }
@@ -201,7 +201,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World").alignment(Alignment::Center);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {
+    pub const fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {
         self.alignment = alignment;
         self
     }
@@ -217,7 +217,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World").left_aligned();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn left_aligned(self) -> Self {
+    pub const fn left_aligned(self) -> Self {
         self.alignment(Alignment::Left)
     }
 
@@ -232,7 +232,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World").centered();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn centered(self) -> Self {
+    pub const fn centered(self) -> Self {
         self.alignment(Alignment::Center)
     }
 
@@ -247,7 +247,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World").right_aligned();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn right_aligned(self) -> Self {
+    pub const fn right_aligned(self) -> Self {
         self.alignment(Alignment::Right)
     }
 
