@@ -557,6 +557,7 @@ impl<'a> Table<'a> {
     /// ];
     /// let table = Table::new(Vec::<Row>::new(), widths).flex(Flex::Legacy);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn flex(mut self, flex: Flex) -> Self {
         self.flex = flex;
         self

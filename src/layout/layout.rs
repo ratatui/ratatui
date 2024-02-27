@@ -391,6 +391,7 @@ impl Layout {
     /// # use ratatui::layout::{Flex, Layout, Constraint::*};
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Legacy);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn flex(mut self, flex: Flex) -> Self {
         self.flex = flex;
         self
@@ -415,6 +416,7 @@ impl Layout {
     ///
     /// - If the layout has only one item, the spacing will not be applied.
     /// - Spacing will not be applied for [`Flex::SpaceAround`] and [`Flex::SpaceBetween`]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn spacing(mut self, spacing: u16) -> Self {
         self.spacing = spacing;
         self
