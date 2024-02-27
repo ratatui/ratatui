@@ -311,7 +311,7 @@ struct ModifierDiff {
 }
 
 impl ModifierDiff {
-    fn queue<W>(&self, mut w: W) -> io::Result<()>
+    fn queue<W>(self, mut w: W) -> io::Result<()>
     where
         W: io::Write,
     {
