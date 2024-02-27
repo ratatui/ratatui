@@ -668,6 +668,6 @@ mod tests {
                 ..Default::default()
             }),
             Style::default().underline_color(Color::Red)
-        )
+        );
     }
 }

@@ -733,7 +733,7 @@ fn configure_constraints(
                 }
             }
             Constraint::Length(length) => {
-                solver.add_constraint(element.has_int_size(length, LENGTH_SIZE_EQ))?
+                solver.add_constraint(element.has_int_size(length, LENGTH_SIZE_EQ))?;
             }
             Constraint::Percentage(p) => {
                 let size = area.size() * f64::from(p) / 100.00;
@@ -776,7 +776,7 @@ fn configure_flex_constraints(
         // constraints are satisfied
         Flex::SpaceAround => {
             for (left, right) in spacers.iter().tuple_combinations() {
-                solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?
+                solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
             }
             for spacer in spacers {
                 solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
@@ -788,7 +788,7 @@ fn configure_flex_constraints(
         // constraints are satisfied, but the first and last spacers are zero size
         Flex::SpaceBetween => {
             for (left, right) in spacers_except_first_and_last.iter().tuple_combinations() {
-                solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?
+                solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?;
             }
             for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
@@ -1104,7 +1104,7 @@ mod tests {
         assert!(!Layout::init_cache(15));
         LAYOUT_CACHE.with(|c| {
             assert_eq!(c.get().unwrap().borrow().cap().get(), 10);
-        })
+        });
     }
 
     #[test]
@@ -1130,7 +1130,7 @@ mod tests {
                 c.get().unwrap().borrow().cap().get(),
                 Layout::DEFAULT_CACHE_SIZE
             );
-        })
+        });
     }
 
     #[test]
@@ -1406,7 +1406,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1449,7 +1449,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1485,7 +1485,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest] // flex, width, lengths, expected
@@ -1618,7 +1618,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1655,7 +1655,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1692,7 +1692,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1795,7 +1795,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1832,7 +1832,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1869,7 +1869,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[test]

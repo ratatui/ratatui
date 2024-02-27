@@ -628,7 +628,7 @@ mod test {
         let (word_wrapper_space, word_wrapper_widths, _) =
             run_composer(Composer::WordWrapper { trim: true }, text_space, width);
         assert_eq!(word_wrapper_space, vec!["AAAAAAAAAAAAAAA AAAA", "AAA",]);
-        assert_eq!(word_wrapper_widths, vec![20, 3])
+        assert_eq!(word_wrapper_widths, vec![20, 3]);
     }
 
     #[test]
