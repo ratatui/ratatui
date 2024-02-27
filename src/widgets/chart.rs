@@ -984,7 +984,7 @@ impl WidgetRef for Chart<'_> {
                         coords: dataset.data,
                         color: dataset.style.fg.unwrap_or(Color::Reset),
                     });
-                    if let GraphType::Line = dataset.graph_type {
+                    if dataset.graph_type == GraphType::Line {
                         for data in dataset.data.windows(2) {
                             ctx.draw(&CanvasLine {
                                 x1: data[0].0,
