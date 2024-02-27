@@ -1126,7 +1126,7 @@ mod tests {
                 style: Style::new(),
                 padding: Padding::zero(),
             }
-        )
+        );
     }
 
     #[test]
@@ -1198,7 +1198,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]

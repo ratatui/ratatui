@@ -1370,7 +1370,7 @@ mod tests {
             assert_eq!(
                 table.get_columns_widths(30, 0),
                 &[(0, 10), (10, 10), (20, 10)]
-            )
+            );
         }
 
         #[test]
@@ -1379,7 +1379,7 @@ mod tests {
                 .rows(vec![])
                 .header(Row::new(vec!["f", "g"]))
                 .column_spacing(0);
-            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)])
+            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)]);
         }
 
         #[test]
@@ -1388,7 +1388,7 @@ mod tests {
                 .rows(vec![])
                 .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
-            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)])
+            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)]);
         }
 
         fn test_table_with_selection(
@@ -1787,6 +1787,6 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::CROSSED_OUT)
-        )
+        );
     }
 }

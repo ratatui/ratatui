@@ -660,7 +660,7 @@ mod tests {
                 .bg(Color::Black)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::ITALIC)
-        )
+        );
     }
 
     #[test]

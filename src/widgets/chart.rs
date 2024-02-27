@@ -1151,7 +1151,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]
@@ -1163,7 +1163,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]
@@ -1175,7 +1175,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]
@@ -1199,7 +1199,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 4));
         widget.render(buffer.area, &mut buffer);
 
-        assert_eq!(buffer, Buffer::with_lines(vec![" ".repeat(8); 4]))
+        assert_eq!(buffer, Buffer::with_lines(vec![" ".repeat(8); 4]));
     }
 
     #[test]

@@ -66,6 +66,7 @@ unsafe_code = "forbid"
 [lints.clippy]
 explicit_iter_loop = "warn"
 needless_for_each = "warn"
+semicolon_if_nothing_returned = "warn"
 
 [features]
 #! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.

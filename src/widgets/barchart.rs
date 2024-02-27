@@ -848,7 +848,7 @@ mod tests {
                 .fg(Color::Black)
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
-        )
+        );
     }
 
     #[test]
@@ -989,7 +989,7 @@ mod tests {
 
     #[test]
     fn test_horizontal_bars_label_width_greater_than_bar_with_style() {
-        test_horizontal_bars_label_width_greater_than_bar(Some(Color::White))
+        test_horizontal_bars_label_width_greater_than_bar(Some(Color::White));
     }
 
     /// Tests horizontal bars label are presents

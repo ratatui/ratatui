@@ -168,7 +168,7 @@ mod tests {
                 top: 3,
                 bottom: 4
             }
-        )
+        );
     }
 
     #[test]
