@@ -800,14 +800,14 @@ impl Table<'_> {
 }
 
 fn ensure_percentages_less_than_100(widths: &[Constraint]) {
-    widths.iter().for_each(|&w| {
+    for w in widths {
         if let Constraint::Percentage(p) = w {
             assert!(
-                p <= 100,
+                *p <= 100,
                 "Percentages should be between 0 and 100 inclusively."
-            )
+            );
         }
-    });
+    }
 }
 
 impl<'a> Styled for Table<'a> {

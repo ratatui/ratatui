@@ -698,7 +698,7 @@ fn configure_variable_constraints(
     area: Element,
 ) -> Result<(), AddConstraintError> {
     // all variables are in the range [area.start, area.end]
-    for &variable in variables.iter() {
+    for &variable in variables {
         solver.add_constraint(variable | GE(REQUIRED) | area.start)?;
         solver.add_constraint(variable | LE(REQUIRED) | area.end)?;
     }
@@ -764,7 +764,7 @@ fn configure_flex_constraints(
     let spacing_f64 = f64::from(spacing) * FLOAT_PRECISION_MULTIPLIER;
     match flex {
         Flex::Legacy => {
-            for spacer in spacers_except_first_and_last.iter() {
+            for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
@@ -778,7 +778,7 @@ fn configure_flex_constraints(
             for (left, right) in spacers.iter().tuple_combinations() {
                 solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?
             }
-            for spacer in spacers.iter() {
+            for spacer in spacers {
                 solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
                 solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
@@ -790,10 +790,10 @@ fn configure_flex_constraints(
             for (left, right) in spacers_except_first_and_last.iter().tuple_combinations() {
                 solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?
             }
-            for spacer in spacers_except_first_and_last.iter() {
+            for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
             }
-            for spacer in spacers_except_first_and_last.iter() {
+            for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
