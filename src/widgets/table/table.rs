@@ -736,7 +736,7 @@ impl Table<'_> {
             // Divide the space between each column equally
             vec![Constraint::Length(max_width / col_count.max(1) as u16); col_count]
         } else {
-            self.widths.to_vec()
+            self.widths.clone()
         };
         // this will always allocate a selection area
         let [_selection_area, columns_area] =

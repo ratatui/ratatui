@@ -66,6 +66,7 @@ unsafe_code = "forbid"
 [lints.clippy]
 cloned_instead_of_copied = "warn"
 explicit_iter_loop = "warn"
+implicit_clone = "warn"
 missing_const_for_fn = "warn"
 needless_for_each = "warn"
 semicolon_if_nothing_returned = "warn"
