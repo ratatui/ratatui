@@ -128,7 +128,7 @@ mod tests {
         canvas.render(buffer.area, &mut buffer);
 
         let mut expected = Buffer::with_lines(expected_lines);
-        for cell in expected.content.iter_mut() {
+        for cell in &mut expected.content {
             if cell.symbol() == "•" {
                 cell.set_style(Style::new().red());
             }

@@ -470,7 +470,7 @@ impl WidgetRef for Line<'_> {
             None => 0,
         };
         let mut x = area.left().saturating_add(offset);
-        for span in self.spans.iter() {
+        for span in &self.spans {
             let span_width = span.width() as u16;
             let span_area = Rect {
                 x,

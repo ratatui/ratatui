@@ -1355,7 +1355,7 @@ mod tests {
 
         let expected = Buffer::with_lines(vec!["┌────┐", "│Data│", "└────┘"]);
 
-        [
+        for position in [
             LegendPosition::TopLeft,
             LegendPosition::Top,
             LegendPosition::TopRight,
@@ -1364,14 +1364,12 @@ mod tests {
             LegendPosition::Bottom,
             LegendPosition::BottomLeft,
             LegendPosition::BottomRight,
-        ]
-        .iter()
-        .for_each(|&position| {
+        ] {
             let chart = chart.clone().legend_position(Some(position));
             buffer.reset();
             chart.render(buffer.area, &mut buffer);
             assert_eq!(buffer, expected);
-        });
+        }
     }
 
     #[test]
