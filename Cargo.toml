@@ -68,6 +68,7 @@ explicit_iter_loop = "warn"
 missing_const_for_fn = "warn"
 needless_for_each = "warn"
 semicolon_if_nothing_returned = "warn"
+use_self = "warn"
 
 [features]
 #! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.

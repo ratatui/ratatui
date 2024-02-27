@@ -131,11 +131,11 @@ impl Color {
     /// Convert a u32 to a Color
     ///
     /// The u32 should be in the format 0x00RRGGBB.
-    pub const fn from_u32(u: u32) -> Color {
+    pub const fn from_u32(u: u32) -> Self {
         let r = (u >> 16) as u8;
         let g = (u >> 8) as u8;
         let b = u as u8;
-        Color::Rgb(r, g, b)
+        Self::Rgb(r, g, b)
     }
 }
 
@@ -250,25 +250,25 @@ impl FromStr for Color {
 impl Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Color::Reset => write!(f, "Reset"),
-            Color::Black => write!(f, "Black"),
-            Color::Red => write!(f, "Red"),
-            Color::Green => write!(f, "Green"),
-            Color::Yellow => write!(f, "Yellow"),
-            Color::Blue => write!(f, "Blue"),
-            Color::Magenta => write!(f, "Magenta"),
-            Color::Cyan => write!(f, "Cyan"),
-            Color::Gray => write!(f, "Gray"),
-            Color::DarkGray => write!(f, "DarkGray"),
-            Color::LightRed => write!(f, "LightRed"),
-            Color::LightGreen => write!(f, "LightGreen"),
-            Color::LightYellow => write!(f, "LightYellow"),
-            Color::LightBlue => write!(f, "LightBlue"),
-            Color::LightMagenta => write!(f, "LightMagenta"),
-            Color::LightCyan => write!(f, "LightCyan"),
-            Color::White => write!(f, "White"),
-            Color::Rgb(r, g, b) => write!(f, "#{:02X}{:02X}{:02X}", r, g, b),
-            Color::Indexed(i) => write!(f, "{}", i),
+            Self::Reset => write!(f, "Reset"),
+            Self::Black => write!(f, "Black"),
+            Self::Red => write!(f, "Red"),
+            Self::Green => write!(f, "Green"),
+            Self::Yellow => write!(f, "Yellow"),
+            Self::Blue => write!(f, "Blue"),
+            Self::Magenta => write!(f, "Magenta"),
+            Self::Cyan => write!(f, "Cyan"),
+            Self::Gray => write!(f, "Gray"),
+            Self::DarkGray => write!(f, "DarkGray"),
+            Self::LightRed => write!(f, "LightRed"),
+            Self::LightGreen => write!(f, "LightGreen"),
+            Self::LightYellow => write!(f, "LightYellow"),
+            Self::LightBlue => write!(f, "LightBlue"),
+            Self::LightMagenta => write!(f, "LightMagenta"),
+            Self::LightCyan => write!(f, "LightCyan"),
+            Self::White => write!(f, "White"),
+            Self::Rgb(r, g, b) => write!(f, "#{:02X}{:02X}{:02X}", r, g, b),
+            Self::Indexed(i) => write!(f, "{}", i),
         }
     }
 }

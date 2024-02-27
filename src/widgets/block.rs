@@ -570,14 +570,14 @@ impl<'a> Block<'a> {
 
 impl BorderType {
     /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
-    pub const fn border_symbols(border_type: BorderType) -> border::Set {
+    pub const fn border_symbols(border_type: Self) -> border::Set {
         match border_type {
-            BorderType::Plain => border::PLAIN,
-            BorderType::Rounded => border::ROUNDED,
-            BorderType::Double => border::DOUBLE,
-            BorderType::Thick => border::THICK,
-            BorderType::QuadrantInside => border::QUADRANT_INSIDE,
-            BorderType::QuadrantOutside => border::QUADRANT_OUTSIDE,
+            Self::Plain => border::PLAIN,
+            Self::Rounded => border::ROUNDED,
+            Self::Double => border::DOUBLE,
+            Self::Thick => border::THICK,
+            Self::QuadrantInside => border::QUADRANT_INSIDE,
+            Self::QuadrantOutside => border::QUADRANT_OUTSIDE,
         }
     }
 

@@ -37,7 +37,7 @@ impl Debug for Borders {
         }
         let mut first = true;
         for (name, border) in self.iter_names() {
-            if border == Borders::NONE {
+            if border == Self::NONE {
                 continue;
             }
             if first {
