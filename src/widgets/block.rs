@@ -1203,9 +1203,9 @@ mod tests {
 
     #[test]
     fn title() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
         use Alignment::*;
         use Position::*;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
         Block::bordered()
             .title(Title::from("A").position(Top).alignment(Left))
             .title(Title::from("B").position(Top).alignment(Center))
