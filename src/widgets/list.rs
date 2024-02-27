@@ -1793,13 +1793,6 @@ mod tests {
 
     #[test]
     fn test_list_long_lines() {
-        let items = list_items(vec![
-            "Item 0 with a very long line that will be truncated",
-            "Item 1",
-            "Item 2",
-        ]);
-        let list = List::new(items).highlight_symbol(">>");
-
         fn test_case(list: List, selected: Option<usize>, expected_lines: Vec<&str>) {
             let mut state = ListState::default();
             state.select(selected);
@@ -1807,6 +1800,13 @@ mod tests {
             let expected = Buffer::with_lines(expected_lines);
             assert_buffer_eq!(buffer, expected);
         }
+
+        let items = list_items(vec![
+            "Item 0 with a very long line that will be truncated",
+            "Item 1",
+            "Item 2",
+        ]);
+        let list = List::new(items).highlight_symbol(">>");
 
         test_case(
             list.clone(),

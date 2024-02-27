@@ -156,10 +156,10 @@ impl<'a> Bar<'a> {
         ticks: u64,
     ) {
         if self.value != 0 {
+            const TICKS_PER_LINE: u64 = 8;
             let value = self.value.to_string();
             let value_label = self.text_value.as_ref().unwrap_or(&value);
             let width = value_label.width() as u16;
-            const TICKS_PER_LINE: u64 = 8;
             // if we have enough space or the ticks are greater equal than 1 cell (8)
             // then print the value
             if width < max_width || (width == max_width && ticks >= TICKS_PER_LINE) {
