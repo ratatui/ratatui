@@ -13,6 +13,9 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+#![warn(clippy::pedantic)]
+#![allow(clippy::wildcard_imports)]
+
 use std::{
     error::Error,
     io,
@@ -107,6 +110,7 @@ fn run_app<B: Backend>(
     }
 }
 
+#[allow(clippy::too_many_lines, clippy::cast_possible_truncation)]
 fn ui(f: &mut Frame, app: &mut App) {
     let size = f.size();
 
