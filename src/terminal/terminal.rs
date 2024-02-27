@@ -172,7 +172,7 @@ where
     }
 
     /// Gets the backend
-    pub fn backend(&self) -> &B {
+    pub const fn backend(&self) -> &B {
         &self.backend
     }
 

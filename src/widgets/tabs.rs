@@ -113,7 +113,7 @@ impl<'a> Tabs<'a> {
     /// The first tab has index 0 (this is also the default index).
     /// The selected tab can have a different style with [`Tabs::highlight_style`].
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn select(mut self, selected: usize) -> Tabs<'a> {
+    pub const fn select(mut self, selected: usize) -> Tabs<'a> {
         self.selected = selected;
         self
     }

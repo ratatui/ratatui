@@ -50,7 +50,7 @@ impl<'a> Bar<'a> {
     /// [`Bar::value_style`] to style the value.  
     /// [`Bar::text_value`] to set the displayed value.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn value(mut self, value: u64) -> Bar<'a> {
+    pub const fn value(mut self, value: u64) -> Bar<'a> {
         self.value = value;
         self
     }

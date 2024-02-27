@@ -84,7 +84,7 @@ impl TestBackend {
     }
 
     /// Returns a reference to the internal buffer of the TestBackend.
-    pub fn buffer(&self) -> &Buffer {
+    pub const fn buffer(&self) -> &Buffer {
         &self.buffer
     }
 

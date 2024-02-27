@@ -145,7 +145,7 @@ impl<'a> Row<'a> {
     /// let row = Row::new(cells).height(2);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn height(mut self, height: u16) -> Self {
+    pub const fn height(mut self, height: u16) -> Self {
         self.height = height;
         self
     }
@@ -164,7 +164,7 @@ impl<'a> Row<'a> {
     /// let row = Row::default().top_margin(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn top_margin(mut self, margin: u16) -> Self {
+    pub const fn top_margin(mut self, margin: u16) -> Self {
         self.top_margin = margin;
         self
     }
@@ -183,7 +183,7 @@ impl<'a> Row<'a> {
     /// let row = Row::default().bottom_margin(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bottom_margin(mut self, margin: u16) -> Self {
+    pub const fn bottom_margin(mut self, margin: u16) -> Self {
         self.bottom_margin = margin;
         self
     }
@@ -224,7 +224,7 @@ impl<'a> Row<'a> {
 // private methods for rendering
 impl Row<'_> {
     /// Returns the total height of the row.
-    pub(crate) fn height_with_margin(&self) -> u16 {
+    pub(crate) const fn height_with_margin(&self) -> u16 {
         self.height
             .saturating_add(self.top_margin)
             .saturating_add(self.bottom_margin)

@@ -36,7 +36,7 @@ impl<'a> Masked<'a> {
     }
 
     /// The character to use for masking.
-    pub fn mask_char(&self) -> char {
+    pub const fn mask_char(&self) -> char {
         self.mask_char
     }
 

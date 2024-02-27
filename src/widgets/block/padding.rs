@@ -186,7 +186,7 @@ mod tests {
     }
 
     #[test]
-    fn can_be_const() {
+    const fn can_be_const() {
         const _PADDING: Padding = Padding::new(1, 1, 1, 1);
         const _UNI_PADDING: Padding = Padding::uniform(1);
         const _NO_PADDING: Padding = Padding::zero();

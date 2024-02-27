@@ -147,7 +147,7 @@ impl<'a> Gauge<'a> {
     /// [unicode block characters](https://en.wikipedia.org/wiki/Block_Elements).
     /// This is useful to display a higher precision bar (8 extra fractional parts per cell).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn use_unicode(mut self, unicode: bool) -> Gauge<'a> {
+    pub const fn use_unicode(mut self, unicode: bool) -> Gauge<'a> {
         self.use_unicode = unicode;
         self
     }
@@ -307,7 +307,7 @@ impl<'a> LineGauge<'a> {
     /// [`NORMAL`](symbols::line::NORMAL), [`DOUBLE`](symbols::line::DOUBLE) and
     /// [`THICK`](symbols::line::THICK).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn line_set(mut self, set: symbols::line::Set) -> Self {
+    pub const fn line_set(mut self, set: symbols::line::Set) -> Self {
         self.line_set = set;
         self
     }

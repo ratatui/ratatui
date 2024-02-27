@@ -62,7 +62,7 @@ impl ListState {
     /// let state = ListState::default().with_offset(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn with_offset(mut self, offset: usize) -> Self {
+    pub const fn with_offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
     }
@@ -78,7 +78,7 @@ impl ListState {
     /// let state = ListState::default().with_selected(Some(1));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn with_selected(mut self, selected: Option<usize>) -> Self {
+    pub const fn with_selected(mut self, selected: Option<usize>) -> Self {
         self.selected = selected;
         self
     }
@@ -92,7 +92,7 @@ impl ListState {
     /// let state = ListState::default();
     /// assert_eq!(state.offset(), 0);
     /// ```
-    pub fn offset(&self) -> usize {
+    pub const fn offset(&self) -> usize {
         self.offset
     }
 
@@ -120,7 +120,7 @@ impl ListState {
     /// let state = TableState::default();
     /// assert_eq!(state.selected(), None);
     /// ```
-    pub fn selected(&self) -> Option<usize> {
+    pub const fn selected(&self) -> Option<usize> {
         self.selected
     }
 
@@ -594,7 +594,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> List<'a> {
+    pub const fn highlight_symbol(mut self, highlight_symbol: &'a str) -> List<'a> {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
@@ -629,7 +629,7 @@ impl<'a> List<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn repeat_highlight_symbol(mut self, repeat: bool) -> List<'a> {
+    pub const fn repeat_highlight_symbol(mut self, repeat: bool) -> List<'a> {
         self.repeat_highlight_symbol = repeat;
         self
     }
@@ -660,7 +660,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).highlight_spacing(HighlightSpacing::Always);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
+    pub const fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
     }
@@ -682,7 +682,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).direction(ListDirection::BottomToTop);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn direction(mut self, direction: ListDirection) -> List<'a> {
+    pub const fn direction(mut self, direction: ListDirection) -> List<'a> {
         self.direction = direction;
         self
     }
@@ -701,7 +701,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).scroll_padding(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn scroll_padding(mut self, padding: usize) -> List<'a> {
+    pub const fn scroll_padding(mut self, padding: usize) -> List<'a> {
         self.scroll_padding = padding;
         self
     }

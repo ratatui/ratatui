@@ -82,7 +82,7 @@ where
     /// # use ratatui::prelude::*;
     /// let backend = TermionBackend::new(stdout());
     /// ```
-    pub fn new(writer: W) -> TermionBackend<W> {
+    pub const fn new(writer: W) -> TermionBackend<W> {
         TermionBackend { writer }
     }
 }

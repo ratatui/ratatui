@@ -92,7 +92,7 @@ impl Buffer {
     }
 
     /// Returns the area covered by this buffer
-    pub fn area(&self) -> &Rect {
+    pub const fn area(&self) -> &Rect {
         &self.area
     }
 
