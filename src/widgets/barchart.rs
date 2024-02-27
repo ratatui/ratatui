@@ -105,11 +105,11 @@ impl<'a> Default for BarChart<'a> {
 }
 
 impl<'a> BarChart<'a> {
-    /// Add group of bars to the BarChart
+    /// Add group of bars to the `BarChart`
     ///
     /// # Examples
     ///
-    /// The following example creates a BarChart with two groups of bars.
+    /// The following example creates a `BarChart` with two groups of bars.
     /// The first group is added by an array slice (`&[(&str, u64)]`).
     /// The second group is added by a [`BarGroup`] instance.
     /// ```
@@ -237,7 +237,7 @@ impl<'a> BarChart<'a> {
     ///
     /// # See also
     ///
-    /// [Bar::value_style] to set the value style individually.
+    /// [`Bar::value_style`] to set the value style individually.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn value_style<S: Into<Style>>(mut self, style: S) -> BarChart<'a> {
         self.value_style = style.into();
@@ -254,7 +254,7 @@ impl<'a> BarChart<'a> {
     ///
     /// # See also
     ///
-    /// [Bar::label] to set the label style individually.
+    /// [`Bar::label`] to set the label style individually.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn label_style<S: Into<Style>>(mut self, style: S) -> BarChart<'a> {
         self.label_style = style.into();

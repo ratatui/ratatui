@@ -58,7 +58,7 @@ thread_local! {
 /// many of the constraints in order of their priorities.
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
-/// calls with the same parameters are faster. The cache is a LruCache, and the size of the cache
+/// calls with the same parameters are faster. The cache is a `LruCache`, and the size of the cache
 /// can be configured using [`Layout::init_cache()`].
 ///
 /// # Constructors
@@ -127,13 +127,13 @@ impl Layout {
     ///
     /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
     /// Into<Constraint>>`. This includes arrays, slices, vectors, iterators. `Into<Constraint>` is
-    /// implemented on u16, so you can pass an array, vec, etc. of u16 to this function to create a
-    /// layout with fixed size chunks.
+    /// implemented on `u16`, so you can pass an array, `Vec`, etc. of `u16` to this function to
+    /// create a layout with fixed size chunks.
     ///
     /// Default values for the other fields are:
     ///
     /// - `margin`: 0, 0
-    /// - `flex`: Flex::Start
+    /// - `flex`: [`Flex::Start`]
     /// - `spacing`: 0
     ///
     /// # Examples
@@ -206,7 +206,7 @@ impl Layout {
     }
 
     /// Initialize an empty cache with a custom size. The cache is keyed on the layout and area, so
-    /// that subsequent calls with the same parameters are faster. The cache is a LruCache, and
+    /// that subsequent calls with the same parameters are faster. The cache is a `LruCache`, and
     /// grows until `cache_size` is reached.
     ///
     /// Returns true if the cell's value was set by this call.
@@ -214,7 +214,7 @@ impl Layout {
     /// has set this value or that the cache size is already initialized.
     ///
     /// Note that a custom cache size will be set only if this function:
-    /// * is called before [Layout::split()] otherwise, the cache size is
+    /// * is called before [`Layout::split()`] otherwise, the cache size is
     ///   [`Self::DEFAULT_CACHE_SIZE`].
     /// * is called for the first time, subsequent calls do not modify the cache size.
     pub fn init_cache(cache_size: usize) -> bool {
@@ -366,8 +366,8 @@ impl Layout {
     ///
     /// # Arguments
     ///
-    /// * `flex`: A `Flex` enum value that represents the flex behavior of the layout. It can be one
-    ///   of the following:
+    /// * `flex`: A [`Flex`] enum value that represents the flex behavior of the layout. It can be
+    ///   one of the following:
     ///   - [`Flex::Legacy`]: The last item is stretched to fill the excess space.
     ///   - [`Flex::Start`]: The items are aligned to the start of the layout.
     ///   - [`Flex::Center`]: The items are aligned to the center of the layout.
@@ -414,13 +414,13 @@ impl Layout {
     /// # Notes
     ///
     /// - If the layout has only one item, the spacing will not be applied.
-    /// - Spacing will not be applied for `Flex::SpaceAround` and `Flex::SpaceBetween`
+    /// - Spacing will not be applied for [`Flex::SpaceAround`] and [`Flex::SpaceBetween`]
     pub const fn spacing(mut self, spacing: u16) -> Self {
         self.spacing = spacing;
         self
     }
 
-    /// Split the rect into a number of sub-rects according to the given [`Layout`]`.
+    /// Split the rect into a number of sub-rects according to the given [`Layout`].
     ///
     /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
     /// `Rc<[Rect]>`.
@@ -449,7 +449,7 @@ impl Layout {
         areas.to_vec().try_into().expect("invalid number of rects")
     }
 
-    /// Split the rect into a number of sub-rects according to the given [`Layout`]` and return just
+    /// Split the rect into a number of sub-rects according to the given [`Layout`] and return just
     /// the spacers between the areas.
     ///
     /// This method requires the number of constraints to be known at compile time. If you don't
@@ -495,8 +495,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// LruCache, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
-    /// is initialized with the [Layout::init_cache()] grows until the initialized cache size.
+    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
+    /// is initialized with the [`Layout::init_cache()`] grows until the initialized cache size.
     ///
     /// There is a helper method that can be used to split the whole area into smaller ones based on
     /// the layout: [`Layout::areas()`]. That method is a shortcut for calling this method. It
@@ -532,8 +532,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// LruCache, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
-    /// is initialized with the [Layout::init_cache()] grows until the initialized cache size.
+    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
+    /// is initialized with the [`Layout::init_cache()`] grows until the initialized cache size.
     ///
     /// # Examples
     ///
@@ -846,7 +846,7 @@ fn configure_flex_constraints(
 /// │abcdef││abcdefabcdef│
 /// └──────┘└────────────┘
 ///
-/// size == base_element * scaling_factor
+/// `size == base_element * scaling_factor`
 fn configure_fill_constraints(
     solver: &mut Solver,
     segments: &[Element],
@@ -1207,7 +1207,7 @@ mod tests {
     }
 
     /// The purpose of this test is to ensure that layout can be constructed with any type that
-    /// implements IntoIterator<Item = AsRef<Constraint>>.
+    /// implements `IntoIterator<Item = AsRef<Constraint>>`.
     #[test]
     #[allow(
         clippy::needless_borrow,

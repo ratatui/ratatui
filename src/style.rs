@@ -33,7 +33,7 @@
 //! that implements [`Styled`]. E.g.:
 //! - Strings and string slices when styled return a [`Span`]
 //! - [`Span`]s can be styled again, which will merge the styles.
-//! - Many widget types can be styled directly rather than calling their style() method.
+//! - Many widget types can be styled directly rather than calling their `style()` method.
 //!
 //! See the [`Stylize`] and [`Styled`] traits for more information. These traits are re-exported in
 //! the [`prelude`] module for convenience.

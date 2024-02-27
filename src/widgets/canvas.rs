@@ -92,7 +92,7 @@ trait Grid: Debug {
     fn reset(&mut self);
 }
 
-/// The BrailleGrid is a grid made up of cells each containing a Braille pattern.
+/// The `BrailleGrid` is a grid made up of cells each containing a Braille pattern.
 ///
 /// This makes it possible to draw shapes with a resolution of 2x4 dots per cell. This is useful
 /// when you want to draw shapes with a high resolution. Font support for Braille patterns is
@@ -117,7 +117,7 @@ struct BrailleGrid {
 }
 
 impl BrailleGrid {
-    /// Create a new BrailleGrid with the given width and height measured in terminal columns and
+    /// Create a new `BrailleGrid` with the given width and height measured in terminal columns and
     /// rows respectively.
     fn new(width: u16, height: u16) -> Self {
         let length = usize::from(width * height);
@@ -168,7 +168,7 @@ impl Grid for BrailleGrid {
     }
 }
 
-/// The CharGrid is a grid made up of cells each containing a single character.
+/// The `CharGrid` is a grid made up of cells each containing a single character.
 ///
 /// This makes it possible to draw shapes with a resolution of 1x1 dots per cell. This is useful
 /// when you want to draw shapes with a low resolution.
@@ -187,7 +187,7 @@ struct CharGrid {
 }
 
 impl CharGrid {
-    /// Create a new CharGrid with the given width and height measured in terminal columns and
+    /// Create a new `CharGrid` with the given width and height measured in terminal columns and
     /// rows respectively.
     fn new(width: u16, height: u16, cell_char: char) -> Self {
         let length = usize::from(width * height);
@@ -239,7 +239,7 @@ impl Grid for CharGrid {
     }
 }
 
-/// The HalfBlockGrid is a grid made up of cells each containing a half block character.
+/// The `HalfBlockGrid` is a grid made up of cells each containing a half block character.
 ///
 /// In terminals, each character is usually twice as tall as it is wide. Unicode has a couple of
 /// vertical half block characters, the upper half block '▀' and lower half block '▄' which take up
@@ -249,8 +249,8 @@ impl Grid for CharGrid {
 /// and lower half of each cell. This allows us to draw shapes with a resolution of 1x2 "pixels" per
 /// cell.
 ///
-/// This allows for more flexibility than the BrailleGrid which only supports a single
-/// foreground color for each 2x4 dots cell, and the CharGrid which only supports a single
+/// This allows for more flexibility than the `BrailleGrid` which only supports a single
+/// foreground color for each 2x4 dots cell, and the `CharGrid` which only supports a single
 /// character for each cell.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 struct HalfBlockGrid {
@@ -570,9 +570,9 @@ impl<'a> Context<'a> {
 ///
 /// See [Unicode Braille Patterns](https://en.wikipedia.org/wiki/Braille_Patterns) for more info.
 ///
-/// The HalfBlock marker is useful when you want to draw shapes with a higher resolution than a
-/// CharGrid but lower than a BrailleGrid. This grid type supports a foreground and background color
-/// for each terminal cell. This allows for more flexibility than the BrailleGrid which only
+/// The `HalfBlock` marker is useful when you want to draw shapes with a higher resolution than a
+/// `CharGrid` but lower than a `BrailleGrid`. This grid type supports a foreground and background
+/// color for each terminal cell. This allows for more flexibility than the `BrailleGrid` which only
 /// supports a single foreground color for each 2x4 dots cell.
 ///
 /// The Canvas widget is used by calling the [`Canvas::paint`] method and passing a closure that
@@ -715,7 +715,7 @@ where
     /// The [`HalfBlock`] marker is useful when you want to draw shapes with a higher resolution
     /// than with a grid of characters (e.g. with [`Block`] or [`Dot`]) but lower than with
     /// [`Braille`]. This grid type supports a foreground and background color for each terminal
-    /// cell. This allows for more flexibility than the BrailleGrid which only supports a single
+    /// cell. This allows for more flexibility than the `BrailleGrid` which only supports a single
     /// foreground color for each 2x4 dots cell.
     ///
     /// [`Braille`]: crate::symbols::Marker::Braille
