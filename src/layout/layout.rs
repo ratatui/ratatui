@@ -1984,7 +1984,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2004,7 +2003,6 @@ mod tests {
                 .flex(Flex::Start)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
@@ -2036,7 +2034,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2067,7 +2064,6 @@ mod tests {
                 .flex(Flex::Start)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2077,7 +2073,6 @@ mod tests {
                 .flex(Flex::Center)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2087,7 +2082,6 @@ mod tests {
                 .flex(Flex::End)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2097,7 +2091,6 @@ mod tests {
                 .flex(Flex::SpaceAround)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2107,7 +2100,6 @@ mod tests {
                 .flex(Flex::SpaceBetween)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2122,7 +2114,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2170,7 +2161,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2188,7 +2178,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2207,7 +2196,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2272,7 +2260,6 @@ mod tests {
                 .flex(flex)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
@@ -2331,7 +2318,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
@@ -2356,7 +2342,6 @@ mod tests {
                 .flex(flex)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
