@@ -84,4 +84,3 @@ jobs:
           echo "Pull request is labeled as 'do not merge'"
           echo "This workflow fails so that the pull request cannot be merged"
           exit 1
-

@@ -27,7 +27,7 @@ pub use title::{Position, Title};
 /// both centered and non-centered titles are rendered, the centered space is calculated based on
 /// the full width of the block, rather than the leftover width.
 ///
-/// Titles are not rendered in the corners of the block unless there is no border on that edge.  
+/// Titles are not rendered in the corners of the block unless there is no border on that edge.
 /// If the block is too small and multiple titles overlap, the border may get cut off at a corner.
 ///
 /// ```plain
@@ -193,7 +193,7 @@ impl<'a> Block<'a> {
     /// [spans](crate::text::Span) (`Vec<Span>`).
     ///
     /// By default, the titles will avoid being rendered in the corners of the block but will align
-    /// against the left or right edge of the block if there is no border on that edge.  
+    /// against the left or right edge of the block if there is no border on that edge.
     /// The following demonstrates this behavior, notice the second title is one character off to
     /// the left.
     ///

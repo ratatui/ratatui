@@ -47,7 +47,7 @@ impl<'a> Bar<'a> {
     ///
     /// # See also
     ///
-    /// [`Bar::value_style`] to style the value.  
+    /// [`Bar::value_style`] to style the value.
     /// [`Bar::text_value`] to set the displayed value.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn value(mut self, value: u64) -> Bar<'a> {
@@ -58,9 +58,9 @@ impl<'a> Bar<'a> {
     /// Set the label of the bar.
     ///
     /// For [`Vertical`](crate::layout::Direction::Vertical) bars,
-    /// display the label **under** the bar.  
+    /// display the label **under** the bar.
     /// For [`Horizontal`](crate::layout::Direction::Horizontal) bars,
-    /// display the label **in** the bar.  
+    /// display the label **in** the bar.
     /// See [`BarChart::direction`](crate::widgets::BarChart::direction) to set the direction.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn label(mut self, label: Line<'a>) -> Bar<'a> {

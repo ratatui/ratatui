@@ -84,7 +84,7 @@ on_success = "job:doc" # so that we don't open the browser at each change
 command = [
     "cargo", "llvm-cov",
     "--lcov", "--output-path", "target/lcov.info",
-    "--all-features", 
+    "--all-features",
     "--color", "always",
 ]
 

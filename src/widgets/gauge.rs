@@ -4,9 +4,9 @@ use crate::{prelude::*, widgets::Block};
 ///
 /// A `Gauge` renders a bar filled according to the value given to [`Gauge::percent`] or
 /// [`Gauge::ratio`]. The bar width and height are defined by the [`Rect`] it is
-/// [rendered](Widget::render) in.  
+/// [rendered](Widget::render) in.
 /// The associated label is always centered horizontally and vertically. If not set with
-/// [`Gauge::label`], the label is the percentage of the bar filled.  
+/// [`Gauge::label`], the label is the percentage of the bar filled.
 /// You might want to have a higher precision bar using [`Gauge::use_unicode`].
 ///
 /// This can be useful to indicate the progression of a task, like a download.
@@ -236,9 +236,9 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 ///
 /// A `LineGauge` renders a thin line filled according to the value given to [`LineGauge::ratio`].
 /// Unlike [`Gauge`], only the width can be defined by the [rendering](Widget::render) [`Rect`].
-/// The height is always 1.  
+/// The height is always 1.
 /// The associated label is always left-aligned. If not set with [`LineGauge::label`], the label
-/// is the percentage of the bar filled.  
+/// is the percentage of the bar filled.
 /// You can also set the symbols used to draw the bar with [`LineGauge::line_set`].
 ///
 /// This can be useful to indicate the progression of a task, like a download.
