@@ -306,6 +306,7 @@ impl<'a> BarChart<'a> {
     }
 }
 
+#[derive(Clone, Copy)]
 struct LabelInfo {
     group_label_visible: bool,
     bar_label_visible: bool,

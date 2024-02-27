@@ -344,6 +344,7 @@ mod test {
         text::{Line, Text},
     };
 
+    #[derive(Clone, Copy)]
     enum Composer {
         WordWrapper { trim: bool },
         LineTruncator,

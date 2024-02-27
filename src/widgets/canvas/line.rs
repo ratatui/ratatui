@@ -115,6 +115,7 @@ mod tests {
     use super::Line;
     use crate::{assert_buffer_eq, prelude::*, widgets::canvas::Canvas};
 
+    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
     fn test(line: Line, expected_lines: Vec<&str>) {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));

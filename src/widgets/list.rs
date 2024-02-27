@@ -1803,7 +1803,7 @@ mod tests {
         fn test_case(list: List, selected: Option<usize>, expected_lines: Vec<&str>) {
             let mut state = ListState::default();
             state.select(selected);
-            let buffer = render_stateful_widget(list.clone(), &mut state, 15, 3);
+            let buffer = render_stateful_widget(list, &mut state, 15, 3);
             let expected = Buffer::with_lines(expected_lines);
             assert_buffer_eq!(buffer, expected);
         }
