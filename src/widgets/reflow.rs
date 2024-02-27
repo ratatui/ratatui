@@ -210,7 +210,7 @@ where
         if let Some(line) = current_line {
             self.current_line = line;
             Some(WrappedLine {
-                line: &self.current_line[..],
+                line: &self.current_line,
                 width: line_width,
                 alignment: self.current_alignment,
             })
@@ -310,7 +310,7 @@ where
             None
         } else {
             Some(WrappedLine {
-                line: &self.current_line[..],
+                line: &self.current_line,
                 width: current_line_width,
                 alignment: current_alignment,
             })
@@ -396,13 +396,10 @@ mod test {
         let width = 40;
         for i in 1..width {
             let text = "a".repeat(i);
-            let (word_wrapper, _, _) = run_composer(
-                Composer::WordWrapper { trim: true },
-                &text[..],
-                width as u16,
-            );
+            let (word_wrapper, _, _) =
+                run_composer(Composer::WordWrapper { trim: true }, &*text, width as u16);
             let (line_truncator, _, _) =
-                run_composer(Composer::LineTruncator, &text[..], width as u16);
+                run_composer(Composer::LineTruncator, &*text, width as u16);
             let expected = vec![text];
             assert_eq!(word_wrapper, expected);
             assert_eq!(line_truncator, expected);
