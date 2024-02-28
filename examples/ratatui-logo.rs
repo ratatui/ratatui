@@ -22,49 +22,46 @@ use std::{
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use indoc::indoc;
 use itertools::izip;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, widgets::Paragraph};
 
 /// A fun example of using half block characters to draw a logo
-fn main() -> io::Result<()> {
+#[allow(clippy::many_single_char_names)]
+fn logo() -> String {
     let r = indoc! {"
             ▄▄▄
             █▄▄▀
             █  █
-        "}
-    .lines();
+        "};
     let a = indoc! {"
              ▄▄
             █▄▄█
             █  █
-        "}
-    .lines();
+        "};
     let t = indoc! {"
             ▄▄▄
              █
              █
-        "}
-    .lines();
+        "};
     let u = indoc! {"
             ▄  ▄
             █  █
             ▀▄▄▀
-        "}
-    .lines();
+        "};
     let i = indoc! {"
             ▄
             █
             █
-        "}
-    .lines();
+        "};
+    izip!(r.lines(), a.lines(), t.lines(), u.lines(), i.lines())
+        .map(|(r, a, t, u, i)| format!("{r:5}{a:5}{t:4}{a:5}{t:4}{u:5}{i:5}"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn main() -> io::Result<()> {
     let mut terminal = init()?;
     terminal.draw(|frame| {
-        let logo = izip!(r, a.clone(), t.clone(), a, t, u, i)
-            .map(|(r, a, t, a2, t2, u, i)| {
-                format!("{:5}{:5}{:4}{:5}{:4}{:5}{:5}", r, a, t, a2, t2, u, i)
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-        frame.render_widget(Paragraph::new(logo), frame.size());
+        frame.render_widget(Paragraph::new(logo()), frame.size());
     })?;
     sleep(Duration::from_secs(5));
     restore()?;
@@ -72,7 +69,7 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-pub fn init() -> io::Result<Terminal<impl Backend>> {
+fn init() -> io::Result<Terminal<impl Backend>> {
     enable_raw_mode()?;
     let options = TerminalOptions {
         viewport: Viewport::Inline(3),
@@ -80,7 +77,7 @@ pub fn init() -> io::Result<Terminal<impl Backend>> {
     Terminal::with_options(CrosstermBackend::new(stdout()), options)
 }
 
-pub fn restore() -> io::Result<()> {
+fn restore() -> io::Result<()> {
     disable_raw_mode()?;
     Ok(())
 }

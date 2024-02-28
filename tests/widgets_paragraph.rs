@@ -9,6 +9,7 @@ use ratatui::{
 
 /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
 /// area and comparing the rendered and expected content.
+#[allow(clippy::needless_pass_by_value)]
 fn test_case(paragraph: Paragraph, expected: Buffer) {
     let backend = TestBackend::new(expected.area.width, expected.area.height);
     let mut terminal = Terminal::new(backend).unwrap();

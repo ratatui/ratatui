@@ -13,6 +13,8 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+#![allow(clippy::enum_glob_use, clippy::wildcard_imports)]
+
 use std::io::{self, stdout};
 
 use color_eyre::{config::HookBuilder, Result};
@@ -95,7 +97,7 @@ impl App {
         self.max_scroll_offset = (self.selected_tab.get_example_count() - 1) * EXAMPLE_HEIGHT;
     }
 
-    fn is_running(&self) -> bool {
+    fn is_running(self) -> bool {
         self.state == AppState::Running
     }
 
@@ -138,14 +140,14 @@ impl App {
     }
 
     fn up(&mut self) {
-        self.scroll_offset = self.scroll_offset.saturating_sub(1)
+        self.scroll_offset = self.scroll_offset.saturating_sub(1);
     }
 
     fn down(&mut self) {
         self.scroll_offset = self
             .scroll_offset
             .saturating_add(1)
-            .min(self.max_scroll_offset)
+            .min(self.max_scroll_offset);
     }
 
     fn top(&mut self) {
@@ -159,17 +161,16 @@ impl App {
 
 impl Widget for App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let [tabs, axis, demo] =
-            Layout::vertical([Constraint::Length(3), Constraint::Length(3), Fill(0)]).areas(area);
+        let [tabs, axis, demo] = Layout::vertical([Length(3), Length(3), Fill(0)]).areas(area);
 
         self.render_tabs(tabs, buf);
-        self.render_axis(axis, buf);
+        Self::render_axis(axis, buf);
         self.render_demo(demo, buf);
     }
 }
 
 impl App {
-    fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
+    fn render_tabs(self, area: Rect, buf: &mut Buffer) {
         let titles = SelectedTab::iter().map(SelectedTab::to_tab_title);
         let block = Block::new()
             .title("Constraints ".bold())
@@ -183,10 +184,10 @@ impl App {
             .render(area, buf);
     }
 
-    fn render_axis(&self, area: Rect, buf: &mut Buffer) {
+    fn render_axis(area: Rect, buf: &mut Buffer) {
         let width = area.width as usize;
         // a bar like `<----- 80 px ----->`
-        let width_label = format!("{} px", width);
+        let width_label = format!("{width} px");
         let width_bar = format!(
             "<{width_label:-^width$}>",
             width = width - width_label.len() / 2
@@ -206,7 +207,8 @@ impl App {
     ///
     /// This function renders the demo content into a separate buffer and then splices the buffer
     /// into the main buffer. This is done to make it possible to handle scrolling easily.
-    fn render_demo(&self, area: Rect, buf: &mut Buffer) {
+    #[allow(clippy::cast_possible_truncation)]
+    fn render_demo(self, area: Rect, buf: &mut Buffer) {
         // render demo content into a separate buffer so all examples fit we add an extra
         // area.height to make sure the last example is fully visible even when the scroll offset is
         // at the max
@@ -246,41 +248,40 @@ impl App {
 
 impl SelectedTab {
     /// Get the previous tab, if there is no previous tab return the current tab.
-    fn previous(&self) -> Self {
-        let current_index: usize = *self as usize;
+    fn previous(self) -> Self {
+        let current_index: usize = self as usize;
         let previous_index = current_index.saturating_sub(1);
-        Self::from_repr(previous_index).unwrap_or(*self)
+        Self::from_repr(previous_index).unwrap_or(self)
     }
 
     /// Get the next tab, if there is no next tab return the current tab.
-    fn next(&self) -> Self {
-        let current_index = *self as usize;
+    fn next(self) -> Self {
+        let current_index = self as usize;
         let next_index = current_index.saturating_add(1);
-        Self::from_repr(next_index).unwrap_or(*self)
+        Self::from_repr(next_index).unwrap_or(self)
     }
 
-    fn get_example_count(&self) -> u16 {
-        use SelectedTab::*;
+    const fn get_example_count(self) -> u16 {
+        #[allow(clippy::match_same_arms)]
         match self {
-            Length => 4,
-            Percentage => 5,
-            Ratio => 4,
-            Fill => 2,
-            Min => 5,
-            Max => 5,
+            Self::Length => 4,
+            Self::Percentage => 5,
+            Self::Ratio => 4,
+            Self::Fill => 2,
+            Self::Min => 5,
+            Self::Max => 5,
         }
     }
 
-    fn to_tab_title(value: SelectedTab) -> Line<'static> {
-        use SelectedTab::*;
+    fn to_tab_title(value: Self) -> Line<'static> {
         let text = format!("  {value}  ");
         let color = match value {
-            Length => LENGTH_COLOR,
-            Percentage => PERCENTAGE_COLOR,
-            Ratio => RATIO_COLOR,
-            Fill => FILL_COLOR,
-            Min => MIN_COLOR,
-            Max => MAX_COLOR,
+            Self::Length => LENGTH_COLOR,
+            Self::Percentage => PERCENTAGE_COLOR,
+            Self::Ratio => RATIO_COLOR,
+            Self::Fill => FILL_COLOR,
+            Self::Min => MIN_COLOR,
+            Self::Max => MAX_COLOR,
         };
         text.fg(tailwind::SLATE.c200).bg(color).into()
     }
@@ -289,18 +290,18 @@ impl SelectedTab {
 impl Widget for SelectedTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         match self {
-            SelectedTab::Length => self.render_length_example(area, buf),
-            SelectedTab::Percentage => self.render_percentage_example(area, buf),
-            SelectedTab::Ratio => self.render_ratio_example(area, buf),
-            SelectedTab::Fill => self.render_fill_example(area, buf),
-            SelectedTab::Min => self.render_min_example(area, buf),
-            SelectedTab::Max => self.render_max_example(area, buf),
+            Self::Length => Self::render_length_example(area, buf),
+            Self::Percentage => Self::render_percentage_example(area, buf),
+            Self::Ratio => Self::render_ratio_example(area, buf),
+            Self::Fill => Self::render_fill_example(area, buf),
+            Self::Min => Self::render_min_example(area, buf),
+            Self::Max => Self::render_max_example(area, buf),
         }
     }
 }
 
 impl SelectedTab {
-    fn render_length_example(&self, area: Rect, buf: &mut Buffer) {
+    fn render_length_example(area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, _] =
             Layout::vertical([Length(EXAMPLE_HEIGHT); 4]).areas(area);
 
@@ -309,7 +310,7 @@ impl SelectedTab {
         Example::new(&[Length(20), Max(20)]).render(example3, buf);
     }
 
-    fn render_percentage_example(&self, area: Rect, buf: &mut Buffer) {
+    fn render_percentage_example(area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, example5, _] =
             Layout::vertical([Length(EXAMPLE_HEIGHT); 6]).areas(area);
 
@@ -320,7 +321,7 @@ impl SelectedTab {
         Example::new(&[Percentage(0), Fill(0)]).render(example5, buf);
     }
 
-    fn render_ratio_example(&self, area: Rect, buf: &mut Buffer) {
+    fn render_ratio_example(area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, _] =
             Layout::vertical([Length(EXAMPLE_HEIGHT); 5]).areas(area);
 
@@ -330,14 +331,14 @@ impl SelectedTab {
         Example::new(&[Ratio(1, 2), Percentage(25), Length(10)]).render(example4, buf);
     }
 
-    fn render_fill_example(&self, area: Rect, buf: &mut Buffer) {
+    fn render_fill_example(area: Rect, buf: &mut Buffer) {
         let [example1, example2, _] = Layout::vertical([Length(EXAMPLE_HEIGHT); 3]).areas(area);
 
         Example::new(&[Fill(1), Fill(2), Fill(3)]).render(example1, buf);
         Example::new(&[Fill(1), Percentage(50), Fill(1)]).render(example2, buf);
     }
 
-    fn render_min_example(&self, area: Rect, buf: &mut Buffer) {
+    fn render_min_example(area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, example5, _] =
             Layout::vertical([Length(EXAMPLE_HEIGHT); 6]).areas(area);
 
@@ -348,7 +349,7 @@ impl SelectedTab {
         Example::new(&[Percentage(100), Min(80)]).render(example5, buf);
     }
 
-    fn render_max_example(&self, area: Rect, buf: &mut Buffer) {
+    fn render_max_example(area: Rect, buf: &mut Buffer) {
         let [example1, example2, example3, example4, example5, _] =
             Layout::vertical([Length(EXAMPLE_HEIGHT); 6]).areas(area);
 
@@ -379,14 +380,13 @@ impl Widget for Example {
         let blocks = Layout::horizontal(&self.constraints).split(area);
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
-            self.illustration(*constraint, block.width)
-                .render(*block, buf);
+            Self::illustration(*constraint, block.width).render(*block, buf);
         }
     }
 }
 
 impl Example {
-    fn illustration(&self, constraint: Constraint, width: u16) -> Paragraph {
+    fn illustration(constraint: Constraint, width: u16) -> impl Widget {
         let color = match constraint {
             Constraint::Length(_) => LENGTH_COLOR,
             Constraint::Percentage(_) => PERCENTAGE_COLOR,
@@ -417,7 +417,7 @@ fn init_error_hooks() -> Result<()> {
     }))?;
     std::panic::set_hook(Box::new(move |info| {
         let _ = restore_terminal();
-        panic(info)
+        panic(info);
     }));
     Ok(())
 }

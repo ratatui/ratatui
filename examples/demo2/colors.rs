@@ -9,13 +9,14 @@ use ratatui::prelude::*;
 pub struct RgbSwatch;
 
 impl Widget for RgbSwatch {
+    #[allow(clippy::cast_precision_loss, clippy::similar_names)]
     fn render(self, area: Rect, buf: &mut Buffer) {
         for (yi, y) in (area.top()..area.bottom()).enumerate() {
-            let value = area.height as f32 - yi as f32;
-            let value_fg = value / (area.height as f32);
-            let value_bg = (value - 0.5) / (area.height as f32);
+            let value = f32::from(area.height) - yi as f32;
+            let value_fg = value / f32::from(area.height);
+            let value_bg = (value - 0.5) / f32::from(area.height);
             for (xi, x) in (area.left()..area.right()).enumerate() {
-                let hue = xi as f32 * 360.0 / area.width as f32;
+                let hue = xi as f32 * 360.0 / f32::from(area.width);
                 let fg = color_from_oklab(hue, Okhsv::max_saturation(), value_fg);
                 let bg = color_from_oklab(hue, Okhsv::max_saturation(), value_bg);
                 buf.get_mut(x, y).set_char('▀').set_fg(fg).set_bg(bg);
@@ -24,7 +25,7 @@ impl Widget for RgbSwatch {
     }
 }
 
-/// Convert a hue and value into an RGB color via the OkLab color space.
+/// Convert a hue and value into an RGB color via the Oklab color space.
 ///
 /// See <https://bottosson.github.io/posts/oklab/> for more details.
 pub fn color_from_oklab(hue: f32, saturation: f32, value: f32) -> Color {

@@ -13,9 +13,10 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-/// This example is useful for testing how your terminal emulator handles different modifiers.
-/// It will render a grid of combinations of foreground and background colors with all
-/// modifiers applied to them.
+// This example is useful for testing how your terminal emulator handles different modifiers.
+// It will render a grid of combinations of foreground and background colors with all
+// modifiers applied to them.
+
 use std::{
     error::Error,
     io::{self, Stdout},
@@ -30,7 +31,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, widgets::Paragraph};
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
 
@@ -50,7 +51,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 
         if event::poll(Duration::from_millis(250))? {
             if let Event::Key(key) = event::read()? {
-                if let KeyCode::Char('q') = key.code {
+                if key.code == KeyCode::Char('q') {
                     return Ok(());
                 }
             }
@@ -87,8 +88,8 @@ fn ui(frame: &mut Frame) {
         .chain(Modifier::all().iter())
         .collect_vec();
     let mut index = 0;
-    for bg in colors.iter() {
-        for fg in colors.iter() {
+    for bg in &colors {
+        for fg in &colors {
             for modifier in &all_modifiers {
                 let modifier_name = format!("{modifier:11?}");
                 let padding = (" ").repeat(12 - modifier_name.len());
