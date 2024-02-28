@@ -812,7 +812,7 @@ fn ensure_percentages_less_than_100(widths: &[Constraint]) {
 }
 
 impl<'a> Styled for Table<'a> {
-    type Item = Table<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -833,7 +833,7 @@ where
     /// `Table::widths` after construction.
     fn from_iter<Iter: IntoIterator<Item = Item>>(rows: Iter) -> Self {
         let widths: [Constraint; 0] = [];
-        Table::new(rows, widths)
+        Self::new(rows, widths)
     }
 }
 

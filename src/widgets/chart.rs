@@ -56,7 +56,7 @@ impl<'a> Axis<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title<T>(mut self, title: T) -> Axis<'a>
+    pub fn title<T>(mut self, title: T) -> Self
     where
         T: Into<Line<'a>>,
     {
@@ -70,7 +70,7 @@ impl<'a> Axis<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn bounds(mut self, bounds: [f64; 2]) -> Axis<'a> {
+    pub const fn bounds(mut self, bounds: [f64; 2]) -> Self {
         self.bounds = bounds;
         self
     }
@@ -98,7 +98,7 @@ impl<'a> Axis<'a> {
     ///         .labels(vec!["0".bold(), "25".into(), "50".bold()]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn labels(mut self, labels: Vec<Span<'a>>) -> Axis<'a> {
+    pub fn labels(mut self, labels: Vec<Span<'a>>) -> Self {
         self.labels = Some(labels);
         self
     }
@@ -120,7 +120,7 @@ impl<'a> Axis<'a> {
     /// let axis = Axis::default().red();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Axis<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -133,7 +133,7 @@ impl<'a> Axis<'a> {
     ///
     /// On the X axis, this parameter only affects the first label.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn labels_alignment(mut self, alignment: Alignment) -> Axis<'a> {
+    pub const fn labels_alignment(mut self, alignment: Alignment) -> Self {
         self.labels_alignment = alignment;
         self
     }
@@ -322,7 +322,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn name<S>(mut self, name: S) -> Dataset<'a>
+    pub fn name<S>(mut self, name: S) -> Self
     where
         S: Into<Line<'a>>,
     {
@@ -341,7 +341,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn data(mut self, data: &'a [(f64, f64)]) -> Dataset<'a> {
+    pub const fn data(mut self, data: &'a [(f64, f64)]) -> Self {
         self.data = data;
         self
     }
@@ -356,7 +356,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn marker(mut self, marker: symbols::Marker) -> Dataset<'a> {
+    pub const fn marker(mut self, marker: symbols::Marker) -> Self {
         self.marker = marker;
         self
     }
@@ -369,7 +369,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn graph_type(mut self, graph_type: GraphType) -> Dataset<'a> {
+    pub const fn graph_type(mut self, graph_type: GraphType) -> Self {
         self.graph_type = graph_type;
         self
     }
@@ -394,7 +394,7 @@ impl<'a> Dataset<'a> {
     /// let dataset = Dataset::default().red();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Dataset<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -527,8 +527,8 @@ impl<'a> Chart<'a> {
     ///     Dataset::default().data(&data_points2),
     /// ]);
     /// ```
-    pub fn new(datasets: Vec<Dataset<'a>>) -> Chart<'a> {
-        Chart {
+    pub fn new(datasets: Vec<Dataset<'a>>) -> Self {
+        Self {
             block: None,
             x_axis: Axis::default(),
             y_axis: Axis::default(),
@@ -543,7 +543,7 @@ impl<'a> Chart<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> Chart<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -557,7 +557,7 @@ impl<'a> Chart<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Chart<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -580,7 +580,7 @@ impl<'a> Chart<'a> {
     /// );
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn x_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
+    pub fn x_axis(mut self, axis: Axis<'a>) -> Self {
         self.x_axis = axis;
         self
     }
@@ -603,7 +603,7 @@ impl<'a> Chart<'a> {
     /// );
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn y_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
+    pub fn y_axis(mut self, axis: Axis<'a>) -> Self {
         self.y_axis = axis;
         self
     }
@@ -651,7 +651,7 @@ impl<'a> Chart<'a> {
     pub const fn hidden_legend_constraints(
         mut self,
         constraints: (Constraint, Constraint),
-    ) -> Chart<'a> {
+    ) -> Self {
         self.hidden_legend_constraints = constraints;
         self
     }
@@ -686,7 +686,7 @@ impl<'a> Chart<'a> {
     /// let chart = Chart::new(vec![]).legend_position(None);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn legend_position(mut self, position: Option<LegendPosition>) -> Chart<'a> {
+    pub const fn legend_position(mut self, position: Option<LegendPosition>) -> Self {
         self.legend_position = position;
         self
     }
@@ -1063,7 +1063,7 @@ impl WidgetRef for Chart<'_> {
 }
 
 impl<'a> Styled for Axis<'a> {
-    type Item = Axis<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -1075,7 +1075,7 @@ impl<'a> Styled for Axis<'a> {
 }
 
 impl<'a> Styled for Dataset<'a> {
-    type Item = Dataset<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -1087,7 +1087,7 @@ impl<'a> Styled for Dataset<'a> {
 }
 
 impl<'a> Styled for Chart<'a> {
-    type Item = Chart<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style

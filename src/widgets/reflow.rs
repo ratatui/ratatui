@@ -48,8 +48,8 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
-    pub fn new(lines: O, max_line_width: u16, trim: bool) -> WordWrapper<'a, O, I> {
-        WordWrapper {
+    pub fn new(lines: O, max_line_width: u16, trim: bool) -> Self {
+        Self {
             input_lines: lines,
             max_line_width,
             wrapped_lines: None,
@@ -243,8 +243,8 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
-    pub fn new(lines: O, max_line_width: u16) -> LineTruncator<'a, O, I> {
-        LineTruncator {
+    pub fn new(lines: O, max_line_width: u16) -> Self {
+        Self {
             input_lines: lines,
             max_line_width,
             horizontal_offset: 0,

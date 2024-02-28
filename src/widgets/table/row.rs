@@ -232,7 +232,7 @@ impl Row<'_> {
 }
 
 impl<'a> Styled for Row<'a> {
-    type Item = Row<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -248,7 +248,7 @@ where
     Item: Into<Cell<'a>>,
 {
     fn from_iter<IterCells: IntoIterator<Item = Item>>(cells: IterCells) -> Self {
-        Row::new(cells)
+        Self::new(cells)
     }
 }
 

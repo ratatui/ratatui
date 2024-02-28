@@ -16,8 +16,8 @@ impl<'a> StyledGrapheme<'a> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
-    pub fn new<S: Into<Style>>(symbol: &'a str, style: S) -> StyledGrapheme<'a> {
-        StyledGrapheme {
+    pub fn new<S: Into<Style>>(symbol: &'a str, style: S) -> Self {
+        Self {
             symbol,
             style: style.into(),
         }
@@ -25,7 +25,7 @@ impl<'a> StyledGrapheme<'a> {
 }
 
 impl<'a> Styled for StyledGrapheme<'a> {
-    type Item = StyledGrapheme<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style

@@ -41,8 +41,8 @@ pub struct Gauge<'a> {
 }
 
 impl<'a> Default for Gauge<'a> {
-    fn default() -> Gauge<'a> {
-        Gauge {
+    fn default() -> Self {
+        Self {
             block: None,
             ratio: 0.0,
             label: None,
@@ -59,7 +59,7 @@ impl<'a> Gauge<'a> {
     /// The gauge is rendered in the inner portion of the block once space for borders and padding
     /// is reserved. Styles set on the block do **not** affect the bar itself.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> Gauge<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -74,7 +74,7 @@ impl<'a> Gauge<'a> {
     ///
     /// See [`Gauge::ratio`] to set from a float.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn percent(mut self, percent: u16) -> Gauge<'a> {
+    pub fn percent(mut self, percent: u16) -> Self {
         assert!(
             percent <= 100,
             "Percentage should be between 0 and 100 inclusively."
@@ -96,7 +96,7 @@ impl<'a> Gauge<'a> {
     ///
     /// See [`Gauge::percent`] to set from a percentage.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn ratio(mut self, ratio: f64) -> Gauge<'a> {
+    pub fn ratio(mut self, ratio: f64) -> Self {
         assert!(
             (0.0..=1.0).contains(&ratio),
             "Ratio should be between 0 and 1 inclusively."
@@ -110,7 +110,7 @@ impl<'a> Gauge<'a> {
     /// For a left-aligned label, see [`LineGauge`].
     /// If the label is not defined, it is the percentage filled.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label<T>(mut self, label: T) -> Gauge<'a>
+    pub fn label<T>(mut self, label: T) -> Self
     where
         T: Into<Span<'a>>,
     {
@@ -126,7 +126,7 @@ impl<'a> Gauge<'a> {
     /// This will style the block (if any non-styled) and background of the widget (everything
     /// except the bar itself). [`Block`] style set with [`Gauge::block`] takes precedence.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Gauge<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -136,7 +136,7 @@ impl<'a> Gauge<'a> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn gauge_style<S: Into<Style>>(mut self, style: S) -> Gauge<'a> {
+    pub fn gauge_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.gauge_style = style.into();
         self
     }
@@ -147,7 +147,7 @@ impl<'a> Gauge<'a> {
     /// [unicode block characters](https://en.wikipedia.org/wiki/Block_Elements).
     /// This is useful to display a higher precision bar (8 extra fractional parts per cell).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn use_unicode(mut self, unicode: bool) -> Gauge<'a> {
+    pub const fn use_unicode(mut self, unicode: bool) -> Self {
         self.use_unicode = unicode;
         self
     }
@@ -403,7 +403,7 @@ impl WidgetRef for LineGauge<'_> {
 }
 
 impl<'a> Styled for Gauge<'a> {
-    type Item = Gauge<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -415,7 +415,7 @@ impl<'a> Styled for Gauge<'a> {
 }
 
 impl<'a> Styled for LineGauge<'a> {
-    type Item = LineGauge<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style

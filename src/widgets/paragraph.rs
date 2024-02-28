@@ -107,11 +107,11 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new(Text::styled("Hello, world!", Style::default()));
     /// let paragraph = Paragraph::new(Line::from(vec!["Hello, ".into(), "world!".red()]));
     /// ```
-    pub fn new<T>(text: T) -> Paragraph<'a>
+    pub fn new<T>(text: T) -> Self
     where
         T: Into<Text<'a>>,
     {
-        Paragraph {
+        Self {
             block: None,
             style: Style::default(),
             wrap: None,
@@ -131,7 +131,7 @@ impl<'a> Paragraph<'a> {
     ///     .block(Block::default().title("Paragraph").borders(Borders::ALL));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> Paragraph<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -151,7 +151,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello, world!").style(Style::new().red().on_white());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Paragraph<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -167,7 +167,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello, world!").wrap(Wrap { trim: true });
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn wrap(mut self, wrap: Wrap) -> Paragraph<'a> {
+    pub const fn wrap(mut self, wrap: Wrap) -> Self {
         self.wrap = Some(wrap);
         self
     }
@@ -184,7 +184,7 @@ impl<'a> Paragraph<'a> {
     /// For more information about future scrolling design and concerns, see [RFC: Design of
     /// Scrollable Widgets](https://github.com/ratatui-org/ratatui/issues/174) on GitHub.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn scroll(mut self, offset: (Vertical, Horizontal)) -> Paragraph<'a> {
+    pub const fn scroll(mut self, offset: (Vertical, Horizontal)) -> Self {
         self.scroll = offset;
         self
     }
@@ -201,7 +201,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World").alignment(Alignment::Center);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {
+    pub const fn alignment(mut self, alignment: Alignment) -> Self {
         self.alignment = alignment;
         self
     }
@@ -390,7 +390,7 @@ impl<'a> Paragraph<'a> {
 }
 
 impl<'a> Styled for Paragraph<'a> {
-    type Item = Paragraph<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style

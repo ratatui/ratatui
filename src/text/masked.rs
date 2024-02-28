@@ -61,25 +61,25 @@ impl Display for Masked<'_> {
 }
 
 impl<'a> From<&'a Masked<'a>> for Cow<'a, str> {
-    fn from(masked: &'a Masked) -> Cow<'a, str> {
+    fn from(masked: &'a Masked) -> Self {
         masked.value()
     }
 }
 
 impl<'a> From<Masked<'a>> for Cow<'a, str> {
-    fn from(masked: Masked<'a>) -> Cow<'a, str> {
+    fn from(masked: Masked<'a>) -> Self {
         masked.value()
     }
 }
 
 impl<'a> From<&'a Masked<'_>> for Text<'a> {
-    fn from(masked: &'a Masked) -> Text<'a> {
+    fn from(masked: &'a Masked) -> Self {
         Text::raw(masked.value())
     }
 }
 
 impl<'a> From<Masked<'a>> for Text<'a> {
-    fn from(masked: Masked<'a>) -> Text<'a> {
+    fn from(masked: Masked<'a>) -> Self {
         Text::raw(masked.value())
     }
 }
