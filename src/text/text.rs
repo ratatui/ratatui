@@ -86,7 +86,7 @@ impl<'a> Text<'a> {
     /// Text::raw("The first line\nThe second line");
     /// Text::raw(String::from("The first line\nThe second line"));
     /// ```
-    pub fn raw<T>(content: T) -> Text<'a>
+    pub fn raw<T>(content: T) -> Self
     where
         T: Into<Cow<'a, str>>,
     {
@@ -96,8 +96,7 @@ impl<'a> Text<'a> {
             Cow::Owned(s) if s.is_empty() => vec![Line::from("")],
             Cow::Owned(s) => s.lines().map(|l| Line::from(l.to_owned())).collect(),
         };
-
-        Text::from(lines)
+        Self::from(lines)
     }
 
     /// Create some text (potentially multiple lines) with a style.
@@ -115,12 +114,12 @@ impl<'a> Text<'a> {
     /// Text::styled("The first line\nThe second line", style);
     /// Text::styled(String::from("The first line\nThe second line"), style);
     /// ```
-    pub fn styled<T, S>(content: T, style: S) -> Text<'a>
+    pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
         S: Into<Style>,
     {
-        Text::raw(content).patch_style(style)
+        Self::raw(content).patch_style(style)
     }
 
     /// Returns the max width of all the lines.
@@ -375,26 +374,26 @@ impl<'a> IntoIterator for &'a mut Text<'a> {
 }
 
 impl<'a> From<String> for Text<'a> {
-    fn from(s: String) -> Text<'a> {
-        Text::raw(s)
+    fn from(s: String) -> Self {
+        Self::raw(s)
     }
 }
 
 impl<'a> From<&'a str> for Text<'a> {
-    fn from(s: &'a str) -> Text<'a> {
-        Text::raw(s)
+    fn from(s: &'a str) -> Self {
+        Self::raw(s)
     }
 }
 
 impl<'a> From<Cow<'a, str>> for Text<'a> {
-    fn from(s: Cow<'a, str>) -> Text<'a> {
-        Text::raw(s)
+    fn from(s: Cow<'a, str>) -> Self {
+        Self::raw(s)
     }
 }
 
 impl<'a> From<Span<'a>> for Text<'a> {
-    fn from(span: Span<'a>) -> Text<'a> {
-        Text {
+    fn from(span: Span<'a>) -> Self {
+        Self {
             lines: vec![Line::from(span)],
             ..Default::default()
         }
@@ -402,8 +401,8 @@ impl<'a> From<Span<'a>> for Text<'a> {
 }
 
 impl<'a> From<Line<'a>> for Text<'a> {
-    fn from(line: Line<'a>) -> Text<'a> {
-        Text {
+    fn from(line: Line<'a>) -> Self {
+        Self {
             lines: vec![line],
             ..Default::default()
         }
@@ -411,8 +410,8 @@ impl<'a> From<Line<'a>> for Text<'a> {
 }
 
 impl<'a> From<Vec<Line<'a>>> for Text<'a> {
-    fn from(lines: Vec<Line<'a>>) -> Text<'a> {
-        Text {
+    fn from(lines: Vec<Line<'a>>) -> Self {
+        Self {
             lines,
             ..Default::default()
         }
@@ -425,7 +424,7 @@ where
 {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let lines = iter.into_iter().map(Into::into).collect();
-        Text {
+        Self {
             lines,
             ..Default::default()
         }
@@ -486,7 +485,7 @@ impl WidgetRef for Text<'_> {
 }
 
 impl<'a> Styled for Text<'a> {
-    type Item = Text<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style

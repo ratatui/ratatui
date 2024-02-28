@@ -84,12 +84,12 @@ impl<'a> Tabs<'a> {
     /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
-    pub fn new<Iter>(titles: Iter) -> Tabs<'a>
+    pub fn new<Iter>(titles: Iter) -> Self
     where
         Iter: IntoIterator,
         Iter::Item: Into<Line<'a>>,
     {
-        Tabs {
+        Self {
             block: None,
             titles: titles.into_iter().map(Into::into).collect(),
             selected: 0,
@@ -103,7 +103,7 @@ impl<'a> Tabs<'a> {
 
     /// Surrounds the `Tabs` with a [`Block`].
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> Tabs<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -113,7 +113,7 @@ impl<'a> Tabs<'a> {
     /// The first tab has index 0 (this is also the default index).
     /// The selected tab can have a different style with [`Tabs::highlight_style`].
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn select(mut self, selected: usize) -> Tabs<'a> {
+    pub const fn select(mut self, selected: usize) -> Self {
         self.selected = selected;
         self
     }
@@ -139,7 +139,7 @@ impl<'a> Tabs<'a> {
     ///
     /// Highlighted tab can be selected with [`Tabs::select`].
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> Tabs<'a> {
+    pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.highlight_style = style.into();
         self
     }
@@ -161,7 +161,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider("-");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn divider<T>(mut self, divider: T) -> Tabs<'a>
+    pub fn divider<T>(mut self, divider: T) -> Self
     where
         T: Into<Span<'a>>,
     {
@@ -186,7 +186,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding("", "");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn padding<T, U>(mut self, left: T, right: U) -> Tabs<'a>
+    pub fn padding<T, U>(mut self, left: T, right: U) -> Self
     where
         T: Into<Line<'a>>,
         U: Into<Line<'a>>,
@@ -208,7 +208,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_left("->");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn padding_left<T>(mut self, padding: T) -> Tabs<'a>
+    pub fn padding_left<T>(mut self, padding: T) -> Self
     where
         T: Into<Line<'a>>,
     {
@@ -228,7 +228,7 @@ impl<'a> Tabs<'a> {
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_right("<-");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn padding_right<T>(mut self, padding: T) -> Tabs<'a>
+    pub fn padding_right<T>(mut self, padding: T) -> Self
     where
         T: Into<Line<'a>>,
     {
@@ -238,7 +238,7 @@ impl<'a> Tabs<'a> {
 }
 
 impl<'a> Styled for Tabs<'a> {
-    type Item = Tabs<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style

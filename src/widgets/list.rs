@@ -252,11 +252,11 @@ impl<'a> ListItem<'a> {
     /// # See also
     ///
     /// - [`List::new`] to create a list of items that can be converted to [`ListItem`]
-    pub fn new<T>(content: T) -> ListItem<'a>
+    pub fn new<T>(content: T) -> Self
     where
         T: Into<Text<'a>>,
     {
-        ListItem {
+        Self {
             content: content.into(),
             style: Style::default(),
         }
@@ -287,7 +287,7 @@ impl<'a> ListItem<'a> {
     /// let item = ListItem::new("Item 1").red().italic();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> ListItem<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -340,7 +340,7 @@ where
     T: Into<Text<'a>>,
 {
     fn from(value: T) -> Self {
-        ListItem::new(value)
+        Self::new(value)
     }
 }
 
@@ -489,12 +489,12 @@ impl<'a> List<'a> {
     /// let empty_list = List::default();
     /// let filled_list = empty_list.items(["Item 1"]);
     /// ```
-    pub fn new<T>(items: T) -> List<'a>
+    pub fn new<T>(items: T) -> Self
     where
         T: IntoIterator,
         T::Item: Into<ListItem<'a>>,
     {
-        List {
+        Self {
             block: None,
             style: Style::default(),
             items: items.into_iter().map(|i| i.into()).collect(),
@@ -541,7 +541,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).block(block);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> List<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -575,7 +575,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).red().italic();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> List<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -594,7 +594,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn highlight_symbol(mut self, highlight_symbol: &'a str) -> List<'a> {
+    pub const fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
@@ -618,7 +618,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).highlight_style(Style::new().red().italic());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> List<'a> {
+    pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.highlight_style = style.into();
         self
     }
@@ -629,7 +629,7 @@ impl<'a> List<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn repeat_highlight_symbol(mut self, repeat: bool) -> List<'a> {
+    pub const fn repeat_highlight_symbol(mut self, repeat: bool) -> Self {
         self.repeat_highlight_symbol = repeat;
         self
     }
@@ -682,7 +682,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).direction(ListDirection::BottomToTop);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn direction(mut self, direction: ListDirection) -> List<'a> {
+    pub const fn direction(mut self, direction: ListDirection) -> Self {
         self.direction = direction;
         self
     }
@@ -701,7 +701,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).scroll_padding(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn scroll_padding(mut self, padding: usize) -> List<'a> {
+    pub const fn scroll_padding(mut self, padding: usize) -> Self {
         self.scroll_padding = padding;
         self
     }
@@ -740,7 +740,7 @@ impl<'a> List<'a> {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     #[deprecated(since = "0.25.0", note = "You should use `List::direction` instead.")]
-    pub fn start_corner(self, corner: Corner) -> List<'a> {
+    pub fn start_corner(self, corner: Corner) -> Self {
         if corner == Corner::BottomLeft {
             self.direction(ListDirection::BottomToTop)
         } else {
@@ -1009,7 +1009,7 @@ impl StatefulWidgetRef for List<'_> {
 }
 
 impl<'a> Styled for List<'a> {
-    type Item = List<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -1021,7 +1021,7 @@ impl<'a> Styled for List<'a> {
 }
 
 impl<'a> Styled for ListItem<'a> {
-    type Item = ListItem<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -1037,7 +1037,7 @@ where
     Item: Into<ListItem<'a>>,
 {
     fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
-        List::new(iter)
+        Self::new(iter)
     }
 }
 

@@ -439,9 +439,9 @@ impl<'a, 'b> Painter<'a, 'b> {
 }
 
 impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
-    fn from(context: &'a mut Context<'b>) -> Painter<'a, 'b> {
+    fn from(context: &'a mut Context<'b>) -> Self {
         let resolution = context.grid.resolution();
-        Painter {
+        Self {
             context,
             resolution,
         }
@@ -493,7 +493,7 @@ impl<'a> Context<'a> {
         x_bounds: [f64; 2],
         y_bounds: [f64; 2],
         marker: symbols::Marker,
-    ) -> Context<'a> {
+    ) -> Self {
         let dot = symbols::DOT.chars().next().unwrap();
         let block = symbols::block::FULL.chars().next().unwrap();
         let bar = symbols::bar::HALF.chars().next().unwrap();
@@ -504,7 +504,7 @@ impl<'a> Context<'a> {
             symbols::Marker::Braille => Box::new(BrailleGrid::new(width, height)),
             symbols::Marker::HalfBlock => Box::new(HalfBlockGrid::new(width, height)),
         };
-        Context {
+        Self {
             x_bounds,
             y_bounds,
             grid,
@@ -639,8 +639,8 @@ impl<'a, F> Default for Canvas<'a, F>
 where
     F: Fn(&mut Context),
 {
-    fn default() -> Canvas<'a, F> {
-        Canvas {
+    fn default() -> Self {
+        Self {
             block: None,
             x_bounds: [0.0, 0.0],
             y_bounds: [0.0, 0.0],
@@ -659,7 +659,7 @@ where
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> Canvas<'a, F> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -671,7 +671,7 @@ where
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn x_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
+    pub const fn x_bounds(mut self, bounds: [f64; 2]) -> Self {
         self.x_bounds = bounds;
         self
     }
@@ -683,7 +683,7 @@ where
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn y_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
+    pub const fn y_bounds(mut self, bounds: [f64; 2]) -> Self {
         self.y_bounds = bounds;
         self
     }
@@ -692,7 +692,7 @@ where
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn paint(mut self, f: F) -> Canvas<'a, F> {
+    pub fn paint(mut self, f: F) -> Self {
         self.paint_func = Some(f);
         self
     }
@@ -701,7 +701,7 @@ where
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn background_color(mut self, color: Color) -> Canvas<'a, F> {
+    pub const fn background_color(mut self, color: Color) -> Self {
         self.background_color = color;
         self
     }
@@ -745,7 +745,7 @@ where
     ///     .paint(|ctx| {});
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn marker(mut self, marker: symbols::Marker) -> Canvas<'a, F> {
+    pub const fn marker(mut self, marker: symbols::Marker) -> Self {
         self.marker = marker;
         self
     }

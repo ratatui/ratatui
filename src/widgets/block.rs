@@ -174,7 +174,7 @@ impl<'a> Block<'a> {
 
     /// Create a new block with [all borders](Borders::ALL) shown
     pub const fn bordered() -> Self {
-        let mut block = Block::new();
+        let mut block = Self::new();
         block.borders = Borders::ALL;
         block
     }
@@ -235,7 +235,7 @@ impl<'a> Block<'a> {
     /// - [`Block::title_alignment`]
     /// - [`Block::title_position`]
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title<T>(mut self, title: T) -> Block<'a>
+    pub fn title<T>(mut self, title: T) -> Self
     where
         T: Into<Title<'a>>,
     {
@@ -306,7 +306,7 @@ impl<'a> Block<'a> {
     ///
     /// If a [`Title`] already has a style, the title's style will add on top of this one.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title_style<S: Into<Style>>(mut self, style: S) -> Block<'a> {
+    pub fn title_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.titles_style = style.into();
         self
     }
@@ -333,7 +333,7 @@ impl<'a> Block<'a> {
     ///     .title_alignment(Alignment::Center);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn title_alignment(mut self, alignment: Alignment) -> Block<'a> {
+    pub const fn title_alignment(mut self, alignment: Alignment) -> Self {
         self.titles_alignment = alignment;
         self
     }
@@ -360,7 +360,7 @@ impl<'a> Block<'a> {
     ///     .title_position(Position::Bottom);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn title_position(mut self, position: Position) -> Block<'a> {
+    pub const fn title_position(mut self, position: Position) -> Self {
         self.titles_position = position;
         self
     }
@@ -382,7 +382,7 @@ impl<'a> Block<'a> {
     ///     .border_style(Style::new().blue());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn border_style<S: Into<Style>>(mut self, style: S) -> Block<'a> {
+    pub fn border_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.border_style = style.into();
         self
     }
@@ -398,7 +398,7 @@ impl<'a> Block<'a> {
     ///
     /// This will also apply to the widget inside that block, unless the inner widget is styled.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Block<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -421,7 +421,7 @@ impl<'a> Block<'a> {
     /// Block::default().borders(Borders::LEFT | Borders::RIGHT);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn borders(mut self, flag: Borders) -> Block<'a> {
+    pub const fn borders(mut self, flag: Borders) -> Self {
         self.borders = flag;
         self
     }
@@ -447,7 +447,7 @@ impl<'a> Block<'a> {
     /// // ╰─────╯
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn border_type(mut self, border_type: BorderType) -> Block<'a> {
+    pub const fn border_type(mut self, border_type: BorderType) -> Self {
         self.border_set = border_type.to_border_set();
         self
     }
@@ -466,7 +466,7 @@ impl<'a> Block<'a> {
     /// // ║     ║
     /// // ╚═════╝
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn border_set(mut self, border_set: border::Set) -> Block<'a> {
+    pub const fn border_set(mut self, border_set: border::Set) -> Self {
         self.border_set = border_set;
         self
     }
@@ -563,7 +563,7 @@ impl<'a> Block<'a> {
     /// // └───────────┘
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn padding(mut self, padding: Padding) -> Block<'a> {
+    pub const fn padding(mut self, padding: Padding) -> Self {
         self.padding = padding;
         self
     }
@@ -850,7 +850,7 @@ impl BlockExt for Option<Block<'_>> {
 }
 
 impl<'a> Styled for Block<'a> {
-    type Item = Block<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style

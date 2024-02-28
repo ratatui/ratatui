@@ -102,11 +102,11 @@ impl<'a> Line<'a> {
     /// Line::raw(String::from("test content"));
     /// Line::raw(Cow::from("test content"));
     /// ```
-    pub fn raw<T>(content: T) -> Line<'a>
+    pub fn raw<T>(content: T) -> Self
     where
         T: Into<Cow<'a, str>>,
     {
-        Line {
+        Self {
             spans: content
                 .into()
                 .lines()
@@ -135,12 +135,12 @@ impl<'a> Line<'a> {
     /// Line::styled(String::from("My text"), style);
     /// Line::styled(Cow::from("test content"), style);
     /// ```
-    pub fn styled<T, S>(content: T, style: S) -> Line<'a>
+    pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
         S: Into<Style>,
     {
-        Line {
+        Self {
             spans: content
                 .into()
                 .lines()
@@ -496,7 +496,7 @@ impl std::fmt::Display for Line<'_> {
 }
 
 impl<'a> Styled for Line<'a> {
-    type Item = Line<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
