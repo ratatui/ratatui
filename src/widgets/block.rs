@@ -711,6 +711,7 @@ impl Block<'_> {
     /// be cut off if the block is too small to fit all titles. This is not ideal and should be
     /// the left side of that leftmost that is cut off. This is due to the line being truncated
     /// incorrectly. See <https://github.com/ratatui-org/ratatui/issues/932>
+    #[allow(clippy::similar_names)]
     fn render_right_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Right);
         let mut titles_area = self.titles_area(area, position);
@@ -745,6 +746,7 @@ impl Block<'_> {
     /// Currently this method aligns the titles to the left inside a centered area. This is not
     /// ideal and should be fixed in the future to align the titles to the center of the block and
     /// truncate both sides of the titles if the block is too small to fit all titles.
+    #[allow(clippy::similar_names)]
     fn render_center_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self
             .filtered_titles(position, Alignment::Center)
@@ -779,6 +781,7 @@ impl Block<'_> {
     }
 
     /// Render titles aligned to the left of the block
+    #[allow(clippy::similar_names)]
     fn render_left_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Left);
         let mut titles_area = self.titles_area(area, position);

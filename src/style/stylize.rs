@@ -393,12 +393,12 @@ mod tests {
 
     #[test]
     fn repeated_attributes() {
-        let cyan_bg = Style::default().bg(Color::Cyan);
-        let cyan_fg = Style::default().fg(Color::Cyan);
+        let bg = Style::default().bg(Color::Cyan);
+        let fg = Style::default().fg(Color::Cyan);
 
         // Behavior: the last one set is the definitive one
-        assert_eq!("hello".on_red().on_cyan(), Span::styled("hello", cyan_bg));
-        assert_eq!("hello".red().cyan(), Span::styled("hello", cyan_fg));
+        assert_eq!("hello".on_red().on_cyan(), Span::styled("hello", bg));
+        assert_eq!("hello".red().cyan(), Span::styled("hello", fg));
     }
 
     #[test]
