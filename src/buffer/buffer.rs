@@ -664,7 +664,7 @@ mod tests {
         let actual_contents = small_one_line_buffer
             .content
             .iter()
-            .map(|c| c.symbol())
+            .map(Cell::symbol)
             .join("");
         let actual_styles = small_one_line_buffer
             .content

@@ -1253,14 +1253,14 @@ mod tests {
             "constraints should be settable with an iter"
         );
 
-        let iterator = CONSTRAINTS.iter().map(|c| c.to_owned());
+        let iterator = CONSTRAINTS.iter().map(ToOwned::to_owned);
         assert_eq!(
             Layout::default().constraints(iterator).constraints,
             CONSTRAINTS,
             "constraints should be settable with an iterator"
         );
 
-        let iterator_ref = CONSTRAINTS.iter().map(|c| c.as_ref());
+        let iterator_ref = CONSTRAINTS.iter().map(AsRef::as_ref);
         assert_eq!(
             Layout::default().constraints(iterator_ref).constraints,
             CONSTRAINTS,

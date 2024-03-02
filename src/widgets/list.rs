@@ -497,7 +497,7 @@ impl<'a> List<'a> {
         Self {
             block: None,
             style: Style::default(),
-            items: items.into_iter().map(|i| i.into()).collect(),
+            items: items.into_iter().map(Into::into).collect(),
             direction: ListDirection::default(),
             ..Self::default()
         }
@@ -522,7 +522,7 @@ impl<'a> List<'a> {
         T: IntoIterator,
         T::Item: Into<ListItem<'a>>,
     {
-        self.items = items.into_iter().map(|i| i.into()).collect();
+        self.items = items.into_iter().map(Into::into).collect();
         self
     }
 

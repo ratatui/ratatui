@@ -400,7 +400,7 @@ impl BarChart<'_> {
             .iter()
             .flat_map(|group| group.bars.iter().map(|bar| &bar.label))
             .flatten() // bar.label is an Option<Line>
-            .map(|label| label.width())
+            .map(Line::width)
             .max()
             .unwrap_or(0) as u16;
 
