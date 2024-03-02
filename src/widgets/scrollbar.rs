@@ -12,7 +12,6 @@ use std::iter;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
-use super::StatefulWidget;
 use crate::{prelude::*, symbols::scrollbar::*};
 
 /// A widget to display a scrollbar
@@ -619,7 +618,6 @@ mod tests {
 
     use rstest::{fixture, rstest};
     use strum::ParseError;
-    use unicode_width::UnicodeWidthStr;
 
     use super::*;
 

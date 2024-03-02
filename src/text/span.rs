@@ -514,7 +514,7 @@ mod tests {
 
     mod widget {
         use super::*;
-        use crate::{assert_buffer_eq, style::Stylize};
+        use crate::assert_buffer_eq;
 
         #[test]
         fn render() {

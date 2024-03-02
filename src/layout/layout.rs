@@ -1077,8 +1077,6 @@ mod strengths {
 
 #[cfg(test)]
 mod tests {
-    use std::iter;
-
     use super::*;
 
     #[test]

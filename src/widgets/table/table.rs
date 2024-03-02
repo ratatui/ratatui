@@ -842,12 +842,7 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::{
-        layout::Constraint::*,
-        style::{Color, Modifier, Style, Stylize},
-        text::Line,
-        widgets::Borders,
-    };
+    use crate::{layout::Constraint::*, style::Style, text::Line, widgets::Borders};
 
     #[test]
     fn new() {
@@ -1006,7 +1001,7 @@ mod tests {
     #[cfg(test)]
     mod render {
         use super::*;
-        use crate::{assert_buffer_eq, widgets::Borders};
+        use crate::assert_buffer_eq;
 
         #[test]
         fn render_empty_area() {

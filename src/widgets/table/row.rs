@@ -257,7 +257,6 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::style::{Color, Modifier, Style, Stylize};
 
     #[test]
     fn new() {

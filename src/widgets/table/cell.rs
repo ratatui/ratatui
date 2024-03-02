@@ -165,7 +165,6 @@ impl<'a> Styled for Cell<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::style::{Color, Modifier, Style, Stylize};
 
     #[test]
     fn new() {

@@ -3,11 +3,9 @@ use std::cmp::max;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
-use super::block::BlockExt;
 use crate::{
     layout::Flex,
     prelude::*,
-    symbols,
     widgets::{
         canvas::{Canvas, Line as CanvasLine, Points},
         Block, Borders,
@@ -1103,10 +1101,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        style::{Modifier, Stylize},
-    };
+    use crate::assert_buffer_eq;
 
     struct LegendTestCase {
         chart_area: Rect,

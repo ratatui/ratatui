@@ -248,7 +248,6 @@ mod tests {
     use time::Month;
 
     use super::*;
-    use crate::style::Color;
 
     #[test]
     fn event_store() {

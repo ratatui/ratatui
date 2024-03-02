@@ -1,6 +1,5 @@
 use unicode_width::UnicodeWidthStr;
 
-use super::block::BlockExt;
 use crate::{
     prelude::*,
     text::StyledGrapheme,
@@ -406,10 +405,7 @@ mod test {
     use super::*;
     use crate::{
         backend::TestBackend,
-        style::{Color, Modifier, Stylize},
-        text::{Line, Span},
         widgets::{block::Position, Borders},
-        Terminal,
     };
 
     /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal

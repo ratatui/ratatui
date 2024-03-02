@@ -3,7 +3,7 @@ use std::borrow::Cow;
 
 use itertools::{Itertools, Position};
 
-use crate::{prelude::*, widgets::Widget};
+use crate::prelude::*;
 
 /// A string split over multiple lines where each line is composed of several clusters, each with
 /// their own style.
@@ -503,7 +503,6 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::style::Stylize;
 
     #[test]
     fn raw() {
@@ -754,7 +753,7 @@ mod tests {
 
     mod widget {
         use super::*;
-        use crate::{assert_buffer_eq, style::Color};
+        use crate::assert_buffer_eq;
 
         #[test]
         fn render() {
