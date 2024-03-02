@@ -71,10 +71,6 @@ struct Layer {
 /// Braille patterns will have a resolution of 2x4 dots per cell. This means that a grid of 10x10
 /// cells will have a resolution of 20x40 dots.
 trait Grid: Debug {
-    /// Get the width of the grid in number of terminal columns
-    fn width(&self) -> u16;
-    /// Get the height of the grid in number of terminal rows
-    fn height(&self) -> u16;
     /// Get the resolution of the grid in number of dots.
     ///
     /// This doesn't have to be the same as the number of rows and columns of the grid. For example,
@@ -131,14 +127,6 @@ impl BrailleGrid {
 }
 
 impl Grid for BrailleGrid {
-    fn width(&self) -> u16 {
-        self.width
-    }
-
-    fn height(&self) -> u16 {
-        self.height
-    }
-
     fn resolution(&self) -> (f64, f64) {
         (f64::from(self.width) * 2.0, f64::from(self.height) * 4.0)
     }
@@ -202,14 +190,6 @@ impl CharGrid {
 }
 
 impl Grid for CharGrid {
-    fn width(&self) -> u16 {
-        self.width
-    }
-
-    fn height(&self) -> u16 {
-        self.height
-    }
-
     fn resolution(&self) -> (f64, f64) {
         (f64::from(self.width), f64::from(self.height))
     }
@@ -275,14 +255,6 @@ impl HalfBlockGrid {
 }
 
 impl Grid for HalfBlockGrid {
-    fn width(&self) -> u16 {
-        self.width
-    }
-
-    fn height(&self) -> u16 {
-        self.height
-    }
-
     fn resolution(&self) -> (f64, f64) {
         (f64::from(self.width), f64::from(self.height) * 2.0)
     }
