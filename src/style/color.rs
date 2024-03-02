@@ -269,8 +269,8 @@ impl Display for Color {
             Self::LightMagenta => write!(f, "LightMagenta"),
             Self::LightCyan => write!(f, "LightCyan"),
             Self::White => write!(f, "White"),
-            Self::Rgb(r, g, b) => write!(f, "#{:02X}{:02X}{:02X}", r, g, b),
-            Self::Indexed(i) => write!(f, "{}", i),
+            Self::Rgb(r, g, b) => write!(f, "#{r:02X}{g:02X}{b:02X}"),
+            Self::Indexed(i) => write!(f, "{i}"),
         }
     }
 }

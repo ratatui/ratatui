@@ -366,12 +366,12 @@ impl Default for Constraint {
 impl Display for Constraint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Percentage(p) => write!(f, "Percentage({})", p),
-            Self::Ratio(n, d) => write!(f, "Ratio({}, {})", n, d),
-            Self::Length(l) => write!(f, "Length({})", l),
-            Self::Fill(l) => write!(f, "Fill({})", l),
-            Self::Max(m) => write!(f, "Max({})", m),
-            Self::Min(m) => write!(f, "Min({})", m),
+            Self::Percentage(p) => write!(f, "Percentage({p})"),
+            Self::Ratio(n, d) => write!(f, "Ratio({n}, {d})"),
+            Self::Length(l) => write!(f, "Length({l})"),
+            Self::Fill(l) => write!(f, "Fill({l})"),
+            Self::Max(m) => write!(f, "Max({m})"),
+            Self::Min(m) => write!(f, "Min({m})"),
         }
     }
 }
