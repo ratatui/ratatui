@@ -12,7 +12,7 @@ pub fn init_hooks() -> Result<()> {
     }))?;
     std::panic::set_hook(Box::new(move |info| {
         let _ = term::restore();
-        panic(info)
+        panic(info);
     }));
     Ok(())
 }

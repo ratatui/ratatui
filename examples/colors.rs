@@ -13,8 +13,9 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-/// This example shows all the colors supported by ratatui. It will render a grid of foreground
-/// and background colors with their names and indexes.
+// This example shows all the colors supported by ratatui. It will render a grid of foreground
+// and background colors with their names and indexes.
+
 use std::{
     error::Error,
     io::{self, Stdout},
@@ -28,7 +29,10 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, Paragraph},
+};
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
 
@@ -48,7 +52,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 
         if event::poll(Duration::from_millis(250))? {
             if let Event::Key(key) = event::read()? {
-                if let KeyCode::Char('q') = key.code {
+                if key.code == KeyCode::Char('q') {
                     return Ok(());
                 }
             }

@@ -13,6 +13,8 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+#![allow(clippy::enum_glob_use, clippy::wildcard_imports)]
+
 use std::io::{self, stdout};
 
 use color_eyre::{config::HookBuilder, Result};
@@ -165,7 +167,7 @@ impl App {
         Ok(())
     }
 
-    fn is_running(&self) -> bool {
+    fn is_running(self) -> bool {
         self.state == AppState::Running
     }
 
@@ -203,14 +205,14 @@ impl App {
     }
 
     fn up(&mut self) {
-        self.scroll_offset = self.scroll_offset.saturating_sub(1)
+        self.scroll_offset = self.scroll_offset.saturating_sub(1);
     }
 
     fn down(&mut self) {
         self.scroll_offset = self
             .scroll_offset
             .saturating_add(1)
-            .min(max_scroll_offset())
+            .min(max_scroll_offset());
     }
 
     fn top(&mut self) {
@@ -239,8 +241,7 @@ fn max_scroll_offset() -> u16 {
     example_height()
         - EXAMPLE_DATA
             .last()
-            .map(|(desc, _)| get_description_height(desc) + 4)
-            .unwrap_or(0)
+            .map_or(0, |(desc, _)| get_description_height(desc) + 4)
 }
 
 /// The height of all examples combined
@@ -264,12 +265,12 @@ impl Widget for App {
         } else {
             axis.width
         };
-        self.axis(axis_width, self.spacing).render(axis, buf);
+        Self::axis(axis_width, self.spacing).render(axis, buf);
     }
 }
 
 impl App {
-    fn tabs(&self) -> impl Widget {
+    fn tabs(self) -> impl Widget {
         let tab_titles = SelectedTab::iter().map(SelectedTab::to_tab_title);
         let block = Block::new()
             .title(Title::from("Flex Layouts ".bold()))
@@ -283,13 +284,13 @@ impl App {
     }
 
     /// a bar like `<----- 80 px (gap: 2 px)? ----->`
-    fn axis(&self, width: u16, spacing: u16) -> impl Widget {
+    fn axis(width: u16, spacing: u16) -> impl Widget {
         let width = width as usize;
         // only show gap when spacing is not zero
         let label = if spacing != 0 {
-            format!("{} px (gap: {} px)", width, spacing)
+            format!("{width} px (gap: {spacing} px)")
         } else {
-            format!("{} px", width)
+            format!("{width} px")
         };
         let bar_width = width.saturating_sub(2); // we want to `<` and `>` at the ends
         let width_bar = format!("<{label:-^bar_width$}>");
@@ -302,6 +303,7 @@ impl App {
     /// into the main buffer. This is done to make it possible to handle scrolling easily.
     ///
     /// Returns bool indicating whether scroll was needed
+    #[allow(clippy::cast_possible_truncation)]
     fn render_demo(self, area: Rect, buf: &mut Buffer) -> bool {
         // render demo content into a separate buffer so all examples fit we add an extra
         // area.height to make sure the last example is fully visible even when the scroll offset is
@@ -347,31 +349,30 @@ impl App {
 
 impl SelectedTab {
     /// Get the previous tab, if there is no previous tab return the current tab.
-    fn previous(&self) -> Self {
-        let current_index: usize = *self as usize;
+    fn previous(self) -> Self {
+        let current_index: usize = self as usize;
         let previous_index = current_index.saturating_sub(1);
-        Self::from_repr(previous_index).unwrap_or(*self)
+        Self::from_repr(previous_index).unwrap_or(self)
     }
 
     /// Get the next tab, if there is no next tab return the current tab.
-    fn next(&self) -> Self {
-        let current_index = *self as usize;
+    fn next(self) -> Self {
+        let current_index = self as usize;
         let next_index = current_index.saturating_add(1);
-        Self::from_repr(next_index).unwrap_or(*self)
+        Self::from_repr(next_index).unwrap_or(self)
     }
 
     /// Convert a `SelectedTab` into a `Line` to display it by the `Tabs` widget.
-    fn to_tab_title(value: SelectedTab) -> Line<'static> {
+    fn to_tab_title(value: Self) -> Line<'static> {
         use tailwind::*;
-        use SelectedTab::*;
         let text = value.to_string();
         let color = match value {
-            Legacy => ORANGE.c400,
-            Start => SKY.c400,
-            Center => SKY.c300,
-            End => SKY.c200,
-            SpaceAround => INDIGO.c400,
-            SpaceBetween => INDIGO.c300,
+            Self::Legacy => ORANGE.c400,
+            Self::Start => SKY.c400,
+            Self::Center => SKY.c300,
+            Self::End => SKY.c200,
+            Self::SpaceAround => INDIGO.c400,
+            Self::SpaceBetween => INDIGO.c300,
         };
         format!(" {text} ").fg(color).bg(Color::Black).into()
     }
@@ -382,20 +383,18 @@ impl StatefulWidget for SelectedTab {
     fn render(self, area: Rect, buf: &mut Buffer, spacing: &mut Self::State) {
         let spacing = *spacing;
         match self {
-            SelectedTab::Legacy => self.render_examples(area, buf, Flex::Legacy, spacing),
-            SelectedTab::Start => self.render_examples(area, buf, Flex::Start, spacing),
-            SelectedTab::Center => self.render_examples(area, buf, Flex::Center, spacing),
-            SelectedTab::End => self.render_examples(area, buf, Flex::End, spacing),
-            SelectedTab::SpaceAround => self.render_examples(area, buf, Flex::SpaceAround, spacing),
-            SelectedTab::SpaceBetween => {
-                self.render_examples(area, buf, Flex::SpaceBetween, spacing)
-            }
+            Self::Legacy => Self::render_examples(area, buf, Flex::Legacy, spacing),
+            Self::Start => Self::render_examples(area, buf, Flex::Start, spacing),
+            Self::Center => Self::render_examples(area, buf, Flex::Center, spacing),
+            Self::End => Self::render_examples(area, buf, Flex::End, spacing),
+            Self::SpaceAround => Self::render_examples(area, buf, Flex::SpaceAround, spacing),
+            Self::SpaceBetween => Self::render_examples(area, buf, Flex::SpaceBetween, spacing),
         }
     }
 }
 
 impl SelectedTab {
-    fn render_examples(&self, area: Rect, buf: &mut Buffer, flex: Flex, spacing: u16) {
+    fn render_examples(area: Rect, buf: &mut Buffer, flex: Flex, spacing: u16) {
         let heights = EXAMPLE_DATA
             .iter()
             .map(|(desc, _)| get_description_height(desc) + 4);
@@ -432,7 +431,7 @@ impl Widget for Example {
             Paragraph::new(
                 self.description
                     .split('\n')
-                    .map(|s| format!("// {}", s).italic().fg(tailwind::SLATE.c400))
+                    .map(|s| format!("// {s}").italic().fg(tailwind::SLATE.c400))
                     .map(Line::from)
                     .collect::<Vec<Line>>(),
             )
@@ -440,18 +439,17 @@ impl Widget for Example {
         }
 
         for (block, constraint) in blocks.iter().zip(&self.constraints) {
-            self.illustration(*constraint, block.width)
-                .render(*block, buf);
+            Self::illustration(*constraint, block.width).render(*block, buf);
         }
 
         for spacer in spacers.iter() {
-            self.render_spacer(*spacer, buf);
+            Self::render_spacer(*spacer, buf);
         }
     }
 }
 
 impl Example {
-    fn render_spacer(&self, spacer: Rect, buf: &mut Buffer) {
+    fn render_spacer(spacer: Rect, buf: &mut Buffer) {
         if spacer.width > 1 {
             let corners_only = symbols::border::Set {
                 top_left: line::NORMAL.top_left,
@@ -483,7 +481,7 @@ impl Example {
         } else if width > 2 {
             format!("{width}")
         } else {
-            "".to_string()
+            String::new()
         };
         let text = Text::from(vec![
             Line::raw(""),
@@ -496,7 +494,7 @@ impl Example {
             .render(spacer, buf);
     }
 
-    fn illustration(&self, constraint: Constraint, width: u16) -> Paragraph {
+    fn illustration(constraint: Constraint, width: u16) -> impl Widget {
         let main_color = color_for_constraint(constraint);
         let fg_color = Color::White;
         let title = format!("{constraint}");
@@ -510,7 +508,7 @@ impl Example {
     }
 }
 
-fn color_for_constraint(constraint: Constraint) -> Color {
+const fn color_for_constraint(constraint: Constraint) -> Color {
     use tailwind::*;
     match constraint {
         Constraint::Min(_) => BLUE.c900,
@@ -532,7 +530,7 @@ fn init_error_hooks() -> Result<()> {
     }))?;
     std::panic::set_hook(Box::new(move |info| {
         let _ = restore_terminal();
-        panic(info)
+        panic(info);
     }));
     Ok(())
 }
@@ -551,6 +549,7 @@ fn restore_terminal() -> Result<()> {
     Ok(())
 }
 
+#[allow(clippy::cast_possible_truncation)]
 fn get_description_height(s: &str) -> u16 {
     if s.is_empty() {
         0
