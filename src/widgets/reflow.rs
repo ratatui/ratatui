@@ -144,9 +144,9 @@ where
                             // or if it would be too long with the current partially processed word added
                             || current_line_width + whitespace_width + word_width >= self.max_line_width && symbol_width > 0
                         {
-                            let mut remaining_width =
-                                (self.max_line_width as i32 - current_line_width as i32).max(0)
-                                    as u16;
+                            let mut remaining_width = (i32::from(self.max_line_width)
+                                - i32::from(current_line_width))
+                            .max(0) as u16;
                             wrapped_lines.push(std::mem::take(&mut current_line));
                             current_line_width = 0;
 

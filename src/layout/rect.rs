@@ -141,10 +141,10 @@ impl Rect {
         Self {
             x: i32::from(self.x)
                 .saturating_add(offset.x)
-                .clamp(0, (u16::MAX - self.width) as i32) as u16,
+                .clamp(0, i32::from(u16::MAX - self.width)) as u16,
             y: i32::from(self.y)
                 .saturating_add(offset.y)
-                .clamp(0, (u16::MAX - self.height) as i32) as u16,
+                .clamp(0, i32::from(u16::MAX - self.height)) as u16,
             ..self
         }
     }

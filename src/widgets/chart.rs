@@ -183,7 +183,7 @@ impl LegendPosition {
         x_title_width: u16,
         y_title_width: u16,
     ) -> Option<Rect> {
-        let mut height_margin = (area.height - legend_height) as i32;
+        let mut height_margin = i32::from(area.height - legend_height);
         if x_title_width != 0 {
             height_margin -= 1;
         }
