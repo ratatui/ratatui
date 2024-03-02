@@ -449,10 +449,10 @@ impl From<ContentStyle> for Style {
         }
 
         Self {
-            fg: value.foreground_color.map(|c| c.into()),
-            bg: value.background_color.map(|c| c.into()),
+            fg: value.foreground_color.map(Into::into),
+            bg: value.background_color.map(Into::into),
             #[cfg(feature = "underline-color")]
-            underline_color: value.underline_color.map(|c| c.into()),
+            underline_color: value.underline_color.map(Into::into),
             add_modifier: value.attributes.into(),
             sub_modifier,
         }
