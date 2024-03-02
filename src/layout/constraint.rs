@@ -209,8 +209,7 @@ impl Constraint {
                 let length = f32::from(length);
                 (percentage * length).min(length) as u16
             }
-            Self::Length(l) => length.min(l),
-            Self::Fill(l) => length.min(l),
+            Self::Length(l) | Self::Fill(l) => length.min(l),
             Self::Max(m) => length.min(m),
             Self::Min(m) => length.max(m),
         }

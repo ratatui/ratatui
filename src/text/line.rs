@@ -464,10 +464,9 @@ impl WidgetRef for Line<'_> {
         buf.set_style(area, self.style);
         let width = self.width() as u16;
         let offset = match self.alignment {
-            Some(Alignment::Left) => 0,
             Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
             Some(Alignment::Right) => area.width.saturating_sub(width),
-            None => 0,
+            Some(Alignment::Left) | None => 0,
         };
         let mut x = area.left().saturating_add(offset);
         for span in &self.spans {
