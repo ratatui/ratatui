@@ -348,7 +348,7 @@ mod tests {
 
         // format!() is used to create a temporary String inside a closure, which suffers the same
         // issue as above without the `Styled` trait impl for `String`
-        let items = vec![String::from("a"), String::from("b")];
+        let items = [String::from("a"), String::from("b")];
         let sss = items.iter().map(|s| format!("{s}{s}").red()).collect_vec();
         assert_eq!(sss, vec![Span::from("aa").red(), Span::from("bb").red()]);
     }
