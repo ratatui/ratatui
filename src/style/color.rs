@@ -311,7 +311,7 @@ impl Color {
 /// representation. H, S, and L values should be in the range [0, 1].
 ///
 /// Based on <https://github.com/killercup/hsl-rs/blob/b8a30e11afd75f262e0550725333293805f4ead0/src/lib.rs>
-fn normalized_hsl_to_rgb(h: f64, s: f64, l: f64) -> Color {
+fn normalized_hsl_to_rgb(hue: f64, saturation: f64, lightness: f64) -> Color {
     // This function can be made into `const` in the future.
     // This comment contains the relevant information for making it `const`.
     //
@@ -331,33 +331,33 @@ fn normalized_hsl_to_rgb(h: f64, s: f64, l: f64) -> Color {
     // ```
 
     // Initialize RGB components
-    let r: f64;
-    let g: f64;
-    let b: f64;
+    let red: f64;
+    let green: f64;
+    let blue: f64;
 
     // Check if the color is achromatic (grayscale)
-    if s == 0.0 {
-        r = l;
-        g = l;
-        b = l;
+    if saturation == 0.0 {
+        red = lightness;
+        green = lightness;
+        blue = lightness;
     } else {
         // Calculate RGB components for colored cases
-        let q = if l < 0.5 {
-            l * (1.0 + s)
+        let q = if lightness < 0.5 {
+            lightness * (1.0 + saturation)
         } else {
-            l + s - l * s
+            lightness + saturation - lightness * saturation
         };
-        let p = 2.0 * l - q;
-        r = hue_to_rgb(p, q, h + 1.0 / 3.0);
-        g = hue_to_rgb(p, q, h);
-        b = hue_to_rgb(p, q, h - 1.0 / 3.0);
+        let p = 2.0 * lightness - q;
+        red = hue_to_rgb(p, q, hue + 1.0 / 3.0);
+        green = hue_to_rgb(p, q, hue);
+        blue = hue_to_rgb(p, q, hue - 1.0 / 3.0);
     }
 
     // Scale RGB components to the range [0, 255] and create a Color::Rgb instance
     Color::Rgb(
-        (r * 255.0).round() as u8,
-        (g * 255.0).round() as u8,
-        (b * 255.0).round() as u8,
+        (red * 255.0).round() as u8,
+        (green * 255.0).round() as u8,
+        (blue * 255.0).round() as u8,
     )
 }
 
