@@ -64,6 +64,7 @@ serde_json = "1.0.109"
 [lints.rust]
 unsafe_code = "forbid"
 [lints.clippy]
+bool_to_int_with_if = "warn"
 cast_lossless = "warn"
 cloned_instead_of_copied = "warn"
 default_trait_access = "warn"

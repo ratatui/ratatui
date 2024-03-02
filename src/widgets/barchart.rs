@@ -406,7 +406,7 @@ impl BarChart<'_> {
 
         let label_x = area.x;
         let bars_area = {
-            let margin = if label_size == 0 { 0 } else { 1 };
+            let margin = u16::from(label_size != 0);
             Rect {
                 x: area.x + label_size + margin,
                 width: area.width - label_size - margin,
