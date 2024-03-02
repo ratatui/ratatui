@@ -874,6 +874,7 @@ mod tests {
         assert_eq!(block.borders, Borders::all());
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn inner_takes_into_account_the_borders() {
         // No borders

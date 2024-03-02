@@ -1243,6 +1243,7 @@ mod tests {
         );
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn test_list_combinations() {
         fn test_case_render(items: &[ListItem], expected_lines: Vec<&str>) {

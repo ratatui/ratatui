@@ -663,6 +663,7 @@ mod tests {
         );
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn style_can_be_stylized() {
         // foreground colors

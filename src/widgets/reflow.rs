@@ -65,6 +65,7 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
+    #[allow(clippy::too_many_lines)]
     fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
         if self.max_line_width == 0 {
             return None;

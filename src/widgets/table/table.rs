@@ -1516,6 +1516,7 @@ mod tests {
             );
         }
 
+        #[allow(clippy::too_many_lines)]
         #[test]
         fn insufficient_area_highlight_symbol_and_column_spacing_allocation() {
             // column spacing is prioritized over every other constraint
