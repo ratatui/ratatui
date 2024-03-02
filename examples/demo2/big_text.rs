@@ -50,7 +50,7 @@ use std::cmp::min;
 
 use derive_builder::Builder;
 use font8x8::UnicodeFonts;
-use ratatui::{prelude::*, text::StyledGrapheme, widgets::Widget};
+use ratatui::{prelude::*, text::StyledGrapheme};
 
 #[allow(unused)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]

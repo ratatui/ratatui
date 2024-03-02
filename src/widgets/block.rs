@@ -866,11 +866,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        layout::{Alignment, Rect},
-        style::{Color, Modifier, Stylize},
-    };
+    use crate::assert_buffer_eq;
 
     #[test]
     fn create_with_all_borders() {

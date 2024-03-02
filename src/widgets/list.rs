@@ -1049,13 +1049,7 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        prelude::Alignment,
-        style::{Color, Modifier, Stylize},
-        text::{Line, Span},
-        widgets::Borders,
-    };
+    use crate::{assert_buffer_eq, widgets::Borders};
 
     #[test]
     fn test_list_state_selected() {

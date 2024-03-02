@@ -429,7 +429,6 @@ impl<'a> Styled for LineGauge<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::style::{Modifier, Stylize};
 
     #[test]
     #[should_panic]

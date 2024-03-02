@@ -1,4 +1,4 @@
-use crate::{prelude::*, widgets::WidgetRef};
+use crate::prelude::*;
 
 /// A consistent view into the terminal state for rendering a single frame.
 ///

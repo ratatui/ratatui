@@ -225,11 +225,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        buffer::Cell,
-        style::{Color, Modifier, Stylize},
-    };
+    use crate::{assert_buffer_eq, buffer::Cell};
 
     #[test]
     fn render_direction_to_string() {

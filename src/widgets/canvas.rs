@@ -30,7 +30,7 @@ pub use self::{
     points::Points,
     rectangle::Rectangle,
 };
-use crate::{prelude::*, symbols, text::Line as TextLine, widgets::Block};
+use crate::{prelude::*, text::Line as TextLine, widgets::Block};
 
 /// Something that can be drawn on a [`Canvas`].
 ///
@@ -839,7 +839,7 @@ mod tests {
     use indoc::indoc;
 
     use super::*;
-    use crate::{buffer::Cell, symbols::Marker};
+    use crate::buffer::Cell;
 
     // helper to test the canvas checks that drawing a vertical and horizontal line
     // results in the expected output
