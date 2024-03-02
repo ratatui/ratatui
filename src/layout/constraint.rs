@@ -198,15 +198,15 @@ impl Constraint {
     pub fn apply(&self, length: u16) -> u16 {
         match *self {
             Self::Percentage(p) => {
-                let p = p as f32 / 100.0;
-                let length = length as f32;
+                let p = f32::from(p) / 100.0;
+                let length = f32::from(length);
                 (p * length).min(length) as u16
             }
             Self::Ratio(numerator, denominator) => {
                 // avoid division by zero by using 1 when denominator is 0
                 // this results in 0/0 -> 0 and x/0 -> x for x != 0
                 let percentage = numerator as f32 / denominator.max(1) as f32;
-                let length = length as f32;
+                let length = f32::from(length);
                 (percentage * length).min(length) as u16
             }
             Self::Length(l) => length.min(l),
