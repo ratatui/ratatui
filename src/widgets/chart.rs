@@ -924,6 +924,7 @@ impl Widget for Chart<'_> {
 }
 
 impl WidgetRef for Chart<'_> {
+    #[allow(clippy::too_many_lines)]
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
 
@@ -1370,6 +1371,7 @@ mod tests {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn test_legend_of_chart_have_odd_margin_size() {
         let name = "Data";
