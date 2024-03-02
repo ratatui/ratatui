@@ -99,7 +99,12 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
 
     /// All logic to style a date goes here.
     fn format_date(&self, date: Date) -> Span {
-        if date.month() != self.display_date.month() {
+        if date.month() == self.display_date.month() {
+            Span::styled(
+                format!("{:2?}", date.day()),
+                self.default_style.patch(self.events.get_style(date)),
+            )
+        } else {
             match self.show_surrounding {
                 None => Span::styled("  ", self.default_bg()),
                 Some(s) => {
@@ -110,11 +115,6 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
                     Span::styled(format!("{:2?}", date.day()), style)
                 }
             }
-        } else {
-            Span::styled(
-                format!("{:2?}", date.day()),
-                self.default_style.patch(self.events.get_style(date)),
-            )
         }
     }
 }
