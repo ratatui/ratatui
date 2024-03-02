@@ -32,8 +32,8 @@ impl fmt::Display for Viewport {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Fullscreen => write!(f, "Fullscreen"),
-            Self::Inline(height) => write!(f, "Inline({})", height),
-            Self::Fixed(area) => write!(f, "Fixed({})", area),
+            Self::Inline(height) => write!(f, "Inline({height})"),
+            Self::Fixed(area) => write!(f, "Fixed({area})"),
         }
     }
 }

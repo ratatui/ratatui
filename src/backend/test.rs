@@ -297,7 +297,6 @@ mod tests {
             format!(
                 r#""{multi_byte_char}" Hidden by multi-width symbols: [(1, " "), (2, " "), (3, " "), (4, " "), (5, " "), (6, " "), (7, " ")]
 "#,
-                multi_byte_char = multi_byte_char
             )
         );
     }
@@ -333,7 +332,7 @@ mod tests {
     #[test]
     fn display() {
         let backend = TestBackend::new(10, 2);
-        assert_eq!(format!("{}", backend), "\"          \"\n\"          \"\n");
+        assert_eq!(format!("{backend}"), "\"          \"\n\"          \"\n");
     }
 
     #[test]
