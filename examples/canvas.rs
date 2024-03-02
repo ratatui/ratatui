@@ -162,12 +162,10 @@ impl App {
     }
 
     fn boxes_canvas(&self, area: Rect) -> impl Widget {
-        let (left, right, bottom, top) = (
-            0.0,
-            f64::from(area.width),
-            0.0,
-            f64::from(area.height).mul_add(2.0, -4.0),
-        );
+        let left = 0.0;
+        let right = f64::from(area.width);
+        let bottom = 0.0;
+        let top = f64::from(area.height).mul_add(2.0, -4.0);
         Canvas::default()
             .block(Block::default().borders(Borders::ALL).title("Rects"))
             .marker(self.marker)
