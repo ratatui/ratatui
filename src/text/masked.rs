@@ -49,14 +49,14 @@ impl<'a> Masked<'a> {
 impl Debug for Masked<'_> {
     /// Debug representation of a masked string is the underlying string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.inner).map_err(|_| fmt::Error)
+        Display::fmt(&self.inner, f)
     }
 }
 
 impl Display for Masked<'_> {
     /// Display representation of a masked string is the masked string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.value()).map_err(|_| fmt::Error)
+        Display::fmt(&self.value(), f)
     }
 }
 
