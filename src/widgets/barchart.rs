@@ -530,7 +530,7 @@ impl BarChart<'_> {
                     .max()
                     .unwrap_or_default()
             })
-            .max(1u64)
+            .max(1)
     }
 
     fn render_labels_and_values(
