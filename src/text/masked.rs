@@ -49,7 +49,7 @@ impl<'a> Masked<'a> {
 impl Debug for Masked<'_> {
     /// Debug representation of a masked string is the underlying string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Debug::fmt(&self.inner, f)
+        Display::fmt(&self.inner, f)
     }
 }
 
