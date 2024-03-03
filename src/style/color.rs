@@ -1,3 +1,5 @@
+#![allow(clippy::unreadable_literal)]
+
 use std::{
     fmt::{self, Debug, Display},
     str::FromStr,
