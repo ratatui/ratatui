@@ -37,7 +37,7 @@ type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
 thread_local! {
-    static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = OnceLock::new();
+    static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = const { OnceLock::new() };
 }
 
 /// A layout is a set of constraints that can be applied to a given area to split it into smaller
