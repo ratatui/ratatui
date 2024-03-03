@@ -76,13 +76,22 @@ must_use_candidate = "allow"
 wildcard_imports = "allow"
 
 # nursery or restricted
+as_underscore = "warn"
 deref_by_slicing = "warn"
 else_if_without_else = "warn"
 empty_line_after_doc_comments = "warn"
 equatable_if_let = "warn"
+fn_to_numeric_cast_any = "warn"
+format_push_string = "warn"
 map_err_ignore = "warn"
 missing_const_for_fn = "warn"
+mixed_read_write_in_expression = "warn"
+mod_module_files = "warn"
+needless_raw_strings = "warn"
 redundant_type_annotations = "warn"
+rest_pat_in_fully_bound_structs = "warn"
+string_lit_chars_any = "warn"
+string_to_string = "warn"
 use_self = "warn"
 
 [features]
