@@ -174,7 +174,7 @@ impl Sparkline<'_> {
 
         let max = match self.max {
             Some(v) => v,
-            None => *self.data.iter().max().unwrap_or(&1u64),
+            None => *self.data.iter().max().unwrap_or(&1),
         };
         let max_index = min(spark_area.width as usize, self.data.len());
         let mut data = self
