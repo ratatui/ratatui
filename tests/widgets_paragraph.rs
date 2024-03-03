@@ -82,7 +82,7 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
 
 #[test]
 fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
-    let nbsp: &str = "\u{00a0}";
+    let nbsp = "\u{00a0}";
     let line = Line::from(vec![Span::raw("NBSP"), Span::raw(nbsp)]);
     let paragraph = Paragraph::new(line).block(Block::default().borders(Borders::ALL));
 
