@@ -77,6 +77,7 @@ wildcard_imports = "allow"
 
 # nursery or restricted
 deref_by_slicing = "warn"
+else_if_without_else = "warn"
 empty_line_after_doc_comments = "warn"
 equatable_if_let = "warn"
 missing_const_for_fn = "warn"

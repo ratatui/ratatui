@@ -189,6 +189,9 @@ where
                             wrapped_lines.push(vec![]);
                         } else if !self.trim || !current_line.is_empty() {
                             current_line.extend(unfinished_whitespaces.into_iter());
+                        } else {
+                            // TODO: explain why this else branch is ok.
+                            // See clippy::else_if_without_else
                         }
                         current_line.append(&mut unfinished_word);
                     }
