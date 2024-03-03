@@ -431,19 +431,19 @@ mod tests {
     use super::*;
 
     #[test]
-    #[should_panic]
+    #[should_panic = "Percentage should be between 0 and 100 inclusively"]
     fn gauge_invalid_percentage() {
         let _ = Gauge::default().percent(110);
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic = "Ratio should be between 0 and 1 inclusively"]
     fn gauge_invalid_ratio_upper_bound() {
         let _ = Gauge::default().ratio(1.1);
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic = "Ratio should be between 0 and 1 inclusively"]
     fn gauge_invalid_ratio_lower_bound() {
         let _ = Gauge::default().ratio(-0.5);
     }

@@ -9,6 +9,7 @@ use std::{
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
+    assert_buffer_eq,
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
     layout::{Rect, Size},
@@ -100,38 +101,7 @@ impl TestBackend {
     /// showing the differences between the expected and actual buffers.
     #[track_caller]
     pub fn assert_buffer(&self, expected: &Buffer) {
-        assert_eq!(expected.area, self.buffer.area);
-        let diff = expected.diff(&self.buffer);
-        if diff.is_empty() {
-            return;
-        }
-
-        let mut debug_info = String::from("Buffers are not equal");
-        debug_info.push('\n');
-        debug_info.push_str("Expected:");
-        debug_info.push('\n');
-        let expected_view = buffer_view(expected);
-        debug_info.push_str(&expected_view);
-        debug_info.push('\n');
-        debug_info.push_str("Got:");
-        debug_info.push('\n');
-        let view = buffer_view(&self.buffer);
-        debug_info.push_str(&view);
-        debug_info.push('\n');
-
-        debug_info.push_str("Diff:");
-        debug_info.push('\n');
-        let nice_diff = diff
-            .iter()
-            .enumerate()
-            .map(|(i, (x, y, cell))| {
-                let expected_cell = expected.get(*x, *y);
-                format!("{i}: at ({x}, {y}) expected {expected_cell:?} got {cell:?}")
-            })
-            .collect::<Vec<String>>()
-            .join("\n");
-        debug_info.push_str(&nice_diff);
-        panic!("{debug_info}");
+        assert_buffer_eq!(&self.buffer, expected);
     }
 }
 
@@ -322,7 +292,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic = "buffer contents not equal"]
     fn assert_buffer_panics() {
         let backend = TestBackend::new(10, 2);
         let buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);

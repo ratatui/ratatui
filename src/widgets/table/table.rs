@@ -969,7 +969,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic = "Percentages should be between 0 and 100 inclusively"]
     fn table_invalid_percentages() {
         let _ = Table::default().widths([Constraint::Percentage(110)]);
     }
