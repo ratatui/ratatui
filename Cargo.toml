@@ -82,6 +82,7 @@ needless_pass_by_value = "warn"
 return_self_not_must_use = "warn"
 semicolon_if_nothing_returned = "warn"
 trivially_copy_pass_by_ref = "warn"
+unreadable_literal = "warn"
 use_self = "warn"
 
 [features]
