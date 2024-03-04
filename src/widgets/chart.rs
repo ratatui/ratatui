@@ -400,7 +400,6 @@ impl<'a> Dataset<'a> {
 
 /// A container that holds all the infos about where to display each elements of the chart (axis,
 /// labels, legend, ...).
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 struct ChartLayout {
     /// Location of the title of the x axis
     title_x: Option<(u16, u16)>,
@@ -691,50 +690,58 @@ impl<'a> Chart<'a> {
 
     /// Compute the internal layout of the chart given the area. If the area is too small some
     /// elements may be automatically hidden
-    fn layout(&self, area: Rect) -> ChartLayout {
-        let mut layout = ChartLayout::default();
+    fn layout(&self, area: Rect) -> Option<ChartLayout> {
         if area.height == 0 || area.width == 0 {
-            return layout;
+            return None;
         }
         let mut x = area.left();
         let mut y = area.bottom() - 1;
 
+        let mut label_x = None;
         if self.x_axis.labels.is_some() && y > area.top() {
-            layout.label_x = Some(y);
+            label_x = Some(y);
             y -= 1;
         }
 
-        layout.label_y = self.y_axis.labels.as_ref().and(Some(x));
+        let label_y = self.y_axis.labels.as_ref().and(Some(x));
         x += self.max_width_of_labels_left_of_y_axis(area, self.y_axis.labels.is_some());
 
+        let mut axis_x = None;
         if self.x_axis.labels.is_some() && y > area.top() {
-            layout.axis_x = Some(y);
+            axis_x = Some(y);
             y -= 1;
         }
 
+        let mut axis_y = None;
         if self.y_axis.labels.is_some() && x + 1 < area.right() {
-            layout.axis_y = Some(x);
+            axis_y = Some(x);
             x += 1;
         }
 
-        if x < area.right() && y > 1 {
-            layout.graph_area = Rect::new(x, area.top(), area.right() - x, y - area.top() + 1);
+        let graph_width = area.right().saturating_sub(x);
+        let graph_height = y.saturating_sub(area.top()).saturating_add(1);
+        if graph_width == 0 || graph_height == 0 {
+            return None;
         }
+        let graph_area = Rect::new(x, area.top(), graph_width, graph_height);
 
+        let mut title_x = None;
         if let Some(ref title) = self.x_axis.title {
             let w = title.width() as u16;
-            if w < layout.graph_area.width && layout.graph_area.height > 2 {
-                layout.title_x = Some((x + layout.graph_area.width - w, y));
+            if w < graph_area.width && graph_area.height > 2 {
+                title_x = Some((x + graph_area.width - w, y));
             }
         }
 
+        let mut title_y = None;
         if let Some(ref title) = self.y_axis.title {
             let w = title.width() as u16;
-            if w + 1 < layout.graph_area.width && layout.graph_area.height > 2 {
-                layout.title_y = Some((x, area.top()));
+            if w + 1 < graph_area.width && graph_area.height > 2 {
+                title_y = Some((x, area.top()));
             }
         }
 
+        let mut legend_area = None;
         if let Some(legend_position) = self.legend_position {
             let legends = self
                 .datasets
@@ -747,27 +754,25 @@ impl<'a> Chart<'a> {
 
                 let [max_legend_width] = Layout::horizontal([self.hidden_legend_constraints.0])
                     .flex(Flex::Start)
-                    .areas(layout.graph_area);
+                    .areas(graph_area);
 
                 let [max_legend_height] = Layout::vertical([self.hidden_legend_constraints.1])
                     .flex(Flex::Start)
-                    .areas(layout.graph_area);
+                    .areas(graph_area);
 
                 if inner_width > 0
                     && legend_width <= max_legend_width.width
                     && legend_height <= max_legend_height.height
                 {
-                    layout.legend_area = legend_position.layout(
-                        layout.graph_area,
+                    legend_area = legend_position.layout(
+                        graph_area,
                         legend_width,
                         legend_height,
-                        layout
-                            .title_x
+                        title_x
                             .and(self.x_axis.title.as_ref())
                             .map(|t| t.width() as u16)
                             .unwrap_or_default(),
-                        layout
-                            .title_y
+                        title_y
                             .and(self.y_axis.title.as_ref())
                             .map(|t| t.width() as u16)
                             .unwrap_or_default(),
@@ -775,7 +780,16 @@ impl<'a> Chart<'a> {
                 }
             }
         }
-        layout
+        Some(ChartLayout {
+            title_x,
+            title_y,
+            label_x,
+            label_y,
+            axis_x,
+            axis_y,
+            legend_area,
+            graph_area,
+        })
     }
 
     fn max_width_of_labels_left_of_y_axis(&self, area: Rect, has_y_axis: bool) -> u16 {
@@ -939,11 +953,10 @@ impl WidgetRef for Chart<'_> {
         // axis names).
         let original_style = buf.get(area.left(), area.top()).style();
 
-        let layout = self.layout(chart_area);
-        let graph_area = layout.graph_area;
-        if graph_area.width < 1 || graph_area.height < 1 {
+        let Some(layout) = self.layout(chart_area) else {
             return;
-        }
+        };
+        let graph_area = layout.graph_area;
 
         self.render_x_labels(buf, &layout, chart_area, graph_area);
         self.render_y_labels(buf, &layout, chart_area, graph_area);
@@ -1136,7 +1149,7 @@ mod tests {
                 .x_axis(Axis::default().title("X axis"))
                 .y_axis(Axis::default().title("Y axis"))
                 .hidden_legend_constraints(case.hidden_legend_constraints);
-            let layout = chart.layout(case.chart_area);
+            let layout = chart.layout(case.chart_area).unwrap();
             assert_eq!(layout.legend_area, case.legend_area);
         }
     }
@@ -1208,7 +1221,7 @@ mod tests {
         let data_unnamed = Dataset::default(); // must not occupy a row in legend
         let widget = Chart::new(vec![data_named_1, data_unnamed, data_named_2]);
         let buffer = Buffer::empty(Rect::new(0, 0, 50, 25));
-        let layout = widget.layout(buffer.area);
+        let layout = widget.layout(buffer.area).unwrap();
 
         assert!(layout.legend_area.is_some());
         assert_eq!(layout.legend_area.unwrap().height, 4); // 2 for borders, 2 for rows
@@ -1219,7 +1232,7 @@ mod tests {
         let dataset = Dataset::default();
         let widget = Chart::new(vec![dataset; 3]);
         let buffer = Buffer::empty(Rect::new(0, 0, 50, 25));
-        let layout = widget.layout(buffer.area);
+        let layout = widget.layout(buffer.area).unwrap();
 
         assert!(layout.legend_area.is_none());
     }
