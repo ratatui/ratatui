@@ -114,7 +114,7 @@ impl Cell {
 
     /// Resets the cell to the default state.
     pub fn reset(&mut self) {
-        self.symbol = CompactString::new(" ");
+        self.symbol = CompactString::new_inline(" ");
         self.fg = Color::Reset;
         self.bg = Color::Reset;
         #[cfg(feature = "underline-color")]
@@ -129,7 +129,7 @@ impl Cell {
 impl Default for Cell {
     fn default() -> Self {
         Self {
-            symbol: CompactString::new(" "),
+            symbol: CompactString::new_inline(" "),
             fg: Color::Reset,
             bg: Color::Reset,
             #[cfg(feature = "underline-color")]
