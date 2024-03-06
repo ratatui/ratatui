@@ -949,19 +949,15 @@ impl WidgetRef for Chart<'_> {
 
         self.block.render_ref(area, buf);
         let chart_area = self.block.inner_if_some(area);
-        if chart_area.is_empty() {
+        let Some(layout) = self.layout(chart_area) else {
             return;
-        }
+        };
+        let graph_area = layout.graph_area;
 
         // Sample the style of the entire widget. This sample will be used to reset the style of
         // the cells that are part of the components put on top of the grah area (i.e legend and
         // axis names).
         let original_style = buf.get(area.left(), area.top()).style();
-
-        let Some(layout) = self.layout(chart_area) else {
-            return;
-        };
-        let graph_area = layout.graph_area;
 
         self.render_x_labels(buf, &layout, chart_area, graph_area);
         self.render_y_labels(buf, &layout, chart_area, graph_area);
