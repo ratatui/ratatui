@@ -720,9 +720,14 @@ impl<'a> Chart<'a> {
 
         let graph_width = area.right().saturating_sub(x);
         let graph_height = y.saturating_sub(area.top()).saturating_add(1);
-        if graph_width == 0 || graph_height == 0 {
-            return None;
-        }
+        debug_assert_ne!(
+            graph_width, 0,
+            "Axis and labels should have been hidden due to the small area"
+        );
+        debug_assert_ne!(
+            graph_height, 0,
+            "Axis and labels should have been hidden due to the small area"
+        );
         let graph_area = Rect::new(x, area.top(), graph_width, graph_height);
 
         let mut title_x = None;
