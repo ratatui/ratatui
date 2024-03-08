@@ -13,6 +13,8 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+#![allow(clippy::enum_glob_use, clippy::wildcard_imports)]
+
 use std::io::{self, stdout};
 
 use color_eyre::{config::HookBuilder, Result};
@@ -27,7 +29,7 @@ use ratatui::{
     prelude::*,
     style::palette::tailwind::*,
     symbols::line,
-    widgets::*,
+    widgets::{Block, Paragraph, Wrap},
 };
 use strum::{Display, EnumIter, FromRepr};
 
@@ -67,9 +69,9 @@ enum ConstraintName {
 /// └──────────────┘
 /// ```
 struct ConstraintBlock {
-    selected: bool,
-    legend: bool,
     constraint: Constraint,
+    legend: bool,
+    selected: bool,
 }
 
 /// A widget that renders a spacer with a label indicating the width of the spacer. E.g.:
@@ -146,32 +148,31 @@ impl App {
         Ok(())
     }
 
-    /// select the next block with wrap around
     fn increment_value(&mut self) {
-        if self.constraints.is_empty() {
+        let Some(constraint) = self.constraints.get_mut(self.selected_index) else {
             return;
-        }
-        self.constraints[self.selected_index] = match self.constraints[self.selected_index] {
-            Constraint::Length(v) => Constraint::Length(v.saturating_add(1)),
-            Constraint::Min(v) => Constraint::Min(v.saturating_add(1)),
-            Constraint::Max(v) => Constraint::Max(v.saturating_add(1)),
-            Constraint::Fill(v) => Constraint::Fill(v.saturating_add(1)),
-            Constraint::Percentage(v) => Constraint::Percentage(v.saturating_add(1)),
-            Constraint::Ratio(n, d) => Constraint::Ratio(n, d.saturating_add(1)),
+        };
+        match constraint {
+            Constraint::Length(v)
+            | Constraint::Min(v)
+            | Constraint::Max(v)
+            | Constraint::Fill(v)
+            | Constraint::Percentage(v) => *v = v.saturating_add(1),
+            Constraint::Ratio(_n, d) => *d = d.saturating_add(1),
         };
     }
 
     fn decrement_value(&mut self) {
-        if self.constraints.is_empty() {
+        let Some(constraint) = self.constraints.get_mut(self.selected_index) else {
             return;
-        }
-        self.constraints[self.selected_index] = match self.constraints[self.selected_index] {
-            Constraint::Length(v) => Constraint::Length(v.saturating_sub(1)),
-            Constraint::Min(v) => Constraint::Min(v.saturating_sub(1)),
-            Constraint::Max(v) => Constraint::Max(v.saturating_sub(1)),
-            Constraint::Fill(v) => Constraint::Fill(v.saturating_sub(1)),
-            Constraint::Percentage(v) => Constraint::Percentage(v.saturating_sub(1)),
-            Constraint::Ratio(n, d) => Constraint::Ratio(n, d.saturating_sub(1)),
+        };
+        match constraint {
+            Constraint::Length(v)
+            | Constraint::Min(v)
+            | Constraint::Max(v)
+            | Constraint::Fill(v)
+            | Constraint::Percentage(v) => *v = v.saturating_sub(1),
+            Constraint::Ratio(_n, d) => *d = d.saturating_sub(1),
         };
     }
 
@@ -222,7 +223,7 @@ impl App {
     }
 
     fn exit(&mut self) {
-        self.mode = AppMode::Quit
+        self.mode = AppMode::Quit;
     }
 
     fn swap_constraint(&mut self, name: ConstraintName) {
@@ -235,7 +236,7 @@ impl App {
             ConstraintName::Min => Min(self.value),
             ConstraintName::Max => Max(self.value),
             ConstraintName::Fill => Fill(self.value),
-            ConstraintName::Ratio => Ratio(1, self.value as u32 / 4), // for balance
+            ConstraintName::Ratio => Ratio(1, u32::from(self.value) / 4), // for balance
         };
         self.constraints[self.selected_index] = constraint;
     }
@@ -243,14 +244,13 @@ impl App {
 
 impl From<Constraint> for ConstraintName {
     fn from(constraint: Constraint) -> Self {
-        use Constraint::*;
         match constraint {
-            Length(_) => ConstraintName::Length,
-            Percentage(_) => ConstraintName::Percentage,
-            Ratio(_, _) => ConstraintName::Ratio,
-            Min(_) => ConstraintName::Min,
-            Max(_) => ConstraintName::Max,
-            Fill(_) => ConstraintName::Fill,
+            Length(_) => Self::Length,
+            Percentage(_) => Self::Percentage,
+            Ratio(_, _) => Self::Ratio,
+            Min(_) => Self::Min,
+            Max(_) => Self::Max,
+            Fill(_) => Self::Fill,
         }
     }
 }
@@ -267,9 +267,9 @@ impl Widget for &App {
             ])
             .areas(area);
 
-        self.header().render(header_area, buf);
-        self.instructions().render(instructions_area, buf);
-        self.swap_legend().render(swap_legend_area, buf);
+        App::header().render(header_area, buf);
+        App::instructions().render(instructions_area, buf);
+        App::swap_legend().render(swap_legend_area, buf);
         self.render_layout_blocks(blocks_area, buf);
     }
 }
@@ -280,12 +280,12 @@ impl App {
     const TEXT_COLOR: Color = SLATE.c400;
     const AXIS_COLOR: Color = SLATE.c500;
 
-    fn header(&self) -> impl Widget {
+    fn header() -> impl Widget {
         let text = "Constraint Explorer";
         text.bold().fg(Self::HEADER_COLOR).to_centered_line()
     }
 
-    fn instructions(&self) -> impl Widget {
+    fn instructions() -> impl Widget {
         let text = "◄ ►: select, ▲ ▼: edit, 1-6: swap, a: add, x: delete, q: quit, + -: spacing";
         Paragraph::new(text)
             .fg(Self::TEXT_COLOR)
@@ -293,7 +293,7 @@ impl App {
             .wrap(Wrap { trim: false })
     }
 
-    fn swap_legend(&self) -> impl Widget {
+    fn swap_legend() -> impl Widget {
         #[allow(unstable_name_collisions)]
         Paragraph::new(
             Line::from(
@@ -327,7 +327,7 @@ impl App {
         let label = if self.spacing != 0 {
             format!("{} px (gap: {} px)", width, self.spacing)
         } else {
-            format!("{} px", width)
+            format!("{width} px")
         };
         let bar_width = width.saturating_sub(2) as usize; // we want to `<` and `>` at the ends
         let width_bar = format!("<{label:-^bar_width$}>");
@@ -348,7 +348,7 @@ impl App {
         self.render_layout_block(Flex::Center, center, buf);
         self.render_layout_block(Flex::End, end, buf);
         self.render_layout_block(Flex::SpaceAround, space_around, buf);
-        self.render_layout_block(Flex::SpaceBetween, space_between, buf)
+        self.render_layout_block(Flex::SpaceBetween, space_between, buf);
     }
 
     fn render_user_constraints_legend(&self, area: Rect, buf: &mut Buffer) {
@@ -371,7 +371,7 @@ impl App {
             Layout::vertical([Length(1), Max(1), Length(4)]).areas(area);
 
         if label_area.height > 0 {
-            format!("Flex::{:?}", flex).bold().render(label_area, buf);
+            format!("Flex::{flex:?}").bold().render(label_area, buf);
         }
 
         self.axis(area.width).render(axis_area, buf);
@@ -405,17 +405,17 @@ impl Widget for ConstraintBlock {
 impl ConstraintBlock {
     const TEXT_COLOR: Color = SLATE.c200;
 
-    fn new(constraint: Constraint, selected: bool, legend: bool) -> Self {
+    const fn new(constraint: Constraint, selected: bool, legend: bool) -> Self {
         Self {
             constraint,
-            selected,
             legend,
+            selected,
         }
     }
 
     fn label(&self, width: u16) -> String {
-        let long_width = format!("{} px", width);
-        let short_width = format!("{}", width);
+        let long_width = format!("{width} px");
+        let short_width = format!("{width}");
         // border takes up 2 columns
         let available_space = width.saturating_sub(2) as usize;
         let width_label = if long_width.len() < available_space {
@@ -423,7 +423,7 @@ impl ConstraintBlock {
         } else if short_width.len() < available_space {
             short_width
         } else {
-            "".to_string()
+            String::new()
         };
         format!("{}\n{}", self.constraint, width_label)
     }
@@ -499,9 +499,9 @@ impl Widget for SpacerBlock {
     fn render(self, area: Rect, buf: &mut Buffer) {
         match area.height {
             1 => (),
-            2 => self.render_2px(area, buf),
-            3 => self.render_3px(area, buf),
-            _ => self.render_4px(area, buf),
+            2 => Self::render_2px(area, buf),
+            3 => Self::render_3px(area, buf),
+            _ => Self::render_4px(area, buf),
         }
     }
 }
@@ -541,7 +541,7 @@ impl SpacerBlock {
     /// A label that says "Spacer" if there is enough space
     fn spacer_label(width: u16) -> impl Widget {
         let label = if width >= 6 { "Spacer" } else { "" };
-        label.fg(SpacerBlock::TEXT_COLOR).to_centered_line()
+        label.fg(Self::TEXT_COLOR).to_centered_line()
     }
 
     /// A label that says "8 px" if there is enough space
@@ -553,12 +553,12 @@ impl SpacerBlock {
         } else if short_label.len() < width as usize {
             short_label
         } else {
-            "".to_string()
+            String::new()
         };
         Line::styled(label, Self::TEXT_COLOR).centered()
     }
 
-    fn render_2px(&self, area: Rect, buf: &mut Buffer) {
+    fn render_2px(area: Rect, buf: &mut Buffer) {
         if area.width > 1 {
             Self::block().render(area, buf);
         } else {
@@ -566,7 +566,7 @@ impl SpacerBlock {
         }
     }
 
-    fn render_3px(&self, area: Rect, buf: &mut Buffer) {
+    fn render_3px(area: Rect, buf: &mut Buffer) {
         if area.width > 1 {
             Self::block().render(area, buf);
         } else {
@@ -577,7 +577,7 @@ impl SpacerBlock {
         Self::spacer_label(area.width).render(row, buf);
     }
 
-    fn render_4px(&self, area: Rect, buf: &mut Buffer) {
+    fn render_4px(area: Rect, buf: &mut Buffer) {
         if area.width > 1 {
             Self::block().render(area, buf);
         } else {
@@ -593,7 +593,7 @@ impl SpacerBlock {
 }
 
 impl ConstraintName {
-    fn color(&self) -> Color {
+    const fn color(self) -> Color {
         match self {
             Self::Length => SLATE.c700,
             Self::Percentage => SLATE.c800,
@@ -604,7 +604,7 @@ impl ConstraintName {
         }
     }
 
-    fn lighter_color(&self) -> Color {
+    const fn lighter_color(self) -> Color {
         match self {
             Self::Length => STONE.c500,
             Self::Percentage => STONE.c600,
@@ -626,7 +626,7 @@ fn init_error_hooks() -> Result<()> {
     }))?;
     std::panic::set_hook(Box::new(move |info| {
         let _ = restore_terminal();
-        panic(info)
+        panic(info);
     }));
     Ok(())
 }

@@ -19,9 +19,12 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, Paragraph},
+};
 
-/// Example code for libr.rs
+/// Example code for lib.rs
 ///
 /// When cargo-rdme supports doc comments that import from code, this will be imported
 /// rather than copied to the lib.rs file.
@@ -34,7 +37,6 @@ fn main() -> io::Result<()> {
     let mut should_quit = false;
     while !should_quit {
         terminal.draw(match arg.as_str() {
-            "hello_world" => hello_world,
             "layout" => layout,
             "styling" => styling,
             _ => hello_world,

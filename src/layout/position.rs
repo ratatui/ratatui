@@ -38,14 +38,14 @@ pub struct Position {
 
 impl Position {
     /// Create a new position
-    pub fn new(x: u16, y: u16) -> Self {
-        Position { x, y }
+    pub const fn new(x: u16, y: u16) -> Self {
+        Self { x, y }
     }
 }
 
 impl From<(u16, u16)> for Position {
     fn from((x, y): (u16, u16)) -> Self {
-        Position { x, y }
+        Self { x, y }
     }
 }
 

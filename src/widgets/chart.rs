@@ -3,11 +3,9 @@ use std::cmp::max;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
-use super::block::BlockExt;
 use crate::{
     layout::Flex,
     prelude::*,
-    symbols,
     widgets::{
         canvas::{Canvas, Line as CanvasLine, Points},
         Block, Borders,
@@ -56,7 +54,7 @@ impl<'a> Axis<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title<T>(mut self, title: T) -> Axis<'a>
+    pub fn title<T>(mut self, title: T) -> Self
     where
         T: Into<Line<'a>>,
     {
@@ -70,7 +68,7 @@ impl<'a> Axis<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bounds(mut self, bounds: [f64; 2]) -> Axis<'a> {
+    pub const fn bounds(mut self, bounds: [f64; 2]) -> Self {
         self.bounds = bounds;
         self
     }
@@ -98,7 +96,7 @@ impl<'a> Axis<'a> {
     ///         .labels(vec!["0".bold(), "25".into(), "50".bold()]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn labels(mut self, labels: Vec<Span<'a>>) -> Axis<'a> {
+    pub fn labels(mut self, labels: Vec<Span<'a>>) -> Self {
         self.labels = Some(labels);
         self
     }
@@ -120,7 +118,7 @@ impl<'a> Axis<'a> {
     /// let axis = Axis::default().red();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Axis<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -133,7 +131,7 @@ impl<'a> Axis<'a> {
     ///
     /// On the X axis, this parameter only affects the first label.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn labels_alignment(mut self, alignment: Alignment) -> Axis<'a> {
+    pub const fn labels_alignment(mut self, alignment: Alignment) -> Self {
         self.labels_alignment = alignment;
         self
     }
@@ -178,14 +176,14 @@ pub enum LegendPosition {
 
 impl LegendPosition {
     fn layout(
-        &self,
+        self,
         area: Rect,
         legend_width: u16,
         legend_height: u16,
         x_title_width: u16,
         y_title_width: u16,
     ) -> Option<Rect> {
-        let mut height_margin = (area.height - legend_height) as i32;
+        let mut height_margin = i32::from(area.height - legend_height);
         if x_title_width != 0 {
             height_margin -= 1;
         }
@@ -322,7 +320,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn name<S>(mut self, name: S) -> Dataset<'a>
+    pub fn name<S>(mut self, name: S) -> Self
     where
         S: Into<Line<'a>>,
     {
@@ -341,7 +339,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn data(mut self, data: &'a [(f64, f64)]) -> Dataset<'a> {
+    pub const fn data(mut self, data: &'a [(f64, f64)]) -> Self {
         self.data = data;
         self
     }
@@ -349,14 +347,14 @@ impl<'a> Dataset<'a> {
     /// Sets the kind of character to use to display this dataset
     ///
     /// You can use dots (`•`), blocks (`█`), bars (`▄`), braille (`⠓`, `⣇`, `⣿`) or half-blocks
-    /// (`█`, `▄`, and `▀`). See [symbols::Marker] for more details.
+    /// (`█`, `▄`, and `▀`). See [`symbols::Marker`] for more details.
     ///
     /// Note [`Marker::Braille`](symbols::Marker::Braille) requires a font that supports Unicode
     /// Braille Patterns.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn marker(mut self, marker: symbols::Marker) -> Dataset<'a> {
+    pub const fn marker(mut self, marker: symbols::Marker) -> Self {
         self.marker = marker;
         self
     }
@@ -369,7 +367,7 @@ impl<'a> Dataset<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn graph_type(mut self, graph_type: GraphType) -> Dataset<'a> {
+    pub const fn graph_type(mut self, graph_type: GraphType) -> Self {
         self.graph_type = graph_type;
         self
     }
@@ -394,7 +392,7 @@ impl<'a> Dataset<'a> {
     /// let dataset = Dataset::default().red();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Dataset<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -527,8 +525,8 @@ impl<'a> Chart<'a> {
     ///     Dataset::default().data(&data_points2),
     /// ]);
     /// ```
-    pub fn new(datasets: Vec<Dataset<'a>>) -> Chart<'a> {
-        Chart {
+    pub fn new(datasets: Vec<Dataset<'a>>) -> Self {
+        Self {
             block: None,
             x_axis: Axis::default(),
             y_axis: Axis::default(),
@@ -543,7 +541,7 @@ impl<'a> Chart<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> Chart<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -557,7 +555,7 @@ impl<'a> Chart<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Chart<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -580,7 +578,7 @@ impl<'a> Chart<'a> {
     /// );
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn x_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
+    pub fn x_axis(mut self, axis: Axis<'a>) -> Self {
         self.x_axis = axis;
         self
     }
@@ -603,7 +601,7 @@ impl<'a> Chart<'a> {
     /// );
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn y_axis(mut self, axis: Axis<'a>) -> Chart<'a> {
+    pub fn y_axis(mut self, axis: Axis<'a>) -> Self {
         self.y_axis = axis;
         self
     }
@@ -648,7 +646,10 @@ impl<'a> Chart<'a> {
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn hidden_legend_constraints(mut self, constraints: (Constraint, Constraint)) -> Chart<'a> {
+    pub const fn hidden_legend_constraints(
+        mut self,
+        constraints: (Constraint, Constraint),
+    ) -> Self {
         self.hidden_legend_constraints = constraints;
         self
     }
@@ -683,7 +684,7 @@ impl<'a> Chart<'a> {
     /// let chart = Chart::new(vec![]).legend_position(None);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn legend_position(mut self, position: Option<LegendPosition>) -> Chart<'a> {
+    pub const fn legend_position(mut self, position: Option<LegendPosition>) -> Self {
         self.legend_position = position;
         self
     }
@@ -923,6 +924,7 @@ impl Widget for Chart<'_> {
 }
 
 impl WidgetRef for Chart<'_> {
+    #[allow(clippy::too_many_lines)]
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
 
@@ -981,7 +983,7 @@ impl WidgetRef for Chart<'_> {
                         coords: dataset.data,
                         color: dataset.style.fg.unwrap_or(Color::Reset),
                     });
-                    if let GraphType::Line = dataset.graph_type {
+                    if dataset.graph_type == GraphType::Line {
                         for data in dataset.data.windows(2) {
                             ctx.draw(&CanvasLine {
                                 x1: data[0].0,
@@ -1060,7 +1062,7 @@ impl WidgetRef for Chart<'_> {
 }
 
 impl<'a> Styled for Axis<'a> {
-    type Item = Axis<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -1072,7 +1074,7 @@ impl<'a> Styled for Axis<'a> {
 }
 
 impl<'a> Styled for Dataset<'a> {
-    type Item = Dataset<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -1084,7 +1086,7 @@ impl<'a> Styled for Dataset<'a> {
 }
 
 impl<'a> Styled for Chart<'a> {
-    type Item = Chart<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -1100,10 +1102,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        style::{Modifier, Stylize},
-    };
+    use crate::assert_buffer_eq;
 
     struct LegendTestCase {
         chart_area: Rect,
@@ -1151,7 +1150,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]
@@ -1163,7 +1162,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]
@@ -1175,7 +1174,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]
@@ -1199,7 +1198,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 4));
         widget.render(buffer.area, &mut buffer);
 
-        assert_eq!(buffer, Buffer::with_lines(vec![" ".repeat(8); 4]))
+        assert_eq!(buffer, Buffer::with_lines(vec![" ".repeat(8); 4]));
     }
 
     #[test]
@@ -1355,7 +1354,7 @@ mod tests {
 
         let expected = Buffer::with_lines(vec!["┌────┐", "│Data│", "└────┘"]);
 
-        [
+        for position in [
             LegendPosition::TopLeft,
             LegendPosition::Top,
             LegendPosition::TopRight,
@@ -1364,16 +1363,15 @@ mod tests {
             LegendPosition::Bottom,
             LegendPosition::BottomLeft,
             LegendPosition::BottomRight,
-        ]
-        .iter()
-        .for_each(|&position| {
+        ] {
             let chart = chart.clone().legend_position(Some(position));
             buffer.reset();
             chart.render(buffer.area, &mut buffer);
             assert_eq!(buffer, expected);
-        });
+        }
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn test_legend_of_chart_have_odd_margin_size() {
         let name = "Data";

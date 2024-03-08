@@ -13,6 +13,8 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+#![allow(clippy::wildcard_imports)]
+
 use std::{
     collections::{BTreeMap, VecDeque},
     error::Error,
@@ -129,6 +131,7 @@ fn input_handling(tx: mpsc::Sender<Event>) {
     });
 }
 
+#[allow(clippy::cast_precision_loss, clippy::needless_pass_by_value)]
 fn workers(tx: mpsc::Sender<Event>) -> Vec<Worker> {
     (0..4)
         .map(|id| {
@@ -168,6 +171,7 @@ fn downloads() -> Downloads {
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     workers: Vec<Worker>,
@@ -194,7 +198,7 @@ fn run_app<B: Backend>(
             Event::DownloadUpdate(worker_id, _download_id, progress) => {
                 let download = downloads.in_progress.get_mut(&worker_id).unwrap();
                 download.progress = progress;
-                redraw = false
+                redraw = false;
             }
             Event::DownloadDone(worker_id, download_id) => {
                 let download = downloads.in_progress.remove(&worker_id).unwrap();
@@ -242,6 +246,7 @@ fn ui(f: &mut Frame, downloads: &Downloads) {
 
     // total progress
     let done = NUM_DOWNLOADS - downloads.pending.len() - downloads.in_progress.len();
+    #[allow(clippy::cast_precision_loss)]
     let progress = LineGauge::default()
         .gauge_style(Style::default().fg(Color::Blue))
         .label(format!("{done}/{NUM_DOWNLOADS}"))
@@ -271,6 +276,7 @@ fn ui(f: &mut Frame, downloads: &Downloads) {
     let list = List::new(items);
     f.render_widget(list, list_area);
 
+    #[allow(clippy::cast_possible_truncation)]
     for (i, (_, download)) in downloads.in_progress.iter().enumerate() {
         let gauge = Gauge::default()
             .gauge_style(Style::default().fg(Color::Yellow))

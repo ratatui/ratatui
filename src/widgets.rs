@@ -70,6 +70,7 @@ use crate::{buffer::Buffer, layout::Rect};
 /// used where backwards compatibility is required (all the internal widgets use this approach).
 ///
 /// A blanket implementation of `Widget` for `&W` where `W` implements `WidgetRef` is provided.
+/// Widget is also implemented for `&str` and `String` types.
 ///
 /// # Examples
 ///
@@ -417,6 +418,51 @@ pub trait StatefulWidgetRef {
 //     }
 // }
 
+/// Renders a string slice as a widget.
+///
+/// This implementation allows a string slice (`&str`) to act as a widget, meaning it can be drawn
+/// onto a [`Buffer`] in a specified [`Rect`]. The slice represents a static string which can be
+/// rendered by reference, thereby avoiding the need for string cloning or ownership transfer when
+/// drawing the text to the screen.
+impl Widget for &str {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.render_ref(area, buf);
+    }
+}
+
+/// Provides the ability to render a string slice by reference.
+///
+/// This trait implementation ensures that a string slice, which is an immutable view over a
+/// `String`, can be drawn on demand without requiring ownership of the string itself. It utilizes
+/// the default text style when rendering onto the provided [`Buffer`] at the position defined by
+/// [`Rect`].
+impl WidgetRef for &str {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        buf.set_string(area.x, area.y, self, crate::style::Style::default());
+    }
+}
+
+/// Renders a `String` object as a widget.
+///
+/// This implementation enables an owned `String` to be treated as a widget, which can be rendered
+/// on a [`Buffer`] within the bounds of a given [`Rect`].
+impl Widget for String {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        self.render_ref(area, buf);
+    }
+}
+
+/// Provides the ability to render a `String` by reference.
+///
+/// This trait allows for a `String` to be rendered onto the [`Buffer`], similarly using the default
+/// style settings. It ensures that an owned `String` can be rendered efficiently by reference,
+/// without the need to give up ownership of the underlying text.
+impl WidgetRef for String {
+    fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        buf.set_string(area.x, area.y, self, crate::style::Style::default());
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use rstest::{fixture, rstest};
@@ -462,7 +508,7 @@ mod tests {
     impl StatefulWidgetRef for PersonalGreeting {
         type State = String;
         fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-            Line::from(format!("Hello {}", state)).render(area, buf);
+            Line::from(format!("Hello {state}")).render(area, buf);
         }
     }
 
@@ -560,5 +606,53 @@ mod tests {
         let widget: Option<Greeting> = None;
         widget.render_ref(buf.area, &mut buf);
         assert_eq!(buf, Buffer::with_lines(["                    "]));
+    }
+
+    #[rstest]
+    fn str_render(mut buf: Buffer) {
+        "hello world".render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn str_render_ref(mut buf: Buffer) {
+        "hello world".render_ref(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn str_option_render(mut buf: Buffer) {
+        Some("hello world").render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn str_option_render_ref(mut buf: Buffer) {
+        Some("hello world").render_ref(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn string_render(mut buf: Buffer) {
+        String::from("hello world").render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn string_render_ref(mut buf: Buffer) {
+        String::from("hello world").render_ref(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn string_option_render(mut buf: Buffer) {
+        Some(String::from("hello world")).render(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+    }
+
+    #[rstest]
+    fn string_option_render_ref(mut buf: Buffer) {
+        Some(String::from("hello world")).render_ref(buf.area, &mut buf);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]),);
     }
 }

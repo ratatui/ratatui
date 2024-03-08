@@ -202,6 +202,7 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints() {
 
 #[test]
 fn widgets_table_columns_widths_can_use_percentage_constraints() {
+    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
     fn test_case(widths: &[Constraint], expected: Buffer) {
         let backend = TestBackend::new(30, 10);
@@ -311,6 +312,7 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
 
 #[test]
 fn widgets_table_columns_widths_can_use_mixed_constraints() {
+    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
     fn test_case(widths: &[Constraint], expected: Buffer) {
         let backend = TestBackend::new(30, 10);
@@ -423,6 +425,7 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
 
 #[test]
 fn widgets_table_columns_widths_can_use_ratio_constraints() {
+    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
     fn test_case(widths: &[Constraint], expected: Buffer) {
         let backend = TestBackend::new(30, 10);
@@ -626,6 +629,7 @@ fn widgets_table_can_have_rows_with_multi_lines() {
     );
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn widgets_table_enable_always_highlight_spacing() {
     let test_case = |state: &mut TableState, space: HighlightSpacing, expected: Buffer| {

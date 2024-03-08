@@ -26,7 +26,7 @@
 <div align="center">
 
 [![Crate Badge]][Crate] [![Docs Badge]][API Docs] [![CI Badge]][CI Workflow] [![License
-Badge]](./LICENSE)<br>
+Badge]](./LICENSE) [![Sponsors Badge]][GitHub Sponsors]<br>
 [![Codecov Badge]][Codecov] [![Deps.rs Badge]][Deps.rs] [![Discord Badge]][Discord Server]
 [![Matrix Badge]][Matrix]<br>
 
@@ -60,6 +60,9 @@ that for each frame, your app must render all widgets that are supposed to be pa
 This is in contrast to the retained mode style of rendering where widgets are updated and then
 automatically redrawn on the next frame. See the [Rendering] section of the [Ratatui Website]
 for more info.
+
+You can also watch the [FOSDEM 2024 talk] about Ratatui which gives a brief introduction to
+terminal user interfaces and showcases the features of Ratatui, along with a hello world demo.
 
 ## Other documentation
 
@@ -301,6 +304,7 @@ Running this example produces the following output:
 [Changelog]: https://github.com/ratatui-org/ratatui/blob/main/CHANGELOG.md
 [Contributing]: https://github.com/ratatui-org/ratatui/blob/main/CONTRIBUTING.md
 [Breaking Changes]: https://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md
+[FOSDEM 2024 talk]: https://www.youtube.com/watch?v=NU0q6NOLJ20
 [docsrs-hello]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-hello.png?raw=true
 [docsrs-layout]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-layout.png?raw=true
 [docsrs-styling]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-styling.png?raw=true
@@ -322,6 +326,7 @@ Running this example produces the following output:
 [Termion]: https://crates.io/crates/termion
 [Termwiz]: https://crates.io/crates/termwiz
 [tui-rs]: https://crates.io/crates/tui
+[GitHub Sponsors]: https://github.com/sponsors/ratatui-org
 [Crate Badge]: https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square
 [License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square
 [CI Badge]:
@@ -339,6 +344,7 @@ Running this example produces the following output:
 [Matrix Badge]:
     https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix
 [Matrix]: https://matrix.to/#/#ratatui:matrix.org
+[Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui-org?logo=github&style=flat-square
 
 <!-- cargo-rdme end -->
 

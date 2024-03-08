@@ -1,13 +1,12 @@
 use unicode_width::UnicodeWidthStr;
 
-use super::block::BlockExt;
 use crate::{
     prelude::*,
     text::StyledGrapheme,
     widgets::{reflow::*, Block},
 };
 
-fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
+const fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {
     match alignment {
         Alignment::Center => (text_area_width / 2).saturating_sub(line_width / 2),
         Alignment::Right => text_area_width.saturating_sub(line_width),
@@ -107,11 +106,11 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new(Text::styled("Hello, world!", Style::default()));
     /// let paragraph = Paragraph::new(Line::from(vec!["Hello, ".into(), "world!".red()]));
     /// ```
-    pub fn new<T>(text: T) -> Paragraph<'a>
+    pub fn new<T>(text: T) -> Self
     where
         T: Into<Text<'a>>,
     {
-        Paragraph {
+        Self {
             block: None,
             style: Style::default(),
             wrap: None,
@@ -131,7 +130,7 @@ impl<'a> Paragraph<'a> {
     ///     .block(Block::default().title("Paragraph").borders(Borders::ALL));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> Paragraph<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -151,7 +150,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello, world!").style(Style::new().red().on_white());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Paragraph<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -167,7 +166,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello, world!").wrap(Wrap { trim: true });
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn wrap(mut self, wrap: Wrap) -> Paragraph<'a> {
+    pub const fn wrap(mut self, wrap: Wrap) -> Self {
         self.wrap = Some(wrap);
         self
     }
@@ -184,7 +183,7 @@ impl<'a> Paragraph<'a> {
     /// For more information about future scrolling design and concerns, see [RFC: Design of
     /// Scrollable Widgets](https://github.com/ratatui-org/ratatui/issues/174) on GitHub.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn scroll(mut self, offset: (Vertical, Horizontal)) -> Paragraph<'a> {
+    pub const fn scroll(mut self, offset: (Vertical, Horizontal)) -> Self {
         self.scroll = offset;
         self
     }
@@ -201,7 +200,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World").alignment(Alignment::Center);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn alignment(mut self, alignment: Alignment) -> Paragraph<'a> {
+    pub const fn alignment(mut self, alignment: Alignment) -> Self {
         self.alignment = alignment;
         self
     }
@@ -217,7 +216,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World").left_aligned();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn left_aligned(self) -> Self {
+    pub const fn left_aligned(self) -> Self {
         self.alignment(Alignment::Left)
     }
 
@@ -232,7 +231,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World").centered();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn centered(self) -> Self {
+    pub const fn centered(self) -> Self {
         self.alignment(Alignment::Center)
     }
 
@@ -247,7 +246,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World").right_aligned();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn right_aligned(self) -> Self {
+    pub const fn right_aligned(self) -> Self {
         self.alignment(Alignment::Right)
     }
 
@@ -390,7 +389,7 @@ impl<'a> Paragraph<'a> {
 }
 
 impl<'a> Styled for Paragraph<'a> {
-    type Item = Paragraph<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -406,16 +405,14 @@ mod test {
     use super::*;
     use crate::{
         backend::TestBackend,
-        style::{Color, Modifier, Stylize},
-        text::{Line, Span},
         widgets::{block::Position, Borders},
-        Terminal,
     };
 
     /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
     /// area and comparing the rendered and expected content.
     /// This can be used for easy testing of varying configured paragraphs with the same expected
     /// buffer or any other test case really.
+    #[allow(clippy::needless_pass_by_value)]
     fn test_case(paragraph: &Paragraph, expected: Buffer) {
         let backend = TestBackend::new(expected.area.width, expected.area.height);
         let mut terminal = Terminal::new(backend).unwrap();
@@ -952,7 +949,7 @@ mod test {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]

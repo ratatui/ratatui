@@ -63,7 +63,7 @@ mod tests {
         assert_buffer_eq!(buffer, other_buffer);
     }
 
-    #[should_panic]
+    #[should_panic = "buffer areas not equal"]
     #[test]
     fn assert_buffer_eq_panics_on_unequal_area() {
         let buffer = Buffer::empty(Rect::new(0, 0, 5, 1));
@@ -71,7 +71,7 @@ mod tests {
         assert_buffer_eq!(buffer, other_buffer);
     }
 
-    #[should_panic]
+    #[should_panic = "buffer contents not equal"]
     #[test]
     fn assert_buffer_eq_panics_on_unequal_style() {
         let buffer = Buffer::empty(Rect::new(0, 0, 5, 1));

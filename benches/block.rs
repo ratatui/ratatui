@@ -10,10 +10,10 @@ use ratatui::{
 };
 
 /// Benchmark for rendering a block.
-pub fn block(c: &mut Criterion) {
+fn block(c: &mut Criterion) {
     let mut group = c.benchmark_group("block");
 
-    for buffer_size in &[
+    for buffer_size in [
         Rect::new(0, 0, 100, 50),  // vertically split screen
         Rect::new(0, 0, 200, 50),  // 1080p fullscreen with medium font
         Rect::new(0, 0, 256, 256), // Max sized area
@@ -47,8 +47,8 @@ pub fn block(c: &mut Criterion) {
 }
 
 /// render the block into a buffer of the given `size`
-fn render(bencher: &mut Bencher, block: &Block, size: &Rect) {
-    let mut buffer = Buffer::empty(*size);
+fn render(bencher: &mut Bencher, block: &Block, size: Rect) {
+    let mut buffer = Buffer::empty(size);
     // We use `iter_batched` to clone the value in the setup function.
     // See https://github.com/ratatui-org/ratatui/pull/377.
     bencher.iter_batched(
@@ -57,7 +57,7 @@ fn render(bencher: &mut Bencher, block: &Block, size: &Rect) {
             bench_block.render(buffer.area, &mut buffer);
         },
         BatchSize::SmallInput,
-    )
+    );
 }
 
 criterion_group!(benches, block);

@@ -46,6 +46,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn show_surrounding<S: Into<Style>>(mut self, style: S) -> Self {
         self.show_surrounding = Some(style.into());
         self
@@ -55,6 +56,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn show_weekdays_header<S: Into<Style>>(mut self, style: S) -> Self {
         self.show_weekday = Some(style.into());
         self
@@ -64,6 +66,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn show_month_header<S: Into<Style>>(mut self, style: S) -> Self {
         self.show_month = Some(style.into());
         self
@@ -73,12 +76,14 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn default_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.default_style = style.into();
         self
     }
 
     /// Render the calendar within a [Block]
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
@@ -94,7 +99,12 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
 
     /// All logic to style a date goes here.
     fn format_date(&self, date: Date) -> Span {
-        if date.month() != self.display_date.month() {
+        if date.month() == self.display_date.month() {
+            Span::styled(
+                format!("{:2?}", date.day()),
+                self.default_style.patch(self.events.get_style(date)),
+            )
+        } else {
             match self.show_surrounding {
                 None => Span::styled("  ", self.default_bg()),
                 Some(s) => {
@@ -105,11 +115,6 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
                     Span::styled(format!("{:2?}", date.day()), style)
                 }
             }
-        } else {
-            Span::styled(
-                format!("{:2?}", date.day()),
-                self.default_style.patch(self.events.get_style(date)),
-            )
         }
     }
 }
@@ -243,7 +248,6 @@ mod tests {
     use time::Month;
 
     use super::*;
-    use crate::style::Color;
 
     #[test]
     fn event_store() {

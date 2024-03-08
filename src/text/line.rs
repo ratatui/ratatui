@@ -2,7 +2,7 @@
 use std::borrow::Cow;
 
 use super::StyledGrapheme;
-use crate::{prelude::*, widgets::Widget};
+use crate::prelude::*;
 
 /// A line of text, consisting of one or more [`Span`]s.
 ///
@@ -10,27 +10,20 @@ use crate::{prelude::*, widgets::Widget};
 /// text. When a [`Line`] is rendered, it is rendered as a single line of text, with each [`Span`]
 /// being rendered in order (left to right).
 ///
-/// [`Line`]s can be created from [`Span`]s, [`String`]s, and [`&str`]s. They can be styled with a
-/// [`Style`], and have an [`Alignment`].
-///
-/// The line's [`Alignment`] is used by the rendering widget to determine how to align the line
-/// within the available space. If the line is longer than the available space, the alignment is
-/// ignored and the line is truncated.
-///
-/// The line's [`Style`] is used by the rendering widget to determine how to style the line. If the
-/// line is longer than the available space, the style is applied to the entire line, and the line
-/// is truncated. Each [`Span`] in the line will be styled with the [`Style`] of the line, and then
-/// with its own [`Style`].
-///
-/// `Line` implements the [`Widget`] trait, which means it can be rendered to a [`Buffer`]. Usually
-/// apps will use the [`Paragraph`] widget instead of rendering a [`Line`] directly as it provides
-/// more functionality.
-///
 /// # Constructor Methods
 ///
 /// - [`Line::default`] creates a line with empty content and the default style.
 /// - [`Line::raw`] creates a line with the given content and the default style.
 /// - [`Line::styled`] creates a line with the given content and style.
+///
+/// # Conversion Methods
+///
+/// - [`Line::from`] creates a `Line` from a [`String`].
+/// - [`Line::from`] creates a `Line` from a [`&str`].
+/// - [`Line::from`] creates a `Line` from a [`Vec`] of [`Span`]s.
+/// - [`Line::from`] creates a `Line` from single [`Span`].
+/// - [`String::from`] converts a line into a [`String`].
+/// - [`Line::from_iter`] creates a line from an iterator of items that are convertible to [`Span`].
 ///
 /// # Setter Methods
 ///
@@ -39,6 +32,15 @@ use crate::{prelude::*, widgets::Widget};
 /// - [`Line::spans`] sets the content of the line.
 /// - [`Line::style`] sets the style of the line.
 /// - [`Line::alignment`] sets the alignment of the line.
+/// - [`Line::left_aligned`] sets the alignment of the line to [`Alignment::Left`].
+/// - [`Line::centered`] sets the alignment of the line to [`Alignment::Center`].
+/// - [`Line::right_aligned`] sets the alignment of the line to [`Alignment::Right`].
+///
+/// # Iteration Methods
+///
+/// - [`Line::iter`] returns an iterator over the spans of this line.
+/// - [`Line::iter_mut`] returns a mutable iterator over the spans of this line.
+/// - [`Line::into_iter`] returns an iterator over the spans of this line.
 ///
 /// # Other Methods
 ///
@@ -56,17 +58,88 @@ use crate::{prelude::*, widgets::Widget};
 ///
 /// # Examples
 ///
+/// ## Creating Lines
+/// [`Line`]s can be created from [`Span`]s, [`String`]s, and [`&str`]s. They can be styled with a
+/// [`Style`].
+///
 /// ```rust
 /// use ratatui::prelude::*;
 ///
-/// Line::raw("unstyled");
-/// Line::styled("yellow text", Style::new().yellow());
-/// Line::from("red text").style(Style::new().red());
-/// Line::from(String::from("unstyled"));
-/// Line::from(vec![
+/// let style = Style::new().yellow();
+/// let line = Line::raw("Hello, world!").style(style);
+/// let line = Line::styled("Hello, world!", style);
+/// let line = Line::styled("Hello, world!", (Color::Yellow, Modifier::BOLD));
+///
+/// let line = Line::from("Hello, world!");
+/// let line = Line::from(String::from("Hello, world!"));
+/// let line = Line::from(vec![
 ///     Span::styled("Hello", Style::new().blue()),
 ///     Span::raw(" world!"),
 /// ]);
+/// ```
+///
+/// ## Styling Lines
+///
+/// The line's [`Style`] is used by the rendering widget to determine how to style the line. Each
+/// [`Span`] in the line will be styled with the [`Style`] of the line, and then with its own
+/// [`Style`]. If the line is longer than the available space, the style is applied to the entire
+/// line, and the line is truncated. `Line` also implements [`Styled`] which means you can use the
+/// methods of the [`Stylize`] trait.
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// let line = Line::from("Hello world!").style(Style::new().yellow().italic());
+/// let line = Line::from("Hello world!").style(Color::Yellow);
+/// let line = Line::from("Hello world!").style((Color::Yellow, Color::Black));
+/// let line = Line::from("Hello world!").style((Color::Yellow, Modifier::ITALIC));
+/// let line = Line::from("Hello world!").yellow().italic();
+/// ```
+///
+/// ## Aligning Lines
+///
+/// The line's [`Alignment`] is used by the rendering widget to determine how to align the line
+/// within the available space. If the line is longer than the available space, the alignment is
+/// ignored and the line is truncated.
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// let line = Line::from("Hello world!").alignment(Alignment::Right);
+/// let line = Line::from("Hello world!").centered();
+/// let line = Line::from("Hello world!").left_aligned();
+/// let line = Line::from("Hello world!").right_aligned();
+/// ```
+///
+/// ## Rendering Lines
+///
+/// `Line` implements the [`Widget`] trait, which means it can be rendered to a [`Buffer`].
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// # fn render(area: Rect, buf: &mut Buffer) {
+/// // in another widget's render method
+/// let line = Line::from("Hello world!").style(Style::new().yellow().italic());
+/// line.render(area, buf);
+/// # }
+///
+/// # fn draw(frame: &mut Frame, area: Rect) {
+/// // in a terminal.draw closure
+/// let line = Line::from("Hello world!").style(Style::new().yellow().italic());
+/// frame.render_widget(line, area);
+/// # }
+/// ```
+/// ## Rendering Lines with a Paragraph widget
+///
+/// Usually apps will use the [`Paragraph`] widget instead of rendering a [`Line`] directly as it
+/// provides more functionality.
+///
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// # fn render(area: Rect, buf: &mut Buffer) {
+/// let line = Line::from("Hello world!").yellow().italic();
+/// Paragraph::new(line)
+///     .wrap(Wrap { trim: true })
+///     .render(area, buf);
+/// # }
 /// ```
 ///
 /// [`Paragraph`]: crate::widgets::Paragraph
@@ -102,11 +175,11 @@ impl<'a> Line<'a> {
     /// Line::raw(String::from("test content"));
     /// Line::raw(Cow::from("test content"));
     /// ```
-    pub fn raw<T>(content: T) -> Line<'a>
+    pub fn raw<T>(content: T) -> Self
     where
         T: Into<Cow<'a, str>>,
     {
-        Line {
+        Self {
             spans: content
                 .into()
                 .lines()
@@ -135,12 +208,12 @@ impl<'a> Line<'a> {
     /// Line::styled(String::from("My text"), style);
     /// Line::styled(Cow::from("test content"), style);
     /// ```
-    pub fn styled<T, S>(content: T, style: S) -> Line<'a>
+    pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
         S: Into<Style>,
     {
-        Line {
+        Self {
             spans: content
                 .into()
                 .lines()
@@ -435,11 +508,20 @@ impl<'a> From<Span<'a>> for Line<'a> {
 }
 
 impl<'a> From<Line<'a>> for String {
-    fn from(line: Line<'a>) -> String {
-        line.iter().fold(String::new(), |mut acc, s| {
+    fn from(line: Line<'a>) -> Self {
+        line.iter().fold(Self::new(), |mut acc, s| {
             acc.push_str(s.content.as_ref());
             acc
         })
+    }
+}
+
+impl<'a, T> FromIterator<T> for Line<'a>
+where
+    T: Into<Span<'a>>,
+{
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        Self::from(iter.into_iter().map(Into::into).collect::<Vec<_>>())
     }
 }
 
@@ -455,13 +537,12 @@ impl WidgetRef for Line<'_> {
         buf.set_style(area, self.style);
         let width = self.width() as u16;
         let offset = match self.alignment {
-            Some(Alignment::Left) => 0,
             Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
             Some(Alignment::Right) => area.width.saturating_sub(width),
-            None => 0,
+            Some(Alignment::Left) | None => 0,
         };
         let mut x = area.left().saturating_add(offset);
-        for span in self.spans.iter() {
+        for span in &self.spans {
             let span_width = span.width() as u16;
             let span_area = Rect {
                 x,
@@ -486,8 +567,22 @@ impl std::fmt::Display for Line<'_> {
     }
 }
 
+impl<'a> Styled for Line<'a> {
+    type Item = Self;
+
+    fn style(&self) -> Style {
+        self.style
+    }
+
+    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
+        self.style(style)
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::iter;
+
     use rstest::{fixture, rstest};
 
     use super::*;
@@ -602,6 +697,16 @@ mod tests {
     }
 
     #[test]
+    fn stylize() {
+        assert_eq!(Line::default().green().style, Color::Green.into());
+        assert_eq!(
+            Line::default().on_green().style,
+            Style::new().bg(Color::Green)
+        );
+        assert_eq!(Line::default().italic().style, Modifier::ITALIC.into());
+    }
+
+    #[test]
     fn from_string() {
         let s = String::from("Hello, world!");
         let line = Line::from(s);
@@ -623,6 +728,32 @@ mod tests {
         ];
         let line = Line::from(spans.clone());
         assert_eq!(spans, line.spans);
+    }
+
+    #[test]
+    fn from_iter() {
+        let line = Line::from_iter(vec!["Hello".blue(), " world!".green()]);
+        assert_eq!(
+            line.spans,
+            vec![
+                Span::styled("Hello", Style::new().blue()),
+                Span::styled(" world!", Style::new().green()),
+            ]
+        );
+    }
+
+    #[test]
+    fn collect() {
+        let line: Line = iter::once("Hello".blue())
+            .chain(iter::once(" world!".green()))
+            .collect();
+        assert_eq!(
+            line.spans,
+            vec![
+                Span::styled("Hello", Style::new().blue()),
+                Span::styled(" world!", Style::new().green()),
+            ]
+        );
     }
 
     #[test]

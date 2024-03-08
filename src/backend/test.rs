@@ -9,6 +9,7 @@ use std::{
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
+    assert_buffer_eq,
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
     layout::{Rect, Size},
@@ -72,9 +73,9 @@ fn buffer_view(buffer: &Buffer) -> String {
 }
 
 impl TestBackend {
-    /// Creates a new TestBackend with the specified width and height.
-    pub fn new(width: u16, height: u16) -> TestBackend {
-        TestBackend {
+    /// Creates a new `TestBackend` with the specified width and height.
+    pub fn new(width: u16, height: u16) -> Self {
+        Self {
             width,
             height,
             buffer: Buffer::empty(Rect::new(0, 0, width, height)),
@@ -83,60 +84,29 @@ impl TestBackend {
         }
     }
 
-    /// Returns a reference to the internal buffer of the TestBackend.
-    pub fn buffer(&self) -> &Buffer {
+    /// Returns a reference to the internal buffer of the `TestBackend`.
+    pub const fn buffer(&self) -> &Buffer {
         &self.buffer
     }
 
-    /// Resizes the TestBackend to the specified width and height.
+    /// Resizes the `TestBackend` to the specified width and height.
     pub fn resize(&mut self, width: u16, height: u16) {
         self.buffer.resize(Rect::new(0, 0, width, height));
         self.width = width;
         self.height = height;
     }
 
-    /// Asserts that the TestBackend's buffer is equal to the expected buffer.
+    /// Asserts that the `TestBackend`'s buffer is equal to the expected buffer.
     /// If the buffers are not equal, a panic occurs with a detailed error message
     /// showing the differences between the expected and actual buffers.
     #[track_caller]
     pub fn assert_buffer(&self, expected: &Buffer) {
-        assert_eq!(expected.area, self.buffer.area);
-        let diff = expected.diff(&self.buffer);
-        if diff.is_empty() {
-            return;
-        }
-
-        let mut debug_info = String::from("Buffers are not equal");
-        debug_info.push('\n');
-        debug_info.push_str("Expected:");
-        debug_info.push('\n');
-        let expected_view = buffer_view(expected);
-        debug_info.push_str(&expected_view);
-        debug_info.push('\n');
-        debug_info.push_str("Got:");
-        debug_info.push('\n');
-        let view = buffer_view(&self.buffer);
-        debug_info.push_str(&view);
-        debug_info.push('\n');
-
-        debug_info.push_str("Diff:");
-        debug_info.push('\n');
-        let nice_diff = diff
-            .iter()
-            .enumerate()
-            .map(|(i, (x, y, cell))| {
-                let expected_cell = expected.get(*x, *y);
-                format!("{i}: at ({x}, {y}) expected {expected_cell:?} got {cell:?}")
-            })
-            .collect::<Vec<String>>()
-            .join("\n");
-        debug_info.push_str(&nice_diff);
-        panic!("{debug_info}");
+        assert_buffer_eq!(&self.buffer, expected);
     }
 }
 
 impl Display for TestBackend {
-    /// Formats the TestBackend for display by calling the buffer_view function
+    /// Formats the `TestBackend` for display by calling the `buffer_view` function
     /// on its internal buffer.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", buffer_view(&self.buffer))
@@ -297,7 +267,6 @@ mod tests {
             format!(
                 r#""{multi_byte_char}" Hidden by multi-width symbols: [(1, " "), (2, " "), (3, " "), (4, " "), (5, " "), (6, " "), (7, " ")]
 "#,
-                multi_byte_char = multi_byte_char
             )
         );
     }
@@ -323,7 +292,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic = "buffer contents not equal"]
     fn assert_buffer_panics() {
         let backend = TestBackend::new(10, 2);
         let buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
@@ -333,7 +302,7 @@ mod tests {
     #[test]
     fn display() {
         let backend = TestBackend::new(10, 2);
-        assert_eq!(format!("{}", backend), "\"          \"\n\"          \"\n");
+        assert_eq!(format!("{backend}"), "\"          \"\n\"          \"\n");
     }
 
     #[test]

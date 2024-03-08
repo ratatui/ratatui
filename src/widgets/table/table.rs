@@ -223,16 +223,16 @@ pub struct Table<'a> {
 impl<'a> Default for Table<'a> {
     fn default() -> Self {
         Self {
-            rows: Default::default(),
-            header: Default::default(),
-            footer: Default::default(),
-            widths: Default::default(),
+            rows: Vec::new(),
+            header: None,
+            footer: None,
+            widths: Vec::new(),
             column_spacing: 1,
-            block: Default::default(),
-            style: Default::default(),
-            highlight_style: Default::default(),
-            highlight_symbol: Default::default(),
-            highlight_spacing: Default::default(),
+            block: None,
+            style: Style::new(),
+            highlight_style: Style::new(),
+            highlight_symbol: Text::default(),
+            highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
         }
     }
@@ -400,7 +400,7 @@ impl<'a> Table<'a> {
     /// let table = Table::new(rows, widths).column_spacing(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn column_spacing(mut self, spacing: u16) -> Self {
+    pub const fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self
     }
@@ -530,7 +530,7 @@ impl<'a> Table<'a> {
     /// let table = Table::new(rows, widths).highlight_spacing(HighlightSpacing::Always);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
+    pub const fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
     }
@@ -557,6 +557,7 @@ impl<'a> Table<'a> {
     /// ];
     /// let table = Table::new(Vec::<Row>::new(), widths).flex(Flex::Legacy);
     /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn flex(mut self, flex: Flex) -> Self {
         self.flex = flex;
         self
@@ -618,7 +619,7 @@ impl StatefulWidgetRef for Table<'_> {
             &columns_widths,
         );
 
-        self.render_footer(footer_area, buf, columns_widths);
+        self.render_footer(footer_area, buf, &columns_widths);
     }
 }
 
@@ -655,7 +656,7 @@ impl Table<'_> {
         }
     }
 
-    fn render_footer(&self, area: Rect, buf: &mut Buffer, column_widths: Vec<(u16, u16)>) {
+    fn render_footer(&self, area: Rect, buf: &mut Buffer, column_widths: &[(u16, u16)]) {
         if let Some(ref footer) = self.footer {
             buf.set_style(area, footer.style);
             for ((x, width), cell) in column_widths.iter().zip(footer.cells.iter()) {
@@ -736,7 +737,7 @@ impl Table<'_> {
             // Divide the space between each column equally
             vec![Constraint::Length(max_width / col_count.max(1) as u16); col_count]
         } else {
-            self.widths.to_vec()
+            self.widths.clone()
         };
         // this will always allocate a selection area
         let [_selection_area, columns_area] =
@@ -787,8 +788,8 @@ impl Table<'_> {
         (start, end)
     }
 
-    /// Returns the width of the selection column if a row is selected, or the highlight_spacing is
-    /// set to show the column always, otherwise 0.
+    /// Returns the width of the selection column if a row is selected, or the `highlight_spacing`
+    /// is set to show the column always, otherwise 0.
     fn selection_width(&self, state: &TableState) -> u16 {
         let has_selection = state.selected().is_some();
         if self.highlight_spacing.should_add(has_selection) {
@@ -800,18 +801,18 @@ impl Table<'_> {
 }
 
 fn ensure_percentages_less_than_100(widths: &[Constraint]) {
-    widths.iter().for_each(|&w| {
+    for w in widths {
         if let Constraint::Percentage(p) = w {
             assert!(
-                p <= 100,
+                *p <= 100,
                 "Percentages should be between 0 and 100 inclusively."
-            )
+            );
         }
-    });
+    }
 }
 
 impl<'a> Styled for Table<'a> {
-    type Item = Table<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -832,7 +833,7 @@ where
     /// `Table::widths` after construction.
     fn from_iter<Iter: IntoIterator<Item = Item>>(rows: Iter) -> Self {
         let widths: [Constraint; 0] = [];
-        Table::new(rows, widths)
+        Self::new(rows, widths)
     }
 }
 
@@ -841,12 +842,7 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::{
-        layout::Constraint::*,
-        style::{Color, Modifier, Style, Stylize},
-        text::Line,
-        widgets::Borders,
-    };
+    use crate::{layout::Constraint::*, style::Style, text::Line, widgets::Borders};
 
     #[test]
     fn new() {
@@ -973,7 +969,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic = "Percentages should be between 0 and 100 inclusively"]
     fn table_invalid_percentages() {
         let _ = Table::default().widths([Constraint::Percentage(110)]);
     }
@@ -1005,7 +1001,7 @@ mod tests {
     #[cfg(test)]
     mod render {
         use super::*;
-        use crate::{assert_buffer_eq, widgets::Borders};
+        use crate::assert_buffer_eq;
 
         #[test]
         fn render_empty_area() {
@@ -1337,7 +1333,7 @@ mod tests {
             );
         }
 
-        /// NOTE: segment_size is deprecated use flex instead!
+        /// NOTE: `segment_size` is deprecated use flex instead!
         #[allow(deprecated)]
         #[test]
         fn underconstrained_segment_size() {
@@ -1370,7 +1366,7 @@ mod tests {
             assert_eq!(
                 table.get_columns_widths(30, 0),
                 &[(0, 10), (10, 10), (20, 10)]
-            )
+            );
         }
 
         #[test]
@@ -1379,7 +1375,7 @@ mod tests {
                 .rows(vec![])
                 .header(Row::new(vec!["f", "g"]))
                 .column_spacing(0);
-            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)])
+            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)]);
         }
 
         #[test]
@@ -1388,7 +1384,7 @@ mod tests {
                 .rows(vec![])
                 .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
-            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)])
+            assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)]);
         }
 
         fn test_table_with_selection(
@@ -1520,6 +1516,7 @@ mod tests {
             );
         }
 
+        #[allow(clippy::too_many_lines)]
         #[test]
         fn insufficient_area_highlight_symbol_and_column_spacing_allocation() {
             // column spacing is prioritized over every other constraint
@@ -1787,6 +1784,6 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::CROSSED_OUT)
-        )
+        );
     }
 }

@@ -366,6 +366,7 @@ fn widgets_chart_can_have_empty_datasets() {
         .unwrap();
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn widgets_chart_can_have_a_legend() {
     let backend = TestBackend::new(60, 30);

@@ -13,8 +13,9 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-/// See also https://github.com/joshka/tui-popup and
-/// https://github.com/sephiroth74/tui-confirm-dialog
+// See also https://github.com/joshka/tui-popup and
+// https://github.com/sephiroth74/tui-confirm-dialog
+
 use std::{error::Error, io};
 
 use crossterm::{
@@ -22,15 +23,18 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, Clear, Paragraph, Wrap},
+};
 
 struct App {
     show_popup: bool,
 }
 
 impl App {
-    fn new() -> App {
-        App { show_popup: false }
+    const fn new() -> Self {
+        Self { show_popup: false }
     }
 }
 

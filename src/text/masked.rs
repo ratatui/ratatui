@@ -36,7 +36,7 @@ impl<'a> Masked<'a> {
     }
 
     /// The character to use for masking.
-    pub fn mask_char(&self) -> char {
+    pub const fn mask_char(&self) -> char {
         self.mask_char
     }
 
@@ -49,37 +49,37 @@ impl<'a> Masked<'a> {
 impl Debug for Masked<'_> {
     /// Debug representation of a masked string is the underlying string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.inner).map_err(|_| fmt::Error)
+        Display::fmt(&self.inner, f)
     }
 }
 
 impl Display for Masked<'_> {
     /// Display representation of a masked string is the masked string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.value()).map_err(|_| fmt::Error)
+        Display::fmt(&self.value(), f)
     }
 }
 
 impl<'a> From<&'a Masked<'a>> for Cow<'a, str> {
-    fn from(masked: &'a Masked) -> Cow<'a, str> {
+    fn from(masked: &'a Masked) -> Self {
         masked.value()
     }
 }
 
 impl<'a> From<Masked<'a>> for Cow<'a, str> {
-    fn from(masked: Masked<'a>) -> Cow<'a, str> {
+    fn from(masked: Masked<'a>) -> Self {
         masked.value()
     }
 }
 
 impl<'a> From<&'a Masked<'_>> for Text<'a> {
-    fn from(masked: &'a Masked) -> Text<'a> {
+    fn from(masked: &'a Masked) -> Self {
         Text::raw(masked.value())
     }
 }
 
 impl<'a> From<Masked<'a>> for Text<'a> {
-    fn from(masked: Masked<'a>) -> Text<'a> {
+    fn from(masked: Masked<'a>) -> Self {
         Text::raw(masked.value())
     }
 }

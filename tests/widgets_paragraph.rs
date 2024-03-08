@@ -9,6 +9,7 @@ use ratatui::{
 
 /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
 /// area and comparing the rendered and expected content.
+#[allow(clippy::needless_pass_by_value)]
 fn test_case(paragraph: Paragraph, expected: Buffer) {
     let backend = TestBackend::new(expected.area.width, expected.area.height);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -81,7 +82,7 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
 
 #[test]
 fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
-    let nbsp: &str = "\u{00a0}";
+    let nbsp = "\u{00a0}";
     let line = Line::from(vec![Span::raw("NBSP"), Span::raw(nbsp)]);
     let paragraph = Paragraph::new(line).block(Block::default().borders(Borders::ALL));
 

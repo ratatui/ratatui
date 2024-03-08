@@ -77,7 +77,7 @@ fn run(terminal: &mut Terminal) -> Result<()> {
 fn handle_events() -> Result<ControlFlow<()>> {
     if event::poll(Duration::from_millis(100))? {
         if let Event::Key(key) = event::read()? {
-            if let KeyCode::Char('q') = key.code {
+            if key.code == KeyCode::Char('q') {
                 return Ok(ControlFlow::Break(()));
             }
         }
@@ -150,7 +150,7 @@ fn placeholder_paragraph() -> Paragraph<'static> {
 fn render_borders(paragraph: &Paragraph, border: Borders, frame: &mut Frame, area: Rect) {
     let block = Block::new()
         .borders(border)
-        .title(format!("Borders::{border:#?}", border = border));
+        .title(format!("Borders::{border:#?}"));
     frame.render_widget(paragraph.clone().block(block), area);
 }
 

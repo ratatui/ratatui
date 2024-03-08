@@ -13,28 +13,31 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+// A simple example demonstrating how to handle user input. This is a bit out of the scope of
+// the library as it does not provide any input handling out of the box. However, it may helps
+// some to get started.
+//
+// This is a very simple example:
+//   * An input box always focused. Every character you type is registered here.
+//   * An entered character is inserted at the cursor position.
+//   * Pressing Backspace erases the left character before the cursor position
+//   * Pressing Enter pushes the current input in the history of previous messages. **Note: ** as
+//   this is a relatively simple example unicode characters are unsupported and their use will
+// result in undefined behaviour.
+//
+// See also https://github.com/rhysd/tui-textarea and https://github.com/sayanarijit/tui-input/
+
 use std::{error::Error, io};
 
-/// A simple example demonstrating how to handle user input. This is a bit out of the scope of
-/// the library as it does not provide any input handling out of the box. However, it may helps
-/// some to get started.
-///
-/// This is a very simple example:
-///   * An input box always focused. Every character you type is registered here.
-///   * An entered character is inserted at the cursor position.
-///   * Pressing Backspace erases the left character before the cursor position
-///   * Pressing Enter pushes the current input in the history of previous messages. **Note: **
-///     as
-///   this is a relatively simple example unicode characters are unsupported and their use will
-/// result in undefined behaviour.
-///
-/// See also https://github.com/rhysd/tui-textarea and https://github.com/sayanarijit/tui-input/
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, List, ListItem, Paragraph},
+};
 
 enum InputMode {
     Normal,
@@ -53,18 +56,16 @@ struct App {
     messages: Vec<String>,
 }
 
-impl Default for App {
-    fn default() -> App {
-        App {
+impl App {
+    const fn new() -> Self {
+        Self {
             input: String::new(),
             input_mode: InputMode::Normal,
             messages: Vec::new(),
             cursor_position: 0,
         }
     }
-}
 
-impl App {
     fn move_cursor_left(&mut self) {
         let cursor_moved_left = self.cursor_position.saturating_sub(1);
         self.cursor_position = self.clamp_cursor(cursor_moved_left);
@@ -127,7 +128,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     // create app and run it
-    let app = App::default();
+    let app = App::new();
     let res = run_app(&mut terminal, app);
 
     // restore terminal
@@ -180,7 +181,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     }
                     _ => {}
                 },
-                _ => {}
+                InputMode::Editing => {}
             }
         }
     }
@@ -235,13 +236,14 @@ fn ui(f: &mut Frame, app: &App) {
         InputMode::Editing => {
             // Make the cursor visible and ask ratatui to put it at the specified coordinates after
             // rendering
+            #[allow(clippy::cast_possible_truncation)]
             f.set_cursor(
                 // Draw the cursor at the current position in the input field.
                 // This position is can be controlled via the left and right arrow key
                 input_area.x + app.cursor_position as u16 + 1,
                 // Move one line down, from the border to the input line
                 input_area.y + 1,
-            )
+            );
         }
     }
 

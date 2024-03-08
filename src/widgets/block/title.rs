@@ -87,7 +87,8 @@ pub enum Position {
 
 impl<'a> Title<'a> {
     /// Set the title content.
-    pub fn content<T>(mut self, content: T) -> Title<'a>
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn content<T>(mut self, content: T) -> Self
     where
         T: Into<Line<'a>>,
     {
@@ -97,14 +98,14 @@ impl<'a> Title<'a> {
 
     /// Set the title alignment.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn alignment(mut self, alignment: Alignment) -> Title<'a> {
+    pub const fn alignment(mut self, alignment: Alignment) -> Self {
         self.alignment = Some(alignment);
         self
     }
 
     /// Set the title position.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn position(mut self, position: Position) -> Title<'a> {
+    pub const fn position(mut self, position: Position) -> Self {
         self.position = Some(position);
         self
     }
@@ -115,18 +116,25 @@ where
     T: Into<Line<'a>>,
 {
     fn from(value: T) -> Self {
-        Self::default().content(value.into())
+        let content = value.into();
+        let alignment = content.alignment;
+        Self {
+            content,
+            alignment,
+            position: None,
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
     use strum::ParseError;
 
     use super::*;
 
     #[test]
-    fn position_tostring() {
+    fn position_to_string() {
         assert_eq!(Position::Top.to_string(), "Top");
         assert_eq!(Position::Bottom.to_string(), "Bottom");
     }
@@ -136,5 +144,25 @@ mod tests {
         assert_eq!("Top".parse::<Position>(), Ok(Position::Top));
         assert_eq!("Bottom".parse::<Position>(), Ok(Position::Bottom));
         assert_eq!("".parse::<Position>(), Err(ParseError::VariantNotFound));
+    }
+
+    #[test]
+    fn title_from_line() {
+        let title = Title::from(Line::raw("Title"));
+        assert_eq!(title.content, Line::from("Title"));
+        assert_eq!(title.alignment, None);
+        assert_eq!(title.position, None);
+    }
+
+    #[rstest]
+    #[case::left(Alignment::Left)]
+    #[case::center(Alignment::Center)]
+    #[case::right(Alignment::Right)]
+    fn title_from_line_with_alignment(#[case] alignment: Alignment) {
+        let line = Line::raw("Title").alignment(alignment);
+        let title = Title::from(line.clone());
+        assert_eq!(title.content, line);
+        assert_eq!(title.alignment, Some(alignment));
+        assert_eq!(title.position, None);
     }
 }

@@ -53,15 +53,15 @@ This is a quick summary of the sections below:
 
 [#881]: https://github.com/ratatui-org/ratatui/pull/881
 
-Previously, constraints would stretch to fill all available space, violating constraints if 
+Previously, constraints would stretch to fill all available space, violating constraints if
 necessary.
 
-With v0.26.0, `Flex` modes are introduced and the default is `Flex::Start`, which will align 
-areas associated with constraints to be beginning of the area. With v0.26.0, additionally, 
-`Min` constraints grow to fill excess space. These changes will allow users to build layouts 
+With v0.26.0, `Flex` modes are introduced and the default is `Flex::Start`, which will align
+areas associated with constraints to be beginning of the area. With v0.26.0, additionally,
+`Min` constraints grow to fill excess space. These changes will allow users to build layouts
 more easily.
 
-With v0.26.0, users will most likely not need to change what constraints they use to create 
+With v0.26.0, users will most likely not need to change what constraints they use to create
 existing layouts with `Flex::Start`. However, to get old behavior, use `Flex::Legacy`.
 
 ```diff
@@ -154,7 +154,7 @@ longer can be called from a constant context.
 [#708]: https://github.com/ratatui-org/ratatui/pull/708
 
 Previously the style of a `Line` was stored in the `Span`s that make up the line. Now the `Line`
-itself has a `style` field, which can be set with the `Line::style` method. Any code that creates
+itself has a `style` field, which can be set with the `Line::styled` method. Any code that creates
 `Line`s using the struct initializer instead of constructors will fail to compile due to the added
 field. This can be easily fixed by adding `..Default::default()` to the field list or by using a
 constructor method (`Line::styled()`, `Line::raw()`) or conversion method (`Line::from()`).

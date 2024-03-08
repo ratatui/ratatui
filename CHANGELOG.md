@@ -2,6 +2,165 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.1](https://github.com/ratatui-org/ratatui/releases/tag/0.26.1) - 2024-02-12
+
+This is a patch release that fixes bugs and adds enhancements, including new iterators, title options for blocks, and various rendering improvements. ✨
+
+### Features
+
+- [74a0511](https://github.com/ratatui-org/ratatui/commit/74a051147a4059990c31e08d96a8469d8220537b)
+  *(rect)* Add Rect::positions iterator ([#928](https://github.com/ratatui-org/ratatui/issues/928))
+
+  ````text
+  Useful for performing some action on all the cells in a particular area.
+  E.g.,
+
+  ```rust
+  fn render(area: Rect, buf: &mut Buffer) {
+     for position in area.positions() {
+          buf.get_mut(position.x, position.y).set_symbol("x");
+      }
+  }
+  ```
+  ````
+
+- [9182f47](https://github.com/ratatui-org/ratatui/commit/9182f47026d1630cb749163b6f8b8987474312ae)
+  *(uncategorized)* Add Block::title_top and Block::title_top_bottom ([#940](https://github.com/ratatui-org/ratatui/issues/940))
+
+  ````text
+  This adds the ability to add titles to the top and bottom of a block
+  without having to use the `Title` struct (which will be removed in a
+  future release - likely v0.28.0).
+
+  Fixes a subtle bug if the title was created from a right aligned Line
+  and was also right aligned. The title would be rendered one cell too far
+  to the right.
+
+  ```rust
+  Block::bordered()
+      .title_top(Line::raw("A").left_aligned())
+      .title_top(Line::raw("B").centered())
+      .title_top(Line::raw("C").right_aligned())
+      .title_bottom(Line::raw("D").left_aligned())
+      .title_bottom(Line::raw("E").centered())
+      .title_bottom(Line::raw("F").right_aligned())
+      .render(buffer.area, &mut buffer);
+  // renders
+  "┌A─────B─────C┐",
+  "│             │",
+  "└D─────E─────F┘",
+  ```
+
+  Addresses part of https://github.com/ratatui-org/ratatui/issues/738
+  ````
+
+### Bug Fixes
+
+- [2202059](https://github.com/ratatui-org/ratatui/commit/220205925911ed4377358d2a28ffca9373f11bda)
+  *(block)* Fix crash on empty right aligned title ([#933](https://github.com/ratatui-org/ratatui/issues/933))
+
+  ````text
+  - Simplified implementation of the rendering for block.
+  - Introduces a subtle rendering change where centered titles that are
+    odd in length will now be rendered one character to the left compared
+    to before. This aligns with other places that we render centered text
+    and is a more consistent behavior. See
+    https://github.com/ratatui-org/ratatui/pull/807#discussion_r1455645954
+    for another example of this.
+  ````
+
+  Fixes: https://github.com/ratatui-org/ratatui/pull/929
+
+- [14c67fb](https://github.com/ratatui-org/ratatui/commit/14c67fbb52101d10b2d2e26898c408ab8dd3ec2d)
+  *(list)* Highlight symbol when using a  multi-bytes char ([#924](https://github.com/ratatui-org/ratatui/issues/924))
+
+  ````text
+  ratatui v0.26.0 brought a regression in the List widget, in which the
+  highlight symbol width was incorrectly calculated - specifically when
+  the highlight symbol was a multi-char character, e.g. `▶`.
+  ````
+
+- [0dcdbea](https://github.com/ratatui-org/ratatui/commit/0dcdbea083aace6d531c0d505837e0911f400675)
+  *(paragraph)* Render Line::styled correctly inside a paragraph ([#930](https://github.com/ratatui-org/ratatui/issues/930))
+
+  ````text
+  Renders the styled graphemes of the line instead of the contained spans.
+  ````
+
+- [fae5862](https://github.com/ratatui-org/ratatui/commit/fae5862c6e0947ee1488a7e4775413dbead67c8b)
+  *(uncategorized)* Ensure that buffer::set_line sets the line style ([#926](https://github.com/ratatui-org/ratatui/issues/926))
+
+  ````text
+  Fixes a regression in 0.26 where buffer::set_line was no longer setting
+  the style. This was due to the new style field on Line instead of being
+  stored only in the spans.
+
+  Also adds a configuration for just running unit tests to bacon.toml.
+  ````
+
+- [fbb5dfa](https://github.com/ratatui-org/ratatui/commit/fbb5dfaaa903efde0e63114c393dc3063d5f56fd)
+  *(uncategorized)* Scrollbar rendering when no track symbols are provided ([#911](https://github.com/ratatui-org/ratatui/issues/911))
+
+### Refactor
+
+- [c3fb258](https://github.com/ratatui-org/ratatui/commit/c3fb25898f3e3ffe485ee69631b680679874d2cb)
+  *(rect)* Move iters to module and add docs ([#927](https://github.com/ratatui-org/ratatui/issues/927))
+
+- [e51ca6e](https://github.com/ratatui-org/ratatui/commit/e51ca6e0d2705e6e0a96aeee78f1e80fcaaf34fc)
+  *(uncategorized)* Finish tidying up table ([#942](https://github.com/ratatui-org/ratatui/issues/942))
+
+- [91040c0](https://github.com/ratatui-org/ratatui/commit/91040c0865043b8d5e7387509523a41345ed5af3)
+  *(uncategorized)* Rearrange block structure ([#939](https://github.com/ratatui-org/ratatui/issues/939))
+
+### Documentation
+
+- [61a8278](https://github.com/ratatui-org/ratatui/commit/61a827821dff2bd733377cfc143266edce1dbeec)
+  *(canvas)* Add documentation to canvas module ([#913](https://github.com/ratatui-org/ratatui/issues/913))
+
+  ````text
+  Document the whole `canvas` module. With this, the whole `widgets`
+  module is documented.
+  ````
+
+- [d2d91f7](https://github.com/ratatui-org/ratatui/commit/d2d91f754c87458c6d07863eca20f3ea8ae319ce)
+  *(changelog)* Add sponsors section ([#908](https://github.com/ratatui-org/ratatui/issues/908))
+
+- [410d08b](https://github.com/ratatui-org/ratatui/commit/410d08b2b5812d7e29302adc0e8ddf18eb7d1d26)
+  *(uncategorized)* Add link to FOSDEM 2024 talk ([#944](https://github.com/ratatui-org/ratatui/issues/944))
+
+- [1f208ff](https://github.com/ratatui-org/ratatui/commit/1f208ffd0368b4d269854dc0c550686dcd2d1de0)
+  *(uncategorized)* Add GitHub Sponsors badge ([#943](https://github.com/ratatui-org/ratatui/issues/943))
+
+### Performance
+
+- [0963463](https://github.com/ratatui-org/ratatui/commit/096346350e19c5de9a4d74bba64796997e9f40da)
+  *(uncategorized)* Use drain instead of remove in chart examples ([#922](https://github.com/ratatui-org/ratatui/issues/922))
+
+### Miscellaneous Tasks
+
+- [a4892ad](https://github.com/ratatui-org/ratatui/commit/a4892ad444739d7a760bc45bbd954e728c66b2d2)
+  *(uncategorized)* Fix typo in docsrs example ([#946](https://github.com/ratatui-org/ratatui/issues/946))
+
+- [18870ce](https://github.com/ratatui-org/ratatui/commit/18870ce99063a492674de061441b2cce5dc54c60)
+  *(uncategorized)* Fix the method name for setting the Line style ([#947](https://github.com/ratatui-org/ratatui/issues/947))
+
+- [8fb4630](https://github.com/ratatui-org/ratatui/commit/8fb46301a00b5d065f9b890496f914d3fdc17495)
+  *(uncategorized)* Remove github action bot that makes comments nudging commit signing ([#937](https://github.com/ratatui-org/ratatui/issues/937))
+
+  ````text
+  We can consider reverting this commit once this PR is merged:
+  https://github.com/1Password/check-signed-commits-action/pull/9
+  ````
+
+### Contributors
+
+Thank you so much to everyone that contributed to this release!
+
+Here is the list of contributors who have contributed to `ratatui` for the first time!
+
+* @mo8it
+* @m4rch3n1ng
+
 ## [0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/0.26.0) - 2024-02-02
 
 We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭

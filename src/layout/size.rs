@@ -15,14 +15,14 @@ pub struct Size {
 
 impl Size {
     /// Create a new `Size` struct
-    pub fn new(width: u16, height: u16) -> Self {
-        Size { width, height }
+    pub const fn new(width: u16, height: u16) -> Self {
+        Self { width, height }
     }
 }
 
 impl From<(u16, u16)> for Size {
     fn from((width, height): (u16, u16)) -> Self {
-        Size { width, height }
+        Self { width, height }
     }
 }
 

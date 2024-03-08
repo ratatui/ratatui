@@ -7,7 +7,7 @@ use ratatui::{
 };
 
 /// Benchmark for rendering a sparkline.
-pub fn sparkline(c: &mut Criterion) {
+fn sparkline(c: &mut Criterion) {
     let mut group = c.benchmark_group("sparkline");
     let mut rng = rand::thread_rng();
 
@@ -38,7 +38,7 @@ fn render(bencher: &mut Bencher, sparkline: &Sparkline) {
             bench_sparkline.render(buffer.area, &mut buffer);
         },
         criterion::BatchSize::LargeInput,
-    )
+    );
 }
 
 criterion_group!(benches, sparkline);
