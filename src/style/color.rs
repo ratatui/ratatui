@@ -164,16 +164,16 @@ impl<'de> serde::Deserialize<'de> for Color {
 
         #[derive(serde::Deserialize)]
         #[serde(untagged)]
-        enum MultipleType {
+        enum Helper {
             String(String),
             ColorWrapper(ColorWrapper),
         }
 
-        let multi_type = MultipleType::deserialize(deserializer)
+        let multi_type = Helper::deserialize(deserializer)
             .map_err(|_| serde::de::Error::custom("Failed to parse Colors"))?;
         match multi_type {
-            MultipleType::String(s) => FromStr::from_str(&s).map_err(serde::de::Error::custom),
-            MultipleType::ColorWrapper(color_wrapper) => match color_wrapper {
+            Helper::String(s) => FromStr::from_str(&s).map_err(serde::de::Error::custom),
+            Helper::ColorWrapper(color_wrapper) => match color_wrapper {
                 ColorWrapper::Rgb(r, g, b) => Ok(Color::Rgb(r, g, b)),
                 ColorWrapper::Indexed(index) => Ok(Color::Indexed(index)),
             },
