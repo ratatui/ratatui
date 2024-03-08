@@ -170,12 +170,12 @@ impl<'de> serde::Deserialize<'de> for Color {
         }
 
         let multi_type = Helper::deserialize(deserializer)
-            .map_err(|_| serde::de::Error::custom("Failed to parse Colors"))?;
+            .map_err(|err| serde::de::Error::custom(format!("Failed to parse Colors: {err}")))?;
         match multi_type {
             Helper::String(s) => FromStr::from_str(&s).map_err(serde::de::Error::custom),
             Helper::ColorWrapper(color_wrapper) => match color_wrapper {
-                ColorWrapper::Rgb(r, g, b) => Ok(Color::Rgb(r, g, b)),
-                ColorWrapper::Indexed(index) => Ok(Color::Indexed(index)),
+                ColorWrapper::Rgb(r, g, b) => Ok(Self::Rgb(r, g, b)),
+                ColorWrapper::Indexed(index) => Ok(Self::Indexed(index)),
             },
         }
     }
