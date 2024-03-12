@@ -304,7 +304,6 @@ impl From<CColor> for Color {
 /// The `ModifierDiff` struct is used to calculate the difference between two `Modifier`
 /// values. This is useful when updating the terminal display, as it allows for more
 /// efficient updates by only sending the necessary changes.
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 struct ModifierDiff {
     pub from: Modifier,
     pub to: Modifier,
