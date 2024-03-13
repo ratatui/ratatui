@@ -160,8 +160,8 @@ impl<'de> serde::Deserialize<'de> for Color {
         /// Colors are currently serialized with the `Display` implementation, so
         /// RGB values are serialized via hex, for example "#FFFFFF".
         ///
-        /// Previously they serialized using serde derive, which encoded
-        /// RGB values as an object, for example { "rgb": [255, 255, 255] }.
+        /// Previously they were serialized using serde derive, which encoded
+        /// RGB values as a map, for example { "rgb": [255, 255, 255] }.
         ///
         /// The deserialization implementation utilises a `Helper` struct
         /// to be able to support both formats for backwards compatibility.
