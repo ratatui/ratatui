@@ -142,6 +142,7 @@ impl Color {
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for Color {
+    /// This utilises the [`Display`] implementation for serialization.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -156,6 +157,14 @@ impl<'de> serde::Deserialize<'de> for Color {
     where
         D: serde::Deserializer<'de>,
     {
+        /// Colors are currently serialized with the `Display` implementation, so
+        /// RGB values are serialized via hex, for example "#FFFFFF".
+        ///
+        /// Previously they serialized using serde derive, which encoded
+        /// RGB values as an object, for example { "rgb": [255, 255, 255] }.
+        ///
+        /// The deserialization implementation utilises a `Helper` struct
+        /// to be able to support both formats for backwards compatibility.
         #[derive(serde::Deserialize)]
         enum ColorWrapper {
             Rgb(u8, u8, u8),
