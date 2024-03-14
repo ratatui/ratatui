@@ -55,7 +55,7 @@ pub struct Label<'a> {
 ///
 /// This allows the canvas to be drawn in multiple layers. This is useful if you want to draw
 /// multiple shapes on the canvas in specific order.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug)]
 struct Layer {
     // A string of characters representing the grid. This will be wrapped to the width of the grid
     // when rendering
@@ -97,7 +97,7 @@ trait Grid: Debug {
 ///
 /// This grid type only supports a single foreground color for each 2x4 dots cell. There is no way
 /// to set the individual color of each dot in the braille pattern.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug)]
 struct BrailleGrid {
     /// Width of the grid in number of terminal columns
     width: u16,
@@ -160,7 +160,7 @@ impl Grid for BrailleGrid {
 ///
 /// This makes it possible to draw shapes with a resolution of 1x1 dots per cell. This is useful
 /// when you want to draw shapes with a low resolution.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug)]
 struct CharGrid {
     /// Width of the grid in number of terminal columns
     width: u16,
@@ -232,7 +232,7 @@ impl Grid for CharGrid {
 /// This allows for more flexibility than the `BrailleGrid` which only supports a single
 /// foreground color for each 2x4 dots cell, and the `CharGrid` which only supports a single
 /// character for each cell.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug)]
 struct HalfBlockGrid {
     /// Width of the grid in number of terminal columns
     width: u16,
