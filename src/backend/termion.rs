@@ -87,6 +87,16 @@ where
     }
 }
 
+/// Gets the writer.
+pub fn writer(&self) -> &W {
+    &self.writer
+}
+
+/// Gets the writer as a mutable reference.
+pub fn writer_mut(&mut self) -> &mut W {
+    &mut self.writer
+}
+
 impl<W> Write for TermionBackend<W>
 where
     W: Write,
