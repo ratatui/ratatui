@@ -577,7 +577,7 @@ impl WidgetRef for Line<'_> {
             let offset = match self.alignment {
                 Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
                 Some(Alignment::Right) => area.width.saturating_sub(width),
-                _ => 0,
+                Some(Aligment::Left)| None => 0,
             };
             x = x.saturating_add(offset);
             self.to_owned()
