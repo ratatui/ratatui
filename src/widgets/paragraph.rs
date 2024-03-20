@@ -338,8 +338,9 @@ impl Paragraph<'_> {
             return;
         }
 
+        buf.set_style(text_area, self.style);
         let styled = self.text.iter().map(|line| {
-            let graphemes = line.styled_graphemes(self.style);
+            let graphemes = line.styled_graphemes(self.text.style);
             let alignment = line.alignment.unwrap_or(self.alignment);
             (graphemes, alignment)
         });
@@ -402,6 +403,7 @@ impl<'a> Styled for Paragraph<'a> {
 
 #[cfg(test)]
 mod test {
+
     use super::*;
     use crate::{
         backend::TestBackend,
@@ -1010,5 +1012,27 @@ mod test {
     fn right_aligned() {
         let p = Paragraph::new("Hello, world!").right_aligned();
         assert_eq!(p.alignment, Alignment::Right);
+    }
+
+    /// Regression test for <https://github.com/ratatui-org/ratatui/issues/990>
+    ///
+    /// This test ensures that paragraphs with a block and styled text are rendered correctly.
+    /// It has been simplified from the original issue but tests the same functionality.
+    #[test]
+    fn paragraph_block_text_style() {
+        let text = Text::styled("Styled text", Color::Green);
+        let paragraph = Paragraph::new(text).block(Block::bordered());
+
+        let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
+        paragraph.render(Rect::new(0, 0, 20, 3), &mut buf);
+
+        let mut expected = Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│Styled text       │",
+            "└──────────────────┘",
+        ]);
+        expected.set_style(Rect::new(1, 1, 11, 1), Style::default().fg(Color::Green));
+
+        assert_eq!(buf, expected);
     }
 }
