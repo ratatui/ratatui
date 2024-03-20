@@ -1,9 +1,17 @@
+#![warn(clippy::pedantic)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::module_name_repetitions,
+    clippy::wildcard_imports
+)]
+
 use std::iter;
 
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
-use super::StatefulWidget;
 use crate::{prelude::*, symbols::scrollbar::*};
 
 /// A widget to display a scrollbar
@@ -523,7 +531,7 @@ impl Scrollbar<'_> {
     ///
     /// This method returns the length of the start, thumb, and end as a tuple.
     fn part_lengths(&self, area: Rect, state: &ScrollbarState) -> (usize, usize, usize) {
-        let track_length = self.track_length_excluding_arrow_heads(area) as f64;
+        let track_length = f64::from(self.track_length_excluding_arrow_heads(area));
         let viewport_length = self.viewport_length(state, area) as f64;
 
         // Ensure that the position of the thumb is within the bounds of the content taking into
@@ -610,7 +618,6 @@ mod tests {
 
     use rstest::{fixture, rstest};
     use strum::ParseError;
-    use unicode_width::UnicodeWidthStr;
 
     use super::*;
 

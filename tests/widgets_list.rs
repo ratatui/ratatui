@@ -86,14 +86,14 @@ fn widgets_list_should_highlight_the_selected_item_wide_symbol() {
 
 #[test]
 fn widgets_list_should_truncate_items() {
-    let backend = TestBackend::new(10, 2);
-    let mut terminal = Terminal::new(backend).unwrap();
-
     struct TruncateTestCase<'a> {
         selected: Option<usize>,
         items: Vec<ListItem<'a>>,
         expected: Buffer,
     }
+
+    let backend = TestBackend::new(10, 2);
+    let mut terminal = Terminal::new(backend).unwrap();
 
     let cases = vec![
         // An item is selected
@@ -274,6 +274,7 @@ fn widget_list_should_not_ignore_empty_string_items() {
     terminal.backend().assert_buffer(&expected);
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn widgets_list_enable_always_highlight_spacing() {
     let test_case = |state: &mut ListState, space: HighlightSpacing, expected: Buffer| {

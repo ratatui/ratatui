@@ -107,11 +107,11 @@ impl<'a> Span<'a> {
     /// Span::raw("test content");
     /// Span::raw(String::from("test content"));
     /// ```
-    pub fn raw<T>(content: T) -> Span<'a>
+    pub fn raw<T>(content: T) -> Self
     where
         T: Into<Cow<'a, str>>,
     {
-        Span {
+        Self {
             content: content.into(),
             style: Style::default(),
         }
@@ -133,12 +133,12 @@ impl<'a> Span<'a> {
     /// Span::styled("test content", style);
     /// Span::styled(String::from("test content"), style);
     /// ```
-    pub fn styled<T, S>(content: T, style: S) -> Span<'a>
+    pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
         S: Into<Style>,
     {
-        Span {
+        Self {
             content: content.into(),
             style: style.into(),
         }
@@ -324,7 +324,7 @@ where
 }
 
 impl<'a> Styled for Span<'a> {
-    type Item = Span<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -514,7 +514,7 @@ mod tests {
 
     mod widget {
         use super::*;
-        use crate::{assert_buffer_eq, style::Stylize};
+        use crate::assert_buffer_eq;
 
         #[test]
         fn render() {

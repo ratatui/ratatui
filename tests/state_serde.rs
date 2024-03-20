@@ -18,59 +18,62 @@ use ratatui::{backend::TestBackend, prelude::*, widgets::*};
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 struct AppState {
-    list_state: ListState,
-    table_state: TableState,
-    scrollbar_state: ScrollbarState,
+    list: ListState,
+    table: TableState,
+    scrollbar: ScrollbarState,
 }
 
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            list_state: ListState::default(),
-            table_state: TableState::default(),
-            scrollbar_state: ScrollbarState::new(10),
+            list: ListState::default(),
+            table: TableState::default(),
+            scrollbar: ScrollbarState::new(10),
         }
     }
 }
 impl AppState {
     fn select(&mut self, index: usize) {
-        self.list_state.select(Some(index));
-        self.table_state.select(Some(index));
-        self.scrollbar_state = self.scrollbar_state.position(index);
+        self.list.select(Some(index));
+        self.table.select(Some(index));
+        self.scrollbar = self.scrollbar.position(index);
     }
 }
 
-/// Renders the list to a TestBackend and asserts that the result matches the expected buffer.
+/// Renders the list to a `TestBackend` and asserts that the result matches the expected buffer.
 #[track_caller]
 fn assert_buffer(state: &mut AppState, expected: &Buffer) {
     let backend = TestBackend::new(21, 5);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let items = vec![
+            let items = [
                 "awa", "banana", "Cats!!", "d20", "Echo", "Foxtrot", "Golf", "Hotel", "IwI",
                 "Juliett",
             ];
 
-            use Constraint::*;
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints([Length(10), Length(10), Length(1)])
+                .constraints([
+                    Constraint::Length(10),
+                    Constraint::Length(10),
+                    Constraint::Length(1),
+                ])
                 .split(f.size());
-            let list = List::new(items.clone())
+            let list = List::new(items)
                 .highlight_symbol(">>")
                 .block(Block::default().borders(Borders::RIGHT));
-            f.render_stateful_widget(list, layout[0], &mut state.list_state);
+            f.render_stateful_widget(list, layout[0], &mut state.list);
 
             let table = Table::new(
-                items.iter().map(|i| Row::new(vec![*i])),
+                items.into_iter().map(|i| Row::new(vec![i])),
                 [Constraint::Length(10); 1],
             )
             .highlight_symbol(">>");
-            f.render_stateful_widget(table, layout[1], &mut state.table_state);
+            f.render_stateful_widget(table, layout[1], &mut state.table);
 
             let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
-            f.render_stateful_widget(scrollbar, layout[2], &mut state.scrollbar_state);
+            f.render_stateful_widget(scrollbar, layout[2], &mut state.scrollbar);
         })
         .unwrap();
     terminal.backend().assert_buffer(expected);
@@ -85,15 +88,15 @@ const DEFAULT_STATE_BUFFER: [&str; 5] = [
 ];
 
 const DEFAULT_STATE_REPR: &str = r#"{
-  "list_state": {
+  "list": {
     "offset": 0,
     "selected": null
   },
-  "table_state": {
+  "table": {
     "offset": 0,
     "selected": null
   },
-  "scrollbar_state": {
+  "scrollbar": {
     "content_length": 10,
     "position": 0,
     "viewport_content_length": 0
@@ -126,15 +129,15 @@ const SELECTED_STATE_BUFFER: [&str; 5] = [
     "  Echo   │  Echo    ▼",
 ];
 const SELECTED_STATE_REPR: &str = r#"{
-  "list_state": {
+  "list": {
     "offset": 0,
     "selected": 1
   },
-  "table_state": {
+  "table": {
     "offset": 0,
     "selected": 1
   },
-  "scrollbar_state": {
+  "scrollbar": {
     "content_length": 10,
     "position": 1,
     "viewport_content_length": 0
@@ -169,15 +172,15 @@ const SCROLLED_STATE_BUFFER: [&str; 5] = [
 ];
 
 const SCROLLED_STATE_REPR: &str = r#"{
-  "list_state": {
+  "list": {
     "offset": 4,
     "selected": 8
   },
-  "table_state": {
+  "table": {
     "offset": 4,
     "selected": 8
   },
-  "scrollbar_state": {
+  "scrollbar": {
     "content_length": 10,
     "position": 8,
     "viewport_content_length": 0

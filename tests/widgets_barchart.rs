@@ -44,7 +44,7 @@ fn widgets_barchart_not_full_below_max_value() {
 
 #[test]
 fn widgets_barchart_group() {
-    const TERMINAL_HEIGHT: u16 = 11u16;
+    const TERMINAL_HEIGHT: u16 = 11;
     let test_case = |expected| {
         let backend = TestBackend::new(35, TERMINAL_HEIGHT);
         let mut terminal = Terminal::new(backend).unwrap();
@@ -67,9 +67,9 @@ fn widgets_barchart_group() {
                                 .text_value("20M".to_string()),
                         ]),
                     )
-                    .data(&vec![("C1", 50u64), ("C2", 40u64)])
-                    .data(&[("C1", 60u64), ("C2", 90u64)])
-                    .data(&[("xx", 10u64), ("xx", 10u64)])
+                    .data(&vec![("C1", 50), ("C2", 40)])
+                    .data(&[("C1", 60), ("C2", 90)])
+                    .data(&[("xx", 10), ("xx", 10)])
                     .group_gap(2)
                     .bar_width(4)
                     .bar_gap(1);

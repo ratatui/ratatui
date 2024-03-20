@@ -13,6 +13,8 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+#![allow(clippy::enum_glob_use)]
+
 use std::{error::Error, io};
 
 use crossterm::{
@@ -21,7 +23,11 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use itertools::Itertools;
-use ratatui::{layout::Constraint::*, prelude::*, widgets::*};
+use ratatui::{
+    layout::Constraint::*,
+    prelude::*,
+    widgets::{Block, Borders, Paragraph},
+};
 
 fn main() -> Result<(), Box<dyn Error>> {
     // setup terminal
@@ -55,13 +61,14 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
         terminal.draw(ui)?;
 
         if let Event::Key(key) = event::read()? {
-            if let KeyCode::Char('q') = key.code {
+            if key.code == KeyCode::Char('q') {
                 return Ok(());
             }
         }
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn ui(frame: &mut Frame) {
     let vertical = Layout::vertical([
         Length(4),  // text
@@ -94,12 +101,12 @@ fn ui(frame: &mut Frame) {
         .iter()
         .flat_map(|area| {
             Layout::horizontal([
-                Constraint::Length(14),
-                Constraint::Length(14),
-                Constraint::Length(14),
-                Constraint::Length(14),
-                Constraint::Length(14),
-                Constraint::Min(0), // fills remaining space
+                Length(14),
+                Length(14),
+                Length(14),
+                Length(14),
+                Length(14),
+                Min(0), // fills remaining space
             ])
             .split(*area)
             .iter()
@@ -191,8 +198,8 @@ fn render_example_combination(
     let inner = block.inner(area);
     frame.render_widget(block, area);
     let layout = Layout::vertical(vec![Length(1); constraints.len() + 1]).split(inner);
-    for (i, (a, b)) in constraints.iter().enumerate() {
-        render_single_example(frame, layout[i], vec![*a, *b, Min(0)]);
+    for (i, (a, b)) in constraints.into_iter().enumerate() {
+        render_single_example(frame, layout[i], vec![a, b, Min(0)]);
     }
     // This is to make it easy to visually see the alignment of the examples
     // with the constraints.
@@ -213,11 +220,11 @@ fn render_single_example(frame: &mut Frame, area: Rect, constraints: Vec<Constra
 
 fn constraint_label(constraint: Constraint) -> String {
     match constraint {
-        Length(n) => format!("{n}"),
-        Min(n) => format!("{n}"),
-        Max(n) => format!("{n}"),
-        Percentage(n) => format!("{n}"),
-        Fill(n) => format!("{n}"),
-        Ratio(a, b) => format!("{a}:{b}"),
+        Constraint::Ratio(a, b) => format!("{a}:{b}"),
+        Constraint::Length(n)
+        | Constraint::Min(n)
+        | Constraint::Max(n)
+        | Constraint::Percentage(n)
+        | Constraint::Fill(n) => format!("{n}"),
     }
 }

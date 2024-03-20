@@ -4,7 +4,10 @@ use std::{
 };
 
 use ratatui::prelude::*;
-use termwiz::{input::*, terminal::Terminal as TermwizTerminal};
+use termwiz::{
+    input::{InputEvent, KeyCode},
+    terminal::Terminal as TermwizTerminal,
+};
 
 use crate::{app::App, ui};
 

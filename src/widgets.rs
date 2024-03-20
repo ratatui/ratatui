@@ -438,7 +438,7 @@ impl Widget for &str {
 /// [`Rect`].
 impl WidgetRef for &str {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_string(area.x, area.y, self, crate::style::Style::default())
+        buf.set_string(area.x, area.y, self, crate::style::Style::default());
     }
 }
 
@@ -459,7 +459,7 @@ impl Widget for String {
 /// without the need to give up ownership of the underlying text.
 impl WidgetRef for String {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_string(area.x, area.y, self, crate::style::Style::default())
+        buf.set_string(area.x, area.y, self, crate::style::Style::default());
     }
 }
 
@@ -508,7 +508,7 @@ mod tests {
     impl StatefulWidgetRef for PersonalGreeting {
         type State = String;
         fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-            Line::from(format!("Hello {}", state)).render(area, buf);
+            Line::from(format!("Hello {state}")).render(area, buf);
         }
     }
 

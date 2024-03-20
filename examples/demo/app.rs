@@ -2,7 +2,7 @@ use rand::{
     distributions::{Distribution, Uniform},
     rngs::ThreadRng,
 };
-use ratatui::widgets::*;
+use ratatui::widgets::ListState;
 
 const TASKS: [&str; 24] = [
     "Item1", "Item2", "Item3", "Item4", "Item5", "Item6", "Item7", "Item8", "Item9", "Item10",
@@ -73,8 +73,8 @@ pub struct RandomSignal {
 }
 
 impl RandomSignal {
-    pub fn new(lower: u64, upper: u64) -> RandomSignal {
-        RandomSignal {
+    pub fn new(lower: u64, upper: u64) -> Self {
+        Self {
             distribution: Uniform::new(lower, upper),
             rng: rand::thread_rng(),
         }
@@ -97,8 +97,8 @@ pub struct SinSignal {
 }
 
 impl SinSignal {
-    pub fn new(interval: f64, period: f64, scale: f64) -> SinSignal {
-        SinSignal {
+    pub const fn new(interval: f64, period: f64, scale: f64) -> Self {
+        Self {
             x: 0.0,
             interval,
             period,
@@ -144,8 +144,8 @@ pub struct StatefulList<T> {
 }
 
 impl<T> StatefulList<T> {
-    pub fn with_items(items: Vec<T>) -> StatefulList<T> {
-        StatefulList {
+    pub fn with_items(items: Vec<T>) -> Self {
+        Self {
             state: ListState::default(),
             items,
         }
@@ -235,7 +235,7 @@ pub struct App<'a> {
 }
 
 impl<'a> App<'a> {
-    pub fn new(title: &'a str, enhanced_graphics: bool) -> App<'a> {
+    pub fn new(title: &'a str, enhanced_graphics: bool) -> Self {
         let mut rand_signal = RandomSignal::new(0, 100);
         let sparkline_points = rand_signal.by_ref().take(300).collect();
         let mut sin_signal = SinSignal::new(0.2, 3.0, 18.0);

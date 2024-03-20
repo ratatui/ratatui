@@ -33,7 +33,7 @@
 //! that implements [`Styled`]. E.g.:
 //! - Strings and string slices when styled return a [`Span`]
 //! - [`Span`]s can be styled again, which will merge the styles.
-//! - Many widget types can be styled directly rather than calling their style() method.
+//! - Many widget types can be styled directly rather than calling their `style()` method.
 //!
 //! See the [`Stylize`] and [`Styled`] traits for more information. These traits are re-exported in
 //! the [`prelude`] module for convenience.
@@ -234,26 +234,26 @@ pub struct Style {
 }
 
 impl Default for Style {
-    fn default() -> Style {
-        Style::new()
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 impl Styled for Style {
-    type Item = Style;
+    type Item = Self;
 
     fn style(&self) -> Style {
         *self
     }
 
-    fn set_style<S: Into<Style>>(self, style: S) -> Self::Item {
+    fn set_style<S: Into<Self>>(self, style: S) -> Self::Item {
         self.patch(style)
     }
 }
 
 impl Style {
-    pub const fn new() -> Style {
-        Style {
+    pub const fn new() -> Self {
+        Self {
             fg: None,
             bg: None,
             #[cfg(feature = "underline-color")]
@@ -264,8 +264,8 @@ impl Style {
     }
 
     /// Returns a `Style` resetting all properties.
-    pub const fn reset() -> Style {
-        Style {
+    pub const fn reset() -> Self {
+        Self {
             fg: Some(Color::Reset),
             bg: Some(Color::Reset),
             #[cfg(feature = "underline-color")]
@@ -286,7 +286,7 @@ impl Style {
     /// assert_eq!(style.patch(diff), Style::default().fg(Color::Red));
     /// ```
     #[must_use = "`fg` returns the modified style without modifying the original"]
-    pub const fn fg(mut self, color: Color) -> Style {
+    pub const fn fg(mut self, color: Color) -> Self {
         self.fg = Some(color);
         self
     }
@@ -302,7 +302,7 @@ impl Style {
     /// assert_eq!(style.patch(diff), Style::default().bg(Color::Red));
     /// ```
     #[must_use = "`bg` returns the modified style without modifying the original"]
-    pub const fn bg(mut self, color: Color) -> Style {
+    pub const fn bg(mut self, color: Color) -> Self {
         self.bg = Some(color);
         self
     }
@@ -336,7 +336,7 @@ impl Style {
     /// ```
     #[cfg(feature = "underline-color")]
     #[must_use = "`underline_color` returns the modified style without modifying the original"]
-    pub const fn underline_color(mut self, color: Color) -> Style {
+    pub const fn underline_color(mut self, color: Color) -> Self {
         self.underline_color = Some(color);
         self
     }
@@ -356,7 +356,7 @@ impl Style {
     /// assert_eq!(patched.sub_modifier, Modifier::empty());
     /// ```
     #[must_use = "`add_modifier` returns the modified style without modifying the original"]
-    pub const fn add_modifier(mut self, modifier: Modifier) -> Style {
+    pub const fn add_modifier(mut self, modifier: Modifier) -> Self {
         self.sub_modifier = self.sub_modifier.difference(modifier);
         self.add_modifier = self.add_modifier.union(modifier);
         self
@@ -377,7 +377,7 @@ impl Style {
     /// assert_eq!(patched.sub_modifier, Modifier::ITALIC);
     /// ```
     #[must_use = "`remove_modifier` returns the modified style without modifying the original"]
-    pub const fn remove_modifier(mut self, modifier: Modifier) -> Style {
+    pub const fn remove_modifier(mut self, modifier: Modifier) -> Self {
         self.add_modifier = self.add_modifier.difference(modifier);
         self.sub_modifier = self.sub_modifier.union(modifier);
         self
@@ -401,7 +401,7 @@ impl Style {
     /// );
     /// ```
     #[must_use = "`patch` returns the modified style without modifying the original"]
-    pub fn patch<S: Into<Style>>(mut self, other: S) -> Style {
+    pub fn patch<S: Into<Self>>(mut self, other: S) -> Self {
         let other = other.into();
         self.fg = other.fg.or(self.fg);
         self.bg = other.bg.or(self.bg);
@@ -660,9 +660,10 @@ mod tests {
                 .bg(Color::Black)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::ITALIC)
-        )
+        );
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn style_can_be_stylized() {
         // foreground colors

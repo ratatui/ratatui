@@ -1,3 +1,4 @@
+#[allow(clippy::wildcard_imports)]
 use ratatui::{
     prelude::*,
     widgets::{canvas::*, *},
@@ -85,6 +86,7 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_widget(line_gauge, chunks[2]);
 }
 
+#[allow(clippy::too_many_lines)]
 fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
     let constraints = if app.show_chart {
         vec![Constraint::Percentage(50), Constraint::Percentage(50)]

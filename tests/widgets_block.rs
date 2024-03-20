@@ -41,6 +41,7 @@ fn widgets_block_renders() {
 
 #[test]
 fn widgets_block_titles_overlap() {
+    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
     fn test_case(block: Block, area: Rect, expected: Buffer) {
         let backend = TestBackend::new(area.width, area.height);
@@ -94,6 +95,7 @@ fn widgets_block_titles_overlap() {
 
 #[test]
 fn widgets_block_renders_on_small_areas() {
+    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
     fn test_case(block: Block, area: Rect, expected: Buffer) {
         let backend = TestBackend::new(area.width, area.height);
@@ -112,7 +114,7 @@ fn widgets_block_renders_on_small_areas() {
         (Borders::BOTTOM, "T"),
         (Borders::ALL, "┌"),
     ];
-    for (borders, symbol) in one_cell_test_cases.iter().cloned() {
+    for (borders, symbol) in one_cell_test_cases {
         test_case(
             Block::default().title("Test").borders(borders),
             Rect::new(0, 0, 0, 0),
@@ -182,8 +184,10 @@ fn widgets_block_renders_on_small_areas() {
     );
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn widgets_block_title_alignment() {
+    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
     fn test_case(alignment: Alignment, borders: Borders, expected: Buffer) {
         let backend = TestBackend::new(15, 3);
@@ -374,8 +378,10 @@ fn widgets_block_title_alignment() {
     );
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn widgets_block_title_alignment_bottom() {
+    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
     fn test_case(alignment: Alignment, borders: Borders, expected: Buffer) {
         let backend = TestBackend::new(15, 3);
@@ -558,8 +564,10 @@ fn widgets_block_title_alignment_bottom() {
     );
 }
 
+#[allow(clippy::too_many_lines)]
 #[test]
 fn widgets_block_multiple_titles() {
+    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
     fn test_case(title_a: Title, title_b: Title, borders: Borders, expected: Buffer) {
         let backend = TestBackend::new(15, 3);

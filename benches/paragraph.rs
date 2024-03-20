@@ -17,15 +17,15 @@ const WRAP_WIDTH: u16 = 100;
 /// Benchmark for rendering a paragraph with a given number of lines. The design of this benchmark
 /// allows comparison of the performance of rendering a paragraph with different numbers of lines.
 /// as well as comparing with the various settings on the scroll and wrap features.
-pub fn paragraph(c: &mut Criterion) {
+fn paragraph(c: &mut Criterion) {
     let mut group = c.benchmark_group("paragraph");
-    for &line_count in [64, 2048, MAX_SCROLL_OFFSET].iter() {
+    for line_count in [64, 2048, MAX_SCROLL_OFFSET] {
         let lines = random_lines(line_count);
         let lines = lines.as_str();
 
         // benchmark that measures the overhead of creating a paragraph separately from rendering
         group.bench_with_input(BenchmarkId::new("new", line_count), lines, |b, lines| {
-            b.iter(|| Paragraph::new(black_box(lines)))
+            b.iter(|| Paragraph::new(black_box(lines)));
         });
 
         // render the paragraph with no scroll
@@ -38,14 +38,14 @@ pub fn paragraph(c: &mut Criterion) {
         // scroll the paragraph by half the number of lines and render
         group.bench_with_input(
             BenchmarkId::new("render_scroll_half", line_count),
-            &Paragraph::new(lines).scroll((0u16, line_count / 2)),
+            &Paragraph::new(lines).scroll((0, line_count / 2)),
             |bencher, paragraph| render(bencher, paragraph, NO_WRAP_WIDTH),
         );
 
         // scroll the paragraph by the full number of lines and render
         group.bench_with_input(
             BenchmarkId::new("render_scroll_full", line_count),
-            &Paragraph::new(lines).scroll((0u16, line_count)),
+            &Paragraph::new(lines).scroll((0, line_count)),
             |bencher, paragraph| render(bencher, paragraph, NO_WRAP_WIDTH),
         );
 
@@ -61,7 +61,7 @@ pub fn paragraph(c: &mut Criterion) {
             BenchmarkId::new("render_wrap_scroll_full", line_count),
             &Paragraph::new(lines)
                 .wrap(Wrap { trim: false })
-                .scroll((0u16, line_count)),
+                .scroll((0, line_count)),
             |bencher, paragraph| render(bencher, paragraph, WRAP_WIDTH),
         );
     }
@@ -79,7 +79,7 @@ fn render(bencher: &mut Bencher, paragraph: &Paragraph, width: u16) {
             bench_paragraph.render(buffer.area, &mut buffer);
         },
         BatchSize::LargeInput,
-    )
+    );
 }
 
 /// Create a string with the given number of lines filled with nonsense words
@@ -87,7 +87,7 @@ fn render(bencher: &mut Bencher, paragraph: &Paragraph, width: u16) {
 /// English language has about 5.1 average characters per word so including the space between words
 /// this should emit around 200 characters per paragraph on average.
 fn random_lines(count: u16) -> String {
-    let count = count as i64;
+    let count = i64::from(count);
     let sentence_count = 3;
     let word_count = 11;
     fakeit::words::paragraph(count, sentence_count, word_count, "\n".into())

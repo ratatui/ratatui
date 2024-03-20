@@ -112,7 +112,6 @@ impl Iterator for Positions {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::layout::Position;
 
     #[test]
     fn rows() {

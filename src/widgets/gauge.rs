@@ -4,9 +4,9 @@ use crate::{prelude::*, widgets::Block};
 ///
 /// A `Gauge` renders a bar filled according to the value given to [`Gauge::percent`] or
 /// [`Gauge::ratio`]. The bar width and height are defined by the [`Rect`] it is
-/// [rendered](Widget::render) in.  
+/// [rendered](Widget::render) in.
 /// The associated label is always centered horizontally and vertically. If not set with
-/// [`Gauge::label`], the label is the percentage of the bar filled.  
+/// [`Gauge::label`], the label is the percentage of the bar filled.
 /// You might want to have a higher precision bar using [`Gauge::use_unicode`].
 ///
 /// This can be useful to indicate the progression of a task, like a download.
@@ -41,8 +41,8 @@ pub struct Gauge<'a> {
 }
 
 impl<'a> Default for Gauge<'a> {
-    fn default() -> Gauge<'a> {
-        Gauge {
+    fn default() -> Self {
+        Self {
             block: None,
             ratio: 0.0,
             label: None,
@@ -59,7 +59,7 @@ impl<'a> Gauge<'a> {
     /// The gauge is rendered in the inner portion of the block once space for borders and padding
     /// is reserved. Styles set on the block do **not** affect the bar itself.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> Gauge<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -74,7 +74,7 @@ impl<'a> Gauge<'a> {
     ///
     /// See [`Gauge::ratio`] to set from a float.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn percent(mut self, percent: u16) -> Gauge<'a> {
+    pub fn percent(mut self, percent: u16) -> Self {
         assert!(
             percent <= 100,
             "Percentage should be between 0 and 100 inclusively."
@@ -96,7 +96,7 @@ impl<'a> Gauge<'a> {
     ///
     /// See [`Gauge::percent`] to set from a percentage.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn ratio(mut self, ratio: f64) -> Gauge<'a> {
+    pub fn ratio(mut self, ratio: f64) -> Self {
         assert!(
             (0.0..=1.0).contains(&ratio),
             "Ratio should be between 0 and 1 inclusively."
@@ -110,7 +110,7 @@ impl<'a> Gauge<'a> {
     /// For a left-aligned label, see [`LineGauge`].
     /// If the label is not defined, it is the percentage filled.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label<T>(mut self, label: T) -> Gauge<'a>
+    pub fn label<T>(mut self, label: T) -> Self
     where
         T: Into<Span<'a>>,
     {
@@ -126,7 +126,7 @@ impl<'a> Gauge<'a> {
     /// This will style the block (if any non-styled) and background of the widget (everything
     /// except the bar itself). [`Block`] style set with [`Gauge::block`] takes precedence.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Gauge<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -136,7 +136,7 @@ impl<'a> Gauge<'a> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn gauge_style<S: Into<Style>>(mut self, style: S) -> Gauge<'a> {
+    pub fn gauge_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.gauge_style = style.into();
         self
     }
@@ -147,7 +147,7 @@ impl<'a> Gauge<'a> {
     /// [unicode block characters](https://en.wikipedia.org/wiki/Block_Elements).
     /// This is useful to display a higher precision bar (8 extra fractional parts per cell).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn use_unicode(mut self, unicode: bool) -> Gauge<'a> {
+    pub const fn use_unicode(mut self, unicode: bool) -> Self {
         self.use_unicode = unicode;
         self
     }
@@ -236,9 +236,9 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 ///
 /// A `LineGauge` renders a thin line filled according to the value given to [`LineGauge::ratio`].
 /// Unlike [`Gauge`], only the width can be defined by the [rendering](Widget::render) [`Rect`].
-/// The height is always 1.  
+/// The height is always 1.
 /// The associated label is always left-aligned. If not set with [`LineGauge::label`], the label
-/// is the percentage of the bar filled.  
+/// is the percentage of the bar filled.
 /// You can also set the symbols used to draw the bar with [`LineGauge::line_set`].
 ///
 /// This can be useful to indicate the progression of a task, like a download.
@@ -307,7 +307,7 @@ impl<'a> LineGauge<'a> {
     /// [`NORMAL`](symbols::line::NORMAL), [`DOUBLE`](symbols::line::DOUBLE) and
     /// [`THICK`](symbols::line::THICK).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn line_set(mut self, set: symbols::line::Set) -> Self {
+    pub const fn line_set(mut self, set: symbols::line::Set) -> Self {
         self.line_set = set;
         self
     }
@@ -316,6 +316,7 @@ impl<'a> LineGauge<'a> {
     ///
     /// With `LineGauge`, labels are only on the left, see [`Gauge`] for a centered label.
     /// If the label is not defined, it is the percentage filled.
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn label<T>(mut self, label: T) -> Self
     where
         T: Into<Line<'a>>,
@@ -402,7 +403,7 @@ impl WidgetRef for LineGauge<'_> {
 }
 
 impl<'a> Styled for Gauge<'a> {
-    type Item = Gauge<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -414,7 +415,7 @@ impl<'a> Styled for Gauge<'a> {
 }
 
 impl<'a> Styled for LineGauge<'a> {
-    type Item = LineGauge<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -428,22 +429,21 @@ impl<'a> Styled for LineGauge<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::style::{Modifier, Stylize};
 
     #[test]
-    #[should_panic]
+    #[should_panic = "Percentage should be between 0 and 100 inclusively"]
     fn gauge_invalid_percentage() {
         let _ = Gauge::default().percent(110);
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic = "Ratio should be between 0 and 1 inclusively"]
     fn gauge_invalid_ratio_upper_bound() {
         let _ = Gauge::default().ratio(1.1);
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic = "Ratio should be between 0 and 1 inclusively"]
     fn gauge_invalid_ratio_lower_bound() {
         let _ = Gauge::default().ratio(-0.5);
     }
@@ -457,7 +457,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]
@@ -474,7 +474,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]

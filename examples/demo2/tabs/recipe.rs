@@ -10,6 +10,7 @@ struct Ingredient {
 }
 
 impl Ingredient {
+    #[allow(clippy::cast_possible_truncation)]
     fn height(&self) -> u16 {
         self.name.lines().count() as u16
     }
@@ -148,7 +149,7 @@ fn render_recipe(area: Rect, buf: &mut Buffer) {
 
 fn render_ingredients(selected_row: usize, area: Rect, buf: &mut Buffer) {
     let mut state = TableState::default().with_selected(Some(selected_row));
-    let rows = INGREDIENTS.iter().cloned();
+    let rows = INGREDIENTS.iter().copied();
     let theme = THEME.recipe;
     StatefulWidget::render(
         Table::new(rows, [Constraint::Length(7), Constraint::Length(30)])
@@ -171,5 +172,5 @@ fn render_scrollbar(position: usize, area: Rect, buf: &mut Buffer) {
         .end_symbol(None)
         .track_symbol(None)
         .thumb_symbol("▐")
-        .render(area, buf, &mut state)
+        .render(area, buf, &mut state);
 }

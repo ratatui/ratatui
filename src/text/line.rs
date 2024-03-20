@@ -10,27 +10,20 @@ use crate::prelude::*;
 /// text. When a [`Line`] is rendered, it is rendered as a single line of text, with each [`Span`]
 /// being rendered in order (left to right).
 ///
-/// [`Line`]s can be created from [`Span`]s, [`String`]s, and [`&str`]s. They can be styled with a
-/// [`Style`], and have an [`Alignment`].
-///
-/// The line's [`Alignment`] is used by the rendering widget to determine how to align the line
-/// within the available space. If the line is longer than the available space, the alignment is
-/// ignored and the line is truncated.
-///
-/// The line's [`Style`] is used by the rendering widget to determine how to style the line. If the
-/// line is longer than the available space, the style is applied to the entire line, and the line
-/// is truncated. Each [`Span`] in the line will be styled with the [`Style`] of the line, and then
-/// with its own [`Style`].
-///
-/// `Line` implements the [`Widget`] trait, which means it can be rendered to a [`Buffer`]. Usually
-/// apps will use the [`Paragraph`] widget instead of rendering a [`Line`] directly as it provides
-/// more functionality.
-///
 /// # Constructor Methods
 ///
 /// - [`Line::default`] creates a line with empty content and the default style.
 /// - [`Line::raw`] creates a line with the given content and the default style.
 /// - [`Line::styled`] creates a line with the given content and style.
+///
+/// # Conversion Methods
+///
+/// - [`Line::from`] creates a `Line` from a [`String`].
+/// - [`Line::from`] creates a `Line` from a [`&str`].
+/// - [`Line::from`] creates a `Line` from a [`Vec`] of [`Span`]s.
+/// - [`Line::from`] creates a `Line` from single [`Span`].
+/// - [`String::from`] converts a line into a [`String`].
+/// - [`Line::from_iter`] creates a line from an iterator of items that are convertible to [`Span`].
 ///
 /// # Setter Methods
 ///
@@ -39,6 +32,15 @@ use crate::prelude::*;
 /// - [`Line::spans`] sets the content of the line.
 /// - [`Line::style`] sets the style of the line.
 /// - [`Line::alignment`] sets the alignment of the line.
+/// - [`Line::left_aligned`] sets the alignment of the line to [`Alignment::Left`].
+/// - [`Line::centered`] sets the alignment of the line to [`Alignment::Center`].
+/// - [`Line::right_aligned`] sets the alignment of the line to [`Alignment::Right`].
+///
+/// # Iteration Methods
+///
+/// - [`Line::iter`] returns an iterator over the spans of this line.
+/// - [`Line::iter_mut`] returns a mutable iterator over the spans of this line.
+/// - [`Line::into_iter`] returns an iterator over the spans of this line.
 ///
 /// # Other Methods
 ///
@@ -56,17 +58,88 @@ use crate::prelude::*;
 ///
 /// # Examples
 ///
+/// ## Creating Lines
+/// [`Line`]s can be created from [`Span`]s, [`String`]s, and [`&str`]s. They can be styled with a
+/// [`Style`].
+///
 /// ```rust
 /// use ratatui::prelude::*;
 ///
-/// Line::raw("unstyled");
-/// Line::styled("yellow text", Style::new().yellow());
-/// Line::from("red text").style(Style::new().red());
-/// Line::from(String::from("unstyled"));
-/// Line::from(vec![
+/// let style = Style::new().yellow();
+/// let line = Line::raw("Hello, world!").style(style);
+/// let line = Line::styled("Hello, world!", style);
+/// let line = Line::styled("Hello, world!", (Color::Yellow, Modifier::BOLD));
+///
+/// let line = Line::from("Hello, world!");
+/// let line = Line::from(String::from("Hello, world!"));
+/// let line = Line::from(vec![
 ///     Span::styled("Hello", Style::new().blue()),
 ///     Span::raw(" world!"),
 /// ]);
+/// ```
+///
+/// ## Styling Lines
+///
+/// The line's [`Style`] is used by the rendering widget to determine how to style the line. Each
+/// [`Span`] in the line will be styled with the [`Style`] of the line, and then with its own
+/// [`Style`]. If the line is longer than the available space, the style is applied to the entire
+/// line, and the line is truncated. `Line` also implements [`Styled`] which means you can use the
+/// methods of the [`Stylize`] trait.
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// let line = Line::from("Hello world!").style(Style::new().yellow().italic());
+/// let line = Line::from("Hello world!").style(Color::Yellow);
+/// let line = Line::from("Hello world!").style((Color::Yellow, Color::Black));
+/// let line = Line::from("Hello world!").style((Color::Yellow, Modifier::ITALIC));
+/// let line = Line::from("Hello world!").yellow().italic();
+/// ```
+///
+/// ## Aligning Lines
+///
+/// The line's [`Alignment`] is used by the rendering widget to determine how to align the line
+/// within the available space. If the line is longer than the available space, the alignment is
+/// ignored and the line is truncated.
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// let line = Line::from("Hello world!").alignment(Alignment::Right);
+/// let line = Line::from("Hello world!").centered();
+/// let line = Line::from("Hello world!").left_aligned();
+/// let line = Line::from("Hello world!").right_aligned();
+/// ```
+///
+/// ## Rendering Lines
+///
+/// `Line` implements the [`Widget`] trait, which means it can be rendered to a [`Buffer`].
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// # fn render(area: Rect, buf: &mut Buffer) {
+/// // in another widget's render method
+/// let line = Line::from("Hello world!").style(Style::new().yellow().italic());
+/// line.render(area, buf);
+/// # }
+///
+/// # fn draw(frame: &mut Frame, area: Rect) {
+/// // in a terminal.draw closure
+/// let line = Line::from("Hello world!").style(Style::new().yellow().italic());
+/// frame.render_widget(line, area);
+/// # }
+/// ```
+/// ## Rendering Lines with a Paragraph widget
+///
+/// Usually apps will use the [`Paragraph`] widget instead of rendering a [`Line`] directly as it
+/// provides more functionality.
+///
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// # fn render(area: Rect, buf: &mut Buffer) {
+/// let line = Line::from("Hello world!").yellow().italic();
+/// Paragraph::new(line)
+///     .wrap(Wrap { trim: true })
+///     .render(area, buf);
+/// # }
 /// ```
 ///
 /// [`Paragraph`]: crate::widgets::Paragraph
@@ -102,11 +175,11 @@ impl<'a> Line<'a> {
     /// Line::raw(String::from("test content"));
     /// Line::raw(Cow::from("test content"));
     /// ```
-    pub fn raw<T>(content: T) -> Line<'a>
+    pub fn raw<T>(content: T) -> Self
     where
         T: Into<Cow<'a, str>>,
     {
-        Line {
+        Self {
             spans: content
                 .into()
                 .lines()
@@ -135,12 +208,12 @@ impl<'a> Line<'a> {
     /// Line::styled(String::from("My text"), style);
     /// Line::styled(Cow::from("test content"), style);
     /// ```
-    pub fn styled<T, S>(content: T, style: S) -> Line<'a>
+    pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
         S: Into<Style>,
     {
-        Line {
+        Self {
             spans: content
                 .into()
                 .lines()
@@ -378,6 +451,40 @@ impl<'a> Line<'a> {
     pub fn iter_mut(&mut self) -> std::slice::IterMut<Span<'a>> {
         self.spans.iter_mut()
     }
+
+    /// Returns a line that's truncated corresponding to it's alignment and result width
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn truncated(&'a self, result_width: u16) -> Self {
+        let mut truncated_line = Line::default();
+        let width = self.width() as u16;
+        let mut offset = match self.alignment {
+            Some(Alignment::Center) => (width.saturating_sub(result_width)) / 2,
+            Some(Alignment::Right) => width.saturating_sub(result_width),
+            _ => 0,
+        };
+        let mut x = 0;
+        for span in &self.spans {
+            let span_width = span.width() as u16;
+            if offset >= span_width {
+                offset -= span_width;
+                continue;
+            }
+            let mut new_span = span.clone();
+            let new_span_width = span_width - offset;
+            if x + new_span_width > result_width {
+                new_span.content =
+                    Cow::from(&span.content[offset as usize..(result_width - x + offset) as usize]);
+                truncated_line.spans.push(new_span);
+                break;
+            }
+
+            new_span.content = Cow::from(&span.content[offset as usize..]);
+            truncated_line.spans.push(new_span);
+            x += new_span_width;
+            offset = 0;
+        }
+        truncated_line
+    }
 }
 
 impl<'a> IntoIterator for Line<'a> {
@@ -435,8 +542,8 @@ impl<'a> From<Span<'a>> for Line<'a> {
 }
 
 impl<'a> From<Line<'a>> for String {
-    fn from(line: Line<'a>) -> String {
-        line.iter().fold(String::new(), |mut acc, s| {
+    fn from(line: Line<'a>) -> Self {
+        line.iter().fold(Self::new(), |mut acc, s| {
             acc.push_str(s.content.as_ref());
             acc
         })
@@ -463,18 +570,23 @@ impl WidgetRef for Line<'_> {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
         let width = self.width() as u16;
-        let offset = match self.alignment {
-            Some(Alignment::Left) => 0,
-            Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
-            Some(Alignment::Right) => area.width.saturating_sub(width),
-            None => 0,
+        let mut x = area.left();
+        let line = if width > area.width {
+            self.truncated(area.width)
+        } else {
+            let offset = match self.alignment {
+                Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
+                Some(Alignment::Right) => area.width.saturating_sub(width),
+                _ => 0,
+            };
+            x = x.saturating_add(offset);
+            self.to_owned()
         };
-        let mut x = area.left().saturating_add(offset);
-        for span in self.spans.iter() {
+        for span in &line.spans {
             let span_width = span.width() as u16;
             let span_area = Rect {
                 x,
-                width: span_width.min(area.right() - x),
+                width: span_width.min(area.right().saturating_sub(x)),
                 ..area
             };
             span.render(span_area, buf);
@@ -496,7 +608,7 @@ impl std::fmt::Display for Line<'_> {
 }
 
 impl<'a> Styled for Line<'a> {
-    type Item = Line<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -514,6 +626,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::assert_buffer_eq;
 
     #[test]
     fn raw_str() {
@@ -751,6 +864,44 @@ mod tests {
         let line_from_styled_span = Line::from(styled_span);
 
         assert_eq!(format!("{line_from_styled_span}"), "Hello, world!");
+    }
+    #[test]
+    fn render_truncates_left() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+        Line::from("Hello world")
+            .left_aligned()
+            .render(buf.area, &mut buf);
+        let expected = Buffer::with_lines(vec!["Hello"]);
+        assert_buffer_eq!(buf, expected);
+    }
+
+    #[test]
+    fn render_truncates_right() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+        Line::from("Hello world")
+            .right_aligned()
+            .render(buf.area, &mut buf);
+        let expected = Buffer::with_lines(vec!["world"]);
+        assert_buffer_eq!(buf, expected);
+    }
+
+    #[test]
+    fn render_truncates_center() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+        Line::from("Hello world")
+            .centered()
+            .render(buf.area, &mut buf);
+        let expected = Buffer::with_lines(vec!["lo wo"]);
+        assert_buffer_eq!(buf, expected);
+    }
+
+    #[test]
+    fn truncate_line_with_multiple_spans() {
+        let line = Line::default().spans(vec!["foo", "bar"]);
+        assert_eq!(
+            line.right_aligned().truncated(4).to_string(),
+            String::from("obar")
+        );
     }
 
     mod widget {

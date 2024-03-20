@@ -48,8 +48,8 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
-    pub fn new(lines: O, max_line_width: u16, trim: bool) -> WordWrapper<'a, O, I> {
-        WordWrapper {
+    pub fn new(lines: O, max_line_width: u16, trim: bool) -> Self {
+        Self {
             input_lines: lines,
             max_line_width,
             wrapped_lines: None,
@@ -65,6 +65,7 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
+    #[allow(clippy::too_many_lines)]
     fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>> {
         if self.max_line_width == 0 {
             return None;
@@ -144,9 +145,9 @@ where
                             // or if it would be too long with the current partially processed word added
                             || current_line_width + whitespace_width + word_width >= self.max_line_width && symbol_width > 0
                         {
-                            let mut remaining_width =
-                                (self.max_line_width as i32 - current_line_width as i32).max(0)
-                                    as u16;
+                            let mut remaining_width = (i32::from(self.max_line_width)
+                                - i32::from(current_line_width))
+                            .max(0) as u16;
                             wrapped_lines.push(std::mem::take(&mut current_line));
                             current_line_width = 0;
 
@@ -188,6 +189,9 @@ where
                             wrapped_lines.push(vec![]);
                         } else if !self.trim || !current_line.is_empty() {
                             current_line.extend(unfinished_whitespaces.into_iter());
+                        } else {
+                            // TODO: explain why this else branch is ok.
+                            // See clippy::else_if_without_else
                         }
                         current_line.append(&mut unfinished_word);
                     }
@@ -210,7 +214,7 @@ where
         if let Some(line) = current_line {
             self.current_line = line;
             Some(WrappedLine {
-                line: &self.current_line[..],
+                line: &self.current_line,
                 width: line_width,
                 alignment: self.current_alignment,
             })
@@ -243,8 +247,8 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
-    pub fn new(lines: O, max_line_width: u16) -> LineTruncator<'a, O, I> {
-        LineTruncator {
+    pub fn new(lines: O, max_line_width: u16) -> Self {
+        Self {
             input_lines: lines,
             max_line_width,
             horizontal_offset: 0,
@@ -310,7 +314,7 @@ where
             None
         } else {
             Some(WrappedLine {
-                line: &self.current_line[..],
+                line: &self.current_line,
                 width: current_line_width,
                 alignment: current_alignment,
             })
@@ -336,14 +340,13 @@ fn trim_offset(src: &str, mut offset: usize) -> &str {
 
 #[cfg(test)]
 mod test {
-    use unicode_segmentation::UnicodeSegmentation;
-
     use super::*;
     use crate::{
         style::Style,
         text::{Line, Text},
     };
 
+    #[derive(Clone, Copy)]
     enum Composer {
         WordWrapper { trim: bool },
         LineTruncator,
@@ -395,13 +398,10 @@ mod test {
         let width = 40;
         for i in 1..width {
             let text = "a".repeat(i);
-            let (word_wrapper, _, _) = run_composer(
-                Composer::WordWrapper { trim: true },
-                &text[..],
-                width as u16,
-            );
+            let (word_wrapper, _, _) =
+                run_composer(Composer::WordWrapper { trim: true }, &*text, width as u16);
             let (line_truncator, _, _) =
-                run_composer(Composer::LineTruncator, &text[..], width as u16);
+                run_composer(Composer::LineTruncator, &*text, width as u16);
             let expected = vec![text];
             assert_eq!(word_wrapper, expected);
             assert_eq!(line_truncator, expected);
@@ -628,7 +628,7 @@ mod test {
         let (word_wrapper_space, word_wrapper_widths, _) =
             run_composer(Composer::WordWrapper { trim: true }, text_space, width);
         assert_eq!(word_wrapper_space, vec!["AAAAAAAAAAAAAAA AAAA", "AAA",]);
-        assert_eq!(word_wrapper_widths, vec![20, 3])
+        assert_eq!(word_wrapper_widths, vec![20, 3]);
     }
 
     #[test]

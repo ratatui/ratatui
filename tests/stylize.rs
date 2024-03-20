@@ -42,8 +42,8 @@ fn barchart_can_be_stylized() {
             expected.get_mut(x, y).set_bg(Color::White);
         }
         // bars
-        for x in [0, 1, 3, 4, 6, 7].iter() {
-            expected.get_mut(*x, y).set_fg(Color::Red);
+        for x in [0, 1, 3, 4, 6, 7] {
+            expected.get_mut(x, y).set_fg(Color::Red);
         }
     }
     // values

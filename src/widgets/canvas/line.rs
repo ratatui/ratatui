@@ -115,6 +115,7 @@ mod tests {
     use super::Line;
     use crate::{assert_buffer_eq, prelude::*, widgets::canvas::Canvas};
 
+    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
     fn test(line: Line, expected_lines: Vec<&str>) {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
@@ -128,7 +129,7 @@ mod tests {
         canvas.render(buffer.area, &mut buffer);
 
         let mut expected = Buffer::with_lines(expected_lines);
-        for cell in expected.content.iter_mut() {
+        for cell in &mut expected.content {
             if cell.symbol() == "•" {
                 cell.set_style(Style::new().red());
             }

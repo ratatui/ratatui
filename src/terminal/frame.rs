@@ -1,4 +1,4 @@
-use crate::{prelude::*, widgets::WidgetRef};
+use crate::prelude::*;
 
 /// A consistent view into the terminal state for rendering a single frame.
 ///
@@ -49,7 +49,7 @@ impl Frame<'_> {
     /// If your app listens for a resize event from the backend, it should ignore the values from
     /// the event for any calculations that are used to render the current frame and use this value
     /// instead as this is the size of the buffer that is used to render the current frame.
-    pub fn size(&self) -> Rect {
+    pub const fn size(&self) -> Rect {
         self.viewport_area
     }
 
@@ -91,6 +91,7 @@ impl Frame<'_> {
     /// let area = Rect::new(0, 0, 5, 5);
     /// frame.render_widget_ref(block, area);
     /// ```
+    #[allow(clippy::needless_pass_by_value)]
     #[stability::unstable(feature = "widget-ref")]
     pub fn render_widget_ref<W: WidgetRef>(&mut self, widget: W, area: Rect) {
         widget.render_ref(area, self.buffer);
@@ -146,6 +147,7 @@ impl Frame<'_> {
     /// let area = Rect::new(0, 0, 5, 5);
     /// frame.render_stateful_widget_ref(list, area, &mut state);
     /// ```
+    #[allow(clippy::needless_pass_by_value)]
     #[stability::unstable(feature = "widget-ref")]
     pub fn render_stateful_widget_ref<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
     where
@@ -177,7 +179,7 @@ impl Frame<'_> {
     ///
     /// Each time a frame has been rendered, this count is incremented,
     /// providing a consistent way to reference the order and number of frames processed by the
-    /// terminal. When count reaches its maximum value (usize::MAX), it wraps around to zero.
+    /// terminal. When count reaches its maximum value (`usize::MAX`), it wraps around to zero.
     ///
     /// This count is particularly useful when dealing with dynamic content or animations where the
     /// state of the display changes over time. By tracking the frame count, developers can
@@ -193,7 +195,7 @@ impl Frame<'_> {
     /// let current_count = frame.count();
     /// println!("Current frame count: {}", current_count);
     /// ```
-    pub fn count(&self) -> usize {
+    pub const fn count(&self) -> usize {
         self.count
     }
 }

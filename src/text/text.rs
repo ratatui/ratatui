@@ -3,32 +3,30 @@ use std::borrow::Cow;
 
 use itertools::{Itertools, Position};
 
-use crate::{prelude::*, widgets::Widget};
+use crate::prelude::*;
 
-/// A string split over multiple lines where each line is composed of several clusters, each with
-/// their own style.
+/// A string split over one or more lines.
 ///
-/// A [`Text`], like a [`Line`], can be constructed using one of the many `From` implementations
-/// or via the [`Text::raw`] and [`Text::styled`] methods. Helpfully, [`Text`] also implements
-/// [`core::iter::Extend`] which enables the concatenation of several [`Text`] blocks.
-///
-/// The text's [`Style`] is used by the rendering widget to determine how to style the text. Each
-/// [`Line`] in the text will be styled with the [`Style`] of the text, and then with its own
-/// [`Style`]. `Text` also implements [`Styled`] which means you can use the methods of the
-/// [`Stylize`] trait.
-///
-/// The text's [`Alignment`] can be set using [`Text::alignment`]. Lines composing the text can
-/// also be individually aligned with [`Line::alignment`].
-///
-/// `Text` implements the [`Widget`] trait, which means it can be rendered to a [`Buffer`].
-/// Usually apps will use the [`Paragraph`] widget instead of rendering a `Text` directly as it
-/// provides more functionality.
+/// [`Text`] is used wherever text is displayed in the terminal and represents one or more [`Line`]s
+/// of text. When a [`Text`] is rendered, each line is rendered as a single line of text from top to
+/// bottom of the area. The text can be styled and aligned.
 ///
 /// # Constructor Methods
 ///
-/// - [`Text::default`] creates a `Text` with empty content and the default style.
 /// - [`Text::raw`] creates a `Text` (potentially multiple lines) with no style.
 /// - [`Text::styled`] creates a `Text` (potentially multiple lines) with a style.
+/// - [`Text::default`] creates a `Text` with empty content and the default style.
+///
+/// # Conversion Methods
+///
+/// - [`Text::from`] creates a `Text` from a `String`.
+/// - [`Text::from`] creates a `Text` from a `&str`.
+/// - [`Text::from`] creates a `Text` from a `Cow<str>`.
+/// - [`Text::from`] creates a `Text` from a [`Span`].
+/// - [`Text::from`] creates a `Text` from a [`Line`].
+/// - [`Text::from`] creates a `Text` from a `Vec<Line>`.
+/// - [`Text::from_iter`] creates a `Text` from an iterator of items that can be converted into
+///   `Line`.
 ///
 /// # Setter Methods
 ///
@@ -36,6 +34,15 @@ use crate::{prelude::*, widgets::Widget};
 ///
 /// - [`Text::style`] sets the style of this `Text`.
 /// - [`Text::alignment`] sets the alignment for this `Text`.
+/// - [`Text::left_aligned`] sets the alignment to [`Alignment::Left`].
+/// - [`Text::centered`] sets the alignment to [`Alignment::Center`].
+/// - [`Text::right_aligned`] sets the alignment to [`Alignment::Right`].
+///
+/// # Iteration Methods
+///
+/// - [`Text::iter`] returns an iterator over the lines of the text.
+/// - [`Text::iter_mut`] returns an iterator that allows modifying each line.
+/// - [`Text::into_iter`] returns an iterator over the lines of the text.
 ///
 /// # Other Methods
 ///
@@ -44,28 +51,118 @@ use crate::{prelude::*, widgets::Widget};
 /// - [`Text::patch_style`] patches the style of this `Text`, adding modifiers from the given style.
 /// - [`Text::reset_style`] resets the style of the `Text`.
 ///
-/// [`Paragraph`]: crate::widgets::Paragraph
-/// [`Widget`]: crate::widgets::Widget
+/// # Examples
+///
+/// ## Creating Text
+///
+/// A [`Text`], like a [`Line`], can be constructed using one of the many `From` implementations or
+/// via the [`Text::raw`] and [`Text::styled`] methods. Helpfully, [`Text`] also implements
+/// [`core::iter::Extend`] which enables the concatenation of several [`Text`] blocks.
 ///
 /// ```rust
+/// use std::{borrow::Cow, iter};
+///
 /// use ratatui::prelude::*;
 ///
-/// let style = Style::default()
-///     .fg(Color::Yellow)
-///     .add_modifier(Modifier::ITALIC);
+/// let style = Style::new().yellow().italic();
+/// let text = Text::raw("The first line\nThe second line").style(style);
+/// let text = Text::styled("The first line\nThe second line", style);
+/// let text = Text::styled(
+///     "The first line\nThe second line",
+///     (Color::Yellow, Modifier::ITALIC),
+/// );
 ///
-/// // An initial two lines of `Text` built from a `&str`
-/// let mut text = Text::from("The first line\nThe second line");
-/// assert_eq!(2, text.height());
+/// let text = Text::from("The first line\nThe second line");
+/// let text = Text::from(String::from("The first line\nThe second line"));
+/// let text = Text::from(Cow::Borrowed("The first line\nThe second line"));
+/// let text = Text::from(Span::styled("The first line\nThe second line", style));
+/// let text = Text::from(Line::from("The first line"));
+/// let text = Text::from(vec![
+///     Line::from("The first line"),
+///     Line::from("The second line"),
+/// ]);
+/// let text = Text::from_iter(iter::once("The first line").chain(iter::once("The second line")));
 ///
-/// // Adding two more unstyled lines
-/// text.extend(Text::raw("These are two\nmore lines!"));
-/// assert_eq!(4, text.height());
-///
-/// // Adding a final two styled lines
-/// text.extend(Text::styled("Some more lines\nnow with more style!", style));
-/// assert_eq!(6, text.height());
+/// let mut text = Text::default();
+/// text.extend(vec![
+///     Line::from("The first line"),
+///     Line::from("The second line"),
+/// ]);
+/// text.extend(Text::from("The third line\nThe fourth line"));
 /// ```
+///
+/// ## Styling Text
+///
+/// The text's [`Style`] is used by the rendering widget to determine how to style the text. Each
+/// [`Line`] in the text will be styled with the [`Style`] of the text, and then with its own
+/// [`Style`]. `Text` also implements [`Styled`] which means you can use the methods of the
+/// [`Stylize`] trait.
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// let text = Text::from("The first line\nThe second line").style(Style::new().yellow().italic());
+/// let text = Text::from("The first line\nThe second line")
+///     .yellow()
+///     .italic();
+/// let text = Text::from(vec![
+///     Line::from("The first line").yellow(),
+///     Line::from("The second line").yellow(),
+/// ])
+/// .italic();
+/// ```
+///
+/// ## Aligning Text
+/// The text's [`Alignment`] can be set using [`Text::alignment`] or the related helper methods.
+/// Lines composing the text can also be individually aligned with [`Line::alignment`].
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// let text = Text::from("The first line\nThe second line").alignment(Alignment::Right);
+/// let text = Text::from("The first line\nThe second line").right_aligned();
+/// let text = Text::from(vec![
+///     Line::from("The first line").left_aligned(),
+///     Line::from("The second line").right_aligned(),
+///     Line::from("The third line"),
+/// ])
+/// .centered();
+/// ```
+///
+/// ## Rendering Text
+/// `Text` implements the [`Widget`] trait, which means it can be rendered to a [`Buffer`] or to a
+/// [`Frame`].
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// // within another widget's `render` method:
+/// # fn render(area: Rect, buf: &mut Buffer) {
+/// let text = Text::from("The first line\nThe second line");
+/// text.render(area, buf);
+/// # }
+///
+/// // within a terminal.draw closure:
+/// # fn draw(frame: &mut Frame, area: Rect) {
+/// let text = Text::from("The first line\nThe second line");
+/// frame.render_widget(text, area);
+/// # }
+/// ```
+///
+/// ## Rendering Text with a Paragraph Widget
+///
+/// Usually apps will use the [`Paragraph`] widget instead of rendering a `Text` directly as it
+/// provides more functionality.
+///
+/// ```rust
+/// # use ratatui::{prelude::*, widgets::*};
+/// # fn render(area: Rect, buf: &mut Buffer) {
+/// let text = Text::from("The first line\nThe second line");
+/// let paragraph = Paragraph::new(text)
+///     .wrap(Wrap { trim: true })
+///     .scroll((1, 1))
+///     .render(area, buf);
+/// # }
+/// ```
+///
+/// [`Paragraph`]: crate::widgets::Paragraph
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Text<'a> {
     /// The lines that make up this piece of text.
@@ -86,7 +183,7 @@ impl<'a> Text<'a> {
     /// Text::raw("The first line\nThe second line");
     /// Text::raw(String::from("The first line\nThe second line"));
     /// ```
-    pub fn raw<T>(content: T) -> Text<'a>
+    pub fn raw<T>(content: T) -> Self
     where
         T: Into<Cow<'a, str>>,
     {
@@ -96,8 +193,7 @@ impl<'a> Text<'a> {
             Cow::Owned(s) if s.is_empty() => vec![Line::from("")],
             Cow::Owned(s) => s.lines().map(|l| Line::from(l.to_owned())).collect(),
         };
-
-        Text::from(lines)
+        Self::from(lines)
     }
 
     /// Create some text (potentially multiple lines) with a style.
@@ -115,12 +211,12 @@ impl<'a> Text<'a> {
     /// Text::styled("The first line\nThe second line", style);
     /// Text::styled(String::from("The first line\nThe second line"), style);
     /// ```
-    pub fn styled<T, S>(content: T, style: S) -> Text<'a>
+    pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
         S: Into<Style>,
     {
-        Text::raw(content).patch_style(style)
+        Self::raw(content).patch_style(style)
     }
 
     /// Returns the max width of all the lines.
@@ -375,26 +471,26 @@ impl<'a> IntoIterator for &'a mut Text<'a> {
 }
 
 impl<'a> From<String> for Text<'a> {
-    fn from(s: String) -> Text<'a> {
-        Text::raw(s)
+    fn from(s: String) -> Self {
+        Self::raw(s)
     }
 }
 
 impl<'a> From<&'a str> for Text<'a> {
-    fn from(s: &'a str) -> Text<'a> {
-        Text::raw(s)
+    fn from(s: &'a str) -> Self {
+        Self::raw(s)
     }
 }
 
 impl<'a> From<Cow<'a, str>> for Text<'a> {
-    fn from(s: Cow<'a, str>) -> Text<'a> {
-        Text::raw(s)
+    fn from(s: Cow<'a, str>) -> Self {
+        Self::raw(s)
     }
 }
 
 impl<'a> From<Span<'a>> for Text<'a> {
-    fn from(span: Span<'a>) -> Text<'a> {
-        Text {
+    fn from(span: Span<'a>) -> Self {
+        Self {
             lines: vec![Line::from(span)],
             ..Default::default()
         }
@@ -402,8 +498,8 @@ impl<'a> From<Span<'a>> for Text<'a> {
 }
 
 impl<'a> From<Line<'a>> for Text<'a> {
-    fn from(line: Line<'a>) -> Text<'a> {
-        Text {
+    fn from(line: Line<'a>) -> Self {
+        Self {
             lines: vec![line],
             ..Default::default()
         }
@@ -411,8 +507,8 @@ impl<'a> From<Line<'a>> for Text<'a> {
 }
 
 impl<'a> From<Vec<Line<'a>>> for Text<'a> {
-    fn from(lines: Vec<Line<'a>>) -> Text<'a> {
-        Text {
+    fn from(lines: Vec<Line<'a>>) -> Self {
+        Self {
             lines,
             ..Default::default()
         }
@@ -425,7 +521,7 @@ where
 {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let lines = iter.into_iter().map(Into::into).collect();
-        Text {
+        Self {
             lines,
             ..Default::default()
         }
@@ -486,7 +582,7 @@ impl WidgetRef for Text<'_> {
 }
 
 impl<'a> Styled for Text<'a> {
-    type Item = Text<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -504,7 +600,6 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::style::Stylize;
 
     #[test]
     fn raw() {
@@ -755,7 +850,7 @@ mod tests {
 
     mod widget {
         use super::*;
-        use crate::{assert_buffer_eq, style::Color};
+        use crate::assert_buffer_eq;
 
         #[test]
         fn render() {

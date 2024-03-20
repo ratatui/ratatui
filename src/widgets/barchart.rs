@@ -38,8 +38,8 @@ pub use bar_group::BarGroup;
 ///
 /// # Examples
 ///
-/// The following example creates a `BarChart` with two groups of bars.  
-/// The first group is added by an array slice (`&[(&str, u64)]`).  
+/// The following example creates a `BarChart` with two groups of bars.
+/// The first group is added by an array slice (`&[(&str, u64)]`).
 /// The second group is added by a [`BarGroup`] instance.
 /// ```
 /// use ratatui::{prelude::*, widgets::*};
@@ -86,8 +86,8 @@ pub struct BarChart<'a> {
 }
 
 impl<'a> Default for BarChart<'a> {
-    fn default() -> BarChart<'a> {
-        BarChart {
+    fn default() -> Self {
+        Self {
             block: None,
             max: None,
             data: Vec::new(),
@@ -105,11 +105,11 @@ impl<'a> Default for BarChart<'a> {
 }
 
 impl<'a> BarChart<'a> {
-    /// Add group of bars to the BarChart
+    /// Add group of bars to the `BarChart`
     ///
     /// # Examples
     ///
-    /// The following example creates a BarChart with two groups of bars.  
+    /// The following example creates a `BarChart` with two groups of bars.
     /// The first group is added by an array slice (`&[(&str, u64)]`).
     /// The second group is added by a [`BarGroup`] instance.
     /// ```
@@ -118,7 +118,8 @@ impl<'a> BarChart<'a> {
     ///     .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
     ///     .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]));
     /// ```
-    pub fn data(mut self, data: impl Into<BarGroup<'a>>) -> BarChart<'a> {
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn data(mut self, data: impl Into<BarGroup<'a>>) -> Self {
         let group: BarGroup = data.into();
         if !group.bars.is_empty() {
             self.data.push(group);
@@ -128,7 +129,7 @@ impl<'a> BarChart<'a> {
 
     /// Surround the [`BarChart`] with a [`Block`].
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> BarChart<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -163,7 +164,7 @@ impl<'a> BarChart<'a> {
     /// // f b b
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn max(mut self, max: u64) -> BarChart<'a> {
+    pub const fn max(mut self, max: u64) -> Self {
         self.max = Some(max);
         self
     }
@@ -176,7 +177,7 @@ impl<'a> BarChart<'a> {
     /// It is also possible to set individually the style of each [`Bar`].
     /// In this case the default style will be patched by the individual style
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bar_style<S: Into<Style>>(mut self, style: S) -> BarChart<'a> {
+    pub fn bar_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.bar_style = style.into();
         self
     }
@@ -186,17 +187,17 @@ impl<'a> BarChart<'a> {
     /// For [`Horizontal`](crate::layout::Direction::Horizontal) bars this becomes the height of
     /// the bar.
     ///
-    /// If not set, this defaults to `1`.  
+    /// If not set, this defaults to `1`.
     /// The bar label also uses this value as its width.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bar_width(mut self, width: u16) -> BarChart<'a> {
+    pub const fn bar_width(mut self, width: u16) -> Self {
         self.bar_width = width;
         self
     }
 
     /// Set the gap between each bar.
     ///
-    /// If not set, this defaults to `1`.  
+    /// If not set, this defaults to `1`.
     /// The bar label will never be larger than the bar itself, even if the gap is sufficient.
     ///
     /// # Example
@@ -213,7 +214,7 @@ impl<'a> BarChart<'a> {
     /// // f   b
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bar_gap(mut self, gap: u16) -> BarChart<'a> {
+    pub const fn bar_gap(mut self, gap: u16) -> Self {
         self.bar_gap = gap;
         self
     }
@@ -222,7 +223,7 @@ impl<'a> BarChart<'a> {
     ///
     /// If not set, the default is [`bar::NINE_LEVELS`](crate::symbols::bar::NINE_LEVELS).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bar_set(mut self, bar_set: symbols::bar::Set) -> BarChart<'a> {
+    pub const fn bar_set(mut self, bar_set: symbols::bar::Set) -> Self {
         self.bar_set = bar_set;
         self
     }
@@ -237,9 +238,9 @@ impl<'a> BarChart<'a> {
     ///
     /// # See also
     ///
-    /// [Bar::value_style] to set the value style individually.
+    /// [`Bar::value_style`] to set the value style individually.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn value_style<S: Into<Style>>(mut self, style: S) -> BarChart<'a> {
+    pub fn value_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.value_style = style.into();
         self
     }
@@ -254,16 +255,16 @@ impl<'a> BarChart<'a> {
     ///
     /// # See also
     ///
-    /// [Bar::label] to set the label style individually.
+    /// [`Bar::label`] to set the label style individually.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label_style<S: Into<Style>>(mut self, style: S) -> BarChart<'a> {
+    pub fn label_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.label_style = style.into();
         self
     }
 
     /// Set the gap between [`BarGroup`].
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn group_gap(mut self, gap: u16) -> BarChart<'a> {
+    pub const fn group_gap(mut self, gap: u16) -> Self {
         self.group_gap = gap;
         self
     }
@@ -275,7 +276,7 @@ impl<'a> BarChart<'a> {
     ///
     /// The style will be applied to everything that isn't styled (borders, bars, labels, ...).
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> BarChart<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -300,12 +301,13 @@ impl<'a> BarChart<'a> {
     /// █bar██
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn direction(mut self, direction: Direction) -> BarChart<'a> {
+    pub const fn direction(mut self, direction: Direction) -> Self {
         self.direction = direction;
         self
     }
 }
 
+#[derive(Clone, Copy)]
 struct LabelInfo {
     group_label_visible: bool,
     bar_label_visible: bool,
@@ -398,13 +400,13 @@ impl BarChart<'_> {
             .iter()
             .flat_map(|group| group.bars.iter().map(|bar| &bar.label))
             .flatten() // bar.label is an Option<Line>
-            .map(|label| label.width())
+            .map(Line::width)
             .max()
             .unwrap_or(0) as u16;
 
         let label_x = area.x;
         let bars_area = {
-            let margin = if label_size == 0 { 0 } else { 1 };
+            let margin = u16::from(label_size != 0);
             Rect {
                 x: area.x + label_size + margin,
                 width: area.width - label_size - margin,
@@ -528,7 +530,7 @@ impl BarChart<'_> {
                     .max()
                     .unwrap_or_default()
             })
-            .max(1u64)
+            .max(1)
     }
 
     fn render_labels_and_values(
@@ -598,7 +600,7 @@ impl WidgetRef for BarChart<'_> {
 }
 
 impl<'a> Styled for BarChart<'a> {
-    type Item = BarChart<'a>;
+    type Item = Self;
     fn style(&self) -> Style {
         self.style
     }
@@ -848,7 +850,7 @@ mod tests {
                 .fg(Color::Black)
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
-        )
+        );
     }
 
     #[test]
@@ -989,7 +991,7 @@ mod tests {
 
     #[test]
     fn test_horizontal_bars_label_width_greater_than_bar_with_style() {
-        test_horizontal_bars_label_width_greater_than_bar(Some(Color::White))
+        test_horizontal_bars_label_width_greater_than_bar(Some(Color::White));
     }
 
     /// Tests horizontal bars label are presents

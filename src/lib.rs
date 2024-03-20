@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 //! ![Demo](https://github.com/ratatui-org/ratatui/blob/1d39444e3dea6f309cf9035be2417ac711c1abc9/examples/demo2-destroy.gif?raw=true)
 //!
 //! <div align="center">

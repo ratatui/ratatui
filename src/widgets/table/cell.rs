@@ -142,8 +142,8 @@ impl<'a, T> From<T> for Cell<'a>
 where
     T: Into<Text<'a>>,
 {
-    fn from(content: T) -> Cell<'a> {
-        Cell {
+    fn from(content: T) -> Self {
+        Self {
             content: content.into(),
             style: Style::default(),
         }
@@ -151,7 +151,7 @@ where
 }
 
 impl<'a> Styled for Cell<'a> {
-    type Item = Cell<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -165,7 +165,6 @@ impl<'a> Styled for Cell<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::style::{Color, Modifier, Style, Stylize};
 
     #[test]
     fn new() {
@@ -195,6 +194,6 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 }

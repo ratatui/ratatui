@@ -13,6 +13,8 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+#![allow(clippy::enum_glob_use, clippy::wildcard_imports)]
+
 use std::{error::Error, io, io::stdout};
 
 use color_eyre::config::HookBuilder;
@@ -81,7 +83,7 @@ fn init_error_hooks() -> color_eyre::Result<()> {
     }))?;
     std::panic::set_hook(Box::new(move |info| {
         let _ = restore_terminal();
-        panic(info)
+        panic(info);
     }));
     Ok(())
 }
@@ -100,9 +102,9 @@ fn restore_terminal() -> color_eyre::Result<()> {
     Ok(())
 }
 
-impl App<'_> {
-    fn new<'a>() -> App<'a> {
-        App {
+impl<'a> App<'a> {
+    fn new() -> Self {
+        Self {
             items: StatefulList::with_items([
                 ("Rewrite everything with Rust!", "I can't hold my inner voice. He tells me to rewrite the complete universe with Rust", Status::Todo),
                 ("Rewrite all of your tui apps with Ratatui", "Yes, you heard that right. Go and replace your tui with Ratatui.", Status::Completed),
@@ -125,11 +127,11 @@ impl App<'_> {
     }
 
     fn go_top(&mut self) {
-        self.items.state.select(Some(0))
+        self.items.state.select(Some(0));
     }
 
     fn go_bottom(&mut self) {
-        self.items.state.select(Some(self.items.items.len() - 1))
+        self.items.state.select(Some(self.items.items.len() - 1));
     }
 }
 
@@ -177,21 +179,14 @@ impl Widget for &mut App<'_> {
         let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
         let [upper_item_list_area, lower_item_list_area] = vertical.areas(rest_area);
 
-        self.render_title(header_area, buf);
+        render_title(header_area, buf);
         self.render_todo(upper_item_list_area, buf);
         self.render_info(lower_item_list_area, buf);
-        self.render_footer(footer_area, buf);
+        render_footer(footer_area, buf);
     }
 }
 
 impl App<'_> {
-    fn render_title(&self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new("Ratatui List Example")
-            .bold()
-            .centered()
-            .render(area, buf);
-    }
-
     fn render_todo(&mut self, area: Rect, buf: &mut Buffer) {
         // We create two blocks, one is for the header (outer) and the other is for list (inner).
         let outer_block = Block::default()
@@ -278,14 +273,19 @@ impl App<'_> {
         // We can now render the item info
         info_paragraph.render(inner_info_area, buf);
     }
+}
 
-    fn render_footer(&self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new(
-            "\nUse ↓↑ to move, ← to unselect, → to change status, g/G to go top/bottom.",
-        )
+fn render_title(area: Rect, buf: &mut Buffer) {
+    Paragraph::new("Ratatui List Example")
+        .bold()
         .centered()
         .render(area, buf);
-    }
+}
+
+fn render_footer(area: Rect, buf: &mut Buffer) {
+    Paragraph::new("\nUse ↓↑ to move, ← to unselect, → to change status, g/G to go top/bottom.")
+        .centered()
+        .render(area, buf);
 }
 
 impl StatefulList<'_> {

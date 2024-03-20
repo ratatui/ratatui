@@ -27,7 +27,7 @@ pub use title::{Position, Title};
 /// both centered and non-centered titles are rendered, the centered space is calculated based on
 /// the full width of the block, rather than the leftover width.
 ///
-/// Titles are not rendered in the corners of the block unless there is no border on that edge.  
+/// Titles are not rendered in the corners of the block unless there is no border on that edge.
 /// If the block is too small and multiple titles overlap, the border may get cut off at a corner.
 ///
 /// ```plain
@@ -174,7 +174,7 @@ impl<'a> Block<'a> {
 
     /// Create a new block with [all borders](Borders::ALL) shown
     pub const fn bordered() -> Self {
-        let mut block = Block::new();
+        let mut block = Self::new();
         block.borders = Borders::ALL;
         block
     }
@@ -193,7 +193,7 @@ impl<'a> Block<'a> {
     /// [spans](crate::text::Span) (`Vec<Span>`).
     ///
     /// By default, the titles will avoid being rendered in the corners of the block but will align
-    /// against the left or right edge of the block if there is no border on that edge.  
+    /// against the left or right edge of the block if there is no border on that edge.
     /// The following demonstrates this behavior, notice the second title is one character off to
     /// the left.
     ///
@@ -234,7 +234,8 @@ impl<'a> Block<'a> {
     /// - [`Block::title_style`]
     /// - [`Block::title_alignment`]
     /// - [`Block::title_position`]
-    pub fn title<T>(mut self, title: T) -> Block<'a>
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn title<T>(mut self, title: T) -> Self
     where
         T: Into<Title<'a>>,
     {
@@ -305,7 +306,7 @@ impl<'a> Block<'a> {
     ///
     /// If a [`Title`] already has a style, the title's style will add on top of this one.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title_style<S: Into<Style>>(mut self, style: S) -> Block<'a> {
+    pub fn title_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.titles_style = style.into();
         self
     }
@@ -332,7 +333,7 @@ impl<'a> Block<'a> {
     ///     .title_alignment(Alignment::Center);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn title_alignment(mut self, alignment: Alignment) -> Block<'a> {
+    pub const fn title_alignment(mut self, alignment: Alignment) -> Self {
         self.titles_alignment = alignment;
         self
     }
@@ -359,7 +360,7 @@ impl<'a> Block<'a> {
     ///     .title_position(Position::Bottom);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn title_position(mut self, position: Position) -> Block<'a> {
+    pub const fn title_position(mut self, position: Position) -> Self {
         self.titles_position = position;
         self
     }
@@ -381,7 +382,7 @@ impl<'a> Block<'a> {
     ///     .border_style(Style::new().blue());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn border_style<S: Into<Style>>(mut self, style: S) -> Block<'a> {
+    pub fn border_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.border_style = style.into();
         self
     }
@@ -397,7 +398,7 @@ impl<'a> Block<'a> {
     ///
     /// This will also apply to the widget inside that block, unless the inner widget is styled.
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> Block<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -420,7 +421,7 @@ impl<'a> Block<'a> {
     /// Block::default().borders(Borders::LEFT | Borders::RIGHT);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn borders(mut self, flag: Borders) -> Block<'a> {
+    pub const fn borders(mut self, flag: Borders) -> Self {
         self.borders = flag;
         self
     }
@@ -446,7 +447,7 @@ impl<'a> Block<'a> {
     /// // ╰─────╯
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn border_type(mut self, border_type: BorderType) -> Block<'a> {
+    pub const fn border_type(mut self, border_type: BorderType) -> Self {
         self.border_set = border_type.to_border_set();
         self
     }
@@ -465,7 +466,7 @@ impl<'a> Block<'a> {
     /// // ║     ║
     /// // ╚═════╝
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn border_set(mut self, border_set: border::Set) -> Block<'a> {
+    pub const fn border_set(mut self, border_set: border::Set) -> Self {
         self.border_set = border_set;
         self
     }
@@ -562,7 +563,7 @@ impl<'a> Block<'a> {
     /// // └───────────┘
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn padding(mut self, padding: Padding) -> Block<'a> {
+    pub const fn padding(mut self, padding: Padding) -> Self {
         self.padding = padding;
         self
     }
@@ -570,14 +571,14 @@ impl<'a> Block<'a> {
 
 impl BorderType {
     /// Convert this `BorderType` into the corresponding [`Set`](border::Set) of border symbols.
-    pub const fn border_symbols(border_type: BorderType) -> border::Set {
+    pub const fn border_symbols(border_type: Self) -> border::Set {
         match border_type {
-            BorderType::Plain => border::PLAIN,
-            BorderType::Rounded => border::ROUNDED,
-            BorderType::Double => border::DOUBLE,
-            BorderType::Thick => border::THICK,
-            BorderType::QuadrantInside => border::QUADRANT_INSIDE,
-            BorderType::QuadrantOutside => border::QUADRANT_OUTSIDE,
+            Self::Plain => border::PLAIN,
+            Self::Rounded => border::ROUNDED,
+            Self::Double => border::DOUBLE,
+            Self::Thick => border::THICK,
+            Self::QuadrantInside => border::QUADRANT_INSIDE,
+            Self::QuadrantOutside => border::QUADRANT_OUTSIDE,
         }
     }
 
@@ -709,7 +710,8 @@ impl Block<'_> {
     /// Currently (due to the way lines are truncated), the right side of the leftmost title will
     /// be cut off if the block is too small to fit all titles. This is not ideal and should be
     /// the left side of that leftmost that is cut off. This is due to the line being truncated
-    /// incorrectly. See https://github.com/ratatui-org/ratatui/issues/932
+    /// incorrectly. See <https://github.com/ratatui-org/ratatui/issues/932>
+    #[allow(clippy::similar_names)]
     fn render_right_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Right);
         let mut titles_area = self.titles_area(area, position);
@@ -744,6 +746,7 @@ impl Block<'_> {
     /// Currently this method aligns the titles to the left inside a centered area. This is not
     /// ideal and should be fixed in the future to align the titles to the center of the block and
     /// truncate both sides of the titles if the block is too small to fit all titles.
+    #[allow(clippy::similar_names)]
     fn render_center_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self
             .filtered_titles(position, Alignment::Center)
@@ -778,6 +781,7 @@ impl Block<'_> {
     }
 
     /// Render titles aligned to the left of the block
+    #[allow(clippy::similar_names)]
     fn render_left_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Left);
         let mut titles_area = self.titles_area(area, position);
@@ -849,7 +853,7 @@ impl BlockExt for Option<Block<'_>> {
 }
 
 impl<'a> Styled for Block<'a> {
-    type Item = Block<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -865,11 +869,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        layout::{Alignment, Rect},
-        style::{Color, Modifier, Stylize},
-    };
+    use crate::assert_buffer_eq;
 
     #[test]
     fn create_with_all_borders() {
@@ -877,6 +877,7 @@ mod tests {
         assert_eq!(block.borders, Borders::all());
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn inner_takes_into_account_the_borders() {
         // No borders
@@ -1107,7 +1108,7 @@ mod tests {
     }
 
     #[test]
-    fn border_type_can_be_const() {
+    const fn border_type_can_be_const() {
         const _PLAIN: border::Set = BorderType::border_symbols(BorderType::Plain);
     }
 
@@ -1126,11 +1127,11 @@ mod tests {
                 style: Style::new(),
                 padding: Padding::zero(),
             }
-        )
+        );
     }
 
     #[test]
-    fn block_can_be_const() {
+    const fn block_can_be_const() {
         const _DEFAULT_STYLE: Style = Style::new();
         const _DEFAULT_PADDING: Padding = Padding::uniform(1);
         const _DEFAULT_BLOCK: Block = Block::new()
@@ -1144,7 +1145,7 @@ mod tests {
             .padding(_DEFAULT_PADDING);
     }
 
-    /// This test ensures that we have some coverage on the Style::from() implementations
+    /// This test ensures that we have some coverage on the [`Style::from()`] implementations
     #[test]
     fn block_style() {
         // nominal style
@@ -1198,14 +1199,14 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]
     fn title() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
         use Alignment::*;
         use Position::*;
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
         Block::bordered()
             .title(Title::from("A").position(Top).alignment(Left))
             .title(Title::from("B").position(Top).alignment(Center))
@@ -1279,7 +1280,7 @@ mod tests {
         }
     }
 
-    /// This is a regression test for bug https://github.com/ratatui-org/ratatui/issues/929
+    /// This is a regression test for bug <https://github.com/ratatui-org/ratatui/issues/929>
     #[test]
     fn render_right_aligned_empty_title() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));

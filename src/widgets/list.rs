@@ -62,7 +62,7 @@ impl ListState {
     /// let state = ListState::default().with_offset(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn with_offset(mut self, offset: usize) -> Self {
+    pub const fn with_offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
     }
@@ -78,7 +78,7 @@ impl ListState {
     /// let state = ListState::default().with_selected(Some(1));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn with_selected(mut self, selected: Option<usize>) -> Self {
+    pub const fn with_selected(mut self, selected: Option<usize>) -> Self {
         self.selected = selected;
         self
     }
@@ -92,7 +92,7 @@ impl ListState {
     /// let state = ListState::default();
     /// assert_eq!(state.offset(), 0);
     /// ```
-    pub fn offset(&self) -> usize {
+    pub const fn offset(&self) -> usize {
         self.offset
     }
 
@@ -120,7 +120,7 @@ impl ListState {
     /// let state = TableState::default();
     /// assert_eq!(state.selected(), None);
     /// ```
-    pub fn selected(&self) -> Option<usize> {
+    pub const fn selected(&self) -> Option<usize> {
         self.selected
     }
 
@@ -252,11 +252,11 @@ impl<'a> ListItem<'a> {
     /// # See also
     ///
     /// - [`List::new`] to create a list of items that can be converted to [`ListItem`]
-    pub fn new<T>(content: T) -> ListItem<'a>
+    pub fn new<T>(content: T) -> Self
     where
         T: Into<Text<'a>>,
     {
-        ListItem {
+        Self {
             content: content.into(),
             style: Style::default(),
         }
@@ -287,7 +287,7 @@ impl<'a> ListItem<'a> {
     /// let item = ListItem::new("Item 1").red().italic();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> ListItem<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -340,7 +340,7 @@ where
     T: Into<Text<'a>>,
 {
     fn from(value: T) -> Self {
-        ListItem::new(value)
+        Self::new(value)
     }
 }
 
@@ -489,15 +489,15 @@ impl<'a> List<'a> {
     /// let empty_list = List::default();
     /// let filled_list = empty_list.items(["Item 1"]);
     /// ```
-    pub fn new<T>(items: T) -> List<'a>
+    pub fn new<T>(items: T) -> Self
     where
         T: IntoIterator,
         T::Item: Into<ListItem<'a>>,
     {
-        List {
+        Self {
             block: None,
             style: Style::default(),
-            items: items.into_iter().map(|i| i.into()).collect(),
+            items: items.into_iter().map(Into::into).collect(),
             direction: ListDirection::default(),
             ..Self::default()
         }
@@ -522,7 +522,7 @@ impl<'a> List<'a> {
         T: IntoIterator,
         T::Item: Into<ListItem<'a>>,
     {
-        self.items = items.into_iter().map(|i| i.into()).collect();
+        self.items = items.into_iter().map(Into::into).collect();
         self
     }
 
@@ -541,7 +541,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).block(block);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> List<'a> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -575,7 +575,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).red().italic();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn style<S: Into<Style>>(mut self, style: S) -> List<'a> {
+    pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
     }
@@ -594,7 +594,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).highlight_symbol(">>");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_symbol(mut self, highlight_symbol: &'a str) -> List<'a> {
+    pub const fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
         self.highlight_symbol = Some(highlight_symbol);
         self
     }
@@ -618,7 +618,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).highlight_style(Style::new().red().italic());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> List<'a> {
+    pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.highlight_style = style.into();
         self
     }
@@ -629,7 +629,7 @@ impl<'a> List<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn repeat_highlight_symbol(mut self, repeat: bool) -> List<'a> {
+    pub const fn repeat_highlight_symbol(mut self, repeat: bool) -> Self {
         self.repeat_highlight_symbol = repeat;
         self
     }
@@ -660,7 +660,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).highlight_spacing(HighlightSpacing::Always);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
+    pub const fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
     }
@@ -682,7 +682,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).direction(ListDirection::BottomToTop);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn direction(mut self, direction: ListDirection) -> List<'a> {
+    pub const fn direction(mut self, direction: ListDirection) -> Self {
         self.direction = direction;
         self
     }
@@ -701,7 +701,7 @@ impl<'a> List<'a> {
     /// let list = List::new(items).scroll_padding(1);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn scroll_padding(mut self, padding: usize) -> List<'a> {
+    pub const fn scroll_padding(mut self, padding: usize) -> Self {
         self.scroll_padding = padding;
         self
     }
@@ -740,7 +740,7 @@ impl<'a> List<'a> {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     #[deprecated(since = "0.25.0", note = "You should use `List::direction` instead.")]
-    pub fn start_corner(self, corner: Corner) -> List<'a> {
+    pub fn start_corner(self, corner: Corner) -> Self {
         if corner == Corner::BottomLeft {
             self.direction(ListDirection::BottomToTop)
         } else {
@@ -973,7 +973,7 @@ impl StatefulWidgetRef for List<'_> {
                 let highlight_symbol_width = self.highlight_symbol.unwrap_or("").width() as u16;
                 Rect {
                     x: row_area.x + highlight_symbol_width,
-                    width: row_area.width - highlight_symbol_width,
+                    width: row_area.width.saturating_sub(highlight_symbol_width),
                     ..row_area
                 }
             } else {
@@ -1009,7 +1009,7 @@ impl StatefulWidgetRef for List<'_> {
 }
 
 impl<'a> Styled for List<'a> {
-    type Item = List<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -1021,7 +1021,7 @@ impl<'a> Styled for List<'a> {
 }
 
 impl<'a> Styled for ListItem<'a> {
-    type Item = ListItem<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -1037,7 +1037,7 @@ where
     Item: Into<ListItem<'a>>,
 {
     fn from_iter<Iter: IntoIterator<Item = Item>>(iter: Iter) -> Self {
-        List::new(iter)
+        Self::new(iter)
     }
 }
 
@@ -1046,16 +1046,10 @@ mod tests {
     use std::borrow::Cow;
 
     use pretty_assertions::assert_eq;
-    use rstest::rstest;
+    use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        prelude::Alignment,
-        style::{Color, Modifier, Stylize},
-        text::{Line, Span},
-        widgets::Borders,
-    };
+    use crate::{assert_buffer_eq, widgets::Borders};
 
     #[test]
     fn test_list_state_selected() {
@@ -1197,7 +1191,7 @@ mod tests {
 
     /// helper method to take a vector of strings and return a vector of list items
     fn list_items(items: Vec<&str>) -> Vec<ListItem> {
-        items.iter().map(|i| ListItem::new(i.to_string())).collect()
+        items.into_iter().map(ListItem::new).collect()
     }
 
     /// helper method to render a widget to an empty buffer with the default state
@@ -1249,6 +1243,7 @@ mod tests {
         );
     }
 
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn test_list_combinations() {
         fn test_case_render(items: &[ListItem], expected_lines: Vec<&str>) {
@@ -1793,20 +1788,20 @@ mod tests {
 
     #[test]
     fn test_list_long_lines() {
+        fn test_case(list: List, selected: Option<usize>, expected_lines: Vec<&str>) {
+            let mut state = ListState::default();
+            state.select(selected);
+            let buffer = render_stateful_widget(list, &mut state, 15, 3);
+            let expected = Buffer::with_lines(expected_lines);
+            assert_buffer_eq!(buffer, expected);
+        }
+
         let items = list_items(vec![
             "Item 0 with a very long line that will be truncated",
             "Item 1",
             "Item 2",
         ]);
         let list = List::new(items).highlight_symbol(">>");
-
-        fn test_case(list: List, selected: Option<usize>, expected_lines: Vec<&str>) {
-            let mut state = ListState::default();
-            state.select(selected);
-            let buffer = render_stateful_widget(list.clone(), &mut state, 15, 3);
-            let expected = Buffer::with_lines(expected_lines);
-            assert_buffer_eq!(buffer, expected);
-        }
 
         test_case(
             list.clone(),
@@ -1874,7 +1869,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]
@@ -1886,7 +1881,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[test]
@@ -2238,5 +2233,31 @@ mod tests {
             "   Item 3 ",
             "          ",
         ]));
+    }
+
+    #[fixture]
+    fn single_line_buf() -> Buffer {
+        Buffer::empty(Rect::new(0, 0, 10, 1))
+    }
+
+    /// Regression test for a bug where highlight symbol being greater than width caused a panic due
+    /// to subtraction with underflow.
+    ///
+    /// See [#949](https://github.com/ratatui-org/ratatui/pull/949) for details
+    #[rstest]
+    #[case::under(">>>>", "Item1", ">>>>Item1 ")] // enough space to render the highlight symbol
+    #[case::exact(">>>>>", "Item1", ">>>>>Item1")] // exact space to render the highlight symbol
+    #[case::overflow(">>>>>>", "Item1", ">>>>>>Item")] // not enough space
+    fn highlight_symbol_overflow(
+        #[case] highlight_symbol: &str,
+        #[case] item: &str,
+        #[case] expected: &str,
+        mut single_line_buf: Buffer,
+    ) {
+        let list = List::new(vec![item]).highlight_symbol(highlight_symbol);
+        let mut state = ListState::default();
+        state.select(Some(0));
+        StatefulWidget::render(list, single_line_buf.area, &mut single_line_buf, &mut state);
+        assert_buffer_eq!(single_line_buf, Buffer::with_lines(vec![expected]));
     }
 }

@@ -55,23 +55,23 @@ pub struct Buffer {
 
 impl Buffer {
     /// Returns a Buffer with all cells set to the default one
-    pub fn empty(area: Rect) -> Buffer {
+    pub fn empty(area: Rect) -> Self {
         let cell = Cell::default();
-        Buffer::filled(area, &cell)
+        Self::filled(area, &cell)
     }
 
     /// Returns a Buffer with all cells initialized with the attributes of the given Cell
-    pub fn filled(area: Rect, cell: &Cell) -> Buffer {
+    pub fn filled(area: Rect, cell: &Cell) -> Self {
         let size = area.area() as usize;
         let mut content = Vec::with_capacity(size);
         for _ in 0..size {
             content.push(cell.clone());
         }
-        Buffer { area, content }
+        Self { area, content }
     }
 
     /// Returns a Buffer containing the given lines
-    pub fn with_lines<'a, Iter>(lines: Iter) -> Buffer
+    pub fn with_lines<'a, Iter>(lines: Iter) -> Self
     where
         Iter: IntoIterator,
         Iter::Item: Into<Line<'a>>,
@@ -79,7 +79,7 @@ impl Buffer {
         let lines = lines.into_iter().map(Into::into).collect::<Vec<_>>();
         let height = lines.len() as u16;
         let width = lines.iter().map(Line::width).max().unwrap_or_default() as u16;
-        let mut buffer = Buffer::empty(Rect::new(0, 0, width, height));
+        let mut buffer = Self::empty(Rect::new(0, 0, width, height));
         for (y, line) in lines.iter().enumerate() {
             buffer.set_line(0, y as u16, line, width);
         }
@@ -92,7 +92,7 @@ impl Buffer {
     }
 
     /// Returns the area covered by this buffer
-    pub fn area(&self) -> &Rect {
+    pub const fn area(&self) -> &Rect {
         &self.area
     }
 
@@ -301,7 +301,7 @@ impl Buffer {
     }
 
     /// Merge an other buffer into this one
-    pub fn merge(&mut self, other: &Buffer) {
+    pub fn merge(&mut self, other: &Self) {
         let area = self.area.union(other.area);
         let cell = Cell::default();
         self.content.resize(area.area() as usize, cell.clone());
@@ -358,7 +358,7 @@ impl Buffer {
     /// Next:    `aコ`
     /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
     /// ```
-    pub fn diff<'a>(&self, other: &'a Buffer) -> Vec<(u16, u16, &'a Cell)> {
+    pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)> {
         let previous_buffer = &self.content;
         let next_buffer = &other.content;
 
@@ -664,7 +664,7 @@ mod tests {
         let actual_contents = small_one_line_buffer
             .content
             .iter()
-            .map(|c| c.symbol())
+            .map(Cell::symbol)
             .join("");
         let actual_styles = small_one_line_buffer
             .content

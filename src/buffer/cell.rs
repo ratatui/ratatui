@@ -42,26 +42,26 @@ impl Cell {
     }
 
     /// Sets the symbol of the cell.
-    pub fn set_symbol(&mut self, symbol: &str) -> &mut Cell {
+    pub fn set_symbol(&mut self, symbol: &str) -> &mut Self {
         self.symbol = CompactString::new(symbol);
         self
     }
 
     /// Sets the symbol of the cell to a single character.
-    pub fn set_char(&mut self, ch: char) -> &mut Cell {
+    pub fn set_char(&mut self, ch: char) -> &mut Self {
         let mut buf = [0; 4];
         self.symbol = CompactString::new(ch.encode_utf8(&mut buf));
         self
     }
 
     /// Sets the foreground color of the cell.
-    pub fn set_fg(&mut self, color: Color) -> &mut Cell {
+    pub fn set_fg(&mut self, color: Color) -> &mut Self {
         self.fg = color;
         self
     }
 
     /// Sets the background color of the cell.
-    pub fn set_bg(&mut self, color: Color) -> &mut Cell {
+    pub fn set_bg(&mut self, color: Color) -> &mut Self {
         self.bg = color;
         self
     }
@@ -70,7 +70,7 @@ impl Cell {
     ///
     ///  `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
-    pub fn set_style<S: Into<Style>>(&mut self, style: S) -> &mut Cell {
+    pub fn set_style<S: Into<Style>>(&mut self, style: S) -> &mut Self {
         let style = style.into();
         if let Some(c) = style.fg {
             self.fg = c;
@@ -107,14 +107,14 @@ impl Cell {
     ///
     /// This is helpful when it is necessary to prevent the buffer from overwriting a cell that is
     /// covered by an image from some terminal graphics protocol (Sixel / iTerm / Kitty ...).
-    pub fn set_skip(&mut self, skip: bool) -> &mut Cell {
+    pub fn set_skip(&mut self, skip: bool) -> &mut Self {
         self.skip = skip;
         self
     }
 
     /// Resets the cell to the default state.
     pub fn reset(&mut self) {
-        self.symbol = CompactString::new(" ");
+        self.symbol = CompactString::new_inline(" ");
         self.fg = Color::Reset;
         self.bg = Color::Reset;
         #[cfg(feature = "underline-color")]
@@ -127,9 +127,9 @@ impl Cell {
 }
 
 impl Default for Cell {
-    fn default() -> Cell {
-        Cell {
-            symbol: CompactString::new(" "),
+    fn default() -> Self {
+        Self {
+            symbol: CompactString::new_inline(" "),
             fg: Color::Reset,
             bg: Color::Reset,
             #[cfg(feature = "underline-color")]

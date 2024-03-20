@@ -50,7 +50,7 @@ use std::cmp::min;
 
 use derive_builder::Builder;
 use font8x8::UnicodeFonts;
-use ratatui::{prelude::*, text::StyledGrapheme, widgets::Widget};
+use ratatui::{prelude::*, text::StyledGrapheme};
 
 #[allow(unused)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
@@ -129,24 +129,24 @@ pub struct BigText<'a> {
 
     /// The size of single glyphs
     ///
-    /// Defaults to `BigTextSize::default()` (=> BigTextSize::Full)
+    /// Defaults to `BigTextSize::default()` (=> `BigTextSize::Full`)
     #[builder(default)]
     pixel_size: PixelSize,
 }
 
 impl Widget for BigText<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = layout(area, &self.pixel_size);
+        let layout = layout(area, self.pixel_size);
         for (line, line_layout) in self.lines.iter().zip(layout) {
             for (g, cell) in line.styled_graphemes(self.style).zip(line_layout) {
-                render_symbol(g, cell, buf, &self.pixel_size);
+                render_symbol(&g, cell, buf, self.pixel_size);
             }
         }
     }
 }
 
 /// Returns how many cells are needed to display a full 8x8 glyphe using the given font size
-fn cells_per_glyph(size: &PixelSize) -> (u16, u16) {
+const fn cells_per_glyph(size: PixelSize) -> (u16, u16) {
     match size {
         PixelSize::Full => (8, 8),
         PixelSize::HalfHeight => (8, 4),
@@ -160,7 +160,7 @@ fn cells_per_glyph(size: &PixelSize) -> (u16, u16) {
 /// The size of each cell depends on given font size
 fn layout(
     area: Rect,
-    pixel_size: &PixelSize,
+    pixel_size: PixelSize,
 ) -> impl IntoIterator<Item = impl IntoIterator<Item = Rect>> {
     let (width, height) = cells_per_glyph(pixel_size);
     (area.top()..area.bottom())
@@ -178,7 +178,7 @@ fn layout(
 
 /// Render a single grapheme into a cell by looking up the corresponding 8x8 bitmap in the
 /// `BITMAPS` array and setting the corresponding cells in the buffer.
-fn render_symbol(grapheme: StyledGrapheme, area: Rect, buf: &mut Buffer, pixel_size: &PixelSize) {
+fn render_symbol(grapheme: &StyledGrapheme, area: Rect, buf: &mut Buffer, pixel_size: PixelSize) {
     buf.set_style(area, grapheme.style);
     let c = grapheme.symbol.chars().next().unwrap(); // TODO: handle multi-char graphemes
     if let Some(glyph) = font8x8::BASIC_FONTS.get(c) {
@@ -187,7 +187,7 @@ fn render_symbol(grapheme: StyledGrapheme, area: Rect, buf: &mut Buffer, pixel_s
 }
 
 /// Get the correct unicode symbol for two vertical "pixels"
-fn get_symbol_half_height(top: u8, bottom: u8) -> char {
+const fn get_symbol_half_height(top: u8, bottom: u8) -> char {
     match top {
         0 => match bottom {
             0 => ' ',
@@ -201,7 +201,7 @@ fn get_symbol_half_height(top: u8, bottom: u8) -> char {
 }
 
 /// Get the correct unicode symbol for two horizontal "pixels"
-fn get_symbol_half_width(left: u8, right: u8) -> char {
+const fn get_symbol_half_width(left: u8, right: u8) -> char {
     match left {
         0 => match right {
             0 => ' ',
@@ -215,20 +215,26 @@ fn get_symbol_half_width(left: u8, right: u8) -> char {
 }
 
 /// Get the correct unicode symbol for 2x2 "pixels"
-fn get_symbol_half_size(top_left: u8, top_right: u8, bottom_left: u8, bottom_right: u8) -> char {
-    let top_left = if top_left > 0 { 1 } else { 0 };
-    let top_right = if top_right > 0 { 1 } else { 0 };
-    let bottom_left = if bottom_left > 0 { 1 } else { 0 };
-    let bottom_right = if bottom_right > 0 { 1 } else { 0 };
-
+const fn get_symbol_half_size(
+    top_left: u8,
+    top_right: u8,
+    bottom_left: u8,
+    bottom_right: u8,
+) -> char {
     const QUADRANT_SYMBOLS: [char; 16] = [
         ' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛', '▗', '▚', '▐', '▜', '▄', '▙', '▟', '█',
     ];
-    QUADRANT_SYMBOLS[top_left + (top_right << 1) + (bottom_left << 2) + (bottom_right << 3)]
+
+    let top_left = if top_left > 0 { 1 } else { 0 };
+    let top_right = if top_right > 0 { 1 << 1 } else { 0 };
+    let bottom_left = if bottom_left > 0 { 1 << 2 } else { 0 };
+    let bottom_right = if bottom_right > 0 { 1 << 3 } else { 0 };
+
+    QUADRANT_SYMBOLS[top_left + top_right + bottom_left + bottom_right]
 }
 
 /// Render a single 8x8 glyph into a cell by setting the corresponding cells in the buffer.
-fn render_glyph(glyph: [u8; 8], area: Rect, buf: &mut Buffer, pixel_size: &PixelSize) {
+fn render_glyph(glyph: [u8; 8], area: Rect, buf: &mut Buffer, pixel_size: PixelSize) {
     let (width, height) = cells_per_glyph(pixel_size);
 
     let glyph_vertical_index = (0..glyph.len()).step_by(8 / height as usize);

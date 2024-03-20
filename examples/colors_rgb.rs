@@ -1,4 +1,4 @@
-//! # [Ratatui] Colors_RGB example
+//! # [Ratatui] `Colors_RGB` example
 //!
 //! The latest version of this example is available in the [examples] folder in the repository.
 //!
@@ -13,18 +13,19 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-/// This example shows the full range of RGB colors that can be displayed in the terminal.
-///
-/// Requires a terminal that supports 24-bit color (true color) and unicode.
-///
-/// This example also demonstrates how implementing the Widget trait on a mutable reference
-/// allows the widget to update its state while it is being rendered. This allows the fps
-/// widget to update the fps calculation and the colors widget to update a cached version of
-/// the colors to render instead of recalculating them every frame.
-///
-/// This is an alternative to using the StatefulWidget trait and a separate state struct. It is
-/// useful when the state is only used by the widget and doesn't need to be shared with other
-/// widgets.
+// This example shows the full range of RGB colors that can be displayed in the terminal.
+//
+// Requires a terminal that supports 24-bit color (true color) and unicode.
+//
+// This example also demonstrates how implementing the Widget trait on a mutable reference
+// allows the widget to update its state while it is being rendered. This allows the fps
+// widget to update the fps calculation and the colors widget to update a cached version of
+// the colors to render instead of recalculating them every frame.
+//
+// This is an alternative to using the `StatefulWidget` trait and a separate state struct. It
+// is useful when the state is only used by the widget and doesn't need to be shared with
+// other widgets.
+
 use std::{
     io::stdout,
     panic,
@@ -110,7 +111,7 @@ impl App {
         Ok(())
     }
 
-    fn is_running(&self) -> bool {
+    const fn is_running(&self) -> bool {
         matches!(self.state, AppState::Running)
     }
 
@@ -140,6 +141,7 @@ impl App {
 /// to update the colors to render.
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        #[allow(clippy::enum_glob_use)]
         use Constraint::*;
         let [top, colors] = Layout::vertical([Length(1), Min(0)]).areas(area);
         let [title, fps] = Layout::horizontal([Min(0), Length(8)]).areas(top);
@@ -151,9 +153,9 @@ impl Widget for &mut App {
     }
 }
 
-/// Default impl for FpsWidget
+/// Default impl for `FpsWidget`
 ///
-/// Manual impl is required because we need to initialize the last_instant field to the current
+/// Manual impl is required because we need to initialize the `last_instant` field to the current
 /// instant.
 impl Default for FpsWidget {
     fn default() -> Self {
@@ -165,7 +167,7 @@ impl Default for FpsWidget {
     }
 }
 
-/// Widget impl for FpsWidget
+/// Widget impl for `FpsWidget`
 ///
 /// This is implemented on a mutable reference so that we can update the frame count and fps
 /// calculation while rendering.
@@ -173,7 +175,7 @@ impl Widget for &mut FpsWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.calculate_fps();
         if let Some(fps) = self.fps {
-            let text = format!("{:.1} fps", fps);
+            let text = format!("{fps:.1} fps");
             Text::from(text).render(area, buf);
         }
     }
@@ -185,6 +187,7 @@ impl FpsWidget {
     /// This updates the fps once a second, but only if the widget has rendered at least 2 frames
     /// since the last calculation. This avoids noise in the fps calculation when rendering on slow
     /// machines that can't render at least 2 frames per second.
+    #[allow(clippy::cast_precision_loss)]
     fn calculate_fps(&mut self) {
         self.frame_count += 1;
         let elapsed = self.last_instant.elapsed();
@@ -196,7 +199,7 @@ impl FpsWidget {
     }
 }
 
-/// Widget impl for ColorsWidget
+/// Widget impl for `ColorsWidget`
 ///
 /// This is implemented on a mutable reference so that we can update the frame count and store a
 /// cached version of the colors to render instead of recalculating them every frame.
@@ -226,6 +229,7 @@ impl ColorsWidget {
     ///
     /// This is called once per frame to setup the colors to render. It caches the colors so that
     /// they don't need to be recalculated every frame.
+    #[allow(clippy::cast_precision_loss)]
     fn setup_colors(&mut self, size: Rect) {
         let Rect { width, height, .. } = size;
         // double the height because each screen row has two rows of half block pixels
@@ -253,7 +257,7 @@ impl ColorsWidget {
     }
 }
 
-/// Install color_eyre panic and error hooks
+/// Install `color_eyre` panic and error hooks
 ///
 /// The hooks restore the terminal to a usable state before printing the error message.
 fn install_error_hooks() -> Result<()> {
@@ -266,7 +270,7 @@ fn install_error_hooks() -> Result<()> {
     }))?;
     panic::set_hook(Box::new(move |info| {
         let _ = restore_terminal();
-        panic(info)
+        panic(info);
     }));
     Ok(())
 }

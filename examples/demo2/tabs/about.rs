@@ -97,10 +97,11 @@ fn render_crate_description(area: Rect, buf: &mut Buffer) {
         .render(area, buf);
 }
 
-/// Use half block characters to render a logo based on the RATATUI_LOGO const.
+/// Use half block characters to render a logo based on the `RATATUI_LOGO` const.
 ///
 /// The logo is rendered in three colors, one for the rat, one for the terminal, and one for the
 /// rat's eye. The eye color alternates between two colors based on the selected row.
+#[allow(clippy::cast_possible_truncation)]
 pub fn render_logo(selected_row: usize, area: Rect, buf: &mut Buffer) {
     let eye_color = if selected_row % 2 == 0 {
         THEME.logo.rat_eye

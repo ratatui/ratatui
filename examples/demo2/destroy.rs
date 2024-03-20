@@ -30,11 +30,16 @@ pub fn destroy(frame: &mut Frame<'_>) {
 ///
 /// Each pick some random pixels and move them each down one row. This is a very inefficient way to
 /// do this, but it works well enough for this demo.
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss
+)]
 fn drip(frame_count: usize, area: Rect, buf: &mut Buffer) {
     // a seeded rng as we have to move the same random pixels each frame
     let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(10);
     let ramp_frames = 450;
-    let fractional_speed = frame_count as f64 / ramp_frames as f64;
+    let fractional_speed = frame_count as f64 / f64::from(ramp_frames);
     let variable_speed = DRIP_SPEED as f64 * fractional_speed * fractional_speed * fractional_speed;
     let pixel_count = (frame_count as f64 * variable_speed).floor() as usize;
     for _ in 0..pixel_count {
@@ -68,6 +73,7 @@ fn drip(frame_count: usize, area: Rect, buf: &mut Buffer) {
 }
 
 /// draw some text fading in and out from black to red and back
+#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 fn text(frame_count: usize, area: Rect, buf: &mut Buffer) {
     let sub_frame = frame_count.saturating_sub(TEXT_DELAY);
     if sub_frame == 0 {
@@ -114,10 +120,13 @@ fn blend(mask_color: Color, cell_color: Color, percentage: f64) -> Color {
         return mask_color;
     };
 
-    let red = mask_red as f64 * percentage + cell_red as f64 * (1.0 - percentage);
-    let green = mask_green as f64 * percentage + cell_green as f64 * (1.0 - percentage);
-    let blue = mask_blue as f64 * percentage + cell_blue as f64 * (1.0 - percentage);
+    let remain = 1.0 - percentage;
 
+    let red = f64::from(mask_red).mul_add(percentage, f64::from(cell_red) * remain);
+    let green = f64::from(mask_green).mul_add(percentage, f64::from(cell_green) * remain);
+    let blue = f64::from(mask_blue).mul_add(percentage, f64::from(cell_blue) * remain);
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     Color::Rgb(red as u8, green as u8, blue as u8)
 }
 
