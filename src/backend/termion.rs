@@ -87,7 +87,7 @@ where
     }
 
     /// Gets the writer.
-    pub fn writer(&self) -> &W {
+    pub const fn writer(&self) -> &W {
         &self.writer
     }
 
