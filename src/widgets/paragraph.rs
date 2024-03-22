@@ -403,7 +403,6 @@ impl<'a> Styled for Paragraph<'a> {
 
 #[cfg(test)]
 mod test {
-
     use super::*;
     use crate::{
         backend::TestBackend,
