@@ -282,7 +282,7 @@ impl App {
 
     fn header() -> impl Widget {
         let text = "Constraint Explorer";
-        text.bold().fg(Self::HEADER_COLOR).to_centered_line()
+        text.bold().fg(Self::HEADER_COLOR).into_centered_line()
     }
 
     fn instructions() -> impl Widget {
@@ -541,7 +541,7 @@ impl SpacerBlock {
     /// A label that says "Spacer" if there is enough space
     fn spacer_label(width: u16) -> impl Widget {
         let label = if width >= 6 { "Spacer" } else { "" };
-        label.fg(Self::TEXT_COLOR).to_centered_line()
+        label.fg(Self::TEXT_COLOR).into_centered_line()
     }
 
     /// A label that says "8 px" if there is enough space
