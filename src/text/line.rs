@@ -453,7 +453,7 @@ impl<'a> Line<'a> {
     }
 
     /// Returns a line that's truncated corresponding to it's alignment and result width
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "method returns the modified value"]
     pub fn truncated(&'a self, result_width: u16) -> Self {
         let mut truncated_line = Line::default();
         let width = self.width() as u16;
@@ -472,8 +472,8 @@ impl<'a> Line<'a> {
             let mut new_span = span.clone();
             let new_span_width = span_width - offset;
             if x + new_span_width > result_width {
-                new_span.content =
-                    Cow::from(&span.content[offset as usize..(result_width - x + offset) as usize]);
+                let span_end = (result_width - x + offset) as usize;
+                new_span.content = Cow::from(&span.content[offset as usize..span_end]);
                 truncated_line.spans.push(new_span);
                 break;
             }
@@ -901,6 +901,15 @@ mod tests {
         assert_eq!(
             line.right_aligned().truncated(4).to_string(),
             String::from("obar")
+        );
+    }
+
+    #[test]
+    fn truncation_ignores_useless_spans() {
+        let line = Line::default().spans(vec!["foo", "bar"]);
+        assert_eq!(
+            line.right_aligned().truncated(3),
+            Line::default().spans(vec!["bar"])
         );
     }
 
