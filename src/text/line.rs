@@ -587,6 +587,11 @@ mod tests {
 
     use super::*;
 
+    #[fixture]
+    fn small_buf() -> Buffer {
+        Buffer::empty(Rect::new(0, 0, 10, 1))
+    }
+
     #[test]
     fn raw_str() {
         let line = Line::raw("test content");
@@ -832,6 +837,7 @@ mod tests {
         const GREEN: Style = Style::new().fg(Color::Green);
         const ITALIC: Style = Style::new().add_modifier(Modifier::ITALIC);
 
+        #[fixture]
         fn hello_world() -> Line<'static> {
             Line::from(vec![
                 Span::styled("Hello ", BLUE),
@@ -849,6 +855,13 @@ mod tests {
             expected.set_style(Rect::new(0, 0, 6, 1), BLUE);
             expected.set_style(Rect::new(6, 0, 6, 1), GREEN);
             assert_buffer_eq!(buf, expected);
+        }
+
+        #[rstest]
+        fn render_out_of_bounds(hello_world: Line<'static>, mut small_buf: Buffer) {
+            let out_of_bounds = Rect::new(20, 20, 10, 1);
+            hello_world.render(out_of_bounds, &mut small_buf);
+            assert_buffer_eq!(small_buf, Buffer::empty(small_buf.area));
         }
 
         #[test]

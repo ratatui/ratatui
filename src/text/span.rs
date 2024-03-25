@@ -363,6 +363,7 @@ impl Widget for Span<'_> {
 
 impl WidgetRef for Span<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
         let Rect {
             x: mut current_x,
             y,
@@ -402,7 +403,14 @@ impl std::fmt::Display for Span<'_> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::fixture;
+
     use super::*;
+
+    #[fixture]
+    fn small_buf() -> Buffer {
+        Buffer::empty(Rect::new(0, 0, 10, 1))
+    }
 
     #[test]
     fn default() {
@@ -533,6 +541,8 @@ mod tests {
     }
 
     mod widget {
+        use rstest::rstest;
+
         use super::*;
         use crate::assert_buffer_eq;
 
@@ -548,6 +558,13 @@ mod tests {
                 "   ".into(),
             ])]);
             assert_buffer_eq!(buf, expected);
+        }
+
+        #[rstest]
+        fn render_out_of_bounds(mut small_buf: Buffer) {
+            let out_of_bounds = Rect::new(20, 20, 10, 1);
+            Span::raw("Hello, World!").render(out_of_bounds, &mut small_buf);
+            assert_eq!(small_buf, Buffer::empty(small_buf.area));
         }
 
         /// When the content of the span is longer than the area passed to render, the content

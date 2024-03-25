@@ -559,6 +559,7 @@ impl Widget for Text<'_> {
 
 impl WidgetRef for Text<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
         for (line, row) in self.iter().zip(area.rows()) {
             let line_width = line.width() as u16;
@@ -600,6 +601,11 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+
+    #[fixture]
+    fn small_buf() -> Buffer {
+        Buffer::empty(Rect::new(0, 0, 10, 1))
+    }
 
     #[test]
     fn raw() {
@@ -863,6 +869,13 @@ mod tests {
             let expected_buf = Buffer::with_lines(vec!["foo  "]);
 
             assert_buffer_eq!(buf, expected_buf);
+        }
+
+        #[rstest]
+        fn render_out_of_bounds(mut small_buf: Buffer) {
+            let out_of_bounds_area = Rect::new(20, 20, 10, 1);
+            Text::from("Hello, world!").render(out_of_bounds_area, &mut small_buf);
+            assert_eq!(small_buf, Buffer::empty(small_buf.area));
         }
 
         #[test]
