@@ -451,6 +451,11 @@ impl<'a> Line<'a> {
     pub fn iter_mut(&mut self) -> std::slice::IterMut<Span<'a>> {
         self.spans.iter_mut()
     }
+
+    /// Adds a span to the line.
+    pub fn push_span(&mut self, span: Span<'a>) {
+        self.spans.push(span);
+    }
 }
 
 impl<'a> IntoIterator for Line<'a> {
@@ -830,6 +835,31 @@ mod tests {
         assert_eq!(format!("{line_from_styled_span}"), "Hello, world!");
     }
 
+    #[test]
+    fn left_aligned() {
+        let line = Line::from("Hello, world!").left_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let line = Line::from("Hello, world!").centered();
+        assert_eq!(line.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let line = Line::from("Hello, world!").right_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Right));
+    }
+
+    #[test]
+    pub fn push_span() {
+        let mut line = Line::from("Hello, ");
+        line.push_span(Span::raw("world!"));
+        assert_eq!(line.spans, vec![Span::raw("Hello, "), Span::raw("world!")]);
+    }
+
     mod widget {
         use super::*;
         use crate::assert_buffer_eq;
@@ -906,24 +936,6 @@ mod tests {
             expected.set_style(Rect::new(9, 0, 6, 1), GREEN);
             assert_buffer_eq!(buf, expected);
         }
-    }
-
-    #[test]
-    fn left_aligned() {
-        let line = Line::from("Hello, world!").left_aligned();
-        assert_eq!(line.alignment, Some(Alignment::Left));
-    }
-
-    #[test]
-    fn centered() {
-        let line = Line::from("Hello, world!").centered();
-        assert_eq!(line.alignment, Some(Alignment::Center));
-    }
-
-    #[test]
-    fn right_aligned() {
-        let line = Line::from("Hello, world!").right_aligned();
-        assert_eq!(line.alignment, Some(Alignment::Right));
     }
 
     mod iterators {

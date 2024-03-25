@@ -441,6 +441,20 @@ impl<'a> Text<'a> {
     pub fn iter_mut(&mut self) -> std::slice::IterMut<Line<'a>> {
         self.lines.iter_mut()
     }
+
+    /// Adds a line to the text.
+    pub fn push_line(&mut self, line: Line<'a>) {
+        self.lines.push(line);
+    }
+
+    /// Adds a span to the last line of the text.
+    pub fn push_span(&mut self, span: Span<'a>) {
+        if let Some(last) = self.lines.last_mut() {
+            last.push_span(span);
+        } else {
+            self.lines.push(Line::from(span));
+        }
+    }
 }
 
 impl<'a> IntoIterator for Text<'a> {
@@ -854,6 +868,61 @@ mod tests {
         assert_eq!(Text::default().italic().style, Modifier::ITALIC.into());
     }
 
+    #[test]
+    fn left_aligned() {
+        let text = Text::from("Hello, world!").left_aligned();
+        assert_eq!(text.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let text = Text::from("Hello, world!").centered();
+        assert_eq!(text.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let text = Text::from("Hello, world!").right_aligned();
+        assert_eq!(text.alignment, Some(Alignment::Right));
+    }
+
+    #[test]
+    fn push_line() {
+        let mut text = Text::from("Hello, world!");
+        text.push_line(Line::from("How are you?"));
+        assert_eq!(
+            text.lines,
+            vec![Line::from("Hello, world!"), Line::from("How are you?")]
+        );
+    }
+
+    #[test]
+    fn push_line_empty() {
+        let mut text = Text::default();
+        text.push_line(Line::from("Hello, world!"));
+        assert_eq!(text.lines, vec![Line::from("Hello, world!")]);
+    }
+
+    #[test]
+    fn push_span() {
+        let mut text = Text::from("Hello, world!");
+        text.push_span(Span::raw("How are you?"));
+        assert_eq!(
+            text.lines,
+            vec![Line::from(vec![
+                Span::raw("Hello, world!"),
+                Span::raw("How are you?")
+            ])],
+        );
+    }
+
+    #[test]
+    fn push_span_empty() {
+        let mut text = Text::default();
+        text.push_span(Span::raw("Hello, world!"));
+        assert_eq!(text.lines, vec![Line::from(Span::raw("Hello, world!"))],);
+    }
+
     mod widget {
         use super::*;
         use crate::assert_buffer_eq;
@@ -956,24 +1025,6 @@ mod tests {
 
             assert_buffer_eq!(buf, expected);
         }
-    }
-
-    #[test]
-    fn left_aligned() {
-        let text = Text::from("Hello, world!").left_aligned();
-        assert_eq!(text.alignment, Some(Alignment::Left));
-    }
-
-    #[test]
-    fn centered() {
-        let text = Text::from("Hello, world!").centered();
-        assert_eq!(text.alignment, Some(Alignment::Center));
-    }
-
-    #[test]
-    fn right_aligned() {
-        let text = Text::from("Hello, world!").right_aligned();
-        assert_eq!(text.alignment, Some(Alignment::Right));
     }
 
     mod iterators {
