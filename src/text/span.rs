@@ -374,7 +374,7 @@ impl WidgetRef for Span<'_> {
         for g in self.styled_graphemes(Style::default()) {
             let symbol_width = g.symbol.width();
             let next_x = current_x.saturating_add(symbol_width as u16);
-            if next_x > max_x {
+            if next_x > max_x || current_x >= max_x {
                 break;
             }
             buf.get_mut(current_x, y)

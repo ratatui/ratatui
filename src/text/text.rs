@@ -871,11 +871,19 @@ mod tests {
             assert_buffer_eq!(buf, expected_buf);
         }
 
+        #[test]
+        fn render_span_with_zero_width_graphemes() {
+            let area = Rect::new(0, 0, 1, 1);
+            let mut buffer = Buffer::empty(area);
+            Line::from("a\0b").render(area, &mut buffer);
+            assert_buffer_eq!(buffer, Buffer::with_lines(["a"]));
+        }
+
         #[rstest]
         fn render_out_of_bounds(mut small_buf: Buffer) {
             let out_of_bounds_area = Rect::new(20, 20, 10, 1);
             Text::from("Hello, world!").render(out_of_bounds_area, &mut small_buf);
-            assert_eq!(small_buf, Buffer::empty(small_buf.area));
+            assert_buffer_eq!(small_buf, Buffer::empty(small_buf.area));
         }
 
         #[test]
