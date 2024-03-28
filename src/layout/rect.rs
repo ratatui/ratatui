@@ -40,6 +40,16 @@ pub struct Offset {
     pub y: i32,
 }
 
+impl<X: Into<i32>, Y: Into<i32>> From<(X, Y)> for Offset {
+    /// Creates a new `Offset` from a tuple of (x, y).
+    fn from((x, y): (X, Y)) -> Self {
+        Self {
+            x: x.into(),
+            y: y.into(),
+        }
+    }
+}
+
 impl fmt::Display for Rect {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}x{}+{}+{}", self.width, self.height, self.x, self.y)
@@ -135,9 +145,20 @@ impl Rect {
     /// - Positive `x` moves the whole `Rect` to the right, negative to the left.
     /// - Positive `y` moves the whole `Rect` to the bottom, negative to the top.
     ///
-    /// See [`Offset`] for details.
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, layout::Offset};
+    /// let rect = Rect::new(1, 2, 3, 4);
+    /// let rect = rect.offset(Offset { x: 10, y: 20 });
+    /// assert_eq!(rect, Rect::new(11, 22, 3, 4));
+    ///
+    /// // offset can also be called with a tuple of (x, y)
+    /// let rect = rect.offset((10, 20));
+    /// ```
     #[must_use = "method returns the modified value"]
-    pub fn offset(self, offset: Offset) -> Self {
+    pub fn offset<T: Into<Offset>>(self, offset: T) -> Self {
+        let offset = offset.into();
         Self {
             x: i32::from(self.x)
                 .saturating_add(offset.x)
@@ -421,6 +442,11 @@ mod tests {
             Rect::new(u16::MAX - 500, u16::MAX - 500, 100, 100).offset(Offset { x: 1000, y: 1000 }),
             Rect::new(u16::MAX - 100, u16::MAX - 100, 100, 100),
         );
+    }
+
+    #[test]
+    fn offset_from_tuple() {
+        assert_eq!(Rect::new(1, 2, 3, 4).offset((5, 6)), Rect::new(6, 8, 3, 4));
     }
 
     #[test]
