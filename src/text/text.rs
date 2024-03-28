@@ -50,6 +50,8 @@ use crate::prelude::*;
 /// - [`Text::height`] returns the height.
 /// - [`Text::patch_style`] patches the style of this `Text`, adding modifiers from the given style.
 /// - [`Text::reset_style`] resets the style of the `Text`.
+/// - [`Text::push_line`] adds a line to the text.
+/// - [`Text::push_span`] adds a span to the last line of the text.
 ///
 /// # Examples
 ///
@@ -443,12 +445,38 @@ impl<'a> Text<'a> {
     }
 
     /// Adds a line to the text.
-    pub fn push_line(&mut self, line: Line<'a>) {
-        self.lines.push(line);
+    ///
+    /// `line` can be any type that can be converted into a `Line`. For example, you can pass a
+    /// `&str`, a `String`, a `Span`, or a `Line`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut text = Text::from("Hello, world!");
+    /// text.push_line(Line::from("How are you?"));
+    /// text.push_line(Span::from("How are you?"));
+    /// text.push_line("How are you?");
+    /// ```
+    pub fn push_line<T: Into<Line<'a>>>(&mut self, line: T) {
+        self.lines.push(line.into());
     }
 
     /// Adds a span to the last line of the text.
-    pub fn push_span(&mut self, span: Span<'a>) {
+    ///
+    /// `span` can be any type that is convertible into a `Span`. For example, you can pass a
+    /// `&str`, a `String`, or a `Span`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut text = Text::from("Hello, world!");
+    /// text.push_span(Span::from("How are you?"));
+    /// text.push_span("How are you?");
+    /// ```
+    pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T) {
+        let span = span.into();
         if let Some(last) = self.lines.last_mut() {
             last.push_span(span);
         } else {
@@ -888,11 +916,18 @@ mod tests {
 
     #[test]
     fn push_line() {
-        let mut text = Text::from("Hello, world!");
-        text.push_line(Line::from("How are you?"));
+        let mut text = Text::from("A");
+        text.push_line(Line::from("B"));
+        text.push_line(Span::from("C"));
+        text.push_line("D");
         assert_eq!(
             text.lines,
-            vec![Line::from("Hello, world!"), Line::from("How are you?")]
+            vec![
+                Line::raw("A"),
+                Line::raw("B"),
+                Line::raw("C"),
+                Line::raw("D")
+            ]
         );
     }
 
@@ -905,13 +940,15 @@ mod tests {
 
     #[test]
     fn push_span() {
-        let mut text = Text::from("Hello, world!");
-        text.push_span(Span::raw("How are you?"));
+        let mut text = Text::from("A");
+        text.push_span(Span::raw("B"));
+        text.push_span("C");
         assert_eq!(
             text.lines,
             vec![Line::from(vec![
-                Span::raw("Hello, world!"),
-                Span::raw("How are you?")
+                Span::raw("A"),
+                Span::raw("B"),
+                Span::raw("C")
             ])],
         );
     }

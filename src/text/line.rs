@@ -48,6 +48,7 @@ use crate::prelude::*;
 /// - [`Line::reset_style`] resets the style of the line.
 /// - [`Line::width`] returns the unicode width of the content held by this line.
 /// - [`Line::styled_graphemes`] returns an iterator over the graphemes held by this line.
+/// - [`Line::push_span`] adds a span to the line.
 ///
 /// # Compatibility Notes
 ///
@@ -453,8 +454,20 @@ impl<'a> Line<'a> {
     }
 
     /// Adds a span to the line.
-    pub fn push_span(&mut self, span: Span<'a>) {
-        self.spans.push(span);
+    ///
+    /// `span` can be any type that is convertible into a `Span`. For example, you can pass a
+    /// `&str`, a `String`, or a `Span`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut line = Line::from("Hello, ");
+    /// line.push_span(Span::raw("world!"));
+    /// line.push_span(" How are you?");
+    /// ```
+    pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T) {
+        self.spans.push(span.into());
     }
 }
 
@@ -855,9 +868,13 @@ mod tests {
 
     #[test]
     pub fn push_span() {
-        let mut line = Line::from("Hello, ");
-        line.push_span(Span::raw("world!"));
-        assert_eq!(line.spans, vec![Span::raw("Hello, "), Span::raw("world!")]);
+        let mut line = Line::from("A");
+        line.push_span(Span::raw("B"));
+        line.push_span("C");
+        assert_eq!(
+            line.spans,
+            vec![Span::raw("A"), Span::raw("B"), Span::raw("C")]
+        );
     }
 
     mod widget {
