@@ -48,6 +48,7 @@ use crate::prelude::*;
 /// - [`Line::reset_style`] resets the style of the line.
 /// - [`Line::width`] returns the unicode width of the content held by this line.
 /// - [`Line::styled_graphemes`] returns an iterator over the graphemes held by this line.
+/// - [`Line::push_span`] adds a span to the line.
 ///
 /// # Compatibility Notes
 ///
@@ -451,6 +452,23 @@ impl<'a> Line<'a> {
     pub fn iter_mut(&mut self) -> std::slice::IterMut<Span<'a>> {
         self.spans.iter_mut()
     }
+
+    /// Adds a span to the line.
+    ///
+    /// `span` can be any type that is convertible into a `Span`. For example, you can pass a
+    /// `&str`, a `String`, or a `Span`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut line = Line::from("Hello, ");
+    /// line.push_span(Span::raw("world!"));
+    /// line.push_span(" How are you?");
+    /// ```
+    pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T) {
+        self.spans.push(span.into());
+    }
 }
 
 impl<'a> IntoIterator for Line<'a> {
@@ -830,6 +848,35 @@ mod tests {
         assert_eq!(format!("{line_from_styled_span}"), "Hello, world!");
     }
 
+    #[test]
+    fn left_aligned() {
+        let line = Line::from("Hello, world!").left_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let line = Line::from("Hello, world!").centered();
+        assert_eq!(line.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let line = Line::from("Hello, world!").right_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Right));
+    }
+
+    #[test]
+    pub fn push_span() {
+        let mut line = Line::from("A");
+        line.push_span(Span::raw("B"));
+        line.push_span("C");
+        assert_eq!(
+            line.spans,
+            vec![Span::raw("A"), Span::raw("B"), Span::raw("C")]
+        );
+    }
+
     mod widget {
         use super::*;
         use crate::assert_buffer_eq;
@@ -906,24 +953,6 @@ mod tests {
             expected.set_style(Rect::new(9, 0, 6, 1), GREEN);
             assert_buffer_eq!(buf, expected);
         }
-    }
-
-    #[test]
-    fn left_aligned() {
-        let line = Line::from("Hello, world!").left_aligned();
-        assert_eq!(line.alignment, Some(Alignment::Left));
-    }
-
-    #[test]
-    fn centered() {
-        let line = Line::from("Hello, world!").centered();
-        assert_eq!(line.alignment, Some(Alignment::Center));
-    }
-
-    #[test]
-    fn right_aligned() {
-        let line = Line::from("Hello, world!").right_aligned();
-        assert_eq!(line.alignment, Some(Alignment::Right));
     }
 
     mod iterators {
