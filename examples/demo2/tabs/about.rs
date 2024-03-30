@@ -64,20 +64,16 @@ impl Widget for AboutTab {
 }
 
 fn render_crate_description(area: Rect, buf: &mut Buffer) {
-    let area = area.inner(
-        &(Margin {
-            vertical: 4,
-            horizontal: 2,
-        }),
-    );
+    let area = area.inner(Margin {
+        vertical: 4,
+        horizontal: 2,
+    });
     Clear.render(area, buf); // clear out the color swatches
     Block::new().style(THEME.content).render(area, buf);
-    let area = area.inner(
-        &(Margin {
-            vertical: 1,
-            horizontal: 2,
-        }),
-    );
+    let area = area.inner(Margin {
+        vertical: 1,
+        horizontal: 2,
+    });
     let text = "- cooking up terminal user interfaces -
 
     Ratatui is a Rust crate that provides widgets (e.g. Paragraph, Table) and draws them to the \
@@ -108,7 +104,7 @@ pub fn render_logo(selected_row: usize, area: Rect, buf: &mut Buffer) {
     } else {
         THEME.logo.rat_eye_alt
     };
-    let area = area.inner(&Margin {
+    let area = area.inner(Margin {
         vertical: 0,
         horizontal: 2,
     });

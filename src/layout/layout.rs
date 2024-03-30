@@ -608,7 +608,7 @@ impl Layout {
         // This is equivalent to storing the solver in `Layout` and calling `solver.reset()` here.
         let mut solver = Solver::new();
 
-        let inner_area = area.inner(&self.margin);
+        let inner_area = area.inner(self.margin);
         let (area_start, area_end) = match self.direction {
             Direction::Horizontal => (
                 f64::from(inner_area.x) * FLOAT_PRECISION_MULTIPLIER,

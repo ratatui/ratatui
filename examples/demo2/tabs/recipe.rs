@@ -105,7 +105,7 @@ impl RecipeTab {
 impl Widget for RecipeTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         RgbSwatch.render(area, buf);
-        let area = area.inner(&Margin {
+        let area = area.inner(Margin {
             vertical: 1,
             horizontal: 2,
         });
@@ -124,7 +124,7 @@ impl Widget for RecipeTab {
         };
         render_scrollbar(self.row_index, scrollbar_area, buf);
 
-        let area = area.inner(&Margin {
+        let area = area.inner(Margin {
             horizontal: 2,
             vertical: 1,
         });

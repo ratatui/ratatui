@@ -47,6 +47,22 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
+## Unreleased
+
+### `Rect::inner` takes `Margin` directly instead of reference ([#1008])
+
+[#1008]: https://github.com/ratatui-org/ratatui/pull/1008
+
+`Margin` needs to be passed without reference now.
+
+```diff
+-let area = area.inner(&Margin {
++let area = area.inner(Margin {
+     vertical: 0,
+     horizontal: 2,
+ });
+```
+
 ## [v0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0)
 
 ### `Flex::Start` is the new default flex mode for `Layout` ([#881])

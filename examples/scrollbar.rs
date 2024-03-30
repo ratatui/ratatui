@@ -186,7 +186,7 @@ fn ui(f: &mut Frame, app: &mut App) {
             .begin_symbol(None)
             .track_symbol(None)
             .end_symbol(None),
-        chunks[2].inner(&Margin {
+        chunks[2].inner(Margin {
             vertical: 1,
             horizontal: 0,
         }),
@@ -204,7 +204,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
             .thumb_symbol("🬋")
             .end_symbol(None),
-        chunks[3].inner(&Margin {
+        chunks[3].inner(Margin {
             vertical: 0,
             horizontal: 1,
         }),
@@ -222,7 +222,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
             .thumb_symbol("░")
             .track_symbol(Some("─")),
-        chunks[4].inner(&Margin {
+        chunks[4].inner(Margin {
             vertical: 0,
             horizontal: 1,
         }),

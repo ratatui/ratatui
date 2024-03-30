@@ -120,7 +120,7 @@ impl Rect {
     ///
     /// If the margin is larger than the `Rect`, the returned `Rect` will have no area.
     #[must_use = "method returns the modified value"]
-    pub const fn inner(self, margin: &Margin) -> Self {
+    pub const fn inner(self, margin: Margin) -> Self {
         let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
         let doubled_margin_vertical = margin.vertical.saturating_mul(2);
 
@@ -393,7 +393,7 @@ mod tests {
     #[test]
     fn inner() {
         assert_eq!(
-            Rect::new(1, 2, 3, 4).inner(&Margin::new(1, 2)),
+            Rect::new(1, 2, 3, 4).inner(Margin::new(1, 2)),
             Rect::new(2, 4, 1, 0)
         );
     }
