@@ -182,7 +182,7 @@ fn ui(f: &mut Frame, app: &mut App) {
     f.render_widget(paragraph, chunks[2]);
     f.render_stateful_widget(
         Scrollbar::new(ScrollbarOrientation::VerticalLeft)
-            .symbols(scrollbar::VERTICAL)
+            .symbols(&scrollbar::VERTICAL)
             .begin_symbol(None)
             .track_symbol(None)
             .end_symbol(None),

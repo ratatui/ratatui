@@ -68,15 +68,15 @@ use crate::{prelude::*, symbols::scrollbar::*};
 /// # }
 /// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Scrollbar<'a> {
+pub struct Scrollbar<'symbols> {
     orientation: ScrollbarOrientation,
     thumb_style: Style,
-    thumb_symbol: &'a str,
+    thumb_symbol: &'symbols str,
     track_style: Style,
-    track_symbol: Option<&'a str>,
-    begin_symbol: Option<&'a str>,
+    track_symbol: Option<&'symbols str>,
+    begin_symbol: Option<&'symbols str>,
     begin_style: Style,
-    end_symbol: Option<&'a str>,
+    end_symbol: Option<&'symbols str>,
     end_style: Style,
 }
 
@@ -154,13 +154,13 @@ pub enum ScrollDirection {
     Backward,
 }
 
-impl<'a> Default for Scrollbar<'a> {
+impl<'symbols> Default for Scrollbar<'symbols> {
     fn default() -> Self {
         Self::new(ScrollbarOrientation::default())
     }
 }
 
-impl<'a> Scrollbar<'a> {
+impl<'symbols> Scrollbar<'symbols> {
     /// Creates a new scrollbar with the given orientation.
     ///
     /// Most of the time you'll want [`ScrollbarOrientation::VerticalRight`] or
@@ -168,11 +168,11 @@ impl<'a> Scrollbar<'a> {
     #[must_use = "creates the Scrollbar"]
     pub const fn new(orientation: ScrollbarOrientation) -> Self {
         let symbols = if orientation.is_vertical() {
-            DOUBLE_VERTICAL
+            &DOUBLE_VERTICAL
         } else {
-            DOUBLE_HORIZONTAL
+            &DOUBLE_HORIZONTAL
         };
-        Self::new_with_symbols(orientation, &symbols)
+        Self::new_with_symbols(orientation, symbols)
     }
 
     /// Creates a new scrollbar with the given orientation and symbol set.
@@ -203,9 +203,9 @@ impl<'a> Scrollbar<'a> {
     pub const fn orientation(mut self, orientation: ScrollbarOrientation) -> Self {
         self.orientation = orientation;
         let symbols = if self.orientation.is_vertical() {
-            DOUBLE_VERTICAL
+            &DOUBLE_VERTICAL
         } else {
-            DOUBLE_HORIZONTAL
+            &DOUBLE_HORIZONTAL
         };
         self.symbols(symbols)
     }
@@ -220,7 +220,7 @@ impl<'a> Scrollbar<'a> {
     pub const fn orientation_and_symbol(
         mut self,
         orientation: ScrollbarOrientation,
-        symbols: Set,
+        symbols: &Set,
     ) -> Self {
         self.orientation = orientation;
         self.symbols(symbols)
@@ -233,7 +233,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn thumb_symbol(mut self, thumb_symbol: &'a str) -> Self {
+    pub const fn thumb_symbol(mut self, thumb_symbol: &'symbols str) -> Self {
         self.thumb_symbol = thumb_symbol;
         self
     }
@@ -259,7 +259,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn track_symbol(mut self, track_symbol: Option<&'a str>) -> Self {
+    pub const fn track_symbol(mut self, track_symbol: Option<&'symbols str>) -> Self {
         self.track_symbol = track_symbol;
         self
     }
@@ -284,7 +284,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn begin_symbol(mut self, begin_symbol: Option<&'a str>) -> Self {
+    pub const fn begin_symbol(mut self, begin_symbol: Option<&'symbols str>) -> Self {
         self.begin_symbol = begin_symbol;
         self
     }
@@ -309,7 +309,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn end_symbol(mut self, end_symbol: Option<&'a str>) -> Self {
+    pub const fn end_symbol(mut self, end_symbol: Option<&'symbols str>) -> Self {
         self.end_symbol = end_symbol;
         self
     }
@@ -344,9 +344,8 @@ impl<'a> Scrollbar<'a> {
     /// respective setters to change their value.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[allow(clippy::needless_pass_by_value)] // Breaking change
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn symbols(mut self, symbols: Set) -> Self {
+    pub const fn symbols(mut self, symbols: &Set) -> Self {
         self.thumb_symbol = symbols.thumb;
         if self.track_symbol.is_some() {
             self.track_symbol = Some(symbols.track);
