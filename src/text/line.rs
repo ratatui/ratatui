@@ -485,6 +485,7 @@ impl<'a> Line<'a> {
             offset = 0;
         }
         truncated_line
+    }
     /// Adds a span to the line.
     ///
     /// `span` can be any type that is convertible into a `Span`. For example, you can pass a
