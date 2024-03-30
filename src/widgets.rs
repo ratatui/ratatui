@@ -355,7 +355,7 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 /// to a stateful widget and render it later. It also allows you to render boxed stateful widgets.
 ///
 /// This trait was introduced in Ratatui 0.26.0 and is implemented for all the internal stateful
-/// widgets. Implemetors should prefer to implement this over the `StatefulWidget` trait and add an
+/// widgets. Implementors should prefer to implement this over the `StatefulWidget` trait and add an
 /// implementation of `StatefulWidget` that calls `StatefulWidgetRef::render_ref` where backwards
 /// compatibility is required.
 ///

@@ -330,7 +330,7 @@ impl<'a> Dataset<'a> {
 
     /// Sets the data points of this dataset
     ///
-    /// Points will then either be rendered as scrattered points or with lines between them
+    /// Points will then either be rendered as scattered points or with lines between them
     /// depending on [`Dataset::graph_type`].
     ///
     /// Data consist in an array of `f64` tuples (`(f64, f64)`), the first element being X and the
@@ -493,7 +493,7 @@ pub struct Chart<'a> {
     style: Style,
     /// Constraints used to determine whether the legend should be shown or not
     hidden_legend_constraints: (Constraint, Constraint),
-    /// The position detnermine where the legenth is shown or hide regaurdless of
+    /// The position determine where the length is shown or hide regardless of
     /// `hidden_legend_constraints`
     legend_position: Option<LegendPosition>,
 }
@@ -636,7 +636,7 @@ impl<'a> Chart<'a> {
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
     ///
-    /// Always hide the legend. Note this can be accomplished more exclicitely by passing `None` to
+    /// Always hide the legend. Note this can be accomplished more explicitly by passing `None` to
     /// [`Chart::legend_position`].
     ///
     /// ```

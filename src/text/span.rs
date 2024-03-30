@@ -540,6 +540,27 @@ mod tests {
         assert_eq!(format!("{stylized_span}"), "stylized test content");
     }
 
+    #[test]
+    fn left_aligned() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.into_left_aligned_line();
+        assert_eq!(line.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.into_centered_line();
+        assert_eq!(line.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.into_right_aligned_line();
+        assert_eq!(line.alignment, Some(Alignment::Right));
+    }
+
     mod widget {
         use rstest::rstest;
 
@@ -648,26 +669,5 @@ mod tests {
             ])]);
             assert_buffer_eq!(buf, expected);
         }
-    }
-
-    #[test]
-    fn left_aligned() {
-        let span = Span::styled("Test Content", Style::new().green().italic());
-        let line = span.into_left_aligned_line();
-        assert_eq!(line.alignment, Some(Alignment::Left));
-    }
-
-    #[test]
-    fn centered() {
-        let span = Span::styled("Test Content", Style::new().green().italic());
-        let line = span.into_centered_line();
-        assert_eq!(line.alignment, Some(Alignment::Center));
-    }
-
-    #[test]
-    fn right_aligned() {
-        let span = Span::styled("Test Content", Style::new().green().italic());
-        let line = span.into_right_aligned_line();
-        assert_eq!(line.alignment, Some(Alignment::Right));
     }
 }

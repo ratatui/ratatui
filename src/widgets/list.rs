@@ -643,7 +643,7 @@ impl<'a> List<'a> {
     /// - [`HighlightSpacing::Always`] will always allocate the spacing, regardless of whether an
     ///   item is selected or not. This means that the table will never change size, regardless of
     ///   if an item is selected or not.
-    /// - [`HighlightSpacing::WhenSelected`] will only allocate the spacing if an itemis selected.
+    /// - [`HighlightSpacing::WhenSelected`] will only allocate the spacing if an item is selected.
     ///   This means that the table will shift when an item is selected. This is the default setting
     ///   for backwards compatibility, but it is recommended to use `HighlightSpacing::Always` for a
     ///   better user experience.
@@ -2127,9 +2127,9 @@ mod tests {
         terminal.backend().assert_buffer(&expected);
     }
 
-    /// If there isnt enough room for the selected item and the requested padding the list can jump
-    /// up and down every frame if something isnt done about it. This code tests to make sure that
-    /// isnt currently happening
+    /// If there isn't enough room for the selected item and the requested padding the list can jump
+    /// up and down every frame if something isn't done about it. This code tests to make sure that
+    /// isn't currently happening
     #[test]
     fn test_padding_flicker() {
         let backend = backend::TestBackend::new(10, 5);

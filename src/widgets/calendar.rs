@@ -2,8 +2,8 @@
 //!
 //!
 //!
-//! The [`Monthly`] widget will display a calendar for the monh provided in `display_date`. Days are
-//! styled using the default style unless:
+//! The [`Monthly`] widget will display a calendar for the month provided in `display_date`. Days
+//! are styled using the default style unless:
 //! * `show_surrounding` is set, then days not in the `display_date` month will use that style.
 //! * a style is returned by the [`DateStyler`] for the day
 //!
