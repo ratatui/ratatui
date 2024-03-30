@@ -455,7 +455,7 @@ impl<'a> Line<'a> {
 
     /// Returns a line that's truncated corresponding to it's alignment and result width
     #[must_use = "method returns the modified value"]
-    pub fn truncated(&'a self, result_width: u16) -> Self {
+    fn truncated(&'a self, result_width: u16) -> Self {
         let mut truncated_line = Line::default();
         let width = self.width() as u16;
         let mut offset = match self.alignment {
