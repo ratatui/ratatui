@@ -864,7 +864,6 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::assert_buffer_eq;
 
     #[test]
     fn create_with_all_borders() {
@@ -1078,7 +1077,7 @@ mod tests {
     fn title() {
         use Alignment::*;
         use Position::*;
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 3));
         Block::bordered()
             .title(Title::from("A").position(Top).alignment(Left))
             .title(Title::from("B").position(Top).alignment(Center))
@@ -1087,19 +1086,18 @@ mod tests {
             .title(Title::from("E").position(Bottom).alignment(Center))
             .title(Title::from("F").position(Bottom).alignment(Right))
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┌A─────B─────C┐",
-                "│             │",
-                "└D─────E─────F┘",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌A───B───C┐",
+            "│         │",
+            "└D───E───F┘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn title_top_bottom() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 3));
         Block::bordered()
             .title_top(Line::raw("A").left_aligned())
             .title_top(Line::raw("B").centered())
@@ -1108,14 +1106,13 @@ mod tests {
             .title_bottom(Line::raw("E").centered())
             .title_bottom(Line::raw("F").right_aligned())
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┌A─────B─────C┐",
-                "│             │",
-                "└D─────E─────F┘",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌A───B───C┐",
+            "│         │",
+            "└D───E───F┘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1131,7 +1128,7 @@ mod tests {
                 .title_alignment(alignment)
                 .title("test")
                 .render(buffer.area, &mut buffer);
-            assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+            assert_eq!(buffer, Buffer::with_lines([expected]));
         }
     }
 
@@ -1148,7 +1145,7 @@ mod tests {
                 .title_alignment(block_title_alignment)
                 .title(Title::from("test").alignment(alignment))
                 .render(buffer.area, &mut buffer);
-            assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+            assert_eq!(buffer, Buffer::with_lines([expected]));
         }
     }
 
@@ -1160,14 +1157,7 @@ mod tests {
             .title_alignment(Alignment::Right)
             .title("")
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "               ",
-                "               ",
-                "               ",
-            ])
-        );
+        assert_eq!(buffer, Buffer::with_lines(["               "; 3]));
     }
 
     #[test]
@@ -1177,7 +1167,7 @@ mod tests {
             .title_position(Position::Bottom)
             .title("test")
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["    ", "test"]));
+        assert_eq!(buffer, Buffer::with_lines(["    ", "test"]));
     }
 
     #[test]
@@ -1188,11 +1178,7 @@ mod tests {
                 .title_alignment(alignment)
                 .title("test".yellow())
                 .render(buffer.area, &mut buffer);
-
-            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
-            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow());
-
-            assert_buffer_eq!(buffer, expected_buffer);
+            assert_eq!(buffer, Buffer::with_lines(["test".yellow()]));
         }
     }
 
@@ -1205,11 +1191,7 @@ mod tests {
                 .title_style(Style::new().yellow())
                 .title("test")
                 .render(buffer.area, &mut buffer);
-
-            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
-            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow());
-
-            assert_buffer_eq!(buffer, expected_buffer);
+            assert_eq!(buffer, Buffer::with_lines(["test".yellow()]));
         }
     }
 
@@ -1222,31 +1204,26 @@ mod tests {
                 .title_style(Style::new().green().on_red())
                 .title("test".yellow())
                 .render(buffer.area, &mut buffer);
-
-            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
-            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow().on_red());
-
-            assert_buffer_eq!(buffer, expected_buffer);
+            assert_eq!(buffer, Buffer::with_lines(["test".yellow().on_red()]));
         }
     }
 
     #[test]
     fn title_border_style() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .title("test")
             .border_style(Style::new().yellow())
             .render(buffer.area, &mut buffer);
-
-        let mut expected_buffer = Buffer::with_lines(vec![
-            "┌test─────────┐",
-            "│             │",
-            "└─────────────┘",
+        #[rustfmt::skip]
+        let mut expected = Buffer::with_lines([
+            "┌test────┐",
+            "│        │",
+            "└────────┘",
         ]);
-        expected_buffer.set_style(Rect::new(0, 0, 15, 3), Style::new().yellow());
-        expected_buffer.set_style(Rect::new(1, 1, 13, 1), Style::reset());
-
-        assert_buffer_eq!(buffer, expected_buffer);
+        expected.set_style(Rect::new(0, 0, 10, 3), Style::new().yellow());
+        expected.set_style(Rect::new(1, 1, 8, 1), Style::reset());
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1268,103 +1245,97 @@ mod tests {
 
     #[test]
     fn render_plain_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::Plain)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┌─────────────┐",
-                "│             │",
-                "└─────────────┘"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌────────┐",
+            "│        │",
+            "└────────┘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_rounded_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::Rounded)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "╭─────────────╮",
-                "│             │",
-                "╰─────────────╯"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "╭────────╮",
+            "│        │",
+            "╰────────╯",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_double_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::Double)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "╔═════════════╗",
-                "║             ║",
-                "╚═════════════╝"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "╔════════╗",
+            "║        ║",
+            "╚════════╝",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_quadrant_inside() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::QuadrantInside)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "▗▄▄▄▄▄▄▄▄▄▄▄▄▄▖",
-                "▐             ▌",
-                "▝▀▀▀▀▀▀▀▀▀▀▀▀▀▘",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "▗▄▄▄▄▄▄▄▄▖",
+            "▐        ▌",
+            "▝▀▀▀▀▀▀▀▀▘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_border_quadrant_outside() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::QuadrantOutside)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▜",
-                "▌             ▐",
-                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▟",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "▛▀▀▀▀▀▀▀▀▜",
+            "▌        ▐",
+            "▙▄▄▄▄▄▄▄▄▟",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_solid_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::Thick)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┏━━━━━━━━━━━━━┓",
-                "┃             ┃",
-                "┗━━━━━━━━━━━━━┛"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┏━━━━━━━━┓",
+            "┃        ┃",
+            "┗━━━━━━━━┛",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_custom_border_set() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_set(border::Set {
                 top_left: "1",
@@ -1377,13 +1348,12 @@ mod tests {
                 horizontal_bottom: "B",
             })
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "1TTTTTTTTTTTTT2",
-                "L             R",
-                "3BBBBBBBBBBBBB4",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "1TTTTTTTT2",
+            "L        R",
+            "3BBBBBBBB4",
+        ]);
+        assert_eq!(buffer, expected);
     }
 }

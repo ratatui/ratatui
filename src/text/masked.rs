@@ -16,7 +16,7 @@ use super::Text;
 /// let password = Masked::new("12345", 'x');
 ///
 /// Paragraph::new(password).render(buffer.area, &mut buffer);
-/// assert_eq!(buffer, Buffer::with_lines(vec!["xxxxx"]));
+/// assert_eq!(buffer, Buffer::with_lines(["xxxxx"]));
 /// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Masked<'a> {
