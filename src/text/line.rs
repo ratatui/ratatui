@@ -453,6 +453,39 @@ impl<'a> Line<'a> {
         self.spans.iter_mut()
     }
 
+    /// Returns a line that's truncated corresponding to it's alignment and result width
+    #[must_use = "method returns the modified value"]
+    fn truncated(&'a self, result_width: u16) -> Self {
+        let mut truncated_line = Line::default();
+        let width = self.width() as u16;
+        let mut offset = match self.alignment {
+            Some(Alignment::Center) => (width.saturating_sub(result_width)) / 2,
+            Some(Alignment::Right) => width.saturating_sub(result_width),
+            _ => 0,
+        };
+        let mut x = 0;
+        for span in &self.spans {
+            let span_width = span.width() as u16;
+            if offset >= span_width {
+                offset -= span_width;
+                continue;
+            }
+            let mut new_span = span.clone();
+            let new_span_width = span_width - offset;
+            if x + new_span_width > result_width {
+                let span_end = (result_width - x + offset) as usize;
+                new_span.content = Cow::from(&span.content[offset as usize..span_end]);
+                truncated_line.spans.push(new_span);
+                break;
+            }
+
+            new_span.content = Cow::from(&span.content[offset as usize..]);
+            truncated_line.spans.push(new_span);
+            x += new_span_width;
+            offset = 0;
+        }
+        truncated_line
+    }
     /// Adds a span to the line.
     ///
     /// `span` can be any type that is convertible into a `Span`. For example, you can pass a
@@ -554,17 +587,23 @@ impl WidgetRef for Line<'_> {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
         let width = self.width() as u16;
-        let offset = match self.alignment {
-            Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
-            Some(Alignment::Right) => area.width.saturating_sub(width),
-            Some(Alignment::Left) | None => 0,
+        let mut x = area.left();
+        let line = if width > area.width {
+            self.truncated(area.width)
+        } else {
+            let offset = match self.alignment {
+                Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
+                Some(Alignment::Right) => area.width.saturating_sub(width),
+                Some(Alignment::Left) | None => 0,
+            };
+            x = x.saturating_add(offset);
+            self.to_owned()
         };
-        let mut x = area.left().saturating_add(offset);
-        for span in &self.spans {
+        for span in &line.spans {
             let span_width = span.width() as u16;
             let span_area = Rect {
                 x,
-                width: span_width.min(area.right() - x),
+                width: span_width.min(area.right().saturating_sub(x)),
                 ..area
             };
             span.render(span_area, buf);
@@ -604,6 +643,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::assert_buffer_eq;
 
     #[fixture]
     fn small_buf() -> Buffer {
@@ -846,6 +886,53 @@ mod tests {
         let line_from_styled_span = Line::from(styled_span);
 
         assert_eq!(format!("{line_from_styled_span}"), "Hello, world!");
+    }
+    #[test]
+    fn render_truncates_left() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+        Line::from("Hello world")
+            .left_aligned()
+            .render(buf.area, &mut buf);
+        let expected = Buffer::with_lines(vec!["Hello"]);
+        assert_buffer_eq!(buf, expected);
+    }
+
+    #[test]
+    fn render_truncates_right() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+        Line::from("Hello world")
+            .right_aligned()
+            .render(buf.area, &mut buf);
+        let expected = Buffer::with_lines(vec!["world"]);
+        assert_buffer_eq!(buf, expected);
+    }
+
+    #[test]
+    fn render_truncates_center() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+        Line::from("Hello world")
+            .centered()
+            .render(buf.area, &mut buf);
+        let expected = Buffer::with_lines(vec!["lo wo"]);
+        assert_buffer_eq!(buf, expected);
+    }
+
+    #[test]
+    fn truncate_line_with_multiple_spans() {
+        let line = Line::default().spans(vec!["foo", "bar"]);
+        assert_eq!(
+            line.right_aligned().truncated(4).to_string(),
+            String::from("obar")
+        );
+    }
+
+    #[test]
+    fn truncation_ignores_useless_spans() {
+        let line = Line::default().spans(vec!["foo", "bar"]);
+        assert_eq!(
+            line.right_aligned().truncated(3),
+            Line::default().spans(vec!["bar"])
+        );
     }
 
     #[test]
