@@ -11,10 +11,8 @@ use strum::{Display, EnumString};
 use crate::{prelude::*, symbols::border, widgets::Borders};
 
 mod padding;
-pub mod title;
 
 pub use padding::Padding;
-pub use title::{Position, Title};
 
 /// Base widget to be used to display a box border around all [upper level ones](crate::widgets).
 ///
@@ -58,18 +56,17 @@ pub use title::{Position, Title};
 ///
 /// Block::default()
 ///     .title("Title 1")
-///     .title(Title::from("Title 2").position(Position::Bottom));
+///     .title_(Title::from("Title 2").position(Position::Bottom));
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
     /// List of titles
-    titles: Vec<Title<'a>>,
+    top_titles: Vec<Line<'a>>,
+    bottom_titles: Vec<Line<'a>>,
     /// The style to be patched to all titles of the block
     titles_style: Style,
     /// The default alignment of the titles that don't have one
     titles_alignment: Alignment,
-    /// The default position of the titles that don't have one
-    titles_position: Position,
     /// Visible borders
     borders: Borders,
     /// Border style
@@ -160,10 +157,10 @@ impl<'a> Block<'a> {
     /// Creates a new block with no [`Borders`] or [`Padding`].
     pub const fn new() -> Self {
         Self {
-            titles: Vec::new(),
+            top_titles: Vec::new(),
+            bottom_titles: Vec::new(),
             titles_style: Style::new(),
             titles_alignment: Alignment::Left,
-            titles_position: Position::Top,
             borders: Borders::NONE,
             border_style: Style::new(),
             border_set: BorderType::Plain.to_border_set(),
@@ -237,10 +234,9 @@ impl<'a> Block<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title<T>(mut self, title: T) -> Self
     where
-        T: Into<Title<'a>>,
+        T: Into<Line<'a>>,
     {
-        self.titles.push(title.into());
-        self
+        self.top_title(title)
     }
 
     /// Adds a title to the top of the block.
@@ -265,9 +261,8 @@ impl<'a> Block<'a> {
     /// // └──────────────────────────────────┘
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title_top<T: Into<Line<'a>>>(mut self, title: T) -> Self {
-        let title = Title::from(title).position(Position::Top);
-        self.titles.push(title);
+    pub fn top_title<T: Into<Line<'a>>>(mut self, title: T) -> Self {
+        self.top_titles.push(title.into());
         self
     }
 
@@ -294,8 +289,7 @@ impl<'a> Block<'a> {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_bottom<T: Into<Line<'a>>>(mut self, title: T) -> Self {
-        let title = Title::from(title).position(Position::Bottom);
-        self.titles.push(title);
+        self.bottom_titles.push(title.into());
         self
     }
 
@@ -335,33 +329,6 @@ impl<'a> Block<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn title_alignment(mut self, alignment: Alignment) -> Self {
         self.titles_alignment = alignment;
-        self
-    }
-
-    /// Sets the default [`Position`] for all block [titles](Title).
-    ///
-    /// Titles that explicitly set a [`Position`] will ignore this.
-    ///
-    /// # Example
-    ///
-    /// This example positions all titles on the bottom except the "top" title which explicitly sets
-    /// [`Position::Top`].
-    /// ```
-    /// use ratatui::{
-    ///     prelude::*,
-    ///     widgets::{block::*, *},
-    /// };
-    ///
-    /// Block::default()
-    ///     // This title won't be aligned in the center
-    ///     .title(Title::from("top").position(Position::Top))
-    ///     .title("foo")
-    ///     .title("bar")
-    ///     .title_position(Position::Bottom);
-    /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn title_position(mut self, position: Position) -> Self {
-        self.titles_position = position;
         self
     }
 
@@ -501,15 +468,14 @@ impl<'a> Block<'a> {
             inner.x = inner.x.saturating_add(1).min(inner.right());
             inner.width = inner.width.saturating_sub(1);
         }
-        if self.borders.intersects(Borders::TOP) || self.have_title_at_position(Position::Top) {
+        if self.borders.intersects(Borders::TOP) || !self.top_titles.is_empty() {
             inner.y = inner.y.saturating_add(1).min(inner.bottom());
             inner.height = inner.height.saturating_sub(1);
         }
         if self.borders.intersects(Borders::RIGHT) {
             inner.width = inner.width.saturating_sub(1);
         }
-        if self.borders.intersects(Borders::BOTTOM) || self.have_title_at_position(Position::Bottom)
-        {
+        if self.borders.intersects(Borders::BOTTOM) || !self.bottom_titles.is_empty() {
             inner.height = inner.height.saturating_sub(1);
         }
 
@@ -524,12 +490,6 @@ impl<'a> Block<'a> {
             .saturating_sub(self.padding.top + self.padding.bottom);
 
         inner
-    }
-
-    fn have_title_at_position(&self, position: Position) -> bool {
-        self.titles
-            .iter()
-            .any(|title| title.position.unwrap_or(self.titles_position) == position)
     }
 
     /// Defines the padding inside a `Block`.
@@ -620,17 +580,40 @@ impl Block<'_> {
     }
 
     fn render_titles(&self, area: Rect, buf: &mut Buffer) {
-        self.render_title_position(Position::Top, area, buf);
-        self.render_title_position(Position::Bottom, area, buf);
-    }
+        let title_areas = self.title_areas(area);
 
-    fn render_title_position(&self, position: Position, area: Rect, buf: &mut Buffer) {
-        // NOTE: the order in which these functions are called defines the overlapping behavior
-        self.render_right_titles(position, area, buf);
-        self.render_center_titles(position, area, buf);
-        self.render_left_titles(position, area, buf);
-    }
+        let right_titles = self.filtered_titles(Alignment::Right);
+        Self::render_right_titles(
+            &right_titles.0.collect_vec(),
+            title_areas.0,
+            buf,
+            self.style,
+        );
+        Self::render_right_titles(
+            &right_titles.1.collect_vec(),
+            title_areas.1,
+            buf,
+            self.style,
+        );
 
+        let center_titles = self.filtered_titles(Alignment::Center);
+        Self::render_center_titles(
+            &center_titles.0.collect_vec(),
+            title_areas.0,
+            buf,
+            self.style,
+        );
+        Self::render_center_titles(
+            &center_titles.1.collect_vec(),
+            title_areas.1,
+            buf,
+            self.style,
+        );
+
+        let left_titles = self.filtered_titles(Alignment::Left);
+        Self::render_left_titles(&left_titles.0.collect_vec(), title_areas.0, buf, self.style);
+        Self::render_left_titles(&left_titles.1.collect_vec(), title_areas.1, buf, self.style);
+    }
     fn render_left_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::LEFT) {
             for y in area.top()..area.bottom() {
@@ -712,16 +695,18 @@ impl Block<'_> {
     /// the left side of that leftmost that is cut off. This is due to the line being truncated
     /// incorrectly. See <https://github.com/ratatui-org/ratatui/issues/932>
     #[allow(clippy::similar_names)]
-    fn render_right_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
-        let titles = self.filtered_titles(position, Alignment::Right);
-        let mut titles_area = self.titles_area(area, position);
-
+    fn render_right_titles<'a>(
+        titles: &Vec<&Line<'a>>,
+        mut titles_area: Rect,
+        buf: &mut Buffer,
+        style: Style,
+    ) {
         // render titles in reverse order to align them to the right
-        for title in titles.rev() {
+        for title in titles.iter().rev() {
             if titles_area.is_empty() {
                 break;
             }
-            let title_width = title.content.width() as u16;
+            let title_width = title.width() as u16;
             let title_area = Rect {
                 x: titles_area
                     .right()
@@ -730,8 +715,8 @@ impl Block<'_> {
                 width: title_width.min(titles_area.width),
                 ..titles_area
             };
-            buf.set_style(title_area, self.titles_style);
-            title.content.render_ref(title_area, buf);
+            buf.set_style(title_area, style);
+            title.render_ref(title_area, buf);
 
             // bump the width of the titles area to the left
             titles_area.width = titles_area
@@ -747,17 +732,17 @@ impl Block<'_> {
     /// ideal and should be fixed in the future to align the titles to the center of the block and
     /// truncate both sides of the titles if the block is too small to fit all titles.
     #[allow(clippy::similar_names)]
-    fn render_center_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
-        let titles = self
-            .filtered_titles(position, Alignment::Center)
-            .collect_vec();
+    fn render_center_titles<'a>(
+        titles: &Vec<&Line<'a>>,
+        titles_area: Rect,
+        buf: &mut Buffer,
+        style: Style,
+    ) {
         let total_width = titles
             .iter()
-            .map(|title| title.content.width() as u16 + 1) // space between titles
+            .map(|title| title.width() as u16 + 1) // space between titles
             .sum::<u16>()
             .saturating_sub(1); // no space for the last title
-
-        let titles_area = self.titles_area(area, position);
         let mut titles_area = Rect {
             x: titles_area.left() + (titles_area.width.saturating_sub(total_width) / 2),
             ..titles_area
@@ -766,13 +751,13 @@ impl Block<'_> {
             if titles_area.is_empty() {
                 break;
             }
-            let title_width = title.content.width() as u16;
+            let title_width = title.width() as u16;
             let title_area = Rect {
                 width: title_width.min(titles_area.width),
                 ..titles_area
             };
-            buf.set_style(title_area, self.titles_style);
-            title.content.render_ref(title_area, buf);
+            buf.set_style(title_area, style);
+            title.render_ref(title_area, buf);
 
             // bump the titles area to the right and reduce its width
             titles_area.x = titles_area.x.saturating_add(title_width + 1);
@@ -782,50 +767,62 @@ impl Block<'_> {
 
     /// Render titles aligned to the left of the block
     #[allow(clippy::similar_names)]
-    fn render_left_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
-        let titles = self.filtered_titles(position, Alignment::Left);
-        let mut titles_area = self.titles_area(area, position);
+    fn render_left_titles<'a>(
+        titles: &Vec<&Line<'a>>,
+        mut titles_area: Rect,
+        buf: &mut Buffer,
+        style: Style,
+    ) {
         for title in titles {
             if titles_area.is_empty() {
                 break;
             }
-            let title_width = title.content.width() as u16;
+            let title_width = title.width() as u16;
             let title_area = Rect {
                 width: title_width.min(titles_area.width),
                 ..titles_area
             };
-            buf.set_style(title_area, self.titles_style);
-            title.content.render_ref(title_area, buf);
+            buf.set_style(title_area, style);
+            title.render_ref(title_area, buf);
 
             // bump the titles area to the right and reduce its width
             titles_area.x = titles_area.x.saturating_add(title_width + 1);
             titles_area.width = titles_area.width.saturating_sub(title_width + 1);
         }
     }
-
     /// An iterator over the titles that match the position and alignment
-    fn filtered_titles(
-        &self,
-        position: Position,
+    fn filtered_titles<'a>(
+        &'a self,
         alignment: Alignment,
-    ) -> impl DoubleEndedIterator<Item = &Title> {
-        self.titles.iter().filter(move |title| {
-            title.position.unwrap_or(self.titles_position) == position
-                && title.alignment.unwrap_or(self.titles_alignment) == alignment
-        })
+    ) -> (
+        impl DoubleEndedIterator<Item = &Line<'a>>,
+        impl DoubleEndedIterator<Item = &Line<'a>>,
+    ) {
+        (
+            self.top_titles
+                .iter()
+                .filter(move |title| title.alignment.unwrap_or(self.titles_alignment) == alignment),
+            self.bottom_titles
+                .iter()
+                .filter(move |title| title.alignment.unwrap_or(self.titles_alignment) == alignment),
+        )
     }
 
     /// An area that is one line tall and spans the width of the block excluding the borders and
     /// is positioned at the top or bottom of the block.
-    fn titles_area(&self, area: Rect, position: Position) -> Rect {
+    fn title_areas(&self, area: Rect) -> (Rect, Rect) {
+        (
+            self.title_area(area.top(), area),
+            self.title_area(area.bottom() - 1, area),
+        )
+    }
+
+    fn title_area(&self, y: u16, area: Rect) -> Rect {
         let left_border = u16::from(self.borders.contains(Borders::LEFT));
         let right_border = u16::from(self.borders.contains(Borders::RIGHT));
         Rect {
             x: area.left() + left_border,
-            y: match position {
-                Position::Top => area.top(),
-                Position::Bottom => area.bottom() - 1,
-            },
+            y: y,
             width: area
                 .width
                 .saturating_sub(left_border)
