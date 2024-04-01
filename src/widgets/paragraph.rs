@@ -404,10 +404,7 @@ impl<'a> Styled for Paragraph<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{
-        backend::TestBackend,
-        widgets::{block::Position, Borders},
-    };
+    use crate::{backend::TestBackend, widgets::Borders};
 
     /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
     /// area and comparing the rendered and expected content.
@@ -626,8 +623,7 @@ mod test {
     #[test]
     fn test_render_paragraph_with_block_with_bottom_title_and_border() {
         let block = Block::default()
-            .title("Title")
-            .title_position(Position::Bottom)
+            .bottom_title("Title")
             .borders(Borders::BOTTOM);
         let paragraph = Paragraph::new("Hello, world!").block(block);
 

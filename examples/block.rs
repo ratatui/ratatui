@@ -28,10 +28,7 @@ use crossterm::{
 use itertools::Itertools;
 use ratatui::{
     prelude::*,
-    widgets::{
-        block::{Position, Title},
-        Block, BorderType, Borders, Padding, Paragraph, Wrap,
-    },
+    widgets::{Block, BorderType, Borders, Padding, Paragraph, Wrap},
 };
 
 // These type aliases are used to make the code more readable by reducing repetition of the generic
@@ -211,36 +208,12 @@ fn render_multiple_titles(paragraph: &Paragraph, frame: &mut Frame, area: Rect) 
 fn render_multiple_title_positions(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::new()
         .borders(Borders::ALL)
-        .title(
-            Title::from("top left")
-                .position(Position::Top)
-                .alignment(Alignment::Left),
-        )
-        .title(
-            Title::from("top center")
-                .position(Position::Top)
-                .alignment(Alignment::Center),
-        )
-        .title(
-            Title::from("top right")
-                .position(Position::Top)
-                .alignment(Alignment::Right),
-        )
-        .title(
-            Title::from("bottom left")
-                .position(Position::Bottom)
-                .alignment(Alignment::Left),
-        )
-        .title(
-            Title::from("bottom center")
-                .position(Position::Bottom)
-                .alignment(Alignment::Center),
-        )
-        .title(
-            Title::from("bottom right")
-                .position(Position::Bottom)
-                .alignment(Alignment::Right),
-        );
+        .title(Line::raw("top left").alignment(Alignment::Left))
+        .title(Line::raw("top center").alignment(Alignment::Center))
+        .title(Line::raw("top right").alignment(Alignment::Right))
+        .title(Line::raw("bottom left").alignment(Alignment::Left))
+        .title(Line::raw("bottom center").alignment(Alignment::Center))
+        .title(Line::raw("bottom right").alignment(Alignment::Right));
     frame.render_widget(paragraph.clone().block(block), area);
 }
 

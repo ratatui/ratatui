@@ -56,7 +56,7 @@ pub use padding::Padding;
 ///
 /// Block::default()
 ///     .title("Title 1")
-///     .title_(Title::from("Title 2").position(Position::Bottom));
+///     .title_(Line::raw("Title 2").position(Position::Bottom));
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
@@ -218,9 +218,9 @@ impl<'a> Block<'a> {
     ///
     /// Block::default()
     ///     .title("Title") // By default in the top left corner
-    ///     .title(Title::from("Left").alignment(Alignment::Left)) // also on the left
-    ///     .title(Title::from("Right").alignment(Alignment::Right))
-    ///     .title(Title::from("Center").alignment(Alignment::Center));
+    ///     .title(Line::raw("Left").alignment(Alignment::Left)) // also on the left
+    ///     .title(Line::raw("Right").alignment(Alignment::Right))
+    ///     .title(Line::raw("Center").alignment(Alignment::Center));
     /// // Renders
     /// // ┌Title─Left────Center─────────Right┐
     /// ```
@@ -232,7 +232,7 @@ impl<'a> Block<'a> {
     /// - [`Block::title_alignment`]
     /// - [`Block::title_position`]
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title<T>(mut self, title: T) -> Self
+    pub fn title<T>(self, title: T) -> Self
     where
         T: Into<Line<'a>>,
     {
@@ -288,7 +288,7 @@ impl<'a> Block<'a> {
     /// // └Left1─Left2───Center─────────Right┘
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn title_bottom<T: Into<Line<'a>>>(mut self, title: T) -> Self {
+    pub fn bottom_title<T: Into<Line<'a>>>(mut self, title: T) -> Self {
         self.bottom_titles.push(title.into());
         self
     }
@@ -321,7 +321,7 @@ impl<'a> Block<'a> {
     ///
     /// Block::default()
     ///     // This title won't be aligned in the center
-    ///     .title(Title::from("right").alignment(Alignment::Right))
+    ///     .title(Line::raw("right").alignment(Alignment::Right))
     ///     .title("foo")
     ///     .title("bar")
     ///     .title_alignment(Alignment::Center);
@@ -695,8 +695,8 @@ impl Block<'_> {
     /// the left side of that leftmost that is cut off. This is due to the line being truncated
     /// incorrectly. See <https://github.com/ratatui-org/ratatui/issues/932>
     #[allow(clippy::similar_names)]
-    fn render_right_titles<'a>(
-        titles: &Vec<&Line<'a>>,
+    fn render_right_titles(
+        titles: &[&Line],
         mut titles_area: Rect,
         buf: &mut Buffer,
         style: Style,
@@ -732,12 +732,7 @@ impl Block<'_> {
     /// ideal and should be fixed in the future to align the titles to the center of the block and
     /// truncate both sides of the titles if the block is too small to fit all titles.
     #[allow(clippy::similar_names)]
-    fn render_center_titles<'a>(
-        titles: &Vec<&Line<'a>>,
-        titles_area: Rect,
-        buf: &mut Buffer,
-        style: Style,
-    ) {
+    fn render_center_titles(titles: &[&Line], titles_area: Rect, buf: &mut Buffer, style: Style) {
         let total_width = titles
             .iter()
             .map(|title| title.width() as u16 + 1) // space between titles
@@ -767,12 +762,7 @@ impl Block<'_> {
 
     /// Render titles aligned to the left of the block
     #[allow(clippy::similar_names)]
-    fn render_left_titles<'a>(
-        titles: &Vec<&Line<'a>>,
-        mut titles_area: Rect,
-        buf: &mut Buffer,
-        style: Style,
-    ) {
+    fn render_left_titles(titles: &[&Line], mut titles_area: Rect, buf: &mut Buffer, style: Style) {
         for title in titles {
             if titles_area.is_empty() {
                 break;
@@ -791,12 +781,12 @@ impl Block<'_> {
         }
     }
     /// An iterator over the titles that match the position and alignment
-    fn filtered_titles<'a>(
-        &'a self,
+    fn filtered_titles(
+        &self,
         alignment: Alignment,
     ) -> (
-        impl DoubleEndedIterator<Item = &Line<'a>>,
-        impl DoubleEndedIterator<Item = &Line<'a>>,
+        impl DoubleEndedIterator<Item = &Line>,
+        impl DoubleEndedIterator<Item = &Line>,
     ) {
         (
             self.top_titles
@@ -822,7 +812,7 @@ impl Block<'_> {
         let right_border = u16::from(self.borders.contains(Borders::RIGHT));
         Rect {
             x: area.left() + left_border,
-            y: y,
+            y,
             width: area
                 .width
                 .saturating_sub(left_border)
@@ -1020,13 +1010,13 @@ mod tests {
         );
         assert_eq!(
             Block::default()
-                .title(Title::from("Test").alignment(Alignment::Center))
+                .title(Line::raw("Test").centered())
                 .inner(Rect::new(0, 0, 0, 1)),
             Rect::new(0, 1, 0, 0),
         );
         assert_eq!(
             Block::default()
-                .title(Title::from("Test").alignment(Alignment::Right))
+                .title(Line::raw("Test").right_aligned())
                 .inner(Rect::new(0, 0, 0, 1)),
             Rect::new(0, 1, 0, 0),
         );
@@ -1037,71 +1027,24 @@ mod tests {
         let test_rect = Rect::new(0, 0, 0, 2);
 
         let top_top = Block::default()
-            .title(Title::from("Test").position(Position::Top))
+            .title(Line::raw("Test"))
             .borders(Borders::TOP);
         assert_eq!(top_top.inner(test_rect), Rect::new(0, 1, 0, 1));
 
         let top_bot = Block::default()
-            .title(Title::from("Test").position(Position::Top))
+            .title(Line::raw("Test"))
             .borders(Borders::BOTTOM);
         assert_eq!(top_bot.inner(test_rect), Rect::new(0, 1, 0, 0));
 
         let bot_top = Block::default()
-            .title(Title::from("Test").position(Position::Bottom))
+            .bottom_title(Line::raw("Test"))
             .borders(Borders::TOP);
         assert_eq!(bot_top.inner(test_rect), Rect::new(0, 1, 0, 0));
 
         let bot_bot = Block::default()
-            .title(Title::from("Test").position(Position::Bottom))
+            .bottom_title(Line::raw("Test"))
             .borders(Borders::BOTTOM);
         assert_eq!(bot_bot.inner(test_rect), Rect::new(0, 0, 0, 1));
-    }
-
-    #[test]
-    fn have_title_at_position_takes_into_account_all_positioning_declarations() {
-        let block = Block::default();
-        assert!(!block.have_title_at_position(Position::Top));
-        assert!(!block.have_title_at_position(Position::Bottom));
-
-        let block = Block::default().title(Title::from("Test").position(Position::Top));
-        assert!(block.have_title_at_position(Position::Top));
-        assert!(!block.have_title_at_position(Position::Bottom));
-
-        let block = Block::default().title(Title::from("Test").position(Position::Bottom));
-        assert!(!block.have_title_at_position(Position::Top));
-        assert!(block.have_title_at_position(Position::Bottom));
-
-        let block = Block::default()
-            .title(Title::from("Test").position(Position::Top))
-            .title_position(Position::Bottom);
-        assert!(block.have_title_at_position(Position::Top));
-        assert!(!block.have_title_at_position(Position::Bottom));
-
-        let block = Block::default()
-            .title(Title::from("Test").position(Position::Bottom))
-            .title_position(Position::Top);
-        assert!(!block.have_title_at_position(Position::Top));
-        assert!(block.have_title_at_position(Position::Bottom));
-
-        let block = Block::default()
-            .title(Title::from("Test").position(Position::Top))
-            .title(Title::from("Test").position(Position::Bottom));
-        assert!(block.have_title_at_position(Position::Top));
-        assert!(block.have_title_at_position(Position::Bottom));
-
-        let block = Block::default()
-            .title(Title::from("Test").position(Position::Top))
-            .title(Title::from("Test"))
-            .title_position(Position::Bottom);
-        assert!(block.have_title_at_position(Position::Top));
-        assert!(block.have_title_at_position(Position::Bottom));
-
-        let block = Block::default()
-            .title(Title::from("Test"))
-            .title(Title::from("Test").position(Position::Bottom))
-            .title_position(Position::Top);
-        assert!(block.have_title_at_position(Position::Top));
-        assert!(block.have_title_at_position(Position::Bottom));
     }
 
     #[test]
@@ -1114,10 +1057,10 @@ mod tests {
         assert_eq!(
             Block::new(),
             Block {
-                titles: Vec::new(),
+                top_titles: Vec::new(),
+                bottom_titles: Vec::new(),
                 titles_style: Style::new(),
                 titles_alignment: Alignment::Left,
-                titles_position: Position::Top,
                 borders: Borders::NONE,
                 border_style: Style::new(),
                 border_set: BorderType::Plain.to_border_set(),
@@ -1137,7 +1080,6 @@ mod tests {
             // .border_style(_DEFAULT_STYLE)    // no longer const
             // .title_style(_DEFAULT_STYLE)     // no longer const
             .title_alignment(Alignment::Left)
-            .title_position(Position::Top)
             .borders(Borders::ALL)
             .padding(_DEFAULT_PADDING);
     }
@@ -1201,37 +1143,14 @@ mod tests {
 
     #[test]
     fn title() {
-        use Alignment::*;
-        use Position::*;
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
         Block::bordered()
-            .title(Title::from("A").position(Top).alignment(Left))
-            .title(Title::from("B").position(Top).alignment(Center))
-            .title(Title::from("C").position(Top).alignment(Right))
-            .title(Title::from("D").position(Bottom).alignment(Left))
-            .title(Title::from("E").position(Bottom).alignment(Center))
-            .title(Title::from("F").position(Bottom).alignment(Right))
-            .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┌A─────B─────C┐",
-                "│             │",
-                "└D─────E─────F┘",
-            ])
-        );
-    }
-
-    #[test]
-    fn title_top_bottom() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
-        Block::bordered()
-            .title_top(Line::raw("A").left_aligned())
-            .title_top(Line::raw("B").centered())
-            .title_top(Line::raw("C").right_aligned())
-            .title_bottom(Line::raw("D").left_aligned())
-            .title_bottom(Line::raw("E").centered())
-            .title_bottom(Line::raw("F").right_aligned())
+            .top_title(Line::raw("A").left_aligned())
+            .top_title(Line::raw("B").centered())
+            .top_title(Line::raw("C").right_aligned())
+            .bottom_title(Line::raw("D").left_aligned())
+            .bottom_title(Line::raw("E").centered())
+            .bottom_title(Line::raw("F").right_aligned())
             .render(buffer.area, &mut buffer);
         assert_buffer_eq!(
             buffer,
@@ -1270,7 +1189,7 @@ mod tests {
         for (block_title_alignment, alignment, expected) in tests {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 1));
             Block::default()
-                .title(Title::from("test").alignment(alignment))
+                .title(Line::raw("test").alignment(alignment))
                 .title_alignment(block_title_alignment)
                 .render(buffer.area, &mut buffer);
             assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
@@ -1299,8 +1218,7 @@ mod tests {
     fn title_position() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
         Block::default()
-            .title("test")
-            .title_position(Position::Bottom)
+            .bottom_title("test")
             .render(buffer.area, &mut buffer);
         assert_buffer_eq!(buffer, Buffer::with_lines(vec!["    ", "test"]));
     }
@@ -1343,7 +1261,7 @@ mod tests {
         for alignment in [Alignment::Left, Alignment::Center, Alignment::Right] {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 1));
             Block::default()
-                .title("test".yellow())
+                .title(Line::raw("test").yellow())
                 .title_style(Style::new().green().on_red())
                 .title_alignment(alignment)
                 .render(buffer.area, &mut buffer);

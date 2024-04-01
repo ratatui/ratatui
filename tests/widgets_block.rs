@@ -3,11 +3,8 @@ use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Rect},
     style::{Color, Style},
-    text::Span,
-    widgets::{
-        block::title::{Position, Title},
-        Block, Borders,
-    },
+    text::{Line, Span},
+    widgets::{Block, Borders},
     Terminal,
 };
 
@@ -55,9 +52,9 @@ fn widgets_block_titles_overlap() {
     // Left overrides the center
     test_case(
         Block::default()
-            .title(Title::from("aaaaa").alignment(Alignment::Left))
-            .title(Title::from("bbb").alignment(Alignment::Center))
-            .title(Title::from("ccc").alignment(Alignment::Right)),
+            .title(Line::raw("aaaaa").alignment(Alignment::Left))
+            .title(Line::raw("bbb").alignment(Alignment::Center))
+            .title(Line::raw("ccc").alignment(Alignment::Right)),
         Rect::new(0, 0, 10, 1),
         Buffer::with_lines(vec!["aaaaab ccc"]),
     );
@@ -65,9 +62,9 @@ fn widgets_block_titles_overlap() {
     // Left alignment overrides the center alignment which overrides the right alignment
     test_case(
         Block::default()
-            .title(Title::from("aaaaa").alignment(Alignment::Left))
-            .title(Title::from("bbbbb").alignment(Alignment::Center))
-            .title(Title::from("ccccc").alignment(Alignment::Right)),
+            .title(Line::raw("aaaaa").alignment(Alignment::Left))
+            .title(Line::raw("bbbbb").alignment(Alignment::Center))
+            .title(Line::raw("ccccc").alignment(Alignment::Right)),
         Rect::new(0, 0, 11, 1),
         Buffer::with_lines(vec!["aaaaabbbccc"]),
     );
@@ -75,10 +72,10 @@ fn widgets_block_titles_overlap() {
     // Multiple left alignment overrides the center alignment and the right alignment
     test_case(
         Block::default()
-            .title(Title::from("aaaaa").alignment(Alignment::Left))
-            .title(Title::from("aaaaa").alignment(Alignment::Left))
-            .title(Title::from("bbbbb").alignment(Alignment::Center))
-            .title(Title::from("ccccc").alignment(Alignment::Right)),
+            .title(Line::raw("aaaaa").alignment(Alignment::Left))
+            .title(Line::raw("aaaaa").alignment(Alignment::Left))
+            .title(Line::raw("bbbbb").alignment(Alignment::Center))
+            .title(Line::raw("ccccc").alignment(Alignment::Right)),
         Rect::new(0, 0, 11, 1),
         Buffer::with_lines(vec!["aaaaabaaaaa"]),
     );
@@ -86,8 +83,8 @@ fn widgets_block_titles_overlap() {
     // The right alignment doesn't override the center alignment, but pierces through it
     test_case(
         Block::default()
-            .title(Title::from("bbbbb").alignment(Alignment::Center))
-            .title(Title::from("ccccccccccc").alignment(Alignment::Right)),
+            .title(Line::raw("bbbbb").alignment(Alignment::Center))
+            .title(Line::raw("ccccccccccc").alignment(Alignment::Right)),
         Rect::new(0, 0, 11, 1),
         Buffer::with_lines(vec!["cccbbbbbccc"]),
     );
@@ -194,7 +191,11 @@ fn widgets_block_title_alignment() {
         let mut terminal = Terminal::new(backend).unwrap();
 
         let block1 = Block::default()
-            .title(Title::from(Span::styled("Title", Style::default())).alignment(alignment))
+            .title(
+                Line::default()
+                    .spans(vec![Span::styled("Title", Style::default())])
+                    .alignment(alignment),
+            )
             .borders(borders);
 
         let block2 = Block::default()
@@ -387,10 +388,10 @@ fn widgets_block_title_alignment_bottom() {
         let backend = TestBackend::new(15, 3);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let title = Title::from(Span::styled("Title", Style::default()))
-            .alignment(alignment)
-            .position(Position::Bottom);
-        let block = Block::default().title(title).borders(borders);
+        let title = Line::default()
+            .spans(vec![Span::styled("Title", Style::default())])
+            .alignment(alignment);
+        let block = Block::default().bottom_title(title).borders(borders);
         let area = Rect::new(1, 0, 13, 3);
         terminal
             .draw(|frame| frame.render_widget(block, area))
@@ -569,7 +570,7 @@ fn widgets_block_title_alignment_bottom() {
 fn widgets_block_multiple_titles() {
     #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
-    fn test_case(title_a: Title, title_b: Title, borders: Borders, expected: Buffer) {
+    fn test_case(title_a: Line, title_b: Line, borders: Borders, expected: Buffer) {
         let backend = TestBackend::new(15, 3);
         let mut terminal = Terminal::new(backend).unwrap();
 
@@ -591,8 +592,8 @@ fn widgets_block_multiple_titles() {
 
     // title bottom-left with all borders
     test_case(
-        Title::from("foo"),
-        Title::from("bar"),
+        Line::raw("foo"),
+        Line::raw("bar"),
         Borders::ALL,
         Buffer::with_lines(vec![
             " ┌foo─bar────┐ ",
@@ -603,8 +604,8 @@ fn widgets_block_multiple_titles() {
 
     // title top-left without top border
     test_case(
-        Title::from("foo"),
-        Title::from("bar"),
+        Line::raw("foo"),
+        Line::raw("bar"),
         Borders::LEFT | Borders::BOTTOM | Borders::RIGHT,
         Buffer::with_lines(vec![
             " │foo bar    │ ",
@@ -615,8 +616,8 @@ fn widgets_block_multiple_titles() {
 
     // title top-left with no left border
     test_case(
-        Title::from("foo"),
-        Title::from("bar"),
+        Line::raw("foo"),
+        Line::raw("bar"),
         Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
         Buffer::with_lines(vec![
             " foo─bar─────┐ ",
@@ -627,8 +628,8 @@ fn widgets_block_multiple_titles() {
 
     // title top-left without right border
     test_case(
-        Title::from("foo"),
-        Title::from("bar"),
+        Line::raw("foo"),
+        Line::raw("bar"),
         Borders::LEFT | Borders::TOP | Borders::BOTTOM,
         Buffer::with_lines(vec![
             " ┌foo─bar───── ",
@@ -639,8 +640,8 @@ fn widgets_block_multiple_titles() {
 
     // title top-left without borders
     test_case(
-        Title::from("foo"),
-        Title::from("bar"),
+        Line::raw("foo"),
+        Line::raw("bar"),
         Borders::NONE,
         Buffer::with_lines(vec![
             " foo bar       ",
@@ -651,8 +652,8 @@ fn widgets_block_multiple_titles() {
 
     // title center with all borders
     test_case(
-        Title::from("foo").alignment(Alignment::Center),
-        Title::from("bar").alignment(Alignment::Center),
+        Line::raw("foo").alignment(Alignment::Center),
+        Line::raw("bar").alignment(Alignment::Center),
         Borders::ALL,
         Buffer::with_lines(vec![
             " ┌──foo─bar──┐ ",
@@ -663,8 +664,8 @@ fn widgets_block_multiple_titles() {
 
     // title center without top border
     test_case(
-        Title::from("foo").alignment(Alignment::Center),
-        Title::from("bar").alignment(Alignment::Center),
+        Line::raw("foo").alignment(Alignment::Center),
+        Line::raw("bar").alignment(Alignment::Center),
         Borders::LEFT | Borders::BOTTOM | Borders::RIGHT,
         Buffer::with_lines(vec![
             " │  foo bar  │ ",
@@ -675,8 +676,8 @@ fn widgets_block_multiple_titles() {
 
     // title center with no left border
     test_case(
-        Title::from("foo").alignment(Alignment::Center),
-        Title::from("bar").alignment(Alignment::Center),
+        Line::raw("foo").alignment(Alignment::Center),
+        Line::raw("bar").alignment(Alignment::Center),
         Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
         Buffer::with_lines(vec![
             " ──foo─bar───┐ ",
@@ -687,8 +688,8 @@ fn widgets_block_multiple_titles() {
 
     // title center without right border
     test_case(
-        Title::from("foo").alignment(Alignment::Center),
-        Title::from("bar").alignment(Alignment::Center),
+        Line::raw("foo").alignment(Alignment::Center),
+        Line::raw("bar").alignment(Alignment::Center),
         Borders::LEFT | Borders::TOP | Borders::BOTTOM,
         Buffer::with_lines(vec![
             " ┌──foo─bar─── ",
@@ -699,8 +700,8 @@ fn widgets_block_multiple_titles() {
 
     // title center without borders
     test_case(
-        Title::from("foo").alignment(Alignment::Center),
-        Title::from("bar").alignment(Alignment::Center),
+        Line::raw("foo").alignment(Alignment::Center),
+        Line::raw("bar").alignment(Alignment::Center),
         Borders::NONE,
         Buffer::with_lines(vec![
             "    foo bar    ",
@@ -711,8 +712,8 @@ fn widgets_block_multiple_titles() {
 
     // title top-right with all borders
     test_case(
-        Title::from("foo").alignment(Alignment::Right),
-        Title::from("bar").alignment(Alignment::Right),
+        Line::raw("foo").alignment(Alignment::Right),
+        Line::raw("bar").alignment(Alignment::Right),
         Borders::ALL,
         Buffer::with_lines(vec![
             " ┌────foo─bar┐ ",
@@ -723,8 +724,8 @@ fn widgets_block_multiple_titles() {
 
     // title top-right without top border
     test_case(
-        Title::from("foo").alignment(Alignment::Right),
-        Title::from("bar").alignment(Alignment::Right),
+        Line::raw("foo").alignment(Alignment::Right),
+        Line::raw("bar").alignment(Alignment::Right),
         Borders::LEFT | Borders::BOTTOM | Borders::RIGHT,
         Buffer::with_lines(vec![
             " │    foo bar│ ",
@@ -735,8 +736,8 @@ fn widgets_block_multiple_titles() {
 
     // title top-right with no left border
     test_case(
-        Title::from("foo").alignment(Alignment::Right),
-        Title::from("bar").alignment(Alignment::Right),
+        Line::raw("foo").alignment(Alignment::Right),
+        Line::raw("bar").alignment(Alignment::Right),
         Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
         Buffer::with_lines(vec![
             " ─────foo─bar┐ ",
@@ -747,8 +748,8 @@ fn widgets_block_multiple_titles() {
 
     // title top-right without right border
     test_case(
-        Title::from("foo").alignment(Alignment::Right),
-        Title::from("bar").alignment(Alignment::Right),
+        Line::raw("foo").alignment(Alignment::Right),
+        Line::raw("bar").alignment(Alignment::Right),
         Borders::LEFT | Borders::TOP | Borders::BOTTOM,
         Buffer::with_lines(vec![
             " ┌─────foo─bar ",
@@ -759,8 +760,8 @@ fn widgets_block_multiple_titles() {
 
     // title top-right without borders
     test_case(
-        Title::from("foo").alignment(Alignment::Right),
-        Title::from("bar").alignment(Alignment::Right),
+        Line::raw("foo").alignment(Alignment::Right),
+        Line::raw("bar").alignment(Alignment::Right),
         Borders::NONE,
         Buffer::with_lines(vec![
             "       foo bar ",

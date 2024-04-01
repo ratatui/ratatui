@@ -3,10 +3,8 @@ use ratatui::{
     buffer::Buffer,
     layout::Rect,
     prelude::Alignment,
-    widgets::{
-        block::{Position, Title},
-        Block, Borders, Padding, Widget,
-    },
+    text::Line,
+    widgets::{Block, Borders, Padding, Widget},
 };
 
 /// Benchmark for rendering a block.
@@ -33,11 +31,7 @@ fn block(c: &mut Criterion) {
             &Block::new()
                 .borders(Borders::ALL)
                 .title("test title")
-                .title(
-                    Title::from("bottom left title")
-                        .alignment(Alignment::Right)
-                        .position(Position::Bottom),
-                )
+                .title(Line::raw("bottom left title").alignment(Alignment::Right))
                 .padding(Padding::new(5, 5, 2, 2)),
             |b, block| render(b, block, buffer_size),
         );

@@ -138,7 +138,7 @@ The following example shows how to migrate for `Line`, but the same applies for 
 
 ```diff
 - block.title("foobar").title_on_bottom();
-+ block.title(Title::from("foobar").position(Position::Bottom));
++ block.title(Line::raw("foobar").position(Position::Bottom));
 ```
 
 ### `Block` style methods cannot be used in a const context ([#720])
