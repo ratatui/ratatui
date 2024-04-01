@@ -1,20 +1,20 @@
 # Examples
 
-This folder contains unreleased code. View the [examples for the latest release
-(0.25.0)](https://github.com/ratatui-org/ratatui/tree/v0.25.0/examples) instead.
+This folder sometimes contains unreleased code. View the examples for the latest release instead.
 
 > [!WARNING]
 >
-> There are backwards incompatible changes in these examples, as they are designed to compile
+> There may be backwards incompatible changes in these examples, as they are designed to compile
 > against the `main` branch.
 >
 > There are a few workaround for this problem:
 >
 > - View the examples as they were when the latest version was release by selecting the tag that
->   matches that version. E.g. <https://github.com/ratatui-org/ratatui/tree/v0.25.0/examples>. There
->   is a combo box at the top of this page which allows you to select any previous tagged version.
-> - To view the code locally, checkout the tag using `git switch --detach v0.25.0`.
-> - Use the latest [alpha version of Ratatui]. These are released weekly on Saturdays.
+>   matches that version. E.g. <https://github.com/ratatui-org/ratatui/tree/v0.26.1/examples>.
+> - If you're viewing this file on GitHub, there is a combo box at the top of this page  which
+>   allows you to select any previous tagged version.
+> - To view the code locally, checkout the tag. E.g. `git switch --detach v0.26.1`.
+> - Use the latest [alpha version of Ratatui] in your app. These are released weekly on Saturdays.
 > - Compile your code against the main branch either locally by adding e.g. `path = "../ratatui"` to
 >   the dependency, or remotely by adding `git = "https://github.com/ratatui-org/ratatui"`
 >
