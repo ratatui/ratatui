@@ -1,6 +1,6 @@
 # Examples
 
-This folder sometimes contains unreleased code. View the examples for the latest release instead.
+This folder might use unreleased code. View the examples for the latest release instead.
 
 > [!WARNING]
 >
