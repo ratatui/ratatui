@@ -17,7 +17,7 @@ pub use padding::Padding;
 /// Base widget to be used to display a box border around all [upper level ones](crate::widgets).
 ///
 /// The borders can be configured with [`Block::borders`] and others. A block can have multiple
-/// [`Title`] using [`Block::title`]. It can also be [styled](Block::style) and
+/// titles using [`Block::title`]. It can also be [styled](Block::style) and
 /// [padded](Block::padding).
 ///
 /// You can call the title methods multiple times to add multiple titles. Each title will be
@@ -185,8 +185,8 @@ impl<'a> Block<'a> {
     /// position or alignment. When both centered and non-centered titles are rendered, the centered
     /// space is calculated based on the full width of the block, rather than the leftover width.
     ///
-    /// You can provide any type that can be converted into [`Title`] including: strings, string
-    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](crate::text::Span), or vectors of
+    /// You can provide any type that can be converted into [`Line`] including: strings, string
+    /// slices (`&str`), [spans](crate::text::Span), or vectors of
     /// [spans](crate::text::Span) (`Vec<Span>`).
     ///
     /// By default, the titles will avoid being rendered in the corners of the block but will align
@@ -230,7 +230,6 @@ impl<'a> Block<'a> {
     /// Titles attached to a block can have default behaviors. See
     /// - [`Block::title_style`]
     /// - [`Block::title_alignment`]
-    /// - [`Block::title_position`]
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title<T>(self, title: T) -> Self
     where
@@ -298,7 +297,7 @@ impl<'a> Block<'a> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// If a [`Title`] already has a style, the title's style will add on top of this one.
+    /// If a title already has a style, the title's style will add on top of this one.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.titles_style = style.into();
