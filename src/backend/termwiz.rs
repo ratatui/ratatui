@@ -111,7 +111,7 @@ impl TermwizBackend {
 }
 
 impl Backend for TermwizBackend {
-    fn draw<'a, I>(&mut self, content: I) -> Result<(), io::Error>
+    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
@@ -181,13 +181,13 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
-    fn hide_cursor(&mut self) -> Result<(), io::Error> {
+    fn hide_cursor(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .add_change(Change::CursorVisibility(CursorVisibility::Hidden));
         Ok(())
     }
 
-    fn show_cursor(&mut self) -> Result<(), io::Error> {
+    fn show_cursor(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .add_change(Change::CursorVisibility(CursorVisibility::Visible));
         Ok(())
@@ -207,18 +207,18 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
-    fn clear(&mut self) -> Result<(), io::Error> {
+    fn clear(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .add_change(Change::ClearScreen(termwiz::color::ColorAttribute::Default));
         Ok(())
     }
 
-    fn size(&self) -> Result<Rect, io::Error> {
+    fn size(&self) -> io::Result<Rect> {
         let (cols, rows) = self.buffered_terminal.dimensions();
         Ok(Rect::new(0, 0, u16_max(cols), u16_max(rows)))
     }
 
-    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+    fn window_size(&mut self) -> io::Result<WindowSize> {
         let ScreenSize {
             cols,
             rows,
@@ -241,7 +241,7 @@ impl Backend for TermwizBackend {
         })
     }
 
-    fn flush(&mut self) -> Result<(), io::Error> {
+    fn flush(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .flush()
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;

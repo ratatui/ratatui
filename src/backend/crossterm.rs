@@ -228,7 +228,7 @@ where
         Ok(Rect::new(0, 0, width, height))
     }
 
-    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+    fn window_size(&mut self) -> io::Result<WindowSize> {
         let crossterm::terminal::WindowSize {
             columns,
             rows,
