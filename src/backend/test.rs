@@ -114,7 +114,7 @@ impl Display for TestBackend {
 }
 
 impl Backend for TestBackend {
-    fn draw<'a, I>(&mut self, content: I) -> Result<(), io::Error>
+    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
@@ -125,26 +125,26 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn hide_cursor(&mut self) -> Result<(), io::Error> {
+    fn hide_cursor(&mut self) -> io::Result<()> {
         self.cursor = false;
         Ok(())
     }
 
-    fn show_cursor(&mut self) -> Result<(), io::Error> {
+    fn show_cursor(&mut self) -> io::Result<()> {
         self.cursor = true;
         Ok(())
     }
 
-    fn get_cursor(&mut self) -> Result<(u16, u16), io::Error> {
+    fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
         Ok(self.pos)
     }
 
-    fn set_cursor(&mut self, x: u16, y: u16) -> Result<(), io::Error> {
+    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
         self.pos = (x, y);
         Ok(())
     }
 
-    fn clear(&mut self) -> Result<(), io::Error> {
+    fn clear(&mut self) -> io::Result<()> {
         self.buffer.reset();
         Ok(())
     }
@@ -214,11 +214,11 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn size(&self) -> Result<Rect, io::Error> {
+    fn size(&self) -> io::Result<Rect> {
         Ok(Rect::new(0, 0, self.width, self.height))
     }
 
-    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+    fn window_size(&mut self) -> io::Result<WindowSize> {
         // Some arbitrary window pixel size, probably doesn't need much testing.
         static WINDOW_PIXEL_SIZE: Size = Size {
             width: 640,
@@ -230,7 +230,7 @@ impl Backend for TestBackend {
         })
     }
 
-    fn flush(&mut self) -> Result<(), io::Error> {
+    fn flush(&mut self) -> io::Result<()> {
         Ok(())
     }
 }
