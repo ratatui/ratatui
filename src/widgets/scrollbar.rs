@@ -472,6 +472,11 @@ impl ScrollbarState {
             }
         }
     }
+
+    /// Returns `true` if the scrollbar is at the bottom.
+    pub fn is_at_bottom(&self) -> bool {
+        self.position == self.content_length.saturating_sub(1)
+    }
 }
 
 impl<'a> StatefulWidget for Scrollbar<'a> {
