@@ -643,7 +643,7 @@ impl<'a> List<'a> {
     /// - [`HighlightSpacing::Always`] will always allocate the spacing, regardless of whether an
     ///   item is selected or not. This means that the table will never change size, regardless of
     ///   if an item is selected or not.
-    /// - [`HighlightSpacing::WhenSelected`] will only allocate the spacing if an itemis selected.
+    /// - [`HighlightSpacing::WhenSelected`] will only allocate the spacing if an item is selected.
     ///   This means that the table will shift when an item is selected. This is the default setting
     ///   for backwards compatibility, but it is recommended to use `HighlightSpacing::Always` for a
     ///   better user experience.
@@ -973,7 +973,7 @@ impl StatefulWidgetRef for List<'_> {
                 let highlight_symbol_width = self.highlight_symbol.unwrap_or("").width() as u16;
                 Rect {
                     x: row_area.x + highlight_symbol_width,
-                    width: row_area.width - highlight_symbol_width,
+                    width: row_area.width.saturating_sub(highlight_symbol_width),
                     ..row_area
                 }
             } else {
@@ -1046,7 +1046,7 @@ mod tests {
     use std::borrow::Cow;
 
     use pretty_assertions::assert_eq;
-    use rstest::rstest;
+    use rstest::{fixture, rstest};
 
     use super::*;
     use crate::{assert_buffer_eq, widgets::Borders};
@@ -2127,9 +2127,9 @@ mod tests {
         terminal.backend().assert_buffer(&expected);
     }
 
-    /// If there isnt enough room for the selected item and the requested padding the list can jump
-    /// up and down every frame if something isnt done about it. This code tests to make sure that
-    /// isnt currently happening
+    /// If there isn't enough room for the selected item and the requested padding the list can jump
+    /// up and down every frame if something isn't done about it. This code tests to make sure that
+    /// isn't currently happening
     #[test]
     fn test_padding_flicker() {
         let backend = backend::TestBackend::new(10, 5);
@@ -2233,5 +2233,31 @@ mod tests {
             "   Item 3 ",
             "          ",
         ]));
+    }
+
+    #[fixture]
+    fn single_line_buf() -> Buffer {
+        Buffer::empty(Rect::new(0, 0, 10, 1))
+    }
+
+    /// Regression test for a bug where highlight symbol being greater than width caused a panic due
+    /// to subtraction with underflow.
+    ///
+    /// See [#949](https://github.com/ratatui-org/ratatui/pull/949) for details
+    #[rstest]
+    #[case::under(">>>>", "Item1", ">>>>Item1 ")] // enough space to render the highlight symbol
+    #[case::exact(">>>>>", "Item1", ">>>>>Item1")] // exact space to render the highlight symbol
+    #[case::overflow(">>>>>>", "Item1", ">>>>>>Item")] // not enough space
+    fn highlight_symbol_overflow(
+        #[case] highlight_symbol: &str,
+        #[case] item: &str,
+        #[case] expected: &str,
+        mut single_line_buf: Buffer,
+    ) {
+        let list = List::new(vec![item]).highlight_symbol(highlight_symbol);
+        let mut state = ListState::default();
+        state.select(Some(0));
+        StatefulWidget::render(list, single_line_buf.area, &mut single_line_buf, &mut state);
+        assert_buffer_eq!(single_line_buf, Buffer::with_lines(vec![expected]));
     }
 }

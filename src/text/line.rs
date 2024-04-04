@@ -48,6 +48,7 @@ use crate::prelude::*;
 /// - [`Line::reset_style`] resets the style of the line.
 /// - [`Line::width`] returns the unicode width of the content held by this line.
 /// - [`Line::styled_graphemes`] returns an iterator over the graphemes held by this line.
+/// - [`Line::push_span`] adds a span to the line.
 ///
 /// # Compatibility Notes
 ///
@@ -451,6 +452,56 @@ impl<'a> Line<'a> {
     pub fn iter_mut(&mut self) -> std::slice::IterMut<Span<'a>> {
         self.spans.iter_mut()
     }
+
+    /// Returns a line that's truncated corresponding to it's alignment and result width
+    #[must_use = "method returns the modified value"]
+    fn truncated(&'a self, result_width: u16) -> Self {
+        let mut truncated_line = Line::default();
+        let width = self.width() as u16;
+        let mut offset = match self.alignment {
+            Some(Alignment::Center) => (width.saturating_sub(result_width)) / 2,
+            Some(Alignment::Right) => width.saturating_sub(result_width),
+            _ => 0,
+        };
+        let mut x = 0;
+        for span in &self.spans {
+            let span_width = span.width() as u16;
+            if offset >= span_width {
+                offset -= span_width;
+                continue;
+            }
+            let mut new_span = span.clone();
+            let new_span_width = span_width - offset;
+            if x + new_span_width > result_width {
+                let span_end = (result_width - x + offset) as usize;
+                new_span.content = Cow::from(&span.content[offset as usize..span_end]);
+                truncated_line.spans.push(new_span);
+                break;
+            }
+
+            new_span.content = Cow::from(&span.content[offset as usize..]);
+            truncated_line.spans.push(new_span);
+            x += new_span_width;
+            offset = 0;
+        }
+        truncated_line
+    }
+    /// Adds a span to the line.
+    ///
+    /// `span` can be any type that is convertible into a `Span`. For example, you can pass a
+    /// `&str`, a `String`, or a `Span`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut line = Line::from("Hello, ");
+    /// line.push_span(Span::raw("world!"));
+    /// line.push_span(" How are you?");
+    /// ```
+    pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T) {
+        self.spans.push(span.into());
+    }
 }
 
 impl<'a> IntoIterator for Line<'a> {
@@ -536,17 +587,23 @@ impl WidgetRef for Line<'_> {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
         let width = self.width() as u16;
-        let offset = match self.alignment {
-            Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
-            Some(Alignment::Right) => area.width.saturating_sub(width),
-            Some(Alignment::Left) | None => 0,
+        let mut x = area.left();
+        let line = if width > area.width {
+            self.truncated(area.width)
+        } else {
+            let offset = match self.alignment {
+                Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
+                Some(Alignment::Right) => area.width.saturating_sub(width),
+                Some(Alignment::Left) | None => 0,
+            };
+            x = x.saturating_add(offset);
+            self.to_owned()
         };
-        let mut x = area.left().saturating_add(offset);
-        for span in &self.spans {
+        for span in &line.spans {
             let span_width = span.width() as u16;
             let span_area = Rect {
                 x,
-                width: span_width.min(area.right() - x),
+                width: span_width.min(area.right().saturating_sub(x)),
                 ..area
             };
             span.render(span_area, buf);
@@ -586,6 +643,12 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::assert_buffer_eq;
+
+    #[fixture]
+    fn small_buf() -> Buffer {
+        Buffer::empty(Rect::new(0, 0, 10, 1))
+    }
 
     #[test]
     fn raw_str() {
@@ -824,6 +887,82 @@ mod tests {
 
         assert_eq!(format!("{line_from_styled_span}"), "Hello, world!");
     }
+    #[test]
+    fn render_truncates_left() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+        Line::from("Hello world")
+            .left_aligned()
+            .render(buf.area, &mut buf);
+        let expected = Buffer::with_lines(vec!["Hello"]);
+        assert_buffer_eq!(buf, expected);
+    }
+
+    #[test]
+    fn render_truncates_right() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+        Line::from("Hello world")
+            .right_aligned()
+            .render(buf.area, &mut buf);
+        let expected = Buffer::with_lines(vec!["world"]);
+        assert_buffer_eq!(buf, expected);
+    }
+
+    #[test]
+    fn render_truncates_center() {
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+        Line::from("Hello world")
+            .centered()
+            .render(buf.area, &mut buf);
+        let expected = Buffer::with_lines(vec!["lo wo"]);
+        assert_buffer_eq!(buf, expected);
+    }
+
+    #[test]
+    fn truncate_line_with_multiple_spans() {
+        let line = Line::default().spans(vec!["foo", "bar"]);
+        assert_eq!(
+            line.right_aligned().truncated(4).to_string(),
+            String::from("obar")
+        );
+    }
+
+    #[test]
+    fn truncation_ignores_useless_spans() {
+        let line = Line::default().spans(vec!["foo", "bar"]);
+        assert_eq!(
+            line.right_aligned().truncated(3),
+            Line::default().spans(vec!["bar"])
+        );
+    }
+
+    #[test]
+    fn left_aligned() {
+        let line = Line::from("Hello, world!").left_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let line = Line::from("Hello, world!").centered();
+        assert_eq!(line.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let line = Line::from("Hello, world!").right_aligned();
+        assert_eq!(line.alignment, Some(Alignment::Right));
+    }
+
+    #[test]
+    pub fn push_span() {
+        let mut line = Line::from("A");
+        line.push_span(Span::raw("B"));
+        line.push_span("C");
+        assert_eq!(
+            line.spans,
+            vec![Span::raw("A"), Span::raw("B"), Span::raw("C")]
+        );
+    }
 
     mod widget {
         use super::*;
@@ -832,6 +971,7 @@ mod tests {
         const GREEN: Style = Style::new().fg(Color::Green);
         const ITALIC: Style = Style::new().add_modifier(Modifier::ITALIC);
 
+        #[fixture]
         fn hello_world() -> Line<'static> {
             Line::from(vec![
                 Span::styled("Hello ", BLUE),
@@ -849,6 +989,13 @@ mod tests {
             expected.set_style(Rect::new(0, 0, 6, 1), BLUE);
             expected.set_style(Rect::new(6, 0, 6, 1), GREEN);
             assert_buffer_eq!(buf, expected);
+        }
+
+        #[rstest]
+        fn render_out_of_bounds(hello_world: Line<'static>, mut small_buf: Buffer) {
+            let out_of_bounds = Rect::new(20, 20, 10, 1);
+            hello_world.render(out_of_bounds, &mut small_buf);
+            assert_buffer_eq!(small_buf, Buffer::empty(small_buf.area));
         }
 
         #[test]
@@ -893,24 +1040,6 @@ mod tests {
             expected.set_style(Rect::new(9, 0, 6, 1), GREEN);
             assert_buffer_eq!(buf, expected);
         }
-    }
-
-    #[test]
-    fn left_aligned() {
-        let line = Line::from("Hello, world!").left_aligned();
-        assert_eq!(line.alignment, Some(Alignment::Left));
-    }
-
-    #[test]
-    fn centered() {
-        let line = Line::from("Hello, world!").centered();
-        assert_eq!(line.alignment, Some(Alignment::Center));
-    }
-
-    #[test]
-    fn right_aligned() {
-        let line = Line::from("Hello, world!").right_aligned();
-        assert_eq!(line.alignment, Some(Alignment::Right));
     }
 
     mod iterators {
