@@ -56,7 +56,7 @@ pub use padding::Padding;
 ///
 /// Block::default()
 ///     .title("Title 1")
-///     .title_(Line::raw("Title 2").position(Position::Bottom));
+///     .bottom_title(Line::raw("Title 2"));
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
@@ -249,10 +249,10 @@ impl<'a> Block<'a> {
     /// ```
     /// # use ratatui::{ prelude::*, widgets::* };
     /// Block::bordered()
-    ///     .title_top("Left1") // By default in the top left corner
-    ///     .title_top(Line::from("Left2").left_aligned())
-    ///     .title_top(Line::from("Right").right_aligned())
-    ///     .title_top(Line::from("Center").centered());
+    ///     .top_title("Left1") // By default in the top left corner
+    ///     .top_title(Line::from("Left2").left_aligned())
+    ///     .top_title(Line::from("Right").right_aligned())
+    ///     .top_title(Line::from("Center").centered());
     ///
     /// // Renders
     /// // ┌Left1─Left2───Center─────────Right┐
@@ -276,10 +276,10 @@ impl<'a> Block<'a> {
     /// ```
     /// # use ratatui::{ prelude::*, widgets::* };
     /// Block::bordered()
-    ///     .title_bottom("Left1") // By default in the top left corner
-    ///     .title_bottom(Line::from("Left2").left_aligned())
-    ///     .title_bottom(Line::from("Right").right_aligned())
-    ///     .title_bottom(Line::from("Center").centered());
+    ///     .bottom_title("Left1") // By default in the top left corner
+    ///     .bottom_title(Line::from("Left2").left_aligned())
+    ///     .bottom_title(Line::from("Right").right_aligned())
+    ///     .bottom_title(Line::from("Center").centered());
     ///
     /// // Renders
     /// // ┌──────────────────────────────────┐
@@ -580,38 +580,20 @@ impl Block<'_> {
 
     fn render_titles(&self, area: Rect, buf: &mut Buffer) {
         let title_areas = self.title_areas(area);
+        buf.set_style(title_areas.0, self.titles_style);
+        buf.set_style(title_areas.0, self.titles_style);
 
         let right_titles = self.filtered_titles(Alignment::Right);
-        Self::render_right_titles(
-            &right_titles.0.collect_vec(),
-            title_areas.0,
-            buf,
-            self.style,
-        );
-        Self::render_right_titles(
-            &right_titles.1.collect_vec(),
-            title_areas.1,
-            buf,
-            self.style,
-        );
+        Self::render_right_titles(&right_titles.0.collect_vec(), title_areas.0, buf);
+        Self::render_right_titles(&right_titles.1.collect_vec(), title_areas.1, buf);
 
         let center_titles = self.filtered_titles(Alignment::Center);
-        Self::render_center_titles(
-            &center_titles.0.collect_vec(),
-            title_areas.0,
-            buf,
-            self.style,
-        );
-        Self::render_center_titles(
-            &center_titles.1.collect_vec(),
-            title_areas.1,
-            buf,
-            self.style,
-        );
+        Self::render_center_titles(&center_titles.0.collect_vec(), title_areas.0, buf);
+        Self::render_center_titles(&center_titles.1.collect_vec(), title_areas.1, buf);
 
         let left_titles = self.filtered_titles(Alignment::Left);
-        Self::render_left_titles(&left_titles.0.collect_vec(), title_areas.0, buf, self.style);
-        Self::render_left_titles(&left_titles.1.collect_vec(), title_areas.1, buf, self.style);
+        Self::render_left_titles(&left_titles.0.collect_vec(), title_areas.0, buf);
+        Self::render_left_titles(&left_titles.1.collect_vec(), title_areas.1, buf);
     }
     fn render_left_side(&self, area: Rect, buf: &mut Buffer) {
         if self.borders.contains(Borders::LEFT) {
@@ -694,12 +676,7 @@ impl Block<'_> {
     /// the left side of that leftmost that is cut off. This is due to the line being truncated
     /// incorrectly. See <https://github.com/ratatui-org/ratatui/issues/932>
     #[allow(clippy::similar_names)]
-    fn render_right_titles(
-        titles: &[&Line],
-        mut titles_area: Rect,
-        buf: &mut Buffer,
-        style: Style,
-    ) {
+    fn render_right_titles(titles: &[&Line], mut titles_area: Rect, buf: &mut Buffer) {
         // render titles in reverse order to align them to the right
         for title in titles.iter().rev() {
             if titles_area.is_empty() {
@@ -714,7 +691,6 @@ impl Block<'_> {
                 width: title_width.min(titles_area.width),
                 ..titles_area
             };
-            buf.set_style(title_area, style);
             title.render_ref(title_area, buf);
 
             // bump the width of the titles area to the left
@@ -731,7 +707,7 @@ impl Block<'_> {
     /// ideal and should be fixed in the future to align the titles to the center of the block and
     /// truncate both sides of the titles if the block is too small to fit all titles.
     #[allow(clippy::similar_names)]
-    fn render_center_titles(titles: &[&Line], titles_area: Rect, buf: &mut Buffer, style: Style) {
+    fn render_center_titles(titles: &[&Line], titles_area: Rect, buf: &mut Buffer) {
         let total_width = titles
             .iter()
             .map(|title| title.width() as u16 + 1) // space between titles
@@ -750,7 +726,6 @@ impl Block<'_> {
                 width: title_width.min(titles_area.width),
                 ..titles_area
             };
-            buf.set_style(title_area, style);
             title.render_ref(title_area, buf);
 
             // bump the titles area to the right and reduce its width
@@ -761,7 +736,7 @@ impl Block<'_> {
 
     /// Render titles aligned to the left of the block
     #[allow(clippy::similar_names)]
-    fn render_left_titles(titles: &[&Line], mut titles_area: Rect, buf: &mut Buffer, style: Style) {
+    fn render_left_titles(titles: &[&Line], mut titles_area: Rect, buf: &mut Buffer) {
         for title in titles {
             if titles_area.is_empty() {
                 break;
@@ -771,7 +746,6 @@ impl Block<'_> {
                 width: title_width.min(titles_area.width),
                 ..titles_area
             };
-            buf.set_style(title_area, style);
             title.render_ref(title_area, buf);
 
             // bump the titles area to the right and reduce its width
@@ -1249,7 +1223,7 @@ mod tests {
                 .render(buffer.area, &mut buffer);
 
             let mut expected_buffer = Buffer::with_lines(vec!["test"]);
-            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow());
+            expected_buffer.set_style(buffer.area, Style::new().yellow());
 
             assert_buffer_eq!(buffer, expected_buffer);
         }
