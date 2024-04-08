@@ -39,7 +39,7 @@ unicode-segmentation = "1.10"
 unicode-width = "0.1"
 document-features = { version = "0.2.7", optional = true }
 lru = "0.12.0"
-stability = "0.1.1"
+stability = "0.2.0"
 compact_str = "0.7.1"
 
 [dev-dependencies]
