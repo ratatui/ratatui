@@ -56,14 +56,14 @@ This is a quick summary of the sections below:
 [#1012]: https://github.com/ratatui-org/ratatui/pull/1012
 
 Previously, a `Block` would have a `titles: Vec<Title>` struct. 
-However, `Title` is just a unnecessary wrapper around `Line`, adding boilerplate to the code,
-so it uses `Line` instead. Also, `Block` has now a separate fields and setters for `top_titles` and `bottom_titles`,
+However, `Title` is just an unnecessary wrapper around `Line`, adding boilerplate to the code,
+so it uses `Line` instead. Also, `Block` now has separate fields and setters for `top_titles` and `bottom_titles`,
 removing the  need for `Position`. `title_position` field is removed completely
 ```diff
-- Block::default().title(Title::from("foobar").aligment(Aligment::Right))
+- Block::default().title(Title::from("foobar").alignment(Alignment::Right))
 //becomes
 + Block::default().title(Line::from("foobar").right_aligned())
-- Block::default().title_bottom(Title::from("foobar").aligment(Aligment::Right))
+- Block::default().title_bottom(Title::from("foobar").alignment(Alignment::Right))
 //becomes
 + Block::default().bottom_title(Line::from("foobar").right_aligned())  
 ```
