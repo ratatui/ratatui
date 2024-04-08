@@ -9,7 +9,9 @@ GitHub with a [breaking change] label.
 ## Summary
 
 This is a quick summary of the sections below:
-
+- [v0.27.0](#v0270)
+  - Removed `Title`, and `Position`
+  - `Block` now uses `Line` for titles and has separate fields and setters for top and bottom titles 
 - [v0.26.0](#v0260)
   - `Flex::Start` is the new default flex mode for `Layout`
   - `patch_style` & `reset_style` now consume and return `Self`
@@ -47,6 +49,25 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
+## [v0.27.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.27.0)
+
+### Removed `Title` and `Position` ([#1012])
+
+[#1012]: https://github.com/ratatui-org/ratatui/pull/1012
+
+Previously, a `Block` would have a `titles: Vec<Title>` struct. 
+However, `Title` is just a unnecessary wrapper around `Line`, adding boilerplate to the code,
+so it uses `Line` instead. Also, `Block` has now a separate fields and setters for `top_titles` and `bottom_titles`,
+removing the  need for `Position`. `title_position` field is removed completely
+```diff
+- Block::default().title(Title::from("foobar").aligment(Aligment::Right))
+//becomes
++ Block::default().title(Line::from("foobar").right_aligned())
+- Block::default().title_bottom(Title::from("foobar").aligment(Aligment::Right))
+//becomes
++ Block::default().bottom_title(Line::from("foobar").right_aligned())  
+```
+   
 ## [v0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0)
 
 ### `Flex::Start` is the new default flex mode for `Layout` ([#881])
@@ -138,7 +159,7 @@ The following example shows how to migrate for `Line`, but the same applies for 
 
 ```diff
 - block.title("foobar").title_on_bottom();
-+ block.title(Line::raw("foobar").position(Position::Bottom));
++ block.title(Title::from("foobar").position(Position::Bottom));
 ```
 
 ### `Block` style methods cannot be used in a const context ([#720])
