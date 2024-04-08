@@ -99,7 +99,7 @@ fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
 #[test]
 fn widgets_paragraph_can_scroll_horizontally() {
     let text =
-        Text::from("段落现在可以水平滚动了！\nParagraph can scroll horizontally!\nShort line");
+        Text::from("段落现在可以水平滚动了！\nParagraph can scroll horizontally!\nLittle line");
     let paragraph = Paragraph::new(text).block(Block::default().borders(Borders::ALL));
 
     test_case(
@@ -108,7 +108,7 @@ fn widgets_paragraph_can_scroll_horizontally() {
             "┌──────────────────┐",
             "│在可以水平滚动了！│",
             "│ph can scroll hori│",
-            "│ine               │",
+            "│line              │",
             "│                  │",
             "│                  │",
             "│                  │",
@@ -124,7 +124,7 @@ fn widgets_paragraph_can_scroll_horizontally() {
             "┌──────────────────┐",
             "│段落现在可以水平滚│",
             "│Paragraph can scro│",
-            "│        Short line│",
+            "│       Little line│",
             "│                  │",
             "│                  │",
             "│                  │",
