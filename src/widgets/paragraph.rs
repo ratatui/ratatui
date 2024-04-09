@@ -256,6 +256,8 @@ impl<'a> Paragraph<'a> {
     /// need in order to be fully rendered. For paragraphs that do not use wrapping, this count is
     /// simply the number of lines present in the paragraph.
     ///
+    /// Note: The design for text wrapping is not stable and might affect this API.
+    ///
     /// # Example
     ///
     /// ```ignore
@@ -267,7 +269,6 @@ impl<'a> Paragraph<'a> {
     /// ```
     #[stability::unstable(
         feature = "rendered-line-info",
-        reason = "The design for text wrapping is not stable and might affect this API.",
         issue = "https://github.com/ratatui-org/ratatui/issues/293"
     )]
     pub fn line_count(&self, width: u16) -> usize {
@@ -297,6 +298,8 @@ impl<'a> Paragraph<'a> {
 
     /// Calculates the shortest line width needed to avoid any word being wrapped or truncated.
     ///
+    /// Note: The design for text wrapping is not stable and might affect this API.
+    ///
     /// # Example
     ///
     /// ```ignore
@@ -309,7 +312,6 @@ impl<'a> Paragraph<'a> {
     /// ```
     #[stability::unstable(
         feature = "rendered-line-info",
-        reason = "The design for text wrapping is not stable and might affect this API.",
         issue = "https://github.com/ratatui-org/ratatui/issues/293"
     )]
     pub fn line_width(&self) -> usize {
