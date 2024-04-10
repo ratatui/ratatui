@@ -20,7 +20,7 @@ description to help the reviewer (follow the provided template). Make sure to hi
 which may need additional attention or you are uncertain about. Any idea with a large scale impact
 on the crate or its users should ideally be discussed in a "Feature Request" issue beforehand.
 
-### Keep PRs small, intentional and focused
+### Keep PRs small, intentional, and focused
 
 Try to do one pull request per change. The time taken to review a PR grows exponential with the size
 of the change. Small focused PRs will generally be much more faster to review. PRs that include both
@@ -171,7 +171,7 @@ time to update. However, if a deprecation is blocking for us to implement a new 
 
 ### Use of unsafe for optimization purposes
 
-We don't currently use any unsafe code in Ratatui, and would like to keep it that way. However there
+We don't currently use any unsafe code in Ratatui, and would like to keep it that way. However, there
 may be specific cases that this becomes necessary in order to avoid slowness. Please see [this
 discussion](https://github.com/ratatui-org/ratatui/discussions/66) for more about the decision.
 
@@ -193,10 +193,10 @@ This project was forked from [`tui-rs`](https://github.com/fdehau/tui-rs/) in Fe
 [blessing of the original author](https://github.com/fdehau/tui-rs/issues/654), Florian Dehau
 ([@fdehau](https://github.com/fdehau)).
 
-The original repository contains all the issues, PRs and discussion that were raised originally, and
+The original repository contains all the issues, PRs, and discussion that were raised originally, and
 it is useful to refer to when contributing code, documentation, or issues with Ratatui.
 
-We imported all the PRs from the original repository and implemented many of the smaller ones and
+We imported all the PRs from the original repository, implemented many of the smaller ones, and
 made notes on the leftovers. These are marked as draft PRs and labelled as [imported from
 tui](https://github.com/ratatui-org/ratatui/pulls?q=is%3Apr+is%3Aopen+label%3A%22imported+from+tui%22).
 We have documented the current state of those PRs, and anyone is welcome to pick them up and
