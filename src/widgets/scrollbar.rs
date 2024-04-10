@@ -455,20 +455,17 @@ impl ScrollbarState {
     pub fn first(&mut self) {
         self.position = 0;
     }
-    
+
     /// Returns true if the scroll position is at (or above) the start of the scrollable content.
-    pub fn is_at_start(&self) -> bool {
-        self.position <= 0
+    #[must_use = "returns whether the scroll position is at the start"]
+    pub const fn is_at_start(&self) -> bool {
+        self.position == 0
     }
 
     /// Returns true if the scroll position is at (or below) the end of the scrollable content.
-    pub fn is_at_end(&self) -> bool {
+    #[must_use = "returns whether the scroll position is at the end"]
+    pub const fn is_at_end(&self) -> bool {
         self.position + self.viewport_content_length >= self.content_length.saturating_sub(1)
-    }
-
-    /// Returns the current scroll position.
-    pub const fn get_position(&self) -> usize {
-        self.position
     }
 
     /// Changes the scroll position based on the provided [`ScrollDirection`].
