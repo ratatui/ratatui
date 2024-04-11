@@ -153,6 +153,43 @@ impl serde::Serialize for Color {
 
 #[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for Color {
+    /// This is used to deserialize a value into Color via serde.
+    ///
+    /// This implementation uses the `FromStr` trait to deserialize strings, so named colours, RGB,
+    /// and indexed values are able to be deserialized. In addition, values that were produced by
+    /// the the older serialization implementation of Color are also able to be deserialized.
+    ///
+    /// See the [`Color`] documentation for more information on color names.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::prelude::*;
+    ///
+    /// #[derive(serde::Deserialize)]
+    /// struct Theme {
+    ///     color: Color,
+    /// }
+    ///
+    /// let theme: Theme = serde_json::from_str::<Theme>("{\"color\": \"bright-white\"}").unwrap();
+    /// assert_eq!(theme.color, Color::White);
+    ///
+    /// let theme: Theme = serde_json::from_str::<Theme>("{\"color\": \"#00FF00\"}").unwrap();
+    /// assert_eq!(theme.color, Color::Rgb(0, 255, 0));
+    ///
+    /// let theme: Theme = serde_json::from_str::<Theme>("{\"color\": \"42\"}").unwrap();
+    /// assert_eq!(theme.color, Color::Indexed(42));
+    ///
+    /// let theme: Result<Theme, _> = serde_json::from_str::<Theme>("{\"color\": \"invalid\"}");
+    /// assert!(theme.is_err());
+    ///
+    /// // Deserializing from the previous serialization implementation
+    /// let theme: Theme = serde_json::from_str::<Theme>("{\"color\": {\"Rgb\":[255,0,255]}}").unwrap();
+    /// assert_eq!(theme.color, Color::Rgb(255, 0, 255));
+    ///
+    /// let theme: Theme = serde_json::from_str::<Theme>("{\"color\": {\"Indexed\":10}}").unwrap();
+    /// assert_eq!(theme.color, Color::Indexed(10));
+    /// ```
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -183,7 +220,7 @@ impl<'de> serde::Deserialize<'de> for Color {
         match multi_type {
             Helper::String(s) => FromStr::from_str(&s).map_err(serde::de::Error::custom),
             Helper::ColorWrapper(color_wrapper) => match color_wrapper {
-                ColorWrapper::Rgb(r, g, b) => Ok(Self::Rgb(r, g, b)),
+                ColorWrapper::Rgb(red, green, blue) => Ok(Self::Rgb(red, green, blue)),
                 ColorWrapper::Indexed(index) => Ok(Self::Indexed(index)),
             },
         }
