@@ -329,7 +329,7 @@ Running this example produces the following output:
 [GitHub Sponsors]: https://github.com/sponsors/ratatui-org
 [Crate Badge]: https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square&color=F05B50&logoColor=F05B50&labelColor=102040
 [License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square&color=1370D3&labelColor=102040
-[CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github&color=4B8C0F&labelColor=102040
+[CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github&labelColor=102040
 [CI Workflow]: https://github.com/ratatui-org/ratatui/actions/workflows/ci.yml
 [Codecov Badge]:
     https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST&color=C43AC3&labelColor=102040&logoColor=C43AC3
@@ -339,7 +339,7 @@ Running this example produces the following output:
 [Discord Badge]:
     https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square&color=1370D3&logoColor=1370D3&labelColor=102040
 [Discord Server]: https://discord.gg/pMCEU9hNEj
-[Docs Badge]: https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square&color=F05B50&logoColor=F05B50&labelColor=102040
+[Docs Badge]: https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square&logoColor=F05B50&labelColor=102040
 [Matrix Badge]:
     https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix&color=4B8C0F&labelColor=102040
 [Matrix]: https://matrix.to/#/#ratatui:matrix.org
