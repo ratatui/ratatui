@@ -159,6 +159,11 @@ impl<'de> serde::Deserialize<'de> for Color {
     /// and indexed values are able to be deserialized. In addition, values that were produced by
     /// the the older serialization implementation of Color are also able to be deserialized.
     ///
+    /// Prior to v0.26.0, Ratatui would be serialized using a map for indexed and RGB values, for
+    /// examples in json `{"Indexed": 10}` and `{"Rgb": [255, 0, 255]}` respectively. Now they are
+    /// serialized using the string representation of the index and the RGB hex value, for example
+    /// in json it would now be `"10"` and `"#FF00FF"` respectively.
+    ///
     /// See the [`Color`] documentation for more information on color names.
     ///
     /// # Examples
@@ -171,24 +176,27 @@ impl<'de> serde::Deserialize<'de> for Color {
     ///     color: Color,
     /// }
     ///
-    /// let theme: Theme = serde_json::from_str::<Theme>("{\"color\": \"bright-white\"}").unwrap();
+    /// # fn get_theme() -> Result<(), serde_json::Error> {
+    /// let theme: Theme = serde_json::from_str(r#"{"color": "bright-white"}"#)?;
     /// assert_eq!(theme.color, Color::White);
     ///
-    /// let theme: Theme = serde_json::from_str::<Theme>("{\"color\": \"#00FF00\"}").unwrap();
+    /// let theme: Theme = serde_json::from_str(r###"{"color": "#00FF00"}"###)?;
     /// assert_eq!(theme.color, Color::Rgb(0, 255, 0));
     ///
-    /// let theme: Theme = serde_json::from_str::<Theme>("{\"color\": \"42\"}").unwrap();
+    /// let theme: Theme = serde_json::from_str(r#"{"color": "42"}"#)?;
     /// assert_eq!(theme.color, Color::Indexed(42));
     ///
-    /// let theme: Result<Theme, _> = serde_json::from_str::<Theme>("{\"color\": \"invalid\"}");
+    /// let theme: Result<Theme, _> = serde_json::from_str(r#"{"color": "invalid"}"#);
     /// assert!(theme.is_err());
     ///
     /// // Deserializing from the previous serialization implementation
-    /// let theme: Theme = serde_json::from_str::<Theme>("{\"color\": {\"Rgb\":[255,0,255]}}").unwrap();
+    /// let theme: Theme = serde_json::from_str(r#"{"color": {"Rgb":[255,0,255]}}"#)?;
     /// assert_eq!(theme.color, Color::Rgb(255, 0, 255));
     ///
-    /// let theme: Theme = serde_json::from_str::<Theme>("{\"color\": {\"Indexed\":10}}").unwrap();
+    /// let theme: Theme = serde_json::from_str(r#"{"color": {"Indexed":10}}"#)?;
     /// assert_eq!(theme.color, Color::Indexed(10));
+    /// # Ok(())
+    /// # }
     /// ```
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -210,16 +218,16 @@ impl<'de> serde::Deserialize<'de> for Color {
 
         #[derive(serde::Deserialize)]
         #[serde(untagged)]
-        enum Helper {
-            String(String),
-            ColorWrapper(ColorWrapper),
+        enum ColorFormat {
+            V2(String),
+            V1(ColorWrapper),
         }
 
-        let multi_type = Helper::deserialize(deserializer)
+        let multi_type = ColorFormat::deserialize(deserializer)
             .map_err(|err| serde::de::Error::custom(format!("Failed to parse Colors: {err}")))?;
         match multi_type {
-            Helper::String(s) => FromStr::from_str(&s).map_err(serde::de::Error::custom),
-            Helper::ColorWrapper(color_wrapper) => match color_wrapper {
+            ColorFormat::V2(s) => FromStr::from_str(&s).map_err(serde::de::Error::custom),
+            ColorFormat::V1(color_wrapper) => match color_wrapper {
                 ColorWrapper::Rgb(red, green, blue) => Ok(Self::Rgb(red, green, blue)),
                 ColorWrapper::Indexed(index) => Ok(Self::Indexed(index)),
             },
@@ -659,17 +667,17 @@ mod tests {
     #[test]
     fn serialize_then_deserialize() -> Result<(), serde_json::Error> {
         let json_rgb = serde_json::to_string(&Color::Rgb(255, 0, 255))?;
-        assert_eq!(json_rgb, "\"#FF00FF\"");
+        assert_eq!(json_rgb, r#""#FF00FF""#);
         assert_eq!(
             serde_json::from_str::<Color>(&json_rgb)?,
             Color::Rgb(255, 0, 255)
         );
 
         let json_white = serde_json::to_string(&Color::White)?;
-        assert_eq!(json_white, "\"White\"");
+        assert_eq!(json_white, r#""White""#);
 
         let json_indexed = serde_json::to_string(&Color::Indexed(10))?;
-        assert_eq!(json_indexed, "\"10\"");
+        assert_eq!(json_indexed, r#""10""#);
         assert_eq!(
             serde_json::from_str::<Color>(&json_indexed)?,
             Color::Indexed(10)
@@ -684,11 +692,11 @@ mod tests {
         assert_eq!(Color::White, serde_json::from_str::<Color>("\"White\"")?);
         assert_eq!(
             Color::Rgb(255, 0, 255),
-            serde_json::from_str::<Color>("{\"Rgb\":[255,0,255]}")?
+            serde_json::from_str::<Color>(r#"{"Rgb":[255,0,255]}"#)?
         );
         assert_eq!(
             Color::Indexed(10),
-            serde_json::from_str::<Color>("{\"Indexed\":10}")?
+            serde_json::from_str::<Color>(r#"{"Indexed":10}"#)?
         );
         Ok(())
     }
