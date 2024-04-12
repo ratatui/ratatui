@@ -171,7 +171,7 @@ impl<'de> serde::Deserialize<'de> for Color {
     /// ```
     /// use ratatui::prelude::*;
     ///
-    /// #[derive(serde::Deserialize)]
+    /// #[derive(Debug, serde::Deserialize)]
     /// struct Theme {
     ///     color: Color,
     /// }
@@ -180,14 +180,18 @@ impl<'de> serde::Deserialize<'de> for Color {
     /// let theme: Theme = serde_json::from_str(r#"{"color": "bright-white"}"#)?;
     /// assert_eq!(theme.color, Color::White);
     ///
-    /// let theme: Theme = serde_json::from_str(r###"{"color": "#00FF00"}"###)?;
+    /// let theme: Theme = serde_json::from_str(r##"{"color": "#00FF00"}"##)?;
     /// assert_eq!(theme.color, Color::Rgb(0, 255, 0));
     ///
     /// let theme: Theme = serde_json::from_str(r#"{"color": "42"}"#)?;
     /// assert_eq!(theme.color, Color::Indexed(42));
     ///
-    /// let theme: Result<Theme, _> = serde_json::from_str(r#"{"color": "invalid"}"#);
-    /// assert!(theme.is_err());
+    /// let err = serde_json::from_str::<Theme>(r#"{"color": "invalid"}"#).unwrap_err();
+    /// assert!(err.is_data());
+    /// assert_eq!(
+    ///     err.to_string(),
+    ///     "Failed to parse Colors at line 1 column 20"
+    /// );
     ///
     /// // Deserializing from the previous serialization implementation
     /// let theme: Theme = serde_json::from_str(r#"{"color": {"Rgb":[255,0,255]}}"#)?;
@@ -667,7 +671,7 @@ mod tests {
     #[test]
     fn serialize_then_deserialize() -> Result<(), serde_json::Error> {
         let json_rgb = serde_json::to_string(&Color::Rgb(255, 0, 255))?;
-        assert_eq!(json_rgb, r#""#FF00FF""#);
+        assert_eq!(json_rgb, r##""#FF00FF""##);
         assert_eq!(
             serde_json::from_str::<Color>(&json_rgb)?,
             Color::Rgb(255, 0, 255)
