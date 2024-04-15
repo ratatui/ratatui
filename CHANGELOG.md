@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.26.2](https://github.com/ratatui-org/ratatui/releases/tag/0.26.2) - 2024-04-15
+## [0.26.2](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.2) - 2024-04-15
 
 This is a patch release that fixes bugs and adds enhancements, including new iterator constructors, List scroll padding, and various rendering improvements. ✨
 
@@ -452,7 +452,7 @@ compilation.
 
 **Full Changelog**: https://github.com/ratatui-org/ratatui/compare/v0.26.1...0.26.2
 
-## [0.26.1](https://github.com/ratatui-org/ratatui/releases/tag/0.26.1) - 2024-02-12
+## [0.26.1](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.1) - 2024-02-12
 
 This is a patch release that fixes bugs and adds enhancements, including new iterators, title options for blocks, and various rendering improvements. ✨
 
@@ -611,7 +611,7 @@ Here is the list of contributors who have contributed to `ratatui` for the first
 * @mo8it
 * @m4rch3n1ng
 
-## [0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/0.26.0) - 2024-02-02
+## [0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0) - 2024-02-02
 
 We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭
 
@@ -2268,7 +2268,7 @@ Shout out to our new sponsors!
 * @atuinsh
 * @JeftavanderHorst!
 
-## [0.25.0](https://github.com/ratatui-org/ratatui/releases/tag/0.25.0) - 2023-12-18
+## [0.25.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.25.0) - 2023-12-18
 
 We are thrilled to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭
 
@@ -2753,7 +2753,7 @@ Here is the list of contributors who have contributed to `ratatui` for the first
 * @YeungKC
 * @lyuha
 
-## [0.24.0](https://github.com/ratatui-org/ratatui/releases/tag/0.24.0) - 2023-10-23
+## [0.24.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.24.0) - 2023-10-23
 
 We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭
 
