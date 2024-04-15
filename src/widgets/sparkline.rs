@@ -24,7 +24,7 @@ use crate::{prelude::*, widgets::Block};
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// Sparkline::default()
-///     .block(Block::default().title("Sparkline").borders(Borders::ALL))
+///     .block(Block::bordered().title("Sparkline"))
 ///     .data(&[0, 2, 3, 4, 1, 4, 10])
 ///     .max(5)
 ///     .direction(RenderDirection::RightToLeft)

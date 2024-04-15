@@ -8,7 +8,7 @@ use crate::{
     prelude::*,
     widgets::{
         canvas::{Canvas, Line as CanvasLine, Points},
-        Block, Borders,
+        Block,
     },
 };
 
@@ -1050,9 +1050,7 @@ impl WidgetRef for Chart<'_> {
 
         if let Some(legend_area) = layout.legend_area {
             buf.set_style(legend_area, original_style);
-            Block::default()
-                .borders(Borders::ALL)
-                .render(legend_area, buf);
+            Block::bordered().render(legend_area, buf);
 
             for (i, (dataset_name, dataset_style)) in self
                 .datasets

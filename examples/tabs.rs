@@ -205,8 +205,7 @@ impl SelectedTab {
 
     /// A block surrounding the tab's content
     fn block(self) -> Block<'static> {
-        Block::default()
-            .borders(Borders::ALL)
+        Block::bordered()
             .border_set(symbols::border::PROPORTIONAL_TALL)
             .padding(Padding::horizontal(1))
             .border_style(self.palette().c700)

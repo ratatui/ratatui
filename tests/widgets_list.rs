@@ -288,7 +288,7 @@ fn widgets_list_enable_always_highlight_spacing() {
                     ListItem::new(vec![Line::from("Item 2"), Line::from("Item 2b")]),
                     ListItem::new(vec![Line::from("Item 3"), Line::from("Item 3c")]),
                 ])
-                .block(Block::default().borders(Borders::ALL))
+                .block(Block::bordered())
                 .highlight_symbol(">> ")
                 .highlight_spacing(space);
                 f.render_stateful_widget(table, size, state);

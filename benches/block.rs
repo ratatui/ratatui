@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Alignment, Rect},
     widgets::{
         block::{Position, Title},
-        Block, Borders, Padding, Widget,
+        Block, Padding, Widget,
     },
 };
 
@@ -29,15 +29,14 @@ fn block(c: &mut Criterion) {
         // Render with all features
         group.bench_with_input(
             format!("render_all_feature/{width}x{height}"),
-            &Block::new()
-                .borders(Borders::ALL)
+            &Block::bordered()
+                .padding(Padding::new(5, 5, 2, 2))
                 .title("test title")
                 .title(
                     Title::from("bottom left title")
                         .alignment(Alignment::Right)
                         .position(Position::Bottom),
-                )
-                .padding(Padding::new(5, 5, 2, 2)),
+                ),
             |b, block| render(b, block, buffer_size),
         );
     }

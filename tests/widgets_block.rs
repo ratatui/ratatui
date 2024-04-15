@@ -15,9 +15,8 @@ use ratatui::{
 fn widgets_block_renders() {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend).unwrap();
-    let block = Block::default()
-        .title(Span::styled("Title", Style::default().fg(Color::LightBlue)))
-        .borders(Borders::ALL);
+    let block =
+        Block::bordered().title(Span::styled("Title", Style::default().fg(Color::LightBlue)));
     terminal
         .draw(|frame| frame.render_widget(block, Rect::new(0, 0, 8, 8)))
         .unwrap();

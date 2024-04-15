@@ -418,7 +418,7 @@ impl<'a> Table<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
-    /// let block = Block::default().title("Table").borders(Borders::ALL);
+    /// let block = Block::bordered().title("Table");
     /// let table = Table::new(rows, widths).block(block);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -842,7 +842,7 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::{layout::Constraint::*, style::Style, text::Line, widgets::Borders};
+    use crate::{layout::Constraint::*, style::Style, text::Line};
 
     #[test]
     fn new() {
@@ -930,7 +930,7 @@ mod tests {
 
     #[test]
     fn block() {
-        let block = Block::default().title("Table").borders(Borders::ALL);
+        let block = Block::bordered().title("Table");
         let table = Table::default().block(block.clone());
         assert_eq!(table.block, Some(block));
     }
@@ -1027,7 +1027,7 @@ mod tests {
                 Row::new(vec!["Cell1", "Cell2"]),
                 Row::new(vec!["Cell3", "Cell4"]),
             ];
-            let block = Block::new().borders(Borders::ALL).title("Block");
+            let block = Block::bordered().title("Block");
             let table = Table::new(rows, vec![Constraint::Length(5); 2]).block(block);
             Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
             let expected = Buffer::with_lines(vec![

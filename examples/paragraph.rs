@@ -26,7 +26,7 @@ use crossterm::{
 };
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, Paragraph, Wrap},
+    widgets::{Block, Paragraph, Wrap},
 };
 
 struct App {
@@ -127,8 +127,7 @@ fn ui(f: &mut Frame, app: &App) {
     ];
 
     let create_block = |title| {
-        Block::default()
-            .borders(Borders::ALL)
+        Block::bordered()
             .style(Style::default().fg(Color::Gray))
             .title(Span::styled(
                 title,

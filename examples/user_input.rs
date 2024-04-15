@@ -36,7 +36,7 @@ use crossterm::{
 };
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    widgets::{Block, List, ListItem, Paragraph},
 };
 
 enum InputMode {
@@ -238,7 +238,7 @@ fn ui(f: &mut Frame, app: &App) {
             InputMode::Normal => Style::default(),
             InputMode::Editing => Style::default().fg(Color::Yellow),
         })
-        .block(Block::default().borders(Borders::ALL).title("Input"));
+        .block(Block::bordered().title("Input"));
     f.render_widget(input, input_area);
     match app.input_mode {
         InputMode::Normal =>
@@ -268,7 +268,6 @@ fn ui(f: &mut Frame, app: &App) {
             ListItem::new(content)
         })
         .collect();
-    let messages =
-        List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
+    let messages = List::new(messages).block(Block::bordered().title("Messages"));
     f.render_widget(messages, messages_area);
 }
