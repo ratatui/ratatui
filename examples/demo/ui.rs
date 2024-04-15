@@ -51,7 +51,7 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
 
     let label = format!("{:.2}%", app.progress * 100.0);
     let gauge = Gauge::default()
-        .block(Block::default().title("Gauge:"))
+        .block(Block::new().title("Gauge:"))
         .gauge_style(
             Style::default()
                 .fg(Color::Magenta)
@@ -64,7 +64,7 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_widget(gauge, chunks[0]);
 
     let sparkline = Sparkline::default()
-        .block(Block::default().title("Sparkline:"))
+        .block(Block::new().title("Sparkline:"))
         .style(Style::default().fg(Color::Green))
         .data(&app.sparkline.points)
         .bar_set(if app.enhanced_graphics {
@@ -75,7 +75,7 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_widget(sparkline, chunks[1]);
 
     let line_gauge = LineGauge::default()
-        .block(Block::default().title("LineGauge:"))
+        .block(Block::new().title("LineGauge:"))
         .gauge_style(Style::default().fg(Color::Magenta))
         .line_set(if app.enhanced_graphics {
             symbols::line::THICK

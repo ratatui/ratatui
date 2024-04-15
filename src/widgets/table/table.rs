@@ -75,7 +75,7 @@ use crate::{layout::Flex, prelude::*, widgets::Block};
 ///     // It has an optional footer, which is simply a Row always visible at the bottom.
 ///     .footer(Row::new(vec!["Updated on Dec 28"]))
 ///     // As any other widget, a Table can be wrapped in a Block.
-///     .block(Block::default().title("Table"))
+///     .block(Block::new().title("Table"))
 ///     // The selected row and its content can also be styled.
 ///     .highlight_style(Style::new().reversed())
 ///     // ...and potentially show a symbol in front of the selection.
@@ -178,7 +178,7 @@ use crate::{layout::Flex, prelude::*, widgets::Block};
 /// ];
 /// let widths = [Constraint::Length(5), Constraint::Length(5), Constraint::Length(10)];
 /// let table = Table::new(rows, widths)
-///     .block(Block::default().title("Table"))
+///     .block(Block::new().title("Table"))
 ///     .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
 ///     .highlight_symbol(">>");
 ///

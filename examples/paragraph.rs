@@ -105,7 +105,7 @@ fn ui(f: &mut Frame, app: &App) {
     let mut long_line = s.repeat(usize::from(size.width) / s.len() + 4);
     long_line.push('\n');
 
-    let block = Block::default().black();
+    let block = Block::new().black();
     f.render_widget(block, size);
 
     let layout = Layout::vertical([Constraint::Ratio(1, 4); 4]).split(size);

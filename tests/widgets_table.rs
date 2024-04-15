@@ -796,7 +796,7 @@ fn widgets_table_can_have_elements_styled_individually() {
                 ],
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-            .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
+            .block(Block::new().borders(Borders::LEFT | Borders::RIGHT))
             .highlight_symbol(">> ")
             .highlight_style(Style::default().add_modifier(Modifier::BOLD))
             .column_spacing(1);
@@ -861,7 +861,7 @@ fn widgets_table_should_render_even_if_empty() {
                 ],
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]))
-            .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
+            .block(Block::new().borders(Borders::LEFT | Borders::RIGHT))
             .column_spacing(1);
             f.render_widget(table, size);
         })

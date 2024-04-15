@@ -625,10 +625,10 @@ mod test {
 
     #[test]
     fn test_render_paragraph_with_block_with_bottom_title_and_border() {
-        let block = Block::default()
-            .title("Title")
+        let block = Block::new()
+            .borders(Borders::BOTTOM)
             .title_position(Position::Bottom)
-            .borders(Borders::BOTTOM);
+            .title("Title");
         let paragraph = Paragraph::new("Hello, world!").block(block);
 
         test_case(

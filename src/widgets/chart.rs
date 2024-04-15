@@ -475,7 +475,7 @@ struct ChartLayout {
 ///
 /// // Create the chart and link all the parts together
 /// let chart = Chart::new(datasets)
-///     .block(Block::default().title("Chart"))
+///     .block(Block::new().title("Chart"))
 ///     .x_axis(x_axis)
 ///     .y_axis(y_axis);
 /// ```
