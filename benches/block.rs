@@ -1,8 +1,7 @@
-use criterion::{criterion_group, criterion_main, BatchSize, Bencher, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BatchSize, Bencher, Criterion};
 use ratatui::{
     buffer::Buffer,
-    layout::Rect,
-    prelude::Alignment,
+    layout::{Alignment, Rect},
     widgets::{
         block::{Position, Title},
         Block, Borders, Padding, Widget,
@@ -13,23 +12,23 @@ use ratatui::{
 fn block(c: &mut Criterion) {
     let mut group = c.benchmark_group("block");
 
-    for buffer_size in [
-        Rect::new(0, 0, 100, 50),  // vertically split screen
-        Rect::new(0, 0, 200, 50),  // 1080p fullscreen with medium font
-        Rect::new(0, 0, 256, 256), // Max sized area
+    for (width, height) in [
+        (100, 50),  // vertically split screen
+        (200, 50),  // 1080p fullscreen with medium font
+        (256, 256), // Max sized area
     ] {
-        let buffer_area = buffer_size.area();
+        let buffer_size = Rect::new(0, 0, width, height);
 
         // Render an empty block
         group.bench_with_input(
-            BenchmarkId::new("render_empty", buffer_area),
+            format!("render_empty/{width}x{height}"),
             &Block::new(),
             |b, block| render(b, block, buffer_size),
         );
 
         // Render with all features
         group.bench_with_input(
-            BenchmarkId::new("render_all_feature", buffer_area),
+            format!("render_all_feature/{width}x{height}"),
             &Block::new()
                 .borders(Borders::ALL)
                 .title("test title")
