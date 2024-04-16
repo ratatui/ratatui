@@ -60,8 +60,11 @@ impl TableState {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let state = TableState::new();
     /// ```
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            offset: 0,
+            selected: None,
+        }
     }
 
     /// Sets the index of the first row to be displayed
