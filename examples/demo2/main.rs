@@ -39,7 +39,7 @@ pub use theme::*;
 fn main() -> Result<()> {
     errors::init_hooks()?;
     let terminal = &mut term::init()?;
-    App::new().run(terminal)?;
+    App::default().run(terminal)?;
     term::restore()?;
     Ok(())
 }

@@ -38,14 +38,10 @@ enum Tab {
 }
 
 pub fn run(terminal: &mut Terminal<impl Backend>) -> Result<()> {
-    App::new().run(terminal)
+    App::default().run(terminal)
 }
 
 impl App {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Run the app until the user quits.
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
         while self.is_running() {
