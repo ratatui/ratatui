@@ -338,10 +338,11 @@ impl App {
         }
 
         if scrollbar_needed {
-            let area = area.intersection(buf.area);
-            let mut state = ScrollbarState::new(max_scroll_offset() as usize)
-                .position(self.scroll_offset as usize);
-            Scrollbar::new(ScrollbarOrientation::VerticalRight).render(area, buf, &mut state);
+            if let Some(area) = area.intersection_opt(buf.area) {
+                let mut state = ScrollbarState::new(max_scroll_offset() as usize)
+                    .position(self.scroll_offset as usize);
+                Scrollbar::new(ScrollbarOrientation::VerticalRight).render(area, buf, &mut state);
+            }
         }
         scrollbar_needed
     }

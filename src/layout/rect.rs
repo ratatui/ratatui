@@ -152,15 +152,15 @@ impl Rect {
     /// Returns a new `Rect` that contains both the current one and the given one.
     #[must_use = "method returns the modified value"]
     pub fn union(self, other: Self) -> Self {
-        let x1 = min(self.x, other.x);
-        let y1 = min(self.y, other.y);
-        let x2 = max(self.right(), other.right());
-        let y2 = max(self.bottom(), other.bottom());
+        let left = min(self.x, other.x);
+        let top = min(self.y, other.y);
+        let right = max(self.right(), other.right());
+        let bottom = max(self.bottom(), other.bottom());
         Self {
-            x: x1,
-            y: y1,
-            width: x2.saturating_sub(x1),
-            height: y2.saturating_sub(y1),
+            x: left,
+            y: top,
+            width: right.saturating_sub(left),
+            height: bottom.saturating_sub(top),
         }
     }
 
@@ -168,16 +168,40 @@ impl Rect {
     ///
     /// If the two `Rect`s do not intersect, the returned `Rect` will have no area.
     #[must_use = "method returns the modified value"]
+    #[deprecated = "use intersection_opt"]
     pub fn intersection(self, other: Self) -> Self {
-        let x1 = max(self.x, other.x);
-        let y1 = max(self.y, other.y);
-        let x2 = min(self.right(), other.right());
-        let y2 = min(self.bottom(), other.bottom());
+        let left = max(self.x, other.x);
+        let top = max(self.y, other.y);
+        let right = min(self.right(), other.right());
+        let bottom = min(self.bottom(), other.bottom());
         Self {
-            x: x1,
-            y: y1,
-            width: x2.saturating_sub(x1),
-            height: y2.saturating_sub(y1),
+            x: left,
+            y: top,
+            width: right.saturating_sub(left),
+            height: bottom.saturating_sub(top),
+        }
+    }
+
+    /// Returns a new `Rect` that is the intersection of the current one and the given one.
+    ///
+    /// If the two `Rect`s do not intersect, `None` is returned.
+    #[must_use]
+    pub fn intersection_opt(self, other: Self) -> Option<Self> {
+        let left = max(self.x, other.x);
+        let top = max(self.y, other.y);
+        let right = min(self.right(), other.right());
+        let bottom = min(self.bottom(), other.bottom());
+        let width = right.saturating_sub(left);
+        let height = bottom.saturating_sub(top);
+        if width > 0 && height > 0 {
+            Some(Self {
+                x: left,
+                y: top,
+                width,
+                height,
+            })
+        } else {
+            None
         }
     }
 
@@ -431,19 +455,29 @@ mod tests {
         );
     }
 
+    #[allow(deprecated)]
     #[test]
     fn intersection() {
         assert_eq!(
             Rect::new(1, 2, 3, 4).intersection(Rect::new(2, 3, 4, 5)),
             Rect::new(2, 3, 2, 3)
         );
+        assert_eq!(
+            Rect::new(1, 2, 3, 4).intersection_opt(Rect::new(2, 3, 4, 5)),
+            Some(Rect::new(2, 3, 2, 3))
+        );
     }
 
+    #[allow(deprecated)]
     #[test]
     fn intersection_underflow() {
         assert_eq!(
             Rect::new(1, 1, 2, 2).intersection(Rect::new(4, 4, 2, 2)),
             Rect::new(4, 4, 0, 0)
+        );
+        assert_eq!(
+            Rect::new(1, 1, 2, 2).intersection_opt(Rect::new(4, 4, 2, 2)),
+            None
         );
     }
 
@@ -535,10 +569,11 @@ mod tests {
 
     #[test]
     fn split() {
-        let [a, b] = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .areas(Rect::new(0, 0, 2, 1));
-        assert_eq!(a, Rect::new(0, 0, 1, 1));
-        assert_eq!(b, Rect::new(1, 0, 1, 1));
+        let [left, right] =
+            Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .areas(Rect::new(0, 0, 2, 1));
+        assert_eq!(left, Rect::new(0, 0, 1, 1));
+        assert_eq!(right, Rect::new(1, 0, 1, 1));
     }
 
     #[test]

@@ -584,7 +584,9 @@ impl Widget for Line<'_> {
 
 impl WidgetRef for Line<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        let area = area.intersection(buf.area);
+        let Some(area) = area.intersection_opt(buf.area) else {
+            return;
+        };
         buf.set_style(area, self.style);
         let width = self.width() as u16;
         let mut x = area.left();

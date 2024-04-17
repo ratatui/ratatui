@@ -273,7 +273,9 @@ impl Buffer {
     /// your own type that implements [`Into<Style>`]).
     pub fn set_style<S: Into<Style>>(&mut self, area: Rect, style: S) {
         let style = style.into();
-        let area = self.area.intersection(area);
+        let Some(area) = self.area.intersection_opt(area) else {
+            return;
+        };
         for y in area.top()..area.bottom() {
             for x in area.left()..area.right() {
                 self.get_mut(x, y).set_style(style);

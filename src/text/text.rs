@@ -601,7 +601,9 @@ impl Widget for Text<'_> {
 
 impl WidgetRef for Text<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        let area = area.intersection(buf.area);
+        let Some(area) = area.intersection_opt(buf.area) else {
+            return;
+        };
         buf.set_style(area, self.style);
         for (line, row) in self.iter().zip(area.rows()) {
             let line_width = line.width() as u16;

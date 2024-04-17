@@ -596,10 +596,9 @@ impl Widget for Block<'_> {
 
 impl WidgetRef for Block<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        let area = area.intersection(buf.area);
-        if area.is_empty() {
+        let Some(area) = area.intersection_opt(buf.area) else {
             return;
-        }
+        };
         buf.set_style(area, self.style);
         self.render_borders(area, buf);
         self.render_titles(area, buf);
@@ -824,7 +823,7 @@ impl Block<'_> {
             x: area.left() + left_border,
             y: match position {
                 Position::Top => area.top(),
-                Position::Bottom => area.bottom() - 1,
+                Position::Bottom => area.bottom().saturating_sub(1),
             },
             width: area
                 .width

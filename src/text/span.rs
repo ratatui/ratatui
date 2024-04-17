@@ -363,14 +363,15 @@ impl Widget for Span<'_> {
 
 impl WidgetRef for Span<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        let area = area.intersection(buf.area);
+        let Some(area) = area.intersection_opt(buf.area) else {
+            return;
+        };
         let Rect {
             x: mut current_x,
             y,
-            width,
             ..
         } = area;
-        let max_x = Ord::min(current_x.saturating_add(width), buf.area.right());
+        let max_x = area.right();
         for g in self.styled_graphemes(Style::default()) {
             let symbol_width = g.symbol.width();
             let next_x = current_x.saturating_add(symbol_width as u16);
@@ -585,7 +586,15 @@ mod tests {
         fn render_out_of_bounds(mut small_buf: Buffer) {
             let out_of_bounds = Rect::new(20, 20, 10, 1);
             Span::raw("Hello, World!").render(out_of_bounds, &mut small_buf);
-            assert_eq!(small_buf, Buffer::empty(small_buf.area));
+            assert_buffer_eq!(small_buf, Buffer::empty(small_buf.area));
+        }
+
+        #[rstest]
+        fn render_shifted(mut small_buf: Buffer) {
+            let area = Rect::new(5, 0, 10, 1);
+            Span::raw("Hello, World!").render(area, &mut small_buf);
+            let expected = Buffer::with_lines(vec!["     Hello"]);
+            assert_buffer_eq!(small_buf, expected);
         }
 
         /// When the content of the span is longer than the area passed to render, the content
