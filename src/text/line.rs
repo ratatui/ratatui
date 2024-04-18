@@ -454,8 +454,8 @@ impl<'a> Line<'a> {
     }
 
     /// Returns a line that's truncated corresponding to it's alignment and result width
-    #[must_use = "method returns the modified value"]
-    fn truncated(&'a self, result_width: u16) -> Self {
+    #[must_use]
+    pub(crate) fn truncated(&'a self, result_width: u16) -> Self {
         let mut truncated_line = Line::default();
         let width = self.width() as u16;
         let mut offset = match self.alignment {
@@ -584,34 +584,7 @@ impl Widget for Line<'_> {
 
 impl WidgetRef for Line<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        let area = area.intersection(buf.area);
-        buf.set_style(area, self.style);
-        let width = self.width() as u16;
-        let mut x = area.left();
-        let line = if width > area.width {
-            self.truncated(area.width)
-        } else {
-            let offset = match self.alignment {
-                Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
-                Some(Alignment::Right) => area.width.saturating_sub(width),
-                Some(Alignment::Left) | None => 0,
-            };
-            x = x.saturating_add(offset);
-            self.to_owned()
-        };
-        for span in &line.spans {
-            let span_width = span.width() as u16;
-            let span_area = Rect {
-                x,
-                width: span_width.min(area.right().saturating_sub(x)),
-                ..area
-            };
-            span.render(span_area, buf);
-            x = x.saturating_add(span_width);
-            if x >= area.right() {
-                break;
-            }
-        }
+        buf.set_line(area.x, area.y, self, area.width);
     }
 }
 

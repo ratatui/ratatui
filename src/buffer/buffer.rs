@@ -1,8 +1,3 @@
-use std::{
-    cmp::min,
-    fmt::{Debug, Formatter, Result},
-};
-
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
@@ -97,15 +92,33 @@ impl Buffer {
     }
 
     /// Returns a reference to Cell at the given coordinates
+    #[allow(deprecated)]
+    // #[deprecated = "use get_opt"]
+    #[track_caller]
     pub fn get(&self, x: u16, y: u16) -> &Cell {
         let i = self.index_of(x, y);
         &self.content[i]
     }
 
+    /// Returns a reference to Cell at the given coordinates
+    pub fn get_opt(&self, x: u16, y: u16) -> Option<&Cell> {
+        let i = self.index_of_opt(x, y)?;
+        self.content.get(i)
+    }
+
     /// Returns a mutable reference to Cell at the given coordinates
+    #[allow(deprecated)]
+    // #[deprecated = "use get_mut_opt"]
+    #[track_caller]
     pub fn get_mut(&mut self, x: u16, y: u16) -> &mut Cell {
         let i = self.index_of(x, y);
         &mut self.content[i]
+    }
+
+    /// Returns a mutable reference to Cell at the given coordinates
+    pub fn get_mut_opt(&mut self, x: u16, y: u16) -> Option<&mut Cell> {
+        let i = self.index_of_opt(x, y)?;
+        self.content.get_mut(i)
     }
 
     /// Returns the index in the `Vec<Cell>` for the given global (x, y) coordinates.
@@ -134,6 +147,8 @@ impl Buffer {
     /// // starts at (200, 100).
     /// buffer.index_of(0, 0); // Panics
     /// ```
+    // #[deprecated = "use index_of_opt"]
+    #[track_caller]
     pub fn index_of(&self, x: u16, y: u16) -> usize {
         debug_assert!(
             x >= self.area.left()
@@ -144,6 +159,32 @@ impl Buffer {
             self.area
         );
         ((y - self.area.y) * self.area.width + (x - self.area.x)) as usize
+    }
+
+    /// Returns the index in the `Vec<Cell>` for the given global (x, y) coordinates.
+    ///
+    /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::prelude::*;
+    /// let rect = Rect::new(200, 100, 10, 10);
+    /// let buffer = Buffer::empty(rect);
+    /// // Global coordinates to the top corner of this buffer's area
+    /// assert_eq!(buffer.index_of_opt(200, 100), Some(0));
+    /// ```
+    pub const fn index_of_opt(&self, x: u16, y: u16) -> Option<usize> {
+        let inside = x >= self.area.left()
+            && x < self.area.right()
+            && y >= self.area.top()
+            && y < self.area.bottom();
+        if inside {
+            let index = (y - self.area.y) * self.area.width + (x - self.area.x);
+            Some(index as usize)
+        } else {
+            None
+        }
     }
 
     /// Returns the (global) coordinates of a cell given its index
@@ -171,6 +212,7 @@ impl Buffer {
     /// // Index 100 is the 101th cell, which lies outside of the area of this Buffer.
     /// buffer.pos_of(100); // Panics
     /// ```
+    // #[deprecated = "use pos_of_opt"]
     pub fn pos_of(&self, i: usize) -> (u16, u16) {
         debug_assert!(
             i < self.content.len(),
@@ -183,88 +225,131 @@ impl Buffer {
         )
     }
 
-    /// Print a string, starting at the position (x, y)
+    /// Returns the (global) coordinates of a cell given its index
     ///
-    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
-    /// your own type that implements [`Into<Style>`]).
+    /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::prelude::*;
+    /// let rect = Rect::new(200, 100, 10, 10);
+    /// let buffer = Buffer::empty(rect);
+    /// assert_eq!(buffer.pos_of_opt(0), Some((200, 100)));
+    /// assert_eq!(buffer.pos_of_opt(14), Some((204, 101)));
+    /// ```
+    pub const fn pos_of_opt(&self, i: usize) -> Option<(u16, u16)> {
+        if i < self.area.area() as usize {
+            Some((
+                self.area.x + (i as u16) % self.area.width,
+                self.area.y + (i as u16) / self.area.width,
+            ))
+        } else {
+            None
+        }
+    }
+
+    /// Print a string, starting at the position (x, y)
     pub fn set_string<T, S>(&mut self, x: u16, y: u16, string: T, style: S)
     where
         T: AsRef<str>,
         S: Into<Style>,
     {
-        self.set_stringn(x, y, string, usize::MAX, style.into());
+        self.set_stringn(x, y, string.as_ref(), usize::MAX, style);
     }
 
     /// Print at most the first n characters of a string if enough space is available
-    /// until the end of the line
+    /// until the end of the line.
     ///
-    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
-    /// your own type that implements [`Into<Style>`]).
+    /// Use [`Buffer::set_string`] when the maximum amount of characters can be printed.
     pub fn set_stringn<T, S>(
         &mut self,
         x: u16,
         y: u16,
         string: T,
-        width: usize,
+        max_width: usize,
         style: S,
     ) -> (u16, u16)
     where
         T: AsRef<str>,
         S: Into<Style>,
     {
+        let Some(mut index) = self.index_of_opt(x, y) else {
+            return (x, y);
+        };
+        let max_width = max_width.try_into().unwrap_or(u16::MAX);
+        let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
+        let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
+            .map(|symbol| (symbol, symbol.width() as u16))
+            .filter(|(_symbol, width)| *width > 0)
+            .map_while(|(symbol, width)| {
+                remaining_width = remaining_width.checked_sub(width)?;
+                Some((symbol, width))
+            });
         let style = style.into();
-        let mut index = self.index_of(x, y);
-        let mut x_offset = x as usize;
-        let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true);
-        let max_offset = min(self.area.right() as usize, width.saturating_add(x as usize));
-        for s in graphemes {
-            let width = s.width();
-            if width == 0 {
-                continue;
-            }
-            // `x_offset + width > max_offset` could be integer overflow on 32-bit machines if we
-            // change dimensions to usize or u32 and someone resizes the terminal to 1x2^32.
-            if width > max_offset.saturating_sub(x_offset) {
-                break;
-            }
+        let mut x_offset = x;
+        for (symbol, width) in graphemes {
+            self.content
+                .get_mut(index)
+                .expect("check earlier should make sure its in the buffer area")
+                .set_symbol(symbol)
+                .set_style(style);
 
-            self.content[index].set_symbol(s);
-            self.content[index].set_style(style);
             // Reset following cells if multi-width (they would be hidden by the grapheme),
-            for i in index + 1..index + width {
-                self.content[i].reset();
+            let index_after_symbol = index + width as usize;
+            for i in (index + 1)..index_after_symbol {
+                self.content
+                    .get_mut(i)
+                    .expect("check earlier should make sure its in the buffer area")
+                    .reset();
             }
-            index += width;
+            index = index_after_symbol;
             x_offset += width;
         }
-        (x_offset as u16, y)
+        (x_offset, y)
     }
 
     /// Print a line, starting at the position (x, y)
     pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, width: u16) -> (u16, u16) {
-        let mut remaining_width = width;
-        let mut x = x;
-        for span in line {
-            if remaining_width == 0 {
-                break;
+        fn render_spans(spans: &[Span], area: Rect, buf: &mut Buffer, x: &mut u16) {
+            for span in spans {
+                let span_width = span.width() as u16;
+                let span_area = Rect {
+                    x: *x,
+                    width: span_width.min(area.right().saturating_sub(*x)),
+                    ..area
+                };
+                span.render(span_area, buf);
+                *x = x.saturating_add(span_width);
+                if *x >= area.right() {
+                    break;
+                }
             }
-            let pos = self.set_stringn(
-                x,
-                y,
-                span.content.as_ref(),
-                remaining_width as usize,
-                line.style.patch(span.style),
-            );
-            let w = pos.0.saturating_sub(x);
-            x = pos.0;
-            remaining_width = remaining_width.saturating_sub(w);
         }
+
+        let area = self.area.intersection(Rect::new(x, y, width, 1));
+        self.set_style(area, line.style);
+
+        let line_width = line.width() as u16;
+        let mut x = area.left();
+        if line_width > area.width {
+            let line = line.truncated(area.width);
+            render_spans(&line.spans, area, self, &mut x);
+        } else {
+            let offset = match line.alignment {
+                Some(Alignment::Center) => (area.width.saturating_sub(line_width)) / 2,
+                Some(Alignment::Right) => area.width.saturating_sub(line_width),
+                Some(Alignment::Left) | None => 0,
+            };
+            x = x.saturating_add(offset);
+            render_spans(&line.spans, area, self, &mut x);
+        };
         (x, y)
     }
 
     /// Print a span, starting at the position (x, y)
     pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, width: u16) -> (u16, u16) {
-        self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
+        self.set_stringn(x, y, &span.content, width as usize, span.style)
     }
 
     /// Set the style of all cells in the given area.
@@ -303,8 +388,7 @@ impl Buffer {
     /// Merge an other buffer into this one
     pub fn merge(&mut self, other: &Self) {
         let area = self.area.union(other.area);
-        let cell = Cell::default();
-        self.content.resize(area.area() as usize, cell.clone());
+        self.content.resize(area.area() as usize, Cell::default());
 
         // Move original content to the appropriate space
         let size = self.area.area() as usize;
@@ -314,7 +398,7 @@ impl Buffer {
             let k = ((y - area.y) * area.width + x - area.x) as usize;
             if i != k {
                 self.content[k] = self.content[i].clone();
-                self.content[i] = cell.clone();
+                self.content[i] = Cell::default();
             }
         }
 
@@ -383,7 +467,7 @@ impl Buffer {
     }
 }
 
-impl Debug for Buffer {
+impl std::fmt::Debug for Buffer {
     /// Writes a debug representation of the buffer to the given formatter.
     ///
     /// The format is like a pretty printed struct, with the following fields:
@@ -391,7 +475,7 @@ impl Debug for Buffer {
     /// * `content`: displayed as a list of strings representing the content of the buffer
     /// * `styles`: displayed as a list of: `{ x: 1, y: 2, fg: Color::Red, bg: Color::Blue,
     ///   modifier: Modifier::BOLD }` only showing a value when there is a change in style.
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!(
             "Buffer {{\n    area: {:?},\n    content: [\n",
             &self.area
@@ -658,7 +742,7 @@ mod tests {
     ) {
         let color = Color::Blue;
         let line = Line::styled(content, color);
-        small_one_line_buffer.set_line(0, 0, &line, 5);
+        small_one_line_buffer.set_line(0, 0, &line, line.width() as u16);
 
         // note: manually testing the contents here as the Buffer::with_lines calls set_line
         let actual_contents = small_one_line_buffer

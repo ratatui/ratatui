@@ -363,35 +363,7 @@ impl Widget for Span<'_> {
 
 impl WidgetRef for Span<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        let area = area.intersection(buf.area);
-        let Rect {
-            x: mut current_x,
-            y,
-            width,
-            ..
-        } = area;
-        let max_x = Ord::min(current_x.saturating_add(width), buf.area.right());
-        for g in self.styled_graphemes(Style::default()) {
-            let symbol_width = g.symbol.width();
-            let next_x = current_x.saturating_add(symbol_width as u16);
-            if next_x > max_x {
-                break;
-            }
-            buf.get_mut(current_x, y)
-                .set_symbol(g.symbol)
-                .set_style(g.style);
-
-            // multi-width graphemes must clear the cells of characters that are hidden by the
-            // grapheme, otherwise the hidden characters will be re-rendered if the grapheme is
-            // overwritten.
-            for i in (current_x + 1)..next_x {
-                buf.get_mut(i, y).reset();
-                // it may seem odd that the style of the hidden cells are not set to the style of
-                // the grapheme, but this is how the existing buffer.set_span() method works.
-                // buf.get_mut(i, y).set_style(g.style);
-            }
-            current_x = next_x;
-        }
+        buf.set_span(area.x, area.y, self, area.width);
     }
 }
 
