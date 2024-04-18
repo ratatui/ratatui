@@ -164,12 +164,12 @@ impl WidgetRef for Gauge<'_> {
         buf.set_style(area, self.style);
         self.block.render_ref(area, buf);
         let inner = self.block.inner_if_some(area);
-        self.render_gague(inner, buf);
+        self.render_gauge(inner, buf);
     }
 }
 
 impl Gauge<'_> {
-    fn render_gague(&self, gauge_area: Rect, buf: &mut Buffer) {
+    fn render_gauge(&self, gauge_area: Rect, buf: &mut Buffer) {
         if gauge_area.is_empty() {
             return;
         }
