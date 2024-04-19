@@ -64,7 +64,9 @@ serde_json = "1.0.109"
 
 [lints.rust]
 unsafe_code = "forbid"
+
 [lints.clippy]
+cargo = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
 cast_possible_truncation = "allow"
 cast_possible_wrap = "allow"
