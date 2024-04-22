@@ -488,7 +488,7 @@ impl<'a> Line<'a> {
                 span.content
                     .as_ref()
                     .chars()
-                    .skip(offset.into())
+                    .skip(usize::from(offset))
                     .collect::<String>(),
             );
             truncated_line.spans.push(new_span);
