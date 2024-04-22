@@ -486,7 +486,6 @@ impl<'a> Line<'a> {
             }
             new_span.content = Cow::from(
                 span.content
-                    .as_ref()
                     .chars()
                     .skip(usize::from(offset))
                     .collect::<String>(),
