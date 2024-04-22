@@ -477,8 +477,8 @@ impl<'a> Line<'a> {
                 new_span.content = Cow::from(
                     span.content
                         .chars()
-                        .skip(offset.into())
-                        .take(span_end - (offset as usize))
+                        .skip(usize::from(offset))
+                        .take(span_end - usize::from(offset))
                         .collect::<String>(),
                 );
                 truncated_line.spans.push(new_span);
