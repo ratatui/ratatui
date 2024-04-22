@@ -897,6 +897,7 @@ mod tests {
 
         assert_eq!(format!("{line_from_styled_span}"), "Hello, world!");
     }
+
     #[test]
     fn render_truncates_left() {
         let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
