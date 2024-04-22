@@ -476,7 +476,6 @@ impl<'a> Line<'a> {
                 let span_end = (result_width - x + offset) as usize;
                 new_span.content = Cow::from(
                     span.content
-                        .as_ref()
                         .chars()
                         .skip(offset.into())
                         .take(span_end - (offset as usize))
