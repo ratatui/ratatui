@@ -938,7 +938,7 @@ mod tests {
         );
     }
 
-   #[test]
+    #[test]
     fn truncate_utf8_even_right() {
         let line = Line::from("██████░░░░".to_string());
         assert_eq!(
@@ -946,6 +946,7 @@ mod tests {
             String::from("░░░░")
         );
     }
+    
     #[test]
     fn truncate_utf8_odd_right() {
         let line = Line::from("██████░░░░".to_string());
@@ -954,6 +955,7 @@ mod tests {
             String::from("█░░░░")
         );
     }
+    
     #[test]
     fn truncate_utf8_even_left() {
         let line = Line::from("░░░░██████".to_string());
@@ -962,6 +964,7 @@ mod tests {
             String::from("░░░░")
         );
     }
+    
     #[test]
     fn truncate_utf8_odd_left() {
         let line = Line::from("░░░░██████".to_string());
