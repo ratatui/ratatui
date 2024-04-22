@@ -474,12 +474,11 @@ impl<'a> Line<'a> {
             let new_span_width = span_width - offset;
             if x + new_span_width > result_width {
                 let span_end = (result_width - x + offset) as usize;
-                new_span.content = Cow::from(&span.content[offset as usize..span_end]);
+                new_span.content = Cow::from( span.content.as_ref().chars().skip(offset.into()).take(span_end - (offset as usize)).collect::<String>());
                 truncated_line.spans.push(new_span);
                 break;
             }
-
-            new_span.content = Cow::from(&span.content[offset as usize..]);
+            new_span.content = Cow::from( span.content.as_ref().chars().skip(offset.into()).collect::<String>());
             truncated_line.spans.push(new_span);
             x += new_span_width;
             offset = 0;
