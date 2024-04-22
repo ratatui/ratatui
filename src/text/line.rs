@@ -453,7 +453,7 @@ impl<'a> Line<'a> {
         self.spans.iter_mut()
     }
 
-    /// Returns a line that's truncated corresponding to it's alignment and result width
+    /// Returns a line that's truncated corresponding to its alignment and result width
     #[must_use = "method returns the modified value"]
     fn truncated(&'a self, result_width: u16) -> Self {
         let mut truncated_line = Line::default();
