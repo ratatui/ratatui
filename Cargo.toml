@@ -1,10 +1,11 @@
 [package]
 name = "ratatui"
-version = "0.26.1" # crate version
+version = "0.26.2" # crate version
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
 description = "A library that's all about cooking up terminal user interfaces"
 documentation = "https://docs.rs/ratatui/latest/ratatui/"
 keywords = ["tui", "terminal", "dashboard"]
+categories = ["command-line-interface"]
 repository = "https://github.com/ratatui-org/ratatui"
 readme = "README.md"
 license = "MIT"
@@ -58,12 +59,14 @@ palette = "0.7.3"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
-rstest = "0.18.2"
+rstest = "0.19.0"
 serde_json = "1.0.109"
 
 [lints.rust]
 unsafe_code = "forbid"
+
 [lints.clippy]
+cargo = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
 cast_possible_truncation = "allow"
 cast_possible_wrap = "allow"

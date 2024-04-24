@@ -28,14 +28,14 @@ pub struct Monthly<'a, DS: DateStyler> {
 
 impl<'a, DS: DateStyler> Monthly<'a, DS> {
     /// Construct a calendar for the `display_date` and highlight the `events`
-    pub fn new(display_date: Date, events: DS) -> Self {
+    pub const fn new(display_date: Date, events: DS) -> Self {
         Self {
             display_date,
             events,
             show_surrounding: None,
             show_weekday: None,
             show_month: None,
-            default_style: Style::default(),
+            default_style: Style::new(),
             block: None,
         }
     }
@@ -90,10 +90,10 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     }
 
     /// Return a style with only the background from the default style
-    fn default_bg(&self) -> Style {
+    const fn default_bg(&self) -> Style {
         match self.default_style.bg {
-            None => Style::default(),
-            Some(c) => Style::default().bg(c),
+            None => Style::new(),
+            Some(c) => Style::new().bg(c),
         }
     }
 
@@ -164,7 +164,7 @@ impl<DS: DateStyler> Monthly<'_, DS> {
 
         let mut y = days_area.y;
         // go through all the weeks containing a day in the target month.
-        while curr_day.month() as u8 != self.display_date.month().next() as u8 {
+        while curr_day.month() != self.display_date.month().next() {
             let mut spans = Vec::with_capacity(14);
             for i in 0..7 {
                 // Draw the gutter. Do it here so we can avoid worrying about
