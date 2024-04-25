@@ -1,3 +1,7 @@
+// The code that works on text pays attention to unicode in this file by working in graphemes
+// instead of byte indexes. This is important for languages that use double-width characters.
+#![allow(clippy::string_slice)]
+
 use std::{collections::VecDeque, vec::IntoIter};
 
 use unicode_segmentation::UnicodeSegmentation;

@@ -313,7 +313,16 @@ impl FromStr for Color {
                 _ => {
                     if let Ok(index) = s.parse::<u8>() {
                         Self::Indexed(index)
-                    } else if let Some((r, g, b)) = parse_hex_color(s) {
+                    } else if let (Ok(r), Ok(g), Ok(b)) = {
+                        if !s.starts_with('#') || s.len() != 7 {
+                            return Err(ParseColorError);
+                        }
+                        (
+                            u8::from_str_radix(&s.chars().skip(1).take(2).collect::<String>(), 16),
+                            u8::from_str_radix(&s.chars().skip(3).take(2).collect::<String>(), 16),
+                            u8::from_str_radix(&s.chars().skip(5).take(2).collect::<String>(), 16),
+                        )
+                    } {
                         Self::Rgb(r, g, b)
                     } else {
                         return Err(ParseColorError);

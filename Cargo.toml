@@ -99,6 +99,7 @@ string_slice = "warn"
 string_to_string = "warn"
 unnecessary_self_imports = "warn"
 use_self = "warn"
+string_slice = "warn"
 
 [features]
 #! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
