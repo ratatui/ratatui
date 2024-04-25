@@ -216,7 +216,7 @@ where
         Ok(Rect::new(0, 0, terminal.0, terminal.1))
     }
 
-    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+    fn window_size(&mut self) -> io::Result<WindowSize> {
         Ok(WindowSize {
             columns_rows: termion::terminal_size()?.into(),
             pixels: termion::terminal_size_pixels()?.into(),

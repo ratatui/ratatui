@@ -256,6 +256,8 @@ impl<'a> Paragraph<'a> {
     /// need in order to be fully rendered. For paragraphs that do not use wrapping, this count is
     /// simply the number of lines present in the paragraph.
     ///
+    /// Note: The design for text wrapping is not stable and might affect this API.
+    ///
     /// # Example
     ///
     /// ```ignore
@@ -267,7 +269,6 @@ impl<'a> Paragraph<'a> {
     /// ```
     #[stability::unstable(
         feature = "rendered-line-info",
-        reason = "The design for text wrapping is not stable and might affect this API.",
         issue = "https://github.com/ratatui-org/ratatui/issues/293"
     )]
     pub fn line_count(&self, width: u16) -> usize {
@@ -297,6 +298,8 @@ impl<'a> Paragraph<'a> {
 
     /// Calculates the shortest line width needed to avoid any word being wrapped or truncated.
     ///
+    /// Note: The design for text wrapping is not stable and might affect this API.
+    ///
     /// # Example
     ///
     /// ```ignore
@@ -309,7 +312,6 @@ impl<'a> Paragraph<'a> {
     /// ```
     #[stability::unstable(
         feature = "rendered-line-info",
-        reason = "The design for text wrapping is not stable and might affect this API.",
         issue = "https://github.com/ratatui-org/ratatui/issues/293"
     )]
     pub fn line_width(&self) -> usize {
@@ -338,8 +340,9 @@ impl Paragraph<'_> {
             return;
         }
 
+        buf.set_style(text_area, self.style);
         let styled = self.text.iter().map(|line| {
-            let graphemes = line.styled_graphemes(self.style);
+            let graphemes = line.styled_graphemes(self.text.style);
             let alignment = line.alignment.unwrap_or(self.alignment);
             (graphemes, alignment)
         });
@@ -1010,5 +1013,27 @@ mod test {
     fn right_aligned() {
         let p = Paragraph::new("Hello, world!").right_aligned();
         assert_eq!(p.alignment, Alignment::Right);
+    }
+
+    /// Regression test for <https://github.com/ratatui-org/ratatui/issues/990>
+    ///
+    /// This test ensures that paragraphs with a block and styled text are rendered correctly.
+    /// It has been simplified from the original issue but tests the same functionality.
+    #[test]
+    fn paragraph_block_text_style() {
+        let text = Text::styled("Styled text", Color::Green);
+        let paragraph = Paragraph::new(text).block(Block::bordered());
+
+        let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
+        paragraph.render(Rect::new(0, 0, 20, 3), &mut buf);
+
+        let mut expected = Buffer::with_lines(vec![
+            "┌──────────────────┐",
+            "│Styled text       │",
+            "└──────────────────┘",
+        ]);
+        expected.set_style(Rect::new(1, 1, 11, 1), Style::default().fg(Color::Green));
+
+        assert_eq!(buf, expected);
     }
 }

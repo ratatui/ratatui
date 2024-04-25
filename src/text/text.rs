@@ -50,6 +50,8 @@ use crate::prelude::*;
 /// - [`Text::height`] returns the height.
 /// - [`Text::patch_style`] patches the style of this `Text`, adding modifiers from the given style.
 /// - [`Text::reset_style`] resets the style of the `Text`.
+/// - [`Text::push_line`] adds a line to the text.
+/// - [`Text::push_span`] adds a span to the last line of the text.
 ///
 /// # Examples
 ///
@@ -441,6 +443,46 @@ impl<'a> Text<'a> {
     pub fn iter_mut(&mut self) -> std::slice::IterMut<Line<'a>> {
         self.lines.iter_mut()
     }
+
+    /// Adds a line to the text.
+    ///
+    /// `line` can be any type that can be converted into a `Line`. For example, you can pass a
+    /// `&str`, a `String`, a `Span`, or a `Line`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut text = Text::from("Hello, world!");
+    /// text.push_line(Line::from("How are you?"));
+    /// text.push_line(Span::from("How are you?"));
+    /// text.push_line("How are you?");
+    /// ```
+    pub fn push_line<T: Into<Line<'a>>>(&mut self, line: T) {
+        self.lines.push(line.into());
+    }
+
+    /// Adds a span to the last line of the text.
+    ///
+    /// `span` can be any type that is convertible into a `Span`. For example, you can pass a
+    /// `&str`, a `String`, or a `Span`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::prelude::*;
+    /// let mut text = Text::from("Hello, world!");
+    /// text.push_span(Span::from("How are you?"));
+    /// text.push_span("How are you?");
+    /// ```
+    pub fn push_span<T: Into<Span<'a>>>(&mut self, span: T) {
+        let span = span.into();
+        if let Some(last) = self.lines.last_mut() {
+            last.push_span(span);
+        } else {
+            self.lines.push(Line::from(span));
+        }
+    }
 }
 
 impl<'a> IntoIterator for Text<'a> {
@@ -559,6 +601,7 @@ impl Widget for Text<'_> {
 
 impl WidgetRef for Text<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
         for (line, row) in self.iter().zip(area.rows()) {
             let line_width = line.width() as u16;
@@ -600,6 +643,11 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+
+    #[fixture]
+    fn small_buf() -> Buffer {
+        Buffer::empty(Rect::new(0, 0, 10, 1))
+    }
 
     #[test]
     fn raw() {
@@ -848,6 +896,70 @@ mod tests {
         assert_eq!(Text::default().italic().style, Modifier::ITALIC.into());
     }
 
+    #[test]
+    fn left_aligned() {
+        let text = Text::from("Hello, world!").left_aligned();
+        assert_eq!(text.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let text = Text::from("Hello, world!").centered();
+        assert_eq!(text.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let text = Text::from("Hello, world!").right_aligned();
+        assert_eq!(text.alignment, Some(Alignment::Right));
+    }
+
+    #[test]
+    fn push_line() {
+        let mut text = Text::from("A");
+        text.push_line(Line::from("B"));
+        text.push_line(Span::from("C"));
+        text.push_line("D");
+        assert_eq!(
+            text.lines,
+            vec![
+                Line::raw("A"),
+                Line::raw("B"),
+                Line::raw("C"),
+                Line::raw("D")
+            ]
+        );
+    }
+
+    #[test]
+    fn push_line_empty() {
+        let mut text = Text::default();
+        text.push_line(Line::from("Hello, world!"));
+        assert_eq!(text.lines, vec![Line::from("Hello, world!")]);
+    }
+
+    #[test]
+    fn push_span() {
+        let mut text = Text::from("A");
+        text.push_span(Span::raw("B"));
+        text.push_span("C");
+        assert_eq!(
+            text.lines,
+            vec![Line::from(vec![
+                Span::raw("A"),
+                Span::raw("B"),
+                Span::raw("C")
+            ])],
+        );
+    }
+
+    #[test]
+    fn push_span_empty() {
+        let mut text = Text::default();
+        text.push_span(Span::raw("Hello, world!"));
+        assert_eq!(text.lines, vec![Line::from(Span::raw("Hello, world!"))],);
+    }
+
     mod widget {
         use super::*;
         use crate::assert_buffer_eq;
@@ -863,6 +975,13 @@ mod tests {
             let expected_buf = Buffer::with_lines(vec!["foo  "]);
 
             assert_buffer_eq!(buf, expected_buf);
+        }
+
+        #[rstest]
+        fn render_out_of_bounds(mut small_buf: Buffer) {
+            let out_of_bounds_area = Rect::new(20, 20, 10, 1);
+            Text::from("Hello, world!").render(out_of_bounds_area, &mut small_buf);
+            assert_eq!(small_buf, Buffer::empty(small_buf.area));
         }
 
         #[test]
@@ -943,24 +1062,6 @@ mod tests {
 
             assert_buffer_eq!(buf, expected);
         }
-    }
-
-    #[test]
-    fn left_aligned() {
-        let text = Text::from("Hello, world!").left_aligned();
-        assert_eq!(text.alignment, Some(Alignment::Left));
-    }
-
-    #[test]
-    fn centered() {
-        let text = Text::from("Hello, world!").centered();
-        assert_eq!(text.alignment, Some(Alignment::Center));
-    }
-
-    #[test]
-    fn right_aligned() {
-        let text = Text::from("Hello, world!").right_aligned();
-        assert_eq!(text.alignment, Some(Alignment::Right));
     }
 
     mod iterators {

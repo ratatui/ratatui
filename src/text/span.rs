@@ -282,11 +282,17 @@ impl<'a> Span<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let l = "Test Content".green().italic().to_left_aligned_line();
+    /// let line = "Test Content".green().italic().into_left_aligned_line();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn to_left_aligned_line(self) -> Line<'a> {
+    pub fn into_left_aligned_line(self) -> Line<'a> {
         Line::from(self).left_aligned()
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    #[deprecated = "use into_left_aligned_line"]
+    pub fn to_left_aligned_line(self) -> Line<'a> {
+        self.into_left_aligned_line()
     }
 
     /// Converts this Span into a center-aligned [`Line`]
@@ -295,10 +301,17 @@ impl<'a> Span<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let l = "Test Content".green().italic().to_centered_line();
+    /// let line = "Test Content".green().italic().into_centered_line();
     /// ```
-    pub fn to_centered_line(self) -> Line<'a> {
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn into_centered_line(self) -> Line<'a> {
         Line::from(self).centered()
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    #[deprecated = "use into_centered_line"]
+    pub fn to_centered_line(self) -> Line<'a> {
+        self.into_centered_line()
     }
 
     /// Converts this Span into a right-aligned [`Line`]
@@ -307,10 +320,17 @@ impl<'a> Span<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let l = "Test Content".green().italic().to_right_aligned_line();
+    /// let line = "Test Content".green().italic().into_right_aligned_line();
     /// ```
-    pub fn to_right_aligned_line(self) -> Line<'a> {
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn into_right_aligned_line(self) -> Line<'a> {
         Line::from(self).right_aligned()
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    #[deprecated = "use into_right_aligned_line"]
+    pub fn to_right_aligned_line(self) -> Line<'a> {
+        self.into_right_aligned_line()
     }
 }
 
@@ -343,6 +363,7 @@ impl Widget for Span<'_> {
 
 impl WidgetRef for Span<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
         let Rect {
             x: mut current_x,
             y,
@@ -382,7 +403,14 @@ impl std::fmt::Display for Span<'_> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::fixture;
+
     use super::*;
+
+    #[fixture]
+    fn small_buf() -> Buffer {
+        Buffer::empty(Rect::new(0, 0, 10, 1))
+    }
 
     #[test]
     fn default() {
@@ -512,7 +540,30 @@ mod tests {
         assert_eq!(format!("{stylized_span}"), "stylized test content");
     }
 
+    #[test]
+    fn left_aligned() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.into_left_aligned_line();
+        assert_eq!(line.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.into_centered_line();
+        assert_eq!(line.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.into_right_aligned_line();
+        assert_eq!(line.alignment, Some(Alignment::Right));
+    }
+
     mod widget {
+        use rstest::rstest;
+
         use super::*;
         use crate::assert_buffer_eq;
 
@@ -528,6 +579,13 @@ mod tests {
                 "   ".into(),
             ])]);
             assert_buffer_eq!(buf, expected);
+        }
+
+        #[rstest]
+        fn render_out_of_bounds(mut small_buf: Buffer) {
+            let out_of_bounds = Rect::new(20, 20, 10, 1);
+            Span::raw("Hello, World!").render(out_of_bounds, &mut small_buf);
+            assert_eq!(small_buf, Buffer::empty(small_buf.area));
         }
 
         /// When the content of the span is longer than the area passed to render, the content
@@ -611,26 +669,5 @@ mod tests {
             ])]);
             assert_buffer_eq!(buf, expected);
         }
-    }
-
-    #[test]
-    fn left_aligned() {
-        let span = Span::styled("Test Content", Style::new().green().italic());
-        let line = span.to_left_aligned_line();
-        assert_eq!(line.alignment, Some(Alignment::Left));
-    }
-
-    #[test]
-    fn centered() {
-        let span = Span::styled("Test Content", Style::new().green().italic());
-        let line = span.to_centered_line();
-        assert_eq!(line.alignment, Some(Alignment::Center));
-    }
-
-    #[test]
-    fn right_aligned() {
-        let span = Span::styled("Test Content", Style::new().green().italic());
-        let line = span.to_right_aligned_line();
-        assert_eq!(line.alignment, Some(Alignment::Right));
     }
 }

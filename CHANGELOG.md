@@ -2,7 +2,457 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.26.1](https://github.com/ratatui-org/ratatui/releases/tag/0.26.1) - 2024-02-12
+## [0.26.2](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.2) - 2024-04-15
+
+This is a patch release that fixes bugs and adds enhancements, including new iterator constructors, List scroll padding, and various rendering improvements. ✨
+
+✨ **Release highlights**: <https://ratatui.rs/highlights/v0262/>
+
+### Features
+
+- [11b452d](https://github.com/ratatui-org/ratatui/commit/11b452d56fe590188ee7a53fa2dde95513b1a4c7)
+  *(layout)* Mark various functions as const by @EdJoPaTo in [#951](https://github.com/ratatui-org/ratatui/pull/951)
+
+- [1cff511](https://github.com/ratatui-org/ratatui/commit/1cff51193466f5a94d202b6233d56889eccf6d7b)
+  *(line)* Impl Styled for Line by @joshka in [#968](https://github.com/ratatui-org/ratatui/pull/968)
+
+  ````text
+  This adds `FromIterator` impls for `Line` and `Text` that allow creating
+  `Line` and `Text` instances from iterators of `Span` and `Line`
+  instances, respectively.
+
+  ```rust
+  let line = Line::from_iter(vec!["Hello".blue(), " world!".green()]);
+  let line: Line = iter::once("Hello".blue())
+      .chain(iter::once(" world!".green()))
+      .collect();
+  let text = Text::from_iter(vec!["The first line", "The second line"]);
+  let text: Text = iter::once("The first line")
+      .chain(iter::once("The second line"))
+      .collect();
+  ```
+  ````
+
+- [654949b](https://github.com/ratatui-org/ratatui/commit/654949bb00b4522130642f9ad50ab4d9095d921b)
+  *(list)* Add Scroll Padding to Lists by @CameronBarnes in [#958](https://github.com/ratatui-org/ratatui/pull/958)
+
+  ````text
+  Introduces scroll padding, which allows the api user to request that a certain number of ListItems be kept visible above and below the currently selected item while scrolling.
+
+  ```rust
+  let list = List::new(items).scroll_padding(1);
+  ```
+  ````
+
+  Fixes:https://github.com/ratatui-org/ratatui/pull/955
+
+- [26af650](https://github.com/ratatui-org/ratatui/commit/26af65043ee9f165459dec228d12eaeed9997d92)
+  *(text)* Add push methods for text and line by @joshka in [#998](https://github.com/ratatui-org/ratatui/pull/998)
+
+  ````text
+  Adds the following methods to the `Text` and `Line` structs:
+  - Text::push_line
+  - Text::push_span
+  - Line::push_span
+
+  This allows for adding lines and spans to a text object without having
+  to call methods on the fields directly, which is useful for incremental
+  construction of text objects.
+  ````
+
+- [b5bdde0](https://github.com/ratatui-org/ratatui/commit/b5bdde079e0e1eda98b9b1bbbba011b770e5b167)
+  *(text)* Add `FromIterator` impls for `Line` and `Text` by @joshka in [#967](https://github.com/ratatui-org/ratatui/pull/967)
+
+  ````text
+  This adds `FromIterator` impls for `Line` and `Text` that allow creating
+  `Line` and `Text` instances from iterators of `Span` and `Line`
+  instances, respectively.
+
+  ```rust
+  let line = Line::from_iter(vec!["Hello".blue(), " world!".green()]);
+  let line: Line = iter::once("Hello".blue())
+      .chain(iter::once(" world!".green()))
+      .collect();
+  let text = Text::from_iter(vec!["The first line", "The second line"]);
+  let text: Text = iter::once("The first line")
+      .chain(iter::once("The second line"))
+      .collect();
+  ```
+  ````
+
+- [12f67e8](https://github.com/ratatui-org/ratatui/commit/12f67e810fad0f907546408192a2380b590ff7bd)
+  *(uncategorized)* Impl Widget for `&str` and `String` by @kdheepak in [#952](https://github.com/ratatui-org/ratatui/pull/952)
+
+  ````text
+  Currently, `f.render_widget("hello world".bold(), area)` works but
+  `f.render_widget("hello world", area)` doesn't. This PR changes that my
+  implementing `Widget` for `&str` and `String`. This makes it easier to
+  render strings with no styles as widgets.
+
+  Example usage:
+
+  ```rust
+  terminal.draw(|f| f.render_widget("Hello World!", f.size()))?;
+  ```
+
+  ---------
+  ````
+
+### Bug Fixes
+
+- [0207160](https://github.com/ratatui-org/ratatui/commit/02071607848c51250b4663722c52e19c8ce1c5e2)
+  *(line)* Line truncation respects alignment by @TadoTheMiner in [#987](https://github.com/ratatui-org/ratatui/pull/987)
+
+  ````text
+  When rendering a `Line`, the line will be truncated:
+  - on the right for left aligned lines
+  - on the left for right aligned lines
+  - on bot sides for centered lines
+
+  E.g. "Hello World" will be rendered as "Hello", "World", "lo wo" for
+  left, right, centered lines respectively.
+  ````
+
+  Fixes:https://github.com/ratatui-org/ratatui/issues/932
+
+- [c56f49b](https://github.com/ratatui-org/ratatui/commit/c56f49b9fb1c7f1c8c97749119e85f81882ca9a9)
+  *(list)* Saturating_sub to fix highlight_symbol overflow by @mrjackwills in [#949](https://github.com/ratatui-org/ratatui/pull/949)
+
+  ````text
+  An overflow (pedantically an underflow) can occur if the
+  highlight_symbol is a multi-byte char, and area is reduced to a size
+  less than that char length.
+  ````
+
+- [b7778e5](https://github.com/ratatui-org/ratatui/commit/b7778e5cd15d0d4b28f7bbb8b3c62950748e333a)
+  *(paragraph)* Unit test typo by @joshka in [#1022](https://github.com/ratatui-org/ratatui/pull/1022)
+
+- [943c043](https://github.com/ratatui-org/ratatui/commit/943c0431d968a82b23a2f31527f32e57f86f8a7c)
+  *(scrollbar)* Dont render on 0 length track by @EdJoPaTo in [#964](https://github.com/ratatui-org/ratatui/pull/964)
+
+  ````text
+  Fixes a panic when `track_length - 1` is used. (clamp panics on `-1.0`
+  being smaller than `0.0`)
+  ````
+
+- [742a5ea](https://github.com/ratatui-org/ratatui/commit/742a5ead066bec14047f6ab7ffa3ac8307eea715)
+  *(text)* Fix panic when rendering out of bounds by @joshka in [#997](https://github.com/ratatui-org/ratatui/pull/997)
+
+  ````text
+  Previously it was possible to cause a panic when rendering to an area
+  outside of the buffer bounds. Instead this now correctly renders nothing
+  to the buffer.
+  ````
+
+- [f6c4e44](https://github.com/ratatui-org/ratatui/commit/f6c4e447e65fe10f4fc7fcc9e9c4312acad41096)
+  *(uncategorized)* Ensure that paragraph correctly renders styled text by @joshka in [#992](https://github.com/ratatui-org/ratatui/pull/992)
+
+  ````text
+  Paragraph was ignoring the new `Text::style` field added in 0.26.0
+  ````
+
+  Fixes:https://github.com/ratatui-org/ratatui/issues/990
+
+- [35e971f](https://github.com/ratatui-org/ratatui/commit/35e971f7ebb0deadc613b561b15511abd48bdb54)
+  *(uncategorized)* Scrollbar thumb not visible on long lists by @ThomasMiz in [#959](https://github.com/ratatui-org/ratatui/pull/959)
+
+  ````text
+  When displaying somewhat-long lists, the `Scrollbar` widget sometimes did not display a thumb character, and only the track will be visible.
+  ````
+
+### Refactor
+
+- [6fd5f63](https://github.com/ratatui-org/ratatui/commit/6fd5f631bbd58156d9fcae196040bb0248097819)
+  *(lint)* Prefer idiomatic for loops by @EdJoPaTo
+
+- [37b957c](https://github.com/ratatui-org/ratatui/commit/37b957c7e167a7ecda07b8a60cee5de71efcc55e)
+  *(lints)* Add lints to scrollbar by @EdJoPaTo
+
+- [c12bcfe](https://github.com/ratatui-org/ratatui/commit/c12bcfefa26529610886040bd96f2b6762436b15)
+  *(non-src)* Apply pedantic lints by @EdJoPaTo in [#976](https://github.com/ratatui-org/ratatui/pull/976)
+
+  ````text
+  Fixes many not yet enabled lints (mostly pedantic) on everything that is
+  not the lib (examples, benches, tests). Therefore, this is not containing
+  anything that can be a breaking change.
+
+  Lints are not enabled as that should be the job of #974. I created this
+  as a separate PR as its mostly independent and would only clutter up the
+  diff of #974 even more.
+
+  Also see
+  https://github.com/ratatui-org/ratatui/pull/974#discussion_r1506458743
+
+  ---------
+  ````
+
+- [8719608](https://github.com/ratatui-org/ratatui/commit/8719608bdaf32ba92bdfdd60569cf73f7070a618)
+  *(span)* Rename to_aligned_line into into_aligned_line by @EdJoPaTo in [#993](https://github.com/ratatui-org/ratatui/pull/993)
+
+  ````text
+  With the Rust method naming conventions these methods are into methods
+  consuming the Span. Therefore, it's more consistent to use `into_`
+  instead of `to_`.
+
+  ```rust
+  Span::to_centered_line
+  Span::to_left_aligned_line
+  Span::to_right_aligned_line
+  ```
+
+  Are marked deprecated and replaced with the following
+
+  ```rust
+  Span::into_centered_line
+  Span::into_left_aligned_line
+  Span::into_right_aligned_line
+  ```
+  ````
+
+- [b831c56](https://github.com/ratatui-org/ratatui/commit/b831c5688c6f1fbfa6ae2bcd70d803a54fcf0196)
+  *(widget-ref)* Clippy::needless_pass_by_value by @EdJoPaTo
+
+- [359204c](https://github.com/ratatui-org/ratatui/commit/359204c9298cc26ea21807d886d596de0329bacc)
+  *(uncategorized)* Simplify to io::Result by @EdJoPaTo in [#1016](https://github.com/ratatui-org/ratatui/pull/1016)
+
+  ````text
+  Simplifies the code, logic stays exactly the same.
+  ````
+
+- [8e68db9](https://github.com/ratatui-org/ratatui/commit/8e68db9e2f57fcbf7cb5140006bbbd4dd80bf907)
+  *(uncategorized)* Remove pointless default on internal structs by @EdJoPaTo in [#980](https://github.com/ratatui-org/ratatui/pull/980)
+
+  See #978
+
+Also remove other derives. They are unused and just slow down
+compilation.
+
+- [3be189e](https://github.com/ratatui-org/ratatui/commit/3be189e3c6ebd418d13138ff32bc4a749dc840cf)
+  *(uncategorized)* Clippy::thread_local_initializer_can_be_made_const by @EdJoPaTo
+
+  ````text
+  enabled by default on nightly
+  ````
+
+- [5c4efac](https://github.com/ratatui-org/ratatui/commit/5c4efacd1d70bb295d90ffaa73853dc206c187fb)
+  *(uncategorized)* Clippy::map_err_ignore by @EdJoPaTo
+
+- [bbb6d65](https://github.com/ratatui-org/ratatui/commit/bbb6d65e063df9a74ab6487b2216183c1fdd7230)
+  *(uncategorized)* Clippy::else_if_without_else by @EdJoPaTo
+
+- [fdb14dc](https://github.com/ratatui-org/ratatui/commit/fdb14dc7cd69788e2ed20709e767f7631b11ffa2)
+  *(uncategorized)* Clippy::redundant_type_annotations by @EdJoPaTo
+
+- [9b3b23a](https://github.com/ratatui-org/ratatui/commit/9b3b23ac14518a1ef23065d4a5da0fb047b18213)
+  *(uncategorized)* Remove literal suffix by @EdJoPaTo
+
+  ````text
+  its not needed and can just be assumed
+  ````
+
+  related:clippy::(un)separated_literal_suffix
+
+- [58b6e0b](https://github.com/ratatui-org/ratatui/commit/58b6e0be0f4db3d90005e130e4b84cd865179785)
+  *(uncategorized)* Clippy::should_panic_without_expect by @EdJoPaTo
+
+- [c870a41](https://github.com/ratatui-org/ratatui/commit/c870a41057ac0c14c2e72e762b37689dc32e7b23)
+  *(uncategorized)* Clippy::many_single_char_names by @EdJoPaTo
+
+- [a6036ad](https://github.com/ratatui-org/ratatui/commit/a6036ad78911653407f607f5efa556a055d3dce9)
+  *(uncategorized)* Clippy::similar_names by @EdJoPaTo
+
+- [060d26b](https://github.com/ratatui-org/ratatui/commit/060d26b6dc6e1027dbf46ae98b0ebba83701f941)
+  *(uncategorized)* Clippy::match_same_arms by @EdJoPaTo
+
+- [fcbea9e](https://github.com/ratatui-org/ratatui/commit/fcbea9ee68591344a29a7b2e83f1c8c878857aeb)
+  *(uncategorized)* Clippy::uninlined_format_args by @EdJoPaTo
+
+- [14b24e7](https://github.com/ratatui-org/ratatui/commit/14b24e75858af48f39d5880e7f6c9adeac1b1da9)
+  *(uncategorized)* Clippy::if_not_else by @EdJoPaTo
+
+- [5ed1f43](https://github.com/ratatui-org/ratatui/commit/5ed1f43c627053f25d9ee711677ebec6cb8fcd85)
+  *(uncategorized)* Clippy::redundant_closure_for_method_calls by @EdJoPaTo
+
+- [c8c7924](https://github.com/ratatui-org/ratatui/commit/c8c7924e0ca84351f5ed5c54e79611ce16d4dc37)
+  *(uncategorized)* Clippy::too_many_lines by @EdJoPaTo
+
+- [e3afe7c](https://github.com/ratatui-org/ratatui/commit/e3afe7c8a14c1cffd7de50782a7acf0f95f41673)
+  *(uncategorized)* Clippy::unreadable_literal by @EdJoPaTo
+
+- [a1f54de](https://github.com/ratatui-org/ratatui/commit/a1f54de7d60fa6c57be29bf8f02a675e58b7b9c2)
+  *(uncategorized)* Clippy::bool_to_int_with_if by @EdJoPaTo
+
+- [b8ea190](https://github.com/ratatui-org/ratatui/commit/b8ea190bf2cde8c18e2ac8276d2eb57d219db263)
+  *(uncategorized)* Clippy::cast_lossless by @EdJoPaTo
+
+- [0de5238](https://github.com/ratatui-org/ratatui/commit/0de5238ed3613f2d663f5e9628ca7b2aa205ed02)
+  *(uncategorized)* Dead_code by @EdJoPaTo
+
+  ````text
+  enabled by default, only detected by nightly yet
+  ````
+
+- [df5dddf](https://github.com/ratatui-org/ratatui/commit/df5dddfbc9c679d15a5a90ea79bb1f8946d5cb9c)
+  *(uncategorized)* Unused_imports by @EdJoPaTo
+
+  ````text
+  enabled by default, only detected on nightly yet
+  ````
+
+- [f1398ae](https://github.com/ratatui-org/ratatui/commit/f1398ae6cb1abd32106923d64844b482c7ba6f82)
+  *(uncategorized)* Clippy::useless_vec by @EdJoPaTo
+
+  ````text
+  Lint enabled by default but only nightly finds this yet
+  ````
+
+- [525848f](https://github.com/ratatui-org/ratatui/commit/525848ff4e066526d402fecf1d5b9c63cff1f22a)
+  *(uncategorized)* Manually apply clippy::use_self for impl with lifetimes by @EdJoPaTo
+
+- [660c718](https://github.com/ratatui-org/ratatui/commit/660c7183c7a10dc453d80dfb651d9534536960b9)
+  *(uncategorized)* Clippy::empty_line_after_doc_comments by @EdJoPaTo
+
+- [ab951fa](https://github.com/ratatui-org/ratatui/commit/ab951fae8166c9321728ba942b48552dfe4d9c55)
+  *(uncategorized)* Clippy::return_self_not_must_use by @EdJoPaTo
+
+- [3cd4369](https://github.com/ratatui-org/ratatui/commit/3cd436917649a93b4b80d0c4a0343284e0585522)
+  *(uncategorized)* Clippy::doc_markdown by @EdJoPaTo
+
+- [9bc014d](https://github.com/ratatui-org/ratatui/commit/9bc014d7f16efdb70fcd6b6b786fe74eac7b9bdf)
+  *(uncategorized)* Clippy::items_after_statements by @EdJoPaTo
+
+- [36a0cd5](https://github.com/ratatui-org/ratatui/commit/36a0cd56e5645533a1d6c2720536fa10a56b0d40)
+  *(uncategorized)* Clippy::deref_by_slicing by @EdJoPaTo
+
+- [f7f6692](https://github.com/ratatui-org/ratatui/commit/f7f66928a8833532a3bc97292665640285e7aafa)
+  *(uncategorized)* Clippy::equatable_if_let by @EdJoPaTo
+
+- [01418eb](https://github.com/ratatui-org/ratatui/commit/01418eb7c2e1874cb4070828c485d81ea171b18d)
+  *(uncategorized)* Clippy::default_trait_access by @EdJoPaTo
+
+- [8536760](https://github.com/ratatui-org/ratatui/commit/8536760e7802a498f7c6d9fe8fb4c7920a1c6e71)
+  *(uncategorized)* Clippy::inefficient_to_string by @EdJoPaTo
+
+- [a558b19](https://github.com/ratatui-org/ratatui/commit/a558b19c9a7b90a1ed3f309301f49f0b483e02ec)
+  *(uncategorized)* Clippy::implicit_clone by @EdJoPaTo
+
+- [5b00e3a](https://github.com/ratatui-org/ratatui/commit/5b00e3aae98cb5c20c10bec944948a75ac83f956)
+  *(uncategorized)* Clippy::use_self by @EdJoPaTo
+
+- [27680c0](https://github.com/ratatui-org/ratatui/commit/27680c05ce1670f026ad23c446ada321c1c755f0)
+  *(uncategorized)* Clippy::semicolon_if_nothing_returned by @EdJoPaTo
+
+### Documentation
+
+- [14461c3](https://github.com/ratatui-org/ratatui/commit/14461c3a3554c95905ebca433fc3d4dae1e1acda)
+  *(breaking-changes)* Typos and markdownlint by @EdJoPaTo in [#1009](https://github.com/ratatui-org/ratatui/pull/1009)
+
+- [d0067c8](https://github.com/ratatui-org/ratatui/commit/d0067c8815d5244d319934d58a9366c8ad36b3e5)
+  *(license)* Update copyright years by @orhun in [#962](https://github.com/ratatui-org/ratatui/pull/962)
+
+- [88bfb5a](https://github.com/ratatui-org/ratatui/commit/88bfb5a43027cf3410ad560772c5bfdbaa3d58b7)
+  *(text)* Update Text and Line docs by @joshka in [#969](https://github.com/ratatui-org/ratatui/pull/969)
+
+- [3b002fd](https://github.com/ratatui-org/ratatui/commit/3b002fdcab964ce3f65f55dc8053d9678ae247a3)
+  *(uncategorized)* Update incompatible code warning in examples readme by @joshka in [#1013](https://github.com/ratatui-org/ratatui/pull/1013)
+
+### Performance
+
+- [e02f476](https://github.com/ratatui-org/ratatui/commit/e02f4768ce2ee30473200fe98e2687e42acb9c33)
+  *(borders)* Allow border!() in const by @EdJoPaTo in [#977](https://github.com/ratatui-org/ratatui/pull/977)
+
+  ````text
+  This allows more compiler optimizations when the macro is used.
+  ````
+
+- [541f0f9](https://github.com/ratatui-org/ratatui/commit/541f0f99538762a07d68a71b2989ecc6ff6f71ef)
+  *(cell)* Use const CompactString::new_inline by @EdJoPaTo in [#979](https://github.com/ratatui-org/ratatui/pull/979)
+
+  ````text
+  Some minor find when messing around trying to `const` all the things.
+
+  While `reset()` and `default()` can not be `const` it's still a benefit
+  when their contents are.
+  ````
+
+- [65e7923](https://github.com/ratatui-org/ratatui/commit/65e792375396c3160d76964ef0dfc4fb1e53be41)
+  *(scrollbar)* Const creation by @EdJoPaTo in [#963](https://github.com/ratatui-org/ratatui/pull/963)
+
+  ````text
+  A bunch of `const fn` allow for more performance and `Default` now uses the `const` new implementations.
+  ````
+
+- [8195f52](https://github.com/ratatui-org/ratatui/commit/8195f526cb4b321f337dcbe9e689cc7f6eb84065)
+  *(uncategorized)* Clippy::needless_pass_by_value by @EdJoPaTo
+
+- [183c07e](https://github.com/ratatui-org/ratatui/commit/183c07ef436cbb8fb0bec418042b44b4fedd836f)
+  *(uncategorized)* Clippy::trivially_copy_pass_by_ref by @EdJoPaTo
+
+- [a13867f](https://github.com/ratatui-org/ratatui/commit/a13867ffceb2f8f57f4540049754c2f916fd3efc)
+  *(uncategorized)* Clippy::cloned_instead_of_copied by @EdJoPaTo
+
+- [3834374](https://github.com/ratatui-org/ratatui/commit/3834374652b46c5ddbfedcf8dea2086fd762f884)
+  *(uncategorized)* Clippy::missing_const_for_fn by @EdJoPaTo
+
+### Miscellaneous Tasks
+
+- [125ee92](https://github.com/ratatui-org/ratatui/commit/125ee929ee9009b97a270e2e105a3f1167ab13d7)
+  *(docs)* Fix: fix typos in crate documentation by @orhun in [#1002](https://github.com/ratatui-org/ratatui/pull/1002)
+
+- [38c17e0](https://github.com/ratatui-org/ratatui/commit/38c17e091cf3f4de2d196ecdd6a40129019eafc4)
+  *(editorconfig)* Set and apply some defaults by @EdJoPaTo
+
+- [07da90a](https://github.com/ratatui-org/ratatui/commit/07da90a7182035b24f870bcbf0a0ffaad75eb48b)
+  *(funding)* Add eth address for receiving funds from drips.network by @BenJam in [#994](https://github.com/ratatui-org/ratatui/pull/994)
+
+- [078e97e](https://github.com/ratatui-org/ratatui/commit/078e97e4ff65c02afa7c884914ecd38a6e959b58)
+  *(github)* Add EdJoPaTo as a maintainer by @orhun in [#986](https://github.com/ratatui-org/ratatui/pull/986)
+
+- [b0314c5](https://github.com/ratatui-org/ratatui/commit/b0314c5731b32f51f5b6ca71a5194c6d7f265972)
+  *(uncategorized)* Remove conventional commit check for PR by @Valentin271 in [#950](https://github.com/ratatui-org/ratatui/pull/950)
+
+  ````text
+  This removes conventional commit check for PRs.
+
+  Since we use the PR title and description this is useless. It fails a
+  lot of time and we ignore it.
+
+  IMPORTANT NOTE: This does **not** mean Ratatui abandons conventional
+  commits. This only relates to commits in PRs.
+  ````
+
+### Build
+
+- [6e6ba27](https://github.com/ratatui-org/ratatui/commit/6e6ba27a122560bcf47b0efd20b7095f1bfd8714)
+  *(lint)* Warn on pedantic and allow the rest by @EdJoPaTo
+
+- [c4ce7e8](https://github.com/ratatui-org/ratatui/commit/c4ce7e8ff6f00875e1ead5b68052f0db737bd44d)
+  *(uncategorized)* Enable more satisfied lints by @EdJoPaTo
+
+  ````text
+  These lints dont generate warnings and therefore dont need refactoring.
+  I think they are useful in the future.
+  ````
+
+- [a4e84a6](https://github.com/ratatui-org/ratatui/commit/a4e84a6a7f6f5b80903799028f30e2a4438f2807)
+  *(uncategorized)* Increase msrv to 1.74.0 by @EdJoPaTo [**breaking**]
+
+  ````text
+  configure lints in Cargo.toml requires 1.74.0
+  ````
+
+  BREAKING CHANGE:rust 1.74 is required now
+
+### New Contributors
+
+* @TadoTheMiner made their first contribution in [#987](https://github.com/ratatui-org/ratatui/pull/987)
+* @BenJam made their first contribution in [#994](https://github.com/ratatui-org/ratatui/pull/994)
+* @CameronBarnes made their first contribution in [#958](https://github.com/ratatui-org/ratatui/pull/958)
+* @ThomasMiz made their first contribution in [#959](https://github.com/ratatui-org/ratatui/pull/959)
+
+**Full Changelog**: https://github.com/ratatui-org/ratatui/compare/v0.26.1...0.26.2
+
+## [0.26.1](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.1) - 2024-02-12
 
 This is a patch release that fixes bugs and adds enhancements, including new iterators, title options for blocks, and various rendering improvements. ✨
 
@@ -161,7 +611,7 @@ Here is the list of contributors who have contributed to `ratatui` for the first
 * @mo8it
 * @m4rch3n1ng
 
-## [0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/0.26.0) - 2024-02-02
+## [0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0) - 2024-02-02
 
 We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭
 
@@ -1818,7 +2268,7 @@ Shout out to our new sponsors!
 * @atuinsh
 * @JeftavanderHorst!
 
-## [0.25.0](https://github.com/ratatui-org/ratatui/releases/tag/0.25.0) - 2023-12-18
+## [0.25.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.25.0) - 2023-12-18
 
 We are thrilled to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭
 
@@ -2303,7 +2753,7 @@ Here is the list of contributors who have contributed to `ratatui` for the first
 * @YeungKC
 * @lyuha
 
-## [0.24.0](https://github.com/ratatui-org/ratatui/releases/tag/0.24.0) - 2023-10-23
+## [0.24.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.24.0) - 2023-10-23
 
 We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭
 

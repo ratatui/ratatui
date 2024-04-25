@@ -1,0 +1,4 @@
+# https://rust-lang.github.io/rust-clippy/master/index.html#/multiple_crate_versions
+# ratatui -> bitflags v2.3
+# termwiz -> wezterm-blob-leases -> mac_address -> nix -> bitflags v1.3.2
+allowed-duplicate-crates = ["bitflags"]
