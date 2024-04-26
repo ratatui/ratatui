@@ -19,7 +19,7 @@ use std::io::{self, stdout};
 
 use color_eyre::{config::HookBuilder, Result};
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
@@ -108,16 +108,18 @@ impl App {
 
     fn handle_events(&mut self) -> Result<()> {
         if let Event::Key(key) = event::read()? {
-            use KeyCode::*;
-            match key.code {
-                Char('q') | Esc => self.quit(),
-                Char('l') | Right => self.next(),
-                Char('h') | Left => self.previous(),
-                Char('j') | Down => self.down(),
-                Char('k') | Up => self.up(),
-                Char('g') | Home => self.top(),
-                Char('G') | End => self.bottom(),
-                _ => (),
+            if key.kind == KeyEventKind::Press {
+                use KeyCode::*;
+                match key.code {
+                    Char('q') | Esc => self.quit(),
+                    Char('l') | Right => self.next(),
+                    Char('h') | Left => self.previous(),
+                    Char('j') | Down => self.down(),
+                    Char('k') | Up => self.up(),
+                    Char('g') | Home => self.top(),
+                    Char('G') | End => self.bottom(),
+                    _ => (),
+                }
             }
         }
         Ok(())
