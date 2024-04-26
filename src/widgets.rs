@@ -21,6 +21,7 @@
 //! - [`Tabs`]: displays a tab bar and allows selection.
 //!
 //! [`Canvas`]: crate::widgets::canvas::Canvas
+mod ansi_string_buffer;
 mod barchart;
 pub mod block;
 mod borders;
@@ -37,6 +38,7 @@ mod scrollbar;
 mod sparkline;
 mod table;
 mod tabs;
+pub mod widget_ext;
 
 pub use self::{
     barchart::{Bar, BarChart, BarGroup},
