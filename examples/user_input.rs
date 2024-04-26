@@ -77,7 +77,15 @@ impl App {
     }
 
     fn enter_char(&mut self, new_char: char) {
-        self.input.insert(self.cursor_position, new_char);
+        // since the char can in UTF-8 contain multiple bytes, String::insert isn't working here
+        if self.cursor_position >= self.input.chars().count() {
+            self.input.push(new_char);
+        } else {
+            let mut new_input = self.input.chars().take(self.cursor_position).collect::<String>();
+            new_input.push(new_char);
+            new_input.push_str(&self.input.chars().skip(self.cursor_position).collect::<String>());
+            self.input = new_input;
+        }
 
         self.move_cursor_right();
     }
