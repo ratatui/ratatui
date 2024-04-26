@@ -41,7 +41,7 @@ mod widget_ext_tests {
     #[test]
     fn widget_ext_to_ansi_string() {
         let ansi_string = Greeting.to_ansi_string(5, 2);
-        println!("{ansi_string}");
+        // println!("{ansi_string}"); // uncomment to visually inspect the output
         assert_eq!(
             ansi_string,
             "\u{1b}[34;49mHello\n\u{1b}[32;49mWorld\u{1b}[0m"

@@ -31,7 +31,7 @@ impl AnsiStringBuffer {
 }
 
 impl Display for AnsiStringBuffer {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let mut last_style = None;
         for y in 0..self.area.height {
             if y > 0 {
@@ -41,7 +41,7 @@ impl Display for AnsiStringBuffer {
                 let cell = self.buf.get(x, y);
                 let style = (cell.fg, cell.bg, cell.modifier);
                 if last_style.is_none() || last_style != Some(style) {
-                    write_cell_style(cell, f)?;
+                    write_cell_style(f, cell)?;
                     last_style = Some(style);
                 }
                 f.write_str(cell.symbol())?;
@@ -51,15 +51,15 @@ impl Display for AnsiStringBuffer {
     }
 }
 
-fn write_cell_style(cell: &buffer::Cell, f: &mut Formatter<'_>) -> fmt::Result {
+fn write_cell_style(f: &mut Formatter, cell: &buffer::Cell) -> fmt::Result {
     f.write_str("\u{1b}[")?;
-    write_modifier(cell.modifier, f)?;
-    write_fg(cell.fg, f)?;
-    write_bg(cell.bg, f)?;
+    write_modifier(f, cell.modifier)?;
+    write_fg(f, cell.fg)?;
+    write_bg(f, cell.bg)?;
     f.write_str("m")
 }
 
-fn write_modifier(modifier: Modifier, f: &mut Formatter<'_>) -> fmt::Result {
+fn write_modifier(f: &mut Formatter, modifier: Modifier) -> fmt::Result {
     if modifier.contains(Modifier::BOLD) {
         f.write_str("1;")?;
     }
@@ -90,7 +90,7 @@ fn write_modifier(modifier: Modifier, f: &mut Formatter<'_>) -> fmt::Result {
     Ok(())
 }
 
-fn write_fg(color: Color, f: &mut Formatter<'_>) -> fmt::Result {
+fn write_fg(f: &mut Formatter, color: Color) -> fmt::Result {
     f.write_str(match color {
         Color::Reset => "39",
         Color::Black => "30",
@@ -120,7 +120,7 @@ fn write_fg(color: Color, f: &mut Formatter<'_>) -> fmt::Result {
     f.write_str(";")
 }
 
-fn write_bg(color: Color, f: &mut Formatter<'_>) -> fmt::Result {
+fn write_bg(f: &mut Formatter, color: Color) -> fmt::Result {
     f.write_str(match color {
         Color::Reset => "49",
         Color::Black => "40",
@@ -160,7 +160,7 @@ mod tests {
         buf.render_ref(&Line::styled("Hello", Color::Blue), Rect::new(0, 0, 5, 1));
         buf.render_ref(&Line::styled("World", Color::Green), Rect::new(0, 1, 5, 1));
         let ansi_string = buf.to_string();
-        println!("{ansi_string}");
+        // println!("{ansi_string}"); // uncomment to visually inspect the output
         assert_eq!(
             ansi_string,
             "\u{1b}[34;49mHello\n\u{1b}[32;49mWorld\u{1b}[0m"
