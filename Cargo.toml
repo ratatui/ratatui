@@ -182,8 +182,8 @@ harness = false
 
 
 [[example]]
-name = "barchart"
-required-features = ["crossterm"]
+name = "ansi_buffer"
+required-features = ["unstable-widget-ext", "unstable-widget-ref"]
 doc-scrape-examples = true
 
 [[example]]
