@@ -17,7 +17,7 @@ pub trait WidgetExt {
 impl<W: WidgetRef> WidgetExt for W {
     fn to_ansi_string(&self, width: u16, height: u16) -> String {
         let mut buf = AnsiStringBuffer::new(width, height);
-        buf.render_ref(self);
+        buf.render_ref(self, buf.area);
         buf.to_string()
     }
 }

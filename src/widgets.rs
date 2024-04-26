@@ -21,7 +21,7 @@
 //! - [`Tabs`]: displays a tab bar and allows selection.
 //!
 //! [`Canvas`]: crate::widgets::canvas::Canvas
-mod ansi_string_buffer;
+pub mod ansi_string_buffer;
 mod barchart;
 pub mod block;
 mod borders;

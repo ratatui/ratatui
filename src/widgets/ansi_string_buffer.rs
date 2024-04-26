@@ -1,14 +1,22 @@
+//! A buffer that allows widgets to easily be rendered to a string with ANSI escape sequences.
+
 use std::fmt::{self, Display, Formatter};
 
 use crate::prelude::*;
 
 /// A buffer that allows widgets to easily be rendered to a string with ANSI escape sequences.
+#[stability::unstable(
+    feature = "widget-ext",
+    issue = "https://github.com/ratatui-org/ratatui/issues/1045"
+)]
 pub struct AnsiStringBuffer {
+    /// The area of the buffer.
     pub area: Rect,
     buf: Buffer,
 }
 
 impl AnsiStringBuffer {
+    /// Creates a new `AnsiStringBuffer` with the given width and height.
     pub fn new(width: u16, height: u16) -> Self {
         Self {
             area: Rect::new(0, 0, width, height),
@@ -16,8 +24,9 @@ impl AnsiStringBuffer {
         }
     }
 
-    pub fn render_ref(&mut self, widget: &impl WidgetRef) {
-        widget.render_ref(self.area, &mut self.buf);
+    /// Renders the given widget to the buffer.
+    pub fn render_ref(&mut self, widget: &impl WidgetRef, area: Rect) {
+        widget.render_ref(area, &mut self.buf);
     }
 }
 
@@ -145,27 +154,16 @@ fn write_bg(color: Color, f: &mut Formatter<'_>) -> fmt::Result {
 mod tests {
     use super::*;
 
-    struct Greeting;
-
-    impl WidgetRef for Greeting {
-        fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-            let text = Text::from(vec![
-                Line::styled("Hello", Color::Blue),
-                Line::styled("World ", Color::Green),
-            ]);
-            text.render(area, buf);
-        }
-    }
-
     #[test]
     fn to_string() {
-        let mut buffer = AnsiStringBuffer::new(10, 2);
-        buffer.render_ref(&Greeting);
-        let ansi_string = buffer.to_string();
+        let mut buf = AnsiStringBuffer::new(5, 2);
+        buf.render_ref(&Line::styled("Hello", Color::Blue), Rect::new(0, 0, 5, 1));
+        buf.render_ref(&Line::styled("World", Color::Green), Rect::new(0, 1, 5, 1));
+        let ansi_string = buf.to_string();
         println!("{ansi_string}");
         assert_eq!(
             ansi_string,
-            "\u{1b}[34;49mHello     \n\u{1b}[32;49mWorld     \u{1b}[0m"
+            "\u{1b}[34;49mHello\n\u{1b}[32;49mWorld\u{1b}[0m"
         );
     }
 }
