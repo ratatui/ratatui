@@ -10,8 +10,8 @@ use crossterm::{
     cursor::{Hide, MoveTo, Show},
     execute, queue,
     style::{
-        Attribute as CAttribute, Attributes as CAttributes, Color as CColor, ContentStyle, Print,
-        SetAttribute, SetBackgroundColor, SetForegroundColor,
+        Attribute as CAttribute, Attributes as CAttributes, Color as CColor, Colors, ContentStyle,
+        Print, SetAttribute, SetBackgroundColor, SetColors, SetForegroundColor,
     },
     terminal::{self, Clear},
 };
@@ -145,14 +145,11 @@ where
                 diff.queue(&mut self.writer)?;
                 modifier = cell.modifier;
             }
-            if cell.fg != fg {
-                let color = CColor::from(cell.fg);
-                queue!(self.writer, SetForegroundColor(color))?;
+            if cell.fg != fg || cell.bg != bg {
+                let fg_color = CColor::from(cell.fg);
+                let bg_color = CColor::from(cell.bg);
+                queue!(self.writer, SetColors(Colors::new(fg_color, bg_color)))?;
                 fg = cell.fg;
-            }
-            if cell.bg != bg {
-                let color = CColor::from(cell.bg);
-                queue!(self.writer, SetBackgroundColor(color))?;
                 bg = cell.bg;
             }
             #[cfg(feature = "underline-color")]
