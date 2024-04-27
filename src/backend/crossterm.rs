@@ -146,9 +146,10 @@ where
                 modifier = cell.modifier;
             }
             if cell.fg != fg || cell.bg != bg {
-                let fg_color = CColor::from(cell.fg);
-                let bg_color = CColor::from(cell.bg);
-                queue!(self.writer, SetColors(Colors::new(fg_color, bg_color)))?;
+                queue!(
+                    self.writer,
+                    SetColors(Colors::new(cell.fg.into(), cell.bg.into()))
+                )?;
                 fg = cell.fg;
                 bg = cell.bg;
             }
