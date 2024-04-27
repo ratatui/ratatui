@@ -108,18 +108,19 @@ impl App {
 
     fn handle_events(&mut self) -> Result<()> {
         if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                use KeyCode::*;
-                match key.code {
-                    Char('q') | Esc => self.quit(),
-                    Char('l') | Right => self.next(),
-                    Char('h') | Left => self.previous(),
-                    Char('j') | Down => self.down(),
-                    Char('k') | Up => self.up(),
-                    Char('g') | Home => self.top(),
-                    Char('G') | End => self.bottom(),
-                    _ => (),
-                }
+            use KeyCode::*;
+            if key.kind != KeyEventKind::Press {
+                return Ok(());
+            }
+            match key.code {
+                Char('q') | Esc => self.quit(),
+                Char('l') | Right => self.next(),
+                Char('h') | Left => self.previous(),
+                Char('j') | Down => self.down(),
+                Char('k') | Up => self.up(),
+                Char('g') | Home => self.top(),
+                Char('G') | End => self.bottom(),
+                _ => (),
             }
         }
         Ok(())
