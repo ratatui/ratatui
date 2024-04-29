@@ -937,6 +937,10 @@ mod tests {
     }
 
     #[test]
+    // https://github.com/ratatui-org/ratatui/issues/1032 truncating string slice is not safe in
+    // Rust UTF-8 encoded strings, here we cut a gauge composed of characters that encode as 2 byte
+    // we cut it from the right with an even number. We expect four characters. Byte operation would
+    // yield only two.
     fn truncate_utf8_even_right() {
         let line = Line::from("██████░░░░".to_string());
         assert_eq!(
@@ -946,6 +950,9 @@ mod tests {
     }
 
     #[test]
+    // https://github.com/ratatui-org/ratatui/issues/1032 truncating string slice is not safe in
+    // Rust UTF-8 encoded strings, here we cut a gauge composed of characters that encode as 2 byte
+    // we cut it from the right with an odd number, this would hit an illegal UTF-8 position to cut
     fn truncate_utf8_odd_right() {
         let line = Line::from("██████░░░░".to_string());
         assert_eq!(
@@ -955,6 +962,10 @@ mod tests {
     }
 
     #[test]
+    // https://github.com/ratatui-org/ratatui/issues/1032 truncating string slice is not safe in
+    // Rust UTF-8 encoded strings, here we cut a gauge composed of characters that encode as 2 byte
+    // we cut it from the left with an even number. We expect four characters. Byte operation would
+    // yield only two.
     fn truncate_utf8_even_left() {
         let line = Line::from("░░░░██████".to_string());
         assert_eq!(
@@ -964,6 +975,9 @@ mod tests {
     }
 
     #[test]
+    // https://github.com/ratatui-org/ratatui/issues/1032 truncating string slice is not safe in
+    // Rust UTF-8 encoded strings, here we cut a gauge composed of characters that encode as 2 byte
+    // we cut it from the left with an odd number, this would hit an illegal UTF-8 position to cut
     fn truncate_utf8_odd_left() {
         let line = Line::from("░░░░██████".to_string());
         assert_eq!(
