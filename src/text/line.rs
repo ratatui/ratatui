@@ -1,5 +1,6 @@
 #![deny(missing_docs)]
 use std::borrow::Cow;
+use unicode_truncate::UnicodeTruncateStr;
 
 use super::StyledGrapheme;
 use crate::prelude::*;
@@ -474,22 +475,15 @@ impl<'a> Line<'a> {
             let new_span_width = span_width - offset;
             if x + new_span_width > result_width {
                 let span_end = (result_width - x + offset) as usize;
-                new_span.content = Cow::from(
-                    span.content
-                        .chars()
-                        .skip(usize::from(offset))
-                        .take(span_end - usize::from(offset))
-                        .collect::<String>(),
+                let (str_cut_start, _len) = span.content.unicode_truncate_start(usize::from(new_span_width));
+                let (str_cut_final, _len) = str_cut_start.unicode_truncate(span_end - usize::from(offset));
+                new_span.content = Cow::from(str_cut_final
                 );
                 truncated_line.spans.push(new_span);
                 break;
             }
-            new_span.content = Cow::from(
-                span.content
-                    .chars()
-                    .skip(usize::from(offset))
-                    .collect::<String>(),
-            );
+            let (new_content, _len) = span.content.unicode_truncate_start(usize::from(new_span_width));
+            new_span.content = Cow::from(new_content);
             truncated_line.spans.push(new_span);
             x += new_span_width;
             offset = 0;
