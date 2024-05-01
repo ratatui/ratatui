@@ -29,6 +29,11 @@ use crate::{prelude::*, symbols::scrollbar::*};
 /// └─────────── begin
 /// ```
 ///
+/// ## Important
+/// When rendering `Scrollbar`, you must specify the `content_length`
+/// field in the [`ScrollbarState`], or else the `Scrollbar` will not render. See
+/// the documentation for [`ScrollbarState`] for more information.
+///
 /// # Examples
 ///
 /// ```rust
