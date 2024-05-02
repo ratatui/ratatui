@@ -195,7 +195,7 @@ impl Buffer {
     /// Use [`Buffer::set_string`] when the maximum amount of characters can be printed.
     pub fn set_stringn<T, S>(
         &mut self,
-        x: u16,
+        mut x: u16,
         y: u16,
         string: T,
         max_width: usize,
@@ -205,7 +205,6 @@ impl Buffer {
         T: AsRef<str>,
         S: Into<Style>,
     {
-        let mut index = self.index_of(x, y);
         let max_width = max_width.try_into().unwrap_or(u16::MAX);
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
@@ -216,25 +215,17 @@ impl Buffer {
                 Some((symbol, width))
             });
         let style = style.into();
-        let mut x_offset = x;
         for (symbol, width) in graphemes {
-            self.content
-                .get_mut(index)
-                .expect("Index only exists when inside the buffer area")
-                .set_symbol(symbol)
-                .set_style(style);
+            self.get_mut(x, y).set_symbol(symbol).set_style(style);
+            let next_symbol = x + width;
+            x += 1;
             // Reset following cells if multi-width (they would be hidden by the grapheme),
-            let index_after_symbol = index + width as usize;
-            for i in (index + 1)..index_after_symbol {
-                self.content
-                    .get_mut(i)
-                    .expect("Index only exists when inside the buffer area")
-                    .reset();
+            while x < next_symbol {
+                self.get_mut(x, y).reset();
+                x += 1;
             }
-            index = index_after_symbol;
-            x_offset += width;
         }
-        (x_offset, y)
+        (x, y)
     }
 
     /// Print a line, starting at the position (x, y)
