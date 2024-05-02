@@ -584,34 +584,39 @@ impl Widget for Line<'_> {
 
 impl WidgetRef for Line<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        fn render_spans(spans: &[Span], area: Rect, buf: &mut Buffer, mut x: u16) {
+            for span in spans {
+                let span_width = span.width() as u16;
+                let span_area = Rect {
+                    x,
+                    width: span_width.min(area.right().saturating_sub(x)),
+                    ..area
+                };
+                span.render(span_area, buf);
+                x = x.saturating_add(span_width);
+                if x >= area.right() {
+                    break;
+                }
+            }
+        }
+
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
-        let width = self.width() as u16;
+
+        let line_width = self.width() as u16;
         let mut x = area.left();
-        let line = if width > area.width {
-            self.truncated(area.width)
+        if line_width > area.width {
+            let line = self.truncated(area.width);
+            render_spans(&line.spans, area, buf, x);
         } else {
             let offset = match self.alignment {
-                Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
-                Some(Alignment::Right) => area.width.saturating_sub(width),
+                Some(Alignment::Center) => (area.width.saturating_sub(line_width)) / 2,
+                Some(Alignment::Right) => area.width.saturating_sub(line_width),
                 Some(Alignment::Left) | None => 0,
             };
             x = x.saturating_add(offset);
-            self.to_owned()
+            render_spans(&self.spans, area, buf, x);
         };
-        for span in &line.spans {
-            let span_width = span.width() as u16;
-            let span_area = Rect {
-                x,
-                width: span_width.min(area.right().saturating_sub(x)),
-                ..area
-            };
-            span.render(span_area, buf);
-            x = x.saturating_add(span_width);
-            if x >= area.right() {
-                break;
-            }
-        }
     }
 }
 
