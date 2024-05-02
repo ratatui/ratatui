@@ -32,50 +32,45 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Bar, BarChart, BarGroup, Block, Paragraph},
 };
+use unicode_width::UnicodeWidthStr;
+
+mod common;
 
 struct Company<'a> {
-    revenue: [u64; 4],
+    revenue: [u32; 4],
     label: &'a str,
     bar_style: Style,
 }
 
 struct App<'a> {
-    data: Vec<(&'a str, u64)>,
+    data: Vec<Bar<'a>>,
     months: [&'a str; 4],
     companies: [Company<'a>; 3],
 }
 
 const TOTAL_REVENUE: &str = "Total Revenue";
+const TICK_RATE: Duration = Duration::from_millis(250);
+
+fn main() -> Result<(), Box<dyn Error>> {
+    common::install_hooks()?;
+    let mut terminal = common::init_terminal()?;
+    App::new().run(&mut terminal)?;
+    common::restore_terminal()?;
+    Ok(())
+}
 
 impl<'a> App<'a> {
     fn new() -> Self {
+        let mut rng = rand::thread_rng();
+        let data = (1..24)
+            .map(|index| {
+                Bar::default()
+                    .label(format!("B{index}").into())
+                    .value(rng.gen_range(1..15))
+            })
+            .collect();
         App {
-            data: vec![
-                ("B1", 9),
-                ("B2", 12),
-                ("B3", 5),
-                ("B4", 8),
-                ("B5", 2),
-                ("B6", 4),
-                ("B7", 5),
-                ("B8", 9),
-                ("B9", 14),
-                ("B10", 15),
-                ("B11", 1),
-                ("B12", 0),
-                ("B13", 4),
-                ("B14", 6),
-                ("B15", 4),
-                ("B16", 6),
-                ("B17", 4),
-                ("B18", 7),
-                ("B19", 13),
-                ("B20", 8),
-                ("B21", 11),
-                ("B22", 9),
-                ("B23", 3),
-                ("B24", 5),
-            ],
+            data,
             companies: [
                 Company {
                     label: "Comp.A",
@@ -97,206 +92,133 @@ impl<'a> App<'a> {
         }
     }
 
-    fn on_tick(&mut self) {
+    fn run(mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+        let mut last_tick = Instant::now();
+        loop {
+            terminal.draw(|frame| frame.render_widget(&self, frame.size()))?;
+
+            let timeout = TICK_RATE.saturating_sub(last_tick.elapsed());
+            if crossterm::event::poll(timeout)? {
+                if let Event::Key(key) = event::read()? {
+                    if key.code == KeyCode::Char('q') {
+                        return Ok(());
+                    }
+                }
+            }
+            if last_tick.elapsed() >= TICK_RATE {
+                self.update_data();
+                last_tick = Instant::now();
+            }
+        }
+    }
+
+    fn update_data(&mut self) {
         let value = self.data.pop().unwrap();
         self.data.insert(0, value);
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+impl Widget for &App<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let vertical = Layout::vertical([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)]);
+        let horizontal =
+            Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
+        let [top, bottom] = vertical.areas(area);
+        let [left, right] = horizontal.areas(bottom);
 
-    // create app and run it
-    let tick_rate = Duration::from_millis(250);
-    let app = App::new();
-    let res = run_app(&mut terminal, app, tick_rate);
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
+        self.main_barchart().render(top, buf);
+        self.group_labels_barchart().render(left, buf);
+        App::legend().render(App::legend_area(left), buf);
+        self.horizontal_barchart().render(right, buf);
+        App::legend().render(App::legend_area(right), buf);
     }
-
-    Ok(())
 }
 
-fn run_app<B: Backend>(
-    terminal: &mut Terminal<B>,
-    mut app: App,
-    tick_rate: Duration,
-) -> io::Result<()> {
-    let mut last_tick = Instant::now();
-    loop {
-        terminal.draw(|f| ui(f, &app))?;
+impl App<'_> {
+    fn main_barchart(&self) -> BarChart<'_> {
+        BarChart::default()
+            .block(Block::bordered().title("Data1"))
+            .data(BarGroup::default().bars(&self.data))
+            .bar_width(9)
+            .bar_style(Style::default().fg(Color::Yellow))
+            .value_style(Style::default().fg(Color::Black).bg(Color::Yellow))
+    }
 
-        let timeout = tick_rate.saturating_sub(last_tick.elapsed());
-        if crossterm::event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                if key.code == KeyCode::Char('q') {
-                    return Ok(());
-                }
-            }
+    fn group_labels_barchart(&self) -> BarChart<'_> {
+        let groups = self.create_groups(false);
+
+        let mut barchart = BarChart::default()
+            .block(Block::default().title("Data1").borders(Borders::ALL))
+            .bar_width(7)
+            .group_gap(3);
+        for group in groups {
+            barchart = barchart.data(group);
         }
-        if last_tick.elapsed() >= tick_rate {
-            app.on_tick();
-            last_tick = Instant::now();
+        barchart
+    }
+
+    fn horizontal_barchart(&self) -> BarChart<'_> {
+        let groups = self.create_groups(true);
+        let mut barchart = BarChart::default()
+            .block(Block::default().title("Data1").borders(Borders::ALL))
+            .bar_width(1)
+            .group_gap(1)
+            .bar_gap(0)
+            .direction(Direction::Horizontal);
+        for group in groups {
+            barchart = barchart.data(group);
         }
-    }
-}
-
-fn ui(frame: &mut Frame, app: &App) {
-    let vertical = Layout::vertical([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)]);
-    let horizontal = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
-    let [top, bottom] = vertical.areas(frame.size());
-    let [left, right] = horizontal.areas(bottom);
-
-    let barchart = BarChart::default()
-        .block(Block::bordered().title("Data1"))
-        .data(&app.data)
-        .bar_width(9)
-        .bar_style(Style::default().fg(Color::Yellow))
-        .value_style(Style::default().fg(Color::Black).bg(Color::Yellow));
-
-    frame.render_widget(barchart, top);
-    draw_bar_with_group_labels(frame, app, left);
-    draw_horizontal_bars(frame, app, right);
-}
-
-#[allow(clippy::cast_precision_loss)]
-fn create_groups<'a>(app: &'a App, combine_values_and_labels: bool) -> Vec<BarGroup<'a>> {
-    app.months
-        .iter()
-        .enumerate()
-        .map(|(i, &month)| {
-            let bars: Vec<Bar> = app
-                .companies
-                .iter()
-                .map(|c| {
-                    let mut bar = Bar::default()
-                        .value(c.revenue[i])
-                        .style(c.bar_style)
-                        .value_style(
-                            Style::default()
-                                .bg(c.bar_style.fg.unwrap())
-                                .fg(Color::Black),
-                        );
-
-                    if combine_values_and_labels {
-                        bar = bar.text_value(format!(
-                            "{} ({:.1} M)",
-                            c.label,
-                            (c.revenue[i] as f64) / 1000.
-                        ));
-                    } else {
-                        bar = bar
-                            .text_value(format!("{:.1}", (c.revenue[i] as f64) / 1000.))
-                            .label(c.label.into());
-                    }
-                    bar
-                })
-                .collect();
-            BarGroup::default()
-                .label(Line::from(month).centered())
-                .bars(&bars)
-        })
-        .collect()
-}
-
-#[allow(clippy::cast_possible_truncation)]
-fn draw_bar_with_group_labels(f: &mut Frame, app: &App, area: Rect) {
-    const LEGEND_HEIGHT: u16 = 6;
-
-    let groups = create_groups(app, false);
-
-    let mut barchart = BarChart::default()
-        .block(Block::bordered().title("Data1"))
-        .bar_width(7)
-        .group_gap(3);
-
-    for group in groups {
-        barchart = barchart.data(group);
+        barchart
     }
 
-    f.render_widget(barchart, area);
-
-    if area.height >= LEGEND_HEIGHT && area.width >= TOTAL_REVENUE.len() as u16 + 2 {
-        let legend_width = TOTAL_REVENUE.len() as u16 + 2;
-        let legend_area = Rect {
-            height: LEGEND_HEIGHT,
-            width: legend_width,
-            y: area.y,
-            x: area.right() - legend_width,
-        };
-        draw_legend(f, legend_area);
-    }
-}
-
-#[allow(clippy::cast_possible_truncation)]
-fn draw_horizontal_bars(f: &mut Frame, app: &App, area: Rect) {
-    const LEGEND_HEIGHT: u16 = 6;
-
-    let groups = create_groups(app, true);
-
-    let mut barchart = BarChart::default()
-        .block(Block::bordered().title("Data1"))
-        .bar_width(1)
-        .group_gap(1)
-        .bar_gap(0)
-        .direction(Direction::Horizontal);
-
-    for group in groups {
-        barchart = barchart.data(group);
+    fn legend_area(area: Rect) -> Rect {
+        let height = 6;
+        let width = TOTAL_REVENUE.width() as u16 + 2;
+        Rect::new(area.right().saturating_sub(width), area.y, width, height).intersection(area)
     }
 
-    f.render_widget(barchart, area);
-
-    if area.height >= LEGEND_HEIGHT && area.width >= TOTAL_REVENUE.len() as u16 + 2 {
-        let legend_width = TOTAL_REVENUE.len() as u16 + 2;
-        let legend_area = Rect {
-            height: LEGEND_HEIGHT,
-            width: legend_width,
-            y: area.y,
-            x: area.right() - legend_width,
-        };
-        draw_legend(f, legend_area);
+    fn legend() -> Paragraph<'static> {
+        let text = vec![
+            Line::styled(TOTAL_REVENUE, (Color::White, Modifier::BOLD)),
+            Line::styled("- Company A", Color::Green),
+            Line::styled("- Company B", Color::Yellow),
+            Line::styled("- Company C", Color::White),
+        ];
+        Paragraph::new(text).block(Block::bordered().fg(Color::White))
     }
-}
 
-fn draw_legend(f: &mut Frame, area: Rect) {
-    let text = vec![
-        Line::from(Span::styled(
-            TOTAL_REVENUE,
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .fg(Color::White),
-        )),
-        Line::from(Span::styled(
-            "- Company A",
-            Style::default().fg(Color::Green),
-        )),
-        Line::from(Span::styled(
-            "- Company B",
-            Style::default().fg(Color::Yellow),
-        )),
-        Line::from(Span::styled(
-            "- Company C",
-            Style::default().fg(Color::White),
-        )),
-    ];
+    fn create_groups(&self, combine_values_and_labels: bool) -> Vec<BarGroup<'_>> {
+        self.months
+            .iter()
+            .enumerate()
+            .map(|(i, &month)| {
+                let bars: Vec<Bar> = self
+                    .companies
+                    .iter()
+                    .map(|c| {
+                        let mut bar = Bar::default()
+                            .value(u64::from(c.revenue[i]))
+                            .style(c.bar_style)
+                            .value_style((Color::Black, c.bar_style.fg.unwrap_or(Color::White)));
 
-    let block = Block::bordered().style(Style::default().fg(Color::White));
-    let paragraph = Paragraph::new(text).block(block);
-    f.render_widget(paragraph, area);
+                        if combine_values_and_labels {
+                            bar = bar.text_value(format!(
+                                "{} ({:.1} M)",
+                                c.label,
+                                f64::from(c.revenue[i]) / 1000.
+                            ));
+                        } else {
+                            bar = bar
+                                .text_value(format!("{:.1}", f64::from(c.revenue[i]) / 1000.))
+                                .label(c.label.into());
+                        }
+                        bar
+                    })
+                    .collect();
+                BarGroup::default()
+                    .label(Line::from(month).centered())
+                    .bars(&bars)
+            })
+            .collect()
+    }
 }

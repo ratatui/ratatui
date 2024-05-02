@@ -18,7 +18,7 @@ exclude = [
   "*.log",
   "tags",
 ]
-autoexamples = true
+autoexamples = false # so we can use a `examples/common.rs` module
 edition = "2021"
 rust-version = "1.74.0"
 
