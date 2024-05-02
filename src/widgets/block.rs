@@ -1130,9 +1130,9 @@ mod tests {
             .padding(_DEFAULT_PADDING);
     }
 
-    /// This test ensures that we have some coverage on the [`Style::from()`] implementations
+    /// Ensure Style from/into works the way a user would use it.
     #[test]
-    fn block_style() {
+    fn style_into_works_from_user_view() {
         // nominal style
         let block = Block::new().style(Style::new().red());
         assert_eq!(block.style, Style::new().red());
