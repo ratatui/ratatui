@@ -15,9 +15,8 @@ use ratatui::{
 fn widgets_block_renders() {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend).unwrap();
-    let block = Block::default()
-        .title(Span::styled("Title", Style::default().fg(Color::LightBlue)))
-        .borders(Borders::ALL);
+    let block =
+        Block::bordered().title(Span::styled("Title", Style::default().fg(Color::LightBlue)));
     terminal
         .draw(|frame| frame.render_widget(block, Rect::new(0, 0, 8, 8)))
         .unwrap();
@@ -54,7 +53,7 @@ fn widgets_block_titles_overlap() {
 
     // Left overrides the center
     test_case(
-        Block::default()
+        Block::new()
             .title(Title::from("aaaaa").alignment(Alignment::Left))
             .title(Title::from("bbb").alignment(Alignment::Center))
             .title(Title::from("ccc").alignment(Alignment::Right)),
@@ -64,7 +63,7 @@ fn widgets_block_titles_overlap() {
 
     // Left alignment overrides the center alignment which overrides the right alignment
     test_case(
-        Block::default()
+        Block::new()
             .title(Title::from("aaaaa").alignment(Alignment::Left))
             .title(Title::from("bbbbb").alignment(Alignment::Center))
             .title(Title::from("ccccc").alignment(Alignment::Right)),
@@ -74,7 +73,7 @@ fn widgets_block_titles_overlap() {
 
     // Multiple left alignment overrides the center alignment and the right alignment
     test_case(
-        Block::default()
+        Block::new()
             .title(Title::from("aaaaa").alignment(Alignment::Left))
             .title(Title::from("aaaaa").alignment(Alignment::Left))
             .title(Title::from("bbbbb").alignment(Alignment::Center))
@@ -85,7 +84,7 @@ fn widgets_block_titles_overlap() {
 
     // The right alignment doesn't override the center alignment, but pierces through it
     test_case(
-        Block::default()
+        Block::new()
             .title(Title::from("bbbbb").alignment(Alignment::Center))
             .title(Title::from("ccccccccccc").alignment(Alignment::Right)),
         Rect::new(0, 0, 11, 1),
@@ -116,69 +115,69 @@ fn widgets_block_renders_on_small_areas() {
     ];
     for (borders, symbol) in one_cell_test_cases {
         test_case(
-            Block::default().title("Test").borders(borders),
+            Block::new().borders(borders).title("Test"),
             Rect::new(0, 0, 0, 0),
             Buffer::empty(Rect::new(0, 0, 0, 0)),
         );
         test_case(
-            Block::default().title("Test").borders(borders),
+            Block::new().borders(borders).title("Test"),
             Rect::new(0, 0, 1, 0),
             Buffer::empty(Rect::new(0, 0, 1, 0)),
         );
         test_case(
-            Block::default().title("Test").borders(borders),
+            Block::new().borders(borders).title("Test"),
             Rect::new(0, 0, 0, 1),
             Buffer::empty(Rect::new(0, 0, 0, 1)),
         );
         test_case(
-            Block::default().title("Test").borders(borders),
+            Block::new().borders(borders).title("Test"),
             Rect::new(0, 0, 1, 1),
             Buffer::with_lines(vec![symbol]),
         );
     }
     test_case(
-        Block::default().title("Test").borders(Borders::LEFT),
+        Block::new().borders(Borders::LEFT).title("Test"),
         Rect::new(0, 0, 4, 1),
         Buffer::with_lines(vec!["│Tes"]),
     );
     test_case(
-        Block::default().title("Test").borders(Borders::RIGHT),
+        Block::new().borders(Borders::RIGHT).title("Test"),
         Rect::new(0, 0, 4, 1),
         Buffer::with_lines(vec!["Tes│"]),
     );
     test_case(
-        Block::default().title("Test").borders(Borders::RIGHT),
+        Block::new().borders(Borders::RIGHT).title("Test"),
         Rect::new(0, 0, 4, 1),
         Buffer::with_lines(vec!["Tes│"]),
     );
     test_case(
-        Block::default()
-            .title("Test")
-            .borders(Borders::LEFT | Borders::RIGHT),
+        Block::new()
+            .borders(Borders::LEFT | Borders::RIGHT)
+            .title("Test"),
         Rect::new(0, 0, 4, 1),
         Buffer::with_lines(vec!["│Te│"]),
     );
     test_case(
-        Block::default().title("Test").borders(Borders::TOP),
+        Block::new().borders(Borders::TOP).title("Test"),
         Rect::new(0, 0, 4, 1),
         Buffer::with_lines(vec!["Test"]),
     );
     test_case(
-        Block::default().title("Test").borders(Borders::TOP),
+        Block::new().borders(Borders::TOP).title("Test"),
         Rect::new(0, 0, 5, 1),
         Buffer::with_lines(vec!["Test─"]),
     );
     test_case(
-        Block::default()
-            .title("Test")
-            .borders(Borders::LEFT | Borders::TOP),
+        Block::new()
+            .borders(Borders::LEFT | Borders::TOP)
+            .title("Test"),
         Rect::new(0, 0, 5, 1),
         Buffer::with_lines(vec!["┌Test"]),
     );
     test_case(
-        Block::default()
-            .title("Test")
-            .borders(Borders::LEFT | Borders::TOP),
+        Block::new()
+            .borders(Borders::LEFT | Borders::TOP)
+            .title("Test"),
         Rect::new(0, 0, 6, 1),
         Buffer::with_lines(vec!["┌Test─"]),
     );
@@ -193,14 +192,14 @@ fn widgets_block_title_alignment() {
         let backend = TestBackend::new(15, 3);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let block1 = Block::default()
-            .title(Title::from(Span::styled("Title", Style::default())).alignment(alignment))
-            .borders(borders);
+        let block1 = Block::new()
+            .borders(borders)
+            .title(Title::from(Span::styled("Title", Style::default())).alignment(alignment));
 
-        let block2 = Block::default()
-            .title("Title")
+        let block2 = Block::new()
+            .borders(borders)
             .title_alignment(alignment)
-            .borders(borders);
+            .title("Title");
 
         let area = Rect::new(1, 0, 13, 3);
 
@@ -390,7 +389,7 @@ fn widgets_block_title_alignment_bottom() {
         let title = Title::from(Span::styled("Title", Style::default()))
             .alignment(alignment)
             .position(Position::Bottom);
-        let block = Block::default().title(title).borders(borders);
+        let block = Block::new().borders(borders).title(title);
         let area = Rect::new(1, 0, 13, 3);
         terminal
             .draw(|frame| frame.render_widget(block, area))
@@ -573,10 +572,7 @@ fn widgets_block_multiple_titles() {
         let backend = TestBackend::new(15, 3);
         let mut terminal = Terminal::new(backend).unwrap();
 
-        let block = Block::default()
-            .title(title_a)
-            .title(title_b)
-            .borders(borders);
+        let block = Block::new().borders(borders).title(title_a).title(title_b);
 
         let area = Rect::new(1, 0, 13, 3);
 

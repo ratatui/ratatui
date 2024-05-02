@@ -2,7 +2,7 @@ use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
     style::{Color, Style},
-    widgets::{Bar, BarChart, BarGroup, Block, Borders},
+    widgets::{Bar, BarChart, BarGroup, Block},
     Terminal,
 };
 
@@ -16,7 +16,7 @@ fn widgets_barchart_not_full_below_max_value() {
             .draw(|f| {
                 let size = f.size();
                 let barchart = BarChart::default()
-                    .block(Block::default().borders(Borders::ALL))
+                    .block(Block::bordered())
                     .data(&[("empty", 0), ("half", 50), ("almost", 99), ("full", 100)])
                     .max(100)
                     .bar_width(7)
@@ -53,7 +53,7 @@ fn widgets_barchart_group() {
             .draw(|f| {
                 let size = f.size();
                 let barchart = BarChart::default()
-                    .block(Block::default().borders(Borders::ALL))
+                    .block(Block::bordered())
                     .data(
                         BarGroup::default().label("Mar".into()).bars(&[
                             Bar::default()

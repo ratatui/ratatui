@@ -127,7 +127,7 @@ fn widgets_list_should_truncate_items() {
         terminal
             .draw(|f| {
                 let list = List::new(case.items.clone())
-                    .block(Block::default().borders(Borders::RIGHT))
+                    .block(Block::new().borders(Borders::RIGHT))
                     .highlight_symbol(">> ");
                 f.render_stateful_widget(list, Rect::new(0, 0, 8, 2), &mut state);
             })
@@ -288,7 +288,7 @@ fn widgets_list_enable_always_highlight_spacing() {
                     ListItem::new(vec![Line::from("Item 2"), Line::from("Item 2b")]),
                     ListItem::new(vec![Line::from("Item 3"), Line::from("Item 3c")]),
                 ])
-                .block(Block::default().borders(Borders::ALL))
+                .block(Block::bordered())
                 .highlight_symbol(">> ")
                 .highlight_spacing(space);
                 f.render_stateful_widget(table, size, state);

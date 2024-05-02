@@ -51,8 +51,7 @@ fn main() -> io::Result<()> {
 
 fn hello_world(frame: &mut Frame) {
     frame.render_widget(
-        Paragraph::new("Hello World!")
-            .block(Block::default().title("Greeting").borders(Borders::ALL)),
+        Paragraph::new("Hello World!").block(Block::bordered().title("Greeting")),
         frame.size(),
     );
 }
@@ -87,8 +86,8 @@ fn layout(frame: &mut Frame) {
         Block::new().borders(Borders::TOP).title("Status Bar"),
         status_bar,
     );
-    frame.render_widget(Block::default().borders(Borders::ALL).title("Left"), left);
-    frame.render_widget(Block::default().borders(Borders::ALL).title("Right"), right);
+    frame.render_widget(Block::bordered().title("Left"), left);
+    frame.render_widget(Block::bordered().title("Right"), right);
 }
 
 fn styling(frame: &mut Frame) {

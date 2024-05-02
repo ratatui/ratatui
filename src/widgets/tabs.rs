@@ -17,7 +17,7 @@ const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVER
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
-///     .block(Block::default().title("Tabs").borders(Borders::ALL))
+///     .block(Block::bordered().title("Tabs"))
 ///     .style(Style::default().white())
 ///     .highlight_style(Style::default().yellow())
 ///     .select(2)
@@ -333,7 +333,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{assert_buffer_eq, widgets::Borders};
+    use crate::assert_buffer_eq;
 
     #[test]
     fn new() {
@@ -414,8 +414,8 @@ mod tests {
 
     #[test]
     fn render_with_block() {
-        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
-            .block(Block::default().title("Tabs").borders(Borders::ALL));
+        let tabs =
+            Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).block(Block::bordered().title("Tabs"));
         let mut expected = Buffer::with_lines(vec![
             "┌Tabs────────────────────────┐",
             "│ Tab1 │ Tab2 │ Tab3 │ Tab4  │",

@@ -197,7 +197,7 @@ impl App {
         );
         Paragraph::new(width_bar.dark_gray())
             .centered()
-            .block(Block::default().padding(Padding {
+            .block(Block::new().padding(Padding {
                 left: 0,
                 right: 0,
                 top: 1,

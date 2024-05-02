@@ -25,7 +25,7 @@ use crossterm::{
 };
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, Clear, Paragraph, Wrap},
+    widgets::{Block, Clear, Paragraph, Wrap},
 };
 
 struct App {
@@ -98,14 +98,11 @@ fn ui(f: &mut Frame, app: &App) {
         .wrap(Wrap { trim: true });
     f.render_widget(paragraph, instructions);
 
-    let block = Block::default()
-        .title("Content")
-        .borders(Borders::ALL)
-        .on_blue();
+    let block = Block::bordered().title("Content").on_blue();
     f.render_widget(block, content);
 
     if app.show_popup {
-        let block = Block::default().title("Popup").borders(Borders::ALL);
+        let block = Block::bordered().title("Popup");
         let area = centered_rect(60, 20, area);
         f.render_widget(Clear, area); //this clears out the background
         f.render_widget(block, area);

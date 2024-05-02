@@ -552,32 +552,26 @@ impl From<(Color, Color, Modifier, Modifier)> for Style {
 mod tests {
     use super::*;
 
-    fn styles() -> Vec<Style> {
-        vec![
-            Style::default(),
-            Style::default().fg(Color::Yellow),
-            Style::default().bg(Color::Yellow),
-            Style::default().add_modifier(Modifier::BOLD),
-            Style::default().remove_modifier(Modifier::BOLD),
-            Style::default().add_modifier(Modifier::ITALIC),
-            Style::default().remove_modifier(Modifier::ITALIC),
-            Style::default().add_modifier(Modifier::ITALIC | Modifier::BOLD),
-            Style::default().remove_modifier(Modifier::ITALIC | Modifier::BOLD),
-        ]
-    }
-
     #[test]
     fn combined_patch_gives_same_result_as_individual_patch() {
-        let styles = styles();
+        let styles = [
+            Style::new(),
+            Style::new().fg(Color::Yellow),
+            Style::new().bg(Color::Yellow),
+            Style::new().add_modifier(Modifier::BOLD),
+            Style::new().remove_modifier(Modifier::BOLD),
+            Style::new().add_modifier(Modifier::ITALIC),
+            Style::new().remove_modifier(Modifier::ITALIC),
+            Style::new().add_modifier(Modifier::ITALIC | Modifier::BOLD),
+            Style::new().remove_modifier(Modifier::ITALIC | Modifier::BOLD),
+        ];
         for &a in &styles {
             for &b in &styles {
                 for &c in &styles {
                     for &d in &styles {
-                        let combined = a.patch(b.patch(c.patch(d)));
-
                         assert_eq!(
-                            Style::default().patch(a).patch(b).patch(c).patch(d),
-                            Style::default().patch(combined)
+                            Style::new().patch(a).patch(b).patch(c).patch(d),
+                            Style::new().patch(a.patch(b.patch(c.patch(d))))
                         );
                     }
                 }
@@ -589,7 +583,7 @@ mod tests {
     fn combine_individual_modifiers() {
         use crate::{buffer::Buffer, layout::Rect};
 
-        let mods = vec![
+        let mods = [
             Modifier::BOLD,
             Modifier::DIM,
             Modifier::ITALIC,
@@ -603,14 +597,12 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 1, 1));
 
-        for m in &mods {
+        for m in mods {
             buffer.get_mut(0, 0).set_style(Style::reset());
-            buffer
-                .get_mut(0, 0)
-                .set_style(Style::default().add_modifier(*m));
+            buffer.get_mut(0, 0).set_style(Style::new().add_modifier(m));
             let style = buffer.get(0, 0).style();
-            assert!(style.add_modifier.contains(*m));
-            assert!(!style.sub_modifier.contains(*m));
+            assert!(style.add_modifier.contains(m));
+            assert!(!style.sub_modifier.contains(m));
         }
     }
 

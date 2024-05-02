@@ -49,10 +49,10 @@ fn render_hops(selected_row: usize, area: Rect, buf: &mut Buffer) {
         .iter()
         .map(|hop| Row::new(vec![hop.host, hop.address]))
         .collect_vec();
-    let block = Block::default()
-        .title("Traceroute bad.horse".bold().white())
+    let block = Block::new()
+        .padding(Padding::new(1, 1, 1, 1))
         .title_alignment(Alignment::Center)
-        .padding(Padding::new(1, 1, 1, 1));
+        .title("Traceroute bad.horse".bold().white());
     StatefulWidget::render(
         Table::new(rows, [Constraint::Max(100), Constraint::Length(15)])
             .header(Row::new(vec!["Host", "Address"]).set_style(THEME.traceroute.header))

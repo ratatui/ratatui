@@ -33,7 +33,7 @@ fn widgets_table_column_spacing_can_be_changed() {
                     ],
                 )
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL))
+                .block(Block::bordered())
                 .column_spacing(column_spacing);
                 f.render_widget(table, size);
             })
@@ -129,7 +129,7 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints() {
                     widths,
                 )
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL));
+                .block(Block::bordered());
                 f.render_widget(table, size);
             })
             .unwrap();
@@ -221,7 +221,7 @@ fn widgets_table_columns_widths_can_use_percentage_constraints() {
                     widths,
                 )
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL))
+                .block(Block::bordered())
                 .column_spacing(0);
                 f.render_widget(table, size);
             })
@@ -331,7 +331,7 @@ fn widgets_table_columns_widths_can_use_mixed_constraints() {
                     widths,
                 )
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL));
+                .block(Block::bordered());
                 f.render_widget(table, size);
             })
             .unwrap();
@@ -444,7 +444,7 @@ fn widgets_table_columns_widths_can_use_ratio_constraints() {
                     widths,
                 )
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL))
+                .block(Block::bordered())
                 .column_spacing(0);
                 f.render_widget(table, size);
             })
@@ -555,7 +555,7 @@ fn widgets_table_can_have_rows_with_multi_lines() {
                     ],
                 )
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL))
+                .block(Block::bordered())
                 .highlight_symbol(">> ")
                 .column_spacing(1);
                 f.render_stateful_widget(table, size, state);
@@ -652,7 +652,7 @@ fn widgets_table_enable_always_highlight_spacing() {
                     ],
                 )
                 .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL))
+                .block(Block::bordered())
                 .highlight_symbol(">> ")
                 .highlight_spacing(space)
                 .column_spacing(1);
@@ -796,7 +796,7 @@ fn widgets_table_can_have_elements_styled_individually() {
                 ],
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-            .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
+            .block(Block::new().borders(Borders::LEFT | Borders::RIGHT))
             .highlight_symbol(">> ")
             .highlight_style(Style::default().add_modifier(Modifier::BOLD))
             .column_spacing(1);
@@ -861,7 +861,7 @@ fn widgets_table_should_render_even_if_empty() {
                 ],
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]))
-            .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
+            .block(Block::new().borders(Borders::LEFT | Borders::RIGHT))
             .column_spacing(1);
             f.render_widget(table, size);
         })
@@ -902,7 +902,7 @@ fn widgets_table_columns_dont_panic() {
         ],
     )
     .header(Row::new(vec!["h1", "h2", "h3", "h4"]))
-    .block(Block::default().borders(Borders::ALL))
+    .block(Block::bordered())
     .highlight_symbol(">> ")
     .column_spacing(1);
 
@@ -940,7 +940,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
                 ],
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-            .block(Block::default().borders(Borders::ALL))
+            .block(Block::bordered())
             .column_spacing(1);
             f.render_stateful_widget(table, size, &mut state);
         })
@@ -971,7 +971,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
                 ],
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-            .block(Block::default().borders(Borders::ALL))
+            .block(Block::bordered())
             .column_spacing(1);
             f.render_stateful_widget(table, size, &mut state);
         })
