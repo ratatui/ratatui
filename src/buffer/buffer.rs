@@ -1,5 +1,3 @@
-use std::ops::{Index, IndexMut};
-
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
@@ -211,6 +209,9 @@ impl Buffer {
         })
     }
 
+    /// Returns the index in the `Vec<Cell>` for the given global (x, y) coordinates.
+    ///
+    /// Returns `None` if the given coordinates are outside of the Buffer's area.
     const fn index_of_opt(&self, x: u16, y: u16) -> Option<usize> {
         let area = self.area;
         if x < area.left() || x >= area.right() || y < area.top() || y >= area.bottom() {
@@ -449,7 +450,7 @@ impl Buffer {
     }
 }
 
-impl<P: Into<Position>> Index<P> for Buffer {
+impl<P: Into<Position>> std::ops::Index<P> for Buffer {
     type Output = Cell;
 
     /// Returns the Cell at the given position
@@ -473,7 +474,7 @@ impl<P: Into<Position>> Index<P> for Buffer {
     }
 }
 
-impl<P: Into<Position>> IndexMut<P> for Buffer {
+impl<P: Into<Position>> std::ops::IndexMut<P> for Buffer {
     /// Returns a mutable reference to the Cell at the given position
     ///
     /// # Panics
