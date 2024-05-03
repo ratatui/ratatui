@@ -3,8 +3,7 @@ use std::ops::{Index, IndexMut};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use self::layout::Position;
-use crate::{buffer::Cell, prelude::*};
+use crate::{buffer::Cell, layout::Position, prelude::*};
 
 /// A buffer that maps to the desired content of the terminal after the draw call
 ///
