@@ -95,13 +95,16 @@ impl Buffer {
 
     /// Returns a reference to Cell at the given coordinates
     ///
-    /// Panics if the index is out of bounds.
-    ///
     /// Callers should generally use the Index trait (`buf[(x, y)]`) or the `get_opt` method instead
     /// of this method.
     ///
-    /// Note that conventionally `get` methods should return `Option<&T>`, but this method panics
-    /// instead. This is kept for backwards compatibility. See `get_opt` for a safe alternative.
+    /// Note that conventionally methods named `get` usually return `Option<&T>`, but this method
+    /// panics instead. This is kept for backwards compatibility. See `get_opt` for a safe
+    /// alternative.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     #[track_caller]
     pub fn get(&self, x: u16, y: u16) -> &Cell {
         let i = self.index_of(x, y);
@@ -110,14 +113,16 @@ impl Buffer {
 
     /// Returns a mutable reference to Cell at the given coordinates
     ///
-    /// Panics if the index is out of bounds.
-    ///
     /// Callers should generally use the `IndexMut` trait (`&mut buf[(x, y)]`) or the `get_mut_opt`
     /// method instead of this method.
     ///
-    /// Note that conventionally `get_mut` methods should return `Option<&mut T>`, but this method
-    /// panics instead. This is kept for backwards compatibility. See `get_mut_opt` for a safe
-    /// alternative.
+    /// Note that conventionally methods named `get_mut` usually return `Option<&mut T>`, but this
+    /// method panics instead. This is kept for backwards compatibility. See `get_mut_opt` for a
+    /// safe alternative.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     #[track_caller]
     pub fn get_mut(&mut self, x: u16, y: u16) -> &mut Cell {
         let i = self.index_of(x, y);
@@ -133,7 +138,7 @@ impl Buffer {
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, buffer::Cell};
+    /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
     /// let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
     ///
     /// assert_eq!(buffer.get_opt((0, 0)), Some(&Cell::default()));
@@ -150,12 +155,13 @@ impl Buffer {
     /// Returns a mutable reference to Cell at the given coordinates
     ///
     /// Returns `None` if the index is out of bounds.
+    ///
     /// Note that unlike `get`, this method accepts a `Position` instead of `x` and `y` coordinates.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// # use ratatui::{prelude::*, buffer::Cell};
+    /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
     /// let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
     ///
     /// assert_eq!(buffer.get_mut_opt((0, 0)), Some(&mut Cell::default()));
@@ -447,6 +453,20 @@ impl Buffer {
 impl<P: Into<Position>> Index<P> for Buffer {
     type Output = Cell;
 
+    /// Returns the Cell at the given position
+    ///
+    /// # Panics
+    ///
+    /// May panic if the given position is outside the buffer's area.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
+    /// let buf = Buffer::empty(Rect::new(0, 0, 10, 10));
+    /// let cell = buf[(0, 0)];
+    /// let cell = buf[Position::new(0, 0)];
+    /// ```
     fn index(&self, pos: P) -> &Self::Output {
         let pos = pos.into();
         let index = self.index_of(pos.x, pos.y);
@@ -455,6 +475,20 @@ impl<P: Into<Position>> Index<P> for Buffer {
 }
 
 impl<P: Into<Position>> IndexMut<P> for Buffer {
+    /// Returns a mutable reference to the Cell at the given position
+    ///
+    /// # Panics
+    ///
+    /// May panic if the given position is outside the buffer's area.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
+    /// let mut buf = Buffer::empty(Rect::new(0, 0, 10, 10));
+    /// buf[(0, 0)].set_symbol("A");
+    /// buf[Position::new(0, 0)].set_symbol("B");
+    /// ```
     fn index_mut(&mut self, pos: P) -> &mut Self::Output {
         let pos = pos.into();
         let index = self.index_of(pos.x, pos.y);
