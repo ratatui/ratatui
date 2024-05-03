@@ -1,8 +1,4 @@
-use std::{
-    cmp::min,
-    fmt::{Debug, Formatter, Result},
-    ops::{Index, IndexMut},
-};
+use std::ops::{Index, IndexMut};
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
