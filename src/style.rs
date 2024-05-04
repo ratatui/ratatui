@@ -75,7 +75,7 @@ use bitflags::bitflags;
 mod color;
 mod stylize;
 
-pub use color::Color;
+pub use color::{Color, ParseColorError};
 pub use stylize::{Styled, Stylize};
 pub mod palette;
 
