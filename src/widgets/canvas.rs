@@ -19,7 +19,7 @@ mod points;
 mod rectangle;
 mod world;
 
-use std::{fmt::Debug, iter::zip};
+use std::{fmt::Debug, iter::zip, ops};
 
 use itertools::Itertools;
 
@@ -377,21 +377,117 @@ impl<'a, 'b> Painter<'a, 'b> {
     /// assert_eq!(point, Some((0, 0)));
     /// ```
     pub fn get_point(&self, x: f64, y: f64) -> Option<(usize, usize)> {
-        let left = self.context.x_bounds[0];
-        let right = self.context.x_bounds[1];
-        let top = self.context.y_bounds[1];
-        let bottom = self.context.y_bounds[0];
-        if x < left || x > right || y < bottom || y > top {
-            return None;
-        }
-        let width = (self.context.x_bounds[1] - self.context.x_bounds[0]).abs();
-        let height = (self.context.y_bounds[1] - self.context.y_bounds[0]).abs();
-        if width == 0.0 || height == 0.0 {
-            return None;
-        }
-        let x = ((x - left) * (self.resolution.0 - 1.0) / width) as usize;
-        let y = ((top - y) * (self.resolution.1 - 1.0) / height) as usize;
+        let x = self.get_point_x(x).ok()?;
+        let y = self.get_point_y(y).ok()?;
         Some((x, y))
+    }
+
+    /// Convert the X-coordinate value from canvas coordinates to grid coordinates.
+    pub fn get_point_x(&self, x: f64) -> Result<usize, usize> {
+        self.get_point_component(x, self.context.x_bounds, self.resolution.0, false)
+    }
+
+    /// Convert the Y-coordinate value from canvas coordinates to grid coordinates.
+    ///
+    /// Returns `Err` containing the nearest grid coordinate if it is out of bounds.
+    pub fn get_point_y(&self, y: f64) -> Result<usize, usize> {
+        self.get_point_component(y, self.context.y_bounds, self.resolution.1, true)
+    }
+
+    fn get_point_component(
+        &self,
+        input: f64,
+        [start, end]: [f64; 2],
+        resolution: f64,
+        inverted: bool,
+    ) -> Result<usize, usize> {
+        let width = (end - start).abs();
+        if width == 0.0 {
+            return Err(0);
+        }
+        let scale = (resolution - 1.0) / width;
+
+        let canvas_offset = move |input| {
+            if inverted {
+                end - input
+            } else {
+                input - start
+            }
+        };
+
+        if input < start {
+            return Err((canvas_offset(start) * scale) as usize);
+        }
+        if input > end {
+            return Err((canvas_offset(end) * scale) as usize);
+        }
+
+        Ok((canvas_offset(input) * scale) as usize)
+    }
+
+    /// Iterates over all canvas X-coordinates within the range that map to a pixel in the output
+    /// grid.
+    pub fn step_points_x(&self, range: ops::RangeInclusive<f64>) -> impl Iterator<Item = GridStep> {
+        self.step_points_component(range, self.context.x_bounds, self.resolution.0, false)
+    }
+
+    /// Iterates over all canvas Y-coordinates within the range that map to a pixel in the output
+    /// grid.
+    pub fn step_points_y(&self, range: ops::RangeInclusive<f64>) -> impl Iterator<Item = GridStep> {
+        self.step_points_component(range, self.context.y_bounds, self.resolution.1, true)
+    }
+
+    fn step_points_component(
+        &self,
+        range: ops::RangeInclusive<f64>,
+        [bounds_start, bounds_end]: [f64; 2],
+        resolution: f64,
+        inverted: bool,
+    ) -> impl Iterator<Item = GridStep> {
+        let canvas_offset = move |input| {
+            if inverted {
+                bounds_end - input
+            } else {
+                input - bounds_start
+            }
+        };
+
+        let width = (bounds_end - bounds_start).abs();
+        (width > 0.0)
+            .then(move || {
+                let scale = (resolution - 1.0) / width;
+
+                let start_canvas = bounds_start.max(*range.start());
+                let end_canvas = bounds_end.min(*range.end());
+
+                (end_canvas >= start_canvas).then(move || {
+                    let start_grid = (canvas_offset(start_canvas) * scale) as usize;
+                    let end_grid = (canvas_offset(end_canvas) * scale) as usize;
+
+                    // non-inverted: grid = (canvas - bounds_start) * scale <=> canvas = grid /
+                    // scale + bounds_start inverted: grid = (bounds_end -
+                    // canvas) * scale <=> canvas = bounds_end - grid / scale
+
+                    (start_grid.min(end_grid)..=start_grid.max(end_grid) + 1)
+                        .map(move |grid_coord| {
+                            let grid_scaled = (grid_coord as f64) / scale;
+                            let canvas_coord = if inverted {
+                                bounds_end - grid_scaled
+                            } else {
+                                bounds_start + grid_scaled
+                            };
+                            (canvas_coord, grid_coord)
+                        })
+                        .tuple_windows()
+                        .map(|(start, end)| GridStep {
+                            canvas: start.0..end.0,
+                            grid: start.1,
+                        })
+                })
+            })
+            .flatten()
+            .into_iter()
+            .flatten()
     }
 
     /// Paint a point of the grid
@@ -408,6 +504,14 @@ impl<'a, 'b> Painter<'a, 'b> {
     pub fn paint(&mut self, x: usize, y: usize, color: Color) {
         self.context.grid.paint(x, y, color);
     }
+}
+
+/// An iterator item of [`Painter::step_points_x`]/[`Painter::step_points_y`].
+pub struct GridStep {
+    /// The range of canvas coordinates that would draw on this grid coordinate.
+    pub canvas: ops::Range<f64>,
+    /// The grid coordinate of this step.
+    pub grid: usize,
 }
 
 impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
