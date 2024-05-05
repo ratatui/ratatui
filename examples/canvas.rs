@@ -179,6 +179,7 @@ impl App {
                         width: f64::from(i),
                         height: f64::from(i),
                         color: Color::Red,
+                        fill: false,
                     });
                     ctx.draw(&Rectangle {
                         x: f64::from(i * i + 3 * i) / 2.0 + 2.0,
@@ -186,6 +187,7 @@ impl App {
                         width: f64::from(i),
                         height: f64::from(i),
                         color: Color::Blue,
+                        fill: false,
                     });
                 }
                 for i in 0..100 {

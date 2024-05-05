@@ -1,3 +1,5 @@
+use std::{convert, mem};
+
 use crate::{
     style::Color,
     widgets::canvas::{Painter, Shape},
@@ -18,12 +20,44 @@ pub struct Circle {
 
 impl Shape for Circle {
     fn draw(&self, painter: &mut Painter<'_, '_>) {
-        for angle in 0..360 {
-            let radians = f64::from(angle).to_radians();
-            let circle_x = self.radius.mul_add(radians.cos(), self.x);
-            let circle_y = self.radius.mul_add(radians.sin(), self.y);
-            if let Some((x, y)) = painter.get_point(circle_x, circle_y) {
-                painter.paint(x, y, self.color);
+        fn swap_sort<T: PartialOrd>(a: &mut T, b: &mut T) {
+            if a > b {
+                mem::swap(a, b);
+            }
+        }
+
+        // draw circle line by line
+        for y_step in painter.step_points_y((self.y - self.radius)..=(self.y + self.radius)) {
+            // identify all x pixels covered on this line
+            let [dx_start, dx_end] = [y_step.canvas.start, y_step.canvas.end].map(|canvas_y| {
+                // dx_start..dx_end is the range of dx values such that dx^2 + dy^2 = r^2
+                // for all dy contained in y_step.canvas
+                let r2 = self.radius.powi(2);
+                let dy2 = (canvas_y - self.y).powi(2);
+                if r2 > dy2 {
+                    (r2 - dy2).sqrt()
+                } else {
+                    0.0 // possibly float precision error, dx should be 0 since this implies dy is
+                        // out of the circle
+                }
+            });
+
+            for sign in [-1., 1.] {
+                let canvas_start = self.x + dx_start * sign;
+                let mut grid_start = painter
+                    .get_point_x(canvas_start)
+                    .unwrap_or_else(convert::identity);
+
+                let canvas_end = self.x + dx_end * sign;
+                let mut grid_end = painter
+                    .get_point_x(canvas_end)
+                    .unwrap_or_else(convert::identity);
+
+                swap_sort(&mut grid_start, &mut grid_end);
+
+                for grid_x in grid_start..=grid_end {
+                    painter.paint(grid_x, y_step.grid, self.color);
+                }
             }
         }
     }
@@ -60,7 +94,7 @@ mod tests {
         canvas.render(buffer.area, &mut buffer);
         let expected = Buffer::with_lines(vec![
             "     ⢀⣠⢤⣀ ",
-            "    ⢰⠋  ⠈⣇",
+            "    ⢰⠋  ⠈⡇",
             "    ⠘⣆⡀ ⣠⠇",
             "      ⠉⠉⠁ ",
             "          ",
