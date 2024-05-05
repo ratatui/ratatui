@@ -55,6 +55,7 @@ impl App {
                 y: 40.0,
                 radius: 10.0,
                 color: Color::Yellow,
+                fill: false,
             },
             playground: Rect::new(10, 10, 200, 100),
             vx: 1.0,
