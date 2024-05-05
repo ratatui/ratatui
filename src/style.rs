@@ -68,7 +68,7 @@
 //! [`prelude`]: crate::prelude
 //! [`Span`]: crate::text::Span
 
-use std::fmt::{self, Debug};
+use std::fmt;
 
 use bitflags::bitflags;
 
@@ -119,7 +119,7 @@ impl fmt::Debug for Modifier {
         if self.is_empty() {
             return write!(f, "NONE");
         }
-        fmt::Debug::fmt(&self.0, f)
+        write!(f, "{}", self.0)
     }
 }
 

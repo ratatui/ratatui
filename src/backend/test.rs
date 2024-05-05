@@ -2,7 +2,7 @@
 //! It is used in the integration tests to verify the correctness of the library.
 
 use std::{
-    fmt::{Display, Write},
+    fmt::{self, Write},
     io,
 };
 
@@ -105,10 +105,10 @@ impl TestBackend {
     }
 }
 
-impl Display for TestBackend {
+impl fmt::Display for TestBackend {
     /// Formats the `TestBackend` for display by calling the `buffer_view` function
     /// on its internal buffer.
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", buffer_view(&self.buffer))
     }
 }
