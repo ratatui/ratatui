@@ -1,5 +1,5 @@
 #![deny(missing_docs)]
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt};
 
 use super::StyledGrapheme;
 use crate::prelude::*;
@@ -615,8 +615,8 @@ impl WidgetRef for Line<'_> {
     }
 }
 
-impl std::fmt::Display for Line<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Line<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for span in &self.spans {
             write!(f, "{span}")?;
         }
