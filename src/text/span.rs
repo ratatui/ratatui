@@ -337,7 +337,7 @@ impl<'a> Span<'a> {
     ///
     /// The first span will contain the characters that fit within the given width, and the second
     /// span will contain the remaining characters.
-    pub fn split_at_width(&'a self, width: usize) -> (Self, Self) {
+    pub(crate) fn split_at_width(&'a self, width: usize) -> (Self, Self) {
         // There's at least two ways to do this. I chose the second option as it iterates over the
         // string once at the cost of always allocating two strings regardless of the split point.
         // 1. iterate the chars to find the split point and then split the spans.
@@ -359,6 +359,7 @@ impl<'a> Span<'a> {
         )
     }
 
+    /// Returns `true` if the span is empty.
     pub fn is_empty(&self) -> bool {
         self.content.is_empty()
     }
