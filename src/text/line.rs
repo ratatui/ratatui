@@ -1011,7 +1011,24 @@ mod tests {
             assert_buffer_eq!(buf, Buffer::with_lines(["lo wo"]));
         }
 
-        /// documentary test to highlight the crab emoji width / length discrepancy
+        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// found panics with truncating lines that contained multi-byte characters.
+        #[test]
+        fn regression_1032() {
+            let line = Line::from(
+                "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得する"
+            );
+            let mut buf = Buffer::empty(Rect::new(0, 0, 83, 1));
+            line.render_ref(buf.area, &mut buf);
+            assert_buffer_eq!(buf, Buffer::with_lines([
+                "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得 "
+            ]));
+        }
+
+        /// Documentary test to highlight the crab emoji width / length discrepancy
+        ///
+        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// found panics with truncating lines that contained multi-byte characters.
         #[test]
         fn crab_emoji_width() {
             let line = Line::from("🦀");
@@ -1019,6 +1036,8 @@ mod tests {
             assert_eq!(line.to_string().len(), 4);
         }
 
+        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// found panics with truncating lines that contained multi-byte characters.
         #[rstest]
         #[case::left_4(Alignment::Left, 4, "1234")]
         #[case::left_5(Alignment::Left, 5, "1234 ")]
@@ -1040,6 +1059,9 @@ mod tests {
             assert_buffer_eq!(buf, Buffer::with_lines([expected]));
         }
 
+        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// found panics with truncating lines that contained multi-byte characters.
+        ///
         /// centering is tricky because there's an ambiguity about whether to take one more char
         /// from the left or the right when the line width is odd. This interacts with the width of
         /// the crab emoji, which is 2 characters wide by hitting the left or right side of the
