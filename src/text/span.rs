@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fmt::Debug};
 
 use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use super::StyledGrapheme;
 use crate::prelude::*;
@@ -331,6 +331,36 @@ impl<'a> Span<'a> {
     #[deprecated = "use into_right_aligned_line"]
     pub fn to_right_aligned_line(self) -> Line<'a> {
         self.into_right_aligned_line()
+    }
+
+    /// Splits the span into two at the given width.
+    ///
+    /// The first span will contain the characters that fit within the given width, and the second
+    /// span will contain the remaining characters.
+    pub fn split_at_width(&'a self, width: usize) -> (Self, Self) {
+        // There's at least two ways to do this. I chose the second option as it iterates over the
+        // string once at the cost of always allocating two strings regardless of the split point.
+        // 1. iterate the chars to find the split point and then split the spans.
+        // 2. iterate the chars and build the spans at the same time.
+        let mut left = String::new();
+        let mut right = String::new();
+        let mut left_width = 0;
+        for c in self.content.chars() {
+            left_width += c.width().unwrap_or(0);
+            if left_width <= width {
+                left.push(c);
+            } else {
+                right.push(c);
+            }
+        }
+        (
+            Span::styled(left, self.style),
+            Span::styled(right, self.style),
+        )
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.content.is_empty()
     }
 }
 

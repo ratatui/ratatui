@@ -453,39 +453,6 @@ impl<'a> Line<'a> {
         self.spans.iter_mut()
     }
 
-    /// Returns a line that's truncated corresponding to it's alignment and result width
-    #[must_use = "method returns the modified value"]
-    fn truncated(&'a self, result_width: u16) -> Self {
-        let mut truncated_line = Line::default();
-        let width = self.width() as u16;
-        let mut offset = match self.alignment {
-            Some(Alignment::Center) => (width.saturating_sub(result_width)) / 2,
-            Some(Alignment::Right) => width.saturating_sub(result_width),
-            _ => 0,
-        };
-        let mut x = 0;
-        for span in &self.spans {
-            let span_width = span.width() as u16;
-            if offset >= span_width {
-                offset -= span_width;
-                continue;
-            }
-            let mut new_span = span.clone();
-            let new_span_width = span_width - offset;
-            if x + new_span_width > result_width {
-                let span_end = (result_width - x + offset) as usize;
-                new_span.content = Cow::from(&span.content[offset as usize..span_end]);
-                truncated_line.spans.push(new_span);
-                break;
-            }
-
-            new_span.content = Cow::from(&span.content[offset as usize..]);
-            truncated_line.spans.push(new_span);
-            x += new_span_width;
-            offset = 0;
-        }
-        truncated_line
-    }
     /// Adds a span to the line.
     ///
     /// `span` can be any type that is convertible into a `Span`. For example, you can pass a
@@ -584,39 +551,58 @@ impl Widget for Line<'_> {
 
 impl WidgetRef for Line<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        fn render_spans(spans: &[Span], area: Rect, buf: &mut Buffer, mut x: u16) {
-            for span in spans {
-                let span_width = span.width() as u16;
-                let span_area = Rect {
-                    x,
-                    width: span_width.min(area.right().saturating_sub(x)),
-                    ..area
-                };
-                span.render(span_area, buf);
-                x = x.saturating_add(span_width);
-                if x >= area.right() {
-                    break;
-                }
-            }
-        }
-
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
-
         let line_width = self.width() as u16;
-        let mut x = area.left();
-        if line_width > area.width {
-            let line = self.truncated(area.width);
-            render_spans(&line.spans, area, buf, x);
-        } else {
+        if line_width <= area.width {
             let offset = match self.alignment {
                 Some(Alignment::Center) => (area.width.saturating_sub(line_width)) / 2,
                 Some(Alignment::Right) => area.width.saturating_sub(line_width),
                 Some(Alignment::Left) | None => 0,
             };
-            x = x.saturating_add(offset);
-            render_spans(&self.spans, area, buf, x);
+            render_spans(&self.spans, area, buf, offset, 0);
+        } else {
+            let offset = match self.alignment {
+                Some(Alignment::Center) => (line_width.saturating_sub(area.width)) / 2,
+                Some(Alignment::Right) => line_width.saturating_sub(area.width),
+                Some(Alignment::Left) | None => 0,
+            };
+            render_spans(&self.spans, area, buf, 0, offset);
         };
+    }
+}
+
+fn render_spans(
+    spans: &[Span],
+    area: Rect,
+    buf: &mut Buffer,
+    mut x_offset: u16,
+    mut span_offset: u16,
+) {
+    for span in spans {
+        let span_width = span.width() as u16;
+        // ignore spans that are completely before the offset
+        if span_offset >= span_width {
+            span_offset -= span_width;
+            continue;
+        }
+        let area = Rect {
+            x: area.x.saturating_add(x_offset),
+            width: area.width.saturating_sub(x_offset),
+            ..area
+        };
+        let is_span_partially_visible = span_offset > 0;
+        if is_span_partially_visible {
+            // only render the right side of the partially visible span
+            let (_left, right) = span.split_at_width(span_offset as usize);
+            right.render_ref(area, buf);
+            x_offset += right.width() as u16;
+            span_offset = 0; // ensure that the next span is rendered in full
+        } else {
+            // render the whole span
+            span.render_ref(area, buf);
+            x_offset += span_width;
+        }
     }
 }
 
@@ -648,7 +634,6 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::assert_buffer_eq;
 
     #[fixture]
     fn small_buf() -> Buffer {
@@ -892,53 +877,6 @@ mod tests {
 
         assert_eq!(format!("{line_from_styled_span}"), "Hello, world!");
     }
-    #[test]
-    fn render_truncates_left() {
-        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
-        Line::from("Hello world")
-            .left_aligned()
-            .render(buf.area, &mut buf);
-        let expected = Buffer::with_lines(vec!["Hello"]);
-        assert_buffer_eq!(buf, expected);
-    }
-
-    #[test]
-    fn render_truncates_right() {
-        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
-        Line::from("Hello world")
-            .right_aligned()
-            .render(buf.area, &mut buf);
-        let expected = Buffer::with_lines(vec!["world"]);
-        assert_buffer_eq!(buf, expected);
-    }
-
-    #[test]
-    fn render_truncates_center() {
-        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
-        Line::from("Hello world")
-            .centered()
-            .render(buf.area, &mut buf);
-        let expected = Buffer::with_lines(vec!["lo wo"]);
-        assert_buffer_eq!(buf, expected);
-    }
-
-    #[test]
-    fn truncate_line_with_multiple_spans() {
-        let line = Line::default().spans(vec!["foo", "bar"]);
-        assert_eq!(
-            line.right_aligned().truncated(4).to_string(),
-            String::from("obar")
-        );
-    }
-
-    #[test]
-    fn truncation_ignores_useless_spans() {
-        let line = Line::default().spans(vec!["foo", "bar"]);
-        assert_eq!(
-            line.right_aligned().truncated(3),
-            Line::default().spans(vec!["bar"])
-        );
-    }
 
     #[test]
     fn left_aligned() {
@@ -1044,6 +982,112 @@ mod tests {
             expected.set_style(Rect::new(3, 0, 6, 1), BLUE);
             expected.set_style(Rect::new(9, 0, 6, 1), GREEN);
             assert_buffer_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_truncates_left() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+            Line::from("Hello world")
+                .left_aligned()
+                .render(buf.area, &mut buf);
+            assert_buffer_eq!(buf, Buffer::with_lines(vec!["Hello"]));
+        }
+
+        #[test]
+        fn render_truncates_right() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+            Line::from("Hello world")
+                .right_aligned()
+                .render(buf.area, &mut buf);
+            assert_buffer_eq!(buf, Buffer::with_lines(vec!["world"]));
+        }
+
+        #[test]
+        fn render_truncates_center() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+            Line::from("Hello world")
+                .centered()
+                .render(buf.area, &mut buf);
+            assert_buffer_eq!(buf, Buffer::with_lines(["lo wo"]));
+        }
+
+        /// documentary test to highlight the crab emoji width / length discrepancy
+        #[test]
+        fn crab_emoji_width() {
+            let line = Line::from("🦀");
+            assert_eq!(line.width(), 2);
+            assert_eq!(line.to_string().len(), 4);
+        }
+
+        #[rstest]
+        #[case::left_4(Alignment::Left, 4, "1234")]
+        #[case::left_5(Alignment::Left, 5, "1234 ")]
+        #[case::left_6(Alignment::Left, 6, "1234🦀")]
+        #[case::left_7(Alignment::Left, 7, "1234🦀7")]
+        #[case::right_4(Alignment::Right, 4, "7890")] // failing actual: "🦀789"
+        #[case::right_4(Alignment::Right, 5, " 7890")]
+        #[case::right_5(Alignment::Right, 6, "🦀7890")]
+        #[case::right_6(Alignment::Right, 7, "4🦀7890")]
+
+        fn render_truncates_emoji(
+            #[case] alignment: Alignment,
+            #[case] buf_width: u16,
+            #[case] expected: &str,
+        ) {
+            let line = Line::from("1234🦀7890").alignment(alignment);
+            let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
+            line.render_ref(buf.area, &mut buf);
+            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
+        }
+
+        /// centering is tricky because there's an ambiguity about whether to take one more char
+        /// from the left or the right when the line width is odd. This interacts with the width of
+        /// the crab emoji, which is 2 characters wide by hitting the left or right side of the
+        /// emoji.
+        #[rstest]
+        #[case::center_6_0(6, 0, "")]
+        #[case::center_6_1(6, 1, " ")] // lef side of "🦀"
+        #[case::center_6_2(6, 2, "🦀")]
+        #[case::center_6_3(6, 3, "b🦀")]
+        #[case::center_6_4(6, 4, "b🦀c")]
+        #[case::center_7_0(7, 0, "")]
+        #[case::center_7_1(7, 1, " ")] // right side of "🦀"
+        #[case::center_7_2(7, 2, "🦀")]
+        #[case::center_7_3(7, 3, "🦀c")]
+        #[case::center_7_4(7, 4, "b🦀c")]
+        #[case::center_8_0(8, 0, "")]
+        #[case::center_8_1(8, 1, " ")] // right side of "🦀"
+        #[case::center_8_2(8, 2, " c")] // right side of "🦀c" failing actual: "🦀 "
+        #[case::center_8_3(8, 3, "🦀c")]
+        #[case::center_8_4(8, 4, "🦀cd")]
+        #[case::center_8_5(8, 5, "b🦀cd")]
+        #[case::center_9_0(9, 0, "")]
+        #[case::center_9_1(9, 1, "c")]
+        #[case::center_9_2(9, 2, " c")] // right side of "🦀c" failing actual: "🦀 "
+        #[case::center_9_3(9, 3, "🦀c")]
+        #[case::center_9_4(9, 4, "🦀cd")]
+        #[case::center_9_5(9, 5, "🦀cde")]
+        #[case::center_9_6(9, 6, "b🦀cde")]
+        fn render_truncates_emoji_center(
+            #[case] line_width: u16,
+            #[case] buf_width: u16,
+            #[case] expected: &str,
+        ) {
+            // because the crab emoji is 2 characters wide, it will can cause the centering tests
+            // intersect with either the left or right part of the emoji, which causes the emoji to
+            // be not rendered. Checking for four different widths of the line is enough to cover
+            // all the possible cases.
+            let value = match line_width {
+                6 => "ab🦀cd",
+                7 => "ab🦀cde",
+                8 => "ab🦀cdef",
+                9 => "ab🦀cdefg",
+                _ => unreachable!(),
+            };
+            let line = Line::from(value).centered();
+            let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
+            line.render_ref(buf.area, &mut buf);
+            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
         }
     }
 
