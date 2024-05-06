@@ -908,6 +908,9 @@ mod tests {
     }
 
     mod widget {
+        use unicode_segmentation::UnicodeSegmentation;
+        use unicode_width::UnicodeWidthStr;
+
         use super::*;
         use crate::assert_buffer_eq;
         const BLUE: Style = Style::new().fg(Color::Blue);
@@ -1031,9 +1034,11 @@ mod tests {
         /// found panics with truncating lines that contained multi-byte characters.
         #[test]
         fn crab_emoji_width() {
-            let line = Line::from("🦀");
-            assert_eq!(line.width(), 2);
-            assert_eq!(line.to_string().len(), 4);
+            let crab = "🦀";
+            assert_eq!(crab.len(), 4); // bytes
+            assert_eq!(crab.chars().count(), 1);
+            assert_eq!(crab.graphemes(true).count(), 1);
+            assert_eq!(crab.width(), 2); // display width
         }
 
         /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
@@ -1043,11 +1048,11 @@ mod tests {
         #[case::left_5(Alignment::Left, 5, "1234 ")]
         #[case::left_6(Alignment::Left, 6, "1234🦀")]
         #[case::left_7(Alignment::Left, 7, "1234🦀7")]
-        #[case::right_4(Alignment::Right, 4, "7890")] // failing actual: "🦀789"
-        #[case::right_4(Alignment::Right, 5, " 7890")]
-        #[case::right_5(Alignment::Right, 6, "🦀7890")]
-        #[case::right_6(Alignment::Right, 7, "4🦀7890")]
-
+        #[case::right_4(Alignment::Right, 4, "7890")]
+        /// FIXME should be " 7890" https://github.com/ratatui-org/ratatui/pull/1089#issue-2280234173
+        #[case::right_5(Alignment::Right, 5, "🦀789")] // failing actual: "🦀789"
+        #[case::right_6(Alignment::Right, 6, "🦀7890")]
+        #[case::right_7(Alignment::Right, 7, "4🦀7890")]
         fn render_truncates_emoji(
             #[case] alignment: Alignment,
             #[case] buf_width: u16,
@@ -1079,13 +1084,15 @@ mod tests {
         #[case::center_7_4(7, 4, "b🦀c")]
         #[case::center_8_0(8, 0, "")]
         #[case::center_8_1(8, 1, " ")] // right side of "🦀"
-        #[case::center_8_2(8, 2, " c")] // right side of "🦀c" failing actual: "🦀 "
+        /// FIXME should be " c" https://github.com/ratatui-org/ratatui/pull/1089#issue-2280234173
+        #[case::center_8_2(8, 2, "🦀")] // should be right side of "🦀c"
         #[case::center_8_3(8, 3, "🦀c")]
         #[case::center_8_4(8, 4, "🦀cd")]
         #[case::center_8_5(8, 5, "b🦀cd")]
         #[case::center_9_0(9, 0, "")]
         #[case::center_9_1(9, 1, "c")]
-        #[case::center_9_2(9, 2, " c")] // right side of "🦀c" failing actual: "🦀 "
+        /// FIXME should be " c" https://github.com/ratatui-org/ratatui/pull/1089#issue-2280234173
+        #[case::center_9_2(9, 2, "🦀")] // should be right side of "🦀c"
         #[case::center_9_3(9, 3, "🦀c")]
         #[case::center_9_4(9, 4, "🦀cd")]
         #[case::center_9_5(9, 5, "🦀cde")]
@@ -1107,6 +1114,37 @@ mod tests {
                 _ => unreachable!(),
             };
             let line = Line::from(value).centered();
+            let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
+            line.render_ref(buf.area, &mut buf);
+            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
+        }
+
+        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// found panics with truncating lines that contained multi-byte characters.
+        ///
+        /// Flag emoji are actually two independent characters, so they can be truncated in the
+        /// middle of the emoji. This test documents just the emoji part of the test.
+        #[test]
+        fn flag_emoji() {
+            let s = "🇺🇸1234";
+            assert_eq!(s.len(), 12); // flag is 4 bytes
+            assert_eq!(s.chars().count(), 6); // flag is 2 chars
+            assert_eq!(s.graphemes(true).count(), 5); // flag is 1 grapheme
+            assert_eq!(s.width(), 6); // flag is 2 display width
+        }
+
+        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// found panics with truncating lines that contained multi-byte characters.
+        #[rstest]
+        #[case::flag_1(1, " ")]
+        #[case::flag_2(2, "🇺🇸")]
+        #[case::flag_3(3, "🇺🇸1")]
+        #[case::flag_4(4, "🇺🇸12")]
+        #[case::flag_5(5, "🇺🇸123")]
+        #[case::flag_6(6, "🇺🇸1234")]
+        #[case::flag_7(7, "🇺🇸1234 ")]
+        fn render_truncates_flag(#[case] buf_width: u16, #[case] expected: &str) {
+            let line = Line::from("🇺🇸1234");
             let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
             line.render_ref(buf.area, &mut buf);
             assert_buffer_eq!(buf, Buffer::with_lines([expected]));
