@@ -606,7 +606,7 @@ fn render_spans(
         };
         let is_span_partially_visible = span_offset > 0;
         if is_span_partially_visible {
-            // only render the right side of the partially visible span
+            // render the partially visible span starting at the offset -> right side
             let (_left, right) = span.split_at_width(span_offset as usize);
             right.render_ref(area, buf);
             buf_x_offset += right.width() as u16;
