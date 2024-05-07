@@ -1148,18 +1148,38 @@ mod tests {
             assert_buffer_eq!(buf, Buffer::with_lines([expected]));
         }
 
+        /// Ensures the rendering also works away from the 0x0 position.
+        #[rstest]
+        #[case::left_6(Alignment::Left, 6, "a🦀bc ")]
+        #[case::center_6(Alignment::Center, 6, "🦀bc🦀")]
+        #[case::right_6(Alignment::Right, 6, " bc🦀d")]
+        fn render_truncates_away_from_0x0(
+            #[case] alignment: Alignment,
+            #[case] buf_width: u16,
+            #[case] expected: &str,
+        ) {
+            let line = Line::from(vec![Span::raw("a🦀b"), Span::raw("c🦀d")]).alignment(alignment);
+            let area = Rect::new(13, 37, buf_width, 1);
+            // Fill buffer with stuff to ensure the output is indeed padded
+            let mut buf = Buffer::filled(area, buffer::Cell::default().set_symbol("X"));
+            line.render_ref(buf.area, &mut buf);
+
+            let mut expected_buffer = Buffer::empty(area);
+            expected_buffer.set_string(13, 37, expected, Style::new());
+            assert_buffer_eq!(buf, expected_buffer);
+        }
+
         /// When two spans are rendered after each other the first needs to be padded in accordance
         /// to the skipped unicode width. In this case the first crab does not fit at width 6 which
         /// takes a front white space.
         #[rstest]
-        #[case::multi_right_4(4, "c🦀d")]
-        #[case::multi_right_5(5, "bc🦀d")]
-        #[case::multi_right_6(6, " bc🦀d")]
-        #[case::multi_right_7(7, "🦀bc🦀d")]
-        #[case::multi_right_8(8, "a🦀bc🦀d")]
+        #[case::right_4(4, "c🦀d")]
+        #[case::right_5(5, "bc🦀d")]
+        #[case::right_6(6, " bc🦀d")]
+        #[case::right_7(7, "🦀bc🦀d")]
+        #[case::right_8(8, "a🦀bc🦀d")]
         fn render_right_aligned_multi_span(#[case] buf_width: u16, #[case] expected: &str) {
-            let line =
-                Line::from(vec![Span::raw("a🦀b"), Span::raw("c🦀d")]).alignment(Alignment::Right);
+            let line = Line::from(vec![Span::raw("a🦀b"), Span::raw("c🦀d")]).right_aligned();
             let area = Rect::new(0, 0, buf_width, 1);
             // Fill buffer with stuff to ensure the output is indeed padded
             let mut buf = Buffer::filled(area, buffer::Cell::default().set_symbol("X"));
