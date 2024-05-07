@@ -607,7 +607,7 @@ fn render_spans(
         let span_is_only_partially_visible = span_offset > 0;
         if span_is_only_partially_visible {
             // render the partially visible span starting at the offset -> right side
-            let (_left, right) = span.split_at_width(span_offset as usize);
+            let right = span.skip_unicode_width(span_offset as usize);
             right.render_ref(area, buf);
             buf_x_offset += right.width() as u16;
             span_offset = 0; // ensure that the next span is rendered in full
@@ -1063,7 +1063,7 @@ mod tests {
         #[case::left_7(Alignment::Left, 7, "1234🦀7")]
         #[case::right_4(Alignment::Right, 4, "7890")]
         /// FIXME should be " 7890" https://github.com/ratatui-org/ratatui/pull/1089#issue-2280234173
-        #[case::right_5(Alignment::Right, 5, "🦀789")] // failing actual: "🦀789"
+        #[case::right_5(Alignment::Right, 5, "🦀789")]
         #[case::right_6(Alignment::Right, 6, "🦀7890")]
         #[case::right_7(Alignment::Right, 7, "4🦀7890")]
         fn render_truncates_emoji(

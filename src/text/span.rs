@@ -337,6 +337,7 @@ impl<'a> Span<'a> {
     ///
     /// The first span will contain the characters that fit within the given width, and the second
     /// span will contain the remaining characters.
+    #[must_use]
     pub(crate) fn split_at_width(&'a self, width: usize) -> (Self, Self) {
         // There's at least two ways to do this. I chose the second option as it iterates over the
         // string once at the cost of always allocating two strings regardless of the split point.
@@ -359,7 +360,29 @@ impl<'a> Span<'a> {
         )
     }
 
+    /// Skips the content until the given `skip_width` is skipped to start after the `skip_width`
+    /// while honoring unicode width of characters.
+    #[must_use]
+    pub(crate) fn skip_unicode_width(&'a self, skip_width: usize) -> Self {
+        let byte_index = self
+            .content
+            .char_indices()
+            .map(|(byte_index, char)| (byte_index, char.width().unwrap_or(0)))
+            // Dont include zero width characters at the beginning
+            .filter(|(_, char_width)| *char_width > 0)
+            .scan(0, |sum: &mut usize, (byte_index, char_width)| {
+                *sum = sum.checked_add(char_width)?;
+                Some((byte_index, *sum))
+            })
+            .find(|(_, current_width)| *current_width > skip_width)
+            .map_or_else(|| self.content.len(), |(index, _current_width)| index);
+        // unwrap is safe as it comes from char_indicies
+        let content = self.content.get(byte_index..).unwrap();
+        Self::styled(content, self.style)
+    }
+
     /// Returns `true` if the span is empty.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.content.is_empty()
     }
