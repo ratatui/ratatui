@@ -572,11 +572,24 @@ impl WidgetRef for Line<'_> {
     }
 }
 
+/// Renders all the spans of the line that are after the `span_offset` in the line and that are
+/// visible in the given area (starting rendering at `area.x + buf_x_offset`). `buf_x_offset`
+/// probably should just be used to modify area.x instead of being a parameter, but it's here
+/// because that would have made the above code just a little uglier
+///
+/// Algorithm:
+/// 1. For each span in the line:
+///    1. If the span is completely before the `span_offset`, skip it
+///    2. If the span is partially before the `span_offset`, render the right side of the span
+///    3. If the span is completely after the `span_offset`, render the whole span
+/// 2. Update `buf_x_offset` to account for the width of the rendered span
+/// 3. Update `span_offset` to 0 after the first span is rendered in full
+/// 4. Repeat
 fn render_spans(
     spans: &[Span],
     area: Rect,
     buf: &mut Buffer,
-    mut x_offset: u16,
+    mut buf_x_offset: u16,
     mut span_offset: u16,
 ) {
     for span in spans {
@@ -587,8 +600,8 @@ fn render_spans(
             continue;
         }
         let area = Rect {
-            x: area.x.saturating_add(x_offset),
-            width: area.width.saturating_sub(x_offset),
+            x: area.x.saturating_add(buf_x_offset),
+            width: area.width.saturating_sub(buf_x_offset),
             ..area
         };
         let is_span_partially_visible = span_offset > 0;
@@ -596,12 +609,12 @@ fn render_spans(
             // only render the right side of the partially visible span
             let (_left, right) = span.split_at_width(span_offset as usize);
             right.render_ref(area, buf);
-            x_offset += right.width() as u16;
+            buf_x_offset += right.width() as u16;
             span_offset = 0; // ensure that the next span is rendered in full
         } else {
             // render the whole span
             span.render_ref(area, buf);
-            x_offset += span_width;
+            buf_x_offset += span_width;
         }
     }
 }
