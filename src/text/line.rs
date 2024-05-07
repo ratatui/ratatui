@@ -604,8 +604,8 @@ fn render_spans(
             width: area.width.saturating_sub(buf_x_offset),
             ..area
         };
-        let is_span_partially_visible = span_offset > 0;
-        if is_span_partially_visible {
+        let span_is_only_partially_visible = span_offset > 0;
+        if span_is_only_partially_visible {
             // render the partially visible span starting at the offset -> right side
             let (_left, right) = span.split_at_width(span_offset as usize);
             right.render_ref(area, buf);
