@@ -604,12 +604,31 @@ fn render_spans(
             width: area.width.saturating_sub(buf_x_offset),
             ..area
         };
+        if area.is_empty() {
+            break;
+        }
         let span_is_only_partially_visible = span_offset > 0;
         if span_is_only_partially_visible {
             // render the partially visible span starting at the offset -> right side
-            let right = span.skip_unicode_width(span_offset as usize);
-            right.render_ref(area, buf);
-            buf_x_offset += right.width() as u16;
+            use unicode_truncate::UnicodeTruncateStr;
+
+            let limit = span_width - span_offset;
+            let (content, width) = span.content.unicode_truncate_start(usize::from(limit));
+            let width = width as u16;
+
+            let x = limit - width;
+
+            // Empty the cells before as there is a multi width grapheme not rendered before. But as
+            // it is not rendered in the first place (its truncated away) dont reset, set " ".
+            for x in area.x..x {
+                buf.get_mut(x, area.y).set_style(span.style).set_symbol(" ");
+            }
+
+            let span_area = Rect { x, width, ..area };
+            let right = Span::styled(content, span.style);
+            right.render_ref(span_area, buf);
+
+            buf_x_offset += limit;
             span_offset = 0; // ensure that the next span is rendered in full
         } else {
             // render the whole span
@@ -1062,8 +1081,7 @@ mod tests {
         #[case::left_6(Alignment::Left, 6, "1234🦀")]
         #[case::left_7(Alignment::Left, 7, "1234🦀7")]
         #[case::right_4(Alignment::Right, 4, "7890")]
-        /// FIXME should be " 7890" https://github.com/ratatui-org/ratatui/pull/1089#issue-2280234173
-        #[case::right_5(Alignment::Right, 5, "🦀789")]
+        #[case::right_5(Alignment::Right, 5, " 7890")]
         #[case::right_6(Alignment::Right, 6, "🦀7890")]
         #[case::right_7(Alignment::Right, 7, "4🦀7890")]
         fn render_truncates_emoji(
@@ -1097,16 +1115,14 @@ mod tests {
         #[case::center_7_4(7, 4, "b🦀c")]
         #[case::center_8_0(8, 0, "")]
         #[case::center_8_1(8, 1, " ")] // right side of "🦀"
-        /// FIXME should be " c" https://github.com/ratatui-org/ratatui/pull/1089#issue-2280234173
-        #[case::center_8_2(8, 2, "🦀")] // should be right side of "🦀c"
+        #[case::center_8_2(8, 2, " c")] // right side of "🦀c"
         #[case::center_8_3(8, 3, "🦀c")]
         #[case::center_8_4(8, 4, "🦀cd")]
         #[case::center_8_5(8, 5, "b🦀cd")]
         #[case::center_9_0(9, 0, "")]
         #[case::center_9_1(9, 1, "c")]
-        /// FIXME should be " c" https://github.com/ratatui-org/ratatui/pull/1089#issue-2280234173
-        #[case::center_9_2(9, 2, "🦀")] // should be right side of "🦀c"
-        #[case::center_9_3(9, 3, "🦀c")]
+        #[case::center_9_2(9, 2, " c")] // right side of "🦀c"
+        #[case::center_9_3(9, 3, " cd")]
         #[case::center_9_4(9, 4, "🦀cd")]
         #[case::center_9_5(9, 5, "🦀cde")]
         #[case::center_9_6(9, 6, "b🦀cde")]
@@ -1128,6 +1144,25 @@ mod tests {
             };
             let line = Line::from(value).centered();
             let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
+            line.render_ref(buf.area, &mut buf);
+            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
+        }
+
+        /// When two spans are rendered after each other the first needs to be padded in accordance
+        /// to the skipped unicode width. In this case the first crab does not fit at width 6 which
+        /// takes a front white space.
+        #[rstest]
+        #[case::multi_right_4(4, "c🦀d")]
+        #[case::multi_right_5(5, "bc🦀d")]
+        #[case::multi_right_6(6, " bc🦀d")]
+        #[case::multi_right_7(7, "🦀bc🦀d")]
+        #[case::multi_right_8(8, "a🦀bc🦀d")]
+        fn render_right_aligned_multi_span(#[case] buf_width: u16, #[case] expected: &str) {
+            let line =
+                Line::from(vec![Span::raw("a🦀b"), Span::raw("c🦀d")]).alignment(Alignment::Right);
+            let area = Rect::new(0, 0, buf_width, 1);
+            // Fill buffer with stuff to ensure the output is indeed padded
+            let mut buf = Buffer::filled(area, buffer::Cell::default().set_symbol("X"));
             line.render_ref(buf.area, &mut buf);
             assert_buffer_eq!(buf, Buffer::with_lines([expected]));
         }
