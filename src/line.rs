@@ -8,7 +8,7 @@
 ///
 /// ```rust
 /// # use ratatui::prelude::*;
-/// use ratatui_macros::{line, raw};
+/// use ratatui_macros::line;
 ///
 /// let line = line!["hello", "world"];
 /// let line = line!["hello".red(), "world".red().bold()];
@@ -23,19 +23,17 @@
 /// let line = line!["hello"; 2];
 /// ```
 ///
-/// * Use [`raw!`] or [`styled!`] macros inside [`line!`] macro for formatting.
+/// * Use [`span!`] macro inside [`line!`] macro for formatting.
 ///
 /// ```rust
 /// # use ratatui::prelude::*;
-/// use ratatui_macros::{line, raw, styled};
+/// use ratatui_macros::{line, span};
 ///
-/// let line = line![raw!("hello {}", "world"), styled!(Modifier::BOLD, "goodbye {}", "world")];
+/// let line = line![span!("hello {}", "world"), span!(Modifier::BOLD; "goodbye {}", "world")];
 /// ```
 ///
 /// [`Line`]: crate::text::Line
 /// [`Span`]: crate::text::Span
-/// [`raw!`]: crate::raw
-/// [`styled!`]: crate::styled
 #[macro_export]
 macro_rules! line {
     () => {
@@ -72,7 +70,7 @@ mod tests {
         assert_eq!(line, Line::from(vec!["hello".into(), "hello".into()]));
 
         // vec count syntax with span
-        let line = line![crate::raw!("hello"); 2];
+        let line = line![crate::span!("hello"); 2];
         assert_eq!(line, Line::from(vec!["hello".into(), "hello".into()]));
     }
 }

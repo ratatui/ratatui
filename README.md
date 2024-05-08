@@ -34,8 +34,8 @@ use ratatui_macros::{
     constraints,
     horizontal,
     vertical,
-    raw,
-    styled,
+    span,
+    line,
 };
 ```
 
@@ -118,19 +118,17 @@ assert_eq!(right.width, 3);
 
 ## Spans
 
-The `raw!` and `styled!` macros create raw and styled `Span`s respectively. They each take a format
-string and arguments. `styled!` accepts as the first paramter any value that can be converted to a
-`Style`.
+The `span!` macro create raw and styled `Span`s. They each take a format string and arguments. `span!` accepts as the first parameter any value that can be converted to a `Style` followed by a `;` followed by the format string and arguments.
 
 ```rust
 use ratatui::prelude::*;
-use ratatui_macros::{styled, raw};
+use ratatui_macros::span;
 
 let name = "world!";
-let raw_greeting = raw!("hello {name}");
-let styled_greeting = styled!(Style::new().green(), "hello {name}");
-let styled_greeting = styled!(Color::Green, "hello {name}");
-let styled_greeting = styled!(Modifier::BOLD, "hello {name}");
+let raw_greeting = span!("hello {name}");
+let styled_greeting = span!(Style::new().green(); "hello {name}");
+let styled_greeting = span!(Color::Green; "hello {name}");
+let styled_greeting = span!(Modifier::BOLD; "hello {name}");
 ```
 
 ## Line
