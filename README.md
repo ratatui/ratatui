@@ -133,6 +133,19 @@ let styled_greeting = styled!(Color::Green, "hello {name}");
 let styled_greeting = styled!(Modifier::BOLD, "hello {name}");
 ```
 
+## Line
+
+The `line!` macro creates a `Line` that contains a sequence of spans. It is similar to the `vec!` macro.
+
+```rust
+use ratatui::prelude::*;
+use ratatui_macros::line;
+
+let name = "world!";
+let line = line!["hello", format!("{name}")];
+let line = line!["bye"; 2];
+```
+
 ## Contributing
 
 Contributions to `ratatui-macros` are welcome! Whether it's submitting a bug report, a feature
@@ -143,10 +156,8 @@ request, or a pull request, all forms of contributions are valued and appreciate
 [CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui-macros/ci.yml?logo=github&style=flat-square
 [Docs.rs badge]: https://img.shields.io/docsrs/ratatui-macros?logo=rust&style=flat-square
 [Crate Downloads badge]: https://img.shields.io/crates/d/ratatui-macros?logo=rust&style=flat-square
-
 [ratatui_macros crate]: https://crates.io/crates/ratatui-macros
 [API Docs]: https://docs.rs/ratatui-macros
 [CI Status]: https://github.com/kdheepak/ratatui-macros/actions
-
 [Ratatui]: https://github.com/ratatui-org/ratatui
 [Layout concepts]: https://ratatui.rs/concepts/layout

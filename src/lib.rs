@@ -2,4 +2,5 @@
 
 mod color;
 mod layout;
+mod line;
 mod span;
