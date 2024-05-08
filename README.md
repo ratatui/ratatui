@@ -51,13 +51,14 @@ use ratatui::prelude::*;
 use ratatui_macros::constraints;
 
 assert_eq!(
-    constraints![==50, ==30%, >=3, <=1, ==1/2],
+    constraints![==50, ==30%, >=3, <=1, ==1/2, =*1],
     [
         Constraint::Length(50),
         Constraint::Percentage(30),
         Constraint::Min(3),
         Constraint::Max(1),
         Constraint::Ratio(1, 2),
+        Constraint::Fill(1),
     ]
 )
 ```

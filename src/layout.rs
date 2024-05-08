@@ -6,30 +6,34 @@
 /// # Examples
 ///
 /// ```
+/// use ratatui::prelude::*;
 /// use ratatui_macros::constraint;
-/// use ratatui::prelude::Constraint;
 /// assert_eq!(constraint!(>= 3 + 4), Constraint::Min(7));
 /// assert_eq!(constraint!(<= 3 + 4), Constraint::Max(7));
 /// assert_eq!(constraint!(== 1 / 3), Constraint::Ratio(1, 3));
 /// assert_eq!(constraint!(== 3), Constraint::Length(3));
 /// assert_eq!(constraint!(== 10 %), Constraint::Percentage(10));
+/// assert_eq!(constraint!(=* 1), Constraint::Fill(1));
 /// ```
 #[macro_export]
 macro_rules! constraint {
     ( == $token:tt % ) => {
-        ratatui::prelude::Constraint::Percentage($token)
+        ratatui::layout::Constraint::Percentage($token)
     };
     ( >= $expr:expr ) => {
-        ratatui::prelude::Constraint::Min($expr)
+        ratatui::layout::Constraint::Min($expr)
     };
     ( <= $expr:expr ) => {
-        ratatui::prelude::Constraint::Max($expr)
+        ratatui::layout::Constraint::Max($expr)
     };
     ( == $num:tt / $denom:tt ) => {
-        ratatui::prelude::Constraint::Ratio($num as u32, $denom as u32)
+        ratatui::layout::Constraint::Ratio($num as u32, $denom as u32)
     };
     ( == $expr:expr ) => {
-        ratatui::prelude::Constraint::Length($expr)
+        ratatui::layout::Constraint::Length($expr)
+    };
+    ( =* $expr:expr ) => {
+        ratatui::layout::Constraint::Fill($expr)
     };
 }
 
@@ -52,13 +56,14 @@ macro_rules! constraint {
 /// use ratatui::prelude::*;
 /// use ratatui_macros::constraints;
 /// assert_eq!(
-///     constraints![==50, ==30%, >=3, <=1, ==1/2],
+///     constraints![==50, ==30%, >=3, <=1, ==1/2, =*1],
 ///     [
 ///         Constraint::Length(50),
 ///         Constraint::Percentage(30),
 ///         Constraint::Min(3),
 ///         Constraint::Max(1),
 ///         Constraint::Ratio(1, 2),
+///         Constraint::Fill(1),
 ///     ]
 /// )
 /// ```
@@ -166,9 +171,7 @@ macro_rules! constraints {
 #[macro_export]
 macro_rules! vertical {
     ($( $constraint:tt )+) => {
-        ratatui::prelude::Layout::default()
-            .direction(ratatui::prelude::Direction::Vertical)
-            .constraints($crate::constraints!( $($constraint)+ ))
+        ratatui::layout::Layout::vertical($crate::constraints!( $($constraint)+ ))
     };
 }
 
@@ -189,8 +192,6 @@ macro_rules! vertical {
 #[macro_export]
 macro_rules! horizontal {
     ($( $constraint:tt )+) => {
-        ratatui::prelude::Layout::default()
-            .direction(ratatui::prelude::Direction::Horizontal)
-            .constraints($crate::constraints!( $($constraint)+ ))
+        ratatui::layout::Layout::horizontal($crate::constraints!( $($constraint)+ ))
     };
 }
