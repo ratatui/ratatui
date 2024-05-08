@@ -16,7 +16,7 @@ This is an experimental playground for us to explore macros that would be useful
 - Constraint-based Layouts: Easily define layout constraints such as fixed, percentage, minimum, and
   maximum sizes, as well as ratios.
 - Directional Layouts: Specify layouts as either horizontal or vertical with simple macro commands.
-- Raw and Styled span format macros.
+- Span and Line macros: Make it easier to create spans and lines with styling.
 
 ## Getting Started
 
