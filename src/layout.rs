@@ -16,21 +16,21 @@
 /// ```
 #[macro_export]
 macro_rules! constraint {
-  ( == $token:tt % ) => {
-    ratatui::prelude::Constraint::Percentage($token)
-  };
-  ( >= $expr:expr ) => {
-    ratatui::prelude::Constraint::Min($expr)
-  };
-  ( <= $expr:expr ) => {
-    ratatui::prelude::Constraint::Max($expr)
-  };
-  ( == $num:tt / $denom:tt ) => {
-    ratatui::prelude::Constraint::Ratio($num as u32, $denom as u32)
-  };
-  ( == $expr:expr ) => {
-    ratatui::prelude::Constraint::Length($expr)
-  };
+    ( == $token:tt % ) => {
+        ratatui::prelude::Constraint::Percentage($token)
+    };
+    ( >= $expr:expr ) => {
+        ratatui::prelude::Constraint::Min($expr)
+    };
+    ( <= $expr:expr ) => {
+        ratatui::prelude::Constraint::Max($expr)
+    };
+    ( == $num:tt / $denom:tt ) => {
+        ratatui::prelude::Constraint::Ratio($num as u32, $denom as u32)
+    };
+    ( == $expr:expr ) => {
+        ratatui::prelude::Constraint::Length($expr)
+    };
 }
 
 /// Creates an array of constraints.

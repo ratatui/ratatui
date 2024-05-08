@@ -555,15 +555,15 @@ macro_rules! palette {
 #[cfg(test)]
 mod tests {
 
-  use ratatui::prelude::Color;
-  palette!(pub SLATE);
+    use ratatui::prelude::Color;
+    palette!(pub SLATE);
 
-  #[test]
-  fn color_test() {
-    assert_eq!(SLATE_900, Color::Rgb(15, 23, 42));
+    #[test]
+    fn color_test() {
+        assert_eq!(SLATE_900, Color::Rgb(15, 23, 42));
 
-    palette!(RED);
+        palette!(RED);
 
-    assert_eq!(RED_900, Color::Rgb(127, 29, 29));
-  }
+        assert_eq!(RED_900, Color::Rgb(127, 29, 29));
+    }
 }
