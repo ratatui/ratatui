@@ -607,7 +607,8 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_
         if span_skip_width > 0 {
             // the first visible span is only partially visible, so truncate the start and render it
             // starting at span_skip_width, all subsequent visible spans are rendered in full (as
-            // available space permits)
+            // available space permits). We only need to truncate the start of the first visible span
+            // because the rest of the line will be truncated automatically by the area width
             let available_width = span_width - span_skip_width;
             let (content, actual_width) = span
                 .content
