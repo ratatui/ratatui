@@ -586,25 +586,29 @@ impl WidgetRef for Line<'_> {
 ///
 /// Algorithm:
 /// 1. For each span in the line:
-///    1. If the span is completely before the `span_offset`, skip it
-///    2. If the span is partially before the `span_offset`, render the right side of the span
-///    3. If the span is completely after the `span_offset`, render the whole span
+///    1. If the span is completely before the `span_skip_width`, skip it and reduce
+///       `span_skip_width` by the span's width
+///    2. If the span is partially before the `span_skip_width`, render the right side of the span
+///       starting at the span offset
+///    3. If the span is completely after the `span_skip_width`, render the whole span
 /// 2. Indent `area` to account for the width of the rendered span
-/// 3. Update `span_offset` to 0 after the first span is rendered in full
+/// 3. Update `span_skip_width` to 0 after the first span is rendered in full
 /// 4. Repeat
-fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_offset: u16) {
+fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_width: u16) {
     for span in spans {
         let span_width = span.width() as u16;
-        // ignore spans that are completely before the offset
-        if span_offset >= span_width {
-            span_offset -= span_width;
+        // ignore spans that are completely before the offset by decrementing `span_skip_width` by
+        // the span width in each iteration until we find a span that is partially or completely
+        // visible
+        if span_skip_width >= span_width {
+            span_skip_width -= span_width;
             continue;
         }
-        if span_offset > 0 {
+        if span_skip_width > 0 {
             // the first visible span is only partially visible, so truncate the start and render it
-            // starting at span offset, all subsequent visible spans are rendered in full (as
+            // starting at span_skip_width, all subsequent visible spans are rendered in full (as
             // available space permits)
-            let available_width = span_width - span_offset;
+            let available_width = span_width - span_skip_width;
             let (content, actual_width) = span
                 .content
                 .unicode_truncate_start(available_width as usize);
@@ -620,7 +624,7 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_offse
             right.render_ref(area, buf);
 
             area = area.indent_x(actual_width);
-            span_offset = 0; // ensure that the next span is rendered in full
+            span_skip_width = 0; // ensure that the next span is rendered in full
         } else {
             // render the whole span
             if area.is_empty() {
