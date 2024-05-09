@@ -600,8 +600,9 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_offse
             break;
         }
         if span_offset > 0 {
-            // the first span is only partially visible, so truncate the start and render it
-            // starting at span offset
+            // the first visible span is only partially visible, so truncate the start and render it
+            // starting at span offset, all subsequent visible spans are rendered in full (as
+            // available space permits)
             let available_width = span_width - span_offset;
             let (content, actual_width) = span
                 .content
