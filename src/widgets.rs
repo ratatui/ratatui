@@ -22,6 +22,7 @@
 //!
 //! [`Canvas`]: crate::widgets::canvas::Canvas
 mod barchart;
+#[allow(deprecated)]
 pub mod block;
 mod borders;
 #[cfg(feature = "widget-calendar")]

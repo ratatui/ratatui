@@ -50,7 +50,7 @@ fn render_hops(selected_row: usize, area: Rect, buf: &mut Buffer) {
         .map(|hop| Row::new(vec![hop.host, hop.address]))
         .collect_vec();
     let block = Block::default()
-        .title("Traceroute bad.horse".bold().white())
+        .title_top("Traceroute bad.horse".bold().white())
         .title_alignment(Alignment::Center)
         .padding(Padding::new(1, 1, 1, 1));
     StatefulWidget::render(
@@ -91,7 +91,7 @@ pub fn render_ping(progress: usize, area: Rect, buf: &mut Buffer) {
     Sparkline::default()
         .block(
             Block::new()
-                .title("Ping")
+                .title_top("Ping")
                 .title_alignment(Alignment::Center)
                 .border_type(BorderType::Thick),
         )

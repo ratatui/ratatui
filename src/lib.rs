@@ -140,7 +140,7 @@
 //! fn ui(frame: &mut Frame) {
 //!     frame.render_widget(
 //!         Paragraph::new("Hello World!")
-//!             .block(Block::default().title("Greeting").borders(Borders::ALL)),
+//!             .block(Block::default().title_top("Greeting").borders(Borders::ALL)),
 //!         frame.size(),
 //!     );
 //! }
@@ -171,11 +171,11 @@
 //!     )
 //!     .split(frame.size());
 //!     frame.render_widget(
-//!         Block::new().borders(Borders::TOP).title("Title Bar"),
+//!         Block::new().borders(Borders::TOP).title_top("Title Bar"),
 //!         main_layout[0],
 //!     );
 //!     frame.render_widget(
-//!         Block::new().borders(Borders::TOP).title("Status Bar"),
+//!         Block::new().borders(Borders::TOP).title_top("Status Bar"),
 //!         main_layout[2],
 //!     );
 //!
@@ -185,11 +185,11 @@
 //!     )
 //!     .split(main_layout[1]);
 //!     frame.render_widget(
-//!         Block::default().borders(Borders::ALL).title("Left"),
+//!         Block::default().borders(Borders::ALL).title_top("Left"),
 //!         inner_layout[0],
 //!     );
 //!     frame.render_widget(
-//!         Block::default().borders(Borders::ALL).title("Right"),
+//!         Block::default().borders(Borders::ALL).title_top("Right"),
 //!         inner_layout[1],
 //!     );
 //! }
@@ -278,6 +278,7 @@
     feature = "document-features",
     doc = "[`calendar`]: widgets::calendar::Monthly"
 )]
+#![cfg_attr(test, allow(deprecated))]
 //!
 //! [Ratatui Website]: https://ratatui.rs/
 //! [Installation]: https://ratatui.rs/installation/

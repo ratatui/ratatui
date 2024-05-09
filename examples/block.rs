@@ -28,10 +28,7 @@ use crossterm::{
 use itertools::Itertools;
 use ratatui::{
     prelude::*,
-    widgets::{
-        block::{Position, Title},
-        Block, BorderType, Borders, Padding, Paragraph, Wrap,
-    },
+    widgets::{Block, BorderType, Borders, Padding, Paragraph, Wrap},
 };
 
 // These type aliases are used to make the code more readable by reducing repetition of the generic
@@ -150,7 +147,7 @@ fn placeholder_paragraph() -> Paragraph<'static> {
 fn render_borders(paragraph: &Paragraph, border: Borders, frame: &mut Frame, area: Rect) {
     let block = Block::new()
         .borders(border)
-        .title(format!("Borders::{border:#?}"));
+        .title_top(format!("Borders::{border:#?}"));
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
@@ -163,14 +160,14 @@ fn render_border_type(
     let block = Block::new()
         .borders(Borders::ALL)
         .border_type(border_type)
-        .title(format!("BorderType::{border_type:#?}"));
+        .title_top(format!("BorderType::{border_type:#?}"));
     frame.render_widget(paragraph.clone().block(block), area);
 }
 fn render_styled_borders(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::new()
         .borders(Borders::ALL)
         .border_style(Style::new().blue().on_white().bold().italic())
-        .title("Styled borders");
+        .title_top("Styled borders");
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
@@ -178,7 +175,7 @@ fn render_styled_block(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::new()
         .borders(Borders::ALL)
         .style(Style::new().blue().on_white().bold().italic())
-        .title("Styled block");
+        .title_top("Styled block");
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
@@ -186,7 +183,7 @@ fn render_styled_block(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
 fn render_styled_title(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::new()
         .borders(Borders::ALL)
-        .title("Styled title")
+        .title_top("Styled title")
         .title_style(Style::new().blue().on_white().bold().italic());
     frame.render_widget(paragraph.clone().block(block), area);
 }
@@ -196,65 +193,41 @@ fn render_styled_title_content(paragraph: &Paragraph, frame: &mut Frame, area: R
         "Styled ".blue().on_white().bold().italic(),
         "title content".red().on_white().bold().italic(),
     ]);
-    let block = Block::new().borders(Borders::ALL).title(title);
+    let block = Block::new().borders(Borders::ALL).title_top(title);
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
 fn render_multiple_titles(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::new()
         .borders(Borders::ALL)
-        .title("Multiple".blue().on_white().bold().italic())
-        .title("Titles".red().on_white().bold().italic());
+        .title_top("Multiple".blue().on_white().bold().italic())
+        .title_top("Lines".red().on_white().bold().italic());
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
 fn render_multiple_title_positions(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::new()
         .borders(Borders::ALL)
-        .title(
-            Title::from("top left")
-                .position(Position::Top)
-                .alignment(Alignment::Left),
-        )
-        .title(
-            Title::from("top center")
-                .position(Position::Top)
-                .alignment(Alignment::Center),
-        )
-        .title(
-            Title::from("top right")
-                .position(Position::Top)
-                .alignment(Alignment::Right),
-        )
-        .title(
-            Title::from("bottom left")
-                .position(Position::Bottom)
-                .alignment(Alignment::Left),
-        )
-        .title(
-            Title::from("bottom center")
-                .position(Position::Bottom)
-                .alignment(Alignment::Center),
-        )
-        .title(
-            Title::from("bottom right")
-                .position(Position::Bottom)
-                .alignment(Alignment::Right),
-        );
+        .title_top(Line::from("top left").left_aligned())
+        .title_top(Line::from("top center").centered())
+        .title_top(Line::from("top right").right_aligned())
+        .title_bottom(Line::from("bottom left").left_aligned())
+        .title_bottom(Line::from("bottom center").centered())
+        .title_bottom(Line::from("bottom right").right_aligned());
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
 fn render_padding(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::new()
         .borders(Borders::ALL)
-        .title("Padding")
+        .title_top("Padding")
         .padding(Padding::new(5, 10, 1, 2));
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
 fn render_nested_blocks(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
-    let outer_block = Block::new().borders(Borders::ALL).title("Outer block");
-    let inner_block = Block::new().borders(Borders::ALL).title("Inner block");
+    let outer_block = Block::new().borders(Borders::ALL).title_top("Outer block");
+    let inner_block = Block::new().borders(Borders::ALL).title_top("Inner block");
     let inner = outer_block.inner(area);
     frame.render_widget(outer_block, area);
     frame.render_widget(paragraph.clone().block(inner_block), inner);

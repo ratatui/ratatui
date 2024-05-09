@@ -22,13 +22,17 @@ fn widgets_gauge_renders() {
                 .split(f.size());
 
             let gauge = Gauge::default()
-                .block(Block::default().title("Percentage").borders(Borders::ALL))
+                .block(
+                    Block::default()
+                        .title_top("Percentage")
+                        .borders(Borders::ALL),
+                )
                 .gauge_style(Style::default().bg(Color::Blue).fg(Color::Red))
                 .use_unicode(true)
                 .percent(43);
             f.render_widget(gauge, chunks[0]);
             let gauge = Gauge::default()
-                .block(Block::default().title("Ratio").borders(Borders::ALL))
+                .block(Block::default().title_top("Ratio").borders(Borders::ALL))
                 .gauge_style(Style::default().bg(Color::Blue).fg(Color::Red))
                 .use_unicode(true)
                 .ratio(0.511_313_934_313_1);
@@ -71,12 +75,16 @@ fn widgets_gauge_renders_no_unicode() {
                 .split(f.size());
 
             let gauge = Gauge::default()
-                .block(Block::default().title("Percentage").borders(Borders::ALL))
+                .block(
+                    Block::default()
+                        .title_top("Percentage")
+                        .borders(Borders::ALL),
+                )
                 .percent(43)
                 .use_unicode(false);
             f.render_widget(gauge, chunks[0]);
             let gauge = Gauge::default()
-                .block(Block::default().title("Ratio").borders(Borders::ALL))
+                .block(Block::default().title_top("Ratio").borders(Borders::ALL))
                 .ratio(0.211_313_934_313_1)
                 .use_unicode(false);
             f.render_widget(gauge, chunks[1]);
@@ -107,7 +115,7 @@ fn widgets_gauge_applies_styles() {
             let gauge = Gauge::default()
                 .block(
                     Block::default()
-                        .title(Span::styled("Test", Style::default().fg(Color::Red)))
+                        .title_top(Span::styled("Test", Style::default().fg(Color::Red)))
                         .borders(Borders::ALL),
                 )
                 .gauge_style(Style::default().fg(Color::Blue).bg(Color::Red))
@@ -196,7 +204,7 @@ fn widgets_line_gauge_renders() {
                 },
             );
             let gauge = LineGauge::default()
-                .block(Block::default().title("Gauge 2").borders(Borders::ALL))
+                .block(Block::default().title_top("Gauge 2").borders(Borders::ALL))
                 .gauge_style(Style::default().fg(Color::Green))
                 .line_set(symbols::line::THICK)
                 .ratio(0.211_313_934_313_1);

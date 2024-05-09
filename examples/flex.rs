@@ -28,7 +28,7 @@ use ratatui::{
     prelude::*,
     style::palette::tailwind,
     symbols::line,
-    widgets::{block::Title, *},
+    widgets::*,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
@@ -273,8 +273,8 @@ impl App {
     fn tabs(self) -> impl Widget {
         let tab_titles = SelectedTab::iter().map(SelectedTab::to_tab_title);
         let block = Block::new()
-            .title(Title::from("Flex Layouts ".bold()))
-            .title(" Use ◄ ► to change tab, ▲ ▼  to scroll, - + to change spacing ");
+            .title_top(Line::from("Flex Layouts ".bold()))
+            .title_top(" Use ◄ ► to change tab, ▲ ▼  to scroll, - + to change spacing ");
         Tabs::new(tab_titles)
             .block(block)
             .highlight_style(Modifier::REVERSED)

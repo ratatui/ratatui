@@ -99,13 +99,13 @@ fn ui(f: &mut Frame, app: &App) {
     f.render_widget(paragraph, instructions);
 
     let block = Block::default()
-        .title("Content")
+        .title_top("Content")
         .borders(Borders::ALL)
         .on_blue();
     f.render_widget(block, content);
 
     if app.show_popup {
-        let block = Block::default().title("Popup").borders(Borders::ALL);
+        let block = Block::default().title_top("Popup").borders(Borders::ALL);
         let area = centered_rect(60, 20, area);
         f.render_widget(Clear, area); //this clears out the background
         f.render_widget(block, area);

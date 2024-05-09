@@ -152,7 +152,7 @@ fn ui(f: &mut Frame, app: &App) {
     let sparkline = Sparkline::default()
         .block(
             Block::default()
-                .title("Data1")
+                .title_top("Data1")
                 .borders(Borders::LEFT | Borders::RIGHT),
         )
         .data(&app.data1)
@@ -161,7 +161,7 @@ fn ui(f: &mut Frame, app: &App) {
     let sparkline = Sparkline::default()
         .block(
             Block::default()
-                .title("Data2")
+                .title_top("Data2")
                 .borders(Borders::LEFT | Borders::RIGHT),
         )
         .data(&app.data2)
@@ -171,7 +171,7 @@ fn ui(f: &mut Frame, app: &App) {
     let sparkline = Sparkline::default()
         .block(
             Block::default()
-                .title("Data3")
+                .title_top("Data3")
                 .borders(Borders::LEFT | Borders::RIGHT),
         )
         .data(&app.data3)

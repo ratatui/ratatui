@@ -1,11 +1,9 @@
 use criterion::{criterion_group, criterion_main, BatchSize, Bencher, Criterion};
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Rect},
-    widgets::{
-        block::{Position, Title},
-        Block, Borders, Padding, Widget,
-    },
+    layout::Rect,
+    text::Line,
+    widgets::{Block, Borders, Padding, Widget},
 };
 
 /// Benchmark for rendering a block.
@@ -31,12 +29,8 @@ fn block(c: &mut Criterion) {
             format!("render_all_feature/{width}x{height}"),
             &Block::new()
                 .borders(Borders::ALL)
-                .title("test title")
-                .title(
-                    Title::from("bottom left title")
-                        .alignment(Alignment::Right)
-                        .position(Position::Bottom),
-                )
+                .title_top("test title")
+                .title_bottom(Line::from("bottom left title").right_aligned())
                 .padding(Padding::new(5, 5, 2, 2)),
             |b, block| render(b, block, buffer_size),
         );

@@ -62,7 +62,7 @@ impl Debug for Borders {
 /// ```
 /// # use ratatui::{border, prelude::*, widgets::*};
 /// Block::new()
-///     .title("Construct Borders and use them in place")
+///     .title_top("Construct Borders and use them in place")
 ///     .borders(border!(TOP, BOTTOM));
 /// ```
 ///

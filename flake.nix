@@ -34,14 +34,15 @@
       devShells = forEachSupportedSystem ({ pkgs }: {
         default = pkgs.mkShell {
           packages = with pkgs; [
+            rustup
             rustToolchain
             openssl
             pkg-config
             cargo-deny
             cargo-edit
-            cargo-make
             cargo-watch
             rust-analyzer
+            cargo-make
           ];
         };
       });

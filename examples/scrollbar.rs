@@ -153,11 +153,11 @@ fn ui(f: &mut Frame, app: &mut App) {
     app.vertical_scroll_state = app.vertical_scroll_state.content_length(text.len());
     app.horizontal_scroll_state = app.horizontal_scroll_state.content_length(long_line.len());
 
-    let create_block = |title: &'static str| Block::bordered().gray().title(title.bold());
+    let create_block = |title: &'static str| Block::bordered().gray().title_top(title.bold());
 
     let title = Block::new()
         .title_alignment(Alignment::Center)
-        .title("Use h j k l or ◄ ▲ ▼ ► to scroll ".bold());
+        .title_top("Use h j k l or ◄ ▲ ▼ ► to scroll ".bold());
     f.render_widget(title, chunks[0]);
 
     let paragraph = Paragraph::new(text.clone())

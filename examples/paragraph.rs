@@ -130,7 +130,7 @@ fn ui(f: &mut Frame, app: &App) {
         Block::default()
             .borders(Borders::ALL)
             .style(Style::default().fg(Color::Gray))
-            .title(Span::styled(
+            .title_top(Span::styled(
                 title,
                 Style::default().add_modifier(Modifier::BOLD),
             ))

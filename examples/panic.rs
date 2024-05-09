@@ -143,7 +143,7 @@ fn ui(f: &mut Frame, app: &App) {
     ];
 
     let b = Block::default()
-        .title("Panic Handler Demo")
+        .title_top("Panic Handler Demo")
         .borders(Borders::ALL);
 
     let p = Paragraph::new(text).block(b).centered();

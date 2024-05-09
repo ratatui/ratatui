@@ -327,23 +327,24 @@ Running this example produces the following output:
 [Termwiz]: https://crates.io/crates/termwiz
 [tui-rs]: https://crates.io/crates/tui
 [GitHub Sponsors]: https://github.com/sponsors/ratatui-org
-[Crate Badge]: https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square&logoColor=E05D44&color=E05D44
-[License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square&color=1370D3
-[CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github
+[Crate Badge]: https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square
+[License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square
+[CI Badge]:
+    https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github
 [CI Workflow]: https://github.com/ratatui-org/ratatui/actions/workflows/ci.yml
 [Codecov Badge]:
-    https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST&color=C43AC3&logoColor=C43AC3
+    https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST
 [Codecov]: https://app.codecov.io/gh/ratatui-org/ratatui
 [Deps.rs Badge]: https://deps.rs/repo/github/ratatui-org/ratatui/status.svg?style=flat-square
 [Deps.rs]: https://deps.rs/repo/github/ratatui-org/ratatui
 [Discord Badge]:
-    https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square&color=1370D3&logoColor=1370D3
+    https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square
 [Discord Server]: https://discord.gg/pMCEU9hNEj
-[Docs Badge]: https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square&logoColor=E05D44
+[Docs Badge]: https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square
 [Matrix Badge]:
-    https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix&color=C43AC3
+    https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix
 [Matrix]: https://matrix.to/#/#ratatui:matrix.org
-[Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui-org?logo=github&style=flat-square&color=1370D3
+[Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui-org?logo=github&style=flat-square
 
 <!-- cargo-rdme end -->
 

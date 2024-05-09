@@ -567,7 +567,7 @@ impl<'a> Context<'a> {
 /// };
 ///
 /// Canvas::default()
-///     .block(Block::default().title("Canvas").borders(Borders::ALL))
+///     .block(Block::default().title_top("Canvas").borders(Borders::ALL))
 ///     .x_bounds([-180.0, 180.0])
 ///     .y_bounds([-90.0, 90.0])
 ///     .paint(|ctx| {

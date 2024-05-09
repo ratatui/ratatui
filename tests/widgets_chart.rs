@@ -46,7 +46,7 @@ fn widgets_chart_can_render_on_small_areas(#[case] width: u16, #[case] height: u
                 .style(Style::default().fg(Color::Magenta))
                 .data(&[(0.0, 0.0)])];
             let chart = Chart::new(datasets)
-                .block(Block::default().title("Plot").borders(Borders::ALL))
+                .block(Block::default().title_top("Plot").borders(Borders::ALL))
                 .x_axis(
                     Axis::default()
                         .bounds([0.0, 0.0])
@@ -265,7 +265,7 @@ fn widgets_chart_can_have_axis_with_zero_length_bounds() {
                 .style(Style::default().fg(Color::Magenta))
                 .data(&[(0.0, 0.0)])];
             let chart = Chart::new(datasets)
-                .block(Block::default().title("Plot").borders(Borders::ALL))
+                .block(Block::default().title_top("Plot").borders(Borders::ALL))
                 .x_axis(
                     Axis::default()
                         .bounds([0.0, 0.0])
@@ -305,7 +305,7 @@ fn widgets_chart_handles_overflows() {
                     (1_588_298_496.0, 1.0),
                 ])];
             let chart = Chart::new(datasets)
-                .block(Block::default().title("Plot").borders(Borders::ALL))
+                .block(Block::default().title_top("Plot").borders(Borders::ALL))
                 .x_axis(
                     Axis::default()
                         .bounds([1_588_298_471.0, 1_588_992_600.0])
@@ -340,7 +340,7 @@ fn widgets_chart_can_have_empty_datasets() {
             let chart = Chart::new(datasets)
                 .block(
                     Block::default()
-                        .title("Empty Dataset With Line")
+                        .title_top("Empty Dataset With Line")
                         .borders(Borders::ALL),
                 )
                 .x_axis(
@@ -411,7 +411,11 @@ fn widgets_chart_can_have_a_legend() {
             ];
             let chart = Chart::new(datasets)
                 .style(Style::default().bg(Color::White))
-                .block(Block::default().title("Chart Test").borders(Borders::ALL))
+                .block(
+                    Block::default()
+                        .title_top("Chart Test")
+                        .borders(Borders::ALL),
+                )
                 .x_axis(
                     Axis::default()
                         .bounds([0.0, 100.0])

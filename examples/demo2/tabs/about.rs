@@ -86,7 +86,7 @@ fn render_crate_description(area: Rect, buf: &mut Buffer) {
         .style(THEME.description)
         .block(
             Block::new()
-                .title(" Ratatui ")
+                .title_top(" Ratatui ")
                 .title_alignment(Alignment::Center)
                 .borders(Borders::TOP)
                 .border_style(THEME.description_title)

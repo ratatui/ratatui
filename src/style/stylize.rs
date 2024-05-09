@@ -134,7 +134,7 @@ macro_rules! modifier {
 /// ]);
 /// let paragraph = Paragraph::new(line).italic().underlined();
 /// let block = Block::default()
-///     .title("Title")
+///     .title_top("Title")
 ///     .borders(Borders::ALL)
 ///     .on_white()
 ///     .bold();

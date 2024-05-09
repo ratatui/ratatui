@@ -226,7 +226,7 @@ fn ui(f: &mut Frame, app: &App) {
             InputMode::Normal => Style::default(),
             InputMode::Editing => Style::default().fg(Color::Yellow),
         })
-        .block(Block::default().borders(Borders::ALL).title("Input"));
+        .block(Block::default().borders(Borders::ALL).title_top("Input"));
     f.render_widget(input, input_area);
     match app.input_mode {
         InputMode::Normal =>
@@ -257,6 +257,6 @@ fn ui(f: &mut Frame, app: &App) {
         })
         .collect();
     let messages =
-        List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
+        List::new(messages).block(Block::default().borders(Borders::ALL).title_top("Messages"));
     f.render_widget(messages, messages_area);
 }

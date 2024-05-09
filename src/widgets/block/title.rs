@@ -132,7 +132,6 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-
     #[test]
     fn position_to_string() {
         assert_eq!(Position::Top.to_string(), "Top");

@@ -26,7 +26,7 @@ use crossterm::{
 use ratatui::{
     prelude::*,
     style::palette::tailwind,
-    widgets::{block::Title, Block, Borders, Gauge, Padding, Paragraph},
+    widgets::{Block, Borders, Gauge, Padding, Paragraph},
 };
 
 const GAUGE1_COLOR: Color = tailwind::RED.c800;
@@ -205,9 +205,8 @@ impl App {
 }
 
 fn title_block(title: &str) -> Block {
-    let title = Title::from(title).alignment(Alignment::Center);
     Block::default()
-        .title(title)
+        .title_top(Line::from(title).centered())
         .borders(Borders::NONE)
         .fg(CUSTOM_LABEL_COLOR)
         .padding(Padding::vertical(1))

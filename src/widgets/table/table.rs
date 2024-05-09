@@ -75,7 +75,7 @@ use crate::{layout::Flex, prelude::*, widgets::Block};
 ///     // It has an optional footer, which is simply a Row always visible at the bottom.
 ///     .footer(Row::new(vec!["Updated on Dec 28"]))
 ///     // As any other widget, a Table can be wrapped in a Block.
-///     .block(Block::default().title("Table"))
+///     .block(Block::default().title_top("Table"))
 ///     // The selected row and its content can also be styled.
 ///     .highlight_style(Style::new().reversed())
 ///     // ...and potentially show a symbol in front of the selection.
@@ -178,7 +178,7 @@ use crate::{layout::Flex, prelude::*, widgets::Block};
 /// ];
 /// let widths = [Constraint::Length(5), Constraint::Length(5), Constraint::Length(10)];
 /// let table = Table::new(rows, widths)
-///     .block(Block::default().title("Table"))
+///     .block(Block::default().title_top("Table"))
 ///     .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
 ///     .highlight_symbol(">>");
 ///
@@ -418,7 +418,7 @@ impl<'a> Table<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
-    /// let block = Block::default().title("Table").borders(Borders::ALL);
+    /// let block = Block::default().title_top("Table").borders(Borders::ALL);
     /// let table = Table::new(rows, widths).block(block);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -930,7 +930,7 @@ mod tests {
 
     #[test]
     fn block() {
-        let block = Block::default().title("Table").borders(Borders::ALL);
+        let block = Block::default().title_top("Table").borders(Borders::ALL);
         let table = Table::default().block(block.clone());
         assert_eq!(table.block, Some(block));
     }
@@ -1027,7 +1027,7 @@ mod tests {
                 Row::new(vec!["Cell1", "Cell2"]),
                 Row::new(vec!["Cell3", "Cell4"]),
             ];
-            let block = Block::new().borders(Borders::ALL).title("Block");
+            let block = Block::new().borders(Borders::ALL).title_top("Block");
             let table = Table::new(rows, vec![Constraint::Length(5); 2]).block(block);
             Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
             let expected = Buffer::with_lines(vec![

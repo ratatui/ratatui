@@ -173,8 +173,8 @@ impl App {
     fn render_tabs(self, area: Rect, buf: &mut Buffer) {
         let titles = SelectedTab::iter().map(SelectedTab::to_tab_title);
         let block = Block::new()
-            .title("Constraints ".bold())
-            .title(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll");
+            .title_top("Constraints ".bold())
+            .title_top(" Use h l or ◄ ► to change tab and j k or ▲ ▼  to scroll");
         Tabs::new(titles)
             .block(block)
             .highlight_style(Modifier::REVERSED)

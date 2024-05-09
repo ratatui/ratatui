@@ -103,12 +103,14 @@ fn widgets_paragraph_can_scroll_horizontally() {
     let paragraph = Paragraph::new(text).block(Block::default().borders(Borders::ALL));
 
     test_case(
-        paragraph.clone().alignment(Alignment::Left).scroll((0, 7)),
+        paragraph.clone().alignment(Alignment::Left).scroll((0, 6)),
         Buffer::with_lines(vec![
             "┌──────────────────┐",
             "│在可以水平滚动了！│",
-            "│ph can scroll hori│",
-            "│line              │",
+            "│aph can scroll hor│",
+            "│ line             │",
+            "│                  │",
+            "│                  │",
             "│                  │",
             "│                  │",
             "│                  │",

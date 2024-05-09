@@ -159,7 +159,7 @@ fn ui(frame: &mut Frame, app: &App) {
     let [left, right] = horizontal.areas(bottom);
 
     let barchart = BarChart::default()
-        .block(Block::default().title("Data1").borders(Borders::ALL))
+        .block(Block::default().title_top("Data1").borders(Borders::ALL))
         .data(&app.data)
         .bar_width(9)
         .bar_style(Style::default().fg(Color::Yellow))
@@ -217,7 +217,7 @@ fn draw_bar_with_group_labels(f: &mut Frame, app: &App, area: Rect) {
     let groups = create_groups(app, false);
 
     let mut barchart = BarChart::default()
-        .block(Block::default().title("Data1").borders(Borders::ALL))
+        .block(Block::default().title_top("Data1").borders(Borders::ALL))
         .bar_width(7)
         .group_gap(3);
 
@@ -246,7 +246,7 @@ fn draw_horizontal_bars(f: &mut Frame, app: &App, area: Rect) {
     let groups = create_groups(app, true);
 
     let mut barchart = BarChart::default()
-        .block(Block::default().title("Data1").borders(Borders::ALL))
+        .block(Block::default().title_top("Data1").borders(Borders::ALL))
         .bar_width(1)
         .group_gap(1)
         .bar_gap(0)

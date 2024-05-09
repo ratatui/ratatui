@@ -233,7 +233,7 @@ fn title_block(title: String) -> Block<'static> {
     Block::default()
         .borders(Borders::TOP)
         .border_style(Style::new().dark_gray())
-        .title(title)
+        .title_top(title)
         .title_alignment(Alignment::Center)
         .title_style(Style::new().reset())
 }

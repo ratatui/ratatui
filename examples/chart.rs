@@ -26,7 +26,7 @@ use crossterm::{
 };
 use ratatui::{
     prelude::*,
-    widgets::{block::Title, Axis, Block, Borders, Chart, Dataset, GraphType, LegendPosition},
+    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, LegendPosition},
 };
 
 #[derive(Clone)]
@@ -186,7 +186,7 @@ fn render_chart1(f: &mut Frame, area: Rect, app: &App) {
     let chart = Chart::new(datasets)
         .block(
             Block::default()
-                .title("Chart 1".cyan().bold())
+                .title_top("Chart 1".cyan().bold())
                 .borders(Borders::ALL),
         )
         .x_axis(
@@ -218,11 +218,7 @@ fn render_line_chart(f: &mut Frame, area: Rect) {
     let chart = Chart::new(datasets)
         .block(
             Block::default()
-                .title(
-                    Title::default()
-                        .content("Line chart".cyan().bold())
-                        .alignment(Alignment::Center),
-                )
+                .title_top(Line::from("Line chart".cyan().bold()).centered())
                 .borders(Borders::ALL),
         )
         .x_axis(
@@ -269,11 +265,9 @@ fn render_scatter(f: &mut Frame, area: Rect) {
 
     let chart = Chart::new(datasets)
         .block(
-            Block::new().borders(Borders::all()).title(
-                Title::default()
-                    .content("Scatter chart".cyan().bold())
-                    .alignment(Alignment::Center),
-            ),
+            Block::new()
+                .borders(Borders::all())
+                .title_top(Line::from("Scatter chart".cyan().bold()).centered()),
         )
         .x_axis(
             Axis::default()

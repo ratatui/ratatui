@@ -111,7 +111,7 @@ impl Widget for RecipeTab {
         });
         Clear.render(area, buf);
         Block::new()
-            .title("Ratatouille Recipe".bold().white())
+            .title_top("Ratatouille Recipe".bold().white())
             .title_alignment(Alignment::Center)
             .style(THEME.content)
             .padding(Padding::new(1, 1, 2, 1))

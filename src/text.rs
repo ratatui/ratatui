@@ -25,21 +25,21 @@
 //! // Converted to Line(vec![
 //! //   Span { content: Cow::Borrowed("My title"), style: Style { .. } }
 //! // ])
-//! let block = Block::default().title("My title");
+//! let block = Block::default().title_top("My title");
 //!
 //! // A simple string with a unique style.
 //! // Converted to Line(vec![
 //! //   Span { content: Cow::Borrowed("My title"), style: Style { fg: Some(Color::Yellow), .. }
 //! // ])
 //! let block =
-//!     Block::default().title(Span::styled("My title", Style::default().fg(Color::Yellow)));
+//!     Block::default().title_top(Span::styled("My title", Style::default().fg(Color::Yellow)));
 //!
 //! // A string with multiple styles.
 //! // Converted to Line(vec![
 //! //   Span { content: Cow::Borrowed("My"), style: Style { fg: Some(Color::Yellow), .. } },
 //! //   Span { content: Cow::Borrowed(" title"), .. }
 //! // ])
-//! let block = Block::default().title(vec![
+//! let block = Block::default().title_top(vec![
 //!     Span::styled("My", Style::default().fg(Color::Yellow)),
 //!     Span::raw(" title"),
 //! ]);

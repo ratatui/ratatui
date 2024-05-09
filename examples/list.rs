@@ -193,7 +193,7 @@ impl App<'_> {
             .borders(Borders::NONE)
             .fg(TEXT_COLOR)
             .bg(TODO_HEADER_BG)
-            .title("TODO List")
+            .title_top("TODO List")
             .title_alignment(Alignment::Center);
         let inner_block = Block::default()
             .borders(Borders::NONE)
@@ -250,7 +250,7 @@ impl App<'_> {
             .borders(Borders::NONE)
             .fg(TEXT_COLOR)
             .bg(TODO_HEADER_BG)
-            .title("TODO Info")
+            .title_top("TODO Info")
             .title_alignment(Alignment::Center);
         let inner_info_block = Block::default()
             .borders(Borders::NONE)

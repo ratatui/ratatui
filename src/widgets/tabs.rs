@@ -17,7 +17,7 @@ const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVER
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
-///     .block(Block::default().title("Tabs").borders(Borders::ALL))
+///     .block(Block::default().title_top("Tabs").borders(Borders::ALL))
 ///     .style(Style::default().white())
 ///     .highlight_style(Style::default().yellow())
 ///     .select(2)
@@ -415,7 +415,7 @@ mod tests {
     #[test]
     fn render_with_block() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
-            .block(Block::default().title("Tabs").borders(Borders::ALL));
+            .block(Block::default().title_top("Tabs").borders(Borders::ALL));
         let mut expected = Buffer::with_lines(vec![
             "┌Tabs────────────────────────┐",
             "│ Tab1 │ Tab2 │ Tab3 │ Tab4  │",
