@@ -17,22 +17,22 @@
 /// ```
 #[macro_export]
 macro_rules! constraint {
-    ( == $token:tt % ) => {
+    (== $token:tt %) => {
         ratatui::layout::Constraint::Percentage($token)
     };
-    ( >= $expr:expr ) => {
+    (>= $expr:expr) => {
         ratatui::layout::Constraint::Min($expr)
     };
-    ( <= $expr:expr ) => {
+    (<= $expr:expr) => {
         ratatui::layout::Constraint::Max($expr)
     };
-    ( == $num:tt / $denom:tt ) => {
+    (== $num:tt / $denom:tt) => {
         ratatui::layout::Constraint::Ratio($num as u32, $denom as u32)
     };
-    ( == $expr:expr ) => {
+    (== $expr:expr) => {
         ratatui::layout::Constraint::Length($expr)
     };
-    ( =* $expr:expr ) => {
+    (=* $expr:expr) => {
         ratatui::layout::Constraint::Fill($expr)
     };
 }

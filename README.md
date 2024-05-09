@@ -137,6 +137,28 @@ let line = line!["hello", format!("{name}")];
 let line = line!["bye"; 2];
 ```
 
+## Text
+
+The `text!` macro creates a `Text` that contains a sequence of lines. It is similar to the `vec!` macro.
+
+```rust
+use ratatui::prelude::*;
+use ratatui_macros::{span, line, text};
+
+let name = "world!";
+let text = text!["hello", format!("{name}")];
+let text = text!["bye"; 2];
+```
+
+It is even possible to use `span!` and `line!` in the `text!` macro:
+
+```rust
+use ratatui::prelude::*;
+use ratatui_macros::{span, line, text};
+let name = "Bye!!!";
+let text = text![line!["hello", "world".bold()], span!(Modifier::BOLD; "{name}")];
+```
+
 ## Contributing
 
 Contributions to `ratatui-macros` are welcome! Whether it's submitting a bug report, a feature

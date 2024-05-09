@@ -3,3 +3,4 @@
 mod layout;
 mod line;
 mod span;
+mod text;
