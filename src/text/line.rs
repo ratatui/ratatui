@@ -3,6 +3,7 @@ use std::borrow::Cow;
 
 use super::StyledGrapheme;
 use crate::prelude::*;
+use unicode_truncate::UnicodeTruncateStr;
 
 /// A line of text, consisting of one or more [`Span`]s.
 ///
@@ -560,14 +561,15 @@ impl WidgetRef for Line<'_> {
                 Some(Alignment::Right) => area.width.saturating_sub(line_width),
                 Some(Alignment::Left) | None => 0,
             };
-            render_spans(&self.spans, area, buf, offset, 0);
+            let area = indent(area, offset);
+            render_spans(&self.spans, area, buf, 0);
         } else {
             let offset = match self.alignment {
                 Some(Alignment::Center) => (line_width.saturating_sub(area.width)) / 2,
                 Some(Alignment::Right) => line_width.saturating_sub(area.width),
                 Some(Alignment::Left) | None => 0,
             };
-            render_spans(&self.spans, area, buf, 0, offset);
+            render_spans(&self.spans, area, buf, offset);
         };
     }
 }
@@ -582,16 +584,10 @@ impl WidgetRef for Line<'_> {
 ///    1. If the span is completely before the `span_offset`, skip it
 ///    2. If the span is partially before the `span_offset`, render the right side of the span
 ///    3. If the span is completely after the `span_offset`, render the whole span
-/// 2. Update `buf_x_offset` to account for the width of the rendered span
+/// 2. Indent `area` to account for the width of the rendered span
 /// 3. Update `span_offset` to 0 after the first span is rendered in full
 /// 4. Repeat
-fn render_spans(
-    spans: &[Span],
-    area: Rect,
-    buf: &mut Buffer,
-    mut buf_x_offset: u16,
-    mut span_offset: u16,
-) {
+fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_offset: u16) {
     for span in spans {
         let span_width = span.width() as u16;
         // ignore spans that are completely before the offset
@@ -599,42 +595,42 @@ fn render_spans(
             span_offset -= span_width;
             continue;
         }
-        let area = Rect {
-            x: area.x.saturating_add(buf_x_offset),
-            width: area.width.saturating_sub(buf_x_offset),
-            ..area
-        };
         if area.is_empty() {
             break;
         }
-        let span_is_only_partially_visible = span_offset > 0;
-        if span_is_only_partially_visible {
-            // render the partially visible span starting at the offset -> right side
-            use unicode_truncate::UnicodeTruncateStr;
+        if span_offset > 0 {
+            // the first span is only partially visible, so truncate the start and render it
+            // starting at span offset
+            let render_width = span_width - span_offset;
+            let (content, display_width) =
+                span.content.unicode_truncate_start(render_width as usize);
+            let display_width = display_width as u16;
 
-            let limit = span_width - span_offset;
-            let (content, width) = span.content.unicode_truncate_start(usize::from(limit));
-            let width = width as u16;
-
-            let x = limit - width;
-
-            // Empty the cells before as there is a multi width grapheme not rendered before. But as
-            // it is not rendered in the first place (its truncated away) dont reset, set " ".
-            for x in area.x..x {
-                buf.get_mut(x, area.y).set_style(span.style).set_symbol(" ");
-            }
-
-            let span_area = Rect { x, width, ..area };
+            // if the truncation has truncated an initial grapheme, then we need to start rendering
+            // from a position that takes that into account by indenting the start of the area
+            area = indent(area, render_width - display_width);
             let right = Span::styled(content, span.style);
-            right.render_ref(span_area, buf);
+            right.render_ref(area, buf);
 
-            buf_x_offset += limit;
+            area = indent(area, display_width);
             span_offset = 0; // ensure that the next span is rendered in full
         } else {
             // render the whole span
             span.render_ref(area, buf);
-            buf_x_offset += span_width;
+            area = indent(area, span_width);
         }
+    }
+}
+
+/// indents a given `area`'s x value by the given `x_offset`, returning a new `Rect`
+///
+/// TODO: this should probably be move into a pubic method on `Rect` as it's a common operation
+/// that's used in a few places
+const fn indent(area: Rect, x_offset: u16) -> Rect {
+    Rect {
+        x: area.x.saturating_add(x_offset),
+        width: area.width.saturating_sub(x_offset),
+        ..area
     }
 }
 
@@ -1150,9 +1146,9 @@ mod tests {
 
         /// Ensures the rendering also works away from the 0x0 position.
         #[rstest]
-        #[case::left_6(Alignment::Left, 6, "a🦀bc ")]
+        #[case::left_6(Alignment::Left, 6, "a🦀bcX")]
         #[case::center_6(Alignment::Center, 6, "🦀bc🦀")]
-        #[case::right_6(Alignment::Right, 6, " bc🦀d")]
+        #[case::right_6(Alignment::Right, 6, "Xbc🦀d")]
         fn render_truncates_away_from_0x0(
             #[case] alignment: Alignment,
             #[case] buf_width: u16,
@@ -1175,7 +1171,7 @@ mod tests {
         #[rstest]
         #[case::right_4(4, "c🦀d")]
         #[case::right_5(5, "bc🦀d")]
-        #[case::right_6(6, " bc🦀d")]
+        #[case::right_6(6, "Xbc🦀d")]
         #[case::right_7(7, "🦀bc🦀d")]
         #[case::right_8(8, "a🦀bc🦀d")]
         fn render_right_aligned_multi_span(#[case] buf_width: u16, #[case] expected: &str) {
