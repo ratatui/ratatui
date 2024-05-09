@@ -22,7 +22,8 @@ env:
   CARGO_HUSKY_DONT_INSTALL_HOOKS: true
 
 jobs:
-  test:
+  build:
+    name: Build & Test
     strategy:
       fail-fast: false
       matrix:
@@ -30,15 +31,46 @@ jobs:
         toolchain: ["stable"]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
+      - name: Checkout the repository
         uses: actions/checkout@v4
-      - name: Install Rust ${{ matrix.toolchain }}}
+
+      - name: Install Rust toolchain ${{ matrix.toolchain }}}
         uses: dtolnay/rust-toolchain@master
         with:
+          targets: x86_64-unknown-linux-gnu
           toolchain: ${{ matrix.toolchain }}
+          components: rustfmt, clippy
+
       - name: Cache Cargo dependencies
-        uses: Swatinem/rust-cache@v2
-      - name: Test ${{ matrix.os }}
-        run: cargo test
-        env:
-          RUST_BACKTRACE: full
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check the formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check --verbose
+
+      - name: Build the project
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --locked --verbose
+
+      - name: Check the lints
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --tests --verbose -- -D warnings
+
+      - name: Tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
