@@ -332,12 +332,6 @@ impl<'a> Span<'a> {
     pub fn to_right_aligned_line(self) -> Line<'a> {
         self.into_right_aligned_line()
     }
-
-    /// Returns `true` if the span is empty.
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.content.is_empty()
-    }
 }
 
 impl<'a, T> From<T> for Span<'a>
