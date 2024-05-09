@@ -939,6 +939,8 @@ mod tests {
         use unicode_segmentation::UnicodeSegmentation;
         use unicode_width::UnicodeWidthStr;
 
+        use self::buffer::Cell;
+
         use super::*;
         use crate::assert_buffer_eq;
         const BLUE: Style = Style::new().fg(Color::Blue);
@@ -1145,24 +1147,21 @@ mod tests {
         }
 
         /// Ensures the rendering also works away from the 0x0 position.
+        ///
+        /// Particularly of note is that an emoji that is truncated will not overwrite the
+        /// characters that are already in the buffer. This is inentional (consider how a line
+        /// that is rendered on a border should not overwrite the border with a partial emoji).
         #[rstest]
-        #[case::left_6(Alignment::Left, 6, "a🦀bcX")]
-        #[case::center_6(Alignment::Center, 6, "🦀bc🦀")]
-        #[case::right_6(Alignment::Right, 6, "Xbc🦀d")]
-        fn render_truncates_away_from_0x0(
-            #[case] alignment: Alignment,
-            #[case] buf_width: u16,
-            #[case] expected: &str,
-        ) {
+        #[case::left(Alignment::Left, "XXa🦀bcXXX")]
+        #[case::center(Alignment::Center, "XX🦀bc🦀XX")]
+        #[case::right(Alignment::Right, "XXXbc🦀dXX")]
+        fn render_truncates_away_from_0x0(#[case] alignment: Alignment, #[case] expected: &str) {
             let line = Line::from(vec![Span::raw("a🦀b"), Span::raw("c🦀d")]).alignment(alignment);
-            let area = Rect::new(13, 37, buf_width, 1);
             // Fill buffer with stuff to ensure the output is indeed padded
-            let mut buf = Buffer::filled(area, buffer::Cell::default().set_symbol("X"));
-            line.render_ref(buf.area, &mut buf);
-
-            let mut expected_buffer = Buffer::empty(area);
-            expected_buffer.set_string(13, 37, expected, Style::new());
-            assert_buffer_eq!(buf, expected_buffer);
+            let mut buf = Buffer::filled(Rect::new(0, 0, 10, 1), Cell::default().set_symbol("X"));
+            let area = Rect::new(2, 0, 6, 1);
+            line.render_ref(area, &mut buf);
+            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
         }
 
         /// When two spans are rendered after each other the first needs to be padded in accordance
@@ -1178,7 +1177,7 @@ mod tests {
             let line = Line::from(vec![Span::raw("a🦀b"), Span::raw("c🦀d")]).right_aligned();
             let area = Rect::new(0, 0, buf_width, 1);
             // Fill buffer with stuff to ensure the output is indeed padded
-            let mut buf = Buffer::filled(area, buffer::Cell::default().set_symbol("X"));
+            let mut buf = Buffer::filled(area, Cell::default().set_symbol("X"));
             line.render_ref(buf.area, &mut buf);
             assert_buffer_eq!(buf, Buffer::with_lines([expected]));
         }
