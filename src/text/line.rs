@@ -1,8 +1,28 @@
 #![deny(missing_docs)]
 use std::{borrow::Cow, fmt};
 
+use unicode_width::UnicodeWidthStr;
+
 use super::StyledGrapheme;
-use crate::prelude::*;
+use crate::{
+    prelude::*,
+    widgets::{
+        reflow::{LineComposer, WordWrapper, WrappedLine},
+        Wrap,
+    },
+};
+
+pub(crate) const fn get_line_offset(
+    line_width: u16,
+    text_area_width: u16,
+    alignment: Alignment,
+) -> u16 {
+    match alignment {
+        Alignment::Center => (text_area_width / 2).saturating_sub(line_width / 2),
+        Alignment::Right => text_area_width.saturating_sub(line_width),
+        Alignment::Left => 0,
+    }
+}
 
 /// A line of text, consisting of one or more [`Span`]s.
 ///
@@ -154,6 +174,9 @@ pub struct Line<'a> {
 
     /// The alignment of this line of text.
     pub alignment: Option<Alignment>,
+
+    /// How to wrap the text
+    pub wrap: Option<Wrap>,
 }
 
 impl<'a> Line<'a> {
@@ -343,6 +366,70 @@ impl<'a> Line<'a> {
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn right_aligned(self) -> Self {
         self.alignment(Alignment::Right)
+    }
+
+    /// Sets the wrapping configuration for the widget.
+    ///
+    /// See [`Wrap`] for more information on the different options.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let line = Line::raw("Hello, world!").wrap(Wrap { trim: true });
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn wrap(mut self, wrap: Wrap) -> Self {
+        self.wrap = Some(wrap);
+        self
+    }
+
+    /// Calculates the number of lines needed to fully render.
+    ///
+    /// Given a max line width, this method calculates the number of lines that a [`Line`] will
+    /// need in order to be fully rendered. For [`Line`]s that do not use wrapping, this count is
+    /// simply 1.
+    ///
+    /// Note: The design for text wrapping is not stable and might affect this API.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let line = Line::raw("Hello World")
+    ///     .wrap(Wrap { trim: false });
+    /// assert_eq!(line.line_count(20), 1);
+    /// assert_eq!(line.line_count(10), 2);
+    /// ```
+    #[stability::unstable(
+        feature = "rendered-line-info",
+        issue = "https://github.com/ratatui-org/ratatui/issues/293"
+    )]
+    pub fn line_count(&self, width: u16) -> usize {
+        use crate::widgets::reflow::WordWrapper;
+
+        if width < 1 {
+            return 0;
+        }
+
+        if let Some(Wrap { trim }) = self.wrap {
+            let styled = [{
+                let graphemes = self
+                    .spans
+                    .iter()
+                    .flat_map(|span| span.styled_graphemes(self.style));
+                let alignment = self.alignment.unwrap_or(Alignment::Left);
+                (graphemes, alignment)
+            }];
+            let mut line_composer = WordWrapper::new(styled.into_iter(), width, trim);
+            let mut count = 0;
+            while line_composer.next_line().is_some() {
+                count += 1;
+            }
+            count
+        } else {
+            1
+        }
     }
 
     /// Returns the width of the underlying string.
@@ -586,30 +673,65 @@ impl WidgetRef for Line<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
-        let width = self.width() as u16;
-        let mut x = area.left();
-        let line = if width > area.width {
-            self.truncated(area.width)
+        if let Some(Wrap { trim }) = self.wrap {
+            let styled = [{
+                let graphemes = self.styled_graphemes(self.style);
+                let alignment = self.alignment.unwrap_or(Alignment::Left);
+                (graphemes, alignment)
+            }];
+            let mut line_composer = WordWrapper::new(styled.into_iter(), area.width, trim);
+            let mut y = 0;
+            while let Some(WrappedLine {
+                line: current_line,
+                width: current_line_width,
+                alignment: current_line_alignment,
+            }) = line_composer.next_line()
+            {
+                let mut x = get_line_offset(current_line_width, area.width, current_line_alignment);
+                for StyledGrapheme { symbol, style } in current_line {
+                    let width = symbol.width();
+                    if width == 0 {
+                        continue;
+                    }
+                    // If the symbol is empty, the last char which rendered last time will
+                    // leave on the line. It's a quick fix.
+                    let symbol = if symbol.is_empty() { " " } else { symbol };
+                    buf.get_mut(area.left() + x, area.top() + y)
+                        .set_symbol(symbol)
+                        .set_style(*style);
+                    x += width as u16;
+                }
+                y += 1;
+                if y >= area.height {
+                    break;
+                }
+            }
         } else {
-            let offset = match self.alignment {
-                Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
-                Some(Alignment::Right) => area.width.saturating_sub(width),
-                Some(Alignment::Left) | None => 0,
+            let width = self.width() as u16;
+            let mut x = area.left();
+            let line = if width > area.width {
+                self.truncated(area.width)
+            } else {
+                let offset = match self.alignment {
+                    Some(Alignment::Center) => (area.width.saturating_sub(width)) / 2,
+                    Some(Alignment::Right) => area.width.saturating_sub(width),
+                    Some(Alignment::Left) | None => 0,
+                };
+                x = x.saturating_add(offset);
+                self.to_owned()
             };
-            x = x.saturating_add(offset);
-            self.to_owned()
-        };
-        for span in &line.spans {
-            let span_width = span.width() as u16;
-            let span_area = Rect {
-                x,
-                width: span_width.min(area.right().saturating_sub(x)),
-                ..area
-            };
-            span.render(span_area, buf);
-            x = x.saturating_add(span_width);
-            if x >= area.right() {
-                break;
+            for span in &line.spans {
+                let span_width = span.width() as u16;
+                let span_area = Rect {
+                    x,
+                    width: span_width.min(area.right().saturating_sub(x)),
+                    ..area
+                };
+                span.render(span_area, buf);
+                x = x.saturating_add(span_width);
+                if x >= area.right() {
+                    break;
+                }
             }
         }
     }

@@ -32,7 +32,7 @@ mod clear;
 mod gauge;
 mod list;
 mod paragraph;
-mod reflow;
+pub(crate) mod reflow;
 mod scrollbar;
 mod sparkline;
 mod table;

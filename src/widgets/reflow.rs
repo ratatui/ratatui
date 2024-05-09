@@ -26,7 +26,7 @@ pub struct WrappedLine<'lend, 'text> {
 
 /// A state machine that wraps lines on word boundaries.
 #[derive(Debug, Default, Clone)]
-pub struct WordWrapper<'a, O, I>
+pub(crate) struct WordWrapper<'a, O, I>
 where
     // Outer iterator providing the individual lines
     O: Iterator<Item = (I, Alignment)>,

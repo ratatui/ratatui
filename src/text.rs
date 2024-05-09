@@ -47,7 +47,7 @@
 mod grapheme;
 pub use grapheme::StyledGrapheme;
 
-mod line;
+pub(crate) mod line;
 pub use line::Line;
 
 mod masked;
