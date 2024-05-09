@@ -557,20 +557,24 @@ impl WidgetRef for Line<'_> {
         buf.set_style(area, self.style);
         let line_width = self.width() as u16;
         if line_width <= area.width {
-            let offset = match self.alignment {
+            // there is enough space to render the whole line, but we may need to indent it
+            let indent_width = match self.alignment {
                 Some(Alignment::Center) => (area.width.saturating_sub(line_width)) / 2,
                 Some(Alignment::Right) => area.width.saturating_sub(line_width),
                 Some(Alignment::Left) | None => 0,
             };
-            let area = area.indent_x(offset);
+            let area = area.indent_x(indent_width);
             render_spans(&self.spans, area, buf, 0);
         } else {
-            let offset = match self.alignment {
+            // there is not enough space to render the whole line, so we need to truncate it
+            // and only render the visible part. We only care about truncating the left side of the
+            // line, as the right side will be truncated by the area width
+            let skip_width = match self.alignment {
                 Some(Alignment::Center) => (line_width.saturating_sub(area.width)) / 2,
                 Some(Alignment::Right) => line_width.saturating_sub(area.width),
                 Some(Alignment::Left) | None => 0,
             };
-            render_spans(&self.spans, area, buf, offset);
+            render_spans(&self.spans, area, buf, skip_width);
         };
     }
 }
