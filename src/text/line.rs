@@ -1,9 +1,10 @@
 #![deny(missing_docs)]
 use std::borrow::Cow;
 
+use unicode_truncate::UnicodeTruncateStr;
+
 use super::StyledGrapheme;
 use crate::prelude::*;
-use unicode_truncate::UnicodeTruncateStr;
 
 /// A line of text, consisting of one or more [`Span`]s.
 ///
@@ -940,7 +941,6 @@ mod tests {
         use unicode_width::UnicodeWidthStr;
 
         use self::buffer::Cell;
-
         use super::*;
         use crate::assert_buffer_eq;
         const BLUE: Style = Style::new().fg(Color::Blue);
