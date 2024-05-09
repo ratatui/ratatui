@@ -562,7 +562,7 @@ impl WidgetRef for Line<'_> {
                 Some(Alignment::Right) => area.width.saturating_sub(line_width),
                 Some(Alignment::Left) | None => 0,
             };
-            let area = indent(area, offset);
+            let area = area.indent_x(offset);
             render_spans(&self.spans, area, buf, 0);
         } else {
             let offset = match self.alignment {
@@ -609,29 +609,17 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_offse
 
             // if the truncation has truncated an initial grapheme, then we need to start rendering
             // from a position that takes that into account by indenting the start of the area
-            area = indent(area, render_width - display_width);
+            area = area.indent_x(render_width - display_width);
             let right = Span::styled(content, span.style);
             right.render_ref(area, buf);
 
-            area = indent(area, display_width);
+            area = area.indent_x(display_width);
             span_offset = 0; // ensure that the next span is rendered in full
         } else {
             // render the whole span
             span.render_ref(area, buf);
-            area = indent(area, span_width);
+            area = area.indent_x(span_width);
         }
-    }
-}
-
-/// indents a given `area`'s x value by the given `x_offset`, returning a new `Rect`
-///
-/// TODO: this should probably be move into a pubic method on `Rect` as it's a common operation
-/// that's used in a few places
-const fn indent(area: Rect, x_offset: u16) -> Rect {
-    Rect {
-        x: area.x.saturating_add(x_offset),
-        width: area.width.saturating_sub(x_offset),
-        ..area
     }
 }
 
