@@ -596,9 +596,6 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_offse
             span_offset -= span_width;
             continue;
         }
-        if area.is_empty() {
-            break;
-        }
         if span_offset > 0 {
             // the first visible span is only partially visible, so truncate the start and render it
             // starting at span offset, all subsequent visible spans are rendered in full (as
@@ -612,6 +609,9 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_offse
             // if the truncation has truncated an initial grapheme, then we need to start rendering
             // from a position that takes that into account by indenting the start of the area
             area = area.indent_x(available_width - actual_width);
+            if area.is_empty() {
+                break;
+            }
             let right = Span::styled(content, span.style);
             right.render_ref(area, buf);
 
@@ -619,6 +619,9 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_offse
             span_offset = 0; // ensure that the next span is rendered in full
         } else {
             // render the whole span
+            if area.is_empty() {
+                break;
+            }
             span.render_ref(area, buf);
             area = area.indent_x(span_width);
         }
