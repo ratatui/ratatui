@@ -557,6 +557,12 @@ impl WidgetRef for Line<'_> {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
 
+        // Left aligned is the default. Use a performance optimized minimal solution.
+        if matches!(self.alignment, Some(Alignment::Left) | None) {
+            render_left_aligned_spans(&self.spans, area, buf);
+            return;
+        }
+
         let area_width = usize::from(area.width);
         let line_width = self.width();
         let can_render_complete_line = line_width <= area_width;
@@ -566,7 +572,7 @@ impl WidgetRef for Line<'_> {
             let indent_width = match self.alignment {
                 Some(Alignment::Center) => (area_width.saturating_sub(line_width)) / 2,
                 Some(Alignment::Right) => area_width.saturating_sub(line_width),
-                Some(Alignment::Left) | None => 0,
+                Some(Alignment::Left) | None => unreachable!("has performance fast path"),
             };
             // cast as u16 is safe as area.width is u16
             let area = area.indent_x(indent_width as u16);
@@ -577,10 +583,28 @@ impl WidgetRef for Line<'_> {
             let skip_width = match self.alignment {
                 Some(Alignment::Center) => (line_width.saturating_sub(area_width)) / 2,
                 Some(Alignment::Right) => line_width.saturating_sub(area_width),
-                Some(Alignment::Left) | None => 0,
+                Some(Alignment::Left) | None => unreachable!("has performance fast path"),
             };
             render_spans(&self.spans, area, buf, skip_width);
         };
+    }
+}
+
+/// Performance optimized minimal solution of [`render_spans`]
+fn render_left_aligned_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer) {
+    for span in spans {
+        if area.is_empty() {
+            break;
+        }
+
+        span.render_ref(area, buf);
+
+        // Get remaining area
+        if let Ok(span_width) = u16::try_from(span.width()) {
+            area = area.indent_x(span_width);
+        } else {
+            break; // span_width > u16::MAX >= area.width
+        }
     }
 }
 
@@ -647,9 +671,12 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_
 
         Span::styled(content, style).render_ref(area, buf);
 
-        // The span might be longer than u16. But the area only calculates up to u16
-        let render_width = u16::try_from(span_width).unwrap_or(u16::MAX);
-        area = area.indent_x(render_width);
+        // Get remaining area
+        if let Ok(span_width) = u16::try_from(span_width) {
+            area = area.indent_x(span_width);
+        } else {
+            break; // span_width > u16::MAX >= area.width
+        }
     }
 }
 
