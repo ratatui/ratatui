@@ -1,4 +1,5 @@
 #![deny(missing_docs)]
+#![warn(clippy::cast_possible_truncation)]
 use std::borrow::Cow;
 
 use unicode_truncate::UnicodeTruncateStr;
@@ -555,23 +556,27 @@ impl WidgetRef for Line<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
         buf.set_style(area, self.style);
-        let line_width = self.width() as u16;
-        if line_width <= area.width {
+
+        let area_width = usize::from(area.width);
+        let line_width = self.width();
+        #[allow(clippy::cast_possible_truncation)] // explained in comment
+        if line_width <= area_width {
             // there is enough space to render the whole line, but we may need to indent it
             let indent_width = match self.alignment {
-                Some(Alignment::Center) => (area.width.saturating_sub(line_width)) / 2,
-                Some(Alignment::Right) => area.width.saturating_sub(line_width),
+                Some(Alignment::Center) => (area_width.saturating_sub(line_width)) / 2,
+                Some(Alignment::Right) => area_width.saturating_sub(line_width),
                 Some(Alignment::Left) | None => 0,
             };
-            let area = area.indent_x(indent_width);
+            // cast as u16 is safe as area_width is u16
+            let area = area.indent_x(indent_width as u16);
             render_spans(&self.spans, area, buf, 0);
         } else {
             // there is not enough space to render the whole line, so we need to truncate it
             // and only render the visible part. We only care about truncating the left side of the
             // line, as the right side will be truncated by the area width
             let skip_width = match self.alignment {
-                Some(Alignment::Center) => (line_width.saturating_sub(area.width)) / 2,
-                Some(Alignment::Right) => line_width.saturating_sub(area.width),
+                Some(Alignment::Center) => (line_width.saturating_sub(area_width)) / 2,
+                Some(Alignment::Right) => line_width.saturating_sub(area_width),
                 Some(Alignment::Left) | None => 0,
             };
             render_spans(&self.spans, area, buf, skip_width);
@@ -594,9 +599,10 @@ impl WidgetRef for Line<'_> {
 /// 2. Indent `area` to account for the width of the rendered span
 /// 3. Update `span_skip_width` to 0 after the first span is rendered in full
 /// 4. Repeat
-fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_width: u16) {
+#[allow(clippy::cast_possible_truncation)] // Ensured by debug_assert or explained in comment
+fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_width: usize) {
     for span in spans {
-        let span_width = span.width() as u16;
+        let span_width = span.width();
         // ignore spans that are completely before the offset by decrementing `span_skip_width` by
         // the span width in each iteration until we find a span that is partially or completely
         // visible
@@ -607,24 +613,32 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_
         if span_skip_width > 0 {
             // the first visible span is only partially visible, so truncate the start and render it
             // starting at span_skip_width, all subsequent visible spans are rendered in full (as
-            // available space permits). We only need to truncate the start of the first visible span
-            // because the rest of the line will be truncated automatically by the area width
+            // available space permits). We only need to truncate the start of the first visible
+            // span because the rest of the line will be truncated automatically by the
+            // area width
             let available_width = span_width - span_skip_width;
-            let (content, actual_width) = span
-                .content
-                .unicode_truncate_start(available_width as usize);
-            let actual_width = actual_width as u16;
+            let (content, actual_width) = span.content.unicode_truncate_start(available_width);
 
             // if the truncation has truncated an initial grapheme, then we need to start rendering
             // from a position that takes that into account by indenting the start of the area
-            area = area.indent_x(available_width - actual_width);
+            let offset_of_initial_grapheme = available_width - actual_width;
+
+            // as u16 is safe as a single grapheme is kinda short.
+            // Some emojis are 20, but not nearly close to u16::MAX
+            area = area.indent_x(offset_of_initial_grapheme as u16);
             if area.is_empty() {
                 break;
             }
+
             let right = Span::styled(content, span.style);
             right.render_ref(area, buf);
 
-            area = area.indent_x(actual_width);
+            debug_assert!(
+                u16::try_from(actual_width).is_ok(),
+                "span_skip_width seems wrong"
+            );
+            area = area.indent_x(actual_width as u16);
+
             span_skip_width = 0; // ensure that the next span is rendered in full
         } else {
             // render the whole span
@@ -632,7 +646,12 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_
                 break;
             }
             span.render_ref(area, buf);
-            area = area.indent_x(span_width);
+
+            debug_assert!(
+                u16::try_from(span_width).is_ok(),
+                "span_skip_width should be > 0 when the span_width is too long"
+            );
+            area = area.indent_x(span_width as u16);
         }
     }
 }
@@ -942,9 +961,9 @@ mod tests {
         use unicode_segmentation::UnicodeSegmentation;
         use unicode_width::UnicodeWidthStr;
 
-        use self::buffer::Cell;
         use super::*;
-        use crate::assert_buffer_eq;
+        use crate::{assert_buffer_eq, buffer::Cell};
+
         const BLUE: Style = Style::new().fg(Color::Blue);
         const GREEN: Style = Style::new().fg(Color::Green);
         const ITALIC: Style = Style::new().add_modifier(Modifier::ITALIC);
@@ -1191,11 +1210,11 @@ mod tests {
         /// middle of the emoji. This test documents just the emoji part of the test.
         #[test]
         fn flag_emoji() {
-            let s = "🇺🇸1234";
-            assert_eq!(s.len(), 12); // flag is 4 bytes
-            assert_eq!(s.chars().count(), 6); // flag is 2 chars
-            assert_eq!(s.graphemes(true).count(), 5); // flag is 1 grapheme
-            assert_eq!(s.width(), 6); // flag is 2 display width
+            let str = "🇺🇸1234";
+            assert_eq!(str.len(), 12); // flag is 4 bytes
+            assert_eq!(str.chars().count(), 6); // flag is 2 chars
+            assert_eq!(str.graphemes(true).count(), 5); // flag is 1 grapheme
+            assert_eq!(str.width(), 6); // flag is 2 display width
         }
 
         /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
@@ -1213,6 +1232,50 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
             line.render_ref(buf.area, &mut buf);
             assert_buffer_eq!(buf, Buffer::with_lines([expected]));
+        }
+
+        // Buffer width is `u16`. A line can be longer.
+        #[test]
+        fn render_truncates_very_long_line_of_many_spans() {
+            let part = "this is some content with a somewhat long width to be repeated over and over again to create horribly long Line over u16::MAX";
+            let min_width = usize::from(u16::MAX).saturating_add(1);
+
+            // width == len as only ASCII is used here
+            let factor = min_width.div_ceil(part.len());
+
+            let line = Line::from(vec![Span::raw(part); factor]).right_aligned();
+
+            dbg!(line.width());
+            assert!(line.width() >= min_width);
+
+            let mut buf = Buffer::empty(Rect::new(0, 0, 32, 1));
+            line.render_ref(buf.area, &mut buf);
+            assert_buffer_eq!(
+                buf,
+                Buffer::with_lines(["horribly long Line over u16::MAX"])
+            );
+        }
+
+        // Buffer width is `u16`. A single span inside a line can be longer.
+        #[test]
+        fn render_truncates_very_long_single_span_line() {
+            let part = "this is some content with a somewhat long width to be repeated over and over again to create horribly long Line over u16::MAX";
+            let min_width = usize::from(u16::MAX).saturating_add(1);
+
+            // width == len as only ASCII is used here
+            let factor = min_width.div_ceil(part.len());
+
+            let line = Line::from(vec![Span::raw(part.repeat(factor))]).right_aligned();
+
+            dbg!(line.width());
+            assert!(line.width() >= min_width);
+
+            let mut buf = Buffer::empty(Rect::new(0, 0, 32, 1));
+            line.render_ref(buf.area, &mut buf);
+            assert_buffer_eq!(
+                buf,
+                Buffer::with_lines(["horribly long Line over u16::MAX"])
+            );
         }
     }
 
