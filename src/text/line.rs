@@ -586,64 +586,70 @@ impl WidgetRef for Line<'_> {
 
 /// Renders all the spans of the line that should be visible. Visibility is determined by the area
 /// and the (remaining) `span_skip_width`.
-///
-/// Algorithm:
-/// 1. For each span check whether it is (fully) visible. Skip or render it (partially).
-/// 2. Indent `area` to account for the width of the rendered span
-/// 3. Update the remaining `span_skip_width`. This will be 0 after the first fully rendered span.
-/// 4. Repeat
 #[allow(clippy::cast_possible_truncation, clippy::arithmetic_side_effects)] // Ensured by debug_assert or explained in comment
 fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_width: usize) {
-    for span in spans {
-        let span_width = span.width();
-        // Ignore spans that are completely before the offset. Decrement `span_skip_width` by the
-        // span width until we find a span that is partially or completely visible.
-        if span_skip_width >= span_width {
-            span_skip_width -= span_width;
-            continue;
-        }
-        let span_only_partially_visible = span_skip_width > 0;
-        if span_only_partially_visible {
-            // The first visible span might only be partially visible. Truncate the start and render
-            // it starting at span_skip_width. All subsequent visible spans are rendered in full (as
-            // available space permits).
-            // As the end is truncated by the area width we only need to truncate the start.
-            debug_assert!(span_width > span_skip_width, "span_skip_width seems wrong");
-            let available_width = span_width - span_skip_width;
-            let (content, actual_width) = span.content.unicode_truncate_start(available_width);
-
-            // if the truncation has truncated an initial grapheme, then we need to start rendering
-            // from a position that takes that into account by indenting the start of the area
-            let offset_of_initial_grapheme = available_width - actual_width;
-
-            // as u16 is safe as a single grapheme is kinda short.
-            // Some emojis are 20, but not nearly close to u16::MAX
-            area = area.indent_x(offset_of_initial_grapheme as u16);
-            if area.is_empty() {
-                break;
+    let spans = spans
+        .iter()
+        .map(|span| (span, span.width()))
+        // Determine whether a span is visible or not. Filter non visible ones out.
+        .filter_map(|(span, span_width)| {
+            // Ignore spans that are completely before the offset. Decrement `span_skip_width` by
+            // the span width until we find a span that is partially or completely visible.
+            if span_skip_width >= span_width {
+                span_skip_width -= span_width;
+                return None;
             }
 
-            let visible = Span::styled(content, span.style);
-            visible.render_ref(area, buf);
-
-            debug_assert!(
-                u16::try_from(actual_width).is_ok(),
-                "span_skip_width seems wrong"
-            );
-            area = area.indent_x(actual_width as u16);
+            // This applies the skip from the start but not the end.
+            // The end will be trimmed by the actual render into the buffer.
+            // This means that the available_width might be > u16::MAX.
+            let available_width = span_width.saturating_sub(span_skip_width);
 
             span_skip_width = 0; // ensure that the next span is rendered in full
-        } else {
-            // render the whole span (until there is no area left)
-            if area.is_empty() {
-                break;
-            }
-            span.render_ref(area, buf);
 
-            // The span might be longer than u16. But the area only calculated up to u16
-            let span_width = u16::try_from(span_width).unwrap_or(u16::MAX);
-            area = area.indent_x(span_width);
+            Some((span, span_width, available_width))
+        })
+        // Handle truncation when needed
+        .map(|(span, span_width, available_width)| {
+            if span_width > available_width {
+                // Partially visible
+
+                // As the end is truncated by the area width we only need to truncate the start.
+                let (content, actual_width) = span.content.unicode_truncate_start(available_width);
+                // if the truncation has truncated an initial grapheme, then we need to start rendering
+                // from a position that takes that into account by indenting the start of the area
+                let offset_of_initial_grapheme = available_width - actual_width;
+
+                debug_assert!(
+                    u16::try_from(offset_of_initial_grapheme).is_ok(),
+                    "single graphemes are kinda short. Some Emojis reach 22 but not nearly close to u16::MAX"
+                );
+                let offset_of_initial_grapheme = offset_of_initial_grapheme as u16;
+
+                (
+                    content,
+                    span.style,
+                    actual_width,
+                    offset_of_initial_grapheme,
+                )
+            } else {
+                // Fully visible
+                (&*span.content, span.style, span_width, 0)
+            }
+        });
+
+    // Render the spans one after each other
+    for (content, style, span_width, offset) in spans {
+        area = area.indent_x(offset);
+        if area.is_empty() {
+            break;
         }
+
+        Span::styled(content, style).render_ref(area, buf);
+
+        // The span might be longer than u16. But the area only calculates up to u16
+        let render_width = u16::try_from(span_width).unwrap_or(u16::MAX);
+        area = area.indent_x(render_width);
     }
 }
 
