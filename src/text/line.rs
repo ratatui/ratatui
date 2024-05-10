@@ -559,21 +559,21 @@ impl WidgetRef for Line<'_> {
 
         let area_width = usize::from(area.width);
         let line_width = self.width();
+        let can_render_complete_line = line_width <= area_width;
+
         #[allow(clippy::cast_possible_truncation)] // explained in comment
-        if line_width <= area_width {
-            // there is enough space to render the whole line, but we may need to indent it
+        if can_render_complete_line {
             let indent_width = match self.alignment {
                 Some(Alignment::Center) => (area_width.saturating_sub(line_width)) / 2,
                 Some(Alignment::Right) => area_width.saturating_sub(line_width),
                 Some(Alignment::Left) | None => 0,
             };
-            // cast as u16 is safe as area_width is u16
+            // cast as u16 is safe as area.width is u16
             let area = area.indent_x(indent_width as u16);
             render_spans(&self.spans, area, buf, 0);
         } else {
-            // there is not enough space to render the whole line, so we need to truncate it
-            // and only render the visible part. We only care about truncating the left side of the
-            // line, as the right side will be truncated by the area width
+            // There is not enough space to render the whole line.
+            // As the right side is truncated by the area width we only need to truncate the left.
             let skip_width = match self.alignment {
                 Some(Alignment::Center) => (line_width.saturating_sub(area_width)) / 2,
                 Some(Alignment::Right) => line_width.saturating_sub(area_width),
@@ -584,38 +584,30 @@ impl WidgetRef for Line<'_> {
     }
 }
 
-/// Renders all the spans of the line that are after the `span_offset` in the line and that are
-/// visible in the given area (starting rendering at `area.x + buf_x_offset`). `buf_x_offset`
-/// probably should just be used to modify area.x instead of being a parameter, but it's here
-/// because that would have made the above code just a little uglier
+/// Renders all the spans of the line that should be visible. Visibility is determined by the area
+/// and the (remaining) `span_skip_width`.
 ///
 /// Algorithm:
-/// 1. For each span in the line:
-///    1. If the span is completely before the `span_skip_width`, skip it and reduce
-///       `span_skip_width` by the span's width
-///    2. If the span is partially before the `span_skip_width`, render the right side of the span
-///       starting at the span offset
-///    3. If the span is completely after the `span_skip_width`, render the whole span
+/// 1. For each span check whether it is (fully) visible. Skip or render it (partially).
 /// 2. Indent `area` to account for the width of the rendered span
-/// 3. Update `span_skip_width` to 0 after the first span is rendered in full
+/// 3. Update the remaining `span_skip_width`. This will be 0 after the first fully rendered span.
 /// 4. Repeat
 #[allow(clippy::cast_possible_truncation, clippy::arithmetic_side_effects)] // Ensured by debug_assert or explained in comment
 fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_width: usize) {
     for span in spans {
         let span_width = span.width();
-        // ignore spans that are completely before the offset by decrementing `span_skip_width` by
-        // the span width in each iteration until we find a span that is partially or completely
-        // visible
+        // Ignore spans that are completely before the offset. Decrement `span_skip_width` by the
+        // span width until we find a span that is partially or completely visible.
         if span_skip_width >= span_width {
             span_skip_width -= span_width;
             continue;
         }
-        if span_skip_width > 0 {
-            // the first visible span is only partially visible, so truncate the start and render it
-            // starting at span_skip_width, all subsequent visible spans are rendered in full (as
-            // available space permits). We only need to truncate the start of the first visible
-            // span because the rest of the line will be truncated automatically by the
-            // area width
+        let span_only_partially_visible = span_skip_width > 0;
+        if span_only_partially_visible {
+            // The first visible span might only be partially visible. Truncate the start and render
+            // it starting at span_skip_width. All subsequent visible spans are rendered in full (as
+            // available space permits).
+            // As the end is truncated by the area width we only need to truncate the start.
             debug_assert!(span_width > span_skip_width, "span_skip_width seems wrong");
             let available_width = span_width - span_skip_width;
             let (content, actual_width) = span.content.unicode_truncate_start(available_width);
@@ -631,8 +623,8 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_
                 break;
             }
 
-            let right = Span::styled(content, span.style);
-            right.render_ref(area, buf);
+            let visible = Span::styled(content, span.style);
+            visible.render_ref(area, buf);
 
             debug_assert!(
                 u16::try_from(actual_width).is_ok(),
@@ -642,7 +634,7 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_
 
             span_skip_width = 0; // ensure that the next span is rendered in full
         } else {
-            // render the whole span
+            // render the whole span (until there is no area left)
             if area.is_empty() {
                 break;
             }
