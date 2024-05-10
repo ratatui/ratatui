@@ -640,11 +640,9 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_
             }
             span.render_ref(area, buf);
 
-            debug_assert!(
-                u16::try_from(span_width).is_ok(),
-                "span_skip_width should be > 0 when the span_width is too long"
-            );
-            area = area.indent_x(span_width as u16);
+            // The span might be longer than u16. But the area only calculated up to u16
+            let span_width = u16::try_from(span_width).unwrap_or(u16::MAX);
+            area = area.indent_x(span_width);
         }
     }
 }
@@ -1228,47 +1226,51 @@ mod tests {
         }
 
         // Buffer width is `u16`. A line can be longer.
-        #[test]
-        fn render_truncates_very_long_line_of_many_spans() {
-            let part = "this is some content with a somewhat long width to be repeated over and over again to create horribly long Line over u16::MAX";
+        #[rstest]
+        #[case::left(Alignment::Left, "This is some content with a some")]
+        #[case::right(Alignment::Right, "horribly long Line over u16::MAX")]
+        fn render_truncates_very_long_line_of_many_spans(
+            #[case] alignment: Alignment,
+            #[case] expected: &str,
+        ) {
+            let part = "This is some content with a somewhat long width to be repeated over and over again to create horribly long Line over u16::MAX";
             let min_width = usize::from(u16::MAX).saturating_add(1);
 
             // width == len as only ASCII is used here
             let factor = min_width.div_ceil(part.len());
 
-            let line = Line::from(vec![Span::raw(part); factor]).right_aligned();
+            let line = Line::from(vec![Span::raw(part); factor]).alignment(alignment);
 
             dbg!(line.width());
             assert!(line.width() >= min_width);
 
             let mut buf = Buffer::empty(Rect::new(0, 0, 32, 1));
             line.render_ref(buf.area, &mut buf);
-            assert_buffer_eq!(
-                buf,
-                Buffer::with_lines(["horribly long Line over u16::MAX"])
-            );
+            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
         }
 
         // Buffer width is `u16`. A single span inside a line can be longer.
-        #[test]
-        fn render_truncates_very_long_single_span_line() {
-            let part = "this is some content with a somewhat long width to be repeated over and over again to create horribly long Line over u16::MAX";
+        #[rstest]
+        #[case::left(Alignment::Left, "This is some content with a some")]
+        #[case::right(Alignment::Right, "horribly long Line over u16::MAX")]
+        fn render_truncates_very_long_single_span_line(
+            #[case] alignment: Alignment,
+            #[case] expected: &str,
+        ) {
+            let part = "This is some content with a somewhat long width to be repeated over and over again to create horribly long Line over u16::MAX";
             let min_width = usize::from(u16::MAX).saturating_add(1);
 
             // width == len as only ASCII is used here
             let factor = min_width.div_ceil(part.len());
 
-            let line = Line::from(vec![Span::raw(part.repeat(factor))]).right_aligned();
+            let line = Line::from(vec![Span::raw(part.repeat(factor))]).alignment(alignment);
 
             dbg!(line.width());
             assert!(line.width() >= min_width);
 
             let mut buf = Buffer::empty(Rect::new(0, 0, 32, 1));
             line.render_ref(buf.area, &mut buf);
-            assert_buffer_eq!(
-                buf,
-                Buffer::with_lines(["horribly long Line over u16::MAX"])
-            );
+            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
         }
     }
 
