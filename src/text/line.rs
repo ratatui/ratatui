@@ -555,6 +555,9 @@ impl Widget for Line<'_> {
 impl WidgetRef for Line<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
         buf.set_style(area, self.style);
 
         // Left aligned is the default. Use a performance optimized minimal solution.
@@ -565,6 +568,10 @@ impl WidgetRef for Line<'_> {
 
         let area_width = usize::from(area.width);
         let line_width = self.width();
+        if line_width == 0 {
+            return;
+        }
+
         let can_render_complete_line = line_width <= area_width;
 
         #[allow(clippy::cast_possible_truncation)] // explained in comment
