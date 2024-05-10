@@ -1,5 +1,5 @@
 #![deny(missing_docs)]
-#![warn(clippy::cast_possible_truncation)]
+#![warn(clippy::pedantic, clippy::nursery, clippy::arithmetic_side_effects)]
 use std::borrow::Cow;
 
 use unicode_truncate::UnicodeTruncateStr;
@@ -599,7 +599,7 @@ impl WidgetRef for Line<'_> {
 /// 2. Indent `area` to account for the width of the rendered span
 /// 3. Update `span_skip_width` to 0 after the first span is rendered in full
 /// 4. Repeat
-#[allow(clippy::cast_possible_truncation)] // Ensured by debug_assert or explained in comment
+#[allow(clippy::cast_possible_truncation, clippy::arithmetic_side_effects)] // Ensured by debug_assert or explained in comment
 fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_width: usize) {
     for span in spans {
         let span_width = span.width();
@@ -616,6 +616,7 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_
             // available space permits). We only need to truncate the start of the first visible
             // span because the rest of the line will be truncated automatically by the
             // area width
+            debug_assert!(span_width > span_skip_width, "span_skip_width seems wrong");
             let available_width = span_width - span_skip_width;
             let (content, actual_width) = span.content.unicode_truncate_start(available_width);
 
