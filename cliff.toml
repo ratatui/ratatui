@@ -26,7 +26,7 @@ body = """
 {% endif -%}
 
 {% macro commit(commit) -%}
-- [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui-org/ratatui/commit/" ~ commit.id }})
+- [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui-org/ratatui/commit/" ~ commit.id }}) \
   *({{commit.scope | default(value = "uncategorized") | lower }})* {{ commit.message | upper_first | trim }}\
   {% if commit.github.username %} by @{{ commit.github.username }}{%- endif -%}\
   {% if commit.github.pr_number %} in [#{{ commit.github.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.github.pr_number }}){%- endif %}\
