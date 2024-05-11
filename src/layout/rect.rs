@@ -47,6 +47,14 @@ impl fmt::Display for Rect {
 }
 
 impl Rect {
+    /// A zero sized Rect at position 0,0
+    pub const ZERO: Self = Self {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+    };
+
     /// Creates a new `Rect`, with width and height limited to keep the area under max `u16`. If
     /// clipped, aspect ratio will be preserved.
     pub fn new(x: u16, y: u16, width: u16, height: u16) -> Self {
@@ -112,12 +120,12 @@ impl Rect {
     ///
     /// If the margin is larger than the `Rect`, the returned `Rect` will have no area.
     #[must_use = "method returns the modified value"]
-    pub fn inner(self, margin: &Margin) -> Self {
+    pub const fn inner(self, margin: &Margin) -> Self {
         let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
         let doubled_margin_vertical = margin.vertical.saturating_mul(2);
 
         if self.width < doubled_margin_horizontal || self.height < doubled_margin_vertical {
-            Self::default()
+            Self::ZERO
         } else {
             Self {
                 x: self.x.saturating_add(margin.horizontal),

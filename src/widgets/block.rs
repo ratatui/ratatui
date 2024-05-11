@@ -860,6 +860,7 @@ impl<'a> Styled for Block<'a> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
     use strum::ParseError;
 
     use super::*;
@@ -871,179 +872,65 @@ mod tests {
         assert_eq!(block.borders, Borders::all());
     }
 
-    #[allow(clippy::too_many_lines)]
-    #[test]
-    fn inner_takes_into_account_the_borders() {
-        // No borders
-        assert_eq!(
-            Block::new().inner(Rect::default()),
-            Rect::new(0, 0, 0, 0),
-            "no borders, width=0, height=0"
-        );
-        assert_eq!(
-            Block::new().inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 0, 1, 1),
-            "no borders, width=1, height=1"
-        );
-
-        // Left border
-        assert_eq!(
-            Block::new()
-                .borders(Borders::LEFT)
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 0, 0, 1),
-            "left, width=0"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::LEFT)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(1, 0, 0, 1),
-            "left, width=1"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::LEFT)
-                .inner(Rect::new(0, 0, 2, 1)),
-            Rect::new(1, 0, 1, 1),
-            "left, width=2"
-        );
-
-        // Top border
-        assert_eq!(
-            Block::new()
-                .borders(Borders::TOP)
-                .inner(Rect::new(0, 0, 1, 0)),
-            Rect::new(0, 0, 1, 0),
-            "top, height=0"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::TOP)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 1, 1, 0),
-            "top, height=1"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::TOP)
-                .inner(Rect::new(0, 0, 1, 2)),
-            Rect::new(0, 1, 1, 1),
-            "top, height=2"
-        );
-
-        // Right border
-        assert_eq!(
-            Block::new()
-                .borders(Borders::RIGHT)
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 0, 0, 1),
-            "right, width=0"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::RIGHT)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 0, 0, 1),
-            "right, width=1"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::RIGHT)
-                .inner(Rect::new(0, 0, 2, 1)),
-            Rect::new(0, 0, 1, 1),
-            "right, width=2"
-        );
-
-        // Bottom border
-        assert_eq!(
-            Block::new()
-                .borders(Borders::BOTTOM)
-                .inner(Rect::new(0, 0, 1, 0)),
-            Rect::new(0, 0, 1, 0),
-            "bottom, height=0"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::BOTTOM)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 0, 1, 0),
-            "bottom, height=1"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::BOTTOM)
-                .inner(Rect::new(0, 0, 1, 2)),
-            Rect::new(0, 0, 1, 1),
-            "bottom, height=2"
-        );
-
-        // All borders
-        assert_eq!(
-            Block::bordered().inner(Rect::default()),
-            Rect::new(0, 0, 0, 0),
-            "all borders, width=0, height=0"
-        );
-        assert_eq!(
-            Block::bordered().inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(1, 1, 0, 0),
-            "all borders, width=1, height=1"
-        );
-        assert_eq!(
-            Block::bordered().inner(Rect::new(0, 0, 2, 2)),
-            Rect::new(1, 1, 0, 0),
-            "all borders, width=2, height=2"
-        );
-        assert_eq!(
-            Block::bordered().inner(Rect::new(0, 0, 3, 3)),
-            Rect::new(1, 1, 1, 1),
-            "all borders, width=3, height=3"
-        );
+    #[rstest]
+    #[case::none_0(Borders::NONE, Rect::ZERO, Rect::ZERO)]
+    #[case::none_1(Borders::NONE, Rect::new(0, 0, 1, 1), Rect::new(0, 0, 1, 1))]
+    #[case::left_0(Borders::LEFT, Rect::ZERO, Rect::ZERO)]
+    #[case::left_w1(Borders::LEFT, Rect::new(0, 0, 0, 1), Rect::new(0, 0, 0, 1))]
+    #[case::left_w2(Borders::LEFT, Rect::new(0, 0, 1, 1), Rect::new(1, 0, 0, 1))]
+    #[case::left_w3(Borders::LEFT, Rect::new(0, 0, 2, 1), Rect::new(1, 0, 1, 1))]
+    #[case::top_0(Borders::TOP, Rect::ZERO, Rect::ZERO)]
+    #[case::top_h1(Borders::TOP, Rect::new(0, 0, 1, 0), Rect::new(0, 0, 1, 0))]
+    #[case::top_h2(Borders::TOP, Rect::new(0, 0, 1, 1), Rect::new(0, 1, 1, 0))]
+    #[case::top_h3(Borders::TOP, Rect::new(0, 0, 1, 2), Rect::new(0, 1, 1, 1))]
+    #[case::right_0(Borders::RIGHT, Rect::ZERO, Rect::ZERO)]
+    #[case::right_w1(Borders::RIGHT, Rect::new(0, 0, 0, 1), Rect::new(0, 0, 0, 1))]
+    #[case::right_w2(Borders::RIGHT, Rect::new(0, 0, 1, 1), Rect::new(0, 0, 0, 1))]
+    #[case::right_w3(Borders::RIGHT, Rect::new(0, 0, 2, 1), Rect::new(0, 0, 1, 1))]
+    #[case::bottom_0(Borders::BOTTOM, Rect::ZERO, Rect::ZERO)]
+    #[case::bottom_h1(Borders::BOTTOM, Rect::new(0, 0, 1, 0), Rect::new(0, 0, 1, 0))]
+    #[case::bottom_h2(Borders::BOTTOM, Rect::new(0, 0, 1, 1), Rect::new(0, 0, 1, 0))]
+    #[case::bottom_h3(Borders::BOTTOM, Rect::new(0, 0, 1, 2), Rect::new(0, 0, 1, 1))]
+    #[case::all_0(Borders::ALL, Rect::ZERO, Rect::ZERO)]
+    #[case::all_1(Borders::ALL, Rect::new(0, 0, 1, 1), Rect::new(1, 1, 0, 0))]
+    #[case::all_2(Borders::ALL, Rect::new(0, 0, 2, 2), Rect::new(1, 1, 0, 0))]
+    #[case::all_3(Borders::ALL, Rect::new(0, 0, 3, 3), Rect::new(1, 1, 1, 1))]
+    fn inner_takes_into_account_the_borders(
+        #[case] borders: Borders,
+        #[case] area: Rect,
+        #[case] expected: Rect,
+    ) {
+        let block = Block::new().borders(borders);
+        assert_eq!(block.inner(area), expected);
     }
 
-    #[test]
-    fn inner_takes_into_account_the_title() {
-        assert_eq!(
-            Block::new().title("Test").inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 1, 0, 0),
-        );
-        assert_eq!(
-            Block::new()
-                .title(Title::from("Test").alignment(Alignment::Center))
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 1, 0, 0),
-        );
-        assert_eq!(
-            Block::new()
-                .title(Title::from("Test").alignment(Alignment::Right))
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 1, 0, 0),
-        );
+    #[rstest]
+    #[case::left(Alignment::Left)]
+    #[case::center(Alignment::Center)]
+    #[case::right(Alignment::Right)]
+    fn inner_takes_into_account_the_title(#[case] alignment: Alignment) {
+        let area = Rect::new(0, 0, 0, 1);
+        let expected = Rect::new(0, 1, 0, 0);
+
+        let block = Block::new().title(Title::from("Test").alignment(alignment));
+        assert_eq!(block.inner(area), expected);
     }
 
-    #[test]
-    fn inner_takes_into_account_border_and_title() {
-        let test_rect = Rect::new(0, 0, 0, 2);
-
-        let top_top = Block::new()
-            .borders(Borders::TOP)
-            .title(Title::from("Test").position(Position::Top));
-        assert_eq!(top_top.inner(test_rect), Rect::new(0, 1, 0, 1));
-
-        let top_bot = Block::new()
-            .borders(Borders::BOTTOM)
-            .title(Title::from("Test").position(Position::Top));
-        assert_eq!(top_bot.inner(test_rect), Rect::new(0, 1, 0, 0));
-
-        let bot_top = Block::new()
-            .borders(Borders::TOP)
-            .title(Title::from("Test").position(Position::Bottom));
-        assert_eq!(bot_top.inner(test_rect), Rect::new(0, 1, 0, 0));
-
-        let bot_bot = Block::new()
-            .borders(Borders::BOTTOM)
-            .title(Title::from("Test").position(Position::Bottom));
-        assert_eq!(bot_bot.inner(test_rect), Rect::new(0, 0, 0, 1));
+    #[rstest]
+    #[case::top_top(Borders::TOP, Position::Top, Rect::new(0, 1, 0, 1))]
+    #[case::top_bot(Borders::BOTTOM, Position::Top, Rect::new(0, 1, 0, 0))]
+    #[case::bot_top(Borders::TOP, Position::Bottom, Rect::new(0, 1, 0, 0))]
+    #[case::top_top(Borders::BOTTOM, Position::Bottom, Rect::new(0, 0, 0, 1))]
+    fn inner_takes_into_account_border_and_title(
+        #[case] borders: Borders,
+        #[case] position: Position,
+        #[case] expected: Rect,
+    ) {
+        let area = Rect::new(0, 0, 0, 2);
+        let block = Block::new()
+            .borders(borders)
+            .title(Title::from("Test").position(position));
+        assert_eq!(block.inner(area), expected);
     }
 
     #[test]
