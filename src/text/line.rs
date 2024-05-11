@@ -555,136 +555,94 @@ impl Widget for Line<'_> {
 impl WidgetRef for Line<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
-        if area.is_empty() {
+        let line_width = self.width();
+        if area.is_empty() || line_width == 0 {
             return;
         }
         buf.set_style(area, self.style);
 
-        // Left aligned is the default. Use a performance optimized minimal solution.
-        if matches!(self.alignment, Some(Alignment::Left) | None) {
-            render_left_aligned_spans(&self.spans, area, buf);
-            return;
-        }
-
         let area_width = usize::from(area.width);
-        let line_width = self.width();
-        if line_width == 0 {
-            return;
-        }
-
         let can_render_complete_line = line_width <= area_width;
-
-        #[allow(clippy::cast_possible_truncation)] // explained in comment
         if can_render_complete_line {
             let indent_width = match self.alignment {
                 Some(Alignment::Center) => (area_width.saturating_sub(line_width)) / 2,
                 Some(Alignment::Right) => area_width.saturating_sub(line_width),
-                Some(Alignment::Left) | None => unreachable!("has performance fast path"),
+                Some(Alignment::Left) | None => 0,
             };
-            // cast as u16 is safe as area.width is u16
-            let area = area.indent_x(indent_width as u16);
+            let indent_width = u16::try_from(indent_width).unwrap_or(u16::MAX);
+            let area = area.indent_x(indent_width);
             render_spans(&self.spans, area, buf, 0);
         } else {
-            // There is not enough space to render the whole line.
-            // As the right side is truncated by the area width we only need to truncate the left.
+            // There is not enough space to render the whole line. As the right side is truncated by
+            // the area width, only truncate the left.
             let skip_width = match self.alignment {
                 Some(Alignment::Center) => (line_width.saturating_sub(area_width)) / 2,
                 Some(Alignment::Right) => line_width.saturating_sub(area_width),
-                Some(Alignment::Left) | None => unreachable!("has performance fast path"),
+                Some(Alignment::Left) | None => 0,
             };
             render_spans(&self.spans, area, buf, skip_width);
         };
     }
 }
 
-/// Performance optimized minimal solution of [`render_spans`]
-fn render_left_aligned_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer) {
-    for span in spans {
-        if area.is_empty() {
-            break;
-        }
-
-        span.render_ref(area, buf);
-
-        // Get remaining area
-        if let Ok(span_width) = u16::try_from(span.width()) {
-            area = area.indent_x(span_width);
-        } else {
-            break; // span_width > u16::MAX >= area.width
-        }
-    }
-}
-
-/// Renders all the spans of the line that should be visible. Visibility is determined by the area
-/// and the (remaining) `span_skip_width`.
-#[allow(clippy::cast_possible_truncation, clippy::arithmetic_side_effects)] // Ensured by debug_assert or explained in comment
-fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, mut span_skip_width: usize) {
-    let spans = spans
-        .iter()
-        .map(|span| (span, span.width()))
-        // Determine whether a span is visible or not. Filter non visible ones out.
-        .filter_map(|(span, span_width)| {
-            // Ignore spans that are completely before the offset. Decrement `span_skip_width` by
-            // the span width until we find a span that is partially or completely visible.
-            if span_skip_width >= span_width {
-                span_skip_width -= span_width;
-                return None;
-            }
-
-            // This applies the skip from the start but not the end.
-            // The end will be trimmed by the actual render into the buffer.
-            // This means that the available_width might be > u16::MAX.
-            let available_width = span_width.saturating_sub(span_skip_width);
-
-            span_skip_width = 0; // ensure that the next span is rendered in full
-
-            Some((span, span_width, available_width))
-        })
-        // Handle truncation when needed
-        .map(|(span, span_width, available_width)| {
-            if span_width > available_width {
-                // Partially visible
-
-                // As the end is truncated by the area width we only need to truncate the start.
-                let (content, actual_width) = span.content.unicode_truncate_start(available_width);
-                // if the truncation has truncated an initial grapheme, then we need to start rendering
-                // from a position that takes that into account by indenting the start of the area
-                let offset_of_initial_grapheme = available_width - actual_width;
-
-                debug_assert!(
-                    u16::try_from(offset_of_initial_grapheme).is_ok(),
-                    "single graphemes are kinda short. Some Emojis reach 22 but not nearly close to u16::MAX"
-                );
-                let offset_of_initial_grapheme = offset_of_initial_grapheme as u16;
-
-                (
-                    content,
-                    span.style,
-                    actual_width,
-                    offset_of_initial_grapheme,
-                )
-            } else {
-                // Fully visible
-                (&*span.content, span.style, span_width, 0)
-            }
-        });
-
-    // Render the spans one after each other
-    for (content, style, span_width, offset) in spans {
+/// Renders all the spans of the line that should be visible.
+fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, span_skip_width: usize) {
+    for (span, span_width, offset) in visible_spans(spans, span_skip_width) {
         area = area.indent_x(offset);
         if area.is_empty() {
             break;
         }
-
-        Span::styled(content, style).render_ref(area, buf);
-
-        // Get remaining area
-        if let Ok(span_width) = u16::try_from(span_width) {
-            area = area.indent_x(span_width);
-        } else {
-            break; // span_width > u16::MAX >= area.width
-        }
+        span.render_ref(area, buf);
+        let span_width = u16::try_from(span_width).unwrap_or(u16::MAX);
+        area = area.indent_x(span_width);
     }
+}
+
+/// Returns an iterator over the spans that are visible
+///
+/// Visibility is determined by the spans that are partially or completely visible taking into
+/// account just the amount of width to skip from the start of the `Line`.
+fn visible_spans<'a>(
+    spans: &'a [Span],
+    mut span_skip_width: usize,
+) -> impl Iterator<Item = (Span<'a>, usize, u16)> {
+    spans
+        .iter()
+        .map(|span| (span, span.width()))
+        // Filter non visible spans out.
+        .filter_map(move |(span, span_width)| {
+            // Ignore spans that are completely before the offset. Decrement `span_skip_width` by
+            // the span width until we find a span that is partially or completely visible.
+            if span_skip_width >= span_width {
+                span_skip_width = span_skip_width.saturating_sub(span_width);
+                return None;
+            }
+
+            // Apply the skip from the start of the span, not the end as the end will be trimmed
+            // when rendering the span to the buffer.
+            let available_width = span_width.saturating_sub(span_skip_width);
+            span_skip_width = 0; // ensure the next span is rendered in full
+            Some((span, span_width, available_width))
+        })
+        .map(|(span, span_width, available_width)| {
+            if span_width <= available_width {
+                // Span is fully visible. Clone here is fast as the underlying content is `Cow`.
+                return (span.clone(), span_width, 0u16);
+            }
+            // Span is only partially visible. As the end is truncated by the area width, only
+            // truncate the start of the span.
+            let (content, actual_width) = span.content.unicode_truncate_start(available_width);
+
+            // When the first grapheme of the span was truncated, start rendering from a position
+            // that takes that into account by indenting the start of the area
+            let first_grapheme_offset = available_width.saturating_sub(actual_width);
+            let first_grapheme_offset = u16::try_from(first_grapheme_offset).unwrap_or(u16::MAX);
+            (
+                Span::styled(content, span.style),
+                actual_width,
+                first_grapheme_offset,
+            )
+        })
 }
 
 impl std::fmt::Display for Line<'_> {
