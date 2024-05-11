@@ -555,10 +555,14 @@ impl Widget for Line<'_> {
 impl WidgetRef for Line<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
-        let line_width = self.width();
-        if area.is_empty() || line_width == 0 {
+        if area.is_empty() {
             return;
         }
+        let line_width = self.width();
+        if line_width == 0 {
+            return;
+        }
+
         buf.set_style(area, self.style);
 
         let area_width = usize::from(area.width);
