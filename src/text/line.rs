@@ -591,7 +591,7 @@ impl WidgetRef for Line<'_> {
 
 /// Renders all the spans of the line that should be visible.
 fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, span_skip_width: usize) {
-    for (span, span_width, offset) in visible_spans(spans, span_skip_width) {
+    for (span, span_width, offset) in spans_after_width(spans, span_skip_width) {
         area = area.indent_x(offset);
         if area.is_empty() {
             break;
@@ -602,13 +602,11 @@ fn render_spans(spans: &[Span], mut area: Rect, buf: &mut Buffer, span_skip_widt
     }
 }
 
-/// Returns an iterator over the spans that are visible
-///
-/// Visibility is determined by the spans that are partially or completely visible taking into
-/// account just the amount of width to skip from the start of the `Line`.
-fn visible_spans<'a>(
+/// Returns an iterator over the spans that lie after a given skip widtch from the start of the
+/// `Line` (including a partially visible span if the `skip_width` lands within a span).
+fn spans_after_width<'a>(
     spans: &'a [Span],
-    mut span_skip_width: usize,
+    mut skip_width: usize,
 ) -> impl Iterator<Item = (Span<'a>, usize, u16)> {
     spans
         .iter()
@@ -617,15 +615,15 @@ fn visible_spans<'a>(
         .filter_map(move |(span, span_width)| {
             // Ignore spans that are completely before the offset. Decrement `span_skip_width` by
             // the span width until we find a span that is partially or completely visible.
-            if span_skip_width >= span_width {
-                span_skip_width = span_skip_width.saturating_sub(span_width);
+            if skip_width >= span_width {
+                skip_width = skip_width.saturating_sub(span_width);
                 return None;
             }
 
             // Apply the skip from the start of the span, not the end as the end will be trimmed
             // when rendering the span to the buffer.
-            let available_width = span_width.saturating_sub(span_skip_width);
-            span_skip_width = 0; // ensure the next span is rendered in full
+            let available_width = span_width.saturating_sub(skip_width);
+            skip_width = 0; // ensure the next span is rendered in full
             Some((span, span_width, available_width))
         })
         .map(|(span, span_width, available_width)| {
