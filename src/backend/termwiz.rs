@@ -575,6 +575,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(feature = "underline-color"))]
     fn from_cell_attribute_for_style() {
         // default
         assert_eq!(
@@ -598,20 +599,6 @@ mod tests {
                     .to_owned()
             ),
             Style::new().fg(Color::Reset).bg(Color::Indexed(31))
-        );
-        // underline color
-        #[cfg(feature = "underline-color")]
-        assert_eq!(
-            Style::from(
-                CellAttributes::default()
-                    .set_underline_color(AnsiColor::Red)
-                    .set
-                    .to_owned()
-            ),
-            Style::new()
-                .fg(Color::Reset)
-                .bg(Color::Reset)
-                .underline_color(Color::Red)
         );
         // underlined
         assert_eq!(
@@ -655,6 +642,23 @@ mod tests {
         assert_eq!(
             Style::from(CellAttributes::default().set_invisible(true).to_owned()),
             Style::new().fg(Color::Reset).bg(Color::Reset).hidden()
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "underline-color")]
+    fn from_cell_attributes_with_underline_color() {
+        // underline color
+        assert_eq!(
+            Style::from(
+                CellAttributes::default()
+                    .set_underline_color(AnsiColor::Red)
+                    .to_owned()
+            ),
+            Style::new()
+                .fg(Color::Reset)
+                .bg(Color::Reset)
+                .underline_color(Color::Indexed(9))
         );
     }
 }
