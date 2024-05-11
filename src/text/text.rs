@@ -1,5 +1,5 @@
 #![warn(missing_docs)]
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt};
 
 use itertools::{Itertools, Position};
 
@@ -580,8 +580,8 @@ where
     }
 }
 
-impl std::fmt::Display for Text<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Text<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (position, line) in self.iter().with_position() {
             if position == Position::Last {
                 write!(f, "{line}")?;

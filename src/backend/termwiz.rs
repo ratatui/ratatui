@@ -271,7 +271,7 @@ impl From<CellAttributes> for Style {
 
         style.fg = Some(value.foreground().into());
         style.bg = Some(value.background().into());
-        #[cfg(feature = "underline_color")]
+        #[cfg(feature = "underline-color")]
         {
             style.underline_color = Some(value.underline_color().into());
         }
@@ -600,7 +600,7 @@ mod tests {
             Style::new().fg(Color::Reset).bg(Color::Indexed(31))
         );
         // underline color
-        #[cfg(feature = "underline_color")]
+        #[cfg(feature = "underline-color")]
         assert_eq!(
             Style::from(
                 CellAttributes::default()
