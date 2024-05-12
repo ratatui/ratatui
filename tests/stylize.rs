@@ -64,7 +64,7 @@ fn block_can_be_stylized() -> io::Result<()> {
     let block = Block::bordered()
         .title_top("Title".light_blue())
         .on_cyan()
-        .cyan()
+        .cyan();
 
     let area = Rect::new(0, 0, 8, 3);
     let mut terminal = Terminal::new(TestBackend::new(11, 4))?;
