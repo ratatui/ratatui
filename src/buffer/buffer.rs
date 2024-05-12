@@ -381,6 +381,10 @@ impl fmt::Debug for Buffer {
     /// * `styles`: displayed as a list of: `{ x: 1, y: 2, fg: Color::Red, bg: Color::Blue,
     ///   modifier: Modifier::BOLD }` only showing a value when there is a change in style.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.area.is_empty() {
+            return f.write_fmt(format_args!("Buffer {{\n    area: {:?}\n}}", self.area));
+        }
+
         f.write_fmt(format_args!(
             "Buffer {{\n    area: {:?},\n    content: [\n",
             &self.area
@@ -457,10 +461,21 @@ mod tests {
     }
 
     #[test]
-    fn debug() {
-        let mut buf = Buffer::empty(Rect::new(0, 0, 12, 2));
-        buf.set_string(0, 0, "Hello World!", Style::default());
-        buf.set_string(
+    fn debug_empty_buffer() {
+        let buffer = Buffer::empty(Rect::ZERO);
+        let result = format!("{buffer:?}");
+        println!("{result}");
+        let expected = "Buffer {
+    area: Rect { x: 0, y: 0, width: 0, height: 0 }
+}";
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn debug_some_example() {
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 12, 2));
+        buffer.set_string(0, 0, "Hello World!", Style::default());
+        buffer.set_string(
             0,
             1,
             "G'day World!",
@@ -469,42 +484,34 @@ mod tests {
                 .bg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
         );
+        let result = format!("{buffer:?}");
+        println!("{result}");
         #[cfg(feature = "underline-color")]
-        assert_eq!(
-            format!("{buf:?}"),
-            indoc::indoc!(
-                "
-                Buffer {
-                    area: Rect { x: 0, y: 0, width: 12, height: 2 },
-                    content: [
-                        \"Hello World!\",
-                        \"G'day World!\",
-                    ],
-                    styles: [
-                        x: 0, y: 0, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
-                        x: 0, y: 1, fg: Green, bg: Yellow, underline: Reset, modifier: BOLD,
-                    ]
-                }"
-            )
-        );
+        let expected = r#"Buffer {
+    area: Rect { x: 0, y: 0, width: 12, height: 2 },
+    content: [
+        "Hello World!",
+        "G'day World!",
+    ],
+    styles: [
+        x: 0, y: 0, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
+        x: 0, y: 1, fg: Green, bg: Yellow, underline: Reset, modifier: BOLD,
+    ]
+}"#;
         #[cfg(not(feature = "underline-color"))]
-        assert_eq!(
-            format!("{buf:?}"),
-            indoc::indoc!(
-                "
-                Buffer {
-                    area: Rect { x: 0, y: 0, width: 12, height: 2 },
-                    content: [
-                        \"Hello World!\",
-                        \"G'day World!\",
-                    ],
-                    styles: [
-                        x: 0, y: 0, fg: Reset, bg: Reset, modifier: NONE,
-                        x: 0, y: 1, fg: Green, bg: Yellow, modifier: BOLD,
-                    ]
-                }"
-            )
-        );
+        let expected = r#"Buffer {
+    area: Rect { x: 0, y: 0, width: 12, height: 2 },
+    content: [
+        "Hello World!",
+        "G'day World!",
+    ],
+    styles: [
+        x: 0, y: 0, fg: Reset, bg: Reset, modifier: NONE,
+        x: 0, y: 1, fg: Green, bg: Yellow, modifier: BOLD,
+    ]
+}"#;
+
+        assert_eq!(result, expected);
     }
 
     #[test]
