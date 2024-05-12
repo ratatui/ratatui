@@ -321,6 +321,18 @@ impl Rect {
             height: self.height,
         }
     }
+
+    /// indents the x value of the `Rect` by a given `offset`
+    ///
+    /// This is pub(crate) for now as we need to stabilize the naming / design of this API.
+    #[must_use]
+    pub(crate) const fn indent_x(self, offset: u16) -> Self {
+        Self {
+            x: self.x.saturating_add(offset),
+            width: self.width.saturating_sub(offset),
+            ..self
+        }
+    }
 }
 
 impl From<(Position, Size)> for Rect {
