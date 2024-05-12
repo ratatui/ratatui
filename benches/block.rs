@@ -3,7 +3,7 @@ use ratatui::{
     buffer::Buffer,
     layout::Rect,
     text::Line,
-    widgets::{Block, Borders, Padding, Widget},
+    widgets::{Block, Padding, Widget},
 };
 
 /// Benchmark for rendering a block.

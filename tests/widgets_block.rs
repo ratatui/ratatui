@@ -191,7 +191,7 @@ fn widgets_block_title_alignment() {
 
         let block1 = Block::new()
             .borders(borders)
-            .title_top(Title::from(Span::styled("Title", Style::default())).alignment(alignment));
+            .title_top(Line::from(Span::styled("Title", Style::default())).alignment(alignment));
 
         let block2 = Block::new()
             .title_top("Title")

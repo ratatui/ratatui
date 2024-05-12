@@ -334,7 +334,7 @@ impl<'a> Block<'a> {
     ///     // This title won't be aligned in the center
     ///     .title(Title::from("right").alignment(Alignment::Right))
     ///     .title_top("foo")
-    ///     .title_top("bar")
+    ///     .title_top("bar");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn title_alignment(mut self, alignment: Alignment) -> Self {
@@ -1249,7 +1249,7 @@ mod tests {
         for (block_title_alignment, alignment, expected) in tests {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 1));
             Block::new()
-                .title_top(Title::from("test").alignment(alignment))
+                .title_top(Line::from("test").alignment(alignment))
                 .title_alignment(block_title_alignment)
                 .render(buffer.area, &mut buffer);
             assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
@@ -1280,7 +1280,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
         Block::new()
             .title_position(Position::Bottom)
-            .title_top("test")
+            .title("test")
             .render(buffer.area, &mut buffer);
         assert_buffer_eq!(buffer, Buffer::with_lines(vec!["    ", "test"]));
     }
