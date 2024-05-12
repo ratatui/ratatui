@@ -574,15 +574,20 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(feature = "underline-color"))]
     fn from_cell_attribute_for_style() {
         use crate::style::Stylize;
 
+        #[cfg(feature = "underline-color")]
+        const STYLE: Style = Style::new()
+            .underline_color(Color::Reset)
+            .fg(Color::Reset)
+            .bg(Color::Reset);
+        #[cfg(not(feature = "underline-color"))]
+        const STYLE: Style = Style::new().fg(Color::Reset).bg(Color::Reset);
+
         // default
-        assert_eq!(
-            Style::from(CellAttributes::default()),
-            Style::new().fg(Color::Reset).bg(Color::Reset)
-        );
+        assert_eq!(Style::from(CellAttributes::default()), STYLE);
+
         // foreground color
         assert_eq!(
             Style::from(
@@ -590,7 +595,7 @@ mod tests {
                     .set_foreground(ColorAttribute::PaletteIndex(31))
                     .to_owned()
             ),
-            Style::new().fg(Color::Indexed(31)).bg(Color::Reset)
+            STYLE.fg(Color::Indexed(31))
         );
         // background color
         assert_eq!(
@@ -599,7 +604,7 @@ mod tests {
                     .set_background(ColorAttribute::PaletteIndex(31))
                     .to_owned()
             ),
-            Style::new().fg(Color::Reset).bg(Color::Indexed(31))
+            STYLE.bg(Color::Indexed(31))
         );
         // underlined
         assert_eq!(
@@ -608,12 +613,12 @@ mod tests {
                     .set_underline(Underline::Single)
                     .to_owned()
             ),
-            Style::new().fg(Color::Reset).bg(Color::Reset).underlined()
+            STYLE.underlined()
         );
         // blink
         assert_eq!(
             Style::from(CellAttributes::default().set_blink(Blink::Slow).to_owned()),
-            Style::new().fg(Color::Reset).bg(Color::Reset).slow_blink()
+            STYLE.slow_blink()
         );
         // intensity
         assert_eq!(
@@ -622,44 +627,38 @@ mod tests {
                     .set_intensity(Intensity::Bold)
                     .to_owned()
             ),
-            Style::new().fg(Color::Reset).bg(Color::Reset).bold()
+            STYLE.bold()
         );
         // italic
         assert_eq!(
             Style::from(CellAttributes::default().set_italic(true).to_owned()),
-            Style::new().fg(Color::Reset).bg(Color::Reset).italic()
+            STYLE.italic()
         );
         // reversed
         assert_eq!(
             Style::from(CellAttributes::default().set_reverse(true).to_owned()),
-            Style::new().fg(Color::Reset).bg(Color::Reset).reversed()
+            STYLE.reversed()
         );
         // strikethrough
         assert_eq!(
             Style::from(CellAttributes::default().set_strikethrough(true).to_owned()),
-            Style::new().fg(Color::Reset).bg(Color::Reset).crossed_out()
+            STYLE.crossed_out()
         );
         // hidden
         assert_eq!(
             Style::from(CellAttributes::default().set_invisible(true).to_owned()),
-            Style::new().fg(Color::Reset).bg(Color::Reset).hidden()
+            STYLE.hidden()
         );
-    }
 
-    #[test]
-    #[cfg(feature = "underline-color")]
-    fn from_cell_attributes_with_underline_color() {
         // underline color
+        #[cfg(feature = "underline-color")]
         assert_eq!(
             Style::from(
                 CellAttributes::default()
                     .set_underline_color(AnsiColor::Red)
                     .to_owned()
             ),
-            Style::new()
-                .fg(Color::Reset)
-                .bg(Color::Reset)
-                .underline_color(Color::Indexed(9))
+            STYLE.underline_color(Color::Indexed(9))
         );
     }
 }
