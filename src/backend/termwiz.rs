@@ -407,7 +407,6 @@ fn u16_max(i: usize) -> u16 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::style::Stylize;
 
     mod into_color {
         use Color as C;
@@ -577,6 +576,8 @@ mod tests {
     #[test]
     #[cfg(not(feature = "underline-color"))]
     fn from_cell_attribute_for_style() {
+        use crate::style::Stylize;
+
         // default
         assert_eq!(
             Style::from(CellAttributes::default()),
