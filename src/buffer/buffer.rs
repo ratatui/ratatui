@@ -419,12 +419,13 @@ impl fmt::Debug for Buffer {
                     }
                 }
             }
+            f.write_str("\",")?;
             if !overwritten.is_empty() {
                 f.write_fmt(format_args!(
-                    "// hidden by multi-width symbols: {overwritten:?}"
+                    " // hidden by multi-width symbols: {overwritten:?}"
                 ))?;
             }
-            f.write_str("\",\n")?;
+            f.write_str("\n")?;
         }
         f.write_str("    ],\n    styles: [\n")?;
         for s in styles {
@@ -468,6 +469,24 @@ mod tests {
         let expected = "Buffer {
     area: Rect { x: 0, y: 0, width: 0, height: 0 }
 }";
+        assert_eq!(result, expected);
+    }
+
+    #[cfg(feature = "underline-color")]
+    #[test]
+    fn debug_grapheme_override() {
+        let buffer = Buffer::with_lines(["a🦀b"]);
+        let result = format!("{buffer:?}");
+        println!("{result}");
+        let expected = r#"Buffer {
+    area: Rect { x: 0, y: 0, width: 4, height: 1 },
+    content: [
+        "a🦀b", // hidden by multi-width symbols: [(2, " ")]
+    ],
+    styles: [
+        x: 0, y: 0, fg: Reset, bg: Reset, underline: Reset, modifier: NONE,
+    ]
+}"#;
         assert_eq!(result, expected);
     }
 
