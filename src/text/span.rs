@@ -397,7 +397,7 @@ impl WidgetRef for Span<'_> {
 
 impl fmt::Display for Span<'_> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.pad(&self.content)
+        fmt::Debug::fmt(self, formatter)
     }
 }
 
