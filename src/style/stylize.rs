@@ -362,6 +362,11 @@ mod tests {
         let cyan_fg = Style::default().fg(Color::Cyan);
 
         assert_eq!("hello".cyan(), Span::styled("hello", cyan_fg));
+
+        assert_eq!(
+            "hello".fg(crossterm::style::Color::DarkCyan),
+            Span::styled("hello", cyan_fg)
+        );
     }
 
     #[test]
@@ -369,6 +374,11 @@ mod tests {
         let cyan_bg = Style::default().bg(Color::Cyan);
 
         assert_eq!("hello".on_cyan(), Span::styled("hello", cyan_bg));
+
+        assert_eq!(
+            "hello".bg(crossterm::style::Color::DarkCyan),
+            Span::styled("hello", cyan_bg)
+        );
     }
 
     #[test]
