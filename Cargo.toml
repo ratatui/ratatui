@@ -4,7 +4,7 @@ version = "0.3.0"
 edition = "2021"
 authors = ["Dheepak Krishnamurthy"]
 description = "Macros for Ratatui"
-license = "MIT" # or any other appropriate license
+license = "MIT"                                              # or any other appropriate license
 repository = "https://github.com/ratatui-org/ratatui-macros"
 documentation = "https://docs.rs/ratatui-macros"
 keywords = ["ratatui", "macros", "tui", "ui"]
@@ -14,11 +14,8 @@ categories = ["tui", "macro"]
 
 [dependencies]
 # requires alpha version of ratatui for the Into<Style> changes
-ratatui = "0.27.0-alpha.5"
+ratatui = "0.26.2"
 
 [dev-dependencies]
 trybuild = { version = "1.0.93", features = ["diff"] }
 cargo-husky = { version = "1.5.0", features = ["user-hooks"] }
-
-
-
