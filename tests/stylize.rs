@@ -5,7 +5,7 @@ use ratatui::{
     buffer::Buffer,
     layout::Rect,
     style::{Color, Style, Stylize},
-    widgets::{BarChart, Block, Borders, Paragraph},
+    widgets::{BarChart, Block, Paragraph},
     Terminal,
 };
 
@@ -61,11 +61,10 @@ fn barchart_can_be_stylized() {
 
 #[test]
 fn block_can_be_stylized() -> io::Result<()> {
-    let block = Block::default()
+    let block = Block::bordered()
         .title_top("Title".light_blue())
         .on_cyan()
         .cyan()
-        .borders(Borders::ALL);
 
     let area = Rect::new(0, 0, 8, 3);
     let mut terminal = Terminal::new(TestBackend::new(11, 4))?;

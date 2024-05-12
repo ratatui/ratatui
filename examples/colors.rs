@@ -230,7 +230,7 @@ fn render_indexed_colors(frame: &mut Frame, area: Rect) {
 }
 
 fn title_block(title: String) -> Block<'static> {
-    Block::default()
+    Block::new()
         .borders(Borders::TOP)
         .border_style(Style::new().dark_gray())
         .title_top(title)

@@ -139,8 +139,7 @@
 //!
 //! fn ui(frame: &mut Frame) {
 //!     frame.render_widget(
-//!         Paragraph::new("Hello World!")
-//!             .block(Block::default().title_top("Greeting").borders(Borders::ALL)),
+//!         Paragraph::new("Hello World!").block(Block::bordered().title_top("Greeting")),
 //!         frame.size(),
 //!     );
 //! }
@@ -184,14 +183,8 @@
 //!         [Constraint::Percentage(50), Constraint::Percentage(50)],
 //!     )
 //!     .split(main_layout[1]);
-//!     frame.render_widget(
-//!         Block::default().borders(Borders::ALL).title_top("Left"),
-//!         inner_layout[0],
-//!     );
-//!     frame.render_widget(
-//!         Block::default().borders(Borders::ALL).title_top("Right"),
-//!         inner_layout[1],
-//!     );
+//!     frame.render_widget(Block::bordered().title_top("Left"), inner_layout[0]);
+//!     frame.render_widget(Block::bordered().title_top("Right"), inner_layout[1]);
 //! }
 //! ```
 //!
@@ -278,7 +271,7 @@
     feature = "document-features",
     doc = "[`calendar`]: widgets::calendar::Monthly"
 )]
-#![cfg_attr(test, allow(deprecated))]
+#![cfg_attr(test, allow(deprecated))] // Required due to a rust bug, remove after the deprecated title struct gets removed completely
 //!
 //! [Ratatui Website]: https://ratatui.rs/
 //! [Installation]: https://ratatui.rs/installation/

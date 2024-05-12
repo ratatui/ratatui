@@ -3,7 +3,7 @@ use ratatui::{
     buffer::Buffer,
     layout::Alignment,
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Padding, Paragraph, Wrap},
+    widgets::{Block, Padding, Paragraph, Wrap},
     Terminal,
 };
 
@@ -30,7 +30,7 @@ fn widgets_paragraph_renders_double_width_graphemes() {
 
     let text = vec![Line::from(s)];
     let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL))
+        .block(Block::bordered())
         .wrap(Wrap { trim: true });
 
     test_case(
@@ -61,7 +61,7 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
             let size = f.size();
             let text = vec![Line::from(s)];
             let paragraph = Paragraph::new(text)
-                .block(Block::default().borders(Borders::ALL))
+                .block(Block::bordered())
                 .wrap(Wrap { trim: true });
             f.render_widget(paragraph, size);
         })
@@ -84,7 +84,7 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
 fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
     let nbsp = "\u{00a0}";
     let line = Line::from(vec![Span::raw("NBSP"), Span::raw(nbsp)]);
-    let paragraph = Paragraph::new(line).block(Block::default().borders(Borders::ALL));
+    let paragraph = Paragraph::new(line).block(Block::bordered());
 
     test_case(
         paragraph,
@@ -100,7 +100,7 @@ fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
 fn widgets_paragraph_can_scroll_horizontally() {
     let text =
         Text::from("段落现在可以水平滚动了！\nParagraph can scroll horizontally!\nLittle line");
-    let paragraph = Paragraph::new(text).block(Block::default().borders(Borders::ALL));
+    let paragraph = Paragraph::new(text).block(Block::bordered());
 
     test_case(
         paragraph.clone().alignment(Alignment::Left).scroll((0, 6)),
@@ -146,7 +146,7 @@ const SAMPLE_STRING: &str = "The library is based on the principle of immediate 
 fn widgets_paragraph_can_wrap_its_content() {
     let text = vec![Line::from(SAMPLE_STRING)];
     let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL))
+        .block(Block::bordered())
         .wrap(Wrap { trim: true });
 
     test_case(
@@ -198,14 +198,14 @@ fn widgets_paragraph_can_wrap_its_content() {
 
 #[test]
 fn widgets_paragraph_works_with_padding() {
-    let text = vec![Line::from(SAMPLE_STRING)];
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).padding(Padding {
-            left: 2,
-            right: 2,
-            top: 1,
-            bottom: 1,
-        }))
+    let block = Block::bordered().padding(Padding {
+        left: 2,
+        right: 2,
+        top: 1,
+        bottom: 1,
+    });
+    let paragraph = Paragraph::new(vec![Line::from(SAMPLE_STRING)])
+        .block(block.clone())
         .wrap(Wrap { trim: true });
 
     test_case(
@@ -226,7 +226,7 @@ fn widgets_paragraph_works_with_padding() {
         ]),
     );
     test_case(
-        paragraph.clone().alignment(Alignment::Right),
+        paragraph.alignment(Alignment::Right),
         Buffer::with_lines(vec![
             "┌────────────────────┐",
             "│                    │",
@@ -243,16 +243,12 @@ fn widgets_paragraph_works_with_padding() {
         ]),
     );
 
-    let mut text = vec![Line::from("This is always centered.").alignment(Alignment::Center)];
-    text.push(Line::from(SAMPLE_STRING));
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).padding(Padding {
-            left: 2,
-            right: 2,
-            top: 1,
-            bottom: 1,
-        }))
-        .wrap(Wrap { trim: true });
+    let paragraph = Paragraph::new(vec![
+        Line::from("This is always centered.").alignment(Alignment::Center),
+        Line::from(SAMPLE_STRING),
+    ])
+    .block(block)
+    .wrap(Wrap { trim: true });
 
     test_case(
         paragraph.alignment(Alignment::Right),
@@ -285,7 +281,7 @@ fn widgets_paragraph_can_align_spans() {
         Line::from(default_s),
     ];
     let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL))
+        .block(Block::bordered())
         .wrap(Wrap { trim: true });
 
     test_case(
@@ -335,7 +331,7 @@ fn widgets_paragraph_can_align_spans() {
 
     let mut text = left_lines.clone();
     text.append(&mut lines);
-    let paragraph = Paragraph::new(text).block(Block::default().borders(Borders::ALL));
+    let paragraph = Paragraph::new(text).block(Block::bordered());
 
     test_case(
         paragraph.clone().alignment(Alignment::Right),

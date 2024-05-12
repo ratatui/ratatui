@@ -62,7 +62,7 @@ fn assert_buffer(state: &mut AppState, expected: &Buffer) {
                 .split(f.size());
             let list = List::new(items)
                 .highlight_symbol(">>")
-                .block(Block::default().borders(Borders::RIGHT));
+                .block(Block::new().borders(Borders::RIGHT));
             f.render_stateful_widget(list, layout[0], &mut state.list);
 
             let table = Table::new(

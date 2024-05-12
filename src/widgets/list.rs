@@ -384,7 +384,7 @@ where
 /// # let area = Rect::default();
 /// let items = ["Item 1", "Item 2", "Item 3"];
 /// let list = List::new(items)
-///     .block(Block::default().title_top("List").borders(Borders::ALL))
+///     .block(Block::bordered().title_top("List"))
 ///     .style(Style::default().fg(Color::White))
 ///     .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
 ///     .highlight_symbol(">>")
@@ -405,7 +405,7 @@ where
 /// let mut state = ListState::default();
 /// let items = ["Item 1", "Item 2", "Item 3"];
 /// let list = List::new(items)
-///     .block(Block::default().title_top("List").borders(Borders::ALL))
+///     .block(Block::bordered().title_top("List"))
 ///     .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
 ///     .highlight_symbol(">>")
 ///     .repeat_highlight_symbol(true);
@@ -537,7 +537,7 @@ impl<'a> List<'a> {
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
     /// # let items = vec!["Item 1"];
-    /// let block = Block::default().title_top("List").borders(Borders::ALL);
+    /// let block = Block::bordered().title_top("List");
     /// let list = List::new(items).block(block);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -1049,7 +1049,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::{assert_buffer_eq, widgets::Borders};
+    use crate::assert_buffer_eq;
 
     #[test]
     fn test_list_state_selected() {
@@ -1229,7 +1229,7 @@ mod tests {
 
         let list = List::new(items)
             .highlight_symbol(">>")
-            .block(Block::default().borders(Borders::all()));
+            .block(Block::bordered());
         // attempt to render into an area of the buffer with zero height after
         // setting the block borders
         Widget::render(list, Rect::new(0, 0, 15, 2), &mut buffer);
@@ -1474,7 +1474,7 @@ mod tests {
     #[test]
     fn test_list_with_empty_strings() {
         let items = list_items(vec!["Item 0", "", "", "Item 1", "Item 2"]);
-        let list = List::new(items).block(Block::default().title_top("List").borders(Borders::ALL));
+        let list = List::new(items).block(Block::bordered().title_top("List"));
         let buffer = render_widget(list, 10, 7);
 
         let expected = Buffer::with_lines(vec![
@@ -1499,7 +1499,7 @@ mod tests {
     #[test]
     fn test_list_block() {
         let items = list_items(vec!["Item 0", "Item 1", "Item 2"]);
-        let list = List::new(items).block(Block::default().title_top("List").borders(Borders::ALL));
+        let list = List::new(items).block(Block::bordered().title_top("List"));
         let buffer = render_widget(list, 10, 7);
 
         let expected = Buffer::with_lines(vec![

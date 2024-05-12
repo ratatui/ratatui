@@ -189,13 +189,13 @@ impl Widget for &mut App<'_> {
 impl App<'_> {
     fn render_todo(&mut self, area: Rect, buf: &mut Buffer) {
         // We create two blocks, one is for the header (outer) and the other is for list (inner).
-        let outer_block = Block::default()
+        let outer_block = Block::new()
             .borders(Borders::NONE)
             .fg(TEXT_COLOR)
             .bg(TODO_HEADER_BG)
             .title_top("TODO List")
             .title_alignment(Alignment::Center);
-        let inner_block = Block::default()
+        let inner_block = Block::new()
             .borders(Borders::NONE)
             .fg(TEXT_COLOR)
             .bg(NORMAL_ROW_COLOR);
@@ -246,13 +246,13 @@ impl App<'_> {
         };
 
         // We show the list item's info under the list in this paragraph
-        let outer_info_block = Block::default()
+        let outer_info_block = Block::new()
             .borders(Borders::NONE)
             .fg(TEXT_COLOR)
             .bg(TODO_HEADER_BG)
             .title_top("TODO Info")
             .title_alignment(Alignment::Center);
-        let inner_info_block = Block::default()
+        let inner_info_block = Block::new()
             .borders(Borders::NONE)
             .bg(NORMAL_ROW_COLOR)
             .padding(Padding::horizontal(1));

@@ -1,7 +1,4 @@
-use std::{
-    cmp::min,
-    fmt::{Debug, Formatter, Result},
-};
+use std::fmt;
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -183,65 +180,56 @@ impl Buffer {
     }
 
     /// Print a string, starting at the position (x, y)
-    ///
-    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
-    /// your own type that implements [`Into<Style>`]).
     pub fn set_string<T, S>(&mut self, x: u16, y: u16, string: T, style: S)
     where
         T: AsRef<str>,
         S: Into<Style>,
     {
-        self.set_stringn(x, y, string, usize::MAX, style.into());
+        self.set_stringn(x, y, string, usize::MAX, style);
     }
 
     /// Print at most the first n characters of a string if enough space is available
-    /// until the end of the line
+    /// until the end of the line.
     ///
-    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
-    /// your own type that implements [`Into<Style>`]).
+    /// Use [`Buffer::set_string`] when the maximum amount of characters can be printed.
     pub fn set_stringn<T, S>(
         &mut self,
-        x: u16,
+        mut x: u16,
         y: u16,
         string: T,
-        width: usize,
+        max_width: usize,
         style: S,
     ) -> (u16, u16)
     where
         T: AsRef<str>,
         S: Into<Style>,
     {
+        let max_width = max_width.try_into().unwrap_or(u16::MAX);
+        let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
+        let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
+            .map(|symbol| (symbol, symbol.width() as u16))
+            .filter(|(_symbol, width)| *width > 0)
+            .map_while(|(symbol, width)| {
+                remaining_width = remaining_width.checked_sub(width)?;
+                Some((symbol, width))
+            });
         let style = style.into();
-        let mut index = self.index_of(x, y);
-        let mut x_offset = x as usize;
-        let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true);
-        let max_offset = min(self.area.right() as usize, width.saturating_add(x as usize));
-        for s in graphemes {
-            let width = s.width();
-            if width == 0 {
-                continue;
-            }
-            // `x_offset + width > max_offset` could be integer overflow on 32-bit machines if we
-            // change dimensions to usize or u32 and someone resizes the terminal to 1x2^32.
-            if width > max_offset.saturating_sub(x_offset) {
-                break;
-            }
-
-            self.content[index].set_symbol(s);
-            self.content[index].set_style(style);
+        for (symbol, width) in graphemes {
+            self.get_mut(x, y).set_symbol(symbol).set_style(style);
+            let next_symbol = x + width;
+            x += 1;
             // Reset following cells if multi-width (they would be hidden by the grapheme),
-            for i in index + 1..index + width {
-                self.content[i].reset();
+            while x < next_symbol {
+                self.get_mut(x, y).reset();
+                x += 1;
             }
-            index += width;
-            x_offset += width;
         }
-        (x_offset as u16, y)
+        (x, y)
     }
 
     /// Print a line, starting at the position (x, y)
-    pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, width: u16) -> (u16, u16) {
-        let mut remaining_width = width;
+    pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, max_width: u16) -> (u16, u16) {
+        let mut remaining_width = max_width;
         let mut x = x;
         for span in line {
             if remaining_width == 0 {
@@ -262,8 +250,8 @@ impl Buffer {
     }
 
     /// Print a span, starting at the position (x, y)
-    pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, width: u16) -> (u16, u16) {
-        self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
+    pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, max_width: u16) -> (u16, u16) {
+        self.set_stringn(x, y, &span.content, max_width as usize, span.style)
     }
 
     /// Set the style of all cells in the given area.
@@ -302,8 +290,7 @@ impl Buffer {
     /// Merge an other buffer into this one
     pub fn merge(&mut self, other: &Self) {
         let area = self.area.union(other.area);
-        let cell = Cell::default();
-        self.content.resize(area.area() as usize, cell.clone());
+        self.content.resize(area.area() as usize, Cell::default());
 
         // Move original content to the appropriate space
         let size = self.area.area() as usize;
@@ -313,7 +300,7 @@ impl Buffer {
             let k = ((y - area.y) * area.width + x - area.x) as usize;
             if i != k {
                 self.content[k] = self.content[i].clone();
-                self.content[i] = cell.clone();
+                self.content[i] = Cell::default();
             }
         }
 
@@ -382,7 +369,7 @@ impl Buffer {
     }
 }
 
-impl Debug for Buffer {
+impl fmt::Debug for Buffer {
     /// Writes a debug representation of the buffer to the given formatter.
     ///
     /// The format is like a pretty printed struct, with the following fields:
@@ -390,7 +377,7 @@ impl Debug for Buffer {
     /// * `content`: displayed as a list of strings representing the content of the buffer
     /// * `styles`: displayed as a list of: `{ x: 1, y: 2, fg: Color::Red, bg: Color::Blue,
     ///   modifier: Modifier::BOLD }` only showing a value when there is a change in style.
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_fmt(format_args!(
             "Buffer {{\n    area: {:?},\n    content: [\n",
             &self.area

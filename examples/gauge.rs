@@ -205,7 +205,7 @@ impl App {
 }
 
 fn title_block(title: &str) -> Block {
-    Block::default()
+    Block::new()
         .title_top(Line::from(title).centered())
         .borders(Borders::NONE)
         .fg(CUSTOM_LABEL_COLOR)

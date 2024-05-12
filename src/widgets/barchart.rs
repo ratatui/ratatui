@@ -45,7 +45,7 @@ pub use bar_group::BarGroup;
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// BarChart::default()
-///     .block(Block::default().title_top("BarChart").borders(Borders::ALL))
+///     .block(Block::bordered().title_top("BarChart"))
 ///     .bar_width(3)
 ///     .bar_gap(1)
 ///     .group_gap(3)
@@ -615,10 +615,7 @@ mod tests {
     use itertools::iproduct;
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        widgets::{BorderType, Borders},
-    };
+    use crate::{assert_buffer_eq, widgets::BorderType};
 
     #[test]
     fn default() {
@@ -646,10 +643,9 @@ mod tests {
     #[test]
     fn block() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 5));
-        let block = Block::default()
-            .title_top("Block")
+        let block = Block::bordered()
             .border_type(BorderType::Double)
-            .borders(Borders::ALL);
+            .title_top("Block");
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
             .block(block);

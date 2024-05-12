@@ -1,4 +1,4 @@
-use std::fmt::{self, Debug};
+use std::fmt;
 
 use bitflags::bitflags;
 
@@ -24,7 +24,7 @@ bitflags! {
 /// Implement the `Debug` trait for the `Borders` bitflags. This is a manual implementation to
 /// display the flags in a more readable way. The default implementation would display the
 /// flags as 'Border(0x0)' for `Borders::NONE` for example.
-impl Debug for Borders {
+impl fmt::Debug for Borders {
     /// Display the Borders bitflags as a list of names. For example, `Borders::NONE` will be
     /// displayed as `NONE` and `Borders::ALL` will be displayed as `ALL`. If multiple flags are
     /// set, they will be displayed separated by a pipe character.

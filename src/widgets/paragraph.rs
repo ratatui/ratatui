@@ -31,7 +31,7 @@ const fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Align
 ///     "Third line".into(),
 /// ];
 /// Paragraph::new(text)
-///     .block(Block::new().title_top("Paragraph").borders(Borders::ALL))
+///     .block(Block::bordered().title_top("Paragraph"))
 ///     .style(Style::new().white().on_black())
 ///     .alignment(Alignment::Center)
 ///     .wrap(Wrap { trim: true });
@@ -126,11 +126,7 @@ impl<'a> Paragraph<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let paragraph = Paragraph::new("Hello, world!").block(
-    ///     Block::default()
-    ///         .title_top("Paragraph")
-    ///         .borders(Borders::ALL),
-    /// );
+    /// let paragraph = Paragraph::new("Hello, world!").block(Block::bordered().title_top("Paragraph"));
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn block(mut self, block: Block<'a>) -> Self {
@@ -527,8 +523,7 @@ mod test {
         // We use the slightly unconventional "worlds" instead of "world" here to make sure when we
         // can truncate this without triggering the typos linter.
         let text = "Hello, worlds!";
-        let truncated_paragraph =
-            Paragraph::new(text).block(Block::default().title_top("Title").borders(Borders::ALL));
+        let truncated_paragraph = Paragraph::new(text).block(Block::bordered().title_top("Title"));
         let wrapped_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: false });
         let trimmed_paragraph = truncated_paragraph.clone().wrap(Wrap { trim: true });
 
@@ -627,9 +622,7 @@ mod test {
 
     #[test]
     fn test_render_paragraph_with_block_with_bottom_title_and_border() {
-        let block = Block::default()
-            .title_bottom("Title")
-            .borders(Borders::BOTTOM);
+        let block = Block::new().title_bottom("Title").borders(Borders::BOTTOM);
         let paragraph = Paragraph::new("Hello, world!").block(block);
 
         test_case(

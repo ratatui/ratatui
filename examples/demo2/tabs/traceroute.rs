@@ -49,7 +49,7 @@ fn render_hops(selected_row: usize, area: Rect, buf: &mut Buffer) {
         .iter()
         .map(|hop| Row::new(vec![hop.host, hop.address]))
         .collect_vec();
-    let block = Block::default()
+    let block = Block::new()
         .title_top("Traceroute bad.horse".bold().white())
         .title_alignment(Alignment::Center)
         .padding(Padding::new(1, 1, 1, 1));

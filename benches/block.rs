@@ -27,8 +27,7 @@ fn block(c: &mut Criterion) {
         // Render with all features
         group.bench_with_input(
             format!("render_all_feature/{width}x{height}"),
-            &Block::new()
-                .borders(Borders::ALL)
+            &Block::bordered()
                 .title_top("test title")
                 .title_bottom(Line::from("bottom left title").right_aligned())
                 .padding(Padding::new(5, 5, 2, 2)),
