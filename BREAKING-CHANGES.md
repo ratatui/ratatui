@@ -10,7 +10,7 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [v0.26.1](#v0261)
+- [v0.26.3](#v0261)
   - `Stylize::bg()` now accepts `Into<Color>`
 - [v0.26.0](#v0260)
   - `Flex::Start` is the new default flex mode for `Layout`
@@ -49,7 +49,7 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## [v0.26.1](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.1)
+## [v0.26.3](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.3)
 
 ### `Stylize::bg()` now accepts `Into<Color>` ([#1099])
 
