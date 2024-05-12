@@ -381,14 +381,13 @@ impl fmt::Debug for Buffer {
     /// * `styles`: displayed as a list of: `{ x: 1, y: 2, fg: Color::Red, bg: Color::Blue,
     ///   modifier: Modifier::BOLD }` only showing a value when there is a change in style.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("Buffer {{\n    area: {:?}", &self.area))?;
+
         if self.area.is_empty() {
-            return f.write_fmt(format_args!("Buffer {{\n    area: {:?}\n}}", self.area));
+            return f.write_str("\n}");
         }
 
-        f.write_fmt(format_args!(
-            "Buffer {{\n    area: {:?},\n    content: [\n",
-            &self.area
-        ))?;
+        f.write_str(",\n    content: [\n")?;
         let mut last_style = None;
         let mut styles = vec![];
         for (y, line) in self.content.chunks(self.area.width as usize).enumerate() {
