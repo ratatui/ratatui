@@ -670,8 +670,8 @@ impl StatefulWidgetRef for Table<'_> {
             return;
         }
 
-        let selection_width = self.selection_width(state);
-        let columns_widths = self.get_columns_widths(table_area.width, selection_width);
+        let highlight_column_width = self.highlight_column_width(state);
+        let columns_widths = self.get_columns_widths(table_area.width, highlight_column_width);
         let (header_area, rows_area, footer_area) = self.layout(table_area);
 
         self.render_header(header_area, buf, &columns_widths);
@@ -680,7 +680,7 @@ impl StatefulWidgetRef for Table<'_> {
             rows_area,
             buf,
             state,
-            selection_width,
+            highlight_column_width,
             (
                 &self.highlight_symbol,
                 &self.mark_symbol,
@@ -741,7 +741,7 @@ impl Table<'_> {
         area: Rect,
         buf: &mut Buffer,
         state: &mut TableState,
-        selection_width: u16,
+        highlight_column_width: u16,
         symbols: (&Text<'_>, &Text<'_>, &Text<'_>, &Text<'_>),
         columns_widths: &[(u16, u16)],
     ) {
@@ -773,9 +773,9 @@ impl Table<'_> {
 
             let is_marked = state.marked().contains(&(i + state.offset));
             let is_selected = state.selected().is_some_and(|index| index == i);
-            if selection_width > 0 {
+            if highlight_column_width > 0 {
                 let area = Rect {
-                    width: selection_width,
+                    width: highlight_column_width,
                     ..row_area
                 };
                 buf.set_style(area, row.style);
@@ -878,13 +878,33 @@ impl Table<'_> {
 
     /// Returns the width of the selection column if a row is selected, or the `highlight_spacing`
     /// is set to show the column always, otherwise 0.
-    fn selection_width(&self, state: &TableState) -> u16 {
+    fn highlight_column_width(&self, state: &TableState) -> u16 {
         let has_selection = state.selected().is_some();
-        if self.highlight_spacing.should_add(has_selection) {
+        let highlight_column_width = if self.highlight_spacing.should_add(has_selection) {
             self.highlight_symbol.width() as u16
         } else {
             0
-        }
+        };
+        let mark_column_width = if self.highlight_spacing.should_add(true) {
+            self.mark_symbol.width() as u16
+        } else {
+            0
+        };
+        let mark_highlight_column_width = if self.highlight_spacing.should_add(true) {
+            self.mark_highlight_symbol.width() as u16
+        } else {
+            0
+        };
+        let unmark_column_width = if self.highlight_spacing.should_add(true) {
+            self.unmark_symbol.width() as u16
+        } else {
+            0
+        };
+
+        highlight_column_width
+            .max(mark_column_width)
+            .max(mark_highlight_column_width)
+            .max(unmark_column_width)
     }
 }
 
