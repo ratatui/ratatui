@@ -2,7 +2,7 @@
 name = "ratatui-macros"
 version = "0.3.0"
 edition = "2021"
-authors = ["Dheepak Krishnamurthy"]
+authors = ["The Ratatui Developers"]
 description = "Macros for Ratatui"
 license = "MIT"                                              # or any other appropriate license
 repository = "https://github.com/ratatui-org/ratatui-macros"
