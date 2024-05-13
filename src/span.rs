@@ -40,17 +40,60 @@
 /// let span = span!(style; "test {:04}", 123);
 /// ```
 ///
+/// # Note
+///
+/// The first parameter must be a formatting specifier followed by a comma OR
+/// anything that can be converted into a [`Style`] followed by a semicolon.
+///
+/// For example, the following will fail to compile:
+///
+/// ```compile_fail
+/// # use ratatui::prelude::*;
+/// # use ratatui_macros::span;
+/// let span = span!(Modifier::BOLD, "hello world");
+/// ```
+///
+/// But this will work:
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// # use ratatui_macros::span;
+/// let span = span!(Modifier::BOLD; "hello world");
+/// ```
+///
+/// The following will fail to compile:
+///
+/// ```compile_fail
+/// # use ratatui::prelude::*;
+/// # use ratatui_macros::span;
+/// let span = span!("hello", "world");
+/// ```
+///
+/// But this will work:
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// # use ratatui_macros::span;
+/// let span = span!("hello {}", "world");
+/// ```
+///
 /// [`Color`]: crate::style::Color
 /// [`Style`]: crate::style::Style
 /// [`Span`]: crate::text::Span
 /// [`Style`]: crate::style::Style
 #[macro_export]
 macro_rules! span {
+    ($string:literal) => {
+        ratatui::text::Span::raw(format!($string))
+    };
+    ($string:literal, $($arg:tt)*) => {
+        ratatui::text::Span::raw(format!($string, $($arg)*))
+    };
+    ($style:expr, $($arg:tt)*) => {
+        compile_error!("first parameter must be a formatting specifier followed by a comma OR a `Style` followed by a semicolon")
+    };
     ($style:expr; $($arg:tt)*) => {
         ratatui::text::Span::styled(format!($($arg)*), $style)
-    };
-    ($($arg:tt)*) => {
-        ratatui::text::Span::raw(format!($($arg)*))
     };
 }
 

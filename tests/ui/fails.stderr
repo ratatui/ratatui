@@ -35,6 +35,22 @@ note: while trying to match `%`
    |     (== $token:tt %) => {
    |                   ^
 
+error: first parameter must be a formatting specifier followed by a comma OR a `Style` followed by a semicolon
+  --> tests/ui/fails.rs:17:13
+   |
+17 |     let _ = span!(Modifier::BOLD, "hello world");
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this error originates in the macro `span` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: argument never used
+  --> tests/ui/fails.rs:19:28
+   |
+19 |     let _ = span!("hello", "hello world");
+   |                   -------  ^^^^^^^^^^^^^ argument never used
+   |                   |
+   |                   formatting specifier missing
+
 error[E0527]: pattern requires 2 elements but array has 3
  --> tests/ui/fails.rs:8:9
   |

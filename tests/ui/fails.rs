@@ -1,5 +1,5 @@
 use ratatui::prelude::*;
-use ratatui_macros::constraints;
+use ratatui_macros::{constraints, span};
 
 fn main() {
     constraints![,];
@@ -13,4 +13,8 @@ fn main() {
     assert_eq!(b, Constraint::Length(2));
 
     let [a, b, c] = constraints![ == 1, == 10%, == 2; 4];
+
+    let _ = span!(Modifier::BOLD, "hello world");
+
+    let _ = span!("hello", "hello world");
 }
