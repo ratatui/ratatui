@@ -1298,13 +1298,17 @@ mod tests {
         }
 
         #[test]
-        fn render_with_selected_and_marked() {
+        fn render_with_selected_marked_unmarked() {
             let rows = vec![
-                Row::new(vec!["Cell1", "Cell2"]),
-                Row::new(vec!["Cell3", "Cell4"]),
+                Row::new(vec!["Cell", "Cell"]),
+                Row::new(vec!["Cell", "Cell"]),
+                Row::new(vec!["Cell", "Cell"]),
+                Row::new(vec!["Cell", "Cell"]),
+                Row::new(vec!["Cell", "Cell"]),
+                Row::new(vec!["Cell", "Cell"]),
+                Row::new(vec!["Cell", "Cell"]),
             ];
             let table = Table::new(rows, [Constraint::Length(5); 2])
-                .highlight_style(Style::new().red())
                 .highlight_symbol("• ")
                 .mark_symbol("⦾")
                 .unmark_symbol(" ")
@@ -1313,25 +1317,77 @@ mod tests {
             let mut state = TableState::new().with_selected(0);
 
             state.mark(1);
+            state.mark(3);
+            state.mark(5);
 
-            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
-            StatefulWidget::render(table.clone(), Rect::new(0, 0, 15, 3), &mut buf, &mut state);
-            let expected = Buffer::with_lines(vec![
-                "• Cell1 Cell2  ".red(),
-                "⦾ Cell3 Cell4  ".into(),
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 10));
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 15, 10), &mut buf, &mut state);
+            let expected = Buffer::with_lines(Text::from(vec![
+                "• Cell  Cell   ".into(),
+                "⦾ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
+                "⦾ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
+                "⦾ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
                 "               ".into(),
-            ]);
+                "               ".into(),
+                "               ".into(),
+            ]));
             assert_buffer_eq!(buf, expected);
 
             state.mark(0);
 
-            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
-            StatefulWidget::render(table, Rect::new(0, 0, 15, 3), &mut buf, &mut state);
-            let expected = Buffer::with_lines(vec![
-                "⦿ Cell1 Cell2  ".red(),
-                "⦾ Cell3 Cell4  ".into(),
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 10));
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 15, 10), &mut buf, &mut state);
+            let expected = Buffer::with_lines(Text::from(vec![
+                "⦿ Cell  Cell   ".into(),
+                "⦾ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
+                "⦾ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
+                "⦾ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
                 "               ".into(),
-            ]);
+                "               ".into(),
+                "               ".into(),
+            ]));
+            assert_buffer_eq!(buf, expected);
+
+            state.select(Some(1));
+
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 10));
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 15, 10), &mut buf, &mut state);
+            let expected = Buffer::with_lines(Text::from(vec![
+                "⦾ Cell  Cell   ".into(),
+                "⦿ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
+                "⦾ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
+                "⦾ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
+                "               ".into(),
+                "               ".into(),
+                "               ".into(),
+            ]));
+            assert_buffer_eq!(buf, expected);
+
+            state.unmark(0);
+
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 10));
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 15, 10), &mut buf, &mut state);
+            let expected = Buffer::with_lines(Text::from(vec![
+                "  Cell  Cell   ".into(),
+                "⦿ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
+                "⦾ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
+                "⦾ Cell  Cell   ".into(),
+                "  Cell  Cell   ".into(),
+                "               ".into(),
+                "               ".into(),
+                "               ".into(),
+            ]));
             assert_buffer_eq!(buf, expected);
         }
     }
