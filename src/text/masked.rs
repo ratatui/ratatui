@@ -46,14 +46,15 @@ impl<'a> Masked<'a> {
 impl fmt::Debug for Masked<'_> {
     /// Debug representation of a masked string is the underlying string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.inner)
+        // note that calling display instead of Debug here is intentional
+        fmt::Display::fmt(&self.inner, f)
     }
 }
 
 impl fmt::Display for Masked<'_> {
     /// Display representation of a masked string is the masked string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.value())
+        fmt::Display::fmt(&self.value(), f)
     }
 }
 
@@ -109,12 +110,14 @@ mod tests {
     fn debug() {
         let masked = Masked::new("12345", 'x');
         assert_eq!(format!("{masked:?}"), "12345");
+        assert_eq!(format!("{masked:.3?}"), "123", "Debug truncates");
     }
 
     #[test]
     fn display() {
         let masked = Masked::new("12345", 'x');
         assert_eq!(format!("{masked}"), "xxxxx");
+        assert_eq!(format!("{masked:.3}"), "xxx", "Display truncates");
     }
 
     #[test]

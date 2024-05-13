@@ -397,7 +397,7 @@ impl WidgetRef for Span<'_> {
 
 impl fmt::Display for Span<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", &self.content)
+        fmt::Display::fmt(&self.content, f)
     }
 }
 
@@ -529,15 +529,15 @@ mod tests {
     #[test]
     fn display_span() {
         let span = Span::raw("test content");
-
         assert_eq!(format!("{span}"), "test content");
+        assert_eq!(format!("{span:.4}"), "test");
     }
 
     #[test]
     fn display_styled_span() {
         let stylized_span = Span::styled("stylized test content", Style::new().green());
-
         assert_eq!(format!("{stylized_span}"), "stylized test content");
+        assert_eq!(format!("{stylized_span:.8}"), "stylized");
     }
 
     #[test]
