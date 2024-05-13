@@ -210,7 +210,7 @@ pub struct Table<'a> {
     /// Style used to render the selected row
     highlight_style: Style,
 
-    /// Symbol in front of the selected rom
+    /// Symbol in front of the selected row
     highlight_symbol: Text<'a>,
 
     /// Decides when to allocate spacing for the row selection
