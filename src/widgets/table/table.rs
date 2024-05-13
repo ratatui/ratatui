@@ -210,8 +210,11 @@ pub struct Table<'a> {
     /// Style used to render the selected row
     highlight_style: Style,
 
-    /// Symbol in front of the selected rom
+    /// Symbol in front of the selected row
     highlight_symbol: Text<'a>,
+
+    /// Symbol in front of the marked row
+    mark_symbol: Text<'a>,
 
     /// Decides when to allocate spacing for the row selection
     highlight_spacing: HighlightSpacing,
@@ -232,6 +235,7 @@ impl<'a> Default for Table<'a> {
             style: Style::new(),
             highlight_style: Style::new(),
             highlight_symbol: Text::default(),
+            mark_symbol: Text::default(),
             highlight_spacing: HighlightSpacing::default(),
             flex: Flex::Start,
         }
@@ -503,6 +507,24 @@ impl<'a> Table<'a> {
         self
     }
 
+    /// Set the symbol to be displayed in front of the marked row
+    ///
+    /// This is a fluent setter method which must be chained or used as it consumes self
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # let rows = [Row::new(vec!["Cell1", "Cell2"])];
+    /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
+    /// let table = Table::new(rows, widths).mark_symbol("\u{2714}");
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn mark_symbol<T: Into<Text<'a>>>(mut self, mark_symbol: T) -> Self {
+        self.mark_symbol = mark_symbol.into();
+        self
+    }
+
     /// Set when to show the highlight spacing
     ///
     /// The highlight spacing is the spacing that is allocated for the selection symbol column (if
@@ -616,6 +638,7 @@ impl StatefulWidgetRef for Table<'_> {
             state,
             selection_width,
             &self.highlight_symbol,
+            &self.mark_symbol,
             &columns_widths,
         );
 
@@ -672,6 +695,7 @@ impl Table<'_> {
         state: &mut TableState,
         selection_width: u16,
         highlight_symbol: &Text<'_>,
+        marked_symbol: &Text<'_>,
         columns_widths: &[(u16, u16)],
     ) {
         if self.rows.is_empty() {
@@ -698,6 +722,7 @@ impl Table<'_> {
             );
             buf.set_style(row_area, row.style);
 
+            let is_marked = state.marked().contains(&(i + state.offset));
             let is_selected = state.selected().is_some_and(|index| index == i);
             if selection_width > 0 && is_selected {
                 let selection_area = Rect {
@@ -706,6 +731,15 @@ impl Table<'_> {
                 };
                 buf.set_style(selection_area, row.style);
                 highlight_symbol.clone().render(selection_area, buf);
+            } else if selection_width > 0 && is_marked {
+                let marked_area = Rect {
+                    width: selection_width,
+                    ..row_area
+                };
+                buf.set_style(marked_area, row.style);
+                marked_symbol.clone().render(marked_area, buf);
+            } else {
+                // we don't care about this
             };
             for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
                 cell.render(
@@ -1184,6 +1218,28 @@ mod tests {
             let expected = Buffer::with_lines(vec![
                 ">>Cell1 Cell2  ".red(),
                 "  Cell3 Cell4  ".into(),
+                "               ".into(),
+            ]);
+            assert_buffer_eq!(buf, expected);
+        }
+
+        #[test]
+        fn render_with_selected_and_marked() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
+            let rows = vec![
+                Row::new(vec!["Cell1", "Cell2"]),
+                Row::new(vec!["Cell3", "Cell4"]),
+            ];
+            let table = Table::new(rows, [Constraint::Length(5); 2])
+                .highlight_style(Style::new().red())
+                .highlight_symbol(">>")
+                .mark_symbol("\u{2714}");
+            let mut state = TableState::new().with_selected(0);
+            state.mark(1);
+            StatefulWidget::render(table, Rect::new(0, 0, 15, 3), &mut buf, &mut state);
+            let expected = Buffer::with_lines(vec![
+                ">>Cell1 Cell2  ".red(),
+                "✔ Cell3 Cell4  ".into(),
                 "               ".into(),
             ]);
             assert_buffer_eq!(buf, expected);
