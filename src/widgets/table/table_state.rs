@@ -229,6 +229,7 @@ impl TableState {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
+    /// # use itertools::Itertools;
     /// let mut state = TableState::default();
     /// state.marked().contains(&1);
     /// ```
