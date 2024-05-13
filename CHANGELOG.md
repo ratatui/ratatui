@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1](https://github.com/ratatui-org/ratatui-macros/compare/v0.3.0...v0.3.1) - 2024-05-13
+
+### Added
+- Better error messages for `span!` macro ([#43](https://github.com/ratatui-org/ratatui-macros/pull/43))
+
+### Fixed
+- downgrade ratatui to 0.26.2 ([#41](https://github.com/ratatui-org/ratatui-macros/pull/41))
+
+### Other
+- Update authors to ratatui developers ([#44](https://github.com/ratatui-org/ratatui-macros/pull/44))
+
 ## [0.3.0](https://github.com/ratatui-org/ratatui-macros/compare/v0.2.4...v0.3.0) - 2024-05-09
 
 ### Added
