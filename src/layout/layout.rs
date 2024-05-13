@@ -448,7 +448,7 @@ impl Layout {
     /// # }
     pub fn areas<const N: usize>(&self, area: Rect) -> [Rect; N] {
         let (areas, _) = self.split_with_spacers(area);
-        areas.to_vec().try_into().expect("invalid number of rects")
+        areas.as_ref().try_into().expect("invalid number of rects")
     }
 
     /// Split the rect into a number of sub-rects according to the given [`Layout`] and return just
@@ -482,7 +482,7 @@ impl Layout {
     pub fn spacers<const N: usize>(&self, area: Rect) -> [Rect; N] {
         let (_, spacers) = self.split_with_spacers(area);
         spacers
-            .to_vec()
+            .as_ref()
             .try_into()
             .expect("invalid number of rects")
     }
