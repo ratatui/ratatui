@@ -15,8 +15,7 @@ use crate::{
     layout::{Rect, Size},
 };
 
-/// A [`Backend`] implementation used for integration testing that that renders to an in memory
-/// buffer.
+/// A [`Backend`] implementation used for integration testing that renders to an memory buffer.
 ///
 /// Note: that although many of the integration and unit tests in ratatui are written using this
 /// backend, it is preferable to write unit tests for widgets directly against the buffer rather
