@@ -1621,6 +1621,7 @@ mod tests {
         }
 
         #[test]
+        #[allow(clippy::too_many_lines)]
         fn highlight_symbol_mark_symbol_and_column_spacing_with_highlight_spacing() {
             // no highlight_symbol or mark_symbol rendered ever
             test_table_with_selection_and_marks(
@@ -1667,6 +1668,7 @@ mod tests {
                     "               ", // row 3
                 ],
             );
+
             // no highlight_symbol or mark_symbol rendered
             test_table_with_selection_and_marks(
                 HighlightSpacing::WhenSelected,
@@ -1718,6 +1720,70 @@ mod tests {
             // mark highlight symbol rendered
             test_table_with_selection_and_marks(
                 HighlightSpacing::WhenSelected,
+                15,      // width
+                0,       // spacing
+                Some(0), // selection
+                [0],     // marks
+                [
+                    " >M> ABCDE12345", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ],
+            );
+
+            // no highlight_symbol or mark_symbol rendered
+            test_table_with_selection_and_marks(
+                HighlightSpacing::Always,
+                15,   // width
+                0,    // spacing
+                None, // selection
+                [],   // marks
+                [
+                    "     ABCDE12345", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ],
+            );
+
+            // mark_symbol rendered
+            test_table_with_selection_and_marks(
+                HighlightSpacing::Always,
+                15,   // width
+                0,    // spacing
+                None, // selection
+                [0],  // marks
+                [
+                    " MMM ABCDE12345", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ],
+            );
+
+            // highlight symbol rendered with mark symbol width
+            test_table_with_selection_and_marks(
+                HighlightSpacing::Always,
+                15,      // width
+                0,       // spacing
+                Some(0), // selection
+                [],      // marks
+                [
+                    ">>>  ABCDE12345", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ],
+            );
+
+            // mark highlight symbol rendered
+            test_table_with_selection_and_marks(
+                HighlightSpacing::Always,
                 15,      // width
                 0,       // spacing
                 Some(0), // selection
