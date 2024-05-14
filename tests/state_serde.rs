@@ -146,6 +146,7 @@ const SELECTED_STATE_REPR: &str = r#"{
 
 #[test]
 fn selected_state_serialize() {
+    use pretty_assertions::assert_eq;
     let mut state = AppState::default();
     state.select(1);
 
