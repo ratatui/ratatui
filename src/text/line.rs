@@ -953,7 +953,7 @@ mod tests {
         use unicode_width::UnicodeWidthStr;
 
         use super::*;
-        use crate::{assert_buffer_eq, buffer::Cell};
+        use crate::buffer::Cell;
 
         const BLUE: Style = Style::new().fg(Color::Blue);
         const GREEN: Style = Style::new().fg(Color::Green);
@@ -972,37 +972,36 @@ mod tests {
         fn render() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
             hello_world().render(Rect::new(0, 0, 15, 1), &mut buf);
-            let mut expected = Buffer::with_lines(vec!["Hello world!   "]);
+            let mut expected = Buffer::with_lines(["Hello world!   "]);
             expected.set_style(Rect::new(0, 0, 15, 1), ITALIC);
             expected.set_style(Rect::new(0, 0, 6, 1), BLUE);
             expected.set_style(Rect::new(6, 0, 6, 1), GREEN);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[rstest]
         fn render_out_of_bounds(hello_world: Line<'static>, mut small_buf: Buffer) {
             let out_of_bounds = Rect::new(20, 20, 10, 1);
             hello_world.render(out_of_bounds, &mut small_buf);
-            assert_buffer_eq!(small_buf, Buffer::empty(small_buf.area));
+            assert_eq!(small_buf, Buffer::empty(small_buf.area));
         }
 
         #[test]
         fn render_only_styles_line_area() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 20, 1));
             hello_world().render(Rect::new(0, 0, 15, 1), &mut buf);
-            let mut expected = Buffer::with_lines(vec!["Hello world!        "]);
+            let mut expected = Buffer::with_lines(["Hello world!        "]);
             expected.set_style(Rect::new(0, 0, 15, 1), ITALIC);
             expected.set_style(Rect::new(0, 0, 6, 1), BLUE);
             expected.set_style(Rect::new(6, 0, 6, 1), GREEN);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[test]
         fn render_truncates() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
             Line::from("Hello world!").render(Rect::new(0, 0, 5, 1), &mut buf);
-            let expected = Buffer::with_lines(vec!["Hello     "]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, Buffer::with_lines(["Hello     "]));
         }
 
         #[test]
@@ -1010,11 +1009,11 @@ mod tests {
             let line = hello_world().alignment(Alignment::Center);
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
             line.render(Rect::new(0, 0, 15, 1), &mut buf);
-            let mut expected = Buffer::with_lines(vec![" Hello world!  "]);
+            let mut expected = Buffer::with_lines([" Hello world!  "]);
             expected.set_style(Rect::new(0, 0, 15, 1), ITALIC);
             expected.set_style(Rect::new(1, 0, 6, 1), BLUE);
             expected.set_style(Rect::new(7, 0, 6, 1), GREEN);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1022,11 +1021,11 @@ mod tests {
             let line = hello_world().alignment(Alignment::Right);
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
             line.render(Rect::new(0, 0, 15, 1), &mut buf);
-            let mut expected = Buffer::with_lines(vec!["   Hello world!"]);
+            let mut expected = Buffer::with_lines(["   Hello world!"]);
             expected.set_style(Rect::new(0, 0, 15, 1), ITALIC);
             expected.set_style(Rect::new(3, 0, 6, 1), BLUE);
             expected.set_style(Rect::new(9, 0, 6, 1), GREEN);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1035,7 +1034,7 @@ mod tests {
             Line::from("Hello world")
                 .left_aligned()
                 .render(buf.area, &mut buf);
-            assert_buffer_eq!(buf, Buffer::with_lines(vec!["Hello"]));
+            assert_eq!(buf, Buffer::with_lines(["Hello"]));
         }
 
         #[test]
@@ -1044,7 +1043,7 @@ mod tests {
             Line::from("Hello world")
                 .right_aligned()
                 .render(buf.area, &mut buf);
-            assert_buffer_eq!(buf, Buffer::with_lines(vec!["world"]));
+            assert_eq!(buf, Buffer::with_lines(["world"]));
         }
 
         #[test]
@@ -1053,7 +1052,7 @@ mod tests {
             Line::from("Hello world")
                 .centered()
                 .render(buf.area, &mut buf);
-            assert_buffer_eq!(buf, Buffer::with_lines(["lo wo"]));
+            assert_eq!(buf, Buffer::with_lines(["lo wo"]));
         }
 
         /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
@@ -1065,7 +1064,7 @@ mod tests {
             );
             let mut buf = Buffer::empty(Rect::new(0, 0, 83, 1));
             line.render_ref(buf.area, &mut buf);
-            assert_buffer_eq!(buf, Buffer::with_lines([
+            assert_eq!(buf, Buffer::with_lines([
                 "🦀 RFC8628 OAuth 2.0 Device Authorization GrantでCLIからGithubのaccess tokenを取得 "
             ]));
         }
@@ -1102,7 +1101,7 @@ mod tests {
             let line = Line::from("1234🦀7890").alignment(alignment);
             let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
             line.render_ref(buf.area, &mut buf);
-            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
+            assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
         /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
@@ -1155,7 +1154,7 @@ mod tests {
             let line = Line::from(value).centered();
             let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
             line.render_ref(buf.area, &mut buf);
-            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
+            assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
         /// Ensures the rendering also works away from the 0x0 position.
@@ -1173,7 +1172,7 @@ mod tests {
             let mut buf = Buffer::filled(Rect::new(0, 0, 10, 1), Cell::default().set_symbol("X"));
             let area = Rect::new(2, 0, 6, 1);
             line.render_ref(area, &mut buf);
-            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
+            assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
         /// When two spans are rendered after each other the first needs to be padded in accordance
@@ -1191,7 +1190,7 @@ mod tests {
             // Fill buffer with stuff to ensure the output is indeed padded
             let mut buf = Buffer::filled(area, Cell::default().set_symbol("X"));
             line.render_ref(buf.area, &mut buf);
-            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
+            assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
         /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
@@ -1222,7 +1221,7 @@ mod tests {
             let line = Line::from("🇺🇸1234");
             let mut buf = Buffer::empty(Rect::new(0, 0, buf_width, 1));
             line.render_ref(buf.area, &mut buf);
-            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
+            assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
         // Buffer width is `u16`. A line can be longer.
@@ -1246,7 +1245,7 @@ mod tests {
 
             let mut buf = Buffer::empty(Rect::new(0, 0, 32, 1));
             line.render_ref(buf.area, &mut buf);
-            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
+            assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
         // Buffer width is `u16`. A single span inside a line can be longer.
@@ -1270,7 +1269,7 @@ mod tests {
 
             let mut buf = Buffer::empty(Rect::new(0, 0, 32, 1));
             line.render_ref(buf.area, &mut buf);
-            assert_buffer_eq!(buf, Buffer::with_lines([expected]));
+            assert_eq!(buf, Buffer::with_lines([expected]));
         }
     }
 
