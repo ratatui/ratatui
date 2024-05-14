@@ -1336,7 +1336,7 @@ mod tests {
                 "               ".into(),
                 "               ".into(),
             ]));
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
 
             state.mark(0);
 
@@ -1354,7 +1354,7 @@ mod tests {
                 "               ".into(),
                 "               ".into(),
             ]));
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
 
             state.select(Some(1));
 
@@ -1372,7 +1372,7 @@ mod tests {
                 "               ".into(),
                 "               ".into(),
             ]));
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
 
             state.unmark(0);
 
@@ -1390,7 +1390,7 @@ mod tests {
                 "               ".into(),
                 "               ".into(),
             ]));
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
     }
 
