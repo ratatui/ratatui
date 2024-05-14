@@ -14,6 +14,7 @@
 // not too happy about the redundancy in these tests,
 // but if that helps readability then it's ok i guess /shrug
 
+use pretty_assertions::assert_eq;
 use ratatui::{backend::TestBackend, prelude::*, widgets::*};
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -148,7 +149,6 @@ const SELECTED_STATE_REPR: &str = r#"{
 
 #[test]
 fn selected_state_serialize() {
-    use pretty_assertions::assert_eq;
     let mut state = AppState::default();
     state.select(1);
 
