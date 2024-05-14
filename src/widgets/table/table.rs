@@ -772,7 +772,7 @@ impl Table<'_> {
             buf.set_style(row_area, row.style);
 
             let is_marked = state.marked().contains(&(i + state.offset));
-            let is_selected = state.selected().is_some_and(|index| index == i);
+            let is_highlighted = state.selected().is_some_and(|index| index == i);
             if highlight_column_width > 0 {
                 let area = Rect {
                     width: highlight_column_width,
@@ -780,15 +780,15 @@ impl Table<'_> {
                 };
                 buf.set_style(area, row.style);
 
-                match (is_selected, is_marked) {
+                match (is_marked, is_highlighted) {
                     (true, true) => {
                         mark_highlight_symbol.render(area, buf);
                     }
                     (true, false) => {
-                        highlight_symbol.render(area, buf);
+                        mark_symbol.render(area, buf);
                     }
                     (false, true) => {
-                        mark_symbol.render(area, buf);
+                        highlight_symbol.render(area, buf);
                     }
                     (false, false) => {
                         unmark_symbol.render(area, buf);
@@ -801,7 +801,7 @@ impl Table<'_> {
                     buf,
                 );
             }
-            if is_selected {
+            if is_highlighted {
                 buf.set_style(row_area, self.highlight_style);
             }
             y_offset += row.height_with_margin();
@@ -876,26 +876,26 @@ impl Table<'_> {
         (start, end)
     }
 
-    /// Returns the width of the selection column if a row is selected, or the `highlight_spacing`
-    /// is set to show the column always, otherwise 0.
+    /// Returns the width of the indicator column if a row is selected, rows are marked,
+    /// or the `highlight_spacing` is set to show the column always, otherwise 0.
     fn highlight_column_width(&self, state: &TableState) -> u16 {
-        let has_selection = state.selected().is_some();
-        let highlight_column_width = if self.highlight_spacing.should_add(has_selection) {
+        let has_highlight = state.selected().is_some() || state.marked().len() > 0;
+        let highlight_column_width = if self.highlight_spacing.should_add(has_highlight) {
             self.highlight_symbol.width() as u16
         } else {
             0
         };
-        let mark_column_width = if self.highlight_spacing.should_add(true) {
+        let mark_column_width = if self.highlight_spacing.should_add(has_highlight) {
             self.mark_symbol.width() as u16
         } else {
             0
         };
-        let mark_highlight_column_width = if self.highlight_spacing.should_add(true) {
+        let mark_highlight_column_width = if self.highlight_spacing.should_add(has_highlight) {
             self.mark_highlight_symbol.width() as u16
         } else {
             0
         };
-        let unmark_column_width = if self.highlight_spacing.should_add(true) {
+        let unmark_column_width = if self.highlight_spacing.should_add(has_highlight) {
             self.unmark_symbol.width() as u16
         } else {
             0
@@ -1588,6 +1588,148 @@ mod tests {
                 .footer(Row::new(vec!["h", "i"]))
                 .column_spacing(0);
             assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)]);
+        }
+
+        #[track_caller]
+        fn test_table_with_selection_and_marks<'line, Lines, Marks>(
+            highlight_spacing: HighlightSpacing,
+            columns: u16,
+            spacing: u16,
+            selection: Option<usize>,
+            marks: Marks,
+            expected: Lines,
+        ) where
+            Lines: IntoIterator,
+            Lines::Item: Into<Line<'line>>,
+            Marks: IntoIterator<Item = usize>,
+        {
+            let table = Table::default()
+                .rows(vec![Row::new(vec!["ABCDE", "12345"])])
+                .highlight_spacing(highlight_spacing)
+                .highlight_symbol(">>>")
+                .mark_symbol(" MMM ")
+                .mark_highlight_symbol(" >M> ")
+                .column_spacing(spacing);
+            let area = Rect::new(0, 0, columns, 3);
+            let mut buf = Buffer::empty(area);
+            let mut state = TableState::default().with_selected(selection);
+            for mark in marks {
+                state.mark(mark);
+            }
+            StatefulWidget::render(table, area, &mut buf, &mut state);
+            assert_eq!(buf, Buffer::with_lines(expected));
+        }
+
+        #[test]
+        fn highlight_symbol_mark_symbol_and_column_spacing_with_highlight_spacing() {
+            // no highlight_symbol or mark_symbol rendered ever
+            test_table_with_selection_and_marks(
+                HighlightSpacing::Never,
+                15,   // width
+                0,    // spacing
+                None, // selection
+                [],   // marks
+                [
+                    "ABCDE  12345   ", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ],
+            );
+            // no highlight_symbol or mark_symbol rendered ever
+            test_table_with_selection_and_marks(
+                HighlightSpacing::Never,
+                15,   // width
+                0,    // spacing
+                None, // selection
+                [0],  // marks
+                [
+                    "ABCDE  12345   ", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ],
+            );
+            // no highlight_symbol or mark_symbol rendered ever
+            test_table_with_selection_and_marks(
+                HighlightSpacing::Never,
+                15,   // width
+                0,    // spacing
+                None, // selection
+                [],   // marks
+                [
+                    "ABCDE  12345   ", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ],
+            );
+            // no highlight_symbol or mark_symbol rendered
+            test_table_with_selection_and_marks(
+                HighlightSpacing::WhenSelected,
+                15,   // width
+                0,    // spacing
+                None, // selection
+                [],   // marks
+                [
+                    "ABCDE  12345   ", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ],
+            );
+
+            // mark_symbol rendered
+            test_table_with_selection_and_marks(
+                HighlightSpacing::WhenSelected,
+                15,   // width
+                0,    // spacing
+                None, // selection
+                [0],  // marks
+                [
+                    " MMM ABCDE12345", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ],
+            );
+
+            // highlight symbol rendered with mark symbol width
+            test_table_with_selection_and_marks(
+                HighlightSpacing::WhenSelected,
+                15,      // width
+                0,       // spacing
+                Some(0), // selection
+                [],      // marks
+                [
+                    ">>>  ABCDE12345", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ],
+            );
+
+            // mark highlight symbol rendered
+            test_table_with_selection_and_marks(
+                HighlightSpacing::WhenSelected,
+                15,      // width
+                0,       // spacing
+                Some(0), // selection
+                [0],     // marks
+                [
+                    " >M> ABCDE12345", /* default layout is Flex::Start but columns length
+                                        * constraints are calculated as `max_area / n_columns`,
+                                        * i.e. they are distributed amongst available space */
+                    "               ", // row 2
+                    "               ", // row 3
+                ],
+            );
         }
 
         #[track_caller]
