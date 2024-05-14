@@ -10,12 +10,10 @@ use strum::{Display, EnumString};
 use crate::{prelude::*, symbols::border, widgets::Borders};
 
 mod padding;
-#[deprecated = "Use line instead of title"]
-#[allow(deprecated)]
 pub mod title;
 
 pub use padding::Padding;
-pub use title::{Position, Title};
+pub use title::Title;
 
 /// Base widget to be used to display a box border around all [upper level ones](crate::widgets).
 ///
@@ -68,7 +66,7 @@ pub struct Block<'a> {
     /// The default alignment of the titles that don't have one
     titles_alignment: Alignment,
     /// The default position of the titles that don't have one
-    titles_position: Position,
+    titles_position: TitlePosition,
     /// Visible borders
     borders: Borders,
     /// Border style
@@ -80,6 +78,29 @@ pub struct Block<'a> {
     style: Style,
     /// Block padding
     padding: Padding,
+}
+
+/// Defines the title position, useful at `title_at_position` method
+///
+/// The title can be positioned on top or at the bottom of the block.
+/// Defaults to [`TitlePosition::Top`].
+///
+/// # Example
+///
+/// ```
+/// use ratatui::widgets::{block::*, *};
+///
+/// Block::new().title_at_position("Bottom title", TitlePosition::Bottom)
+/// ```
+#[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TitlePosition {
+    /// Position the title at the top of the block.
+    ///
+    /// This is the default.
+    #[default]
+    Top,
+    /// Position the title at the bottom of the block.
+    Bottom,
 }
 
 /// The type of border of a [`Block`].
@@ -162,7 +183,7 @@ impl<'a> Block<'a> {
             titles: Vec::new(),
             titles_style: Style::new(),
             titles_alignment: Alignment::Left,
-            titles_position: Position::Top,
+            titles_position: TitlePosition::Top,
             borders: Borders::NONE,
             border_style: Style::new(),
             border_set: BorderType::Plain.to_border_set(),
@@ -224,9 +245,9 @@ impl<'a> Block<'a> {
     /// };
     ///
     /// Block::new()
-    ///     .title_top("Title") // By default in the top left corner
-    ///     .title_top(Line::from("Right").right_aligned())
-    ///     .title_top(Line::from("Center").centered());
+    ///     .title("Title") // By default in the top left corner
+    ///     .title(Title::from("Right").right_aligned())
+    ///     .title(Title::from("Center").centered());
     /// // Renders
     /// // ┌Title─Left────Center─────────Right┐
     /// ```
@@ -238,13 +259,39 @@ impl<'a> Block<'a> {
     /// - [`Block::title_alignment`]
     /// - [`Block::title_position`]
     #[must_use = "method moves the value of self and returns the modified value"]
-    #[deprecated = "use title_top and title_bottom"]
+    #[deprecated = "use title_at_position, title_top and title_bottom"]
     pub fn title<T>(mut self, title: T) -> Self
     where
         T: Into<Title<'a>>,
     {
         self.titles.push(title.into());
         self
+    }
+
+    /// Adds a title to the specified title position.
+    ///
+    /// You can provide any type that can be converted into [`Line`] including: strings, string
+    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](crate::text::Span), or vectors of
+    /// [spans](crate::text::Span) (`Vec<Span>`).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use ratatui::{ prelude::*, widgets::* };
+    /// Block::bordered()
+    ///     .title_at_position("Top", TitlePosition::Top)
+    ///     .title_at_position("Bottom", TitlePosition::Bottom)
+    /// // Renders
+    /// // ┌Top───────────────────────────────┐
+    /// // │                                  │
+    /// // └Bottom────────────────────────────┘
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn title_at_position<T: Into<Line<'a>>>(self, title: T, position: TitlePosition) -> Self {
+        match position {
+            TitlePosition::Top => self.title_top(title),
+            TitlePosition::Bottom => self.title_bottom(title),
+        }
     }
 
     /// Adds a title to the top of the block.
@@ -270,7 +317,7 @@ impl<'a> Block<'a> {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_top<T: Into<Line<'a>>>(mut self, title: T) -> Self {
-        let title = Title::from(title).position(Position::Top);
+        let title = Title::from(title).position(TitlePosition::Top);
         self.titles.push(title);
         self
     }
@@ -298,7 +345,7 @@ impl<'a> Block<'a> {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_bottom<T: Into<Line<'a>>>(mut self, title: T) -> Self {
-        let title = Title::from(title).position(Position::Bottom);
+        let title = Title::from(title).position(TitlePosition::Bottom);
         self.titles.push(title);
         self
     }
@@ -342,14 +389,14 @@ impl<'a> Block<'a> {
         self
     }
 
-    /// Sets the default [`Position`] for all block [titles](Title).
+    /// Sets the default [`TitlePosition`] for all block [titles](Title).
     ///
-    /// Titles that explicitly set a [`Position`] will ignore this.
+    /// Titles that explicitly set a [`TitlePosition`] will ignore this.
     ///
     /// # Example
     ///
     /// This example positions all titles on the bottom except the "top" title which explicitly sets
-    /// [`Position::Top`].
+    /// [`TitlePosition::Top`].
     /// ```
     /// use ratatui::{
     ///     prelude::*,
@@ -357,15 +404,15 @@ impl<'a> Block<'a> {
     /// };
     ///
     /// Block::new()
-    ///     .title_position(Position::Bottom)
+    ///     .title_position(TitlePosition::Bottom)
     ///     // This title won't be aligned in the center
-    ///     .title(Title::from("top").position(Position::Top))
+    ///     .title(Title::from("top").position(TitlePosition::Top))
     ///     .title("foo")
     ///     .title("bar");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     #[deprecated = "Title position should be set explicitly by title_top and title_bottom"]
-    pub const fn title_position(mut self, position: Position) -> Self {
+    pub const fn title_position(mut self, position: TitlePosition) -> Self {
         self.titles_position = position;
         self
     }
@@ -499,14 +546,15 @@ impl<'a> Block<'a> {
             inner.x = inner.x.saturating_add(1).min(inner.right());
             inner.width = inner.width.saturating_sub(1);
         }
-        if self.borders.intersects(Borders::TOP) || self.has_title_at_position(Position::Top) {
+        if self.borders.intersects(Borders::TOP) || self.has_title_at_position(TitlePosition::Top) {
             inner.y = inner.y.saturating_add(1).min(inner.bottom());
             inner.height = inner.height.saturating_sub(1);
         }
         if self.borders.intersects(Borders::RIGHT) {
             inner.width = inner.width.saturating_sub(1);
         }
-        if self.borders.intersects(Borders::BOTTOM) || self.has_title_at_position(Position::Bottom)
+        if self.borders.intersects(Borders::BOTTOM)
+            || self.has_title_at_position(TitlePosition::Bottom)
         {
             inner.height = inner.height.saturating_sub(1);
         }
@@ -524,7 +572,7 @@ impl<'a> Block<'a> {
         inner
     }
     #[deprecated]
-    fn has_title_at_position(&self, position: Position) -> bool {
+    fn has_title_at_position(&self, position: TitlePosition) -> bool {
         self.titles
             .iter()
             .any(|title| title.position.unwrap_or(self.titles_position) == position)
@@ -614,11 +662,11 @@ impl Block<'_> {
     }
 
     fn render_titles(&self, area: Rect, buf: &mut Buffer) {
-        self.render_title_position(Position::Top, area, buf);
-        self.render_title_position(Position::Bottom, area, buf);
+        self.render_title_position(TitlePosition::Top, area, buf);
+        self.render_title_position(TitlePosition::Bottom, area, buf);
     }
 
-    fn render_title_position(&self, position: Position, area: Rect, buf: &mut Buffer) {
+    fn render_title_position(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
         // NOTE: the order in which these functions are called defines the overlapping behavior
         self.render_right_titles(position, area, buf);
         self.render_center_titles(position, area, buf);
@@ -706,7 +754,7 @@ impl Block<'_> {
     /// the left side of that leftmost that is cut off. This is due to the line being truncated
     /// incorrectly. See <https://github.com/ratatui-org/ratatui/issues/932>
     #[allow(clippy::similar_names)]
-    fn render_right_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
+    fn render_right_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Right);
         let mut titles_area = self.titles_area(area, position);
 
@@ -741,7 +789,7 @@ impl Block<'_> {
     /// ideal and should be fixed in the future to align the titles to the center of the block and
     /// truncate both sides of the titles if the block is too small to fit all titles.
     #[allow(clippy::similar_names)]
-    fn render_center_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
+    fn render_center_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
         let titles = self
             .filtered_titles(position, Alignment::Center)
             .collect_vec();
@@ -776,7 +824,7 @@ impl Block<'_> {
 
     /// Render titles aligned to the left of the block
     #[allow(clippy::similar_names)]
-    fn render_left_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
+    fn render_left_titles(&self, position: TitlePosition, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Left);
         let mut titles_area = self.titles_area(area, position);
         for title in titles {
@@ -800,7 +848,7 @@ impl Block<'_> {
     /// An iterator over the titles that match the position and alignment
     fn filtered_titles(
         &self,
-        position: Position,
+        position: TitlePosition,
         alignment: Alignment,
     ) -> impl DoubleEndedIterator<Item = &Title> {
         self.titles.iter().filter(move |title| {
@@ -811,14 +859,14 @@ impl Block<'_> {
 
     /// An area that is one line tall and spans the width of the block excluding the borders and
     /// is positioned at the top or bottom of the block.
-    fn titles_area(&self, area: Rect, position: Position) -> Rect {
+    fn titles_area(&self, area: Rect, position: TitlePosition) -> Rect {
         let left_border = u16::from(self.borders.contains(Borders::LEFT));
         let right_border = u16::from(self.borders.contains(Borders::RIGHT));
         Rect {
             x: area.left() + left_border,
             y: match position {
-                Position::Top => area.top(),
-                Position::Bottom => area.bottom() - 1,
+                TitlePosition::Top => area.top(),
+                TitlePosition::Bottom => area.bottom() - 1,
             },
             width: area
                 .width
@@ -1042,48 +1090,48 @@ mod tests {
     #[deprecated]
     fn has_title_at_position_takes_into_account_all_positioning_declarations() {
         let block = Block::new();
-        assert!(!block.has_title_at_position(Position::Top));
-        assert!(!block.has_title_at_position(Position::Bottom));
+        assert!(!block.has_title_at_position(TitlePosition::Top));
+        assert!(!block.has_title_at_position(TitlePosition::Bottom));
 
-        let block = Block::new().title(Title::from("Test").position(Position::Top));
-        assert!(block.has_title_at_position(Position::Top));
-        assert!(!block.has_title_at_position(Position::Bottom));
+        let block = Block::new().title(Title::from("Test").position(TitlePosition::Top));
+        assert!(block.has_title_at_position(TitlePosition::Top));
+        assert!(!block.has_title_at_position(TitlePosition::Bottom));
 
-        let block = Block::new().title(Title::from("Test").position(Position::Bottom));
-        assert!(!block.has_title_at_position(Position::Top));
-        assert!(block.has_title_at_position(Position::Bottom));
-
-        let block = Block::new()
-            .title(Title::from("Test").position(Position::Top))
-            .title_position(Position::Bottom);
-        assert!(block.has_title_at_position(Position::Top));
-        assert!(!block.has_title_at_position(Position::Bottom));
+        let block = Block::new().title(Title::from("Test").position(TitlePosition::Bottom));
+        assert!(!block.has_title_at_position(TitlePosition::Top));
+        assert!(block.has_title_at_position(TitlePosition::Bottom));
 
         let block = Block::new()
-            .title(Title::from("Test").position(Position::Bottom))
-            .title_position(Position::Top);
-        assert!(!block.has_title_at_position(Position::Top));
-        assert!(block.has_title_at_position(Position::Bottom));
+            .title(Title::from("Test").position(TitlePosition::Top))
+            .title_position(TitlePosition::Bottom);
+        assert!(block.has_title_at_position(TitlePosition::Top));
+        assert!(!block.has_title_at_position(TitlePosition::Bottom));
 
         let block = Block::new()
-            .title(Title::from("Test").position(Position::Top))
-            .title(Title::from("Test").position(Position::Bottom));
-        assert!(block.has_title_at_position(Position::Top));
-        assert!(block.has_title_at_position(Position::Bottom));
+            .title(Title::from("Test").position(TitlePosition::Bottom))
+            .title_position(TitlePosition::Top);
+        assert!(!block.has_title_at_position(TitlePosition::Top));
+        assert!(block.has_title_at_position(TitlePosition::Bottom));
 
         let block = Block::new()
-            .title(Title::from("Test").position(Position::Top))
+            .title(Title::from("Test").position(TitlePosition::Top))
+            .title(Title::from("Test").position(TitlePosition::Bottom));
+        assert!(block.has_title_at_position(TitlePosition::Top));
+        assert!(block.has_title_at_position(TitlePosition::Bottom));
+
+        let block = Block::new()
+            .title(Title::from("Test").position(TitlePosition::Top))
             .title(Title::from("Test"))
-            .title_position(Position::Bottom);
-        assert!(block.has_title_at_position(Position::Top));
-        assert!(block.has_title_at_position(Position::Bottom));
+            .title_position(TitlePosition::Bottom);
+        assert!(block.has_title_at_position(TitlePosition::Top));
+        assert!(block.has_title_at_position(TitlePosition::Bottom));
 
         let block = Block::new()
             .title(Title::from("Test"))
-            .title(Title::from("Test").position(Position::Bottom))
-            .title_position(Position::Top);
-        assert!(block.has_title_at_position(Position::Top));
-        assert!(block.has_title_at_position(Position::Bottom));
+            .title(Title::from("Test").position(TitlePosition::Bottom))
+            .title_position(TitlePosition::Top);
+        assert!(block.has_title_at_position(TitlePosition::Top));
+        assert!(block.has_title_at_position(TitlePosition::Bottom));
     }
 
     #[test]
@@ -1099,7 +1147,7 @@ mod tests {
                 titles: Vec::new(),
                 titles_style: Style::new(),
                 titles_alignment: Alignment::Left,
-                titles_position: Position::Top,
+                titles_position: TitlePosition::Top,
                 borders: Borders::NONE,
                 border_style: Style::new(),
                 border_set: BorderType::Plain.to_border_set(),
@@ -1279,7 +1327,7 @@ mod tests {
     fn title_position() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
         Block::new()
-            .title_position(Position::Bottom)
+            .title_position(TitlePosition::Bottom)
             .title("test")
             .render(buffer.area, &mut buffer);
         assert_buffer_eq!(buffer, Buffer::with_lines(vec!["    ", "test"]));

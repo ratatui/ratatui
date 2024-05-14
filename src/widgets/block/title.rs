@@ -1,8 +1,5 @@
 //! This module holds the [`Title`] element and its related configuration types.
 //! A title is a piece of [`Block`](crate::widgets::Block) configuration.
-
-use strum::{Display, EnumString};
-
 use crate::{layout::Alignment, text::Line};
 
 /// A [`Block`](crate::widgets::Block) title.
@@ -14,21 +11,21 @@ use crate::{layout::Alignment, text::Line};
 /// Title with no style.
 /// ```
 /// use ratatui::widgets::block::Title;
-///
+/// #[allow(deprecated)]
 /// Title::from("Title");
 /// ```
 ///
 /// Blue title on a white background (via [`Stylize`](crate::style::Stylize) trait).
 /// ```
 /// use ratatui::{prelude::*, widgets::block::*};
-///
+/// #[allow(deprecated)]
 /// Title::from("Title".blue().on_white());
 /// ```
 ///
 /// Title with multiple styles (see [`Line`] and [`Stylize`](crate::style::Stylize)).
 /// ```
 /// use ratatui::{prelude::*, widgets::block::*};
-///
+/// #[allow(deprecated)]
 /// Title::from(Line::from(vec!["Q".white().underlined(), "uit".gray()]));
 /// ```
 ///
@@ -38,12 +35,13 @@ use crate::{layout::Alignment, text::Line};
 ///     prelude::*,
 ///     widgets::{block::*, *},
 /// };
-///
+/// #[allow(deprecated)]
 /// Title::from("Title")
 ///     .position(Position::Top)
 ///     .alignment(Alignment::Right);
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[deprecated = "Title can replaced with anything convertible to line in methods title_top title_bottom and title_at_position"]
 pub struct Title<'a> {
     /// Title content
     pub content: Line<'a>,
@@ -70,20 +68,12 @@ pub struct Title<'a> {
 /// # Example
 ///
 /// ```
-/// use ratatui::widgets::{block::*, *};
-///
+/// use ratatui::widgets::{block::{*, title::*}, *};
+/// #[allow(deprecated)]
 /// Block::new().title(Title::from("title").position(Position::Bottom));
 /// ```
-#[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Position {
-    /// Position the title at the top of the block.
-    ///
-    /// This is the default.
-    #[default]
-    Top,
-    /// Position the title at the bottom of the block.
-    Bottom,
-}
+#[deprecated = "Position is just a link to ratatui::widgets::block::TitlePosition"]
+pub use super::TitlePosition as Position;
 
 impl<'a> Title<'a> {
     /// Set the title content.
