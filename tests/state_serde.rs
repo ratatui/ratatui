@@ -94,7 +94,8 @@ const DEFAULT_STATE_REPR: &str = r#"{
   },
   "table": {
     "offset": 0,
-    "selected": null
+    "selected": null,
+    "marked": []
   },
   "scrollbar": {
     "content_length": 10,
@@ -135,7 +136,8 @@ const SELECTED_STATE_REPR: &str = r#"{
   },
   "table": {
     "offset": 0,
-    "selected": 1
+    "selected": 1,
+    "marked": []
   },
   "scrollbar": {
     "content_length": 10,
@@ -179,7 +181,8 @@ const SCROLLED_STATE_REPR: &str = r#"{
   },
   "table": {
     "offset": 4,
-    "selected": 8
+    "selected": 8,
+    "marked": []
   },
   "scrollbar": {
     "content_length": 10,
