@@ -219,7 +219,7 @@ pub struct Table<'a> {
     /// Symbol in front of the unmarked row
     unmark_symbol: Text<'a>,
 
-    /// Symbol in front of the marked row
+    /// Symbol in front of the marked and selected row
     mark_highlight_symbol: Text<'a>,
 
     /// Decides when to allocate spacing for the row selection
