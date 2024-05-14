@@ -30,6 +30,7 @@ use crate::{prelude::*, widgets::Block};
 /// # See also
 ///
 /// - [`LineGauge`] for a thin progress bar
+#[allow(clippy::struct_field_names)] // gauge_style needs to be differentiated to style
 #[derive(Debug, Clone, PartialEq)]
 pub struct Gauge<'a> {
     block: Option<Block<'a>>,

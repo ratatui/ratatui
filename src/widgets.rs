@@ -654,6 +654,6 @@ mod tests {
     #[rstest]
     fn string_option_render_ref(mut buf: Buffer) {
         Some(String::from("hello world")).render_ref(buf.area, &mut buf);
-        assert_eq!(buf, Buffer::with_lines(["hello world         "]),);
+        assert_eq!(buf, Buffer::with_lines(["hello world         "]));
     }
 }

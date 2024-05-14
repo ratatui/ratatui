@@ -286,10 +286,10 @@ fn draw_legend(f: &mut Frame, area: Rect) {
             "- Company B",
             Style::default().fg(Color::Yellow),
         )),
-        Line::from(vec![Span::styled(
+        Line::from(Span::styled(
             "- Company C",
             Style::default().fg(Color::White),
-        )]),
+        )),
     ];
 
     let block = Block::bordered().style(Style::default().fg(Color::White));

@@ -112,154 +112,111 @@ fn draw_line_high(painter: &mut Painter, x1: usize, y1: usize, x2: usize, y2: us
 
 #[cfg(test)]
 mod tests {
-    use super::Line;
-    use crate::{assert_buffer_eq, prelude::*, widgets::canvas::Canvas};
+    use rstest::rstest;
 
-    #[allow(clippy::needless_pass_by_value)]
-    #[track_caller]
-    fn test(line: Line, expected_lines: Vec<&str>) {
+    use super::{super::*, *};
+    use crate::{buffer::Buffer, layout::Rect};
+
+    #[rstest]
+    #[case::off_grid(&Line::new(-1.0, -1.0, 10.0, 10.0, Color::Red), ["          "; 10])]
+    #[case::off_grid(&Line::new(0.0, 0.0, 11.0, 11.0, Color::Red), ["          "; 10])]
+    #[case::horizontal(&Line::new(0.0, 0.0, 10.0, 0.0, Color::Red), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "••••••••••",
+    ])]
+    #[case::horizontal(&Line::new(10.0, 10.0, 0.0, 10.0, Color::Red), [
+        "••••••••••",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+    ])]
+    #[case::vertical(&Line::new(0.0, 0.0, 0.0, 10.0, Color::Red), ["•         "; 10])]
+    #[case::vertical(&Line::new(10.0, 10.0, 10.0, 0.0, Color::Red), ["         •"; 10])]
+    // dy < dx, x1 < x2
+    #[case::diagonal(&Line::new(0.0, 0.0, 10.0, 5.0, Color::Red), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "         •",
+        "       •• ",
+        "     ••   ",
+        "   ••     ",
+        " ••       ",
+        "•         ",
+    ])]
+    // dy < dx, x1 > x2
+    #[case::diagonal(&Line::new(10.0, 0.0, 0.0, 5.0, Color::Red), [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "•         ",
+        " ••       ",
+        "   ••     ",
+        "     ••   ",
+        "       •• ",
+        "         •",
+    ])]
+    // dy > dx, y1 < y2
+    #[case::diagonal(&Line::new(0.0, 0.0, 5.0, 10.0, Color::Red), [
+        "    •     ",
+        "    •     ",
+        "   •      ",
+        "   •      ",
+        "  •       ",
+        "  •       ",
+        " •        ",
+        " •        ",
+        "•         ",
+        "•         ",
+    ])]
+    // dy > dx, y1 > y2
+    #[case::diagonal(&Line::new(0.0, 10.0, 5.0, 0.0, Color::Red), [
+        "•         ",
+        "•         ",
+        " •        ",
+        " •        ",
+        "  •       ",
+        "  •       ",
+        "   •      ",
+        "   •      ",
+        "    •     ",
+        "    •     ",
+    ])]
+    fn tests<'expected_line, ExpectedLines>(#[case] line: &Line, #[case] expected: ExpectedLines)
+    where
+        ExpectedLines: IntoIterator,
+        ExpectedLines::Item: Into<crate::text::Line<'expected_line>>,
+    {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
         let canvas = Canvas::default()
             .marker(Marker::Dot)
             .x_bounds([0.0, 10.0])
             .y_bounds([0.0, 10.0])
-            .paint(|context| {
-                context.draw(&line);
-            });
+            .paint(|context| context.draw(line));
         canvas.render(buffer.area, &mut buffer);
 
-        let mut expected = Buffer::with_lines(expected_lines);
+        let mut expected = Buffer::with_lines(expected);
         for cell in &mut expected.content {
             if cell.symbol() == "•" {
                 cell.set_style(Style::new().red());
             }
         }
-        assert_buffer_eq!(buffer, expected);
-    }
-
-    #[test]
-    fn off_grid() {
-        test(
-            Line::new(-1.0, -1.0, 10.0, 10.0, Color::Red),
-            vec!["          "; 10],
-        );
-        test(
-            Line::new(0.0, 0.0, 11.0, 11.0, Color::Red),
-            vec!["          "; 10],
-        );
-    }
-
-    #[test]
-    fn horizontal() {
-        test(
-            Line::new(0.0, 0.0, 10.0, 0.0, Color::Red),
-            vec![
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "••••••••••",
-            ],
-        );
-        test(
-            Line::new(10.0, 10.0, 0.0, 10.0, Color::Red),
-            vec![
-                "••••••••••",
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-            ],
-        );
-    }
-
-    #[test]
-    fn vertical() {
-        test(
-            Line::new(0.0, 0.0, 0.0, 10.0, Color::Red),
-            vec!["•         "; 10],
-        );
-        test(
-            Line::new(10.0, 10.0, 10.0, 0.0, Color::Red),
-            vec!["         •"; 10],
-        );
-    }
-
-    #[test]
-    fn diagonal() {
-        // dy < dx, x1 < x2
-        test(
-            Line::new(0.0, 0.0, 10.0, 5.0, Color::Red),
-            vec![
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "         •",
-                "       •• ",
-                "     ••   ",
-                "   ••     ",
-                " ••       ",
-                "•         ",
-            ],
-        );
-        // dy < dx, x1 > x2
-        test(
-            Line::new(10.0, 0.0, 0.0, 5.0, Color::Red),
-            vec![
-                "          ",
-                "          ",
-                "          ",
-                "          ",
-                "•         ",
-                " ••       ",
-                "   ••     ",
-                "     ••   ",
-                "       •• ",
-                "         •",
-            ],
-        );
-        // dy > dx, y1 < y2
-        test(
-            Line::new(0.0, 0.0, 5.0, 10.0, Color::Red),
-            vec![
-                "    •     ",
-                "    •     ",
-                "   •      ",
-                "   •      ",
-                "  •       ",
-                "  •       ",
-                " •        ",
-                " •        ",
-                "•         ",
-                "•         ",
-            ],
-        );
-        // dy > dx, y1 > y2
-        test(
-            Line::new(0.0, 10.0, 5.0, 0.0, Color::Red),
-            vec![
-                "•         ",
-                "•         ",
-                " •        ",
-                " •        ",
-                "  •       ",
-                "  •       ",
-                "   •      ",
-                "   •      ",
-                "    •     ",
-                "    •     ",
-            ],
-        );
+        assert_eq!(buffer, expected);
     }
 }
