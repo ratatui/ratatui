@@ -1,57 +1,44 @@
 /// Assert that two buffers are equal by comparing their areas and content.
 ///
-/// On panic, displays the areas or the content and a diff of the contents.
+/// # Panics
+/// When the buffers differ this method panics and displays the differences similar to
+/// `assert_eq!()`.
+#[deprecated = "use assert_eq!(&actual, &expected)"]
 #[macro_export]
 macro_rules! assert_buffer_eq {
     ($actual_expr:expr, $expected_expr:expr) => {
         match (&$actual_expr, &$expected_expr) {
             (actual, expected) => {
-                if actual.area != expected.area {
-                    panic!(
-                        indoc::indoc!(
-                            "
-                            buffer areas not equal
-                            expected:  {:?}
-                            actual:    {:?}"
-                        ),
-                        expected, actual
-                    );
-                }
-                let diff = expected.diff(&actual);
-                if !diff.is_empty() {
-                    let nice_diff = diff
-                        .iter()
-                        .enumerate()
-                        .map(|(i, (x, y, cell))| {
-                            let expected_cell = expected.get(*x, *y);
-                            indoc::formatdoc! {"
-                                {i}: at ({x}, {y})
-                                  expected: {expected_cell:?}
-                                  actual:   {cell:?}
-                            "}
-                        })
-                        .collect::<Vec<String>>()
-                        .join("\n");
-                    panic!(
-                        indoc::indoc!(
-                            "
-                            buffer contents not equal
-                            expected: {:?}
-                            actual: {:?}
-                            diff:
-                            {}"
-                        ),
-                        expected, actual, nice_diff
-                    );
-                }
+                assert!(
+                    actual.area == expected.area,
+                    "buffer areas not equal\nexpected: {expected:?}\nactual:   {actual:?}",
+                );
+                let nice_diff = expected
+                    .diff(actual)
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, (x, y, cell))| {
+                        let expected_cell = expected.get(x, y);
+                        format!("{i}: at ({x}, {y})\n  expected: {expected_cell:?}\n  actual:   {cell:?}")
+                    })
+                    .collect::<Vec<String>>()
+                    .join("\n");
+                assert!(
+                    nice_diff.is_empty(),
+                    "buffer contents not equal\nexpected: {expected:?}\nactual:   {actual:?}\ndiff:\n{nice_diff}",
+                );
                 // shouldn't get here, but this guards against future behavior
                 // that changes equality but not area or content
-                assert_eq!(actual, expected, "buffers not equal");
+                assert_eq!(
+                    actual, expected,
+                    "buffers are not equal in an unexpected way. Please open an issue about this."
+                );
             }
         }
     };
 }
 
+#[allow(deprecated)]
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;

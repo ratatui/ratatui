@@ -35,7 +35,7 @@ fn widgets_gauge_renders() {
             f.render_widget(gauge, chunks[1]);
         })
         .unwrap();
-    let mut expected = Buffer::with_lines(vec![
+    let mut expected = Buffer::with_lines([
         "                                        ",
         "                                        ",
         "  ┌Percentage────────────────────────┐  ",
@@ -82,7 +82,7 @@ fn widgets_gauge_renders_no_unicode() {
             f.render_widget(gauge, chunks[1]);
         })
         .unwrap();
-    let expected = Buffer::with_lines(vec![
+    terminal.backend().assert_buffer_lines([
         "                                        ",
         "                                        ",
         "  ┌Percentage────────────────────────┐  ",
@@ -94,7 +94,6 @@ fn widgets_gauge_renders_no_unicode() {
         "                                        ",
         "                                        ",
     ]);
-    terminal.backend().assert_buffer(&expected);
 }
 
 #[test]
@@ -119,7 +118,7 @@ fn widgets_gauge_applies_styles() {
             f.render_widget(gauge, f.size());
         })
         .unwrap();
-    let mut expected = Buffer::with_lines(vec![
+    let mut expected = Buffer::with_lines([
         "┌Test──────┐",
         "│████      │",
         "│███43%    │",
@@ -171,8 +170,7 @@ fn widgets_gauge_supports_large_labels() {
             f.render_widget(gauge, f.size());
         })
         .unwrap();
-    let expected = Buffer::with_lines(vec!["4333333333"]);
-    terminal.backend().assert_buffer(&expected);
+    terminal.backend().assert_buffer_lines(["4333333333"]);
 }
 
 #[test]
@@ -209,7 +207,7 @@ fn widgets_line_gauge_renders() {
             );
         })
         .unwrap();
-    let mut expected = Buffer::with_lines(vec![
+    let mut expected = Buffer::with_lines([
         "43% ────────────────",
         "┌Gauge 2───────────┐",
         "│21% ━━━━━━━━━━━━━━│",
