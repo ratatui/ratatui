@@ -68,7 +68,10 @@ pub struct Title<'a> {
 /// # Example
 ///
 /// ```
-/// use ratatui::widgets::{block::{*, title::*}, *};
+/// use ratatui::widgets::{
+///     block::{title::*, *},
+///     *,
+/// };
 /// #[allow(deprecated)]
 /// Block::new().title(Title::from("title").position(Position::Bottom));
 /// ```
