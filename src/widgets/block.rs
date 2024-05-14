@@ -90,7 +90,7 @@ pub struct Block<'a> {
 /// ```
 /// use ratatui::widgets::{block::*, *};
 ///
-/// Block::new().title_at_position("Bottom title", TitlePosition::Bottom)
+/// Block::new().title_at_position("Bottom title", TitlePosition::Bottom);
 /// ```
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TitlePosition {
@@ -246,8 +246,8 @@ impl<'a> Block<'a> {
     ///
     /// Block::new()
     ///     .title("Title") // By default in the top left corner
-    ///     .title(Title::from("Right").right_aligned())
-    ///     .title(Title::from("Center").centered());
+    ///     .title(Title::from("Right").alignment(Alignment::Right))
+    ///     .title(Title::from("Center").alignment(Alignment::Center));
     /// // Renders
     /// // ┌Title─Left────Center─────────Right┐
     /// ```
@@ -277,10 +277,10 @@ impl<'a> Block<'a> {
     /// # Example
     ///
     /// ```
-    /// # use ratatui::{ prelude::*, widgets::* };
+    /// # use ratatui::{ prelude::*, widgets::block::*, };
     /// Block::bordered()
     ///     .title_at_position("Top", TitlePosition::Top)
-    ///     .title_at_position("Bottom", TitlePosition::Bottom)
+    ///     .title_at_position("Bottom", TitlePosition::Bottom);
     /// // Renders
     /// // ┌Top───────────────────────────────┐
     /// // │                                  │

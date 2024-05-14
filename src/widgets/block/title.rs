@@ -33,7 +33,7 @@ use crate::{layout::Alignment, text::Line};
 /// ```
 /// use ratatui::{
 ///     prelude::*,
-///     widgets::{block::*, *},
+///     widgets::{block::title::*, *},
 /// };
 /// #[allow(deprecated)]
 /// Title::from("Title")
