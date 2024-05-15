@@ -17,20 +17,22 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
 use std::{
-    error::Error,
     io::{self, stdout, Stdout},
     panic,
 };
 
 use color_eyre::{
     config::{EyreHook, HookBuilder, PanicHook},
-    eyre,
+    eyre::{self},
 };
 use crossterm::{
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{
+        disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
+        LeaveAlternateScreen,
+    },
 };
-use ratatui::prelude::*;
+use ratatui::{backend::CrosstermBackend, Terminal};
 
 /// Initialize the terminal by enabling raw mode and entering the alternate screen.
 pub fn init_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
@@ -42,9 +44,13 @@ pub fn init_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
 }
 
 /// Restore the terminal by leaving the alternate screen and disabling raw mode.
-pub fn restore_terminal() -> io::Result<()> {
+pub fn restore_terminal() -> color_eyre::Result<()> {
     disable_raw_mode()?;
-    execute!(stdout(), LeaveAlternateScreen,)?;
+    execute!(
+        stdout(),
+        LeaveAlternateScreen,
+        Clear(ClearType::FromCursorDown),
+    )?;
     Ok(())
 }
 
@@ -68,10 +74,10 @@ fn install_panic_hook(panic_hook: PanicHook) {
 }
 
 /// Install an error hook that restores the terminal before printing the error.
-fn install_error_hook(eyre_hook: EyreHook) -> eyre::Result<()> {
+fn install_error_hook(eyre_hook: EyreHook) -> color_eyre::Result<()> {
     // convert from a color_eyre EyreHook to a standard eyre hook
     let eyre_hook = eyre_hook.into_eyre_hook();
-    eyre::set_hook(Box::new(move |error: &(dyn Error + 'static)| {
+    eyre::set_hook(Box::new(move |error| {
         let _ = restore_terminal();
         eyre_hook(error)
     }))?;
