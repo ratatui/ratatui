@@ -17,7 +17,7 @@ use std::time::{Duration, Instant};
 
 use crossterm::event::{self, Event, KeyCode};
 use itertools::{izip, Itertools};
-use rand::prelude::*;
+use rand::{thread_rng, Rng};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::{
@@ -109,7 +109,7 @@ impl<'a> App<'a> {
 
 /// Generate some random data for the main bar chart
 fn generate_main_barchart_data() -> Vec<Bar<'static>> {
-    let mut rng = rand::thread_rng();
+    let mut rng = thread_rng();
     (1..50)
         .map(|index| {
             Bar::default()
@@ -144,8 +144,8 @@ impl App<'_> {
             .block(Block::bordered().title("Vertical Grouped"))
             .data(BarGroup::default().bars(&self.data))
             .bar_width(5)
-            .bar_style(Style::default().fg(Color::Yellow))
-            .value_style(Style::default().fg(Color::Black).bg(Color::Yellow))
+            .bar_style(Style::new().fg(Color::Yellow))
+            .value_style(Style::new().fg(Color::Black).bg(Color::Yellow))
     }
 
     /// Create a vertical revenue bar chart with the data from the `revenues` field.
