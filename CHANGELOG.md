@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0](https://github.com/ratatui-org/ratatui-macros/compare/v0.3.1...v0.4.0) - 2024-05-15
+
+### Added
+- *(layout)* [**breaking**] Use `*=` instead of `=*` ([#45](https://github.com/ratatui-org/ratatui-macros/pull/45))
+
 ## [0.3.1](https://github.com/ratatui-org/ratatui-macros/compare/v0.3.0...v0.3.1) - 2024-05-13
 
 ### Added
