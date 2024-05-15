@@ -964,10 +964,10 @@ mod tests {
     }
 
     #[rstest]
-    #[case::top_top(Borders::TOP, Position::Top, Rect::new(0, 1, 0, 1))]
-    #[case::top_bot(Borders::BOTTOM, Position::Top, Rect::new(0, 1, 0, 0))]
-    #[case::bot_top(Borders::TOP, Position::Bottom, Rect::new(0, 1, 0, 0))]
-    #[case::top_top(Borders::BOTTOM, Position::Bottom, Rect::new(0, 0, 0, 1))]
+    #[case::top_top(Borders::TOP, TitlePosition::Top, Rect::new(0, 1, 0, 1))]
+    #[case::top_bot(Borders::BOTTOM, TitlePosition::Top, Rect::new(0, 1, 0, 0))]
+    #[case::bot_top(Borders::TOP, TitlePosition::Bottom, Rect::new(0, 1, 0, 0))]
+    #[case::top_top(Borders::BOTTOM, TitlePosition::Bottom, Rect::new(0, 0, 0, 1))]
     fn inner_takes_into_account_border_and_title(
         #[case] borders: Borders,
         #[case] position: TitlePosition,
@@ -1124,7 +1124,7 @@ mod tests {
     #[test]
     fn title() {
         use Alignment::*;
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 3));
         Block::bordered()
             .title_top(Line::from("A").alignment(Left))
             .title_top(Line::from("B").alignment(Center))

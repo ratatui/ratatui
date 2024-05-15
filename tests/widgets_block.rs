@@ -374,8 +374,7 @@ fn widgets_block_title_alignment_bottom<'line, Lines>(
     let backend = TestBackend::new(15, 3);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    let title = Line::from(Span::styled("Line", Style::default()))
-        .alignment(alignment);
+    let title = Line::from(Span::styled("Line", Style::default())).alignment(alignment);
     let block = Block::default().title_bottom(title).borders(borders);
     let area = Rect::new(1, 0, 13, 3);
     terminal

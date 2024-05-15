@@ -1469,7 +1469,6 @@ mod tests {
 
     #[test]
     fn test_list_with_empty_strings() {
-
         let list = List::new(["Item 0", "", "", "Item 1", "Item 2"])
             .block(Block::bordered().title_top("List"));
         let buffer = render_widget(list, 10, 7);
@@ -1494,7 +1493,8 @@ mod tests {
 
     #[test]
     fn test_list_block() {
-        let list = List::new(["Item 0", "Item 1", "Item 2"]).block(Block::bordered().title_top("List"));
+        let list =
+            List::new(["Item 0", "Item 1", "Item 2"]).block(Block::bordered().title_top("List"));
         let buffer = render_widget(list, 10, 7);
         let expected = Buffer::with_lines([
             "┌List────┐",

@@ -100,8 +100,7 @@ fn widgets_paragraph_can_scroll_horizontally() {
 
     test_case(
         paragraph.clone().alignment(Alignment::Left).scroll((0, 6)),
-        Buffer::with_lines(vec![
-
+        &Buffer::with_lines(vec![
             "┌──────────────────┐",
             "│在可以水平滚动了！│",
             "│aph can scroll hor│",
