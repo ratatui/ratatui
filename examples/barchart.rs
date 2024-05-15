@@ -72,8 +72,8 @@ impl<'a> App<'a> {
     fn new() -> Self {
         App {
             data: generate_main_barchart_data(),
-            companies: Company::companies(),
-            revenues: Revenues::revenues(),
+            companies: Company::fake_companies(),
+            revenues: Revenues::fake_revenues(),
         }
     }
 
@@ -97,7 +97,7 @@ impl<'a> App<'a> {
                 last_tick = Instant::now();
             }
         }
-        return Ok(());
+        Ok(())
     }
 
     // Rotate the data to simulate a real-time update
@@ -122,7 +122,7 @@ fn generate_main_barchart_data() -> Vec<Bar<'static>> {
 impl Widget for &App<'_> {
     /// Render the application
     fn render(self, area: Rect, buf: &mut Buffer) {
-        use Constraint::*;
+        use Constraint::{Percentage, Ratio};
         let [top, bottom] = Layout::vertical([Ratio(1, 3), Ratio(2, 3)]).areas(area);
         let [left, right] = Layout::horizontal([Percentage(50), Percentage(50)]).areas(bottom);
 
@@ -195,7 +195,7 @@ impl App<'_> {
             TOTAL_REVENUE_LABEL,
             (Color::White, Modifier::BOLD),
         )];
-        for company in self.companies.iter() {
+        for company in &self.companies {
             text.push(Line::styled(format!("- {}", company.name), company.color));
         }
         Paragraph::new(text).block(Block::bordered().white())
@@ -204,12 +204,12 @@ impl App<'_> {
 
 impl Revenues {
     /// Create a new instance of `Revenues`
-    fn new(period: &'static str, revenues: [u32; COMPANY_COUNT]) -> Self {
+    const fn new(period: &'static str, revenues: [u32; COMPANY_COUNT]) -> Self {
         Self { period, revenues }
     }
 
     /// Some fake revenue data
-    fn revenues() -> [Self; PERIOD_COUNT] {
+    fn fake_revenues() -> [Self; PERIOD_COUNT] {
         [
             Self::new("Jan", [9500, 1500, 10500]),
             Self::new("Feb", [12500, 2500, 10600]),
@@ -241,12 +241,12 @@ impl Revenues {
 
 impl Company {
     /// Create a new instance of `Company`
-    fn new(name: &'static str, label: &'static str, color: Color) -> Self {
+    const fn new(name: &'static str, label: &'static str, color: Color) -> Self {
         Self { name, label, color }
     }
 
     /// Generate fake company data
-    fn companies() -> [Self; COMPANY_COUNT] {
+    fn fake_companies() -> [Self; COMPANY_COUNT] {
         [
             Self::new("Company A", "Comp.A", Color::Green),
             Self::new("Company B", "Comp.B", Color::Yellow),
