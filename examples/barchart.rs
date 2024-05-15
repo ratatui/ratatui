@@ -209,7 +209,7 @@ impl Revenues {
     }
 
     /// Some fake revenue data
-    fn fake_revenues() -> [Self; PERIOD_COUNT] {
+    const fn fake_revenues() -> [Self; PERIOD_COUNT] {
         [
             Self::new("Jan", [9500, 1500, 10500]),
             Self::new("Feb", [12500, 2500, 10600]),
@@ -246,7 +246,7 @@ impl Company {
     }
 
     /// Generate fake company data
-    fn fake_companies() -> [Self; COMPANY_COUNT] {
+    const fn fake_companies() -> [Self; COMPANY_COUNT] {
         [
             Self::new("Company A", "Comp.A", Color::Green),
             Self::new("Company B", "Comp.B", Color::Yellow),
