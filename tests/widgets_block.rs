@@ -19,7 +19,7 @@ fn widgets_block_renders() {
         .draw(|frame| frame.render_widget(block, Rect::new(0, 0, 8, 8)))
         .unwrap();
     let mut expected = Buffer::with_lines([
-        "┌Line─┐  ",
+        "┌Line──┐  ",
         "│      │  ",
         "│      │  ",
         "│      │  ",
@@ -30,7 +30,7 @@ fn widgets_block_renders() {
         "          ",
         "          ",
     ]);
-    for x in 1..=5 {
+    for x in 1..=4 {
         expected.get_mut(x, 0).set_fg(Color::LightBlue);
     }
     terminal.backend().assert_buffer(&expected);
@@ -185,22 +185,22 @@ fn widgets_block_renders_on_small_areas() {
 
 #[rstest]
 #[case::left_with_all_borders(Alignment::Left, Borders::ALL, [
-    " ┌Line──────┐ ",
+    " ┌Line───────┐ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
 #[case::left_without_top_border(Alignment::Left, Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
-    " │Line      │ ",
+    " │Line       │ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
 #[case::left_without_left_border(Alignment::Left, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
-    " Line───────┐ ",
+    " Line────────┐ ",
     "             │ ",
     " ────────────┘ ",
 ])]
 #[case::left_without_right_border(Alignment::Left, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
-    " ┌Line─────── ",
+    " ┌Line──────── ",
     " │             ",
     " └──────────── ",
 ])]
@@ -210,52 +210,52 @@ fn widgets_block_renders_on_small_areas() {
     "               ",
 ])]
 #[case::center_with_all_borders(Alignment::Center, Borders::ALL, [
-    " ┌───Line───┐ ",
+    " ┌───Line────┐ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
 #[case::center_without_top_border(Alignment::Center, Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
-    " │   Line   │ ",
+    " │   Line    │ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
 #[case::center_without_left_border(Alignment::Center, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
-    " ───Line────┐ ",
+    " ────Line────┐ ",
     "             │ ",
     " ────────────┘ ",
 ])]
 #[case::center_without_right_border(Alignment::Center, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
-    " ┌───Line──── ",
+    " ┌────Line──── ",
     " │             ",
     " └──────────── ",
 ])]
 #[case::center_without_borders(Alignment::Center, Borders::NONE, [
-    "     Line     ",
+    "     Line      ",
     "               ",
     "               ",
 ])]
 #[case::right_with_all_borders(Alignment::Right, Borders::ALL, [
-    " ┌──────Line┐ ",
+    " ┌───────Line┐ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
 #[case::right_without_top_border(Alignment::Right, Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
-    " │      Line│ ",
+    " │       Line│ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
 #[case::right_without_left_border(Alignment::Right, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
-    " ───────Line┐ ",
+    " ────────Line┐ ",
     "             │ ",
     " ────────────┘ ",
 ])]
 #[case::right_without_right_border(Alignment::Right, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
-    " ┌───────Line ",
+    " ┌────────Line ",
     " │             ",
     " └──────────── ",
 ])]
 #[case::right_without_borders(Alignment::Right, Borders::NONE, [
-    "         Line ",
+    "          Line ",
     "               ",
     "               ",
 ])]
@@ -291,77 +291,77 @@ fn widgets_block_title_alignment_top<'line, Lines>(
 #[case::left(Alignment::Left, Borders::ALL, [
     " ┌───────────┐ ",
     " │           │ ",
-    " └Line──────┘ ",
+    " └Line───────┘ ",
 ])]
 #[case::left(Alignment::Left, Borders::LEFT | Borders::TOP | Borders::RIGHT, [
     " ┌───────────┐ ",
     " │           │ ",
-    " │Line      │ ",
+    " │Line       │ ",
 ])]
 #[case::left(Alignment::Left, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
     " ────────────┐ ",
     "             │ ",
-    " Line───────┘ ",
+    " Line────────┘ ",
 ])]
 #[case::left(Alignment::Left, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
     " ┌──────────── ",
     " │             ",
-    " └Line─────── ",
+    " └Line──────── ",
 ])]
 #[case::left(Alignment::Left, Borders::NONE, [
     "               ",
     "               ",
-    " Line         ",
+    " Line          ",
 ])]
 #[case::left(Alignment::Center, Borders::ALL, [
     " ┌───────────┐ ",
     " │           │ ",
-    " └───Line───┘ ",
+    " └───Line────┘ ",
 ])]
 #[case::left(Alignment::Center, Borders::LEFT | Borders::TOP | Borders::RIGHT, [
     " ┌───────────┐ ",
     " │           │ ",
-    " │   Line   │ ",
+    " │   Line    │ ",
 ])]
 #[case::left(Alignment::Center, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
     " ────────────┐ ",
     "             │ ",
-    " ───Line────┘ ",
+    " ────Line────┘ ",
 ])]
 #[case::left(Alignment::Center, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
     " ┌──────────── ",
     " │             ",
-    " └───Line──── ",
+    " └────Line──── ",
 ])]
 #[case::left(Alignment::Center, Borders::NONE, [
     "               ",
     "               ",
-    "     Line     ",
+    "     Line      ",
 ])]
 #[case::left(Alignment::Right, Borders::ALL, [
     " ┌───────────┐ ",
     " │           │ ",
-    " └──────Line┘ ",
+    " └───────Line┘ ",
 ])]
 #[case::left(Alignment::Right, Borders::LEFT | Borders::TOP | Borders::RIGHT, [
     " ┌───────────┐ ",
     " │           │ ",
-    " │      Line│ ",
+    " │       Line│ ",
 ])]
 #[case::left(Alignment::Right, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
     " ────────────┐ ",
     "             │ ",
-    " ───────Line┘ ",
+    " ────────Line┘ ",
 ])]
 #[case::left(Alignment::Right, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
     " ┌──────────── ",
     " │             ",
-    " └───────Line ",
+    " └────────Line ",
 ])]
 #[case::left(Alignment::Right, Borders::NONE, [
     "               ",
     "               ",
-    "         Line ",
+    "          Line ",
 ])]
 fn widgets_block_title_alignment_bottom<'line, Lines>(
     #[case] alignment: Alignment,
