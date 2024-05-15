@@ -236,7 +236,7 @@ fn run_app<B: Backend>(
 fn ui(f: &mut Frame, downloads: &Downloads) {
     let area = f.size();
 
-    let block = Block::default().title(block::Title::from("Progress").alignment(Alignment::Center));
+    let block = Block::new().title(block::Title::from("Progress").alignment(Alignment::Center));
     f.render_widget(block, area);
 
     let vertical = Layout::vertical([Constraint::Length(2), Constraint::Length(4)]).margin(1);

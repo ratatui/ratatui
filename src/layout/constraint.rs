@@ -1,4 +1,4 @@
-use std::fmt::{self, Display};
+use std::fmt;
 
 use itertools::Itertools;
 use strum::EnumIs;
@@ -362,7 +362,7 @@ impl Default for Constraint {
     }
 }
 
-impl Display for Constraint {
+impl fmt::Display for Constraint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Percentage(p) => write!(f, "Percentage({p})"),

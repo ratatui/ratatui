@@ -65,7 +65,7 @@ impl Frame<'_> {
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();
-    /// let block = Block::default();
+    /// let block = Block::new();
     /// let area = Rect::new(0, 0, 5, 5);
     /// frame.render_widget(block, area);
     /// ```
@@ -87,7 +87,7 @@ impl Frame<'_> {
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();
-    /// let block = Block::default();
+    /// let block = Block::new();
     /// let area = Rect::new(0, 0, 5, 5);
     /// frame.render_widget_ref(block, area);
     /// ```

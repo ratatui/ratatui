@@ -24,7 +24,7 @@ use crate::{prelude::*, widgets::Block};
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// Sparkline::default()
-///     .block(Block::default().title("Sparkline").borders(Borders::ALL))
+///     .block(Block::bordered().title("Sparkline"))
 ///     .data(&[0, 2, 3, 4, 1, 4, 10])
 ///     .max(5)
 ///     .direction(RenderDirection::RightToLeft)
@@ -225,7 +225,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::{assert_buffer_eq, buffer::Cell};
+    use crate::buffer::Cell;
 
     #[test]
     fn render_direction_to_string() {
@@ -264,21 +264,21 @@ mod tests {
     fn it_does_not_panic_if_max_is_zero() {
         let widget = Sparkline::default().data(&[0, 0, 0]);
         let buffer = render(widget, 6);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["   xxx"]));
+        assert_eq!(buffer, Buffer::with_lines(["   xxx"]));
     }
 
     #[test]
     fn it_does_not_panic_if_max_is_set_to_zero() {
         let widget = Sparkline::default().data(&[0, 1, 2]).max(0);
         let buffer = render(widget, 6);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["   xxx"]));
+        assert_eq!(buffer, Buffer::with_lines(["   xxx"]));
     }
 
     #[test]
     fn it_draws() {
         let widget = Sparkline::default().data(&[0, 1, 2, 3, 4, 5, 6, 7, 8]);
         let buffer = render(widget, 12);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![" ▁▂▃▄▅▆▇█xxx"]));
+        assert_eq!(buffer, Buffer::with_lines([" ▁▂▃▄▅▆▇█xxx"]));
     }
 
     #[test]
@@ -287,7 +287,7 @@ mod tests {
             .data(&[0, 1, 2, 3, 4, 5, 6, 7, 8])
             .direction(RenderDirection::LeftToRight);
         let buffer = render(widget, 12);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec![" ▁▂▃▄▅▆▇█xxx"]));
+        assert_eq!(buffer, Buffer::with_lines([" ▁▂▃▄▅▆▇█xxx"]));
     }
 
     #[test]
@@ -296,7 +296,7 @@ mod tests {
             .data(&[0, 1, 2, 3, 4, 5, 6, 7, 8])
             .direction(RenderDirection::RightToLeft);
         let buffer = render(widget, 12);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["xxx█▇▆▅▄▃▂▁ "]));
+        assert_eq!(buffer, Buffer::with_lines(["xxx█▇▆▅▄▃▂▁ "]));
     }
 
     #[test]

@@ -37,7 +37,7 @@ use crossterm::{
 };
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Paragraph},
 };
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
@@ -142,11 +142,9 @@ fn ui(f: &mut Frame, app: &App) {
         Line::from("try first without the panic handler to see the difference"),
     ];
 
-    let b = Block::default()
-        .title("Panic Handler Demo")
-        .borders(Borders::ALL);
+    let paragraph = Paragraph::new(text)
+        .block(Block::bordered().title("Panic Handler Demo"))
+        .centered();
 
-    let p = Paragraph::new(text).block(b).centered();
-
-    f.render_widget(p, f.size());
+    f.render_widget(paragraph, f.size());
 }
