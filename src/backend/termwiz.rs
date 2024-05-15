@@ -271,7 +271,7 @@ impl From<CellAttributes> for Style {
 
         style.fg = Some(value.foreground().into());
         style.bg = Some(value.background().into());
-        #[cfg(feature = "underline_color")]
+        #[cfg(feature = "underline-color")]
         {
             style.underline_color = Some(value.underline_color().into());
         }

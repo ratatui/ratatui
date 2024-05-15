@@ -6,6 +6,7 @@ use std::{
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
+use self::layout::Position;
 use crate::{buffer::Cell, prelude::*};
 
 /// A buffer that maps to the desired content of the terminal after the draw call
@@ -96,17 +97,35 @@ impl Buffer {
     }
 
     /// Returns a reference to Cell at the given coordinates
+    /// # Panics
+    /// Panics if the coordinates are out of bounds
     #[track_caller]
     pub fn get(&self, x: u16, y: u16) -> &Cell {
         let i = self.index_of(x, y);
         &self.content[i]
     }
 
+    /// Returns an option containing a reference to Cell at the given coordinates, or `None`, if the
+    /// coordinates are out of bounds
+    pub fn try_get(&self, x: u16, y: u16) -> Option<&Cell> {
+        let i = self.index_of(x, y);
+        self.content.get(i)
+    }
+
     /// Returns a mutable reference to Cell at the given coordinates
+    /// # Panics
+    /// Panics if the coordinates are out of bounds
     #[track_caller]
     pub fn get_mut(&mut self, x: u16, y: u16) -> &mut Cell {
         let i = self.index_of(x, y);
         &mut self.content[i]
+    }
+
+    /// Returns an option containing a mutable reference to Cell at the given coordinates, or
+    /// `None`, if the coordinates are out of bounds
+    pub fn try_get_mut(&mut self, x: u16, y: u16) -> Option<&mut Cell> {
+        let i = self.index_of(x, y);
+        self.content.get_mut(i)
     }
 
     /// Returns the index in the `Vec<Cell>` for the given global (x, y) coordinates.
@@ -137,17 +156,31 @@ impl Buffer {
     /// ```
     #[track_caller]
     pub fn index_of(&self, x: u16, y: u16) -> usize {
-        debug_assert!(
-            x >= self.area.left()
-                && x < self.area.right()
-                && y >= self.area.top()
-                && y < self.area.bottom(),
-            "Trying to access position outside the buffer: x={x}, y={y}, area={:?}",
-            self.area
-        );
-        ((y - self.area.y) * self.area.width + (x - self.area.x)) as usize
+        self.try_index_of(x, y)
+            .unwrap_or_else(|| Self::panic_on_wrong_position(x, y, self.area))
     }
-
+    fn panic_on_wrong_position(x: u16, y: u16, area: Rect) -> ! {
+        panic!("Trying to access position outside the buffer: x={x}, y={y}, area={area:?}",)
+    }
+    /// Returns an option containing the index in the `Vec<Cell>` for the given global (x, y)
+    /// coordinates, or `None` if the position is outside the buffer.
+    /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::prelude::*;
+    /// let rect = Rect::new(200, 100, 10, 10);
+    /// let buffer = Buffer::empty(rect);
+    /// // Global coordinates to the top corner of this buffer's area
+    /// assert_eq!(buffer.try_index_of(200, 100), Some(0));
+    /// ```
+    #[must_use]
+    pub fn try_index_of(&self, x: u16, y: u16) -> Option<usize> {
+        self.area
+            .contains(Position { x, y })
+            .then_some(((y - self.area.y) * self.area.width + (x - self.area.x)) as usize)
+    }
     /// Returns the (global) coordinates of a cell given its index
     ///
     /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
@@ -174,14 +207,35 @@ impl Buffer {
     /// buffer.pos_of(100); // Panics
     /// ```
     pub fn pos_of(&self, i: usize) -> (u16, u16) {
-        debug_assert!(
-            i < self.content.len(),
-            "Trying to get the coords of a cell outside the buffer: i={i} len={}",
-            self.content.len()
-        );
+        self.try_pos_of(i).unwrap_or_else(|| {
+            panic!(
+                "Trying to get the coords of a cell outside the buffer: i={i} len={}",
+                self.content.len()
+            )
+        })
+    }
+
+    /// Returns an option containing the (global) coordinates of a cell given its index
+    /// or `None` when given an index that is outside the Buffer's content.
+    /// Global coordinates are offset by the Buffer's area offset (`x`/`y`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ratatui::prelude::*;
+    /// let rect = Rect::new(200, 100, 10, 10);
+    /// let buffer = Buffer::empty(rect);
+    /// assert_eq!(buffer.pos_of(0), (200, 100));
+    /// assert_eq!(buffer.pos_of(14), (204, 101));
+    /// ```
+    #[must_use]
+    pub fn try_pos_of(&self, i: usize) -> Option<(u16, u16)> {
+        (i < self.content.len()).then_some(Self::calculate_coordinates_from_index(self.area, i))
+    }
+    const fn calculate_coordinates_from_index(area: Rect, i: usize) -> (u16, u16) {
         (
-            self.area.x + (i as u16) % self.area.width,
-            self.area.y + (i as u16) / self.area.width,
+            area.x + (i as u16) % area.width,
+            area.y + (i as u16) / area.width,
         )
     }
 
@@ -189,12 +243,30 @@ impl Buffer {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    /// # Panics
+    ///
+    /// Panics when given an coordinate that is outside of this Buffer's area.
     pub fn set_string<T, S>(&mut self, x: u16, y: u16, string: T, style: S)
     where
         T: AsRef<str>,
         S: Into<Style>,
     {
-        self.set_stringn(x, y, string, usize::MAX, style.into());
+        self.try_set_stringn(x, y, string, usize::MAX, style.into())
+            .unwrap_or_else(|| Self::panic_on_wrong_position(x, y, self.area));
+    }
+
+    /// Print a string, starting at the position (x, y)
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    #[must_use]
+    pub fn try_set_string<T, S>(&mut self, x: u16, y: u16, string: T, style: S) -> Option<()>
+    where
+        T: AsRef<str>,
+        S: Into<Style>,
+    {
+        self.try_set_stringn(x, y, string, usize::MAX, style.into())?;
+        Some(())
     }
 
     /// Print at most the first n characters of a string if enough space is available
@@ -202,6 +274,9 @@ impl Buffer {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    /// # Panics
+    ///
+    /// Panics when given an coordinate that is outside of this Buffer's area.
     pub fn set_stringn<T, S>(
         &mut self,
         x: u16,
@@ -214,6 +289,31 @@ impl Buffer {
         T: AsRef<str>,
         S: Into<Style>,
     {
+        self.try_set_stringn(x, y, string, width, style)
+            .unwrap_or_else(|| Self::panic_on_wrong_position(x, y, self.area))
+    }
+
+    /// Print at most the first n characters of a string if enough space is available
+    /// until the end of the line
+    /// Returns `None` if the index is out of bounds
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    #[must_use]
+    pub fn try_set_stringn<T, S>(
+        &mut self,
+        x: u16,
+        y: u16,
+        string: T,
+        width: usize,
+        style: S,
+    ) -> Option<(u16, u16)>
+    where
+        T: AsRef<str>,
+        S: Into<Style>,
+    {
+        if !self.area.contains(Position { x, y }) {
+            return None;
+        }
         let style = style.into();
         let mut index = self.index_of(x, y);
         let mut x_offset = x as usize;
@@ -239,40 +339,73 @@ impl Buffer {
             index += width;
             x_offset += width;
         }
-        (x_offset as u16, y)
+        Some((x_offset as u16, y))
     }
 
     /// Print a line, starting at the position (x, y)
+    /// # Panics
+    ///
+    /// Panics when given an coordinate that is outside of this Buffer's area.
     pub fn set_line(&mut self, x: u16, y: u16, line: &Line<'_>, width: u16) -> (u16, u16) {
+        self.try_set_line(x, y, line, width)
+            .unwrap_or_else(|| Self::panic_on_wrong_position(x, y, self.area))
+    }
+
+    /// Print a line, starting at the position (x, y)
+    #[must_use = "Function returns none if index is out of bounds, which should be handled"]
+    pub fn try_set_line(
+        &mut self,
+        x: u16,
+        y: u16,
+        line: &Line<'_>,
+        width: u16,
+    ) -> Option<(u16, u16)> {
         let mut remaining_width = width;
         let mut x = x;
         for span in line {
             if remaining_width == 0 {
                 break;
             }
-            let pos = self.set_stringn(
+            let pos = self.try_set_stringn(
                 x,
                 y,
                 span.content.as_ref(),
                 remaining_width as usize,
                 line.style.patch(span.style),
-            );
+            )?;
             let w = pos.0.saturating_sub(x);
             x = pos.0;
             remaining_width = remaining_width.saturating_sub(w);
         }
-        (x, y)
+        Some((x, y))
     }
 
     /// Print a span, starting at the position (x, y)
+    /// # Panics
+    ///
+    /// Panics when given an coordinate that is outside of this Buffer's area.
     pub fn set_span(&mut self, x: u16, y: u16, span: &Span<'_>, width: u16) -> (u16, u16) {
-        self.set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
+        self.try_set_span(x, y, span, width)
+            .unwrap_or_else(|| Self::panic_on_wrong_position(x, y, self.area))
+    }
+
+    /// Print a span, starting at the position (x, y)
+    pub fn try_set_span(
+        &mut self,
+        x: u16,
+        y: u16,
+        span: &Span<'_>,
+        width: u16,
+    ) -> Option<(u16, u16)> {
+        self.try_set_stringn(x, y, span.content.as_ref(), width as usize, span.style)
     }
 
     /// Set the style of all cells in the given area.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    // this function doesn't need a try version because intersection guarantees no index out of
+    // bounds
     pub fn set_style<S: Into<Style>>(&mut self, area: Rect, style: S) {
         let style = style.into();
         let area = self.area.intersection(area);
