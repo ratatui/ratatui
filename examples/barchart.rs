@@ -13,7 +13,10 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::time::{Duration, Instant};
+use std::{
+    io,
+    time::{Duration, Instant},
+};
 
 use crossterm::event::{self, Event, KeyCode};
 use itertools::{izip, Itertools};
@@ -36,8 +39,13 @@ use unicode_width::UnicodeWidthStr;
 /// Contains functions to initialize / restore the terminal, and install panic / error hooks.
 mod common;
 
+const COMPANY_COUNT: usize = 3;
+const PERIOD_COUNT: usize = 4;
+
 struct App<'a> {
+    exit: bool,
     data: Vec<Bar<'a>>,
+    last_update: Instant,
     companies: [Company; COMPANY_COUNT],
     revenues: [Revenues; PERIOD_COUNT],
 }
@@ -53,11 +61,6 @@ struct Company {
     color: Color,
 }
 
-const COMPANY_COUNT: usize = 3;
-const PERIOD_COUNT: usize = 4;
-const TOTAL_REVENUE_LABEL: &str = "Total Revenue";
-const TICK_RATE: Duration = Duration::from_millis(250);
-
 fn main() -> color_eyre::Result<()> {
     common::install_hooks()?;
     let mut terminal = common::init_terminal()?;
@@ -68,33 +71,42 @@ fn main() -> color_eyre::Result<()> {
 }
 
 impl<'a> App<'a> {
+    // update the data every 250ms
+    const UPDATE_RATE: Duration = Duration::from_millis(250);
+
     /// Create a new instance of the application
     fn new() -> Self {
         App {
+            exit: false,
             data: generate_main_barchart_data(),
+            last_update: Instant::now(),
             companies: Company::fake_companies(),
             revenues: Revenues::fake_revenues(),
         }
     }
 
     /// Run the application
-    fn run(mut self, terminal: &mut Terminal<impl Backend>) -> color_eyre::Result<()> {
-        let mut last_tick = Instant::now();
-        loop {
-            terminal.draw(|frame| frame.render_widget(&self, frame.size()))?;
+    fn run(mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+        while !self.exit {
+            self.draw(terminal)?;
+            self.handle_events()?;
+            self.update_data();
+        }
+        Ok(())
+    }
 
-            let timeout = TICK_RATE.saturating_sub(last_tick.elapsed());
-            if event::poll(timeout)? {
-                if let Event::Key(key) = event::read()? {
-                    if key.code == KeyCode::Char('q') {
-                        break;
-                    }
+    fn draw(&self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+        terminal.draw(|frame| frame.render_widget(self, frame.size()))?;
+        Ok(())
+    }
+
+    fn handle_events(&mut self) -> io::Result<()> {
+        let timeout = Self::UPDATE_RATE.saturating_sub(self.last_update.elapsed());
+        if event::poll(timeout)? {
+            if let Event::Key(key) = event::read()? {
+                if key.code == KeyCode::Char('q') {
+                    self.exit = true;
                 }
-            }
-            if last_tick.elapsed() >= TICK_RATE {
-                // only update the data every 250ms
-                self.update_data();
-                last_tick = Instant::now();
             }
         }
         Ok(())
@@ -102,8 +114,11 @@ impl<'a> App<'a> {
 
     // Rotate the data to simulate a real-time update
     fn update_data(&mut self) {
-        let value = self.data.pop().unwrap();
-        self.data.insert(0, value);
+        if self.last_update.elapsed() >= Self::UPDATE_RATE {
+            let value = self.data.pop().unwrap();
+            self.data.insert(0, value);
+            self.last_update = Instant::now();
+        }
     }
 }
 
@@ -138,6 +153,8 @@ impl Widget for &App<'_> {
 }
 
 impl App<'_> {
+    const TOTAL_REVENUE_LABEL: &'static str = "Total Revenue";
+
     /// Create a bar chart with the data from the `data` field.
     fn main_barchart(&self) -> BarChart<'_> {
         BarChart::default()
@@ -185,14 +202,14 @@ impl App<'_> {
     /// Calculate the area for the legend based on the width of the revenue bar chart.
     fn legend_area(area: Rect) -> Rect {
         let height = 6;
-        let width = TOTAL_REVENUE_LABEL.width() as u16 + 2;
+        let width = Self::TOTAL_REVENUE_LABEL.width() as u16 + 2;
         Rect::new(area.right().saturating_sub(width), area.y, width, height).intersection(area)
     }
 
     /// Create a `Paragraph` widget with the legend for the revenue bar charts.
     fn legend(&self) -> Paragraph<'static> {
         let mut text = vec![Line::styled(
-            TOTAL_REVENUE_LABEL,
+            Self::TOTAL_REVENUE_LABEL,
             (Color::White, Modifier::BOLD),
         )];
         for company in &self.companies {
