@@ -291,6 +291,7 @@ impl Buffer {
     /// until the end of the line.
     ///
     /// Use [`Buffer::set_string`] when the maximum amount of characters can be printed.
+    #[must_use]
     pub fn try_set_stringn<T, S>(
         &mut self,
         mut x: u16,
@@ -677,6 +678,14 @@ mod tests {
         // There are a total of 100 cells; zero-indexed means that 100 would be the 101st cell.
         buf.pos_of(100);
     }
+    #[test]
+    fn try_pos_of_returns_none_on_out_of_bounds() {
+        let rect = Rect::new(0, 0, 10, 10);
+        let buf = Buffer::empty(rect);
+
+        // There are a total of 100 cells; zero-indexed means that 100 would be the 101st cell.
+        assert_eq!(buf.try_pos_of(100), None);
+    }
 
     #[test]
     #[should_panic(expected = "outside the buffer")]
@@ -686,6 +695,15 @@ mod tests {
 
         // width is 10; zero-indexed means that 10 would be the 11th cell.
         buf.index_of(10, 0);
+    }
+
+    #[test]
+    fn try_index_of_returns_none_on_out_of_bounds() {
+        let rect = Rect::new(0, 0, 10, 10);
+        let buf = Buffer::empty(rect);
+
+        // width is 10; zero-indexed means that 10 would be the 11th cell.
+        assert_eq!(buf.try_index_of(10, 0), None);
     }
 
     #[test]
@@ -717,6 +735,49 @@ mod tests {
         buffer.set_string(0, 1, "67890", Style::default());
         assert_eq!(buffer, Buffer::with_lines(["12345", "67890"]));
     }
+    #[test]
+    fn try_set_string() {
+        let area = Rect::new(0, 0, 5, 1);
+        let mut buffer = Buffer::empty(area);
+
+        // Zero-width
+        buffer
+            .try_set_stringn(0, 0, "aaa", 0, Style::default())
+            .unwrap();
+        assert_eq!(buffer, Buffer::with_lines(["     "]));
+
+        buffer
+            .try_set_string(0, 0, "aaa", Style::default())
+            .unwrap();
+        assert_eq!(buffer, Buffer::with_lines(["aaa  "]));
+
+        // Width limit:
+        buffer
+            .try_set_stringn(0, 0, "bbbbbbbbbbbbbb", 4, Style::default())
+            .unwrap();
+        assert_eq!(buffer, Buffer::with_lines(["bbbb "]));
+
+        buffer
+            .try_set_string(0, 0, "12345", Style::default())
+            .unwrap();
+        assert_eq!(buffer, Buffer::with_lines(["12345"]));
+
+        // Width truncation:
+        buffer
+            .try_set_string(0, 0, "123456", Style::default())
+            .unwrap();
+        assert_eq!(buffer, Buffer::with_lines(["12345"]));
+
+        // multi-line
+        buffer = Buffer::empty(Rect::new(0, 0, 5, 2));
+        buffer
+            .try_set_string(0, 0, "12345", Style::default())
+            .unwrap();
+        buffer
+            .try_set_string(0, 1, "67890", Style::default())
+            .unwrap();
+        assert_eq!(buffer, Buffer::with_lines(["12345", "67890"]));
+    }
 
     #[test]
     fn set_string_multi_width_overwrite() {
@@ -726,6 +787,21 @@ mod tests {
         // multi-width overwrite
         buffer.set_string(0, 0, "aaaaa", Style::default());
         buffer.set_string(0, 0, "称号", Style::default());
+        assert_eq!(buffer, Buffer::with_lines(["称号a"]));
+    }
+
+    #[test]
+    fn try_set_string_multi_width_overwrite() {
+        let area = Rect::new(0, 0, 5, 1);
+        let mut buffer = Buffer::empty(area);
+
+        // multi-width overwrite
+        buffer
+            .try_set_string(0, 0, "aaaaa", Style::default())
+            .unwrap();
+        buffer
+            .try_set_string(0, 0, "称号", Style::default())
+            .unwrap();
         assert_eq!(buffer, Buffer::with_lines(["称号a"]));
     }
 
@@ -744,6 +820,25 @@ mod tests {
         buffer.set_stringn(0, 0, s, 1, Style::default());
         assert_eq!(buffer, Buffer::with_lines(["a"]));
     }
+    #[test]
+    fn try_set_string_zero_width() {
+        let area = Rect::new(0, 0, 1, 1);
+        let mut buffer = Buffer::empty(area);
+
+        // Leading grapheme with zero width
+        let s = "\u{1}a";
+        buffer
+            .try_set_stringn(0, 0, s, 1, Style::default())
+            .unwrap();
+        assert_eq!(buffer, Buffer::with_lines(["a"]));
+
+        // Trailing grapheme with zero with
+        let s = "a\u{1}";
+        buffer
+            .try_set_stringn(0, 0, s, 1, Style::default())
+            .unwrap();
+        assert_eq!(buffer, Buffer::with_lines(["a"]));
+    }
 
     #[test]
     fn set_string_double_width() {
@@ -754,6 +849,22 @@ mod tests {
 
         // Only 1 space left.
         buffer.set_string(0, 0, "コンピ", Style::default());
+        assert_eq!(buffer, Buffer::with_lines(["コン "]));
+    }
+
+    #[test]
+    fn try_set_string_double_width() {
+        let area = Rect::new(0, 0, 5, 1);
+        let mut buffer = Buffer::empty(area);
+        buffer
+            .try_set_string(0, 0, "コン", Style::default())
+            .unwrap();
+        assert_eq!(buffer, Buffer::with_lines(["コン "]));
+
+        // Only 1 space left.
+        buffer
+            .try_set_string(0, 0, "コンピ", Style::default())
+            .unwrap();
         assert_eq!(buffer, Buffer::with_lines(["コン "]));
     }
 
@@ -787,6 +898,26 @@ mod tests {
     #[case::one("1", "1    ")]
     #[case::full("12345", "12345")]
     #[case::overflow("123456", "12345")]
+    fn try_set_line_raw(
+        mut small_one_line_buffer: Buffer,
+        #[case] content: &str,
+        #[case] expected: &str,
+    ) {
+        let line = Line::raw(content);
+        small_one_line_buffer.try_set_line(0, 0, &line, 5).unwrap();
+
+        // note: testing with empty / set_string here instead of with_lines because with_lines calls
+        // set_line
+        let mut expected_buffer = Buffer::empty(small_one_line_buffer.area);
+        expected_buffer.set_string(0, 0, expected, Style::default());
+        assert_eq!(small_one_line_buffer, expected_buffer);
+    }
+
+    #[rstest]
+    #[case::empty("", "     ")]
+    #[case::one("1", "1    ")]
+    #[case::full("12345", "12345")]
+    #[case::overflow("123456", "12345")]
     fn set_line_styled(
         mut small_one_line_buffer: Buffer,
         #[case] content: &str,
@@ -795,6 +926,41 @@ mod tests {
         let color = Color::Blue;
         let line = Line::styled(content, color);
         small_one_line_buffer.set_line(0, 0, &line, 5);
+
+        // note: manually testing the contents here as the Buffer::with_lines calls set_line
+        let actual_contents = small_one_line_buffer
+            .content
+            .iter()
+            .map(Cell::symbol)
+            .join("");
+        let actual_styles = small_one_line_buffer
+            .content
+            .iter()
+            .map(|c| c.fg)
+            .collect_vec();
+
+        // set_line only sets the style for non-empty cells (unlike Line::render which sets the
+        // style for all cells)
+        let expected_styles = iter::repeat(color)
+            .take(content.len().min(5))
+            .chain(iter::repeat(Color::default()).take(5_usize.saturating_sub(content.len())))
+            .collect_vec();
+        assert_eq!(actual_contents, expected);
+        assert_eq!(actual_styles, expected_styles);
+    }
+    #[rstest]
+    #[case::empty("", "     ")]
+    #[case::one("1", "1    ")]
+    #[case::full("12345", "12345")]
+    #[case::overflow("123456", "12345")]
+    fn try_set_line_styled(
+        mut small_one_line_buffer: Buffer,
+        #[case] content: &str,
+        #[case] expected: &str,
+    ) {
+        let color = Color::Blue;
+        let line = Line::styled(content, color);
+        small_one_line_buffer.try_set_line(0, 0, &line, 5).unwrap();
 
         // note: manually testing the contents here as the Buffer::with_lines calls set_line
         let actual_contents = small_one_line_buffer
