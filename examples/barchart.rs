@@ -18,26 +18,18 @@ use std::{
     time::{Duration, Instant},
 };
 
+use common::Terminal;
 use crossterm::event::{self, Event, KeyCode};
 use itertools::{izip, Itertools};
 use rand::{thread_rng, Rng};
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    crossterm::{
-        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
+    buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
-    terminal::{Frame, Terminal},
-    text::{Line, Span},
-    widgets::{Bar, BarChart, BarGroup, Block, Paragraph},
+    style::{Color, Modifier, Style, Stylize},
+    text::Line,
+    widgets::{Bar, BarChart, BarGroup, Block, Paragraph, Widget},
 };
 use unicode_width::UnicodeWidthStr;
-
-/// Contains functions to initialize / restore the terminal, and install panic / error hooks.
-mod common;
 
 const COMPANY_COUNT: usize = 3;
 const PERIOD_COUNT: usize = 4;
@@ -86,7 +78,7 @@ impl<'a> App<'a> {
     }
 
     /// Run the application
-    fn run(mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+    fn run(mut self, terminal: &mut Terminal) -> io::Result<()> {
         while !self.exit {
             self.draw(terminal)?;
             self.handle_events()?;
@@ -95,7 +87,7 @@ impl<'a> App<'a> {
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+    fn draw(&self, terminal: &mut Terminal) -> io::Result<()> {
         terminal.draw(|frame| frame.render_widget(self, frame.size()))?;
         Ok(())
     }
@@ -295,5 +287,85 @@ impl Company {
             .text_value(text_value)
             .style(self.color)
             .value_style(Style::new().fg(Color::Black).bg(self.color))
+    }
+}
+
+/// Contains functions common to all examples
+mod common {
+    use std::{
+        io::{self, stdout, Stdout},
+        panic,
+    };
+
+    use color_eyre::{
+        config::{EyreHook, HookBuilder, PanicHook},
+        eyre::{self},
+    };
+    use crossterm::{
+        execute,
+        terminal::{
+            disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
+            LeaveAlternateScreen,
+        },
+    };
+    use ratatui::backend::CrosstermBackend;
+
+    // A type alias to simplify the usage of the terminal and make it easier to change the backend
+    // or choice of writer.
+    pub type Terminal = ratatui::Terminal<CrosstermBackend<Stdout>>;
+
+    /// Initialize the terminal by enabling raw mode and entering the alternate screen.
+    ///
+    /// This function should be called before the program starts to ensure that the terminal is in
+    /// the correct state for the application.
+    pub fn init_terminal() -> io::Result<Terminal> {
+        enable_raw_mode()?;
+        execute!(stdout(), EnterAlternateScreen)?;
+        let backend = CrosstermBackend::new(stdout());
+        Terminal::new(backend)
+    }
+
+    /// Restore the terminal by leaving the alternate screen and disabling raw mode.
+    ///
+    /// This function should be called before the program exits to ensure that the terminal is
+    /// restored to its original state.
+    pub fn restore_terminal() -> io::Result<()> {
+        disable_raw_mode()?;
+        execute!(
+            stdout(),
+            LeaveAlternateScreen,
+            Clear(ClearType::FromCursorDown),
+        )
+    }
+
+    /// Installs hooks for panic and error handling.
+    ///
+    /// Makes the app resilient to panics and errors by restoring the terminal before printing the
+    /// panic or error message. This prevents error messages from being messed up by the terminal
+    /// state.
+    pub fn install_hooks() -> color_eyre::Result<()> {
+        let (panic_hook, eyre_hook) = HookBuilder::default().into_hooks();
+        install_panic_hook(panic_hook);
+        install_error_hook(eyre_hook)?;
+        Ok(())
+    }
+
+    /// Install a panic hook that restores the terminal before printing the panic.
+    fn install_panic_hook(panic_hook: PanicHook) {
+        let panic_hook = panic_hook.into_panic_hook();
+        panic::set_hook(Box::new(move |panic_info| {
+            let _ = restore_terminal();
+            panic_hook(panic_info);
+        }));
+    }
+
+    /// Install an error hook that restores the terminal before printing the error.
+    fn install_error_hook(eyre_hook: EyreHook) -> color_eyre::Result<()> {
+        let eyre_hook = eyre_hook.into_eyre_hook();
+        eyre::set_hook(Box::new(move |error| {
+            let _ = restore_terminal();
+            eyre_hook(error)
+        }))?;
+        Ok(())
     }
 }
