@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.26.3](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.3) - 2024-05-19
 
-We are happy to announce a brand new platform for Rust & TUI enthusiasts: [**Ratatui Forum**](https://forum.ratatui.rs) 🐭
+We are happy to announce a brand new [**Ratatui Forum**](https://forum.ratatui.rs) 🐭 for Rust & TUI enthusiasts.
 
 This is a patch release that fixes the unicode truncation bug, adds performance and quality of life improvements.
 
