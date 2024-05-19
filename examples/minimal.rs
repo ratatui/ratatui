@@ -22,8 +22,10 @@ use ratatui::{backend::CrosstermBackend, text::Text, Terminal};
 
 /// This is a bare minimum example. There are many approaches to running an application loop, so
 /// this is not meant to be prescriptive. See the [examples] folder for more complete examples.
+/// In particular, the [hello-world] example is a good starting point.
 ///
 /// [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
+/// [hello-world]: https://github.com/ratatui-org/ratatui/blob/main/examples/hello_world.rs
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stdout()))?;
     enable_raw_mode()?;
