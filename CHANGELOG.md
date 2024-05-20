@@ -2,6 +2,315 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.3](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.3) - 2024-05-19
+
+We are happy to announce a brand new [**Ratatui Forum**](https://forum.ratatui.rs) 🐭 for Rust & TUI enthusiasts.
+
+This is a patch release that fixes the unicode truncation bug, adds performance and quality of life improvements.
+
+✨ **Release highlights**: <https://ratatui.rs/highlights/v0263/>
+
+### Features
+
+- [97ee102](https://github.com/ratatui-org/ratatui/commit/97ee102f179eed4f309d575495f0e4c8359b4f04) *(buffer)* Track_caller for index_of by @EdJoPaTo in [#1046](https://github.com/ratatui-org/ratatui/pull/1046)
+**
+  ````text
+  The caller put in the wrong x/y -> the caller is the cause.
+  ````
+
+- [bf09234](https://github.com/ratatui-org/ratatui/commit/bf0923473c5cb7f2cff24b010f0072b5ce2f8cf2) *(table)* Make TableState::new const by @EdJoPaTo in [#1040](https://github.com/ratatui-org/ratatui/pull/1040)
+
+- [eb281df](https://github.com/ratatui-org/ratatui/commit/eb281df97482c2aab66875dc27a49a316a4d7fd7) *(uncategorized)* Use inner Display implementation by @EdJoPaTo in [#1097](https://github.com/ratatui-org/ratatui/pull/1097)
+
+- [ec763af](https://github.com/ratatui-org/ratatui/commit/ec763af8512df731799c8f30c38c37252068a4c4) *(uncategorized)* Make Stylize's `.bg(color)` generic by @kdheepak in [#1099](https://github.com/ratatui-org/ratatui/pull/1099)
+
+  ````text
+  This PR makes `.bg(color)` generic accepting anything that can be
+  converted into `Color`; similar to the `.fg(color)` method on the same
+  trait
+  ````
+
+- [4d1784f](https://github.com/ratatui-org/ratatui/commit/4d1784f2de104b88e998216addaae96ab018f44f) *(uncategorized)* Re-export ParseColorError as style::ParseColorError by @joshka in [#1086](https://github.com/ratatui-org/ratatui/pull/1086)
+
+  Fixes:https://github.com/ratatui-org/ratatui/issues/1085
+
+### Bug Fixes
+
+- [366cbae](https://github.com/ratatui-org/ratatui/commit/366cbae09fb2bf5b5d7f489de1ff15f930569f05) *(buffer)* Fix Debug panic and fix formatting of overridden parts by @EdJoPaTo in [#1098](https://github.com/ratatui-org/ratatui/pull/1098)
+
+  ````text
+  Fix panic in `Debug for Buffer` when `width == 0`.
+  Also corrects the output when symbols are overridden.
+  ````
+
+- [4392759](https://github.com/ratatui-org/ratatui/commit/43927595012254b33a3901e0d2e5d28164ad04f0) *(examples)* Changed user_input example to work with multi-byte unicode chars by @OkieOth in [#1069](https://github.com/ratatui-org/ratatui/pull/1069)
+
+  ````text
+  This is the proposed solution for issue #1068. It solves the bug in the
+  user_input example with multi-byte UTF-8 characters as input.
+  ````
+
+  Fixes:#1068
+
+---------
+
+- [20fc0dd](https://github.com/ratatui-org/ratatui/commit/20fc0ddfca97a863c9ec7537bcf283d3d49baab4) *(examples)* Fix key handling in constraints by @psobolik in [#1066](https://github.com/ratatui-org/ratatui/pull/1066)
+
+  ````text
+  Add check for `KeyEventKind::Press` to constraints example's event
+  handler to eliminate double keys
+  on Windows.
+  ````
+
+  Fixes:#1062
+
+---------
+
+- [f4637d4](https://github.com/ratatui-org/ratatui/commit/f4637d40c35e068fd60d17c9a42b9114667c9861) *(reflow)* Allow wrapping at zero width whitespace by @kxxt in [#1074](https://github.com/ratatui-org/ratatui/pull/1074)
+
+- [699c2d7](https://github.com/ratatui-org/ratatui/commit/699c2d7c8d0e8c2023cf75350b66535a7b48a102) *(uncategorized)* Unicode truncation bug by @joshka in [#1089](https://github.com/ratatui-org/ratatui/pull/1089)
+
+  ````text
+  - Rewrote the line / span rendering code to take into account how
+  multi-byte / wide emoji characters are truncated when rendering into
+  areas that cannot accommodate them in the available space
+  - Added comprehensive coverage over the edge cases
+  - Adds a benchmark to ensure perf
+  ````
+
+  Fixes:https://github.com/ratatui-org/ratatui/issues/1032
+
+- [b30411d](https://github.com/ratatui-org/ratatui/commit/b30411d1c71cb7b43b7232226514caa54a56c25f) *(uncategorized)* Termwiz underline color test by @joshka in [#1094](https://github.com/ratatui-org/ratatui/pull/1094)
+
+  ````text
+  Fixes code that doesn't compile in the termwiz tests when
+  underline-color feature is enabled.
+  ````
+
+- [5f1e119](https://github.com/ratatui-org/ratatui/commit/5f1e119563043e97e5c2c5e7dd48ccd75e17791e) *(uncategorized)* Correct feature flag typo for termwiz by @joshka in [#1088](https://github.com/ratatui-org/ratatui/pull/1088)
+
+  ````text
+  underline-color was incorrectly spelt as underline_color
+  ````
+
+- [0a16496](https://github.com/ratatui-org/ratatui/commit/0a164965ea2b163433871717cee4fd774a23ee5a) *(uncategorized)* Use `to_string` to serialize Color by @SleepySwords in [#934](https://github.com/ratatui-org/ratatui/pull/934)
+
+  ````text
+  Since deserialize now uses `FromStr` to deserialize color, serializing
+  `Color` RGB values, as well as index values, would produce an output
+  that would no longer be able to be deserialized without causing an
+  error.
+  ````
+
+  Color::Rgb will now be serialized as the hex representation of their
+value.
+For example, with serde_json, `Color::Rgb(255, 0, 255)` would be
+serialized as `"#FF00FF"` rather than `{"Rgb": [255, 0, 255]}`.
+
+  Color::Indexed will now be serialized as just the string of the index.
+For example, with serde_json, `Color::Indexed(10)` would be serialized
+as `"10"` rather than `{"Indexed": 10}`.
+
+Other color variants remain the same.
+
+### Refactor
+
+- [2cfe82a](https://github.com/ratatui-org/ratatui/commit/2cfe82a47eb34baa25f474db7be364de7b95374a) *(buffer)* Deprecate assert_buffer_eq! in favor of assert_eq! by @EdJoPaTo in [#1007](https://github.com/ratatui-org/ratatui/pull/1007)
+
+  ````text
+  - Simplify `assert_buffer_eq!` logic.
+  - Deprecate `assert_buffer_eq!`.
+  - Introduce `TestBackend::assert_buffer_lines`.
+
+  Also simplify many tests involving buffer comparisons.
+
+  For the deprecation, just use `assert_eq` instead of `assert_buffer_eq`:
+
+  ```diff
+  -assert_buffer_eq!(actual, expected);
+  +assert_eq!(actual, expected);
+  ```
+
+  ---
+
+  I noticed `assert_buffer_eq!` creating no test coverage reports and
+  looked into this macro. First I simplified it. Then I noticed a bunch of
+  `assert_eq!(buffer, …)` and other indirect usages of this macro (like
+  `TestBackend::assert_buffer`).
+
+  The good thing here is that it's mainly used in tests so not many
+  changes to the library code.
+  ````
+
+- [baedc39](https://github.com/ratatui-org/ratatui/commit/baedc39494ea70292b1d247934420a20d0544b7e) *(buffer)* Simplify set_stringn logic by @EdJoPaTo in [#1083](https://github.com/ratatui-org/ratatui/pull/1083)
+
+- [9bd89c2](https://github.com/ratatui-org/ratatui/commit/9bd89c218afb1f3999dce1bfe6edea5b7442966d) *(clippy)* Enable breaking lint checks by @EdJoPaTo in [#988](https://github.com/ratatui-org/ratatui/pull/988)
+
+  ````text
+  We need to make sure to not change existing methods without a notice.
+  But at the same time this also finds public additions with mistakes
+  before they are even released which is what I would like to have.
+
+  This renames a method and deprecated the old name hinting to a new name.
+  Should this be mentioned somewhere, so it's added to the release notes?
+  It's not breaking because the old method is still there.
+  ````
+
+- [bef5bcf](https://github.com/ratatui-org/ratatui/commit/bef5bcf750375a78b11ae06f217091b2463e842f) *(example)* Remove pointless new method by @EdJoPaTo in [#1038](https://github.com/ratatui-org/ratatui/pull/1038)
+
+  ````text
+  Use `App::default()` directly.
+  ````
+
+- [f3172c5](https://github.com/ratatui-org/ratatui/commit/f3172c59d4dae6ce4909251976a39c21d88f1907) *(gauge)* Fix internal typo by @EdJoPaTo in [#1048](https://github.com/ratatui-org/ratatui/pull/1048)
+
+### Documentation
+
+- [da1ade7](https://github.com/ratatui-org/ratatui/commit/da1ade7b2e4d8909ea0001483780d2c907349fd6) *(github)* Update code owners about past maintainers by @orhun in [#1073](https://github.com/ratatui-org/ratatui/pull/1073)
+
+  ````text
+  As per suggestion in
+  https://github.com/ratatui-org/ratatui/pull/1067#issuecomment-2079766990
+
+  It's good for historical purposes!
+  ````
+
+- [3687f78](https://github.com/ratatui-org/ratatui/commit/3687f78f6a06bd175eda3e19819f6dc68012fb59) *(github)* Update code owners by @orhun in [#1067](https://github.com/ratatui-org/ratatui/pull/1067)
+
+  ````text
+  Removes the team members that are not able to review PRs recently (with
+  their approval ofc)
+  ````
+
+- [839cca2](https://github.com/ratatui-org/ratatui/commit/839cca20bf3f109352ea43f1119e13c879e04b95) *(table)* Fix typo in docs for highlight_symbol by @kdheepak in [#1108](https://github.com/ratatui-org/ratatui/pull/1108)
+
+- [f945a0b](https://github.com/ratatui-org/ratatui/commit/f945a0bcff644c1fa2ad3caaa87cf2b640beaf46) *(test)* Fix typo in TestBackend documentation by @orhun in [#1107](https://github.com/ratatui-org/ratatui/pull/1107)
+
+- [828d17a](https://github.com/ratatui-org/ratatui/commit/828d17a3f5f449255d7981bb462bf48382c7cb2e) *(uncategorized)* Add minimal example by @joshka in [#1114](https://github.com/ratatui-org/ratatui/pull/1114)
+
+- [e95230b](https://github.com/ratatui-org/ratatui/commit/e95230beda9f86dfb7a9bc1c1167e5a91a2748c3) *(uncategorized)* Add note about scrollbar state content length by @Utagai in [#1077](https://github.com/ratatui-org/ratatui/pull/1077)
+
+### Performance
+
+- [366c2a0](https://github.com/ratatui-org/ratatui/commit/366c2a0e6d17810b26ba37918e72c2f784176d2c) *(block)* Use Block::bordered by @EdJoPaTo in [#1041](https://github.com/ratatui-org/ratatui/pull/1041)
+
+  `Block::bordered()` is shorter than
+
+  `Block::new().borders(Borders::ALL)`, requires one less import
+(`Borders`) and in case `Block::default()` was used before can even be
+`const`.
+
+- [2e71c18](https://github.com/ratatui-org/ratatui/commit/2e71c1874e2de6d9f2bd21622246e55484a9fc62) *(buffer)* Simplify Buffer::filled with macro by @EdJoPaTo in [#1036](https://github.com/ratatui-org/ratatui/pull/1036)
+
+  ````text
+  The `vec![]` macro is highly optimized by the Rust team and shorter.
+  Don't do it manually.
+
+  This change is mainly cleaner code. The only production code that uses
+  this is `Terminal::with_options` and `Terminal::insert_before` so it's
+  not performance relevant on every render.
+  ````
+
+- [81b9633](https://github.com/ratatui-org/ratatui/commit/81b96338ea41f9e5fbb0868808a0b450f31eef41) *(calendar)* Use const fn by @EdJoPaTo in [#1039](https://github.com/ratatui-org/ratatui/pull/1039)
+
+  ````text
+  Also, do the comparison without `as u8`. Stays the same at runtime and
+  is cleaner code.
+  ````
+
+- [c442dfd](https://github.com/ratatui-org/ratatui/commit/c442dfd1ad4896e7abeeaac1754b94bae1f8d014) *(canvas)* Change map data to const instead of static by @EdJoPaTo in [#1037](https://github.com/ratatui-org/ratatui/pull/1037)
+
+- [1706b0a](https://github.com/ratatui-org/ratatui/commit/1706b0a3e434c51dfed9af88470f47162b615c33) *(crossterm)* Speed up combined fg and bg color changes by up to 20% by @joshka in [#1072](https://github.com/ratatui-org/ratatui/pull/1072)
+
+- [1a4bb1c](https://github.com/ratatui-org/ratatui/commit/1a4bb1cbb8dc98ab3c9ecfce225a591b0f7a36bc) *(layout)* Avoid allocating memory when using split ergonomic utils by @tranzystorekk in [#1105](https://github.com/ratatui-org/ratatui/pull/1105)
+
+  ````text
+  Don't create intermediate vec in `Layout::areas` and
+  `Layout::spacers` when there's no need for one.
+  ````
+
+### Styling
+
+- [aa4260f](https://github.com/ratatui-org/ratatui/commit/aa4260f92c869ed77123fab700f9f20b059bbe07) *(uncategorized)* Use std::fmt instead of importing Debug and Display by @joshka in [#1087](https://github.com/ratatui-org/ratatui/pull/1087)
+
+  ````text
+  This is a small universal style change to avoid making this change a
+  part of other PRs.
+
+  [rationale](https://github.com/ratatui-org/ratatui/pull/1083#discussion_r1588466060)
+  ````
+
+### Testing
+
+- [3cc29bd](https://github.com/ratatui-org/ratatui/commit/3cc29bdada096283f1fa89d0a610fa6fd5425f9b) *(block)* Use rstest to simplify test cases by @EdJoPaTo in [#1095](https://github.com/ratatui-org/ratatui/pull/1095)
+
+### Miscellaneous Tasks
+
+- [5fbb77a](https://github.com/ratatui-org/ratatui/commit/5fbb77ad205ccff763d71899c2f5a34560d25b92) *(readme)* Use terminal theme for badges by @TadoTheMiner in [#1026](https://github.com/ratatui-org/ratatui/pull/1026)
+
+  ````text
+  The badges in the readme were all the default theme. Giving them
+  prettier colors that match the terminal gif is better. I've used the
+  colors from the VHS repo.
+  ````
+
+- [bef2bc1](https://github.com/ratatui-org/ratatui/commit/bef2bc1e7c012ecbf357ac54a5262304646b292d) *(cargo)* Add homepage to Cargo.toml by @joshka in [#1080](https://github.com/ratatui-org/ratatui/pull/1080)
+
+- [76e5fe5](https://github.com/ratatui-org/ratatui/commit/76e5fe5a9a1934aa7cce8f0d48c1c9035ac0bf41) *(uncategorized)* Revert "Make Stylize's `.bg(color)` generic" by @kdheepak in [#1102](https://github.com/ratatui-org/ratatui/pull/1102)
+
+  ````text
+  This reverts commit ec763af8512df731799c8f30c38c37252068a4c4 from #1099
+  ````
+
+- [64eb391](https://github.com/ratatui-org/ratatui/commit/64eb3913a4776db290baeb4179e00d2686d42934) *(uncategorized)* Fixup cargo lint for windows targets by @joshka in [#1071](https://github.com/ratatui-org/ratatui/pull/1071)
+
+  ````text
+  Crossterm brings in multiple versions of the same dep
+  ````
+
+- [326a461](https://github.com/ratatui-org/ratatui/commit/326a461f9a345ba853d57afefc8d77ba0b0b5a14) *(uncategorized)* Add package categories field by @mcskware in [#1035](https://github.com/ratatui-org/ratatui/pull/1035)
+
+  ````text
+  Add the package categories field in Cargo.toml, with value
+  `["command-line-interface"]`. This fixes the (currently non-default)
+  clippy cargo group lint
+  [`clippy::cargo_common_metadata`](https://rust-lang.github.io/rust-clippy/master/index.html#/cargo_common_metadata).
+
+  As per discussion in [Cargo package categories
+  suggestions](https://github.com/ratatui-org/ratatui/discussions/1034),
+  this lint is not suggested to be run by default in CI, but rather as an
+  occasional one-off as part of the larger
+  [`clippy::cargo`](https://doc.rust-lang.org/stable/clippy/lints.html#cargo)
+  lint group.
+  ````
+
+### Build
+
+- [4955380](https://github.com/ratatui-org/ratatui/commit/4955380932ab4d657be15dd6c65f48334795c785) *(uncategorized)* Remove pre-push hooks by @joshka in [#1115](https://github.com/ratatui-org/ratatui/pull/1115)
+
+- [28e81c0](https://github.com/ratatui-org/ratatui/commit/28e81c0714d55f0103d9f075609bcf7e5f551fb1) *(uncategorized)* Add underline-color to all features flag in makefile by @joshka in [#1100](https://github.com/ratatui-org/ratatui/pull/1100)
+
+- [c75aa19](https://github.com/ratatui-org/ratatui/commit/c75aa1990f5c1e7e86de0fafc9ce0c1b1dcac3ea) *(uncategorized)* Add clippy::cargo lint by @joshka in [#1053](https://github.com/ratatui-org/ratatui/pull/1053)
+
+  ````text
+  Followup to https://github.com/ratatui-org/ratatui/pull/1035 and
+  https://github.com/ratatui-org/ratatui/discussions/1034
+
+  It's reasonable to enable this and deal with breakage by fixing any
+  specific issues that arise.
+  ````
+
+### New Contributors
+
+* @Utagai made their first contribution in [#1077](https://github.com/ratatui-org/ratatui/pull/1077)
+* @kxxt made their first contribution in [#1074](https://github.com/ratatui-org/ratatui/pull/1074)
+* @OkieOth made their first contribution in [#1069](https://github.com/ratatui-org/ratatui/pull/1069)
+* @psobolik made their first contribution in [#1066](https://github.com/ratatui-org/ratatui/pull/1066)
+* @SleepySwords made their first contribution in [#934](https://github.com/ratatui-org/ratatui/pull/934)
+* @mcskware made their first contribution in [#1035](https://github.com/ratatui-org/ratatui/pull/1035)
+
+**Full Changelog**: https://github.com/ratatui-org/ratatui/compare/v0.26.2...v0.26.3
+
 ## [0.26.2](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.2) - 2024-04-15
 
 This is a patch release that fixes bugs and adds enhancements, including new iterator constructors, List scroll padding, and various rendering improvements. ✨
