@@ -17,5 +17,5 @@ categories = ["tui", "macro"]
 ratatui = "0.26.2"
 
 [dev-dependencies]
-trybuild = { version = "1.0.93", features = ["diff"] }
+trybuild = { version = "1.0.96", features = ["diff"] }
 cargo-husky = { version = "1.5.0", features = ["user-hooks"] }
