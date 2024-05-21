@@ -13,3 +13,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      cargo-dependencies:
+        patterns: ["*"]
