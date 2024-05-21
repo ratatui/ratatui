@@ -32,7 +32,7 @@ use crate::{buffer::Cell, layout::Position, prelude::*};
 ///     "string",
 ///     Style::default().fg(Color::Red).bg(Color::White),
 /// );
-/// let cell = buf[(5, 0)];
+/// let cell = &buf[(5, 0)];
 /// assert_eq!(cell.symbol(), "r");
 /// assert_eq!(cell.fg, Color::Red);
 /// assert_eq!(cell.bg, Color::White);
@@ -165,10 +165,12 @@ impl Buffer {
     /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
     /// let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
     ///
-    /// assert_eq!(buffer.cell(Position::new(0, 0)), Some(&mut Cell::default()));
-    /// assert_eq!(buffer.cell(Position::new(10, 10)), None);
-    /// assert_eq!(buffer.cell((0, 0)), Some(&mut Cell::default()));
-    /// assert_eq!(buffer.cell((10, 10)), None);
+    /// if let Some(cell) = buffer.cell_mut(Position::new(0, 0)) {
+    ///     cell.set_symbol("A");
+    /// }
+    /// if let Some(cell) = buffer.cell_mut((0, 0)) {
+    ///     cell.set_style(Style::default().fg(Color::Red));
+    /// }
     /// ```
     pub fn cell_mut<P: Into<Position>>(&mut self, pos: P) -> Option<&mut Cell> {
         let pos = pos.into();
@@ -467,8 +469,8 @@ impl<P: Into<Position>> ops::Index<P> for Buffer {
     /// ```
     /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
     /// let buf = Buffer::empty(Rect::new(0, 0, 10, 10));
-    /// let cell = buf[(0, 0)];
-    /// let cell = buf[Position::new(0, 0)];
+    /// let cell = &buf[(0, 0)];
+    /// let cell = &buf[Position::new(0, 0)];
     /// ```
     fn index(&self, pos: P) -> &Self::Output {
         let pos = pos.into();
