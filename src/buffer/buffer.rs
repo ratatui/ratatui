@@ -92,7 +92,7 @@ impl Buffer {
 
     /// Returns a reference to Cell at the given coordinates
     ///
-    /// Callers should generally use the Index trait (`buf[(x, y)]`) or the `get_opt` method instead
+    /// Callers should generally use the Index trait (`buf[(x, y)]`) or the [`cell`] method instead
     /// of this method.
     ///
     /// Note that conventionally methods named `get` usually return `Option<&T>`, but this method
@@ -110,12 +110,12 @@ impl Buffer {
 
     /// Returns a mutable reference to Cell at the given coordinates
     ///
-    /// Callers should generally use the `IndexMut` trait (`&mut buf[(x, y)]`) or the `get_mut_opt`
+    /// Callers should generally use the `IndexMut` trait (`&mut buf[(x, y)]`) or the [`cell_mut`]
     /// method instead of this method.
     ///
     /// Note that conventionally methods named `get_mut` usually return `Option<&mut T>`, but this
-    /// method panics instead. This is kept for backwards compatibility. See `get_mut_opt` for a
-    /// safe alternative.
+    /// method panics instead. This is kept for backwards compatibility. See `cell_mut` for a safe
+    /// alternative.
     ///
     /// # Panics
     ///
@@ -138,12 +138,12 @@ impl Buffer {
     /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
     /// let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
     ///
-    /// assert_eq!(buffer.get_opt((0, 0)), Some(&Cell::default()));
-    /// assert_eq!(buffer.get_opt((10, 10)), None);
-    /// assert_eq!(buffer.get_opt(Position::new(0, 0)), Some(&Cell::default()));
-    /// assert_eq!(buffer.get_opt(Position::new(10, 10)), None);
+    /// assert_eq!(buffer.cell(Position::new(0, 0)), Some(&Cell::default()));
+    /// assert_eq!(buffer.cell(Position::new(10, 10)), None);
+    /// assert_eq!(buffer.cell((0, 0)), Some(&Cell::default()));
+    /// assert_eq!(buffer.cell((10, 10)), None);
     /// ```
-    pub fn get_opt<P: Into<Position>>(&self, pos: P) -> Option<&Cell> {
+    pub fn cell<P: Into<Position>>(&self, pos: P) -> Option<&Cell> {
         let pos = pos.into();
         let index = self.index_of_opt(pos.x, pos.y)?;
         self.content.get(index)
@@ -161,15 +161,12 @@ impl Buffer {
     /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
     /// let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
     ///
-    /// assert_eq!(buffer.get_mut_opt((0, 0)), Some(&mut Cell::default()));
-    /// assert_eq!(buffer.get_mut_opt((10, 10)), None);
-    /// assert_eq!(
-    ///     buffer.get_mut_opt(Position::new(0, 0)),
-    ///     Some(&mut Cell::default())
-    /// );
-    /// assert_eq!(buffer.get_mut_opt(Position::new(10, 10)), None);
+    /// assert_eq!(buffer.cell(Position::new(0, 0)), Some(&mut Cell::default()));
+    /// assert_eq!(buffer.cell(Position::new(10, 10)), None);
+    /// assert_eq!(buffer.cell((0, 0)), Some(&mut Cell::default()));
+    /// assert_eq!(buffer.cell((10, 10)), None);
     /// ```
-    pub fn get_mut_opt<P: Into<Position>>(&mut self, pos: P) -> Option<&mut Cell> {
+    pub fn cell_mut<P: Into<Position>>(&mut self, pos: P) -> Option<&mut Cell> {
         let pos = pos.into();
         let index = self.index_of_opt(pos.x, pos.y)?;
         self.content.get_mut(index)
@@ -668,29 +665,29 @@ mod tests {
     }
 
     #[test]
-    fn get_opt() {
+    fn test_cell() {
         let buf = Buffer::with_lines(["Hello", "World"]);
 
         let mut expected = Cell::default();
         expected.set_symbol("H");
 
-        assert_eq!(buf.get_opt((0, 0)), Some(&expected));
-        assert_eq!(buf.get_opt((10, 10)), None);
-        assert_eq!(buf.get_opt(Position::new(0, 0)), Some(&expected));
-        assert_eq!(buf.get_opt(Position::new(10, 10)), None);
+        assert_eq!(buf.cell((0, 0)), Some(&expected));
+        assert_eq!(buf.cell((10, 10)), None);
+        assert_eq!(buf.cell(Position::new(0, 0)), Some(&expected));
+        assert_eq!(buf.cell(Position::new(10, 10)), None);
     }
 
     #[test]
-    fn get_mut_opt() {
+    fn test_cell_mut() {
         let mut buf = Buffer::with_lines(["Hello", "World"]);
 
         let mut expected = Cell::default();
         expected.set_symbol("H");
 
-        assert_eq!(buf.get_mut_opt((0, 0)), Some(&mut expected));
-        assert_eq!(buf.get_mut_opt((10, 10)), None);
-        assert_eq!(buf.get_mut_opt(Position::new(0, 0)), Some(&mut expected));
-        assert_eq!(buf.get_mut_opt(Position::new(10, 10)), None);
+        assert_eq!(buf.cell_mut((0, 0)), Some(&mut expected));
+        assert_eq!(buf.cell_mut((10, 10)), None);
+        assert_eq!(buf.cell_mut(Position::new(0, 0)), Some(&mut expected));
+        assert_eq!(buf.cell_mut(Position::new(10, 10)), None);
     }
 
     #[test]
