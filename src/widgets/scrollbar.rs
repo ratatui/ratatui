@@ -29,6 +29,11 @@ use crate::{prelude::*, symbols::scrollbar::*};
 /// └─────────── begin
 /// ```
 ///
+/// # Important
+///
+/// You must specify the [`ScrollbarState::content_length`] before rendering the `Scrollbar`, or
+/// else the `Scrollbar` will render blank.
+///
 /// # Examples
 ///
 /// ```rust
@@ -669,113 +674,107 @@ mod tests {
     }
 
     #[rstest]
-    #[case("#-", 0, 2, "area 2, position_0")]
-    #[case("-#", 1, 2, "area 2, position_1")]
+    #[case::area_2_position_0("#-", 0, 2)]
+    #[case::area_2_position_1("-#", 1, 2)]
     fn render_scrollbar_simplest(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] description: &str,
         scrollbar_no_arrows: Scrollbar,
     ) {
         let mut buffer = Buffer::empty(Rect::new(0, 0, expected.width() as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
-        assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}",);
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
     #[rstest]
-    #[case("#####-----", 0, 10, "position_0")]
-    #[case("-#####----", 1, 10, "position_1")]
-    #[case("-#####----", 2, 10, "position_2")]
-    #[case("--#####---", 3, 10, "position_3")]
-    #[case("--#####---", 4, 10, "position_4")]
-    #[case("---#####--", 5, 10, "position_5")]
-    #[case("---#####--", 6, 10, "position_6")]
-    #[case("----#####-", 7, 10, "position_7")]
-    #[case("----#####-", 8, 10, "position_8")]
-    #[case("-----#####", 9, 10, "position_9")]
+    #[case::position_0("#####-----", 0, 10)]
+    #[case::position_1("-#####----", 1, 10)]
+    #[case::position_2("-#####----", 2, 10)]
+    #[case::position_3("--#####---", 3, 10)]
+    #[case::position_4("--#####---", 4, 10)]
+    #[case::position_5("---#####--", 5, 10)]
+    #[case::position_6("---#####--", 6, 10)]
+    #[case::position_7("----#####-", 7, 10)]
+    #[case::position_8("----#####-", 8, 10)]
+    #[case::position_9("-----#####", 9, 10)]
     fn render_scrollbar_simple(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] description: &str,
         scrollbar_no_arrows: Scrollbar,
     ) {
         let mut buffer = Buffer::empty(Rect::new(0, 0, expected.width() as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
-        assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}",);
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
     #[rstest]
-    #[case("          ", 0, 0, "position_0")]
+    #[case::position_0("          ", 0, 0)]
     fn render_scrollbar_nobar(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] description: &str,
         scrollbar_no_arrows: Scrollbar,
     ) {
         let size = expected.width();
         let mut buffer = Buffer::empty(Rect::new(0, 0, size as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
-        assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}",);
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
     #[rstest]
-    #[case("##########", 0, 1, "fullbar position 0")]
-    #[case("#########-", 0, 2, "almost fullbar position 0")]
-    #[case("-#########", 1, 2, "almost fullbar position 1")]
+    #[case::fullbar_position_0("##########", 0, 1)]
+    #[case::almost_fullbar_position_0("#########-", 0, 2)]
+    #[case::almost_fullbar_position_1("-#########", 1, 2)]
     fn render_scrollbar_fullbar(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] description: &str,
         scrollbar_no_arrows: Scrollbar,
     ) {
         let size = expected.width();
         let mut buffer = Buffer::empty(Rect::new(0, 0, size as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
-        assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}",);
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
     #[rstest]
-    #[case("#########-", 0, 2, "position_0")]
-    #[case("-#########", 1, 2, "position_1")]
+    #[case::position_0("#########-", 0, 2)]
+    #[case::position_1("-#########", 1, 2)]
     fn render_scrollbar_almost_fullbar(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] description: &str,
         scrollbar_no_arrows: Scrollbar,
     ) {
         let size = expected.width();
         let mut buffer = Buffer::empty(Rect::new(0, 0, size as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
-        assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}",);
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
     #[rstest]
-    #[case("█████═════", 0, 10, "position_0")]
-    #[case("═█████════", 1, 10, "position_1")]
-    #[case("═█████════", 2, 10, "position_2")]
-    #[case("══█████═══", 3, 10, "position_3")]
-    #[case("══█████═══", 4, 10, "position_4")]
-    #[case("═══█████══", 5, 10, "position_5")]
-    #[case("═══█████══", 6, 10, "position_6")]
-    #[case("════█████═", 7, 10, "position_7")]
-    #[case("════█████═", 8, 10, "position_8")]
-    #[case("═════█████", 9, 10, "position_9")]
-    #[case("═════█████", 100, 10, "position_out_of_bounds")]
+    #[case::position_0("█████═════", 0, 10)]
+    #[case::position_1("═█████════", 1, 10)]
+    #[case::position_2("═█████════", 2, 10)]
+    #[case::position_3("══█████═══", 3, 10)]
+    #[case::position_4("══█████═══", 4, 10)]
+    #[case::position_5("═══█████══", 5, 10)]
+    #[case::position_6("═══█████══", 6, 10)]
+    #[case::position_7("════█████═", 7, 10)]
+    #[case::position_8("════█████═", 8, 10)]
+    #[case::position_9("═════█████", 9, 10)]
+    #[case::position_out_of_bounds("═════█████", 100, 10)]
     fn render_scrollbar_without_symbols(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] assertion_message: &str,
     ) {
         let size = expected.width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
@@ -784,30 +783,25 @@ mod tests {
             .begin_symbol(None)
             .end_symbol(None)
             .render(buffer.area, &mut buffer, &mut state);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![expected]),
-            "{assertion_message}",
-        );
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
     #[rstest]
-    #[case("█████     ", 0, 10, "position_0")]
-    #[case(" █████    ", 1, 10, "position_1")]
-    #[case(" █████    ", 2, 10, "position_2")]
-    #[case("  █████   ", 3, 10, "position_3")]
-    #[case("  █████   ", 4, 10, "position_4")]
-    #[case("   █████  ", 5, 10, "position_5")]
-    #[case("   █████  ", 6, 10, "position_6")]
-    #[case("    █████ ", 7, 10, "position_7")]
-    #[case("    █████ ", 8, 10, "position_8")]
-    #[case("     █████", 9, 10, "position_9")]
-    #[case("     █████", 100, 10, "position_out_of_bounds")]
+    #[case::position_0("█████     ", 0, 10)]
+    #[case::position_1(" █████    ", 1, 10)]
+    #[case::position_2(" █████    ", 2, 10)]
+    #[case::position_3("  █████   ", 3, 10)]
+    #[case::position_4("  █████   ", 4, 10)]
+    #[case::position_5("   █████  ", 5, 10)]
+    #[case::position_6("   █████  ", 6, 10)]
+    #[case::position_7("    █████ ", 7, 10)]
+    #[case::position_8("    █████ ", 8, 10)]
+    #[case::position_9("     █████", 9, 10)]
+    #[case::position_out_of_bounds("     █████", 100, 10)]
     fn render_scrollbar_without_track_symbols(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] assertion_message: &str,
     ) {
         let size = expected.width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
@@ -817,30 +811,25 @@ mod tests {
             .begin_symbol(None)
             .end_symbol(None)
             .render(buffer.area, &mut buffer, &mut state);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![expected]),
-            "{assertion_message}",
-        );
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
     #[rstest]
-    #[case("█████-----", 0, 10, "position_0")]
-    #[case("-█████----", 1, 10, "position_1")]
-    #[case("-█████----", 2, 10, "position_2")]
-    #[case("--█████---", 3, 10, "position_3")]
-    #[case("--█████---", 4, 10, "position_4")]
-    #[case("---█████--", 5, 10, "position_5")]
-    #[case("---█████--", 6, 10, "position_6")]
-    #[case("----█████-", 7, 10, "position_7")]
-    #[case("----█████-", 8, 10, "position_8")]
-    #[case("-----█████", 9, 10, "position_9")]
-    #[case("-----█████", 100, 10, "position_out_of_bounds")]
+    #[case::position_0("█████-----", 0, 10)]
+    #[case::position_1("-█████----", 1, 10)]
+    #[case::position_2("-█████----", 2, 10)]
+    #[case::position_3("--█████---", 3, 10)]
+    #[case::position_4("--█████---", 4, 10)]
+    #[case::position_5("---█████--", 5, 10)]
+    #[case::position_6("---█████--", 6, 10)]
+    #[case::position_7("----█████-", 7, 10)]
+    #[case::position_8("----█████-", 8, 10)]
+    #[case::position_9("-----█████", 9, 10)]
+    #[case::position_out_of_bounds("-----█████", 100, 10)]
     fn render_scrollbar_without_track_symbols_over_content(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] assertion_message: &str,
     ) {
         let size = expected.width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
@@ -853,32 +842,27 @@ mod tests {
             .begin_symbol(None)
             .end_symbol(None)
             .render(buffer.area, &mut buffer, &mut state);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![expected]),
-            "{assertion_message}",
-        );
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
     #[rstest]
-    #[case("<####---->", 0, 10, "position_0")]
-    #[case("<#####--->", 1, 10, "position_1")]
-    #[case("<-####--->", 2, 10, "position_2")]
-    #[case("<-####--->", 3, 10, "position_3")]
-    #[case("<--####-->", 4, 10, "position_4")]
-    #[case("<--####-->", 5, 10, "position_5")]
-    #[case("<---####->", 6, 10, "position_6")]
-    #[case("<---####->", 7, 10, "position_7")]
-    #[case("<---#####>", 8, 10, "position_8")]
-    #[case("<----####>", 9, 10, "position_9")]
-    #[case("<----####>", 10, 10, "position_one_out_of_bounds")]
-    #[case("<----####>", 15, 10, "position_few_out_of_bounds")]
-    #[case("<----####>", 500, 10, "position_very_many_out_of_bounds")]
+    #[case::position_0("<####---->", 0, 10)]
+    #[case::position_1("<#####--->", 1, 10)]
+    #[case::position_2("<-####--->", 2, 10)]
+    #[case::position_3("<-####--->", 3, 10)]
+    #[case::position_4("<--####-->", 4, 10)]
+    #[case::position_5("<--####-->", 5, 10)]
+    #[case::position_6("<---####->", 6, 10)]
+    #[case::position_7("<---####->", 7, 10)]
+    #[case::position_8("<---#####>", 8, 10)]
+    #[case::position_9("<----####>", 9, 10)]
+    #[case::position_one_out_of_bounds("<----####>", 10, 10)]
+    #[case::position_few_out_of_bounds("<----####>", 15, 10)]
+    #[case::position_very_many_out_of_bounds("<----####>", 500, 10)]
     fn render_scrollbar_with_symbols(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] assertion_message: &str,
     ) {
         let size = expected.width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 1));
@@ -889,30 +873,25 @@ mod tests {
             .track_symbol(Some("-"))
             .thumb_symbol("#")
             .render(buffer.area, &mut buffer, &mut state);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![expected]),
-            "{assertion_message}",
-        );
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
     #[rstest]
-    #[case("█████═════", 0, 10, "position_0")]
-    #[case("═█████════", 1, 10, "position_1")]
-    #[case("═█████════", 2, 10, "position_2")]
-    #[case("══█████═══", 3, 10, "position_3")]
-    #[case("══█████═══", 4, 10, "position_4")]
-    #[case("═══█████══", 5, 10, "position_5")]
-    #[case("═══█████══", 6, 10, "position_6")]
-    #[case("════█████═", 7, 10, "position_7")]
-    #[case("════█████═", 8, 10, "position_8")]
-    #[case("═════█████", 9, 10, "position_9")]
-    #[case("═════█████", 100, 10, "position_out_of_bounds")]
+    #[case::position_0("█████═════", 0, 10)]
+    #[case::position_1("═█████════", 1, 10)]
+    #[case::position_2("═█████════", 2, 10)]
+    #[case::position_3("══█████═══", 3, 10)]
+    #[case::position_4("══█████═══", 4, 10)]
+    #[case::position_5("═══█████══", 5, 10)]
+    #[case::position_6("═══█████══", 6, 10)]
+    #[case::position_7("════█████═", 7, 10)]
+    #[case::position_8("════█████═", 8, 10)]
+    #[case::position_9("═════█████", 9, 10)]
+    #[case::position_out_of_bounds("═════█████", 100, 10)]
     fn render_scrollbar_horizontal_bottom(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] description: &str,
     ) {
         let size = expected.width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 2));
@@ -922,30 +901,25 @@ mod tests {
             .end_symbol(None)
             .render(buffer.area, &mut buffer, &mut state);
         let empty_string = " ".repeat(size as usize);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![&empty_string, expected]),
-            "{description}",
-        );
+        assert_eq!(buffer, Buffer::with_lines([&empty_string, expected]));
     }
 
     #[rstest]
-    #[case("█████═════", 0, 10, "position_0")]
-    #[case("═█████════", 1, 10, "position_1")]
-    #[case("═█████════", 2, 10, "position_2")]
-    #[case("══█████═══", 3, 10, "position_3")]
-    #[case("══█████═══", 4, 10, "position_4")]
-    #[case("═══█████══", 5, 10, "position_5")]
-    #[case("═══█████══", 6, 10, "position_6")]
-    #[case("════█████═", 7, 10, "position_7")]
-    #[case("════█████═", 8, 10, "position_8")]
-    #[case("═════█████", 9, 10, "position_9")]
-    #[case("═════█████", 100, 10, "position_out_of_bounds")]
+    #[case::position_0("█████═════", 0, 10)]
+    #[case::position_1("═█████════", 1, 10)]
+    #[case::position_2("═█████════", 2, 10)]
+    #[case::position_3("══█████═══", 3, 10)]
+    #[case::position_4("══█████═══", 4, 10)]
+    #[case::position_5("═══█████══", 5, 10)]
+    #[case::position_6("═══█████══", 6, 10)]
+    #[case::position_7("════█████═", 7, 10)]
+    #[case::position_8("════█████═", 8, 10)]
+    #[case::position_9("═════█████", 9, 10)]
+    #[case::position_out_of_bounds("═════█████", 100, 10)]
     fn render_scrollbar_horizontal_top(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] description: &str,
     ) {
         let size = expected.width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, size, 2));
@@ -955,30 +929,25 @@ mod tests {
             .end_symbol(None)
             .render(buffer.area, &mut buffer, &mut state);
         let empty_string = " ".repeat(size as usize);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![expected, &empty_string]),
-            "{description}",
-        );
+        assert_eq!(buffer, Buffer::with_lines([expected, &empty_string]));
     }
 
     #[rstest]
-    #[case("<####---->", 0, 10, "position_0")]
-    #[case("<#####--->", 1, 10, "position_1")]
-    #[case("<-####--->", 2, 10, "position_2")]
-    #[case("<-####--->", 3, 10, "position_3")]
-    #[case("<--####-->", 4, 10, "position_4")]
-    #[case("<--####-->", 5, 10, "position_5")]
-    #[case("<---####->", 6, 10, "position_6")]
-    #[case("<---####->", 7, 10, "position_7")]
-    #[case("<---#####>", 8, 10, "position_8")]
-    #[case("<----####>", 9, 10, "position_9")]
-    #[case("<----####>", 10, 10, "position_one_out_of_bounds")]
+    #[case::position_0("<####---->", 0, 10)]
+    #[case::position_1("<#####--->", 1, 10)]
+    #[case::position_2("<-####--->", 2, 10)]
+    #[case::position_3("<-####--->", 3, 10)]
+    #[case::position_4("<--####-->", 4, 10)]
+    #[case::position_5("<--####-->", 5, 10)]
+    #[case::position_6("<---####->", 6, 10)]
+    #[case::position_7("<---####->", 7, 10)]
+    #[case::position_8("<---#####>", 8, 10)]
+    #[case::position_9("<----####>", 9, 10)]
+    #[case::position_one_out_of_bounds("<----####>", 10, 10)]
     fn render_scrollbar_vertical_left(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] description: &str,
     ) {
         let size = expected.width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, 5, size));
@@ -990,26 +959,25 @@ mod tests {
             .thumb_symbol("#")
             .render(buffer.area, &mut buffer, &mut state);
         let bar = expected.chars().map(|c| format!("{c}    "));
-        assert_eq!(buffer, Buffer::with_lines(bar), "{description}");
+        assert_eq!(buffer, Buffer::with_lines(bar));
     }
 
     #[rstest]
-    #[case("<####---->", 0, 10, "position_0")]
-    #[case("<#####--->", 1, 10, "position_1")]
-    #[case("<-####--->", 2, 10, "position_2")]
-    #[case("<-####--->", 3, 10, "position_3")]
-    #[case("<--####-->", 4, 10, "position_4")]
-    #[case("<--####-->", 5, 10, "position_5")]
-    #[case("<---####->", 6, 10, "position_6")]
-    #[case("<---####->", 7, 10, "position_7")]
-    #[case("<---#####>", 8, 10, "position_8")]
-    #[case("<----####>", 9, 10, "position_9")]
-    #[case("<----####>", 10, 10, "position_one_out_of_bounds")]
+    #[case::position_0("<####---->", 0, 10)]
+    #[case::position_1("<#####--->", 1, 10)]
+    #[case::position_2("<-####--->", 2, 10)]
+    #[case::position_3("<-####--->", 3, 10)]
+    #[case::position_4("<--####-->", 4, 10)]
+    #[case::position_5("<--####-->", 5, 10)]
+    #[case::position_6("<---####->", 6, 10)]
+    #[case::position_7("<---####->", 7, 10)]
+    #[case::position_8("<---#####>", 8, 10)]
+    #[case::position_9("<----####>", 9, 10)]
+    #[case::position_one_out_of_bounds("<----####>", 10, 10)]
     fn render_scrollbar_vertical_rightl(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] description: &str,
     ) {
         let size = expected.width() as u16;
         let mut buffer = Buffer::empty(Rect::new(0, 0, 5, size));
@@ -1021,26 +989,25 @@ mod tests {
             .thumb_symbol("#")
             .render(buffer.area, &mut buffer, &mut state);
         let bar = expected.chars().map(|c| format!("    {c}"));
-        assert_eq!(buffer, Buffer::with_lines(bar), "{description}");
+        assert_eq!(buffer, Buffer::with_lines(bar));
     }
 
     #[rstest]
-    #[case("##--------", 0, 10, "position_0")]
-    #[case("-##-------", 1, 10, "position_1")]
-    #[case("--##------", 2, 10, "position_2")]
-    #[case("---##-----", 3, 10, "position_3")]
-    #[case("----#-----", 4, 10, "position_4")]
-    #[case("-----#----", 5, 10, "position_5")]
-    #[case("-----##---", 6, 10, "position_6")]
-    #[case("------##--", 7, 10, "position_7")]
-    #[case("-------##-", 8, 10, "position_8")]
-    #[case("--------##", 9, 10, "position_9")]
-    #[case("--------##", 10, 10, "position_one_out_of_bounds")]
+    #[case::position_0("##--------", 0, 10)]
+    #[case::position_1("-##-------", 1, 10)]
+    #[case::position_2("--##------", 2, 10)]
+    #[case::position_3("---##-----", 3, 10)]
+    #[case::position_4("----#-----", 4, 10)]
+    #[case::position_5("-----#----", 5, 10)]
+    #[case::position_6("-----##---", 6, 10)]
+    #[case::position_7("------##--", 7, 10)]
+    #[case::position_8("-------##-", 8, 10)]
+    #[case::position_9("--------##", 9, 10)]
+    #[case::position_one_out_of_bounds("--------##", 10, 10)]
     fn custom_viewport_length(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] description: &str,
         scrollbar_no_arrows: Scrollbar,
     ) {
         let size = expected.width() as u16;
@@ -1049,28 +1016,27 @@ mod tests {
             .position(position)
             .viewport_content_length(2);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
-        assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}");
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
     /// Fixes <https://github.com/ratatui-org/ratatui/pull/959> which was a bug that would not
     /// render a thumb when the viewport was very small in comparison to the content length.
     #[rstest]
-    #[case("#----", 0, 100, "position_0")]
-    #[case("#----", 10, 100, "position_10")]
-    #[case("-#---", 20, 100, "position_20")]
-    #[case("-#---", 30, 100, "position_30")]
-    #[case("--#--", 40, 100, "position_40")]
-    #[case("--#--", 50, 100, "position_50")]
-    #[case("---#-", 60, 100, "position_60")]
-    #[case("---#-", 70, 100, "position_70")]
-    #[case("----#", 80, 100, "position_80")]
-    #[case("----#", 90, 100, "position_90")]
-    #[case("----#", 100, 100, "position_one_out_of_bounds")]
+    #[case::position_0("#----", 0, 100)]
+    #[case::position_10("#----", 10, 100)]
+    #[case::position_20("-#---", 20, 100)]
+    #[case::position_30("-#---", 30, 100)]
+    #[case::position_40("--#--", 40, 100)]
+    #[case::position_50("--#--", 50, 100)]
+    #[case::position_60("---#-", 60, 100)]
+    #[case::position_70("---#-", 70, 100)]
+    #[case::position_80("----#", 80, 100)]
+    #[case::position_90("----#", 90, 100)]
+    #[case::position_one_out_of_bounds("----#", 100, 100)]
     fn thumb_visible_on_very_small_track(
         #[case] expected: &str,
         #[case] position: usize,
         #[case] content_length: usize,
-        #[case] description: &str,
         scrollbar_no_arrows: Scrollbar,
     ) {
         let size = expected.width() as u16;
@@ -1079,6 +1045,6 @@ mod tests {
             .position(position)
             .viewport_content_length(2);
         scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
-        assert_eq!(buffer, Buffer::with_lines(vec![expected]), "{description}");
+        assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 }

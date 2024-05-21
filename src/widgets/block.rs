@@ -41,12 +41,12 @@ pub use title::{Position, Title};
 /// ```
 /// use ratatui::{prelude::*, widgets::*};
 ///
-/// Block::default()
-///     .title("Block")
+/// Block::new()
+///     .border_type(BorderType::Rounded)
 ///     .borders(Borders::LEFT | Borders::RIGHT)
 ///     .border_style(Style::default().fg(Color::White))
-///     .border_type(BorderType::Rounded)
-///     .style(Style::default().bg(Color::Black));
+///     .style(Style::default().bg(Color::Black))
+///     .title("Block");
 /// ```
 ///
 /// You may also use multiple titles like in the following:
@@ -56,7 +56,7 @@ pub use title::{Position, Title};
 ///     widgets::{block::*, *},
 /// };
 ///
-/// Block::default()
+/// Block::new()
 ///     .title("Title 1")
 ///     .title(Title::from("Title 2").position(Position::Bottom));
 /// ```
@@ -173,6 +173,11 @@ impl<'a> Block<'a> {
     }
 
     /// Create a new block with [all borders](Borders::ALL) shown
+    ///
+    /// ```
+    /// # use ratatui::widgets::{Block, Borders};
+    /// assert_eq!(Block::bordered(), Block::new().borders(Borders::ALL));
+    /// ```
     pub const fn bordered() -> Self {
         let mut block = Self::new();
         block.borders = Borders::ALL;
@@ -219,7 +224,7 @@ impl<'a> Block<'a> {
     ///     widgets::{block::*, *},
     /// };
     ///
-    /// Block::default()
+    /// Block::new()
     ///     .title("Title") // By default in the top left corner
     ///     .title(Title::from("Left").alignment(Alignment::Left)) // also on the left
     ///     .title(Title::from("Right").alignment(Alignment::Right))
@@ -325,12 +330,12 @@ impl<'a> Block<'a> {
     ///     widgets::{block::*, *},
     /// };
     ///
-    /// Block::default()
+    /// Block::new()
+    ///     .title_alignment(Alignment::Center)
     ///     // This title won't be aligned in the center
     ///     .title(Title::from("right").alignment(Alignment::Right))
     ///     .title("foo")
-    ///     .title("bar")
-    ///     .title_alignment(Alignment::Center);
+    ///     .title("bar");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn title_alignment(mut self, alignment: Alignment) -> Self {
@@ -352,12 +357,12 @@ impl<'a> Block<'a> {
     ///     widgets::{block::*, *},
     /// };
     ///
-    /// Block::default()
+    /// Block::new()
+    ///     .title_position(Position::Bottom)
     ///     // This title won't be aligned in the center
     ///     .title(Title::from("top").position(Position::Top))
     ///     .title("foo")
-    ///     .title("bar")
-    ///     .title_position(Position::Bottom);
+    ///     .title("bar");
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn title_position(mut self, position: Position) -> Self {
@@ -377,9 +382,7 @@ impl<'a> Block<'a> {
     /// This example shows a `Block` with blue borders.
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default()
-    ///     .borders(Borders::ALL)
-    ///     .border_style(Style::new().blue());
+    /// Block::bordered().border_style(Style::new().blue());
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn border_style<S: Into<Style>>(mut self, style: S) -> Self {
@@ -409,17 +412,13 @@ impl<'a> Block<'a> {
     ///
     /// # Examples
     ///
-    /// Simply show all borders.
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default().borders(Borders::ALL);
-    /// ```
-    ///
     /// Display left and right borders.
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default().borders(Borders::LEFT | Borders::RIGHT);
+    /// Block::new().borders(Borders::LEFT | Borders::RIGHT);
     /// ```
+    ///
+    /// To show all borders you can abbreviate this with [`Block::bordered`]
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn borders(mut self, flag: Borders) -> Self {
         self.borders = flag;
@@ -437,10 +436,9 @@ impl<'a> Block<'a> {
     ///
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default()
-    ///     .title("Block")
-    ///     .borders(Borders::ALL)
-    ///     .border_type(BorderType::Rounded);
+    /// Block::bordered()
+    ///     .border_type(BorderType::Rounded)
+    ///     .title("Block");
     /// // Renders
     /// // ╭Block╮
     /// // │     │
@@ -460,7 +458,7 @@ impl<'a> Block<'a> {
     ///
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default().title("Block").borders(Borders::ALL).border_set(symbols::border::DOUBLE);
+    /// Block::bordered().border_set(symbols::border::DOUBLE).title("Block");
     /// // Renders
     /// // ╔Block╗
     /// // ║     ║
@@ -479,8 +477,8 @@ impl<'a> Block<'a> {
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
     /// # fn render_nested_block(frame: &mut Frame) {
-    /// let outer_block = Block::default().title("Outer").borders(Borders::ALL);
-    /// let inner_block = Block::default().title("Inner").borders(Borders::ALL);
+    /// let outer_block = Block::bordered().title("Outer");
+    /// let inner_block = Block::bordered().title("Inner");
     ///
     /// let outer_area = frame.size();
     /// let inner_area = outer_block.inner(outer_area);
@@ -501,14 +499,14 @@ impl<'a> Block<'a> {
             inner.x = inner.x.saturating_add(1).min(inner.right());
             inner.width = inner.width.saturating_sub(1);
         }
-        if self.borders.intersects(Borders::TOP) || self.have_title_at_position(Position::Top) {
+        if self.borders.intersects(Borders::TOP) || self.has_title_at_position(Position::Top) {
             inner.y = inner.y.saturating_add(1).min(inner.bottom());
             inner.height = inner.height.saturating_sub(1);
         }
         if self.borders.intersects(Borders::RIGHT) {
             inner.width = inner.width.saturating_sub(1);
         }
-        if self.borders.intersects(Borders::BOTTOM) || self.have_title_at_position(Position::Bottom)
+        if self.borders.intersects(Borders::BOTTOM) || self.has_title_at_position(Position::Bottom)
         {
             inner.height = inner.height.saturating_sub(1);
         }
@@ -526,7 +524,7 @@ impl<'a> Block<'a> {
         inner
     }
 
-    fn have_title_at_position(&self, position: Position) -> bool {
+    fn has_title_at_position(&self, position: Position) -> bool {
         self.titles
             .iter()
             .any(|title| title.position.unwrap_or(self.titles_position) == position)
@@ -541,9 +539,7 @@ impl<'a> Block<'a> {
     /// This renders a `Block` with no padding (the default).
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default()
-    ///     .borders(Borders::ALL)
-    ///     .padding(Padding::zero());
+    /// Block::bordered().padding(Padding::zero());
     /// // Renders
     /// // ┌───────┐
     /// // │content│
@@ -554,9 +550,7 @@ impl<'a> Block<'a> {
     /// Notice the two spaces before and after the content.
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::default()
-    ///     .borders(Borders::ALL)
-    ///     .padding(Padding::horizontal(2));
+    /// Block::bordered().padding(Padding::horizontal(2));
     /// // Renders
     /// // ┌───────────┐
     /// // │  content  │
@@ -866,10 +860,10 @@ impl<'a> Styled for Block<'a> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
     use strum::ParseError;
 
     use super::*;
-    use crate::assert_buffer_eq;
 
     #[test]
     fn create_with_all_borders() {
@@ -877,234 +871,112 @@ mod tests {
         assert_eq!(block.borders, Borders::all());
     }
 
-    #[allow(clippy::too_many_lines)]
-    #[test]
-    fn inner_takes_into_account_the_borders() {
-        // No borders
-        assert_eq!(
-            Block::default().inner(Rect::default()),
-            Rect::new(0, 0, 0, 0),
-            "no borders, width=0, height=0"
-        );
-        assert_eq!(
-            Block::default().inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 0, 1, 1),
-            "no borders, width=1, height=1"
-        );
+    #[rstest]
+    #[case::none_0(Borders::NONE, Rect::ZERO, Rect::ZERO)]
+    #[case::none_1(Borders::NONE, Rect::new(0, 0, 1, 1), Rect::new(0, 0, 1, 1))]
+    #[case::left_0(Borders::LEFT, Rect::ZERO, Rect::ZERO)]
+    #[case::left_w1(Borders::LEFT, Rect::new(0, 0, 0, 1), Rect::new(0, 0, 0, 1))]
+    #[case::left_w2(Borders::LEFT, Rect::new(0, 0, 1, 1), Rect::new(1, 0, 0, 1))]
+    #[case::left_w3(Borders::LEFT, Rect::new(0, 0, 2, 1), Rect::new(1, 0, 1, 1))]
+    #[case::top_0(Borders::TOP, Rect::ZERO, Rect::ZERO)]
+    #[case::top_h1(Borders::TOP, Rect::new(0, 0, 1, 0), Rect::new(0, 0, 1, 0))]
+    #[case::top_h2(Borders::TOP, Rect::new(0, 0, 1, 1), Rect::new(0, 1, 1, 0))]
+    #[case::top_h3(Borders::TOP, Rect::new(0, 0, 1, 2), Rect::new(0, 1, 1, 1))]
+    #[case::right_0(Borders::RIGHT, Rect::ZERO, Rect::ZERO)]
+    #[case::right_w1(Borders::RIGHT, Rect::new(0, 0, 0, 1), Rect::new(0, 0, 0, 1))]
+    #[case::right_w2(Borders::RIGHT, Rect::new(0, 0, 1, 1), Rect::new(0, 0, 0, 1))]
+    #[case::right_w3(Borders::RIGHT, Rect::new(0, 0, 2, 1), Rect::new(0, 0, 1, 1))]
+    #[case::bottom_0(Borders::BOTTOM, Rect::ZERO, Rect::ZERO)]
+    #[case::bottom_h1(Borders::BOTTOM, Rect::new(0, 0, 1, 0), Rect::new(0, 0, 1, 0))]
+    #[case::bottom_h2(Borders::BOTTOM, Rect::new(0, 0, 1, 1), Rect::new(0, 0, 1, 0))]
+    #[case::bottom_h3(Borders::BOTTOM, Rect::new(0, 0, 1, 2), Rect::new(0, 0, 1, 1))]
+    #[case::all_0(Borders::ALL, Rect::ZERO, Rect::ZERO)]
+    #[case::all_1(Borders::ALL, Rect::new(0, 0, 1, 1), Rect::new(1, 1, 0, 0))]
+    #[case::all_2(Borders::ALL, Rect::new(0, 0, 2, 2), Rect::new(1, 1, 0, 0))]
+    #[case::all_3(Borders::ALL, Rect::new(0, 0, 3, 3), Rect::new(1, 1, 1, 1))]
+    fn inner_takes_into_account_the_borders(
+        #[case] borders: Borders,
+        #[case] area: Rect,
+        #[case] expected: Rect,
+    ) {
+        let block = Block::new().borders(borders);
+        assert_eq!(block.inner(area), expected);
+    }
 
-        // Left border
-        assert_eq!(
-            Block::default()
-                .borders(Borders::LEFT)
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 0, 0, 1),
-            "left, width=0"
-        );
-        assert_eq!(
-            Block::default()
-                .borders(Borders::LEFT)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(1, 0, 0, 1),
-            "left, width=1"
-        );
-        assert_eq!(
-            Block::default()
-                .borders(Borders::LEFT)
-                .inner(Rect::new(0, 0, 2, 1)),
-            Rect::new(1, 0, 1, 1),
-            "left, width=2"
-        );
+    #[rstest]
+    #[case::left(Alignment::Left)]
+    #[case::center(Alignment::Center)]
+    #[case::right(Alignment::Right)]
+    fn inner_takes_into_account_the_title(#[case] alignment: Alignment) {
+        let area = Rect::new(0, 0, 0, 1);
+        let expected = Rect::new(0, 1, 0, 0);
 
-        // Top border
-        assert_eq!(
-            Block::default()
-                .borders(Borders::TOP)
-                .inner(Rect::new(0, 0, 1, 0)),
-            Rect::new(0, 0, 1, 0),
-            "top, height=0"
-        );
-        assert_eq!(
-            Block::default()
-                .borders(Borders::TOP)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 1, 1, 0),
-            "top, height=1"
-        );
-        assert_eq!(
-            Block::default()
-                .borders(Borders::TOP)
-                .inner(Rect::new(0, 0, 1, 2)),
-            Rect::new(0, 1, 1, 1),
-            "top, height=2"
-        );
+        let block = Block::new().title(Title::from("Test").alignment(alignment));
+        assert_eq!(block.inner(area), expected);
+    }
 
-        // Right border
-        assert_eq!(
-            Block::default()
-                .borders(Borders::RIGHT)
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 0, 0, 1),
-            "right, width=0"
-        );
-        assert_eq!(
-            Block::default()
-                .borders(Borders::RIGHT)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 0, 0, 1),
-            "right, width=1"
-        );
-        assert_eq!(
-            Block::default()
-                .borders(Borders::RIGHT)
-                .inner(Rect::new(0, 0, 2, 1)),
-            Rect::new(0, 0, 1, 1),
-            "right, width=2"
-        );
-
-        // Bottom border
-        assert_eq!(
-            Block::default()
-                .borders(Borders::BOTTOM)
-                .inner(Rect::new(0, 0, 1, 0)),
-            Rect::new(0, 0, 1, 0),
-            "bottom, height=0"
-        );
-        assert_eq!(
-            Block::default()
-                .borders(Borders::BOTTOM)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 0, 1, 0),
-            "bottom, height=1"
-        );
-        assert_eq!(
-            Block::default()
-                .borders(Borders::BOTTOM)
-                .inner(Rect::new(0, 0, 1, 2)),
-            Rect::new(0, 0, 1, 1),
-            "bottom, height=2"
-        );
-
-        // All borders
-        assert_eq!(
-            Block::default()
-                .borders(Borders::ALL)
-                .inner(Rect::default()),
-            Rect::new(0, 0, 0, 0),
-            "all borders, width=0, height=0"
-        );
-        assert_eq!(
-            Block::default()
-                .borders(Borders::ALL)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(1, 1, 0, 0),
-            "all borders, width=1, height=1"
-        );
-        assert_eq!(
-            Block::default()
-                .borders(Borders::ALL)
-                .inner(Rect::new(0, 0, 2, 2)),
-            Rect::new(1, 1, 0, 0),
-            "all borders, width=2, height=2"
-        );
-        assert_eq!(
-            Block::default()
-                .borders(Borders::ALL)
-                .inner(Rect::new(0, 0, 3, 3)),
-            Rect::new(1, 1, 1, 1),
-            "all borders, width=3, height=3"
-        );
+    #[rstest]
+    #[case::top_top(Borders::TOP, Position::Top, Rect::new(0, 1, 0, 1))]
+    #[case::top_bot(Borders::BOTTOM, Position::Top, Rect::new(0, 1, 0, 0))]
+    #[case::bot_top(Borders::TOP, Position::Bottom, Rect::new(0, 1, 0, 0))]
+    #[case::top_top(Borders::BOTTOM, Position::Bottom, Rect::new(0, 0, 0, 1))]
+    fn inner_takes_into_account_border_and_title(
+        #[case] borders: Borders,
+        #[case] position: Position,
+        #[case] expected: Rect,
+    ) {
+        let area = Rect::new(0, 0, 0, 2);
+        let block = Block::new()
+            .borders(borders)
+            .title(Title::from("Test").position(position));
+        assert_eq!(block.inner(area), expected);
     }
 
     #[test]
-    fn inner_takes_into_account_the_title() {
-        assert_eq!(
-            Block::default().title("Test").inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 1, 0, 0),
-        );
-        assert_eq!(
-            Block::default()
-                .title(Title::from("Test").alignment(Alignment::Center))
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 1, 0, 0),
-        );
-        assert_eq!(
-            Block::default()
-                .title(Title::from("Test").alignment(Alignment::Right))
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 1, 0, 0),
-        );
-    }
+    fn has_title_at_position_takes_into_account_all_positioning_declarations() {
+        let block = Block::new();
+        assert!(!block.has_title_at_position(Position::Top));
+        assert!(!block.has_title_at_position(Position::Bottom));
 
-    #[test]
-    fn inner_takes_into_account_border_and_title() {
-        let test_rect = Rect::new(0, 0, 0, 2);
+        let block = Block::new().title(Title::from("Test").position(Position::Top));
+        assert!(block.has_title_at_position(Position::Top));
+        assert!(!block.has_title_at_position(Position::Bottom));
 
-        let top_top = Block::default()
-            .title(Title::from("Test").position(Position::Top))
-            .borders(Borders::TOP);
-        assert_eq!(top_top.inner(test_rect), Rect::new(0, 1, 0, 1));
+        let block = Block::new().title(Title::from("Test").position(Position::Bottom));
+        assert!(!block.has_title_at_position(Position::Top));
+        assert!(block.has_title_at_position(Position::Bottom));
 
-        let top_bot = Block::default()
-            .title(Title::from("Test").position(Position::Top))
-            .borders(Borders::BOTTOM);
-        assert_eq!(top_bot.inner(test_rect), Rect::new(0, 1, 0, 0));
-
-        let bot_top = Block::default()
-            .title(Title::from("Test").position(Position::Bottom))
-            .borders(Borders::TOP);
-        assert_eq!(bot_top.inner(test_rect), Rect::new(0, 1, 0, 0));
-
-        let bot_bot = Block::default()
-            .title(Title::from("Test").position(Position::Bottom))
-            .borders(Borders::BOTTOM);
-        assert_eq!(bot_bot.inner(test_rect), Rect::new(0, 0, 0, 1));
-    }
-
-    #[test]
-    fn have_title_at_position_takes_into_account_all_positioning_declarations() {
-        let block = Block::default();
-        assert!(!block.have_title_at_position(Position::Top));
-        assert!(!block.have_title_at_position(Position::Bottom));
-
-        let block = Block::default().title(Title::from("Test").position(Position::Top));
-        assert!(block.have_title_at_position(Position::Top));
-        assert!(!block.have_title_at_position(Position::Bottom));
-
-        let block = Block::default().title(Title::from("Test").position(Position::Bottom));
-        assert!(!block.have_title_at_position(Position::Top));
-        assert!(block.have_title_at_position(Position::Bottom));
-
-        let block = Block::default()
+        let block = Block::new()
             .title(Title::from("Test").position(Position::Top))
             .title_position(Position::Bottom);
-        assert!(block.have_title_at_position(Position::Top));
-        assert!(!block.have_title_at_position(Position::Bottom));
+        assert!(block.has_title_at_position(Position::Top));
+        assert!(!block.has_title_at_position(Position::Bottom));
 
-        let block = Block::default()
+        let block = Block::new()
             .title(Title::from("Test").position(Position::Bottom))
             .title_position(Position::Top);
-        assert!(!block.have_title_at_position(Position::Top));
-        assert!(block.have_title_at_position(Position::Bottom));
+        assert!(!block.has_title_at_position(Position::Top));
+        assert!(block.has_title_at_position(Position::Bottom));
 
-        let block = Block::default()
+        let block = Block::new()
             .title(Title::from("Test").position(Position::Top))
             .title(Title::from("Test").position(Position::Bottom));
-        assert!(block.have_title_at_position(Position::Top));
-        assert!(block.have_title_at_position(Position::Bottom));
+        assert!(block.has_title_at_position(Position::Top));
+        assert!(block.has_title_at_position(Position::Bottom));
 
-        let block = Block::default()
+        let block = Block::new()
             .title(Title::from("Test").position(Position::Top))
             .title(Title::from("Test"))
             .title_position(Position::Bottom);
-        assert!(block.have_title_at_position(Position::Top));
-        assert!(block.have_title_at_position(Position::Bottom));
+        assert!(block.has_title_at_position(Position::Top));
+        assert!(block.has_title_at_position(Position::Bottom));
 
-        let block = Block::default()
+        let block = Block::new()
             .title(Title::from("Test"))
             .title(Title::from("Test").position(Position::Bottom))
             .title_position(Position::Top);
-        assert!(block.have_title_at_position(Position::Top));
-        assert!(block.have_title_at_position(Position::Bottom));
+        assert!(block.has_title_at_position(Position::Top));
+        assert!(block.has_title_at_position(Position::Bottom));
     }
 
     #[test]
@@ -1134,50 +1006,49 @@ mod tests {
     const fn block_can_be_const() {
         const _DEFAULT_STYLE: Style = Style::new();
         const _DEFAULT_PADDING: Padding = Padding::uniform(1);
-        const _DEFAULT_BLOCK: Block = Block::new()
+        const _DEFAULT_BLOCK: Block = Block::bordered()
             // the following methods are no longer const because they use Into<Style>
             // .style(_DEFAULT_STYLE)           // no longer const
             // .border_style(_DEFAULT_STYLE)    // no longer const
             // .title_style(_DEFAULT_STYLE)     // no longer const
             .title_alignment(Alignment::Left)
             .title_position(Position::Top)
-            .borders(Borders::ALL)
             .padding(_DEFAULT_PADDING);
     }
 
-    /// This test ensures that we have some coverage on the [`Style::from()`] implementations
+    /// Ensure Style from/into works the way a user would use it.
     #[test]
-    fn block_style() {
+    fn style_into_works_from_user_view() {
         // nominal style
-        let block = Block::default().style(Style::new().red());
+        let block = Block::new().style(Style::new().red());
         assert_eq!(block.style, Style::new().red());
 
         // auto-convert from Color
-        let block = Block::default().style(Color::Red);
+        let block = Block::new().style(Color::Red);
         assert_eq!(block.style, Style::new().red());
 
         // auto-convert from (Color, Color)
-        let block = Block::default().style((Color::Red, Color::Blue));
+        let block = Block::new().style((Color::Red, Color::Blue));
         assert_eq!(block.style, Style::new().red().on_blue());
 
         // auto-convert from Modifier
-        let block = Block::default().style(Modifier::BOLD | Modifier::ITALIC);
+        let block = Block::new().style(Modifier::BOLD | Modifier::ITALIC);
         assert_eq!(block.style, Style::new().bold().italic());
 
         // auto-convert from (Modifier, Modifier)
-        let block = Block::default().style((Modifier::BOLD | Modifier::ITALIC, Modifier::DIM));
+        let block = Block::new().style((Modifier::BOLD | Modifier::ITALIC, Modifier::DIM));
         assert_eq!(block.style, Style::new().bold().italic().not_dim());
 
         // auto-convert from (Color, Modifier)
-        let block = Block::default().style((Color::Red, Modifier::BOLD));
+        let block = Block::new().style((Color::Red, Modifier::BOLD));
         assert_eq!(block.style, Style::new().red().bold());
 
         // auto-convert from (Color, Color, Modifier)
-        let block = Block::default().style((Color::Red, Color::Blue, Modifier::BOLD));
+        let block = Block::new().style((Color::Red, Color::Blue, Modifier::BOLD));
         assert_eq!(block.style, Style::new().red().on_blue().bold());
 
         // auto-convert from (Color, Color, Modifier, Modifier)
-        let block = Block::default().style((
+        let block = Block::new().style((
             Color::Red,
             Color::Blue,
             Modifier::BOLD | Modifier::ITALIC,
@@ -1191,7 +1062,7 @@ mod tests {
 
     #[test]
     fn can_be_stylized() {
-        let block = Block::default().black().on_white().bold().not_dim();
+        let block = Block::new().black().on_white().bold().not_dim();
         assert_eq!(
             block.style,
             Style::default()
@@ -1206,7 +1077,7 @@ mod tests {
     fn title() {
         use Alignment::*;
         use Position::*;
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 3));
         Block::bordered()
             .title(Title::from("A").position(Top).alignment(Left))
             .title(Title::from("B").position(Top).alignment(Center))
@@ -1215,19 +1086,18 @@ mod tests {
             .title(Title::from("E").position(Bottom).alignment(Center))
             .title(Title::from("F").position(Bottom).alignment(Right))
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┌A─────B─────C┐",
-                "│             │",
-                "└D─────E─────F┘",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌A───B───C┐",
+            "│         │",
+            "└D───E───F┘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn title_top_bottom() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 3));
         Block::bordered()
             .title_top(Line::raw("A").left_aligned())
             .title_top(Line::raw("B").centered())
@@ -1236,14 +1106,13 @@ mod tests {
             .title_bottom(Line::raw("E").centered())
             .title_bottom(Line::raw("F").right_aligned())
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┌A─────B─────C┐",
-                "│             │",
-                "└D─────E─────F┘",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌A───B───C┐",
+            "│         │",
+            "└D───E───F┘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1255,11 +1124,11 @@ mod tests {
         ];
         for (alignment, expected) in tests {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 1));
-            Block::default()
-                .title("test")
+            Block::new()
                 .title_alignment(alignment)
+                .title("test")
                 .render(buffer.area, &mut buffer);
-            assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+            assert_eq!(buffer, Buffer::with_lines([expected]));
         }
     }
 
@@ -1272,11 +1141,11 @@ mod tests {
         ];
         for (block_title_alignment, alignment, expected) in tests {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 1));
-            Block::default()
-                .title(Title::from("test").alignment(alignment))
+            Block::new()
                 .title_alignment(block_title_alignment)
+                .title(Title::from("test").alignment(alignment))
                 .render(buffer.area, &mut buffer);
-            assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+            assert_eq!(buffer, Buffer::with_lines([expected]));
         }
     }
 
@@ -1284,43 +1153,32 @@ mod tests {
     #[test]
     fn render_right_aligned_empty_title() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
-        Block::default()
-            .title("")
+        Block::new()
             .title_alignment(Alignment::Right)
+            .title("")
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "               ",
-                "               ",
-                "               ",
-            ])
-        );
+        assert_eq!(buffer, Buffer::with_lines(["               "; 3]));
     }
 
     #[test]
     fn title_position() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 2));
-        Block::default()
-            .title("test")
+        Block::new()
             .title_position(Position::Bottom)
+            .title("test")
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["    ", "test"]));
+        assert_eq!(buffer, Buffer::with_lines(["    ", "test"]));
     }
 
     #[test]
     fn title_content_style() {
         for alignment in [Alignment::Left, Alignment::Center, Alignment::Right] {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 1));
-            Block::default()
-                .title("test".yellow())
+            Block::new()
                 .title_alignment(alignment)
+                .title("test".yellow())
                 .render(buffer.area, &mut buffer);
-
-            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
-            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow());
-
-            assert_buffer_eq!(buffer, expected_buffer);
+            assert_eq!(buffer, Buffer::with_lines(["test".yellow()]));
         }
     }
 
@@ -1328,16 +1186,12 @@ mod tests {
     fn block_title_style() {
         for alignment in [Alignment::Left, Alignment::Center, Alignment::Right] {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 1));
-            Block::default()
-                .title("test")
-                .title_style(Style::new().yellow())
+            Block::new()
                 .title_alignment(alignment)
+                .title_style(Style::new().yellow())
+                .title("test")
                 .render(buffer.area, &mut buffer);
-
-            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
-            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow());
-
-            assert_buffer_eq!(buffer, expected_buffer);
+            assert_eq!(buffer, Buffer::with_lines(["test".yellow()]));
         }
     }
 
@@ -1345,37 +1199,31 @@ mod tests {
     fn title_style_overrides_block_title_style() {
         for alignment in [Alignment::Left, Alignment::Center, Alignment::Right] {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 4, 1));
-            Block::default()
-                .title("test".yellow())
-                .title_style(Style::new().green().on_red())
+            Block::new()
                 .title_alignment(alignment)
+                .title_style(Style::new().green().on_red())
+                .title("test".yellow())
                 .render(buffer.area, &mut buffer);
-
-            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
-            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow().on_red());
-
-            assert_buffer_eq!(buffer, expected_buffer);
+            assert_eq!(buffer, Buffer::with_lines(["test".yellow().on_red()]));
         }
     }
 
     #[test]
     fn title_border_style() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
-        Block::default()
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::bordered()
             .title("test")
-            .borders(Borders::ALL)
             .border_style(Style::new().yellow())
             .render(buffer.area, &mut buffer);
-
-        let mut expected_buffer = Buffer::with_lines(vec![
-            "┌test─────────┐",
-            "│             │",
-            "└─────────────┘",
+        #[rustfmt::skip]
+        let mut expected = Buffer::with_lines([
+            "┌test────┐",
+            "│        │",
+            "└────────┘",
         ]);
-        expected_buffer.set_style(Rect::new(0, 0, 15, 3), Style::new().yellow());
-        expected_buffer.set_style(Rect::new(1, 1, 13, 1), Style::reset());
-
-        assert_buffer_eq!(buffer, expected_buffer);
+        expected.set_style(Rect::new(0, 0, 10, 3), Style::new().yellow());
+        expected.set_style(Rect::new(1, 1, 8, 1), Style::reset());
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1397,111 +1245,98 @@ mod tests {
 
     #[test]
     fn render_plain_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
-        Block::default()
-            .borders(Borders::ALL)
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::bordered()
             .border_type(BorderType::Plain)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┌─────────────┐",
-                "│             │",
-                "└─────────────┘"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌────────┐",
+            "│        │",
+            "└────────┘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_rounded_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
-        Block::default()
-            .borders(Borders::ALL)
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::bordered()
             .border_type(BorderType::Rounded)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "╭─────────────╮",
-                "│             │",
-                "╰─────────────╯"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "╭────────╮",
+            "│        │",
+            "╰────────╯",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_double_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
-        Block::default()
-            .borders(Borders::ALL)
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::bordered()
             .border_type(BorderType::Double)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "╔═════════════╗",
-                "║             ║",
-                "╚═════════════╝"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "╔════════╗",
+            "║        ║",
+            "╚════════╝",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_quadrant_inside() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
-        Block::default()
-            .borders(Borders::ALL)
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::bordered()
             .border_type(BorderType::QuadrantInside)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "▗▄▄▄▄▄▄▄▄▄▄▄▄▄▖",
-                "▐             ▌",
-                "▝▀▀▀▀▀▀▀▀▀▀▀▀▀▘",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "▗▄▄▄▄▄▄▄▄▖",
+            "▐        ▌",
+            "▝▀▀▀▀▀▀▀▀▘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_border_quadrant_outside() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
-        Block::default()
-            .borders(Borders::ALL)
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::bordered()
             .border_type(BorderType::QuadrantOutside)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▜",
-                "▌             ▐",
-                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▟",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "▛▀▀▀▀▀▀▀▀▜",
+            "▌        ▐",
+            "▙▄▄▄▄▄▄▄▄▟",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_solid_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
-        Block::default()
-            .borders(Borders::ALL)
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::bordered()
             .border_type(BorderType::Thick)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┏━━━━━━━━━━━━━┓",
-                "┃             ┃",
-                "┗━━━━━━━━━━━━━┛"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┏━━━━━━━━┓",
+            "┃        ┃",
+            "┗━━━━━━━━┛",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_custom_border_set() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
-        Block::default()
-            .borders(Borders::ALL)
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+        Block::bordered()
             .border_set(border::Set {
                 top_left: "1",
                 top_right: "2",
@@ -1513,13 +1348,12 @@ mod tests {
                 horizontal_bottom: "B",
             })
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "1TTTTTTTTTTTTT2",
-                "L             R",
-                "3BBBBBBBBBBBBB4",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "1TTTTTTTT2",
+            "L        R",
+            "3BBBBBBBB4",
+        ]);
+        assert_eq!(buffer, expected);
     }
 }

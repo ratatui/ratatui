@@ -436,7 +436,7 @@ impl ConstraintBlock {
         } else {
             main_color
         };
-        Block::default()
+        Block::new()
             .fg(Self::TEXT_COLOR)
             .bg(selected_color)
             .render(area, buf);

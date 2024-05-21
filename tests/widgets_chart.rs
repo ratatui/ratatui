@@ -5,7 +5,7 @@ use ratatui::{
     style::{Color, Style},
     symbols,
     text::{self, Span},
-    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType::Line},
+    widgets::{Axis, Block, Chart, Dataset, GraphType::Line},
     Terminal,
 };
 use rstest::rstest;
@@ -14,9 +14,16 @@ fn create_labels<'a>(labels: &'a [&'a str]) -> Vec<Span<'a>> {
     labels.iter().map(|l| Span::from(*l)).collect()
 }
 
-fn axis_test_case<'a, S>(width: u16, height: u16, x_axis: Axis, y_axis: Axis, lines: Vec<S>)
-where
-    S: Into<text::Line<'a>>,
+#[track_caller]
+fn axis_test_case<'line, Lines>(
+    width: u16,
+    height: u16,
+    x_axis: Axis,
+    y_axis: Axis,
+    expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<text::Line<'line>>,
 {
     let backend = TestBackend::new(width, height);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -26,8 +33,7 @@ where
             f.render_widget(chart, f.size());
         })
         .unwrap();
-    let expected = Buffer::with_lines(lines);
-    terminal.backend().assert_buffer(&expected);
+    terminal.backend().assert_buffer_lines(expected);
 }
 
 #[rstest]
@@ -46,7 +52,7 @@ fn widgets_chart_can_render_on_small_areas(#[case] width: u16, #[case] height: u
                 .style(Style::default().fg(Color::Magenta))
                 .data(&[(0.0, 0.0)])];
             let chart = Chart::new(datasets)
-                .block(Block::default().title("Plot").borders(Borders::ALL))
+                .block(Block::bordered().title("Plot"))
                 .x_axis(
                     Axis::default()
                         .bounds([0.0, 0.0])
@@ -62,195 +68,192 @@ fn widgets_chart_can_render_on_small_areas(#[case] width: u16, #[case] height: u
         .unwrap();
 }
 
-#[test]
-fn widgets_chart_handles_long_labels() {
-    let test_case = |x_labels, y_labels, x_alignment, lines| {
-        let mut x_axis = Axis::default().bounds([0.0, 1.0]);
-        if let Some((left_label, right_label)) = x_labels {
-            x_axis = x_axis
-                .labels(vec![Span::from(left_label), Span::from(right_label)])
-                .labels_alignment(x_alignment);
-        }
-
-        let mut y_axis = Axis::default().bounds([0.0, 1.0]);
-        if let Some((left_label, right_label)) = y_labels {
-            y_axis = y_axis.labels(vec![Span::from(left_label), Span::from(right_label)]);
-        }
-
-        axis_test_case(10, 5, x_axis, y_axis, lines);
-    };
-
-    test_case(
-        Some(("AAAA", "B")),
-        None,
-        Alignment::Left,
-        vec![
-            "          ",
-            "          ",
-            "          ",
-            "   ───────",
-            "AAA      B",
-        ],
-    );
-    test_case(
-        Some(("A", "BBBB")),
-        None,
-        Alignment::Left,
-        vec![
-            "          ",
-            "          ",
-            "          ",
-            " ─────────",
-            "A     BBBB",
-        ],
-    );
-    test_case(
-        Some(("AAAAAAAAAAA", "B")),
-        None,
-        Alignment::Left,
-        vec![
-            "          ",
-            "          ",
-            "          ",
-            "   ───────",
-            "AAA      B",
-        ],
-    );
-    test_case(
-        Some(("A", "B")),
-        Some(("CCCCCCC", "D")),
-        Alignment::Left,
-        vec![
-            "D  │      ",
-            "   │      ",
-            "CCC│      ",
-            "   └──────",
-            "   A     B",
-        ],
-    );
-    test_case(
-        Some(("AAAAAAAAAA", "B")),
-        Some(("C", "D")),
-        Alignment::Center,
-        vec![
-            "D  │      ",
-            "   │      ",
-            "C  │      ",
-            "   └──────",
-            "AAAAAAA  B",
-        ],
-    );
-    test_case(
-        Some(("AAAAAAA", "B")),
-        Some(("C", "D")),
-        Alignment::Right,
-        vec![
-            "D│        ",
-            " │        ",
-            "C│        ",
-            " └────────",
-            " AAAAA   B",
-        ],
-    );
-    test_case(
-        Some(("AAAAAAA", "BBBBBBB")),
-        Some(("C", "D")),
-        Alignment::Right,
-        vec![
-            "D│        ",
-            " │        ",
-            "C│        ",
-            " └────────",
-            " AAAAABBBB",
-        ],
-    );
+#[rstest]
+#[case(
+    Some(("AAAA", "B")),
+    None,
+    Alignment::Left,
+    vec![
+        "          ",
+        "          ",
+        "          ",
+        "   ───────",
+        "AAA      B",
+    ],
+)]
+#[case(
+    Some(("A", "BBBB")),
+    None,
+    Alignment::Left,
+    vec![
+        "          ",
+        "          ",
+        "          ",
+        " ─────────",
+        "A     BBBB",
+    ],
+)]
+#[case(
+    Some(("AAAAAAAAAAA", "B")),
+    None,
+    Alignment::Left,
+    vec![
+        "          ",
+        "          ",
+        "          ",
+        "   ───────",
+        "AAA      B",
+    ],
+)]
+#[case(
+    Some(("A", "B")),
+    Some(("CCCCCCC", "D")),
+    Alignment::Left,
+    vec![
+        "D  │      ",
+        "   │      ",
+        "CCC│      ",
+        "   └──────",
+        "   A     B",
+    ],
+)]
+#[case(
+    Some(("AAAAAAAAAA", "B")),
+    Some(("C", "D")),
+    Alignment::Center,
+    vec![
+        "D  │      ",
+        "   │      ",
+        "C  │      ",
+        "   └──────",
+        "AAAAAAA  B",
+    ],
+)]
+#[case(
+    Some(("AAAAAAA", "B")),
+    Some(("C", "D")),
+    Alignment::Right,
+    vec![
+        "D│        ",
+        " │        ",
+        "C│        ",
+        " └────────",
+        " AAAAA   B",
+    ],
+)]
+#[case(
+    Some(("AAAAAAA", "BBBBBBB")),
+    Some(("C", "D")),
+    Alignment::Right,
+    vec![
+        "D│        ",
+        " │        ",
+        "C│        ",
+        " └────────",
+        " AAAAABBBB",
+    ],
+)]
+fn widgets_chart_handles_long_labels<'line, Lines>(
+    #[case] x_labels: Option<(&str, &str)>,
+    #[case] y_labels: Option<(&str, &str)>,
+    #[case] x_alignment: Alignment,
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<text::Line<'line>>,
+{
+    let mut x_axis = Axis::default().bounds([0.0, 1.0]);
+    if let Some((left_label, right_label)) = x_labels {
+        x_axis = x_axis
+            .labels(vec![Span::from(left_label), Span::from(right_label)])
+            .labels_alignment(x_alignment);
+    }
+    let mut y_axis = Axis::default().bounds([0.0, 1.0]);
+    if let Some((left_label, right_label)) = y_labels {
+        y_axis = y_axis.labels(vec![Span::from(left_label), Span::from(right_label)]);
+    }
+    axis_test_case(10, 5, x_axis, y_axis, expected);
 }
 
-#[test]
-fn widgets_chart_handles_x_axis_labels_alignments() {
-    let test_case = |y_alignment, lines| {
-        let x_axis = Axis::default()
-            .labels(vec![Span::from("AAAA"), Span::from("B"), Span::from("C")])
-            .labels_alignment(y_alignment);
-
-        let y_axis = Axis::default();
-
-        axis_test_case(10, 5, x_axis, y_axis, lines);
-    };
-
-    test_case(
-        Alignment::Left,
-        vec![
-            "          ",
-            "          ",
-            "          ",
-            "   ───────",
-            "AAA   B  C",
-        ],
-    );
-    test_case(
-        Alignment::Center,
-        vec![
-            "          ",
-            "          ",
-            "          ",
-            "  ────────",
-            "AAAA B   C",
-        ],
-    );
-    test_case(
-        Alignment::Right,
-        vec![
-            "          ",
-            "          ",
-            "          ",
-            "──────────",
-            "AAA  B   C",
-        ],
-    );
+#[rstest]
+#[case::left(
+    Alignment::Left,
+    vec![
+        "          ",
+        "          ",
+        "          ",
+        "   ───────",
+        "AAA   B  C",
+    ],
+)]
+#[case::center(
+    Alignment::Center,
+    vec![
+        "          ",
+        "          ",
+        "          ",
+        "  ────────",
+        "AAAA B   C",
+    ],
+)]
+#[case::right(
+    Alignment::Right,
+    vec![
+        "          ",
+        "          ",
+        "          ",
+        "──────────",
+        "AAA  B   C",
+    ],
+)]
+fn widgets_chart_handles_x_axis_labels_alignments<'line, Lines>(
+    #[case] y_alignment: Alignment,
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<text::Line<'line>>,
+{
+    let x_axis = Axis::default()
+        .labels(vec![Span::from("AAAA"), Span::from("B"), Span::from("C")])
+        .labels_alignment(y_alignment);
+    let y_axis = Axis::default();
+    axis_test_case(10, 5, x_axis, y_axis, expected);
 }
 
-#[test]
-fn widgets_chart_handles_y_axis_labels_alignments() {
-    let test_case = |y_alignment, lines| {
-        let x_axis = Axis::default().labels(create_labels(&["AAAAA", "B"]));
-
-        let y_axis = Axis::default()
-            .labels(create_labels(&["C", "D"]))
-            .labels_alignment(y_alignment);
-
-        axis_test_case(20, 5, x_axis, y_axis, lines);
-    };
-    test_case(
-        Alignment::Left,
-        vec![
-            "D   │               ",
-            "    │               ",
-            "C   │               ",
-            "    └───────────────",
-            "AAAAA              B",
-        ],
-    );
-    test_case(
-        Alignment::Center,
-        vec![
-            "  D │               ",
-            "    │               ",
-            "  C │               ",
-            "    └───────────────",
-            "AAAAA              B",
-        ],
-    );
-    test_case(
-        Alignment::Right,
-        vec![
-            "   D│               ",
-            "    │               ",
-            "   C│               ",
-            "    └───────────────",
-            "AAAAA              B",
-        ],
-    );
+#[rstest]
+#[case::left(Alignment::Left, [
+    "D   │               ",
+    "    │               ",
+    "C   │               ",
+    "    └───────────────",
+    "AAAAA              B",
+])]
+#[case::center(Alignment::Center, [
+    "  D │               ",
+    "    │               ",
+    "  C │               ",
+    "    └───────────────",
+    "AAAAA              B",
+])]
+#[case::right(Alignment::Right, [
+    "   D│               ",
+    "    │               ",
+    "   C│               ",
+    "    └───────────────",
+    "AAAAA              B",
+])]
+fn widgets_chart_handles_y_axis_labels_alignments<'line, Lines>(
+    #[case] y_alignment: Alignment,
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<text::Line<'line>>,
+{
+    let x_axis = Axis::default().labels(create_labels(&["AAAAA", "B"]));
+    let y_axis = Axis::default()
+        .labels(create_labels(&["C", "D"]))
+        .labels_alignment(y_alignment);
+    axis_test_case(20, 5, x_axis, y_axis, expected);
 }
 
 #[test]
@@ -265,7 +268,7 @@ fn widgets_chart_can_have_axis_with_zero_length_bounds() {
                 .style(Style::default().fg(Color::Magenta))
                 .data(&[(0.0, 0.0)])];
             let chart = Chart::new(datasets)
-                .block(Block::default().title("Plot").borders(Borders::ALL))
+                .block(Block::bordered().title("Plot"))
                 .x_axis(
                     Axis::default()
                         .bounds([0.0, 0.0])
@@ -305,7 +308,7 @@ fn widgets_chart_handles_overflows() {
                     (1_588_298_496.0, 1.0),
                 ])];
             let chart = Chart::new(datasets)
-                .block(Block::default().title("Plot").borders(Borders::ALL))
+                .block(Block::bordered().title("Plot"))
                 .x_axis(
                     Axis::default()
                         .bounds([1_588_298_471.0, 1_588_992_600.0])
@@ -338,11 +341,7 @@ fn widgets_chart_can_have_empty_datasets() {
         .draw(|f| {
             let datasets = vec![Dataset::default().data(&[]).graph_type(Line)];
             let chart = Chart::new(datasets)
-                .block(
-                    Block::default()
-                        .title("Empty Dataset With Line")
-                        .borders(Borders::ALL),
-                )
+                .block(Block::bordered().title("Empty Dataset With Line"))
                 .x_axis(
                     Axis::default()
                         .bounds([0.0, 0.0])
@@ -411,7 +410,7 @@ fn widgets_chart_can_have_a_legend() {
             ];
             let chart = Chart::new(datasets)
                 .style(Style::default().bg(Color::White))
-                .block(Block::default().title("Chart Test").borders(Borders::ALL))
+                .block(Block::bordered().title("Chart Test"))
                 .x_axis(
                     Axis::default()
                         .bounds([0.0, 100.0])
@@ -435,7 +434,7 @@ fn widgets_chart_can_have_a_legend() {
             );
         })
         .unwrap();
-    let mut expected = Buffer::with_lines(vec![
+    let mut expected = Buffer::with_lines([
         "┌Chart Test────────────────────────────────────────────────┐",
         "│10.0│Y Axis                                    ┌─────────┐│",
         "│    │  ••                                      │Dataset 1││",
@@ -615,7 +614,6 @@ fn widgets_chart_can_have_a_legend() {
     for (col, row) in x_axis_title {
         expected.get_mut(col, row).set_fg(Color::Yellow);
     }
-
     terminal.backend().assert_buffer(&expected);
 }
 
@@ -645,7 +643,7 @@ fn widgets_chart_top_line_styling_is_correct() {
         })
         .unwrap();
 
-    let mut expected = Buffer::with_lines(vec![
+    let mut expected = Buffer::with_lines([
         "b│abc••••",
         " │       ",
         " │       ",

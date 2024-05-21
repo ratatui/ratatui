@@ -206,11 +206,11 @@ impl App {
 
 fn title_block(title: &str) -> Block {
     let title = Title::from(title).alignment(Alignment::Center);
-    Block::default()
-        .title(title)
+    Block::new()
         .borders(Borders::NONE)
-        .fg(CUSTOM_LABEL_COLOR)
         .padding(Padding::vertical(1))
+        .title(title)
+        .fg(CUSTOM_LABEL_COLOR)
 }
 
 fn init_error_hooks() -> color_eyre::Result<()> {

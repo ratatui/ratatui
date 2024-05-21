@@ -1,9 +1,6 @@
 #![allow(clippy::unreadable_literal)]
 
-use std::{
-    fmt::{self, Debug, Display},
-    str::FromStr,
-};
+use std::{fmt, str::FromStr};
 
 /// ANSI Color
 ///
@@ -142,7 +139,7 @@ impl Color {
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for Color {
-    /// This utilises the [`Display`] implementation for serialization.
+    /// This utilises the [`fmt::Display`] implementation for serialization.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -243,8 +240,8 @@ impl<'de> serde::Deserialize<'de> for Color {
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ParseColorError;
 
-impl std::fmt::Display for ParseColorError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for ParseColorError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Failed to parse Colors")
     }
 }
@@ -336,7 +333,7 @@ impl FromStr for Color {
     }
 }
 
-impl Display for Color {
+impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Reset => write!(f, "Reset"),

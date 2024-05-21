@@ -65,7 +65,7 @@ impl Frame<'_> {
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();
-    /// let block = Block::default();
+    /// let block = Block::new();
     /// let area = Rect::new(0, 0, 5, 5);
     /// frame.render_widget(block, area);
     /// ```
@@ -83,13 +83,15 @@ impl Frame<'_> {
     /// # Example
     ///
     /// ```rust
+    /// # #[cfg(feature = "unstable-widget-ref")] {
     /// # use ratatui::{backend::TestBackend, prelude::*, widgets::Block};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
     /// # let mut frame = terminal.get_frame();
-    /// let block = Block::default();
+    /// let block = Block::new();
     /// let area = Rect::new(0, 0, 5, 5);
     /// frame.render_widget_ref(block, area);
+    /// # }
     /// ```
     #[allow(clippy::needless_pass_by_value)]
     #[stability::unstable(feature = "widget-ref")]
@@ -138,6 +140,7 @@ impl Frame<'_> {
     /// # Example
     ///
     /// ```rust
+    /// # #[cfg(feature = "unstable-widget-ref")] {
     /// # use ratatui::{backend::TestBackend, prelude::*, widgets::*};
     /// # let backend = TestBackend::new(5, 5);
     /// # let mut terminal = Terminal::new(backend).unwrap();
@@ -146,6 +149,7 @@ impl Frame<'_> {
     /// let list = List::new(vec![ListItem::new("Item 1"), ListItem::new("Item 2")]);
     /// let area = Rect::new(0, 0, 5, 5);
     /// frame.render_stateful_widget_ref(list, area, &mut state);
+    /// # }
     /// ```
     #[allow(clippy::needless_pass_by_value)]
     #[stability::unstable(feature = "widget-ref")]

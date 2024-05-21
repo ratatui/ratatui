@@ -56,11 +56,9 @@ documented.
 
 ### Run CI tests before pushing a PR
 
-We're using [cargo-husky](https://github.com/rhysd/cargo-husky) to automatically run git hooks,
-which will run `cargo make ci` before each push. To initialize the hook  run `cargo test`. If
-`cargo-make` is not installed, it will provide instructions to install it for you. This will ensure
-that your code is formatted, compiles and passes all tests before you push. If you need to skip this
-check, you can use `git push --no-verify`.
+Running `cargo make ci` before pushing will perform the same checks that we do in the CI process.
+It's not mandatory to do this before pushing, however it may save you time to do so instead of
+waiting for GitHub to run the checks.
 
 ### Sign your commits
 

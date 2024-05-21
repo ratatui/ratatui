@@ -14,7 +14,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         .iter()
         .map(|t| text::Line::from(Span::styled(*t, Style::default().fg(Color::Green))))
         .collect::<Tabs>()
-        .block(Block::default().borders(Borders::ALL).title(app.title))
+        .block(Block::bordered().title(app.title))
         .highlight_style(Style::default().fg(Color::Yellow))
         .select(app.tabs.index);
     f.render_widget(tabs, chunks[0]);
@@ -46,12 +46,12 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
     ])
     .margin(1)
     .split(area);
-    let block = Block::default().borders(Borders::ALL).title("Graphs");
+    let block = Block::bordered().title("Graphs");
     f.render_widget(block, area);
 
     let label = format!("{:.2}%", app.progress * 100.0);
     let gauge = Gauge::default()
-        .block(Block::default().title("Gauge:"))
+        .block(Block::new().title("Gauge:"))
         .gauge_style(
             Style::default()
                 .fg(Color::Magenta)
@@ -64,7 +64,7 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_widget(gauge, chunks[0]);
 
     let sparkline = Sparkline::default()
-        .block(Block::default().title("Sparkline:"))
+        .block(Block::new().title("Sparkline:"))
         .style(Style::default().fg(Color::Green))
         .data(&app.sparkline.points)
         .bar_set(if app.enhanced_graphics {
@@ -75,7 +75,7 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_widget(sparkline, chunks[1]);
 
     let line_gauge = LineGauge::default()
-        .block(Block::default().title("LineGauge:"))
+        .block(Block::new().title("LineGauge:"))
         .gauge_style(Style::default().fg(Color::Magenta))
         .line_set(if app.enhanced_graphics {
             symbols::line::THICK
@@ -110,7 +110,7 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
                 .map(|i| ListItem::new(vec![text::Line::from(Span::raw(*i))]))
                 .collect();
             let tasks = List::new(tasks)
-                .block(Block::default().borders(Borders::ALL).title("List"))
+                .block(Block::bordered().title("List"))
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD))
                 .highlight_symbol("> ");
             f.render_stateful_widget(tasks, chunks[0], &mut app.tasks.state);
@@ -138,12 +138,12 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
                     ListItem::new(content)
                 })
                 .collect();
-            let logs = List::new(logs).block(Block::default().borders(Borders::ALL).title("List"));
+            let logs = List::new(logs).block(Block::bordered().title("List"));
             f.render_stateful_widget(logs, chunks[1], &mut app.logs.state);
         }
 
         let barchart = BarChart::default()
-            .block(Block::default().borders(Borders::ALL).title("Bar chart"))
+            .block(Block::bordered().title("Bar chart"))
             .data(&app.barchart)
             .bar_width(3)
             .bar_gap(2)
@@ -195,14 +195,12 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
         ];
         let chart = Chart::new(datasets)
             .block(
-                Block::default()
-                    .title(Span::styled(
-                        "Chart",
-                        Style::default()
-                            .fg(Color::Cyan)
-                            .add_modifier(Modifier::BOLD),
-                    ))
-                    .borders(Borders::ALL),
+                Block::bordered().title(Span::styled(
+                    "Chart",
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                )),
             )
             .x_axis(
                 Axis::default()
@@ -254,7 +252,7 @@ fn draw_text(f: &mut Frame, area: Rect) {
             "One more thing is that it should display unicode characters: 10€"
         ),
     ];
-    let block = Block::default().borders(Borders::ALL).title(Span::styled(
+    let block = Block::bordered().title(Span::styled(
         "Footer",
         Style::default()
             .fg(Color::Magenta)
@@ -292,11 +290,11 @@ fn draw_second_tab(f: &mut Frame, app: &mut App, area: Rect) {
             .style(Style::default().fg(Color::Yellow))
             .bottom_margin(1),
     )
-    .block(Block::default().title("Servers").borders(Borders::ALL));
+    .block(Block::bordered().title("Servers"));
     f.render_widget(table, chunks[0]);
 
     let map = Canvas::default()
-        .block(Block::default().title("World").borders(Borders::ALL))
+        .block(Block::bordered().title("World"))
         .paint(|ctx| {
             ctx.draw(&Map {
                 color: Color::White,
@@ -390,6 +388,6 @@ fn draw_third_tab(f: &mut Frame, _app: &mut App, area: Rect) {
             Constraint::Ratio(1, 3),
         ],
     )
-    .block(Block::default().title("Colors").borders(Borders::ALL));
+    .block(Block::bordered().title("Colors"));
     f.render_widget(table, chunks[0]);
 }

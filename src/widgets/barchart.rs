@@ -45,7 +45,7 @@ pub use bar_group::BarGroup;
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// BarChart::default()
-///     .block(Block::default().title("BarChart").borders(Borders::ALL))
+///     .block(Block::bordered().title("BarChart"))
 ///     .bar_width(3)
 ///     .bar_gap(1)
 ///     .group_gap(3)
@@ -615,151 +615,140 @@ mod tests {
     use itertools::iproduct;
 
     use super::*;
-    use crate::{
-        assert_buffer_eq,
-        widgets::{BorderType, Borders},
-    };
+    use crate::widgets::BorderType;
 
     #[test]
     fn default() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         let widget = BarChart::default();
         widget.render(buffer.area, &mut buffer);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["          "; 3]));
+        assert_eq!(buffer, Buffer::with_lines(["          "; 3]));
     }
 
     #[test]
     fn data() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         let widget = BarChart::default().data(&[("foo", 1), ("bar", 2)]);
         widget.render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "  █            ",
-                "1 2            ",
-                "f b            ",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "  █       ",
+            "1 2       ",
+            "f b       ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn block() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 5));
-        let block = Block::default()
-            .title("Block")
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
+        let block = Block::bordered()
             .border_type(BorderType::Double)
-            .borders(Borders::ALL);
+            .title("Block");
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
             .block(block);
         widget.render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "╔Block════════╗",
-                "║  █          ║",
-                "║1 2          ║",
-                "║f b          ║",
-                "╚═════════════╝",
-            ])
-        );
+        let expected = Buffer::with_lines([
+            "╔Block═══╗",
+            "║  █     ║",
+            "║1 2     ║",
+            "║f b     ║",
+            "╚════════╝",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn max() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         let without_max = BarChart::default().data(&[("foo", 1), ("bar", 2), ("baz", 100)]);
         without_max.render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "    █          ",
-                "    █          ",
-                "f b b          ",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "    █     ",
+            "    █     ",
+            "f b b     ",
+        ]);
+        assert_eq!(buffer, expected);
         let with_max = BarChart::default()
             .data(&[("foo", 1), ("bar", 2), ("baz", 100)])
             .max(2);
         with_max.render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "  █ █          ",
-                "1 2 █          ",
-                "f b b          ",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "  █ █     ",
+            "1 2 █     ",
+            "f b b     ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn bar_style() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
             .bar_style(Style::new().red());
         widget.render(buffer.area, &mut buffer);
-        let mut expected = Buffer::with_lines(vec![
-            "  █            ",
-            "1 2            ",
-            "f b            ",
+        #[rustfmt::skip]
+        let mut expected = Buffer::with_lines([
+            "  █       ",
+            "1 2       ",
+            "f b       ",
         ]);
         for (x, y) in iproduct!([0, 2], [0, 1]) {
             expected.get_mut(x, y).set_fg(Color::Red);
         }
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn bar_width() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
             .bar_width(3);
         widget.render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "    ███        ",
-                "█1█ █2█        ",
-                "foo bar        ",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "    ███   ",
+            "█1█ █2█   ",
+            "foo bar   ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn bar_gap() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
             .bar_gap(2);
         widget.render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "   █           ",
-                "1  2           ",
-                "f  b           ",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "   █      ",
+            "1  2      ",
+            "f  b      ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn bar_set() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         let widget = BarChart::default()
             .data(&[("foo", 0), ("bar", 1), ("baz", 3)])
             .bar_set(symbols::bar::THREE_LEVELS);
         widget.render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "    █          ",
-                "  ▄ 3          ",
-                "f b b          ",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "    █     ",
+            "  ▄ 3     ",
+            "f b b     ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -779,67 +768,68 @@ mod tests {
             ])
             .bar_set(symbols::bar::NINE_LEVELS);
         widget.render(Rect::new(0, 1, 18, 2), &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "                  ",
-                "  ▁ ▂ ▃ ▄ ▅ ▆ ▇ 8 ",
-                "a b c d e f g h i ",
-            ])
-        );
+        let expected = Buffer::with_lines([
+            "                  ",
+            "  ▁ ▂ ▃ ▄ ▅ ▆ ▇ 8 ",
+            "a b c d e f g h i ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn value_style() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
             .bar_width(3)
             .value_style(Style::new().red());
         widget.render(buffer.area, &mut buffer);
-        let mut expected = Buffer::with_lines(vec![
-            "    ███        ",
-            "█1█ █2█        ",
-            "foo bar        ",
+        #[rustfmt::skip]
+        let mut expected = Buffer::with_lines([
+            "    ███   ",
+            "█1█ █2█   ",
+            "foo bar   ",
         ]);
         expected.get_mut(1, 1).set_fg(Color::Red);
         expected.get_mut(5, 1).set_fg(Color::Red);
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn label_style() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
             .label_style(Style::new().red());
         widget.render(buffer.area, &mut buffer);
-        let mut expected = Buffer::with_lines(vec![
-            "  █            ",
-            "1 2            ",
-            "f b            ",
+        #[rustfmt::skip]
+        let mut expected = Buffer::with_lines([
+            "  █       ",
+            "1 2       ",
+            "f b       ",
         ]);
         expected.get_mut(0, 2).set_fg(Color::Red);
         expected.get_mut(2, 2).set_fg(Color::Red);
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn style() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         let widget = BarChart::default()
             .data(&[("foo", 1), ("bar", 2)])
             .style(Style::new().red());
         widget.render(buffer.area, &mut buffer);
-        let mut expected = Buffer::with_lines(vec![
-            "  █            ",
-            "1 2            ",
-            "f b            ",
+        #[rustfmt::skip]
+        let mut expected = Buffer::with_lines([
+            "  █       ",
+            "1 2       ",
+            "f b       ",
         ]);
-        for (x, y) in iproduct!(0..15, 0..3) {
+        for (x, y) in iproduct!(0..10, 0..3) {
             expected.get_mut(x, y).set_fg(Color::Red);
         }
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -865,8 +855,13 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
         chart.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec!["  █", "1 2", "G  "]);
-        assert_buffer_eq!(buffer, expected);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "  █",
+            "1 2",
+            "G  ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     fn build_test_barchart<'a>() -> BarChart<'a> {
@@ -892,7 +887,7 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 8));
         chart.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec![
+        let expected = Buffer::with_lines([
             "2█   ",
             "3██  ",
             "4███ ",
@@ -902,8 +897,7 @@ mod tests {
             "5████",
             "G2   ",
         ]);
-
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -912,7 +906,7 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 7));
         chart.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec![
+        let expected = Buffer::with_lines([
             "2█   ",
             "3██  ",
             "4███ ",
@@ -921,8 +915,7 @@ mod tests {
             "4███ ",
             "5████",
         ]);
-
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -931,9 +924,15 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 5));
         chart.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec!["2█   ", "3██  ", "4███ ", "G1   ", "3██  "]);
-
-        assert_buffer_eq!(buffer, expected);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "2█   ",
+            "3██  ",
+            "4███ ",
+            "G1   ",
+            "3██  ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     fn test_horizontal_bars_label_width_greater_than_bar(bar_color: Option<Color>) {
@@ -956,7 +955,7 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 5, 2));
         chart.render(buffer.area, &mut buffer);
 
-        let mut expected = Buffer::with_lines(vec!["label", "5████"]);
+        let mut expected = Buffer::with_lines(["label", "5████"]);
 
         // first line has a yellow foreground. first cell contains italic "5"
         expected.get_mut(0, 1).modifier.insert(Modifier::ITALIC);
@@ -981,7 +980,7 @@ mod tests {
         expected.get_mut(3, 0).set_fg(expected_color);
         expected.get_mut(4, 0).set_fg(expected_color);
 
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1004,9 +1003,13 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         chart.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec!["Jan 10█   ", "Feb 20████", "Mar 5     "]);
-
-        assert_buffer_eq!(buffer, expected);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "Jan 10█   ",
+            "Feb 20████",
+            "Mar 5     ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1027,13 +1030,13 @@ mod tests {
         // G1 should have the bold red style
         // bold: because of BarChart::label_style
         // red: is included with the label itself
-        let mut expected = Buffer::with_lines(vec!["2████", "G1   "]);
+        let mut expected = Buffer::with_lines(["2████", "G1   "]);
         let cell = expected.get_mut(0, 1).set_fg(Color::Red);
         cell.modifier.insert(Modifier::BOLD);
         let cell = expected.get_mut(1, 1).set_fg(Color::Red);
         cell.modifier.insert(Modifier::BOLD);
 
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1050,17 +1053,14 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 13, 5));
         chart.render(buffer.area, &mut buffer);
-
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "    ▂ █     ▂",
-                "  ▄ █ █   ▄ █",
-                "▆ 2 3 4 ▆ 2 3",
-                "a b c c a b c",
-                "  G1     G2  ",
-            ])
-        );
+        let expected = Buffer::with_lines([
+            "    ▂ █     ▂",
+            "  ▄ █ █   ▄ █",
+            "▆ 2 3 4 ▆ 2 3",
+            "a b c c a b c",
+            "  G1     G2  ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1073,9 +1073,13 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 3, 3));
         chart.render(buffer.area, &mut buffer);
-
-        let expected = Buffer::with_lines(vec!["  █", "▆ 5", "  G"]);
-        assert_buffer_eq!(buffer, expected);
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "  █",
+            "▆ 5",
+            "  G",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1098,15 +1102,14 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 5));
         chart.render(buffer.area, &mut buffer);
-
-        let expected = Buffer::with_lines(vec![
+        let expected = Buffer::with_lines([
             "    ▆▆▆ ███",
             "    ███ ███",
             "▃▃▃ ███ ███",
             "写█ 写█ 写█",
             "B1  B2  B2 ",
         ]);
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1118,7 +1121,7 @@ mod tests {
             .bar_gap(0);
         let mut buffer = Buffer::empty(Rect::new(0, 0, 0, 10));
         chart.render(buffer.area, &mut buffer);
-        assert_buffer_eq!(buffer, Buffer::empty(Rect::new(0, 0, 0, 10)));
+        assert_eq!(buffer, Buffer::empty(Rect::new(0, 0, 0, 10)));
     }
 
     #[test]
@@ -1143,8 +1146,7 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 17, 1));
         chart.render(buffer.area, &mut buffer);
-
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["  ▁ ▂ ▃ ▄ ▅ ▆ ▇ 8"]));
+        assert_eq!(buffer, Buffer::with_lines(["  ▁ ▂ ▃ ▄ ▅ ▆ ▇ 8"]));
     }
 
     #[test]
@@ -1169,15 +1171,12 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 17, 3));
         chart.render(Rect::new(0, 1, buffer.area.width, 2), &mut buffer);
-
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "                 ",
-                "  ▁ ▂ ▃ ▄ ▅ ▆ ▇ 8",
-                "a b c d e f g h i",
-            ])
-        );
+        let expected = Buffer::with_lines([
+            "                 ",
+            "  ▁ ▂ ▃ ▄ ▅ ▆ ▇ 8",
+            "a b c d e f g h i",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1202,15 +1201,12 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 17, 3));
         chart.render(buffer.area, &mut buffer);
-
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "  ▁ ▂ ▃ ▄ ▅ ▆ ▇ 8",
-                "a b c d e f g h i",
-                "      Group      ",
-            ])
-        );
+        let expected = Buffer::with_lines([
+            "  ▁ ▂ ▃ ▄ ▅ ▆ ▇ 8",
+            "a b c d e f g h i",
+            "      Group      ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1235,15 +1231,12 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 26, 3));
         chart.render(buffer.area, &mut buffer);
-
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "   1▁ 2▂ 3▃ 4▄ 5▅ 6▆ 7▇ 8█",
-                "a  b  c  d  e  f  g  h  i ",
-                "          Group           ",
-            ])
-        );
+        let expected = Buffer::with_lines([
+            "   1▁ 2▂ 3▃ 4▄ 5▅ 6▆ 7▇ 8█",
+            "a  b  c  d  e  f  g  h  i ",
+            "          Group           ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1268,16 +1261,13 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 17, 4));
         chart.render(buffer.area, &mut buffer);
-
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "          ▂ ▄ ▆ █",
-                "  ▂ ▄ ▆ 4 5 6 7 8",
-                "a b c d e f g h i",
-                "      Group      ",
-            ])
-        );
+        let expected = Buffer::with_lines([
+            "          ▂ ▄ ▆ █",
+            "  ▂ ▄ ▆ 4 5 6 7 8",
+            "a b c d e f g h i",
+            "      Group      ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1300,15 +1290,12 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 17, 3));
         chart.render(Rect::new(0, 1, buffer.area.width, 2), &mut buffer);
-
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "                 ",
-                "  ▁ ▂ ▃ ▄ ▅ ▆ ▇ 8",
-                "      Group      ",
-            ])
-        );
+        let expected = Buffer::with_lines([
+            "                 ",
+            "  ▁ ▂ ▃ ▄ ▅ ▆ ▇ 8",
+            "      Group      ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1319,13 +1306,9 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 59, 1));
         chart.render(buffer.area, &mut buffer);
-
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "        ▁ ▁ ▁ ▁ ▂ ▂ ▂ ▃ ▃ ▃ ▃ ▄ ▄ ▄ ▄ ▅ ▅ ▅ ▆ ▆ ▆ ▆ ▇ ▇ ▇ █",
-            ])
-        );
+        let expected =
+            Buffer::with_lines(["        ▁ ▁ ▁ ▁ ▂ ▂ ▂ ▃ ▃ ▃ ▃ ▄ ▄ ▄ ▄ ▅ ▅ ▅ ▆ ▆ ▆ ▆ ▇ ▇ ▇ █"]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1337,17 +1320,14 @@ mod tests {
 
         let mut buffer = Buffer::empty(Rect::new(0, 0, 7, 6));
         chart.render(buffer.area, &mut buffer);
-
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "   ██  ",
-                "   ██  ",
-                "▄▄ ██  ",
-                "██ ██  ",
-                "1█ 2█  ",
-                "a  b   ",
-            ])
-        );
+        let expected = Buffer::with_lines([
+            "   ██  ",
+            "   ██  ",
+            "▄▄ ██  ",
+            "██ ██  ",
+            "1█ 2█  ",
+            "a  b   ",
+        ]);
+        assert_eq!(buffer, expected);
     }
 }

@@ -137,7 +137,7 @@ impl App {
 
     fn map_canvas(&self) -> impl Widget + '_ {
         Canvas::default()
-            .block(Block::default().borders(Borders::ALL).title("World"))
+            .block(Block::bordered().title("World"))
             .marker(self.marker)
             .paint(|ctx| {
                 ctx.draw(&Map {
@@ -152,7 +152,7 @@ impl App {
 
     fn pong_canvas(&self) -> impl Widget + '_ {
         Canvas::default()
-            .block(Block::default().borders(Borders::ALL).title("Pong"))
+            .block(Block::bordered().title("Pong"))
             .marker(self.marker)
             .paint(|ctx| {
                 ctx.draw(&self.ball);
@@ -167,7 +167,7 @@ impl App {
         let bottom = 0.0;
         let top = f64::from(area.height).mul_add(2.0, -4.0);
         Canvas::default()
-            .block(Block::default().borders(Borders::ALL).title("Rects"))
+            .block(Block::bordered().title("Rects"))
             .marker(self.marker)
             .x_bounds([left, right])
             .y_bounds([bottom, top])
