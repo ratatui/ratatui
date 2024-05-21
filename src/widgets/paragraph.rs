@@ -376,7 +376,7 @@ impl<'a> Paragraph<'a> {
                     // If the symbol is empty, the last char which rendered last time will
                     // leave on the line. It's a quick fix.
                     let symbol = if symbol.is_empty() { " " } else { symbol };
-                    buf.get_mut(area.left() + x, area.top() + y - self.scroll.0)
+                    buf[(area.left() + x, area.top() + y - self.scroll.0)]
                         .set_symbol(symbol)
                         .set_style(*style);
                     x += width as u16;

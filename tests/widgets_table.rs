@@ -680,7 +680,7 @@ fn widgets_table_can_have_elements_styled_individually() {
     ]);
     // First row = row color + highlight style
     for col in 1..=28 {
-        expected.get_mut(col, 2).set_style(
+        expected[(col, 2)].set_style(
             Style::default()
                 .fg(Color::Green)
                 .add_modifier(Modifier::BOLD),
@@ -689,26 +689,18 @@ fn widgets_table_can_have_elements_styled_individually() {
     // Second row:
     // 1. row color
     for col in 1..=28 {
-        expected
-            .get_mut(col, 3)
-            .set_style(Style::default().fg(Color::LightGreen));
+        expected[(col, 3)].set_style(Style::default().fg(Color::LightGreen));
     }
     // 2. cell color
     for col in 11..=16 {
-        expected
-            .get_mut(col, 3)
-            .set_style(Style::default().fg(Color::Yellow));
+        expected[(col, 3)].set_style(Style::default().fg(Color::Yellow));
     }
     for col in 18..=23 {
-        expected
-            .get_mut(col, 3)
-            .set_style(Style::default().fg(Color::Red));
+        expected[(col, 3)].set_style(Style::default().fg(Color::Red));
     }
     // 3. text color
     for col in 21..=22 {
-        expected
-            .get_mut(col, 3)
-            .set_style(Style::default().fg(Color::Blue));
+        expected[(col, 3)].set_style(Style::default().fg(Color::Blue));
     }
     terminal.backend().assert_buffer(&expected);
 }

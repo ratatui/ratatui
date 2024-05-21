@@ -23,8 +23,8 @@ use crate::{buffer::Cell, layout::Position, prelude::*};
 ///     width: 10,
 ///     height: 5,
 /// });
-/// buf.get_mut(0, 2).set_symbol("x");
-/// assert_eq!(buf.get(0, 2).symbol(), "x");
+/// buf[(0, 2)].set_symbol("x");
+/// assert_eq!(buf[(0, 2)].symbol(), "x");
 ///
 /// buf.set_string(
 ///     3,
@@ -32,13 +32,13 @@ use crate::{buffer::Cell, layout::Position, prelude::*};
 ///     "string",
 ///     Style::default().fg(Color::Red).bg(Color::White),
 /// );
-/// let cell = buf.get(5, 0);
+/// let cell = &buf[(5, 0)];
 /// assert_eq!(cell.symbol(), "r");
 /// assert_eq!(cell.fg, Color::Red);
 /// assert_eq!(cell.bg, Color::White);
 ///
-/// buf.get_mut(5, 0).set_char('x');
-/// assert_eq!(buf.get(5, 0).symbol(), "x");
+/// buf[(5, 0)].set_char('x');
+/// assert_eq!(buf[(5, 0)].symbol(), "x");
 /// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -94,8 +94,8 @@ impl Buffer {
 
     /// Returns a reference to Cell at the given coordinates
     ///
-    /// Callers should generally use the Index trait (`buf[(x, y)]`) or the [`Buffer::cell`] method
-    /// instead of this method.
+    /// Callers should generally use the [`ops::Index`] trait ([`Buffer[Position]`]) or the
+    /// [`Buffer::cell`] method instead of this method.
     ///
     /// Note that conventionally methods named `get` usually return `Option<&T>`, but this method
     /// panics instead. This is kept for backwards compatibility. See `get_opt` for a safe
@@ -105,6 +105,7 @@ impl Buffer {
     ///
     /// Panics if the index is out of bounds.
     #[track_caller]
+    #[deprecated(note = "Use Buffer[] or Buffer::cell instead")]
     pub fn get(&self, x: u16, y: u16) -> &Cell {
         let i = self.index_of(x, y);
         &self.content[i]
@@ -112,7 +113,7 @@ impl Buffer {
 
     /// Returns a mutable reference to Cell at the given coordinates
     ///
-    /// Callers should generally use the `IndexMut` trait (`&mut buf[(x, y)]`) or the
+    /// Callers should generally use the [`ops::IndexMut`] trait (`&mut Buffer[Position]`) or the
     /// [`Buffer::cell_mut`] method instead of this method.
     ///
     /// Note that conventionally methods named `get_mut` usually return `Option<&mut T>`, but this
@@ -123,6 +124,7 @@ impl Buffer {
     ///
     /// Panics if the index is out of bounds.
     #[track_caller]
+    #[deprecated(note = "Use Buffer[] or Buffer::cell_mut instead")]
     pub fn get_mut(&mut self, x: u16, y: u16) -> &mut Cell {
         let i = self.index_of(x, y);
         &mut self.content[i]
@@ -162,11 +164,12 @@ impl Buffer {
     /// ```rust
     /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
     /// let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
-    ///
-    /// assert_eq!(buffer.cell(Position::new(0, 0)), Some(&mut Cell::default()));
-    /// assert_eq!(buffer.cell(Position::new(10, 10)), None);
-    /// assert_eq!(buffer.cell((0, 0)), Some(&mut Cell::default()));
-    /// assert_eq!(buffer.cell((10, 10)), None);
+    /// if let Some(cell) = buffer.cell_mut(Position::new(0, 0)) {
+    ///     *cell = Cell::default();
+    /// }
+    /// if let Some(cell) = buffer.cell_mut((0, 0)) {
+    ///     *cell = Cell::default();
+    /// }
     /// ```
     pub fn cell_mut<P: Into<Position>>(&mut self, pos: P) -> Option<&mut Cell> {
         let pos = pos.into();
@@ -297,12 +300,12 @@ impl Buffer {
             });
         let style = style.into();
         for (symbol, width) in graphemes {
-            self.get_mut(x, y).set_symbol(symbol).set_style(style);
+            self[(x, y)].set_symbol(symbol).set_style(style);
             let next_symbol = x + width;
             x += 1;
             // Reset following cells if multi-width (they would be hidden by the grapheme),
             while x < next_symbol {
-                self.get_mut(x, y).reset();
+                self[(x, y)].reset();
                 x += 1;
             }
         }
@@ -345,7 +348,7 @@ impl Buffer {
         let area = self.area.intersection(area);
         for y in area.top()..area.bottom() {
             for x in area.left()..area.right() {
-                self.get_mut(x, y).set_style(style);
+                self[(x, y)].set_style(style);
             }
         }
     }
@@ -465,8 +468,8 @@ impl<P: Into<Position>> ops::Index<P> for Buffer {
     /// ```
     /// # use ratatui::{prelude::*, buffer::Cell, layout::Position};
     /// let buf = Buffer::empty(Rect::new(0, 0, 10, 10));
-    /// let cell = buf[(0, 0)];
-    /// let cell = buf[Position::new(0, 0)];
+    /// let cell = &buf[(0, 0)];
+    /// let cell = &buf[Position::new(0, 0)];
     /// ```
     fn index(&self, pos: P) -> &Self::Output {
         let pos = pos.into();
