@@ -96,6 +96,8 @@ where
     }
 
     /// Gets the writer as a mutable reference.
+    /// Note: writing to the writer may cause incorrect output after the write. This is due to the
+    /// way that the Terminal implements diffing Buffers.
     #[stability::unstable(
         feature = "backend-writer",
         issue = "https://github.com/ratatui-org/ratatui/pull/991"
