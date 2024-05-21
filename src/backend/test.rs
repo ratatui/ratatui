@@ -2,21 +2,19 @@
 //! It is used in the integration tests to verify the correctness of the library.
 
 use std::{
-    fmt::{Display, Write},
+    fmt::{self, Write},
     io,
 };
 
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    assert_buffer_eq,
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
     layout::{Rect, Size},
 };
 
-/// A [`Backend`] implementation used for integration testing that that renders to an in memory
-/// buffer.
+/// A [`Backend`] implementation used for integration testing that renders to an memory buffer.
 ///
 /// Note: that although many of the integration and unit tests in ratatui are written using this
 /// backend, it is preferable to write unit tests for widgets directly against the buffer rather
@@ -30,7 +28,7 @@ use crate::{
 ///
 /// let mut backend = TestBackend::new(10, 2);
 /// backend.clear()?;
-/// backend.assert_buffer(&Buffer::with_lines(vec!["          "; 2]));
+/// backend.assert_buffer_lines(["          "; 2]);
 /// # std::io::Result::Ok(())
 /// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -97,18 +95,40 @@ impl TestBackend {
     }
 
     /// Asserts that the `TestBackend`'s buffer is equal to the expected buffer.
-    /// If the buffers are not equal, a panic occurs with a detailed error message
-    /// showing the differences between the expected and actual buffers.
+    ///
+    /// This is a shortcut for `assert_eq!(self.buffer(), &expected)`.
+    ///
+    /// # Panics
+    /// When they are not equal, a panic occurs with a detailed error message showing the
+    /// differences between the expected and actual buffers.
+    #[allow(deprecated)]
     #[track_caller]
     pub fn assert_buffer(&self, expected: &Buffer) {
-        assert_buffer_eq!(&self.buffer, expected);
+        // TODO: use assert_eq!()
+        crate::assert_buffer_eq!(&self.buffer, expected);
+    }
+
+    /// Asserts that the `TestBackend`'s buffer is equal to the expected lines.
+    ///
+    /// This is a shortcut for `assert_eq!(self.buffer(), &Buffer::with_lines(expected))`.
+    ///
+    /// # Panics
+    /// When they are not equal, a panic occurs with a detailed error message showing the
+    /// differences between the expected and actual buffers.
+    #[track_caller]
+    pub fn assert_buffer_lines<'line, Lines>(&self, expected: Lines)
+    where
+        Lines: IntoIterator,
+        Lines::Item: Into<crate::text::Line<'line>>,
+    {
+        self.assert_buffer(&Buffer::with_lines(expected));
     }
 }
 
-impl Display for TestBackend {
+impl fmt::Display for TestBackend {
     /// Formats the `TestBackend` for display by calling the `buffer_view` function
     /// on its internal buffer.
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", buffer_view(&self.buffer))
     }
 }
@@ -246,7 +266,7 @@ mod tests {
             TestBackend {
                 width: 10,
                 height: 2,
-                buffer: Buffer::with_lines(vec!["          "; 2]),
+                buffer: Buffer::with_lines(["          "; 2]),
                 cursor: false,
                 pos: (0, 0),
             }
@@ -254,14 +274,14 @@ mod tests {
     }
     #[test]
     fn test_buffer_view() {
-        let buffer = Buffer::with_lines(vec!["aaaa"; 2]);
+        let buffer = Buffer::with_lines(["aaaa"; 2]);
         assert_eq!(buffer_view(&buffer), "\"aaaa\"\n\"aaaa\"\n");
     }
 
     #[test]
     fn buffer_view_with_overwrites() {
         let multi_byte_char = "👨‍👩‍👧‍👦"; // renders 8 wide
-        let buffer = Buffer::with_lines(vec![multi_byte_char]);
+        let buffer = Buffer::with_lines([multi_byte_char]);
         assert_eq!(
             buffer_view(&buffer),
             format!(
@@ -274,29 +294,27 @@ mod tests {
     #[test]
     fn buffer() {
         let backend = TestBackend::new(10, 2);
-        assert_eq!(backend.buffer(), &Buffer::with_lines(vec!["          "; 2]));
+        backend.assert_buffer_lines(["          "; 2]);
     }
 
     #[test]
     fn resize() {
         let mut backend = TestBackend::new(10, 2);
         backend.resize(5, 5);
-        assert_eq!(backend.buffer(), &Buffer::with_lines(vec!["     "; 5]));
+        backend.assert_buffer_lines(["     "; 5]);
     }
 
     #[test]
     fn assert_buffer() {
         let backend = TestBackend::new(10, 2);
-        let buffer = Buffer::with_lines(vec!["          "; 2]);
-        backend.assert_buffer(&buffer);
+        backend.assert_buffer_lines(["          "; 2]);
     }
 
     #[test]
     #[should_panic = "buffer contents not equal"]
     fn assert_buffer_panics() {
         let backend = TestBackend::new(10, 2);
-        let buffer = Buffer::with_lines(vec!["aaaaaaaaaa"; 2]);
-        backend.assert_buffer(&buffer);
+        backend.assert_buffer_lines(["aaaaaaaaaa"; 2]);
     }
 
     #[test]
@@ -312,7 +330,7 @@ mod tests {
         cell.set_symbol("a");
         backend.draw([(0, 0, &cell)].into_iter()).unwrap();
         backend.draw([(0, 1, &cell)].into_iter()).unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec!["a         "; 2]));
+        backend.assert_buffer_lines(["a         "; 2]);
     }
 
     #[test]
@@ -344,24 +362,19 @@ mod tests {
 
     #[test]
     fn clear() {
-        let mut backend = TestBackend::new(10, 4);
+        let mut backend = TestBackend::new(4, 2);
         let mut cell = Cell::default();
         cell.set_symbol("a");
         backend.draw([(0, 0, &cell)].into_iter()).unwrap();
         backend.draw([(0, 1, &cell)].into_iter()).unwrap();
         backend.clear().unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec![
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-        ]));
+        backend.assert_buffer_lines(["    ", "    "]);
     }
 
     #[test]
     fn clear_region_all() {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -370,19 +383,19 @@ mod tests {
         ]);
 
         backend.clear_region(ClearType::All).unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec![
+        backend.assert_buffer_lines([
             "          ",
             "          ",
             "          ",
             "          ",
             "          ",
-        ]));
+        ]);
     }
 
     #[test]
     fn clear_region_after_cursor() {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -392,19 +405,19 @@ mod tests {
 
         backend.set_cursor(3, 2).unwrap();
         backend.clear_region(ClearType::AfterCursor).unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec![
+        backend.assert_buffer_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaa      ",
             "          ",
             "          ",
-        ]));
+        ]);
     }
 
     #[test]
     fn clear_region_before_cursor() {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -414,19 +427,19 @@ mod tests {
 
         backend.set_cursor(5, 3).unwrap();
         backend.clear_region(ClearType::BeforeCursor).unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec![
+        backend.assert_buffer_lines([
             "          ",
             "          ",
             "          ",
             "     aaaaa",
             "aaaaaaaaaa",
-        ]));
+        ]);
     }
 
     #[test]
     fn clear_region_current_line() {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -436,19 +449,19 @@ mod tests {
 
         backend.set_cursor(3, 1).unwrap();
         backend.clear_region(ClearType::CurrentLine).unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec![
+        backend.assert_buffer_lines([
             "aaaaaaaaaa",
             "          ",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
-        ]));
+        ]);
     }
 
     #[test]
     fn clear_region_until_new_line() {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -458,19 +471,19 @@ mod tests {
 
         backend.set_cursor(3, 0).unwrap();
         backend.clear_region(ClearType::UntilNewLine).unwrap();
-        backend.assert_buffer(&Buffer::with_lines(vec![
+        backend.assert_buffer_lines([
             "aaa       ",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
-        ]));
+        ]);
     }
 
     #[test]
     fn append_lines_not_at_last_line() {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -496,19 +509,19 @@ mod tests {
         assert_eq!(backend.get_cursor().unwrap(), (4, 4));
 
         // As such the buffer should remain unchanged
-        backend.assert_buffer(&Buffer::with_lines(vec![
+        backend.assert_buffer_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
             "dddddddddd",
             "eeeeeeeeee",
-        ]));
+        ]);
     }
 
     #[test]
     fn append_lines_at_last_line() {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -522,7 +535,7 @@ mod tests {
 
         backend.append_lines(1).unwrap();
 
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "bbbbbbbbbb",
             "cccccccccc",
             "dddddddddd",
@@ -538,7 +551,7 @@ mod tests {
     #[test]
     fn append_multiple_lines_not_at_last_line() {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -555,19 +568,19 @@ mod tests {
         assert_eq!(backend.get_cursor().unwrap(), (1, 4));
 
         // As such the buffer should remain unchanged
-        backend.assert_buffer(&Buffer::with_lines(vec![
+        backend.assert_buffer_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
             "dddddddddd",
             "eeeeeeeeee",
-        ]));
+        ]);
     }
 
     #[test]
     fn append_multiple_lines_past_last_line() {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -580,19 +593,19 @@ mod tests {
         backend.append_lines(3).unwrap();
         assert_eq!(backend.get_cursor().unwrap(), (1, 4));
 
-        backend.assert_buffer(&Buffer::with_lines(vec![
+        backend.assert_buffer_lines([
             "cccccccccc",
             "dddddddddd",
             "eeeeeeeeee",
             "          ",
             "          ",
-        ]));
+        ]);
     }
 
     #[test]
     fn append_multiple_lines_where_cursor_at_end_appends_height_lines() {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -605,19 +618,19 @@ mod tests {
         backend.append_lines(5).unwrap();
         assert_eq!(backend.get_cursor().unwrap(), (1, 4));
 
-        backend.assert_buffer(&Buffer::with_lines(vec![
+        backend.assert_buffer_lines([
             "          ",
             "          ",
             "          ",
             "          ",
             "          ",
-        ]));
+        ]);
     }
 
     #[test]
     fn append_multiple_lines_where_cursor_appends_height_lines() {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines(vec![
+        backend.buffer = Buffer::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -630,13 +643,13 @@ mod tests {
         backend.append_lines(5).unwrap();
         assert_eq!(backend.get_cursor().unwrap(), (1, 4));
 
-        backend.assert_buffer(&Buffer::with_lines(vec![
+        backend.assert_buffer_lines([
             "bbbbbbbbbb",
             "cccccccccc",
             "dddddddddd",
             "eeeeeeeeee",
             "          ",
-        ]));
+        ]);
     }
 
     #[test]

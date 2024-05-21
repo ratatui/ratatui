@@ -66,7 +66,7 @@ impl Shape for Rectangle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{assert_buffer_eq, prelude::*, widgets::canvas::Canvas};
+    use crate::{prelude::*, widgets::canvas::Canvas};
 
     #[test]
     fn draw_block_lines() {
@@ -85,7 +85,7 @@ mod tests {
                 });
             });
         canvas.render(buffer.area, &mut buffer);
-        let mut expected = Buffer::with_lines(vec![
+        let mut expected = Buffer::with_lines([
             "██████████",
             "█        █",
             "█        █",
@@ -99,7 +99,7 @@ mod tests {
         ]);
         expected.set_style(buffer.area, Style::new().red());
         expected.set_style(buffer.area.inner(&Margin::new(1, 1)), Style::reset());
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -119,7 +119,7 @@ mod tests {
                 });
             });
         canvas.render(buffer.area, &mut buffer);
-        let mut expected = Buffer::with_lines(vec![
+        let mut expected = Buffer::with_lines([
             "█▀▀▀▀▀▀▀▀█",
             "█        █",
             "█        █",
@@ -134,7 +134,7 @@ mod tests {
         expected.set_style(buffer.area, Style::new().red().on_red());
         expected.set_style(buffer.area.inner(&Margin::new(1, 0)), Style::reset().red());
         expected.set_style(buffer.area.inner(&Margin::new(1, 1)), Style::reset());
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -163,7 +163,7 @@ mod tests {
                 });
             });
         canvas.render(buffer.area, &mut buffer);
-        let mut expected = Buffer::with_lines(vec![
+        let mut expected = Buffer::with_lines([
             "⡏⠉⠉⠉⠉⠉⠉⠉⠉⢹",
             "⡇⢠⠤⠤⠤⠤⠤⠤⡄⢸",
             "⡇⢸      ⡇⢸",
@@ -178,6 +178,6 @@ mod tests {
         expected.set_style(buffer.area, Style::new().red());
         expected.set_style(buffer.area.inner(&Margin::new(1, 1)), Style::new().green());
         expected.set_style(buffer.area.inner(&Margin::new(2, 2)), Style::reset());
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 }
