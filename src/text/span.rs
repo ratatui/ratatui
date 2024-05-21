@@ -377,18 +377,16 @@ impl WidgetRef for Span<'_> {
             if next_x > max_x {
                 break;
             }
-            buf.get_mut(current_x, y)
-                .set_symbol(g.symbol)
-                .set_style(g.style);
+            buf[(current_x, y)].set_symbol(g.symbol).set_style(g.style);
 
             // multi-width graphemes must clear the cells of characters that are hidden by the
             // grapheme, otherwise the hidden characters will be re-rendered if the grapheme is
             // overwritten.
             for i in (current_x + 1)..next_x {
-                buf.get_mut(i, y).reset();
+                buf[(i, y)].reset();
                 // it may seem odd that the style of the hidden cells are not set to the style of
                 // the grapheme, but this is how the existing buffer.set_span() method works.
-                // buf.get_mut(i, y).set_style(g.style);
+                // buf[(i, y)].set_style(g.style);
             }
             current_x = next_x;
         }

@@ -771,7 +771,7 @@ where
                         (index % width) as u16 + canvas_area.left(),
                         (index / width) as u16 + canvas_area.top(),
                     );
-                    let cell = buf.get_mut(x, y).set_char(ch);
+                    let cell = buf[(x, y)].set_char(ch);
                     if colors.0 != Color::Reset {
                         cell.set_fg(colors.0);
                     }

@@ -18,7 +18,7 @@ macro_rules! assert_buffer_eq {
                     .into_iter()
                     .enumerate()
                     .map(|(i, (x, y, cell))| {
-                        let expected_cell = expected.get(x, y);
+                        let expected_cell = &expected[(x, y)];
                         format!("{i}: at ({x}, {y})\n  expected: {expected_cell:?}\n  actual:   {cell:?}")
                     })
                     .collect::<Vec<String>>()

@@ -214,13 +214,13 @@ fn widgets_line_gauge_renders() {
         "└──────────────────┘",
     ]);
     for col in 4..10 {
-        expected.get_mut(col, 0).set_fg(Color::Green);
+        expected[(col, 0)].set_fg(Color::Green);
     }
     for col in 10..20 {
-        expected.get_mut(col, 0).set_fg(Color::White);
+        expected[(col, 0)].set_fg(Color::White);
     }
     for col in 5..7 {
-        expected.get_mut(col, 2).set_fg(Color::Green);
+        expected[(col, 2)].set_fg(Color::Green);
     }
     terminal.backend().assert_buffer(&expected);
 }

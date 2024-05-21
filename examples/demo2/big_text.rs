@@ -245,7 +245,7 @@ fn render_glyph(glyph: [u8; 8], area: Rect, buf: &mut Buffer, pixel_size: PixelS
             .clone()
             .zip(area.left()..area.right())
         {
-            let cell = buf.get_mut(x, y);
+            let cell = &mut buf[(x, y)];
             let symbol_character = match pixel_size {
                 PixelSize::Full => match glyph[row] & (1 << col) {
                     0 => ' ',

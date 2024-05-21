@@ -39,7 +39,7 @@ use crossterm::{
     ExecutableCommand,
 };
 use palette::{convert::FromColorUnclamped, Okhsv, Srgb};
-use ratatui::prelude::*;
+use ratatui::{layout::Position, prelude::*};
 
 #[derive(Debug, Default)]
 struct App {
@@ -217,7 +217,7 @@ impl Widget for &mut ColorsWidget {
                 // pixel below it
                 let fg = colors[yi * 2][xi];
                 let bg = colors[yi * 2 + 1][xi];
-                buf.get_mut(x, y).set_char('▀').set_fg(fg).set_bg(bg);
+                buf[Position::new(x, y)].set_char('▀').set_fg(fg).set_bg(bg);
             }
         }
         self.frame_count += 1;
