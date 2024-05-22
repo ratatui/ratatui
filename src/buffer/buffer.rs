@@ -1,4 +1,7 @@
-use std::{fmt, ops};
+use std::{
+    fmt,
+    ops::{Index, IndexMut},
+};
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -92,13 +95,12 @@ impl Buffer {
         &self.area
     }
 
-    /// Returns a reference to Cell at the given coordinates
+    /// Returns a reference to the [`Cell`] at the given coordinates
     ///
-    /// Callers should generally use the [`ops::Index`] trait ([`Buffer[Position]`]) or the
-    /// [`Buffer::cell`] method instead of this method.
+    /// Callers should use [`Buffer[]`](Self::index) or [`Buffer::cell`] instead of this method.
     ///
-    /// Note that conventionally methods named `get` usually return `Option<&T>`, but this method
-    /// panics instead. This is kept for backwards compatibility. See [`cell`](Self::cell) for a safe
+    /// Note: idiomatically methods named `get` usually return `Option<&T>`, but this method panics
+    /// instead. This is kept for backwards compatibility. See [`cell`](Self::cell) for a safe
     /// alternative.
     ///
     /// # Panics
@@ -106,35 +108,40 @@ impl Buffer {
     /// Panics if the index is out of bounds.
     #[track_caller]
     #[deprecated(note = "Use Buffer[] or Buffer::cell instead")]
+    #[must_use]
     pub fn get(&self, x: u16, y: u16) -> &Cell {
         let i = self.index_of(x, y);
         &self.content[i]
     }
 
-    /// Returns a mutable reference to Cell at the given coordinates
+    /// Returns a mutable reference to the [`Cell`] at the given coordinates.
     ///
-    /// Callers should generally use the [`ops::IndexMut`] trait (`&mut Buffer[Position]`) or the
-    /// [`Buffer::cell_mut`] method instead of this method.
+    /// Callers should use [`Buffer[]`](Self::index_mut) or [`Buffer::cell_mut`] instead of this
+    /// method.
     ///
-    /// Note that conventionally methods named `get_mut` usually return `Option<&mut T>`, but this
-    /// method panics instead. This is kept for backwards compatibility. See `cell_mut` for a safe
-    /// alternative.
+    /// Note: idiomatically methods named `get_mut` usually return `Option<&mut T>`, but this method
+    /// panics instead. This is kept for backwards compatibility. See [`cell_mut`](Self::cell_mut)
+    /// for a safe alternative.
     ///
     /// # Panics
     ///
-    /// Panics if the index is out of bounds.
+    /// Panics if the position is outside the `Buffer`'s area.
     #[track_caller]
     #[deprecated(note = "Use Buffer[] or Buffer::cell_mut instead")]
+    #[must_use]
     pub fn get_mut(&mut self, x: u16, y: u16) -> &mut Cell {
         let i = self.index_of(x, y);
         &mut self.content[i]
     }
 
-    /// Returns a reference to Cell at the given coordinates.
+    /// Returns a reference to the [`Cell`] at the given position or [`None`] if the position is
+    /// outside the `Buffer`'s area.
     ///
-    /// Returns `None` if the index is out of bounds.
+    /// This method accepts any value that can be converted to [`Position`] (e.g. `(x, y)` or
+    /// `Position::new(x, y)`).
     ///
-    /// Note that unlike `get`, this method accepts a `Position` instead of `x` and `y` coordinates.
+    /// For a method that panics when the position is outside the buffer instead of returning
+    /// `None`, use [`Buffer[]`](Self::index).
     ///
     /// # Examples
     ///
@@ -147,17 +154,21 @@ impl Buffer {
     /// assert_eq!(buffer.cell((0, 0)), Some(&Cell::default()));
     /// assert_eq!(buffer.cell((10, 10)), None);
     /// ```
+    #[must_use]
     pub fn cell<P: Into<Position>>(&self, pos: P) -> Option<&Cell> {
         let pos = pos.into();
         let index = self.index_of_opt(pos.x, pos.y)?;
         self.content.get(index)
     }
 
-    /// Returns a mutable reference to Cell at the given coordinates
+    /// Returns a mutable reference to the [`Cell`] at the given position or [`None`] if the
+    /// position is outside the `Buffer`'s area.
     ///
-    /// Returns `None` if the index is out of bounds.
+    /// This method accepts any value that can be converted to [`Position`] (e.g. `(x, y)` or
+    /// `Position::new(x, y)`).
     ///
-    /// Note that unlike `get`, this method accepts a `Position` instead of `x` and `y` coordinates.
+    /// For a method that panics when the position is outside the buffer instead of returning
+    /// `None`, use [`Buffer[]`](Self::index_mut).
     ///
     /// # Examples
     ///
@@ -172,6 +183,7 @@ impl Buffer {
     ///     cell.set_style(Style::default().fg(Color::Red));
     /// }
     /// ```
+    #[must_use]
     pub fn cell_mut<P: Into<Position>>(&mut self, pos: P) -> Option<&mut Cell> {
         let pos = pos.into();
         let index = self.index_of_opt(pos.x, pos.y)?;
@@ -203,6 +215,7 @@ impl Buffer {
     /// buffer.index_of(0, 0); // Panics
     /// ```
     #[track_caller]
+    #[must_use]
     pub fn index_of(&self, x: u16, y: u16) -> usize {
         self.index_of_opt(x, y).unwrap_or_else(|| {
             panic!(
@@ -217,6 +230,7 @@ impl Buffer {
     /// Returns `None` if the given coordinates are outside of the Buffer's area.
     ///
     /// Note that this is private because of <https://github.com/ratatui-org/ratatui/issues/1122>
+    #[must_use]
     const fn index_of_opt(&self, x: u16, y: u16) -> Option<usize> {
         let area = self.area;
         if x < area.left() || x >= area.right() || y < area.top() || y >= area.bottom() {
@@ -253,6 +267,7 @@ impl Buffer {
     /// // Index 100 is the 101th cell, which lies outside of the area of this Buffer.
     /// buffer.pos_of(100); // Panics
     /// ```
+    #[must_use]
     pub fn pos_of(&self, i: usize) -> (u16, u16) {
         debug_assert!(
             i < self.content.len(),
@@ -455,14 +470,18 @@ impl Buffer {
     }
 }
 
-impl<P: Into<Position>> ops::Index<P> for Buffer {
+impl<P: Into<Position>> Index<P> for Buffer {
     type Output = Cell;
 
-    /// Returns the Cell at the given position
+    /// Returns a reference to the [`Cell`] at the given position.
+    ///
+    /// This method accepts any value that can be converted to [`Position`] (e.g. `(x, y)` or
+    /// `Position::new(x, y)`).
     ///
     /// # Panics
     ///
-    /// May panic if the given position is outside the buffer's area.
+    /// May panic if the given position is outside the buffer's area. For a method that returns
+    /// `None` instead of panicking, use [`Buffer::cell`](Self::cell).
     ///
     /// # Examples
     ///
@@ -479,12 +498,16 @@ impl<P: Into<Position>> ops::Index<P> for Buffer {
     }
 }
 
-impl<P: Into<Position>> ops::IndexMut<P> for Buffer {
-    /// Returns a mutable reference to the Cell at the given position
+impl<P: Into<Position>> IndexMut<P> for Buffer {
+    /// Returns a mutable reference to the [`Cell`] at the given position.
+    ///
+    /// This method accepts any value that can be converted to [`Position`] (e.g. `(x, y)` or
+    /// `Position::new(x, y)`).
     ///
     /// # Panics
     ///
-    /// May panic if the given position is outside the buffer's area.
+    /// May panic if the given position is outside the buffer's area. For a method that returns
+    /// `None` instead of panicking, use [`Buffer::cell_mut`](Self::cell_mut).
     ///
     /// # Examples
     ///
@@ -688,7 +711,7 @@ mod tests {
         let buf = Buffer::empty(rect);
 
         // There are a total of 100 cells; zero-indexed means that 100 would be the 101st cell.
-        buf.pos_of(100);
+        let _ = buf.pos_of(100);
     }
 
     #[rstest]
