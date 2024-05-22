@@ -98,7 +98,7 @@ impl Buffer {
     /// [`Buffer::cell`] method instead of this method.
     ///
     /// Note that conventionally methods named `get` usually return `Option<&T>`, but this method
-    /// panics instead. This is kept for backwards compatibility. See `get_opt` for a safe
+    /// panics instead. This is kept for backwards compatibility. See [`cell`](Self::cell) for a safe
     /// alternative.
     ///
     /// # Panics
