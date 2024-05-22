@@ -85,6 +85,26 @@ where
     pub const fn new(writer: W) -> Self {
         Self { writer }
     }
+
+    /// Gets the writer.
+    #[stability::unstable(
+        feature = "backend-writer",
+        issue = "https://github.com/ratatui-org/ratatui/pull/991"
+    )]
+    pub const fn writer(&self) -> &W {
+        &self.writer
+    }
+
+    /// Gets the writer as a mutable reference.
+    /// Note: writing to the writer may cause incorrect output after the write. This is due to the
+    /// way that the Terminal implements diffing Buffers.
+    #[stability::unstable(
+        feature = "backend-writer",
+        issue = "https://github.com/ratatui-org/ratatui/pull/991"
+    )]
+    pub fn writer_mut(&mut self) -> &mut W {
+        &mut self.writer
+    }
 }
 
 impl<W> Write for TermionBackend<W>
