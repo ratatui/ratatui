@@ -152,6 +152,11 @@ all-features = true
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
+# Improve benchmark consistency
+[profile.bench]
+codegen-units = 1
+lto = true
+
 [[bench]]
 name = "barchart"
 harness = false
