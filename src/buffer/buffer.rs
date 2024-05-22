@@ -285,8 +285,8 @@ impl Buffer {
 
     /// Reset all cells in the buffer
     pub fn reset(&mut self) {
-        for c in &mut self.content {
-            c.reset();
+        for cell in &mut self.content {
+            cell.reset();
         }
     }
 
@@ -303,7 +303,7 @@ impl Buffer {
             let k = ((y - area.y) * area.width + x - area.x) as usize;
             if i != k {
                 self.content[k] = self.content[i].clone();
-                self.content[i] = Cell::default();
+                self.content[i].reset();
             }
         }
 

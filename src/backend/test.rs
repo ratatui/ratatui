@@ -170,26 +170,29 @@ impl Backend for TestBackend {
     }
 
     fn clear_region(&mut self, clear_type: super::ClearType) -> io::Result<()> {
-        match clear_type {
-            ClearType::All => self.clear()?,
+        let region = match clear_type {
+            ClearType::All => return self.clear(),
             ClearType::AfterCursor => {
                 let index = self.buffer.index_of(self.pos.0, self.pos.1) + 1;
-                self.buffer.content[index..].fill(Cell::default());
+                &mut self.buffer.content[index..]
             }
             ClearType::BeforeCursor => {
                 let index = self.buffer.index_of(self.pos.0, self.pos.1);
-                self.buffer.content[..index].fill(Cell::default());
+                &mut self.buffer.content[..index]
             }
             ClearType::CurrentLine => {
                 let line_start_index = self.buffer.index_of(0, self.pos.1);
                 let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
-                self.buffer.content[line_start_index..=line_end_index].fill(Cell::default());
+                &mut self.buffer.content[line_start_index..=line_end_index]
             }
             ClearType::UntilNewLine => {
                 let index = self.buffer.index_of(self.pos.0, self.pos.1);
                 let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
-                self.buffer.content[index..=line_end_index].fill(Cell::default());
+                &mut self.buffer.content[index..=line_end_index]
             }
+        };
+        for cell in region {
+            cell.reset();
         }
         Ok(())
     }
