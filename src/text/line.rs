@@ -475,7 +475,7 @@ impl<'a> Line<'a> {
 }
 
 impl<'a> IntoIterator for Line<'a> {
-    type IntoIter = std::vec::IntoIter<Span<'a>>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
     type Item = Span<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
