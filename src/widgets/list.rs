@@ -910,6 +910,7 @@ impl StatefulWidget for List<'_> {
 // Note: remove this when StatefulWidgetRef is stabilized and replace with the blanket impl
 impl StatefulWidget for &List<'_> {
     type State = ListState;
+
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         StatefulWidgetRef::render_ref(self, area, buf, state);
     }

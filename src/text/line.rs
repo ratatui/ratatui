@@ -475,8 +475,8 @@ impl<'a> Line<'a> {
 }
 
 impl<'a> IntoIterator for Line<'a> {
-    type Item = Span<'a>;
     type IntoIter = std::vec::IntoIter<Span<'a>>;
+    type Item = Span<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.spans.into_iter()
@@ -484,8 +484,8 @@ impl<'a> IntoIterator for Line<'a> {
 }
 
 impl<'a> IntoIterator for &'a Line<'a> {
-    type Item = &'a Span<'a>;
     type IntoIter = std::slice::Iter<'a, Span<'a>>;
+    type Item = &'a Span<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -493,8 +493,8 @@ impl<'a> IntoIterator for &'a Line<'a> {
 }
 
 impl<'a> IntoIterator for &'a mut Line<'a> {
-    type Item = &'a mut Span<'a>;
     type IntoIter = std::slice::IterMut<'a, Span<'a>>;
+    type Item = &'a mut Span<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()

@@ -50,6 +50,7 @@ impl RandomSignal {
 
 impl Iterator for RandomSignal {
     type Item = u64;
+
     fn next(&mut self) -> Option<u64> {
         Some(self.distribution.sample(&mut self.rng))
     }

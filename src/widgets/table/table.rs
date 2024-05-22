@@ -588,6 +588,7 @@ impl StatefulWidget for Table<'_> {
 // Note: remove this when StatefulWidgetRef is stabilized and replace with the blanket impl
 impl StatefulWidget for &Table<'_> {
     type State = TableState;
+
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         StatefulWidgetRef::render_ref(self, area, buf, state);
     }

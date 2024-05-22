@@ -601,6 +601,7 @@ impl WidgetRef for BarChart<'_> {
 
 impl<'a> Styled for BarChart<'a> {
     type Item = Self;
+
     fn style(&self) -> Style {
         self.style
     }
