@@ -175,6 +175,7 @@ pub enum LegendPosition {
 }
 
 impl LegendPosition {
+    #[must_use]
     fn layout(
         self,
         area: Rect,
@@ -400,6 +401,7 @@ impl<'a> Dataset<'a> {
 
 /// A container that holds all the infos about where to display each elements of the chart (axis,
 /// labels, legend, ...).
+#[must_use]
 struct ChartLayout {
     /// Location of the title of the x axis
     title_x: Option<(u16, u16)>,
@@ -524,6 +526,7 @@ impl<'a> Chart<'a> {
     ///     Dataset::default().data(&data_points2),
     /// ]);
     /// ```
+    #[must_use]
     pub fn new(datasets: Vec<Dataset<'a>>) -> Self {
         Self {
             block: None,
@@ -690,6 +693,7 @@ impl<'a> Chart<'a> {
 
     /// Compute the internal layout of the chart given the area. If the area is too small some
     /// elements may be automatically hidden
+    #[must_use]
     fn layout(&self, area: Rect) -> Option<ChartLayout> {
         if area.height == 0 || area.width == 0 {
             return None;
@@ -797,6 +801,7 @@ impl<'a> Chart<'a> {
         })
     }
 
+    #[must_use]
     fn max_width_of_labels_left_of_y_axis(&self, area: Rect, has_y_axis: bool) -> u16 {
         let mut max_width = self
             .y_axis
@@ -1116,6 +1121,7 @@ mod tests {
 
     use super::*;
 
+    #[must_use]
     struct LegendTestCase {
         chart_area: Rect,
         hidden_legend_constraints: (Constraint, Constraint),

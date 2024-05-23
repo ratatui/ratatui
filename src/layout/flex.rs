@@ -14,6 +14,7 @@ use super::constraint::Constraint;
 /// - `Center`: Centers items within the container.
 /// - `SpaceBetween`: Adds excess space between each element.
 /// - `SpaceAround`: Adds excess space around each element.
+#[must_use]
 #[derive(Copy, Debug, Default, Display, EnumString, Clone, Eq, PartialEq, Hash, EnumIs)]
 pub enum Flex {
     /// Fills the available space within the container, putting excess space into the last
@@ -177,5 +178,3 @@ pub enum Flex {
     /// ```
     SpaceAround,
 }
-#[cfg(test)]
-mod tests {}

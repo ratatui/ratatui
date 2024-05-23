@@ -55,6 +55,7 @@ pub struct Label<'a> {
 ///
 /// This allows the canvas to be drawn in multiple layers. This is useful if you want to draw
 /// multiple shapes on the canvas in specific order.
+#[must_use]
 #[derive(Debug)]
 struct Layer {
     // A string of characters representing the grid. This will be wrapped to the width of the grid
@@ -84,7 +85,6 @@ trait Grid: fmt::Debug {
     /// corner. Note that this is not the same as the `(x, y)` coordinates of the canvas.
     fn paint(&mut self, x: usize, y: usize, color: Color);
     /// Save the current state of the [`Grid`] as a layer to be rendered
-    #[must_use]
     fn save(&self) -> Layer;
     /// Reset the grid to its initial state
     fn reset(&mut self);
@@ -99,6 +99,7 @@ trait Grid: fmt::Debug {
 ///
 /// This grid type only supports a single foreground color for each 2x4 dots cell. There is no way
 /// to set the individual color of each dot in the braille pattern.
+#[must_use]
 #[derive(Debug)]
 struct BrailleGrid {
     /// Width of the grid in number of terminal columns
@@ -162,6 +163,7 @@ impl Grid for BrailleGrid {
 ///
 /// This makes it possible to draw shapes with a resolution of 1x1 dots per cell. This is useful
 /// when you want to draw shapes with a low resolution.
+#[must_use]
 #[derive(Debug)]
 struct CharGrid {
     /// Width of the grid in number of terminal columns
@@ -234,6 +236,7 @@ impl Grid for CharGrid {
 /// This allows for more flexibility than the `BrailleGrid` which only supports a single
 /// foreground color for each 2x4 dots cell, and the `CharGrid` which only supports a single
 /// character for each cell.
+#[must_use]
 #[derive(Debug)]
 struct HalfBlockGrid {
     /// Width of the grid in number of terminal columns
@@ -378,6 +381,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     /// let point = painter.get_point(1.0, 2.0);
     /// assert_eq!(point, Some((0, 0)));
     /// ```
+    #[must_use]
     pub fn get_point(&self, x: f64, y: f64) -> Option<(usize, usize)> {
         let left = self.context.x_bounds[0];
         let right = self.context.x_bounds[1];
@@ -428,6 +432,7 @@ impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
 /// this as similar to the [`Frame`] struct that is used to draw widgets on the terminal.
 ///
 /// [`Frame`]: crate::prelude::Frame
+#[must_use]
 #[derive(Debug)]
 pub struct Context<'a> {
     x_bounds: [f64; 2],

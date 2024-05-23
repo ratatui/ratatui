@@ -14,7 +14,6 @@ pub trait Styled {
     type Item;
 
     /// Returns the style of the object.
-    #[must_use]
     fn style(&self) -> Style;
 
     /// Sets the style of the object.

@@ -106,6 +106,7 @@ thread_local! {
 ///
 /// [`cassowary-rs`]: https://crates.io/crates/cassowary
 /// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+#[must_use]
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,
@@ -521,6 +522,7 @@ impl Layout {
     ///     .split(Rect::new(0, 0, 9, 2));
     /// assert_eq!(layout[..], [Rect::new(0, 0, 3, 2), Rect::new(3, 0, 6, 2)]);
     /// ```
+    #[must_use]
     pub fn split(&self, area: Rect) -> Rects {
         self.split_with_spacers(area).0
     }
@@ -570,6 +572,7 @@ impl Layout {
     ///     ]
     /// );
     /// ```
+    #[must_use]
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
         LAYOUT_CACHE.with(|c| {
             c.get_or_init(|| {
@@ -1116,7 +1119,7 @@ mod tests {
             height: 10,
         };
 
-        Layout::default()
+        _ = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Percentage(10),

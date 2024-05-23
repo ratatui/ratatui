@@ -10,6 +10,7 @@ pub mod block {
     pub const ONE_QUARTER: &str = "▎";
     pub const ONE_EIGHTH: &str = "▏";
 
+    #[must_use]
     #[derive(Debug, Clone, Eq, PartialEq, Hash)]
     pub struct Set {
         pub full: &'static str,
@@ -70,6 +71,7 @@ pub mod bar {
     pub const ONE_QUARTER: &str = "▂";
     pub const ONE_EIGHTH: &str = "▁";
 
+    #[must_use]
     #[derive(Debug, Clone, Eq, PartialEq, Hash)]
     pub struct Set {
         pub full: &'static str,
@@ -163,6 +165,7 @@ pub mod line {
     pub const DOUBLE_CROSS: &str = "╬";
     pub const THICK_CROSS: &str = "╋";
 
+    #[must_use]
     #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
     pub struct Set {
         pub vertical: &'static str,
@@ -238,6 +241,7 @@ pub mod line {
 pub mod border {
     use super::line;
 
+    #[must_use]
     #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
     pub struct Set {
         pub top_left: &'static str,
@@ -485,6 +489,7 @@ pub mod braille {
 }
 
 /// Marker to use when plotting data points
+#[must_use]
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Marker {
     /// One point per cell in shape of dot (`•`)
@@ -521,6 +526,7 @@ pub mod scrollbar {
     /// │  └──────── thumb
     /// └─────────── begin
     /// ```
+    #[must_use]
     #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
     pub struct Set {
         pub track: &'static str,

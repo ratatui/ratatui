@@ -92,6 +92,7 @@ impl ListState {
     /// let state = ListState::default();
     /// assert_eq!(state.offset(), 0);
     /// ```
+    #[must_use]
     pub const fn offset(&self) -> usize {
         self.offset
     }
@@ -105,6 +106,7 @@ impl ListState {
     /// let mut state = ListState::default();
     /// *state.offset_mut() = 1;
     /// ```
+    #[must_use]
     pub fn offset_mut(&mut self) -> &mut usize {
         &mut self.offset
     }
@@ -120,6 +122,7 @@ impl ListState {
     /// let state = TableState::default();
     /// assert_eq!(state.selected(), None);
     /// ```
+    #[must_use]
     pub const fn selected(&self) -> Option<usize> {
         self.selected
     }
@@ -135,6 +138,7 @@ impl ListState {
     /// let mut state = ListState::default();
     /// *state.selected_mut() = Some(1);
     /// ```
+    #[must_use]
     pub fn selected_mut(&mut self) -> &mut Option<usize> {
         &mut self.selected
     }
@@ -311,6 +315,7 @@ impl<'a> ListItem<'a> {
     /// let item = ListItem::new("Multi-line\nitem");
     /// assert_eq!(item.height(), 2);
     /// ```
+    #[must_use]
     pub fn height(&self) -> usize {
         self.content.height()
     }
@@ -330,6 +335,7 @@ impl<'a> ListItem<'a> {
     /// let item = ListItem::new("12345\n1234567");
     /// assert_eq!(item.width(), 7);
     /// ```
+    #[must_use]
     pub fn width(&self) -> usize {
         self.content.width()
     }
@@ -749,11 +755,13 @@ impl<'a> List<'a> {
     }
 
     /// Returns the number of [`ListItem`]s in the list
+    #[must_use]
     pub fn len(&self) -> usize {
         self.items.len()
     }
 
     /// Returns true if the list contains no elements.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
@@ -762,6 +770,7 @@ impl<'a> List<'a> {
     /// selected item on screen even with items of inconsistent sizes
     ///
     /// This function is sensitive to how the bounds checking function handles item height
+    #[must_use]
     fn apply_scroll_padding_to_selected_index(
         &self,
         selected: Option<usize>,
@@ -805,6 +814,7 @@ impl<'a> List<'a> {
     }
 
     /// Given an offset, calculate which items can fit in a given area
+    #[must_use]
     fn get_items_bounds(
         &self,
         selected: Option<usize>,

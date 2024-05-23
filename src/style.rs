@@ -222,6 +222,7 @@ impl fmt::Debug for Modifier {
 ///     buffer.get(0, 0).style(),
 /// );
 /// ```
+#[must_use = "The Style needs to be applied to something to have an effect"]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Style {

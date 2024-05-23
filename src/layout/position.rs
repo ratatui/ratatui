@@ -21,6 +21,7 @@ use crate::layout::Rect;
 /// // position can be converted back into the components when needed
 /// let (x, y) = position.into();
 /// ```
+#[must_use]
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct Position {
     /// The x coordinate of the position

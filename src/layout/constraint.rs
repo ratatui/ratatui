@@ -44,6 +44,7 @@ use strum::EnumIs;
 /// // Create a layout with fill proportional sizes for each element
 /// let constraints = Constraint::from_fills([1, 2, 1]);
 /// ```
+#[must_use]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, EnumIs)]
 pub enum Constraint {
     /// Applies a minimum size constraint to the element
@@ -195,6 +196,7 @@ impl Constraint {
         since = "0.26.0",
         note = "This field will be hidden in the next minor version."
     )]
+    #[must_use]
     pub fn apply(&self, length: u16) -> u16 {
         match *self {
             Self::Percentage(p) => {
@@ -225,6 +227,7 @@ impl Constraint {
     /// let constraints = Constraint::from_lengths([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
+    #[must_use]
     pub fn from_lengths<T>(lengths: T) -> Vec<Self>
     where
         T: IntoIterator<Item = u16>,
@@ -242,6 +245,7 @@ impl Constraint {
     /// let constraints = Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
+    #[must_use]
     pub fn from_ratios<T>(ratios: T) -> Vec<Self>
     where
         T: IntoIterator<Item = (u32, u32)>,
@@ -262,6 +266,7 @@ impl Constraint {
     /// let constraints = Constraint::from_percentages([25, 50, 25]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
+    #[must_use]
     pub fn from_percentages<T>(percentages: T) -> Vec<Self>
     where
         T: IntoIterator<Item = u16>,
@@ -279,6 +284,7 @@ impl Constraint {
     /// let constraints = Constraint::from_maxes([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
+    #[must_use]
     pub fn from_maxes<T>(maxes: T) -> Vec<Self>
     where
         T: IntoIterator<Item = u16>,
@@ -296,6 +302,7 @@ impl Constraint {
     /// let constraints = Constraint::from_mins([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
+    #[must_use]
     pub fn from_mins<T>(mins: T) -> Vec<Self>
     where
         T: IntoIterator<Item = u16>,
@@ -313,6 +320,7 @@ impl Constraint {
     /// let constraints = Constraint::from_mins([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
+    #[must_use]
     pub fn from_fills<T>(proportional_factors: T) -> Vec<Self>
     where
         T: IntoIterator<Item = u16>,

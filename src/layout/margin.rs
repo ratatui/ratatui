@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[must_use]
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Margin {
     pub horizontal: u16,

@@ -14,6 +14,7 @@ pub use iter::*;
 ///
 /// A simple rectangle used in the computation of the layout and to give widgets a hint about the
 /// area they are supposed to render to.
+#[must_use]
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rect {
@@ -79,16 +80,19 @@ impl Rect {
 
     /// The area of the `Rect`. If the area is larger than the maximum value of `u16`, it will be
     /// clamped to `u16::MAX`.
+    #[must_use]
     pub const fn area(self) -> u16 {
         self.width.saturating_mul(self.height)
     }
 
     /// Returns true if the `Rect` has no area.
+    #[must_use]
     pub const fn is_empty(self) -> bool {
         self.width == 0 || self.height == 0
     }
 
     /// Returns the left coordinate of the `Rect`.
+    #[must_use]
     pub const fn left(self) -> u16 {
         self.x
     }
@@ -98,11 +102,13 @@ impl Rect {
     ///
     /// If the right coordinate is larger than the maximum value of u16, it will be clamped to
     /// `u16::MAX`.
+    #[must_use]
     pub const fn right(self) -> u16 {
         self.x.saturating_add(self.width)
     }
 
     /// Returns the top coordinate of the `Rect`.
+    #[must_use]
     pub const fn top(self) -> u16 {
         self.y
     }
@@ -112,6 +118,7 @@ impl Rect {
     ///
     /// If the bottom coordinate is larger than the maximum value of u16, it will be clamped to
     /// `u16::MAX`.
+    #[must_use]
     pub const fn bottom(self) -> u16 {
         self.y.saturating_add(self.height)
     }
@@ -120,7 +127,6 @@ impl Rect {
     ///
     /// If the margin is larger than the `Rect`, the returned `Rect` will have no area.
     #[allow(clippy::trivially_copy_pass_by_ref)] // See PR #1008
-    #[must_use]
     pub const fn inner(self, margin: &Margin) -> Self {
         let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
         let doubled_margin_vertical = margin.vertical.saturating_mul(2);
@@ -145,7 +151,6 @@ impl Rect {
     /// - Positive `y` moves the whole `Rect` to the bottom, negative to the top.
     ///
     /// See [`Offset`] for details.
-    #[must_use]
     pub fn offset(self, offset: Offset) -> Self {
         Self {
             x: i32::from(self.x)
@@ -159,7 +164,6 @@ impl Rect {
     }
 
     /// Returns a new `Rect` that contains both the current one and the given one.
-    #[must_use]
     pub fn union(self, other: Self) -> Self {
         let x1 = min(self.x, other.x);
         let y1 = min(self.y, other.y);
@@ -176,7 +180,6 @@ impl Rect {
     /// Returns a new `Rect` that is the intersection of the current one and the given one.
     ///
     /// If the two `Rect`s do not intersect, the returned `Rect` will have no area.
-    #[must_use]
     pub fn intersection(self, other: Self) -> Self {
         let x1 = max(self.x, other.x);
         let y1 = max(self.y, other.y);
@@ -191,6 +194,7 @@ impl Rect {
     }
 
     /// Returns true if the two `Rect`s intersect.
+    #[must_use]
     pub const fn intersects(self, other: Self) -> bool {
         self.x < other.right()
             && self.right() > other.x
@@ -209,6 +213,7 @@ impl Rect {
     /// let rect = Rect::new(1, 2, 3, 4);
     /// assert!(rect.contains(Position { x: 1, y: 2 }));
     /// ````
+    #[must_use]
     pub const fn contains(self, position: Position) -> bool {
         position.x >= self.x
             && position.x < self.right()
@@ -240,7 +245,6 @@ impl Rect {
     /// let rect = Rect::new(0, 0, 100, 100).clamp(area);
     /// # }
     /// ```
-    #[must_use]
     pub fn clamp(self, other: Self) -> Self {
         let width = self.width.min(other.width);
         let height = self.height.min(other.height);
@@ -326,7 +330,6 @@ impl Rect {
     /// indents the x value of the `Rect` by a given `offset`
     ///
     /// This is pub(crate) for now as we need to stabilize the naming / design of this API.
-    #[must_use]
     pub(crate) const fn indent_x(self, offset: u16) -> Self {
         Self {
             x: self.x.saturating_add(offset),
@@ -499,7 +502,7 @@ mod tests {
         for width in 256u16..300u16 {
             for height in 256u16..300u16 {
                 let rect = Rect::new(0, 0, width, height);
-                rect.area(); // Should not panic.
+                _ = rect.area(); // Should not panic.
                 assert!(rect.width < width || rect.height < height);
                 // The target dimensions are rounded down so the math will not be too precise
                 // but let's make sure the ratios don't diverge crazily.
@@ -526,7 +529,7 @@ mod tests {
         for width in 0..256u16 {
             for height in 0..256u16 {
                 let rect = Rect::new(0, 0, width, height);
-                rect.area(); // Should not panic.
+                _ = rect.area(); // Should not panic.
                 assert_eq!(rect.width, width);
                 assert_eq!(rect.height, height);
             }

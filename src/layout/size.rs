@@ -5,6 +5,7 @@ use crate::prelude::*;
 ///
 /// The width and height are stored as `u16` values and represent the number of columns and rows
 /// respectively.
+#[must_use]
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Size {
     /// The width in columns
