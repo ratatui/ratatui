@@ -61,7 +61,7 @@ impl ListState {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let state = ListState::default().with_offset(1);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn with_offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
@@ -77,7 +77,7 @@ impl ListState {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let state = ListState::default().with_selected(Some(1));
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn with_selected(mut self, selected: Option<usize>) -> Self {
         self.selected = selected;
         self
@@ -286,7 +286,7 @@ impl<'a> ListItem<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let item = ListItem::new("Item 1").red().italic();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -516,7 +516,7 @@ impl<'a> List<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let list = List::default().items(["Item 1", "Item 2"]);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn items<T>(mut self, items: T) -> Self
     where
         T: IntoIterator,
@@ -540,7 +540,7 @@ impl<'a> List<'a> {
     /// let block = Block::bordered().title("List");
     /// let list = List::new(items).block(block);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
@@ -574,7 +574,7 @@ impl<'a> List<'a> {
     /// # let items = ["Item 1"];
     /// let list = List::new(items).red().italic();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -593,7 +593,7 @@ impl<'a> List<'a> {
     /// # let items = ["Item 1", "Item 2"];
     /// let list = List::new(items).highlight_symbol(">>");
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn highlight_symbol(mut self, highlight_symbol: &'a str) -> Self {
         self.highlight_symbol = Some(highlight_symbol);
         self
@@ -617,7 +617,7 @@ impl<'a> List<'a> {
     /// # let items = ["Item 1", "Item 2"];
     /// let list = List::new(items).highlight_style(Style::new().red().italic());
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.highlight_style = style.into();
         self
@@ -628,7 +628,7 @@ impl<'a> List<'a> {
     /// This is `false` by default.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn repeat_highlight_symbol(mut self, repeat: bool) -> Self {
         self.repeat_highlight_symbol = repeat;
         self
@@ -659,7 +659,7 @@ impl<'a> List<'a> {
     /// # let items = ["Item 1"];
     /// let list = List::new(items).highlight_spacing(HighlightSpacing::Always);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
@@ -681,7 +681,7 @@ impl<'a> List<'a> {
     /// # let items = ["Item 1"];
     /// let list = List::new(items).direction(ListDirection::BottomToTop);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn direction(mut self, direction: ListDirection) -> Self {
         self.direction = direction;
         self
@@ -700,7 +700,7 @@ impl<'a> List<'a> {
     /// # let items = ["Item 1"];
     /// let list = List::new(items).scroll_padding(1);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn scroll_padding(mut self, padding: usize) -> Self {
         self.scroll_padding = padding;
         self
@@ -738,7 +738,7 @@ impl<'a> List<'a> {
     /// # let items = ["Item 1"];
     /// let list = List::new(items).start_corner(Corner::BottomLeft);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     #[deprecated(since = "0.25.0", note = "You should use `List::direction` instead.")]
     pub fn start_corner(self, corner: Corner) -> Self {
         if corner == Corner::BottomLeft {

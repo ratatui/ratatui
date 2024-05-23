@@ -119,7 +119,7 @@ impl<'a> Row<'a> {
     ///     Cell::new("Cell 3"),
     /// ]);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn cells<T>(mut self, cells: T) -> Self
     where
         T: IntoIterator,
@@ -144,7 +144,7 @@ impl<'a> Row<'a> {
     /// let cells = vec!["Cell 1\nline 2", "Cell 2", "Cell 3"];
     /// let row = Row::new(cells).height(2);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn height(mut self, height: u16) -> Self {
         self.height = height;
         self
@@ -163,7 +163,7 @@ impl<'a> Row<'a> {
     /// # let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
     /// let row = Row::default().top_margin(1);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn top_margin(mut self, margin: u16) -> Self {
         self.top_margin = margin;
         self
@@ -182,7 +182,7 @@ impl<'a> Row<'a> {
     /// # let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
     /// let row = Row::default().bottom_margin(1);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn bottom_margin(mut self, margin: u16) -> Self {
         self.bottom_margin = margin;
         self
@@ -214,7 +214,7 @@ impl<'a> Row<'a> {
     /// let cells = vec!["Cell 1", "Cell 2", "Cell 3"];
     /// let row = Row::new(cells).red().italic();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self

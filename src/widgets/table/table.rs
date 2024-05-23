@@ -300,7 +300,7 @@ impl<'a> Table<'a> {
     /// ];
     /// let table = Table::default().rows(rows);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn rows<T>(mut self, rows: T) -> Self
     where
         T: IntoIterator<Item = Row<'a>>,
@@ -325,7 +325,7 @@ impl<'a> Table<'a> {
     /// ]);
     /// let table = Table::default().header(header);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn header(mut self, header: Row<'a>) -> Self {
         self.header = Some(header);
         self
@@ -347,7 +347,7 @@ impl<'a> Table<'a> {
     /// ]);
     /// let table = Table::default().footer(footer);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn footer(mut self, footer: Row<'a>) -> Self {
         self.footer = Some(footer);
         self
@@ -375,7 +375,7 @@ impl<'a> Table<'a> {
     /// let widths = [10, 10, 20].into_iter().map(|c| Constraint::Length(c));
     /// let table = Table::default().widths(widths);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn widths<I>(mut self, widths: I) -> Self
     where
         I: IntoIterator,
@@ -399,7 +399,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).column_spacing(1);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn column_spacing(mut self, spacing: u16) -> Self {
         self.column_spacing = spacing;
         self
@@ -421,7 +421,7 @@ impl<'a> Table<'a> {
     /// let block = Block::bordered().title("Table");
     /// let table = Table::new(rows, widths).block(block);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
@@ -455,7 +455,7 @@ impl<'a> Table<'a> {
     /// # let widths = vec![Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).red().italic();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -479,7 +479,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).highlight_style(Style::new().red().italic());
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn highlight_style<S: Into<Style>>(mut self, highlight_style: S) -> Self {
         self.highlight_style = highlight_style.into();
         self
@@ -497,7 +497,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).highlight_symbol(">>");
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn highlight_symbol<T: Into<Text<'a>>>(mut self, highlight_symbol: T) -> Self {
         self.highlight_symbol = highlight_symbol.into();
         self
@@ -529,7 +529,7 @@ impl<'a> Table<'a> {
     /// # let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths).highlight_spacing(HighlightSpacing::Always);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn highlight_spacing(mut self, value: HighlightSpacing) -> Self {
         self.highlight_spacing = value;
         self
@@ -557,7 +557,7 @@ impl<'a> Table<'a> {
     /// ];
     /// let table = Table::new(Vec::<Row>::new(), widths).flex(Flex::Legacy);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn flex(mut self, flex: Flex) -> Self {
         self.flex = flex;
         self

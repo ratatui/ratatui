@@ -239,7 +239,7 @@ impl<'a> Block<'a> {
     /// - [`Block::title_style`]
     /// - [`Block::title_alignment`]
     /// - [`Block::title_position`]
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn title<T>(mut self, title: T) -> Self
     where
         T: Into<Title<'a>>,
@@ -269,7 +269,7 @@ impl<'a> Block<'a> {
     /// // │                                  │
     /// // └──────────────────────────────────┘
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn title_top<T: Into<Line<'a>>>(mut self, title: T) -> Self {
         let title = Title::from(title).position(Position::Top);
         self.titles.push(title);
@@ -297,7 +297,7 @@ impl<'a> Block<'a> {
     /// // │                                  │
     /// // └Left1─Left2───Center─────────Right┘
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn title_bottom<T: Into<Line<'a>>>(mut self, title: T) -> Self {
         let title = Title::from(title).position(Position::Bottom);
         self.titles.push(title);
@@ -310,7 +310,7 @@ impl<'a> Block<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// If a [`Title`] already has a style, the title's style will add on top of this one.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn title_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.titles_style = style.into();
         self
@@ -337,7 +337,7 @@ impl<'a> Block<'a> {
     ///     .title("foo")
     ///     .title("bar");
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn title_alignment(mut self, alignment: Alignment) -> Self {
         self.titles_alignment = alignment;
         self
@@ -364,7 +364,7 @@ impl<'a> Block<'a> {
     ///     .title("foo")
     ///     .title("bar");
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn title_position(mut self, position: Position) -> Self {
         self.titles_position = position;
         self
@@ -384,7 +384,7 @@ impl<'a> Block<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// Block::bordered().border_style(Style::new().blue());
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn border_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.border_style = style.into();
         self
@@ -400,7 +400,7 @@ impl<'a> Block<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This will also apply to the widget inside that block, unless the inner widget is styled.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -419,7 +419,7 @@ impl<'a> Block<'a> {
     /// ```
     ///
     /// To show all borders you can abbreviate this with [`Block::bordered`]
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn borders(mut self, flag: Borders) -> Self {
         self.borders = flag;
         self
@@ -444,7 +444,7 @@ impl<'a> Block<'a> {
     /// // │     │
     /// // ╰─────╯
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn border_type(mut self, border_type: BorderType) -> Self {
         self.border_set = border_type.to_border_set();
         self
@@ -463,7 +463,7 @@ impl<'a> Block<'a> {
     /// // ╔Block╗
     /// // ║     ║
     /// // ╚═════╝
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn border_set(mut self, border_set: border::Set) -> Self {
         self.border_set = border_set;
         self
@@ -556,7 +556,7 @@ impl<'a> Block<'a> {
     /// // │  content  │
     /// // └───────────┘
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn padding(mut self, padding: Padding) -> Self {
         self.padding = padding;
         self

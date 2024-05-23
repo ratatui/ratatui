@@ -245,7 +245,7 @@ impl Layout {
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 0, 10, 5), Rect::new(0, 5, 10, 5)]);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn direction(mut self, direction: Direction) -> Self {
         self.direction = direction;
         self
@@ -295,7 +295,7 @@ impl Layout {
     /// Layout::default().constraints([1, 2, 3]);
     /// Layout::default().constraints(vec![1, 2, 3]);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn constraints<I>(mut self, constraints: I) -> Self
     where
         I: IntoIterator,
@@ -317,7 +317,7 @@ impl Layout {
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 2, 6, 6)]);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn margin(mut self, margin: u16) -> Self {
         self.margin = Margin {
             horizontal: margin,
@@ -338,7 +338,7 @@ impl Layout {
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(2, 0, 6, 10)]);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn horizontal_margin(mut self, horizontal: u16) -> Self {
         self.margin.horizontal = horizontal;
         self
@@ -356,7 +356,7 @@ impl Layout {
     ///     .split(Rect::new(0, 0, 10, 10));
     /// assert_eq!(layout[..], [Rect::new(0, 2, 10, 6)]);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn vertical_margin(mut self, vertical: u16) -> Self {
         self.margin.vertical = vertical;
         self
@@ -391,7 +391,7 @@ impl Layout {
     /// # use ratatui::layout::{Flex, Layout, Constraint::*};
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Legacy);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn flex(mut self, flex: Flex) -> Self {
         self.flex = flex;
         self
@@ -416,7 +416,7 @@ impl Layout {
     ///
     /// - If the layout has only one item, the spacing will not be applied.
     /// - Spacing will not be applied for [`Flex::SpaceAround`] and [`Flex::SpaceBetween`]
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn spacing(mut self, spacing: u16) -> Self {
         self.spacing = spacing;
         self

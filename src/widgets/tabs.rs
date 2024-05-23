@@ -102,7 +102,7 @@ impl<'a> Tabs<'a> {
     }
 
     /// Surrounds the `Tabs` with a [`Block`].
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
@@ -112,7 +112,7 @@ impl<'a> Tabs<'a> {
     ///
     /// The first tab has index 0 (this is also the default index).
     /// The selected tab can have a different style with [`Tabs::highlight_style`].
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn select(mut self, selected: usize) -> Self {
         self.selected = selected;
         self
@@ -126,7 +126,7 @@ impl<'a> Tabs<'a> {
     /// This will set the given style on the entire render area.
     /// More precise style can be applied to the titles by styling the ones given to [`Tabs::new`].
     /// The selected tab can be styled differently using [`Tabs::highlight_style`].
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -138,7 +138,7 @@ impl<'a> Tabs<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// Highlighted tab can be selected with [`Tabs::select`].
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn highlight_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.highlight_style = style.into();
         self
@@ -160,7 +160,7 @@ impl<'a> Tabs<'a> {
     /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).divider("-");
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn divider<T>(mut self, divider: T) -> Self
     where
         T: Into<Span<'a>>,
@@ -185,7 +185,7 @@ impl<'a> Tabs<'a> {
     /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding("", "");
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn padding<T, U>(mut self, left: T, right: U) -> Self
     where
         T: Into<Line<'a>>,
@@ -207,7 +207,7 @@ impl<'a> Tabs<'a> {
     /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_left("->");
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn padding_left<T>(mut self, padding: T) -> Self
     where
         T: Into<Line<'a>>,
@@ -227,7 +227,7 @@ impl<'a> Tabs<'a> {
     /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1", "Tab 2"]).padding_right("<-");
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn padding_right<T>(mut self, padding: T) -> Self
     where
         T: Into<Line<'a>>,

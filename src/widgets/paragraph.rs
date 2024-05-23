@@ -128,7 +128,7 @@ impl<'a> Paragraph<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello, world!").block(Block::bordered().title("Paragraph"));
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
@@ -148,7 +148,7 @@ impl<'a> Paragraph<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello, world!").style(Style::new().red().on_white());
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -164,7 +164,7 @@ impl<'a> Paragraph<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello, world!").wrap(Wrap { trim: true });
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn wrap(mut self, wrap: Wrap) -> Self {
         self.wrap = Some(wrap);
         self
@@ -181,7 +181,7 @@ impl<'a> Paragraph<'a> {
     ///
     /// For more information about future scrolling design and concerns, see [RFC: Design of
     /// Scrollable Widgets](https://github.com/ratatui-org/ratatui/issues/174) on GitHub.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn scroll(mut self, offset: (Vertical, Horizontal)) -> Self {
         self.scroll = offset;
         self
@@ -198,7 +198,7 @@ impl<'a> Paragraph<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello World").alignment(Alignment::Center);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn alignment(mut self, alignment: Alignment) -> Self {
         self.alignment = alignment;
         self
@@ -214,7 +214,7 @@ impl<'a> Paragraph<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello World").left_aligned();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn left_aligned(self) -> Self {
         self.alignment(Alignment::Left)
     }
@@ -229,7 +229,7 @@ impl<'a> Paragraph<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello World").centered();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn centered(self) -> Self {
         self.alignment(Alignment::Center)
     }
@@ -244,7 +244,7 @@ impl<'a> Paragraph<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let paragraph = Paragraph::new("Hello World").right_aligned();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn right_aligned(self) -> Self {
         self.alignment(Alignment::Right)
     }

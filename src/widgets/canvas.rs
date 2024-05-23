@@ -630,7 +630,7 @@ where
     /// Wraps the canvas with a custom [`Block`] widget.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
@@ -642,7 +642,7 @@ where
     /// bounds.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn x_bounds(mut self, bounds: [f64; 2]) -> Self {
         self.x_bounds = bounds;
         self
@@ -654,7 +654,7 @@ where
     /// bounds.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn y_bounds(mut self, bounds: [f64; 2]) -> Self {
         self.y_bounds = bounds;
         self
@@ -663,7 +663,7 @@ where
     /// Store the closure that will be used to draw to the [`Canvas`]
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn paint(mut self, f: F) -> Self {
         self.paint_func = Some(f);
         self
@@ -672,7 +672,7 @@ where
     /// Change the background [`Color`] of the entire canvas
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn background_color(mut self, color: Color) -> Self {
         self.background_color = color;
         self
@@ -716,7 +716,7 @@ where
     ///     .marker(symbols::Marker::Block)
     ///     .paint(|ctx| {});
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn marker(mut self, marker: symbols::Marker) -> Self {
         self.marker = marker;
         self

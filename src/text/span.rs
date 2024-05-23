@@ -157,7 +157,7 @@ impl<'a> Span<'a> {
     /// # use ratatui::prelude::*;
     /// let mut span = Span::default().content("content");
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn content<T>(mut self, content: T) -> Self
     where
         T: Into<Cow<'a, str>>,
@@ -182,7 +182,7 @@ impl<'a> Span<'a> {
     /// # use ratatui::prelude::*;
     /// let mut span = Span::default().style(Style::new().green());
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -203,7 +203,7 @@ impl<'a> Span<'a> {
     ///     .patch_style(Style::new().red().on_yellow().bold());
     /// assert_eq!(span.style, Style::new().red().on_yellow().italic().bold());
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn patch_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = self.style.patch(style);
         self
@@ -226,7 +226,7 @@ impl<'a> Span<'a> {
     /// .reset_style();
     /// assert_eq!(span.style, Style::reset());
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn reset_style(self) -> Self {
         self.patch_style(Style::reset())
     }
@@ -284,7 +284,7 @@ impl<'a> Span<'a> {
     /// # use ratatui::prelude::*;
     /// let line = "Test Content".green().italic().into_left_aligned_line();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn into_left_aligned_line(self) -> Line<'a> {
         Line::from(self).left_aligned()
     }
@@ -303,7 +303,7 @@ impl<'a> Span<'a> {
     /// # use ratatui::prelude::*;
     /// let line = "Test Content".green().italic().into_centered_line();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn into_centered_line(self) -> Line<'a> {
         Line::from(self).centered()
     }
@@ -322,7 +322,7 @@ impl<'a> Span<'a> {
     /// # use ratatui::prelude::*;
     /// let line = "Test Content".green().italic().into_right_aligned_line();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn into_right_aligned_line(self) -> Line<'a> {
         Line::from(self).right_aligned()
     }

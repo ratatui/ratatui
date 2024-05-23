@@ -49,7 +49,7 @@ impl<'a> Bar<'a> {
     ///
     /// [`Bar::value_style`] to style the value.
     /// [`Bar::text_value`] to set the displayed value.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn value(mut self, value: u64) -> Self {
         self.value = value;
         self
@@ -62,7 +62,7 @@ impl<'a> Bar<'a> {
     /// For [`Horizontal`](crate::layout::Direction::Horizontal) bars,
     /// display the label **in** the bar.
     /// See [`BarChart::direction`](crate::widgets::BarChart::direction) to set the direction.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn label(mut self, label: Line<'a>) -> Self {
         self.label = Some(label);
         self
@@ -74,7 +74,7 @@ impl<'a> Bar<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This will apply to every non-styled element. It can be seen and used as a default value.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -88,7 +88,7 @@ impl<'a> Bar<'a> {
     /// # See also
     ///
     /// [`Bar::value`] to set the value.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn value_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.value_style = style.into();
         self
@@ -102,7 +102,7 @@ impl<'a> Bar<'a> {
     /// # See also
     ///
     /// [`Bar::value`] to set the value.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn text_value(mut self, text_value: String) -> Self {
         self.text_value = Some(text_value);
         self

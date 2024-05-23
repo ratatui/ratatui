@@ -263,7 +263,7 @@ impl<'a> Text<'a> {
     /// # use ratatui::prelude::*;
     /// let mut line = Text::from("foo").style(Style::new().red());
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -297,7 +297,7 @@ impl<'a> Text<'a> {
     /// let raw_text = raw_text.patch_style(Color::Yellow);
     /// assert_eq!(raw_text, styled_text);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn patch_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = self.style.patch(style);
         self
@@ -321,7 +321,7 @@ impl<'a> Text<'a> {
     /// let text = text.reset_style();
     /// assert_eq!(Style::reset(), text.style);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn reset_style(self) -> Self {
         self.patch_style(Style::reset())
     }
@@ -369,7 +369,7 @@ impl<'a> Text<'a> {
     ///   default
     ///       right
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn alignment(self, alignment: Alignment) -> Self {
         Self {
             alignment: Some(alignment),
@@ -391,7 +391,7 @@ impl<'a> Text<'a> {
     /// # use ratatui::prelude::*;
     /// let text = Text::from("Hi, what's up?").left_aligned();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn left_aligned(self) -> Self {
         self.alignment(Alignment::Left)
     }
@@ -410,7 +410,7 @@ impl<'a> Text<'a> {
     /// # use ratatui::prelude::*;
     /// let text = Text::from("Hi, what's up?").centered();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn centered(self) -> Self {
         self.alignment(Alignment::Center)
     }
@@ -429,7 +429,7 @@ impl<'a> Text<'a> {
     /// # use ratatui::prelude::*;
     /// let text = Text::from("Hi, what's up?").right_aligned();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn right_aligned(self) -> Self {
         self.alignment(Alignment::Right)
     }

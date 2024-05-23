@@ -120,7 +120,7 @@ impl Rect {
     ///
     /// If the margin is larger than the `Rect`, the returned `Rect` will have no area.
     #[allow(clippy::trivially_copy_pass_by_ref)] // See PR #1008
-    #[must_use = "method returns the modified value"]
+    #[must_use]
     pub const fn inner(self, margin: &Margin) -> Self {
         let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
         let doubled_margin_vertical = margin.vertical.saturating_mul(2);
@@ -145,7 +145,7 @@ impl Rect {
     /// - Positive `y` moves the whole `Rect` to the bottom, negative to the top.
     ///
     /// See [`Offset`] for details.
-    #[must_use = "method returns the modified value"]
+    #[must_use]
     pub fn offset(self, offset: Offset) -> Self {
         Self {
             x: i32::from(self.x)
@@ -159,7 +159,7 @@ impl Rect {
     }
 
     /// Returns a new `Rect` that contains both the current one and the given one.
-    #[must_use = "method returns the modified value"]
+    #[must_use]
     pub fn union(self, other: Self) -> Self {
         let x1 = min(self.x, other.x);
         let y1 = min(self.y, other.y);
@@ -176,7 +176,7 @@ impl Rect {
     /// Returns a new `Rect` that is the intersection of the current one and the given one.
     ///
     /// If the two `Rect`s do not intersect, the returned `Rect` will have no area.
-    #[must_use = "method returns the modified value"]
+    #[must_use]
     pub fn intersection(self, other: Self) -> Self {
         let x1 = max(self.x, other.x);
         let y1 = max(self.y, other.y);
@@ -240,7 +240,7 @@ impl Rect {
     /// let rect = Rect::new(0, 0, 100, 100).clamp(area);
     /// # }
     /// ```
-    #[must_use = "method returns the modified value"]
+    #[must_use]
     pub fn clamp(self, other: Self) -> Self {
         let width = self.width.min(other.width);
         let height = self.height.min(other.height);

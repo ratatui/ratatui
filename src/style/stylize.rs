@@ -46,13 +46,13 @@ macro_rules! color {
     ( $color:ident ) => {
         paste! {
             #[doc = "Sets the foreground color to [`" $color "`](Color::" $color:camel ")."]
-            #[must_use = concat!("`", stringify!($color), "` returns the modified style without modifying the original")]
+            #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
             fn $color(self) -> T {
                 self.fg(Color::[<$color:camel>])
             }
 
             #[doc = "Sets the background color to [`" $color "`](Color::" $color:camel ")."]
-            #[must_use = concat!("`on_", stringify!($color), "` returns the modified style without modifying the original")]
+            #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
             fn [<on_ $color>](self) -> T {
                 self.bg(Color::[<$color:camel>])
             }
@@ -84,7 +84,7 @@ macro_rules! modifier {
     ( $modifier:ident ) => {
         paste! {
             #[doc = "Adds the [`" $modifier:upper "`](Modifier::" $modifier:upper ") modifier."]
-            #[must_use = concat!("`", stringify!($modifier), "` returns the modified style without modifying the original")]
+            #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
             fn [<$modifier>](self) -> T {
                 self.add_modifier(Modifier::[<$modifier:upper>])
             }
@@ -92,7 +92,7 @@ macro_rules! modifier {
 
         paste! {
             #[doc = "Removes the [`" $modifier:upper "`](Modifier::" $modifier:upper ") modifier."]
-            #[must_use = concat!("`not_", stringify!($modifier), "` returns the modified style without modifying the original")]
+            #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
             fn [<not_ $modifier>](self) -> T {
                 self.remove_modifier(Modifier::[<$modifier:upper>])
             }
@@ -136,15 +136,15 @@ macro_rules! modifier {
 /// let block = Block::bordered().title("Title").on_white().bold();
 /// ```
 pub trait Stylize<'a, T>: Sized {
-    #[must_use = "`bg` returns the modified style without modifying the original"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     fn bg(self, color: Color) -> T;
-    #[must_use = "`fg` returns the modified style without modifying the original"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     fn fg<S: Into<Color>>(self, color: S) -> T;
-    #[must_use = "`reset` returns the modified style without modifying the original"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     fn reset(self) -> T;
-    #[must_use = "`add_modifier` returns the modified style without modifying the original"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     fn add_modifier(self, modifier: Modifier) -> T;
-    #[must_use = "`remove_modifier` returns the modified style without modifying the original"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     fn remove_modifier(self, modifier: Modifier) -> T;
 
     color!(black);

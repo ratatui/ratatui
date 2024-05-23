@@ -22,14 +22,14 @@ pub struct BarGroup<'a> {
 
 impl<'a> BarGroup<'a> {
     /// Set the group label
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn label(mut self, label: Line<'a>) -> Self {
         self.label = Some(label);
         self
     }
 
     /// Set the bars of the group to be shown
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn bars(mut self, bars: &[Bar<'a>]) -> Self {
         self.bars = bars.to_vec();
         self

@@ -53,7 +53,7 @@ impl<'a> Axis<'a> {
     /// this is the top.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn title<T>(mut self, title: T) -> Self
     where
         T: Into<Line<'a>>,
@@ -67,7 +67,7 @@ impl<'a> Axis<'a> {
     /// In other words, sets the min and max value on this axis.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn bounds(mut self, bounds: [f64; 2]) -> Self {
         self.bounds = bounds;
         self
@@ -95,7 +95,7 @@ impl<'a> Axis<'a> {
     ///         .bounds([0.0, 50.0])
     ///         .labels(vec!["0".bold(), "25".into(), "50".bold()]);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn labels(mut self, labels: Vec<Span<'a>>) -> Self {
         self.labels = Some(labels);
         self
@@ -117,7 +117,7 @@ impl<'a> Axis<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let axis = Axis::default().red();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -130,7 +130,7 @@ impl<'a> Axis<'a> {
     /// - X axis: The first X-axis label is aligned relative to the Y-axis
     ///
     /// On the X axis, this parameter only affects the first label.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn labels_alignment(mut self, alignment: Alignment) -> Self {
         self.labels_alignment = alignment;
         self
@@ -319,7 +319,7 @@ impl<'a> Dataset<'a> {
     /// precedence.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn name<S>(mut self, name: S) -> Self
     where
         S: Into<Line<'a>>,
@@ -338,7 +338,7 @@ impl<'a> Dataset<'a> {
     /// top, as in math.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn data(mut self, data: &'a [(f64, f64)]) -> Self {
         self.data = data;
         self
@@ -353,7 +353,7 @@ impl<'a> Dataset<'a> {
     /// Braille Patterns.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn marker(mut self, marker: symbols::Marker) -> Self {
         self.marker = marker;
         self
@@ -366,7 +366,7 @@ impl<'a> Dataset<'a> {
     /// between them. See [`GraphType`] for more details
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn graph_type(mut self, graph_type: GraphType) -> Self {
         self.graph_type = graph_type;
         self
@@ -391,7 +391,7 @@ impl<'a> Dataset<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let dataset = Dataset::default().red();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -539,7 +539,7 @@ impl<'a> Chart<'a> {
     /// Wraps the chart with the given [`Block`]
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
@@ -553,7 +553,7 @@ impl<'a> Chart<'a> {
     /// Styles of [`Axis`] and [`Dataset`] will have priority over this style.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -576,7 +576,7 @@ impl<'a> Chart<'a> {
     ///         .labels(vec!["0".into(), "20".into()]),
     /// );
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn x_axis(mut self, axis: Axis<'a>) -> Self {
         self.x_axis = axis;
         self
@@ -599,7 +599,7 @@ impl<'a> Chart<'a> {
     ///         .labels(vec!["0".into(), "20".into()]),
     /// );
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn y_axis(mut self, axis: Axis<'a>) -> Self {
         self.y_axis = axis;
         self
@@ -644,7 +644,7 @@ impl<'a> Chart<'a> {
     /// let constraints = (Constraint::Length(0), Constraint::Ratio(1, 4));
     /// let chart = Chart::new(vec![]).hidden_legend_constraints(constraints);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn hidden_legend_constraints(
         mut self,
         constraints: (Constraint, Constraint),
@@ -682,7 +682,7 @@ impl<'a> Chart<'a> {
     /// # use ratatui::widgets::{Chart, LegendPosition};
     /// let chart = Chart::new(vec![]).legend_position(None);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn legend_position(mut self, position: Option<LegendPosition>) -> Self {
         self.legend_position = position;
         self

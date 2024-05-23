@@ -118,7 +118,7 @@ impl<'a> BarChart<'a> {
     ///     .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
     ///     .data(BarGroup::default().bars(&[Bar::default().value(10), Bar::default().value(20)]));
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn data(mut self, data: impl Into<BarGroup<'a>>) -> Self {
         let group: BarGroup = data.into();
         if !group.bars.is_empty() {
@@ -128,7 +128,7 @@ impl<'a> BarChart<'a> {
     }
 
     /// Surround the [`BarChart`] with a [`Block`].
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
@@ -163,7 +163,7 @@ impl<'a> BarChart<'a> {
     /// // █ █ █
     /// // f b b
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn max(mut self, max: u64) -> Self {
         self.max = Some(max);
         self
@@ -176,7 +176,7 @@ impl<'a> BarChart<'a> {
     ///
     /// It is also possible to set individually the style of each [`Bar`].
     /// In this case the default style will be patched by the individual style
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn bar_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.bar_style = style.into();
         self
@@ -189,7 +189,7 @@ impl<'a> BarChart<'a> {
     ///
     /// If not set, this defaults to `1`.
     /// The bar label also uses this value as its width.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn bar_width(mut self, width: u16) -> Self {
         self.bar_width = width;
         self
@@ -213,7 +213,7 @@ impl<'a> BarChart<'a> {
     /// // █   █
     /// // f   b
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn bar_gap(mut self, gap: u16) -> Self {
         self.bar_gap = gap;
         self
@@ -222,7 +222,7 @@ impl<'a> BarChart<'a> {
     /// The [`bar::Set`](crate::symbols::bar::Set) to use for displaying the bars.
     ///
     /// If not set, the default is [`bar::NINE_LEVELS`](crate::symbols::bar::NINE_LEVELS).
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn bar_set(mut self, bar_set: symbols::bar::Set) -> Self {
         self.bar_set = bar_set;
         self
@@ -239,7 +239,7 @@ impl<'a> BarChart<'a> {
     /// # See also
     ///
     /// [`Bar::value_style`] to set the value style individually.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn value_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.value_style = style.into();
         self
@@ -256,14 +256,14 @@ impl<'a> BarChart<'a> {
     /// # See also
     ///
     /// [`Bar::label`] to set the label style individually.
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn label_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.label_style = style.into();
         self
     }
 
     /// Set the gap between [`BarGroup`].
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn group_gap(mut self, gap: u16) -> Self {
         self.group_gap = gap;
         self
@@ -275,7 +275,7 @@ impl<'a> BarChart<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// The style will be applied to everything that isn't styled (borders, bars, labels, ...).
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -300,7 +300,7 @@ impl<'a> BarChart<'a> {
     ///
     /// █bar██
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn direction(mut self, direction: Direction) -> Self {
         self.direction = direction;
         self

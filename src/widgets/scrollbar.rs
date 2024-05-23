@@ -170,7 +170,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// Most of the time you'll want [`ScrollbarOrientation::VerticalRight`] or
     /// [`ScrollbarOrientation::HorizontalBottom`]. See [`ScrollbarOrientation`] for more options.
-    #[must_use = "creates the Scrollbar"]
+    #[must_use]
     pub const fn new(orientation: ScrollbarOrientation) -> Self {
         let symbols = if orientation.is_vertical() {
             DOUBLE_VERTICAL
@@ -181,7 +181,7 @@ impl<'a> Scrollbar<'a> {
     }
 
     /// Creates a new scrollbar with the given orientation and symbol set.
-    #[must_use = "creates the Scrollbar"]
+    #[must_use]
     const fn new_with_symbols(orientation: ScrollbarOrientation, symbols: &Set) -> Self {
         Self {
             orientation,
@@ -204,7 +204,7 @@ impl<'a> Scrollbar<'a> {
     /// Resets the symbols to [`DOUBLE_VERTICAL`] or [`DOUBLE_HORIZONTAL`] based on orientation.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn orientation(mut self, orientation: ScrollbarOrientation) -> Self {
         self.orientation = orientation;
         let symbols = if self.orientation.is_vertical() {
@@ -221,7 +221,7 @@ impl<'a> Scrollbar<'a> {
     /// [`Scrollbar::symbols`]. See those for more details.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn orientation_and_symbol(
         mut self,
         orientation: ScrollbarOrientation,
@@ -237,7 +237,7 @@ impl<'a> Scrollbar<'a> {
     /// for a visual example of what this represents.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn thumb_symbol(mut self, thumb_symbol: &'a str) -> Self {
         self.thumb_symbol = thumb_symbol;
         self
@@ -252,7 +252,7 @@ impl<'a> Scrollbar<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn thumb_style<S: Into<Style>>(mut self, thumb_style: S) -> Self {
         self.thumb_style = thumb_style.into();
         self
@@ -263,7 +263,7 @@ impl<'a> Scrollbar<'a> {
     /// See [`Scrollbar`] for a visual example of what this represents.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn track_symbol(mut self, track_symbol: Option<&'a str>) -> Self {
         self.track_symbol = track_symbol;
         self
@@ -277,7 +277,7 @@ impl<'a> Scrollbar<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn track_style<S: Into<Style>>(mut self, track_style: S) -> Self {
         self.track_style = track_style.into();
         self
@@ -288,7 +288,7 @@ impl<'a> Scrollbar<'a> {
     /// See [`Scrollbar`] for a visual example of what this represents.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn begin_symbol(mut self, begin_symbol: Option<&'a str>) -> Self {
         self.begin_symbol = begin_symbol;
         self
@@ -302,7 +302,7 @@ impl<'a> Scrollbar<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn begin_style<S: Into<Style>>(mut self, begin_style: S) -> Self {
         self.begin_style = begin_style.into();
         self
@@ -313,7 +313,7 @@ impl<'a> Scrollbar<'a> {
     /// See [`Scrollbar`] for a visual example of what this represents.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn end_symbol(mut self, end_symbol: Option<&'a str>) -> Self {
         self.end_symbol = end_symbol;
         self
@@ -327,7 +327,7 @@ impl<'a> Scrollbar<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn end_style<S: Into<Style>>(mut self, end_style: S) -> Self {
         self.end_style = end_style.into();
         self
@@ -350,7 +350,7 @@ impl<'a> Scrollbar<'a> {
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[allow(clippy::needless_pass_by_value)] // Breaking change
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn symbols(mut self, symbols: Set) -> Self {
         self.thumb_symbol = symbols.thumb;
         if self.track_symbol.is_some() {
@@ -380,7 +380,7 @@ impl<'a> Scrollbar<'a> {
     /// ```
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         let style = style.into();
         self.track_style = style;
@@ -402,7 +402,7 @@ impl ScrollbarState {
     ///
     /// `content_length` is the total number of element, that can be scrolled. See
     /// [`ScrollbarState`] for more details.
-    #[must_use = "creates the ScrollbarState"]
+    #[must_use]
     pub const fn new(content_length: usize) -> Self {
         Self {
             content_length,
@@ -416,7 +416,7 @@ impl ScrollbarState {
     /// This represents the number of scrolled items.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn position(mut self, position: usize) -> Self {
         self.position = position;
         self
@@ -428,7 +428,7 @@ impl ScrollbarState {
     /// same as the number of scrollable cells.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn content_length(mut self, content_length: usize) -> Self {
         self.content_length = content_length;
         self
@@ -437,7 +437,7 @@ impl ScrollbarState {
     /// Sets the items' size.
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn viewport_content_length(mut self, viewport_content_length: usize) -> Self {
         self.viewport_content_length = viewport_content_length;
         self
@@ -605,13 +605,13 @@ impl Scrollbar<'_> {
 
 impl ScrollbarOrientation {
     /// Returns `true` if the scrollbar is vertical.
-    #[must_use = "returns the requested kind of the scrollbar"]
+    #[must_use]
     pub const fn is_vertical(&self) -> bool {
         matches!(self, Self::VerticalRight | Self::VerticalLeft)
     }
 
     /// Returns `true` if the scrollbar is horizontal.
-    #[must_use = "returns the requested kind of the scrollbar"]
+    #[must_use]
     pub const fn is_horizontal(&self) -> bool {
         matches!(self, Self::HorizontalBottom | Self::HorizontalTop)
     }

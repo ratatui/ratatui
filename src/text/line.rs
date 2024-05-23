@@ -240,7 +240,7 @@ impl<'a> Line<'a> {
     /// let line = Line::default().spans(vec!["Hello".blue(), " world!".green()]);
     /// let line = Line::default().spans([1, 2, 3].iter().map(|i| format!("Item {}", i)));
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn spans<I>(mut self, spans: I) -> Self
     where
         I: IntoIterator,
@@ -266,7 +266,7 @@ impl<'a> Line<'a> {
     /// # use ratatui::prelude::*;
     /// let mut line = Line::from("foo").style(Style::new().red());
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self
@@ -289,7 +289,7 @@ impl<'a> Line<'a> {
     ///     line.alignment(Alignment::Right).alignment
     /// )
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn alignment(self, alignment: Alignment) -> Self {
         Self {
             alignment: Some(alignment),
@@ -309,7 +309,7 @@ impl<'a> Line<'a> {
     /// # use ratatui::prelude::*;
     /// let line = Line::from("Hi, what's up?").left_aligned();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn left_aligned(self) -> Self {
         self.alignment(Alignment::Left)
     }
@@ -326,7 +326,7 @@ impl<'a> Line<'a> {
     /// # use ratatui::prelude::*;
     /// let line = Line::from("Hi, what's up?").centered();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn centered(self) -> Self {
         self.alignment(Alignment::Center)
     }
@@ -343,7 +343,7 @@ impl<'a> Line<'a> {
     /// # use ratatui::prelude::*;
     /// let line = Line::from("Hi, what's up?").right_aligned();
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn right_aligned(self) -> Self {
         self.alignment(Alignment::Right)
     }
@@ -420,7 +420,7 @@ impl<'a> Line<'a> {
     ///
     /// assert_eq!(styled_line, line.patch_style(Color::Yellow));
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn patch_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = self.style.patch(style);
         self
@@ -441,7 +441,7 @@ impl<'a> Line<'a> {
     ///
     /// assert_eq!(Style::reset(), line.reset_style().style);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn reset_style(self) -> Self {
         self.patch_style(Style::reset())
     }

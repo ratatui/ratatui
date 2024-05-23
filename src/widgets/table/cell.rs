@@ -89,7 +89,7 @@ impl<'a> Cell<'a> {
     /// ]));
     /// Cell::default().content(Text::from("a text"));
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn content<T>(mut self, content: T) -> Self
     where
         T: Into<Text<'a>>,
@@ -124,7 +124,7 @@ impl<'a> Cell<'a> {
     /// ```
     ///
     /// [`Row`]: super::Row
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
         self

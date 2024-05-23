@@ -77,7 +77,7 @@ impl TableState {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let state = TableState::new().with_offset(1);
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub const fn with_offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
@@ -93,7 +93,7 @@ impl TableState {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let state = TableState::new().with_selected(Some(1));
     /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn with_selected<T>(mut self, selected: T) -> Self
     where
         T: Into<Option<usize>>,
