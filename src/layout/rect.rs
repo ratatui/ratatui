@@ -119,6 +119,7 @@ impl Rect {
     /// Returns a new `Rect` inside the current one, with the given margin on each side.
     ///
     /// If the margin is larger than the `Rect`, the returned `Rect` will have no area.
+    #[allow(clippy::trivially_copy_pass_by_ref)] // See PR #1008
     #[must_use = "method returns the modified value"]
     pub const fn inner(self, margin: Margin) -> Self {
         let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
@@ -319,6 +320,18 @@ impl Rect {
         Size {
             width: self.width,
             height: self.height,
+        }
+    }
+
+    /// indents the x value of the `Rect` by a given `offset`
+    ///
+    /// This is pub(crate) for now as we need to stabilize the naming / design of this API.
+    #[must_use]
+    pub(crate) const fn indent_x(self, offset: u16) -> Self {
+        Self {
+            x: self.x.saturating_add(offset),
+            width: self.width.saturating_sub(offset),
+            ..self
         }
     }
 }

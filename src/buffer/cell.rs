@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use compact_str::CompactString;
 
 use crate::prelude::*;
@@ -37,6 +35,7 @@ pub struct Cell {
 
 impl Cell {
     /// Gets the symbol of the cell.
+    #[must_use]
     pub fn symbol(&self) -> &str {
         self.symbol.as_str()
     }
@@ -88,19 +87,16 @@ impl Cell {
     }
 
     /// Returns the style of the cell.
-    pub fn style(&self) -> Style {
-        #[cfg(feature = "underline-color")]
-        return Style::default()
-            .fg(self.fg)
-            .bg(self.bg)
-            .underline_color(self.underline_color)
-            .add_modifier(self.modifier);
-
-        #[cfg(not(feature = "underline-color"))]
-        return Style::default()
-            .fg(self.fg)
-            .bg(self.bg)
-            .add_modifier(self.modifier);
+    #[must_use]
+    pub const fn style(&self) -> Style {
+        Style {
+            fg: Some(self.fg),
+            bg: Some(self.bg),
+            #[cfg(feature = "underline-color")]
+            underline_color: Some(self.underline_color),
+            add_modifier: self.modifier,
+            sub_modifier: Modifier::empty(),
+        }
     }
 
     /// Sets the cell to be skipped when copying (diffing) the buffer to the screen.

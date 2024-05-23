@@ -550,6 +550,8 @@ impl From<(Color, Color, Modifier, Modifier)> for Style {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     #[test]
@@ -606,26 +608,21 @@ mod tests {
         }
     }
 
-    #[test]
-    fn modifier_debug() {
-        assert_eq!(format!("{:?}", Modifier::empty()), "NONE");
-        assert_eq!(format!("{:?}", Modifier::BOLD), "BOLD");
-        assert_eq!(format!("{:?}", Modifier::DIM), "DIM");
-        assert_eq!(format!("{:?}", Modifier::ITALIC), "ITALIC");
-        assert_eq!(format!("{:?}", Modifier::UNDERLINED), "UNDERLINED");
-        assert_eq!(format!("{:?}", Modifier::SLOW_BLINK), "SLOW_BLINK");
-        assert_eq!(format!("{:?}", Modifier::RAPID_BLINK), "RAPID_BLINK");
-        assert_eq!(format!("{:?}", Modifier::REVERSED), "REVERSED");
-        assert_eq!(format!("{:?}", Modifier::HIDDEN), "HIDDEN");
-        assert_eq!(format!("{:?}", Modifier::CROSSED_OUT), "CROSSED_OUT");
-        assert_eq!(
-            format!("{:?}", Modifier::BOLD | Modifier::DIM),
-            "BOLD | DIM"
-        );
-        assert_eq!(
-            format!("{:?}", Modifier::all()),
-            "BOLD | DIM | ITALIC | UNDERLINED | SLOW_BLINK | RAPID_BLINK | REVERSED | HIDDEN | CROSSED_OUT"
-        );
+    #[rstest]
+    #[case(Modifier::empty(), "NONE")]
+    #[case(Modifier::BOLD, "BOLD")]
+    #[case(Modifier::DIM, "DIM")]
+    #[case(Modifier::ITALIC, "ITALIC")]
+    #[case(Modifier::UNDERLINED, "UNDERLINED")]
+    #[case(Modifier::SLOW_BLINK, "SLOW_BLINK")]
+    #[case(Modifier::RAPID_BLINK, "RAPID_BLINK")]
+    #[case(Modifier::REVERSED, "REVERSED")]
+    #[case(Modifier::HIDDEN, "HIDDEN")]
+    #[case(Modifier::CROSSED_OUT, "CROSSED_OUT")]
+    #[case(Modifier::BOLD | Modifier::DIM, "BOLD | DIM")]
+    #[case(Modifier::all(), "BOLD | DIM | ITALIC | UNDERLINED | SLOW_BLINK | RAPID_BLINK | REVERSED | HIDDEN | CROSSED_OUT")]
+    fn modifier_debug(#[case] modifier: Modifier, #[case] expected: &str) {
+        assert_eq!(format!("{modifier:?}"), expected);
     }
 
     #[test]
