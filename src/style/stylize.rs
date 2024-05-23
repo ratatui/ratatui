@@ -14,12 +14,14 @@ pub trait Styled {
     type Item;
 
     /// Returns the style of the object.
+    #[must_use]
     fn style(&self) -> Style;
 
     /// Sets the style of the object.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     fn set_style<S: Into<Style>>(self, style: S) -> Self::Item;
 }
 

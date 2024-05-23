@@ -12,6 +12,7 @@ const ZWSP: &str = "\u{200b}";
 /// Cannot implement it as Iterator since it yields slices of the internal buffer (need streaming
 /// iterators for that).
 pub trait LineComposer<'a> {
+    #[must_use]
     fn next_line<'lend>(&'lend mut self) -> Option<WrappedLine<'lend, 'a>>;
 }
 

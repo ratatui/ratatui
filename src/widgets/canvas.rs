@@ -76,6 +76,7 @@ trait Grid: fmt::Debug {
     /// This doesn't have to be the same as the number of rows and columns of the grid. For example,
     /// a grid of Braille patterns will have a resolution of 2x4 dots per cell. This means that a
     /// grid of 10x10 cells will have a resolution of 20x40 dots.
+    #[must_use]
     fn resolution(&self) -> (f64, f64);
     /// Paint a point of the grid.
     ///
@@ -83,6 +84,7 @@ trait Grid: fmt::Debug {
     /// corner. Note that this is not the same as the `(x, y)` coordinates of the canvas.
     fn paint(&mut self, x: usize, y: usize, color: Color);
     /// Save the current state of the [`Grid`] as a layer to be rendered
+    #[must_use]
     fn save(&self) -> Layer;
     /// Reset the grid to its initial state
     fn reset(&mut self);

@@ -187,6 +187,7 @@ impl<DS: DateStyler> Monthly<'_, DS> {
 /// that implements this trait can be used.
 pub trait DateStyler {
     /// Given a date, return a style for that date
+    #[must_use]
     fn get_style(&self, date: Date) -> Style;
 }
 
