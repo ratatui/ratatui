@@ -119,7 +119,6 @@ impl Rect {
     /// Returns a new `Rect` inside the current one, with the given margin on each side.
     ///
     /// If the margin is larger than the `Rect`, the returned `Rect` will have no area.
-    #[allow(clippy::trivially_copy_pass_by_ref)] // See PR #1008
     #[must_use = "method returns the modified value"]
     pub const fn inner(self, margin: Margin) -> Self {
         let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
