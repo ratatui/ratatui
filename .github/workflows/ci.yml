@@ -46,7 +46,12 @@ jobs:
         uses: crate-ci/typos@master
       - name: Lint dependencies
         uses: EmbarkStudios/cargo-deny-action@v1
-
+      - name: Lint markdown
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            '**/*.md'
+            '!target'
   clippy:
     runs-on: ubuntu-latest
     steps:
