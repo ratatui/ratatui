@@ -237,19 +237,20 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 
 /// A compact widget to display a progress bar over a single thin line.
 ///
-/// A `LineGauge` renders a thin line filled according to the value given to [`LineGauge::ratio`].
-/// Unlike [`Gauge`], only the width can be defined by the [rendering](Widget::render) [`Rect`].
-/// The height is always 1.
+/// This can be useful to indicate the progression of a task, like a download.
 ///
-/// The associated label is always left-aligned. If not set with [`LineGauge::label`], the label
-/// is the percentage of the bar filled.
+/// A `LineGauge` renders a thin line filled according to the value given to [`LineGauge::ratio`].
+/// Unlike [`Gauge`], only the width can be defined by the [rendering](Widget::render) [`Rect`]. The
+/// height is always 1.
+///
+/// The associated label is always left-aligned. If not set with [`LineGauge::label`], the label is
+/// the percentage of the bar filled.
 ///
 /// You can also set the symbols used to draw the bar with [`LineGauge::line_set`].
-/// To style the gauge line use [`LineGauge::filled_style`] and [`LineGauge::unfilled_style`]
-/// which let you pick a color for foreground (i.e. line) and background of the filled and unfilled
-/// part of gauge respectively.
 ///
-/// This can be useful to indicate the progression of a task, like a download.
+/// To style the gauge line use [`LineGauge::filled_style`] and [`LineGauge::unfilled_style`] which
+/// let you pick a color for foreground (i.e. line) and background of the filled and unfilled part
+/// of gauge respectively.
 ///
 /// # Examples:
 ///
@@ -258,7 +259,7 @@ fn get_unicode_block<'a>(frac: f64) -> &'a str {
 ///
 /// LineGauge::default()
 ///     .block(Block::bordered().title("Progress"))
-///     .gauge_style(
+///     .filled_style(
 ///         Style::default()
 ///             .fg(Color::White)
 ///             .bg(Color::Black)
@@ -353,15 +354,18 @@ impl<'a> LineGauge<'a> {
     /// your own type that implements [`Into<Style>`]).
     #[deprecated(
         since = "0.27.0",
-        note = "You should use `LineGauge::filled_style and LineGauge::unfilled_style` instead."
+        note = "You should use `LineGauge::filled_style` instead."
     )]
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn gauge_style<S: Into<Style>>(mut self, style: S) -> Self {
-        let s: Style = style.into();
-        let filled_color: Color = s.fg.unwrap_or(Color::Reset);
-        let unfilled_color: Color = s.bg.unwrap_or(Color::Reset);
-        self.filled_style = s.fg(filled_color).bg(Color::Reset);
-        self.unfilled_style = s.fg(unfilled_color).bg(Color::Reset);
+        let style: Style = style.into();
+
+        // maintain backward compatibility, which used the background color of the style as the
+        // unfilled part of the gauge and the foreground color as the filled part of the gauge
+        let filled_color = style.fg.unwrap_or(Color::Reset);
+        let unfilled_color = style.bg.unwrap_or(Color::Reset);
+        self.filled_style = style.fg(filled_color).bg(Color::Reset);
+        self.unfilled_style = style.fg(unfilled_color).bg(Color::Reset);
         self
     }
 
@@ -375,7 +379,7 @@ impl<'a> LineGauge<'a> {
         self
     }
 
-    /// Sets the unffiled style of the bar.
+    /// Sets the style of the unfilled part of the bar.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
@@ -414,26 +418,12 @@ impl WidgetRef for LineGauge<'_> {
         for col in start..end {
             buf.get_mut(col, row)
                 .set_symbol(self.line_set.horizontal)
-                .set_style(Style {
-                    fg: self.filled_style.fg,
-                    bg: self.filled_style.bg,
-                    #[cfg(feature = "underline-color")]
-                    underline_color: self.filled_style.underline_color,
-                    add_modifier: self.filled_style.add_modifier,
-                    sub_modifier: self.filled_style.sub_modifier,
-                });
+                .set_style(self.filled_style);
         }
         for col in end..gauge_area.right() {
             buf.get_mut(col, row)
                 .set_symbol(self.line_set.horizontal)
-                .set_style(Style {
-                    fg: self.unfilled_style.fg,
-                    bg: self.unfilled_style.bg,
-                    #[cfg(feature = "underline-color")]
-                    underline_color: self.unfilled_style.underline_color,
-                    add_modifier: self.unfilled_style.add_modifier,
-                    sub_modifier: self.unfilled_style.sub_modifier,
-                });
+                .set_style(self.unfilled_style);
         }
     }
 }
