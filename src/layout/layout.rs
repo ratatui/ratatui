@@ -220,6 +220,7 @@ impl Layout {
     /// * is called before [`Layout::split()`] otherwise, the cache size is
     ///   [`Self::DEFAULT_CACHE_SIZE`].
     /// * is called for the first time, subsequent calls do not modify the cache size.
+    #[allow(clippy::must_use_candidate)] // TODO: should return Result?
     pub fn init_cache(cache_size: usize) -> bool {
         LAYOUT_CACHE
             .with(|c| {
