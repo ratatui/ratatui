@@ -221,7 +221,7 @@ impl CalendarEventStore {
     /// your own type that implements [`Into<Style>`]).
     pub fn add<S: Into<Style>>(&mut self, date: Date, style: S) {
         // to simplify style nonsense, last write wins
-        let _ = self.0.insert(date, style.into());
+        self.0.insert(date, style.into());
     }
 
     /// Helper for trait impls

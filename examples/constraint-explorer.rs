@@ -199,7 +199,7 @@ impl App {
         if self.constraints.is_empty() {
             return;
         }
-        _ = self.constraints.remove(self.selected_index);
+        self.constraints.remove(self.selected_index);
         self.selected_index = self.selected_index.saturating_sub(1);
     }
 
