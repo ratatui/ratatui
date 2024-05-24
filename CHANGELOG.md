@@ -1,7 +1,8 @@
 # Changelog
 
-<!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 All notable changes to this project will be documented in this file.
+<!-- ignore lint rules that are often triggered by content generated from commits / git-cliff -->
+<!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 
 ## [0.26.3](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.3) - 2024-05-19
 
