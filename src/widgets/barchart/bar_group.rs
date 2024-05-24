@@ -23,14 +23,14 @@ pub struct BarGroup<'a> {
 impl<'a> BarGroup<'a> {
     /// Set the group label
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn label(mut self, label: Line<'a>) -> BarGroup<'a> {
+    pub fn label(mut self, label: Line<'a>) -> Self {
         self.label = Some(label);
         self
     }
 
     /// Set the bars of the group to be shown
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn bars(mut self, bars: &[Bar<'a>]) -> BarGroup<'a> {
+    pub fn bars(mut self, bars: &[Bar<'a>]) -> Self {
         self.bars = bars.to_vec();
         self
     }
@@ -65,8 +65,8 @@ impl<'a> BarGroup<'a> {
 }
 
 impl<'a> From<&[(&'a str, u64)]> for BarGroup<'a> {
-    fn from(value: &[(&'a str, u64)]) -> BarGroup<'a> {
-        BarGroup {
+    fn from(value: &[(&'a str, u64)]) -> Self {
+        Self {
             label: None,
             bars: value
                 .iter()
@@ -77,13 +77,13 @@ impl<'a> From<&[(&'a str, u64)]> for BarGroup<'a> {
 }
 
 impl<'a, const N: usize> From<&[(&'a str, u64); N]> for BarGroup<'a> {
-    fn from(value: &[(&'a str, u64); N]) -> BarGroup<'a> {
+    fn from(value: &[(&'a str, u64); N]) -> Self {
         Self::from(value.as_ref())
     }
 }
 
 impl<'a> From<&Vec<(&'a str, u64)>> for BarGroup<'a> {
-    fn from(value: &Vec<(&'a str, u64)>) -> BarGroup<'a> {
+    fn from(value: &Vec<(&'a str, u64)>) -> Self {
         let array: &[(&str, u64)] = value;
         Self::from(array)
     }

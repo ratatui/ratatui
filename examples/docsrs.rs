@@ -19,7 +19,10 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, Paragraph},
+};
 
 /// Example code for lib.rs
 ///
@@ -34,7 +37,6 @@ fn main() -> io::Result<()> {
     let mut should_quit = false;
     while !should_quit {
         terminal.draw(match arg.as_str() {
-            "hello_world" => hello_world,
             "layout" => layout,
             "styling" => styling,
             _ => hello_world,
@@ -49,8 +51,7 @@ fn main() -> io::Result<()> {
 
 fn hello_world(frame: &mut Frame) {
     frame.render_widget(
-        Paragraph::new("Hello World!")
-            .block(Block::default().title("Greeting").borders(Borders::ALL)),
+        Paragraph::new("Hello World!").block(Block::bordered().title("Greeting")),
         frame.size(),
     );
 }
@@ -85,8 +86,8 @@ fn layout(frame: &mut Frame) {
         Block::new().borders(Borders::TOP).title("Status Bar"),
         status_bar,
     );
-    frame.render_widget(Block::default().borders(Borders::ALL).title("Left"), left);
-    frame.render_widget(Block::default().borders(Borders::ALL).title("Right"), right);
+    frame.render_widget(Block::bordered().title("Left"), left);
+    frame.render_widget(Block::bordered().title("Right"), right);
 }
 
 fn styling(frame: &mut Frame) {

@@ -13,7 +13,9 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{io, io::stdout};
+#![allow(clippy::wildcard_imports, clippy::enum_glob_use)]
+
+use std::io::stdout;
 
 use color_eyre::{config::HookBuilder, Result};
 use crossterm::{
@@ -72,7 +74,7 @@ impl App {
         Ok(())
     }
 
-    fn handle_events(&mut self) -> Result<(), io::Error> {
+    fn handle_events(&mut self) -> std::io::Result<()> {
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
                 use KeyCode::*;
@@ -102,17 +104,17 @@ impl App {
 
 impl SelectedTab {
     /// Get the previous tab, if there is no previous tab return the current tab.
-    fn previous(&self) -> Self {
-        let current_index: usize = *self as usize;
+    fn previous(self) -> Self {
+        let current_index: usize = self as usize;
         let previous_index = current_index.saturating_sub(1);
-        Self::from_repr(previous_index).unwrap_or(*self)
+        Self::from_repr(previous_index).unwrap_or(self)
     }
 
     /// Get the next tab, if there is no next tab return the current tab.
-    fn next(&self) -> Self {
-        let current_index = *self as usize;
+    fn next(self) -> Self {
+        let current_index = self as usize;
         let next_index = current_index.saturating_add(1);
-        Self::from_repr(next_index).unwrap_or(*self)
+        Self::from_repr(next_index).unwrap_or(self)
     }
 }
 
@@ -125,20 +127,16 @@ impl Widget for &App {
         let horizontal = Layout::horizontal([Min(0), Length(20)]);
         let [tabs_area, title_area] = horizontal.areas(header_area);
 
-        self.render_title(title_area, buf);
+        render_title(title_area, buf);
         self.render_tabs(tabs_area, buf);
         self.selected_tab.render(inner_area, buf);
-        self.render_footer(footer_area, buf);
+        render_footer(footer_area, buf);
     }
 }
 
 impl App {
-    fn render_title(&self, area: Rect, buf: &mut Buffer) {
-        "Ratatui Tabs Example".bold().render(area, buf);
-    }
-
     fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
-        let titles = SelectedTab::iter().map(|tab| tab.title());
+        let titles = SelectedTab::iter().map(SelectedTab::title);
         let highlight_style = (Color::default(), self.selected_tab.palette().c700);
         let selected_tab_index = self.selected_tab as usize;
         Tabs::new(titles)
@@ -148,74 +146,77 @@ impl App {
             .divider(" ")
             .render(area, buf);
     }
+}
 
-    fn render_footer(&self, area: Rect, buf: &mut Buffer) {
-        Line::raw("◄ ► to change tab | Press q to quit")
-            .centered()
-            .render(area, buf);
-    }
+fn render_title(area: Rect, buf: &mut Buffer) {
+    "Ratatui Tabs Example".bold().render(area, buf);
+}
+
+fn render_footer(area: Rect, buf: &mut Buffer) {
+    Line::raw("◄ ► to change tab | Press q to quit")
+        .centered()
+        .render(area, buf);
 }
 
 impl Widget for SelectedTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         // in a real app these might be separate widgets
         match self {
-            SelectedTab::Tab1 => self.render_tab0(area, buf),
-            SelectedTab::Tab2 => self.render_tab1(area, buf),
-            SelectedTab::Tab3 => self.render_tab2(area, buf),
-            SelectedTab::Tab4 => self.render_tab3(area, buf),
+            Self::Tab1 => self.render_tab0(area, buf),
+            Self::Tab2 => self.render_tab1(area, buf),
+            Self::Tab3 => self.render_tab2(area, buf),
+            Self::Tab4 => self.render_tab3(area, buf),
         }
     }
 }
 
 impl SelectedTab {
     /// Return tab's name as a styled `Line`
-    fn title(&self) -> Line<'static> {
+    fn title(self) -> Line<'static> {
         format!("  {self}  ")
             .fg(tailwind::SLATE.c200)
             .bg(self.palette().c900)
             .into()
     }
 
-    fn render_tab0(&self, area: Rect, buf: &mut Buffer) {
+    fn render_tab0(self, area: Rect, buf: &mut Buffer) {
         Paragraph::new("Hello, World!")
             .block(self.block())
-            .render(area, buf)
+            .render(area, buf);
     }
 
-    fn render_tab1(&self, area: Rect, buf: &mut Buffer) {
+    fn render_tab1(self, area: Rect, buf: &mut Buffer) {
         Paragraph::new("Welcome to the Ratatui tabs example!")
             .block(self.block())
-            .render(area, buf)
+            .render(area, buf);
     }
 
-    fn render_tab2(&self, area: Rect, buf: &mut Buffer) {
+    fn render_tab2(self, area: Rect, buf: &mut Buffer) {
         Paragraph::new("Look! I'm different than others!")
             .block(self.block())
-            .render(area, buf)
+            .render(area, buf);
     }
 
-    fn render_tab3(&self, area: Rect, buf: &mut Buffer) {
+    fn render_tab3(self, area: Rect, buf: &mut Buffer) {
         Paragraph::new("I know, these are some basic changes. But I think you got the main idea.")
             .block(self.block())
-            .render(area, buf)
+            .render(area, buf);
     }
 
     /// A block surrounding the tab's content
-    fn block(&self) -> Block<'static> {
-        Block::default()
-            .borders(Borders::ALL)
+    fn block(self) -> Block<'static> {
+        Block::bordered()
             .border_set(symbols::border::PROPORTIONAL_TALL)
             .padding(Padding::horizontal(1))
             .border_style(self.palette().c700)
     }
 
-    fn palette(&self) -> tailwind::Palette {
+    const fn palette(self) -> tailwind::Palette {
         match self {
-            SelectedTab::Tab1 => tailwind::BLUE,
-            SelectedTab::Tab2 => tailwind::EMERALD,
-            SelectedTab::Tab3 => tailwind::INDIGO,
-            SelectedTab::Tab4 => tailwind::RED,
+            Self::Tab1 => tailwind::BLUE,
+            Self::Tab2 => tailwind::EMERALD,
+            Self::Tab3 => tailwind::INDIGO,
+            Self::Tab4 => tailwind::RED,
         }
     }
 }
@@ -230,7 +231,7 @@ fn init_error_hooks() -> color_eyre::Result<()> {
     }))?;
     std::panic::set_hook(Box::new(move |info| {
         let _ = restore_terminal();
-        panic(info)
+        panic(info);
     }));
     Ok(())
 }

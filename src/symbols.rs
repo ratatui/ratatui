@@ -395,6 +395,7 @@ pub mod border {
     /// ▏xxxxx▕
     /// ▔▔▔▔▔▔▔
     /// ```
+    #[allow(clippy::doc_markdown)]
     pub const ONE_EIGHTH_WIDE: Set = Set {
         top_right: ONE_EIGHTH_BOTTOM_EIGHT,
         top_left: ONE_EIGHTH_BOTTOM_EIGHT,
@@ -414,6 +415,7 @@ pub mod border {
     /// ▕xx▏
     /// ▕▁▁▏
     /// ```
+    #[allow(clippy::doc_markdown)]
     pub const ONE_EIGHTH_TALL: Set = Set {
         top_right: ONE_EIGHTH_LEFT_EIGHT,
         top_left: ONE_EIGHTH_RIGHT_EIGHT,

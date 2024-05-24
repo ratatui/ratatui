@@ -1,7 +1,4 @@
-use std::{
-    borrow::Cow,
-    fmt::{self, Debug, Display},
-};
+use std::{borrow::Cow, fmt};
 
 use super::Text;
 
@@ -19,7 +16,7 @@ use super::Text;
 /// let password = Masked::new("12345", 'x');
 ///
 /// Paragraph::new(password).render(buffer.area, &mut buffer);
-/// assert_eq!(buffer, Buffer::with_lines(vec!["xxxxx"]));
+/// assert_eq!(buffer, Buffer::with_lines(["xxxxx"]));
 /// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Masked<'a> {
@@ -36,7 +33,7 @@ impl<'a> Masked<'a> {
     }
 
     /// The character to use for masking.
-    pub fn mask_char(&self) -> char {
+    pub const fn mask_char(&self) -> char {
         self.mask_char
     }
 
@@ -46,40 +43,41 @@ impl<'a> Masked<'a> {
     }
 }
 
-impl Debug for Masked<'_> {
+impl fmt::Debug for Masked<'_> {
     /// Debug representation of a masked string is the underlying string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.inner).map_err(|_| fmt::Error)
+        // note that calling display instead of Debug here is intentional
+        fmt::Display::fmt(&self.inner, f)
     }
 }
 
-impl Display for Masked<'_> {
+impl fmt::Display for Masked<'_> {
     /// Display representation of a masked string is the masked string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.value()).map_err(|_| fmt::Error)
+        fmt::Display::fmt(&self.value(), f)
     }
 }
 
 impl<'a> From<&'a Masked<'a>> for Cow<'a, str> {
-    fn from(masked: &'a Masked) -> Cow<'a, str> {
+    fn from(masked: &'a Masked) -> Self {
         masked.value()
     }
 }
 
 impl<'a> From<Masked<'a>> for Cow<'a, str> {
-    fn from(masked: Masked<'a>) -> Cow<'a, str> {
+    fn from(masked: Masked<'a>) -> Self {
         masked.value()
     }
 }
 
 impl<'a> From<&'a Masked<'_>> for Text<'a> {
-    fn from(masked: &'a Masked) -> Text<'a> {
+    fn from(masked: &'a Masked) -> Self {
         Text::raw(masked.value())
     }
 }
 
 impl<'a> From<Masked<'a>> for Text<'a> {
-    fn from(masked: Masked<'a>) -> Text<'a> {
+    fn from(masked: Masked<'a>) -> Self {
         Text::raw(masked.value())
     }
 }
@@ -112,12 +110,14 @@ mod tests {
     fn debug() {
         let masked = Masked::new("12345", 'x');
         assert_eq!(format!("{masked:?}"), "12345");
+        assert_eq!(format!("{masked:.3?}"), "123", "Debug truncates");
     }
 
     #[test]
     fn display() {
         let masked = Masked::new("12345", 'x');
         assert_eq!(format!("{masked}"), "xxxxx");
+        assert_eq!(format!("{masked:.3}"), "xxx", "Display truncates");
     }
 
     #[test]

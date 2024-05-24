@@ -133,11 +133,7 @@ macro_rules! modifier {
 ///     "world".green().on_yellow().not_bold(),
 /// ]);
 /// let paragraph = Paragraph::new(line).italic().underlined();
-/// let block = Block::default()
-///     .title("Title")
-///     .borders(Borders::ALL)
-///     .on_white()
-///     .bold();
+/// let block = Block::bordered().title("Title").on_white().bold();
 /// ```
 pub trait Stylize<'a, T>: Sized {
     #[must_use = "`bg` returns the modified style without modifying the original"]
@@ -348,7 +344,7 @@ mod tests {
 
         // format!() is used to create a temporary String inside a closure, which suffers the same
         // issue as above without the `Styled` trait impl for `String`
-        let items = vec![String::from("a"), String::from("b")];
+        let items = [String::from("a"), String::from("b")];
         let sss = items.iter().map(|s| format!("{s}{s}").red()).collect_vec();
         assert_eq!(sss, vec![Span::from("aa").red(), Span::from("bb").red()]);
     }
@@ -393,12 +389,12 @@ mod tests {
 
     #[test]
     fn repeated_attributes() {
-        let cyan_bg = Style::default().bg(Color::Cyan);
-        let cyan_fg = Style::default().fg(Color::Cyan);
+        let bg = Style::default().bg(Color::Cyan);
+        let fg = Style::default().fg(Color::Cyan);
 
         // Behavior: the last one set is the definitive one
-        assert_eq!("hello".on_red().on_cyan(), Span::styled("hello", cyan_bg));
-        assert_eq!("hello".red().cyan(), Span::styled("hello", cyan_fg));
+        assert_eq!("hello".on_red().on_cyan(), Span::styled("hello", bg));
+        assert_eq!("hello".red().cyan(), Span::styled("hello", fg));
     }
 
     #[test]

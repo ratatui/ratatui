@@ -29,7 +29,7 @@ fn widgets_canvas_draw_labels() {
         })
         .unwrap();
 
-    let mut expected = Buffer::with_lines(vec!["    ", "    ", "     ", "     ", "test "]);
+    let mut expected = Buffer::with_lines(["", "", "", "", "test "]);
     for row in 0..5 {
         for col in 0..5 {
             expected.get_mut(col, row).set_bg(Color::Yellow);

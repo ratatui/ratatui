@@ -84,23 +84,23 @@ impl TermwizBackend {
     /// let backend = TermwizBackend::new()?;
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
-    pub fn new() -> Result<TermwizBackend, Box<dyn Error>> {
+    pub fn new() -> Result<Self, Box<dyn Error>> {
         let mut buffered_terminal =
             BufferedTerminal::new(SystemTerminal::new(Capabilities::new_from_env()?)?)?;
         buffered_terminal.terminal().set_raw_mode()?;
         buffered_terminal.terminal().enter_alternate_screen()?;
-        Ok(TermwizBackend { buffered_terminal })
+        Ok(Self { buffered_terminal })
     }
 
     /// Creates a new Termwiz backend instance with the given buffered terminal.
-    pub fn with_buffered_terminal(instance: BufferedTerminal<SystemTerminal>) -> TermwizBackend {
-        TermwizBackend {
+    pub const fn with_buffered_terminal(instance: BufferedTerminal<SystemTerminal>) -> Self {
+        Self {
             buffered_terminal: instance,
         }
     }
 
     /// Returns a reference to the buffered terminal used by the backend.
-    pub fn buffered_terminal(&self) -> &BufferedTerminal<SystemTerminal> {
+    pub const fn buffered_terminal(&self) -> &BufferedTerminal<SystemTerminal> {
         &self.buffered_terminal
     }
 
@@ -111,7 +111,7 @@ impl TermwizBackend {
 }
 
 impl Backend for TermwizBackend {
-    fn draw<'a, I>(&mut self, content: I) -> Result<(), io::Error>
+    fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
@@ -181,13 +181,13 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
-    fn hide_cursor(&mut self) -> Result<(), io::Error> {
+    fn hide_cursor(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .add_change(Change::CursorVisibility(CursorVisibility::Hidden));
         Ok(())
     }
 
-    fn show_cursor(&mut self) -> Result<(), io::Error> {
+    fn show_cursor(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .add_change(Change::CursorVisibility(CursorVisibility::Visible));
         Ok(())
@@ -207,18 +207,18 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
-    fn clear(&mut self) -> Result<(), io::Error> {
+    fn clear(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .add_change(Change::ClearScreen(termwiz::color::ColorAttribute::Default));
         Ok(())
     }
 
-    fn size(&self) -> Result<Rect, io::Error> {
+    fn size(&self) -> io::Result<Rect> {
         let (cols, rows) = self.buffered_terminal.dimensions();
         Ok(Rect::new(0, 0, u16_max(cols), u16_max(rows)))
     }
 
-    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+    fn window_size(&mut self) -> io::Result<WindowSize> {
         let ScreenSize {
             cols,
             rows,
@@ -241,7 +241,7 @@ impl Backend for TermwizBackend {
         })
     }
 
-    fn flush(&mut self) -> Result<(), io::Error> {
+    fn flush(&mut self) -> io::Result<()> {
         self.buffered_terminal
             .flush()
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
@@ -251,7 +251,7 @@ impl Backend for TermwizBackend {
 
 impl From<CellAttributes> for Style {
     fn from(value: CellAttributes) -> Self {
-        let mut style = Style::new()
+        let mut style = Self::new()
             .add_modifier(value.intensity().into())
             .add_modifier(value.underline().into())
             .add_modifier(value.blink().into());
@@ -271,7 +271,7 @@ impl From<CellAttributes> for Style {
 
         style.fg = Some(value.foreground().into());
         style.bg = Some(value.background().into());
-        #[cfg(feature = "underline_color")]
+        #[cfg(feature = "underline-color")]
         {
             style.underline_color = Some(value.underline_color().into());
         }
@@ -283,9 +283,9 @@ impl From<CellAttributes> for Style {
 impl From<Intensity> for Modifier {
     fn from(value: Intensity) -> Self {
         match value {
-            Intensity::Normal => Modifier::empty(),
-            Intensity::Bold => Modifier::BOLD,
-            Intensity::Half => Modifier::DIM,
+            Intensity::Normal => Self::empty(),
+            Intensity::Bold => Self::BOLD,
+            Intensity::Half => Self::DIM,
         }
     }
 }
@@ -293,8 +293,8 @@ impl From<Intensity> for Modifier {
 impl From<Underline> for Modifier {
     fn from(value: Underline) -> Self {
         match value {
-            Underline::None => Modifier::empty(),
-            _ => Modifier::UNDERLINED,
+            Underline::None => Self::empty(),
+            _ => Self::UNDERLINED,
         }
     }
 }
@@ -302,17 +302,17 @@ impl From<Underline> for Modifier {
 impl From<Blink> for Modifier {
     fn from(value: Blink) -> Self {
         match value {
-            Blink::None => Modifier::empty(),
-            Blink::Slow => Modifier::SLOW_BLINK,
-            Blink::Rapid => Modifier::RAPID_BLINK,
+            Blink::None => Self::empty(),
+            Blink::Slow => Self::SLOW_BLINK,
+            Blink::Rapid => Self::RAPID_BLINK,
         }
     }
 }
 
 impl From<Color> for ColorAttribute {
-    fn from(color: Color) -> ColorAttribute {
+    fn from(color: Color) -> Self {
         match color {
-            Color::Reset => ColorAttribute::Default,
+            Color::Reset => Self::Default,
             Color::Black => AnsiColor::Black.into(),
             Color::DarkGray => AnsiColor::Grey.into(),
             Color::Gray => AnsiColor::Silver.into(),
@@ -329,10 +329,8 @@ impl From<Color> for ColorAttribute {
             Color::White => AnsiColor::White.into(),
             Color::Blue => AnsiColor::Navy.into(),
             Color::LightBlue => AnsiColor::Blue.into(),
-            Color::Indexed(i) => ColorAttribute::PaletteIndex(i),
-            Color::Rgb(r, g, b) => {
-                ColorAttribute::TrueColorWithDefaultFallback(SrgbaTuple::from((r, g, b)))
-            }
+            Color::Indexed(i) => Self::PaletteIndex(i),
+            Color::Rgb(r, g, b) => Self::TrueColorWithDefaultFallback(SrgbaTuple::from((r, g, b))),
         }
     }
 }
@@ -340,22 +338,22 @@ impl From<Color> for ColorAttribute {
 impl From<AnsiColor> for Color {
     fn from(value: AnsiColor) -> Self {
         match value {
-            AnsiColor::Black => Color::Black,
-            AnsiColor::Grey => Color::DarkGray,
-            AnsiColor::Silver => Color::Gray,
-            AnsiColor::Maroon => Color::Red,
-            AnsiColor::Red => Color::LightRed,
-            AnsiColor::Green => Color::Green,
-            AnsiColor::Lime => Color::LightGreen,
-            AnsiColor::Olive => Color::Yellow,
-            AnsiColor::Yellow => Color::LightYellow,
-            AnsiColor::Purple => Color::Magenta,
-            AnsiColor::Fuchsia => Color::LightMagenta,
-            AnsiColor::Teal => Color::Cyan,
-            AnsiColor::Aqua => Color::LightCyan,
-            AnsiColor::White => Color::White,
-            AnsiColor::Navy => Color::Blue,
-            AnsiColor::Blue => Color::LightBlue,
+            AnsiColor::Black => Self::Black,
+            AnsiColor::Grey => Self::DarkGray,
+            AnsiColor::Silver => Self::Gray,
+            AnsiColor::Maroon => Self::Red,
+            AnsiColor::Red => Self::LightRed,
+            AnsiColor::Green => Self::Green,
+            AnsiColor::Lime => Self::LightGreen,
+            AnsiColor::Olive => Self::Yellow,
+            AnsiColor::Yellow => Self::LightYellow,
+            AnsiColor::Purple => Self::Magenta,
+            AnsiColor::Fuchsia => Self::LightMagenta,
+            AnsiColor::Teal => Self::Cyan,
+            AnsiColor::Aqua => Self::LightCyan,
+            AnsiColor::White => Self::White,
+            AnsiColor::Navy => Self::Blue,
+            AnsiColor::Blue => Self::LightBlue,
         }
     }
 }
@@ -365,8 +363,8 @@ impl From<ColorAttribute> for Color {
         match value {
             ColorAttribute::TrueColorWithDefaultFallback(srgba)
             | ColorAttribute::TrueColorWithPaletteFallback(srgba, _) => srgba.into(),
-            ColorAttribute::PaletteIndex(i) => Color::Indexed(i),
-            ColorAttribute::Default => Color::Reset,
+            ColorAttribute::PaletteIndex(i) => Self::Indexed(i),
+            ColorAttribute::Default => Self::Reset,
         }
     }
 }
@@ -374,8 +372,8 @@ impl From<ColorAttribute> for Color {
 impl From<ColorSpec> for Color {
     fn from(value: ColorSpec) -> Self {
         match value {
-            ColorSpec::Default => Color::Reset,
-            ColorSpec::PaletteIndex(i) => Color::Indexed(i),
+            ColorSpec::Default => Self::Reset,
+            ColorSpec::PaletteIndex(i) => Self::Indexed(i),
             ColorSpec::TrueColor(srgba) => srgba.into(),
         }
     }
@@ -384,14 +382,14 @@ impl From<ColorSpec> for Color {
 impl From<SrgbaTuple> for Color {
     fn from(value: SrgbaTuple) -> Self {
         let (r, g, b, _) = value.to_srgb_u8();
-        Color::Rgb(r, g, b)
+        Self::Rgb(r, g, b)
     }
 }
 
 impl From<RgbColor> for Color {
     fn from(value: RgbColor) -> Self {
         let (r, g, b) = value.to_tuple_rgb8();
-        Color::Rgb(r, g, b)
+        Self::Rgb(r, g, b)
     }
 }
 
@@ -409,7 +407,6 @@ fn u16_max(i: usize) -> u16 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::style::Stylize;
 
     mod into_color {
         use Color as C;
@@ -578,11 +575,19 @@ mod tests {
 
     #[test]
     fn from_cell_attribute_for_style() {
+        use crate::style::Stylize;
+
+        #[cfg(feature = "underline-color")]
+        const STYLE: Style = Style::new()
+            .underline_color(Color::Reset)
+            .fg(Color::Reset)
+            .bg(Color::Reset);
+        #[cfg(not(feature = "underline-color"))]
+        const STYLE: Style = Style::new().fg(Color::Reset).bg(Color::Reset);
+
         // default
-        assert_eq!(
-            Style::from(CellAttributes::default()),
-            Style::new().fg(Color::Reset).bg(Color::Reset)
-        );
+        assert_eq!(Style::from(CellAttributes::default()), STYLE);
+
         // foreground color
         assert_eq!(
             Style::from(
@@ -590,7 +595,7 @@ mod tests {
                     .set_foreground(ColorAttribute::PaletteIndex(31))
                     .to_owned()
             ),
-            Style::new().fg(Color::Indexed(31)).bg(Color::Reset)
+            STYLE.fg(Color::Indexed(31))
         );
         // background color
         assert_eq!(
@@ -599,21 +604,7 @@ mod tests {
                     .set_background(ColorAttribute::PaletteIndex(31))
                     .to_owned()
             ),
-            Style::new().fg(Color::Reset).bg(Color::Indexed(31))
-        );
-        // underline color
-        #[cfg(feature = "underline_color")]
-        assert_eq!(
-            Style::from(
-                CellAttributes::default()
-                    .set_underline_color(AnsiColor::Red)
-                    .set
-                    .to_owned()
-            ),
-            Style::new()
-                .fg(Color::Reset)
-                .bg(Color::Reset)
-                .underline_color(Color::Red)
+            STYLE.bg(Color::Indexed(31))
         );
         // underlined
         assert_eq!(
@@ -622,12 +613,12 @@ mod tests {
                     .set_underline(Underline::Single)
                     .to_owned()
             ),
-            Style::new().fg(Color::Reset).bg(Color::Reset).underlined()
+            STYLE.underlined()
         );
         // blink
         assert_eq!(
             Style::from(CellAttributes::default().set_blink(Blink::Slow).to_owned()),
-            Style::new().fg(Color::Reset).bg(Color::Reset).slow_blink()
+            STYLE.slow_blink()
         );
         // intensity
         assert_eq!(
@@ -636,27 +627,38 @@ mod tests {
                     .set_intensity(Intensity::Bold)
                     .to_owned()
             ),
-            Style::new().fg(Color::Reset).bg(Color::Reset).bold()
+            STYLE.bold()
         );
         // italic
         assert_eq!(
             Style::from(CellAttributes::default().set_italic(true).to_owned()),
-            Style::new().fg(Color::Reset).bg(Color::Reset).italic()
+            STYLE.italic()
         );
         // reversed
         assert_eq!(
             Style::from(CellAttributes::default().set_reverse(true).to_owned()),
-            Style::new().fg(Color::Reset).bg(Color::Reset).reversed()
+            STYLE.reversed()
         );
         // strikethrough
         assert_eq!(
             Style::from(CellAttributes::default().set_strikethrough(true).to_owned()),
-            Style::new().fg(Color::Reset).bg(Color::Reset).crossed_out()
+            STYLE.crossed_out()
         );
         // hidden
         assert_eq!(
             Style::from(CellAttributes::default().set_invisible(true).to_owned()),
-            Style::new().fg(Color::Reset).bg(Color::Reset).hidden()
+            STYLE.hidden()
+        );
+
+        // underline color
+        #[cfg(feature = "underline-color")]
+        assert_eq!(
+            Style::from(
+                CellAttributes::default()
+                    .set_underline_color(AnsiColor::Red)
+                    .to_owned()
+            ),
+            STYLE.underline_color(Color::Indexed(9))
         );
     }
 }

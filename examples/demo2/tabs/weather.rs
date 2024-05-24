@@ -84,7 +84,7 @@ fn render_simple_barchart(area: Rect, buf: &mut Buffer) {
                 // This doesn't actually render correctly as the text is too wide for the bar
                 // See https://github.com/ratatui-org/ratatui/issues/513 for more info
                 // (the demo GIFs hack around this by hacking the calculation in bars.rs)
-                .text_value(format!("{}°", value))
+                .text_value(format!("{value}°"))
                 .style(if value > 70 {
                     Style::new().fg(Color::Red)
                 } else {
@@ -128,12 +128,14 @@ fn render_horizontal_barchart(area: Rect, buf: &mut Buffer) {
         .render(area, buf);
 }
 
+#[allow(clippy::cast_precision_loss)]
 pub fn render_gauge(progress: usize, area: Rect, buf: &mut Buffer) {
     let percent = (progress * 3).min(100) as f64;
 
     render_line_gauge(percent, area, buf);
 }
 
+#[allow(clippy::cast_possible_truncation)]
 fn render_line_gauge(percent: f64, area: Rect, buf: &mut Buffer) {
     // cycle color hue based on the percent for a neat effect yellow -> red
     let hue = 90.0 - (percent as f32 * 0.6);
@@ -141,7 +143,7 @@ fn render_line_gauge(percent: f64, area: Rect, buf: &mut Buffer) {
     let fg = color_from_oklab(hue, Okhsv::max_saturation(), value);
     let bg = color_from_oklab(hue, Okhsv::max_saturation(), value * 0.5);
     let label = if percent < 100.0 {
-        format!("Downloading: {}%", percent)
+        format!("Downloading: {percent}%")
     } else {
         "Download Complete!".into()
     };

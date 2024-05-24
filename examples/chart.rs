@@ -26,11 +26,11 @@ use crossterm::{
 };
 use ratatui::{
     prelude::*,
-    widgets::{block::Title, *},
+    widgets::{block::Title, Axis, Block, Chart, Dataset, GraphType, LegendPosition},
 };
 
 #[derive(Clone)]
-pub struct SinSignal {
+struct SinSignal {
     x: f64,
     interval: f64,
     period: f64,
@@ -38,8 +38,8 @@ pub struct SinSignal {
 }
 
 impl SinSignal {
-    pub fn new(interval: f64, period: f64, scale: f64) -> SinSignal {
-        SinSignal {
+    const fn new(interval: f64, period: f64, scale: f64) -> Self {
+        Self {
             x: 0.0,
             interval,
             period,
@@ -66,12 +66,12 @@ struct App {
 }
 
 impl App {
-    fn new() -> App {
+    fn new() -> Self {
         let mut signal1 = SinSignal::new(0.2, 3.0, 18.0);
         let mut signal2 = SinSignal::new(0.1, 2.0, 10.0);
         let data1 = signal1.by_ref().take(200).collect::<Vec<(f64, f64)>>();
         let data2 = signal2.by_ref().take(200).collect::<Vec<(f64, f64)>>();
-        App {
+        Self {
             signal1,
             data1,
             signal2,
@@ -133,7 +133,7 @@ fn run_app<B: Backend>(
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                if let KeyCode::Char('q') = key.code {
+                if key.code == KeyCode::Char('q') {
                     return Ok(());
                 }
             }
@@ -184,11 +184,7 @@ fn render_chart1(f: &mut Frame, area: Rect, app: &App) {
     ];
 
     let chart = Chart::new(datasets)
-        .block(
-            Block::default()
-                .title("Chart 1".cyan().bold())
-                .borders(Borders::ALL),
-        )
+        .block(Block::bordered().title("Chart 1".cyan().bold()))
         .x_axis(
             Axis::default()
                 .title("X Axis")
@@ -217,13 +213,11 @@ fn render_line_chart(f: &mut Frame, area: Rect) {
 
     let chart = Chart::new(datasets)
         .block(
-            Block::default()
-                .title(
-                    Title::default()
-                        .content("Line chart".cyan().bold())
-                        .alignment(Alignment::Center),
-                )
-                .borders(Borders::ALL),
+            Block::bordered().title(
+                Title::default()
+                    .content("Line chart".cyan().bold())
+                    .alignment(Alignment::Center),
+            ),
         )
         .x_axis(
             Axis::default()
@@ -242,7 +236,7 @@ fn render_line_chart(f: &mut Frame, area: Rect) {
         .legend_position(Some(LegendPosition::TopLeft))
         .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)));
 
-    f.render_widget(chart, area)
+    f.render_widget(chart, area);
 }
 
 fn render_scatter(f: &mut Frame, area: Rect) {
@@ -269,7 +263,7 @@ fn render_scatter(f: &mut Frame, area: Rect) {
 
     let chart = Chart::new(datasets)
         .block(
-            Block::new().borders(Borders::all()).title(
+            Block::bordered().title(
                 Title::default()
                     .content("Scatter chart".cyan().bold())
                     .alignment(Alignment::Center),
@@ -310,7 +304,7 @@ const HEAVY_PAYLOAD_DATA: [(f64, f64); 9] = [
 const MEDIUM_PAYLOAD_DATA: [(f64, f64); 29] = [
     (1963., 29500.),
     (1964., 30600.),
-    (1965., 177900.),
+    (1965., 177_900.),
     (1965., 21000.),
     (1966., 17900.),
     (1966., 8400.),
@@ -340,7 +334,7 @@ const MEDIUM_PAYLOAD_DATA: [(f64, f64); 29] = [
 ];
 
 const SMALL_PAYLOAD_DATA: [(f64, f64); 23] = [
-    (1961., 118500.),
+    (1961., 118_500.),
     (1962., 14900.),
     (1975., 21400.),
     (1980., 32800.),

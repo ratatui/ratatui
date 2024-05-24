@@ -13,6 +13,8 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+#![allow(clippy::wildcard_imports)]
+
 use std::{
     io::{self, stdout, Stdout},
     time::{Duration, Instant},
@@ -44,8 +46,8 @@ struct App {
 }
 
 impl App {
-    fn new() -> App {
-        App {
+    fn new() -> Self {
+        Self {
             x: 0.0,
             y: 0.0,
             ball: Circle {
@@ -64,7 +66,7 @@ impl App {
 
     pub fn run() -> io::Result<()> {
         let mut terminal = init_terminal()?;
-        let mut app = App::new();
+        let mut app = Self::new();
         let mut last_tick = Instant::now();
         let tick_rate = Duration::from_millis(16);
         loop {
@@ -106,13 +108,13 @@ impl App {
         // bounce the ball by flipping the velocity vector
         let ball = &self.ball;
         let playground = self.playground;
-        if ball.x - ball.radius < playground.left() as f64
-            || ball.x + ball.radius > playground.right() as f64
+        if ball.x - ball.radius < f64::from(playground.left())
+            || ball.x + ball.radius > f64::from(playground.right())
         {
             self.vx = -self.vx;
         }
-        if ball.y - ball.radius < playground.top() as f64
-            || ball.y + ball.radius > playground.bottom() as f64
+        if ball.y - ball.radius < f64::from(playground.top())
+            || ball.y + ball.radius > f64::from(playground.bottom())
         {
             self.vy = -self.vy;
         }
@@ -135,7 +137,7 @@ impl App {
 
     fn map_canvas(&self) -> impl Widget + '_ {
         Canvas::default()
-            .block(Block::default().borders(Borders::ALL).title("World"))
+            .block(Block::bordered().title("World"))
             .marker(self.marker)
             .paint(|ctx| {
                 ctx.draw(&Map {
@@ -150,7 +152,7 @@ impl App {
 
     fn pong_canvas(&self) -> impl Widget + '_ {
         Canvas::default()
-            .block(Block::default().borders(Borders::ALL).title("Pong"))
+            .block(Block::bordered().title("Pong"))
             .marker(self.marker)
             .paint(|ctx| {
                 ctx.draw(&self.ball);
@@ -160,36 +162,38 @@ impl App {
     }
 
     fn boxes_canvas(&self, area: Rect) -> impl Widget {
-        let (left, right, bottom, top) =
-            (0.0, area.width as f64, 0.0, area.height as f64 * 2.0 - 4.0);
+        let left = 0.0;
+        let right = f64::from(area.width);
+        let bottom = 0.0;
+        let top = f64::from(area.height).mul_add(2.0, -4.0);
         Canvas::default()
-            .block(Block::default().borders(Borders::ALL).title("Rects"))
+            .block(Block::bordered().title("Rects"))
             .marker(self.marker)
             .x_bounds([left, right])
             .y_bounds([bottom, top])
             .paint(|ctx| {
                 for i in 0..=11 {
                     ctx.draw(&Rectangle {
-                        x: (i * i + 3 * i) as f64 / 2.0 + 2.0,
+                        x: f64::from(i * i + 3 * i) / 2.0 + 2.0,
                         y: 2.0,
-                        width: i as f64,
-                        height: i as f64,
+                        width: f64::from(i),
+                        height: f64::from(i),
                         color: Color::Red,
                     });
                     ctx.draw(&Rectangle {
-                        x: (i * i + 3 * i) as f64 / 2.0 + 2.0,
+                        x: f64::from(i * i + 3 * i) / 2.0 + 2.0,
                         y: 21.0,
-                        width: i as f64,
-                        height: i as f64,
+                        width: f64::from(i),
+                        height: f64::from(i),
                         color: Color::Blue,
                     });
                 }
                 for i in 0..100 {
                     if i % 10 != 0 {
-                        ctx.print(i as f64 + 1.0, 0.0, format!("{i}", i = i % 10));
+                        ctx.print(f64::from(i) + 1.0, 0.0, format!("{i}", i = i % 10));
                     }
                     if i % 2 == 0 && i % 10 != 0 {
-                        ctx.print(0.0, i as f64, format!("{i}", i = i % 10));
+                        ctx.print(0.0, f64::from(i), format!("{i}", i = i % 10));
                     }
                 }
             })

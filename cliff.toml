@@ -1,4 +1,9 @@
-# configuration for https://github.com/orhun/git-cliff
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[remote.github]
+owner = "ratatui-org"
+repo = "ratatui"
 
 [changelog]
 # changelog header
@@ -21,8 +26,10 @@ body = """
 {% endif -%}
 
 {% macro commit(commit) -%}
-- [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui-org/ratatui/commit/" ~ commit.id }})
-  *({{commit.scope | default(value = "uncategorized") | lower }})* {{ commit.message | upper_first }}
+- [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui-org/ratatui/commit/" ~ commit.id }}) \
+  *({{commit.scope | default(value = "uncategorized") | lower }})* {{ commit.message | upper_first | trim }}\
+  {% if commit.github.username %} by @{{ commit.github.username }}{%- endif -%}\
+  {% if commit.github.pr_number %} in [#{{ commit.github.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.github.pr_number }}){%- endif %}\
 {%- if commit.breaking %} [**breaking**]{% endif %}
 {%- if commit.body %}
 
@@ -49,6 +56,28 @@ body = """
 {%- endif -%}
 {%- endfor -%}
 {%- endfor %}
+
+{% if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+### New Contributors
+{%- endif %}\
+{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
+* @{{ contributor.username }} made their first contribution
+{%- if contributor.pr_number %} in \
+[#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
+{%- endif %}
+{%- endfor -%}
+
+{% if version %}
+{% if previous.version %}
+**Full Changelog**: {{ self::remote_url() }}/compare/{{ previous.version }}...{{ version }}
+{% endif %}
+{% else -%}
+  {% raw %}\n{% endraw %}
+{% endif %}
+
+{%- macro remote_url() -%}
+https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}\
+{% endmacro %}
 """
 
 
@@ -68,7 +97,7 @@ filter_unconventional = true
 split_commits = false
 # regex for preprocessing the commit messages
 commit_preprocessors = [
-  { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/ratatui-org/ratatui/issues/${2}))" },
+  { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
   { pattern = '(better safe shared layout cache)', replace = "perf(layout): ${1}" },
   { pattern = '(Clarify README.md)', replace = "docs(readme): ${1}" },
   { pattern = '(Update README.md)', replace = "docs(readme): ${1}" },

@@ -26,14 +26,14 @@ pub enum HighlightSpacing {
 impl HighlightSpacing {
     /// Determine if a selection column should be displayed
     ///
-    /// has_selection: true if a row is selected in the table
+    /// `has_selection`: true if a row is selected in the table
     ///
     /// Returns true if a selection column should be displayed
-    pub(crate) fn should_add(&self, has_selection: bool) -> bool {
+    pub(crate) const fn should_add(&self, has_selection: bool) -> bool {
         match self {
-            HighlightSpacing::Always => true,
-            HighlightSpacing::WhenSelected => has_selection,
-            HighlightSpacing::Never => false,
+            Self::Always => true,
+            Self::WhenSelected => has_selection,
+            Self::Never => false,
         }
     }
 }

@@ -38,14 +38,10 @@ enum Tab {
 }
 
 pub fn run(terminal: &mut Terminal<impl Backend>) -> Result<()> {
-    App::new().run(terminal)
+    App::default().run(terminal)
 }
 
 impl App {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Run the app until the user quits.
     pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
         while self.is_running() {
@@ -80,11 +76,12 @@ impl App {
         let timeout = Duration::from_secs_f64(1.0 / 50.0);
         match term::next_event(timeout)? {
             Some(Event::Key(key)) if key.kind == KeyEventKind::Press => self.handle_key_press(key),
-            _ => Ok(()),
+            _ => {}
         }
+        Ok(())
     }
 
-    fn handle_key_press(&mut self, key: KeyEvent) -> Result<()> {
+    fn handle_key_press(&mut self, key: KeyEvent) {
         use KeyCode::*;
         match key.code {
             Char('q') | Esc => self.mode = Mode::Quit,
@@ -93,10 +90,8 @@ impl App {
             Char('k') | Up => self.prev(),
             Char('j') | Down => self.next(),
             Char('d') | Delete => self.destroy(),
-
             _ => {}
         };
-        Ok(())
     }
 
     fn prev(&mut self) {
@@ -124,11 +119,11 @@ impl App {
     }
 
     fn next_tab(&mut self) {
-        self.tab = self.tab.next()
+        self.tab = self.tab.next();
     }
 
     fn destroy(&mut self) {
-        self.mode = Mode::Destroy
+        self.mode = Mode::Destroy;
     }
 }
 
@@ -147,7 +142,7 @@ impl Widget for &App {
         Block::new().style(THEME.root).render(area, buf);
         self.render_title_bar(title_bar, buf);
         self.render_selected_tab(tab, buf);
-        self.render_bottom_bar(bottom_bar, buf);
+        App::render_bottom_bar(bottom_bar, buf);
     }
 }
 
@@ -157,7 +152,7 @@ impl App {
         let [title, tabs] = layout.areas(area);
 
         Span::styled("Ratatui", THEME.app_title).render(title, buf);
-        let titles = Tab::iter().map(|tab| tab.title());
+        let titles = Tab::iter().map(Tab::title);
         Tabs::new(titles)
             .style(THEME.tabs)
             .highlight_style(THEME.tabs_selected)
@@ -177,7 +172,7 @@ impl App {
         };
     }
 
-    fn render_bottom_bar(&self, area: Rect, buf: &mut Buffer) {
+    fn render_bottom_bar(area: Rect, buf: &mut Buffer) {
         let keys = [
             ("H/←", "Left"),
             ("L/→", "Right"),
@@ -189,8 +184,8 @@ impl App {
         let spans = keys
             .iter()
             .flat_map(|(key, desc)| {
-                let key = Span::styled(format!(" {} ", key), THEME.key_binding.key);
-                let desc = Span::styled(format!(" {} ", desc), THEME.key_binding.description);
+                let key = Span::styled(format!(" {key} "), THEME.key_binding.key);
+                let desc = Span::styled(format!(" {desc} "), THEME.key_binding.description);
                 [key, desc]
             })
             .collect_vec();
@@ -202,22 +197,22 @@ impl App {
 }
 
 impl Tab {
-    fn next(&self) -> Self {
-        let current_index = *self as usize;
+    fn next(self) -> Self {
+        let current_index = self as usize;
         let next_index = current_index.saturating_add(1);
-        Self::from_repr(next_index).unwrap_or(*self)
+        Self::from_repr(next_index).unwrap_or(self)
     }
 
-    fn prev(&self) -> Self {
-        let current_index = *self as usize;
+    fn prev(self) -> Self {
+        let current_index = self as usize;
         let prev_index = current_index.saturating_sub(1);
-        Self::from_repr(prev_index).unwrap_or(*self)
+        Self::from_repr(prev_index).unwrap_or(self)
     }
 
-    fn title(&self) -> String {
+    fn title(self) -> String {
         match self {
-            Tab::About => "".to_string(),
-            tab => format!(" {} ", tab),
+            Self::About => String::new(),
+            tab => format!(" {tab} "),
         }
     }
 }

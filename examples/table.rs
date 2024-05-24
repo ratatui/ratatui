@@ -13,6 +13,8 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+#![allow(clippy::enum_glob_use, clippy::wildcard_imports)]
+
 use std::{error::Error, io};
 
 use crossterm::{
@@ -48,7 +50,7 @@ struct TableColors {
 }
 
 impl TableColors {
-    fn new(color: &tailwind::Palette) -> Self {
+    const fn new(color: &tailwind::Palette) -> Self {
         Self {
             buffer_bg: tailwind::SLATE.c950,
             header_bg: color.c900,
@@ -69,7 +71,7 @@ struct Data {
 }
 
 impl Data {
-    fn ref_array(&self) -> [&String; 3] {
+    const fn ref_array(&self) -> [&String; 3] {
         [&self.name, &self.address, &self.email]
     }
 
@@ -96,9 +98,9 @@ struct App {
 }
 
 impl App {
-    fn new() -> App {
+    fn new() -> Self {
         let data_vec = generate_fake_names();
-        App {
+        Self {
             state: TableState::default().with_selected(0),
             longest_item_lens: constraint_len_calculator(&data_vec),
             scroll_state: ScrollbarState::new((data_vec.len() - 1) * ITEM_HEIGHT),
@@ -147,7 +149,7 @@ impl App {
     }
 
     pub fn set_colors(&mut self) {
-        self.colors = TableColors::new(&PALETTES[self.color_index])
+        self.colors = TableColors::new(&PALETTES[self.color_index]);
     }
 }
 
@@ -245,8 +247,7 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
         .fg(app.colors.selected_style_fg);
 
     let header = ["Name", "Address", "Email"]
-        .iter()
-        .cloned()
+        .into_iter()
         .map(Cell::from)
         .collect::<Row>()
         .style(header_style)
@@ -257,9 +258,8 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
             _ => app.colors.alt_row_color,
         };
         let item = data.ref_array();
-        item.iter()
-            .cloned()
-            .map(|content| Cell::from(Text::from(format!("\n{}\n", content))))
+        item.into_iter()
+            .map(|content| Cell::from(Text::from(format!("\n{content}\n"))))
             .collect::<Row>()
             .style(Style::new().fg(app.colors.row_fg).bg(color))
             .height(4)
@@ -308,6 +308,7 @@ fn constraint_len_calculator(items: &[Data]) -> (u16, u16, u16) {
         .max()
         .unwrap_or(0);
 
+    #[allow(clippy::cast_possible_truncation)]
     (name_len as u16, address_len as u16, email_len as u16)
 }
 
@@ -325,15 +326,14 @@ fn render_scrollbar(f: &mut Frame, app: &mut App, area: Rect) {
     );
 }
 
-fn render_footer(f: &mut Frame, app: &mut App, area: Rect) {
+fn render_footer(f: &mut Frame, app: &App, area: Rect) {
     let info_footer = Paragraph::new(Line::from(INFO_TEXT))
         .style(Style::new().fg(app.colors.row_fg).bg(app.colors.buffer_bg))
         .centered()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::new().fg(app.colors.footer_border_color))
-                .border_type(BorderType::Double),
+            Block::bordered()
+                .border_type(BorderType::Double)
+                .border_style(Style::new().fg(app.colors.footer_border_color)),
         );
     f.render_widget(info_footer, area);
 }

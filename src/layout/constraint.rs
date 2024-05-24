@@ -1,4 +1,4 @@
-use std::fmt::{self, Display};
+use std::fmt;
 
 use itertools::Itertools;
 use strum::EnumIs;
@@ -197,22 +197,21 @@ impl Constraint {
     )]
     pub fn apply(&self, length: u16) -> u16 {
         match *self {
-            Constraint::Percentage(p) => {
-                let p = p as f32 / 100.0;
-                let length = length as f32;
+            Self::Percentage(p) => {
+                let p = f32::from(p) / 100.0;
+                let length = f32::from(length);
                 (p * length).min(length) as u16
             }
-            Constraint::Ratio(numerator, denominator) => {
+            Self::Ratio(numerator, denominator) => {
                 // avoid division by zero by using 1 when denominator is 0
                 // this results in 0/0 -> 0 and x/0 -> x for x != 0
                 let percentage = numerator as f32 / denominator.max(1) as f32;
-                let length = length as f32;
+                let length = f32::from(length);
                 (percentage * length).min(length) as u16
             }
-            Constraint::Length(l) => length.min(l),
-            Constraint::Fill(l) => length.min(l),
-            Constraint::Max(m) => length.min(m),
-            Constraint::Min(m) => length.max(m),
+            Self::Length(l) | Self::Fill(l) => length.min(l),
+            Self::Max(m) => length.min(m),
+            Self::Min(m) => length.max(m),
         }
     }
 
@@ -226,11 +225,11 @@ impl Constraint {
     /// let constraints = Constraint::from_lengths([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_lengths<T>(lengths: T) -> Vec<Constraint>
+    pub fn from_lengths<T>(lengths: T) -> Vec<Self>
     where
         T: IntoIterator<Item = u16>,
     {
-        lengths.into_iter().map(Constraint::Length).collect_vec()
+        lengths.into_iter().map(Self::Length).collect_vec()
     }
 
     /// Convert an iterator of ratios into a vector of constraints
@@ -243,13 +242,13 @@ impl Constraint {
     /// let constraints = Constraint::from_ratios([(1, 4), (1, 2), (1, 4)]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_ratios<T>(ratios: T) -> Vec<Constraint>
+    pub fn from_ratios<T>(ratios: T) -> Vec<Self>
     where
         T: IntoIterator<Item = (u32, u32)>,
     {
         ratios
             .into_iter()
-            .map(|(n, d)| Constraint::Ratio(n, d))
+            .map(|(n, d)| Self::Ratio(n, d))
             .collect_vec()
     }
 
@@ -263,14 +262,11 @@ impl Constraint {
     /// let constraints = Constraint::from_percentages([25, 50, 25]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_percentages<T>(percentages: T) -> Vec<Constraint>
+    pub fn from_percentages<T>(percentages: T) -> Vec<Self>
     where
         T: IntoIterator<Item = u16>,
     {
-        percentages
-            .into_iter()
-            .map(Constraint::Percentage)
-            .collect_vec()
+        percentages.into_iter().map(Self::Percentage).collect_vec()
     }
 
     /// Convert an iterator of maxes into a vector of constraints
@@ -283,11 +279,11 @@ impl Constraint {
     /// let constraints = Constraint::from_maxes([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_maxes<T>(maxes: T) -> Vec<Constraint>
+    pub fn from_maxes<T>(maxes: T) -> Vec<Self>
     where
         T: IntoIterator<Item = u16>,
     {
-        maxes.into_iter().map(Constraint::Max).collect_vec()
+        maxes.into_iter().map(Self::Max).collect_vec()
     }
 
     /// Convert an iterator of mins into a vector of constraints
@@ -300,11 +296,11 @@ impl Constraint {
     /// let constraints = Constraint::from_mins([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_mins<T>(mins: T) -> Vec<Constraint>
+    pub fn from_mins<T>(mins: T) -> Vec<Self>
     where
         T: IntoIterator<Item = u16>,
     {
-        mins.into_iter().map(Constraint::Min).collect_vec()
+        mins.into_iter().map(Self::Min).collect_vec()
     }
 
     /// Convert an iterator of proportional factors into a vector of constraints
@@ -317,22 +313,22 @@ impl Constraint {
     /// let constraints = Constraint::from_mins([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
-    pub fn from_fills<T>(proportional_factors: T) -> Vec<Constraint>
+    pub fn from_fills<T>(proportional_factors: T) -> Vec<Self>
     where
         T: IntoIterator<Item = u16>,
     {
         proportional_factors
             .into_iter()
-            .map(Constraint::Fill)
+            .map(Self::Fill)
             .collect_vec()
     }
 }
 
 impl From<u16> for Constraint {
-    /// Convert a u16 into a [Constraint::Length]
+    /// Convert a `u16` into a [`Constraint::Length`]
     ///
     /// This is useful when you want to specify a fixed size for a layout, but don't want to
-    /// explicitly create a [Constraint::Length] yourself.
+    /// explicitly create a [`Constraint::Length`] yourself.
     ///
     /// # Examples
     ///
@@ -343,38 +339,38 @@ impl From<u16> for Constraint {
     /// let layout = Layout::horizontal([1, 2, 3]).split(area);
     /// let layout = Layout::vertical([1, 2, 3]).split(area);
     /// ````
-    fn from(length: u16) -> Constraint {
-        Constraint::Length(length)
+    fn from(length: u16) -> Self {
+        Self::Length(length)
     }
 }
 
-impl From<&Constraint> for Constraint {
-    fn from(constraint: &Constraint) -> Self {
+impl From<&Self> for Constraint {
+    fn from(constraint: &Self) -> Self {
         *constraint
     }
 }
 
-impl AsRef<Constraint> for Constraint {
-    fn as_ref(&self) -> &Constraint {
+impl AsRef<Self> for Constraint {
+    fn as_ref(&self) -> &Self {
         self
     }
 }
 
 impl Default for Constraint {
     fn default() -> Self {
-        Constraint::Percentage(100)
+        Self::Percentage(100)
     }
 }
 
-impl Display for Constraint {
+impl fmt::Display for Constraint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Constraint::Percentage(p) => write!(f, "Percentage({})", p),
-            Constraint::Ratio(n, d) => write!(f, "Ratio({}, {})", n, d),
-            Constraint::Length(l) => write!(f, "Length({})", l),
-            Constraint::Fill(l) => write!(f, "Fill({})", l),
-            Constraint::Max(m) => write!(f, "Max({})", m),
-            Constraint::Min(m) => write!(f, "Min({})", m),
+            Self::Percentage(p) => write!(f, "Percentage({p})"),
+            Self::Ratio(n, d) => write!(f, "Ratio({n}, {d})"),
+            Self::Length(l) => write!(f, "Length({l})"),
+            Self::Fill(l) => write!(f, "Fill({l})"),
+            Self::Max(m) => write!(f, "Max({m})"),
+            Self::Min(m) => write!(f, "Min({m})"),
         }
     }
 }

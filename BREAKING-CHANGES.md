@@ -2,7 +2,7 @@
 
 This document contains a list of breaking changes in each version and some notes to help migrate
 between versions. It is compiled manually from the commit history and changelog. We also tag PRs on
-github with a [breaking change] label.
+GitHub with a [breaking change] label.
 
 [breaking change]: (https://github.com/ratatui-org/ratatui/issues?q=label%3A%22breaking+change%22)
 
@@ -39,7 +39,7 @@ This is a quick summary of the sections below:
   - `Scrollbar`: symbols moved to `symbols` module
   - MSRV is now 1.67.0
 - [v0.22.0](#v0220)
-  - serde representation of `Borders` and `Modifiers` has changed
+  - `serde` representation of `Borders` and `Modifiers` has changed
 - [v0.21.0](#v0210)
   - MSRV is now 1.65.0
   - `terminal::ViewPort` is now an enum
@@ -74,19 +74,19 @@ This is a quick summary of the sections below:
 
 ## [v0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0)
 
-### `Flex::Start` is the new default flex mode for `Layout`
+### `Flex::Start` is the new default flex mode for `Layout` ([#881])
 
 [#881]: https://github.com/ratatui-org/ratatui/pull/881
 
-Previously, constraints would stretch to fill all available space, violating constraints if 
+Previously, constraints would stretch to fill all available space, violating constraints if
 necessary.
 
-With v0.26.0, `Flex` modes are introduced and the default is `Flex::Start`, which will align 
-areas associated with constraints to be beginning of the area. With v0.26.0, additionally, 
-`Min` constraints grow to fill excess space. These changes will allow users to build layouts 
+With v0.26.0, `Flex` modes are introduced, and the default is `Flex::Start`, which will align
+areas associated with constraints to be beginning of the area. With v0.26.0, additionally,
+`Min` constraints grow to fill excess space. These changes will allow users to build layouts
 more easily.
 
-With v0.26.0, users will most likely not need to change what constraints they use to create 
+With v0.26.0, users will most likely not need to change what constraints they use to create
 existing layouts with `Flex::Start`. However, to get old behavior, use `Flex::Legacy`.
 
 ```diff
@@ -133,7 +133,7 @@ by removing the call to `.collect()`.
 [#751]: https://github.com/ratatui-org/ratatui/pull/751
 
 The default() implementation of Table now sets the column_spacing field to 1 and the segment_size
-field to SegmentSize::None. This will affect the rendering of a small amount of apps.
+field to `SegmentSize::None`. This will affect the rendering of a small amount of apps.
 
 To use the previous default values, call `table.segment_size(Default::default())` and
 `table.column_spacing(0)`.
@@ -247,8 +247,8 @@ widget in the default configuration would not show any indication of the selecte
 
 [#664]: https://github.com/ratatui-org/ratatui/pull/664
 
-Previously `Table`s could be constructed without widths. In almost all cases this is an error.
-A new widths parameter is now mandatory on `Table::new()`. Existing code of the form:
+Previously `Table`s could be constructed without `widths`. In almost all cases this is an error.
+A new `widths` parameter is now mandatory on `Table::new()`. Existing code of the form:
 
 ```diff
 - Table::new(rows).widths(widths)
@@ -306,7 +306,7 @@ let layout = layout::new(Direction::Vertical, [Constraint::Min(1), Constraint::M
 
 ## [v0.24.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.24.0)
 
-### ScrollbarState field type changed from `u16` to `usize` ([#456])
+### `ScrollbarState` field type changed from `u16` to `usize` ([#456])
 
 [#456]: https://github.com/ratatui-org/ratatui/pull/456
 
@@ -410,12 +410,12 @@ The MSRV of ratatui is now 1.67 due to an MSRV update in a dependency (`time`).
 
 ## [v0.22.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.22.0)
 
-### bitflags updated to 2.3 ([#205])
+### `bitflags` updated to 2.3 ([#205])
 
 [#205]: https://github.com/ratatui-org/ratatui/issues/205
 
-The serde representation of bitflags has changed. Any existing serialized types that have Borders or
-Modifiers will need to be re-serialized. This is documented in the [bitflags
+The `serde` representation of `bitflags` has changed. Any existing serialized types that have Borders or
+Modifiers will need to be re-serialized. This is documented in the [`bitflags`
 changelog](https://github.com/bitflags/bitflags/blob/main/CHANGELOG.md#200-rc2)..
 
 ## [v0.21.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.21.0)
@@ -447,9 +447,9 @@ let terminal = Terminal::with_options(backend, TerminalOptions {
 
 [#168]: https://github.com/ratatui-org/ratatui/issues/168
 
-A new type `Masked` was introduced that implements `From<Text<'a>>`. This causes any code that did
+A new type `Masked` was introduced that implements `From<Text<'a>>`. This causes any code that
 previously did not need to use type annotations to fail to compile. To fix this, annotate or call
-to_string() / to_owned() / as_str() on the value. E.g.:
+`to_string()` / `to_owned()` / `as_str()` on the value. E.g.:
 
 ```diff
 - let paragraph = Paragraph::new("".as_ref());

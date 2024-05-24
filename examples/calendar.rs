@@ -13,6 +13,8 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+#![allow(clippy::wildcard_imports)]
+
 use std::{error::Error, io};
 
 use crossterm::{
@@ -166,15 +168,13 @@ fn make_dates(current_year: i32) -> CalendarEventStore {
 mod cals {
     use super::*;
 
-    pub(super) fn get_cal<'a, DS: DateStyler>(m: Month, y: i32, es: DS) -> Monthly<'a, DS> {
-        use Month::*;
+    pub fn get_cal<'a, DS: DateStyler>(m: Month, y: i32, es: DS) -> Monthly<'a, DS> {
         match m {
-            May => example1(m, y, es),
-            June => example2(m, y, es),
-            July => example3(m, y, es),
-            December => example3(m, y, es),
-            February => example4(m, y, es),
-            November => example5(m, y, es),
+            Month::May => example1(m, y, es),
+            Month::June => example2(m, y, es),
+            Month::July | Month::December => example3(m, y, es),
+            Month::February => example4(m, y, es),
+            Month::November => example5(m, y, es),
             _ => default(m, y, es),
         }
     }

@@ -27,10 +27,10 @@ pub enum MapResolution {
 }
 
 impl MapResolution {
-    fn data(self) -> &'static [(f64, f64)] {
+    const fn data(self) -> &'static [(f64, f64)] {
         match self {
-            MapResolution::Low => &WORLD_LOW_RESOLUTION,
-            MapResolution::High => &WORLD_HIGH_RESOLUTION,
+            Self::Low => &WORLD_LOW_RESOLUTION,
+            Self::High => &WORLD_HIGH_RESOLUTION,
         }
     }
 }
@@ -65,7 +65,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::{assert_buffer_eq, prelude::*, widgets::canvas::Canvas};
+    use crate::{prelude::*, widgets::canvas::Canvas};
 
     #[test]
     fn map_resolution_to_string() {
@@ -101,7 +101,7 @@ mod tests {
                 context.draw(&Map::default());
             });
         canvas.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec![
+        let expected = Buffer::with_lines([
             "                                                                                ",
             "                   ••••••• •• •• •• •                                           ",
             "            ••••••••••••••       •••      ••••  •••  ••    ••••                 ",
@@ -143,7 +143,7 @@ mod tests {
             "       •                                                                        ",
             "                                                                                ",
         ]);
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -160,7 +160,7 @@ mod tests {
                 });
             });
         canvas.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec![
+        let expected = Buffer::with_lines([
             "                                                                                ",
             "                  ⢀⣠⠤⠤⠤⠔⢤⣤⡄⠤⡠⣄⠢⠂⢢⠰⣠⡄⣀⡀                      ⣀                   ",
             "            ⢀⣀⡤⣦⠲⢶⣿⣮⣿⡉⣰⢶⢏⡂        ⢀⣟⠁     ⢺⣻⢿⠏   ⠈⠉⠁ ⢀⣀    ⠈⠓⢳⣢⣂⡀               ",
@@ -202,6 +202,6 @@ mod tests {
             "⠶⠔⠲⠤⠠⠜⢗⠤⠄                 ⠘⠉  ⠁                                            ⠈⠉⠒⠔⠤",
             "                                                                                ",
         ]);
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 }

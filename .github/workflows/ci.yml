@@ -29,13 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        if: github.event_name != 'pull_request'
         uses: actions/checkout@v4
-      - name: Checkout
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
       - name: Install Rust nightly
         uses: dtolnay/rust-toolchain@nightly
         with:
@@ -48,11 +42,6 @@ jobs:
         run: cargo make lint-format
       - name: Check documentation
         run: cargo make lint-docs
-      - name: Check conventional commits
-        uses: crate-ci/committed@master
-        with:
-          args: "-vv"
-          commits: HEAD
       - name: Check typos
         uses: crate-ci/typos@master
       - name: Lint dependencies
@@ -102,7 +91,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        toolchain: ["1.70.0", "stable"]
+        toolchain: ["1.74.0", "stable"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -145,7 +134,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        toolchain: ["1.70.0", "stable"]
+        toolchain: ["1.74.0", "stable"]
         backend: [crossterm, termion, termwiz]
         exclude:
           # termion is not supported on windows

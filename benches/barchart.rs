@@ -8,7 +8,7 @@ use ratatui::{
 };
 
 /// Benchmark for rendering a barchart.
-pub fn barchart(c: &mut Criterion) {
+fn barchart(c: &mut Criterion) {
     let mut group = c.benchmark_group("barchart");
     let mut rng = rand::thread_rng();
 
@@ -66,7 +66,7 @@ fn render(bencher: &mut Bencher, barchart: &BarChart) {
             bench_barchart.render(buffer.area, &mut buffer);
         },
         criterion::BatchSize::LargeInput,
-    )
+    );
 }
 
 criterion_group!(benches, barchart);

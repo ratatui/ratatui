@@ -28,17 +28,20 @@ use rand::{
     distributions::{Distribution, Uniform},
     rngs::ThreadRng,
 };
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, Sparkline},
+};
 
 #[derive(Clone)]
-pub struct RandomSignal {
+struct RandomSignal {
     distribution: Uniform<u64>,
     rng: ThreadRng,
 }
 
 impl RandomSignal {
-    pub fn new(lower: u64, upper: u64) -> RandomSignal {
-        RandomSignal {
+    fn new(lower: u64, upper: u64) -> Self {
+        Self {
             distribution: Uniform::new(lower, upper),
             rng: rand::thread_rng(),
         }
@@ -60,12 +63,12 @@ struct App {
 }
 
 impl App {
-    fn new() -> App {
+    fn new() -> Self {
         let mut signal = RandomSignal::new(0, 100);
         let data1 = signal.by_ref().take(200).collect::<Vec<u64>>();
         let data2 = signal.by_ref().take(200).collect::<Vec<u64>>();
         let data3 = signal.by_ref().take(200).collect::<Vec<u64>>();
-        App {
+        Self {
             signal,
             data1,
             data2,
@@ -127,7 +130,7 @@ fn run_app<B: Backend>(
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                if let KeyCode::Char('q') = key.code {
+                if key.code == KeyCode::Char('q') {
                     return Ok(());
                 }
             }
@@ -148,18 +151,18 @@ fn ui(f: &mut Frame, app: &App) {
     .split(f.size());
     let sparkline = Sparkline::default()
         .block(
-            Block::default()
-                .title("Data1")
-                .borders(Borders::LEFT | Borders::RIGHT),
+            Block::new()
+                .borders(Borders::LEFT | Borders::RIGHT)
+                .title("Data1"),
         )
         .data(&app.data1)
         .style(Style::default().fg(Color::Yellow));
     f.render_widget(sparkline, chunks[0]);
     let sparkline = Sparkline::default()
         .block(
-            Block::default()
-                .title("Data2")
-                .borders(Borders::LEFT | Borders::RIGHT),
+            Block::new()
+                .borders(Borders::LEFT | Borders::RIGHT)
+                .title("Data2"),
         )
         .data(&app.data2)
         .style(Style::default().bg(Color::Green));
@@ -167,9 +170,9 @@ fn ui(f: &mut Frame, app: &App) {
     // Multiline
     let sparkline = Sparkline::default()
         .block(
-            Block::default()
-                .title("Data3")
-                .borders(Borders::LEFT | Borders::RIGHT),
+            Block::new()
+                .borders(Borders::LEFT | Borders::RIGHT)
+                .title("Data3"),
         )
         .data(&app.data3)
         .style(Style::default().fg(Color::Red));

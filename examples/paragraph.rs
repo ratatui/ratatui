@@ -24,15 +24,18 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Paragraph, Wrap},
+};
 
 struct App {
     scroll: u16,
 }
 
 impl App {
-    fn new() -> App {
-        App { scroll: 0 }
+    const fn new() -> Self {
+        Self { scroll: 0 }
     }
 
     fn on_tick(&mut self) {
@@ -82,7 +85,7 @@ fn run_app<B: Backend>(
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                if let KeyCode::Char('q') = key.code {
+                if key.code == KeyCode::Char('q') {
                     return Ok(());
                 }
             }
@@ -102,7 +105,7 @@ fn ui(f: &mut Frame, app: &App) {
     let mut long_line = s.repeat(usize::from(size.width) / s.len() + 4);
     long_line.push('\n');
 
-    let block = Block::default().black();
+    let block = Block::new().black();
     f.render_widget(block, size);
 
     let layout = Layout::vertical([Constraint::Ratio(1, 4); 4]).split(size);
@@ -124,8 +127,7 @@ fn ui(f: &mut Frame, app: &App) {
     ];
 
     let create_block = |title| {
-        Block::default()
-            .borders(Borders::ALL)
+        Block::bordered()
             .style(Style::default().fg(Color::Gray))
             .title(Span::styled(
                 title,

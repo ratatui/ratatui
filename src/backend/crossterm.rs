@@ -10,8 +10,8 @@ use crossterm::{
     cursor::{Hide, MoveTo, Show},
     execute, queue,
     style::{
-        Attribute as CAttribute, Attributes as CAttributes, Color as CColor, ContentStyle, Print,
-        SetAttribute, SetBackgroundColor, SetForegroundColor,
+        Attribute as CAttribute, Attributes as CAttributes, Color as CColor, Colors, ContentStyle,
+        Print, SetAttribute, SetBackgroundColor, SetColors, SetForegroundColor,
     },
     terminal::{self, Clear},
 };
@@ -97,8 +97,29 @@ where
     /// # use ratatui::prelude::*;
     /// let backend = CrosstermBackend::new(stdout());
     /// ```
-    pub fn new(writer: W) -> CrosstermBackend<W> {
-        CrosstermBackend { writer }
+    pub const fn new(writer: W) -> Self {
+        Self { writer }
+    }
+
+    /// Gets the writer.
+    #[stability::unstable(
+        feature = "backend-writer",
+        issue = "https://github.com/ratatui-org/ratatui/pull/991"
+    )]
+    pub const fn writer(&self) -> &W {
+        &self.writer
+    }
+
+    /// Gets the writer as a mutable reference.
+    ///
+    /// Note: writing to the writer may cause incorrect output after the write. This is due to the
+    /// way that the Terminal implements diffing Buffers.
+    #[stability::unstable(
+        feature = "backend-writer",
+        issue = "https://github.com/ratatui-org/ratatui/pull/991"
+    )]
+    pub fn writer_mut(&mut self) -> &mut W {
+        &mut self.writer
     }
 }
 
@@ -145,14 +166,12 @@ where
                 diff.queue(&mut self.writer)?;
                 modifier = cell.modifier;
             }
-            if cell.fg != fg {
-                let color = CColor::from(cell.fg);
-                queue!(self.writer, SetForegroundColor(color))?;
+            if cell.fg != fg || cell.bg != bg {
+                queue!(
+                    self.writer,
+                    SetColors(Colors::new(cell.fg.into(), cell.bg.into()))
+                )?;
                 fg = cell.fg;
-            }
-            if cell.bg != bg {
-                let color = CColor::from(cell.bg);
-                queue!(self.writer, SetBackgroundColor(color))?;
                 bg = cell.bg;
             }
             #[cfg(feature = "underline-color")]
@@ -228,7 +247,7 @@ where
         Ok(Rect::new(0, 0, width, height))
     }
 
-    fn window_size(&mut self) -> Result<WindowSize, io::Error> {
+    fn window_size(&mut self) -> io::Result<WindowSize> {
         let crossterm::terminal::WindowSize {
             columns,
             rows,
@@ -252,25 +271,25 @@ where
 impl From<Color> for CColor {
     fn from(color: Color) -> Self {
         match color {
-            Color::Reset => CColor::Reset,
-            Color::Black => CColor::Black,
-            Color::Red => CColor::DarkRed,
-            Color::Green => CColor::DarkGreen,
-            Color::Yellow => CColor::DarkYellow,
-            Color::Blue => CColor::DarkBlue,
-            Color::Magenta => CColor::DarkMagenta,
-            Color::Cyan => CColor::DarkCyan,
-            Color::Gray => CColor::Grey,
-            Color::DarkGray => CColor::DarkGrey,
-            Color::LightRed => CColor::Red,
-            Color::LightGreen => CColor::Green,
-            Color::LightBlue => CColor::Blue,
-            Color::LightYellow => CColor::Yellow,
-            Color::LightMagenta => CColor::Magenta,
-            Color::LightCyan => CColor::Cyan,
-            Color::White => CColor::White,
-            Color::Indexed(i) => CColor::AnsiValue(i),
-            Color::Rgb(r, g, b) => CColor::Rgb { r, g, b },
+            Color::Reset => Self::Reset,
+            Color::Black => Self::Black,
+            Color::Red => Self::DarkRed,
+            Color::Green => Self::DarkGreen,
+            Color::Yellow => Self::DarkYellow,
+            Color::Blue => Self::DarkBlue,
+            Color::Magenta => Self::DarkMagenta,
+            Color::Cyan => Self::DarkCyan,
+            Color::Gray => Self::Grey,
+            Color::DarkGray => Self::DarkGrey,
+            Color::LightRed => Self::Red,
+            Color::LightGreen => Self::Green,
+            Color::LightBlue => Self::Blue,
+            Color::LightYellow => Self::Yellow,
+            Color::LightMagenta => Self::Magenta,
+            Color::LightCyan => Self::Cyan,
+            Color::White => Self::White,
+            Color::Indexed(i) => Self::AnsiValue(i),
+            Color::Rgb(r, g, b) => Self::Rgb { r, g, b },
         }
     }
 }
@@ -304,14 +323,13 @@ impl From<CColor> for Color {
 /// The `ModifierDiff` struct is used to calculate the difference between two `Modifier`
 /// values. This is useful when updating the terminal display, as it allows for more
 /// efficient updates by only sending the necessary changes.
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 struct ModifierDiff {
     pub from: Modifier,
     pub to: Modifier,
 }
 
 impl ModifierDiff {
-    fn queue<W>(&self, mut w: W) -> io::Result<()>
+    fn queue<W>(self, mut w: W) -> io::Result<()>
     where
         W: io::Write,
     {
@@ -377,22 +395,22 @@ impl From<CAttribute> for Modifier {
         // `Attribute*s*` (note the *s*) contains multiple `Attribute`
         // We convert `Attribute` to `Attribute*s*` (containing only 1 value) to avoid implementing
         // the conversion again
-        Modifier::from(CAttributes::from(value))
+        Self::from(CAttributes::from(value))
     }
 }
 
 impl From<CAttributes> for Modifier {
     fn from(value: CAttributes) -> Self {
-        let mut res = Modifier::empty();
+        let mut res = Self::empty();
 
         if value.has(CAttribute::Bold) {
-            res |= Modifier::BOLD;
+            res |= Self::BOLD;
         }
         if value.has(CAttribute::Dim) {
-            res |= Modifier::DIM;
+            res |= Self::DIM;
         }
         if value.has(CAttribute::Italic) {
-            res |= Modifier::ITALIC;
+            res |= Self::ITALIC;
         }
         if value.has(CAttribute::Underlined)
             || value.has(CAttribute::DoubleUnderlined)
@@ -400,22 +418,22 @@ impl From<CAttributes> for Modifier {
             || value.has(CAttribute::Underdotted)
             || value.has(CAttribute::Underdashed)
         {
-            res |= Modifier::UNDERLINED;
+            res |= Self::UNDERLINED;
         }
         if value.has(CAttribute::SlowBlink) {
-            res |= Modifier::SLOW_BLINK;
+            res |= Self::SLOW_BLINK;
         }
         if value.has(CAttribute::RapidBlink) {
-            res |= Modifier::RAPID_BLINK;
+            res |= Self::RAPID_BLINK;
         }
         if value.has(CAttribute::Reverse) {
-            res |= Modifier::REVERSED;
+            res |= Self::REVERSED;
         }
         if value.has(CAttribute::Hidden) {
-            res |= Modifier::HIDDEN;
+            res |= Self::HIDDEN;
         }
         if value.has(CAttribute::CrossedOut) {
-            res |= Modifier::CROSSED_OUT;
+            res |= Self::CROSSED_OUT;
         }
 
         res
@@ -449,10 +467,10 @@ impl From<ContentStyle> for Style {
         }
 
         Self {
-            fg: value.foreground_color.map(|c| c.into()),
-            bg: value.background_color.map(|c| c.into()),
+            fg: value.foreground_color.map(Into::into),
+            bg: value.background_color.map(Into::into),
             #[cfg(feature = "underline-color")]
-            underline_color: value.underline_color.map(|c| c.into()),
+            underline_color: value.underline_color.map(Into::into),
             add_modifier: value.attributes.into(),
             sub_modifier,
         }
@@ -668,6 +686,6 @@ mod tests {
                 ..Default::default()
             }),
             Style::default().underline_color(Color::Red)
-        )
+        );
     }
 }

@@ -13,6 +13,8 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
+#![allow(clippy::enum_glob_use)]
+
 use std::{io::stdout, time::Duration};
 
 use color_eyre::{config::HookBuilder, Result};
@@ -24,7 +26,7 @@ use crossterm::{
 use ratatui::{
     prelude::*,
     style::palette::tailwind,
-    widgets::{block::Title, *},
+    widgets::{block::Title, Block, Borders, Gauge, Padding, Paragraph},
 };
 
 const GAUGE1_COLOR: Color = tailwind::RED.c800;
@@ -84,7 +86,7 @@ impl App {
         // difference between how a continuous gauge acts for floor and rounded values.
         self.progress_columns = (self.progress_columns + 1).clamp(0, terminal_width);
         self.progress1 = self.progress_columns * 100 / terminal_width;
-        self.progress2 = self.progress_columns as f64 * 100.0 / terminal_width as f64;
+        self.progress2 = f64::from(self.progress_columns) * 100.0 / f64::from(terminal_width);
 
         // progress3 and progress4 similarly show the difference between unicode and non-unicode
         // gauges measuring the same thing.
@@ -119,6 +121,7 @@ impl App {
 }
 
 impl Widget for &App {
+    #[allow(clippy::similar_names)]
     fn render(self, area: Rect, buf: &mut Buffer) {
         use Constraint::*;
         let layout = Layout::vertical([Length(2), Min(0), Length(1)]);
@@ -127,8 +130,8 @@ impl Widget for &App {
         let layout = Layout::vertical([Ratio(1, 4); 4]);
         let [gauge1_area, gauge2_area, gauge3_area, gauge4_area] = layout.areas(gauge_area);
 
-        self.render_header(header_area, buf);
-        self.render_footer(footer_area, buf);
+        render_header(header_area, buf);
+        render_footer(footer_area, buf);
 
         self.render_gauge1(gauge1_area, buf);
         self.render_gauge2(gauge2_area, buf);
@@ -137,23 +140,23 @@ impl Widget for &App {
     }
 }
 
+fn render_header(area: Rect, buf: &mut Buffer) {
+    Paragraph::new("Ratatui Gauge Example")
+        .bold()
+        .alignment(Alignment::Center)
+        .fg(CUSTOM_LABEL_COLOR)
+        .render(area, buf);
+}
+
+fn render_footer(area: Rect, buf: &mut Buffer) {
+    Paragraph::new("Press ENTER to start")
+        .alignment(Alignment::Center)
+        .fg(CUSTOM_LABEL_COLOR)
+        .bold()
+        .render(area, buf);
+}
+
 impl App {
-    fn render_header(&self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new("Ratatui Gauge Example")
-            .bold()
-            .alignment(Alignment::Center)
-            .fg(CUSTOM_LABEL_COLOR)
-            .render(area, buf);
-    }
-
-    fn render_footer(&self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new("Press ENTER to start")
-            .alignment(Alignment::Center)
-            .fg(CUSTOM_LABEL_COLOR)
-            .bold()
-            .render(area, buf);
-    }
-
     fn render_gauge1(&self, area: Rect, buf: &mut Buffer) {
         let title = title_block("Gauge with percentage");
         Gauge::default()
@@ -203,11 +206,11 @@ impl App {
 
 fn title_block(title: &str) -> Block {
     let title = Title::from(title).alignment(Alignment::Center);
-    Block::default()
-        .title(title)
+    Block::new()
         .borders(Borders::NONE)
-        .fg(CUSTOM_LABEL_COLOR)
         .padding(Padding::vertical(1))
+        .title(title)
+        .fg(CUSTOM_LABEL_COLOR)
 }
 
 fn init_error_hooks() -> color_eyre::Result<()> {
@@ -220,7 +223,7 @@ fn init_error_hooks() -> color_eyre::Result<()> {
     }))?;
     std::panic::set_hook(Box::new(move |info| {
         let _ = restore_terminal();
-        panic(info)
+        panic(info);
     }));
     Ok(())
 }

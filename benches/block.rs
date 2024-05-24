@@ -1,44 +1,42 @@
-use criterion::{criterion_group, criterion_main, BatchSize, Bencher, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BatchSize, Bencher, Criterion};
 use ratatui::{
     buffer::Buffer,
-    layout::Rect,
-    prelude::Alignment,
+    layout::{Alignment, Rect},
     widgets::{
         block::{Position, Title},
-        Block, Borders, Padding, Widget,
+        Block, Padding, Widget,
     },
 };
 
 /// Benchmark for rendering a block.
-pub fn block(c: &mut Criterion) {
+fn block(c: &mut Criterion) {
     let mut group = c.benchmark_group("block");
 
-    for buffer_size in &[
-        Rect::new(0, 0, 100, 50),  // vertically split screen
-        Rect::new(0, 0, 200, 50),  // 1080p fullscreen with medium font
-        Rect::new(0, 0, 256, 256), // Max sized area
+    for (width, height) in [
+        (100, 50),  // vertically split screen
+        (200, 50),  // 1080p fullscreen with medium font
+        (256, 256), // Max sized area
     ] {
-        let buffer_area = buffer_size.area();
+        let buffer_size = Rect::new(0, 0, width, height);
 
         // Render an empty block
         group.bench_with_input(
-            BenchmarkId::new("render_empty", buffer_area),
+            format!("render_empty/{width}x{height}"),
             &Block::new(),
             |b, block| render(b, block, buffer_size),
         );
 
         // Render with all features
         group.bench_with_input(
-            BenchmarkId::new("render_all_feature", buffer_area),
-            &Block::new()
-                .borders(Borders::ALL)
+            format!("render_all_feature/{width}x{height}"),
+            &Block::bordered()
+                .padding(Padding::new(5, 5, 2, 2))
                 .title("test title")
                 .title(
                     Title::from("bottom left title")
                         .alignment(Alignment::Right)
                         .position(Position::Bottom),
-                )
-                .padding(Padding::new(5, 5, 2, 2)),
+                ),
             |b, block| render(b, block, buffer_size),
         );
     }
@@ -47,8 +45,8 @@ pub fn block(c: &mut Criterion) {
 }
 
 /// render the block into a buffer of the given `size`
-fn render(bencher: &mut Bencher, block: &Block, size: &Rect) {
-    let mut buffer = Buffer::empty(*size);
+fn render(bencher: &mut Bencher, block: &Block, size: Rect) {
+    let mut buffer = Buffer::empty(size);
     // We use `iter_batched` to clone the value in the setup function.
     // See https://github.com/ratatui-org/ratatui/pull/377.
     bencher.iter_batched(
@@ -57,7 +55,7 @@ fn render(bencher: &mut Bencher, block: &Block, size: &Rect) {
             bench_block.render(buffer.area, &mut buffer);
         },
         BatchSize::SmallInput,
-    )
+    );
 }
 
 criterion_group!(benches, block);

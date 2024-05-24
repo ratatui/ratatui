@@ -13,8 +13,9 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-/// See also https://github.com/joshka/tui-popup and
-/// https://github.com/sephiroth74/tui-confirm-dialog
+// See also https://github.com/joshka/tui-popup and
+// https://github.com/sephiroth74/tui-confirm-dialog
+
 use std::{error::Error, io};
 
 use crossterm::{
@@ -22,15 +23,18 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Clear, Paragraph, Wrap},
+};
 
 struct App {
     show_popup: bool,
 }
 
 impl App {
-    fn new() -> App {
-        App { show_popup: false }
+    const fn new() -> Self {
+        Self { show_popup: false }
     }
 }
 
@@ -94,14 +98,11 @@ fn ui(f: &mut Frame, app: &App) {
         .wrap(Wrap { trim: true });
     f.render_widget(paragraph, instructions);
 
-    let block = Block::default()
-        .title("Content")
-        .borders(Borders::ALL)
-        .on_blue();
+    let block = Block::bordered().title("Content").on_blue();
     f.render_widget(block, content);
 
     if app.show_popup {
-        let block = Block::default().title("Popup").borders(Borders::ALL);
+        let block = Block::bordered().title("Popup");
         let area = centered_rect(60, 20, area);
         f.render_widget(Clear, area); //this clears out the background
         f.render_widget(block, area);

@@ -1,4 +1,4 @@
-use std::fmt::{self, Debug};
+use std::fmt;
 
 use bitflags::bitflags;
 
@@ -24,7 +24,7 @@ bitflags! {
 /// Implement the `Debug` trait for the `Borders` bitflags. This is a manual implementation to
 /// display the flags in a more readable way. The default implementation would display the
 /// flags as 'Border(0x0)' for `Borders::NONE` for example.
-impl Debug for Borders {
+impl fmt::Debug for Borders {
     /// Display the Borders bitflags as a list of names. For example, `Borders::NONE` will be
     /// displayed as `NONE` and `Borders::ALL` will be displayed as `ALL`. If multiple flags are
     /// set, they will be displayed separated by a pipe character.
@@ -37,7 +37,7 @@ impl Debug for Borders {
         }
         let mut first = true;
         for (name, border) in self.iter_names() {
-            if border == Borders::NONE {
+            if border == Self::NONE {
                 continue;
             }
             if first {
@@ -51,39 +51,52 @@ impl Debug for Borders {
     }
 }
 
-/// Macro that constructs and returns a [`Borders`] object from TOP, BOTTOM, LEFT, RIGHT, NONE, and
-/// ALL. Internally it creates an empty `Borders` object and then inserts each bit flag specified
-/// into it using `Borders::insert()`.
+/// Macro that constructs and returns a combination of the [`Borders`] object from TOP, BOTTOM, LEFT
+/// and RIGHT.
+///
+/// When used with NONE you should consider omitting this completely. For ALL you should consider
+/// [`Block::bordered()`](crate::widgets::Block::bordered) instead.
 ///
 /// ## Examples
 ///
-///```
-/// use ratatui::{border, prelude::*, widgets::*};
-///
-/// Block::default()
-///     //Construct a `Borders` object and use it in place
+/// ```
+/// # use ratatui::{border, prelude::*, widgets::*};
+/// Block::new()
+///     .title("Construct Borders and use them in place")
 ///     .borders(border!(TOP, BOTTOM));
+/// ```
 ///
-/// //`border!` can be called with any order of individual sides
-/// let bottom_first = border!(BOTTOM, LEFT, TOP);
-/// //with the ALL keyword which works as expected
-/// let all = border!(ALL);
-/// //or with nothing to return a `Borders::NONE' bitflag.
-/// let none = border!(NONE);
+/// `border!` can be called with any number of individual sides:
+///
+/// ```
+/// # use ratatui::{border, prelude::*, widgets::*};
+/// let right_open = border!(TOP, LEFT, BOTTOM);
+/// assert_eq!(right_open, Borders::TOP | Borders::LEFT | Borders::BOTTOM);
+/// ```
+///
+/// Single borders work but using `Borders::` directly would be simpler.
+///
+/// ```
+/// # use ratatui::{border, prelude::*, widgets::*};
+/// assert_eq!(border!(TOP), Borders::TOP);
+/// assert_eq!(border!(ALL), Borders::ALL);
+/// assert_eq!(border!(), Borders::NONE);
 /// ```
 #[cfg(feature = "macros")]
 #[macro_export]
 macro_rules! border {
-( $($b:tt), +) => {{
-        let mut border = Borders::empty();
+    () => {
+        Borders::NONE
+    };
+    ($b:ident) => {
+        Borders::$b
+    };
+    ($first:ident,$($other:ident),*) => {
+        Borders::$first
         $(
-           border.insert(Borders::$b);
+            .union(Borders::$other)
         )*
-        border
-}};
-() =>{
-    Borders::NONE
-}
+    };
 }
 
 #[cfg(test)]
@@ -105,5 +118,42 @@ mod tests {
             format!("{:?}", Borders::TOP | Borders::BOTTOM),
             "TOP | BOTTOM"
         );
+    }
+}
+
+#[cfg(all(test, feature = "macros"))]
+mod macro_tests {
+    use super::*;
+
+    #[test]
+    fn can_be_const() {
+        const NOTHING: Borders = border!();
+        const JUST_TOP: Borders = border!(TOP);
+        const TOP_BOTTOM: Borders = border!(TOP, BOTTOM);
+        const RIGHT_OPEN: Borders = border!(TOP, LEFT, BOTTOM);
+
+        assert_eq!(NOTHING, Borders::NONE);
+        assert_eq!(JUST_TOP, Borders::TOP);
+        assert_eq!(TOP_BOTTOM, Borders::TOP | Borders::BOTTOM);
+        assert_eq!(RIGHT_OPEN, Borders::TOP | Borders::LEFT | Borders::BOTTOM);
+    }
+
+    #[test]
+    fn border_empty() {
+        let empty = Borders::NONE;
+        assert_eq!(empty, border!());
+    }
+
+    #[test]
+    fn border_all() {
+        let all = Borders::ALL;
+        assert_eq!(all, border!(ALL));
+        assert_eq!(all, border!(TOP, BOTTOM, LEFT, RIGHT));
+    }
+
+    #[test]
+    fn border_left_right() {
+        let left_right = Borders::from_bits(Borders::LEFT.bits() | Borders::RIGHT.bits());
+        assert_eq!(left_right, Some(border!(RIGHT, LEFT)));
     }
 }

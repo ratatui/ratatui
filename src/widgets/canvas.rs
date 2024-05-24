@@ -19,7 +19,7 @@ mod points;
 mod rectangle;
 mod world;
 
-use std::{fmt::Debug, iter::zip};
+use std::{fmt, iter::zip};
 
 use itertools::Itertools;
 
@@ -30,7 +30,7 @@ pub use self::{
     points::Points,
     rectangle::Rectangle,
 };
-use crate::{prelude::*, symbols, text::Line as TextLine, widgets::Block};
+use crate::{prelude::*, text::Line as TextLine, widgets::Block};
 
 /// Something that can be drawn on a [`Canvas`].
 ///
@@ -55,7 +55,7 @@ pub struct Label<'a> {
 ///
 /// This allows the canvas to be drawn in multiple layers. This is useful if you want to draw
 /// multiple shapes on the canvas in specific order.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug)]
 struct Layer {
     // A string of characters representing the grid. This will be wrapped to the width of the grid
     // when rendering
@@ -70,11 +70,7 @@ struct Layer {
 /// resolution of the grid might exceed the number of rows and columns. For example, a grid of
 /// Braille patterns will have a resolution of 2x4 dots per cell. This means that a grid of 10x10
 /// cells will have a resolution of 20x40 dots.
-trait Grid: Debug {
-    /// Get the width of the grid in number of terminal columns
-    fn width(&self) -> u16;
-    /// Get the height of the grid in number of terminal rows
-    fn height(&self) -> u16;
+trait Grid: fmt::Debug {
     /// Get the resolution of the grid in number of dots.
     ///
     /// This doesn't have to be the same as the number of rows and columns of the grid. For example,
@@ -92,7 +88,7 @@ trait Grid: Debug {
     fn reset(&mut self);
 }
 
-/// The BrailleGrid is a grid made up of cells each containing a Braille pattern.
+/// The `BrailleGrid` is a grid made up of cells each containing a Braille pattern.
 ///
 /// This makes it possible to draw shapes with a resolution of 2x4 dots per cell. This is useful
 /// when you want to draw shapes with a high resolution. Font support for Braille patterns is
@@ -101,7 +97,7 @@ trait Grid: Debug {
 ///
 /// This grid type only supports a single foreground color for each 2x4 dots cell. There is no way
 /// to set the individual color of each dot in the braille pattern.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug)]
 struct BrailleGrid {
     /// Width of the grid in number of terminal columns
     width: u16,
@@ -117,11 +113,11 @@ struct BrailleGrid {
 }
 
 impl BrailleGrid {
-    /// Create a new BrailleGrid with the given width and height measured in terminal columns and
+    /// Create a new `BrailleGrid` with the given width and height measured in terminal columns and
     /// rows respectively.
-    fn new(width: u16, height: u16) -> BrailleGrid {
+    fn new(width: u16, height: u16) -> Self {
         let length = usize::from(width * height);
-        BrailleGrid {
+        Self {
             width,
             height,
             utf16_code_points: vec![symbols::braille::BLANK; length],
@@ -131,14 +127,6 @@ impl BrailleGrid {
 }
 
 impl Grid for BrailleGrid {
-    fn width(&self) -> u16 {
-        self.width
-    }
-
-    fn height(&self) -> u16 {
-        self.height
-    }
-
     fn resolution(&self) -> (f64, f64) {
         (f64::from(self.width) * 2.0, f64::from(self.height) * 4.0)
     }
@@ -168,11 +156,11 @@ impl Grid for BrailleGrid {
     }
 }
 
-/// The CharGrid is a grid made up of cells each containing a single character.
+/// The `CharGrid` is a grid made up of cells each containing a single character.
 ///
 /// This makes it possible to draw shapes with a resolution of 1x1 dots per cell. This is useful
 /// when you want to draw shapes with a low resolution.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug)]
 struct CharGrid {
     /// Width of the grid in number of terminal columns
     width: u16,
@@ -187,11 +175,11 @@ struct CharGrid {
 }
 
 impl CharGrid {
-    /// Create a new CharGrid with the given width and height measured in terminal columns and
+    /// Create a new `CharGrid` with the given width and height measured in terminal columns and
     /// rows respectively.
-    fn new(width: u16, height: u16, cell_char: char) -> CharGrid {
+    fn new(width: u16, height: u16, cell_char: char) -> Self {
         let length = usize::from(width * height);
-        CharGrid {
+        Self {
             width,
             height,
             cells: vec![' '; length],
@@ -202,14 +190,6 @@ impl CharGrid {
 }
 
 impl Grid for CharGrid {
-    fn width(&self) -> u16 {
-        self.width
-    }
-
-    fn height(&self) -> u16 {
-        self.height
-    }
-
     fn resolution(&self) -> (f64, f64) {
         (f64::from(self.width), f64::from(self.height))
     }
@@ -239,7 +219,7 @@ impl Grid for CharGrid {
     }
 }
 
-/// The HalfBlockGrid is a grid made up of cells each containing a half block character.
+/// The `HalfBlockGrid` is a grid made up of cells each containing a half block character.
 ///
 /// In terminals, each character is usually twice as tall as it is wide. Unicode has a couple of
 /// vertical half block characters, the upper half block '▀' and lower half block '▄' which take up
@@ -249,10 +229,10 @@ impl Grid for CharGrid {
 /// and lower half of each cell. This allows us to draw shapes with a resolution of 1x2 "pixels" per
 /// cell.
 ///
-/// This allows for more flexibility than the BrailleGrid which only supports a single
-/// foreground color for each 2x4 dots cell, and the CharGrid which only supports a single
+/// This allows for more flexibility than the `BrailleGrid` which only supports a single
+/// foreground color for each 2x4 dots cell, and the `CharGrid` which only supports a single
 /// character for each cell.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug)]
 struct HalfBlockGrid {
     /// Width of the grid in number of terminal columns
     width: u16,
@@ -265,8 +245,8 @@ struct HalfBlockGrid {
 impl HalfBlockGrid {
     /// Create a new `HalfBlockGrid` with the given width and height measured in terminal columns
     /// and rows respectively.
-    fn new(width: u16, height: u16) -> HalfBlockGrid {
-        HalfBlockGrid {
+    fn new(width: u16, height: u16) -> Self {
+        Self {
             width,
             height,
             pixels: vec![vec![Color::Reset; width as usize]; height as usize * 2],
@@ -275,14 +255,6 @@ impl HalfBlockGrid {
 }
 
 impl Grid for HalfBlockGrid {
-    fn width(&self) -> u16 {
-        self.width
-    }
-
-    fn height(&self) -> u16 {
-        self.height
-    }
-
     fn resolution(&self) -> (f64, f64) {
         (f64::from(self.width), f64::from(self.height) * 2.0)
     }
@@ -439,9 +411,9 @@ impl<'a, 'b> Painter<'a, 'b> {
 }
 
 impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
-    fn from(context: &'a mut Context<'b>) -> Painter<'a, 'b> {
+    fn from(context: &'a mut Context<'b>) -> Self {
         let resolution = context.grid.resolution();
-        Painter {
+        Self {
             context,
             resolution,
         }
@@ -493,7 +465,7 @@ impl<'a> Context<'a> {
         x_bounds: [f64; 2],
         y_bounds: [f64; 2],
         marker: symbols::Marker,
-    ) -> Context<'a> {
+    ) -> Self {
         let dot = symbols::DOT.chars().next().unwrap();
         let block = symbols::block::FULL.chars().next().unwrap();
         let bar = symbols::bar::HALF.chars().next().unwrap();
@@ -504,7 +476,7 @@ impl<'a> Context<'a> {
             symbols::Marker::Braille => Box::new(BrailleGrid::new(width, height)),
             symbols::Marker::HalfBlock => Box::new(HalfBlockGrid::new(width, height)),
         };
-        Context {
+        Self {
             x_bounds,
             y_bounds,
             grid,
@@ -570,9 +542,9 @@ impl<'a> Context<'a> {
 ///
 /// See [Unicode Braille Patterns](https://en.wikipedia.org/wiki/Braille_Patterns) for more info.
 ///
-/// The HalfBlock marker is useful when you want to draw shapes with a higher resolution than a
-/// CharGrid but lower than a BrailleGrid. This grid type supports a foreground and background color
-/// for each terminal cell. This allows for more flexibility than the BrailleGrid which only
+/// The `HalfBlock` marker is useful when you want to draw shapes with a higher resolution than a
+/// `CharGrid` but lower than a `BrailleGrid`. This grid type supports a foreground and background
+/// color for each terminal cell. This allows for more flexibility than the `BrailleGrid` which only
 /// supports a single foreground color for each 2x4 dots cell.
 ///
 /// The Canvas widget is used by calling the [`Canvas::paint`] method and passing a closure that
@@ -595,7 +567,7 @@ impl<'a> Context<'a> {
 /// };
 ///
 /// Canvas::default()
-///     .block(Block::default().title("Canvas").borders(Borders::ALL))
+///     .block(Block::bordered().title("Canvas"))
 ///     .x_bounds([-180.0, 180.0])
 ///     .y_bounds([-90.0, 90.0])
 ///     .paint(|ctx| {
@@ -639,8 +611,8 @@ impl<'a, F> Default for Canvas<'a, F>
 where
     F: Fn(&mut Context),
 {
-    fn default() -> Canvas<'a, F> {
-        Canvas {
+    fn default() -> Self {
+        Self {
             block: None,
             x_bounds: [0.0, 0.0],
             y_bounds: [0.0, 0.0],
@@ -659,7 +631,7 @@ where
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn block(mut self, block: Block<'a>) -> Canvas<'a, F> {
+    pub fn block(mut self, block: Block<'a>) -> Self {
         self.block = Some(block);
         self
     }
@@ -671,7 +643,7 @@ where
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn x_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
+    pub const fn x_bounds(mut self, bounds: [f64; 2]) -> Self {
         self.x_bounds = bounds;
         self
     }
@@ -683,7 +655,7 @@ where
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn y_bounds(mut self, bounds: [f64; 2]) -> Canvas<'a, F> {
+    pub const fn y_bounds(mut self, bounds: [f64; 2]) -> Self {
         self.y_bounds = bounds;
         self
     }
@@ -692,7 +664,7 @@ where
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn paint(mut self, f: F) -> Canvas<'a, F> {
+    pub fn paint(mut self, f: F) -> Self {
         self.paint_func = Some(f);
         self
     }
@@ -701,7 +673,7 @@ where
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn background_color(mut self, color: Color) -> Canvas<'a, F> {
+    pub const fn background_color(mut self, color: Color) -> Self {
         self.background_color = color;
         self
     }
@@ -715,7 +687,7 @@ where
     /// The [`HalfBlock`] marker is useful when you want to draw shapes with a higher resolution
     /// than with a grid of characters (e.g. with [`Block`] or [`Dot`]) but lower than with
     /// [`Braille`]. This grid type supports a foreground and background color for each terminal
-    /// cell. This allows for more flexibility than the BrailleGrid which only supports a single
+    /// cell. This allows for more flexibility than the `BrailleGrid` which only supports a single
     /// foreground color for each 2x4 dots cell.
     ///
     /// [`Braille`]: crate::symbols::Marker::Braille
@@ -744,7 +716,8 @@ where
     ///     .marker(symbols::Marker::Block)
     ///     .paint(|ctx| {});
     /// ```
-    pub fn marker(mut self, marker: symbols::Marker) -> Canvas<'a, F> {
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn marker(mut self, marker: symbols::Marker) -> Self {
         self.marker = marker;
         self
     }
@@ -838,7 +811,7 @@ mod tests {
     use indoc::indoc;
 
     use super::*;
-    use crate::{buffer::Cell, symbols::Marker};
+    use crate::buffer::Cell;
 
     // helper to test the canvas checks that drawing a vertical and horizontal line
     // results in the expected output

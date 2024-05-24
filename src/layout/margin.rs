@@ -1,4 +1,4 @@
-use std::fmt::{self, Display};
+use std::fmt;
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Margin {
@@ -7,15 +7,15 @@ pub struct Margin {
 }
 
 impl Margin {
-    pub const fn new(horizontal: u16, vertical: u16) -> Margin {
-        Margin {
+    pub const fn new(horizontal: u16, vertical: u16) -> Self {
+        Self {
             horizontal,
             vertical,
         }
     }
 }
 
-impl Display for Margin {
+impl fmt::Display for Margin {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}x{}", self.horizontal, self.vertical)
     }

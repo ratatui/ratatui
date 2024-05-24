@@ -1,10 +1,10 @@
-use std::{borrow::Cow, fmt::Debug};
+use std::{borrow::Cow, fmt};
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 use super::StyledGrapheme;
-use crate::{prelude::*, widgets::Widget};
+use crate::prelude::*;
 
 /// Represents a part of a line that is contiguous and where all characters share the same style.
 ///
@@ -107,11 +107,11 @@ impl<'a> Span<'a> {
     /// Span::raw("test content");
     /// Span::raw(String::from("test content"));
     /// ```
-    pub fn raw<T>(content: T) -> Span<'a>
+    pub fn raw<T>(content: T) -> Self
     where
         T: Into<Cow<'a, str>>,
     {
-        Span {
+        Self {
             content: content.into(),
             style: Style::default(),
         }
@@ -133,12 +133,12 @@ impl<'a> Span<'a> {
     /// Span::styled("test content", style);
     /// Span::styled(String::from("test content"), style);
     /// ```
-    pub fn styled<T, S>(content: T, style: S) -> Span<'a>
+    pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
         S: Into<Style>,
     {
-        Span {
+        Self {
             content: content.into(),
             style: style.into(),
         }
@@ -282,11 +282,17 @@ impl<'a> Span<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let l = "Test Content".green().italic().to_left_aligned_line();
+    /// let line = "Test Content".green().italic().into_left_aligned_line();
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn to_left_aligned_line(self) -> Line<'a> {
+    pub fn into_left_aligned_line(self) -> Line<'a> {
         Line::from(self).left_aligned()
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    #[deprecated = "use into_left_aligned_line"]
+    pub fn to_left_aligned_line(self) -> Line<'a> {
+        self.into_left_aligned_line()
     }
 
     /// Converts this Span into a center-aligned [`Line`]
@@ -295,10 +301,17 @@ impl<'a> Span<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let l = "Test Content".green().italic().to_centered_line();
+    /// let line = "Test Content".green().italic().into_centered_line();
     /// ```
-    pub fn to_centered_line(self) -> Line<'a> {
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn into_centered_line(self) -> Line<'a> {
         Line::from(self).centered()
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    #[deprecated = "use into_centered_line"]
+    pub fn to_centered_line(self) -> Line<'a> {
+        self.into_centered_line()
     }
 
     /// Converts this Span into a right-aligned [`Line`]
@@ -307,10 +320,17 @@ impl<'a> Span<'a> {
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
-    /// let l = "Test Content".green().italic().to_right_aligned_line();
+    /// let line = "Test Content".green().italic().into_right_aligned_line();
     /// ```
-    pub fn to_right_aligned_line(self) -> Line<'a> {
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn into_right_aligned_line(self) -> Line<'a> {
         Line::from(self).right_aligned()
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    #[deprecated = "use into_right_aligned_line"]
+    pub fn to_right_aligned_line(self) -> Line<'a> {
+        self.into_right_aligned_line()
     }
 }
 
@@ -324,7 +344,7 @@ where
 }
 
 impl<'a> Styled for Span<'a> {
-    type Item = Span<'a>;
+    type Item = Self;
 
     fn style(&self) -> Style {
         self.style
@@ -343,6 +363,7 @@ impl Widget for Span<'_> {
 
 impl WidgetRef for Span<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
+        let area = area.intersection(buf.area);
         let Rect {
             x: mut current_x,
             y,
@@ -374,15 +395,22 @@ impl WidgetRef for Span<'_> {
     }
 }
 
-impl std::fmt::Display for Span<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &self.content)
+impl fmt::Display for Span<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.content, f)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use rstest::fixture;
+
     use super::*;
+
+    #[fixture]
+    fn small_buf() -> Buffer {
+        Buffer::empty(Rect::new(0, 0, 10, 1))
+    }
 
     #[test]
     fn default() {
@@ -501,20 +529,42 @@ mod tests {
     #[test]
     fn display_span() {
         let span = Span::raw("test content");
-
         assert_eq!(format!("{span}"), "test content");
+        assert_eq!(format!("{span:.4}"), "test");
     }
 
     #[test]
     fn display_styled_span() {
         let stylized_span = Span::styled("stylized test content", Style::new().green());
-
         assert_eq!(format!("{stylized_span}"), "stylized test content");
+        assert_eq!(format!("{stylized_span:.8}"), "stylized");
+    }
+
+    #[test]
+    fn left_aligned() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.into_left_aligned_line();
+        assert_eq!(line.alignment, Some(Alignment::Left));
+    }
+
+    #[test]
+    fn centered() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.into_centered_line();
+        assert_eq!(line.alignment, Some(Alignment::Center));
+    }
+
+    #[test]
+    fn right_aligned() {
+        let span = Span::styled("Test Content", Style::new().green().italic());
+        let line = span.into_right_aligned_line();
+        assert_eq!(line.alignment, Some(Alignment::Right));
     }
 
     mod widget {
+        use rstest::rstest;
+
         use super::*;
-        use crate::{assert_buffer_eq, style::Stylize};
 
         #[test]
         fn render() {
@@ -522,12 +572,18 @@ mod tests {
             let span = Span::styled("test content", style);
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
             span.render(buf.area, &mut buf);
-
-            let expected = Buffer::with_lines(vec![Line::from(vec![
+            let expected = Buffer::with_lines([Line::from(vec![
                 "test content".green().on_yellow(),
                 "   ".into(),
             ])]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
+        }
+
+        #[rstest]
+        fn render_out_of_bounds(mut small_buf: Buffer) {
+            let out_of_bounds = Rect::new(20, 20, 10, 1);
+            Span::raw("Hello, World!").render(out_of_bounds, &mut small_buf);
+            assert_eq!(small_buf, Buffer::empty(small_buf.area));
         }
 
         /// When the content of the span is longer than the area passed to render, the content
@@ -540,10 +596,11 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
             span.render(Rect::new(0, 0, 5, 1), &mut buf);
 
-            let mut expected = Buffer::with_lines(vec![Line::from("test      ")]);
-            expected.set_style(Rect::new(0, 0, 5, 1), (Color::Green, Color::Yellow));
-
-            assert_buffer_eq!(buf, expected);
+            let expected = Buffer::with_lines([Line::from(vec![
+                "test ".green().on_yellow(),
+                "     ".into(),
+            ])]);
+            assert_eq!(buf, expected);
         }
 
         /// When there is already a style set on the buffer, the style of the span should be
@@ -555,12 +612,11 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
             buf.set_style(buf.area, Style::new().italic());
             span.render(buf.area, &mut buf);
-
-            let expected = Buffer::with_lines(vec![Line::from(vec![
+            let expected = Buffer::with_lines([Line::from(vec![
                 "test content".green().on_yellow().italic(),
                 "   ".italic(),
             ])]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         /// When the span contains a multi-width grapheme, the grapheme will ensure that the cells
@@ -571,12 +627,11 @@ mod tests {
             let span = Span::styled("test 😃 content", style);
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
             span.render(buf.area, &mut buf);
-
             // The existing code in buffer.set_line() handles multi-width graphemes by clearing the
             // cells of the hidden characters. This test ensures that the existing behavior is
             // preserved.
-            let expected = Buffer::with_lines(vec!["test 😃 content".green().on_yellow()]);
-            assert_buffer_eq!(buf, expected);
+            let expected = Buffer::with_lines(["test 😃 content".green().on_yellow()]);
+            assert_eq!(buf, expected);
         }
 
         /// When the span contains a multi-width grapheme that does not fit in the area passed to
@@ -589,11 +644,9 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 6, 1));
             span.render(buf.area, &mut buf);
 
-            let expected = Buffer::with_lines(vec![Line::from(vec![
-                "test ".green().on_yellow(),
-                " ".into(),
-            ])]);
-            assert_buffer_eq!(buf, expected);
+            let expected =
+                Buffer::with_lines([Line::from(vec!["test ".green().on_yellow(), " ".into()])]);
+            assert_eq!(buf, expected);
         }
 
         /// When the area passed to render overflows the buffer, the content should be truncated
@@ -605,32 +658,11 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
             span.render(Rect::new(10, 0, 20, 1), &mut buf);
 
-            let expected = Buffer::with_lines(vec![Line::from(vec![
+            let expected = Buffer::with_lines([Line::from(vec![
                 "          ".into(),
                 "test ".green().on_yellow(),
             ])]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
-    }
-
-    #[test]
-    fn left_aligned() {
-        let span = Span::styled("Test Content", Style::new().green().italic());
-        let line = span.to_left_aligned_line();
-        assert_eq!(line.alignment, Some(Alignment::Left));
-    }
-
-    #[test]
-    fn centered() {
-        let span = Span::styled("Test Content", Style::new().green().italic());
-        let line = span.to_centered_line();
-        assert_eq!(line.alignment, Some(Alignment::Center));
-    }
-
-    #[test]
-    fn right_aligned() {
-        let span = Span::styled("Test Content", Style::new().green().italic());
-        let line = span.to_right_aligned_line();
-        assert_eq!(line.alignment, Some(Alignment::Right));
     }
 }

@@ -37,7 +37,7 @@ type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
 thread_local! {
-    static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = OnceLock::new();
+    static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = const { OnceLock::new() };
 }
 
 /// A layout is a set of constraints that can be applied to a given area to split it into smaller
@@ -58,7 +58,7 @@ thread_local! {
 /// many of the constraints in order of their priorities.
 ///
 /// When the layout is computed, the result is cached in a thread-local cache, so that subsequent
-/// calls with the same parameters are faster. The cache is a LruCache, and the size of the cache
+/// calls with the same parameters are faster. The cache is a `LruCache`, and the size of the cache
 /// can be configured using [`Layout::init_cache()`].
 ///
 /// # Constructors
@@ -127,13 +127,13 @@ impl Layout {
     ///
     /// The `constraints` parameter accepts any type that implements `IntoIterator<Item =
     /// Into<Constraint>>`. This includes arrays, slices, vectors, iterators. `Into<Constraint>` is
-    /// implemented on u16, so you can pass an array, vec, etc. of u16 to this function to create a
-    /// layout with fixed size chunks.
+    /// implemented on `u16`, so you can pass an array, `Vec`, etc. of `u16` to this function to
+    /// create a layout with fixed size chunks.
     ///
     /// Default values for the other fields are:
     ///
     /// - `margin`: 0, 0
-    /// - `flex`: Flex::Start
+    /// - `flex`: [`Flex::Start`]
     /// - `spacing`: 0
     ///
     /// # Examples
@@ -152,15 +152,15 @@ impl Layout {
     ///
     /// Layout::new(Direction::Horizontal, vec![1, 2]);
     /// ```
-    pub fn new<I>(direction: Direction, constraints: I) -> Layout
+    pub fn new<I>(direction: Direction, constraints: I) -> Self
     where
         I: IntoIterator,
         I::Item: Into<Constraint>,
     {
-        Layout {
+        Self {
             direction,
             constraints: constraints.into_iter().map(Into::into).collect(),
-            ..Layout::default()
+            ..Self::default()
         }
     }
 
@@ -175,12 +175,12 @@ impl Layout {
     /// # use ratatui::prelude::*;
     /// let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
     /// ```
-    pub fn vertical<I>(constraints: I) -> Layout
+    pub fn vertical<I>(constraints: I) -> Self
     where
         I: IntoIterator,
         I::Item: Into<Constraint>,
     {
-        Layout::new(Direction::Vertical, constraints.into_iter().map(Into::into))
+        Self::new(Direction::Vertical, constraints.into_iter().map(Into::into))
     }
 
     /// Creates a new horizontal layout with default values.
@@ -194,19 +194,19 @@ impl Layout {
     /// # use ratatui::prelude::*;
     /// let layout = Layout::horizontal([Constraint::Length(5), Constraint::Min(0)]);
     /// ```
-    pub fn horizontal<I>(constraints: I) -> Layout
+    pub fn horizontal<I>(constraints: I) -> Self
     where
         I: IntoIterator,
         I::Item: Into<Constraint>,
     {
-        Layout::new(
+        Self::new(
             Direction::Horizontal,
             constraints.into_iter().map(Into::into),
         )
     }
 
     /// Initialize an empty cache with a custom size. The cache is keyed on the layout and area, so
-    /// that subsequent calls with the same parameters are faster. The cache is a LruCache, and
+    /// that subsequent calls with the same parameters are faster. The cache is a `LruCache`, and
     /// grows until `cache_size` is reached.
     ///
     /// Returns true if the cell's value was set by this call.
@@ -214,7 +214,7 @@ impl Layout {
     /// has set this value or that the cache size is already initialized.
     ///
     /// Note that a custom cache size will be set only if this function:
-    /// * is called before [Layout::split()] otherwise, the cache size is
+    /// * is called before [`Layout::split()`] otherwise, the cache size is
     ///   [`Self::DEFAULT_CACHE_SIZE`].
     /// * is called for the first time, subsequent calls do not modify the cache size.
     pub fn init_cache(cache_size: usize) -> bool {
@@ -246,7 +246,7 @@ impl Layout {
     /// assert_eq!(layout[..], [Rect::new(0, 0, 10, 5), Rect::new(0, 5, 10, 5)]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn direction(mut self, direction: Direction) -> Layout {
+    pub const fn direction(mut self, direction: Direction) -> Self {
         self.direction = direction;
         self
     }
@@ -296,7 +296,7 @@ impl Layout {
     /// Layout::default().constraints(vec![1, 2, 3]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn constraints<I>(mut self, constraints: I) -> Layout
+    pub fn constraints<I>(mut self, constraints: I) -> Self
     where
         I: IntoIterator,
         I::Item: Into<Constraint>,
@@ -318,7 +318,7 @@ impl Layout {
     /// assert_eq!(layout[..], [Rect::new(2, 2, 6, 6)]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn margin(mut self, margin: u16) -> Layout {
+    pub const fn margin(mut self, margin: u16) -> Self {
         self.margin = Margin {
             horizontal: margin,
             vertical: margin,
@@ -339,7 +339,7 @@ impl Layout {
     /// assert_eq!(layout[..], [Rect::new(2, 0, 6, 10)]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn horizontal_margin(mut self, horizontal: u16) -> Layout {
+    pub const fn horizontal_margin(mut self, horizontal: u16) -> Self {
         self.margin.horizontal = horizontal;
         self
     }
@@ -357,7 +357,7 @@ impl Layout {
     /// assert_eq!(layout[..], [Rect::new(0, 2, 10, 6)]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn vertical_margin(mut self, vertical: u16) -> Layout {
+    pub const fn vertical_margin(mut self, vertical: u16) -> Self {
         self.margin.vertical = vertical;
         self
     }
@@ -366,8 +366,8 @@ impl Layout {
     ///
     /// # Arguments
     ///
-    /// * `flex`: A `Flex` enum value that represents the flex behavior of the layout. It can be one
-    ///   of the following:
+    /// * `flex`: A [`Flex`] enum value that represents the flex behavior of the layout. It can be
+    ///   one of the following:
     ///   - [`Flex::Legacy`]: The last item is stretched to fill the excess space.
     ///   - [`Flex::Start`]: The items are aligned to the start of the layout.
     ///   - [`Flex::Center`]: The items are aligned to the center of the layout.
@@ -391,7 +391,8 @@ impl Layout {
     /// # use ratatui::layout::{Flex, Layout, Constraint::*};
     /// let layout = Layout::horizontal([Length(20), Length(20), Length(20)]).flex(Flex::Legacy);
     /// ```
-    pub const fn flex(mut self, flex: Flex) -> Layout {
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn flex(mut self, flex: Flex) -> Self {
         self.flex = flex;
         self
     }
@@ -414,13 +415,14 @@ impl Layout {
     /// # Notes
     ///
     /// - If the layout has only one item, the spacing will not be applied.
-    /// - Spacing will not be applied for `Flex::SpaceAround` and `Flex::SpaceBetween`
-    pub const fn spacing(mut self, spacing: u16) -> Layout {
+    /// - Spacing will not be applied for [`Flex::SpaceAround`] and [`Flex::SpaceBetween`]
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn spacing(mut self, spacing: u16) -> Self {
         self.spacing = spacing;
         self
     }
 
-    /// Split the rect into a number of sub-rects according to the given [`Layout`]`.
+    /// Split the rect into a number of sub-rects according to the given [`Layout`].
     ///
     /// An ergonomic wrapper around [`Layout::split`] that returns an array of `Rect`s instead of
     /// `Rc<[Rect]>`.
@@ -446,10 +448,10 @@ impl Layout {
     /// # }
     pub fn areas<const N: usize>(&self, area: Rect) -> [Rect; N] {
         let (areas, _) = self.split_with_spacers(area);
-        areas.to_vec().try_into().expect("invalid number of rects")
+        areas.as_ref().try_into().expect("invalid number of rects")
     }
 
-    /// Split the rect into a number of sub-rects according to the given [`Layout`]` and return just
+    /// Split the rect into a number of sub-rects according to the given [`Layout`] and return just
     /// the spacers between the areas.
     ///
     /// This method requires the number of constraints to be known at compile time. If you don't
@@ -480,7 +482,7 @@ impl Layout {
     pub fn spacers<const N: usize>(&self, area: Rect) -> [Rect; N] {
         let (_, spacers) = self.split_with_spacers(area);
         spacers
-            .to_vec()
+            .as_ref()
             .try_into()
             .expect("invalid number of rects")
     }
@@ -495,8 +497,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// LruCache, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
-    /// is initialized with the [Layout::init_cache()] grows until the initialized cache size.
+    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
+    /// is initialized with the [`Layout::init_cache()`] grows until the initialized cache size.
     ///
     /// There is a helper method that can be used to split the whole area into smaller ones based on
     /// the layout: [`Layout::areas()`]. That method is a shortcut for calling this method. It
@@ -532,8 +534,8 @@ impl Layout {
     ///
     /// This method stores the result of the computation in a thread-local cache keyed on the layout
     /// and area, so that subsequent calls with the same parameters are faster. The cache is a
-    /// LruCache, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
-    /// is initialized with the [Layout::init_cache()] grows until the initialized cache size.
+    /// `LruCache`, and grows until [`Self::DEFAULT_CACHE_SIZE`] is reached by default, if the cache
+    /// is initialized with the [`Layout::init_cache()`] grows until the initialized cache size.
     ///
     /// # Examples
     ///
@@ -698,7 +700,7 @@ fn configure_variable_constraints(
     area: Element,
 ) -> Result<(), AddConstraintError> {
     // all variables are in the range [area.start, area.end]
-    for &variable in variables.iter() {
+    for &variable in variables {
         solver.add_constraint(variable | GE(REQUIRED) | area.start)?;
         solver.add_constraint(variable | LE(REQUIRED) | area.end)?;
     }
@@ -733,7 +735,7 @@ fn configure_constraints(
                 }
             }
             Constraint::Length(length) => {
-                solver.add_constraint(element.has_int_size(length, LENGTH_SIZE_EQ))?
+                solver.add_constraint(element.has_int_size(length, LENGTH_SIZE_EQ))?;
             }
             Constraint::Percentage(p) => {
                 let size = area.size() * f64::from(p) / 100.00;
@@ -764,7 +766,7 @@ fn configure_flex_constraints(
     let spacing_f64 = f64::from(spacing) * FLOAT_PRECISION_MULTIPLIER;
     match flex {
         Flex::Legacy => {
-            for spacer in spacers_except_first_and_last.iter() {
+            for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_size(spacing_f64, SPACER_SIZE_EQ))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
@@ -776,9 +778,9 @@ fn configure_flex_constraints(
         // constraints are satisfied
         Flex::SpaceAround => {
             for (left, right) in spacers.iter().tuple_combinations() {
-                solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?
+                solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
             }
-            for spacer in spacers.iter() {
+            for spacer in spacers {
                 solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
                 solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
@@ -788,12 +790,12 @@ fn configure_flex_constraints(
         // constraints are satisfied, but the first and last spacers are zero size
         Flex::SpaceBetween => {
             for (left, right) in spacers_except_first_and_last.iter().tuple_combinations() {
-                solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?
+                solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?;
             }
-            for spacer in spacers_except_first_and_last.iter() {
+            for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
             }
-            for spacer in spacers_except_first_and_last.iter() {
+            for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
             }
             if let (Some(first), Some(last)) = (spacers.first(), spacers.last()) {
@@ -846,7 +848,7 @@ fn configure_flex_constraints(
 /// │abcdef││abcdefabcdef│
 /// └──────┘└────────────┘
 ///
-/// size == base_element * scaling_factor
+/// `size == base_element * scaling_factor`
 fn configure_fill_constraints(
     solver: &mut Solver,
     segments: &[Element],
@@ -1075,8 +1077,6 @@ mod strengths {
 
 #[cfg(test)]
 mod tests {
-    use std::iter;
-
     use super::*;
 
     #[test]
@@ -1104,7 +1104,7 @@ mod tests {
         assert!(!Layout::init_cache(15));
         LAYOUT_CACHE.with(|c| {
             assert_eq!(c.get().unwrap().borrow().cap().get(), 10);
-        })
+        });
     }
 
     #[test]
@@ -1130,7 +1130,7 @@ mod tests {
                 c.get().unwrap().borrow().cap().get(),
                 Layout::DEFAULT_CACHE_SIZE
             );
-        })
+        });
     }
 
     #[test]
@@ -1207,7 +1207,7 @@ mod tests {
     }
 
     /// The purpose of this test is to ensure that layout can be constructed with any type that
-    /// implements IntoIterator<Item = AsRef<Constraint>>.
+    /// implements `IntoIterator<Item = AsRef<Constraint>>`.
     #[test]
     #[allow(
         clippy::needless_borrow,
@@ -1253,14 +1253,14 @@ mod tests {
             "constraints should be settable with an iter"
         );
 
-        let iterator = CONSTRAINTS.iter().map(|c| c.to_owned());
+        let iterator = CONSTRAINTS.iter().map(ToOwned::to_owned);
         assert_eq!(
             Layout::default().constraints(iterator).constraints,
             CONSTRAINTS,
             "constraints should be settable with an iterator"
         );
 
-        let iterator_ref = CONSTRAINTS.iter().map(|c| c.as_ref());
+        let iterator_ref = CONSTRAINTS.iter().map(AsRef::as_ref);
         assert_eq!(
             Layout::default().constraints(iterator_ref).constraints,
             CONSTRAINTS,
@@ -1334,7 +1334,6 @@ mod tests {
         use rstest::rstest;
 
         use crate::{
-            assert_buffer_eq,
             layout::flex::Flex,
             prelude::{Constraint::*, *},
             widgets::Paragraph,
@@ -1361,8 +1360,7 @@ mod tests {
                 let s = c.to_string().repeat(area.width as usize);
                 Paragraph::new(s).render(layout[i], &mut buffer);
             }
-            let expected = Buffer::with_lines(vec![expected]);
-            assert_buffer_eq!(buffer, expected);
+            assert_eq!(buffer, Buffer::with_lines([expected]));
         }
 
         #[rstest]
@@ -1406,7 +1404,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1449,7 +1447,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1485,7 +1483,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest] // flex, width, lengths, expected
@@ -1618,7 +1616,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1655,7 +1653,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1692,7 +1690,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1795,7 +1793,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1832,7 +1830,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[rstest]
@@ -1869,7 +1867,7 @@ mod tests {
             #[case] constraints: &[Constraint],
             #[case] expected: &str,
         ) {
-            letters(flex, constraints, width, expected)
+            letters(flex, constraints, width, expected);
         }
 
         #[test]
@@ -1984,7 +1982,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2004,7 +2001,6 @@ mod tests {
                 .flex(Flex::Start)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
@@ -2036,7 +2032,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2067,7 +2062,6 @@ mod tests {
                 .flex(Flex::Start)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2077,7 +2071,6 @@ mod tests {
                 .flex(Flex::Center)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2087,7 +2080,6 @@ mod tests {
                 .flex(Flex::End)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2097,7 +2089,6 @@ mod tests {
                 .flex(Flex::SpaceAround)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2107,7 +2098,6 @@ mod tests {
                 .flex(Flex::SpaceBetween)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2122,7 +2112,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2170,7 +2159,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2188,7 +2176,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2207,7 +2194,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| r.width)
                 .collect::<Vec<u16>>();
             assert_eq!(expected, r);
@@ -2272,7 +2258,6 @@ mod tests {
                 .flex(flex)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
@@ -2331,7 +2316,6 @@ mod tests {
                 .flex(Flex::Legacy)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
@@ -2356,7 +2340,6 @@ mod tests {
                 .flex(flex)
                 .split(rect)
                 .iter()
-                .cloned()
                 .map(|r| (r.x, r.width))
                 .collect::<Vec<(u16, u16)>>();
             assert_eq!(expected, r);
