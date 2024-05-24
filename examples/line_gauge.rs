@@ -73,7 +73,7 @@ impl App {
         }
 
         self.progress_columns = (self.progress_columns + 1).clamp(0, terminal_width);
-        self.progress = self.progress_columns as f64 / terminal_width as f64;
+        self.progress = f64::from(self.progress_columns) / f64::from(terminal_width);
     }
 
     fn handle_events(&mut self) -> Result<()> {
@@ -81,10 +81,9 @@ impl App {
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    use KeyCode::*;
                     match key.code {
-                        Char(' ') | Enter => self.start(),
-                        Char('q') | Esc => self.quit(),
+                        KeyCode::Char(' ') | KeyCode::Enter => self.start(),
+                        KeyCode::Char('q') | KeyCode::Esc => self.quit(),
                         _ => {}
                     }
                 }
@@ -104,15 +103,15 @@ impl App {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        use Constraint::*;
+        use Constraint::{Length, Min, Ratio};
         let layout = Layout::vertical([Length(2), Min(0), Length(1)]);
-        let [header_area, gauge_area, footer_area] = layout.areas(area);
+        let [header_area, main_area, footer_area] = layout.areas(area);
 
         let layout = Layout::vertical([Ratio(1, 3); 3]);
-        let [gauge1_area, gauge2_area, gauge3_area] = layout.areas(gauge_area);
+        let [gauge1_area, gauge2_area, gauge3_area] = layout.areas(main_area);
 
-        self.render_header(header_area, buf);
-        self.render_footer(footer_area, buf);
+        header().render(header_area, buf);
+        footer().render(footer_area, buf);
 
         self.render_gauge1(gauge1_area, buf);
         self.render_gauge2(gauge2_area, buf);
@@ -120,23 +119,21 @@ impl Widget for &App {
     }
 }
 
+fn header() -> impl Widget {
+    Paragraph::new("Ratatui Line Gauge Example")
+        .bold()
+        .alignment(Alignment::Center)
+        .fg(CUSTOM_LABEL_COLOR)
+}
+
+fn footer() -> impl Widget {
+    Paragraph::new("Press ENTER / SPACE to start")
+        .alignment(Alignment::Center)
+        .fg(CUSTOM_LABEL_COLOR)
+        .bold()
+}
+
 impl App {
-    fn render_header(&self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new("Ratatui Line Gauge Example")
-            .bold()
-            .alignment(Alignment::Center)
-            .fg(CUSTOM_LABEL_COLOR)
-            .render(area, buf);
-    }
-
-    fn render_footer(&self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new("Press ENTER / SPACE to start")
-            .alignment(Alignment::Center)
-            .fg(CUSTOM_LABEL_COLOR)
-            .bold()
-            .render(area, buf);
-    }
-
     fn render_gauge1(&self, area: Rect, buf: &mut Buffer) {
         let title = title_block("Blue / red only foreground");
         LineGauge::default()
@@ -198,7 +195,7 @@ fn init_error_hooks() -> color_eyre::Result<()> {
     }))?;
     std::panic::set_hook(Box::new(move |info| {
         let _ = restore_terminal();
-        panic(info)
+        panic(info);
     }));
     Ok(())
 }

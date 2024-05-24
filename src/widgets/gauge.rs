@@ -383,6 +383,7 @@ impl<'a> LineGauge<'a> {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    #[must_use = "method moves the value of self and returns the modified value"]
     pub fn unfilled_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.unfilled_style = style.into();
         self
@@ -500,7 +501,7 @@ mod tests {
                 .bg(Color::White)
                 .add_modifier(Modifier::BOLD)
                 .remove_modifier(Modifier::DIM)
-        )
+        );
     }
 
     #[allow(deprecated)]
@@ -517,7 +518,7 @@ mod tests {
         assert_eq!(
             gauge.unfilled_style,
             Style::default().fg(Color::Blue).bg(Color::Reset)
-        )
+        );
     }
 
     #[test]
