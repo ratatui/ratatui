@@ -284,6 +284,6 @@ mod tests {
     fn test_today() {
         let store = CalendarEventStore::today(Style::new());
         // One entry: today.
-        assert_eq!(store.0.len(), 0);
+        assert_eq!(store.0.len(), 1);
     }
 }
