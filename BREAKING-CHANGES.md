@@ -51,7 +51,7 @@ This is a quick summary of the sections below:
 
 ## v0.27.0 (unreleased)
 
-### Remove deprecated `List::start_corner` ([#758])
+### Remove deprecated `List::start_corner` and `layout::Corner` ([#758])
 
 [#758]: https://github.com/ratatui-org/ratatui/pull/757
 
@@ -71,6 +71,8 @@ This is a quick summary of the sections below:
 // becomes
 + list.direction(ListDirection::BottomToTop);
 ```
+
+`layout::Corner` was removed entirely.
 
 ## [v0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0)
 

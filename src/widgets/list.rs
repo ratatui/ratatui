@@ -1649,30 +1649,6 @@ mod tests {
         assert_eq!(buffer, Buffer::with_lines(expected));
     }
 
-    #[rstest]
-    #[case::topleft(Corner::TopLeft, [
-        "Item 0    ",
-        "Item 1    ",
-        "Item 2    ",
-        "          ",
-    ])]
-    #[case::bottomleft(Corner::BottomLeft, [
-        "          ",
-        "Item 2    ",
-        "Item 1    ",
-        "Item 0    ",
-    ])]
-    fn start_corner<'line, Lines>(#[case] corner: Corner, #[case] expected: Lines)
-    where
-        Lines: IntoIterator,
-        Lines::Item: Into<Line<'line>>,
-    {
-        #[allow(deprecated)] // For start_corner
-        let list = List::new(["Item 0", "Item 1", "Item 2"]).start_corner(corner);
-        let buffer = render_widget(list, 10, 4);
-        assert_eq!(buffer, Buffer::with_lines(expected));
-    }
-
     #[test]
     fn test_list_truncate_items() {
         let list = List::new(["Item 0", "Item 1", "Item 2", "Item 3", "Item 4"]);

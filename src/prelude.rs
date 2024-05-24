@@ -27,7 +27,7 @@ pub(crate) use crate::widgets::{StatefulWidgetRef, WidgetRef};
 pub use crate::{
     backend::{self, Backend},
     buffer::{self, Buffer},
-    layout::{self, Alignment, Constraint, Corner, Direction, Layout, Margin, Rect},
+    layout::{self, Alignment, Constraint, Direction, Layout, Margin, Rect},
     style::{self, Color, Modifier, Style, Styled, Stylize},
     symbols::{self, Marker},
     terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport},
