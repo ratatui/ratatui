@@ -19,11 +19,11 @@ alias = "ci"
 
 [tasks.ci]
 description = "Run continuous integration tasks"
-dependencies = ["lint-style", "clippy", "check", "test"]
+dependencies = ["lint", "clippy", "check", "test"]
 
-[tasks.lint-style]
-description = "Lint code style (formatting, typos, docs)"
-dependencies = ["lint-format", "lint-typos", "lint-docs"]
+[tasks.lint]
+description = "Lint code style (formatting, typos, docs, markdown)"
+dependencies = ["lint-format", "lint-typos", "lint-docs", "lint-markdown"]
 
 [tasks.lint-format]
 description = "Lint code formatting"
@@ -55,6 +55,11 @@ args = [
   "--check",
   "-Dwarnings",
 ]
+
+[tasks.lint-markdown]
+description = "Check markdown files for errors and warnings"
+command = "markdownlint-cli2"
+args = ["**/*.md", "!target"]
 
 [tasks.check]
 description = "Check code for errors and warnings"
