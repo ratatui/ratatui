@@ -1,6 +1,5 @@
 use std::fmt;
 
-#[must_use]
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Margin {
     pub horizontal: u16,
@@ -8,6 +7,7 @@ pub struct Margin {
 }
 
 impl Margin {
+    #[must_use]
     pub const fn new(horizontal: u16, vertical: u16) -> Self {
         Self {
             horizontal,

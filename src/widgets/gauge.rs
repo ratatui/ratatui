@@ -219,6 +219,7 @@ impl Gauge<'_> {
     }
 }
 
+#[must_use]
 fn get_unicode_block<'a>(frac: f64) -> &'a str {
     match (frac * 8.0).round() as u16 {
         1 => symbols::block::ONE_EIGHTH,

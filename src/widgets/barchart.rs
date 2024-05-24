@@ -307,6 +307,7 @@ impl<'a> BarChart<'a> {
     }
 }
 
+#[must_use]
 #[derive(Clone, Copy)]
 struct LabelInfo {
     group_label_visible: bool,
@@ -318,6 +319,7 @@ impl BarChart<'_> {
     /// Returns the visible bars length in ticks. A cell contains 8 ticks.
     /// `available_space` used to calculate how many bars can fit in the space
     /// `bar_max_length` is the maximal length a bar can take.
+    #[must_use]
     fn group_ticks(&self, available_space: u16, bar_max_length: u16) -> Vec<Vec<u64>> {
         let max: u64 = self.maximum_data_value();
         self.data

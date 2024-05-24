@@ -47,6 +47,7 @@ pub struct TestBackend {
 /// It iterates through the buffer content and appends each cell's symbol to the view string.
 /// If a cell is hidden by a multi-width symbol, it is added to the overwritten vector and
 /// displayed at the end of the line.
+#[must_use]
 fn buffer_view(buffer: &Buffer) -> String {
     let mut view = String::with_capacity(buffer.content.len() + buffer.area.height as usize * 3);
     for cells in buffer.content.chunks(buffer.area.width as usize) {
@@ -72,6 +73,7 @@ fn buffer_view(buffer: &Buffer) -> String {
 
 impl TestBackend {
     /// Creates a new `TestBackend` with the specified width and height.
+    #[must_use]
     pub fn new(width: u16, height: u16) -> Self {
         Self {
             width,
@@ -83,6 +85,7 @@ impl TestBackend {
     }
 
     /// Returns a reference to the internal buffer of the `TestBackend`.
+    #[must_use]
     pub const fn buffer(&self) -> &Buffer {
         &self.buffer
     }
@@ -275,6 +278,7 @@ mod tests {
             }
         );
     }
+
     #[test]
     fn test_buffer_view() {
         let buffer = Buffer::with_lines(["aaaa"; 2]);

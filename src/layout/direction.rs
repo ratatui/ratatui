@@ -1,6 +1,5 @@
 use strum::{Display, EnumString};
 
-#[must_use]
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Direction {
     Horizontal,

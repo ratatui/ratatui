@@ -84,6 +84,7 @@ impl<'a> Tabs<'a> {
     /// # use ratatui::{prelude::*, widgets::Tabs};
     /// let tabs = Tabs::new(vec!["Tab 1".red(), "Tab 2".blue()]);
     /// ```
+    #[must_use]
     pub fn new<Iter>(titles: Iter) -> Self
     where
         Iter: IntoIterator,
@@ -360,7 +361,8 @@ mod tests {
 
     #[test]
     fn new_from_vec_of_str() {
-        Tabs::new(vec!["a", "b"]);
+       let tabs =  Tabs::new(vec!["a", "b"]);
+       assert_eq!(tabs.titles, [Line::from("a"), Line::from("b")]);
     }
 
     #[test]
@@ -368,7 +370,7 @@ mod tests {
         let tabs: Tabs = (0..5).map(|i| format!("Tab{i}")).collect();
         assert_eq!(
             tabs.titles,
-            vec![
+            [
                 Line::from("Tab0"),
                 Line::from("Tab1"),
                 Line::from("Tab2"),

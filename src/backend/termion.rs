@@ -82,6 +82,7 @@ where
     /// # use ratatui::prelude::*;
     /// let backend = TermionBackend::new(stdout());
     /// ```
+    #[must_use]
     pub const fn new(writer: W) -> Self {
         Self { writer }
     }
@@ -91,6 +92,7 @@ where
         feature = "backend-writer",
         issue = "https://github.com/ratatui-org/ratatui/pull/991"
     )]
+    #[must_use]
     pub const fn writer(&self) -> &W {
         &self.writer
     }
@@ -102,6 +104,7 @@ where
         feature = "backend-writer",
         issue = "https://github.com/ratatui-org/ratatui/pull/991"
     )]
+    #[must_use]
     pub fn writer_mut(&mut self) -> &mut W {
         &mut self.writer
     }

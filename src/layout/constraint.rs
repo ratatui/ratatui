@@ -44,7 +44,6 @@ use strum::EnumIs;
 /// // Create a layout with fill proportional sizes for each element
 /// let constraints = Constraint::from_fills([1, 2, 1]);
 /// ```
-#[must_use]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, EnumIs)]
 pub enum Constraint {
     /// Applies a minimum size constraint to the element

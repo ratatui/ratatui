@@ -260,6 +260,7 @@ impl<'a> Table<'a> {
     /// let widths = [Constraint::Length(5), Constraint::Length(5)];
     /// let table = Table::new(rows, widths);
     /// ```
+    #[must_use]
     pub fn new<R, C>(rows: R, widths: C) -> Self
     where
         R: IntoIterator,
@@ -626,6 +627,7 @@ impl StatefulWidgetRef for Table<'_> {
 // private methods for rendering
 impl Table<'_> {
     /// Splits the table area into a header, rows area and a footer
+    #[must_use]
     fn layout(&self, area: Rect) -> (Rect, Rect, Rect) {
         let header_top_margin = self.header.as_ref().map_or(0, |h| h.top_margin);
         let header_height = self.header.as_ref().map_or(0, |h| h.height);
@@ -724,6 +726,7 @@ impl Table<'_> {
     ///
     /// Returns (x, width). When self.widths is empty, it is assumed `.widths()` has not been called
     /// and a default of equal widths is returned.
+    #[must_use]
     fn get_columns_widths(&self, max_width: u16, selection_width: u16) -> Vec<(u16, u16)> {
         let widths = if self.widths.is_empty() {
             let col_count = self
@@ -750,6 +753,7 @@ impl Table<'_> {
         rects.iter().map(|c| (c.x, c.width)).collect()
     }
 
+    #[must_use]
     fn get_row_bounds(
         &self,
         selected: Option<usize>,
@@ -790,6 +794,7 @@ impl Table<'_> {
 
     /// Returns the width of the selection column if a row is selected, or the `highlight_spacing`
     /// is set to show the column always, otherwise 0.
+    #[must_use]
     fn selection_width(&self, state: &TableState) -> u16 {
         let has_selection = state.selected().is_some();
         if self.highlight_spacing.should_add(has_selection) {

@@ -50,6 +50,7 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
+    #[must_use]
     pub fn new(lines: O, max_line_width: u16, trim: bool) -> Self {
         Self {
             input_lines: lines,
@@ -249,6 +250,7 @@ where
     O: Iterator<Item = (I, Alignment)>,
     I: Iterator<Item = StyledGrapheme<'a>>,
 {
+    #[must_use]
     pub fn new(lines: O, max_line_width: u16) -> Self {
         Self {
             input_lines: lines,
@@ -326,6 +328,7 @@ where
 
 /// This function will return a str slice which start at specified offset.
 /// As src is a unicode str, start offset has to be calculated with each character.
+#[must_use]
 fn trim_offset(src: &str, mut offset: usize) -> &str {
     let mut start = 0;
     for c in UnicodeSegmentation::graphemes(src, true) {
@@ -354,6 +357,7 @@ mod test {
         LineTruncator,
     }
 
+    #[must_use]
     fn run_composer<'a>(
         which: Composer,
         text: impl Into<Text<'a>>,

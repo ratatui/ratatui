@@ -106,6 +106,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new(Text::styled("Hello, world!", Style::default()));
     /// let paragraph = Paragraph::new(Line::from(vec!["Hello, ".into(), "world!".red()]));
     /// ```
+    #[must_use]
     pub fn new<T>(text: T) -> Self
     where
         T: Into<Text<'a>>,
@@ -270,6 +271,7 @@ impl<'a> Paragraph<'a> {
         feature = "rendered-line-info",
         issue = "https://github.com/ratatui-org/ratatui/issues/293"
     )]
+    #[must_use]
     pub fn line_count(&self, width: u16) -> usize {
         if width < 1 {
             return 0;

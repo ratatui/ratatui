@@ -21,6 +21,7 @@ use crate::prelude::*;
 ///
 /// For a more complete example how to utilize `Clear` to realize popups see
 /// the example `examples/popup.rs`
+#[must_use]
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Clear;
 

@@ -27,6 +27,7 @@ pub enum MapResolution {
 }
 
 impl MapResolution {
+    #[must_use]
     const fn data(self) -> &'static [(f64, f64)] {
         match self {
             Self::Low => &WORLD_LOW_RESOLUTION,

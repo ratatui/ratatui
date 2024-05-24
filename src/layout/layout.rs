@@ -106,7 +106,6 @@ thread_local! {
 ///
 /// [`cassowary-rs`]: https://crates.io/crates/cassowary
 /// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
-#[must_use]
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,
@@ -153,6 +152,7 @@ impl Layout {
     ///
     /// Layout::new(Direction::Horizontal, vec![1, 2]);
     /// ```
+    #[must_use]
     pub fn new<I>(direction: Direction, constraints: I) -> Self
     where
         I: IntoIterator,
@@ -176,6 +176,7 @@ impl Layout {
     /// # use ratatui::prelude::*;
     /// let layout = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
     /// ```
+    #[must_use]
     pub fn vertical<I>(constraints: I) -> Self
     where
         I: IntoIterator,
@@ -195,6 +196,7 @@ impl Layout {
     /// # use ratatui::prelude::*;
     /// let layout = Layout::horizontal([Constraint::Length(5), Constraint::Min(0)]);
     /// ```
+    #[must_use]
     pub fn horizontal<I>(constraints: I) -> Self
     where
         I: IntoIterator,
@@ -447,6 +449,7 @@ impl Layout {
     /// // or explicitly specify the number of constraints:
     /// let areas = layout.areas::<2>(area);
     /// # }
+    #[must_use]
     pub fn areas<const N: usize>(&self, area: Rect) -> [Rect; N] {
         let (areas, _) = self.split_with_spacers(area);
         areas.as_ref().try_into().expect("invalid number of rects")
@@ -480,6 +483,7 @@ impl Layout {
     /// // or explicitly specify the number of constraints:
     /// let spacers = layout.spacers::<2>(area);
     /// # }
+    #[must_use]
     pub fn spacers<const N: usize>(&self, area: Rect) -> [Rect; N] {
         let (_, spacers) = self.split_with_spacers(area);
         spacers
@@ -883,6 +887,7 @@ fn configure_fill_constraints(
     Ok(())
 }
 
+#[must_use]
 fn changes_to_rects(
     changes: &HashMap<Variable, f64>,
     elements: &[Element],
@@ -931,6 +936,7 @@ fn debug_segments(segments: &[Element], changes: &HashMap<Variable, f64>) {
 }
 
 /// A container used by the solver inside split
+#[must_use]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 struct Element {
     start: Variable,

@@ -535,6 +535,7 @@ impl Scrollbar<'_> {
     /// - `         ═══════ `: track end
     ///
     /// This method returns the length of the start, thumb, and end as a tuple.
+    #[must_use]
     fn part_lengths(&self, area: Rect, state: &ScrollbarState) -> (usize, usize, usize) {
         let track_length = f64::from(self.track_length_excluding_arrow_heads(area));
         let viewport_length = self.viewport_length(state, area) as f64;
@@ -564,6 +565,7 @@ impl Scrollbar<'_> {
         (thumb_start, thumb_length, track_end_length)
     }
 
+    #[must_use]
     fn scollbar_area(&self, area: Rect) -> Rect {
         match self.orientation {
             ScrollbarOrientation::VerticalLeft => area.columns().next(),
@@ -581,6 +583,7 @@ impl Scrollbar<'_> {
     ///  vvvvvvvvvvvvvvv
     /// <═══█████═══════>
     /// ```
+    #[must_use]
     fn track_length_excluding_arrow_heads(&self, area: Rect) -> u16 {
         let start_len = self.begin_symbol.map_or(0, |s| s.width() as u16);
         let end_len = self.end_symbol.map_or(0, |s| s.width() as u16);
@@ -592,6 +595,7 @@ impl Scrollbar<'_> {
         }
     }
 
+    #[must_use]
     const fn viewport_length(&self, state: &ScrollbarState, area: Rect) -> usize {
         if state.viewport_content_length != 0 {
             state.viewport_content_length

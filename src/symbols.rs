@@ -489,7 +489,6 @@ pub mod braille {
 }
 
 /// Marker to use when plotting data points
-#[must_use]
 #[derive(Debug, Default, Display, EnumString, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Marker {
     /// One point per cell in shape of dot (`•`)

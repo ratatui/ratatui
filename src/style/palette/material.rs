@@ -418,6 +418,7 @@ use crate::prelude::*;
 ///
 /// This is a collection of colors that are used in Material design. They consist of a set of
 /// colors from 50 to 900, and a set of accent colors from 100 to 700.
+#[must_use]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct AccentedPalette {
     pub c50: Color,
@@ -440,6 +441,7 @@ pub struct AccentedPalette {
 ///
 /// This is a collection of colors that are used in Material design. They consist of a set of
 /// colors from 50 to 900.
+#[must_use]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct NonAccentedPalette {
     pub c50: Color,

@@ -432,7 +432,6 @@ impl<'a, 'b> From<&'a mut Context<'b>> for Painter<'a, 'b> {
 /// this as similar to the [`Frame`] struct that is used to draw widgets on the terminal.
 ///
 /// [`Frame`]: crate::prelude::Frame
-#[must_use]
 #[derive(Debug)]
 pub struct Context<'a> {
     x_bounds: [f64; 2],
@@ -466,6 +465,7 @@ impl<'a> Context<'a> {
     ///     symbols::Marker::Braille,
     /// );
     /// ```
+    #[must_use]
     pub fn new(
         width: u16,
         height: u16,

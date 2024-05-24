@@ -185,6 +185,7 @@ impl<'a> Text<'a> {
     /// Text::raw("The first line\nThe second line");
     /// Text::raw(String::from("The first line\nThe second line"));
     /// ```
+    #[must_use]
     pub fn raw<T>(content: T) -> Self
     where
         T: Into<Cow<'a, str>>,
@@ -213,6 +214,7 @@ impl<'a> Text<'a> {
     /// Text::styled("The first line\nThe second line", style);
     /// Text::styled(String::from("The first line\nThe second line"), style);
     /// ```
+    #[must_use]
     pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
@@ -230,6 +232,7 @@ impl<'a> Text<'a> {
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(15, text.width());
     /// ```
+    #[must_use]
     pub fn width(&self) -> usize {
         self.iter().map(Line::width).max().unwrap_or_default()
     }
@@ -243,6 +246,7 @@ impl<'a> Text<'a> {
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(2, text.height());
     /// ```
+    #[must_use]
     pub fn height(&self) -> usize {
         self.lines.len()
     }

@@ -25,6 +25,7 @@ pub struct Masked<'a> {
 }
 
 impl<'a> Masked<'a> {
+    #[must_use]
     pub fn new(s: impl Into<Cow<'a, str>>, mask_char: char) -> Self {
         Self {
             inner: s.into(),
@@ -33,11 +34,13 @@ impl<'a> Masked<'a> {
     }
 
     /// The character to use for masking.
+    #[must_use]
     pub const fn mask_char(&self) -> char {
         self.mask_char
     }
 
     /// The underlying string, with all characters masked.
+    #[must_use]
     pub fn value(&self) -> Cow<'a, str> {
         self.inner.chars().map(|_| self.mask_char).collect()
     }

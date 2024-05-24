@@ -83,16 +83,19 @@ impl Buffer {
     }
 
     /// Returns the content of the buffer as a slice
+    #[must_use]
     pub fn content(&self) -> &[Cell] {
         &self.content
     }
 
     /// Returns the area covered by this buffer
+    #[must_use]
     pub const fn area(&self) -> &Rect {
         &self.area
     }
 
     /// Returns a reference to Cell at the given coordinates
+    #[must_use]
     #[track_caller]
     pub fn get(&self, x: u16, y: u16) -> &Cell {
         let i = self.index_of(x, y);
@@ -100,6 +103,7 @@ impl Buffer {
     }
 
     /// Returns a mutable reference to Cell at the given coordinates
+    #[must_use]
     #[track_caller]
     pub fn get_mut(&mut self, x: u16, y: u16) -> &mut Cell {
         let i = self.index_of(x, y);
@@ -132,6 +136,7 @@ impl Buffer {
     /// // starts at (200, 100).
     /// buffer.index_of(0, 0); // Panics
     /// ```
+    #[must_use]
     #[track_caller]
     pub fn index_of(&self, x: u16, y: u16) -> usize {
         debug_assert!(
@@ -170,6 +175,7 @@ impl Buffer {
     /// // Index 100 is the 101th cell, which lies outside of the area of this Buffer.
     /// buffer.pos_of(100); // Panics
     /// ```
+    #[must_use]
     pub fn pos_of(&self, i: usize) -> (u16, u16) {
         debug_assert!(
             i < self.content.len(),
@@ -347,6 +353,7 @@ impl Buffer {
     /// Next:    `aコ`
     /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
     /// ```
+    #[must_use]
     pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)> {
         let previous_buffer = &self.content;
         let next_buffer = &other.content;
@@ -453,6 +460,7 @@ mod tests {
 
     use super::*;
 
+    #[must_use]
     fn cell(s: &str) -> Cell {
         let mut cell = Cell::default();
         cell.set_symbol(s);
@@ -559,7 +567,8 @@ mod tests {
         let buf = Buffer::empty(rect);
 
         // There are a total of 100 cells; zero-indexed means that 100 would be the 101st cell.
-        buf.pos_of(100);
+        let result = buf.pos_of(100);
+        dbg!(result);
     }
 
     #[test]
@@ -569,7 +578,8 @@ mod tests {
         let buf = Buffer::empty(rect);
 
         // width is 10; zero-indexed means that 10 would be the 11th cell.
-        buf.index_of(10, 0);
+        let result = buf.index_of(10, 0);
+        dbg!(result);
     }
 
     #[test]

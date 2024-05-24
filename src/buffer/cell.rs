@@ -87,6 +87,7 @@ impl Cell {
     }
 
     /// Returns the style of the cell.
+    #[must_use]
     pub const fn style(&self) -> Style {
         Style {
             fg: Some(self.fg),

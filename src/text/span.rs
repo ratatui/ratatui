@@ -107,6 +107,7 @@ impl<'a> Span<'a> {
     /// Span::raw("test content");
     /// Span::raw(String::from("test content"));
     /// ```
+    #[must_use]
     pub fn raw<T>(content: T) -> Self
     where
         T: Into<Cow<'a, str>>,
@@ -133,6 +134,7 @@ impl<'a> Span<'a> {
     /// Span::styled("test content", style);
     /// Span::styled(String::from("test content"), style);
     /// ```
+    #[must_use]
     pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
@@ -232,6 +234,7 @@ impl<'a> Span<'a> {
     }
 
     /// Returns the unicode width of the content held by this span.
+    #[must_use]
     pub fn width(&self) -> usize {
         self.content.width()
     }
@@ -291,6 +294,7 @@ impl<'a> Span<'a> {
 
     #[allow(clippy::wrong_self_convention)]
     #[deprecated = "use into_left_aligned_line"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn to_left_aligned_line(self) -> Line<'a> {
         self.into_left_aligned_line()
     }
@@ -310,6 +314,7 @@ impl<'a> Span<'a> {
 
     #[allow(clippy::wrong_self_convention)]
     #[deprecated = "use into_centered_line"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn to_centered_line(self) -> Line<'a> {
         self.into_centered_line()
     }
@@ -329,6 +334,7 @@ impl<'a> Span<'a> {
 
     #[allow(clippy::wrong_self_convention)]
     #[deprecated = "use into_right_aligned_line"]
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     pub fn to_right_aligned_line(self) -> Line<'a> {
         self.into_right_aligned_line()
     }

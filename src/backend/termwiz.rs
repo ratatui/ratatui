@@ -93,6 +93,7 @@ impl TermwizBackend {
     }
 
     /// Creates a new Termwiz backend instance with the given buffered terminal.
+    #[must_use]
     pub const fn with_buffered_terminal(instance: BufferedTerminal<SystemTerminal>) -> Self {
         Self {
             buffered_terminal: instance,
@@ -100,11 +101,13 @@ impl TermwizBackend {
     }
 
     /// Returns a reference to the buffered terminal used by the backend.
+    #[must_use]
     pub const fn buffered_terminal(&self) -> &BufferedTerminal<SystemTerminal> {
         &self.buffered_terminal
     }
 
     /// Returns a mutable reference to the buffered terminal used by the backend.
+    #[must_use]
     pub fn buffered_terminal_mut(&mut self) -> &mut BufferedTerminal<SystemTerminal> {
         &mut self.buffered_terminal
     }

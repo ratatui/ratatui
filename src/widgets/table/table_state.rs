@@ -60,6 +60,7 @@ impl TableState {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let state = TableState::new();
     /// ```
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             offset: 0,
@@ -111,6 +112,7 @@ impl TableState {
     /// let state = TableState::new();
     /// assert_eq!(state.offset(), 0);
     /// ```
+    #[must_use]
     pub const fn offset(&self) -> usize {
         self.offset
     }
@@ -124,6 +126,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// *state.offset_mut() = 1;
     /// ```
+    #[must_use]
     pub fn offset_mut(&mut self) -> &mut usize {
         &mut self.offset
     }
@@ -139,6 +142,7 @@ impl TableState {
     /// let state = TableState::new();
     /// assert_eq!(state.selected(), None);
     /// ```
+    #[must_use]
     pub const fn selected(&self) -> Option<usize> {
         self.selected
     }
@@ -154,6 +158,7 @@ impl TableState {
     /// let mut state = TableState::default();
     /// *state.selected_mut() = Some(1);
     /// ```
+    #[must_use]
     pub fn selected_mut(&mut self) -> &mut Option<usize> {
         &mut self.selected
     }

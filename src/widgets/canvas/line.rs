@@ -20,6 +20,7 @@ pub struct Line {
 
 impl Line {
     /// Create a new line from `(x1, y1)` to `(x2, y2)` with the given color
+    #[must_use]
     pub const fn new(x1: f64, y1: f64, x2: f64, y2: f64, color: Color) -> Self {
         Self {
             x1,

@@ -179,6 +179,7 @@ impl<'a> Line<'a> {
     /// Line::raw(String::from("test content"));
     /// Line::raw(Cow::from("test content"));
     /// ```
+    #[must_use]
     pub fn raw<T>(content: T) -> Self
     where
         T: Into<Cow<'a, str>>,
@@ -212,6 +213,7 @@ impl<'a> Line<'a> {
     /// Line::styled(String::from("My text"), style);
     /// Line::styled(Cow::from("test content"), style);
     /// ```
+    #[must_use]
     pub fn styled<T, S>(content: T, style: S) -> Self
     where
         T: Into<Cow<'a, str>>,
@@ -357,6 +359,7 @@ impl<'a> Line<'a> {
     /// let line = Line::from(vec!["Hello".blue(), " world!".green()]);
     /// assert_eq!(12, line.width());
     /// ```
+    #[must_use]
     pub fn width(&self) -> usize {
         self.spans.iter().map(Span::width).sum()
     }

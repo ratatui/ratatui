@@ -28,6 +28,7 @@ pub struct Monthly<'a, DS: DateStyler> {
 
 impl<'a, DS: DateStyler> Monthly<'a, DS> {
     /// Construct a calendar for the `display_date` and highlight the `events`
+    #[must_use]
     pub const fn new(display_date: Date, events: DS) -> Self {
         Self {
             display_date,
@@ -90,6 +91,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     }
 
     /// Return a style with only the background from the default style
+    #[must_use]
     const fn default_bg(&self) -> Style {
         match self.default_style.bg {
             None => Style::new(),
@@ -98,6 +100,7 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     }
 
     /// All logic to style a date goes here.
+    #[must_use]
     fn format_date(&self, date: Date) -> Span {
         if date.month() == self.display_date.month() {
             Span::styled(
@@ -187,6 +190,7 @@ impl<DS: DateStyler> Monthly<'_, DS> {
 /// that implements this trait can be used.
 pub trait DateStyler {
     /// Given a date, return a style for that date
+    #[must_use]
     fn get_style(&self, date: Date) -> Style;
 }
 
@@ -199,6 +203,7 @@ impl CalendarEventStore {
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    #[must_use]
     pub fn today<S: Into<Style>>(style: S) -> Self {
         let mut res = Self::default();
         res.add(
@@ -220,6 +225,7 @@ impl CalendarEventStore {
     }
 
     /// Helper for trait impls
+    #[must_use]
     fn lookup_style(&self, date: Date) -> Style {
         self.0.get(&date).copied().unwrap_or_default()
     }
@@ -276,6 +282,8 @@ mod tests {
 
     #[test]
     fn test_today() {
-        CalendarEventStore::today(Style::default());
+        let store = CalendarEventStore::today(Style::new());
+        // One entry: today.
+        assert_eq!(store.0.len(), 0);
     }
 }

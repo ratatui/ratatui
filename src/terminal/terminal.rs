@@ -156,6 +156,7 @@ where
     }
 
     /// Get a Frame object which provides a consistent view into the terminal state for rendering.
+    #[must_use]
     pub fn get_frame(&mut self) -> Frame {
         let count = self.frame_count;
         Frame {
@@ -167,16 +168,19 @@ where
     }
 
     /// Gets the current buffer as a mutable reference.
+    #[must_use]
     pub fn current_buffer_mut(&mut self) -> &mut Buffer {
         &mut self.buffers[self.current]
     }
 
     /// Gets the backend
+    #[must_use]
     pub const fn backend(&self) -> &B {
         &self.backend
     }
 
     /// Gets the backend as a mutable reference
+    #[must_use]
     pub fn backend_mut(&mut self) -> &mut B {
         &mut self.backend
     }

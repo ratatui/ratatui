@@ -61,6 +61,7 @@ impl<'a> Cell<'a> {
     /// ]));
     /// Cell::new(Text::from("a text"));
     /// ```
+    #[must_use]
     pub fn new<T>(content: T) -> Self
     where
         T: Into<Text<'a>>,

@@ -36,6 +36,7 @@ impl<'a> BarGroup<'a> {
     }
 
     /// The maximum bar value of this group
+    #[must_use]
     pub(super) fn max(&self) -> Option<u64> {
         self.bars.iter().max_by_key(|v| v.value).map(|v| v.value)
     }

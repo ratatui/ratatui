@@ -89,6 +89,7 @@ impl<'a> Row<'a> {
     ///     Cell::new("Cell 3"),
     /// ]);
     /// ```
+    #[must_use]
     pub fn new<T>(cells: T) -> Self
     where
         T: IntoIterator,
@@ -224,6 +225,7 @@ impl<'a> Row<'a> {
 // private methods for rendering
 impl Row<'_> {
     /// Returns the total height of the row.
+    #[must_use]
     pub(crate) const fn height_with_margin(&self) -> u16 {
         self.height
             .saturating_add(self.top_margin)

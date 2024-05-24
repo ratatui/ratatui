@@ -158,6 +158,7 @@ pub enum BorderType {
 
 impl<'a> Block<'a> {
     /// Creates a new block with no [`Borders`] or [`Padding`].
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             titles: Vec::new(),
@@ -178,6 +179,7 @@ impl<'a> Block<'a> {
     /// # use ratatui::widgets::{Block, Borders};
     /// assert_eq!(Block::bordered(), Block::new().borders(Borders::ALL));
     /// ```
+    #[must_use]
     pub const fn bordered() -> Self {
         let mut block = Self::new();
         block.borders = Borders::ALL;
@@ -469,6 +471,38 @@ impl<'a> Block<'a> {
         self
     }
 
+    /// Defines the padding inside a `Block`.
+    ///
+    /// See [`Padding`] for more information.
+    ///
+    /// # Examples
+    ///
+    /// This renders a `Block` with no padding (the default).
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// Block::bordered().padding(Padding::zero());
+    /// // Renders
+    /// // ┌───────┐
+    /// // │content│
+    /// // └───────┘
+    /// ```
+    ///
+    /// This example shows a `Block` with padding left and right ([`Padding::horizontal`]).
+    /// Notice the two spaces before and after the content.
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// Block::bordered().padding(Padding::horizontal(2));
+    /// // Renders
+    /// // ┌───────────┐
+    /// // │  content  │
+    /// // └───────────┘
+    /// ```
+    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
+    pub const fn padding(mut self, padding: Padding) -> Self {
+        self.padding = padding;
+        self
+    }
+
     /// Compute the inner area of a block based on its border visibility rules.
     ///
     /// # Examples
@@ -493,6 +527,7 @@ impl<'a> Block<'a> {
     /// // │└───────────┘│
     /// // └─────────────┘
     /// ```
+    #[must_use]
     pub fn inner(&self, area: Rect) -> Rect {
         let mut inner = area;
         if self.borders.intersects(Borders::LEFT) {
@@ -524,42 +559,11 @@ impl<'a> Block<'a> {
         inner
     }
 
+    #[must_use]
     fn has_title_at_position(&self, position: Position) -> bool {
         self.titles
             .iter()
             .any(|title| title.position.unwrap_or(self.titles_position) == position)
-    }
-
-    /// Defines the padding inside a `Block`.
-    ///
-    /// See [`Padding`] for more information.
-    ///
-    /// # Examples
-    ///
-    /// This renders a `Block` with no padding (the default).
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::bordered().padding(Padding::zero());
-    /// // Renders
-    /// // ┌───────┐
-    /// // │content│
-    /// // └───────┘
-    /// ```
-    ///
-    /// This example shows a `Block` with padding left and right ([`Padding::horizontal`]).
-    /// Notice the two spaces before and after the content.
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::bordered().padding(Padding::horizontal(2));
-    /// // Renders
-    /// // ┌───────────┐
-    /// // │  content  │
-    /// // └───────────┘
-    /// ```
-    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
-    pub const fn padding(mut self, padding: Padding) -> Self {
-        self.padding = padding;
-        self
     }
 }
 

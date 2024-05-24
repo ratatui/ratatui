@@ -129,6 +129,7 @@ impl Color {
     /// Convert a u32 to a Color
     ///
     /// The u32 should be in the format 0x00RRGGBB.
+    #[must_use]
     pub const fn from_u32(u: u32) -> Self {
         let r = (u >> 16) as u8;
         let g = (u >> 8) as u8;
@@ -380,6 +381,7 @@ impl Color {
     /// let color: Color = Color::from_hsl(0.0, 0.0, 0.0);
     /// assert_eq!(color, Color::Rgb(0, 0, 0));
     /// ```
+    #[must_use]
     pub fn from_hsl(h: f64, s: f64, l: f64) -> Self {
         // Clamp input values to valid ranges
         let h = h.clamp(0.0, 360.0);
@@ -395,6 +397,7 @@ impl Color {
 /// representation. H, S, and L values should be in the range [0, 1].
 ///
 /// Based on <https://github.com/killercup/hsl-rs/blob/b8a30e11afd75f262e0550725333293805f4ead0/src/lib.rs>
+#[must_use]
 fn normalized_hsl_to_rgb(hue: f64, saturation: f64, lightness: f64) -> Color {
     // This function can be made into `const` in the future.
     // This comment contains the relevant information for making it `const`.
@@ -446,6 +449,7 @@ fn normalized_hsl_to_rgb(hue: f64, saturation: f64, lightness: f64) -> Color {
 }
 
 /// Helper function to calculate RGB component for a specific hue value.
+#[must_use]
 fn hue_to_rgb(p: f64, q: f64, t: f64) -> f64 {
     // Adjust the hue value to be within the valid range [0, 1]
     let mut t = t;

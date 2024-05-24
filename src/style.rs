@@ -222,7 +222,6 @@ impl fmt::Debug for Modifier {
 ///     buffer.get(0, 0).style(),
 /// );
 /// ```
-#[must_use = "The Style needs to be applied to something to have an effect"]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Style {
@@ -253,6 +252,7 @@ impl Styled for Style {
 }
 
 impl Style {
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             fg: None,
@@ -265,6 +265,7 @@ impl Style {
     }
 
     /// Returns a `Style` resetting all properties.
+    #[must_use]
     pub const fn reset() -> Self {
         Self {
             fg: Some(Color::Reset),

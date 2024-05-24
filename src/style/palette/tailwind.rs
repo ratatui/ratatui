@@ -277,6 +277,7 @@
 
 use crate::prelude::*;
 
+#[must_use]
 pub struct Palette {
     pub c50: Color,
     pub c100: Color,

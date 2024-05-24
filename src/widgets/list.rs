@@ -256,6 +256,7 @@ impl<'a> ListItem<'a> {
     /// # See also
     ///
     /// - [`List::new`] to create a list of items that can be converted to [`ListItem`]
+    #[must_use]
     pub fn new<T>(content: T) -> Self
     where
         T: Into<Text<'a>>,
@@ -495,6 +496,7 @@ impl<'a> List<'a> {
     /// let empty_list = List::default();
     /// let filled_list = empty_list.items(["Item 1"]);
     /// ```
+    #[must_use]
     pub fn new<T>(items: T) -> Self
     where
         T: IntoIterator,

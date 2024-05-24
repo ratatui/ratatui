@@ -49,6 +49,7 @@ impl Frame<'_> {
     /// If your app listens for a resize event from the backend, it should ignore the values from
     /// the event for any calculations that are used to render the current frame and use this value
     /// instead as this is the size of the buffer that is used to render the current frame.
+    #[must_use]
     pub const fn size(&self) -> Rect {
         self.viewport_area
     }
@@ -171,6 +172,7 @@ impl Frame<'_> {
     }
 
     /// Gets the buffer that this `Frame` draws into as a mutable reference.
+    #[must_use]
     pub fn buffer_mut(&mut self) -> &mut Buffer {
         self.buffer
     }
@@ -199,6 +201,7 @@ impl Frame<'_> {
     /// let current_count = frame.count();
     /// println!("Current frame count: {}", current_count);
     /// ```
+    #[must_use]
     pub const fn count(&self) -> usize {
         self.count
     }

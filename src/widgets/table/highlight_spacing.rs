@@ -29,6 +29,7 @@ impl HighlightSpacing {
     /// `has_selection`: true if a row is selected in the table
     ///
     /// Returns true if a selection column should be displayed
+    #[must_use]
     pub(crate) const fn should_add(&self, has_selection: bool) -> bool {
         match self {
             Self::Always => true,
