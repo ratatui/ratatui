@@ -10,6 +10,8 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [v0.27.0 (unreleased)](#v0270-unreleased)
+  - Removed deprecated `List::start_corner`
 - [v0.26.0](#v0260)
   - `Flex::Start` is the new default flex mode for `Layout`
   - `patch_style` & `reset_style` now consume and return `Self`
@@ -46,6 +48,31 @@ This is a quick summary of the sections below:
 - [v0.20.0](#v0200)
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
+
+## v0.27.0 (unreleased)
+
+### Remove deprecated `List::start_corner` and `layout::Corner` ([#758])
+
+[#758]: https://github.com/ratatui-org/ratatui/pull/757
+
+`List::start_corner` was deprecated in v0.25. Use `List::direction` and `ListDirection` instead.
+
+```diff
+- list.start_corner(Corner::TopLeft);
+- list.start_corner(Corner::TopRight);
+// This is not an error, BottomRight rendered top to bottom previously
+- list.start_corner(Corner::BottomRight);
+// all becomes
++ list.direction(ListDirection::TopToBottom);
+```
+
+```diff
+- list.start_corner(Corner::BottomLeft);
+// becomes
++ list.direction(ListDirection::BottomToTop);
+```
+
+`layout::Corner` was removed entirely.
 
 ## [v0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0)
 

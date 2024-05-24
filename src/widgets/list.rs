@@ -714,48 +714,6 @@ impl<'a> List<'a> {
         self
     }
 
-    /// Defines the list direction (up or down)
-    ///
-    /// Defines if the `List` is displayed *top to bottom* (default) or *bottom to top*. Use
-    /// [`Corner::BottomLeft`] to go *bottom to top*. **Any** other variant will go *top to bottom*.
-    /// If there is too few items to fill the screen, the list will stick to the starting edge.
-    ///
-    /// This is set to [`Corner::TopLeft`] by default.
-    ///
-    /// This is a fluent setter method which must be chained or used as it consumes self
-    ///
-    /// ## Note
-    ///
-    /// Despite its name, this method doesn't change the horizontal alignment, i.e. the `List`
-    /// **won't** start in a corner.
-    ///
-    /// # Example
-    ///
-    /// Same as default, i.e. *top to bottom*. Despite the name implying otherwise.
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = ["Item 1"];
-    /// let list = List::new(items).start_corner(Corner::BottomRight);
-    /// ```
-    ///
-    /// Bottom to top
-    ///
-    /// ```rust
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// # let items = ["Item 1"];
-    /// let list = List::new(items).start_corner(Corner::BottomLeft);
-    /// ```
-    #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
-    #[deprecated(since = "0.25.0", note = "You should use `List::direction` instead.")]
-    pub fn start_corner(self, corner: Corner) -> Self {
-        if corner == Corner::BottomLeft {
-            self.direction(ListDirection::BottomToTop)
-        } else {
-            self.direction(ListDirection::TopToBottom)
-        }
-    }
-
     /// Returns the number of [`ListItem`]s in the list
     #[must_use]
     pub fn len(&self) -> usize {
@@ -1699,30 +1657,6 @@ mod tests {
         Lines::Item: Into<Line<'line>>,
     {
         let list = List::new(["Item 0", "Item 1", "Item 2"]).direction(direction);
-        let buffer = render_widget(list, 10, 4);
-        assert_eq!(buffer, Buffer::with_lines(expected));
-    }
-
-    #[rstest]
-    #[case::topleft(Corner::TopLeft, [
-        "Item 0    ",
-        "Item 1    ",
-        "Item 2    ",
-        "          ",
-    ])]
-    #[case::bottomleft(Corner::BottomLeft, [
-        "          ",
-        "Item 2    ",
-        "Item 1    ",
-        "Item 0    ",
-    ])]
-    fn start_corner<'line, Lines>(#[case] corner: Corner, #[case] expected: Lines)
-    where
-        Lines: IntoIterator,
-        Lines::Item: Into<Line<'line>>,
-    {
-        #[allow(deprecated)] // For start_corner
-        let list = List::new(["Item 0", "Item 1", "Item 2"]).start_corner(corner);
         let buffer = render_widget(list, 10, 4);
         assert_eq!(buffer, Buffer::with_lines(expected));
     }

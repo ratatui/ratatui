@@ -246,6 +246,11 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
+name = "line_gauge"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
 name = "hello_world"
 required-features = ["crossterm"]
 doc-scrape-examples = true
