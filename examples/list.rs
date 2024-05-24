@@ -54,7 +54,7 @@ impl TodoItem {
     }
 }
 
-struct StatefulList {
+struct TodoList {
     state: ListState,
     items: Vec<TodoItem>,
     last_selected: Option<usize>,
@@ -67,7 +67,7 @@ struct StatefulList {
 /// Check the event handling at the bottom to see how to change the state on incoming events.
 /// Check the drawing logic for items on how to specify the highlighting style for selected items.
 struct App {
-    items: StatefulList,
+    items: TodoList,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -115,7 +115,7 @@ fn restore_terminal() -> color_eyre::Result<()> {
 impl App {
     fn new() -> Self {
         Self {
-            items: StatefulList::with_items(&[
+            items: TodoList::with_items(&[
                 ("Rewrite everything with Rust!", "I can't hold my inner voice. He tells me to rewrite the complete universe with Rust", Status::Todo),
                 ("Rewrite all of your tui apps with Ratatui", "Yes, you heard that right. Go and replace your tui with Ratatui.", Status::Completed),
                 ("Pet your cat", "Minnak loves to be pet by you! Don't forget to pet and give some treats!", Status::Todo),
@@ -298,7 +298,7 @@ fn render_footer(area: Rect, buf: &mut Buffer) {
         .render(area, buf);
 }
 
-impl StatefulList {
+impl TodoList {
     fn with_items(items: &[(&str, &str, Status)]) -> Self {
         Self {
             state: ListState::default(),
