@@ -1,5 +1,6 @@
 # Changelog
 
+<!-- markdownlint-disable line-length no-bare-urls ul-style emphasis-style -->
 All notable changes to this project will be documented in this file.
 
 ## [0.26.3](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.3) - 2024-05-19
@@ -13,7 +14,7 @@ This is a patch release that fixes the unicode truncation bug, adds performance 
 ### Features
 
 - [97ee102](https://github.com/ratatui-org/ratatui/commit/97ee102f179eed4f309d575495f0e4c8359b4f04) *(buffer)* Track_caller for index_of by @EdJoPaTo in [#1046](https://github.com/ratatui-org/ratatui/pull/1046)
-**
+
   ````text
   The caller put in the wrong x/y -> the caller is the cause.
   ````
@@ -1216,7 +1217,7 @@ In this version, we have primarily focused on simplifications and quality-of-lif
   ````
 
 - [0494ee5](https://github.com/ratatui-org/ratatui/commit/0494ee52f1f0070f1ccf4532f7301fd59d4a5c10)
-  _(layout)_ Accept Into<Constraint> for constructors ([#744](https://github.com/ratatui-org/ratatui/issues/744))
+  _(layout)_ Accept `Into<Constraint>` for constructors ([#744](https://github.com/ratatui-org/ratatui/issues/744))
 
   ````text
   This allows Layout constructors to accept any type that implements
@@ -1434,7 +1435,7 @@ In this version, we have primarily focused on simplifications and quality-of-lif
   ```
 
 - [803a72d](https://github.com/ratatui-org/ratatui/commit/803a72df27190e273556e089e42036bfc001f003)
-  _(table)_ Accept Into<Constraint> for widths ([#745](https://github.com/ratatui-org/ratatui/issues/745))
+  _(table)_ Accept `Into<Constraint>` for widths ([#745](https://github.com/ratatui-org/ratatui/issues/745))
 
   ````text
   This allows Table constructors to accept any type that implements
@@ -1675,8 +1676,6 @@ Ratatui code patterns that are useful for refactoring.
 
 Fixes:https://github.com/ratatui-org/ratatui/issues/792
 
----
-
 - [4ee4e6d](https://github.com/ratatui-org/ratatui/commit/4ee4e6d78a136b5a1e4942f25b9afe34f7dd5d0c)
   _(uncategorized)_ Make spacing work in `Flex::SpaceAround` and `Flex::SpaceBetween` ([#892](https://github.com/ratatui-org/ratatui/issues/892))
 
@@ -1789,7 +1788,7 @@ Now user provided spacing gaps always take priority in all `Flex` modes.
 
   `symbols::border::PROPORTIONAL_WIDE`
 
-```
+```text
 ▄▄▄▄
 █xx█
 █xx█
@@ -1798,7 +1797,7 @@ Now user provided spacing gaps always take priority in all `Flex` modes.
 
 `symbols::border::PROPORTIONAL_TALL`
 
-```
+```text
 █▀▀█
 █xx█
 █xx█
@@ -1962,23 +1961,19 @@ Display implementation displays actual content while ignoring style.
   Line::styled("world", Style::new().bold());
 
   // can now be simplified to
-  ````
-
   Line::styled("hello", Color::Red);
-
   Line::styled("world", Modifier::BOLD);
+  ```
 
-`````
-
-Fixes https://github.com/ratatui-org/ratatui/issues/694
+  Fixes https://github.com/ratatui-org/ratatui/issues/694
 
   BREAKING CHANGE:All style related methods now accept `S: Into<Style>`
-instead of `Style`. This means that if you are already passing an
-ambiguous type that implements `Into<Style>` you will need to remove
-the `.into()` call.
+  instead of `Style`. This means that if you are already passing an ambiguous type
+  that implements `Into<Style>` you will need to remove the `.into()` call.
 
-`Block` style methods can no longer be called from a const context as
-trait functions cannot (yet) be const.
+  `Block` style methods can no longer be called from a const context as
+  trait functions cannot (yet) be const.
+  ````
 
 * feat: add tuple conversions to Style
 
@@ -1994,7 +1989,7 @@ Adds conversions for various Color and Modifier combinations
   ````text
   This fixes a panic in set_style when the area to be styled is
   outside the buffer's bounds.
-`````
+  ````
 
 - [c959bd2](https://github.com/ratatui-org/ratatui/commit/c959bd2881244a4ad9609403d8a84860f290b859)
   _(calendar)_ CalendarEventStore panic ([#822](https://github.com/ratatui-org/ratatui/issues/822))
@@ -3562,7 +3557,7 @@ Also, we created various tutorials and walkthroughs in [Ratatui Book](https://gi
   _(barchart)_ Add benchmarks ([#455](https://github.com/ratatui-org/ratatui/issues/455))
 
 - [94af2a2](https://github.com/ratatui-org/ratatui/commit/94af2a29e10248ed709bbc8a7bf2f569894abc62)
-  _(buffer)_ Allow with_lines to accept Vec<Into<Line>> ([#494](https://github.com/ratatui-org/ratatui/issues/494))
+  _(buffer)_ Allow with_lines to accept `Vec<Into<Line>>` ([#494](https://github.com/ratatui-org/ratatui/issues/494))
 
   ```text
   This allows writing unit tests without having to call set_style on the

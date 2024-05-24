@@ -389,8 +389,8 @@ The MSRV of ratatui is now 1.67 due to an MSRV update in a dependency (`time`).
 
 [#205]: https://github.com/ratatui-org/ratatui/issues/205
 
-The `serde` representation of `bitflags` has changed. Any existing serialized types that have Borders or
-Modifiers will need to be re-serialized. This is documented in the [`bitflags`
+The `serde` representation of `bitflags` has changed. Any existing serialized types that have
+Borders or Modifiers will need to be re-serialized. This is documented in the [`bitflags`
 changelog](https://github.com/bitflags/bitflags/blob/main/CHANGELOG.md#200-rc2)..
 
 ## [v0.21.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.21.0)
