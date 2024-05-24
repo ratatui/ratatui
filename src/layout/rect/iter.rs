@@ -2,7 +2,7 @@ use self::layout::Position;
 use crate::prelude::*;
 
 /// An iterator over rows within a `Rect`.
-#[must_use]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Rows {
     /// The `Rect` associated with the rows.
     pub rect: Rect,
@@ -37,7 +37,7 @@ impl Iterator for Rows {
 }
 
 /// An iterator over columns within a `Rect`.
-#[must_use]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Columns {
     /// The `Rect` associated with the columns.
     pub rect: Rect,
@@ -74,7 +74,7 @@ impl Iterator for Columns {
 /// An iterator over positions within a `Rect`.
 ///
 /// The iterator will yield all positions within the `Rect` in a row-major order.
-#[must_use]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Positions {
     /// The `Rect` associated with the positions.
     pub rect: Rect,
