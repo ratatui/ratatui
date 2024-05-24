@@ -168,7 +168,7 @@ impl<'a> Block<'a> {
             border_style: Style::new(),
             border_set: BorderType::Plain.to_border_set(),
             style: Style::new(),
-            padding: Padding::zero(),
+            padding: Padding::ZERO,
         }
     }
 
@@ -539,7 +539,7 @@ impl<'a> Block<'a> {
     /// This renders a `Block` with no padding (the default).
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::bordered().padding(Padding::zero());
+    /// Block::bordered().padding(Padding::ZERO);
     /// // Renders
     /// // ┌───────┐
     /// // │content│
@@ -997,7 +997,7 @@ mod tests {
                 border_style: Style::new(),
                 border_set: BorderType::Plain.to_border_set(),
                 style: Style::new(),
-                padding: Padding::zero(),
+                padding: Padding::ZERO,
             }
         );
     }
