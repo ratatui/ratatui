@@ -469,6 +469,38 @@ impl<'a> Block<'a> {
         self
     }
 
+    /// Defines the padding inside a `Block`.
+    ///
+    /// See [`Padding`] for more information.
+    ///
+    /// # Examples
+    ///
+    /// This renders a `Block` with no padding (the default).
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// Block::bordered().padding(Padding::zero());
+    /// // Renders
+    /// // ┌───────┐
+    /// // │content│
+    /// // └───────┘
+    /// ```
+    ///
+    /// This example shows a `Block` with padding left and right ([`Padding::horizontal`]).
+    /// Notice the two spaces before and after the content.
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// Block::bordered().padding(Padding::horizontal(2));
+    /// // Renders
+    /// // ┌───────────┐
+    /// // │  content  │
+    /// // └───────────┘
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn padding(mut self, padding: Padding) -> Self {
+        self.padding = padding;
+        self
+    }
+
     /// Compute the inner area of a block based on its border visibility rules.
     ///
     /// # Examples
@@ -528,38 +560,6 @@ impl<'a> Block<'a> {
         self.titles
             .iter()
             .any(|title| title.position.unwrap_or(self.titles_position) == position)
-    }
-
-    /// Defines the padding inside a `Block`.
-    ///
-    /// See [`Padding`] for more information.
-    ///
-    /// # Examples
-    ///
-    /// This renders a `Block` with no padding (the default).
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::bordered().padding(Padding::zero());
-    /// // Renders
-    /// // ┌───────┐
-    /// // │content│
-    /// // └───────┘
-    /// ```
-    ///
-    /// This example shows a `Block` with padding left and right ([`Padding::horizontal`]).
-    /// Notice the two spaces before and after the content.
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::bordered().padding(Padding::horizontal(2));
-    /// // Renders
-    /// // ┌───────────┐
-    /// // │  content  │
-    /// // └───────────┘
-    /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn padding(mut self, padding: Padding) -> Self {
-        self.padding = padding;
-        self
     }
 }
 
