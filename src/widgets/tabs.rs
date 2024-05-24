@@ -361,8 +361,8 @@ mod tests {
 
     #[test]
     fn new_from_vec_of_str() {
-       let tabs =  Tabs::new(vec!["a", "b"]);
-       assert_eq!(tabs.titles, [Line::from("a"), Line::from("b")]);
+        let tabs = Tabs::new(vec!["a", "b"]);
+        assert_eq!(tabs.titles, [Line::from("a"), Line::from("b")]);
     }
 
     #[test]
