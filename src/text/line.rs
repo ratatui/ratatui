@@ -1169,7 +1169,7 @@ mod tests {
         fn render_truncates_away_from_0x0(#[case] alignment: Alignment, #[case] expected: &str) {
             let line = Line::from(vec![Span::raw("a🦀b"), Span::raw("c🦀d")]).alignment(alignment);
             // Fill buffer with stuff to ensure the output is indeed padded
-            let mut buf = Buffer::filled(Rect::new(0, 0, 10, 1), Cell::default().set_symbol("X"));
+            let mut buf = Buffer::filled(Rect::new(0, 0, 10, 1), &Cell::new("X"));
             let area = Rect::new(2, 0, 6, 1);
             line.render_ref(area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([expected]));
@@ -1188,7 +1188,7 @@ mod tests {
             let line = Line::from(vec![Span::raw("a🦀b"), Span::raw("c🦀d")]).right_aligned();
             let area = Rect::new(0, 0, buf_width, 1);
             // Fill buffer with stuff to ensure the output is indeed padded
-            let mut buf = Buffer::filled(area, Cell::default().set_symbol("X"));
+            let mut buf = Buffer::filled(area, &Cell::new("X"));
             line.render_ref(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([expected]));
         }

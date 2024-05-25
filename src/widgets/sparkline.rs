@@ -30,7 +30,7 @@ use crate::{prelude::*, widgets::Block};
 ///     .direction(RenderDirection::RightToLeft)
 ///     .style(Style::default().red().on_white());
 /// ```
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Sparkline<'a> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,
@@ -57,19 +57,6 @@ pub enum RenderDirection {
     LeftToRight,
     /// The first value is on the right, going to the left
     RightToLeft,
-}
-
-impl<'a> Default for Sparkline<'a> {
-    fn default() -> Self {
-        Self {
-            block: None,
-            style: Style::default(),
-            data: &[],
-            max: None,
-            bar_set: symbols::bar::NINE_LEVELS,
-            direction: RenderDirection::LeftToRight,
-        }
-    }
 }
 
 impl<'a> Sparkline<'a> {
@@ -172,10 +159,9 @@ impl Sparkline<'_> {
             return;
         }
 
-        let max = match self.max {
-            Some(v) => v,
-            None => *self.data.iter().max().unwrap_or(&1),
-        };
+        let max = self
+            .max
+            .unwrap_or_else(|| *self.data.iter().max().unwrap_or(&1));
         let max_index = min(spark_area.width as usize, self.data.len());
         let mut data = self
             .data
@@ -253,9 +239,7 @@ mod tests {
     // filled with x symbols to make it easier to assert on the result
     fn render(widget: Sparkline, width: u16) -> Buffer {
         let area = Rect::new(0, 0, width, 1);
-        let mut cell = Cell::default();
-        cell.set_symbol("x");
-        let mut buffer = Buffer::filled(area, &cell);
+        let mut buffer = Buffer::filled(area, &Cell::new("x"));
         widget.render(area, &mut buffer);
         buffer
     }

@@ -255,22 +255,6 @@
 //! ![docsrs-styling]
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
-#![cfg_attr(
-    feature = "document-features",
-    doc = "[`CrossTermBackend`]: backend::CrosstermBackend"
-)]
-#![cfg_attr(
-    feature = "document-features",
-    doc = "[`TermionBackend`]: backend::TermionBackend"
-)]
-#![cfg_attr(
-    feature = "document-features",
-    doc = "[`TermwizBackend`]: backend::TermwizBackend"
-)]
-#![cfg_attr(
-    feature = "document-features",
-    doc = "[`calendar`]: widgets::calendar::Monthly"
-)]
 //!
 //! [Ratatui Website]: https://ratatui.rs/
 //! [Installation]: https://ratatui.rs/installation/
