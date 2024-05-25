@@ -340,6 +340,7 @@ fn trim_offset(src: &str, mut offset: usize) -> &str {
             break;
         }
     }
+    #[allow(clippy::string_slice)] // Is safe as it comes from UnicodeSegmentation
     &src[start..]
 }
 
@@ -436,17 +437,17 @@ mod test {
         let (line_truncator, _, _) = run_composer(Composer::LineTruncator, text, width as u16);
 
         let wrapped = vec![
-            &text[..width],
-            &text[width..width * 2],
-            &text[width * 2..width * 3],
-            &text[width * 3..],
+            text.get(..width).unwrap(),
+            text.get(width..width * 2).unwrap(),
+            text.get(width * 2..width * 3).unwrap(),
+            text.get(width * 3..).unwrap(),
         ];
         assert_eq!(
             word_wrapper, wrapped,
             "WordWrapper should detect the line cannot be broken on word boundary and \
              break it at line width limit."
         );
-        assert_eq!(line_truncator, vec![&text[..width]]);
+        assert_eq!(line_truncator, [text.get(..width).unwrap()]);
     }
 
     #[test]
@@ -476,7 +477,7 @@ mod test {
         assert_eq!(word_wrapper_single_space, word_wrapped);
         assert_eq!(word_wrapper_multi_space, word_wrapped);
 
-        assert_eq!(line_truncator, vec![&text[..width]]);
+        assert_eq!(line_truncator, [text.get(..width).unwrap()]);
     }
 
     #[test]
