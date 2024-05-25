@@ -95,6 +95,9 @@ impl Widget for &mut App {
         self.squares.render(squares, buf);
 
         self.green_square.render(squares, buf);
+
+        // display the position of the green square. This is updated automatically when the green
+        // square is rendered.
         let green_square_position = format!(
             "Green square is at ({},{})",
             self.green_square.last_x, self.green_square.last_y
@@ -148,7 +151,7 @@ struct Timer {
 }
 
 impl Default for Timer {
-    fn default() -> Timer {
+    fn default() -> Self {
         Self {
             start: Instant::now(),
         }
@@ -224,7 +227,7 @@ impl WidgetRef for BlueSquare {
 /// just displays the coordinates as a string.
 ///
 /// This approach was probably always available in Ratatui, but it wasn't widely used either. This
-/// is an alternative to implementing the StatefulWidget trait, for situations where you want to
+/// is an alternative to implementing the `StatefulWidget` trait, for situations where you want to
 /// store the state in the widget itself instead of a separate struct.
 #[derive(Default)]
 struct RightAlignedSquare {
