@@ -252,7 +252,7 @@ mod tests {
     // filled with x symbols to make it easier to assert on the result
     fn render(widget: Sparkline, width: u16) -> Buffer {
         let area = Rect::new(0, 0, width, 1);
-        let mut buffer = Buffer::filled(area, &Cell::new_inline("x"));
+        let mut buffer = Buffer::filled(area, &Cell::new("x"));
         widget.render(area, &mut buffer);
         buffer
     }

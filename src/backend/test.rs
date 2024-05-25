@@ -329,7 +329,7 @@ mod tests {
     #[test]
     fn draw() {
         let mut backend = TestBackend::new(10, 2);
-        let cell = Cell::new_inline("a");
+        let cell = Cell::new("a");
         backend.draw([(0, 0, &cell)].into_iter()).unwrap();
         backend.draw([(0, 1, &cell)].into_iter()).unwrap();
         backend.assert_buffer_lines(["a         "; 2]);
@@ -365,7 +365,7 @@ mod tests {
     #[test]
     fn clear() {
         let mut backend = TestBackend::new(4, 2);
-        let cell = Cell::new_inline("a");
+        let cell = Cell::new("a");
         backend.draw([(0, 0, &cell)].into_iter()).unwrap();
         backend.draw([(0, 1, &cell)].into_iter()).unwrap();
         backend.clear().unwrap();

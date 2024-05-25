@@ -35,27 +35,15 @@ pub struct Cell {
 
 impl Cell {
     /// An empty `Cell`
-    pub const EMPTY: Self = Self::new_inline(" ");
-
-    /// Creates a new `Cell` with the given symbol.
-    pub fn new(symbol: &str) -> Self {
-        Self {
-            symbol: CompactString::new(symbol),
-            fg: Color::Reset,
-            bg: Color::Reset,
-            #[cfg(feature = "underline-color")]
-            underline_color: Color::Reset,
-            modifier: Modifier::empty(),
-            skip: false,
-        }
-    }
+    pub const EMPTY: Self = Self::new(" ");
 
     /// Creates a new `Cell` with the given symbol.
     ///
     /// This works at compile time and puts the symbol onto the stack. Fails to build when the
-    /// symbol doesnt fit onto the stack and requires to be placed on the heap. Use [`Self::new`] in
-    /// that case. See [`CompactString::new_inline`] for more details on this.
-    pub const fn new_inline(symbol: &str) -> Self {
+    /// symbol doesnt fit onto the stack and requires to be placed on the heap. Use
+    /// `Self::default().set_symbol()` in that case. See [`CompactString::new_inline`] for more
+    /// details on this.
+    pub const fn new(symbol: &str) -> Self {
         Self {
             symbol: CompactString::new_inline(symbol),
             fg: Color::Reset,

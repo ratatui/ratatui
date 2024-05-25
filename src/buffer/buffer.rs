@@ -750,7 +750,7 @@ mod tests {
     fn diff_empty_filled() {
         let area = Rect::new(0, 0, 40, 40);
         let prev = Buffer::empty(area);
-        let next = Buffer::filled(area, &Cell::new_inline("a"));
+        let next = Buffer::filled(area, &Cell::new("a"));
         let diff = prev.diff(&next);
         assert_eq!(diff.len(), 40 * 40);
     }
@@ -758,8 +758,8 @@ mod tests {
     #[test]
     fn diff_filled_filled() {
         let area = Rect::new(0, 0, 40, 40);
-        let prev = Buffer::filled(area, &Cell::new_inline("a"));
-        let next = Buffer::filled(area, &Cell::new_inline("a"));
+        let prev = Buffer::filled(area, &Cell::new("a"));
+        let next = Buffer::filled(area, &Cell::new("a"));
         let diff = prev.diff(&next);
         assert_eq!(diff, vec![]);
     }
@@ -784,10 +784,10 @@ mod tests {
         assert_eq!(
             diff,
             vec![
-                (2, 1, &Cell::new_inline("I")),
-                (3, 1, &Cell::new_inline("T")),
-                (4, 1, &Cell::new_inline("L")),
-                (5, 1, &Cell::new_inline("E")),
+                (2, 1, &Cell::new("I")),
+                (3, 1, &Cell::new("T")),
+                (4, 1, &Cell::new("L")),
+                (5, 1, &Cell::new("E")),
             ]
         );
     }
@@ -808,11 +808,11 @@ mod tests {
         assert_eq!(
             diff,
             vec![
-                (1, 0, &Cell::new_inline("称")),
+                (1, 0, &Cell::new("称")),
                 // Skipped "i"
-                (3, 0, &Cell::new_inline("号")),
+                (3, 0, &Cell::new("号")),
                 // Skipped "l"
-                (5, 0, &Cell::new_inline("─")),
+                (5, 0, &Cell::new("─")),
             ]
         );
     }
@@ -826,9 +826,9 @@ mod tests {
         assert_eq!(
             diff,
             vec![
-                (1, 0, &Cell::new_inline("─")),
-                (2, 0, &Cell::new_inline("称")),
-                (4, 0, &Cell::new_inline("号")),
+                (1, 0, &Cell::new("─")),
+                (2, 0, &Cell::new("称")),
+                (4, 0, &Cell::new("号")),
             ]
         );
     }
@@ -842,7 +842,7 @@ mod tests {
         }
 
         let diff = prev.diff(&next);
-        assert_eq!(diff, vec![(0, 0, &Cell::new_inline("4"))],);
+        assert_eq!(diff, vec![(0, 0, &Cell::new("4"))],);
     }
 
     #[rstest]
@@ -853,8 +853,8 @@ mod tests {
         Lines: IntoIterator,
         Lines::Item: Into<Line<'line>>,
     {
-        let mut one = Buffer::filled(one, &Cell::new_inline("1"));
-        let two = Buffer::filled(two, &Cell::new_inline("2"));
+        let mut one = Buffer::filled(one, &Cell::new("1"));
+        let two = Buffer::filled(two, &Cell::new("2"));
         one.merge(&two);
         assert_eq!(one, Buffer::with_lines(expected));
     }
@@ -868,7 +868,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            &Cell::new_inline("1"),
+            &Cell::new("1"),
         );
         let two = Buffer::filled(
             Rect {
@@ -877,7 +877,7 @@ mod tests {
                 width: 3,
                 height: 4,
             },
-            &Cell::new_inline("2"),
+            &Cell::new("2"),
         );
         one.merge(&two);
         let mut expected = Buffer::with_lines(["222 ", "222 ", "2221", "2221"]);
@@ -901,7 +901,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::new_inline("1").set_skip(one),
+            Cell::new("1").set_skip(one),
         );
         let two = Buffer::filled(
             Rect {
@@ -910,7 +910,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::new_inline("2").set_skip(two),
+            Cell::new("2").set_skip(two),
         );
         one.merge(&two);
         let skipped = one.content().iter().map(|c| c.skip).collect::<Vec<_>>();
