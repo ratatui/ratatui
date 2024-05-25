@@ -88,7 +88,9 @@ map_err_ignore = "warn"
 missing_const_for_fn = "warn"
 mixed_read_write_in_expression = "warn"
 mod_module_files = "warn"
+needless_pass_by_ref_mut = "warn"
 needless_raw_strings = "warn"
+or_fun_call = "warn"
 redundant_type_annotations = "warn"
 rest_pat_in_fully_bound_structs = "warn"
 string_lit_chars_any = "warn"
@@ -243,6 +245,11 @@ doc-scrape-examples = false
 
 [[example]]
 name = "gauge"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "line_gauge"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 

@@ -76,7 +76,7 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
 
     let line_gauge = LineGauge::default()
         .block(Block::new().title("LineGauge:"))
-        .gauge_style(Style::default().fg(Color::Magenta))
+        .filled_style(Style::default().fg(Color::Magenta))
         .line_set(if app.enhanced_graphics {
             symbols::line::THICK
         } else {
