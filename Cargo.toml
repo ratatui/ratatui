@@ -106,15 +106,15 @@ use_self = "warn"
 ## which allows you to set the underline color of text.
 default = ["crossterm", "underline-color"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
-## enables the [`CrosstermBackend`] backend and adds a dependency on the [Crossterm crate].
+## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
 crossterm = ["dep:crossterm"]
-## enables the [`TermionBackend`] backend and adds a dependency on the [Termion crate].
+## enables the [`TermionBackend`](backend::TermionBackend) backend and adds a dependency on [`termion`].
 termion = ["dep:termion"]
-## enables the [`TermwizBackend`] backend and adds a dependency on the [Termwiz crate].
+## enables the [`TermwizBackend`](backend::TermwizBackend) backend and adds a dependency on [`termwiz`].
 termwiz = ["dep:termwiz"]
 
 #! The following optional features are available for all backends:
-## enables serialization and deserialization of style and color types using the [Serde crate].
+## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 
@@ -126,12 +126,14 @@ all-widgets = ["widget-calendar"]
 
 #! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
 #! dependencies. The available features are:
-## enables the [`calendar`] widget module and adds a dependency on the [Time crate].
+## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
 widget-calendar = ["dep:time"]
 
-#! Underline color is only supported by the [`CrosstermBackend`] backend, and is not supported
-#! on Windows 7.
+#! The following optional features are only available for some backends:
+
 ## enables the backend code that sets the underline color.
+## Underline color is only supported by the [`CrosstermBackend`](backend::CrosstermBackend) backend,
+## and is not supported on Windows 7.
 underline-color = ["dep:crossterm"]
 
 #! The following features are unstable and may change in the future:
@@ -139,13 +141,13 @@ underline-color = ["dep:crossterm"]
 ## Enable all unstable features.
 unstable = ["unstable-rendered-line-info", "unstable-widget-ref"]
 
-## Enables the [`Paragraph::line_count`](crate::widgets::Paragraph::line_count)
-## [`Paragraph::line_width`](crate::widgets::Paragraph::line_width) methods
+## Enables the [`Paragraph::line_count`](widgets::Paragraph::line_count)
+## [`Paragraph::line_width`](widgets::Paragraph::line_width) methods
 ## which are experimental and may change in the future.
 ## See [Issue 293](https://github.com/ratatui-org/ratatui/issues/293) for more details.
 unstable-rendered-line-info = []
 
-## Enables the `WidgetRef` and `StatefulWidgetRef` traits which are experimental and may change in
+## Enables the [`WidgetRef`](widgets::WidgetRef) and [`StatefulWidgetRef`](widgets::StatefulWidgetRef) traits which are experimental and may change in
 ## the future.
 unstable-widget-ref = []
 
