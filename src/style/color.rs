@@ -187,7 +187,7 @@ impl<'de> serde::Deserialize<'de> for Color {
     /// assert!(err.is_data());
     /// assert_eq!(
     ///     err.to_string(),
-    ///     "Failed to parse Colors at line 1 column 20"
+    ///     "Failed to parse Color at line 1 column 20"
     /// );
     ///
     /// // Deserializing from the previous serialization implementation
@@ -225,7 +225,7 @@ impl<'de> serde::Deserialize<'de> for Color {
         }
 
         let multi_type = ColorFormat::deserialize(deserializer)
-            .map_err(|err| serde::de::Error::custom(format!("Failed to parse Colors: {err}")))?;
+            .map_err(|err| serde::de::Error::custom(format!("Failed to parse Color: {err}")))?;
         match multi_type {
             ColorFormat::V2(s) => FromStr::from_str(&s).map_err(serde::de::Error::custom),
             ColorFormat::V1(color_wrapper) => match color_wrapper {
@@ -242,7 +242,7 @@ pub struct ParseColorError;
 
 impl fmt::Display for ParseColorError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Failed to parse Colors")
+        f.pad("Failed to parse Color")
     }
 }
 
@@ -654,14 +654,20 @@ mod tests {
 
     #[cfg(feature = "serde")]
     #[test]
-    fn deserialize_error() {
+    #[should_panic = "Failed to parse Color"]
+    fn deserialize_unknown_string_errors() {
         let color: Result<_, serde::de::value::Error> =
             Color::deserialize("invalid".into_deserializer());
-        assert!(color.is_err());
+        color.unwrap();
+    }
 
+    #[cfg(feature = "serde")]
+    #[test]
+    #[should_panic = "Failed to parse Color"]
+    fn deserialize_wrong_hex_errors() {
         let color: Result<_, serde::de::value::Error> =
             Color::deserialize("#00000000".into_deserializer());
-        assert!(color.is_err());
+        color.unwrap();
     }
 
     #[cfg(feature = "serde")]

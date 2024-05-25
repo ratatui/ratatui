@@ -78,6 +78,7 @@ wildcard_imports = "allow"
 
 # nursery or restricted
 as_underscore = "warn"
+assertions_on_result_states = "warn"
 deref_by_slicing = "warn"
 else_if_without_else = "warn"
 empty_line_after_doc_comments = "warn"
