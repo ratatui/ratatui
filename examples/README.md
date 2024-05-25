@@ -164,6 +164,18 @@ cargo run --example=gauge --features=crossterm
 
 ![Gauge][gauge.gif]
 
+## Line Gauge
+
+Demonstrates the [`Line
+Gauge`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.LineGauge.html) widget. Source:
+[line_gauge.rs](./line_gauge.rs).
+
+```shell
+cargo run --example=line_gauge --features=crossterm
+```
+
+![LineGauge][line_gauge.gif]
+
 ## Inline
 
 Demonstrates how to use the
@@ -346,6 +358,7 @@ examples/vhs/generate.bash
 [inline.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/inline.gif?raw=true
 [layout.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/layout.gif?raw=true
 [list.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/list.gif?raw=true
+[line_gauge.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/line_gauge.gif?raw=true
 [modifiers.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/modifiers.gif?raw=true
 [panic.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/panic.gif?raw=true
 [paragraph.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/paragraph.gif?raw=true
