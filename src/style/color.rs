@@ -185,10 +185,7 @@ impl<'de> serde::Deserialize<'de> for Color {
     ///
     /// let err = serde_json::from_str::<Theme>(r#"{"color": "invalid"}"#).unwrap_err();
     /// assert!(err.is_data());
-    /// assert_eq!(
-    ///     err.to_string(),
-    ///     "Failed to parse Color at line 1 column 20"
-    /// );
+    /// assert_eq!(err.to_string(), "Failed to parse Color at line 1 column 20");
     ///
     /// // Deserializing from the previous serialization implementation
     /// let theme: Theme = serde_json::from_str(r#"{"color": {"Rgb":[255,0,255]}}"#)?;
