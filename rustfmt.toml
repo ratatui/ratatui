@@ -5,7 +5,5 @@ format_macro_matchers=true
 group_imports = "StdExternalCrate"
 imports_granularity = "Crate"
 normalize_doc_attributes=true
-reorder_impl_items=true
-unstable_features=true
 use_field_init_shorthand=true
 wrap_comments = true
