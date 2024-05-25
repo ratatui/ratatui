@@ -379,7 +379,6 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 ///
 /// impl StatefulWidgetRef for PersonalGreeting {
 ///     type State = String;
-///
 ///     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
 ///         Line::raw(format!("Hello {}", state)).render(area, buf);
 ///     }
@@ -387,7 +386,6 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 ///
 /// impl StatefulWidget for PersonalGreeting {
 ///     type State = String;
-///
 ///     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
 ///         (&self).render_ref(area, buf, state);
 ///     }
@@ -565,7 +563,6 @@ mod tests {
 
         impl StatefulWidget for PersonalGreeting {
             type State = String;
-
             fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
                 Line::from(format!("Hello {state}")).render(area, buf);
             }
@@ -586,7 +583,6 @@ mod tests {
 
         impl StatefulWidgetRef for PersonalGreeting {
             type State = String;
-
             fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
                 Line::from(format!("Hello {state}")).render(area, buf);
             }

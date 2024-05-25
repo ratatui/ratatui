@@ -380,7 +380,6 @@ impl SelectedTab {
 
 impl StatefulWidget for SelectedTab {
     type State = u16;
-
     fn render(self, area: Rect, buf: &mut Buffer, spacing: &mut Self::State) {
         let spacing = *spacing;
         match self {

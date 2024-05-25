@@ -275,7 +275,7 @@ impl fmt::Display for Bg {
 }
 
 macro_rules! from_termion_for_color {
-    ($termion_color:ident, $color:ident) => {
+    ($termion_color:ident, $color: ident) => {
         impl From<tcolor::$termion_color> for Color {
             fn from(_: tcolor::$termion_color) -> Self {
                 Color::$color
@@ -416,7 +416,7 @@ impl fmt::Display for ModifierDiff {
 }
 
 macro_rules! from_termion_for_modifier {
-    ($termion_modifier:ident, $modifier:ident) => {
+    ($termion_modifier:ident, $modifier: ident) => {
         impl From<tstyle::$termion_modifier> for Modifier {
             fn from(_: tstyle::$termion_modifier) -> Self {
                 Modifier::$modifier

@@ -486,8 +486,8 @@ impl<'a> Text<'a> {
 }
 
 impl<'a> IntoIterator for Text<'a> {
-    type IntoIter = std::vec::IntoIter<Self::Item>;
     type Item = Line<'a>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.lines.into_iter()
@@ -495,8 +495,8 @@ impl<'a> IntoIterator for Text<'a> {
 }
 
 impl<'a> IntoIterator for &'a Text<'a> {
-    type IntoIter = std::slice::Iter<'a, Line<'a>>;
     type Item = &'a Line<'a>;
+    type IntoIter = std::slice::Iter<'a, Line<'a>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -504,8 +504,8 @@ impl<'a> IntoIterator for &'a Text<'a> {
 }
 
 impl<'a> IntoIterator for &'a mut Text<'a> {
-    type IntoIter = std::slice::IterMut<'a, Line<'a>>;
     type Item = &'a mut Line<'a>;
+    type IntoIter = std::slice::IterMut<'a, Line<'a>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()

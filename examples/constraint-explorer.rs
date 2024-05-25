@@ -276,9 +276,9 @@ impl Widget for &App {
 
 // App rendering
 impl App {
-    const AXIS_COLOR: Color = SLATE.c500;
     const HEADER_COLOR: Color = SLATE.c200;
     const TEXT_COLOR: Color = SLATE.c400;
+    const AXIS_COLOR: Color = SLATE.c500;
 
     fn header() -> impl Widget {
         let text = "Constraint Explorer";
@@ -507,8 +507,8 @@ impl Widget for SpacerBlock {
 }
 
 impl SpacerBlock {
-    const BORDER_COLOR: Color = SLATE.c600;
     const TEXT_COLOR: Color = SLATE.c500;
+    const BORDER_COLOR: Color = SLATE.c600;
 
     /// A block with a corner borders
     fn block() -> impl Widget {

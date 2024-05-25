@@ -83,7 +83,6 @@ impl RandomSignal {
 
 impl Iterator for RandomSignal {
     type Item = u64;
-
     fn next(&mut self) -> Option<u64> {
         Some(self.distribution.sample(&mut self.rng))
     }
@@ -110,7 +109,6 @@ impl SinSignal {
 
 impl Iterator for SinSignal {
     type Item = (f64, f64);
-
     fn next(&mut self) -> Option<Self::Item> {
         let point = (self.x, (self.x * 1.0 / self.period).sin() * self.scale);
         self.x += self.interval;
@@ -127,7 +125,6 @@ impl<'a> TabsState<'a> {
     pub fn new(titles: Vec<&'a str>) -> TabsState {
         TabsState { titles, index: 0 }
     }
-
     pub fn next(&mut self) {
         self.index = (self.index + 1) % self.titles.len();
     }

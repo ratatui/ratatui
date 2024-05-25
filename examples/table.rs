@@ -109,7 +109,6 @@ impl App {
             items: data_vec,
         }
     }
-
     pub fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
