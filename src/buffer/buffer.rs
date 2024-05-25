@@ -845,56 +845,22 @@ mod tests {
         assert_eq!(diff, vec![(0, 0, &Cell::new_inline("4"))],);
     }
 
-    #[test]
-    fn merge() {
-        let mut one = Buffer::filled(
-            Rect {
-                x: 0,
-                y: 0,
-                width: 2,
-                height: 2,
-            },
-            &Cell::new_inline("1"),
-        );
-        let two = Buffer::filled(
-            Rect {
-                x: 0,
-                y: 2,
-                width: 2,
-                height: 2,
-            },
-            &Cell::new_inline("2"),
-        );
+    #[rstest]
+    #[case(Rect::new(0, 0, 2, 2), Rect::new(0, 2, 2, 2), ["11", "11", "22", "22"])]
+    #[case(Rect::new(2, 2, 2, 2), Rect::new(0, 0, 2, 2), ["22  ", "22  ", "  11", "  11"])]
+    fn merge<'line, Lines>(#[case] one: Rect, #[case] two: Rect, #[case] expected: Lines)
+    where
+        Lines: IntoIterator,
+        Lines::Item: Into<Line<'line>>,
+    {
+        let mut one = Buffer::filled(one, &Cell::new_inline("1"));
+        let two = Buffer::filled(two, &Cell::new_inline("2"));
         one.merge(&two);
-        assert_eq!(one, Buffer::with_lines(["11", "11", "22", "22"]));
+        assert_eq!(one, Buffer::with_lines(expected));
     }
 
     #[test]
-    fn merge2() {
-        let mut one = Buffer::filled(
-            Rect {
-                x: 2,
-                y: 2,
-                width: 2,
-                height: 2,
-            },
-            &Cell::new_inline("1"),
-        );
-        let two = Buffer::filled(
-            Rect {
-                x: 0,
-                y: 0,
-                width: 2,
-                height: 2,
-            },
-            &Cell::new_inline("2"),
-        );
-        one.merge(&two);
-        assert_eq!(one, Buffer::with_lines(["22  ", "22  ", "  11", "  11"]));
-    }
-
-    #[test]
-    fn merge3() {
+    fn merge_with_offset() {
         let mut one = Buffer::filled(
             Rect {
                 x: 3,
@@ -914,18 +880,20 @@ mod tests {
             &Cell::new_inline("2"),
         );
         one.merge(&two);
-        let mut merged = Buffer::with_lines(["222 ", "222 ", "2221", "2221"]);
-        merged.area = Rect {
+        let mut expected = Buffer::with_lines(["222 ", "222 ", "2221", "2221"]);
+        expected.area = Rect {
             x: 1,
             y: 1,
             width: 4,
             height: 4,
         };
-        assert_eq!(one, merged);
+        assert_eq!(one, expected);
     }
 
-    #[test]
-    fn merge_skip() {
+    #[rstest]
+    #[case(false, true, [false, false, true, true, true, true])]
+    #[case(true, false, [true, true, false, false, false, false])]
+    fn merge_skip(#[case] one: bool, #[case] two: bool, #[case] expected: [bool; 6]) {
         let mut one = Buffer::filled(
             Rect {
                 x: 0,
@@ -933,7 +901,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            &Cell::new_inline("1"),
+            Cell::new_inline("1").set_skip(one),
         );
         let two = Buffer::filled(
             Rect {
@@ -942,36 +910,11 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::new_inline("2").set_skip(true),
+            Cell::new_inline("2").set_skip(two),
         );
         one.merge(&two);
-        let skipped: Vec<bool> = one.content().iter().map(|c| c.skip).collect();
-        assert_eq!(skipped, vec![false, false, true, true, true, true]);
-    }
-
-    #[test]
-    fn merge_skip2() {
-        let mut one = Buffer::filled(
-            Rect {
-                x: 0,
-                y: 0,
-                width: 2,
-                height: 2,
-            },
-            Cell::new_inline("1").set_skip(true),
-        );
-        let two = Buffer::filled(
-            Rect {
-                x: 0,
-                y: 1,
-                width: 2,
-                height: 2,
-            },
-            &Cell::new_inline("2"),
-        );
-        one.merge(&two);
-        let skipped: Vec<bool> = one.content().iter().map(|c| c.skip).collect();
-        assert_eq!(skipped, vec![true, true, false, false, false, false]);
+        let skipped = one.content().iter().map(|c| c.skip).collect::<Vec<_>>();
+        assert_eq!(skipped, expected);
     }
 
     #[test]
