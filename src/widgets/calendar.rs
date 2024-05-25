@@ -208,7 +208,7 @@ impl CalendarEventStore {
         let mut res = Self::default();
         res.add(
             OffsetDateTime::now_local()
-                .unwrap_or(OffsetDateTime::now_utc())
+                .unwrap_or_else(|_| OffsetDateTime::now_utc())
                 .date(),
             style.into(),
         );

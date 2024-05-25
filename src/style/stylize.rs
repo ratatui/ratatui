@@ -139,9 +139,9 @@ macro_rules! modifier {
 /// ```
 pub trait Stylize<'a, T>: Sized {
     #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
-    fn bg(self, color: Color) -> T;
+    fn bg<C: Into<Color>>(self, color: C) -> T;
     #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
-    fn fg<S: Into<Color>>(self, color: S) -> T;
+    fn fg<C: Into<Color>>(self, color: C) -> T;
     #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
     fn reset(self) -> T;
     #[must_use = "https://ratatui.rs/concepts/builder-lite-pattern/"]
@@ -181,12 +181,12 @@ impl<'a, T, U> Stylize<'a, T> for U
 where
     U: Styled<Item = T>,
 {
-    fn bg(self, color: Color) -> T {
-        let style = self.style().bg(color);
+    fn bg<C: Into<Color>>(self, color: C) -> T {
+        let style = self.style().bg(color.into());
         self.set_style(style)
     }
 
-    fn fg<S: Into<Color>>(self, color: S) -> T {
+    fn fg<C: Into<Color>>(self, color: C) -> T {
         let style = self.style().fg(color.into());
         self.set_style(style)
     }

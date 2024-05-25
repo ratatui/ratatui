@@ -965,11 +965,7 @@ mod tests {
             expected.get_mut(x, 1).set_fg(Color::Yellow);
         }
 
-        let expected_color = if let Some(color) = bar_color {
-            color
-        } else {
-            Color::Yellow
-        };
+        let expected_color = bar_color.unwrap_or(Color::Yellow);
 
         // second line contains the word "label". Since the bar value is 2,
         // then the first 2 characters of "label" are italic red.

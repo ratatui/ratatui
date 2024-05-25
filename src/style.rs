@@ -654,151 +654,80 @@ mod tests {
         );
     }
 
-    #[allow(clippy::too_many_lines)]
+    #[rstest]
+    #[case(Style::new().black(), Color::Black)]
+    #[case(Style::new().red(), Color::Red)]
+    #[case(Style::new().green(), Color::Green)]
+    #[case(Style::new().yellow(), Color::Yellow)]
+    #[case(Style::new().blue(), Color::Blue)]
+    #[case(Style::new().magenta(), Color::Magenta)]
+    #[case(Style::new().cyan(), Color::Cyan)]
+    #[case(Style::new().white(), Color::White)]
+    #[case(Style::new().gray(), Color::Gray)]
+    #[case(Style::new().dark_gray(), Color::DarkGray)]
+    #[case(Style::new().light_red(), Color::LightRed)]
+    #[case(Style::new().light_green(), Color::LightGreen)]
+    #[case(Style::new().light_yellow(), Color::LightYellow)]
+    #[case(Style::new().light_blue(), Color::LightBlue)]
+    #[case(Style::new().light_magenta(), Color::LightMagenta)]
+    #[case(Style::new().light_cyan(), Color::LightCyan)]
+    #[case(Style::new().white(), Color::White)]
+    fn fg_can_be_stylized(#[case] stylized: Style, #[case] expected: Color) {
+        assert_eq!(stylized, Style::new().fg(expected));
+    }
+
+    #[rstest]
+    #[case(Style::new().on_black(), Color::Black)]
+    #[case(Style::new().on_red(), Color::Red)]
+    #[case(Style::new().on_green(), Color::Green)]
+    #[case(Style::new().on_yellow(), Color::Yellow)]
+    #[case(Style::new().on_blue(), Color::Blue)]
+    #[case(Style::new().on_magenta(), Color::Magenta)]
+    #[case(Style::new().on_cyan(), Color::Cyan)]
+    #[case(Style::new().on_white(), Color::White)]
+    #[case(Style::new().on_gray(), Color::Gray)]
+    #[case(Style::new().on_dark_gray(), Color::DarkGray)]
+    #[case(Style::new().on_light_red(), Color::LightRed)]
+    #[case(Style::new().on_light_green(), Color::LightGreen)]
+    #[case(Style::new().on_light_yellow(), Color::LightYellow)]
+    #[case(Style::new().on_light_blue(), Color::LightBlue)]
+    #[case(Style::new().on_light_magenta(), Color::LightMagenta)]
+    #[case(Style::new().on_light_cyan(), Color::LightCyan)]
+    #[case(Style::new().on_white(), Color::White)]
+    fn bg_can_be_stylized(#[case] stylized: Style, #[case] expected: Color) {
+        assert_eq!(stylized, Style::new().bg(expected));
+    }
+
+    #[rstest]
+    #[case(Style::new().bold(), Modifier::BOLD)]
+    #[case(Style::new().dim(), Modifier::DIM)]
+    #[case(Style::new().italic(), Modifier::ITALIC)]
+    #[case(Style::new().underlined(), Modifier::UNDERLINED)]
+    #[case(Style::new().slow_blink(), Modifier::SLOW_BLINK)]
+    #[case(Style::new().rapid_blink(), Modifier::RAPID_BLINK)]
+    #[case(Style::new().reversed(), Modifier::REVERSED)]
+    #[case(Style::new().hidden(), Modifier::HIDDEN)]
+    #[case(Style::new().crossed_out(), Modifier::CROSSED_OUT)]
+    fn add_modifier_can_be_stylized(#[case] stylized: Style, #[case] expected: Modifier) {
+        assert_eq!(stylized, Style::new().add_modifier(expected));
+    }
+
+    #[rstest]
+    #[case(Style::new().not_bold(), Modifier::BOLD)]
+    #[case(Style::new().not_dim(), Modifier::DIM)]
+    #[case(Style::new().not_italic(), Modifier::ITALIC)]
+    #[case(Style::new().not_underlined(), Modifier::UNDERLINED)]
+    #[case(Style::new().not_slow_blink(), Modifier::SLOW_BLINK)]
+    #[case(Style::new().not_rapid_blink(), Modifier::RAPID_BLINK)]
+    #[case(Style::new().not_reversed(), Modifier::REVERSED)]
+    #[case(Style::new().not_hidden(), Modifier::HIDDEN)]
+    #[case(Style::new().not_crossed_out(), Modifier::CROSSED_OUT)]
+    fn remove_modifier_can_be_stylized(#[case] stylized: Style, #[case] expected: Modifier) {
+        assert_eq!(stylized, Style::new().remove_modifier(expected));
+    }
+
     #[test]
-    fn style_can_be_stylized() {
-        // foreground colors
-        assert_eq!(Style::new().black(), Style::new().fg(Color::Black));
-        assert_eq!(Style::new().red(), Style::new().fg(Color::Red));
-        assert_eq!(Style::new().green(), Style::new().fg(Color::Green));
-        assert_eq!(Style::new().yellow(), Style::new().fg(Color::Yellow));
-        assert_eq!(Style::new().blue(), Style::new().fg(Color::Blue));
-        assert_eq!(Style::new().magenta(), Style::new().fg(Color::Magenta));
-        assert_eq!(Style::new().cyan(), Style::new().fg(Color::Cyan));
-        assert_eq!(Style::new().white(), Style::new().fg(Color::White));
-        assert_eq!(Style::new().gray(), Style::new().fg(Color::Gray));
-        assert_eq!(Style::new().dark_gray(), Style::new().fg(Color::DarkGray));
-        assert_eq!(Style::new().light_red(), Style::new().fg(Color::LightRed));
-        assert_eq!(
-            Style::new().light_green(),
-            Style::new().fg(Color::LightGreen)
-        );
-        assert_eq!(
-            Style::new().light_yellow(),
-            Style::new().fg(Color::LightYellow)
-        );
-        assert_eq!(Style::new().light_blue(), Style::new().fg(Color::LightBlue));
-        assert_eq!(
-            Style::new().light_magenta(),
-            Style::new().fg(Color::LightMagenta)
-        );
-        assert_eq!(Style::new().light_cyan(), Style::new().fg(Color::LightCyan));
-        assert_eq!(Style::new().white(), Style::new().fg(Color::White));
-
-        // Background colors
-        assert_eq!(Style::new().on_black(), Style::new().bg(Color::Black));
-        assert_eq!(Style::new().on_red(), Style::new().bg(Color::Red));
-        assert_eq!(Style::new().on_green(), Style::new().bg(Color::Green));
-        assert_eq!(Style::new().on_yellow(), Style::new().bg(Color::Yellow));
-        assert_eq!(Style::new().on_blue(), Style::new().bg(Color::Blue));
-        assert_eq!(Style::new().on_magenta(), Style::new().bg(Color::Magenta));
-        assert_eq!(Style::new().on_cyan(), Style::new().bg(Color::Cyan));
-        assert_eq!(Style::new().on_white(), Style::new().bg(Color::White));
-        assert_eq!(Style::new().on_gray(), Style::new().bg(Color::Gray));
-        assert_eq!(
-            Style::new().on_dark_gray(),
-            Style::new().bg(Color::DarkGray)
-        );
-        assert_eq!(
-            Style::new().on_light_red(),
-            Style::new().bg(Color::LightRed)
-        );
-        assert_eq!(
-            Style::new().on_light_green(),
-            Style::new().bg(Color::LightGreen)
-        );
-        assert_eq!(
-            Style::new().on_light_yellow(),
-            Style::new().bg(Color::LightYellow)
-        );
-        assert_eq!(
-            Style::new().on_light_blue(),
-            Style::new().bg(Color::LightBlue)
-        );
-        assert_eq!(
-            Style::new().on_light_magenta(),
-            Style::new().bg(Color::LightMagenta)
-        );
-        assert_eq!(
-            Style::new().on_light_cyan(),
-            Style::new().bg(Color::LightCyan)
-        );
-        assert_eq!(Style::new().on_white(), Style::new().bg(Color::White));
-
-        // Add Modifiers
-        assert_eq!(
-            Style::new().bold(),
-            Style::new().add_modifier(Modifier::BOLD)
-        );
-        assert_eq!(Style::new().dim(), Style::new().add_modifier(Modifier::DIM));
-        assert_eq!(
-            Style::new().italic(),
-            Style::new().add_modifier(Modifier::ITALIC)
-        );
-        assert_eq!(
-            Style::new().underlined(),
-            Style::new().add_modifier(Modifier::UNDERLINED)
-        );
-        assert_eq!(
-            Style::new().slow_blink(),
-            Style::new().add_modifier(Modifier::SLOW_BLINK)
-        );
-        assert_eq!(
-            Style::new().rapid_blink(),
-            Style::new().add_modifier(Modifier::RAPID_BLINK)
-        );
-        assert_eq!(
-            Style::new().reversed(),
-            Style::new().add_modifier(Modifier::REVERSED)
-        );
-        assert_eq!(
-            Style::new().hidden(),
-            Style::new().add_modifier(Modifier::HIDDEN)
-        );
-        assert_eq!(
-            Style::new().crossed_out(),
-            Style::new().add_modifier(Modifier::CROSSED_OUT)
-        );
-
-        // Remove Modifiers
-        assert_eq!(
-            Style::new().not_bold(),
-            Style::new().remove_modifier(Modifier::BOLD)
-        );
-        assert_eq!(
-            Style::new().not_dim(),
-            Style::new().remove_modifier(Modifier::DIM)
-        );
-        assert_eq!(
-            Style::new().not_italic(),
-            Style::new().remove_modifier(Modifier::ITALIC)
-        );
-        assert_eq!(
-            Style::new().not_underlined(),
-            Style::new().remove_modifier(Modifier::UNDERLINED)
-        );
-        assert_eq!(
-            Style::new().not_slow_blink(),
-            Style::new().remove_modifier(Modifier::SLOW_BLINK)
-        );
-        assert_eq!(
-            Style::new().not_rapid_blink(),
-            Style::new().remove_modifier(Modifier::RAPID_BLINK)
-        );
-        assert_eq!(
-            Style::new().not_reversed(),
-            Style::new().remove_modifier(Modifier::REVERSED)
-        );
-        assert_eq!(
-            Style::new().not_hidden(),
-            Style::new().remove_modifier(Modifier::HIDDEN)
-        );
-        assert_eq!(
-            Style::new().not_crossed_out(),
-            Style::new().remove_modifier(Modifier::CROSSED_OUT)
-        );
-
-        // reset
+    fn reset_can_be_stylized() {
         assert_eq!(Style::new().reset(), Style::reset());
     }
 
