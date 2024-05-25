@@ -33,7 +33,7 @@ use crate::{prelude::*, widgets::Block};
 ///
 /// - [`LineGauge`] for a thin progress bar
 #[allow(clippy::struct_field_names)] // gauge_style needs to be differentiated to style
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Gauge<'a> {
     block: Option<Block<'a>>,
     ratio: f64,
@@ -41,19 +41,6 @@ pub struct Gauge<'a> {
     use_unicode: bool,
     style: Style,
     gauge_style: Style,
-}
-
-impl<'a> Default for Gauge<'a> {
-    fn default() -> Self {
-        Self {
-            block: None,
-            ratio: 0.0,
-            label: None,
-            use_unicode: false,
-            style: Style::default(),
-            gauge_style: Style::default(),
-        }
-    }
 }
 
 impl<'a> Gauge<'a> {

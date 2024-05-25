@@ -30,7 +30,7 @@ use crate::{prelude::*, widgets::Block};
 ///     .direction(RenderDirection::RightToLeft)
 ///     .style(Style::default().red().on_white());
 /// ```
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Sparkline<'a> {
     /// A block to wrap the widget in
     block: Option<Block<'a>>,
@@ -57,19 +57,6 @@ pub enum RenderDirection {
     LeftToRight,
     /// The first value is on the right, going to the left
     RightToLeft,
-}
-
-impl<'a> Default for Sparkline<'a> {
-    fn default() -> Self {
-        Self {
-            block: None,
-            style: Style::default(),
-            data: &[],
-            max: None,
-            bar_set: symbols::bar::NINE_LEVELS,
-            direction: RenderDirection::LeftToRight,
-        }
-    }
 }
 
 impl<'a> Sparkline<'a> {

@@ -222,7 +222,7 @@ impl fmt::Debug for Modifier {
 ///     buffer.get(0, 0).style(),
 /// );
 /// ```
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Style {
     pub fg: Option<Color>,
@@ -231,12 +231,6 @@ pub struct Style {
     pub underline_color: Option<Color>,
     pub add_modifier: Modifier,
     pub sub_modifier: Modifier,
-}
-
-impl Default for Style {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl Styled for Style {
