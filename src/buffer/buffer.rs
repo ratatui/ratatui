@@ -54,7 +54,7 @@ impl Buffer {
     /// Returns a Buffer with all cells set to the default one
     #[must_use]
     pub fn empty(area: Rect) -> Self {
-        Self::filled(area, &Cell::default())
+        Self::filled(area, &Cell::EMPTY)
     }
 
     /// Returns a Buffer with all cells initialized with the attributes of the given Cell
@@ -278,7 +278,7 @@ impl Buffer {
         if self.content.len() > length {
             self.content.truncate(length);
         } else {
-            self.content.resize(length, Cell::default());
+            self.content.resize(length, Cell::EMPTY);
         }
         self.area = area;
     }
@@ -293,7 +293,7 @@ impl Buffer {
     /// Merge an other buffer into this one
     pub fn merge(&mut self, other: &Self) {
         let area = self.area.union(other.area);
-        self.content.resize(area.area() as usize, Cell::default());
+        self.content.resize(area.area() as usize, Cell::EMPTY);
 
         // Move original content to the appropriate space
         let size = self.area.area() as usize;
@@ -452,12 +452,6 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-
-    fn cell(s: &str) -> Cell {
-        let mut cell = Cell::default();
-        cell.set_symbol(s);
-        cell
-    }
 
     #[test]
     fn debug_empty_buffer() {
@@ -756,7 +750,7 @@ mod tests {
     fn diff_empty_filled() {
         let area = Rect::new(0, 0, 40, 40);
         let prev = Buffer::empty(area);
-        let next = Buffer::filled(area, Cell::default().set_symbol("a"));
+        let next = Buffer::filled(area, &Cell::new_inline("a"));
         let diff = prev.diff(&next);
         assert_eq!(diff.len(), 40 * 40);
     }
@@ -764,8 +758,8 @@ mod tests {
     #[test]
     fn diff_filled_filled() {
         let area = Rect::new(0, 0, 40, 40);
-        let prev = Buffer::filled(area, Cell::default().set_symbol("a"));
-        let next = Buffer::filled(area, Cell::default().set_symbol("a"));
+        let prev = Buffer::filled(area, &Cell::new_inline("a"));
+        let next = Buffer::filled(area, &Cell::new_inline("a"));
         let diff = prev.diff(&next);
         assert_eq!(diff, vec![]);
     }
@@ -790,21 +784,22 @@ mod tests {
         assert_eq!(
             diff,
             vec![
-                (2, 1, &cell("I")),
-                (3, 1, &cell("T")),
-                (4, 1, &cell("L")),
-                (5, 1, &cell("E")),
+                (2, 1, &Cell::new_inline("I")),
+                (3, 1, &Cell::new_inline("T")),
+                (4, 1, &Cell::new_inline("L")),
+                (5, 1, &Cell::new_inline("E")),
             ]
         );
     }
 
     #[test]
-    #[rustfmt::skip]
     fn diff_multi_width() {
+        #[rustfmt::skip]
         let prev = Buffer::with_lines([
             "┌Title─┐  ",
             "└──────┘  ",
         ]);
+        #[rustfmt::skip]
         let next = Buffer::with_lines([
             "┌称号──┐  ",
             "└──────┘  ",
@@ -813,11 +808,11 @@ mod tests {
         assert_eq!(
             diff,
             vec![
-                (1, 0, &cell("称")),
+                (1, 0, &Cell::new_inline("称")),
                 // Skipped "i"
-                (3, 0, &cell("号")),
+                (3, 0, &Cell::new_inline("号")),
                 // Skipped "l"
-                (5, 0, &cell("─")),
+                (5, 0, &Cell::new_inline("─")),
             ]
         );
     }
@@ -830,7 +825,11 @@ mod tests {
         let diff = prev.diff(&next);
         assert_eq!(
             diff,
-            vec![(1, 0, &cell("─")), (2, 0, &cell("称")), (4, 0, &cell("号")),]
+            vec![
+                (1, 0, &Cell::new_inline("─")),
+                (2, 0, &Cell::new_inline("称")),
+                (4, 0, &Cell::new_inline("号")),
+            ]
         );
     }
 
@@ -843,7 +842,7 @@ mod tests {
         }
 
         let diff = prev.diff(&next);
-        assert_eq!(diff, vec![(0, 0, &cell("4"))],);
+        assert_eq!(diff, vec![(0, 0, &Cell::new_inline("4"))],);
     }
 
     #[test]
@@ -855,7 +854,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::default().set_symbol("1"),
+            &Cell::new_inline("1"),
         );
         let two = Buffer::filled(
             Rect {
@@ -864,7 +863,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::default().set_symbol("2"),
+            &Cell::new_inline("2"),
         );
         one.merge(&two);
         assert_eq!(one, Buffer::with_lines(["11", "11", "22", "22"]));
@@ -879,7 +878,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::default().set_symbol("1"),
+            &Cell::new_inline("1"),
         );
         let two = Buffer::filled(
             Rect {
@@ -888,7 +887,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::default().set_symbol("2"),
+            &Cell::new_inline("2"),
         );
         one.merge(&two);
         assert_eq!(one, Buffer::with_lines(["22  ", "22  ", "  11", "  11"]));
@@ -903,7 +902,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::default().set_symbol("1"),
+            &Cell::new_inline("1"),
         );
         let two = Buffer::filled(
             Rect {
@@ -912,7 +911,7 @@ mod tests {
                 width: 3,
                 height: 4,
             },
-            Cell::default().set_symbol("2"),
+            &Cell::new_inline("2"),
         );
         one.merge(&two);
         let mut merged = Buffer::with_lines(["222 ", "222 ", "2221", "2221"]);
@@ -934,7 +933,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::default().set_symbol("1"),
+            &Cell::new_inline("1"),
         );
         let two = Buffer::filled(
             Rect {
@@ -943,7 +942,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::default().set_symbol("2").set_skip(true),
+            Cell::new_inline("2").set_skip(true),
         );
         one.merge(&two);
         let skipped: Vec<bool> = one.content().iter().map(|c| c.skip).collect();
@@ -959,7 +958,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::default().set_symbol("1").set_skip(true),
+            Cell::new_inline("1").set_skip(true),
         );
         let two = Buffer::filled(
             Rect {
@@ -968,7 +967,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            Cell::default().set_symbol("2"),
+            &Cell::new_inline("2"),
         );
         one.merge(&two);
         let skipped: Vec<bool> = one.content().iter().map(|c| c.skip).collect();
