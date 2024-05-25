@@ -201,13 +201,13 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "canvas"
-required-features = ["crossterm"]
+name = "calendar"
+required-features = ["crossterm", "widget-calendar"]
 doc-scrape-examples = true
 
 [[example]]
-name = "calendar"
-required-features = ["crossterm", "widget-calendar"]
+name = "canvas"
+required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
@@ -225,6 +225,16 @@ doc-scrape-examples = false
 name = "colors_rgb"
 required-features = ["crossterm"]
 doc-scrape-examples = true
+
+[[example]]
+name = "constraint-explorer"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "constraints"
+required-features = ["crossterm"]
+doc-scrape-examples = false
 
 [[example]]
 name = "custom_widget"
@@ -247,12 +257,12 @@ required-features = ["crossterm"]
 doc-scrape-examples = false
 
 [[example]]
-name = "gauge"
+name = "flex"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "line_gauge"
+name = "gauge"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
@@ -262,22 +272,17 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
+name = "inline"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
 name = "layout"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "constraints"
-required-features = ["crossterm"]
-doc-scrape-examples = false
-
-[[example]]
-name = "flex"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
-name = "constraint-explorer"
+name = "line_gauge"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
@@ -340,11 +345,6 @@ doc-scrape-examples = true
 
 [[example]]
 name = "user_input"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
-name = "inline"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
