@@ -1036,4 +1036,75 @@ mod tests {
             ),
         );
     }
+
+    mod painter {
+        use rstest::{fixture, rstest};
+
+        use crate::symbols::Marker;
+
+        use super::*;
+
+        #[rstest]
+        #[case::braille(10, 20, [100.0, 200.0], [1000.0, 2000.0], Marker::Braille, (20.0, 80.0))]
+        #[case::block(10, 20, [100.0, 200.0], [1000.0, 2000.0], Marker::Block, (10.0, 20.0))]
+        #[case::dot(10, 20, [100.0, 200.0], [1000.0, 2000.0], Marker::Dot, (10.0, 20.0))]
+        #[case::bar(10, 20, [100.0, 200.0], [1000.0, 2000.0], Marker::Bar, (10.0, 20.0))]
+        #[case::halfblock(10, 20, [100.0, 200.0], [1000.0, 2000.0], Marker::HalfBlock, (10.0, 40.0))]
+        fn from(
+            #[case] width: u16,
+            #[case] height: u16,
+            #[case] x_bounds: [f64; 2],
+            #[case] y_bounds: [f64; 2],
+            #[case] marker: Marker,
+            #[case] resolution: (f64, f64),
+        ) {
+            let mut ctx = Context::new(width, height, x_bounds, y_bounds, marker);
+            let painter = Painter::from(&mut ctx);
+            assert_eq!(painter.resolution, resolution);
+        }
+
+        #[rstest]
+        #[case(0.0, 0.0, None)]
+        #[case(0.0, 1000.0, None)]
+        #[case(0.0, 1500.0, None)]
+        #[case(0.0, 2000.0, None)]
+        #[case[0.0, 3000.0, None]]
+        #[case(100.0, 0.0, None)]
+        #[case(100.0, 1000.0, Some((0, 79)))]
+        #[case(100.0, 1500.0, Some((0, 39)))]
+        #[case(100.0, 2000.0, Some((0, 0)))]
+        #[case(100.0, 3000.0, None)]
+        #[case(150.0, 0.0, None)]
+        #[case(150.0, 1000.0, Some((9, 79)))]
+        #[case(150.0, 1500.0, Some((9, 39)))]
+        #[case(150.0, 2000.0, Some((9, 0)))]
+        #[case(150.0, 3000.0, None)]
+        #[case(200.0, 0.0, None)]
+        #[case(200.0, 1000.0, Some((19, 79)))]
+        #[case(200.0, 1500.0, Some((19, 39)))]
+        #[case(200.0, 2000.0, Some((19, 0)))]
+        #[case(200.0, 3000.0, None)]
+        #[case(300.0, 0.0, None)]
+        #[case(300.0, 1000.0, None)]
+        #[case(300.0, 1500.0, None)]
+        #[case(300.0, 2000.0, None)]
+        #[case(300.0, 3000.0, None)]
+        fn get_point(#[case] x: f64, #[case] y: f64, #[case] expected: Option<(usize, usize)>) {
+            let mut ctx = Context::new(10, 20, [100.0, 200.0], [1000.0, 2000.0], Marker::Braille);
+            let painter = Painter::from(&mut ctx);
+            let point = painter.get_point(x, y);
+            assert_eq!(point, expected);
+        }
+
+        #[rstest]
+        #[case(0.0, 0.0)]
+        #[case(10.0, 0.0)]
+        #[case(0.0, 20.0)]
+        fn get_point_zero_width_or_height(#[case] x_max: f64, #[case] y_max: f64) {
+            let mut ctx = Context::new(10, 20, [0.0, x_max], [0.0, y_max], Marker::Braille);
+            let painter = Painter::from(&mut ctx);
+            let point = painter.get_point(0.0, 0.0);
+            assert_eq!(point, None);
+        }
+    }
 }
