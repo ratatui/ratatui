@@ -19,7 +19,7 @@ mod points;
 mod rectangle;
 mod world;
 
-use std::{fmt::Debug, iter::zip};
+use std::{fmt, iter::zip};
 
 use itertools::Itertools;
 
@@ -70,7 +70,7 @@ struct Layer {
 /// resolution of the grid might exceed the number of rows and columns. For example, a grid of
 /// Braille patterns will have a resolution of 2x4 dots per cell. This means that a grid of 10x10
 /// cells will have a resolution of 20x40 dots.
-trait Grid: Debug {
+trait Grid: fmt::Debug {
     /// Get the resolution of the grid in number of dots.
     ///
     /// This doesn't have to be the same as the number of rows and columns of the grid. For example,
@@ -567,7 +567,7 @@ impl<'a> Context<'a> {
 /// };
 ///
 /// Canvas::default()
-///     .block(Block::default().title("Canvas").borders(Borders::ALL))
+///     .block(Block::bordered().title("Canvas"))
 ///     .x_bounds([-180.0, 180.0])
 ///     .y_bounds([-90.0, 90.0])
 ///     .paint(|ctx| {
@@ -817,9 +817,7 @@ mod tests {
     // results in the expected output
     fn test_marker(marker: Marker, expected: &str) {
         let area = Rect::new(0, 0, 5, 5);
-        let mut cell = Cell::default();
-        cell.set_char('x');
-        let mut buf = Buffer::filled(area, &cell);
+        let mut buf = Buffer::filled(area, &Cell::new("x"));
         let horizontal_line = Line {
             x1: 0.0,
             y1: 0.0,

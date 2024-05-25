@@ -10,6 +10,10 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [Unreleased](#unreleased)
+  - `Stylize::bg()` now accepts `Into<Color>`
+- [v0.27.0 (unreleased)](#v0270-unreleased)
+  - Removed deprecated `List::start_corner`
 - [v0.26.0](#v0260)
   - `Flex::Start` is the new default flex mode for `Layout`
   - `patch_style` & `reset_style` now consume and return `Self`
@@ -47,6 +51,39 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
+## Unreleased
+
+### `Stylize::bg()` now accepts `Into<Color>` ([#1103])
+
+[#1099]: https://github.com/ratatui-org/ratatui/pull/1103
+
+Previously, `Stylize::bg()` accepted `Color` but now accepts `Into<Color>`. This allows more flexible types from calling scopes, though it can break some type inference in the calling scope.
+
+## v0.27.0 (unreleased)
+
+### Remove deprecated `List::start_corner` and `layout::Corner` ([#758])
+
+[#758]: https://github.com/ratatui-org/ratatui/pull/757
+
+`List::start_corner` was deprecated in v0.25. Use `List::direction` and `ListDirection` instead.
+
+```diff
+- list.start_corner(Corner::TopLeft);
+- list.start_corner(Corner::TopRight);
+// This is not an error, BottomRight rendered top to bottom previously
+- list.start_corner(Corner::BottomRight);
+// all becomes
++ list.direction(ListDirection::TopToBottom);
+```
+
+```diff
+- list.start_corner(Corner::BottomLeft);
+// becomes
++ list.direction(ListDirection::BottomToTop);
+```
+
+`layout::Corner` was removed entirely.
+
 ## [v0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0)
 
 ### `Flex::Start` is the new default flex mode for `Layout` ([#881])
@@ -74,7 +111,7 @@ existing layouts with `Flex::Start`. However, to get old behavior, use `Flex::Le
 
 [#774]: https://github.com/ratatui-org/ratatui/pull/774
 
-Previously, `Table::new()` accepted `IntoIterator<Item=Row<'a>>`.  The argument change to
+Previously, `Table::new()` accepted `IntoIterator<Item=Row<'a>>`. The argument change to
 `IntoIterator<Item: Into<Row<'a>>>`, This allows more flexible types from calling scopes, though it
 can some break type inference in the calling scope for empty containers.
 
@@ -91,7 +128,7 @@ This can be resolved either by providing an explicit type (e.g. `Vec::<Row>::new
 
 [#776]: https://github.com/ratatui-org/ratatui/pull/776
 
-Previously, `Tabs::new()` accepted `Vec<T>` where `T: Into<Line<'a>>`.  This allows more flexible
+Previously, `Tabs::new()` accepted `Vec<T>` where `T: Into<Line<'a>>`. This allows more flexible
 types from calling scopes, though it can break some type inference in the calling scope.
 
 This typically occurs when collecting an iterator prior to calling `Tabs::new`, and can be resolved

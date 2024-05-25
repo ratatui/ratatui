@@ -6,6 +6,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::{layout::Alignment, text::StyledGrapheme};
 
 const NBSP: &str = "\u{00a0}";
+const ZWSP: &str = "\u{200b}";
 
 /// A state machine to pack styled symbols into lines.
 /// Cannot implement it as Iterator since it yields slices of the internal buffer (need streaming
@@ -104,8 +105,8 @@ where
 
                     let mut has_seen_non_whitespace = false;
                     for StyledGrapheme { symbol, style } in line_symbols {
-                        let symbol_whitespace =
-                            symbol.chars().all(&char::is_whitespace) && symbol != NBSP;
+                        let symbol_whitespace = symbol == ZWSP
+                            || (symbol.chars().all(&char::is_whitespace) && symbol != NBSP);
                         let symbol_width = symbol.width() as u16;
                         // Ignore characters wider than the total max width
                         if symbol_width > self.max_line_width {
@@ -335,6 +336,7 @@ fn trim_offset(src: &str, mut offset: usize) -> &str {
             break;
         }
     }
+    #[allow(clippy::string_slice)] // Is safe as it comes from UnicodeSegmentation
     &src[start..]
 }
 
@@ -430,17 +432,17 @@ mod test {
         let (line_truncator, _, _) = run_composer(Composer::LineTruncator, text, width as u16);
 
         let wrapped = vec![
-            &text[..width],
-            &text[width..width * 2],
-            &text[width * 2..width * 3],
-            &text[width * 3..],
+            text.get(..width).unwrap(),
+            text.get(width..width * 2).unwrap(),
+            text.get(width * 2..width * 3).unwrap(),
+            text.get(width * 3..).unwrap(),
         ];
         assert_eq!(
             word_wrapper, wrapped,
             "WordWrapper should detect the line cannot be broken on word boundary and \
              break it at line width limit."
         );
-        assert_eq!(line_truncator, vec![&text[..width]]);
+        assert_eq!(line_truncator, [text.get(..width).unwrap()]);
     }
 
     #[test]
@@ -470,7 +472,7 @@ mod test {
         assert_eq!(word_wrapper_single_space, word_wrapped);
         assert_eq!(word_wrapper_multi_space, word_wrapped);
 
-        assert_eq!(line_truncator, vec![&text[..width]]);
+        assert_eq!(line_truncator, [text.get(..width).unwrap()]);
     }
 
     #[test]
@@ -705,5 +707,13 @@ mod test {
             truncated_alignments,
             vec![Alignment::Left, Alignment::Right, Alignment::Center]
         );
+    }
+
+    #[test]
+    fn line_composer_zero_width_white_space() {
+        let width = 3;
+        let line = "foo\u{200b}bar";
+        let (word_wrapper, _, _) = run_composer(Composer::WordWrapper { trim: true }, line, width);
+        assert_eq!(word_wrapper, vec!["foo", "bar"]);
     }
 }

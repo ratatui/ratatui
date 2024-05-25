@@ -1,9 +1,6 @@
 #![allow(clippy::unreadable_literal)]
 
-use std::{
-    fmt::{self, Debug, Display},
-    str::FromStr,
-};
+use std::{fmt, str::FromStr};
 
 /// ANSI Color
 ///
@@ -142,7 +139,7 @@ impl Color {
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for Color {
-    /// This utilises the [`Display`] implementation for serialization.
+    /// This utilises the [`fmt::Display`] implementation for serialization.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -243,8 +240,8 @@ impl<'de> serde::Deserialize<'de> for Color {
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct ParseColorError;
 
-impl std::fmt::Display for ParseColorError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for ParseColorError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Failed to parse Colors")
     }
 }
@@ -316,16 +313,7 @@ impl FromStr for Color {
                 _ => {
                     if let Ok(index) = s.parse::<u8>() {
                         Self::Indexed(index)
-                    } else if let (Ok(r), Ok(g), Ok(b)) = {
-                        if !s.starts_with('#') || s.len() != 7 {
-                            return Err(ParseColorError);
-                        }
-                        (
-                            u8::from_str_radix(&s[1..3], 16),
-                            u8::from_str_radix(&s[3..5], 16),
-                            u8::from_str_radix(&s[5..7], 16),
-                        )
-                    } {
+                    } else if let Some((r, g, b)) = parse_hex_color(s) {
                         Self::Rgb(r, g, b)
                     } else {
                         return Err(ParseColorError);
@@ -336,7 +324,17 @@ impl FromStr for Color {
     }
 }
 
-impl Display for Color {
+fn parse_hex_color(input: &str) -> Option<(u8, u8, u8)> {
+    if !input.starts_with('#') || input.len() != 7 {
+        return None;
+    }
+    let r = u8::from_str_radix(input.get(1..3)?, 16).ok()?;
+    let g = u8::from_str_radix(input.get(3..5)?, 16).ok()?;
+    let b = u8::from_str_radix(input.get(5..7)?, 16).ok()?;
+    Some((r, g, b))
+}
+
+impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Reset => write!(f, "Reset"),
@@ -590,6 +588,7 @@ mod tests {
             "abcdef0",       // 7 chars is not a color
             " bcdefa",       // doesn't start with a '#'
             "#abcdef00",     // too many chars
+            "#1🦀2",         // len 7 but on char boundaries shouldnt panic
             "resett",        // typo
             "lightblackk",   // typo
         ];

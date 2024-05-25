@@ -26,7 +26,7 @@ use itertools::Itertools;
 use ratatui::{
     layout::Constraint::*,
     prelude::*,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Paragraph},
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -190,10 +190,9 @@ fn render_example_combination(
     title: &str,
     constraints: Vec<(Constraint, Constraint)>,
 ) {
-    let block = Block::default()
+    let block = Block::bordered()
         .title(title.gray())
         .style(Style::reset())
-        .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::DarkGray));
     let inner = block.inner(area);
     frame.render_widget(block, area);

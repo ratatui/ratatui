@@ -1,12 +1,13 @@
 [package]
 name = "ratatui"
-version = "0.26.2" # crate version
+version = "0.26.3" # crate version
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
 description = "A library that's all about cooking up terminal user interfaces"
 documentation = "https://docs.rs/ratatui/latest/ratatui/"
+repository = "https://github.com/ratatui-org/ratatui"
+homepage = "https://ratatui.rs"
 keywords = ["tui", "terminal", "dashboard"]
 categories = ["command-line-interface"]
-repository = "https://github.com/ratatui-org/ratatui"
 readme = "README.md"
 license = "MIT"
 exclude = [
@@ -24,37 +25,34 @@ rust-version = "1.74.0"
 [badges]
 
 [dependencies]
-crossterm = { version = "0.27", optional = true }
-termion = { version = "3.0", optional = true }
-termwiz = { version = "0.22.0", optional = true }
-
-serde = { version = "1", optional = true, features = ["derive"] }
 bitflags = "2.3"
 cassowary = "0.3"
-indoc = "2.0"
+compact_str = "0.7.1"
+crossterm = { version = "0.27", optional = true }
+document-features = { version = "0.2.7", optional = true }
 itertools = "0.12"
+lru = "0.12.0"
 paste = "1.0.2"
+serde = { version = "1", optional = true, features = ["derive"] }
+stability = "0.2.0"
 strum = { version = "0.26", features = ["derive"] }
+termion = { version = "3.0", optional = true }
+termwiz = { version = "0.22.0", optional = true }
 time = { version = "0.3.11", optional = true, features = ["local-offset"] }
 unicode-segmentation = "1.10"
+unicode-truncate = "1"
 unicode-width = "0.1"
-document-features = { version = "0.2.7", optional = true }
-lru = "0.12.0"
-stability = "0.2.0"
-compact_str = "0.7.1"
 
 [dev-dependencies]
 anyhow = "1.0.71"
 argh = "0.1.12"
 better-panic = "0.3.0"
-cargo-husky = { version = "1.5.0", default-features = false, features = [
-  "user-hooks",
-] }
 color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 derive_builder = "0.20.0"
 fakeit = "1.1"
 font8x8 = "0.3.1"
+indoc = "2"
 palette = "0.7.3"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
@@ -90,10 +88,13 @@ map_err_ignore = "warn"
 missing_const_for_fn = "warn"
 mixed_read_write_in_expression = "warn"
 mod_module_files = "warn"
+needless_pass_by_ref_mut = "warn"
 needless_raw_strings = "warn"
+or_fun_call = "warn"
 redundant_type_annotations = "warn"
 rest_pat_in_fully_bound_structs = "warn"
 string_lit_chars_any = "warn"
+string_slice = "warn"
 string_to_string = "warn"
 use_self = "warn"
 
@@ -105,15 +106,15 @@ use_self = "warn"
 ## which allows you to set the underline color of text.
 default = ["crossterm", "underline-color"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
-## enables the [`CrosstermBackend`] backend and adds a dependency on the [Crossterm crate].
+## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
 crossterm = ["dep:crossterm"]
-## enables the [`TermionBackend`] backend and adds a dependency on the [Termion crate].
+## enables the [`TermionBackend`](backend::TermionBackend) backend and adds a dependency on [`termion`].
 termion = ["dep:termion"]
-## enables the [`TermwizBackend`] backend and adds a dependency on the [Termwiz crate].
+## enables the [`TermwizBackend`](backend::TermwizBackend) backend and adds a dependency on [`termwiz`].
 termwiz = ["dep:termwiz"]
 
 #! The following optional features are available for all backends:
-## enables serialization and deserialization of style and color types using the [Serde crate].
+## enables serialization and deserialization of style and color types using the [`serde`] crate.
 ## This is useful if you want to save themes to a file.
 serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 
@@ -125,12 +126,14 @@ all-widgets = ["widget-calendar"]
 
 #! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
 #! dependencies. The available features are:
-## enables the [`calendar`] widget module and adds a dependency on the [Time crate].
+## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
 widget-calendar = ["dep:time"]
 
-#! Underline color is only supported by the [`CrosstermBackend`] backend, and is not supported
-#! on Windows 7.
+#! The following optional features are only available for some backends:
+
 ## enables the backend code that sets the underline color.
+## Underline color is only supported by the [`CrosstermBackend`](backend::CrosstermBackend) backend,
+## and is not supported on Windows 7.
 underline-color = ["dep:crossterm"]
 
 #! The following features are unstable and may change in the future:
@@ -138,13 +141,13 @@ underline-color = ["dep:crossterm"]
 ## Enable all unstable features.
 unstable = ["unstable-rendered-line-info", "unstable-widget-ref"]
 
-## Enables the [`Paragraph::line_count`](crate::widgets::Paragraph::line_count)
-## [`Paragraph::line_width`](crate::widgets::Paragraph::line_width) methods
+## Enables the [`Paragraph::line_count`](widgets::Paragraph::line_count)
+## [`Paragraph::line_width`](widgets::Paragraph::line_width) methods
 ## which are experimental and may change in the future.
 ## See [Issue 293](https://github.com/ratatui-org/ratatui/issues/293) for more details.
 unstable-rendered-line-info = []
 
-## Enables the `WidgetRef` and `StatefulWidgetRef` traits which are experimental and may change in
+## Enables the [`WidgetRef`](widgets::WidgetRef) and [`StatefulWidgetRef`](widgets::StatefulWidgetRef) traits which are experimental and may change in
 ## the future.
 unstable-widget-ref = []
 
@@ -154,12 +157,21 @@ all-features = true
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
+# Improve benchmark consistency
+[profile.bench]
+codegen-units = 1
+lto = true
+
 [[bench]]
 name = "barchart"
 harness = false
 
 [[bench]]
 name = "block"
+harness = false
+
+[[bench]]
+name = "line"
 harness = false
 
 [[bench]]
@@ -189,13 +201,13 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "canvas"
-required-features = ["crossterm"]
+name = "calendar"
+required-features = ["crossterm", "widget-calendar"]
 doc-scrape-examples = true
 
 [[example]]
-name = "calendar"
-required-features = ["crossterm", "widget-calendar"]
+name = "canvas"
+required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
@@ -213,6 +225,16 @@ doc-scrape-examples = false
 name = "colors_rgb"
 required-features = ["crossterm"]
 doc-scrape-examples = true
+
+[[example]]
+name = "constraint-explorer"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "constraints"
+required-features = ["crossterm"]
+doc-scrape-examples = false
 
 [[example]]
 name = "custom_widget"
@@ -235,6 +257,11 @@ required-features = ["crossterm"]
 doc-scrape-examples = false
 
 [[example]]
+name = "flex"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
 name = "gauge"
 required-features = ["crossterm"]
 doc-scrape-examples = true
@@ -245,22 +272,17 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
+name = "inline"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
 name = "layout"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
-name = "constraints"
-required-features = ["crossterm"]
-doc-scrape-examples = false
-
-[[example]]
-name = "flex"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
-name = "constraint-explorer"
+name = "line_gauge"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
@@ -273,6 +295,12 @@ doc-scrape-examples = true
 name = "list"
 required-features = ["crossterm"]
 doc-scrape-examples = true
+
+[[example]]
+name = "minimal"
+required-features = ["crossterm"]
+# prefer to show the more featureful examples in the docs
+doc-scrape-examples = false
 
 [[example]]
 name = "modifiers"
@@ -322,11 +350,6 @@ doc-scrape-examples = true
 
 [[example]]
 name = "user_input"
-required-features = ["crossterm"]
-doc-scrape-examples = true
-
-[[example]]
-name = "inline"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 

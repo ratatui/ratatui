@@ -236,7 +236,7 @@ fn run_app<B: Backend>(
 fn ui(f: &mut Frame, downloads: &Downloads) {
     let area = f.size();
 
-    let block = Block::default().title(block::Title::from("Progress").alignment(Alignment::Center));
+    let block = Block::new().title(block::Title::from("Progress").alignment(Alignment::Center));
     f.render_widget(block, area);
 
     let vertical = Layout::vertical([Constraint::Length(2), Constraint::Length(4)]).margin(1);
@@ -248,7 +248,7 @@ fn ui(f: &mut Frame, downloads: &Downloads) {
     let done = NUM_DOWNLOADS - downloads.pending.len() - downloads.in_progress.len();
     #[allow(clippy::cast_precision_loss)]
     let progress = LineGauge::default()
-        .gauge_style(Style::default().fg(Color::Blue))
+        .filled_style(Style::default().fg(Color::Blue))
         .label(format!("{done}/{NUM_DOWNLOADS}"))
         .ratio(done as f64 / NUM_DOWNLOADS as f64);
     f.render_widget(progress, progress_area);

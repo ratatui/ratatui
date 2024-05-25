@@ -2,7 +2,6 @@
 
 mod alignment;
 mod constraint;
-mod corner;
 mod direction;
 mod flex;
 #[allow(clippy::module_inception)]
@@ -14,7 +13,6 @@ mod size;
 
 pub use alignment::Alignment;
 pub use constraint::Constraint;
-pub use corner::Corner;
 pub use direction::Direction;
 pub use flex::Flex;
 pub use layout::Layout;

@@ -9,760 +9,628 @@ use ratatui::{
     widgets::{Block, Borders, Cell, HighlightSpacing, Row, Table, TableState},
     Terminal,
 };
+use rstest::rstest;
 
-#[test]
-fn widgets_table_column_spacing_can_be_changed() {
-    let test_case = |column_spacing, expected| {
-        let backend = TestBackend::new(30, 10);
-        let mut terminal = Terminal::new(backend).unwrap();
-
-        terminal
-            .draw(|f| {
-                let size = f.size();
-                let table = Table::new(
-                    vec![
-                        Row::new(vec!["Row11", "Row12", "Row13"]),
-                        Row::new(vec!["Row21", "Row22", "Row23"]),
-                        Row::new(vec!["Row31", "Row32", "Row33"]),
-                        Row::new(vec!["Row41", "Row42", "Row43"]),
-                    ],
-                    [
-                        Constraint::Length(5),
-                        Constraint::Length(5),
-                        Constraint::Length(5),
-                    ],
-                )
-                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL))
-                .column_spacing(column_spacing);
-                f.render_widget(table, size);
-            })
-            .unwrap();
-        terminal.backend().assert_buffer(&expected);
-    };
-
-    // no space between columns
-    test_case(
-        0,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1Head2Head3             │",
-            "│                            │",
-            "│Row11Row12Row13             │",
-            "│Row21Row22Row23             │",
-            "│Row31Row32Row33             │",
-            "│Row41Row42Row43             │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // one space between columns
-    test_case(
-        1,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1 Head2 Head3           │",
-            "│                            │",
-            "│Row11 Row12 Row13           │",
-            "│Row21 Row22 Row23           │",
-            "│Row31 Row32 Row33           │",
-            "│Row41 Row42 Row43           │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // enough space to just not hide the third column
-    test_case(
-        6,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1      Head2      Head3 │",
-            "│                            │",
-            "│Row11      Row12      Row13 │",
-            "│Row21      Row22      Row23 │",
-            "│Row31      Row32      Row33 │",
-            "│Row41      Row42      Row43 │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // enough space to hide part of the third column
-    test_case(
-        7,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1       Head       Head3│",
-            "│                            │",
-            "│Row11       Row1       Row13│",
-            "│Row21       Row2       Row23│",
-            "│Row31       Row3       Row33│",
-            "│Row41       Row4       Row43│",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
+#[rstest]
+#[case::no_space_between_columns(0, [
+    "┌────────────────────────────┐",
+    "│Head1Head2Head3             │",
+    "│                            │",
+    "│Row11Row12Row13             │",
+    "│Row21Row22Row23             │",
+    "│Row31Row32Row33             │",
+    "│Row41Row42Row43             │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::one_space_between_columns(1, [
+    "┌────────────────────────────┐",
+    "│Head1 Head2 Head3           │",
+    "│                            │",
+    "│Row11 Row12 Row13           │",
+    "│Row21 Row22 Row23           │",
+    "│Row31 Row32 Row33           │",
+    "│Row41 Row42 Row43           │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::large_width_just_before_pushing_a_column_off(6, [
+    "┌────────────────────────────┐",
+    "│Head1      Head2      Head3 │",
+    "│                            │",
+    "│Row11      Row12      Row13 │",
+    "│Row21      Row22      Row23 │",
+    "│Row31      Row32      Row33 │",
+    "│Row41      Row42      Row43 │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::large_width_pushes_part_of_third_column_off(7, [
+    "┌────────────────────────────┐",
+    "│Head1       Head       Head3│",
+    "│                            │",
+    "│Row11       Row1       Row13│",
+    "│Row21       Row2       Row23│",
+    "│Row31       Row3       Row33│",
+    "│Row41       Row4       Row43│",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+fn widgets_table_column_spacing_can_be_changed<'line, Lines>(
+    #[case] column_spacing: u16,
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<Line<'line>>,
+{
+    let backend = TestBackend::new(30, 10);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(
+                vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]),
+                ],
+                [
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                ],
+            )
+            .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+            .block(Block::bordered())
+            .column_spacing(column_spacing);
+            f.render_widget(table, size);
+        })
+        .unwrap();
+    terminal.backend().assert_buffer_lines(expected);
 }
 
-#[test]
-fn widgets_table_columns_widths_can_use_fixed_length_constraints() {
-    let test_case = |widths, expected| {
-        let backend = TestBackend::new(30, 10);
-        let mut terminal = Terminal::new(backend).unwrap();
-
-        terminal
-            .draw(|f| {
-                let size = f.size();
-                let table = Table::new(
-                    vec![
-                        Row::new(vec!["Row11", "Row12", "Row13"]),
-                        Row::new(vec!["Row21", "Row22", "Row23"]),
-                        Row::new(vec!["Row31", "Row32", "Row33"]),
-                        Row::new(vec!["Row41", "Row42", "Row43"]),
-                    ],
-                    widths,
-                )
-                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL));
-                f.render_widget(table, size);
-            })
-            .unwrap();
-        terminal.backend().assert_buffer(&expected);
-    };
-
-    // columns of zero width show nothing
-    test_case(
-        &[
-            Constraint::Length(0),
-            Constraint::Length(0),
-            Constraint::Length(0),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // columns of 1 width trim
-    test_case(
-        &[
-            Constraint::Length(1),
-            Constraint::Length(1),
-            Constraint::Length(1),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│H H H                       │",
-            "│                            │",
-            "│R R R                       │",
-            "│R R R                       │",
-            "│R R R                       │",
-            "│R R R                       │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // columns of large width just before pushing a column off
-    test_case(
-        &[
-            Constraint::Length(8),
-            Constraint::Length(8),
-            Constraint::Length(8),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1    Head2    Head3     │",
-            "│                            │",
-            "│Row11    Row12    Row13     │",
-            "│Row21    Row22    Row23     │",
-            "│Row31    Row32    Row33     │",
-            "│Row41    Row42    Row43     │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
+#[rstest]
+#[case::zero_width_shows_nothing( &[
+    Constraint::Length(0),
+    Constraint::Length(0),
+    Constraint::Length(0),
+], [
+    "┌────────────────────────────┐",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::slim_columns_trim_data(&[
+    Constraint::Length(1),
+    Constraint::Length(1),
+    Constraint::Length(1),
+], [
+    "┌────────────────────────────┐",
+    "│H H H                       │",
+    "│                            │",
+    "│R R R                       │",
+    "│R R R                       │",
+    "│R R R                       │",
+    "│R R R                       │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::large_width_just_before_pushing_a_column_off(&[
+    Constraint::Length(8),
+    Constraint::Length(8),
+    Constraint::Length(8),
+], [
+    "┌────────────────────────────┐",
+    "│Head1    Head2    Head3     │",
+    "│                            │",
+    "│Row11    Row12    Row13     │",
+    "│Row21    Row22    Row23     │",
+    "│Row31    Row32    Row33     │",
+    "│Row41    Row42    Row43     │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+fn widgets_table_columns_widths_can_use_fixed_length_constraints<'line, Lines>(
+    #[case] widths: &[Constraint],
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<Line<'line>>,
+{
+    let backend = TestBackend::new(30, 10);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(
+                vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]),
+                ],
+                widths,
+            )
+            .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+            .block(Block::bordered());
+            f.render_widget(table, size);
+        })
+        .unwrap();
+    terminal.backend().assert_buffer_lines(expected);
 }
 
-#[test]
-fn widgets_table_columns_widths_can_use_percentage_constraints() {
-    #[allow(clippy::needless_pass_by_value)]
-    #[track_caller]
-    fn test_case(widths: &[Constraint], expected: Buffer) {
-        let backend = TestBackend::new(30, 10);
-        let mut terminal = Terminal::new(backend).unwrap();
-
-        terminal
-            .draw(|f| {
-                let size = f.size();
-                let table = Table::new(
-                    vec![
-                        Row::new(vec!["Row11", "Row12", "Row13"]),
-                        Row::new(vec!["Row21", "Row22", "Row23"]),
-                        Row::new(vec!["Row31", "Row32", "Row33"]),
-                        Row::new(vec!["Row41", "Row42", "Row43"]),
-                    ],
-                    widths,
-                )
-                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL))
-                .column_spacing(0);
-                f.render_widget(table, size);
-            })
-            .unwrap();
-        terminal.backend().assert_buffer(&expected);
-    }
-
-    // columns of zero width show nothing
-    test_case(
-        &[
-            Constraint::Percentage(0),
-            Constraint::Percentage(0),
-            Constraint::Percentage(0),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // columns of not enough width trims the data
-    test_case(
-        &[
-            Constraint::Percentage(11),
-            Constraint::Percentage(11),
-            Constraint::Percentage(11),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│HeaHeaHea                   │",
-            "│                            │",
-            "│RowRowRow                   │",
-            "│RowRowRow                   │",
-            "│RowRowRow                   │",
-            "│RowRowRow                   │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // columns of large width just before pushing a column off
-    test_case(
-        &[
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1    Head2    Head3     │",
-            "│                            │",
-            "│Row11    Row12    Row13     │",
-            "│Row21    Row22    Row23     │",
-            "│Row31    Row32    Row33     │",
-            "│Row41    Row42    Row43     │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // percentages summing to 100 should give equal widths
-    test_case(
-        &[Constraint::Percentage(50), Constraint::Percentage(50)],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1         Head2         │",
-            "│                            │",
-            "│Row11         Row12         │",
-            "│Row21         Row22         │",
-            "│Row31         Row32         │",
-            "│Row41         Row42         │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
+#[rstest]
+#[case::zero_width_shows_nothing(&[
+    Constraint::Percentage(0),
+    Constraint::Percentage(0),
+    Constraint::Percentage(0),
+], [
+    "┌────────────────────────────┐",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::slim_columns_trim_data(&[
+    Constraint::Percentage(11),
+    Constraint::Percentage(11),
+    Constraint::Percentage(11),
+], [
+    "┌────────────────────────────┐",
+    "│HeaHeaHea                   │",
+    "│                            │",
+    "│RowRowRow                   │",
+    "│RowRowRow                   │",
+    "│RowRowRow                   │",
+    "│RowRowRow                   │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::large_width_just_before_pushing_a_column_off(&[
+    Constraint::Percentage(33),
+    Constraint::Percentage(33),
+    Constraint::Percentage(33),
+], [
+    "┌────────────────────────────┐",
+    "│Head1    Head2    Head3     │",
+    "│                            │",
+    "│Row11    Row12    Row13     │",
+    "│Row21    Row22    Row23     │",
+    "│Row31    Row32    Row33     │",
+    "│Row41    Row42    Row43     │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::sum_100_equal_widths(&[Constraint::Percentage(50), Constraint::Percentage(50)], [
+    "┌────────────────────────────┐",
+    "│Head1         Head2         │",
+    "│                            │",
+    "│Row11         Row12         │",
+    "│Row21         Row22         │",
+    "│Row31         Row32         │",
+    "│Row41         Row42         │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+fn widgets_table_columns_widths_can_use_percentage_constraints<'line, Lines>(
+    #[case] widths: &[Constraint],
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<Line<'line>>,
+{
+    let backend = TestBackend::new(30, 10);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(
+                vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]),
+                ],
+                widths,
+            )
+            .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+            .block(Block::bordered())
+            .column_spacing(0);
+            f.render_widget(table, size);
+        })
+        .unwrap();
+    terminal.backend().assert_buffer_lines(expected);
 }
 
-#[test]
-fn widgets_table_columns_widths_can_use_mixed_constraints() {
-    #[allow(clippy::needless_pass_by_value)]
-    #[track_caller]
-    fn test_case(widths: &[Constraint], expected: Buffer) {
-        let backend = TestBackend::new(30, 10);
-        let mut terminal = Terminal::new(backend).unwrap();
-
-        terminal
-            .draw(|f| {
-                let size = f.size();
-                let table = Table::new(
-                    vec![
-                        Row::new(vec!["Row11", "Row12", "Row13"]),
-                        Row::new(vec!["Row21", "Row22", "Row23"]),
-                        Row::new(vec!["Row31", "Row32", "Row33"]),
-                        Row::new(vec!["Row41", "Row42", "Row43"]),
-                    ],
-                    widths,
-                )
-                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL));
-                f.render_widget(table, size);
-            })
-            .unwrap();
-        terminal.backend().assert_buffer(&expected);
-    }
-
-    // columns of zero width show nothing
-    test_case(
-        &[
-            Constraint::Percentage(0),
-            Constraint::Length(0),
-            Constraint::Percentage(0),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // columns of not enough width trims the data
-    test_case(
-        &[
-            Constraint::Percentage(11),
-            Constraint::Length(20),
-            Constraint::Percentage(11),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Hea Head2                Hea│",
-            "│                            │",
-            "│Row Row12                Row│",
-            "│Row Row22                Row│",
-            "│Row Row32                Row│",
-            "│Row Row42                Row│",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // columns of large width just before pushing a column off
-    test_case(
-        &[
-            Constraint::Percentage(33),
-            Constraint::Length(10),
-            Constraint::Percentage(33),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1     Head2      Head3  │",
-            "│                            │",
-            "│Row11     Row12      Row13  │",
-            "│Row21     Row22      Row23  │",
-            "│Row31     Row32      Row33  │",
-            "│Row41     Row42      Row43  │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // columns of large size (>100% total) hide the last column
-    test_case(
-        &[
-            Constraint::Percentage(60),
-            Constraint::Length(10),
-            Constraint::Percentage(60),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1      Head2      Head3 │",
-            "│                            │",
-            "│Row11      Row12      Row13 │",
-            "│Row21      Row22      Row23 │",
-            "│Row31      Row32      Row33 │",
-            "│Row41      Row42      Row43 │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
+#[rstest]
+#[case::zero_width_shows_nothing(&[
+    Constraint::Percentage(0),
+    Constraint::Length(0),
+    Constraint::Percentage(0),
+], [
+    "┌────────────────────────────┐",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::slim_columns_trim_data(&[
+    Constraint::Percentage(11),
+    Constraint::Length(20),
+    Constraint::Percentage(11),
+], [
+    "┌────────────────────────────┐",
+    "│Hea Head2                Hea│",
+    "│                            │",
+    "│Row Row12                Row│",
+    "│Row Row22                Row│",
+    "│Row Row32                Row│",
+    "│Row Row42                Row│",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::large_width_just_before_pushing_a_column_off(&[
+    Constraint::Percentage(33),
+    Constraint::Length(10),
+    Constraint::Percentage(33),
+], [
+    "┌────────────────────────────┐",
+    "│Head1     Head2      Head3  │",
+    "│                            │",
+    "│Row11     Row12      Row13  │",
+    "│Row21     Row22      Row23  │",
+    "│Row31     Row32      Row33  │",
+    "│Row41     Row42      Row43  │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::more_than_100(&[
+    Constraint::Percentage(60),
+    Constraint::Length(10),
+    Constraint::Percentage(60),
+], [
+    "┌────────────────────────────┐",
+    "│Head1      Head2      Head3 │",
+    "│                            │",
+    "│Row11      Row12      Row13 │",
+    "│Row21      Row22      Row23 │",
+    "│Row31      Row32      Row33 │",
+    "│Row41      Row42      Row43 │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+fn widgets_table_columns_widths_can_use_mixed_constraints<'line, Lines>(
+    #[case] widths: &[Constraint],
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<Line<'line>>,
+{
+    let backend = TestBackend::new(30, 10);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(
+                vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]),
+                ],
+                widths,
+            )
+            .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+            .block(Block::bordered());
+            f.render_widget(table, size);
+        })
+        .unwrap();
+    terminal.backend().assert_buffer_lines(expected);
 }
 
-#[test]
-fn widgets_table_columns_widths_can_use_ratio_constraints() {
-    #[allow(clippy::needless_pass_by_value)]
-    #[track_caller]
-    fn test_case(widths: &[Constraint], expected: Buffer) {
-        let backend = TestBackend::new(30, 10);
-        let mut terminal = Terminal::new(backend).unwrap();
-
-        terminal
-            .draw(|f| {
-                let size = f.size();
-                let table = Table::new(
-                    vec![
-                        Row::new(vec!["Row11", "Row12", "Row13"]),
-                        Row::new(vec!["Row21", "Row22", "Row23"]),
-                        Row::new(vec!["Row31", "Row32", "Row33"]),
-                        Row::new(vec!["Row41", "Row42", "Row43"]),
-                    ],
-                    widths,
-                )
-                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL))
-                .column_spacing(0);
-                f.render_widget(table, size);
-            })
-            .unwrap();
-        terminal.backend().assert_buffer(&expected);
-    }
-
-    // columns of zero width show nothing
-    test_case(
-        &[
-            Constraint::Ratio(0, 1),
-            Constraint::Ratio(0, 1),
-            Constraint::Ratio(0, 1),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // columns of not enough width trims the data
-    test_case(
-        &[
-            Constraint::Ratio(1, 9),
-            Constraint::Ratio(1, 9),
-            Constraint::Ratio(1, 9),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│HeaHeaHea                   │",
-            "│                            │",
-            "│RowRowRow                   │",
-            "│RowRowRow                   │",
-            "│RowRowRow                   │",
-            "│RowRowRow                   │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // columns of large width just before pushing a column off
-    test_case(
-        &[
-            Constraint::Ratio(1, 3),
-            Constraint::Ratio(1, 3),
-            Constraint::Ratio(1, 3),
-        ],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1    Head2     Head3    │",
-            "│                            │",
-            "│Row11    Row12     Row13    │",
-            "│Row21    Row22     Row23    │",
-            "│Row31    Row32     Row33    │",
-            "│Row41    Row42     Row43    │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // percentages summing to 100 should give equal widths
-    test_case(
-        &[Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)],
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1         Head2         │",
-            "│                            │",
-            "│Row11         Row12         │",
-            "│Row21         Row22         │",
-            "│Row31         Row32         │",
-            "│Row41         Row42         │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
+#[rstest]
+#[case::zero_shows_nothing(&[
+    Constraint::Ratio(0, 1),
+    Constraint::Ratio(0, 1),
+    Constraint::Ratio(0, 1),
+], [
+    "┌────────────────────────────┐",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::slim_trims_data(&[
+    Constraint::Ratio(1, 9),
+    Constraint::Ratio(1, 9),
+    Constraint::Ratio(1, 9),
+], [
+    "┌────────────────────────────┐",
+    "│HeaHeaHea                   │",
+    "│                            │",
+    "│RowRowRow                   │",
+    "│RowRowRow                   │",
+    "│RowRowRow                   │",
+    "│RowRowRow                   │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::three(&[Constraint::Ratio(1, 3), Constraint::Ratio(1, 3), Constraint::Ratio(1, 3)], [
+    "┌────────────────────────────┐",
+    "│Head1    Head2     Head3    │",
+    "│                            │",
+    "│Row11    Row12     Row13    │",
+    "│Row21    Row22     Row23    │",
+    "│Row31    Row32     Row33    │",
+    "│Row41    Row42     Row43    │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+#[case::two(&[Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)], [
+    "┌────────────────────────────┐",
+    "│Head1         Head2         │",
+    "│                            │",
+    "│Row11         Row12         │",
+    "│Row21         Row22         │",
+    "│Row31         Row32         │",
+    "│Row41         Row42         │",
+    "│                            │",
+    "│                            │",
+    "└────────────────────────────┘",
+])]
+fn widgets_table_columns_widths_can_use_ratio_constraints<'line, Lines>(
+    #[case] widths: &[Constraint],
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<Line<'line>>,
+{
+    let backend = TestBackend::new(30, 10);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(
+                vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]),
+                ],
+                widths,
+            )
+            .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+            .block(Block::bordered())
+            .column_spacing(0);
+            f.render_widget(table, size);
+        })
+        .unwrap();
+    terminal.backend().assert_buffer_lines(expected);
 }
 
-#[test]
-fn widgets_table_can_have_rows_with_multi_lines() {
-    let test_case = |state: &mut TableState, expected: Buffer| {
-        let backend = TestBackend::new(30, 8);
-        let mut terminal = Terminal::new(backend).unwrap();
-        terminal
-            .draw(|f| {
-                let size = f.size();
-                let table = Table::new(
-                    vec![
-                        Row::new(vec!["Row11", "Row12", "Row13"]),
-                        Row::new(vec!["Row21", "Row22", "Row23"]).height(2),
-                        Row::new(vec!["Row31", "Row32", "Row33"]),
-                        Row::new(vec!["Row41", "Row42", "Row43"]).height(2),
-                    ],
-                    [
-                        Constraint::Length(5),
-                        Constraint::Length(5),
-                        Constraint::Length(5),
-                    ],
-                )
-                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL))
-                .highlight_symbol(">> ")
-                .column_spacing(1);
-                f.render_stateful_widget(table, size, state);
-            })
-            .unwrap();
-        terminal.backend().assert_buffer(&expected);
-    };
-
-    let mut state = TableState::default();
-    // no selection
-    test_case(
-        &mut state,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1 Head2 Head3           │",
-            "│                            │",
-            "│Row11 Row12 Row13           │",
-            "│Row21 Row22 Row23           │",
-            "│                            │",
-            "│Row31 Row32 Row33           │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // select first
-    state.select(Some(0));
-    test_case(
-        &mut state,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│   Head1 Head2 Head3        │",
-            "│                            │",
-            "│>> Row11 Row12 Row13        │",
-            "│   Row21 Row22 Row23        │",
-            "│                            │",
-            "│   Row31 Row32 Row33        │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // select second (we don't show partially the 4th row)
-    state.select(Some(1));
-    test_case(
-        &mut state,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│   Head1 Head2 Head3        │",
-            "│                            │",
-            "│   Row11 Row12 Row13        │",
-            "│>> Row21 Row22 Row23        │",
-            "│                            │",
-            "│   Row31 Row32 Row33        │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // select 4th (we don't show partially the 1st row)
-    state.select(Some(3));
-    test_case(
-        &mut state,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│   Head1 Head2 Head3        │",
-            "│                            │",
-            "│   Row31 Row32 Row33        │",
-            "│>> Row41 Row42 Row43        │",
-            "│                            │",
-            "│                            │",
-            "└────────────────────────────┘",
-        ]),
-    );
+#[rstest]
+#[case::none(
+    None,
+    [
+        "┌────────────────────────────┐",
+        "│Head1 Head2 Head3           │",
+        "│                            │",
+        "│Row11 Row12 Row13           │",
+        "│Row21 Row22 Row23           │",
+        "│                            │",
+        "│Row31 Row32 Row33           │",
+        "└────────────────────────────┘",
+    ],
+)]
+#[case::first(
+    Some(0),
+    [
+        "┌────────────────────────────┐",
+        "│   Head1 Head2 Head3        │",
+        "│                            │",
+        "│>> Row11 Row12 Row13        │",
+        "│   Row21 Row22 Row23        │",
+        "│                            │",
+        "│   Row31 Row32 Row33        │",
+        "└────────────────────────────┘",
+    ],
+)]
+#[case::second_no_partially_fourth(
+    Some(1),
+    [
+        "┌────────────────────────────┐",
+        "│   Head1 Head2 Head3        │",
+        "│                            │",
+        "│   Row11 Row12 Row13        │",
+        "│>> Row21 Row22 Row23        │",
+        "│                            │",
+        "│   Row31 Row32 Row33        │",
+        "└────────────────────────────┘",
+    ],
+)]
+#[case::fourth_no_partially_first(
+    Some(3),
+    [
+        "┌────────────────────────────┐",
+        "│   Head1 Head2 Head3        │",
+        "│                            │",
+        "│   Row31 Row32 Row33        │",
+        "│>> Row41 Row42 Row43        │",
+        "│                            │",
+        "│                            │",
+        "└────────────────────────────┘",
+    ],
+)]
+fn widgets_table_can_have_rows_with_multi_lines<'line, Lines>(
+    #[case] selected: Option<usize>,
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<Line<'line>>,
+{
+    let mut state = TableState::new().with_selected(selected);
+    let backend = TestBackend::new(30, 8);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(
+                vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]).height(2),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]).height(2),
+                ],
+                [
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                ],
+            )
+            .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+            .block(Block::bordered())
+            .highlight_symbol(">> ")
+            .column_spacing(1);
+            f.render_stateful_widget(table, size, &mut state);
+        })
+        .unwrap();
+    terminal.backend().assert_buffer_lines(expected);
 }
 
-#[allow(clippy::too_many_lines)]
-#[test]
-fn widgets_table_enable_always_highlight_spacing() {
-    let test_case = |state: &mut TableState, space: HighlightSpacing, expected: Buffer| {
-        let backend = TestBackend::new(30, 8);
-        let mut terminal = Terminal::new(backend).unwrap();
-        terminal
-            .draw(|f| {
-                let size = f.size();
-                let table = Table::new(
-                    vec![
-                        Row::new(vec!["Row11", "Row12", "Row13"]),
-                        Row::new(vec!["Row21", "Row22", "Row23"]).height(2),
-                        Row::new(vec!["Row31", "Row32", "Row33"]),
-                        Row::new(vec!["Row41", "Row42", "Row43"]).height(2),
-                    ],
-                    [
-                        Constraint::Length(5),
-                        Constraint::Length(5),
-                        Constraint::Length(5),
-                    ],
-                )
-                .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-                .block(Block::default().borders(Borders::ALL))
-                .highlight_symbol(">> ")
-                .highlight_spacing(space)
-                .column_spacing(1);
-                f.render_stateful_widget(table, size, state);
-            })
-            .unwrap();
-        terminal.backend().assert_buffer(&expected);
-    };
-
-    assert_eq!(HighlightSpacing::default(), HighlightSpacing::WhenSelected);
-
-    let mut state = TableState::default();
-    // no selection, "WhenSelected" should only allocate if selected
-    test_case(
-        &mut state,
-        HighlightSpacing::default(),
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1 Head2 Head3           │",
-            "│                            │",
-            "│Row11 Row12 Row13           │",
-            "│Row21 Row22 Row23           │",
-            "│                            │",
-            "│Row31 Row32 Row33           │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // no selection, "Always" should allocate regardless if selected or not
-    test_case(
-        &mut state,
-        HighlightSpacing::Always,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│   Head1 Head2 Head3        │",
-            "│                            │",
-            "│   Row11 Row12 Row13        │",
-            "│   Row21 Row22 Row23        │",
-            "│                            │",
-            "│   Row31 Row32 Row33        │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // no selection, "Never" should never allocate regadless if selected or not
-    test_case(
-        &mut state,
-        HighlightSpacing::Never,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1 Head2 Head3           │",
-            "│                            │",
-            "│Row11 Row12 Row13           │",
-            "│Row21 Row22 Row23           │",
-            "│                            │",
-            "│Row31 Row32 Row33           │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // select first, "WhenSelected" should only allocate if selected
-    state.select(Some(0));
-    test_case(
-        &mut state,
-        HighlightSpacing::default(),
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│   Head1 Head2 Head3        │",
-            "│                            │",
-            "│>> Row11 Row12 Row13        │",
-            "│   Row21 Row22 Row23        │",
-            "│                            │",
-            "│   Row31 Row32 Row33        │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // select first, "Always" should allocate regardless if selected or not
-    state.select(Some(0));
-    test_case(
-        &mut state,
-        HighlightSpacing::Always,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│   Head1 Head2 Head3        │",
-            "│                            │",
-            "│>> Row11 Row12 Row13        │",
-            "│   Row21 Row22 Row23        │",
-            "│                            │",
-            "│   Row31 Row32 Row33        │",
-            "└────────────────────────────┘",
-        ]),
-    );
-
-    // select first, "Never" should never allocate regadless if selected or not
-    state.select(Some(0));
-    test_case(
-        &mut state,
-        HighlightSpacing::Never,
-        Buffer::with_lines(vec![
-            "┌────────────────────────────┐",
-            "│Head1 Head2 Head3           │",
-            "│                            │",
-            "│Row11 Row12 Row13           │",
-            "│Row21 Row22 Row23           │",
-            "│                            │",
-            "│Row31 Row32 Row33           │",
-            "└────────────────────────────┘",
-        ]),
-    );
+#[rstest]
+#[case::none_when_selected(None, HighlightSpacing::WhenSelected, [
+    "┌────────────────────────────┐",
+    "│Head1 Head2 Head3           │",
+    "│                            │",
+    "│Row11 Row12 Row13           │",
+    "│Row21 Row22 Row23           │",
+    "│                            │",
+    "│Row31 Row32 Row33           │",
+    "└────────────────────────────┘",
+])]
+#[case::none_always(
+    None, HighlightSpacing::Always, [
+    "┌────────────────────────────┐",
+    "│   Head1 Head2 Head3        │",
+    "│                            │",
+    "│   Row11 Row12 Row13        │",
+    "│   Row21 Row22 Row23        │",
+    "│                            │",
+    "│   Row31 Row32 Row33        │",
+    "└────────────────────────────┘",
+])]
+#[case::none_never(None, HighlightSpacing::Never, [
+    "┌────────────────────────────┐",
+    "│Head1 Head2 Head3           │",
+    "│                            │",
+    "│Row11 Row12 Row13           │",
+    "│Row21 Row22 Row23           │",
+    "│                            │",
+    "│Row31 Row32 Row33           │",
+    "└────────────────────────────┘",
+])]
+#[case::first_when_selected(Some(0), HighlightSpacing::WhenSelected, [
+    "┌────────────────────────────┐",
+    "│   Head1 Head2 Head3        │",
+    "│                            │",
+    "│>> Row11 Row12 Row13        │",
+    "│   Row21 Row22 Row23        │",
+    "│                            │",
+    "│   Row31 Row32 Row33        │",
+    "└────────────────────────────┘",
+])]
+#[case::first_always(Some(0), HighlightSpacing::Always, [
+    "┌────────────────────────────┐",
+    "│   Head1 Head2 Head3        │",
+    "│                            │",
+    "│>> Row11 Row12 Row13        │",
+    "│   Row21 Row22 Row23        │",
+    "│                            │",
+    "│   Row31 Row32 Row33        │",
+    "└────────────────────────────┘",
+])]
+#[case::first_never(Some(0), HighlightSpacing::Never, [
+    "┌────────────────────────────┐",
+    "│Head1 Head2 Head3           │",
+    "│                            │",
+    "│Row11 Row12 Row13           │",
+    "│Row21 Row22 Row23           │",
+    "│                            │",
+    "│Row31 Row32 Row33           │",
+    "└────────────────────────────┘",
+])]
+fn widgets_table_enable_always_highlight_spacing<'line, Lines>(
+    #[case] selected: Option<usize>,
+    #[case] space: HighlightSpacing,
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<Line<'line>>,
+{
+    let mut state = TableState::new().with_selected(selected);
+    let backend = TestBackend::new(30, 8);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            let table = Table::new(
+                vec![
+                    Row::new(vec!["Row11", "Row12", "Row13"]),
+                    Row::new(vec!["Row21", "Row22", "Row23"]).height(2),
+                    Row::new(vec!["Row31", "Row32", "Row33"]),
+                    Row::new(vec!["Row41", "Row42", "Row43"]).height(2),
+                ],
+                [
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                    Constraint::Length(5),
+                ],
+            )
+            .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
+            .block(Block::bordered())
+            .highlight_symbol(">> ")
+            .highlight_spacing(space)
+            .column_spacing(1);
+            f.render_stateful_widget(table, size, &mut state);
+        })
+        .unwrap();
+    terminal.backend().assert_buffer_lines(expected);
 }
 
 #[test]
@@ -796,7 +664,7 @@ fn widgets_table_can_have_elements_styled_individually() {
                 ],
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-            .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
+            .block(Block::new().borders(Borders::LEFT | Borders::RIGHT))
             .highlight_symbol(">> ")
             .highlight_style(Style::default().add_modifier(Modifier::BOLD))
             .column_spacing(1);
@@ -804,7 +672,7 @@ fn widgets_table_can_have_elements_styled_individually() {
         })
         .unwrap();
 
-    let mut expected = Buffer::with_lines(vec![
+    let mut expected = Buffer::with_lines([
         "│   Head1  Head2  Head3      │",
         "│                            │",
         "│>> Row11  Row12  Row13      │",
@@ -861,38 +729,24 @@ fn widgets_table_should_render_even_if_empty() {
                 ],
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]))
-            .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
+            .block(Block::new().borders(Borders::LEFT | Borders::RIGHT))
             .column_spacing(1);
             f.render_widget(table, size);
         })
         .unwrap();
-
-    let expected = Buffer::with_lines(vec![
+    terminal.backend().assert_buffer_lines([
         "│Head1  Head2  Head3         │",
         "│                            │",
         "│                            │",
         "│                            │",
     ]);
-
-    terminal.backend().assert_buffer(&expected);
 }
 
+// based on https://github.com/fdehau/tui-rs/issues/470#issuecomment-852562848
 #[test]
 fn widgets_table_columns_dont_panic() {
-    let test_case = |state: &mut TableState, table: Table, width: u16| {
-        let backend = TestBackend::new(width, 8);
-        let mut terminal = Terminal::new(backend).unwrap();
-        terminal
-            .draw(|f| {
-                let size = f.size();
-                f.render_stateful_widget(table, size, state);
-            })
-            .unwrap();
-    };
-
-    // based on https://github.com/fdehau/tui-rs/issues/470#issuecomment-852562848
-    let table1_width = 98;
-    let table1 = Table::new(
+    let table_width = 98;
+    let table = Table::new(
         vec![Row::new(vec!["r1", "r2", "r3", "r4"])],
         [
             Constraint::Percentage(15),
@@ -902,7 +756,7 @@ fn widgets_table_columns_dont_panic() {
         ],
     )
     .header(Row::new(vec!["h1", "h2", "h3", "h4"]))
-    .block(Block::default().borders(Borders::ALL))
+    .block(Block::bordered())
     .highlight_symbol(">> ")
     .column_spacing(1);
 
@@ -910,7 +764,15 @@ fn widgets_table_columns_dont_panic() {
 
     // select first, which would cause a panic before fix
     state.select(Some(0));
-    test_case(&mut state, table1.clone(), table1_width);
+
+    let backend = TestBackend::new(table_width, 8);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| {
+            let size = f.size();
+            f.render_stateful_widget(table, size, &mut state);
+        })
+        .unwrap();
 }
 
 #[test]
@@ -940,12 +802,12 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
                 ],
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-            .block(Block::default().borders(Borders::ALL))
+            .block(Block::bordered())
             .column_spacing(1);
             f.render_stateful_widget(table, size, &mut state);
         })
         .unwrap();
-    let expected = Buffer::with_lines(vec![
+    terminal.backend().assert_buffer_lines([
         "┌────────────────────────────┐",
         "│Head1 Head2 Head3           │",
         "│                            │",
@@ -955,7 +817,6 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
         "│Row51 Row52 Row53           │",
         "└────────────────────────────┘",
     ]);
-    terminal.backend().assert_buffer(&expected);
 
     // render with 1 item => offset will be at 1
     state.select(Some(1));
@@ -971,12 +832,12 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
                 ],
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
-            .block(Block::default().borders(Borders::ALL))
+            .block(Block::bordered())
             .column_spacing(1);
             f.render_stateful_widget(table, size, &mut state);
         })
         .unwrap();
-    let expected = Buffer::with_lines(vec![
+    terminal.backend().assert_buffer_lines([
         "┌────────────────────────────┐",
         "│Head1 Head2 Head3           │",
         "│                            │",
@@ -986,5 +847,4 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
         "│                            │",
         "└────────────────────────────┘",
     ]);
-    terminal.backend().assert_buffer(&expected);
 }

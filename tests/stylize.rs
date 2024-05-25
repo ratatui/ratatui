@@ -5,7 +5,7 @@ use ratatui::{
     buffer::Buffer,
     layout::Rect,
     style::{Color, Style, Stylize},
-    widgets::{BarChart, Block, Borders, Paragraph},
+    widgets::{BarChart, Block, Paragraph},
     Terminal,
 };
 
@@ -28,7 +28,7 @@ fn barchart_can_be_stylized() {
         })
         .unwrap();
 
-    let mut expected = Buffer::with_lines(vec![
+    let mut expected = Buffer::with_lines([
         "      ██ ",
         "   ▅▅ ██ ",
         "▂▂ ██ ██ ",
@@ -55,17 +55,15 @@ fn barchart_can_be_stylized() {
         expected.get_mut(x * 3, 4).set_fg(Color::Blue);
         expected.get_mut(x * 3 + 1, 4).set_fg(Color::Reset);
     }
-
     terminal.backend().assert_buffer(&expected);
 }
 
 #[test]
 fn block_can_be_stylized() -> io::Result<()> {
-    let block = Block::default()
+    let block = Block::bordered()
         .title("Title".light_blue())
         .on_cyan()
-        .cyan()
-        .borders(Borders::ALL);
+        .cyan();
 
     let area = Rect::new(0, 0, 8, 3);
     let mut terminal = Terminal::new(TestBackend::new(11, 4))?;
@@ -73,7 +71,8 @@ fn block_can_be_stylized() -> io::Result<()> {
         f.render_widget(block, area);
     })?;
 
-    let mut expected = Buffer::with_lines(vec![
+    #[rustfmt::skip]
+    let mut expected = Buffer::with_lines([
         "┌Title─┐   ",
         "│      │   ",
         "└──────┘   ",
@@ -90,7 +89,6 @@ fn block_can_be_stylized() -> io::Result<()> {
     for x in 1..=5 {
         expected.get_mut(x, 0).set_fg(Color::LightBlue);
     }
-
     terminal.backend().assert_buffer(&expected);
     Ok(())
 }
@@ -105,7 +103,7 @@ fn paragraph_can_be_stylized() -> io::Result<()> {
         f.render_widget(paragraph, area);
     })?;
 
-    let mut expected = Buffer::with_lines(vec!["Text      "]);
+    let mut expected = Buffer::with_lines(["Text      "]);
     for x in 0..4 {
         expected.get_mut(x, 0).set_fg(Color::Cyan);
     }

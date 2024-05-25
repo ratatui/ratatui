@@ -139,8 +139,7 @@
 //!
 //! fn ui(frame: &mut Frame) {
 //!     frame.render_widget(
-//!         Paragraph::new("Hello World!")
-//!             .block(Block::default().title("Greeting").borders(Borders::ALL)),
+//!         Paragraph::new("Hello World!").block(Block::bordered().title("Greeting")),
 //!         frame.size(),
 //!     );
 //! }
@@ -184,14 +183,8 @@
 //!         [Constraint::Percentage(50), Constraint::Percentage(50)],
 //!     )
 //!     .split(main_layout[1]);
-//!     frame.render_widget(
-//!         Block::default().borders(Borders::ALL).title("Left"),
-//!         inner_layout[0],
-//!     );
-//!     frame.render_widget(
-//!         Block::default().borders(Borders::ALL).title("Right"),
-//!         inner_layout[1],
-//!     );
+//!     frame.render_widget(Block::bordered().title("Left"), inner_layout[0]);
+//!     frame.render_widget(Block::bordered().title("Right"), inner_layout[1]);
 //! }
 //! ```
 //!
@@ -262,22 +255,6 @@
 //! ![docsrs-styling]
 #![cfg_attr(feature = "document-features", doc = "\n## Features")]
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
-#![cfg_attr(
-    feature = "document-features",
-    doc = "[`CrossTermBackend`]: backend::CrosstermBackend"
-)]
-#![cfg_attr(
-    feature = "document-features",
-    doc = "[`TermionBackend`]: backend::TermionBackend"
-)]
-#![cfg_attr(
-    feature = "document-features",
-    doc = "[`TermwizBackend`]: backend::TermwizBackend"
-)]
-#![cfg_attr(
-    feature = "document-features",
-    doc = "[`calendar`]: widgets::calendar::Monthly"
-)]
 //!
 //! [Ratatui Website]: https://ratatui.rs/
 //! [Installation]: https://ratatui.rs/installation/

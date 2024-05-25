@@ -133,17 +133,13 @@ macro_rules! modifier {
 ///     "world".green().on_yellow().not_bold(),
 /// ]);
 /// let paragraph = Paragraph::new(line).italic().underlined();
-/// let block = Block::default()
-///     .title("Title")
-///     .borders(Borders::ALL)
-///     .on_white()
-///     .bold();
+/// let block = Block::bordered().title("Title").on_white().bold();
 /// ```
 pub trait Stylize<'a, T>: Sized {
     #[must_use = "`bg` returns the modified style without modifying the original"]
-    fn bg(self, color: Color) -> T;
+    fn bg<C: Into<Color>>(self, color: C) -> T;
     #[must_use = "`fg` returns the modified style without modifying the original"]
-    fn fg<S: Into<Color>>(self, color: S) -> T;
+    fn fg<C: Into<Color>>(self, color: C) -> T;
     #[must_use = "`reset` returns the modified style without modifying the original"]
     fn reset(self) -> T;
     #[must_use = "`add_modifier` returns the modified style without modifying the original"]
@@ -183,12 +179,12 @@ impl<'a, T, U> Stylize<'a, T> for U
 where
     U: Styled<Item = T>,
 {
-    fn bg(self, color: Color) -> T {
-        let style = self.style().bg(color);
+    fn bg<C: Into<Color>>(self, color: C) -> T {
+        let style = self.style().bg(color.into());
         self.set_style(style)
     }
 
-    fn fg<S: Into<Color>>(self, color: S) -> T {
+    fn fg<C: Into<Color>>(self, color: C) -> T {
         let style = self.style().fg(color.into());
         self.set_style(style)
     }

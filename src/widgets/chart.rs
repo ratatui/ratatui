@@ -8,7 +8,7 @@ use crate::{
     prelude::*,
     widgets::{
         canvas::{Canvas, Line as CanvasLine, Points},
-        Block, Borders,
+        Block,
     },
 };
 
@@ -475,7 +475,7 @@ struct ChartLayout {
 ///
 /// // Create the chart and link all the parts together
 /// let chart = Chart::new(datasets)
-///     .block(Block::default().title("Chart"))
+///     .block(Block::new().title("Chart"))
 ///     .x_axis(x_axis)
 ///     .y_axis(y_axis);
 /// ```
@@ -1050,9 +1050,7 @@ impl WidgetRef for Chart<'_> {
 
         if let Some(legend_area) = layout.legend_area {
             buf.set_style(legend_area, original_style);
-            Block::default()
-                .borders(Borders::ALL)
-                .render(legend_area, buf);
+            Block::bordered().render(legend_area, buf);
 
             for (i, (dataset_name, dataset_style)) in self
                 .datasets
@@ -1113,10 +1111,10 @@ impl<'a> Styled for Chart<'a> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
     use strum::ParseError;
 
     use super::*;
-    use crate::assert_buffer_eq;
 
     struct LegendTestCase {
         chart_area: Rect,
@@ -1211,7 +1209,6 @@ mod tests {
             .x_axis(Axis::default().title("xxxxxxxxxxxxxxxx"));
         let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 4));
         widget.render(buffer.area, &mut buffer);
-
         assert_eq!(buffer, Buffer::with_lines(vec![" ".repeat(8); 4]));
     }
 
@@ -1246,30 +1243,25 @@ mod tests {
         let widget = Chart::new(vec![long_dataset_name, short_dataset])
             .hidden_legend_constraints((100.into(), 100.into()));
         let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 5));
-
         widget.render(buffer.area, &mut buffer);
-
-        let expected = Buffer::with_lines(vec![
+        let expected = Buffer::with_lines([
             "    ┌──────────────┐",
             "    │Very long name│",
             "    │    Short name│",
             "    └──────────────┘",
             "                    ",
         ]);
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn test_chart_have_a_topleft_legend() {
         let chart = Chart::new(vec![Dataset::default().name("Ds1")])
             .legend_position(Some(LegendPosition::TopLeft));
-
         let area = Rect::new(0, 0, 30, 20);
         let mut buffer = Buffer::empty(area);
-
         chart.render(buffer.area, &mut buffer);
-
-        let expected = Buffer::with_lines(vec![
+        let expected = Buffer::with_lines([
             "┌───┐                         ",
             "│Ds1│                         ",
             "└───┘                         ",
@@ -1291,7 +1283,6 @@ mod tests {
             "                              ",
             "                              ",
         ]);
-
         assert_eq!(buffer, expected);
     }
 
@@ -1299,13 +1290,10 @@ mod tests {
     fn test_chart_have_a_long_y_axis_title_overlapping_legend() {
         let chart = Chart::new(vec![Dataset::default().name("Ds1")])
             .y_axis(Axis::default().title("The title overlap a legend."));
-
         let area = Rect::new(0, 0, 30, 20);
         let mut buffer = Buffer::empty(area);
-
         chart.render(buffer.area, &mut buffer);
-
-        let expected = Buffer::with_lines(vec![
+        let expected = Buffer::with_lines([
             "The title overlap a legend.   ",
             "                         ┌───┐",
             "                         │Ds1│",
@@ -1327,7 +1315,6 @@ mod tests {
             "                              ",
             "                              ",
         ]);
-
         assert_eq!(buffer, expected);
     }
 
@@ -1335,13 +1322,10 @@ mod tests {
     fn test_chart_have_overflowed_y_axis() {
         let chart = Chart::new(vec![Dataset::default().name("Ds1")])
             .y_axis(Axis::default().title("The title overlap a legend."));
-
         let area = Rect::new(0, 0, 10, 10);
         let mut buffer = Buffer::empty(area);
-
         chart.render(buffer.area, &mut buffer);
-
-        let expected = Buffer::with_lines(vec![
+        let expected = Buffer::with_lines([
             "          ",
             "          ",
             "          ",
@@ -1353,7 +1337,6 @@ mod tests {
             "          ",
             "          ",
         ]);
-
         assert_eq!(buffer, expected);
     }
 
@@ -1362,12 +1345,8 @@ mod tests {
         let name = "Data";
         let chart = Chart::new(vec![Dataset::default().name(name)])
             .hidden_legend_constraints((Constraint::Percentage(100), Constraint::Percentage(100)));
-
         let area = Rect::new(0, 0, name.len() as u16 + 2, 3);
         let mut buffer = Buffer::empty(area);
-
-        let expected = Buffer::with_lines(vec!["┌────┐", "│Data│", "└────┘"]);
-
         for position in [
             LegendPosition::TopLeft,
             LegendPosition::Top,
@@ -1381,171 +1360,103 @@ mod tests {
             let chart = chart.clone().legend_position(Some(position));
             buffer.reset();
             chart.render(buffer.area, &mut buffer);
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "┌────┐",
+                "│Data│",
+                "└────┘",
+            ]);
             assert_eq!(buffer, expected);
         }
     }
 
-    #[allow(clippy::too_many_lines)]
-    #[test]
-    fn test_legend_of_chart_have_odd_margin_size() {
+    #[rstest]
+    #[case(Some(LegendPosition::TopLeft), [
+        "┌────┐   ",
+        "│Data│   ",
+        "└────┘   ",
+        "         ",
+        "         ",
+        "         ",
+    ])]
+    #[case(Some(LegendPosition::Top), [
+        " ┌────┐  ",
+        " │Data│  ",
+        " └────┘  ",
+        "         ",
+        "         ",
+        "         ",
+    ])]
+    #[case(Some(LegendPosition::TopRight), [
+        "   ┌────┐",
+        "   │Data│",
+        "   └────┘",
+        "         ",
+        "         ",
+        "         ",
+    ])]
+    #[case(Some(LegendPosition::Left), [
+        "         ",
+        "┌────┐   ",
+        "│Data│   ",
+        "└────┘   ",
+        "         ",
+        "         ",
+    ])]
+    #[case(Some(LegendPosition::Right), [
+        "         ",
+        "   ┌────┐",
+        "   │Data│",
+        "   └────┘",
+        "         ",
+        "         ",
+    ])]
+    #[case(Some(LegendPosition::BottomLeft), [
+        "         ",
+        "         ",
+        "         ",
+        "┌────┐   ",
+        "│Data│   ",
+        "└────┘   ",
+    ])]
+    #[case(Some(LegendPosition::Bottom), [
+        "         ",
+        "         ",
+        "         ",
+        " ┌────┐  ",
+        " │Data│  ",
+        " └────┘  ",
+    ])]
+    #[case(Some(LegendPosition::BottomRight), [
+        "         ",
+        "         ",
+        "         ",
+        "   ┌────┐",
+        "   │Data│",
+        "   └────┘",
+    ])]
+    #[case(None, [
+        "         ",
+        "         ",
+        "         ",
+        "         ",
+        "         ",
+        "         ",
+    ])]
+    fn test_legend_of_chart_have_odd_margin_size<'line, Lines>(
+        #[case] legend_position: Option<LegendPosition>,
+        #[case] expected: Lines,
+    ) where
+        Lines: IntoIterator,
+        Lines::Item: Into<Line<'line>>,
+    {
         let name = "Data";
-        let base_chart = Chart::new(vec![Dataset::default().name(name)])
-            .hidden_legend_constraints((Constraint::Percentage(100), Constraint::Percentage(100)));
-
         let area = Rect::new(0, 0, name.len() as u16 + 2 + 3, 3 + 3);
         let mut buffer = Buffer::empty(area);
-
-        let chart = base_chart
-            .clone()
-            .legend_position(Some(LegendPosition::TopLeft));
-        buffer.reset();
+        let chart = Chart::new(vec![Dataset::default().name(name)])
+            .legend_position(legend_position)
+            .hidden_legend_constraints((Constraint::Percentage(100), Constraint::Percentage(100)));
         chart.render(buffer.area, &mut buffer);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┌────┐   ",
-                "│Data│   ",
-                "└────┘   ",
-                "         ",
-                "         ",
-                "         ",
-            ])
-        );
-        buffer.reset();
-
-        let chart = base_chart
-            .clone()
-            .legend_position(Some(LegendPosition::Top));
-        buffer.reset();
-        chart.render(buffer.area, &mut buffer);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                " ┌────┐  ",
-                " │Data│  ",
-                " └────┘  ",
-                "         ",
-                "         ",
-                "         ",
-            ])
-        );
-
-        let chart = base_chart
-            .clone()
-            .legend_position(Some(LegendPosition::TopRight));
-        buffer.reset();
-        chart.render(buffer.area, &mut buffer);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "   ┌────┐",
-                "   │Data│",
-                "   └────┘",
-                "         ",
-                "         ",
-                "         ",
-            ])
-        );
-
-        let chart = base_chart
-            .clone()
-            .legend_position(Some(LegendPosition::Left));
-        buffer.reset();
-        chart.render(buffer.area, &mut buffer);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "         ",
-                "┌────┐   ",
-                "│Data│   ",
-                "└────┘   ",
-                "         ",
-                "         ",
-            ])
-        );
-        buffer.reset();
-
-        let chart = base_chart
-            .clone()
-            .legend_position(Some(LegendPosition::Right));
-        buffer.reset();
-        chart.render(buffer.area, &mut buffer);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "         ",
-                "   ┌────┐",
-                "   │Data│",
-                "   └────┘",
-                "         ",
-                "         ",
-            ])
-        );
-
-        let chart = base_chart
-            .clone()
-            .legend_position(Some(LegendPosition::BottomLeft));
-        buffer.reset();
-        chart.render(buffer.area, &mut buffer);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "         ",
-                "         ",
-                "         ",
-                "┌────┐   ",
-                "│Data│   ",
-                "└────┘   ",
-            ])
-        );
-
-        let chart = base_chart
-            .clone()
-            .legend_position(Some(LegendPosition::Bottom));
-        buffer.reset();
-        chart.render(buffer.area, &mut buffer);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "         ",
-                "         ",
-                "         ",
-                " ┌────┐  ",
-                " │Data│  ",
-                " └────┘  ",
-            ])
-        );
-
-        let chart = base_chart
-            .clone()
-            .legend_position(Some(LegendPosition::BottomRight));
-        buffer.reset();
-        chart.render(buffer.area, &mut buffer);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "         ",
-                "         ",
-                "         ",
-                "   ┌────┐",
-                "   │Data│",
-                "   └────┘",
-            ])
-        );
-
-        let chart = base_chart.clone().legend_position(None);
-        buffer.reset();
-        chart.render(buffer.area, &mut buffer);
-        assert_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "         ",
-                "         ",
-                "         ",
-                "         ",
-                "         ",
-                "         ",
-            ])
-        );
+        assert_eq!(buffer, Buffer::with_lines(expected));
     }
 }

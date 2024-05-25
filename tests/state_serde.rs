@@ -42,7 +42,11 @@ impl AppState {
 
 /// Renders the list to a `TestBackend` and asserts that the result matches the expected buffer.
 #[track_caller]
-fn assert_buffer(state: &mut AppState, expected: &Buffer) {
+fn assert_buffer<'line, Lines>(state: &mut AppState, expected: Lines)
+where
+    Lines: IntoIterator,
+    Lines::Item: Into<Line<'line>>,
+{
     let backend = TestBackend::new(21, 5);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
@@ -62,7 +66,7 @@ fn assert_buffer(state: &mut AppState, expected: &Buffer) {
                 .split(f.size());
             let list = List::new(items)
                 .highlight_symbol(">>")
-                .block(Block::default().borders(Borders::RIGHT));
+                .block(Block::new().borders(Borders::RIGHT));
             f.render_stateful_widget(list, layout[0], &mut state.list);
 
             let table = Table::new(
@@ -76,7 +80,7 @@ fn assert_buffer(state: &mut AppState, expected: &Buffer) {
             f.render_stateful_widget(scrollbar, layout[2], &mut state.scrollbar);
         })
         .unwrap();
-    terminal.backend().assert_buffer(expected);
+    terminal.backend().assert_buffer_lines(expected);
 }
 
 const DEFAULT_STATE_BUFFER: [&str; 5] = [
@@ -106,19 +110,15 @@ const DEFAULT_STATE_REPR: &str = r#"{
 #[test]
 fn default_state_serialize() {
     let mut state = AppState::default();
-
-    let expected = Buffer::with_lines(DEFAULT_STATE_BUFFER);
-    assert_buffer(&mut state, &expected);
-
+    assert_buffer(&mut state, DEFAULT_STATE_BUFFER);
     let state = serde_json::to_string_pretty(&state).unwrap();
     assert_eq!(state, DEFAULT_STATE_REPR);
 }
 
 #[test]
 fn default_state_deserialize() {
-    let expected = Buffer::with_lines(DEFAULT_STATE_BUFFER);
     let mut state: AppState = serde_json::from_str(DEFAULT_STATE_REPR).unwrap();
-    assert_buffer(&mut state, &expected);
+    assert_buffer(&mut state, DEFAULT_STATE_BUFFER);
 }
 
 const SELECTED_STATE_BUFFER: [&str; 5] = [
@@ -148,19 +148,15 @@ const SELECTED_STATE_REPR: &str = r#"{
 fn selected_state_serialize() {
     let mut state = AppState::default();
     state.select(1);
-
-    let expected = Buffer::with_lines(SELECTED_STATE_BUFFER);
-    assert_buffer(&mut state, &expected);
-
+    assert_buffer(&mut state, SELECTED_STATE_BUFFER);
     let state = serde_json::to_string_pretty(&state).unwrap();
     assert_eq!(state, SELECTED_STATE_REPR);
 }
 
 #[test]
 fn selected_state_deserialize() {
-    let expected = Buffer::with_lines(SELECTED_STATE_BUFFER);
     let mut state: AppState = serde_json::from_str(SELECTED_STATE_REPR).unwrap();
-    assert_buffer(&mut state, &expected);
+    assert_buffer(&mut state, SELECTED_STATE_BUFFER);
 }
 
 const SCROLLED_STATE_BUFFER: [&str; 5] = [
@@ -191,17 +187,13 @@ const SCROLLED_STATE_REPR: &str = r#"{
 fn scrolled_state_serialize() {
     let mut state = AppState::default();
     state.select(8);
-
-    let expected = Buffer::with_lines(SCROLLED_STATE_BUFFER);
-    assert_buffer(&mut state, &expected);
-
+    assert_buffer(&mut state, SCROLLED_STATE_BUFFER);
     let state = serde_json::to_string_pretty(&state).unwrap();
     assert_eq!(state, SCROLLED_STATE_REPR);
 }
 
 #[test]
 fn scrolled_state_deserialize() {
-    let expected = Buffer::with_lines(SCROLLED_STATE_BUFFER);
     let mut state: AppState = serde_json::from_str(SCROLLED_STATE_REPR).unwrap();
-    assert_buffer(&mut state, &expected);
+    assert_buffer(&mut state, SCROLLED_STATE_BUFFER);
 }

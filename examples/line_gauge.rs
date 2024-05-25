@@ -1,4 +1,4 @@
-//! # [Ratatui] Gauge example
+//! # [Ratatui] Line Gauge example
 //!
 //! The latest version of this example is available in the [examples] folder in the repository.
 //!
@@ -13,8 +13,6 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::enum_glob_use)]
-
 use std::{io::stdout, time::Duration};
 
 use color_eyre::{config::HookBuilder, Result};
@@ -26,23 +24,16 @@ use crossterm::{
 use ratatui::{
     prelude::*,
     style::palette::tailwind,
-    widgets::{block::Title, Block, Borders, Gauge, Padding, Paragraph},
+    widgets::{block::Title, *},
 };
 
-const GAUGE1_COLOR: Color = tailwind::RED.c800;
-const GAUGE2_COLOR: Color = tailwind::GREEN.c800;
-const GAUGE3_COLOR: Color = tailwind::BLUE.c800;
-const GAUGE4_COLOR: Color = tailwind::ORANGE.c800;
 const CUSTOM_LABEL_COLOR: Color = tailwind::SLATE.c200;
 
 #[derive(Debug, Default, Clone, Copy)]
 struct App {
     state: AppState,
     progress_columns: u16,
-    progress1: u16,
-    progress2: f64,
-    progress3: f64,
-    progress4: f64,
+    progress: f64,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -81,17 +72,8 @@ impl App {
             return;
         }
 
-        // progress1 and progress2 help show the difference between ratio and percentage measuring
-        // the same thing, but converting to either a u16 or f64. Effectively, we're showing the
-        // difference between how a continuous gauge acts for floor and rounded values.
         self.progress_columns = (self.progress_columns + 1).clamp(0, terminal_width);
-        self.progress1 = self.progress_columns * 100 / terminal_width;
-        self.progress2 = f64::from(self.progress_columns) * 100.0 / f64::from(terminal_width);
-
-        // progress3 and progress4 similarly show the difference between unicode and non-unicode
-        // gauges measuring the same thing.
-        self.progress3 = (self.progress3 + 0.1).clamp(40.0, 100.0);
-        self.progress4 = (self.progress4 + 0.1).clamp(40.0, 100.0);
+        self.progress = f64::from(self.progress_columns) / f64::from(terminal_width);
     }
 
     fn handle_events(&mut self) -> Result<()> {
@@ -99,10 +81,9 @@ impl App {
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    use KeyCode::*;
                     match key.code {
-                        Char(' ') | Enter => self.start(),
-                        Char('q') | Esc => self.quit(),
+                        KeyCode::Char(' ') | KeyCode::Enter => self.start(),
+                        KeyCode::Char('q') | KeyCode::Esc => self.quit(),
                         _ => {}
                     }
                 }
@@ -121,96 +102,87 @@ impl App {
 }
 
 impl Widget for &App {
-    #[allow(clippy::similar_names)]
     fn render(self, area: Rect, buf: &mut Buffer) {
-        use Constraint::*;
+        use Constraint::{Length, Min, Ratio};
         let layout = Layout::vertical([Length(2), Min(0), Length(1)]);
-        let [header_area, gauge_area, footer_area] = layout.areas(area);
+        let [header_area, main_area, footer_area] = layout.areas(area);
 
-        let layout = Layout::vertical([Ratio(1, 4); 4]);
-        let [gauge1_area, gauge2_area, gauge3_area, gauge4_area] = layout.areas(gauge_area);
+        let layout = Layout::vertical([Ratio(1, 3); 3]);
+        let [gauge1_area, gauge2_area, gauge3_area] = layout.areas(main_area);
 
-        render_header(header_area, buf);
-        render_footer(footer_area, buf);
+        header().render(header_area, buf);
+        footer().render(footer_area, buf);
 
         self.render_gauge1(gauge1_area, buf);
         self.render_gauge2(gauge2_area, buf);
         self.render_gauge3(gauge3_area, buf);
-        self.render_gauge4(gauge4_area, buf);
     }
 }
 
-fn render_header(area: Rect, buf: &mut Buffer) {
-    Paragraph::new("Ratatui Gauge Example")
+fn header() -> impl Widget {
+    Paragraph::new("Ratatui Line Gauge Example")
         .bold()
         .alignment(Alignment::Center)
         .fg(CUSTOM_LABEL_COLOR)
-        .render(area, buf);
 }
 
-fn render_footer(area: Rect, buf: &mut Buffer) {
-    Paragraph::new("Press ENTER to start")
+fn footer() -> impl Widget {
+    Paragraph::new("Press ENTER / SPACE to start")
         .alignment(Alignment::Center)
         .fg(CUSTOM_LABEL_COLOR)
         .bold()
-        .render(area, buf);
 }
 
 impl App {
     fn render_gauge1(&self, area: Rect, buf: &mut Buffer) {
-        let title = title_block("Gauge with percentage");
-        Gauge::default()
+        let title = title_block("Blue / red only foreground");
+        LineGauge::default()
             .block(title)
-            .gauge_style(GAUGE1_COLOR)
-            .percent(self.progress1)
+            .filled_style(Style::default().fg(Color::Blue))
+            .unfilled_style(Style::default().fg(Color::Red))
+            .label("Foreground:")
+            .ratio(self.progress)
             .render(area, buf);
     }
 
     fn render_gauge2(&self, area: Rect, buf: &mut Buffer) {
-        let title = title_block("Gauge with ratio and custom label");
-        let label = Span::styled(
-            format!("{:.1}/100", self.progress2),
-            Style::new().italic().bold().fg(CUSTOM_LABEL_COLOR),
-        );
-        Gauge::default()
+        let title = title_block("Blue / red only background");
+        LineGauge::default()
             .block(title)
-            .gauge_style(GAUGE2_COLOR)
-            .ratio(self.progress2 / 100.0)
-            .label(label)
+            .filled_style(Style::default().fg(Color::Blue).bg(Color::Blue))
+            .unfilled_style(Style::default().fg(Color::Red).bg(Color::Red))
+            .label("Background:")
+            .ratio(self.progress)
             .render(area, buf);
     }
 
     fn render_gauge3(&self, area: Rect, buf: &mut Buffer) {
-        let title = title_block("Gauge with ratio (no unicode)");
-        let label = format!("{:.1}%", self.progress3);
-        Gauge::default()
+        let title = title_block("Fully styled with background");
+        LineGauge::default()
             .block(title)
-            .gauge_style(GAUGE3_COLOR)
-            .ratio(self.progress3 / 100.0)
-            .label(label)
-            .render(area, buf);
-    }
-
-    fn render_gauge4(&self, area: Rect, buf: &mut Buffer) {
-        let title = title_block("Gauge with ratio (unicode)");
-        let label = format!("{:.1}%", self.progress3);
-        Gauge::default()
-            .block(title)
-            .gauge_style(GAUGE4_COLOR)
-            .ratio(self.progress4 / 100.0)
-            .label(label)
-            .use_unicode(true)
+            .filled_style(
+                Style::default()
+                    .fg(tailwind::BLUE.c400)
+                    .bg(tailwind::BLUE.c600),
+            )
+            .unfilled_style(
+                Style::default()
+                    .fg(tailwind::RED.c400)
+                    .bg(tailwind::RED.c800),
+            )
+            .label("Both:")
+            .ratio(self.progress)
             .render(area, buf);
     }
 }
 
 fn title_block(title: &str) -> Block {
     let title = Title::from(title).alignment(Alignment::Center);
-    Block::new()
-        .borders(Borders::NONE)
-        .padding(Padding::vertical(1))
+    Block::default()
         .title(title)
+        .borders(Borders::NONE)
         .fg(CUSTOM_LABEL_COLOR)
+        .padding(Padding::vertical(1))
 }
 
 fn init_error_hooks() -> color_eyre::Result<()> {

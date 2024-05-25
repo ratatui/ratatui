@@ -10,18 +10,18 @@ use ratatui::{
     },
     Terminal,
 };
+use rstest::rstest;
 
 #[test]
 fn widgets_block_renders() {
     let backend = TestBackend::new(10, 10);
     let mut terminal = Terminal::new(backend).unwrap();
-    let block = Block::default()
-        .title(Span::styled("Title", Style::default().fg(Color::LightBlue)))
-        .borders(Borders::ALL);
+    let block =
+        Block::bordered().title(Span::styled("Title", Style::default().fg(Color::LightBlue)));
     terminal
         .draw(|frame| frame.render_widget(block, Rect::new(0, 0, 8, 8)))
         .unwrap();
-    let mut expected = Buffer::with_lines(vec![
+    let mut expected = Buffer::with_lines([
         "┌Title─┐  ",
         "│      │  ",
         "│      │  ",
@@ -41,69 +41,71 @@ fn widgets_block_renders() {
 
 #[test]
 fn widgets_block_titles_overlap() {
-    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
-    fn test_case(block: Block, area: Rect, expected: Buffer) {
+    fn test_case<'line, Lines>(block: Block, area: Rect, expected: Lines)
+    where
+        Lines: IntoIterator,
+        Lines::Item: Into<ratatui::text::Line<'line>>,
+    {
         let backend = TestBackend::new(area.width, area.height);
         let mut terminal = Terminal::new(backend).unwrap();
         terminal
             .draw(|frame| frame.render_widget(block, area))
             .unwrap();
-        terminal.backend().assert_buffer(&expected);
+        terminal.backend().assert_buffer_lines(expected);
     }
 
     // Left overrides the center
     test_case(
-        Block::default()
+        Block::new()
             .title(Title::from("aaaaa").alignment(Alignment::Left))
             .title(Title::from("bbb").alignment(Alignment::Center))
             .title(Title::from("ccc").alignment(Alignment::Right)),
         Rect::new(0, 0, 10, 1),
-        Buffer::with_lines(vec!["aaaaab ccc"]),
+        ["aaaaab ccc"],
     );
 
     // Left alignment overrides the center alignment which overrides the right alignment
     test_case(
-        Block::default()
+        Block::new()
             .title(Title::from("aaaaa").alignment(Alignment::Left))
             .title(Title::from("bbbbb").alignment(Alignment::Center))
             .title(Title::from("ccccc").alignment(Alignment::Right)),
         Rect::new(0, 0, 11, 1),
-        Buffer::with_lines(vec!["aaaaabbbccc"]),
+        ["aaaaabbbccc"],
     );
 
     // Multiple left alignment overrides the center alignment and the right alignment
     test_case(
-        Block::default()
+        Block::new()
             .title(Title::from("aaaaa").alignment(Alignment::Left))
             .title(Title::from("aaaaa").alignment(Alignment::Left))
             .title(Title::from("bbbbb").alignment(Alignment::Center))
             .title(Title::from("ccccc").alignment(Alignment::Right)),
         Rect::new(0, 0, 11, 1),
-        Buffer::with_lines(vec!["aaaaabaaaaa"]),
+        ["aaaaabaaaaa"],
     );
 
     // The right alignment doesn't override the center alignment, but pierces through it
     test_case(
-        Block::default()
+        Block::new()
             .title(Title::from("bbbbb").alignment(Alignment::Center))
             .title(Title::from("ccccccccccc").alignment(Alignment::Right)),
         Rect::new(0, 0, 11, 1),
-        Buffer::with_lines(vec!["cccbbbbbccc"]),
+        ["cccbbbbbccc"],
     );
 }
 
 #[test]
 fn widgets_block_renders_on_small_areas() {
-    #[allow(clippy::needless_pass_by_value)]
     #[track_caller]
-    fn test_case(block: Block, area: Rect, expected: Buffer) {
+    fn test_case(block: Block, area: Rect, expected: &Buffer) {
         let backend = TestBackend::new(area.width, area.height);
         let mut terminal = Terminal::new(backend).unwrap();
         terminal
             .draw(|frame| frame.render_widget(block, area))
             .unwrap();
-        terminal.backend().assert_buffer(&expected);
+        terminal.backend().assert_buffer(expected);
     }
 
     let one_cell_test_cases = [
@@ -116,656 +118,374 @@ fn widgets_block_renders_on_small_areas() {
     ];
     for (borders, symbol) in one_cell_test_cases {
         test_case(
-            Block::default().title("Test").borders(borders),
+            Block::new().borders(borders).title("Test"),
             Rect::new(0, 0, 0, 0),
-            Buffer::empty(Rect::new(0, 0, 0, 0)),
+            &Buffer::empty(Rect::new(0, 0, 0, 0)),
         );
         test_case(
-            Block::default().title("Test").borders(borders),
+            Block::new().borders(borders).title("Test"),
             Rect::new(0, 0, 1, 0),
-            Buffer::empty(Rect::new(0, 0, 1, 0)),
+            &Buffer::empty(Rect::new(0, 0, 1, 0)),
         );
         test_case(
-            Block::default().title("Test").borders(borders),
+            Block::new().borders(borders).title("Test"),
             Rect::new(0, 0, 0, 1),
-            Buffer::empty(Rect::new(0, 0, 0, 1)),
+            &Buffer::empty(Rect::new(0, 0, 0, 1)),
         );
         test_case(
-            Block::default().title("Test").borders(borders),
+            Block::new().borders(borders).title("Test"),
             Rect::new(0, 0, 1, 1),
-            Buffer::with_lines(vec![symbol]),
+            &Buffer::with_lines([symbol]),
         );
     }
     test_case(
-        Block::default().title("Test").borders(Borders::LEFT),
+        Block::new().borders(Borders::LEFT).title("Test"),
         Rect::new(0, 0, 4, 1),
-        Buffer::with_lines(vec!["│Tes"]),
+        &Buffer::with_lines(["│Tes"]),
     );
     test_case(
-        Block::default().title("Test").borders(Borders::RIGHT),
+        Block::new().borders(Borders::RIGHT).title("Test"),
         Rect::new(0, 0, 4, 1),
-        Buffer::with_lines(vec!["Tes│"]),
+        &Buffer::with_lines(["Tes│"]),
     );
     test_case(
-        Block::default().title("Test").borders(Borders::RIGHT),
+        Block::new().borders(Borders::RIGHT).title("Test"),
         Rect::new(0, 0, 4, 1),
-        Buffer::with_lines(vec!["Tes│"]),
+        &Buffer::with_lines(["Tes│"]),
     );
     test_case(
-        Block::default()
-            .title("Test")
-            .borders(Borders::LEFT | Borders::RIGHT),
+        Block::new()
+            .borders(Borders::LEFT | Borders::RIGHT)
+            .title("Test"),
         Rect::new(0, 0, 4, 1),
-        Buffer::with_lines(vec!["│Te│"]),
+        &Buffer::with_lines(["│Te│"]),
     );
     test_case(
-        Block::default().title("Test").borders(Borders::TOP),
+        Block::new().borders(Borders::TOP).title("Test"),
         Rect::new(0, 0, 4, 1),
-        Buffer::with_lines(vec!["Test"]),
+        &Buffer::with_lines(["Test"]),
     );
     test_case(
-        Block::default().title("Test").borders(Borders::TOP),
+        Block::new().borders(Borders::TOP).title("Test"),
         Rect::new(0, 0, 5, 1),
-        Buffer::with_lines(vec!["Test─"]),
+        &Buffer::with_lines(["Test─"]),
     );
     test_case(
-        Block::default()
-            .title("Test")
-            .borders(Borders::LEFT | Borders::TOP),
+        Block::new()
+            .borders(Borders::LEFT | Borders::TOP)
+            .title("Test"),
         Rect::new(0, 0, 5, 1),
-        Buffer::with_lines(vec!["┌Test"]),
+        &Buffer::with_lines(["┌Test"]),
     );
     test_case(
-        Block::default()
-            .title("Test")
-            .borders(Borders::LEFT | Borders::TOP),
+        Block::new()
+            .borders(Borders::LEFT | Borders::TOP)
+            .title("Test"),
         Rect::new(0, 0, 6, 1),
-        Buffer::with_lines(vec!["┌Test─"]),
+        &Buffer::with_lines(["┌Test─"]),
     );
 }
 
-#[allow(clippy::too_many_lines)]
-#[test]
-fn widgets_block_title_alignment() {
-    #[allow(clippy::needless_pass_by_value)]
-    #[track_caller]
-    fn test_case(alignment: Alignment, borders: Borders, expected: Buffer) {
-        let backend = TestBackend::new(15, 3);
-        let mut terminal = Terminal::new(backend).unwrap();
+#[rstest]
+#[case::left_with_all_borders(Alignment::Left, Borders::ALL, [
+    " ┌Title──────┐ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::left_without_top_border(Alignment::Left, Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+    " │Title      │ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::left_without_left_border(Alignment::Left, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " Title───────┐ ",
+    "             │ ",
+    " ────────────┘ ",
+])]
+#[case::left_without_right_border(Alignment::Left, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌Title─────── ",
+    " │             ",
+    " └──────────── ",
+])]
+#[case::left_without_borders(Alignment::Left, Borders::NONE, [
+    " Title         ",
+    "               ",
+    "               ",
+])]
+#[case::center_with_all_borders(Alignment::Center, Borders::ALL, [
+    " ┌───Title───┐ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::center_without_top_border(Alignment::Center, Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+    " │   Title   │ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::center_without_left_border(Alignment::Center, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " ───Title────┐ ",
+    "             │ ",
+    " ────────────┘ ",
+])]
+#[case::center_without_right_border(Alignment::Center, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌───Title──── ",
+    " │             ",
+    " └──────────── ",
+])]
+#[case::center_without_borders(Alignment::Center, Borders::NONE, [
+    "     Title     ",
+    "               ",
+    "               ",
+])]
+#[case::right_with_all_borders(Alignment::Right, Borders::ALL, [
+    " ┌──────Title┐ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::right_without_top_border(Alignment::Right, Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+    " │      Title│ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::right_without_left_border(Alignment::Right, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " ───────Title┐ ",
+    "             │ ",
+    " ────────────┘ ",
+])]
+#[case::right_without_right_border(Alignment::Right, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌───────Title ",
+    " │             ",
+    " └──────────── ",
+])]
+#[case::right_without_borders(Alignment::Right, Borders::NONE, [
+    "         Title ",
+    "               ",
+    "               ",
+])]
+fn widgets_block_title_alignment_top<'line, Lines>(
+    #[case] alignment: Alignment,
+    #[case] borders: Borders,
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<ratatui::text::Line<'line>>,
+{
+    let backend = TestBackend::new(15, 3);
+    let mut terminal = Terminal::new(backend).unwrap();
 
-        let block1 = Block::default()
-            .title(Title::from(Span::styled("Title", Style::default())).alignment(alignment))
-            .borders(borders);
+    let block1 = Block::new()
+        .borders(borders)
+        .title(Title::from(Span::raw("Title")).alignment(alignment));
 
-        let block2 = Block::default()
-            .title("Title")
-            .title_alignment(alignment)
-            .borders(borders);
+    let block2 = Block::new()
+        .borders(borders)
+        .title_alignment(alignment)
+        .title("Title");
+    let area = Rect::new(1, 0, 13, 3);
+    let expected = Buffer::with_lines(expected);
 
-        let area = Rect::new(1, 0, 13, 3);
-
-        for block in [block1, block2] {
-            terminal
-                .draw(|frame| frame.render_widget(block, area))
-                .unwrap();
-            terminal.backend().assert_buffer(&expected);
-        }
-    }
-
-    // title top-left with all borders
-    test_case(
-        Alignment::Left,
-        Borders::ALL,
-        Buffer::with_lines(vec![
-            " ┌Title──────┐ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title top-left without top border
-    test_case(
-        Alignment::Left,
-        Borders::LEFT | Borders::BOTTOM | Borders::RIGHT,
-        Buffer::with_lines(vec![
-            " │Title      │ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title top-left with no left border
-    test_case(
-        Alignment::Left,
-        Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " Title───────┐ ",
-            "             │ ",
-            " ────────────┘ ",
-        ]),
-    );
-
-    // title top-left without right border
-    test_case(
-        Alignment::Left,
-        Borders::LEFT | Borders::TOP | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ┌Title─────── ",
-            " │             ",
-            " └──────────── ",
-        ]),
-    );
-
-    // title top-left without borders
-    test_case(
-        Alignment::Left,
-        Borders::NONE,
-        Buffer::with_lines(vec![
-            " Title         ",
-            "               ",
-            "               ",
-        ]),
-    );
-
-    // title center with all borders
-    test_case(
-        Alignment::Center,
-        Borders::ALL,
-        Buffer::with_lines(vec![
-            " ┌───Title───┐ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title center without top border
-    test_case(
-        Alignment::Center,
-        Borders::LEFT | Borders::BOTTOM | Borders::RIGHT,
-        Buffer::with_lines(vec![
-            " │   Title   │ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title center with no left border
-    test_case(
-        Alignment::Center,
-        Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ───Title────┐ ",
-            "             │ ",
-            " ────────────┘ ",
-        ]),
-    );
-
-    // title center without right border
-    test_case(
-        Alignment::Center,
-        Borders::LEFT | Borders::TOP | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ┌───Title──── ",
-            " │             ",
-            " └──────────── ",
-        ]),
-    );
-
-    // title center without borders
-    test_case(
-        Alignment::Center,
-        Borders::NONE,
-        Buffer::with_lines(vec![
-            "     Title     ",
-            "               ",
-            "               ",
-        ]),
-    );
-
-    // title top-right with all borders
-    test_case(
-        Alignment::Right,
-        Borders::ALL,
-        Buffer::with_lines(vec![
-            " ┌──────Title┐ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title top-right without top border
-    test_case(
-        Alignment::Right,
-        Borders::LEFT | Borders::BOTTOM | Borders::RIGHT,
-        Buffer::with_lines(vec![
-            " │      Title│ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title top-right with no left border
-    test_case(
-        Alignment::Right,
-        Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ───────Title┐ ",
-            "             │ ",
-            " ────────────┘ ",
-        ]),
-    );
-
-    // title top-right without right border
-    test_case(
-        Alignment::Right,
-        Borders::LEFT | Borders::TOP | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ┌───────Title ",
-            " │             ",
-            " └──────────── ",
-        ]),
-    );
-
-    // title top-right without borders
-    test_case(
-        Alignment::Right,
-        Borders::NONE,
-        Buffer::with_lines(vec![
-            "         Title ",
-            "               ",
-            "               ",
-        ]),
-    );
-}
-
-#[allow(clippy::too_many_lines)]
-#[test]
-fn widgets_block_title_alignment_bottom() {
-    #[allow(clippy::needless_pass_by_value)]
-    #[track_caller]
-    fn test_case(alignment: Alignment, borders: Borders, expected: Buffer) {
-        let backend = TestBackend::new(15, 3);
-        let mut terminal = Terminal::new(backend).unwrap();
-
-        let title = Title::from(Span::styled("Title", Style::default()))
-            .alignment(alignment)
-            .position(Position::Bottom);
-        let block = Block::default().title(title).borders(borders);
-        let area = Rect::new(1, 0, 13, 3);
+    for block in [block1, block2] {
         terminal
             .draw(|frame| frame.render_widget(block, area))
             .unwrap();
         terminal.backend().assert_buffer(&expected);
     }
-
-    // title bottom-left with all borders
-    test_case(
-        Alignment::Left,
-        Borders::ALL,
-        Buffer::with_lines(vec![
-            " ┌───────────┐ ",
-            " │           │ ",
-            " └Title──────┘ ",
-        ]),
-    );
-
-    // title bottom-left without bottom border
-    test_case(
-        Alignment::Left,
-        Borders::LEFT | Borders::TOP | Borders::RIGHT,
-        Buffer::with_lines(vec![
-            " ┌───────────┐ ",
-            " │           │ ",
-            " │Title      │ ",
-        ]),
-    );
-
-    // title bottom-left with no left border
-    test_case(
-        Alignment::Left,
-        Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ────────────┐ ",
-            "             │ ",
-            " Title───────┘ ",
-        ]),
-    );
-
-    // title bottom-left without right border
-    test_case(
-        Alignment::Left,
-        Borders::LEFT | Borders::TOP | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ┌──────────── ",
-            " │             ",
-            " └Title─────── ",
-        ]),
-    );
-
-    // title bottom-left without borders
-    test_case(
-        Alignment::Left,
-        Borders::NONE,
-        Buffer::with_lines(vec![
-            "               ",
-            "               ",
-            " Title         ",
-        ]),
-    );
-
-    // title center with all borders
-    test_case(
-        Alignment::Center,
-        Borders::ALL,
-        Buffer::with_lines(vec![
-            " ┌───────────┐ ",
-            " │           │ ",
-            " └───Title───┘ ",
-        ]),
-    );
-
-    // title center without bottom border
-    test_case(
-        Alignment::Center,
-        Borders::LEFT | Borders::TOP | Borders::RIGHT,
-        Buffer::with_lines(vec![
-            " ┌───────────┐ ",
-            " │           │ ",
-            " │   Title   │ ",
-        ]),
-    );
-
-    // title center with no left border
-    test_case(
-        Alignment::Center,
-        Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ────────────┐ ",
-            "             │ ",
-            " ───Title────┘ ",
-        ]),
-    );
-
-    // title center without right border
-    test_case(
-        Alignment::Center,
-        Borders::LEFT | Borders::TOP | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ┌──────────── ",
-            " │             ",
-            " └───Title──── ",
-        ]),
-    );
-
-    // title center without borders
-    test_case(
-        Alignment::Center,
-        Borders::NONE,
-        Buffer::with_lines(vec![
-            "               ",
-            "               ",
-            "     Title     ",
-        ]),
-    );
-
-    // title bottom-right with all borders
-    test_case(
-        Alignment::Right,
-        Borders::ALL,
-        Buffer::with_lines(vec![
-            " ┌───────────┐ ",
-            " │           │ ",
-            " └──────Title┘ ",
-        ]),
-    );
-
-    // title bottom-right without bottom border
-    test_case(
-        Alignment::Right,
-        Borders::LEFT | Borders::TOP | Borders::RIGHT,
-        Buffer::with_lines(vec![
-            " ┌───────────┐ ",
-            " │           │ ",
-            " │      Title│ ",
-        ]),
-    );
-
-    // title bottom-right with no left border
-    test_case(
-        Alignment::Right,
-        Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ────────────┐ ",
-            "             │ ",
-            " ───────Title┘ ",
-        ]),
-    );
-
-    // title bottom-right without right border
-    test_case(
-        Alignment::Right,
-        Borders::LEFT | Borders::TOP | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ┌──────────── ",
-            " │             ",
-            " └───────Title ",
-        ]),
-    );
-
-    // title bottom-right without borders
-    test_case(
-        Alignment::Right,
-        Borders::NONE,
-        Buffer::with_lines(vec![
-            "               ",
-            "               ",
-            "         Title ",
-        ]),
-    );
 }
 
-#[allow(clippy::too_many_lines)]
-#[test]
-fn widgets_block_multiple_titles() {
-    #[allow(clippy::needless_pass_by_value)]
-    #[track_caller]
-    fn test_case(title_a: Title, title_b: Title, borders: Borders, expected: Buffer) {
-        let backend = TestBackend::new(15, 3);
-        let mut terminal = Terminal::new(backend).unwrap();
+#[rstest]
+#[case::left(Alignment::Left, Borders::ALL, [
+    " ┌───────────┐ ",
+    " │           │ ",
+    " └Title──────┘ ",
+])]
+#[case::left(Alignment::Left, Borders::LEFT | Borders::TOP | Borders::RIGHT, [
+    " ┌───────────┐ ",
+    " │           │ ",
+    " │Title      │ ",
+])]
+#[case::left(Alignment::Left, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " ────────────┐ ",
+    "             │ ",
+    " Title───────┘ ",
+])]
+#[case::left(Alignment::Left, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌──────────── ",
+    " │             ",
+    " └Title─────── ",
+])]
+#[case::left(Alignment::Left, Borders::NONE, [
+    "               ",
+    "               ",
+    " Title         ",
+])]
+#[case::left(Alignment::Center, Borders::ALL, [
+    " ┌───────────┐ ",
+    " │           │ ",
+    " └───Title───┘ ",
+])]
+#[case::left(Alignment::Center, Borders::LEFT | Borders::TOP | Borders::RIGHT, [
+    " ┌───────────┐ ",
+    " │           │ ",
+    " │   Title   │ ",
+])]
+#[case::left(Alignment::Center, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " ────────────┐ ",
+    "             │ ",
+    " ───Title────┘ ",
+])]
+#[case::left(Alignment::Center, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌──────────── ",
+    " │             ",
+    " └───Title──── ",
+])]
+#[case::left(Alignment::Center, Borders::NONE, [
+    "               ",
+    "               ",
+    "     Title     ",
+])]
+#[case::left(Alignment::Right, Borders::ALL, [
+    " ┌───────────┐ ",
+    " │           │ ",
+    " └──────Title┘ ",
+])]
+#[case::left(Alignment::Right, Borders::LEFT | Borders::TOP | Borders::RIGHT, [
+    " ┌───────────┐ ",
+    " │           │ ",
+    " │      Title│ ",
+])]
+#[case::left(Alignment::Right, Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " ────────────┐ ",
+    "             │ ",
+    " ───────Title┘ ",
+])]
+#[case::left(Alignment::Right, Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌──────────── ",
+    " │             ",
+    " └───────Title ",
+])]
+#[case::left(Alignment::Right, Borders::NONE, [
+    "               ",
+    "               ",
+    "         Title ",
+])]
+fn widgets_block_title_alignment_bottom<'line, Lines>(
+    #[case] alignment: Alignment,
+    #[case] borders: Borders,
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<ratatui::text::Line<'line>>,
+{
+    let backend = TestBackend::new(15, 3);
+    let mut terminal = Terminal::new(backend).unwrap();
 
-        let block = Block::default()
-            .title(title_a)
-            .title(title_b)
-            .borders(borders);
+    let title = Title::from(Span::styled("Title", Style::default()))
+        .alignment(alignment)
+        .position(Position::Bottom);
+    let block = Block::default().title(title).borders(borders);
+    let area = Rect::new(1, 0, 13, 3);
+    terminal
+        .draw(|frame| frame.render_widget(block, area))
+        .unwrap();
+    terminal.backend().assert_buffer_lines(expected);
+}
 
-        let area = Rect::new(1, 0, 13, 3);
-
-        terminal
-            .draw(|f| {
-                f.render_widget(block, area);
-            })
-            .unwrap();
-
-        terminal.backend().assert_buffer(&expected);
-    }
-
-    // title bottom-left with all borders
-    test_case(
-        Title::from("foo"),
-        Title::from("bar"),
-        Borders::ALL,
-        Buffer::with_lines(vec![
-            " ┌foo─bar────┐ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title top-left without top border
-    test_case(
-        Title::from("foo"),
-        Title::from("bar"),
-        Borders::LEFT | Borders::BOTTOM | Borders::RIGHT,
-        Buffer::with_lines(vec![
-            " │foo bar    │ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title top-left with no left border
-    test_case(
-        Title::from("foo"),
-        Title::from("bar"),
-        Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " foo─bar─────┐ ",
-            "             │ ",
-            " ────────────┘ ",
-        ]),
-    );
-
-    // title top-left without right border
-    test_case(
-        Title::from("foo"),
-        Title::from("bar"),
-        Borders::LEFT | Borders::TOP | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ┌foo─bar───── ",
-            " │             ",
-            " └──────────── ",
-        ]),
-    );
-
-    // title top-left without borders
-    test_case(
-        Title::from("foo"),
-        Title::from("bar"),
-        Borders::NONE,
-        Buffer::with_lines(vec![
-            " foo bar       ",
-            "               ",
-            "               ",
-        ]),
-    );
-
-    // title center with all borders
-    test_case(
-        Title::from("foo").alignment(Alignment::Center),
-        Title::from("bar").alignment(Alignment::Center),
-        Borders::ALL,
-        Buffer::with_lines(vec![
-            " ┌──foo─bar──┐ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title center without top border
-    test_case(
-        Title::from("foo").alignment(Alignment::Center),
-        Title::from("bar").alignment(Alignment::Center),
-        Borders::LEFT | Borders::BOTTOM | Borders::RIGHT,
-        Buffer::with_lines(vec![
-            " │  foo bar  │ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title center with no left border
-    test_case(
-        Title::from("foo").alignment(Alignment::Center),
-        Title::from("bar").alignment(Alignment::Center),
-        Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ──foo─bar───┐ ",
-            "             │ ",
-            " ────────────┘ ",
-        ]),
-    );
-
-    // title center without right border
-    test_case(
-        Title::from("foo").alignment(Alignment::Center),
-        Title::from("bar").alignment(Alignment::Center),
-        Borders::LEFT | Borders::TOP | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ┌──foo─bar─── ",
-            " │             ",
-            " └──────────── ",
-        ]),
-    );
-
-    // title center without borders
-    test_case(
-        Title::from("foo").alignment(Alignment::Center),
-        Title::from("bar").alignment(Alignment::Center),
-        Borders::NONE,
-        Buffer::with_lines(vec![
-            "    foo bar    ",
-            "               ",
-            "               ",
-        ]),
-    );
-
-    // title top-right with all borders
-    test_case(
-        Title::from("foo").alignment(Alignment::Right),
-        Title::from("bar").alignment(Alignment::Right),
-        Borders::ALL,
-        Buffer::with_lines(vec![
-            " ┌────foo─bar┐ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title top-right without top border
-    test_case(
-        Title::from("foo").alignment(Alignment::Right),
-        Title::from("bar").alignment(Alignment::Right),
-        Borders::LEFT | Borders::BOTTOM | Borders::RIGHT,
-        Buffer::with_lines(vec![
-            " │    foo bar│ ",
-            " │           │ ",
-            " └───────────┘ ",
-        ]),
-    );
-
-    // title top-right with no left border
-    test_case(
-        Title::from("foo").alignment(Alignment::Right),
-        Title::from("bar").alignment(Alignment::Right),
-        Borders::TOP | Borders::RIGHT | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ─────foo─bar┐ ",
-            "             │ ",
-            " ────────────┘ ",
-        ]),
-    );
-
-    // title top-right without right border
-    test_case(
-        Title::from("foo").alignment(Alignment::Right),
-        Title::from("bar").alignment(Alignment::Right),
-        Borders::LEFT | Borders::TOP | Borders::BOTTOM,
-        Buffer::with_lines(vec![
-            " ┌─────foo─bar ",
-            " │             ",
-            " └──────────── ",
-        ]),
-    );
-
-    // title top-right without borders
-    test_case(
-        Title::from("foo").alignment(Alignment::Right),
-        Title::from("bar").alignment(Alignment::Right),
-        Borders::NONE,
-        Buffer::with_lines(vec![
-            "       foo bar ",
-            "               ",
-            "               ",
-        ]),
-    );
+#[rstest]
+#[case::left_with_all_borders(Title::from("foo"), Title::from("bar"), Borders::ALL, [
+    " ┌foo─bar────┐ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::left_without_top_border(Title::from("foo"), Title::from("bar"), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+    " │foo bar    │ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::left_without_left_border(Title::from("foo"), Title::from("bar"), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " foo─bar─────┐ ",
+    "             │ ",
+    " ────────────┘ ",
+])]
+#[case::left_without_right_border(Title::from("foo"), Title::from("bar"), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌foo─bar───── ",
+    " │             ",
+    " └──────────── ",
+])]
+#[case::left_without_borders(Title::from("foo"), Title::from("bar"), Borders::NONE, [
+    " foo bar       ",
+    "               ",
+    "               ",
+])]
+#[case::center_with_borders(Title::from("foo").alignment(Alignment::Center), Title::from("bar").alignment(Alignment::Center), Borders::ALL, [
+    " ┌──foo─bar──┐ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::center_without_top_border(Title::from("foo").alignment(Alignment::Center), Title::from("bar").alignment(Alignment::Center), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+    " │  foo bar  │ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::center_without_left_border(Title::from("foo").alignment(Alignment::Center), Title::from("bar").alignment(Alignment::Center), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " ──foo─bar───┐ ",
+    "             │ ",
+    " ────────────┘ ",
+])]
+#[case::center_without_right_border(Title::from("foo").alignment(Alignment::Center), Title::from("bar").alignment(Alignment::Center), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌──foo─bar─── ",
+    " │             ",
+    " └──────────── ",
+])]
+#[case::center_without_borders(Title::from("foo").alignment(Alignment::Center), Title::from("bar").alignment(Alignment::Center), Borders::NONE, [
+    "    foo bar    ",
+    "               ",
+    "               ",
+])]
+#[case::right_with_all_borders(Title::from("foo").alignment(Alignment::Right), Title::from("bar").alignment(Alignment::Right), Borders::ALL, [
+    " ┌────foo─bar┐ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::right_without_top_border(Title::from("foo").alignment(Alignment::Right), Title::from("bar").alignment(Alignment::Right), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+    " │    foo bar│ ",
+    " │           │ ",
+    " └───────────┘ ",
+])]
+#[case::right_without_left_border(Title::from("foo").alignment(Alignment::Right), Title::from("bar").alignment(Alignment::Right), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+    " ─────foo─bar┐ ",
+    "             │ ",
+    " ────────────┘ ",
+])]
+#[case::right_without_right_border(Title::from("foo").alignment(Alignment::Right), Title::from("bar").alignment(Alignment::Right), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+    " ┌─────foo─bar ",
+    " │             ",
+    " └──────────── ",
+])]
+#[case::right_without_borders(Title::from("foo").alignment(Alignment::Right), Title::from("bar").alignment(Alignment::Right), Borders::NONE, [
+    "       foo bar ",
+    "               ",
+    "               ",
+])]
+fn widgets_block_multiple_titles<'line, Lines>(
+    #[case] title_a: Title,
+    #[case] title_b: Title,
+    #[case] borders: Borders,
+    #[case] expected: Lines,
+) where
+    Lines: IntoIterator,
+    Lines::Item: Into<ratatui::text::Line<'line>>,
+{
+    let backend = TestBackend::new(15, 3);
+    let mut terminal = Terminal::new(backend).unwrap();
+    let block = Block::default()
+        .title(title_a)
+        .title(title_b)
+        .borders(borders);
+    let area = Rect::new(1, 0, 13, 3);
+    terminal
+        .draw(|f| {
+            f.render_widget(block, area);
+        })
+        .unwrap();
+    terminal.backend().assert_buffer_lines(expected);
 }

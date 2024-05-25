@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use compact_str::CompactString;
 
 use crate::prelude::*;
@@ -36,7 +34,29 @@ pub struct Cell {
 }
 
 impl Cell {
+    /// An empty `Cell`
+    pub const EMPTY: Self = Self::new(" ");
+
+    /// Creates a new `Cell` with the given symbol.
+    ///
+    /// This works at compile time and puts the symbol onto the stack. Fails to build when the
+    /// symbol doesnt fit onto the stack and requires to be placed on the heap. Use
+    /// `Self::default().set_symbol()` in that case. See [`CompactString::new_inline`] for more
+    /// details on this.
+    pub const fn new(symbol: &str) -> Self {
+        Self {
+            symbol: CompactString::new_inline(symbol),
+            fg: Color::Reset,
+            bg: Color::Reset,
+            #[cfg(feature = "underline-color")]
+            underline_color: Color::Reset,
+            modifier: Modifier::empty(),
+            skip: false,
+        }
+    }
+
     /// Gets the symbol of the cell.
+    #[must_use]
     pub fn symbol(&self) -> &str {
         self.symbol.as_str()
     }
@@ -88,19 +108,16 @@ impl Cell {
     }
 
     /// Returns the style of the cell.
-    pub fn style(&self) -> Style {
-        #[cfg(feature = "underline-color")]
-        return Style::default()
-            .fg(self.fg)
-            .bg(self.bg)
-            .underline_color(self.underline_color)
-            .add_modifier(self.modifier);
-
-        #[cfg(not(feature = "underline-color"))]
-        return Style::default()
-            .fg(self.fg)
-            .bg(self.bg)
-            .add_modifier(self.modifier);
+    #[must_use]
+    pub const fn style(&self) -> Style {
+        Style {
+            fg: Some(self.fg),
+            bg: Some(self.bg),
+            #[cfg(feature = "underline-color")]
+            underline_color: Some(self.underline_color),
+            add_modifier: self.modifier,
+            sub_modifier: Modifier::empty(),
+        }
     }
 
     /// Sets the cell to be skipped when copying (diffing) the buffer to the screen.
@@ -112,7 +129,7 @@ impl Cell {
         self
     }
 
-    /// Resets the cell to the default state.
+    /// Resets the cell to the empty state.
     pub fn reset(&mut self) {
         self.symbol = CompactString::new_inline(" ");
         self.fg = Color::Reset;
@@ -128,15 +145,7 @@ impl Cell {
 
 impl Default for Cell {
     fn default() -> Self {
-        Self {
-            symbol: CompactString::new_inline(" "),
-            fg: Color::Reset,
-            bg: Color::Reset,
-            #[cfg(feature = "underline-color")]
-            underline_color: Color::Reset,
-            modifier: Modifier::empty(),
-            skip: false,
-        }
+        Self::EMPTY
     }
 }
 
@@ -146,11 +155,15 @@ mod tests {
 
     #[test]
     fn symbol_field() {
-        let mut cell = Cell::default();
+        let mut cell = Cell::EMPTY;
         assert_eq!(cell.symbol(), " ");
         cell.set_symbol("あ"); // Multi-byte character
         assert_eq!(cell.symbol(), "あ");
         cell.set_symbol("👨‍👩‍👧‍👦"); // Multiple code units combined with ZWJ
         assert_eq!(cell.symbol(), "👨‍👩‍👧‍👦");
+
+        // above Cell::EMPTY is put into a mutable variable and is changed then.
+        // While this looks like it might change the constant, it actually doesnt:
+        assert_eq!(Cell::EMPTY.symbol(), " ");
     }
 }

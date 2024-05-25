@@ -140,8 +140,8 @@ fn render_line_gauge(percent: f64, area: Rect, buf: &mut Buffer) {
     // cycle color hue based on the percent for a neat effect yellow -> red
     let hue = 90.0 - (percent as f32 * 0.6);
     let value = Okhsv::max_value();
-    let fg = color_from_oklab(hue, Okhsv::max_saturation(), value);
-    let bg = color_from_oklab(hue, Okhsv::max_saturation(), value * 0.5);
+    let filled_color = color_from_oklab(hue, Okhsv::max_saturation(), value);
+    let unfilled_color = color_from_oklab(hue, Okhsv::max_saturation(), value * 0.5);
     let label = if percent < 100.0 {
         format!("Downloading: {percent}%")
     } else {
@@ -151,7 +151,8 @@ fn render_line_gauge(percent: f64, area: Rect, buf: &mut Buffer) {
         .ratio(percent / 100.0)
         .label(label)
         .style(Style::new().light_blue())
-        .gauge_style(Style::new().fg(fg).bg(bg))
+        .filled_style(Style::new().fg(filled_color))
+        .unfilled_style(Style::new().fg(unfilled_color))
         .line_set(symbols::line::THICK)
         .render(area, buf);
 }

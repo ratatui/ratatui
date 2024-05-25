@@ -3,25 +3,23 @@ use ratatui::{
     buffer::Buffer,
     layout::Alignment,
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Padding, Paragraph, Wrap},
+    widgets::{Block, Padding, Paragraph, Wrap},
     Terminal,
 };
 
 /// Tests the [`Paragraph`] widget against the expected [`Buffer`] by rendering it onto an equal
 /// area and comparing the rendered and expected content.
-#[allow(clippy::needless_pass_by_value)]
-fn test_case(paragraph: Paragraph, expected: Buffer) {
+#[track_caller]
+fn test_case(paragraph: Paragraph, expected: &Buffer) {
     let backend = TestBackend::new(expected.area.width, expected.area.height);
     let mut terminal = Terminal::new(backend).unwrap();
-
     terminal
         .draw(|f| {
             let size = f.size();
             f.render_widget(paragraph, size);
         })
         .unwrap();
-
-    terminal.backend().assert_buffer(&expected);
+    terminal.backend().assert_buffer(expected);
 }
 
 #[test]
@@ -30,12 +28,12 @@ fn widgets_paragraph_renders_double_width_graphemes() {
 
     let text = vec![Line::from(s)];
     let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL))
+        .block(Block::bordered())
         .wrap(Wrap { trim: true });
 
     test_case(
         paragraph,
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌────────┐",
             "│コンピュ│",
             "│ータ上で│",
@@ -61,13 +59,12 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
             let size = f.size();
             let text = vec![Line::from(s)];
             let paragraph = Paragraph::new(text)
-                .block(Block::default().borders(Borders::ALL))
+                .block(Block::bordered())
                 .wrap(Wrap { trim: true });
             f.render_widget(paragraph, size);
         })
         .unwrap();
-
-    let expected = Buffer::with_lines(vec![
+    terminal.backend().assert_buffer_lines([
         // The internal width is 8 so only 4 slots for double-width characters.
         "┌────────┐",
         "│aコンピ │", // Here we have 1 latin character so only 3 double-width ones can fit.
@@ -77,18 +74,17 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
         "│、      │",
         "└────────┘",
     ]);
-    terminal.backend().assert_buffer(&expected);
 }
 
 #[test]
 fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
     let nbsp = "\u{00a0}";
     let line = Line::from(vec![Span::raw("NBSP"), Span::raw(nbsp)]);
-    let paragraph = Paragraph::new(line).block(Block::default().borders(Borders::ALL));
+    let paragraph = Paragraph::new(line).block(Block::bordered());
 
     test_case(
         paragraph,
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌──────────────────┐",
             "│NBSP\u{00a0}             │",
             "└──────────────────┘",
@@ -100,11 +96,11 @@ fn widgets_paragraph_can_wrap_with_a_trailing_nbsp() {
 fn widgets_paragraph_can_scroll_horizontally() {
     let text =
         Text::from("段落现在可以水平滚动了！\nParagraph can scroll horizontally!\nLittle line");
-    let paragraph = Paragraph::new(text).block(Block::default().borders(Borders::ALL));
+    let paragraph = Paragraph::new(text).block(Block::bordered());
 
     test_case(
         paragraph.clone().alignment(Alignment::Left).scroll((0, 7)),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌──────────────────┐",
             "│在可以水平滚动了！│",
             "│ph can scroll hori│",
@@ -120,7 +116,7 @@ fn widgets_paragraph_can_scroll_horizontally() {
     // only support Alignment::Left
     test_case(
         paragraph.clone().alignment(Alignment::Right).scroll((0, 7)),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌──────────────────┐",
             "│段落现在可以水平滚│",
             "│Paragraph can scro│",
@@ -144,12 +140,12 @@ const SAMPLE_STRING: &str = "The library is based on the principle of immediate 
 fn widgets_paragraph_can_wrap_its_content() {
     let text = vec![Line::from(SAMPLE_STRING)];
     let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL))
+        .block(Block::bordered())
         .wrap(Wrap { trim: true });
 
     test_case(
         paragraph.clone().alignment(Alignment::Left),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌──────────────────┐",
             "│The library is    │",
             "│based on the      │",
@@ -164,7 +160,7 @@ fn widgets_paragraph_can_wrap_its_content() {
     );
     test_case(
         paragraph.clone().alignment(Alignment::Center),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌──────────────────┐",
             "│  The library is  │",
             "│   based on the   │",
@@ -179,7 +175,7 @@ fn widgets_paragraph_can_wrap_its_content() {
     );
     test_case(
         paragraph.clone().alignment(Alignment::Right),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌──────────────────┐",
             "│    The library is│",
             "│      based on the│",
@@ -196,19 +192,19 @@ fn widgets_paragraph_can_wrap_its_content() {
 
 #[test]
 fn widgets_paragraph_works_with_padding() {
-    let text = vec![Line::from(SAMPLE_STRING)];
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).padding(Padding {
-            left: 2,
-            right: 2,
-            top: 1,
-            bottom: 1,
-        }))
+    let block = Block::bordered().padding(Padding {
+        left: 2,
+        right: 2,
+        top: 1,
+        bottom: 1,
+    });
+    let paragraph = Paragraph::new(vec![Line::from(SAMPLE_STRING)])
+        .block(block.clone())
         .wrap(Wrap { trim: true });
 
     test_case(
         paragraph.clone().alignment(Alignment::Left),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌────────────────────┐",
             "│                    │",
             "│  The library is    │",
@@ -225,7 +221,7 @@ fn widgets_paragraph_works_with_padding() {
     );
     test_case(
         paragraph.clone().alignment(Alignment::Right),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌────────────────────┐",
             "│                    │",
             "│    The library is  │",
@@ -241,20 +237,16 @@ fn widgets_paragraph_works_with_padding() {
         ]),
     );
 
-    let mut text = vec![Line::from("This is always centered.").alignment(Alignment::Center)];
-    text.push(Line::from(SAMPLE_STRING));
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).padding(Padding {
-            left: 2,
-            right: 2,
-            top: 1,
-            bottom: 1,
-        }))
-        .wrap(Wrap { trim: true });
+    let paragraph = Paragraph::new(vec![
+        Line::from("This is always centered.").alignment(Alignment::Center),
+        Line::from(SAMPLE_STRING),
+    ])
+    .block(block)
+    .wrap(Wrap { trim: true });
 
     test_case(
         paragraph.alignment(Alignment::Right),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌────────────────────┐",
             "│                    │",
             "│   This is always   │",
@@ -283,12 +275,12 @@ fn widgets_paragraph_can_align_spans() {
         Line::from(default_s),
     ];
     let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL))
+        .block(Block::bordered())
         .wrap(Wrap { trim: true });
 
     test_case(
         paragraph.clone().alignment(Alignment::Left),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌──────────────────┐",
             "│  This string will│",
             "│      override the│",
@@ -303,7 +295,7 @@ fn widgets_paragraph_can_align_spans() {
     );
     test_case(
         paragraph.alignment(Alignment::Center),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌──────────────────┐",
             "│  This string will│",
             "│      override the│",
@@ -333,11 +325,11 @@ fn widgets_paragraph_can_align_spans() {
 
     let mut text = left_lines.clone();
     text.append(&mut lines);
-    let paragraph = Paragraph::new(text).block(Block::default().borders(Borders::ALL));
+    let paragraph = Paragraph::new(text).block(Block::bordered());
 
     test_case(
         paragraph.clone().alignment(Alignment::Right),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌──────────────────┐",
             "│This string       │",
             "│will override the │",
@@ -352,7 +344,7 @@ fn widgets_paragraph_can_align_spans() {
     );
     test_case(
         paragraph.alignment(Alignment::Left),
-        Buffer::with_lines(vec![
+        &Buffer::with_lines([
             "┌──────────────────┐",
             "│This string       │",
             "│will override the │",

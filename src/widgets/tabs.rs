@@ -17,7 +17,7 @@ const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVER
 /// use ratatui::{prelude::*, widgets::*};
 ///
 /// Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
-///     .block(Block::default().title("Tabs").borders(Borders::ALL))
+///     .block(Block::bordered().title("Tabs"))
 ///     .style(Style::default().white())
 ///     .highlight_style(Style::default().yellow())
 ///     .select(2)
@@ -333,7 +333,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{assert_buffer_eq, widgets::Borders};
 
     #[test]
     fn new() {
@@ -379,60 +378,61 @@ mod tests {
         );
     }
 
-    fn render(tabs: Tabs, area: Rect) -> Buffer {
+    #[track_caller]
+    fn test_case(tabs: Tabs, area: Rect, expected: &Buffer) {
         let mut buffer = Buffer::empty(area);
         tabs.render(area, &mut buffer);
-        buffer
+        assert_eq!(&buffer, expected);
     }
 
     #[test]
     fn render_default() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]);
-        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
+        let mut expected = Buffer::with_lines([" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
         // first tab selected
         expected.set_style(Rect::new(1, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
-        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
+        test_case(tabs, Rect::new(0, 0, 30, 1), &expected);
     }
 
     #[test]
     fn render_no_padding() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding("", "");
-        let mut expected = Buffer::with_lines(vec!["Tab1│Tab2│Tab3│Tab4           "]);
+        let mut expected = Buffer::with_lines(["Tab1│Tab2│Tab3│Tab4           "]);
         // first tab selected
         expected.set_style(Rect::new(0, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
-        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
+        test_case(tabs, Rect::new(0, 0, 30, 1), &expected);
     }
 
     #[test]
     fn render_more_padding() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).padding("---", "++");
-        let mut expected = Buffer::with_lines(vec!["---Tab1++│---Tab2++│---Tab3++│"]);
+        let mut expected = Buffer::with_lines(["---Tab1++│---Tab2++│---Tab3++│"]);
         // first tab selected
         expected.set_style(Rect::new(3, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
-        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
+        test_case(tabs, Rect::new(0, 0, 30, 1), &expected);
     }
 
     #[test]
     fn render_with_block() {
-        let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"])
-            .block(Block::default().title("Tabs").borders(Borders::ALL));
-        let mut expected = Buffer::with_lines(vec![
+        let tabs =
+            Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).block(Block::bordered().title("Tabs"));
+        let mut expected = Buffer::with_lines([
             "┌Tabs────────────────────────┐",
             "│ Tab1 │ Tab2 │ Tab3 │ Tab4  │",
             "└────────────────────────────┘",
         ]);
         // first tab selected
         expected.set_style(Rect::new(2, 1, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
-        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 3)), expected);
+        test_case(tabs, Rect::new(0, 0, 30, 3), &expected);
     }
 
     #[test]
     fn render_style() {
         let tabs =
             Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).style(Style::default().fg(Color::Red));
-        let mut expected = Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    ".red()]);
+        let mut expected = Buffer::with_lines([" Tab1 │ Tab2 │ Tab3 │ Tab4    ".red()]);
         expected.set_style(Rect::new(1, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE.red());
-        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
+        test_case(tabs, Rect::new(0, 0, 30, 1), &expected);
     }
 
     #[test]
@@ -440,40 +440,32 @@ mod tests {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]);
 
         // first tab selected
-        assert_buffer_eq!(
-            render(tabs.clone().select(0), Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![Line::from(vec![
-                " ".into(),
-                "Tab1".reversed(),
-                " │ Tab2 │ Tab3 │ Tab4    ".into(),
-            ])])
-        );
+        let expected = Buffer::with_lines([Line::from(vec![
+            " ".into(),
+            "Tab1".reversed(),
+            " │ Tab2 │ Tab3 │ Tab4    ".into(),
+        ])]);
+        test_case(tabs.clone().select(0), Rect::new(0, 0, 30, 1), &expected);
 
         // second tab selected
-        assert_buffer_eq!(
-            render(tabs.clone().select(1), Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![Line::from(vec![
-                " Tab1 │ ".into(),
-                "Tab2".reversed(),
-                " │ Tab3 │ Tab4    ".into(),
-            ])])
-        );
+        let expected = Buffer::with_lines([Line::from(vec![
+            " Tab1 │ ".into(),
+            "Tab2".reversed(),
+            " │ Tab3 │ Tab4    ".into(),
+        ])]);
+        test_case(tabs.clone().select(1), Rect::new(0, 0, 30, 1), &expected);
 
         // last tab selected
-        assert_buffer_eq!(
-            render(tabs.clone().select(3), Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![Line::from(vec![
-                " Tab1 │ Tab2 │ Tab3 │ ".into(),
-                "Tab4".reversed(),
-                "    ".into(),
-            ])])
-        );
+        let expected = Buffer::with_lines([Line::from(vec![
+            " Tab1 │ Tab2 │ Tab3 │ ".into(),
+            "Tab4".reversed(),
+            "    ".into(),
+        ])]);
+        test_case(tabs.clone().select(3), Rect::new(0, 0, 30, 1), &expected);
 
         // out of bounds selects no tab
-        assert_buffer_eq!(
-            render(tabs.clone().select(4), Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![" Tab1 │ Tab2 │ Tab3 │ Tab4    "])
-        );
+        let expected = Buffer::with_lines([" Tab1 │ Tab2 │ Tab3 │ Tab4    "]);
+        test_case(tabs.clone().select(4), Rect::new(0, 0, 30, 1), &expected);
     }
 
     #[test]
@@ -482,23 +474,21 @@ mod tests {
             .style(Style::new().red())
             .highlight_style(Style::new().underlined())
             .select(0);
-        assert_buffer_eq!(
-            render(tabs, Rect::new(0, 0, 30, 1)),
-            Buffer::with_lines(vec![Line::from(vec![
-                " ".red(),
-                "Tab1".red().underlined(),
-                " │ Tab2 │ Tab3 │ Tab4    ".red(),
-            ])])
-        );
+        let expected = Buffer::with_lines([Line::from(vec![
+            " ".red(),
+            "Tab1".red().underlined(),
+            " │ Tab2 │ Tab3 │ Tab4    ".red(),
+        ])]);
+        test_case(tabs, Rect::new(0, 0, 30, 1), &expected);
     }
 
     #[test]
     fn render_divider() {
         let tabs = Tabs::new(vec!["Tab1", "Tab2", "Tab3", "Tab4"]).divider("--");
-        let mut expected = Buffer::with_lines(vec![" Tab1 -- Tab2 -- Tab3 -- Tab4 "]);
+        let mut expected = Buffer::with_lines([" Tab1 -- Tab2 -- Tab3 -- Tab4 "]);
         // first tab selected
         expected.set_style(Rect::new(1, 0, 4, 1), DEFAULT_HIGHLIGHT_STYLE);
-        assert_buffer_eq!(render(tabs, Rect::new(0, 0, 30, 1)), expected);
+        test_case(tabs, Rect::new(0, 0, 30, 1), &expected);
     }
 
     #[test]

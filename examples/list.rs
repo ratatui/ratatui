@@ -38,15 +38,25 @@ enum Status {
     Completed,
 }
 
-struct TodoItem<'a> {
-    todo: &'a str,
-    info: &'a str,
+struct TodoItem {
+    todo: String,
+    info: String,
     status: Status,
 }
 
-struct StatefulList<'a> {
+impl TodoItem {
+    fn new(todo: &str, info: &str, status: Status) -> Self {
+        Self {
+            todo: todo.to_string(),
+            info: info.to_string(),
+            status,
+        }
+    }
+}
+
+struct TodoList {
     state: ListState,
-    items: Vec<TodoItem<'a>>,
+    items: Vec<TodoItem>,
     last_selected: Option<usize>,
 }
 
@@ -56,8 +66,8 @@ struct StatefulList<'a> {
 ///
 /// Check the event handling at the bottom to see how to change the state on incoming events.
 /// Check the drawing logic for items on how to specify the highlighting style for selected items.
-struct App<'a> {
-    items: StatefulList<'a>,
+struct App {
+    items: TodoList,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -102,10 +112,10 @@ fn restore_terminal() -> color_eyre::Result<()> {
     Ok(())
 }
 
-impl<'a> App<'a> {
+impl App {
     fn new() -> Self {
         Self {
-            items: StatefulList::with_items([
+            items: TodoList::with_items(&[
                 ("Rewrite everything with Rust!", "I can't hold my inner voice. He tells me to rewrite the complete universe with Rust", Status::Todo),
                 ("Rewrite all of your tui apps with Ratatui", "Yes, you heard that right. Go and replace your tui with Ratatui.", Status::Completed),
                 ("Pet your cat", "Minnak loves to be pet by you! Don't forget to pet and give some treats!", Status::Todo),
@@ -135,7 +145,7 @@ impl<'a> App<'a> {
     }
 }
 
-impl App<'_> {
+impl App {
     fn run(&mut self, mut terminal: Terminal<impl Backend>) -> io::Result<()> {
         loop {
             self.draw(&mut terminal)?;
@@ -164,7 +174,7 @@ impl App<'_> {
     }
 }
 
-impl Widget for &mut App<'_> {
+impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         // Create a space for header, todo list and the footer.
         let vertical = Layout::vertical([
@@ -186,16 +196,16 @@ impl Widget for &mut App<'_> {
     }
 }
 
-impl App<'_> {
+impl App {
     fn render_todo(&mut self, area: Rect, buf: &mut Buffer) {
         // We create two blocks, one is for the header (outer) and the other is for list (inner).
-        let outer_block = Block::default()
+        let outer_block = Block::new()
             .borders(Borders::NONE)
-            .fg(TEXT_COLOR)
-            .bg(TODO_HEADER_BG)
+            .title_alignment(Alignment::Center)
             .title("TODO List")
-            .title_alignment(Alignment::Center);
-        let inner_block = Block::default()
+            .fg(TEXT_COLOR)
+            .bg(TODO_HEADER_BG);
+        let inner_block = Block::new()
             .borders(Borders::NONE)
             .fg(TEXT_COLOR)
             .bg(NORMAL_ROW_COLOR);
@@ -238,24 +248,24 @@ impl App<'_> {
         // We get the info depending on the item's state.
         let info = if let Some(i) = self.items.state.selected() {
             match self.items.items[i].status {
-                Status::Completed => "✓ DONE: ".to_string() + self.items.items[i].info,
-                Status::Todo => "TODO: ".to_string() + self.items.items[i].info,
+                Status::Completed => format!("✓ DONE: {}", self.items.items[i].info),
+                Status::Todo => format!("TODO: {}", self.items.items[i].info),
             }
         } else {
             "Nothing to see here...".to_string()
         };
 
         // We show the list item's info under the list in this paragraph
-        let outer_info_block = Block::default()
+        let outer_info_block = Block::new()
             .borders(Borders::NONE)
-            .fg(TEXT_COLOR)
-            .bg(TODO_HEADER_BG)
+            .title_alignment(Alignment::Center)
             .title("TODO Info")
-            .title_alignment(Alignment::Center);
-        let inner_info_block = Block::default()
+            .fg(TEXT_COLOR)
+            .bg(TODO_HEADER_BG);
+        let inner_info_block = Block::new()
             .borders(Borders::NONE)
-            .bg(NORMAL_ROW_COLOR)
-            .padding(Padding::horizontal(1));
+            .padding(Padding::horizontal(1))
+            .bg(NORMAL_ROW_COLOR);
 
         // This is a similar process to what we did for list. outer_info_area will be used for
         // header inner_info_area will be used for the list info.
@@ -288,11 +298,14 @@ fn render_footer(area: Rect, buf: &mut Buffer) {
         .render(area, buf);
 }
 
-impl StatefulList<'_> {
-    fn with_items<'a>(items: [(&'a str, &'a str, Status); 6]) -> StatefulList<'a> {
-        StatefulList {
+impl TodoList {
+    fn with_items(items: &[(&str, &str, Status)]) -> Self {
+        Self {
             state: ListState::default(),
-            items: items.iter().map(TodoItem::from).collect(),
+            items: items
+                .iter()
+                .map(|(todo, info, status)| TodoItem::new(todo, info, *status))
+                .collect(),
             last_selected: None,
         }
     }
@@ -333,7 +346,7 @@ impl StatefulList<'_> {
     }
 }
 
-impl TodoItem<'_> {
+impl TodoItem {
     fn to_list_item(&self, index: usize) -> ListItem {
         let bg_color = match index % 2 {
             0 => NORMAL_ROW_COLOR,
@@ -348,15 +361,5 @@ impl TodoItem<'_> {
         };
 
         ListItem::new(line).bg(bg_color)
-    }
-}
-
-impl<'a> From<&(&'a str, &'a str, Status)> for TodoItem<'a> {
-    fn from((todo, info, status): &(&'a str, &'a str, Status)) -> Self {
-        Self {
-            todo,
-            info,
-            status: *status,
-        }
     }
 }
