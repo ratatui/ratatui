@@ -743,7 +743,7 @@ mod tests {
         let prev = Buffer::empty(area);
         let next = Buffer::empty(area);
         let diff = prev.diff(&next);
-        assert_eq!(diff, vec![]);
+        assert_eq!(diff, []);
     }
 
     #[test]
@@ -761,7 +761,7 @@ mod tests {
         let prev = Buffer::filled(area, &Cell::new("a"));
         let next = Buffer::filled(area, &Cell::new("a"));
         let diff = prev.diff(&next);
-        assert_eq!(diff, vec![]);
+        assert_eq!(diff, []);
     }
 
     #[test]
@@ -783,7 +783,7 @@ mod tests {
         let diff = prev.diff(&next);
         assert_eq!(
             diff,
-            vec![
+            [
                 (2, 1, &Cell::new("I")),
                 (3, 1, &Cell::new("T")),
                 (4, 1, &Cell::new("L")),
@@ -807,7 +807,7 @@ mod tests {
         let diff = prev.diff(&next);
         assert_eq!(
             diff,
-            vec![
+            [
                 (1, 0, &Cell::new("称")),
                 // Skipped "i"
                 (3, 0, &Cell::new("号")),
@@ -825,7 +825,7 @@ mod tests {
         let diff = prev.diff(&next);
         assert_eq!(
             diff,
-            vec![
+            [
                 (1, 0, &Cell::new("─")),
                 (2, 0, &Cell::new("称")),
                 (4, 0, &Cell::new("号")),
@@ -842,7 +842,7 @@ mod tests {
         }
 
         let diff = prev.diff(&next);
-        assert_eq!(diff, vec![(0, 0, &Cell::new("4"))],);
+        assert_eq!(diff, [(0, 0, &Cell::new("4"))],);
     }
 
     #[rstest]
