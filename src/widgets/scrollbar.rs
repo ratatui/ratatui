@@ -63,7 +63,7 @@ use crate::{prelude::*, symbols::scrollbar::*};
 /// // and the scrollbar, those are separate widgets
 /// frame.render_stateful_widget(
 ///     scrollbar,
-///     area.inner(&Margin {
+///     area.inner(Margin {
 ///         // using an inner vertical margin of 1 unit makes the scrollbar inside the block
 ///         vertical: 1,
 ///         horizontal: 0,
