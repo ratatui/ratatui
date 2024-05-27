@@ -2,6 +2,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     prelude::*,
+    style::Styled,
     text::StyledGrapheme,
     widgets::{reflow::*, Block},
 };

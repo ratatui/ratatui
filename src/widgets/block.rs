@@ -8,7 +8,7 @@
 use itertools::Itertools;
 use strum::{Display, EnumString};
 
-use crate::{prelude::*, symbols::border, widgets::Borders};
+use crate::{prelude::*, style::Styled, symbols::border, widgets::Borders};
 
 mod padding;
 pub mod title;

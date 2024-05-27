@@ -22,7 +22,7 @@ use std::{
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use indoc::indoc;
 use itertools::izip;
-use ratatui::{prelude::*, widgets::Paragraph};
+use ratatui::{prelude::*, widgets::Paragraph, TerminalOptions, Viewport};
 
 /// A fun example of using half block characters to draw a logo
 #[allow(clippy::many_single_char_names)]

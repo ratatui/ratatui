@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, style::Styled, widgets::*};
 use unicode_width::UnicodeWidthStr;
 
 use crate::{RgbSwatch, THEME};

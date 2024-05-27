@@ -26,6 +26,7 @@ use crossterm::{
 };
 use ratatui::{
     prelude::*,
+    symbols::Marker,
     widgets::{block::Title, Axis, Block, Chart, Dataset, GraphType, LegendPosition},
 };
 

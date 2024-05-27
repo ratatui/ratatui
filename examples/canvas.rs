@@ -27,6 +27,7 @@ use crossterm::{
 };
 use ratatui::{
     prelude::*,
+    symbols::Marker,
     widgets::{canvas::*, *},
 };
 

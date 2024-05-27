@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::{backend::ClearType, prelude::*};
+use crate::{backend::ClearType, prelude::*, CompletedFrame, TerminalOptions, Viewport};
 
 /// An interface to interact and draw [`Frame`]s on the user's terminal.
 ///

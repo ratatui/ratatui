@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use strum::{Display, EnumString};
 
-use crate::{prelude::*, widgets::Block};
+use crate::{prelude::*, style::Styled, widgets::Block};
 
 /// Widget to render a sparkline over one or more lines.
 ///

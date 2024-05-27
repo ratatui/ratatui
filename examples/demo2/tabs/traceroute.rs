@@ -1,6 +1,8 @@
 use itertools::Itertools;
 use ratatui::{
     prelude::*,
+    style::Styled,
+    symbols::Marker,
     widgets::{canvas::*, *},
 };
 

@@ -3,6 +3,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     prelude::*,
+    style::Styled,
     widgets::{Block, HighlightSpacing},
 };
 

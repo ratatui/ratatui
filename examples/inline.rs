@@ -25,7 +25,7 @@ use std::{
 };
 
 use rand::distributions::{Distribution, Uniform};
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, widgets::*, TerminalOptions, Viewport};
 
 const NUM_DOWNLOADS: usize = 10;
 

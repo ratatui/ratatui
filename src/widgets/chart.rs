@@ -6,6 +6,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::{
     layout::Flex,
     prelude::*,
+    style::Styled,
     widgets::{
         canvas::{Canvas, Line as CanvasLine, Points},
         Block,

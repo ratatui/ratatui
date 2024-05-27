@@ -53,6 +53,53 @@ This is a quick summary of the sections below:
 
 ## Unreleased
 
+### Uncommon items removed from the prelude ([#1149])
+
+The following items have been removed from the prelude:
+
+- `style::Styled` - this trait is useful for widgets that want to
+  support the Stylize trait, but it adds complexity as widgets have two
+  `style` methods and a `set_style` method.
+- `symbols::Marker` - this item is used by code that needs to draw to
+  the `Canvas` widget, but it's not a common item that would be used by
+  most users of the library.
+- `terminal::{CompletedFrame, TerminalOptions, Viewport}` - these items
+  are rarely used by code that needs to interact with the terminal, and
+  they're generally only ever used once in any app.
+
+The following items have been added to the prelude:
+
+- `layout::{Position, Size}` - these items are used by code that needs
+  to interact with the layout system. These are newer items that were
+  added in the last few releases, which should be used more liberally.
+  This may cause conflicts for types defined elsewhere with a similar
+  name.
+
+To update your app:
+
+```diff
+// if your app uses Styled::style() or Styled::set_style():
+-use ratatui::prelude::*;
++use ratatui::{prelude::*, style::Styled};
+
+// if your app uses symbols::Marker:
+-use ratatui::prelude::*;
++use ratatui::{prelude::*, symbols::Marker}
+
+// if your app uses terminal::{CompletedFrame, TerminalOptions, Viewport}
+-use ratatui::prelude::*;
++use ratatui::{prelude::*, terminal::{CompletedFrame, TerminalOptions, Viewport}};
+
+// to disambiguate existing types named Position or Size:
+- use some_crate::{Position, Size};
+- let size: Size = ...;
+- let position: Position = ...;
++ let size: some_crate::Size = ...;
++ let position: some_crate::Position = ...;
+```
+
+[#1149]: https://github.com/ratatui-org/ratatui/pull/1149
+
 ### `Rect::inner` takes `Margin` directly instead of reference ([#1008])
 
 [#1008]: https://github.com/ratatui-org/ratatui/pull/1008
@@ -181,8 +228,6 @@ The following example shows how to migrate for `Line`, but the same applies for 
 ```
 
 ### Remove deprecated `Block::title_on_bottom` ([#757])
-
-[#757]: https://github.com/ratatui-org/ratatui/pull/757
 
 `Block::title_on_bottom` was deprecated in v0.22. Use `Block::title` and `Title::position` instead.
 
