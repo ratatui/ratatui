@@ -1,6 +1,5 @@
-use crate::{prelude::*, style::Styled};
-
 use super::*;
+use crate::{prelude::*, style::Styled};
 
 /// A single row of data to be displayed in a [`Table`] widget.
 ///

@@ -1,8 +1,7 @@
 use itertools::Itertools;
 
-use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
-
 use super::*;
+use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 
 /// A widget to display data in formatted columns.
 ///
