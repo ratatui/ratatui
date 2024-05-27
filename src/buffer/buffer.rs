@@ -54,14 +54,14 @@ impl Buffer {
     /// Returns a Buffer with all cells set to the default one
     #[must_use]
     pub fn empty(area: Rect) -> Self {
-        Self::filled(area, &Cell::EMPTY)
+        Self::filled(area, Cell::EMPTY)
     }
 
     /// Returns a Buffer with all cells initialized with the attributes of the given Cell
     #[must_use]
-    pub fn filled(area: Rect, cell: &Cell) -> Self {
+    pub fn filled(area: Rect, cell: Cell) -> Self {
         let size = area.area() as usize;
-        let content = vec![cell.clone(); size];
+        let content = vec![cell; size];
         Self { area, content }
     }
 
@@ -750,7 +750,7 @@ mod tests {
     fn diff_empty_filled() {
         let area = Rect::new(0, 0, 40, 40);
         let prev = Buffer::empty(area);
-        let next = Buffer::filled(area, &Cell::new("a"));
+        let next = Buffer::filled(area, Cell::new("a"));
         let diff = prev.diff(&next);
         assert_eq!(diff.len(), 40 * 40);
     }
@@ -758,8 +758,8 @@ mod tests {
     #[test]
     fn diff_filled_filled() {
         let area = Rect::new(0, 0, 40, 40);
-        let prev = Buffer::filled(area, &Cell::new("a"));
-        let next = Buffer::filled(area, &Cell::new("a"));
+        let prev = Buffer::filled(area, Cell::new("a"));
+        let next = Buffer::filled(area, Cell::new("a"));
         let diff = prev.diff(&next);
         assert_eq!(diff, []);
     }
@@ -853,8 +853,8 @@ mod tests {
         Lines: IntoIterator,
         Lines::Item: Into<Line<'line>>,
     {
-        let mut one = Buffer::filled(one, &Cell::new("1"));
-        let two = Buffer::filled(two, &Cell::new("2"));
+        let mut one = Buffer::filled(one, Cell::new("1"));
+        let two = Buffer::filled(two, Cell::new("2"));
         one.merge(&two);
         assert_eq!(one, Buffer::with_lines(expected));
     }
@@ -868,7 +868,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            &Cell::new("1"),
+            Cell::new("1"),
         );
         let two = Buffer::filled(
             Rect {
@@ -877,7 +877,7 @@ mod tests {
                 width: 3,
                 height: 4,
             },
-            &Cell::new("2"),
+            Cell::new("2"),
         );
         one.merge(&two);
         let mut expected = Buffer::with_lines(["222 ", "222 ", "2221", "2221"]);
@@ -893,25 +893,29 @@ mod tests {
     #[rstest]
     #[case(false, true, [false, false, true, true, true, true])]
     #[case(true, false, [true, true, false, false, false, false])]
-    fn merge_skip(#[case] one: bool, #[case] two: bool, #[case] expected: [bool; 6]) {
-        let mut one = Buffer::filled(
-            Rect {
+    fn merge_skip(#[case] skip_one: bool, #[case] skip_two: bool, #[case] expected: [bool; 6]) {
+        let mut one = {
+            let area = Rect {
                 x: 0,
                 y: 0,
                 width: 2,
                 height: 2,
-            },
-            Cell::new("1").set_skip(one),
-        );
-        let two = Buffer::filled(
-            Rect {
+            };
+            let mut cell = Cell::new("1");
+            cell.skip = skip_one;
+            Buffer::filled(area, cell)
+        };
+        let two = {
+            let area = Rect {
                 x: 0,
                 y: 1,
                 width: 2,
                 height: 2,
-            },
-            Cell::new("2").set_skip(two),
-        );
+            };
+            let mut cell = Cell::new("2");
+            cell.skip = skip_two;
+            Buffer::filled(area, cell)
+        };
         one.merge(&two);
         let skipped = one.content().iter().map(|c| c.skip).collect::<Vec<_>>();
         assert_eq!(skipped, expected);
