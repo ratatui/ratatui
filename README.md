@@ -330,7 +330,7 @@ Running this example produces the following output:
 [License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square&color=1370D3
 [CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github
 [CI Workflow]: https://github.com/ratatui-org/ratatui/actions/workflows/ci.yml
-[Codecov Badge]:https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST&color=C43AC3&logoColor=C43AC3
+[Codecov Badge]: https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST&color=C43AC3&logoColor=C43AC3
 [Codecov]: https://app.codecov.io/gh/ratatui-org/ratatui
 [Deps.rs Badge]: https://deps.rs/repo/github/ratatui-org/ratatui/status.svg?style=flat-square
 [Deps.rs]: https://deps.rs/repo/github/ratatui-org/ratatui
