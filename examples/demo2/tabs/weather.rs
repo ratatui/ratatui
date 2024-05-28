@@ -4,7 +4,7 @@ use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Margin, Rect},
     style::{Color, Style, Stylize},
-    symbols::{self},
+    symbols,
     widgets::{
         calendar::{CalendarEventStore, Monthly},
         Bar, BarChart, BarGroup, Block, Clear, LineGauge, Padding, Widget,
