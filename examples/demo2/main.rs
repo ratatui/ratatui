@@ -28,11 +28,12 @@ mod tabs;
 mod term;
 mod theme;
 
-pub use app::App;
 use color_eyre::Result;
-pub use colors::{color_from_oklab, RgbSwatch};
-pub use term::{init, restore};
-pub use theme::THEME;
+
+pub use crate::{
+    colors::{color_from_oklab, RgbSwatch},
+    theme::THEME,
+};
 
 fn main() -> Result<()> {
     errors::init_hooks()?;
