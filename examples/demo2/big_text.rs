@@ -300,8 +300,9 @@ fn render_glyph(glyph: [u8; 8], area: Rect, buf: &mut Buffer, pixel_size: PixelS
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ratatui::style::Stylize;
+
+    use super::*;
 
     type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
