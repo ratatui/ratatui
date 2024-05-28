@@ -1,13 +1,11 @@
-use ratatui::widgets::canvas;
-#[allow(clippy::wildcard_imports)]
 use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
-    symbols::{self},
+    symbols,
     terminal::Frame,
     text::{self, Span},
     widgets::{
-        canvas::{Canvas, Circle, Map, MapResolution, Rectangle},
+        canvas::{self, Canvas, Circle, Map, MapResolution, Rectangle},
         Axis, BarChart, Block, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem, Paragraph,
         Row, Sparkline, Table, Tabs, Wrap,
     },

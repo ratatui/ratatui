@@ -149,7 +149,6 @@ impl App {
 /// to update the colors to render.
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        #[allow(clippy::enum_glob_use)]
         use Constraint::{Length, Min};
         let [top, colors] = Layout::vertical([Length(1), Min(0)]).areas(area);
         let [title, fps] = Layout::horizontal([Min(0), Length(8)]).areas(top);

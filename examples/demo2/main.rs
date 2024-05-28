@@ -14,11 +14,9 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
 #![allow(
-    clippy::enum_glob_use,
     clippy::missing_errors_doc,
     clippy::module_name_repetitions,
-    clippy::must_use_candidate,
-    clippy::wildcard_imports
+    clippy::must_use_candidate
 )]
 
 mod app;
