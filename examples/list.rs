@@ -18,12 +18,16 @@
 use std::{error::Error, io, io::stdout};
 
 use color_eyre::config::HookBuilder;
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
+use ratatui::{
+    crossterm::{
+        event::{self, Event, KeyCode, KeyEventKind},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
+    prelude::*,
+    style::palette::tailwind,
+    widgets::*,
 };
-use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
 
 const TODO_HEADER_BG: Color = tailwind::BLUE.c950;
 const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;

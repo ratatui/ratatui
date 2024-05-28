@@ -1,9 +1,12 @@
 use std::time::Duration;
 
 use color_eyre::{eyre::Context, Result};
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind},
+    prelude::*,
+    widgets::*,
+};
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 use crate::{destroy, tabs::*, term, THEME};
