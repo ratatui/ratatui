@@ -84,11 +84,10 @@ impl App {
     fn handle_events(&mut self) -> std::io::Result<()> {
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
-                use KeyCode::{Char, Esc, Left, Right};
                 match key.code {
-                    Char('l') | Right => self.next_tab(),
-                    Char('h') | Left => self.previous_tab(),
-                    Char('q') | Esc => self.quit(),
+                    KeyCode::Char('l') | KeyCode::Right => self.next_tab(),
+                    KeyCode::Char('h') | KeyCode::Left => self.previous_tab(),
+                    KeyCode::Char('q') | KeyCode::Esc => self.quit(),
                     _ => {}
                 }
             }

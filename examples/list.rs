@@ -161,15 +161,16 @@ impl App {
 
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    use KeyCode::{Char, Down, Enter, Esc, Left, Right, Up};
                     match key.code {
-                        Char('q') | Esc => return Ok(()),
-                        Char('h') | Left => self.items.unselect(),
-                        Char('j') | Down => self.items.next(),
-                        Char('k') | Up => self.items.previous(),
-                        Char('l') | Right | Enter => self.change_status(),
-                        Char('g') => self.go_top(),
-                        Char('G') => self.go_bottom(),
+                        KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                        KeyCode::Char('h') | KeyCode::Left => self.items.unselect(),
+                        KeyCode::Char('j') | KeyCode::Down => self.items.next(),
+                        KeyCode::Char('k') | KeyCode::Up => self.items.previous(),
+                        KeyCode::Char('l') | KeyCode::Right | KeyCode::Enter => {
+                            self.change_status();
+                        }
+                        KeyCode::Char('g') => self.go_top(),
+                        KeyCode::Char('G') => self.go_bottom(),
                         _ => {}
                     }
                 }

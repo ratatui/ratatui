@@ -101,10 +101,9 @@ impl App {
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    use KeyCode::{Char, Enter, Esc};
                     match key.code {
-                        Char(' ') | Enter => self.start(),
-                        Char('q') | Esc => self.quit(),
+                        KeyCode::Char(' ') | KeyCode::Enter => self.start(),
+                        KeyCode::Char('q') | KeyCode::Esc => self.quit(),
                         _ => {}
                     }
                 }

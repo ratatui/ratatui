@@ -185,18 +185,17 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        use KeyCode::{Char, Down, End, Esc, Home, Left, Right, Up};
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
-                Char('q') | Esc => self.quit(),
-                Char('l') | Right => self.next(),
-                Char('h') | Left => self.previous(),
-                Char('j') | Down => self.down(),
-                Char('k') | Up => self.up(),
-                Char('g') | Home => self.top(),
-                Char('G') | End => self.bottom(),
-                Char('+') => self.increment_spacing(),
-                Char('-') => self.decrement_spacing(),
+                KeyCode::Char('q') | KeyCode::Esc => self.quit(),
+                KeyCode::Char('l') | KeyCode::Right => self.next(),
+                KeyCode::Char('h') | KeyCode::Left => self.previous(),
+                KeyCode::Char('j') | KeyCode::Down => self.down(),
+                KeyCode::Char('k') | KeyCode::Up => self.up(),
+                KeyCode::Char('g') | KeyCode::Home => self.top(),
+                KeyCode::Char('G') | KeyCode::End => self.bottom(),
+                KeyCode::Char('+') => self.increment_spacing(),
+                KeyCode::Char('-') => self.decrement_spacing(),
                 _ => (),
             },
             _ => {}

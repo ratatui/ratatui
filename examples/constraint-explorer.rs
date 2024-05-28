@@ -130,24 +130,23 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        use KeyCode::{Char, Down, Esc, Left, Right, Up};
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
-                Char('q') | Esc => self.exit(),
-                Char('1') => self.swap_constraint(ConstraintName::Min),
-                Char('2') => self.swap_constraint(ConstraintName::Max),
-                Char('3') => self.swap_constraint(ConstraintName::Length),
-                Char('4') => self.swap_constraint(ConstraintName::Percentage),
-                Char('5') => self.swap_constraint(ConstraintName::Ratio),
-                Char('6') => self.swap_constraint(ConstraintName::Fill),
-                Char('+') => self.increment_spacing(),
-                Char('-') => self.decrement_spacing(),
-                Char('x') => self.delete_block(),
-                Char('a') => self.insert_block(),
-                Char('k') | Up => self.increment_value(),
-                Char('j') | Down => self.decrement_value(),
-                Char('h') | Left => self.prev_block(),
-                Char('l') | Right => self.next_block(),
+                KeyCode::Char('q') | KeyCode::Esc => self.exit(),
+                KeyCode::Char('1') => self.swap_constraint(ConstraintName::Min),
+                KeyCode::Char('2') => self.swap_constraint(ConstraintName::Max),
+                KeyCode::Char('3') => self.swap_constraint(ConstraintName::Length),
+                KeyCode::Char('4') => self.swap_constraint(ConstraintName::Percentage),
+                KeyCode::Char('5') => self.swap_constraint(ConstraintName::Ratio),
+                KeyCode::Char('6') => self.swap_constraint(ConstraintName::Fill),
+                KeyCode::Char('+') => self.increment_spacing(),
+                KeyCode::Char('-') => self.decrement_spacing(),
+                KeyCode::Char('x') => self.delete_block(),
+                KeyCode::Char('a') => self.insert_block(),
+                KeyCode::Char('k') | KeyCode::Up => self.increment_value(),
+                KeyCode::Char('j') | KeyCode::Down => self.decrement_value(),
+                KeyCode::Char('h') | KeyCode::Left => self.prev_block(),
+                KeyCode::Char('l') | KeyCode::Right => self.next_block(),
                 _ => {}
             },
             _ => {}

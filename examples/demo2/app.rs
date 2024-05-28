@@ -94,14 +94,13 @@ impl App {
     }
 
     fn handle_key_press(&mut self, key: KeyEvent) {
-        use KeyCode::{Char, Delete, Down, Esc, Left, Right, Up};
         match key.code {
-            Char('q') | Esc => self.mode = Mode::Quit,
-            Char('h') | Left => self.prev_tab(),
-            Char('l') | Right => self.next_tab(),
-            Char('k') | Up => self.prev(),
-            Char('j') | Down => self.next(),
-            Char('d') | Delete => self.destroy(),
+            KeyCode::Char('q') | KeyCode::Esc => self.mode = Mode::Quit,
+            KeyCode::Char('h') | KeyCode::Left => self.prev_tab(),
+            KeyCode::Char('l') | KeyCode::Right => self.next_tab(),
+            KeyCode::Char('k') | KeyCode::Up => self.prev(),
+            KeyCode::Char('j') | KeyCode::Down => self.next(),
+            KeyCode::Char('d') | KeyCode::Delete => self.destroy(),
             _ => {}
         };
     }
