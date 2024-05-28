@@ -15,17 +15,17 @@
 
 use std::{error::Error, io, ops::ControlFlow, time::Duration};
 
-use crossterm::{
-    event::{
-        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseButton, MouseEvent,
-        MouseEventKind,
-    },
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     buffer::Buffer,
+    crossterm::{
+        event::{
+            self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseButton, MouseEvent,
+            MouseEventKind,
+        },
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
     layout::{Constraint, Layout, Rect},
     style::{Color, Style},
     terminal::{Frame, Terminal},

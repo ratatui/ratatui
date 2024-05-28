@@ -4,13 +4,13 @@ use std::{
 };
 
 use color_eyre::{eyre::WrapErr, Result};
-use crossterm::{
-    event::{self, Event},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, Event},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
     layout::Rect,
     terminal::{Terminal, TerminalOptions, Viewport},
 };

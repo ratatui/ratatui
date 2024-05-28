@@ -15,12 +15,13 @@
 
 use std::io::{self, stdout};
 
-use crossterm::{
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use ratatui::{
     backend::CrosstermBackend,
+    crossterm::{
+        event::{self, Event, KeyCode},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style, Stylize},
     terminal::{Frame, Terminal},
@@ -60,7 +61,6 @@ fn hello_world(frame: &mut Frame) {
     );
 }
 
-use crossterm::event::{self, Event, KeyCode};
 fn handle_events() -> io::Result<bool> {
     if event::poll(std::time::Duration::from_millis(50))? {
         if let Event::Key(key) = event::read()? {

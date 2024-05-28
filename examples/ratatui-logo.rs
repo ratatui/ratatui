@@ -19,11 +19,11 @@ use std::{
     time::Duration,
 };
 
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use indoc::indoc;
 use itertools::izip;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
+    crossterm::terminal::{disable_raw_mode, enable_raw_mode},
     terminal::{Terminal, Viewport},
     widgets::Paragraph,
     TerminalOptions,

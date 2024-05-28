@@ -3,12 +3,12 @@ use std::{error::Error, io, sync::mpsc, thread, time::Duration};
 use ratatui::{
     backend::{Backend, TermionBackend},
     terminal::Terminal,
-};
-use termion::{
-    event::Key,
-    input::{MouseTerminal, TermRead},
-    raw::IntoRawMode,
-    screen::IntoAlternateScreen,
+    termion::{
+        event::Key,
+        input::{MouseTerminal, TermRead},
+        raw::IntoRawMode,
+        screen::IntoAlternateScreen,
+    },
 };
 
 use crate::{app::App, ui};

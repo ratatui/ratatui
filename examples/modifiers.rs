@@ -25,14 +25,14 @@ use std::{
     time::Duration,
 };
 
-use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use itertools::Itertools;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style, Stylize},
     terminal::{Frame, Terminal},

@@ -19,13 +19,13 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use ratatui::{
     backend::CrosstermBackend,
+    crossterm::{
+        event::{self, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
     terminal::{Frame, Terminal},
     widgets::Paragraph,
 };

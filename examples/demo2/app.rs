@@ -1,11 +1,11 @@
 use std::time::Duration;
 
 use color_eyre::{eyre::Context, Result};
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
 use itertools::Itertools;
 use ratatui::{
     backend::Backend,
     buffer::Buffer,
+    crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::Color,
     terminal::Terminal,

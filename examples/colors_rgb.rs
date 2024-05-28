@@ -33,15 +33,15 @@ use std::{
 };
 
 use color_eyre::{config::HookBuilder, eyre, Result};
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use palette::{convert::FromColorUnclamped, Okhsv, Srgb};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     buffer::Buffer,
+    crossterm::{
+        event::{self, Event, KeyCode, KeyEventKind},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
     layout::{Constraint, Layout, Rect},
     style::Color,
     terminal::Terminal,

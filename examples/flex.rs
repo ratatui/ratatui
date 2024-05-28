@@ -16,17 +16,17 @@
 use std::io::{self, stdout};
 
 use color_eyre::{config::HookBuilder, Result};
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     buffer::Buffer,
+    crossterm::{
+        event::{self, Event, KeyCode, KeyEventKind},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
     layout::{
-        Alignment, Constraint,
-        Constraint::{Fill, Length, Max, Min, Percentage, Ratio},
+        Alignment,
+        Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio},
         Flex, Layout, Rect,
     },
     style::{palette::tailwind, Color, Modifier, Style, Stylize},

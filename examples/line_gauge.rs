@@ -16,14 +16,14 @@
 use std::{io::stdout, time::Duration};
 
 use color_eyre::{config::HookBuilder, Result};
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     buffer::Buffer,
+    crossterm::{
+        event::{self, Event, KeyCode, KeyEventKind},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
     layout::{Alignment, Constraint, Layout, Rect},
     style::{palette::tailwind, Color, Style, Stylize},
     terminal::Terminal,
