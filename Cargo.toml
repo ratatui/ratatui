@@ -96,6 +96,7 @@ rest_pat_in_fully_bound_structs = "warn"
 string_lit_chars_any = "warn"
 string_slice = "warn"
 string_to_string = "warn"
+unnecessary_self_imports = "warn"
 use_self = "warn"
 
 [features]
