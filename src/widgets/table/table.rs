@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use super::*;
+use super::{HighlightSpacing, Row, TableState};
 use crate::{layout::Flex, prelude::*, widgets::Block};
 
 /// A widget to display data in formatted columns.
@@ -842,7 +842,7 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::{layout::Constraint::*, style::Style, text::Line};
+    use crate::{layout::Constraint::*, style::Style, text::Line, widgets::Cell};
 
     #[test]
     fn new() {

@@ -74,7 +74,6 @@ missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
-wildcard_imports = "allow"
 
 # nursery or restricted
 as_underscore = "warn"
@@ -98,6 +97,7 @@ string_slice = "warn"
 string_to_string = "warn"
 unnecessary_self_imports = "warn"
 use_self = "warn"
+wildcard_imports = "deny"
 
 [features]
 #! The crate provides a set of optional features that can be enabled in your `cargo.toml` file.
