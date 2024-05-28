@@ -15,15 +15,18 @@
 
 use std::{error::Error, io, ops::ControlFlow, time::Duration};
 
-use crossterm::{
-    event::{
-        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseButton, MouseEvent,
-        MouseEventKind,
+use ratatui::{
+    crossterm::{
+        event::{
+            self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseButton, MouseEvent,
+            MouseEventKind,
+        },
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    prelude::*,
+    widgets::Paragraph,
 };
-use ratatui::{prelude::*, widgets::Paragraph};
 
 /// A custom widget that renders a button with a label, theme and state.
 #[derive(Debug, Clone)]

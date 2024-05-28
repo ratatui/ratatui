@@ -7,20 +7,19 @@
 
 use std::{error::Error, io};
 
-use termwiz::{
-    caps::Capabilities,
-    cell::{AttributeChange, Blink, CellAttributes, Intensity, Underline},
-    color::{AnsiColor, ColorAttribute, ColorSpec, LinearRgba, RgbColor, SrgbaTuple},
-    surface::{Change, CursorVisibility, Position},
-    terminal::{buffered::BufferedTerminal, ScreenSize, SystemTerminal, Terminal},
-};
-
 use crate::{
     backend::{Backend, WindowSize},
     buffer::Cell,
     layout::Size,
     prelude::Rect,
     style::{Color, Modifier, Style},
+    termwiz::{
+        caps::Capabilities,
+        cell::{AttributeChange, Blink, CellAttributes, Intensity, Underline},
+        color::{AnsiColor, ColorAttribute, ColorSpec, LinearRgba, RgbColor, SrgbaTuple},
+        surface::{Change, CursorVisibility, Position},
+        terminal::{buffered::BufferedTerminal, ScreenSize, SystemTerminal, Terminal},
+    },
 };
 
 /// A [`Backend`] implementation that uses [Termwiz] to render to the terminal.
