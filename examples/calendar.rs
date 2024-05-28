@@ -170,6 +170,7 @@ fn make_dates(current_year: i32) -> CalendarEventStore {
 }
 
 mod cals {
+    #[allow(clippy::wildcard_imports)]
     use super::*;
 
     pub fn get_cal<'a, DS: DateStyler>(m: Month, y: i32, es: DS) -> Monthly<'a, DS> {
