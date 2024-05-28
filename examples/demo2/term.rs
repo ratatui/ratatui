@@ -9,7 +9,11 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use ratatui::prelude::*;
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    layout::Rect,
+    terminal::{Terminal, TerminalOptions, Viewport},
+};
 
 pub fn init() -> Result<Terminal<impl Backend>> {
     // this size is to match the size of the terminal when running the demo

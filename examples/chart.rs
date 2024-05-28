@@ -25,7 +25,12 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{Color, Modifier, Style, Stylize},
+    symbols::{self, Marker},
+    terminal::{Frame, Terminal},
+    text::Span,
     widgets::{block::Title, Axis, Block, Chart, Dataset, GraphType, LegendPosition},
 };
 

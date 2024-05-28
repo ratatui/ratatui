@@ -1,5 +1,9 @@
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    buffer::Buffer,
+    layout::{Alignment, Constraint, Layout, Margin, Rect},
+    widgets::{Block, Borders, Clear, Padding, Paragraph, Widget, Wrap},
+};
 
 use crate::{RgbSwatch, THEME};
 

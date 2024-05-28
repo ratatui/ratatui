@@ -24,8 +24,15 @@ use crossterm::{
 };
 use itertools::Itertools;
 use ratatui::{
-    layout::Constraint::*,
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    layout::{
+        Constraint,
+        Constraint::{Length, Max, Min, Percentage, Ratio},
+        Layout, Rect,
+    },
+    style::{Color, Style, Stylize},
+    terminal::{Frame, Terminal},
+    text::Line,
     widgets::{Block, Paragraph},
 };
 

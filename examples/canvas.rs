@@ -26,8 +26,15 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::{
-    prelude::*,
-    widgets::{canvas::*, *},
+    backend::CrosstermBackend,
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Stylize},
+    symbols::Marker,
+    terminal::{Frame, Terminal},
+    widgets::{
+        canvas::{Canvas, Circle, Map, MapResolution, Rectangle},
+        Block, Widget,
+    },
 };
 
 fn main() -> io::Result<()> {

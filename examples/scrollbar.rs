@@ -27,7 +27,15 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{prelude::*, symbols::scrollbar, widgets::*};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    layout::{Alignment, Constraint, Layout, Margin},
+    style::{Color, Style, Stylize},
+    symbols::scrollbar,
+    terminal::{Frame, Terminal},
+    text::{Line, Masked, Span},
+    widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
+};
 
 #[derive(Default)]
 struct App {

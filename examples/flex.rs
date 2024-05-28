@@ -24,11 +24,21 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::{
-    layout::{Constraint::*, Flex},
-    prelude::*,
-    style::palette::tailwind,
-    symbols::line,
-    widgets::{block::Title, *},
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    layout::{
+        Alignment, Constraint,
+        Constraint::{Fill, Length, Max, Min, Percentage, Ratio},
+        Flex, Layout, Rect,
+    },
+    style::{palette::tailwind, Color, Modifier, Style, Stylize},
+    symbols::{self, line},
+    terminal::Terminal,
+    text::{Line, Text},
+    widgets::{
+        block::Title, Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        StatefulWidget, Tabs, Widget,
+    },
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
@@ -177,7 +187,7 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        use KeyCode::*;
+        use KeyCode::{Char, Down, End, Esc, Home, Left, Right, Up};
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
                 Char('q') | Esc => self.quit(),
@@ -364,7 +374,7 @@ impl SelectedTab {
 
     /// Convert a `SelectedTab` into a `Line` to display it by the `Tabs` widget.
     fn to_tab_title(value: Self) -> Line<'static> {
-        use tailwind::*;
+        use tailwind::{INDIGO, ORANGE, SKY};
         let text = value.to_string();
         let color = match value {
             Self::Legacy => ORANGE.c400,
@@ -509,7 +519,7 @@ impl Example {
 }
 
 const fn color_for_constraint(constraint: Constraint) -> Color {
-    use tailwind::*;
+    use tailwind::{BLUE, SLATE};
     match constraint {
         Constraint::Min(_) => BLUE.c900,
         Constraint::Max(_) => BLUE.c800,

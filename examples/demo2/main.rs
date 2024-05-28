@@ -30,16 +30,16 @@ mod tabs;
 mod term;
 mod theme;
 
-pub use app::*;
+pub use app::App;
 use color_eyre::Result;
-pub use colors::*;
-pub use term::*;
-pub use theme::*;
+pub use colors::{color_from_oklab, RgbSwatch};
+pub use term::{init, restore};
+pub use theme::THEME;
 
 fn main() -> Result<()> {
     errors::init_hooks()?;
     let terminal = &mut term::init()?;
-    App::default().run(terminal)?;
+    app::run(terminal)?;
     term::restore()?;
     Ok(())
 }

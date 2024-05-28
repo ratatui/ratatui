@@ -22,7 +22,13 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{prelude::*, widgets::calendar::*};
+use ratatui::{
+    backend::CrosstermBackend,
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Modifier, Style},
+    terminal::{Frame, Terminal},
+    widgets::calendar::{CalendarEventStore, DateStyler, Monthly},
+};
 use time::{Date, Month, OffsetDateTime};
 
 fn main() -> Result<(), Box<dyn Error>> {

@@ -24,7 +24,10 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    layout::{Constraint, Layout, Rect},
+    style::Stylize,
+    terminal::{Frame, Terminal},
     widgets::{Block, Clear, Paragraph, Wrap},
 };
 

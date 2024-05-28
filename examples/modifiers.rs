@@ -31,7 +31,14 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::Paragraph};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    layout::{Constraint, Layout},
+    style::{Color, Modifier, Style, Stylize},
+    terminal::{Frame, Terminal},
+    text::Line,
+    widgets::Paragraph,
+};
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
 

@@ -1,7 +1,14 @@
 use itertools::Itertools;
 use ratatui::{
-    prelude::*,
-    widgets::{canvas::*, *},
+    buffer::Buffer,
+    layout::{Alignment, Constraint, Layout, Margin, Rect},
+    style::{Styled, Stylize},
+    symbols::Marker,
+    widgets::{
+        canvas::{self, Canvas, Map, MapResolution, Points},
+        Block, BorderType, Clear, Padding, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        Sparkline, StatefulWidget, Table, TableState, Widget,
+    },
 };
 
 use crate::{RgbSwatch, THEME};
@@ -104,7 +111,7 @@ fn render_map(selected_row: usize, area: Rect, buf: &mut Buffer) {
     let theme = THEME.traceroute.map;
     let path: Option<(&Hop, &Hop)> = HOPS.iter().tuple_windows().nth(selected_row);
     let map = Map {
-        resolution: canvas::MapResolution::High,
+        resolution: MapResolution::High,
         color: theme.color,
     };
     Canvas::default()

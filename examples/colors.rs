@@ -30,7 +30,11 @@ use crossterm::{
 };
 use itertools::Itertools;
 use ratatui::{
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{Color, Style, Stylize},
+    terminal::{Frame, Terminal},
+    text::Line,
     widgets::{Block, Borders, Paragraph},
 };
 

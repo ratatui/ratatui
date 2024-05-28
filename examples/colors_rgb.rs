@@ -39,7 +39,15 @@ use crossterm::{
     ExecutableCommand,
 };
 use palette::{convert::FromColorUnclamped, Okhsv, Srgb};
-use ratatui::prelude::*;
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    layout::{Constraint, Layout, Rect},
+    style::Color,
+    terminal::Terminal,
+    text::Text,
+    widgets::Widget,
+};
 
 #[derive(Debug, Default)]
 struct App {
@@ -142,7 +150,7 @@ impl App {
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         #[allow(clippy::enum_glob_use)]
-        use Constraint::*;
+        use Constraint::{Length, Min};
         let [top, colors] = Layout::vertical([Length(1), Min(0)]).areas(area);
         let [title, fps] = Layout::horizontal([Min(0), Length(8)]).areas(top);
         Text::from("colors_rgb example. Press q to quit")

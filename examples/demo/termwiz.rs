@@ -3,7 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use ratatui::prelude::*;
+use ratatui::{backend::TermwizBackend, terminal::Terminal};
 use termwiz::{
     input::{InputEvent, KeyCode},
     terminal::Terminal as TermwizTerminal,

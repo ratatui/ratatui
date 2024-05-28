@@ -23,7 +23,15 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{prelude::*, widgets::Paragraph};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Style},
+    terminal::{Frame, Terminal},
+    text::Line,
+    widgets::{Paragraph, Widget},
+};
 
 /// A custom widget that renders a button with a label, theme and state.
 #[derive(Debug, Clone)]

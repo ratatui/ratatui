@@ -23,7 +23,16 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    layout::{Constraint, Layout, Rect},
+    style::{palette::tailwind, Color, Stylize},
+    symbols,
+    terminal::Terminal,
+    text::Line,
+    widgets::{Block, Padding, Paragraph, Tabs, Widget},
+};
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 #[derive(Default)]
@@ -77,7 +86,7 @@ impl App {
     fn handle_events(&mut self) -> std::io::Result<()> {
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
-                use KeyCode::*;
+                use KeyCode::{Char, Esc, Left, Right};
                 match key.code {
                     Char('l') | Right => self.next_tab(),
                     Char('h') | Left => self.previous_tab(),
@@ -120,7 +129,7 @@ impl SelectedTab {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        use Constraint::*;
+        use Constraint::{Length, Min};
         let vertical = Layout::vertical([Length(1), Min(0), Length(1)]);
         let [header_area, inner_area, footer_area] = vertical.areas(area);
 

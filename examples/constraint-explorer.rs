@@ -25,11 +25,20 @@ use crossterm::{
 };
 use itertools::Itertools;
 use ratatui::{
-    layout::{Constraint::*, Flex},
-    prelude::*,
-    style::palette::tailwind::*,
-    symbols::line,
-    widgets::{Block, Paragraph, Wrap},
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    layout::{
+        Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio},
+        Flex, Layout, Rect,
+    },
+    style::{
+        palette::tailwind::{BLUE, SKY, SLATE, STONE},
+        Color, Style, Stylize,
+    },
+    symbols::{self, line},
+    terminal::Terminal,
+    text::{Line, Span, Text},
+    widgets::{Block, Paragraph, Widget, Wrap},
 };
 use strum::{Display, EnumIter, FromRepr};
 
@@ -123,7 +132,7 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        use KeyCode::*;
+        use KeyCode::{Char, Down, Esc, Left, Right, Up};
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
                 Char('q') | Esc => self.exit(),

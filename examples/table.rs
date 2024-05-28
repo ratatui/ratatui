@@ -23,7 +23,17 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    layout::{Constraint, Layout, Margin, Rect},
+    style::{self, Color, Modifier, Style, Stylize},
+    terminal::{Frame, Terminal},
+    text::{Line, Text},
+    widgets::{
+        Block, BorderType, Cell, HighlightSpacing, Paragraph, Row, Scrollbar, ScrollbarOrientation,
+        ScrollbarState, Table, TableState,
+    },
+};
 use style::palette::tailwind;
 use unicode_width::UnicodeWidthStr;
 
@@ -212,7 +222,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
-                use KeyCode::*;
+                use KeyCode::{Char, Down, Esc, Left, Right, Up};
                 match key.code {
                     Char('q') | Esc => return Ok(()),
                     Char('j') | Down => app.next(),

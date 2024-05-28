@@ -20,7 +20,11 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::{
-    prelude::*,
+    backend::CrosstermBackend,
+    layout::{Constraint, Layout},
+    style::{Color, Modifier, Style, Stylize},
+    terminal::{Frame, Terminal},
+    text::{Line, Span, Text},
     widgets::{Block, Borders, Paragraph},
 };
 

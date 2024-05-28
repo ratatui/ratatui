@@ -29,7 +29,10 @@ use rand::{
     rngs::ThreadRng,
 };
 use ratatui::{
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    layout::{Constraint, Layout},
+    style::{Color, Style},
+    terminal::{Frame, Terminal},
     widgets::{Block, Borders, Sparkline},
 };
 

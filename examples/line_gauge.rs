@@ -22,9 +22,12 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::{
-    prelude::*,
-    style::palette::tailwind,
-    widgets::{block::Title, *},
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{palette::tailwind, Color, Style, Stylize},
+    terminal::Terminal,
+    widgets::{block::Title, Block, Borders, LineGauge, Padding, Paragraph, Widget},
 };
 
 const CUSTOM_LABEL_COLOR: Color = tailwind::SLATE.c200;

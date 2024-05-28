@@ -24,9 +24,13 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::{
-    prelude::*,
-    style::palette::tailwind,
-    widgets::{block::Title, Block, Borders, Gauge, Padding, Paragraph},
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{palette::tailwind, Color, Style, Stylize},
+    terminal::Terminal,
+    text::Span,
+    widgets::{block::Title, Block, Borders, Gauge, Padding, Paragraph, Widget},
 };
 
 const GAUGE1_COLOR: Color = tailwind::RED.c800;
@@ -99,7 +103,7 @@ impl App {
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    use KeyCode::*;
+                    use KeyCode::{Char, Enter, Esc};
                     match key.code {
                         Char(' ') | Enter => self.start(),
                         Char('q') | Esc => self.quit(),
@@ -123,7 +127,7 @@ impl App {
 impl Widget for &App {
     #[allow(clippy::similar_names)]
     fn render(self, area: Rect, buf: &mut Buffer) {
-        use Constraint::*;
+        use Constraint::{Length, Min, Ratio};
         let layout = Layout::vertical([Length(2), Min(0), Length(1)]);
         let [header_area, gauge_area, footer_area] = layout.areas(area);
 

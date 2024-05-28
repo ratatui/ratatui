@@ -27,7 +27,11 @@ use crossterm::{
 };
 use itertools::Itertools;
 use ratatui::{
-    prelude::*,
+    backend::CrosstermBackend,
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{Style, Stylize},
+    terminal::Frame,
+    text::Line,
     widgets::{
         block::{Position, Title},
         Block, BorderType, Borders, Padding, Paragraph, Wrap,

@@ -23,7 +23,18 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{palette::tailwind, Color, Modifier, Style, Stylize},
+    terminal::Terminal,
+    text::Line,
+    widgets::{
+        Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
+        StatefulWidget, Widget, Wrap,
+    },
+};
 
 const TODO_HEADER_BG: Color = tailwind::BLUE.c950;
 const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
@@ -152,7 +163,7 @@ impl App {
 
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    use KeyCode::*;
+                    use KeyCode::{Char, Down, Enter, Esc, Left, Right, Up};
                     match key.code {
                         Char('q') | Esc => return Ok(()),
                         Char('h') | Left => self.items.unselect(),

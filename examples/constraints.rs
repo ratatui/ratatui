@@ -23,7 +23,22 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use ratatui::{layout::Constraint::*, prelude::*, style::palette::tailwind, widgets::*};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    layout::{
+        Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio},
+        Layout, Rect,
+    },
+    style::{palette::tailwind, Color, Modifier, Style, Stylize},
+    symbols,
+    terminal::Terminal,
+    text::Line,
+    widgets::{
+        Block, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget,
+        Tabs, Widget,
+    },
+};
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 const SPACER_HEIGHT: u16 = 0;
@@ -108,7 +123,7 @@ impl App {
 
     fn handle_events(&mut self) -> Result<()> {
         if let Event::Key(key) = event::read()? {
-            use KeyCode::*;
+            use KeyCode::{Char, Down, End, Esc, Home, Left, Right, Up};
             if key.kind != KeyEventKind::Press {
                 return Ok(());
             }

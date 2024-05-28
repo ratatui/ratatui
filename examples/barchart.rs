@@ -25,7 +25,11 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    terminal::{Frame, Terminal},
+    text::{Line, Span},
     widgets::{Bar, BarChart, BarGroup, Block, Paragraph},
 };
 

@@ -3,10 +3,22 @@ use std::time::Duration;
 use color_eyre::{eyre::Context, Result};
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    backend::Backend,
+    buffer::Buffer,
+    layout::{Constraint, Layout, Rect},
+    style::Color,
+    terminal::Terminal,
+    text::{Line, Span},
+    widgets::{Block, Tabs, Widget},
+};
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
-use crate::{destroy, tabs::*, term, THEME};
+use crate::{
+    destroy,
+    tabs::{AboutTab, EmailTab, RecipeTab, TracerouteTab, WeatherTab},
+    term, THEME,
+};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct App {
@@ -82,7 +94,7 @@ impl App {
     }
 
     fn handle_key_press(&mut self, key: KeyEvent) {
-        use KeyCode::*;
+        use KeyCode::{Char, Delete, Down, Esc, Left, Right, Up};
         match key.code {
             Char('q') | Esc => self.mode = Mode::Quit,
             Char('h') | Left => self.prev_tab(),

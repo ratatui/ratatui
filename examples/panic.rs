@@ -36,7 +36,9 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    terminal::{Frame, Terminal},
+    text::Line,
     widgets::{Block, Paragraph},
 };
 
