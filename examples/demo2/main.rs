@@ -30,7 +30,7 @@ mod theme;
 
 use color_eyre::Result;
 
-pub use crate::{
+pub use self::{
     colors::{color_from_oklab, RgbSwatch},
     theme::THEME,
 };
