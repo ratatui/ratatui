@@ -30,12 +30,16 @@
 use std::{error::Error, io};
 
 use ratatui::{
+    backend::{Backend, CrosstermBackend},
     crossterm::{
         event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    prelude::*,
+    layout::{Constraint, Layout},
+    style::{Color, Modifier, Style, Stylize},
+    terminal::{Frame, Terminal},
+    text::{Line, Span, Text},
     widgets::{Block, List, ListItem, Paragraph},
 };
 

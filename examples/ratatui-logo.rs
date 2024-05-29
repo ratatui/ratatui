@@ -22,9 +22,11 @@ use std::{
 use indoc::indoc;
 use itertools::izip;
 use ratatui::{
+    backend::{Backend, CrosstermBackend},
     crossterm::terminal::{disable_raw_mode, enable_raw_mode},
-    prelude::*,
+    terminal::{Terminal, Viewport},
     widgets::Paragraph,
+    TerminalOptions,
 };
 
 /// A fun example of using half block characters to draw a logo

@@ -5,12 +5,13 @@ use std::{
 };
 
 use ratatui::{
+    backend::{Backend, CrosstermBackend},
     crossterm::{
         event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    prelude::*,
+    terminal::Terminal,
 };
 
 use crate::{app::App, ui};

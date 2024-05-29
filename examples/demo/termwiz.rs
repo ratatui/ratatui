@@ -4,7 +4,8 @@ use std::{
 };
 
 use ratatui::{
-    prelude::*,
+    backend::TermwizBackend,
+    terminal::Terminal,
     termwiz::{
         input::{InputEvent, KeyCode},
         terminal::Terminal as TermwizTerminal,

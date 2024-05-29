@@ -16,12 +16,16 @@
 use std::io::{self, stdout};
 
 use ratatui::{
+    backend::CrosstermBackend,
     crossterm::{
         event::{self, Event, KeyCode},
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    prelude::*,
+    layout::{Constraint, Layout},
+    style::{Color, Modifier, Style, Stylize},
+    terminal::{Frame, Terminal},
+    text::{Line, Span, Text},
     widgets::{Block, Borders, Paragraph},
 };
 

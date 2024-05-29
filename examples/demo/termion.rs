@@ -1,7 +1,8 @@
 use std::{error::Error, io, sync::mpsc, thread, time::Duration};
 
 use ratatui::{
-    prelude::*,
+    backend::{Backend, TermionBackend},
+    terminal::Terminal,
     termion::{
         event::Key,
         input::{MouseTerminal, TermRead},

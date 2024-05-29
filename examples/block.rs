@@ -22,12 +22,16 @@ use std::{
 
 use itertools::Itertools;
 use ratatui::{
+    backend::CrosstermBackend,
     crossterm::{
         event::{self, Event, KeyCode},
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    prelude::*,
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{Style, Stylize},
+    terminal::Frame,
+    text::Line,
     widgets::{
         block::{Position, Title},
         Block, BorderType, Borders, Padding, Paragraph, Wrap,

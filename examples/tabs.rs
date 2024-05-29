@@ -13,20 +13,23 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::wildcard_imports, clippy::enum_glob_use)]
-
 use std::io::stdout;
 
 use color_eyre::{config::HookBuilder, Result};
 use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
     crossterm::{
         event::{self, Event, KeyCode, KeyEventKind},
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    prelude::*,
-    style::palette::tailwind,
-    widgets::*,
+    layout::{Constraint, Layout, Rect},
+    style::{palette::tailwind, Color, Stylize},
+    symbols,
+    terminal::Terminal,
+    text::Line,
+    widgets::{Block, Padding, Paragraph, Tabs, Widget},
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
@@ -81,11 +84,10 @@ impl App {
     fn handle_events(&mut self) -> std::io::Result<()> {
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
-                use KeyCode::*;
                 match key.code {
-                    Char('l') | Right => self.next_tab(),
-                    Char('h') | Left => self.previous_tab(),
-                    Char('q') | Esc => self.quit(),
+                    KeyCode::Char('l') | KeyCode::Right => self.next_tab(),
+                    KeyCode::Char('h') | KeyCode::Left => self.previous_tab(),
+                    KeyCode::Char('q') | KeyCode::Esc => self.quit(),
                     _ => {}
                 }
             }
@@ -124,7 +126,7 @@ impl SelectedTab {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        use Constraint::*;
+        use Constraint::{Length, Min};
         let vertical = Layout::vertical([Length(1), Min(0), Length(1)]);
         let [header_area, inner_area, footer_area] = vertical.areas(area);
 

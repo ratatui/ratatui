@@ -13,20 +13,22 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::enum_glob_use)]
-
 use std::{io::stdout, time::Duration};
 
 use color_eyre::{config::HookBuilder, Result};
 use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
     crossterm::{
         event::{self, Event, KeyCode, KeyEventKind},
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    prelude::*,
-    style::palette::tailwind,
-    widgets::{block::Title, Block, Borders, Gauge, Padding, Paragraph},
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{palette::tailwind, Color, Style, Stylize},
+    terminal::Terminal,
+    text::Span,
+    widgets::{block::Title, Block, Borders, Gauge, Padding, Paragraph, Widget},
 };
 
 const GAUGE1_COLOR: Color = tailwind::RED.c800;
@@ -99,10 +101,9 @@ impl App {
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    use KeyCode::*;
                     match key.code {
-                        Char(' ') | Enter => self.start(),
-                        Char('q') | Esc => self.quit(),
+                        KeyCode::Char(' ') | KeyCode::Enter => self.start(),
+                        KeyCode::Char('q') | KeyCode::Esc => self.quit(),
                         _ => {}
                     }
                 }
@@ -123,7 +124,7 @@ impl App {
 impl Widget for &App {
     #[allow(clippy::similar_names)]
     fn render(self, area: Rect, buf: &mut Buffer) {
-        use Constraint::*;
+        use Constraint::{Length, Min, Ratio};
         let layout = Layout::vertical([Length(2), Min(0), Length(1)]);
         let [header_area, gauge_area, footer_area] = layout.areas(area);
 

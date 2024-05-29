@@ -13,19 +13,24 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::enum_glob_use)]
-
 use std::{error::Error, io};
 
 use itertools::Itertools;
 use ratatui::{
+    backend::{Backend, CrosstermBackend},
     crossterm::{
         event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    layout::Constraint::*,
-    prelude::*,
+    layout::{
+        Constraint,
+        Constraint::{Length, Max, Min, Percentage, Ratio},
+        Layout, Rect,
+    },
+    style::{Color, Style, Stylize},
+    terminal::{Frame, Terminal},
+    text::Line,
     widgets::{Block, Paragraph},
 };
 

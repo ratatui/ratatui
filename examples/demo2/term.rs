@@ -5,12 +5,14 @@ use std::{
 
 use color_eyre::{eyre::WrapErr, Result};
 use ratatui::{
+    backend::{Backend, CrosstermBackend},
     crossterm::{
         event::{self, Event},
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    prelude::*,
+    layout::Rect,
+    terminal::{Terminal, TerminalOptions, Viewport},
 };
 
 pub fn init() -> Result<Terminal<impl Backend>> {

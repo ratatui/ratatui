@@ -13,8 +13,6 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::wildcard_imports)]
-
 use std::{
     collections::{BTreeMap, VecDeque},
     error::Error,
@@ -25,7 +23,16 @@ use std::{
 };
 
 use rand::distributions::{Distribution, Uniform};
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{Color, Modifier, Style},
+    symbols,
+    terminal::{Frame, Terminal, Viewport},
+    text::{Line, Span},
+    widgets::{block, Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
+    TerminalOptions,
+};
 
 const NUM_DOWNLOADS: usize = 10;
 

@@ -13,20 +13,25 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::enum_glob_use, clippy::wildcard_imports)]
-
 use std::{error::Error, io, io::stdout};
 
 use color_eyre::config::HookBuilder;
 use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
     crossterm::{
         event::{self, Event, KeyCode, KeyEventKind},
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    prelude::*,
-    style::palette::tailwind,
-    widgets::*,
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{palette::tailwind, Color, Modifier, Style, Stylize},
+    terminal::Terminal,
+    text::Line,
+    widgets::{
+        Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
+        StatefulWidget, Widget, Wrap,
+    },
 };
 
 const TODO_HEADER_BG: Color = tailwind::BLUE.c950;
@@ -156,15 +161,16 @@ impl App {
 
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    use KeyCode::*;
                     match key.code {
-                        Char('q') | Esc => return Ok(()),
-                        Char('h') | Left => self.items.unselect(),
-                        Char('j') | Down => self.items.next(),
-                        Char('k') | Up => self.items.previous(),
-                        Char('l') | Right | Enter => self.change_status(),
-                        Char('g') => self.go_top(),
-                        Char('G') => self.go_bottom(),
+                        KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                        KeyCode::Char('h') | KeyCode::Left => self.items.unselect(),
+                        KeyCode::Char('j') | KeyCode::Down => self.items.next(),
+                        KeyCode::Char('k') | KeyCode::Up => self.items.previous(),
+                        KeyCode::Char('l') | KeyCode::Right | KeyCode::Enter => {
+                            self.change_status();
+                        }
+                        KeyCode::Char('g') => self.go_top(),
+                        KeyCode::Char('G') => self.go_bottom(),
                         _ => {}
                     }
                 }

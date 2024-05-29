@@ -1,7 +1,14 @@
-#[allow(clippy::wildcard_imports)]
 use ratatui::{
-    prelude::*,
-    widgets::{canvas::*, *},
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Modifier, Style},
+    symbols,
+    terminal::Frame,
+    text::{self, Span},
+    widgets::{
+        canvas::{self, Canvas, Circle, Map, MapResolution, Rectangle},
+        Axis, BarChart, Block, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem, Paragraph,
+        Row, Sparkline, Table, Tabs, Wrap,
+    },
 };
 
 use crate::app::App;

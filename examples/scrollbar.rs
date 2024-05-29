@@ -14,7 +14,6 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
 #![warn(clippy::pedantic)]
-#![allow(clippy::wildcard_imports)]
 
 use std::{
     error::Error,
@@ -23,14 +22,18 @@ use std::{
 };
 
 use ratatui::{
+    backend::{Backend, CrosstermBackend},
     crossterm::{
         event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    prelude::*,
+    layout::{Alignment, Constraint, Layout, Margin},
+    style::{Color, Style, Stylize},
     symbols::scrollbar,
-    widgets::*,
+    terminal::{Frame, Terminal},
+    text::{Line, Masked, Span},
+    widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
 };
 
 #[derive(Default)]
