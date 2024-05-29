@@ -34,9 +34,9 @@ use unicode_width::UnicodeWidthStr;
 const COMPANY_COUNT: usize = 3;
 const PERIOD_COUNT: usize = 4;
 
-struct App<'a> {
+struct App {
     exit: bool,
-    data: Vec<Bar<'a>>,
+    data: Vec<Bar<'static>>,
     last_update: Instant,
     companies: [Company; COMPANY_COUNT],
     revenues: [Revenues; PERIOD_COUNT],
@@ -62,7 +62,7 @@ fn main() -> color_eyre::Result<()> {
     Ok(())
 }
 
-impl<'a> App<'a> {
+impl App {
     // update the data every 250ms
     const UPDATE_RATE: Duration = Duration::from_millis(250);
 
@@ -126,7 +126,7 @@ fn generate_main_barchart_data() -> Vec<Bar<'static>> {
         .collect()
 }
 
-impl Widget for &App<'_> {
+impl Widget for &App {
     /// Render the application
     fn render(self, area: Rect, buf: &mut Buffer) {
         use Constraint::{Percentage, Ratio};
@@ -144,7 +144,7 @@ impl Widget for &App<'_> {
     }
 }
 
-impl App<'_> {
+impl App {
     const TOTAL_REVENUE_LABEL: &'static str = "Total Revenue";
 
     /// Create a bar chart with the data from the `data` field.
@@ -228,7 +228,7 @@ impl Revenues {
     }
 
     /// Create a `BarGroup` with vertical bars for each company
-    fn to_vertical_bar_group<'a>(&'a self, companies: &'a [Company]) -> BarGroup<'a> {
+    fn to_vertical_bar_group<'a>(&self, companies: &'a [Company]) -> BarGroup<'a> {
         let bars = izip!(companies, self.revenues)
             .map(|(company, revenue)| company.vertical_revenue_bar(revenue))
             .collect_vec();
