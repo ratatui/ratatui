@@ -18,7 +18,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use common::Terminal;
+use self::common::Terminal;
 use crossterm::event::{self, Event, KeyCode};
 use itertools::{izip, Itertools};
 use rand::{thread_rng, Rng};
