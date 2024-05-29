@@ -1,5 +1,7 @@
 use itertools::Itertools;
 
+#[allow(unused_imports)] // `Cell` is used in the doc comment but not the code
+use super::Cell;
 use super::{HighlightSpacing, Row, TableState};
 use crate::{layout::Flex, prelude::*, widgets::Block};
 
@@ -176,7 +178,11 @@ use crate::{layout::Flex, prelude::*, widgets::Block};
 ///     Row::new(vec!["Row21", "Row22", "Row23"]),
 ///     Row::new(vec!["Row31", "Row32", "Row33"]),
 /// ];
-/// let widths = [Constraint::Length(5), Constraint::Length(5), Constraint::Length(10)];
+/// let widths = [
+///     Constraint::Length(5),
+///     Constraint::Length(5),
+///     Constraint::Length(10),
+/// ];
 /// let table = Table::new(rows, widths)
 ///     .block(Block::new().title("Table"))
 ///     .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
@@ -184,6 +190,7 @@ use crate::{layout::Flex, prelude::*, widgets::Block};
 ///
 /// frame.render_stateful_widget(table, area, &mut table_state);
 /// # }
+/// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Table<'a> {
     /// Data to display in each row
