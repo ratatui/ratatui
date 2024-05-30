@@ -1,3 +1,5 @@
+use crate::widgets::ListState;
+
 /// State of a [`Table`] widget
 ///
 /// This state can be used to scroll through the rows and select one of them. When the table is
@@ -177,6 +179,15 @@ impl TableState {
     }
 }
 
+impl From<ListState> for TableState {
+    fn from(list_state: ListState) -> Self {
+        Self {
+            offset: list_state.offset,
+            selected: list_state.selected,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -238,5 +249,13 @@ mod tests {
         let mut state = TableState::new().with_selected(Some(1));
         state.select(None);
         assert_eq!(state.selected, None);
+    }
+
+    #[test]
+    fn into_list_state() {
+        let table_state = TableState::new().with_selected(Some(1)).with_offset(1);
+        let list_state: ListState = table_state.into();
+        assert_eq!(list_state.selected(), Some(1));
+        assert_eq!(list_state.offset(), 1);
     }
 }

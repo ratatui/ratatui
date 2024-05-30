@@ -3,7 +3,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     prelude::*,
-    widgets::{Block, HighlightSpacing},
+    widgets::{table::TableState, Block, HighlightSpacing},
 };
 
 /// State of the [`List`] widget
@@ -46,8 +46,8 @@ use crate::{
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ListState {
-    offset: usize,
-    selected: Option<usize>,
+    pub(crate) offset: usize,
+    pub(crate) selected: Option<usize>,
 }
 
 impl ListState {
@@ -154,6 +154,15 @@ impl ListState {
         self.selected = index;
         if index.is_none() {
             self.offset = 0;
+        }
+    }
+}
+
+impl From<TableState> for ListState {
+    fn from(table_state: TableState) -> Self {
+        Self {
+            offset: table_state.offset,
+            selected: table_state.selected,
         }
     }
 }
@@ -1033,6 +1042,14 @@ mod tests {
         state.select(None);
         assert_eq!(state.selected, None);
         assert_eq!(state.offset, 0);
+    }
+
+    #[test]
+    fn test_list_state_into_table_state() {
+        let list_state = ListState::default().with_selected(Some(1)).with_offset(1);
+        let table_state: TableState = list_state.into();
+        assert_eq!(table_state.selected(), Some(1));
+        assert_eq!(table_state.offset(), 1);
     }
 
     #[test]
