@@ -18,7 +18,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use self::common::Terminal;
 use crossterm::event::{self, Event, KeyCode};
 use itertools::{izip, Itertools};
 use rand::{thread_rng, Rng};
@@ -30,6 +29,8 @@ use ratatui::{
     widgets::{Bar, BarChart, BarGroup, Block, Paragraph, Widget},
 };
 use unicode_width::UnicodeWidthStr;
+
+use self::common::Terminal;
 
 const COMPANY_COUNT: usize = 3;
 const PERIOD_COUNT: usize = 4;
@@ -68,7 +69,7 @@ impl App {
 
     /// Create a new instance of the application
     fn new() -> Self {
-        App {
+        Self {
             exit: false,
             data: generate_main_barchart_data(),
             last_update: Instant::now(),
