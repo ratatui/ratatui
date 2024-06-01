@@ -229,14 +229,14 @@ The following example shows how to migrate for `Line`, but the same applies for 
 
 ### Remove deprecated `Block::title_on_bottom` ([#757])
 
+[#757]: https://github.com/ratatui-org/ratatui/pull/757
+
 `Block::title_on_bottom` was deprecated in v0.22. Use `Block::title` and `Title::position` instead.
 
 ```diff
 - block.title("foobar").title_on_bottom();
 + block.title(Title::from("foobar").position(Position::Bottom));
 ```
-
-[#757]: https://github.com/ratatui-org/ratatui/pull/757
 
 ### `Block` style methods cannot be used in a const context ([#720])
 
