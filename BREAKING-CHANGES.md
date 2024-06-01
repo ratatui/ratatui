@@ -12,6 +12,7 @@ This is a quick summary of the sections below:
 
 - [Unreleased](#unreleased)
   - `Rect::inner` takes `Margin` directly instead of reference
+  - `Buffer::filled` takes `Cell` directly instead of reference
   - `Stylize::bg()` now accepts `Into<Color>`
   - Removed deprecated `List::start_corner`
 - [v0.26.0](#v0260)
@@ -112,6 +113,17 @@ To update your app:
      vertical: 0,
      horizontal: 2,
  });
+```
+
+### `Buffer::filled` takes `Cell` directly instead of reference ([#1148])
+
+[#1148]: https://github.com/ratatui-org/ratatui/pull/1148
+
+`Buffer::filled` moves the `Cell` instead of taking a reference.
+
+```diff
+-Buffer::filled(area, &Cell::new("X"));
++Buffer::filled(area, Cell::new("X"));
 ```
 
 ### `Stylize::bg()` now accepts `Into<Color>` ([#1103])

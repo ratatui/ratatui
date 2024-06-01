@@ -4,7 +4,10 @@ use crate::{
     prelude::*,
     style::Styled,
     text::StyledGrapheme,
-    widgets::{reflow::*, Block},
+    widgets::{
+        reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine},
+        Block,
+    },
 };
 
 const fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Alignment) -> u16 {

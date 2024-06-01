@@ -30,7 +30,7 @@ fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::E
     }
 
     let expected = {
-        use termion::{color, cursor, style};
+        use ratatui::termion::{color, cursor, style};
         let mut s = String::new();
         // First draw
         write!(s, "{}", cursor::Goto(1, 1))?;

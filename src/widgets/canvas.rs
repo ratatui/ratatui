@@ -817,7 +817,7 @@ mod tests {
     // results in the expected output
     fn test_marker(marker: Marker, expected: &str) {
         let area = Rect::new(0, 0, 5, 5);
-        let mut buf = Buffer::filled(area, &Cell::new("x"));
+        let mut buf = Buffer::filled(area, Cell::new("x"));
         let horizontal_line = Line {
             x1: 0.0,
             y1: 0.0,

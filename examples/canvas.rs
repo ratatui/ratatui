@@ -13,22 +13,26 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::wildcard_imports)]
-
 use std::{
     io::{self, stdout, Stdout},
     time::{Duration, Instant},
 };
 
-use crossterm::{
-    event::{self, Event, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use ratatui::{
-    prelude::*,
+    backend::CrosstermBackend,
+    crossterm::{
+        event::{self, Event, KeyCode},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Stylize},
     symbols::Marker,
-    widgets::{canvas::*, *},
+    terminal::{Frame, Terminal},
+    widgets::{
+        canvas::{Canvas, Circle, Map, MapResolution, Rectangle},
+        Block, Widget,
+    },
 };
 
 fn main() -> io::Result<()> {

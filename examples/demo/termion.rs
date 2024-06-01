@@ -1,11 +1,14 @@
 use std::{error::Error, io, sync::mpsc, thread, time::Duration};
 
-use ratatui::prelude::*;
-use termion::{
-    event::Key,
-    input::{MouseTerminal, TermRead},
-    raw::IntoRawMode,
-    screen::IntoAlternateScreen,
+use ratatui::{
+    backend::{Backend, TermionBackend},
+    terminal::Terminal,
+    termion::{
+        event::Key,
+        input::{MouseTerminal, TermRead},
+        raw::IntoRawMode,
+        screen::IntoAlternateScreen,
+    },
 };
 
 use crate::{app::App, ui};

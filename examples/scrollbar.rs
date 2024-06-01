@@ -14,7 +14,6 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
 #![warn(clippy::pedantic)]
-#![allow(clippy::wildcard_imports)]
 
 use std::{
     error::Error,
@@ -22,12 +21,20 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{Alignment, Constraint, Layout, Margin},
+    style::{Color, Style, Stylize},
+    symbols::scrollbar,
+    terminal::{Frame, Terminal},
+    text::{Line, Masked, Span},
+    widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
 };
-use ratatui::{prelude::*, symbols::scrollbar, widgets::*};
 
 #[derive(Default)]
 struct App {

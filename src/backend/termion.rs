@@ -9,13 +9,12 @@ use std::{
     io::{self, Write},
 };
 
-use termion::{color as tcolor, style as tstyle};
-
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
     prelude::Rect,
     style::{Color, Modifier, Style},
+    termion::{self, color as tcolor, color::Color as _, style as tstyle},
 };
 
 /// A [`Backend`] implementation that uses [Termion] to render to the terminal.
@@ -40,8 +39,10 @@ use crate::{
 /// ```rust,no_run
 /// use std::io::{stderr, stdout};
 ///
-/// use ratatui::prelude::*;
-/// use termion::{raw::IntoRawMode, screen::IntoAlternateScreen};
+/// use ratatui::{
+///     prelude::*,
+///     termion::{raw::IntoRawMode, screen::IntoAlternateScreen},
+/// };
 ///
 /// let writer = stdout().into_raw_mode()?.into_alternate_screen()?;
 /// let mut backend = TermionBackend::new(writer);
@@ -243,7 +244,6 @@ struct ModifierDiff {
 
 impl fmt::Display for Fg {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use termion::color::Color as TermionColor;
         match self.0 {
             Color::Reset => termion::color::Reset.write_fg(f),
             Color::Black => termion::color::Black.write_fg(f),
@@ -269,7 +269,6 @@ impl fmt::Display for Fg {
 }
 impl fmt::Display for Bg {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use termion::color::Color as TermionColor;
         match self.0 {
             Color::Reset => termion::color::Reset.write_bg(f),
             Color::Black => termion::color::Black.write_bg(f),

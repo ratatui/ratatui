@@ -3,8 +3,7 @@
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
-    clippy::module_name_repetitions,
-    clippy::wildcard_imports
+    clippy::module_name_repetitions
 )]
 
 use std::iter;
@@ -12,7 +11,10 @@ use std::iter;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
-use crate::{prelude::*, symbols::scrollbar::*};
+use crate::{
+    prelude::*,
+    symbols::scrollbar::{Set, DOUBLE_HORIZONTAL, DOUBLE_VERTICAL},
+};
 
 /// A widget to display a scrollbar
 ///

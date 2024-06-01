@@ -203,6 +203,8 @@ mod tests {
         ExpectedLines: IntoIterator,
         ExpectedLines::Item: Into<crate::text::Line<'expected_line>>,
     {
+        use crate::widgets::{Style, Stylize, Widget};
+
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
         let canvas = Canvas::default()
             .marker(Marker::Dot)
