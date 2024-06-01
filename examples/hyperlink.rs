@@ -16,8 +16,15 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::io::{self, stdout, Stdout};
+use std::{
+    io::{self, stdout, Stdout},
+    panic,
+};
 
+use color_eyre::{
+    config::{EyreHook, HookBuilder, PanicHook},
+    eyre, Result,
+};
 use crossterm::{
     event::{self, Event, KeyCode},
     execute,
@@ -27,9 +34,11 @@ use crossterm::{
 use itertools::Itertools;
 use ratatui::{prelude::*, widgets::WidgetRef};
 
-fn main() -> io::Result<()> {
+fn main() -> Result<()> {
+    init_error_handling()?;
     let mut terminal = init_terminal()?;
-    App::new().run(&mut terminal)?;
+    let app = App::new();
+    app.run(&mut terminal)?;
     restore_terminal()?;
     Ok(())
 }
@@ -41,18 +50,17 @@ struct App {
 impl App {
     fn new() -> Self {
         let text = Line::from(vec!["Example ".into(), "hyperlink".blue()]);
-        Self {
-            hyperlink: Hyperlink::new(text, "https://example.com"),
-        }
+        let hyperlink = Hyperlink::new(text, "https://example.com");
+        Self { hyperlink }
     }
 
     fn run(self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
         loop {
-            terminal.draw(|frame| {
-                frame.render_widget(&self.hyperlink, frame.size());
-            })?;
-            if should_quit()? {
-                break;
+            terminal.draw(|frame| frame.render_widget(&self.hyperlink, frame.size()))?;
+            if let Event::Key(key) = event::read()? {
+                if matches!(key.code, KeyCode::Char('q') | KeyCode::Esc) {
+                    break;
+                }
             }
         }
         Ok(())
@@ -101,22 +109,43 @@ impl WidgetRef for Hyperlink<'_> {
     }
 }
 
-fn should_quit() -> io::Result<bool> {
-    if let Event::Key(key) = event::read()? {
-        return Ok(KeyCode::Char('q') == key.code);
-    }
-    Ok(false)
-}
-
+/// Initialize the terminal with raw mode and alternate screen.
 fn init_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
     enable_raw_mode()?;
     stdout().execute(EnterAlternateScreen)?;
-    let terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-    Ok(terminal)
+    Terminal::new(CrosstermBackend::new(stdout()))
 }
 
+/// Restore the terminal to its original state.
 fn restore_terminal() -> io::Result<()> {
     disable_raw_mode()?;
     execute!(stdout(), LeaveAlternateScreen)?;
+    Ok(())
+}
+
+/// Initialize error handling with color-eyre.
+pub fn init_error_handling() -> Result<()> {
+    let (panic_hook, eyre_hook) = HookBuilder::default().into_hooks();
+    set_panic_hook(panic_hook);
+    set_error_hook(eyre_hook)?;
+    Ok(())
+}
+
+/// Install a panic hook that restores the terminal before printing the panic.
+fn set_panic_hook(panic_hook: PanicHook) {
+    let panic_hook = panic_hook.into_panic_hook();
+    panic::set_hook(Box::new(move |panic_info| {
+        let _ = restore_terminal();
+        panic_hook(panic_info);
+    }));
+}
+
+/// Install an error hook that restores the terminal before printing the error.
+fn set_error_hook(eyre_hook: EyreHook) -> Result<()> {
+    let eyre_hook = eyre_hook.into_eyre_hook();
+    eyre::set_hook(Box::new(move |error| {
+        let _ = restore_terminal();
+        eyre_hook(error)
+    }))?;
     Ok(())
 }
