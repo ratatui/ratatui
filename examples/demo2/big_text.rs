@@ -20,7 +20,16 @@
 //!
 //! ```rust
 //! use anyhow::Result;
-//! use ratatui::prelude::*;
+//! use ratatui::{
+//!     backend::{self, Backend, CrosstermBackend},
+//!     buffer::{self, Buffer},
+//!     layout::{self, Alignment, Constraint, Direction, Layout, Margin, Rect},
+//!     style::{self, Color, Modifier, Style, Styled, Stylize},
+//!     symbols::{self, Marker},
+//!     terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport},
+//!     text::{self, Line, Masked, Span, Text},
+//!     widgets::{block::BlockExt, StatefulWidget, Widget},
+//! };
 //! use tui_big_text::{BigTextBuilder, PixelSize};
 //!
 //! fn render(frame: &mut Frame) -> Result<()> {
@@ -50,7 +59,13 @@ use std::cmp::min;
 
 use derive_builder::Builder;
 use font8x8::UnicodeFonts;
-use ratatui::{prelude::*, text::StyledGrapheme};
+use ratatui::{
+    buffer::Buffer,
+    layout::Rect,
+    style::Style,
+    text::{Line, StyledGrapheme},
+    widgets::Widget,
+};
 
 #[allow(unused)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
@@ -79,7 +94,16 @@ pub enum PixelSize {
 /// # Examples
 ///
 /// ```rust
-/// use ratatui::prelude::*;
+/// use ratatui::{
+///     backend::{self, Backend, CrosstermBackend},
+///     buffer::{self, Buffer},
+///     layout::{self, Alignment, Constraint, Direction, Layout, Margin, Rect},
+///     style::{self, Color, Modifier, Style, Styled, Stylize},
+///     symbols::{self, Marker},
+///     terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport},
+///     text::{self, Line, Masked, Span, Text},
+///     widgets::{block::BlockExt, StatefulWidget, Widget},
+/// };
 /// use tui_big_text::{BigTextBuilder, PixelSize};
 ///
 /// BigText::builder()
@@ -276,6 +300,8 @@ fn render_glyph(glyph: [u8; 8], area: Rect, buf: &mut Buffer, pixel_size: PixelS
 
 #[cfg(test)]
 mod tests {
+    use ratatui::style::Stylize;
+
     use super::*;
 
     type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;

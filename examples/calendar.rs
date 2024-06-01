@@ -13,16 +13,20 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::wildcard_imports)]
-
 use std::{error::Error, io};
 
-use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+use ratatui::{
+    backend::CrosstermBackend,
+    crossterm::{
+        event::{self, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Modifier, Style},
+    widgets::calendar::{CalendarEventStore, DateStyler, Monthly},
+    Frame, Terminal,
 };
-use ratatui::{prelude::*, widgets::calendar::*};
 use time::{Date, Month, OffsetDateTime};
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -52,8 +56,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn draw(f: &mut Frame) {
-    let app_area = f.size();
+fn draw(frame: &mut Frame) {
+    let app_area = frame.size();
 
     let calarea = Rect {
         x: app_area.x + 1,
@@ -80,7 +84,7 @@ fn draw(f: &mut Frame) {
     });
     for col in cols {
         let cal = cals::get_cal(start.month(), start.year(), &list);
-        f.render_widget(cal, col);
+        frame.render_widget(cal, col);
         start = start.replace_month(start.month().next()).unwrap();
     }
 }
@@ -166,6 +170,7 @@ fn make_dates(current_year: i32) -> CalendarEventStore {
 }
 
 mod cals {
+    #[allow(clippy::wildcard_imports)]
     use super::*;
 
     pub fn get_cal<'a, DS: DateStyler>(m: Month, y: i32, es: DS) -> Monthly<'a, DS> {

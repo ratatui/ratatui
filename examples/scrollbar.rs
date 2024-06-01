@@ -14,7 +14,6 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
 #![warn(clippy::pedantic)]
-#![allow(clippy::wildcard_imports)]
 
 use std::{
     error::Error,
@@ -22,12 +21,20 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{Alignment, Constraint, Layout, Margin},
+    style::{Color, Style, Stylize},
+    symbols::scrollbar,
+    terminal::{Frame, Terminal},
+    text::{Line, Masked, Span},
+    widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
 };
-use ratatui::{prelude::*, symbols::scrollbar, widgets::*};
 
 #[derive(Default)]
 struct App {
@@ -186,7 +193,7 @@ fn ui(f: &mut Frame, app: &mut App) {
             .begin_symbol(None)
             .track_symbol(None)
             .end_symbol(None),
-        chunks[2].inner(&Margin {
+        chunks[2].inner(Margin {
             vertical: 1,
             horizontal: 0,
         }),
@@ -204,7 +211,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
             .thumb_symbol("🬋")
             .end_symbol(None),
-        chunks[3].inner(&Margin {
+        chunks[3].inner(Margin {
             vertical: 0,
             horizontal: 1,
         }),
@@ -222,7 +229,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
             .thumb_symbol("░")
             .track_symbol(Some("─")),
-        chunks[4].inner(&Margin {
+        chunks[4].inner(Margin {
             vertical: 0,
             horizontal: 1,
         }),

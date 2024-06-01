@@ -11,8 +11,9 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [Unreleased](#unreleased)
+  - `Rect::inner` takes `Margin` directly instead of reference
+  - `Buffer::filled` takes `Cell` directly instead of reference
   - `Stylize::bg()` now accepts `Into<Color>`
-- [v0.27.0 (unreleased)](#v0270-unreleased)
   - Removed deprecated `List::start_corner`
 - [v0.26.0](#v0260)
   - `Flex::Start` is the new default flex mode for `Layout`
@@ -53,17 +54,41 @@ This is a quick summary of the sections below:
 
 ## Unreleased
 
+### `Rect::inner` takes `Margin` directly instead of reference ([#1008])
+
+[#1008]: https://github.com/ratatui-org/ratatui/pull/1008
+
+`Margin` needs to be passed without reference now.
+
+```diff
+-let area = area.inner(&Margin {
++let area = area.inner(Margin {
+     vertical: 0,
+     horizontal: 2,
+ });
+```
+
+### `Buffer::filled` takes `Cell` directly instead of reference ([#1148])
+
+[#1148]: https://github.com/ratatui-org/ratatui/pull/1148
+
+`Buffer::filled` moves the `Cell` instead of taking a reference.
+
+```diff
+-Buffer::filled(area, &Cell::new("X"));
++Buffer::filled(area, Cell::new("X"));
+```
+
 ### `Stylize::bg()` now accepts `Into<Color>` ([#1103])
 
-[#1099]: https://github.com/ratatui-org/ratatui/pull/1103
+[#1103]: https://github.com/ratatui-org/ratatui/pull/1103
 
-Previously, `Stylize::bg()` accepted `Color` but now accepts `Into<Color>`. This allows more flexible types from calling scopes, though it can break some type inference in the calling scope.
+Previously, `Stylize::bg()` accepted `Color` but now accepts `Into<Color>`. This allows more
+flexible types from calling scopes, though it can break some type inference in the calling scope.
 
-## v0.27.0 (unreleased)
+### Remove deprecated `List::start_corner` and `layout::Corner` ([#757])
 
-### Remove deprecated `List::start_corner` and `layout::Corner` ([#758])
-
-[#758]: https://github.com/ratatui-org/ratatui/pull/757
+[#757]: https://github.com/ratatui-org/ratatui/pull/757
 
 `List::start_corner` was deprecated in v0.25. Use `List::direction` and `ListDirection` instead.
 

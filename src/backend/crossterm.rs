@@ -6,19 +6,19 @@ use std::io::{self, Write};
 
 #[cfg(feature = "underline-color")]
 use crossterm::style::SetUnderlineColor;
-use crossterm::{
-    cursor::{Hide, MoveTo, Show},
-    execute, queue,
-    style::{
-        Attribute as CAttribute, Attributes as CAttributes, Color as CColor, Colors, ContentStyle,
-        Print, SetAttribute, SetBackgroundColor, SetColors, SetForegroundColor,
-    },
-    terminal::{self, Clear},
-};
 
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
+    crossterm::{
+        cursor::{Hide, MoveTo, Show},
+        execute, queue,
+        style::{
+            Attribute as CAttribute, Attributes as CAttributes, Color as CColor, Colors,
+            ContentStyle, Print, SetAttribute, SetBackgroundColor, SetColors, SetForegroundColor,
+        },
+        terminal::{self, Clear},
+    },
     layout::Size,
     prelude::Rect,
     style::{Color, Modifier, Style},
@@ -45,11 +45,15 @@ use crate::{
 /// ```rust,no_run
 /// use std::io::{stderr, stdout};
 ///
-/// use crossterm::{
-///     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-///     ExecutableCommand,
+/// use ratatui::{
+///     crossterm::{
+///         terminal::{
+///             disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+///         },
+///         ExecutableCommand,
+///     },
+///     prelude::*,
 /// };
-/// use ratatui::prelude::*;
 ///
 /// let mut backend = CrosstermBackend::new(stdout());
 /// // or
