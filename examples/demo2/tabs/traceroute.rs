@@ -2,9 +2,7 @@ use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Layout, Margin, Rect},
-    style::Styled,
     style::{Styled, Stylize},
-    symbols::Marker,
     symbols::Marker,
     widgets::{
         canvas::{self, Canvas, Map, MapResolution, Points},
