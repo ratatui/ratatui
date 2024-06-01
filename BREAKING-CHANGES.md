@@ -121,9 +121,9 @@ To update your app:
 Previously, `Stylize::bg()` accepted `Color` but now accepts `Into<Color>`. This allows more
 flexible types from calling scopes, though it can break some type inference in the calling scope.
 
-### Remove deprecated `List::start_corner` and `layout::Corner` ([#757])
+### Remove deprecated `List::start_corner` and `layout::Corner` ([#759])
 
-[#757]: https://github.com/ratatui-org/ratatui/pull/757
+[#759]: https://github.com/ratatui-org/ratatui/pull/759
 
 `List::start_corner` was deprecated in v0.25. Use `List::direction` and `ListDirection` instead.
 
@@ -235,6 +235,8 @@ The following example shows how to migrate for `Line`, but the same applies for 
 - block.title("foobar").title_on_bottom();
 + block.title(Title::from("foobar").position(Position::Bottom));
 ```
+
+[#757]: https://github.com/ratatui-org/ratatui/pull/757
 
 ### `Block` style methods cannot be used in a const context ([#720])
 

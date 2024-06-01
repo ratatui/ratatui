@@ -1,5 +1,5 @@
 use crate::{
-    prelude::*,
+    style::Color,
     widgets::canvas::{Painter, Shape},
 };
 

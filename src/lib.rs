@@ -336,6 +336,6 @@ pub mod text;
 pub mod widgets;
 
 #[doc(inline)]
-pub use crate::terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
+pub use terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
 
 pub mod prelude;
