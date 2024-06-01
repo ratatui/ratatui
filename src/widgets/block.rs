@@ -53,7 +53,7 @@ pub use title::{Position, Title};
 /// ```
 /// use ratatui::{
 ///     prelude::*,
-///     widgets::{block::*, *},
+///     widgets::{block::{Position, Title}, Block},
 /// };
 ///
 /// Block::new()
@@ -354,7 +354,7 @@ impl<'a> Block<'a> {
     /// ```
     /// use ratatui::{
     ///     prelude::*,
-    ///     widgets::{block::*, *},
+    ///     widgets::{block::{Position, Title}, Block},
     /// };
     ///
     /// Block::new()

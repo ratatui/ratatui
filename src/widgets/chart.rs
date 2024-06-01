@@ -286,7 +286,7 @@ impl LegendPosition {
 /// This example draws a red line between two points.
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{prelude::*, symbols::Marker, widgets::*};
 ///
 /// let dataset = Dataset::default()
 ///     .name("dataset 1")
