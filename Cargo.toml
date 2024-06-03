@@ -58,7 +58,7 @@ palette = "0.7.3"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
-rstest = "0.19.0"
+rstest = "0.21.0"
 serde_json = "1.0.109"
 
 [lints.rust]
