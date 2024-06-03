@@ -204,7 +204,7 @@ impl Widget for &BoxedSquares {
 
 /// `RedSquare` and `BlueSquare` are widgets that render a red and blue square, respectively. They
 /// implement the `WidgetRef` trait instead of the `Widget` trait, which which allows them to be
-/// rendered as boxed widgets. It's not possible to use Widget for this as a dynamic refernce to a
+/// rendered as boxed widgets. It's not possible to use Widget for this as a dynamic reference to a
 /// widget cannot generally be moved out of the box.
 impl WidgetRef for RedSquare {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
