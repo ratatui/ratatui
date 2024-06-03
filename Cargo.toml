@@ -36,6 +36,7 @@ paste = "1.0.2"
 serde = { version = "1", optional = true, features = ["derive"] }
 stability = "0.2.0"
 strum = { version = "0.26", features = ["derive"] }
+strum_macros = { version = "0.26.3" }
 termion = { version = "3.0", optional = true }
 termwiz = { version = "0.22.0", optional = true }
 time = { version = "0.3.11", optional = true, features = ["local-offset"] }
