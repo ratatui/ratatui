@@ -26,9 +26,8 @@ use common::Terminal;
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Layout, Position, Rect, Size},
     style::{Color, Style},
-    text::Span,
     widgets::{Widget, WidgetRef},
 };
 
@@ -45,7 +44,8 @@ fn main() -> Result<()> {
 struct App {
     should_quit: bool,
     timer: Timer,
-    squares: Squares,
+    #[cfg(feature = "unstable-widget-ref")]
+    boxed_squares: BoxedSquares,
     green_square: RightAlignedSquare,
 }
 
@@ -90,19 +90,21 @@ impl Widget for &mut App {
         let constraints = Constraint::from_lengths([1, 1, 2, 1]);
         let [greeting, timer, squares, position] = Layout::vertical(constraints).areas(area);
 
-        Greeting::default().render(greeting, buf);
+        // render an ephemeral greeting widget
+        Greeting::new("Ratatui!").render(greeting, buf);
+
+        // render a reference to the timer widget
         self.timer.render(timer, buf);
-        self.squares.render(squares, buf);
 
+        // render a boxed widget containing red and blue squares
+        #[cfg(feature = "unstable-widget-ref")]
+        self.boxed_squares.render(squares, buf);
+
+        // render a mutable reference to the green square widget
         self.green_square.render(squares, buf);
-
-        // display the position of the green square. This is updated automatically when the green
-        // square is rendered.
-        let green_square_position = format!(
-            "Green square is at ({},{})",
-            self.green_square.last_x, self.green_square.last_y
-        );
-        green_square_position.render(position, buf);
+        // Display the dynamically updated position of the green square
+        let square_position = format!("Green square is at {}", self.green_square.last_position);
+        square_position.render(position, buf);
     }
 }
 
@@ -119,32 +121,25 @@ impl Widget for &mut App {
 ///
 /// [PR #903]: https://github.com/ratatui-org/ratatui/pull/903
 struct Greeting {
-    message: String,
+    name: String,
 }
 
-impl Default for Greeting {
-    fn default() -> Self {
+impl Greeting {
+    fn new(name: &str) -> Self {
         Self {
-            message: "Hello, world!".to_string(),
+            name: name.to_string(),
         }
     }
 }
 
 impl Widget for Greeting {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Span::raw(&self.message).render(area, buf);
+        let greeting = format!("Hello, {}!", self.name);
+        greeting.render(area, buf);
     }
 }
 
 /// A timer widget that displays the elapsed time since the timer was started.
-///
-/// This widget is implemented on a reference to the type, which means that it can be reused and
-/// doesn't need to be consumed when it is rendered. This is useful for widgets that need to store
-/// state and be updated over time.
-///
-/// This approach was probably always available in Ratatui, but it wasn't widely used until `Widget`
-/// was implemented on references in [PR #903] (merged in Ratatui 0.26.0). This is because all the
-/// built-in widgets would consume themselves when rendered.
 #[derive(Debug)]
 struct Timer {
     start: Instant,
@@ -158,6 +153,13 @@ impl Default for Timer {
     }
 }
 
+/// This implements `Widget` on a reference to the type, which means that it can be reused and
+/// doesn't need to be consumed when it is rendered. This is useful for widgets that need to store
+/// state and be updated over time.
+///
+/// This approach was probably always available in Ratatui, but it wasn't widely used until `Widget`
+/// was implemented on references in [PR #903] (merged in Ratatui 0.26.0). This is because all the
+/// built-in widgets previously would consume themselves when rendered.
 impl Widget for &Timer {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let elapsed = self.start.elapsed().as_secs_f32();
@@ -166,24 +168,12 @@ impl Widget for &Timer {
     }
 }
 
-/// A widget that contains a list of squares.
-///
-/// This implements the `Widget` trait on a reference to the type. It contains a list of boxed
-/// widgets that implement the `WidgetRef` trait. This is useful for widgets that contain a list of
-/// other widgets that can be different types.
-///
-/// `RedSquare` and `BlueSquare` are widgets that render a red and blue square, respectively. They
-/// implement the `WidgetRef` trait, which allows them to be rendered as boxed widgets (It's not
-/// possible to use Widget for this as the widgets cannot generally be moved out of the box).
-struct Squares {
+/// A widget that contains a list of several different widgets.
+struct BoxedSquares {
     squares: Vec<Box<dyn WidgetRef>>,
 }
 
-struct RedSquare;
-
-struct BlueSquare;
-
-impl Default for Squares {
+impl Default for BoxedSquares {
     fn default() -> Self {
         let red_square: Box<dyn WidgetRef> = Box::new(RedSquare);
         let blue_square: Box<dyn WidgetRef> = Box::new(BlueSquare);
@@ -193,7 +183,16 @@ impl Default for Squares {
     }
 }
 
-impl Widget for &Squares {
+/// A widget that renders a red square.
+struct RedSquare;
+
+/// A widget that renders a blue square.
+struct BlueSquare;
+
+/// This implements the `Widget` trait on a reference to the type. It contains a list of boxed
+/// widgets that implement the `WidgetRef` trait. This is useful for widgets that contain a list of
+/// other widgets that can be different types.
+impl Widget for &BoxedSquares {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let constraints = iter::repeat(Constraint::Length(4)).take(self.squares.len());
         let areas = Layout::horizontal(constraints).split(area);
@@ -203,6 +202,10 @@ impl Widget for &Squares {
     }
 }
 
+/// `RedSquare` and `BlueSquare` are widgets that render a red and blue square, respectively. They
+/// implement the `WidgetRef` trait instead of the `Widget` trait, which which allows them to be
+/// rendered as boxed widgets. It's not possible to use Widget for this as a dynamic refernce to a
+/// widget cannot generally be moved out of the box.
 impl WidgetRef for RedSquare {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         fill(area, buf, "█", Color::Red);
@@ -216,7 +219,11 @@ impl WidgetRef for BlueSquare {
 }
 
 /// A widget that renders a green square aligned to the right of the area.
-///
+#[derive(Default)]
+struct RightAlignedSquare {
+    last_position: Position,
+}
+
 /// This widget is implemented on a mutable reference to the type, which means that it can store
 /// state and update it when it is rendered. This is useful for widgets that need to store the
 /// result of some calculation that can only be done when the widget is rendered.
@@ -229,25 +236,14 @@ impl WidgetRef for BlueSquare {
 /// This approach was probably always available in Ratatui, but it wasn't widely used either. This
 /// is an alternative to implementing the `StatefulWidget` trait, for situations where you want to
 /// store the state in the widget itself instead of a separate struct.
-#[derive(Default)]
-struct RightAlignedSquare {
-    last_x: u16,
-    last_y: u16,
-}
-
 impl Widget for &mut RightAlignedSquare {
-    /// Render a green square aligned to the right of the area.
-    ///
-    /// Updates the x and y coordinates to record the position of the square.
+    /// Render a green square aligned to the right of the area and store the position.
     fn render(self, area: Rect, buf: &mut Buffer) {
         const WIDTH: u16 = 4;
-        self.last_x = area.right() - WIDTH;
-        self.last_y = area.y;
-        let area = Rect {
-            x: self.last_x,
-            width: WIDTH,
-            ..area
-        };
+        let x = area.right() - WIDTH; // Align to the right
+        self.last_position = Position { x, y: area.y };
+        let size = Size::new(WIDTH, area.height);
+        let area = Rect::from((self.last_position, size));
         fill(area, buf, "█", Color::Green);
     }
 }
