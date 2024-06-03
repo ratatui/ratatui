@@ -11,6 +11,7 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [Unreleased](#unreleased)
+  - 'termion' updated to 4.0
   - `Rect::inner` takes `Margin` directly instead of reference
   - `Buffer::filled` takes `Cell` directly instead of reference
   - `Stylize::bg()` now accepts `Into<Color>`
@@ -53,6 +54,16 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased
+
+### Termion is updated to 4.0 [#1106]
+
+Changelog: <https://gitlab.redox-os.org/redox-os/termion/-/blob/master/CHANGELOG.md>
+
+A change is only necessary if you were matching on all variants of the `MouseEvent` enum without a
+wildcard. In this case, you need to either handle the two new variants, `MouseLeft` and
+`MouseRight`, or add a wildcard.
+
+[#1106]: https://github.com/ratatui-org/ratatui/pull/1106
 
 ### `Rect::inner` takes `Margin` directly instead of reference ([#1008])
 
@@ -193,8 +204,6 @@ The following example shows how to migrate for `Line`, but the same applies for 
 ```
 
 ### Remove deprecated `Block::title_on_bottom` ([#757])
-
-[#757]: https://github.com/ratatui-org/ratatui/pull/757
 
 `Block::title_on_bottom` was deprecated in v0.22. Use `Block::title` and `Title::position` instead.
 
