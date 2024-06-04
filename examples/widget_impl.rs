@@ -16,13 +16,10 @@
 //! [Ratatui]: https://github.com/ratatui-org/ratatui
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
-use std::{
-    iter,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
+use self::common::Terminal;
 use color_eyre::Result;
-use common::Terminal;
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::{
     buffer::Buffer,
@@ -194,7 +191,7 @@ struct BlueSquare;
 /// other widgets that can be different types.
 impl Widget for &BoxedSquares {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let constraints = iter::repeat(Constraint::Length(4)).take(self.squares.len());
+        let constraints = vec![Constraint::Length(4); self.squares.len()];
         let areas = Layout::horizontal(constraints).split(area);
         for (widget, area) in self.squares.iter().zip(areas.iter()) {
             widget.render_ref(*area, buf);
