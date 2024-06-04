@@ -18,7 +18,6 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 use std::time::{Duration, Instant};
 
-use self::common::Terminal;
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::{
@@ -27,6 +26,8 @@ use ratatui::{
     style::{Color, Style},
     widgets::{Widget, WidgetRef},
 };
+
+use self::common::Terminal;
 
 fn main() -> Result<()> {
     common::install_hooks()?;
