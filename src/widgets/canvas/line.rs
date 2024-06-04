@@ -115,7 +115,13 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
-    use crate::{buffer::Buffer, layout::Rect, symbols::Marker, widgets::canvas::Canvas};
+    use crate::{
+        buffer::Buffer,
+        layout::Rect,
+        style::{Style, Stylize},
+        symbols::Marker,
+        widgets::{canvas::Canvas, Widget},
+    };
 
     #[rstest]
     #[case::off_grid(&Line::new(-1.0, -1.0, 10.0, 10.0, Color::Red), ["          "; 10])]
@@ -203,8 +209,6 @@ mod tests {
         ExpectedLines: IntoIterator,
         ExpectedLines::Item: Into<crate::text::Line<'expected_line>>,
     {
-        use crate::widgets::{Style, Stylize, Widget};
-
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
         let canvas = Canvas::default()
             .marker(Marker::Dot)

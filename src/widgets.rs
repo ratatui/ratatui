@@ -52,7 +52,7 @@ pub use self::{
     table::{Cell, HighlightSpacing, Row, Table, TableState},
     tabs::Tabs,
 };
-use crate::prelude::*;
+use crate::{buffer::Buffer, layout::Rect};
 
 /// A `Widget` is a type that can be drawn on a [`Buffer`] in a given [`Rect`].
 ///
@@ -474,6 +474,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::text::Line;
 
     #[fixture]
     fn buf() -> Buffer {
