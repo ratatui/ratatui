@@ -70,7 +70,7 @@ impl Cell {
     /// Appends a symbol to the cell.
     ///
     /// This is particularly useful for adding zero-width characters to the cell.
-    pub fn append_symbol(&mut self, symbol: &str) -> &mut Self {
+    pub(crate) fn append_symbol(&mut self, symbol: &str) -> &mut Self {
         self.symbol.push_str(symbol);
         self
     }
