@@ -67,6 +67,14 @@ impl Cell {
         self
     }
 
+    /// Appends a symbol to the cell.
+    ///
+    /// This is particularly useful for adding zero-width characters to the cell.
+    pub fn append_symbol(&mut self, symbol: &str) -> &mut Self {
+        self.symbol.push_str(symbol);
+        self
+    }
+
     /// Sets the symbol of the cell to a single character.
     pub fn set_char(&mut self, ch: char) -> &mut Self {
         let mut buf = [0; 4];
@@ -154,16 +162,128 @@ mod tests {
     use super::*;
 
     #[test]
-    fn symbol_field() {
-        let mut cell = Cell::EMPTY;
+    fn new() {
+        let cell = Cell::new("あ");
+        assert_eq!(
+            cell,
+            Cell {
+                symbol: CompactString::new_inline("あ"),
+                fg: Color::Reset,
+                bg: Color::Reset,
+                #[cfg(feature = "underline-color")]
+                underline_color: Color::Reset,
+                modifier: Modifier::empty(),
+                skip: false,
+            }
+        );
+    }
+
+    #[test]
+    fn empty() {
+        let cell = Cell::EMPTY;
         assert_eq!(cell.symbol(), " ");
+    }
+
+    #[test]
+    fn set_symbol() {
+        let mut cell = Cell::EMPTY;
         cell.set_symbol("あ"); // Multi-byte character
         assert_eq!(cell.symbol(), "あ");
         cell.set_symbol("👨‍👩‍👧‍👦"); // Multiple code units combined with ZWJ
         assert_eq!(cell.symbol(), "👨‍👩‍👧‍👦");
+    }
 
-        // above Cell::EMPTY is put into a mutable variable and is changed then.
-        // While this looks like it might change the constant, it actually doesnt:
-        assert_eq!(Cell::EMPTY.symbol(), " ");
+    #[test]
+    fn append_symbol() {
+        let mut cell = Cell::EMPTY;
+        cell.set_symbol("あ"); // Multi-byte character
+        cell.append_symbol("\u{200B}"); // zero-width space
+        assert_eq!(cell.symbol(), "あ\u{200B}");
+    }
+
+    #[test]
+    fn set_char() {
+        let mut cell = Cell::EMPTY;
+        cell.set_char('あ'); // Multi-byte character
+        assert_eq!(cell.symbol(), "あ");
+    }
+
+    #[test]
+    fn set_fg() {
+        let mut cell = Cell::EMPTY;
+        cell.set_fg(Color::Red);
+        assert_eq!(cell.fg, Color::Red);
+    }
+
+    #[test]
+    fn set_bg() {
+        let mut cell = Cell::EMPTY;
+        cell.set_bg(Color::Red);
+        assert_eq!(cell.bg, Color::Red);
+    }
+
+    #[test]
+    fn set_style() {
+        let mut cell = Cell::EMPTY;
+        cell.set_style(Style::new().fg(Color::Red).bg(Color::Blue));
+        assert_eq!(cell.fg, Color::Red);
+        assert_eq!(cell.bg, Color::Blue);
+    }
+
+    #[test]
+    fn set_skip() {
+        let mut cell = Cell::EMPTY;
+        cell.set_skip(true);
+        assert!(cell.skip);
+    }
+
+    #[test]
+    fn reset() {
+        let mut cell = Cell::EMPTY;
+        cell.set_symbol("あ");
+        cell.set_fg(Color::Red);
+        cell.set_bg(Color::Blue);
+        cell.set_skip(true);
+        cell.reset();
+        assert_eq!(cell.symbol(), " ");
+        assert_eq!(cell.fg, Color::Reset);
+        assert_eq!(cell.bg, Color::Reset);
+        assert!(!cell.skip);
+    }
+
+    #[test]
+    fn style() {
+        let cell = Cell::EMPTY;
+        assert_eq!(
+            cell.style(),
+            Style {
+                fg: Some(Color::Reset),
+                bg: Some(Color::Reset),
+                #[cfg(feature = "underline-color")]
+                underline_color: Some(Color::Reset),
+                add_modifier: Modifier::empty(),
+                sub_modifier: Modifier::empty(),
+            }
+        );
+    }
+
+    #[test]
+    fn default() {
+        let cell = Cell::default();
+        assert_eq!(cell.symbol(), " ");
+    }
+
+    #[test]
+    fn cell_eq() {
+        let cell1 = Cell::new("あ");
+        let cell2 = Cell::new("あ");
+        assert_eq!(cell1, cell2);
+    }
+
+    #[test]
+    fn cell_ne() {
+        let cell1 = Cell::new("あ");
+        let cell2 = Cell::new("い");
+        assert_ne!(cell1, cell2);
     }
 }
