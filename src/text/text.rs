@@ -557,6 +557,12 @@ impl<'a> From<Vec<Line<'a>>> for Text<'a> {
     }
 }
 
+impl<'a> From<usize> for Text<'a> {
+    fn from(v: usize) -> Self {
+        Self::raw(v.to_string())
+    }
+}
+
 impl<'a, T> FromIterator<T> for Text<'a>
 where
     T: Into<Line<'a>>,
@@ -745,6 +751,12 @@ mod tests {
     fn from_line() {
         let text = Text::from(Line::from("The first line"));
         assert_eq!(text.lines, vec![Line::from("The first line")]);
+    }
+
+    #[test]
+    fn from_usize() {
+        let text = Text::from(42);
+        assert_eq!(text.lines, vec![Line::from("42")]);
     }
 
     #[test]

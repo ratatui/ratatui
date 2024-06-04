@@ -513,6 +513,12 @@ impl<'a> From<&'a str> for Line<'a> {
     }
 }
 
+impl<'a> From<usize> for Line<'a> {
+    fn from(v: usize) -> Self {
+        Self::from(vec![Span::from(v.to_string())])
+    }
+}
+
 impl<'a> From<Vec<Span<'a>>> for Line<'a> {
     fn from(spans: Vec<Span<'a>>) -> Self {
         Self {
@@ -812,6 +818,12 @@ mod tests {
         let s = "Hello, world!";
         let line = Line::from(s);
         assert_eq!(vec![Span::from("Hello, world!")], line.spans);
+    }
+
+    #[test]
+    fn from_usize() {
+        let line = Line::from(42);
+        assert_eq!(vec![Span::from("42")], line.spans);
     }
 
     #[test]
