@@ -55,7 +55,7 @@ This is a quick summary of the sections below:
 
 ## Unreleased
 
-### Uncommon items removed from the prelude ([#1149])
+### Prelude items added / removed ([#1149])
 
 The following items have been removed from the prelude:
 
