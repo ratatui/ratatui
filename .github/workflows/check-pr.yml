@@ -84,3 +84,15 @@ jobs:
           echo "Pull request is labeled as 'do not merge'"
           echo "This workflow fails so that the pull request cannot be merged"
           exit 1
+
+  check-semver:
+    name: Check semver
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Check semver
+        uses: obi1kenobi/cargo-semver-checks-action@v2
