@@ -1,4 +1,4 @@
-use crate::{prelude::*, widgets::Block};
+use crate::{prelude::*, style::Styled, widgets::Block};
 
 const DEFAULT_HIGHLIGHT_STYLE: Style = Style::new().add_modifier(Modifier::REVERSED);
 

@@ -66,7 +66,7 @@ impl Shape for Rectangle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{prelude::*, widgets::canvas::Canvas};
+    use crate::{prelude::*, symbols::Marker, widgets::canvas::Canvas};
 
     #[test]
     fn draw_block_lines() {

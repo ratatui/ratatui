@@ -3,7 +3,7 @@ use itertools::Itertools;
 #[allow(unused_imports)] // `Cell` is used in the doc comment but not the code
 use super::Cell;
 use super::{HighlightSpacing, Row, TableState};
-use crate::{layout::Flex, prelude::*, widgets::Block};
+use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 
 /// A widget to display data in formatted columns.
 ///

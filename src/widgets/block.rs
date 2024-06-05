@@ -8,7 +8,7 @@
 use itertools::Itertools;
 use strum::{Display, EnumString};
 
-use crate::{prelude::*, symbols::border, widgets::Borders};
+use crate::{prelude::*, style::Styled, symbols::border, widgets::Borders};
 
 mod padding;
 pub mod title;
@@ -53,7 +53,10 @@ pub use title::{Position, Title};
 /// ```
 /// use ratatui::{
 ///     prelude::*,
-///     widgets::{block::*, *},
+///     widgets::{
+///         block::{Position, Title},
+///         Block,
+///     },
 /// };
 ///
 /// Block::new()
@@ -354,7 +357,10 @@ impl<'a> Block<'a> {
     /// ```
     /// use ratatui::{
     ///     prelude::*,
-    ///     widgets::{block::*, *},
+    ///     widgets::{
+    ///         block::{Position, Title},
+    ///         Block,
+    ///     },
     /// };
     ///
     /// Block::new()
