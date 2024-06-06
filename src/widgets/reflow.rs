@@ -673,11 +673,11 @@ mod test {
     #[test]
     fn line_composer_zero_width_at_end() {
         let width = 3;
-        let line = "foo\0";
+        let line = "foo\u{200B}";
         let (word_wrapper, _, _) = run_composer(Composer::WordWrapper { trim: true }, line, width);
         let (line_truncator, _, _) = run_composer(Composer::LineTruncator, line, width);
-        assert_eq!(word_wrapper, vec!["foo\0"]);
-        assert_eq!(line_truncator, vec!["foo\0"]);
+        assert_eq!(word_wrapper, vec!["foo\u{200B}"]);
+        assert_eq!(line_truncator, vec!["foo\u{200B}"]);
     }
 
     #[test]
