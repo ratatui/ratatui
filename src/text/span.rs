@@ -394,6 +394,28 @@ impl WidgetRef for Span<'_> {
     }
 }
 
+/// A trait for converting a value to a [`Span`].
+///
+/// This trait is automatically implemented for any type that implements the [`Display`] trait. As
+/// such, `ToSpan` shouln't be implemented directly: [`Display`] should be implemented instead, and
+/// you get the `ToSpan` implementation for free.
+///
+/// [`Display`]: std::fmt::Display
+pub trait ToSpan {
+    fn to_span(&self) -> Span<'_>;
+}
+
+/// # Panics
+///
+/// In this implementation, the `to_span` method panics if the `Display` implementation returns an
+/// error. This indicates an incorrect `Display` implementation since `fmt::Write for String` never
+/// returns an error itself.
+impl<T: fmt::Display> ToSpan for T {
+    fn to_span(&self) -> Span<'_> {
+        Span::raw(self.to_string())
+    }
+}
+
 impl fmt::Display for Span<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.content, f)
@@ -492,6 +514,12 @@ mod tests {
         let span = Span::from(&content);
         assert_eq!(span.content, Cow::Borrowed(content.as_str()));
         assert_eq!(span.style, Style::default());
+    }
+
+    #[test]
+    fn to_span() {
+        assert_eq!(42.to_span(), Span::raw("42"));
+        assert_eq!("test".to_span(), Span::raw("42"));
     }
 
     #[test]

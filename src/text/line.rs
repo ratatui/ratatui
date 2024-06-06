@@ -512,12 +512,6 @@ impl<'a> From<&'a str> for Line<'a> {
     }
 }
 
-impl<'a> From<usize> for Line<'a> {
-    fn from(v: usize) -> Self {
-        Self::from(vec![Span::from(v.to_string())])
-    }
-}
-
 impl<'a> From<Vec<Span<'a>>> for Line<'a> {
     fn from(spans: Vec<Span<'a>>) -> Self {
         Self {
@@ -680,6 +674,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::text::span::ToSpan;
 
     #[fixture]
     fn small_buf() -> Buffer {
@@ -820,8 +815,8 @@ mod tests {
     }
 
     #[test]
-    fn from_usize() {
-        let line = Line::from(42);
+    fn from_integer() {
+        let line = Line::from(42.to_span());
         assert_eq!(vec![Span::from("42")], line.spans);
     }
 

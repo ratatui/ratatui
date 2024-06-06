@@ -649,6 +649,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
+    use crate::text::span::ToSpan;
 
     #[fixture]
     fn small_buf() -> Buffer {
@@ -754,8 +755,8 @@ mod tests {
     }
 
     #[test]
-    fn from_usize() {
-        let text = Text::from(42);
+    fn from_integer() {
+        let text = Text::from(42.to_span());
         assert_eq!(text.lines, vec![Line::from("42")]);
     }
 
