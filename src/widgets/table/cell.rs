@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, style::Styled};
 
 /// A [`Cell`] contains the [`Text`] to be displayed in a [`Row`] of a [`Table`].
 ///

@@ -327,26 +327,24 @@
     html_favicon_url = "https://raw.githubusercontent.com/ratatui-org/ratatui/main/assets/favicon.ico"
 )]
 
-pub mod backend;
-pub mod buffer;
-pub mod layout;
-pub mod style;
-pub mod symbols;
-pub mod terminal;
-pub mod text;
-pub mod widgets;
-
-#[doc(inline)]
-pub use self::terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
-
-pub mod prelude;
-
 /// re-export the `crossterm` crate so that users don't have to add it as a dependency
 #[cfg(feature = "crossterm")]
 pub use crossterm;
+#[doc(inline)]
+pub use terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
 /// re-export the `termion` crate so that users don't have to add it as a dependency
 #[cfg(feature = "termion")]
 pub use termion;
 /// re-export the `termwiz` crate so that users don't have to add it as a dependency
 #[cfg(feature = "termwiz")]
 pub use termwiz;
+
+pub mod backend;
+pub mod buffer;
+pub mod layout;
+pub mod prelude;
+pub mod style;
+pub mod symbols;
+pub mod terminal;
+pub mod text;
+pub mod widgets;

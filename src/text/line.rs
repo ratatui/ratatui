@@ -4,8 +4,7 @@ use std::{borrow::Cow, fmt};
 
 use unicode_truncate::UnicodeTruncateStr;
 
-use super::StyledGrapheme;
-use crate::prelude::*;
+use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 
 /// A line of text, consisting of one or more [`Span`]s.
 ///
