@@ -3,7 +3,7 @@ use std::{borrow::Cow, fmt};
 
 use itertools::{Itertools, Position};
 
-use crate::prelude::*;
+use crate::{prelude::*, style::Styled};
 
 /// A string split over one or more lines.
 ///
