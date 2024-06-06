@@ -18,7 +18,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use self::common::{init_terminal, install_hooks, restore_terminal, Tui};
 use crossterm::event::KeyEventKind;
 use ratatui::{
     buffer::Buffer,
@@ -28,6 +27,8 @@ use ratatui::{
     text::{Line, Masked, Span},
     widgets::{Block, Paragraph, Widget, Wrap},
 };
+
+use self::common::{init_terminal, install_hooks, restore_terminal, Tui};
 
 fn main() -> color_eyre::Result<()> {
     install_hooks()?;
