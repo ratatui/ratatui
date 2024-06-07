@@ -73,9 +73,9 @@ use std::fmt;
 use bitflags::bitflags;
 pub use color::{Color, ParseColorError};
 pub use stylize::{Styled, Stylize};
-pub mod palette;
 
 mod color;
+pub mod palette;
 #[cfg(feature = "palette")]
 mod palette_conversion;
 mod stylize;

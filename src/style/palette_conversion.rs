@@ -61,7 +61,7 @@ mod tests {
         const RED: Color = Color::Rgb(255, 0, 0);
         assert_eq!(Color::from(Srgb::new(255u8, 0, 0)), RED);
         assert_eq!(Color::from(Srgb::new(65535u16, 0, 0)), RED);
-        assert_eq!(Color::from(Srgb::new(1.0f32, 0., 0.)), RED);
+        assert_eq!(Color::from(Srgb::new(1.0f32, 0.0, 0.0)), RED);
 
         assert_eq!(
             Color::from(Srgb::new(0.5f32, 0.5, 0.5)),
@@ -72,8 +72,8 @@ mod tests {
     #[test]
     fn from_lin_srgb() {
         const RED: Color = Color::Rgb(255, 0, 0);
-        assert_eq!(Color::from(LinSrgb::new(1.0f32, 0., 0.)), RED);
-        assert_eq!(Color::from(LinSrgb::new(1.0f64, 0., 0.)), RED);
+        assert_eq!(Color::from(LinSrgb::new(1.0f32, 0.0, 0.0)), RED);
+        assert_eq!(Color::from(LinSrgb::new(1.0f64, 0.0, 0.0)), RED);
 
         assert_eq!(
             Color::from(LinSrgb::new(0.5f32, 0.5, 0.5)),
