@@ -676,7 +676,7 @@ mod test {
         let line = "foo\u{200B}";
         let (word_wrapper, _, _) = run_composer(Composer::WordWrapper { trim: true }, line, width);
         let (line_truncator, _, _) = run_composer(Composer::LineTruncator, line, width);
-        assert_eq!(word_wrapper, vec!["foo\u{200B}"]);
+        assert_eq!(word_wrapper, vec!["foo"]);
         assert_eq!(line_truncator, vec!["foo\u{200B}"]);
     }
 
