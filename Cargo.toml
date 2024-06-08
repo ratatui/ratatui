@@ -33,6 +33,7 @@ document-features = { version = "0.2.7", optional = true }
 itertools = "0.13"
 lru = "0.12.0"
 paste = "1.0.2"
+palette = { version = "0.7.6", optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
 stability = "0.2.0"
 strum = { version = "0.26", features = ["derive"] }
@@ -121,6 +122,9 @@ serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 
 ## enables the [`border!`] macro.
 macros = []
+
+## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
+palette = ["dep:palette"]
 
 ## enables all widgets.
 all-widgets = ["widget-calendar"]
