@@ -726,7 +726,7 @@ mod tests {
     /// some Unicode Left-Right-Marks (U+200E)
     ///
     /// The issue was that a zero-width character at the end of the buffer causes the buffer bounds
-    /// to be exceeded (due to a position + 1 calculation that fails to account for the possibilty
+    /// to be exceeded (due to a position + 1 calculation that fails to account for the possibility
     /// that the next position might not be available).
     #[test]
     fn issue_1160() {
