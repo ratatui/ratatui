@@ -586,6 +586,36 @@ where
     }
 }
 
+/// A trait for converting a value to a [`Text`].
+///
+/// This trait is automatically implemented for any type that implements the [`Display`] trait. As
+/// such, `ToText` shouldn't be implemented directly: [`Display`] should be implemented instead, and
+/// you get the `ToText` implementation for free.
+///
+/// [`Display`]: std::fmt::Display
+pub trait ToText<'a> {
+    fn to_text(&self) -> Text<'a>;
+}
+
+/// # Panics
+///
+/// In this implementation, the `to_text` method panics if the `Display` implementation returns an
+/// error. This indicates an incorrect `Display` implementation since `fmt::Write for String` never
+/// returns an error itself.
+impl<'a, T: fmt::Display> ToText<'a> for T {
+    fn to_text(&self) -> Text<'a> {
+        let lines = self
+            .to_string()
+            .lines()
+            .map(|line| Line::from(line.to_string()))
+            .collect();
+        Text {
+            lines,
+            ..Default::default()
+        }
+    }
+}
+
 impl fmt::Display for Text<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (position, line) in self.iter().with_position() {
@@ -649,7 +679,6 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::text::span::ToSpan;
 
     #[fixture]
     fn small_buf() -> Buffer {
@@ -754,10 +783,22 @@ mod tests {
         assert_eq!(text.lines, vec![Line::from("The first line")]);
     }
 
-    #[test]
-    fn from_integer() {
-        let text = Text::from(42.to_span());
-        assert_eq!(text.lines, vec![Line::from("42")]);
+    #[rstest]
+    #[case(42, Text::from("42"))]
+    #[case("just\ntesting", Text::from("just\ntesting"))]
+    #[case(true, Text::from("true"))]
+    #[case(3.14, Text::from("3.14"))]
+    #[case('a', Text::from("a"))]
+    #[case(String::from("hello"), Text::from("hello"))]
+    #[case(-1, Text::from("-1"))]
+    #[case("line1\nline2", Text::from("line1\nline2"))]
+    #[case(
+        "first line\nsecond line\nthird line",
+        Text::from("first line\nsecond line\nthird line")
+    )]
+    #[case("trailing newline\n", Text::from("trailing newline\n"))]
+    fn to_text(#[case] value: impl fmt::Display, #[case] expected: Text) {
+        assert_eq!(value.to_text(), Text::from(expected));
     }
 
     #[test]

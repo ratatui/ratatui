@@ -646,6 +646,28 @@ fn spans_after_width<'a>(
         })
 }
 
+/// A trait for converting a value to a [`Line`].
+///
+/// This trait is automatically implemented for any type that implements the [`Display`] trait. As
+/// such, `ToLine` shouln't be implemented directly: [`Display`] should be implemented instead, and
+/// you get the `ToLine` implementation for free.
+///
+/// [`Display`]: std::fmt::Display
+pub trait ToLine {
+    fn to_line(&self) -> Line<'_>;
+}
+
+/// # Panics
+///
+/// In this implementation, the `to_line` method panics if the `Display` implementation returns an
+/// error. This indicates an incorrect `Display` implementation since `fmt::Write for String` never
+/// returns an error itself.
+impl<T: fmt::Display> ToLine for T {
+    fn to_line(&self) -> Line<'_> {
+        Line::from(self.to_string())
+    }
+}
+
 impl fmt::Display for Line<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for span in &self.spans {
@@ -674,7 +696,6 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::text::span::ToSpan;
 
     #[fixture]
     fn small_buf() -> Buffer {
@@ -815,8 +836,8 @@ mod tests {
     }
 
     #[test]
-    fn from_integer() {
-        let line = Line::from(42.to_span());
+    fn to_line() {
+        let line = 42.to_line();
         assert_eq!(vec![Span::from("42")], line.spans);
     }
 

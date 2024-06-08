@@ -519,7 +519,7 @@ mod tests {
     #[test]
     fn to_span() {
         assert_eq!(42.to_span(), Span::raw("42"));
-        assert_eq!("test".to_span(), Span::raw("42"));
+        assert_eq!("test".to_span(), Span::raw("test"));
     }
 
     #[test]
