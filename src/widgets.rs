@@ -474,7 +474,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::prelude::*;
+    use crate::text::Line;
 
     #[fixture]
     fn buf() -> Buffer {

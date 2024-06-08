@@ -3,8 +3,7 @@ use std::{borrow::Cow, fmt};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use super::StyledGrapheme;
-use crate::prelude::*;
+use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 
 /// Represents a part of a line that is contiguous and where all characters share the same style.
 ///
