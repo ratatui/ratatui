@@ -609,16 +609,18 @@ mod tests {
 
     #[test]
     fn set_string_zero_width() {
+        assert_eq!("\u{200B}".width(), 0);
+
         let area = Rect::new(0, 0, 1, 1);
         let mut buffer = Buffer::empty(area);
 
         // Leading grapheme with zero width
-        let s = "\u{1}a";
+        let s = "\u{200B}a";
         buffer.set_stringn(0, 0, s, 1, Style::default());
         assert_eq!(buffer, Buffer::with_lines(["a"]));
 
         // Trailing grapheme with zero with
-        let s = "a\u{1}";
+        let s = "a\u{200B}";
         buffer.set_stringn(0, 0, s, 1, Style::default());
         assert_eq!(buffer, Buffer::with_lines(["a"]));
     }
