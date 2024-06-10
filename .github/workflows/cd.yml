@@ -31,10 +31,7 @@ jobs:
         run: .github/workflows/calculate-alpha-release.bash
 
       - name: Publish on crates.io
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --allow-dirty --token ${{ secrets.CARGO_TOKEN }}
+        run: cargo publish --allow-dirty --token ${{ secrets.CARGO_TOKEN }}
 
       - name: Generate a changelog
         uses: orhun/git-cliff-action@v3
@@ -60,7 +57,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Publish on crates.io
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --token ${{ secrets.CARGO_TOKEN }}
+        run: cargo publish --token ${{ secrets.CARGO_TOKEN }}
