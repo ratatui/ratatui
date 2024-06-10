@@ -46,6 +46,10 @@ jobs:
         uses: crate-ci/typos@master
       - name: Lint dependencies
         uses: EmbarkStudios/cargo-deny-action@v1
+      - name: Check workflow files
+        uses: docker://rhysd/actionlint:latest
+        with:
+          args: -color
 
   clippy:
     runs-on: ubuntu-latest
