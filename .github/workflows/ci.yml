@@ -163,7 +163,7 @@ jobs:
     name: Benchmark with Bencher
     runs-on: ubuntu-latest
     env:
-      BENCHER_PROJECT: Ratatui
+      BENCHER_PROJECT: ratatui-org
       BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
     steps:
       - name: Checkout
