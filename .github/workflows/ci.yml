@@ -158,3 +158,17 @@ jobs:
         run: cargo make test-backend ${{ matrix.backend }}
         env:
           RUST_BACKTRACE: full
+
+  bencher:
+    name: Benchmark with Bencher
+    runs-on: ubuntu-latest
+    env:
+      BENCHER_PROJECT: Ratatui
+      BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install bencher
+        uses: bencherdev/bencher@main
+      - name: Run bencher
+        run: bencher run --adapter rust_criterion "cargo bench"
