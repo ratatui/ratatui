@@ -444,7 +444,13 @@ impl Widget for &str {
 /// [`Rect`].
 impl WidgetRef for &str {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_string(area.x, area.y, self, crate::style::Style::default());
+        buf.set_stringn(
+            area.x,
+            area.y,
+            self,
+            area.width as usize,
+            crate::style::Style::default(),
+        );
     }
 }
 
@@ -465,7 +471,13 @@ impl Widget for String {
 /// without the need to give up ownership of the underlying text.
 impl WidgetRef for String {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_string(area.x, area.y, self, crate::style::Style::default());
+        buf.set_stringn(
+            area.x,
+            area.y,
+            self,
+            area.width as usize,
+            crate::style::Style::default(),
+        );
     }
 }
 
@@ -651,6 +663,13 @@ mod tests {
         }
 
         #[rstest]
+        fn render_area(mut buf: Buffer) {
+            let area = Rect::new(buf.area.x, buf.area.y, 11, buf.area.height);
+            "hello world, just hello".render(area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+        }
+
+        #[rstest]
         fn render_ref(mut buf: Buffer) {
             "hello world".render_ref(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines(["hello world         "]));
@@ -674,6 +693,13 @@ mod tests {
         #[rstest]
         fn render(mut buf: Buffer) {
             String::from("hello world").render(buf.area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+        }
+
+        #[rstest]
+        fn render_area(mut buf: Buffer) {
+            let area = Rect::new(buf.area.x, buf.area.y, 11, buf.area.height);
+            String::from("hello world, just hello").render(area, &mut buf);
             assert_eq!(buf, Buffer::with_lines(["hello world         "]));
         }
 
