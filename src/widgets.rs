@@ -52,6 +52,7 @@ pub use self::{
     table::{Cell, HighlightSpacing, Row, Table, TableState},
     tabs::Tabs,
 };
+use crate::style::Style;
 use crate::{buffer::Buffer, layout::Rect};
 
 /// A `Widget` is a type that can be drawn on a [`Buffer`] in a given [`Rect`].
@@ -444,13 +445,7 @@ impl Widget for &str {
 /// [`Rect`].
 impl WidgetRef for &str {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_stringn(
-            area.x,
-            area.y,
-            self,
-            area.width as usize,
-            crate::style::Style::default(),
-        );
+        buf.set_stringn(area.x, area.y, self, area.width as usize, Style::new());
     }
 }
 
@@ -471,13 +466,7 @@ impl Widget for String {
 /// without the need to give up ownership of the underlying text.
 impl WidgetRef for String {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_stringn(
-            area.x,
-            area.y,
-            self,
-            area.width as usize,
-            crate::style::Style::default(),
-        );
+        buf.set_stringn(area.x, area.y, self, area.width as usize, Style::new());
     }
 }
 
