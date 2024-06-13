@@ -58,7 +58,7 @@ impl Rect {
     /// Creates a new `Rect`, with width and height limited to keep the area under max `u16`. If
     /// clipped, aspect ratio will be preserved.
     pub fn new(x: u16, y: u16, width: u16, height: u16) -> Self {
-        let max_area = u16::max_value();
+        let max_area = u16::MAX;
         let (clipped_width, clipped_height) =
             if u32::from(width) * u32::from(height) > u32::from(max_area) {
                 let aspect_ratio = f64::from(width) / f64::from(height);
