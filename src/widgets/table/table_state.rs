@@ -49,6 +49,7 @@
 pub struct TableState {
     pub(crate) offset: usize,
     pub(crate) selected: Option<usize>,
+    pub(crate) marked: Vec<usize>,
 }
 
 impl TableState {
@@ -64,6 +65,7 @@ impl TableState {
         Self {
             offset: 0,
             selected: None,
+            marked: vec![],
         }
     }
 
@@ -174,6 +176,78 @@ impl TableState {
         if index.is_none() {
             self.offset = 0;
         }
+    }
+
+    /// Sets the index of the row as marked
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = TableState::default();
+    /// state.mark(1);
+    /// ```
+    pub fn mark(&mut self, index: usize) {
+        if !self.marked.contains(&index) {
+            self.marked.push(index);
+        }
+    }
+
+    /// Sets the index of the row as unmarked
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = TableState::default();
+    /// state.unmark(1);
+    /// ```
+    pub fn unmark(&mut self, index: usize) {
+        self.marked.retain(|i| *i != index);
+    }
+
+    /// Toggles the index of the row as marked or unmarked
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = TableState::default();
+    /// state.toggle_mark(1);
+    /// ```
+    pub fn toggle_mark(&mut self, index: usize) {
+        if self.marked.contains(&index) {
+            self.unmark(index);
+        } else {
+            self.mark(index);
+        }
+    }
+
+    /// Returns a iterator of all marked rows
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// # use itertools::Itertools;
+    /// let mut state = TableState::default();
+    /// state.marked().contains(&1);
+    /// ```
+    pub fn marked(&self) -> std::slice::Iter<'_, usize> {
+        self.marked.iter()
+    }
+
+    /// Clears all marks from all rows
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = TableState::default();
+    /// state.clear_marks();
+    /// ```
+    pub fn clear_marks(&mut self) {
+        self.marked.drain(..);
     }
 }
 
