@@ -23,7 +23,7 @@ use super::Color;
 impl<T: IntoStimulus<u8>> From<Srgb<T>> for Color {
     fn from(color: Srgb<T>) -> Self {
         let (red, green, blue) = color.into_format().into_components();
-        Color::Rgb(red, green, blue)
+        Self::Rgb(red, green, blue)
     }
 }
 
@@ -48,7 +48,7 @@ where
 {
     fn from(color: LinSrgb<T>) -> Self {
         let srgb_color = Srgb::<T>::from_linear(color);
-        Color::from(srgb_color)
+        Self::from(srgb_color)
     }
 }
 
