@@ -37,16 +37,12 @@ use palette::{convert::FromColorUnclamped, Okhsv, Srgb};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     buffer::Buffer,
-    crossterm::{
-        event::{self, Event, KeyCode, KeyEventKind},
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-        ExecutableCommand,
-    },
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::Color,
-    terminal::Terminal,
     text::Text,
     widgets::Widget,
+    Terminal,
 };
 
 #[derive(Debug, Default)]
@@ -101,9 +97,8 @@ struct ColorsWidget {
 
 fn main() -> Result<()> {
     install_error_hooks()?;
-    let terminal = init_terminal()?;
+    let terminal = CrosstermBackend::stdout().into_terminal_with_defaults()?;
     App::default().run(terminal)?;
-    restore_terminal()?;
     Ok(())
 }
 
@@ -272,27 +267,12 @@ fn install_error_hooks() -> Result<()> {
     let panic = panic.into_panic_hook();
     let error = error.into_eyre_hook();
     eyre::set_hook(Box::new(move |e| {
-        let _ = restore_terminal();
+        let _ = CrosstermBackend::reset(stdout());
         error(e)
     }))?;
     panic::set_hook(Box::new(move |info| {
-        let _ = restore_terminal();
+        let _ = CrosstermBackend::reset(stdout());
         panic(info);
     }));
-    Ok(())
-}
-
-fn init_terminal() -> Result<Terminal<impl Backend>> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-    terminal.clear()?;
-    terminal.hide_cursor()?;
-    Ok(terminal)
-}
-
-fn restore_terminal() -> Result<()> {
-    disable_raw_mode()?;
-    stdout().execute(LeaveAlternateScreen)?;
     Ok(())
 }
