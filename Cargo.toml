@@ -50,6 +50,7 @@ unicode-width = "0.1.13"
 anyhow = "1.0.71"
 argh = "0.1.12"
 better-panic = "0.3.0"
+color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 derive_builder = "0.20.0"
 fakeit = "1.1"
