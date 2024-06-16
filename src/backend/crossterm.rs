@@ -28,6 +28,7 @@ use crate::{
     },
     layout::{Rect, Size},
     style::{Color, Modifier, Style},
+    Terminal, TerminalOptions,
 };
 
 /// A [`Backend`] implementation that uses [Crossterm] to render to the terminal.
