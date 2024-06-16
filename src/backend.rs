@@ -104,7 +104,11 @@ use std::io;
 
 use strum::{Display, EnumString};
 
-use crate::{buffer::Cell, layout::Size, prelude::Rect, Terminal, TerminalOptions};
+use crate::{
+    buffer::Cell,
+    layout::{Rect, Size},
+    Terminal, TerminalOptions,
+};
 
 #[cfg(feature = "termion")]
 mod termion;
