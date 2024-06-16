@@ -199,6 +199,9 @@ impl CrosstermBackend<io::Stderr> {
     ///
     /// Raw mode and alternate screen are restored when the `CrosstermBackend` is dropped.
     ///
+    /// If the `color-eyre` feature is enabled, the color-eyre panic and error report hooks are
+    /// installed.
+    ///
     /// # Example
     ///
     /// ```rust,no_run
@@ -207,7 +210,10 @@ impl CrosstermBackend<io::Stderr> {
     /// # std::io::Result::Ok(())
     /// ```
     pub fn stderr_with_defaults() -> io::Result<Self> {
-        Self::stderr().with_raw_mode()?.with_alternate_screen()
+        let backend = Self::stderr().with_raw_mode()?.with_alternate_screen()?;
+        #[cfg(feature = "color-eyre")]
+        let backend = backend.with_color_eyre_hooks()?;
+        Ok(backend)
     }
 }
 
@@ -321,6 +327,39 @@ impl<W: Write> CrosstermBackend<W> {
     ) -> io::Result<Self> {
         execute!(self.writer, PushKeyboardEnhancementFlags(flags))?;
         self.restore_keyboard_enhancement_flags_on_drop = true;
+        Ok(self)
+    }
+
+    /// Installs the color-eyre panic and error report hooks.
+    ///
+    /// This is a convenience method that sets up the color-eyre hooks for the terminal backend.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use ratatui::backend::CrosstermBackend;
+    ///
+    /// let backend = CrosstermBackend::stdout().with_color_eyre_hooks()?;
+    /// ```
+    #[cfg(feature = "color-eyre")]
+    pub fn with_color_eyre_hooks(self) -> color_eyre::Result<Self> {
+        use std::{io::stderr, panic};
+
+        use color_eyre::{config::HookBuilder, eyre};
+
+        let (panic, error) = HookBuilder::default().into_hooks();
+        let panic = panic.into_panic_hook();
+        let error = error.into_eyre_hook();
+        eyre::set_hook(Box::new(move |e| {
+            // ignore errors here because we are already in an error state
+            let _ = CrosstermBackend::reset(stderr());
+            error(e)
+        }))?;
+        panic::set_hook(Box::new(move |info| {
+            // ignore errors here because we are already in an error state
+            let _ = CrosstermBackend::reset(stderr());
+            panic(info);
+        }));
         Ok(self)
     }
 
