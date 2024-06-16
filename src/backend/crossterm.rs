@@ -27,7 +27,6 @@ use crate::{
     },
     layout::{Rect, Size},
     style::{Color, Modifier, Style},
-    Terminal, TerminalOptions,
 };
 
 /// A [`Backend`] implementation that uses [Crossterm] to render to the terminal.
@@ -176,7 +175,7 @@ impl CrosstermBackend<io::Stdout> {
     /// # std::io::Result::Ok(())
     /// ```
     pub fn stdout_with_defaults() -> io::Result<Self> {
-        Self::stdout().with_raw_mode()?.with_alternate_screen()
+        Self::stdout().with_defaults()
     }
 }
 
@@ -210,14 +209,38 @@ impl CrosstermBackend<io::Stderr> {
     /// # std::io::Result::Ok(())
     /// ```
     pub fn stderr_with_defaults() -> io::Result<Self> {
-        let backend = Self::stderr().with_raw_mode()?.with_alternate_screen()?;
-        #[cfg(feature = "color-eyre")]
-        let backend = backend.with_color_eyre_hooks()?;
-        Ok(backend)
+        Self::stderr().with_defaults()
     }
 }
 
 impl<W: Write> CrosstermBackend<W> {
+    /// Enables default settings for the terminal backend.
+    ///
+    /// This enables raw mode and switches to the alternate screen. Mouse support is not enabled.
+    ///
+    /// If the `color-eyre` feature is enabled, the color-eyre panic and error report hooks are
+    /// installed. Otherwise, a panic hook is installed that resets the terminal to its default
+    /// state before panicking.
+    ///
+    /// Returns an [`io::Result`] containing self so that it can be chained with other methods.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use ratatui::backend::CrosstermBackend;
+    ///
+    /// let backend = CrosstermBackend::stdout().with_defaults()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn with_defaults(mut self) -> io::Result<Self> {
+        let backend = self.with_raw_mode()?.with_alternate_screen()?;
+        #[cfg(feature = "color-eyre")]
+        let backend = backend.with_color_eyre_hooks()?;
+        #[cfg(not(feature = "color-eyre"))]
+        let backend = backend.with_panic_hook()?;
+        Ok(backend)
+    }
+
     /// Enables raw mode for the terminal.
     ///
     /// Returns an [`io::Result`] containing self so that it can be chained with other methods.
@@ -330,6 +353,29 @@ impl<W: Write> CrosstermBackend<W> {
         Ok(self)
     }
 
+    /// Installs a panic hook that resets the terminal to its default state before panicking.
+    ///
+    /// This is a convenience method that sets up the panic hook for the terminal backend.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use ratatui::backend::CrosstermBackend;
+    ///
+    /// let backend = CrosstermBackend::stdout().with_panic_hook()?;
+    /// ```
+    #[cfg(not(feature = "color-eyre"))]
+    pub fn with_panic_hook(self) -> io::Result<Self> {
+        use std::panic;
+
+        let hook = panic::take_hook();
+        panic::set_hook(Box::new(move |info| {
+            let _ = CrosstermBackend::reset(io::stderr());
+            hook(info);
+        }));
+        Ok(self)
+    }
+
     /// Installs the color-eyre panic and error report hooks.
     ///
     /// This is a convenience method that sets up the color-eyre hooks for the terminal backend.
@@ -342,7 +388,7 @@ impl<W: Write> CrosstermBackend<W> {
     /// let backend = CrosstermBackend::stdout().with_color_eyre_hooks()?;
     /// ```
     #[cfg(feature = "color-eyre")]
-    pub fn with_color_eyre_hooks(self) -> color_eyre::Result<Self> {
+    pub fn with_color_eyre_hooks(self) -> io::Result<Self> {
         use std::{io::stderr, panic};
 
         use color_eyre::{config::HookBuilder, eyre};
@@ -354,7 +400,8 @@ impl<W: Write> CrosstermBackend<W> {
             // ignore errors here because we are already in an error state
             let _ = CrosstermBackend::reset(stderr());
             error(e)
-        }))?;
+        }))
+        .map_err(|error| io::Error::other(error))?;
         panic::set_hook(Box::new(move |info| {
             // ignore errors here because we are already in an error state
             let _ = CrosstermBackend::reset(stderr());
