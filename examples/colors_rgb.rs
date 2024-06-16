@@ -26,13 +26,9 @@
 // is useful when the state is only used by the widget and doesn't need to be shared with
 // other widgets.
 
-use std::{
-    io::stdout,
-    panic,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
-use color_eyre::{config::HookBuilder, eyre, Result};
+use color_eyre::Result;
 use palette::{convert::FromColorUnclamped, Okhsv, Srgb};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
@@ -257,22 +253,4 @@ impl ColorsWidget {
             self.colors.push(row);
         }
     }
-}
-
-/// Install `color_eyre` panic and error hooks
-///
-/// The hooks restore the terminal to a usable state before printing the error message.
-fn install_error_hooks() -> Result<()> {
-    let (panic, error) = HookBuilder::default().into_hooks();
-    let panic = panic.into_panic_hook();
-    let error = error.into_eyre_hook();
-    eyre::set_hook(Box::new(move |e| {
-        let _ = CrosstermBackend::reset(stdout());
-        error(e)
-    }))?;
-    panic::set_hook(Box::new(move |info| {
-        let _ = CrosstermBackend::reset(stdout());
-        panic(info);
-    }));
-    Ok(())
 }
