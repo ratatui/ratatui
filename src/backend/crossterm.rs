@@ -4,20 +4,18 @@
 //! [Crossterm]: https://crates.io/crates/crossterm
 use std::io::{self, Write};
 
-use crossterm::event::{
-    DisableBracketedPaste, DisableFocusChange, EnableBracketedPaste, EnableFocusChange,
-    KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
-};
-
 #[cfg(feature = "underline-color")]
 use crate::crossterm::style::SetUnderlineColor;
-
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
     crossterm::{
         cursor::{Hide, MoveTo, Show},
-        event::{DisableMouseCapture, EnableMouseCapture},
+        event::{
+            DisableBracketedPaste, DisableFocusChange, DisableMouseCapture, EnableBracketedPaste,
+            EnableFocusChange, EnableMouseCapture, KeyboardEnhancementFlags,
+            PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+        },
         execute, queue,
         style::{
             Attribute as CAttribute, Attributes as CAttributes, Color as CColor, Colors,
@@ -60,8 +58,10 @@ use crate::{
 /// # Example
 ///
 /// ```rust,no_run
-/// use ratatui::backend::{Backend, CrosstermBackend};
-/// use crossterm::event::KeyboardEnhancementFlags;
+/// use ratatui::{
+///     backend::{Backend, CrosstermBackend},
+///     crossterm::event::KeyboardEnhancementFlags,
+/// };
 ///
 /// let mut terminal = CrosstermBackend::stdout_with_defaults()?.to_terminal()?;
 /// // or
@@ -87,6 +87,7 @@ use crate::{
 /// [Crossterm]: https://crates.io/crates/crossterm
 /// [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct CrosstermBackend<W: Write> {
     /// The writer used to send commands to the terminal.
     writer: W,
@@ -112,6 +113,7 @@ where
     ///
     /// ```rust,no_run
     /// use std::io;
+    ///
     /// use ratatui::backend::CrosstermBackend;
     ///
     /// let backend = CrosstermBackend::new(io::stdout());
@@ -317,8 +319,7 @@ impl<W: Write> CrosstermBackend<W> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use ratatui::backend::CrosstermBackend;
-    /// use crossterm::event::KeyboardEnhancementFlags;
+    /// use ratatui::{backend::CrosstermBackend, crossterm::event::KeyboardEnhancementFlags};
     ///
     /// let backend = CrosstermBackend::stdout()
     ///     .with_keyboard_enhancement_flags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES)?;
@@ -603,7 +604,6 @@ impl ModifierDiff {
     where
         W: io::Write,
     {
-        //use crossterm::Attribute;
         let removed = self.from - self.to;
         if removed.contains(Modifier::REVERSED) {
             queue!(w, SetAttribute(CAttribute::NoReverse))?;
