@@ -117,7 +117,7 @@ pub mod bar {
 }
 
 pub mod border {
-    use super::line;
+    use super::{block, line};
 
     #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
     pub struct Set {
@@ -350,6 +350,56 @@ pub mod border {
         vertical_right: QUADRANT_BLOCK,
         horizontal_top: QUADRANT_TOP_HALF,
         horizontal_bottom: QUADRANT_BOTTOM_HALF,
+    };
+
+    /// Solid border set
+    ///
+    /// The border is created by using full blocks for all sides.
+    ///
+    /// ```text
+    /// ████
+    /// █xx█
+    /// █xx█
+    /// ████
+    pub const FULL: Set = Set {
+        top_left: block::FULL,
+        top_right: block::FULL,
+        bottom_left: block::FULL,
+        bottom_right: block::FULL,
+        vertical_left: block::FULL,
+        vertical_right: block::FULL,
+        horizontal_top: block::FULL,
+        horizontal_bottom: block::FULL,
+    };
+
+    /// Empty border set
+    ///
+    /// The border is created by using empty strings for all sides.
+    ///
+    /// This is useful for ensuring that the border style is applied to a border on a block with a
+    /// title without actually drawing a border.
+    ///
+    /// # Example
+    ///
+    /// `@` represents the content in the area outside the border.
+    ///
+    /// ```text
+    /// @@@@@@@@
+    /// @@    @@
+    /// @@ xx @@
+    /// @@ xx @@
+    /// @@    @@
+    /// @@@@@@@@
+    /// ```
+    pub const EMPTY: Set = Set {
+        top_left: " ",
+        top_right: " ",
+        bottom_left: " ",
+        bottom_right: " ",
+        vertical_left: " ",
+        vertical_right: " ",
+        horizontal_top: " ",
+        horizontal_bottom: " ",
     };
 }
 
