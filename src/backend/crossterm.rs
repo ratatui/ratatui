@@ -42,15 +42,15 @@ use crate::{
 /// alternate screen using [`CrosstermBackend::stdout_with_defaults`] or
 /// [`CrosstermBackend::stderr_with_defaults`].
 ///
-/// The `CrosstermBackend` can be converted into a [`Terminal`] instance using
-/// [`CrosstermBackend::to_terminal`].
-///
 /// If the default settings are not desired, the `CrosstermBackend` can be configured using the
 /// `with_*` methods. These methods return an [`io::Result`] containing self so that they can be
 /// chained with other methods. The settings are restored when the `CrosstermBackend` is dropped.
 /// - [`CrosstermBackend::with_raw_mode`] enables raw mode for the terminal.
 /// - [`CrosstermBackend::with_alternate_screen`] switches to the alternate screen.
 /// - [`CrosstermBackend::with_mouse_capture`] enables mouse capture.
+/// - [`CrosstermBackend::with_bracketed_paste`] enables bracketed paste.
+/// - [`CrosstermBackend::with_focus_change`] enables focus change.
+/// - [`CrosstermBackend::with_keyboard_enhancement_flags`] enables keyboard enhancement flags.
 ///
 /// If a backend is configured using the `with_*` methods, the settings are restored when the
 /// `CrosstermBackend` is dropped.
