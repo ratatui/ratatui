@@ -4,25 +4,32 @@
 //! [Crossterm]: https://crates.io/crates/crossterm
 use std::io::{self, Write};
 
+use crossterm::event::{
+    DisableBracketedPaste, DisableFocusChange, EnableBracketedPaste, EnableFocusChange,
+    KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+};
+
 #[cfg(feature = "underline-color")]
-use crossterm::style::SetUnderlineColor;
+use crate::crossterm::style::SetUnderlineColor;
 
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
     crossterm::{
         cursor::{Hide, MoveTo, Show},
+        event::{DisableMouseCapture, EnableMouseCapture},
         execute, queue,
         style::{
             Attribute as CAttribute, Attributes as CAttributes, Color as CColor, Colors,
             ContentStyle, Print, SetAttribute, SetBackgroundColor, SetColors, SetForegroundColor,
         },
-        terminal::{self, Clear},
+        terminal::{
+            self, disable_raw_mode, enable_raw_mode, Clear, EnterAlternateScreen,
+            LeaveAlternateScreen,
+        },
     },
-    layout::Size,
-    prelude::Rect,
+    layout::{Rect, Size},
     style::{Color, Modifier, Style},
-    Terminal, TerminalOptions,
 };
 
 /// A [`Backend`] implementation that uses [Crossterm] to render to the terminal.
@@ -31,12 +38,21 @@ use crate::{
 /// to send commands to the terminal. It provides methods for drawing content, manipulating the
 /// cursor, and clearing the terminal screen.
 ///
-/// Most applications should enable raw mode and switch to alternate screen mode when using
-/// `CrosstermBackend`. This can be done by calling [`CrosstermBackend::with_raw_mode`] and
-/// [`CrosstermBackend::with_alternate_screen`] before calling [`CrosstermBackend::into_terminal`].
-/// Mouse support can also be enabled with [`CrosstermBackend::with_mouse_support`]. A convenience
-/// method, [`CrosstermBackend::into_terminal_with_defaults`], is provided to enable raw mode and
-/// switch to the alternate screen with default settings.
+/// Convenience methods ([`CrosstermBackend::stdout`] and [`CrosstermBackend::stderr`] are provided
+/// to create a `CrosstermBackend` with [`std::io::stdout`] or [`std::io::stderr`] as the writer.
+/// Additionally, these can be created with default settings to enable raw mode and switch to the
+/// alternate screen using [`CrosstermBackend::stdout_with_defaults`] or
+/// [`CrosstermBackend::stderr_with_defaults`].
+///
+/// The `CrosstermBackend` can be converted into a [`Terminal`] instance using
+/// [`CrosstermBackend::to_terminal`].
+///
+/// If the default settings are not desired, the `CrosstermBackend` can be configured using the
+/// `with_*` methods. These methods return an [`io::Result`] containing self so that they can be
+/// chained with other methods. The settings are restored when the `CrosstermBackend` is dropped.
+/// - [`CrosstermBackend::with_raw_mode`] enables raw mode for the terminal.
+/// - [`CrosstermBackend::with_alternate_screen`] switches to the alternate screen.
+/// - [`CrosstermBackend::with_mouse_capture`] enables mouse capture.
 ///
 /// If a backend is configured using the `with_*` methods, the settings are restored when the
 /// `CrosstermBackend` is dropped.
@@ -44,17 +60,21 @@ use crate::{
 /// # Example
 ///
 /// ```rust,no_run
-/// use ratatui::{backend::CrosstermBackend, Terminal};
+/// use ratatui::backend::{Backend, CrosstermBackend};
+/// use crossterm::event::KeyboardEnhancementFlags;
 ///
-/// let mut terminal = CrosstermBackend::stdout().into_terminal_with_defaults()?;
+/// let mut terminal = CrosstermBackend::stdout_with_defaults()?.to_terminal()?;
 /// // or
-/// let mut terminal = CrosstermBackend::stderr().into_terminal_with_defaults()?;
+/// let mut terminal = CrosstermBackend::stderr_with_defaults()?.to_terminal()?;
 /// // or with custom settings
 /// let mut terminal = CrosstermBackend::stdout()
 ///     .with_raw_mode()?
 ///     .with_alternate_screen()?
-///     .with_mouse_support()?
-///     .into_terminal()?;
+///     .with_mouse_capture()?
+///     .with_bracketed_paste()?
+///     .with_focus_change()?
+///     .with_keyboard_enhancement_flags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES)?
+///     .to_terminal()?;
 /// # std::io::Result::Ok(())
 /// ```
 ///
@@ -73,6 +93,9 @@ pub struct CrosstermBackend<W: Write> {
     restore_raw_mode_on_drop: bool,
     restore_alternate_screen_on_drop: bool,
     restore_mouse_capture_on_drop: bool,
+    restore_bracketed_paste_on_drop: bool,
+    restore_focus_change_on_drop: bool,
+    restore_keyboard_enhancement_flags_on_drop: bool,
 }
 
 impl<W> CrosstermBackend<W>
@@ -81,12 +104,17 @@ where
 {
     /// Creates a new `CrosstermBackend` with the given writer.
     ///
+    /// Applications will typically use [`CrosstermBackend::stdout`] or [`CrosstermBackend::stderr`]
+    /// to create a `CrosstermBackend` with [`std::io::stdout`] or [`std::io::stderr`] as the
+    /// writer.
+    ///
     /// # Example
     ///
     /// ```rust,no_run
-    /// # use std::io::stdout;
-    /// # use ratatui::prelude::*;
-    /// let backend = CrosstermBackend::new(stdout());
+    /// use std::io;
+    /// use ratatui::backend::CrosstermBackend;
+    ///
+    /// let backend = CrosstermBackend::new(io::stdout());
     /// ```
     pub const fn new(writer: W) -> Self {
         Self {
@@ -94,6 +122,9 @@ where
             restore_raw_mode_on_drop: false,
             restore_alternate_screen_on_drop: false,
             restore_mouse_capture_on_drop: false,
+            restore_bracketed_paste_on_drop: false,
+            restore_focus_change_on_drop: false,
+            restore_keyboard_enhancement_flags_on_drop: false,
         }
     }
 
@@ -119,76 +150,20 @@ where
     }
 }
 
-impl CrosstermBackend<std::io::Stdout> {
+impl CrosstermBackend<io::Stdout> {
     /// Creates a new `CrosstermBackend` with `std::io::stdout`.
     ///
     /// # Example
     ///
     /// ```rust,no_run
-    /// use ratatui::prelude::*;
-    ///
+    /// # use ratatui::backend::CrosstermBackend;
     /// let backend = CrosstermBackend::stdout();
     /// ```
     pub fn stdout() -> Self {
-        Self::new(std::io::stdout())
-    }
-}
-
-impl CrosstermBackend<std::io::Stderr> {
-    /// Creates a new `CrosstermBackend` with `std::io::stderr`.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// use ratatui::prelude::*;
-    ///
-    /// let backend = CrosstermBackend::stderr();
-    /// ```
-    pub fn stderr() -> Self {
-        Self::new(std::io::stderr())
-    }
-}
-
-impl<W: Write> CrosstermBackend<W> {
-    /// Converts the `CrosstermBackend` into a [`Terminal`] instance.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// use ratatui::backend::CrosstermBackend;
-    ///
-    /// let terminal = CrosstermBackend::stdout()
-    ///     .with_raw_mode()?
-    ///     .with_alternate_screen()?
-    ///     .with_mouse_support()?
-    ///     .into_terminal()?;
-    /// # std::io::Result::Ok(())
-    /// ```
-    pub fn into_terminal(self) -> io::Result<Terminal<Self>> {
-        Terminal::new(self)
+        Self::new(io::stdout())
     }
 
-    /// Converts the `CrosstermBackend` into a [`Terminal`] instance with options.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// use ratatui::{backend::CrosstermBackend, TerminalOptions};
-    ///
-    /// let options = TerminalOptions {
-    ///     viewport: Viewport::Inline(10),
-    /// };
-    /// let terminal = CrosstermBackend::stdout().into_terminal_with_options(options)?;
-    /// # std::io::Result::Ok(())
-    /// ```
-    pub fn into_terminal_with_options(
-        self,
-        options: TerminalOptions,
-    ) -> io::Result<Terminal<Self>> {
-        Terminal::with_options(self, options)
-    }
-
-    /// Converts the `CrosstermBackend` into a [`Terminal`] instance with default settings.
+    /// Creates a new `CrosstermBackend` with `std::io::stdout` and default settings.
     ///
     /// This enables raw mode and switches to the alternate screen. Mouse support is not enabled.
     ///
@@ -199,14 +174,47 @@ impl<W: Write> CrosstermBackend<W> {
     /// ```rust,no_run
     /// use ratatui::backend::CrosstermBackend;
     ///
-    /// let terminal = CrosstermBackend::stdout().into_terminal_with_defaults()?;
+    /// let backend = CrosstermBackend::stdout_with_defaults()?;
     /// # std::io::Result::Ok(())
     /// ```
-    pub fn into_terminal_with_defaults(self) -> io::Result<Terminal<Self>> {
-        let backend = self.with_raw_mode()?.with_alternate_screen()?;
-        Terminal::new(backend)
+    pub fn stdout_with_defaults() -> io::Result<Self> {
+        Self::stdout().with_raw_mode()?.with_alternate_screen()
+    }
+}
+
+impl CrosstermBackend<io::Stderr> {
+    /// Creates a new `CrosstermBackend` with `std::io::stderr`.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use ratatui::backend::CrosstermBackend;
+    /// let backend = CrosstermBackend::stderr();
+    /// ```
+    pub fn stderr() -> Self {
+        Self::new(io::stderr())
     }
 
+    /// Creates a new `CrosstermBackend` with `std::io::stderr` and default settings.
+    ///
+    /// This enables raw mode and switches to the alternate screen. Mouse support is not enabled.
+    ///
+    /// Raw mode and alternate screen are restored when the `CrosstermBackend` is dropped.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use ratatui::backend::CrosstermBackend;
+    ///
+    /// let backend = CrosstermBackend::stderr_with_defaults()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn stderr_with_defaults() -> io::Result<Self> {
+        Self::stderr().with_raw_mode()?.with_alternate_screen()
+    }
+}
+
+impl<W: Write> CrosstermBackend<W> {
     /// Enables raw mode for the terminal.
     ///
     /// Returns an [`io::Result`] containing self so that it can be chained with other methods.
@@ -222,8 +230,8 @@ impl<W: Write> CrosstermBackend<W> {
     /// # std::io::Result::Ok(())
     /// ```
     pub fn with_raw_mode(mut self) -> io::Result<Self> {
+        enable_raw_mode()?;
         self.restore_raw_mode_on_drop = true;
-        terminal::enable_raw_mode()?;
         Ok(self)
     }
 
@@ -242,35 +250,99 @@ impl<W: Write> CrosstermBackend<W> {
     /// # std::io::Result::Ok(())
     /// ```
     pub fn with_alternate_screen(mut self) -> io::Result<Self> {
+        execute!(self.writer, EnterAlternateScreen)?;
         self.restore_alternate_screen_on_drop = true;
-        execute!(self.writer, terminal::EnterAlternateScreen)?;
         Ok(self)
     }
 
-    /// Enables mouse support for the terminal.
+    /// Enables mouse capture for the terminal.
     ///
     /// Returns an [`io::Result`] containing self so that it can be chained with other methods.
     ///
-    /// Mouse support is restored when the `CrosstermBackend` is dropped.
+    /// Mouse capture is disabled when the `CrosstermBackend` is dropped.
     ///
     /// # Example
     ///
     /// ```rust,no_run
     /// use ratatui::backend::CrosstermBackend;
     ///
-    /// let backend = CrosstermBackend::stdout().with_mouse_support()?;
+    /// let backend = CrosstermBackend::stdout().with_mouse_capture()?;
     /// # std::io::Result::Ok(())
     /// ```
-    pub fn with_mouse_support(mut self) -> io::Result<Self> {
+    pub fn with_mouse_capture(mut self) -> io::Result<Self> {
+        execute!(self.writer, EnableMouseCapture)?;
         self.restore_mouse_capture_on_drop = true;
-        execute!(self.writer, crossterm::event::EnableMouseCapture)?;
+        Ok(self)
+    }
+
+    /// Enables bracketed paste for the terminal.
+    ///
+    /// Returns an [`io::Result`] containing self so that it can be chained with other methods.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use ratatui::backend::CrosstermBackend;
+    ///
+    /// let backend = CrosstermBackend::stdout().with_bracketed_paste()?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn with_bracketed_paste(mut self) -> io::Result<Self> {
+        execute!(self.writer, EnableBracketedPaste)?;
+        self.restore_bracketed_paste_on_drop = true;
+        Ok(self)
+    }
+
+    /// Enables focus change for the terminal.
+    ///
+    /// Returns an [`io::Result`] containing self so that it can be chained with other methods.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use ratatui::backend::CrosstermBackend;
+    ///
+    /// let backend = CrosstermBackend::stdout().with_focus_change()?;
+    /// # std::io::Result::Ok(())
+    pub fn with_focus_change(mut self) -> io::Result<Self> {
+        execute!(self.writer, EnableFocusChange)?;
+        self.restore_focus_change_on_drop = true;
+        Ok(self)
+    }
+
+    /// Enables keyboard enhancement flags for the terminal.
+    ///
+    /// Returns an [`io::Result`] containing self so that it can be chained with other methods.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use ratatui::backend::CrosstermBackend;
+    /// use crossterm::event::KeyboardEnhancementFlags;
+    ///
+    /// let backend = CrosstermBackend::stdout()
+    ///     .with_keyboard_enhancement_flags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES)?;
+    /// # std::io::Result::Ok(())
+    /// ```
+    pub fn with_keyboard_enhancement_flags(
+        mut self,
+        flags: KeyboardEnhancementFlags,
+    ) -> io::Result<Self> {
+        execute!(self.writer, PushKeyboardEnhancementFlags(flags))?;
+        self.restore_keyboard_enhancement_flags_on_drop = true;
         Ok(self)
     }
 
     /// Resets the terminal to its default state.
     ///
-    /// Disables raw mode, disables mouse capture, and leaves the alternate screen.
+    /// - Disables raw mode
+    /// - Disables mouse capture
+    /// - Leaves the alternate screen
+    /// - Disables bracketed paste
+    /// - Disables focus change
+    /// - Pops keyboard enhancement flags
     ///
+    /// Note: this met
     /// # Example
     ///
     /// ```rust,no_run
@@ -282,12 +354,16 @@ impl<W: Write> CrosstermBackend<W> {
     /// # std::io::Result::Ok(())
     /// ```
     pub fn reset(mut writer: W) -> io::Result<()> {
-        terminal::disable_raw_mode()?;
+        disable_raw_mode()?;
         execute!(
             writer,
-            terminal::LeaveAlternateScreen,
-            crossterm::event::DisableMouseCapture
-        )
+            LeaveAlternateScreen,
+            DisableMouseCapture,
+            DisableBracketedPaste,
+            DisableFocusChange,
+            PopKeyboardEnhancementFlags
+        )?;
+        writer.flush()
     }
 }
 
@@ -296,14 +372,24 @@ impl<W: Write> Drop for CrosstermBackend<W> {
         // note that these are not checked for errors because there is nothing that can be done if
         // they fail. The terminal is likely in a bad state, and the application is exiting anyway.
         if self.restore_raw_mode_on_drop {
-            let _ = terminal::disable_raw_mode();
+            let _ = disable_raw_mode();
         }
         if self.restore_mouse_capture_on_drop {
-            let _ = execute!(self.writer, crossterm::event::DisableMouseCapture);
+            let _ = execute!(self.writer, DisableMouseCapture);
         }
         if self.restore_alternate_screen_on_drop {
-            let _ = execute!(self.writer, terminal::LeaveAlternateScreen);
+            let _ = execute!(self.writer, LeaveAlternateScreen);
         }
+        if self.restore_bracketed_paste_on_drop {
+            let _ = execute!(self.writer, DisableBracketedPaste);
+        }
+        if self.restore_focus_change_on_drop {
+            let _ = execute!(self.writer, DisableFocusChange);
+        }
+        if self.restore_keyboard_enhancement_flags_on_drop {
+            let _ = execute!(self.writer, PopKeyboardEnhancementFlags);
+        }
+        let _ = self.writer.flush();
     }
 }
 

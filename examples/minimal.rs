@@ -14,7 +14,7 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
 use ratatui::{
-    backend::CrosstermBackend,
+    backend::{Backend, CrosstermBackend},
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     text::Text,
 };
@@ -26,7 +26,7 @@ use ratatui::{
 /// [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 /// [hello-world]: https://github.com/ratatui-org/ratatui/blob/main/examples/hello_world.rs
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut terminal = CrosstermBackend::stdout().into_terminal_with_defaults()?;
+    let mut terminal = CrosstermBackend::stdout_with_defaults()?.to_terminal()?;
     terminal.clear()?;
     loop {
         terminal.draw(|frame| frame.render_widget(Text::raw("Hello World!"), frame.size()))?;
