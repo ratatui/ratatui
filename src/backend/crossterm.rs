@@ -2,7 +2,7 @@
 //! the [Crossterm] crate to interact with the terminal.
 //!
 //! [Crossterm]: https://crates.io/crates/crossterm
-use std::io::{self, Write};
+use std::io;
 
 #[cfg(feature = "underline-color")]
 use crate::crossterm::style::SetUnderlineColor;
@@ -87,7 +87,7 @@ use crate::{
 /// [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 #[allow(clippy::struct_excessive_bools)]
-pub struct CrosstermBackend<W: Write> {
+pub struct CrosstermBackend<W: io::Write> {
     /// The writer used to send commands to the terminal.
     writer: W,
     restore_raw_mode_on_drop: bool,
@@ -98,10 +98,7 @@ pub struct CrosstermBackend<W: Write> {
     restore_keyboard_enhancement_flags_on_drop: bool,
 }
 
-impl<W> CrosstermBackend<W>
-where
-    W: Write,
-{
+impl<W: io::Write> CrosstermBackend<W> {
     /// Creates a new `CrosstermBackend` with the given writer.
     ///
     /// Applications will typically use [`CrosstermBackend::stdout`] or [`CrosstermBackend::stderr`]
@@ -213,7 +210,7 @@ impl CrosstermBackend<io::Stderr> {
     }
 }
 
-impl<W: Write> CrosstermBackend<W> {
+impl<W: io::Write> CrosstermBackend<W> {
     /// Enables default settings for the terminal backend.
     ///
     /// This enables raw mode and switches to the alternate screen. Mouse support is not enabled.
@@ -232,12 +229,12 @@ impl<W: Write> CrosstermBackend<W> {
     /// let backend = CrosstermBackend::stdout().with_defaults()?;
     /// # std::io::Result::Ok(())
     /// ```
-    pub fn with_defaults(mut self) -> io::Result<Self> {
+    pub fn with_defaults(self) -> io::Result<Self> {
         let backend = self.with_raw_mode()?.with_alternate_screen()?;
         #[cfg(feature = "color-eyre")]
         let backend = backend.with_color_eyre_hooks()?;
         #[cfg(not(feature = "color-eyre"))]
-        let backend = backend.with_panic_hook()?;
+        let backend = backend.with_panic_hook();
         Ok(backend)
     }
 
@@ -365,7 +362,8 @@ impl<W: Write> CrosstermBackend<W> {
     /// let backend = CrosstermBackend::stdout().with_panic_hook()?;
     /// ```
     #[cfg(not(feature = "color-eyre"))]
-    pub fn with_panic_hook(self) -> io::Result<Self> {
+    #[must_use]
+    pub fn with_panic_hook(self) -> Self {
         use std::panic;
 
         let hook = panic::take_hook();
@@ -373,7 +371,7 @@ impl<W: Write> CrosstermBackend<W> {
             let _ = CrosstermBackend::reset(io::stderr());
             hook(info);
         }));
-        Ok(self)
+        self
     }
 
     /// Installs the color-eyre panic and error report hooks.
@@ -386,6 +384,7 @@ impl<W: Write> CrosstermBackend<W> {
     /// use ratatui::backend::CrosstermBackend;
     ///
     /// let backend = CrosstermBackend::stdout().with_color_eyre_hooks()?;
+    /// # std::io::Result::Ok(())
     /// ```
     #[cfg(feature = "color-eyre")]
     pub fn with_color_eyre_hooks(self) -> io::Result<Self> {
@@ -448,7 +447,7 @@ impl<W: Write> CrosstermBackend<W> {
     }
 }
 
-impl<W: Write> Drop for CrosstermBackend<W> {
+impl<W: io::Write> Drop for CrosstermBackend<W> {
     fn drop(&mut self) {
         // note that these are not checked for errors because there is nothing that can be done if
         // they fail. The terminal is likely in a bad state, and the application is exiting anyway.
@@ -474,10 +473,7 @@ impl<W: Write> Drop for CrosstermBackend<W> {
     }
 }
 
-impl<W> Write for CrosstermBackend<W>
-where
-    W: Write,
-{
+impl<W: io::Write> io::Write for CrosstermBackend<W> {
     /// Writes a buffer of bytes to the underlying buffer.
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.writer.write(buf)
@@ -489,10 +485,7 @@ where
     }
 }
 
-impl<W> Backend for CrosstermBackend<W>
-where
-    W: Write,
-{
+impl<W: io::Write> Backend for CrosstermBackend<W> {
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
@@ -680,10 +673,7 @@ struct ModifierDiff {
 }
 
 impl ModifierDiff {
-    fn queue<W>(self, mut w: W) -> io::Result<()>
-    where
-        W: io::Write,
-    {
+    fn queue<W: io::Write>(self, mut w: W) -> io::Result<()> {
         let removed = self.from - self.to;
         if removed.contains(Modifier::REVERSED) {
             queue!(w, SetAttribute(CAttribute::NoReverse))?;
