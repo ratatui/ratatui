@@ -324,7 +324,10 @@ pub trait Backend {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use ratatui::{backend::{Backend, CrosstermBackend}, TerminalOptions, Viewport};
+    /// use ratatui::{
+    ///     backend::{Backend, CrosstermBackend},
+    ///     TerminalOptions, Viewport,
+    /// };
     ///
     /// let options = TerminalOptions {
     ///     viewport: Viewport::Inline(10),
