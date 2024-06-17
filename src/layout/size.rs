@@ -1,4 +1,6 @@
 #![warn(missing_docs)]
+use std::fmt;
+
 use crate::prelude::*;
 
 /// A simple size struct
@@ -32,6 +34,12 @@ impl From<Rect> for Size {
     }
 }
 
+impl fmt::Display for Size {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}x{}", self.width, self.height)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -55,5 +63,10 @@ mod tests {
         let size = Size::from(Rect::new(0, 0, 10, 20));
         assert_eq!(size.width, 10);
         assert_eq!(size.height, 20);
+    }
+
+    #[test]
+    fn display() {
+        assert_eq!(Size::new(10, 20).to_string(), "10x20");
     }
 }

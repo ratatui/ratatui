@@ -6,6 +6,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::{
     layout::Flex,
     prelude::*,
+    style::Styled,
     widgets::{
         canvas::{Canvas, Line as CanvasLine, Points},
         Block,
@@ -285,7 +286,7 @@ impl LegendPosition {
 /// This example draws a red line between two points.
 ///
 /// ```rust
-/// use ratatui::{prelude::*, widgets::*};
+/// use ratatui::{prelude::*, symbols::Marker, widgets::*};
 ///
 /// let dataset = Dataset::default()
 ///     .name("dataset 1")

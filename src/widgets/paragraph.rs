@@ -2,6 +2,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     prelude::*,
+    style::Styled,
     text::StyledGrapheme,
     widgets::{
         reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine},
@@ -432,7 +433,7 @@ mod test {
 
     #[test]
     fn zero_width_char_at_end_of_line() {
-        let line = "foo\0";
+        let line = "foo\u{200B}";
         for paragraph in [
             Paragraph::new(line),
             Paragraph::new(line).wrap(Wrap { trim: false }),
