@@ -248,7 +248,7 @@ pub trait StatefulWidget {
     /// Renders the the widget into the buffer using the provided state.
     ///
     /// This method replaces the `render` method with a name that does not conflict with the
-    /// `render` method from the `Widget` trait. (This conflict causes apps to have to specifially
+    /// `render` method from the `Widget` trait. (This conflict causes apps to have to specifically
     /// disambiguate the method call when using the `StatefulWidget` trait in situations where both
     /// traits are in scope.)
     fn render_stateful(self, area: Rect, buf: &mut Buffer, state: &mut Self::State)
