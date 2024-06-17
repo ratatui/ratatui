@@ -160,15 +160,12 @@ fn render_ingredients(selected_row: usize, area: Rect, buf: &mut Buffer) {
     let mut state = TableState::default().with_selected(Some(selected_row));
     let rows = INGREDIENTS.iter().copied();
     let theme = THEME.recipe;
-    StatefulWidget::render(
-        Table::new(rows, [Constraint::Length(7), Constraint::Length(30)])
-            .block(Block::new().style(theme.ingredients))
-            .header(Row::new(vec!["Qty", "Ingredient"]).style(theme.ingredients_header))
-            .highlight_style(Style::new().light_yellow()),
-        area,
-        buf,
-        &mut state,
-    );
+
+    Table::new(rows, [Constraint::Length(7), Constraint::Length(30)])
+        .block(Block::new().style(theme.ingredients))
+        .header(Row::new(vec!["Qty", "Ingredient"]).style(theme.ingredients_header))
+        .highlight_style(Style::new().light_yellow())
+        .render_stateful(area, buf, &mut state);
 }
 
 fn render_scrollbar(position: usize, area: Rect, buf: &mut Buffer) {
@@ -181,5 +178,5 @@ fn render_scrollbar(position: usize, area: Rect, buf: &mut Buffer) {
         .end_symbol(None)
         .track_symbol(None)
         .thumb_symbol("▐")
-        .render(area, buf, &mut state);
+        .render_stateful(area, buf, &mut state);
 }

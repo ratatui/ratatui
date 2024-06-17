@@ -63,7 +63,7 @@ fn render_stateful(bencher: &mut Bencher, list: &List, mut state: ListState) {
     bencher.iter_batched(
         || list.to_owned(),
         |bench_list| {
-            StatefulWidget::render(bench_list, buffer.area, &mut buffer, &mut state);
+            bench_list.render_stateful(buffer.area, &mut buffer, &mut state);
         },
         BatchSize::LargeInput,
     );

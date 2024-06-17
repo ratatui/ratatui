@@ -99,7 +99,7 @@ impl Frame<'_> {
         widget.render_ref(area, self.buffer);
     }
 
-    /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render`].
+    /// Render a [`StatefulWidget`] to the current buffer using [`StatefulWidget::render_stateful`].
     ///
     /// Usually the area argument is the size of the current frame or a sub-area of the current
     /// frame (which can be obtained using [`Layout`] to split the total area).
@@ -125,7 +125,7 @@ impl Frame<'_> {
     where
         W: StatefulWidget,
     {
-        widget.render(area, self.buffer, state);
+        widget.render_stateful(area, self.buffer, state);
     }
 
     /// Render a [`StatefulWidgetRef`] to the current buffer using

@@ -60,15 +60,12 @@ fn render_hops(selected_row: usize, area: Rect, buf: &mut Buffer) {
         .padding(Padding::new(1, 1, 1, 1))
         .title_alignment(Alignment::Center)
         .title("Traceroute bad.horse".bold().white());
-    StatefulWidget::render(
-        Table::new(rows, [Constraint::Max(100), Constraint::Length(15)])
-            .header(Row::new(vec!["Host", "Address"]).set_style(THEME.traceroute.header))
-            .highlight_style(THEME.traceroute.selected)
-            .block(block),
-        area,
-        buf,
-        &mut state,
-    );
+
+    Table::new(rows, [Constraint::Max(100), Constraint::Length(15)])
+        .header(Row::new(vec!["Host", "Address"]).set_style(THEME.traceroute.header))
+        .highlight_style(THEME.traceroute.selected)
+        .block(block)
+        .render_stateful(area, buf, &mut state);
     let mut scrollbar_state = ScrollbarState::default()
         .content_length(HOPS.len())
         .position(selected_row);
@@ -84,7 +81,7 @@ fn render_hops(selected_row: usize, area: Rect, buf: &mut Buffer) {
         .end_symbol(None)
         .track_symbol(None)
         .thumb_symbol("▌")
-        .render(area, buf, &mut scrollbar_state);
+        .render_stateful(area, buf, &mut scrollbar_state);
 }
 
 pub fn render_ping(progress: usize, area: Rect, buf: &mut Buffer) {

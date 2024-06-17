@@ -249,9 +249,7 @@ impl App {
             .highlight_spacing(HighlightSpacing::Always);
 
         // We can now render the item list
-        // (look careful we are using StatefulWidget's render.)
-        // ratatui::widgets::StatefulWidget::render as stateful_render
-        StatefulWidget::render(items, inner_area, buf, &mut self.items.state);
+        items.render_stateful(inner_area, buf, &mut self.items.state);
     }
 
     fn render_info(&self, area: Rect, buf: &mut Buffer) {
