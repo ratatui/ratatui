@@ -55,6 +55,20 @@ This is a quick summary of the sections below:
 
 ## Unreleased
 
+### `StatefulWidgetRef::render_ref` renamed to `render_stateful_ref` [#1184]
+
+[#1184]: https://github.com/ratatui-org/ratatui/pull/1184
+
+This change helps avoid collisions with `WidgetRef::render_ref`.
+
+```diff
+ trait StatefulWidgetRef {
+     type State;
+-    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) { }
++    fn render_stateful_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) { }
+ }
+```
+
 ### Prelude items added / removed ([#1149])
 
 The following items have been removed from the prelude:

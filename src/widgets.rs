@@ -360,14 +360,14 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 ///
 /// This trait was introduced in Ratatui 0.26.0 and is implemented for all the internal stateful
 /// widgets. Implementors should prefer to implement this over the `StatefulWidget` trait and add an
-/// implementation of `StatefulWidget` that calls `StatefulWidgetRef::render_ref` where backwards
-/// compatibility is required.
+/// implementation of `StatefulWidget` that calls `StatefulWidgetRef::render_stateful_ref` where
+/// backwards compatibility is required.
 ///
 /// A blanket implementation of `StatefulWidget` for `&W` where `W` implements `StatefulWidgetRef`
 /// is provided.
 ///
-/// See the documentation for [`WidgetRef`] for more information on boxed widgets.
-/// See the documentation for [`StatefulWidget`] for more information on stateful widgets.
+/// See the documentation for [`WidgetRef`] for more information on boxed widgets. See the
+/// documentation for [`StatefulWidget`] for more information on stateful widgets.
 ///
 /// # Examples
 ///
@@ -379,7 +379,7 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 ///
 /// impl StatefulWidgetRef for PersonalGreeting {
 ///     type State = String;
-///     fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+///     fn render_stateful_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
 ///         Line::raw(format!("Hello {}", state)).render(area, buf);
 ///     }
 /// }
@@ -387,7 +387,7 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 /// impl StatefulWidget for PersonalGreeting {
 ///     type State = String;
 ///     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-///         (&self).render_ref(area, buf, state);
+///         self.render_stateful_ref(area, buf, state);
 ///     }
 /// }
 ///
@@ -406,7 +406,7 @@ pub trait StatefulWidgetRef {
     type State;
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom stateful widget.
-    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
+    fn render_stateful_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
 }
 
 // Note: while StatefulWidgetRef is marked as unstable, the blanket implementation of StatefulWidget
@@ -420,7 +420,7 @@ pub trait StatefulWidgetRef {
 // impl<W: StatefulWidgetRef> StatefulWidget for &W {
 //     type State = W::State;
 //     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-//         StatefulWidgetRef::render_ref(self, area, buf, state);
+//         self.render_stateful_ref(area, buf, state);
 //     }
 // }
 
@@ -583,7 +583,7 @@ mod tests {
 
         impl StatefulWidgetRef for PersonalGreeting {
             type State = String;
-            fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+            fn render_stateful_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
                 Line::from(format!("Hello {state}")).render(area, buf);
             }
         }
@@ -591,7 +591,7 @@ mod tests {
         #[rstest]
         fn render_ref(mut buf: Buffer, mut state: String) {
             let widget = PersonalGreeting;
-            widget.render_ref(buf.area, &mut buf, &mut state);
+            widget.render_stateful_ref(buf.area, &mut buf, &mut state);
             assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
         }
 
@@ -610,7 +610,7 @@ mod tests {
         #[rstest]
         fn box_render_render(mut buf: Buffer, mut state: String) {
             let widget = Box::new(PersonalGreeting);
-            widget.render_ref(buf.area, &mut buf, &mut state);
+            widget.render_stateful_ref(buf.area, &mut buf, &mut state);
             assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
         }
     }
