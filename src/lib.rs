@@ -2,10 +2,10 @@
 //!
 //! <div align="center">
 //!
-//! [![Crate Badge]][Crate] [![Docs Badge]][API Docs] [![CI Badge]][CI Workflow] [![License
-//! Badge]](./LICENSE) [![Sponsors Badge]][GitHub Sponsors]<br>
-//! [![Codecov Badge]][Codecov] [![Deps.rs Badge]][Deps.rs] [![Discord Badge]][Discord Server]
-//! [![Matrix Badge]][Matrix]<br>
+//! [![Crate Badge]][Crate] [![Docs Badge]][API Docs] [![CI Badge]][CI Workflow] [![Deps.rs
+//! Badge]][Deps.rs]<br> [![Codecov Badge]][Codecov] [![License Badge]](./LICENSE) [![Sponsors
+//! Badge]][GitHub Sponsors]<br> [![Discord Badge]][Discord Server] [![Matrix Badge]][Matrix]
+//! [![Forum Badge]][Forum]<br>
 //!
 //! [Ratatui Website] · [API Docs] · [Examples] · [Changelog] · [Breaking Changes]<br>
 //! [Contributing] · [Report a bug] · [Request a Feature] · [Create a Pull Request]
@@ -44,6 +44,7 @@
 //! ## Other documentation
 //!
 //! - [Ratatui Website] - explains the library's concepts and provides step-by-step tutorials
+//! - [Ratatui Forum][Forum] - a place to ask questions and discuss the library
 //! - [API Docs] - the full API documentation for the library on docs.rs.
 //! - [Examples] - a collection of examples that demonstrate how to use the library.
 //! - [Contributing] - Please read this if you are interested in contributing to the project.
@@ -318,6 +319,8 @@
 //! [Docs Badge]: https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square&logoColor=E05D44
 //! [Matrix Badge]: https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix&color=C43AC3
 //! [Matrix]: https://matrix.to/#/#ratatui:matrix.org
+//! [Forum Badge]: https://img.shields.io/discourse/likes?server=https%3A%2F%2Fforum.ratatui.rs&style=flat-square&logo=discourse&label=forum&color=C43AC3
+//! [Forum]: https://forum.ratatui.rs
 //! [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui-org?logo=github&style=flat-square&color=1370D3
 
 // show the feature flags in the generated documentation
