@@ -775,7 +775,7 @@ impl Table<'_> {
             end += 1;
         }
 
-        let selected = selected.unwrap_or(0).min(self.rows.len() - 1);
+        let selected = selected.unwrap_or(start).min(self.rows.len() - 1);
         while selected >= end {
             height = height.saturating_add(self.rows[end].height_with_margin());
             end += 1;
@@ -1196,6 +1196,74 @@ mod tests {
                 "               ".into(),
             ]);
             assert_eq!(buf, expected);
+        }
+
+        /// Regression test for <https://github.com/ratatui-org/ratatui/issues/1179>
+        ///
+        /// A bug where the table would not render the correct rows when there is no selection.
+        #[test]
+        fn render_with_offset() {
+            let rows = (1..100).map(|i| Row::new([i.to_string()]));
+            let table = Table::new(rows, [Constraint::Length(2)]);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 2, 5));
+            let mut state = TableState::new().with_offset(50);
+            StatefulWidget::render(table, Rect::new(0, 0, 5, 5), &mut buf, &mut state);
+            assert_eq!(buf, Buffer::with_lines(["51", "52", "53", "54", "55"]));
+        }
+
+        #[test]
+        fn render_with_selection_and_offset() {
+            let rows = (1..100).map(|i| Row::new([i.to_string()]));
+            let table = Table::new(rows, [Constraint::Length(2)]);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 2, 5));
+
+            let mut state = TableState::new().with_offset(50).with_selected(20);
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
+            assert_eq!(
+                buf,
+                Buffer::with_lines(["21", "22", "23", "24", "25"]),
+                "before offset"
+            );
+
+            let mut state = TableState::new().with_offset(50).with_selected(49);
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
+            assert_eq!(
+                buf,
+                Buffer::with_lines(["50", "51", "52", "53", "54"]),
+                "immediately before offset"
+            );
+
+            let mut state = TableState::new().with_offset(50).with_selected(50);
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
+            assert_eq!(
+                buf,
+                Buffer::with_lines(["51", "52", "53", "54", "55"]),
+                "at offset"
+            );
+
+            let mut state = TableState::new().with_offset(50).with_selected(54);
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
+            assert_eq!(
+                buf,
+                Buffer::with_lines(["51", "52", "53", "54", "55"]),
+                "at end of offset"
+            );
+
+            let mut state = TableState::new().with_offset(50).with_selected(55);
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
+            assert_eq!(
+                buf,
+                Buffer::with_lines(["52", "53", "54", "55", "56"]),
+                "immediately after offset"
+            );
+
+            let mut state = TableState::new().with_offset(50).with_selected(80);
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
+            assert_eq!(
+                buf,
+                Buffer::with_lines(["77", "78", "79", "80", "81"]),
+                "after offset"
+            );
         }
     }
 
