@@ -292,6 +292,11 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
+name = "hyperlink"
+required-features = ["crossterm", "unstable-widget-ref"]
+doc-scrape-examples = true
+
+[[example]]
 name = "list"
 required-features = ["crossterm"]
 doc-scrape-examples = true
