@@ -25,9 +25,10 @@
 
 <div align="center">
 
-[![Crate Badge]][Crate] [![Docs Badge]][API Docs] [![CI Badge]][CI Workflow] [![Deps.rs Badge]][Deps.rs]<br>
-[![Codecov Badge]][Codecov] [![License Badge]](./LICENSE) [![Sponsors Badge]][GitHub Sponsors]<br>
-[![Discord Badge]][Discord Server] [![Matrix Badge]][Matrix] [![Forum Badge]][Forum]<br>
+[![Crate Badge]][Crate] [![Docs Badge]][API Docs] [![CI Badge]][CI Workflow] [![Deps.rs
+Badge]][Deps.rs]<br> [![Codecov Badge]][Codecov] [![License Badge]](./LICENSE) [![Sponsors
+Badge]][GitHub Sponsors]<br> [![Discord Badge]][Discord Server] [![Matrix Badge]][Matrix]
+[![Forum Badge]][Forum]<br>
 
 [Ratatui Website] · [API Docs] · [Examples] · [Changelog] · [Breaking Changes]<br>
 [Contributing] · [Report a bug] · [Request a Feature] · [Create a Pull Request]
