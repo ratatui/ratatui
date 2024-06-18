@@ -312,7 +312,7 @@ pub trait Backend {
     /// let terminal = CrosstermBackend::stdout().to_terminal()?;
     /// # std::io::Result::Ok(())
     /// ```
-    fn to_terminal(self) -> io::Result<Terminal<Self>>
+    fn into_terminal(self) -> io::Result<Terminal<Self>>
     where
         Self: Sized,
     {
