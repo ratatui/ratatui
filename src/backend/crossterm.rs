@@ -111,11 +111,8 @@ where
     /// # Example
     ///
     /// ```rust,no_run
-    /// use std::io;
-    ///
-    /// use ratatui::backend::CrosstermBackend;
-    ///
-    /// let backend = CrosstermBackend::new(io::stdout());
+    /// # use ratatui::backend::CrosstermBackend;
+    /// let backend = CrosstermBackend::new(std::io::stdout());
     /// ```
     pub const fn new(writer: W) -> Self {
         Self {
@@ -173,8 +170,7 @@ impl CrosstermBackend<io::Stdout> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use ratatui::backend::CrosstermBackend;
-    ///
+    /// # use ratatui::backend::CrosstermBackend;
     /// let backend = CrosstermBackend::stdout_with_defaults()?;
     /// # std::io::Result::Ok(())
     /// ```
@@ -205,8 +201,7 @@ impl CrosstermBackend<io::Stderr> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use ratatui::backend::CrosstermBackend;
-    ///
+    /// # use ratatui::backend::CrosstermBackend;
     /// let backend = CrosstermBackend::stderr_with_defaults()?;
     /// # std::io::Result::Ok(())
     /// ```
@@ -225,8 +220,7 @@ impl<W: Write> CrosstermBackend<W> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use ratatui::backend::CrosstermBackend;
-    ///
+    /// # use ratatui::backend::CrosstermBackend;
     /// let backend = CrosstermBackend::stdout().with_raw_mode()?;
     /// # std::io::Result::Ok(())
     /// ```
@@ -245,8 +239,7 @@ impl<W: Write> CrosstermBackend<W> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use ratatui::backend::CrosstermBackend;
-    ///
+    /// # use ratatui::backend::CrosstermBackend;
     /// let backend = CrosstermBackend::stdout().with_alternate_screen()?;
     /// # std::io::Result::Ok(())
     /// ```
@@ -265,8 +258,7 @@ impl<W: Write> CrosstermBackend<W> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use ratatui::backend::CrosstermBackend;
-    ///
+    /// # use ratatui::backend::CrosstermBackend;
     /// let backend = CrosstermBackend::stdout().with_mouse_capture()?;
     /// # std::io::Result::Ok(())
     /// ```
@@ -283,8 +275,7 @@ impl<W: Write> CrosstermBackend<W> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use ratatui::backend::CrosstermBackend;
-    ///
+    /// # use ratatui::backend::CrosstermBackend;
     /// let backend = CrosstermBackend::stdout().with_bracketed_paste()?;
     /// # std::io::Result::Ok(())
     /// ```
@@ -301,8 +292,7 @@ impl<W: Write> CrosstermBackend<W> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use ratatui::backend::CrosstermBackend;
-    ///
+    /// # use ratatui::backend::CrosstermBackend;
     /// let backend = CrosstermBackend::stdout().with_focus_change()?;
     /// # std::io::Result::Ok(())
     pub fn with_focus_change(mut self) -> io::Result<Self> {
@@ -342,15 +332,19 @@ impl<W: Write> CrosstermBackend<W> {
     /// - Disables focus change
     /// - Pops keyboard enhancement flags
     ///
-    /// Note: this met
+    /// This method is an associated method rather than an instance method to make it possible to
+    /// call without having a `CrosstermBackend` instance. This is often useful in the context of
+    /// error / panic handling.
+    ///
+    /// If you have created a `CrosstermBackend` using the `with_*` methods, the settings are
+    /// restored when the `CrosstermBackend` is dropped, so you do not need to call this method
+    /// manually.
+    ///
     /// # Example
     ///
     /// ```rust,no_run
-    /// use std::io::stdout;
-    ///
-    /// use ratatui::backend::CrosstermBackend;
-    ///
-    /// CrosstermBackend::reset(stdout())?;
+    /// # use ratatui::backend::CrosstermBackend;
+    /// CrosstermBackend::reset(std::io::stderr())?;
     /// # std::io::Result::Ok(())
     /// ```
     pub fn reset(mut writer: W) -> io::Result<()> {
