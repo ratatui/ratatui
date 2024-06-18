@@ -1202,28 +1202,20 @@ mod tests {
             assert_eq!(buf, expected);
         }
 
-        /// Regression test for <https://github.com/ratatui-org/ratatui/issues/1179>
-        ///
-        /// A bug where the table would not render the correct rows when there is no selection.
-        #[test]
-        fn render_with_offset() {
-            let rows = (1..100).map(|i| Row::new([i.to_string()]));
-            let table = Table::new(rows, [Constraint::Length(2)]);
-            let mut buf = Buffer::empty(Rect::new(0, 0, 2, 5));
-            let mut state = TableState::new().with_offset(50);
-            StatefulWidget::render(table, Rect::new(0, 0, 5, 5), &mut buf, &mut state);
-            assert_eq!(buf, Buffer::with_lines(["51", "52", "53", "54", "55"]));
-        }
 
+        /// Note that this includes a regression test for a bug where the table would not render the
+        /// correct rows when there is no selection.
+        /// <https://github.com/ratatui-org/ratatui/issues/1179>
         #[rstest]
+        #[case::no_selction(None, ["50", "51", "52", "53", "54"], 50)]
         #[case::selection_before_offset(20, ["20", "21", "22", "23", "24"], 20)]
         #[case::selection_immediately_before_offset(49, ["49", "50", "51", "52", "53"], 49)]
         #[case::selection_at_start_of_offset(50, ["50", "51", "52", "53", "54"], 50)]
         #[case::selection_at_end_of_offset(54, ["50", "51", "52", "53", "54"], 50)]
         #[case::selection_immediately_after_offset(55, ["51", "52", "53", "54", "55"], 51)]
         #[case::selection_after_offset(80, ["76", "77", "78", "79", "80"], 76)]
-        fn render_with_selection_and_offset(
-            #[case] selected_row: usize,
+        fn render_with_selection_and_offset<T: Into<Option<usize>>>(
+            #[case] selected_row: T,
             #[case] expected_items: [&str; 5],
             #[case] expected_offset: usize,
         ) {
