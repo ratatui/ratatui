@@ -22,8 +22,7 @@ use crate::{
             ContentStyle, Print, SetAttribute, SetBackgroundColor, SetColors, SetForegroundColor,
         },
         terminal::{
-            self, disable_raw_mode, enable_raw_mode, Clear, EnterAlternateScreen,
-            LeaveAlternateScreen,
+            disable_raw_mode, enable_raw_mode, Clear, EnterAlternateScreen, LeaveAlternateScreen,
         },
     },
     layout::{Rect, Size},
@@ -514,7 +513,7 @@ where
     }
 
     fn size(&self) -> io::Result<Rect> {
-        let (width, height) = terminal::size()?;
+        let (width, height) = crossterm::terminal::size()?;
         Ok(Rect::new(0, 0, width, height))
     }
 
@@ -524,7 +523,7 @@ where
             rows,
             width,
             height,
-        } = terminal::window_size()?;
+        } = crossterm::terminal::window_size()?;
         Ok(WindowSize {
             columns_rows: Size {
                 width: columns,
