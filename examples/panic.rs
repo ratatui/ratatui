@@ -13,21 +13,19 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-//! How to use a panic hook to reset the terminal before printing the panic to
-//! the terminal.
+//! How to use a panic hook to reset the terminal before printing the panic to the terminal.
 //!
-//! When exiting normally or when handling `Result::Err`, we can reset the
-//! terminal manually at the end of `main` just before we print the error.
+//! When exiting normally or when handling `Result::Err`, we can reset the terminal manually at the
+//! end of `main` just before we print the error.
 //!
-//! Because a panic interrupts the normal control flow, manually resetting the
-//! terminal at the end of `main` won't do us any good. Instead, we need to
-//! make sure to set up a panic hook that first resets the terminal before
-//! handling the panic. This both reuses the standard panic hook to ensure a
-//! consistent panic handling UX and properly resets the terminal to not
-//! distort the output.
+//! Because a panic interrupts the normal control flow, manually resetting the terminal at the end
+//! of `main` won't do us any good. Instead, we need to make sure to set up a panic hook that first
+//! resets the terminal before handling the panic. This both reuses the standard panic hook to
+//! ensure a consistent panic handling UX and properly resets the terminal to not distort the
+//! output.
 //!
-//! That's why this example is set up to show both situations, with and without
-//! the chained panic hook, to see the difference.
+//! That's why this example is set up to show both situations, with and without the chained panic
+//! hook, to see the difference.
 
 use std::{error::Error, io};
 
@@ -43,6 +41,21 @@ use ratatui::{
 };
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
+
+fn main() -> Result<()> {
+    let mut terminal = init_terminal()?;
+
+    let mut app = App::default();
+    let res = run_tui(&mut terminal, &mut app);
+
+    reset_terminal()?;
+
+    if let Err(err) = res {
+        println!("{err:?}");
+    }
+
+    Ok(())
+}
 
 #[derive(Default)]
 struct App {
@@ -62,26 +75,12 @@ impl App {
     }
 }
 
-fn main() -> Result<()> {
-    let mut terminal = init_terminal()?;
-
-    let mut app = App::default();
-    let res = run_tui(&mut terminal, &mut app);
-
-    reset_terminal()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
-    }
-
-    Ok(())
-}
-
 /// Initializes the terminal.
 fn init_terminal() -> Result<Terminal<CrosstermBackend<io::Stdout>>> {
     crossterm::execute!(io::stdout(), EnterAlternateScreen)?;
     enable_raw_mode()?;
 
+    #[allow(deprecated)]
     let backend = CrosstermBackend::new(io::stdout());
 
     let mut terminal = Terminal::new(backend)?;
@@ -99,7 +98,7 @@ fn reset_terminal() -> Result<()> {
 }
 
 /// Runs the TUI loop.
-fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
+fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> {
     loop {
         terminal.draw(|f| ui(f, app))?;
 

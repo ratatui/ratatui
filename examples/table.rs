@@ -13,26 +13,20 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{error::Error, io};
-
+use color_eyre::Result;
 use itertools::Itertools;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
-    crossterm::{
-        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Margin, Rect},
-    style::{self, Color, Modifier, Style, Stylize},
-    terminal::{Frame, Terminal},
+    style::{palette::tailwind, Color, Modifier, Style, Stylize},
+    terminal::Frame,
     text::{Line, Text},
     widgets::{
         Block, BorderType, Cell, HighlightSpacing, Paragraph, Row, Scrollbar, ScrollbarOrientation,
         ScrollbarState, Table, TableState,
     },
 };
-use style::palette::tailwind;
 use unicode_width::UnicodeWidthStr;
 
 const PALETTES: [tailwind::Palette; 4] = [
@@ -46,30 +40,36 @@ const INFO_TEXT: &str =
 
 const ITEM_HEIGHT: usize = 4;
 
-struct TableColors {
-    buffer_bg: Color,
-    header_bg: Color,
-    header_fg: Color,
-    row_fg: Color,
-    selected_style_fg: Color,
-    normal_row_color: Color,
-    alt_row_color: Color,
-    footer_border_color: Color,
-}
+fn main() -> Result<()> {
+    let mut terminal = CrosstermBackend::stdout_with_defaults()?
+        .with_mouse_capture()?
+        .to_terminal()?;
 
-impl TableColors {
-    const fn new(color: &tailwind::Palette) -> Self {
-        Self {
-            buffer_bg: tailwind::SLATE.c950,
-            header_bg: color.c900,
-            header_fg: tailwind::SLATE.c200,
-            row_fg: tailwind::SLATE.c200,
-            selected_style_fg: color.c400,
-            normal_row_color: tailwind::SLATE.c950,
-            alt_row_color: tailwind::SLATE.c900,
-            footer_border_color: color.c400,
+    let mut app = App::new();
+    loop {
+        terminal.draw(|f| ui(f, &mut app))?;
+
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
+                    KeyCode::Char('j') | KeyCode::Down => app.next(),
+                    KeyCode::Char('k') | KeyCode::Up => app.previous(),
+                    KeyCode::Char('l') | KeyCode::Right => app.next_color(),
+                    KeyCode::Char('h') | KeyCode::Left => app.previous_color(),
+                    _ => {}
+                }
+            }
         }
     }
+}
+struct App {
+    state: TableState,
+    items: Vec<Data>,
+    longest_item_lens: (u16, u16, u16), // order is (name, address, email)
+    scroll_state: ScrollbarState,
+    colors: TableColors,
+    color_index: usize,
 }
 
 struct Data {
@@ -96,13 +96,30 @@ impl Data {
     }
 }
 
-struct App {
-    state: TableState,
-    items: Vec<Data>,
-    longest_item_lens: (u16, u16, u16), // order is (name, address, email)
-    scroll_state: ScrollbarState,
-    colors: TableColors,
-    color_index: usize,
+struct TableColors {
+    buffer_bg: Color,
+    header_bg: Color,
+    header_fg: Color,
+    row_fg: Color,
+    selected_style_fg: Color,
+    normal_row_color: Color,
+    alt_row_color: Color,
+    footer_border_color: Color,
+}
+
+impl TableColors {
+    const fn new(color: &tailwind::Palette) -> Self {
+        Self {
+            buffer_bg: tailwind::SLATE.c950,
+            header_bg: color.c900,
+            header_fg: tailwind::SLATE.c200,
+            row_fg: tailwind::SLATE.c200,
+            selected_style_fg: color.c400,
+            normal_row_color: tailwind::SLATE.c950,
+            alt_row_color: tailwind::SLATE.c900,
+            footer_border_color: color.c400,
+        }
+    }
 }
 
 impl App {
@@ -184,53 +201,6 @@ fn generate_fake_names() -> Vec<Data> {
         })
         .sorted_by(|a, b| a.name.cmp(&b.name))
         .collect_vec()
-}
-
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    // create app and run it
-    let app = App::new();
-    let res = run_app(&mut terminal, app);
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
-    }
-
-    Ok(())
-}
-
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
-    loop {
-        terminal.draw(|f| ui(f, &mut app))?;
-
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
-                    KeyCode::Char('j') | KeyCode::Down => app.next(),
-                    KeyCode::Char('k') | KeyCode::Up => app.previous(),
-                    KeyCode::Char('l') | KeyCode::Right => app.next_color(),
-                    KeyCode::Char('h') | KeyCode::Left => app.previous_color(),
-                    _ => {}
-                }
-            }
-        }
-    }
 }
 
 fn ui(f: &mut Frame, app: &mut App) {

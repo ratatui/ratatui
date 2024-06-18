@@ -1,8 +1,6 @@
-use std::{
-    error::Error,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
+use color_eyre::{eyre::eyre, Result};
 use ratatui::{
     backend::TermwizBackend,
     terminal::Terminal,
@@ -14,14 +12,14 @@ use ratatui::{
 
 use crate::{app::App, ui};
 
-pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
-    let backend = TermwizBackend::new()?;
+pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<()> {
+    let backend =
+        TermwizBackend::new().map_err(|error| eyre!("failed to init termwiz backend. {error}"))?;
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
 
-    // create app and run it
     let app = App::new("Termwiz Demo", enhanced_graphics);
-    let res = run_app(&mut terminal, app, tick_rate);
+    let res = run_app(app, &mut terminal, tick_rate);
 
     terminal.show_cursor()?;
     terminal.flush()?;
@@ -34,12 +32,12 @@ pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn E
 }
 
 fn run_app(
-    terminal: &mut Terminal<TermwizBackend>,
     mut app: App,
+    terminal: &mut Terminal<TermwizBackend>,
     tick_rate: Duration,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<()> {
     let mut last_tick = Instant::now();
-    loop {
+    while !app.should_quit {
         terminal.draw(|f| ui::draw(f, &mut app))?;
 
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
@@ -72,8 +70,6 @@ fn run_app(
             app.on_tick();
             last_tick = Instant::now();
         }
-        if app.should_quit {
-            return Ok(());
-        }
     }
+    Ok(())
 }

@@ -10,3 +10,5 @@ Enter
 Sleep 2s
 Show
 Sleep 2s
+Hide
+Type "q"

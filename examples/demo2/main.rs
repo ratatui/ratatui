@@ -23,12 +23,16 @@ mod app;
 mod big_text;
 mod colors;
 mod destroy;
-mod errors;
 mod tabs;
-mod term;
 mod theme;
 
+use app::App;
 use color_eyre::Result;
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    layout::Rect,
+    TerminalOptions, Viewport,
+};
 
 pub use self::{
     colors::{color_from_oklab, RgbSwatch},
@@ -36,9 +40,11 @@ pub use self::{
 };
 
 fn main() -> Result<()> {
-    errors::init_hooks()?;
-    let terminal = &mut term::init()?;
-    app::run(terminal)?;
-    term::restore()?;
-    Ok(())
+    // this size is to match the size of the terminal when running the demo
+    // using vhs in a 1280x640 sized window (github social preview size)
+    let options = TerminalOptions {
+        viewport: Viewport::Fixed(Rect::new(0, 0, 81, 18)),
+    };
+    let terminal = CrosstermBackend::stdout_with_defaults()?.to_terminal_with_options(options)?;
+    App::default().run(terminal)
 }

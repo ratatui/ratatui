@@ -400,7 +400,7 @@ impl<W: io::Write> CrosstermBackend<W> {
             let _ = CrosstermBackend::reset(stderr());
             error(e)
         }))
-        .map_err(|error| io::Error::other(error))?;
+        .map_err(io::Error::other)?;
         panic::set_hook(Box::new(move |info| {
             // ignore errors here because we are already in an error state
             let _ = CrosstermBackend::reset(stderr());

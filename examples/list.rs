@@ -13,17 +13,11 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{error::Error, io, io::stdout};
-
-use color_eyre::config::HookBuilder;
+use color_eyre::Result;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     buffer::Buffer,
-    crossterm::{
-        event::{self, Event, KeyCode, KeyEventKind},
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-        ExecutableCommand,
-    },
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Alignment, Constraint, Layout, Rect},
     style::{palette::tailwind, Color, Modifier, Style, Stylize},
     terminal::Terminal,
@@ -79,46 +73,9 @@ struct App {
     items: TodoList,
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    init_error_hooks()?;
-    let terminal = init_terminal()?;
-
-    // create app and run it
-    App::new().run(terminal)?;
-
-    restore_terminal()?;
-
-    Ok(())
-}
-
-fn init_error_hooks() -> color_eyre::Result<()> {
-    let (panic, error) = HookBuilder::default().into_hooks();
-    let panic = panic.into_panic_hook();
-    let error = error.into_eyre_hook();
-    color_eyre::eyre::set_hook(Box::new(move |e| {
-        let _ = restore_terminal();
-        error(e)
-    }))?;
-    std::panic::set_hook(Box::new(move |info| {
-        let _ = restore_terminal();
-        panic(info);
-    }));
-    Ok(())
-}
-
-fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout());
-    let terminal = Terminal::new(backend)?;
-    Ok(terminal)
-}
-
-fn restore_terminal() -> color_eyre::Result<()> {
-    disable_raw_mode()?;
-    stdout().execute(LeaveAlternateScreen)?;
-    Ok(())
+fn main() -> Result<()> {
+    let terminal = CrosstermBackend::stdout_with_defaults()?.to_terminal()?;
+    App::new().run(terminal)
 }
 
 impl App {
@@ -155,7 +112,7 @@ impl App {
 }
 
 impl App {
-    fn run(&mut self, mut terminal: Terminal<impl Backend>) -> io::Result<()> {
+    fn run(mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
         loop {
             self.draw(&mut terminal)?;
 
@@ -178,7 +135,7 @@ impl App {
         }
     }
 
-    fn draw(&mut self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+    fn draw(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
         terminal.draw(|f| f.render_widget(self, f.size()))?;
         Ok(())
     }

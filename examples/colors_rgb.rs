@@ -93,8 +93,7 @@ struct ColorsWidget {
 
 fn main() -> Result<()> {
     let terminal = CrosstermBackend::stdout_with_defaults()?.to_terminal()?;
-    App::default().run(terminal)?;
-    Ok(())
+    App::default().run(terminal)
 }
 
 impl App {
@@ -118,9 +117,9 @@ impl App {
     /// Currently, this only handles the q key to quit the app.
     fn handle_events(&mut self) -> Result<()> {
         // Ensure that the app only blocks for a period that allows the app to render at
-        // approximately 60 FPS (this doesn't account for the time to render the frame, and will
+        // approximately 50 FPS (this doesn't account for the time to render the frame, and will
         // also update the app immediately any time an event occurs)
-        let timeout = Duration::from_secs_f32(1.0 / 60.0);
+        let timeout = Duration::from_secs_f32(1.0 / 50.0); // 50 FPS is standard for GIFs
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {

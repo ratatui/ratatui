@@ -13,17 +13,13 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::io::stdout;
+use std::fmt;
 
-use color_eyre::{config::HookBuilder, Result};
+use color_eyre::Result;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     buffer::Buffer,
-    crossterm::{
-        event::{self, Event, KeyCode, KeyEventKind},
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-        ExecutableCommand,
-    },
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::{palette::tailwind, Color, Stylize},
     symbols,
@@ -31,7 +27,11 @@ use ratatui::{
     text::Line,
     widgets::{Block, Padding, Paragraph, Tabs, Widget},
 };
-use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
+
+fn main() -> Result<()> {
+    let terminal = CrosstermBackend::stdout_with_defaults()?.to_terminal()?;
+    App::default().run(terminal)
+}
 
 #[derive(Default)]
 struct App {
@@ -46,31 +46,30 @@ enum AppState {
     Quitting,
 }
 
-#[derive(Default, Clone, Copy, Display, FromRepr, EnumIter)]
+#[derive(Default, Clone, Copy)]
 enum SelectedTab {
     #[default]
-    #[strum(to_string = "Tab 1")]
     Tab1,
-    #[strum(to_string = "Tab 2")]
     Tab2,
-    #[strum(to_string = "Tab 3")]
     Tab3,
-    #[strum(to_string = "Tab 4")]
     Tab4,
 }
 
-fn main() -> Result<()> {
-    init_error_hooks()?;
-    let mut terminal = init_terminal()?;
-    App::default().run(&mut terminal)?;
-    restore_terminal()?;
-    Ok(())
+impl fmt::Display for SelectedTab {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Tab1 => write!(f, "Tab 1"),
+            Self::Tab2 => write!(f, "Tab 2"),
+            Self::Tab3 => write!(f, "Tab 3"),
+            Self::Tab4 => write!(f, "Tab 4"),
+        }
+    }
 }
 
 impl App {
-    fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
+    fn run(mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
         while self.state == AppState::Running {
-            self.draw(terminal)?;
+            self.draw(&mut terminal)?;
             self.handle_events()?;
         }
         Ok(())
@@ -108,22 +107,6 @@ impl App {
     }
 }
 
-impl SelectedTab {
-    /// Get the previous tab, if there is no previous tab return the current tab.
-    fn previous(self) -> Self {
-        let current_index: usize = self as usize;
-        let previous_index = current_index.saturating_sub(1);
-        Self::from_repr(previous_index).unwrap_or(self)
-    }
-
-    /// Get the next tab, if there is no next tab return the current tab.
-    fn next(self) -> Self {
-        let current_index = self as usize;
-        let next_index = current_index.saturating_add(1);
-        Self::from_repr(next_index).unwrap_or(self)
-    }
-}
-
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         use Constraint::{Length, Min};
@@ -142,7 +125,7 @@ impl Widget for &App {
 
 impl App {
     fn render_tabs(&self, area: Rect, buf: &mut Buffer) {
-        let titles = SelectedTab::iter().map(SelectedTab::title);
+        let titles = SelectedTab::titles();
         let highlight_style = (Color::default(), self.selected_tab.palette().c700);
         let selected_tab_index = self.selected_tab as usize;
         Tabs::new(titles)
@@ -177,6 +160,35 @@ impl Widget for SelectedTab {
 }
 
 impl SelectedTab {
+    fn titles() -> [Line<'static>; 4] {
+        [
+            Self::Tab1.title(),
+            Self::Tab2.title(),
+            Self::Tab3.title(),
+            Self::Tab4.title(),
+        ]
+    }
+
+    /// Get the previous tab, if there is no previous tab return the current tab.
+    const fn previous(self) -> Self {
+        match self {
+            Self::Tab1 => Self::Tab4,
+            Self::Tab2 => Self::Tab1,
+            Self::Tab3 => Self::Tab2,
+            Self::Tab4 => Self::Tab3,
+        }
+    }
+
+    /// Get the next tab, if there is no next tab return the current tab.
+    const fn next(self) -> Self {
+        match self {
+            Self::Tab1 => Self::Tab2,
+            Self::Tab2 => Self::Tab3,
+            Self::Tab3 => Self::Tab4,
+            Self::Tab4 => Self::Tab1,
+        }
+    }
+
     /// Return tab's name as a styled `Line`
     fn title(self) -> Line<'static> {
         format!("  {self}  ")
@@ -225,33 +237,4 @@ impl SelectedTab {
             Self::Tab4 => tailwind::RED,
         }
     }
-}
-
-fn init_error_hooks() -> color_eyre::Result<()> {
-    let (panic, error) = HookBuilder::default().into_hooks();
-    let panic = panic.into_panic_hook();
-    let error = error.into_eyre_hook();
-    color_eyre::eyre::set_hook(Box::new(move |e| {
-        let _ = restore_terminal();
-        error(e)
-    }))?;
-    std::panic::set_hook(Box::new(move |info| {
-        let _ = restore_terminal();
-        panic(info);
-    }));
-    Ok(())
-}
-
-fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout());
-    let terminal = Terminal::new(backend)?;
-    Ok(terminal)
-}
-
-fn restore_terminal() -> color_eyre::Result<()> {
-    disable_raw_mode()?;
-    stdout().execute(LeaveAlternateScreen)?;
-    Ok(())
 }

@@ -1,5 +1,6 @@
-use std::{error::Error, io, sync::mpsc, thread, time::Duration};
+use std::{io, sync::mpsc, thread, time::Duration};
 
+use color_eyre::Result;
 use ratatui::{
     backend::{Backend, TermionBackend},
     terminal::Terminal,
@@ -13,7 +14,7 @@ use ratatui::{
 
 use crate::{app::App, ui};
 
-pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn Error>> {
+pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<()> {
     // setup terminal
     let stdout = io::stdout()
         .into_raw_mode()
@@ -22,22 +23,17 @@ pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn E
         .unwrap();
     let stdout = MouseTerminal::from(stdout);
     let backend = TermionBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let terminal = Terminal::new(backend)?;
 
-    // create app and run it
     let app = App::new("Termion demo", enhanced_graphics);
-    run_app(&mut terminal, app, tick_rate)?;
+    run_app(app, terminal, tick_rate)?;
 
     Ok(())
 }
 
-fn run_app<B: Backend>(
-    terminal: &mut Terminal<B>,
-    mut app: App,
-    tick_rate: Duration,
-) -> Result<(), Box<dyn Error>> {
+fn run_app(mut app: App, mut terminal: Terminal<impl Backend>, tick_rate: Duration) -> Result<()> {
     let events = events(tick_rate);
-    loop {
+    while !app.should_quit {
         terminal.draw(|f| ui::draw(f, &mut app))?;
 
         match events.recv()? {
@@ -51,10 +47,8 @@ fn run_app<B: Backend>(
             },
             Event::Tick => app.on_tick(),
         }
-        if app.should_quit {
-            return Ok(());
-        }
     }
+    Ok(())
 }
 
 enum Event {

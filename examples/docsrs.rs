@@ -13,18 +13,13 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::io::{self, stdout};
-
+use color_eyre::Result;
 use ratatui::{
-    backend::CrosstermBackend,
-    crossterm::{
-        event::{self, Event, KeyCode},
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-        ExecutableCommand,
-    },
+    backend::{Backend, CrosstermBackend},
+    crossterm::event::{self, Event, KeyCode},
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style, Stylize},
-    terminal::{Frame, Terminal},
+    terminal::Frame,
     text::{Line, Span, Text},
     widgets::{Block, Borders, Paragraph},
 };
@@ -33,12 +28,9 @@ use ratatui::{
 ///
 /// When cargo-rdme supports doc comments that import from code, this will be imported
 /// rather than copied to the lib.rs file.
-fn main() -> io::Result<()> {
+fn main() -> Result<()> {
     let arg = std::env::args().nth(1).unwrap_or_default();
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-
+    let mut terminal = CrosstermBackend::stdout_with_defaults()?.to_terminal()?;
     let mut should_quit = false;
     while !should_quit {
         terminal.draw(match arg.as_str() {
@@ -48,9 +40,6 @@ fn main() -> io::Result<()> {
         })?;
         should_quit = handle_events()?;
     }
-
-    disable_raw_mode()?;
-    stdout().execute(LeaveAlternateScreen)?;
     Ok(())
 }
 
@@ -61,7 +50,7 @@ fn hello_world(frame: &mut Frame) {
     );
 }
 
-fn handle_events() -> io::Result<bool> {
+fn handle_events() -> Result<bool> {
     if event::poll(std::time::Duration::from_millis(50))? {
         if let Event::Key(key) = event::read()? {
             if key.kind == event::KeyEventKind::Press && key.code == KeyCode::Char('q') {

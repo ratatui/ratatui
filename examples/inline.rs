@@ -15,13 +15,12 @@
 
 use std::{
     collections::{BTreeMap, VecDeque},
-    error::Error,
-    io,
     sync::mpsc,
     thread,
     time::{Duration, Instant},
 };
 
+use color_eyre::Result;
 use rand::distributions::{Distribution, Uniform};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
@@ -87,17 +86,11 @@ struct Worker {
     tx: mpsc::Sender<Download>,
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    crossterm::terminal::enable_raw_mode()?;
-    let stdout = io::stdout();
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::with_options(
-        backend,
-        TerminalOptions {
-            viewport: Viewport::Inline(8),
-        },
-    )?;
-
+fn main() -> Result<()> {
+    let options = TerminalOptions {
+        viewport: Viewport::Inline(8),
+    };
+    let terminal = CrosstermBackend::stdout_with_defaults()?.to_terminal_with_options(options)?;
     let (tx, rx) = mpsc::channel();
     input_handling(tx.clone());
     let workers = workers(tx);
@@ -108,11 +101,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         w.tx.send(d).unwrap();
     }
 
-    run_app(&mut terminal, workers, downloads, rx)?;
-
-    crossterm::terminal::disable_raw_mode()?;
-    terminal.clear()?;
-
+    run_app(terminal, workers, downloads, rx)?;
     Ok(())
 }
 
@@ -179,12 +168,12 @@ fn downloads() -> Downloads {
 }
 
 #[allow(clippy::needless_pass_by_value)]
-fn run_app<B: Backend>(
-    terminal: &mut Terminal<B>,
+fn run_app(
+    mut terminal: Terminal<impl Backend>,
     workers: Vec<Worker>,
     mut downloads: Downloads,
     rx: mpsc::Receiver<Event>,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<()> {
     let mut redraw = true;
     loop {
         if redraw {

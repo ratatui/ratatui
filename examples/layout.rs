@@ -13,58 +13,28 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{error::Error, io};
-
+use color_eyre::Result;
 use itertools::Itertools;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
-    crossterm::{
-        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
+    crossterm::event::{self, Event, KeyCode},
     layout::{
         Constraint,
         Constraint::{Length, Max, Min, Percentage, Ratio},
         Layout, Rect,
     },
     style::{Color, Style, Stylize},
-    terminal::{Frame, Terminal},
+    terminal::Frame,
     text::Line,
     widgets::{Block, Paragraph},
 };
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    // create app and run it
-    let res = run_app(&mut terminal);
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
-    }
-
-    Ok(())
-}
-
-fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
+fn main() -> Result<()> {
+    let mut terminal = CrosstermBackend::stdout_with_defaults()?
+        .with_mouse_capture()?
+        .to_terminal()?;
     loop {
         terminal.draw(ui)?;
-
         if let Event::Key(key) = event::read()? {
             if key.code == KeyCode::Char('q') {
                 return Ok(());

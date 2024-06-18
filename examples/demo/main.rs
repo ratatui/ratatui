@@ -13,9 +13,10 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{error::Error, time::Duration};
+use std::time::Duration;
 
 use argh::FromArgs;
+use color_eyre::Result;
 
 mod app;
 #[cfg(feature = "crossterm")]
@@ -38,7 +39,7 @@ struct Cli {
     enhanced_graphics: bool,
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
     let cli: Cli = argh::from_env();
     let tick_rate = Duration::from_millis(cli.tick_rate);
     #[cfg(feature = "crossterm")]

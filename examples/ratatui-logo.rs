@@ -13,25 +13,39 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{
-    io::{self, stdout},
-    thread::sleep,
-    time::Duration,
-};
-
+use color_eyre::Result;
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use indoc::indoc;
 use itertools::izip;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
-    crossterm::terminal::{disable_raw_mode, enable_raw_mode},
-    terminal::{Terminal, Viewport},
+    terminal::Viewport,
     widgets::Paragraph,
     TerminalOptions,
 };
 
+fn main() -> Result<()> {
+    let mut terminal =
+        CrosstermBackend::stdout_with_defaults()?.to_terminal_with_options(TerminalOptions {
+            viewport: Viewport::Inline(3),
+        })?;
+    terminal.draw(|frame| {
+        frame.render_widget(logo(), frame.size());
+    })?;
+    loop {
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                break;
+            }
+        }
+    }
+    println!(); // necessary to avoid the cursor being on the same line as the logo
+    Ok(())
+}
+
 /// A fun example of using half block characters to draw a logo
 #[allow(clippy::many_single_char_names)]
-fn logo() -> String {
+fn logo() -> Paragraph<'static> {
     let r = indoc! {"
             ▄▄▄
             █▄▄▀
@@ -57,32 +71,9 @@ fn logo() -> String {
             █
             █
         "};
-    izip!(r.lines(), a.lines(), t.lines(), u.lines(), i.lines())
+    let lines = izip!(r.lines(), a.lines(), t.lines(), u.lines(), i.lines())
         .map(|(r, a, t, u, i)| format!("{r:5}{a:5}{t:4}{a:5}{t:4}{u:5}{i:5}"))
         .collect::<Vec<_>>()
-        .join("\n")
-}
-
-fn main() -> io::Result<()> {
-    let mut terminal = init()?;
-    terminal.draw(|frame| {
-        frame.render_widget(Paragraph::new(logo()), frame.size());
-    })?;
-    sleep(Duration::from_secs(5));
-    restore()?;
-    println!();
-    Ok(())
-}
-
-fn init() -> io::Result<Terminal<impl Backend>> {
-    enable_raw_mode()?;
-    let options = TerminalOptions {
-        viewport: Viewport::Inline(3),
-    };
-    Terminal::with_options(CrosstermBackend::new(stdout()), options)
-}
-
-fn restore() -> io::Result<()> {
-    disable_raw_mode()?;
-    Ok(())
+        .join("\n");
+    Paragraph::new(lines)
 }
