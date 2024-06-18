@@ -20,7 +20,9 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// [`Table`] implements [`Widget`] and so it can be drawn using [`Frame::render_widget`].
 ///
 /// [`Table`] is also a [`StatefulWidget`], which means you can use it with [`TableState`] to allow
-/// the user to scroll through the rows and select one of them.
+/// the user to scroll through the rows and select one of them. When rendering a [`Table`] with a
+/// [`TableState`], the selected row will be highlighted. If the selected row is not visible (based
+/// on the offset), the table will be scrolled to make the selected row visible.
 ///
 /// Note: if the `widths` field is empty, the table will be rendered with equal widths.
 ///
@@ -1007,6 +1009,8 @@ mod tests {
 
     #[cfg(test)]
     mod render {
+        use rstest::rstest;
+
         use super::*;
 
         #[test]
@@ -1211,59 +1215,30 @@ mod tests {
             assert_eq!(buf, Buffer::with_lines(["51", "52", "53", "54", "55"]));
         }
 
-        #[test]
-        fn render_with_selection_and_offset() {
-            let rows = (1..100).map(|i| Row::new([i.to_string()]));
+        #[rstest]
+        #[case::selection_before_offset(20, ["20", "21", "22", "23", "24"], 20)]
+        #[case::selection_immediately_before_offset(49, ["49", "50", "51", "52", "53"], 49)]
+        #[case::selection_at_start_of_offset(50, ["50", "51", "52", "53", "54"], 50)]
+        #[case::selection_at_end_of_offset(54, ["50", "51", "52", "53", "54"], 50)]
+        #[case::selection_immediately_after_offset(55, ["51", "52", "53", "54", "55"], 51)]
+        #[case::selection_after_offset(80, ["76", "77", "78", "79", "80"], 76)]
+        fn render_with_selection_and_offset(
+            #[case] selected_row: usize,
+            #[case] expected_items: [&str; 5],
+            #[case] expected_offset: usize,
+        ) {
+            // render 100 rows offset at 50, with a selected row
+            let rows = (0..100).map(|i| Row::new([i.to_string()]));
             let table = Table::new(rows, [Constraint::Length(2)]);
             let mut buf = Buffer::empty(Rect::new(0, 0, 2, 5));
+            let mut state = TableState::new()
+                .with_offset(50)
+                .with_selected(selected_row);
 
-            let mut state = TableState::new().with_offset(50).with_selected(20);
             StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
-            assert_eq!(
-                buf,
-                Buffer::with_lines(["21", "22", "23", "24", "25"]),
-                "before offset"
-            );
 
-            let mut state = TableState::new().with_offset(50).with_selected(49);
-            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
-            assert_eq!(
-                buf,
-                Buffer::with_lines(["50", "51", "52", "53", "54"]),
-                "immediately before offset"
-            );
-
-            let mut state = TableState::new().with_offset(50).with_selected(50);
-            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
-            assert_eq!(
-                buf,
-                Buffer::with_lines(["51", "52", "53", "54", "55"]),
-                "at offset"
-            );
-
-            let mut state = TableState::new().with_offset(50).with_selected(54);
-            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
-            assert_eq!(
-                buf,
-                Buffer::with_lines(["51", "52", "53", "54", "55"]),
-                "at end of offset"
-            );
-
-            let mut state = TableState::new().with_offset(50).with_selected(55);
-            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
-            assert_eq!(
-                buf,
-                Buffer::with_lines(["52", "53", "54", "55", "56"]),
-                "immediately after offset"
-            );
-
-            let mut state = TableState::new().with_offset(50).with_selected(80);
-            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
-            assert_eq!(
-                buf,
-                Buffer::with_lines(["77", "78", "79", "80", "81"]),
-                "after offset"
-            );
+            assert_eq!(buf, Buffer::with_lines(expected_items));
+            assert_eq!(state.offset, expected_offset);
         }
     }
 
