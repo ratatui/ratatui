@@ -777,7 +777,14 @@ impl Table<'_> {
             end += 1;
         }
 
-        let selected = selected.unwrap_or(start).min(self.rows.len() - 1);
+        let Some(selected) = selected else {
+            return (start, end);
+        };
+
+        // clamp the selected row to the last row
+        let selected = selected.min(self.rows.len() - 1);
+
+        // scroll down until the selected row is visible
         while selected >= end {
             height = height.saturating_add(self.rows[end].height_with_margin());
             end += 1;
@@ -786,6 +793,8 @@ impl Table<'_> {
                 start += 1;
             }
         }
+
+        // scroll up until the selected row is visible
         while selected < start {
             start -= 1;
             height = height.saturating_add(self.rows[start].height_with_margin());
@@ -1202,22 +1211,21 @@ mod tests {
             assert_eq!(buf, expected);
         }
 
-
         /// Note that this includes a regression test for a bug where the table would not render the
         /// correct rows when there is no selection.
         /// <https://github.com/ratatui-org/ratatui/issues/1179>
         #[rstest]
-        #[case::no_selction(None, ["50", "51", "52", "53", "54"], 50)]
-        #[case::selection_before_offset(20, ["20", "21", "22", "23", "24"], 20)]
-        #[case::selection_immediately_before_offset(49, ["49", "50", "51", "52", "53"], 49)]
-        #[case::selection_at_start_of_offset(50, ["50", "51", "52", "53", "54"], 50)]
-        #[case::selection_at_end_of_offset(54, ["50", "51", "52", "53", "54"], 50)]
-        #[case::selection_immediately_after_offset(55, ["51", "52", "53", "54", "55"], 51)]
-        #[case::selection_after_offset(80, ["76", "77", "78", "79", "80"], 76)]
+        #[case::no_selection(None, 50, ["50", "51", "52", "53", "54"])]
+        #[case::selection_before_offset(20, 20, ["20", "21", "22", "23", "24"])]
+        #[case::selection_immediately_before_offset(49, 49, ["49", "50", "51", "52", "53"])]
+        #[case::selection_at_start_of_offset(50, 50, ["50", "51", "52", "53", "54"])]
+        #[case::selection_at_end_of_offset(54, 50, ["50", "51", "52", "53", "54"])]
+        #[case::selection_immediately_after_offset(55, 51, ["51", "52", "53", "54", "55"])]
+        #[case::selection_after_offset(80, 76, ["76", "77", "78", "79", "80"])]
         fn render_with_selection_and_offset<T: Into<Option<usize>>>(
             #[case] selected_row: T,
-            #[case] expected_items: [&str; 5],
             #[case] expected_offset: usize,
+            #[case] expected_items: [&str; 5],
         ) {
             // render 100 rows offset at 50, with a selected row
             let rows = (0..100).map(|i| Row::new([i.to_string()]));
