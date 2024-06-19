@@ -36,6 +36,10 @@ pub use title::{Position, Title};
 /// Without left border───
 /// ```
 ///
+/// Styles are applied first to the entire block, then to the borders, and finally to the titles.
+/// If the block is used as a container for another widget, the inner widget can also be styled.
+/// Styles will be inherited by each level unless they are overridden.
+///
 /// # Examples
 ///
 /// ```
@@ -396,16 +400,36 @@ impl<'a> Block<'a> {
         self
     }
 
-    /// Defines the block style.
+    /// Defines the style of the entire block.
     ///
     /// This is the most generic [`Style`] a block can receive, it will be merged with any other
-    /// more specific style. Elements can be styled further with [`Block::title_style`] and
-    /// [`Block::border_style`].
+    /// more specific styles. Elements can be styled further with [`Block::title_style`] and
+    /// [`Block::border_style`], which will be applied on top of this style. If the block is used
+    /// as a container for another widget, the inner widget can also be styled.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
     /// This will also apply to the widget inside that block, unless the inner widget is styled.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let block = Block::new().style(Style::new().red().on_black());
+    ///
+    /// // To override styles set on the block level, you can style the title, border.
+    /// let block = Block::new()
+    ///     .style(Style::new().red().bold().italic())
+    ///     .border_style(Style::new().not_italic()) // will be red and bold
+    ///     .title_style(Style::new().not_bold()) // will be red and italic
+    ///     .title("Title");
+    ///
+    /// // To style the inner widget, you can style the widget itself.
+    /// let paragraph = Paragraph::new("Content")
+    ///     .block(block)
+    ///     .style(Style::new().white().not_bold()); // will be white, and italic
+    /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
