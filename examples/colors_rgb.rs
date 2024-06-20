@@ -97,7 +97,8 @@ struct ColorsWidget {
 
 fn main() -> Result<()> {
     install_error_hooks()?;
-    let terminal = CrosstermBackend::stdout_with_defaults()?.into_terminal()?;
+    let backend = CrosstermBackend::stdout_with_defaults()?;
+    let terminal = Terminal::new(backend)?;
     App::default().run(terminal)?;
     Ok(())
 }

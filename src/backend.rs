@@ -107,7 +107,6 @@ use strum::{Display, EnumString};
 use crate::{
     buffer::Cell,
     layout::{Rect, Size},
-    Terminal, TerminalOptions,
 };
 
 #[cfg(feature = "termion")]
@@ -302,45 +301,6 @@ pub trait Backend {
 
     /// Flush any buffered content to the terminal screen.
     fn flush(&mut self) -> io::Result<()>;
-
-    /// Converts the `Backend` into a [`Terminal`] instance.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use ratatui::backend::{Backend, CrosstermBackend};
-    /// let terminal = CrosstermBackend::stdout().to_terminal()?;
-    /// # std::io::Result::Ok(())
-    /// ```
-    fn into_terminal(self) -> io::Result<Terminal<Self>>
-    where
-        Self: Sized,
-    {
-        Terminal::new(self)
-    }
-
-    /// Converts the `Backend` into a [`Terminal`] instance with options.
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// use ratatui::{
-    ///     backend::{Backend, CrosstermBackend},
-    ///     TerminalOptions, Viewport,
-    /// };
-    ///
-    /// let options = TerminalOptions {
-    ///     viewport: Viewport::Inline(10),
-    /// };
-    /// let terminal = CrosstermBackend::stdout().to_terminal_with_options(options)?;
-    /// # std::io::Result::Ok(())
-    /// ```
-    fn to_terminal_with_options(self, options: TerminalOptions) -> io::Result<Terminal<Self>>
-    where
-        Self: Sized,
-    {
-        Terminal::with_options(self, options)
-    }
 }
 
 #[cfg(test)]

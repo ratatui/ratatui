@@ -14,9 +14,10 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
+    backend::CrosstermBackend,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     text::Text,
+    Terminal,
 };
 
 /// This is a bare minimum example. There are many approaches to running an application loop, so
@@ -26,7 +27,8 @@ use ratatui::{
 /// [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 /// [hello-world]: https://github.com/ratatui-org/ratatui/blob/main/examples/hello_world.rs
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut terminal = CrosstermBackend::stdout_with_defaults()?.into_terminal()?;
+    let backend = CrosstermBackend::stdout_with_defaults()?;
+    let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
     loop {
         terminal.draw(|frame| frame.render_widget(Text::raw("Hello World!"), frame.size()))?;

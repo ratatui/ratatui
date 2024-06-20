@@ -62,18 +62,17 @@ use crate::{
 ///     crossterm::event::KeyboardEnhancementFlags,
 /// };
 ///
-/// let mut terminal = CrosstermBackend::stdout_with_defaults()?.to_terminal()?;
+/// let backend = CrosstermBackend::stdout_with_defaults()?;
 /// // or
-/// let mut terminal = CrosstermBackend::stderr_with_defaults()?.to_terminal()?;
+/// let backend = CrosstermBackend::stderr_with_defaults()?;
 /// // or with custom settings
-/// let mut terminal = CrosstermBackend::stdout()
+/// let terminal = CrosstermBackend::stdout()
 ///     .with_raw_mode()?
 ///     .with_alternate_screen()?
 ///     .with_mouse_capture()?
 ///     .with_bracketed_paste()?
 ///     .with_focus_change()?
-///     .with_keyboard_enhancement_flags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES)?
-///     .to_terminal()?;
+///     .with_keyboard_enhancement_flags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES)?;
 /// # std::io::Result::Ok(())
 /// ```
 ///
