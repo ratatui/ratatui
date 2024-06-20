@@ -61,6 +61,9 @@ rand = "0.8.5"
 rand_chacha = "0.3.1"
 rstest = "0.21.0"
 serde_json = "1.0.109"
+tracing = "0.1.40"
+tracing-appender = "0.2.3"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 
 [lints.rust]
 unsafe_code = "forbid"
@@ -350,6 +353,11 @@ doc-scrape-examples = true
 
 [[example]]
 name = "tabs"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "tracing"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
