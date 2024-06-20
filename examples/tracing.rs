@@ -22,7 +22,10 @@
 // the logs. To see more logs, you can run the example with `RUST_LOG=tracing=debug cargo run
 // --example`
 //
+// For a helpful widget that handles logging, see the [tui-logger] crate.
+//
 // [tracing]: https://crates.io/crates/tracing
+// [tui-logger]: https://crates.io/crates/tui-logger
 
 use std::{fs::File, io::stdout, panic, time::Duration};
 
