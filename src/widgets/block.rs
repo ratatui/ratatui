@@ -27,8 +27,8 @@ pub use title::{Position, Title};
 /// both centered and non-centered titles are rendered, the centered space is calculated based on
 /// the full width of the block, rather than the leftover width.
 ///
-/// Titles are not rendered in the corners of the block unless there is no border on that edge.
-/// If the block is too small and multiple titles overlap, the border may get cut off at a corner.
+/// Titles are not rendered in the corners of the block unless there is no border on that edge. If
+/// the block is too small and multiple titles overlap, the border may get cut off at a corner.
 ///
 /// ```plain
 /// ┌With at least a left border───
@@ -36,9 +36,9 @@ pub use title::{Position, Title};
 /// Without left border───
 /// ```
 ///
-/// Styles are applied first to the entire block, then to the borders, and finally to the titles.
-/// If the block is used as a container for another widget, the inner widget can also be styled.
-/// Styles will be inherited by each level unless they are overridden.
+/// [`Style`]s are applied first to the entire block, then to the borders, and finally to the
+/// titles. If the block is used as a container for another widget, the inner widget can also be
+/// styled. See [`Style`] for more information on how merging styles works.
 ///
 /// # Examples
 ///
@@ -410,7 +410,9 @@ impl<'a> Block<'a> {
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// This will also apply to the widget inside that block, unless the inner widget is styled.
+    /// This will also apply to the widget inside that block, the inner widget overrides the style.
+    ///
+    /// See [`Style`] for more information on how merging styles works.
     ///
     /// # Example
     ///
