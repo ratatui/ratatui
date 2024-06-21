@@ -66,7 +66,7 @@ use crate::{
 /// // or
 /// let backend = CrosstermBackend::stderr_with_defaults()?;
 /// // or with custom settings
-/// let terminal = CrosstermBackend::stdout()
+/// let backend = CrosstermBackend::stdout()
 ///     .with_raw_mode()?
 ///     .with_alternate_screen()?
 ///     .with_mouse_capture()?
