@@ -194,7 +194,7 @@ impl<W: Write> CrosstermBackend<W> {
     ///
     /// ```rust,no_run
     /// # use ratatui::backend::CrosstermBackend;
-    /// let backend = CrosstermBackend::stdout().with_raw_mode()?;
+    /// let backend = CrosstermBackend::stdout()?.with_raw_mode()?;
     /// # std::io::Result::Ok(())
     /// ```
     pub fn with_raw_mode(mut self) -> io::Result<Self> {
@@ -213,7 +213,7 @@ impl<W: Write> CrosstermBackend<W> {
     ///
     /// ```rust,no_run
     /// # use ratatui::backend::CrosstermBackend;
-    /// let backend = CrosstermBackend::stdout().with_alternate_screen()?;
+    /// let backend = CrosstermBackend::stdout()?.with_alternate_screen()?;
     /// # std::io::Result::Ok(())
     /// ```
     pub fn with_alternate_screen(mut self) -> io::Result<Self> {
@@ -232,7 +232,7 @@ impl<W: Write> CrosstermBackend<W> {
     ///
     /// ```rust,no_run
     /// # use ratatui::backend::CrosstermBackend;
-    /// let backend = CrosstermBackend::stdout().with_mouse_capture()?;
+    /// let backend = CrosstermBackend::stdout()?.with_mouse_capture()?;
     /// # std::io::Result::Ok(())
     /// ```
     pub fn with_mouse_capture(mut self) -> io::Result<Self> {
@@ -249,7 +249,7 @@ impl<W: Write> CrosstermBackend<W> {
     ///
     /// ```rust,no_run
     /// # use ratatui::backend::CrosstermBackend;
-    /// let backend = CrosstermBackend::stdout().with_bracketed_paste()?;
+    /// let backend = CrosstermBackend::stdout()?.with_bracketed_paste()?;
     /// # std::io::Result::Ok(())
     /// ```
     pub fn with_bracketed_paste(mut self) -> io::Result<Self> {
@@ -266,7 +266,7 @@ impl<W: Write> CrosstermBackend<W> {
     ///
     /// ```rust,no_run
     /// # use ratatui::backend::CrosstermBackend;
-    /// let backend = CrosstermBackend::stdout().with_focus_change()?;
+    /// let backend = CrosstermBackend::stdout()?.with_focus_change()?;
     /// # std::io::Result::Ok(())
     pub fn with_focus_change(mut self) -> io::Result<Self> {
         execute!(self.writer, EnableFocusChange)?;
@@ -283,7 +283,7 @@ impl<W: Write> CrosstermBackend<W> {
     /// ```rust,no_run
     /// use ratatui::{backend::CrosstermBackend, crossterm::event::KeyboardEnhancementFlags};
     ///
-    /// let backend = CrosstermBackend::stdout()
+    /// let backend = CrosstermBackend::stdout()?
     ///     .with_keyboard_enhancement_flags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES)?;
     /// # std::io::Result::Ok(())
     /// ```
