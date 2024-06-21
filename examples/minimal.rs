@@ -27,7 +27,7 @@ use ratatui::{
 /// [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 /// [hello-world]: https://github.com/ratatui-org/ratatui/blob/main/examples/hello_world.rs
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let backend = CrosstermBackend::stdout_with_defaults()?;
+    let backend = CrosstermBackend::stdout()?;
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
     loop {

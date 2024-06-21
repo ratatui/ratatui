@@ -97,7 +97,7 @@ struct ColorsWidget {
 
 fn main() -> Result<()> {
     install_error_hooks()?;
-    let backend = CrosstermBackend::stdout_with_defaults()?;
+    let backend = CrosstermBackend::stdout()?;
     let terminal = Terminal::new(backend)?;
     App::default().run(terminal)?;
     Ok(())
@@ -268,11 +268,11 @@ fn install_error_hooks() -> Result<()> {
     let panic = panic.into_panic_hook();
     let error = error.into_eyre_hook();
     eyre::set_hook(Box::new(move |e| {
-        let _ = CrosstermBackend::reset(stdout());
+        let _ = CrosstermBackend::restore(stdout());
         error(e)
     }))?;
     panic::set_hook(Box::new(move |info| {
-        let _ = CrosstermBackend::reset(stdout());
+        let _ = CrosstermBackend::restore(stdout());
         panic(info);
     }));
     Ok(())
