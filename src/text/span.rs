@@ -362,34 +362,46 @@ impl Widget for Span<'_> {
 
 impl WidgetRef for Span<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        let area = area.intersection(buf.area);
-        let Rect {
-            x: mut current_x,
-            y,
-            width,
-            ..
-        } = area;
-        let max_x = Ord::min(current_x.saturating_add(width), buf.area.right());
-        for g in self.styled_graphemes(Style::default()) {
-            let symbol_width = g.symbol.width();
-            let next_x = current_x.saturating_add(symbol_width as u16);
-            if next_x > max_x {
+        let Rect { mut x, y, .. } = area.intersection(buf.area);
+        for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
+            let symbol_width = grapheme.symbol.width();
+            let next_x = x.saturating_add(symbol_width as u16);
+            if next_x > area.intersection(buf.area).right() {
                 break;
             }
-            buf.get_mut(current_x, y)
-                .set_symbol(g.symbol)
-                .set_style(g.style);
+
+            if i == 0 {
+                // the first grapheme is always set on the cell
+                buf.get_mut(x, y)
+                    .set_symbol(grapheme.symbol)
+                    .set_style(grapheme.style);
+            } else if x == area.x {
+                // there is one or more zero-width graphemes in the first cell, so the first cell
+                // must be appended to.
+                buf.get_mut(x, y)
+                    .append_symbol(grapheme.symbol)
+                    .set_style(grapheme.style);
+            } else if symbol_width == 0 {
+                // append zero-width graphemes to the previous cell
+                buf.get_mut(x - 1, y)
+                    .append_symbol(grapheme.symbol)
+                    .set_style(grapheme.style);
+            } else {
+                // just a normal grapheme (not first, not zero-width, not overflowing the area)
+                buf.get_mut(x, y)
+                    .set_symbol(grapheme.symbol)
+                    .set_style(grapheme.style);
+            }
 
             // multi-width graphemes must clear the cells of characters that are hidden by the
             // grapheme, otherwise the hidden characters will be re-rendered if the grapheme is
             // overwritten.
-            for i in (current_x + 1)..next_x {
-                buf.get_mut(i, y).reset();
+            for x_hidden in (x + 1)..next_x {
                 // it may seem odd that the style of the hidden cells are not set to the style of
                 // the grapheme, but this is how the existing buffer.set_span() method works.
-                // buf.get_mut(i, y).set_style(g.style);
+                buf.get_mut(x_hidden, y).reset();
             }
-            current_x = next_x;
+            x = next_x;
         }
     }
 }
@@ -424,6 +436,7 @@ impl fmt::Display for Span<'_> {
 
 #[cfg(test)]
 mod tests {
+    use buffer::Cell;
     use rstest::fixture;
 
     use super::*;
@@ -691,5 +704,72 @@ mod tests {
             ])]);
             assert_eq!(buf, expected);
         }
+
+        #[test]
+        fn render_first_zero_width() {
+            let span = Span::raw("\u{200B}abc");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [Cell::new("\u{200B}a"), Cell::new("b"), Cell::new("c"),]
+            );
+        }
+
+        #[test]
+        fn render_second_zero_width() {
+            let span = Span::raw("a\u{200B}bc");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [Cell::new("a\u{200B}"), Cell::new("b"), Cell::new("c")]
+            );
+        }
+
+        #[test]
+        fn render_middle_zero_width() {
+            let span = Span::raw("ab\u{200B}c");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [Cell::new("a"), Cell::new("b\u{200B}"), Cell::new("c")]
+            );
+        }
+
+        #[test]
+        fn render_last_zero_width() {
+            let span = Span::raw("abc\u{200B}");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [Cell::new("a"), Cell::new("b"), Cell::new("c\u{200B}")]
+            );
+        }
+    }
+
+    /// Regression test for <https://github.com/ratatui-org/ratatui/issues/1160> One line contains
+    /// some Unicode Left-Right-Marks (U+200E)
+    ///
+    /// The issue was that a zero-width character at the end of the buffer causes the buffer bounds
+    /// to be exceeded (due to a position + 1 calculation that fails to account for the possibility
+    /// that the next position might not be available).
+    #[test]
+    fn issue_1160() {
+        let span = Span::raw("Hello\u{200E}");
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+        span.render(buf.area, &mut buf);
+        assert_eq!(
+            buf.content(),
+            [
+                Cell::new("H"),
+                Cell::new("e"),
+                Cell::new("l"),
+                Cell::new("l"),
+                Cell::new("o\u{200E}"),
+            ]
+        );
     }
 }
