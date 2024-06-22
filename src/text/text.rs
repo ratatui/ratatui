@@ -557,12 +557,6 @@ impl<'a> From<Vec<Line<'a>>> for Text<'a> {
     }
 }
 
-impl<'a> From<usize> for Text<'a> {
-    fn from(v: usize) -> Self {
-        Self::raw(v.to_string())
-    }
-}
-
 impl<'a, T> FromIterator<T> for Text<'a>
 where
     T: Into<Line<'a>>,
@@ -604,15 +598,7 @@ pub trait ToText<'a> {
 /// returns an error itself.
 impl<'a, T: fmt::Display> ToText<'a> for T {
     fn to_text(&self) -> Text<'a> {
-        let lines = self
-            .to_string()
-            .lines()
-            .map(|line| Line::from(line.to_string()))
-            .collect();
-        Text {
-            lines,
-            ..Default::default()
-        }
+        Text::from_iter(self.to_string().lines().map(|line| line.to_string()))
     }
 }
 
