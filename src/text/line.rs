@@ -12,6 +12,9 @@ use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 /// text. When a [`Line`] is rendered, it is rendered as a single line of text, with each [`Span`]
 /// being rendered in order (left to right).
 ///
+/// Any newlines in the content are removed when creating a [`Line`] using the constructor or
+/// conversion methods.
+///
 /// # Constructor Methods
 ///
 /// - [`Line::default`] creates a line with empty content and the default style.
@@ -502,13 +505,13 @@ impl<'a> IntoIterator for &'a mut Line<'a> {
 
 impl<'a> From<String> for Line<'a> {
     fn from(s: String) -> Self {
-        Self::from(vec![Span::from(s)])
+        Self::raw(s)
     }
 }
 
 impl<'a> From<&'a str> for Line<'a> {
     fn from(s: &'a str) -> Self {
-        Self::from(vec![Span::from(s)])
+        Self::raw(s)
     }
 }
 
@@ -803,14 +806,22 @@ mod tests {
     fn from_string() {
         let s = String::from("Hello, world!");
         let line = Line::from(s);
-        assert_eq!(vec![Span::from("Hello, world!")], line.spans);
+        assert_eq!(line.spans, vec![Span::from("Hello, world!")]);
+
+        let s = String::from("Hello\nworld!");
+        let line = Line::from(s);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
     }
 
     #[test]
     fn from_str() {
         let s = "Hello, world!";
         let line = Line::from(s);
-        assert_eq!(vec![Span::from("Hello, world!")], line.spans);
+        assert_eq!(line.spans, vec![Span::from("Hello, world!")]);
+
+        let s = "Hello\nworld!";
+        let line = Line::from(s);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
     }
 
     #[test]
@@ -820,7 +831,7 @@ mod tests {
             Span::styled(" world!", Style::default().fg(Color::Green)),
         ];
         let line = Line::from(spans.clone());
-        assert_eq!(spans, line.spans);
+        assert_eq!(line.spans, spans);
     }
 
     #[test]
@@ -853,7 +864,7 @@ mod tests {
     fn from_span() {
         let span = Span::styled("Hello, world!", Style::default().fg(Color::Yellow));
         let line = Line::from(span.clone());
-        assert_eq!(vec![span], line.spans);
+        assert_eq!(line.spans, vec![span],);
     }
 
     #[test]
@@ -863,7 +874,7 @@ mod tests {
             Span::styled(" world!", Style::default().fg(Color::Green)),
         ]);
         let s: String = line.into();
-        assert_eq!("Hello, world!", s);
+        assert_eq!(s, "Hello, world!");
     }
 
     #[test]

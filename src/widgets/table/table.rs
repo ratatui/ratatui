@@ -20,7 +20,9 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// [`Table`] implements [`Widget`] and so it can be drawn using [`Frame::render_widget`].
 ///
 /// [`Table`] is also a [`StatefulWidget`], which means you can use it with [`TableState`] to allow
-/// the user to scroll through the rows and select one of them.
+/// the user to scroll through the rows and select one of them. When rendering a [`Table`] with a
+/// [`TableState`], the selected row will be highlighted. If the selected row is not visible (based
+/// on the offset), the table will be scrolled to make the selected row visible.
 ///
 /// Note: if the `widths` field is empty, the table will be rendered with equal widths.
 ///
@@ -775,7 +777,14 @@ impl Table<'_> {
             end += 1;
         }
 
-        let selected = selected.unwrap_or(0).min(self.rows.len() - 1);
+        let Some(selected) = selected else {
+            return (start, end);
+        };
+
+        // clamp the selected row to the last row
+        let selected = selected.min(self.rows.len() - 1);
+
+        // scroll down until the selected row is visible
         while selected >= end {
             height = height.saturating_add(self.rows[end].height_with_margin());
             end += 1;
@@ -784,6 +793,8 @@ impl Table<'_> {
                 start += 1;
             }
         }
+
+        // scroll up until the selected row is visible
         while selected < start {
             start -= 1;
             height = height.saturating_add(self.rows[start].height_with_margin());
@@ -1007,6 +1018,8 @@ mod tests {
 
     #[cfg(test)]
     mod render {
+        use rstest::rstest;
+
         use super::*;
 
         #[test]
@@ -1196,6 +1209,36 @@ mod tests {
                 "               ".into(),
             ]);
             assert_eq!(buf, expected);
+        }
+
+        /// Note that this includes a regression test for a bug where the table would not render the
+        /// correct rows when there is no selection.
+        /// <https://github.com/ratatui-org/ratatui/issues/1179>
+        #[rstest]
+        #[case::no_selection(None, 50, ["50", "51", "52", "53", "54"])]
+        #[case::selection_before_offset(20, 20, ["20", "21", "22", "23", "24"])]
+        #[case::selection_immediately_before_offset(49, 49, ["49", "50", "51", "52", "53"])]
+        #[case::selection_at_start_of_offset(50, 50, ["50", "51", "52", "53", "54"])]
+        #[case::selection_at_end_of_offset(54, 50, ["50", "51", "52", "53", "54"])]
+        #[case::selection_immediately_after_offset(55, 51, ["51", "52", "53", "54", "55"])]
+        #[case::selection_after_offset(80, 76, ["76", "77", "78", "79", "80"])]
+        fn render_with_selection_and_offset<T: Into<Option<usize>>>(
+            #[case] selected_row: T,
+            #[case] expected_offset: usize,
+            #[case] expected_items: [&str; 5],
+        ) {
+            // render 100 rows offset at 50, with a selected row
+            let rows = (0..100).map(|i| Row::new([i.to_string()]));
+            let table = Table::new(rows, [Constraint::Length(2)]);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 2, 5));
+            let mut state = TableState::new()
+                .with_offset(50)
+                .with_selected(selected_row);
+
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
+
+            assert_eq!(buf, Buffer::with_lines(expected_items));
+            assert_eq!(state.offset, expected_offset);
         }
     }
 
