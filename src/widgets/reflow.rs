@@ -72,155 +72,142 @@ where
             return None;
         }
 
-        let mut current_line: Option<Vec<StyledGrapheme<'a>>> = None;
-        let mut line_width: u16 = 0;
+        loop {
+            // emit next preprocessed line if present
+            'emit: {
+                let Some(line_iterator) = &mut self.wrapped_lines else {
+                    break 'emit;
+                };
+                let Some(line) = line_iterator.next() else {
+                    break 'emit;
+                };
 
-        // Try to repeatedly retrieve next line
-        while current_line.is_none() {
-            // Retrieve next preprocessed wrapped line
-            if let Some(line_iterator) = &mut self.wrapped_lines {
-                if let Some(line) = line_iterator.next() {
-                    line_width = line
-                        .iter()
-                        .map(|grapheme| grapheme.symbol.width())
-                        .sum::<usize>() as u16;
-                    current_line = Some(line);
-                }
+                let line_width = line
+                    .iter()
+                    .map(|grapheme| grapheme.symbol.width() as u16)
+                    .sum();
+
+                self.current_line = line;
+                return Some(WrappedLine {
+                    line: &self.current_line,
+                    width: line_width,
+                    alignment: self.current_alignment,
+                });
             }
 
-            // When no more preprocessed wrapped lines
-            if current_line.is_none() {
-                // Try to calculate next wrapped lines based on current whole line
-                if let Some((line_symbols, line_alignment)) = &mut self.input_lines.next() {
-                    // Save the whole line's alignment
-                    self.current_alignment = *line_alignment;
-                    let mut wrapped_lines = vec![]; // Saves the wrapped lines
-                                                    // Saves the unfinished wrapped line
-                    let (mut current_line, mut current_line_width) = (vec![], 0);
-                    // Saves the partially processed word
-                    let (mut unfinished_word, mut word_width) = (vec![], 0);
-                    // Saves the whitespaces of the partially unfinished word
-                    let (mut unfinished_whitespaces, mut whitespace_width) =
-                        (VecDeque::<StyledGrapheme>::new(), 0);
+            self.wrapped_lines = None;
 
-                    let mut has_seen_non_whitespace = false;
-                    for StyledGrapheme { symbol, style } in line_symbols {
-                        let symbol_whitespace = symbol == ZWSP
-                            || (symbol.chars().all(&char::is_whitespace) && symbol != NBSP);
-                        let symbol_width = symbol.width() as u16;
-                        // Ignore characters wider than the total max width
-                        if symbol_width > self.max_line_width {
-                            continue;
-                        }
+            // otherwise, process pending wrapped lines from input
+            let (line_symbols, line_alignment) = self.input_lines.next()?;
+            self.current_alignment = line_alignment;
 
-                        // Append finished word to current line
-                        if has_seen_non_whitespace && symbol_whitespace
-                            // Append if trimmed (whitespaces removed) word would overflow
-                            || word_width + symbol_width > self.max_line_width && current_line.is_empty() && self.trim
-                            // Append if removed whitespace would overflow -> reset whitespace counting to prevent overflow
-                            || whitespace_width + symbol_width > self.max_line_width && current_line.is_empty() && self.trim
-                            // Append if complete word would overflow
-                            || word_width + whitespace_width + symbol_width > self.max_line_width && current_line.is_empty() && !self.trim
-                        {
-                            if !current_line.is_empty() || !self.trim {
-                                // Also append whitespaces if not trimming or current line is not
-                                // empty
-                                current_line.extend(
-                                    std::mem::take(&mut unfinished_whitespaces).into_iter(),
-                                );
-                                current_line_width += whitespace_width;
-                            }
-                            // Append trimmed word
-                            current_line.append(&mut unfinished_word);
-                            current_line_width += word_width;
+            let mut wrapped_lines = vec![];
+            let mut current_line = vec![];
+            let mut current_line_width = 0;
+            let mut pending_word = vec![];
+            let mut word_width = 0;
+            let mut pending_whitespace: VecDeque<StyledGrapheme> = VecDeque::new();
+            let mut whitespace_width = 0;
+            let mut non_whitespace_previous = false;
 
-                            // Clear whitespace buffer
-                            unfinished_whitespaces.clear();
-                            whitespace_width = 0;
-                            word_width = 0;
-                        }
+            for StyledGrapheme { symbol, style } in line_symbols {
+                let is_whitespace =
+                    symbol == ZWSP || symbol.chars().all(char::is_whitespace) && symbol != NBSP;
+                let symbol_width = symbol.width() as u16;
 
-                        // Append the unfinished wrapped line to wrapped lines if it is as wide as
-                        // max line width
-                        if current_line_width >= self.max_line_width
-                            // or if it would be too long with the current partially processed word added
-                            || current_line_width + whitespace_width + word_width >= self.max_line_width && symbol_width > 0
-                        {
-                            let mut remaining_width = (i32::from(self.max_line_width)
-                                - i32::from(current_line_width))
-                            .max(0) as u16;
-                            wrapped_lines.push(std::mem::take(&mut current_line));
-                            current_line_width = 0;
+                // ignore symbols wider than max width
+                if symbol_width > self.max_line_width {
+                    continue;
+                }
 
-                            // Remove all whitespaces till end of just appended wrapped line + next
-                            // whitespace
-                            let mut first_whitespace = unfinished_whitespaces.pop_front();
-                            while let Some(grapheme) = first_whitespace.as_ref() {
-                                let symbol_width = grapheme.symbol.width() as u16;
-                                whitespace_width -= symbol_width;
-
-                                if symbol_width > remaining_width {
-                                    break;
-                                }
-                                remaining_width -= symbol_width;
-                                first_whitespace = unfinished_whitespaces.pop_front();
-                            }
-                            // In case all whitespaces have been exhausted
-                            if symbol_whitespace && first_whitespace.is_none() {
-                                // Prevent first whitespace to count towards next word
-                                continue;
-                            }
-                        }
-
-                        // Append symbol to unfinished, partially processed word
-                        if symbol_whitespace {
-                            whitespace_width += symbol_width;
-                            unfinished_whitespaces.push_back(StyledGrapheme { symbol, style });
-                        } else {
-                            word_width += symbol_width;
-                            unfinished_word.push(StyledGrapheme { symbol, style });
-                        }
-
-                        has_seen_non_whitespace = !symbol_whitespace;
+                // append finished word to current line
+                if non_whitespace_previous && is_whitespace
+                    || word_width + symbol_width > self.max_line_width
+                        && current_line.is_empty()
+                        && self.trim
+                    || whitespace_width + symbol_width > self.max_line_width
+                        && current_line.is_empty()
+                        && self.trim
+                    || word_width + whitespace_width + symbol_width > self.max_line_width
+                        && current_line.is_empty()
+                        && !self.trim
+                {
+                    if !current_line.is_empty() || !self.trim {
+                        current_line.extend(pending_whitespace.drain(..));
+                        current_line_width += whitespace_width;
                     }
 
-                    // Append remaining text parts
-                    if !unfinished_word.is_empty() || !unfinished_whitespaces.is_empty() {
-                        if current_line.is_empty() && unfinished_word.is_empty() {
-                            wrapped_lines.push(vec![]);
-                        } else if !self.trim || !current_line.is_empty() {
-                            current_line.extend(unfinished_whitespaces.into_iter());
-                        } else {
-                            // TODO: explain why this else branch is ok.
-                            // See clippy::else_if_without_else
+                    current_line.append(&mut pending_word);
+                    current_line_width += word_width;
+
+                    pending_whitespace.clear();
+                    whitespace_width = 0;
+                    word_width = 0;
+                }
+
+                // add finished wrapped line to remaining lines
+                if current_line_width >= self.max_line_width
+                    || current_line_width + whitespace_width + word_width >= self.max_line_width
+                        && symbol_width > 0
+                {
+                    let mut remaining_width =
+                        u16::saturating_sub(self.max_line_width, current_line_width);
+
+                    wrapped_lines.push(std::mem::take(&mut current_line));
+                    current_line_width = 0;
+
+                    // remove whitespace up to the end of line
+                    while let Some(grapheme) = pending_whitespace.front() {
+                        let width = grapheme.symbol.width() as u16;
+
+                        if width > remaining_width {
+                            break;
                         }
-                        current_line.append(&mut unfinished_word);
-                    }
-                    if !current_line.is_empty() {
-                        wrapped_lines.push(current_line);
-                    }
-                    if wrapped_lines.is_empty() {
-                        // Append empty line if there was nothing to wrap in the first place
-                        wrapped_lines.push(vec![]);
+
+                        whitespace_width -= width;
+                        remaining_width -= width;
+                        pending_whitespace.pop_front();
                     }
 
-                    self.wrapped_lines = Some(wrapped_lines.into_iter());
+                    // don't count first whitespace toward next word
+                    if is_whitespace && pending_whitespace.is_empty() {
+                        continue;
+                    }
+                }
+
+                // append symbol to a pending buffer
+                if is_whitespace {
+                    whitespace_width += symbol_width;
+                    pending_whitespace.push_back(StyledGrapheme { symbol, style });
                 } else {
-                    // No more whole lines available -> stop repeatedly retrieving next wrapped line
-                    break;
+                    word_width += symbol_width;
+                    pending_word.push(StyledGrapheme { symbol, style });
                 }
-            }
-        }
 
-        if let Some(line) = current_line {
-            self.current_line = line;
-            Some(WrappedLine {
-                line: &self.current_line,
-                width: line_width,
-                alignment: self.current_alignment,
-            })
-        } else {
-            None
+                non_whitespace_previous = !is_whitespace;
+            }
+
+            // append remaining text parts
+            if !pending_word.is_empty() || !pending_whitespace.is_empty() {
+                if current_line.is_empty() && pending_word.is_empty() {
+                    wrapped_lines.push(vec![]);
+                } else if !self.trim || !current_line.is_empty() {
+                    current_line.extend(pending_whitespace);
+                } else {
+                    // TODO: explain why this else branch is ok
+                    // See clippy::else_if_without_else
+                }
+
+                current_line.append(&mut pending_word);
+            }
+            if !current_line.is_empty() {
+                wrapped_lines.push(current_line);
+            }
+            if wrapped_lines.is_empty() {
+                wrapped_lines.push(vec![]);
+            }
+
+            self.wrapped_lines = Some(wrapped_lines.into_iter());
         }
     }
 }
