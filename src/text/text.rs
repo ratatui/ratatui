@@ -774,7 +774,7 @@ mod tests {
     #[case(42, Text::from("42"))]
     #[case("just\ntesting", Text::from("just\ntesting"))]
     #[case(true, Text::from("true"))]
-    #[case(3.14, Text::from("3.14"))]
+    #[case(6.66, Text::from("6.66"))]
     #[case('a', Text::from("a"))]
     #[case(String::from("hello"), Text::from("hello"))]
     #[case(-1, Text::from("-1"))]
@@ -785,7 +785,7 @@ mod tests {
     )]
     #[case("trailing newline\n", Text::from("trailing newline\n"))]
     fn to_text(#[case] value: impl fmt::Display, #[case] expected: Text) {
-        assert_eq!(value.to_text(), Text::from(expected));
+        assert_eq!(value.to_text(), expected);
     }
 
     #[test]
