@@ -59,6 +59,10 @@ where
             trim,
         }
     }
+
+    fn next_cached_line(&mut self) -> Option<Vec<StyledGrapheme<'a>>> {
+        self.wrapped_lines.as_mut()?.next()
+    }
 }
 
 impl<'a, O, I> LineComposer<'a> for WordWrapper<'a, O, I>
@@ -73,15 +77,8 @@ where
         }
 
         loop {
-            // emit next preprocessed line if present
-            'emit: {
-                let Some(line_iterator) = &mut self.wrapped_lines else {
-                    break 'emit;
-                };
-                let Some(line) = line_iterator.next() else {
-                    break 'emit;
-                };
-
+            // emit next cached line if present
+            if let Some(line) = self.next_cached_line() {
                 let line_width = line
                     .iter()
                     .map(|grapheme| grapheme.symbol.width() as u16)
