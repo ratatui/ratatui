@@ -588,6 +588,7 @@ where
 ///
 /// [`Display`]: std::fmt::Display
 pub trait ToText<'a> {
+    /// Converts the value to a [`Text`].
     fn to_text(&self) -> Text<'a>;
 }
 
@@ -598,7 +599,7 @@ pub trait ToText<'a> {
 /// returns an error itself.
 impl<'a, T: fmt::Display> ToText<'a> for T {
     fn to_text(&self) -> Text<'a> {
-        Text::from_iter(self.to_string().lines().map(|line| line.to_string()))
+        Text::raw(self.to_string())
     }
 }
 
