@@ -63,8 +63,8 @@ where
 
     fn process_input(&mut self, line_symbols: impl IntoIterator<Item = StyledGrapheme<'a>>) {
         let mut result = vec![];
-        let mut current_line = vec![];
-        let mut current_line_width = 0;
+        let mut pending_line = vec![];
+        let mut line_width = 0;
         let mut pending_word = vec![];
         let mut word_width = 0;
         let mut pending_whitespace: VecDeque<StyledGrapheme> = VecDeque::new();
@@ -75,7 +75,7 @@ where
             let is_whitespace = grapheme.is_whitespace();
             let symbol_width = grapheme.symbol.width() as u16;
 
-            // ignore symbols wider than max width
+            // ignore symbols wider than line limit
             if symbol_width > self.max_line_width {
                 continue;
             }
@@ -83,43 +83,46 @@ where
             let word_found = non_whitespace_previous && is_whitespace;
             // current word would overflow after removing whitespace
             let trimmed_overflow = word_width + symbol_width > self.max_line_width
-                && current_line.is_empty()
+                && pending_line.is_empty()
                 && self.trim;
             // separated whitespace would overflow on its own
             let whitespace_overflow = whitespace_width + symbol_width > self.max_line_width
-                && current_line.is_empty()
+                && pending_line.is_empty()
                 && self.trim;
             // current full word (including whitespace) would overflow
             let untrimmed_overflow = word_width + whitespace_width + symbol_width
                 > self.max_line_width
-                && current_line.is_empty()
+                && pending_line.is_empty()
                 && !self.trim;
 
             // append finished segment to current line
             if word_found || trimmed_overflow || whitespace_overflow || untrimmed_overflow {
-                if !current_line.is_empty() || !self.trim {
-                    current_line.extend(pending_whitespace.drain(..));
-                    current_line_width += whitespace_width;
+                if !pending_line.is_empty() || !self.trim {
+                    pending_line.extend(pending_whitespace.drain(..));
+                    line_width += whitespace_width;
                 }
 
-                current_line.append(&mut pending_word);
-                current_line_width += word_width;
+                pending_line.append(&mut pending_word);
+                line_width += word_width;
 
                 pending_whitespace.clear();
                 whitespace_width = 0;
                 word_width = 0;
             }
 
-            // add finished wrapped line to remaining lines
-            if current_line_width >= self.max_line_width
-                || current_line_width + whitespace_width + word_width >= self.max_line_width
-                    && symbol_width > 0
-            {
-                let mut remaining_width =
-                    u16::saturating_sub(self.max_line_width, current_line_width);
+            // pending line fills up limit
+            let line_full = line_width >= self.max_line_width;
+            // pending word would overflow line limit
+            let pending_word_overflow = line_width + whitespace_width + word_width
+                >= self.max_line_width
+                && symbol_width > 0;
 
-                result.push(std::mem::take(&mut current_line));
-                current_line_width = 0;
+            // add finished wrapped line to remaining lines
+            if line_full || pending_word_overflow {
+                let mut remaining_width = u16::saturating_sub(self.max_line_width, line_width);
+
+                result.push(std::mem::take(&mut pending_line));
+                line_width = 0;
 
                 // remove whitespace up to the end of line
                 while let Some(grapheme) = pending_whitespace.front() {
@@ -154,25 +157,25 @@ where
 
         // append remaining text parts
         if !pending_word.is_empty() || !pending_whitespace.is_empty() {
-            if current_line.is_empty() && pending_word.is_empty() {
+            if pending_line.is_empty() && pending_word.is_empty() {
                 result.push(vec![]);
-            } else if !self.trim || !current_line.is_empty() {
-                current_line.extend(pending_whitespace);
-            } else {
-                // TODO: explain why this else branch is ok
-                // See clippy::else_if_without_else
             }
 
-            current_line.append(&mut pending_word);
+            if !pending_line.is_empty() || !self.trim {
+                pending_line.extend(pending_whitespace);
+            }
+
+            pending_line.append(&mut pending_word);
         }
-        if !current_line.is_empty() {
-            result.push(current_line);
+
+        if !pending_line.is_empty() {
+            result.push(pending_line);
         }
         if result.is_empty() {
             result.push(vec![]);
         }
 
-        // save cached lines for emitting later
+        // save processed lines for emitting later
         self.wrapped_lines = Some(result.into_iter());
     }
 }
