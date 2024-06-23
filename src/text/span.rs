@@ -414,6 +414,7 @@ impl WidgetRef for Span<'_> {
 ///
 /// [`Display`]: std::fmt::Display
 pub trait ToSpan {
+    /// Converts the value to a [`Span`].
     fn to_span(&self) -> Span<'_>;
 }
 

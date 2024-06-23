@@ -657,6 +657,7 @@ fn spans_after_width<'a>(
 ///
 /// [`Display`]: std::fmt::Display
 pub trait ToLine {
+    /// Converts the value to a [`Line`].
     fn to_line(&self) -> Line<'_>;
 }
 
