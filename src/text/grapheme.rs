@@ -1,5 +1,8 @@
 use crate::{prelude::*, style::Styled};
 
+const NBSP: &str = "\u{00a0}";
+const ZWSP: &str = "\u{200b}";
+
 /// A grapheme associated to a style.
 /// Note that, although `StyledGrapheme` is the smallest divisible unit of text,
 /// it actually is not a member of the text type hierarchy (`Text` -> `Line` -> `Span`).
@@ -21,6 +24,11 @@ impl<'a> StyledGrapheme<'a> {
             symbol,
             style: style.into(),
         }
+    }
+
+    pub(crate) fn is_whitespace(&self) -> bool {
+        let symbol = self.symbol;
+        symbol == ZWSP || symbol.chars().all(char::is_whitespace) && symbol != NBSP
     }
 }
 

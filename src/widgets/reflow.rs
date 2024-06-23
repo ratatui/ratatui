@@ -5,9 +5,6 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{layout::Alignment, text::StyledGrapheme};
 
-const NBSP: &str = "\u{00a0}";
-const ZWSP: &str = "\u{200b}";
-
 /// A state machine to pack styled symbols into lines.
 /// Cannot implement it as Iterator since it yields slices of the internal buffer (need streaming
 /// iterators for that).
@@ -105,10 +102,9 @@ where
             let mut whitespace_width = 0;
             let mut non_whitespace_previous = false;
 
-            for StyledGrapheme { symbol, style } in line_symbols {
-                let is_whitespace =
-                    symbol == ZWSP || symbol.chars().all(char::is_whitespace) && symbol != NBSP;
-                let symbol_width = symbol.width() as u16;
+            for grapheme in line_symbols {
+                let is_whitespace = grapheme.is_whitespace();
+                let symbol_width = grapheme.symbol.width() as u16;
 
                 // ignore symbols wider than max width
                 if symbol_width > self.max_line_width {
@@ -173,10 +169,10 @@ where
                 // append symbol to a pending buffer
                 if is_whitespace {
                     whitespace_width += symbol_width;
-                    pending_whitespace.push_back(StyledGrapheme { symbol, style });
+                    pending_whitespace.push_back(grapheme);
                 } else {
                     word_width += symbol_width;
-                    pending_word.push(StyledGrapheme { symbol, style });
+                    pending_word.push(grapheme);
                 }
 
                 non_whitespace_previous = !is_whitespace;
