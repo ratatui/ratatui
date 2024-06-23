@@ -95,8 +95,6 @@ where
                 });
             }
 
-            self.wrapped_lines = None;
-
             // otherwise, process pending wrapped lines from input
             let (line_symbols, line_alignment) = self.input_lines.next()?;
             self.current_alignment = line_alignment;
