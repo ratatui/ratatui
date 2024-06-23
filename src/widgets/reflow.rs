@@ -80,18 +80,23 @@ where
                 continue;
             }
 
-            // append finished word to current line
-            if non_whitespace_previous && is_whitespace
-                || word_width + symbol_width > self.max_line_width
-                    && current_line.is_empty()
-                    && self.trim
-                || whitespace_width + symbol_width > self.max_line_width
-                    && current_line.is_empty()
-                    && self.trim
-                || word_width + whitespace_width + symbol_width > self.max_line_width
-                    && current_line.is_empty()
-                    && !self.trim
-            {
+            let word_found = non_whitespace_previous && is_whitespace;
+            // current word would overflow after removing whitespace
+            let trimmed_overflow = word_width + symbol_width > self.max_line_width
+                && current_line.is_empty()
+                && self.trim;
+            // separated whitespace would overflow on its own
+            let whitespace_overflow = whitespace_width + symbol_width > self.max_line_width
+                && current_line.is_empty()
+                && self.trim;
+            // current full word (including whitespace) would overflow
+            let untrimmed_overflow = word_width + whitespace_width + symbol_width
+                > self.max_line_width
+                && current_line.is_empty()
+                && !self.trim;
+
+            // append finished segment to current line
+            if word_found || trimmed_overflow || whitespace_overflow || untrimmed_overflow {
                 if !current_line.is_empty() || !self.trim {
                     current_line.extend(pending_whitespace.drain(..));
                     current_line_width += whitespace_width;
