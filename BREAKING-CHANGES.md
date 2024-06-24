@@ -10,7 +10,9 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [Unreleased](#unreleased)
+- [v0.27.0](#v0270)
+  - List no clamps the selected index to list
+  - Prelude items added / removed
   - 'termion' updated to 4.0
   - `Rect::inner` takes `Margin` directly instead of reference
   - `Buffer::filled` takes `Cell` directly instead of reference
@@ -54,7 +56,7 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## Unreleased
+## [v0.27.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.27.0)
 
 ### List no clamps the selected index to list ([#1159])
 
@@ -110,7 +112,6 @@ To update your app:
 + let size: some_crate::Size = ...;
 + let position: some_crate::Position = ...;
 ```
-
 
 ### Termion is updated to 4.0 [#1106]
 
