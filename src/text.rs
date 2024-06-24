@@ -48,14 +48,14 @@ mod grapheme;
 pub use grapheme::StyledGrapheme;
 
 mod line;
-pub use line::Line;
+pub use line::{Line, ToLine};
 
 mod masked;
 pub use masked::Masked;
 
 mod span;
-pub use span::Span;
+pub use span::{Span, ToSpan};
 
 #[allow(clippy::module_inception)]
 mod text;
-pub use text::Text;
+pub use text::{Text, ToText};

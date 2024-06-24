@@ -186,7 +186,7 @@ fn widgets_list_should_clamp_offset_if_items_are_removed() {
         })
         .unwrap();
     terminal.backend().assert_buffer_lines([
-        "   Item 3 ",
+        ">> Item 3 ",
         "          ",
         "          ",
         "          ",
