@@ -16,6 +16,7 @@ This is a quick summary of the sections below:
   - `Buffer::filled` takes `Cell` directly instead of reference
   - `Stylize::bg()` now accepts `Into<Color>`
   - Removed deprecated `List::start_corner`
+  - `LineGauge::gauge_style` is deprecated
 - [v0.26.0](#v0260)
   - `Flex::Start` is the new default flex mode for `Layout`
   - `patch_style` & `reset_style` now consume and return `Self`
@@ -166,6 +167,19 @@ flexible types from calling scopes, though it can break some type inference in t
 ```
 
 `layout::Corner` was removed entirely.
+
+### `LineGauge::gauge_style` is deprecated ([#565])
+
+[#565]: https://github.com/ratatui-org/ratatui/pull/1148
+
+`LineGauge::gauge_style` is deprecated and replaced with `LineGauge::filled_style` and `LineGauge::unfilled_style`:
+
+```diff
+let gauge = LineGauge::default()
+- .gauge_style(Style::default().fg(Color::Red).bg(Color::Blue)
++ .filled_style(Style::default().fg(Color::Green))
++ .unfilled_style(Style::default().fg(Color::White));
+```
 
 ## [v0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0)
 
