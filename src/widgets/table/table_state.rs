@@ -175,6 +175,72 @@ impl TableState {
             self.offset = 0;
         }
     }
+
+    /// Selects the next item or the first one if no item is selected
+    ///
+    /// Note: until the table is rendered, the number of items is not known, so the index is set to
+    /// `0` and will be corrected when the table is rendered
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = TableState::default();
+    /// state.select_next();
+    /// ```
+    pub fn select_next(&mut self) {
+        let next = self.selected.map_or(0, |i| i.saturating_add(1));
+        self.select(Some(next));
+    }
+
+    /// Selects the previous item or the last one if no item is selected
+    ///
+    /// Note: until the table is rendered, the number of items is not known, so the index is set to
+    /// `usize::MAX` and will be corrected when the table is rendered
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = TableState::default();
+    /// state.select_previous();
+    /// ```
+    pub fn select_previous(&mut self) {
+        let previous = self.selected.map_or(usize::MAX, |i| i.saturating_sub(1));
+        self.select(Some(previous));
+    }
+
+    /// Selects the first item
+    ///
+    /// Note: until the table is rendered, the number of items is not known, so the index is set to
+    /// `0` and will be corrected when the table is rendered
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = TableState::default();
+    /// state.select_first();
+    /// ```
+    pub fn select_first(&mut self) {
+        self.select(Some(0));
+    }
+
+    /// Selects the last item
+    ///
+    /// Note: until the table is rendered, the number of items is not known, so the index is set to
+    /// `usize::MAX` and will be corrected when the table is rendered
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = TableState::default();
+    /// state.select_last();
+    /// ```
+    pub fn select_last(&mut self) {
+        self.select(Some(usize::MAX));
+    }
 }
 
 #[cfg(test)]
@@ -238,5 +304,41 @@ mod tests {
         let mut state = TableState::new().with_selected(Some(1));
         state.select(None);
         assert_eq!(state.selected, None);
+    }
+
+    #[test]
+    fn test_table_state_navigation() {
+        let mut state = TableState::default();
+        state.select_first();
+        assert_eq!(state.selected, Some(0));
+
+        state.select_previous(); // should not go below 0
+        assert_eq!(state.selected, Some(0));
+
+        state.select_next();
+        assert_eq!(state.selected, Some(1));
+
+        state.select_previous();
+        assert_eq!(state.selected, Some(0));
+
+        state.select_last();
+        assert_eq!(state.selected, Some(usize::MAX));
+
+        state.select_next(); // should not go above usize::MAX
+        assert_eq!(state.selected, Some(usize::MAX));
+
+        state.select_previous();
+        assert_eq!(state.selected, Some(usize::MAX - 1));
+
+        state.select_next();
+        assert_eq!(state.selected, Some(usize::MAX));
+
+        let mut state = TableState::default();
+        state.select_next();
+        assert_eq!(state.selected, Some(0));
+
+        let mut state = TableState::default();
+        state.select_previous();
+        assert_eq!(state.selected, Some(usize::MAX));
     }
 }

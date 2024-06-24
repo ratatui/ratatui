@@ -613,6 +613,14 @@ impl StatefulWidgetRef for Table<'_> {
             return;
         }
 
+        if state.selected.is_some_and(|s| s >= self.rows.len()) {
+            state.select(Some(self.rows.len().saturating_sub(1)));
+        }
+
+        if self.rows.is_empty() {
+            state.select(None);
+        }
+
         let selection_width = self.selection_width(state);
         let columns_widths = self.get_columns_widths(table_area.width, selection_width);
         let (header_area, rows_area, footer_area) = self.layout(table_area);
@@ -1014,6 +1022,60 @@ mod tests {
         let vec_ref = &vec![Constraint::Percentage(100)];
         let table = Table::new(Vec::<Row>::new(), vec_ref);
         assert_eq!(table.widths, vec![Constraint::Percentage(100)], "vec ref");
+    }
+
+    #[cfg(test)]
+    mod state {
+        use rstest::{fixture, rstest};
+
+        use super::TableState;
+        use crate::{
+            buffer::Buffer,
+            layout::{Constraint, Rect},
+            widgets::{Row, StatefulWidget, Table},
+        };
+
+        #[fixture]
+        fn table_buf() -> Buffer {
+            Buffer::empty(Rect::new(0, 0, 10, 10))
+        }
+
+        #[rstest]
+        fn test_list_state_empty_list(mut table_buf: Buffer) {
+            let mut state = TableState::default();
+
+            let rows: Vec<Row> = Vec::new();
+            let widths = vec![Constraint::Percentage(100)];
+            let table = Table::new(rows, widths);
+            state.select_first();
+            StatefulWidget::render(table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected, None);
+        }
+
+        #[rstest]
+        fn test_list_state_single_item(mut table_buf: Buffer) {
+            let mut state = TableState::default();
+
+            let widths = vec![Constraint::Percentage(100)];
+
+            let items = vec![Row::new(vec!["Item 1"])];
+            let table = Table::new(items, widths);
+            state.select_first();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected, Some(0));
+
+            state.select_last();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected, Some(0));
+
+            state.select_previous();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected, Some(0));
+
+            state.select_next();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected, Some(0));
+        }
     }
 
     #[cfg(test)]
