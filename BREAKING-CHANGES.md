@@ -56,6 +56,16 @@ This is a quick summary of the sections below:
 
 ## Unreleased
 
+### List no clamps the selected index to list ([#1159])
+
+[#1149]: https://github.com/ratatui-org/ratatui/pull/1149
+
+The `List` widget now clamps the selected index to the bounds of the list when navigating with
+`first`, `last`, `previous`, and `next`, as well as when setting the index directly with `select`.
+
+Previously selecting an index past the end of the list would show treat the list as having a
+selection which was not visible. Now the last item in the list will be selected instead.
+
 ### Prelude items added / removed ([#1149])
 
 The following items have been removed from the prelude:
@@ -101,7 +111,6 @@ To update your app:
 + let position: some_crate::Position = ...;
 ```
 
-[#1149]: https://github.com/ratatui-org/ratatui/pull/1149
 
 ### Termion is updated to 4.0 [#1106]
 
