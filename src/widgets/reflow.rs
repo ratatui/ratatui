@@ -61,6 +61,8 @@ where
         self.wrapped_lines.as_mut()?.next()
     }
 
+    /// Split an input line (`line_symbols`) into wrapped lines
+    /// and cache them to be emitted later
     fn process_input(&mut self, line_symbols: impl IntoIterator<Item = StyledGrapheme<'a>>) {
         let mut result_lines = vec![];
         let mut pending_line = vec![];
