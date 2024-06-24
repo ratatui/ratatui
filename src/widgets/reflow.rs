@@ -82,18 +82,17 @@ where
 
             let word_found = non_whitespace_previous && is_whitespace;
             // current word would overflow after removing whitespace
-            let trimmed_overflow = word_width + symbol_width > self.max_line_width
-                && pending_line.is_empty()
-                && self.trim;
+            let trimmed_overflow = pending_line.is_empty()
+                && self.trim
+                && word_width + symbol_width > self.max_line_width;
             // separated whitespace would overflow on its own
-            let whitespace_overflow = whitespace_width + symbol_width > self.max_line_width
-                && pending_line.is_empty()
-                && self.trim;
+            let whitespace_overflow = pending_line.is_empty()
+                && self.trim
+                && whitespace_width + symbol_width > self.max_line_width;
             // current full word (including whitespace) would overflow
-            let untrimmed_overflow = word_width + whitespace_width + symbol_width
-                > self.max_line_width
-                && pending_line.is_empty()
-                && !self.trim;
+            let untrimmed_overflow = pending_line.is_empty()
+                && !self.trim
+                && word_width + whitespace_width + symbol_width > self.max_line_width;
 
             // append finished segment to current line
             if word_found || trimmed_overflow || whitespace_overflow || untrimmed_overflow {
@@ -113,9 +112,8 @@ where
             // pending line fills up limit
             let line_full = line_width >= self.max_line_width;
             // pending word would overflow line limit
-            let pending_word_overflow = line_width + whitespace_width + word_width
-                >= self.max_line_width
-                && symbol_width > 0;
+            let pending_word_overflow = symbol_width > 0
+                && line_width + whitespace_width + word_width >= self.max_line_width;
 
             // add finished wrapped line to remaining lines
             if line_full || pending_word_overflow {
