@@ -156,17 +156,13 @@ where
         }
 
         // append remaining text parts
-        if !pending_word.is_empty() || !pending_whitespace.is_empty() {
-            if pending_line.is_empty() && pending_word.is_empty() {
-                result.push(vec![]);
-            }
-
-            if !pending_line.is_empty() || !self.trim {
-                pending_line.extend(pending_whitespace);
-            }
-
-            pending_line.append(&mut pending_word);
+        if pending_line.is_empty() && pending_word.is_empty() && !pending_whitespace.is_empty() {
+            result.push(vec![]);
         }
+        if !pending_line.is_empty() || !self.trim {
+            pending_line.extend(pending_whitespace);
+        }
+        pending_line.extend(pending_word);
 
         if !pending_line.is_empty() {
             result.push(pending_line);
