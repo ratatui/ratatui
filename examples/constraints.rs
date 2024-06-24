@@ -256,7 +256,8 @@ impl App {
         if scrollbar_needed {
             let mut state = ScrollbarState::new(self.max_scroll_offset as usize)
                 .position(self.scroll_offset as usize);
-            Scrollbar::new(ScrollbarOrientation::VerticalRight).render(area, buf, &mut state);
+            Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .render_stateful(area, buf, &mut state);
         }
     }
 }

@@ -680,7 +680,7 @@ mod tests {
     ) {
         let mut buffer = Buffer::empty(Rect::new(0, 0, expected.width() as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
-        scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
+        scrollbar_no_arrows.render_stateful(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
@@ -703,7 +703,7 @@ mod tests {
     ) {
         let mut buffer = Buffer::empty(Rect::new(0, 0, expected.width() as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
-        scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
+        scrollbar_no_arrows.render_stateful(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
@@ -718,7 +718,7 @@ mod tests {
         let size = expected.width();
         let mut buffer = Buffer::empty(Rect::new(0, 0, size as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
-        scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
+        scrollbar_no_arrows.render_stateful(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
@@ -735,7 +735,7 @@ mod tests {
         let size = expected.width();
         let mut buffer = Buffer::empty(Rect::new(0, 0, size as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
-        scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
+        scrollbar_no_arrows.render_stateful(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
@@ -751,7 +751,7 @@ mod tests {
         let size = expected.width();
         let mut buffer = Buffer::empty(Rect::new(0, 0, size as u16, 1));
         let mut state = ScrollbarState::new(content_length).position(position);
-        scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
+        scrollbar_no_arrows.render_stateful(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
@@ -778,7 +778,7 @@ mod tests {
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
             .begin_symbol(None)
             .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
+            .render_stateful(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
@@ -806,7 +806,7 @@ mod tests {
             .track_symbol(None)
             .begin_symbol(None)
             .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
+            .render_stateful(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
@@ -837,7 +837,7 @@ mod tests {
             .track_symbol(None)
             .begin_symbol(None)
             .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
+            .render_stateful(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
@@ -868,7 +868,7 @@ mod tests {
             .end_symbol(Some(">"))
             .track_symbol(Some("-"))
             .thumb_symbol("#")
-            .render(buffer.area, &mut buffer, &mut state);
+            .render_stateful(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
@@ -895,7 +895,7 @@ mod tests {
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
             .begin_symbol(None)
             .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
+            .render_stateful(buffer.area, &mut buffer, &mut state);
         let empty_string = " ".repeat(size as usize);
         assert_eq!(buffer, Buffer::with_lines([&empty_string, expected]));
     }
@@ -923,7 +923,7 @@ mod tests {
         Scrollbar::new(ScrollbarOrientation::HorizontalTop)
             .begin_symbol(None)
             .end_symbol(None)
-            .render(buffer.area, &mut buffer, &mut state);
+            .render_stateful(buffer.area, &mut buffer, &mut state);
         let empty_string = " ".repeat(size as usize);
         assert_eq!(buffer, Buffer::with_lines([expected, &empty_string]));
     }
@@ -953,7 +953,7 @@ mod tests {
             .end_symbol(Some(">"))
             .track_symbol(Some("-"))
             .thumb_symbol("#")
-            .render(buffer.area, &mut buffer, &mut state);
+            .render_stateful(buffer.area, &mut buffer, &mut state);
         let bar = expected.chars().map(|c| format!("{c}    "));
         assert_eq!(buffer, Buffer::with_lines(bar));
     }
@@ -983,7 +983,7 @@ mod tests {
             .end_symbol(Some(">"))
             .track_symbol(Some("-"))
             .thumb_symbol("#")
-            .render(buffer.area, &mut buffer, &mut state);
+            .render_stateful(buffer.area, &mut buffer, &mut state);
         let bar = expected.chars().map(|c| format!("    {c}"));
         assert_eq!(buffer, Buffer::with_lines(bar));
     }
@@ -1011,7 +1011,7 @@ mod tests {
         let mut state = ScrollbarState::new(content_length)
             .position(position)
             .viewport_content_length(2);
-        scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
+        scrollbar_no_arrows.render_stateful(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
@@ -1040,7 +1040,7 @@ mod tests {
         let mut state = ScrollbarState::new(content_length)
             .position(position)
             .viewport_content_length(2);
-        scrollbar_no_arrows.render(buffer.area, &mut buffer, &mut state);
+        scrollbar_no_arrows.render_stateful(buffer.area, &mut buffer, &mut state);
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 }

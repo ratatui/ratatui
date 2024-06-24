@@ -221,9 +221,43 @@ pub trait StatefulWidget {
     ///
     /// If you don't need this then you probably want to implement [`Widget`] instead.
     type State;
+
+    /// Renders the the widget into the buffer using the provided state.
+    ///
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom stateful widget.
+    ///
+    /// When both `Widget` and `StatefulWidget` are in scope, this method conflicts with the
+    /// `render` method from the `Widget` trait. Prior to Ratatui 0.27.0, this conflict caused
+    /// apps to have to qualify the method call when using the `StatefulWidget` trait. To avoid
+    /// this, the `render` method is deprecated and replaced with a new method called
+    /// `render_stateful`. This new method does not conflict with the `render` method from the
+    /// `Widget` trait.
+    ///
+    /// This method will be removed in a future release (likely Ratatui 0.29.0). Callers should
+    /// update their code to use the `render_stateful` method instead. Widget implementors may
+    /// either:
+    /// - Implement the `render` method, and change the name of the method to `render_stateful` when
+    ///   the `render` method is removed. A default implementation of `render_stateful` is provided
+    ///   that calls `render`.
+    /// - Implement the `render_stateful` method directly and add a temporary implementation of
+    ///  `render` that calls `render_stateful` until the `render` method is removed.
+    #[deprecated(note = "Use `render_stateful` instead")]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
+
+    /// Renders the the widget into the buffer using the provided state.
+    ///
+    /// This method replaces the `render` method with a name that does not conflict with the
+    /// `render` method from the `Widget` trait. (This conflict causes apps to have to specifically
+    /// disambiguate the method call when using the `StatefulWidget` trait in situations where both
+    /// traits are in scope.)
+    fn render_stateful(self, area: Rect, buf: &mut Buffer, state: &mut Self::State)
+    where
+        Self: Sized,
+    {
+        #[allow(deprecated)]
+        self.render(area, buf, state);
+    }
 }
 
 /// A `WidgetRef` is a trait that allows rendering a widget by reference.
@@ -387,6 +421,13 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 /// impl StatefulWidget for PersonalGreeting {
 ///     type State = String;
 ///     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+///         self.render_stateful(area, buf, state);
+///     }
+///
+///     fn render_stateful(self, area: Rect, buf: &mut Buffer, state: &mut Self::State)
+///     where
+///         Self: Sized,
+///     {
 ///         (&self).render_ref(area, buf, state);
 ///     }
 /// }
@@ -571,7 +612,7 @@ mod tests {
         #[rstest]
         fn render(mut buf: Buffer, mut state: String) {
             let widget = PersonalGreeting;
-            widget.render(buf.area, &mut buf, &mut state);
+            widget.render_stateful(buf.area, &mut buf, &mut state);
             assert_eq!(buf, Buffer::with_lines(["Hello world         "]));
         }
     }

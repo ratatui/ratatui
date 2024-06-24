@@ -331,7 +331,7 @@ impl App {
 
         let mut spacing = self.spacing;
         self.selected_tab
-            .render(content_area, &mut demo_buf, &mut spacing);
+            .render_stateful(content_area, &mut demo_buf, &mut spacing);
 
         let visible_content = demo_buf
             .content
@@ -348,7 +348,8 @@ impl App {
             let area = area.intersection(buf.area);
             let mut state = ScrollbarState::new(max_scroll_offset() as usize)
                 .position(self.scroll_offset as usize);
-            Scrollbar::new(ScrollbarOrientation::VerticalRight).render(area, buf, &mut state);
+            Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .render_stateful(area, buf, &mut state);
         }
         scrollbar_needed
     }
@@ -387,8 +388,15 @@ impl SelectedTab {
 
 impl StatefulWidget for SelectedTab {
     type State = u16;
-    fn render(self, area: Rect, buf: &mut Buffer, spacing: &mut Self::State) {
-        let spacing = *spacing;
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        self.render_stateful(area, buf, state);
+    }
+
+    fn render_stateful(self, area: Rect, buf: &mut Buffer, state: &mut Self::State)
+    where
+        Self: Sized,
+    {
+        let spacing = *state;
         match self {
             Self::Legacy => Self::render_examples(area, buf, Flex::Legacy, spacing),
             Self::Start => Self::render_examples(area, buf, Flex::Start, spacing),
