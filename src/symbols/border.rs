@@ -25,6 +25,7 @@ impl Default for Set {
 /// │xxxxx│
 /// │xxxxx│
 /// └─────┘
+/// ```
 pub const PLAIN: Set = Set {
     top_left: line::NORMAL.top_left,
     top_right: line::NORMAL.top_right,
@@ -43,6 +44,7 @@ pub const PLAIN: Set = Set {
 /// │xxxxx│
 /// │xxxxx│
 /// ╰─────╯
+/// ```
 pub const ROUNDED: Set = Set {
     top_left: line::ROUNDED.top_left,
     top_right: line::ROUNDED.top_right,
@@ -61,6 +63,7 @@ pub const ROUNDED: Set = Set {
 /// ║xxxxx║
 /// ║xxxxx║
 /// ╚═════╝
+/// ```
 pub const DOUBLE: Set = Set {
     top_left: line::DOUBLE.top_left,
     top_right: line::DOUBLE.top_right,
@@ -79,6 +82,7 @@ pub const DOUBLE: Set = Set {
 /// ┃xxxxx┃
 /// ┃xxxxx┃
 /// ┗━━━━━┛
+/// ```
 pub const THICK: Set = Set {
     top_left: line::THICK.top_left,
     top_right: line::THICK.top_right,
@@ -242,6 +246,7 @@ pub const PROPORTIONAL_TALL: Set = Set {
 /// █xx█
 /// █xx█
 /// ████
+/// ```
 pub const FULL: Set = Set {
     top_left: block::FULL,
     top_right: block::FULL,
