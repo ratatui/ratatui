@@ -16,6 +16,7 @@ This is a quick summary of the sections below:
   - `Buffer::filled` takes `Cell` directly instead of reference
   - `Stylize::bg()` now accepts `Into<Color>`
   - Removed deprecated `List::start_corner`
+  - `LineGauge::gauge_style` is deprecated
 - [v0.26.0](#v0260)
   - `Flex::Start` is the new default flex mode for `Layout`
   - `patch_style` & `reset_style` now consume and return `Self`
@@ -54,6 +55,16 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased
+
+### List no clamps the selected index to list ([#1159])
+
+[#1149]: https://github.com/ratatui-org/ratatui/pull/1149
+
+The `List` widget now clamps the selected index to the bounds of the list when navigating with
+`first`, `last`, `previous`, and `next`, as well as when setting the index directly with `select`.
+
+Previously selecting an index past the end of the list would show treat the list as having a
+selection which was not visible. Now the last item in the list will be selected instead.
 
 ### Prelude items added / removed ([#1149])
 
@@ -100,7 +111,6 @@ To update your app:
 + let position: some_crate::Position = ...;
 ```
 
-[#1149]: https://github.com/ratatui-org/ratatui/pull/1149
 
 ### Termion is updated to 4.0 [#1106]
 
@@ -166,6 +176,19 @@ flexible types from calling scopes, though it can break some type inference in t
 ```
 
 `layout::Corner` was removed entirely.
+
+### `LineGauge::gauge_style` is deprecated ([#565])
+
+[#565]: https://github.com/ratatui-org/ratatui/pull/1148
+
+`LineGauge::gauge_style` is deprecated and replaced with `LineGauge::filled_style` and `LineGauge::unfilled_style`:
+
+```diff
+let gauge = LineGauge::default()
+- .gauge_style(Style::default().fg(Color::Red).bg(Color::Blue)
++ .filled_style(Style::default().fg(Color::Green))
++ .unfilled_style(Style::default().fg(Color::White));
+```
 
 ## [v0.26.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.26.0)
 
