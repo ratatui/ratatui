@@ -62,7 +62,7 @@ where
     }
 
     fn process_input(&mut self, line_symbols: impl IntoIterator<Item = StyledGrapheme<'a>>) {
-        let mut result = vec![];
+        let mut result_lines = vec![];
         let mut pending_line = vec![];
         let mut line_width = 0;
         let mut pending_word = vec![];
@@ -119,7 +119,7 @@ where
             if line_full || pending_word_overflow {
                 let mut remaining_width = u16::saturating_sub(self.max_line_width, line_width);
 
-                result.push(std::mem::take(&mut pending_line));
+                result_lines.push(std::mem::take(&mut pending_line));
                 line_width = 0;
 
                 // remove whitespace up to the end of line
@@ -155,7 +155,7 @@ where
 
         // append remaining text parts
         if pending_line.is_empty() && pending_word.is_empty() && !pending_whitespace.is_empty() {
-            result.push(vec![]);
+            result_lines.push(vec![]);
         }
         if !pending_line.is_empty() || !self.trim {
             pending_line.extend(pending_whitespace);
@@ -163,14 +163,14 @@ where
         pending_line.extend(pending_word);
 
         if !pending_line.is_empty() {
-            result.push(pending_line);
+            result_lines.push(pending_line);
         }
-        if result.is_empty() {
-            result.push(vec![]);
+        if result_lines.is_empty() {
+            result_lines.push(vec![]);
         }
 
         // save processed lines for emitting later
-        self.wrapped_lines = Some(result.into_iter());
+        self.wrapped_lines = Some(result_lines.into_iter());
     }
 }
 
