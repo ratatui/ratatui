@@ -20,6 +20,42 @@ const fn get_line_offset(line_width: u16, text_area_width: u16, alignment: Align
 
 /// A widget to display some text.
 ///
+/// It is used to display a block of text. The text can be styled and aligned. It can also be
+/// wrapped to the next line if it is too long to fit in the given area.
+///
+/// The text can be any type that can be converted into a [`Text`]. By default, the text is styled
+/// with [`Style::default()`], not wrapped, and aligned to the left.
+///
+/// The text can be wrapped to the next line if it is too long to fit in the given area. The
+/// wrapping can be configured with the [`wrap`] method. For more complex wrapping, consider using
+/// the [Textwrap crate].
+///
+/// The text can be aligned to the left, right, or center. The alignment can be configured with the
+/// [`alignment`] method or with the [`left_aligned`], [`right_aligned`], and [`centered`] methods.
+///
+/// The text can be scrolled to show a specific part of the text. The scroll offset can be set with
+/// the [`scroll`] method.
+///
+/// The text can be surrounded by a [`Block`] with a title and borders. The block can be configured
+/// with the [`block`] method.
+///
+/// The style of the text can be set with the [`style`] method. This style will be applied to the
+/// entire widget, including the block if one is present. Any style set on the block or text will be
+/// added to this style. See the [`Style`] type for more information on how styles are combined.
+///
+/// Note: If neither wrapping or a block is needed, consider rendering the [`Text`], [`Line`], or
+/// [`Span`] widgets directly.
+///
+/// [Textwrap crate]: https://crates.io/crates/textwrap
+/// [`wrap`]: Self::wrap
+/// [`alignment`]: Self::alignment
+/// [`left_aligned`]: Self::left_aligned
+/// [`right_aligned`]: Self::right_aligned
+/// [`centered`]: Self::centered
+/// [`scroll`]: Self::scroll
+/// [`block`]: Self::block
+/// [`style`]: Self::style
+///
 /// # Example
 ///
 /// ```
