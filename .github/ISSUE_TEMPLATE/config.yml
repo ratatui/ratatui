@@ -1,5 +1,11 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Frequently Asked Questions
+    url: https://ratatui.rs/faq/
+    about: Check the website FAQ section to see if your question has already been answered
+  - name: Ratatui Forum
+    url: https://forum.ratatui.rs
+    about: Ask questions about ratatui on our Forum
   - name: Discord Chat
     url: https://discord.gg/pMCEU9hNEj
     about: Ask questions about ratatui on Discord
