@@ -270,7 +270,7 @@ impl<'a> Paragraph<'a> {
     /// assert_eq!(paragraph.line_count(20), 1);
     /// assert_eq!(paragraph.line_count(10), 2);
     /// ```
-    #[stability::unstable(
+    #[instability::unstable(
         feature = "rendered-line-info",
         issue = "https://github.com/ratatui-org/ratatui/issues/293"
     )]
@@ -313,7 +313,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World\nhi\nHello World!!!");
     /// assert_eq!(paragraph.line_width(), 14);
     /// ```
-    #[stability::unstable(
+    #[instability::unstable(
         feature = "rendered-line-info",
         issue = "https://github.com/ratatui-org/ratatui/issues/293"
     )]
