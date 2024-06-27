@@ -35,6 +35,30 @@ pub use title::{Position, Title};
 ///
 /// Without left border───
 /// ```
+/// # Constructor methods
+///
+/// - [`Block::new`] creates a new [`Block`] with no border or paddings.
+/// - [`Block::bordered`] Create a new block with all borders shown.
+///
+/// # Setter methods
+///
+/// These methods are fluent setters. They return a new [`Block`] with the specified property set.
+///
+/// - [`Block::borders`] Defines which borders to display.
+/// - [`Block::border_style`] Defines the style of the borders.
+/// - [`Block::border_type`] Sets the symbols used to display the border (e.g. single line, double
+///   line, thick or rounded borders).
+/// - [`Block::padding`] Defines the padding inside a [`Block`].
+/// - [`Block::style`] Sets the base style of the widget.
+/// - [`Block::title`] Adds a title to the block.
+/// - [`Block::title_alignment`] Sets the default [`Alignment`] for all block titles.
+/// - [`Block::title_style`] Applies the style to all titles.
+/// - [`Block::title_top`] Adds a title to the top of the block.
+/// - [`Block::title_bottom`] Adds a title to the bottom of the block.
+/// - [`Block::title_position`] Adds a title to the block.
+///
+/// # Other Methods
+/// - [`Block::inner`] Compute the inner area of a block based on its border visibility rules.
 ///
 /// # Examples
 ///
@@ -62,6 +86,20 @@ pub use title::{Position, Title};
 /// Block::new()
 ///     .title("Title 1")
 ///     .title(Title::from("Title 2").position(Position::Bottom));
+/// ```
+///
+/// You can also pass it as parameters of another widget so that the block surrounds them:
+/// ```
+/// use ratatui::{
+///     prelude::*,
+///     widgets::{Block, Borders, List},
+/// };
+///
+/// let surrounding_block = Block::default()
+///     .borders(Borders::ALL)
+///     .title("Here is a list of items");
+/// let items = ["Item 1", "Item 2", "Item 3"];
+/// let list = List::new(items).block(surrounding_block);
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
