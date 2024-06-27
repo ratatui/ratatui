@@ -56,6 +56,5 @@ pub use masked::Masked;
 mod span;
 pub use span::{Span, ToSpan};
 
-#[allow(clippy::module_inception)]
 mod text;
 pub use text::{Text, ToText};

@@ -4,7 +4,6 @@ mod alignment;
 mod constraint;
 mod direction;
 mod flex;
-#[allow(clippy::module_inception)]
 mod layout;
 mod margin;
 mod position;

@@ -2,7 +2,6 @@
 //! A module for the [`Buffer`] and [`Cell`] types.
 
 mod assert;
-#[allow(clippy::module_inception)]
 mod buffer;
 mod cell;
 
