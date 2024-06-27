@@ -420,7 +420,7 @@ impl<'a> Block<'a> {
     /// # use ratatui::{prelude::*, widgets::*};
     /// let block = Block::new().style(Style::new().red().on_black());
     ///
-    /// // To override styles set on the block level, you can style the title, border.
+    /// // For border and title you can additionally apply styles on top of the block level style.
     /// let block = Block::new()
     ///     .style(Style::new().red().bold().italic())
     ///     .border_style(Style::new().not_italic()) // will be red and bold
