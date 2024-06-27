@@ -38,9 +38,6 @@ pub use title::{Position, Title};
 /// # Constructor methods
 ///
 /// - [`Block::new`] creates a new [`Block`] with no border or paddings.
-/// - [`Block::border_style`] Defines the style of the borders.
-/// - [`Block::border_type`] Sets the symbols used to display the border (e.g. single line, double
-///   line, thick or rounded borders).
 /// - [`Block::bordered`] Create a new block with all borders shown.
 ///
 /// # Setter methods
@@ -48,6 +45,9 @@ pub use title::{Position, Title};
 /// These methods are fluent setters. They return a new [`Block`] with the specified property set.
 ///
 /// - [`Block::borders`] Defines which borders to display.
+/// - [`Block::border_style`] Defines the style of the borders.
+/// - [`Block::border_type`] Sets the symbols used to display the border (e.g. single line, double
+///   line, thick or rounded borders).
 /// - [`Block::padding`] Defines the padding inside a [`Block`].
 /// - [`Block::style`] Sets the base style of the widget.
 /// - [`Block::title`] Adds a title to the block.
