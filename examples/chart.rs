@@ -153,17 +153,18 @@ fn run_app<B: Backend>(
 fn ui(frame: &mut Frame, app: &App) {
     let area = frame.size();
 
-    let vertical = Layout::vertical([Constraint::Percentage(40), Constraint::Percentage(60)]);
-    let horizontal = Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)]);
-    let [chart1, bottom] = vertical.areas(area);
-    let [line_chart, scatter] = horizontal.areas(bottom);
+    let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(area);
+    let [animated_chart, bar_chart] =
+        Layout::horizontal([Constraint::Fill(1), Constraint::Length(29)]).areas(top);
+    let [line_chart, scatter] = Layout::horizontal([Constraint::Fill(1); 2]).areas(bottom);
 
-    render_chart1(frame, chart1, app);
+    render_animated_chart(frame, animated_chart, app);
+    render_barchart(frame, bar_chart);
     render_line_chart(frame, line_chart);
     render_scatter(frame, scatter);
 }
 
-fn render_chart1(f: &mut Frame, area: Rect, app: &App) {
+fn render_animated_chart(f: &mut Frame, area: Rect, app: &App) {
     let x_labels = vec![
         Span::styled(
             format!("{}", app.window[0]),
@@ -189,7 +190,7 @@ fn render_chart1(f: &mut Frame, area: Rect, app: &App) {
     ];
 
     let chart = Chart::new(datasets)
-        .block(Block::bordered().title("Chart 1".cyan().bold()))
+        .block(Block::bordered())
         .x_axis(
             Axis::default()
                 .title("X Axis")
@@ -206,6 +207,51 @@ fn render_chart1(f: &mut Frame, area: Rect, app: &App) {
         );
 
     f.render_widget(chart, area);
+}
+
+fn render_barchart(frame: &mut Frame, bar_chart: Rect) {
+    let dataset = Dataset::default()
+        .marker(symbols::Marker::HalfBlock)
+        .style(Style::new().fg(Color::Blue))
+        .graph_type(GraphType::Bar)
+        // a bell curve
+        .data(&[
+            (0., 0.4),
+            (10., 2.9),
+            (20., 13.5),
+            (30., 41.1),
+            (40., 80.1),
+            (50., 100.0),
+            (60., 80.1),
+            (70., 41.1),
+            (80., 13.5),
+            (90., 2.9),
+            (100., 0.4),
+        ]);
+
+    let chart = Chart::new(vec![dataset])
+        .block(
+            Block::bordered().title(
+                Title::default()
+                    .content("Bar chart".cyan().bold())
+                    .alignment(Alignment::Center),
+            ),
+        )
+        .x_axis(
+            Axis::default()
+                .style(Style::default().gray())
+                .bounds([0.0, 100.0])
+                .labels(vec!["0".bold(), "50".into(), "100.0".bold()]),
+        )
+        .y_axis(
+            Axis::default()
+                .style(Style::default().gray())
+                .bounds([0.0, 100.0])
+                .labels(vec!["0".bold(), "50".into(), "100.0".bold()]),
+        )
+        .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)));
+
+    frame.render_widget(chart, bar_chart);
 }
 
 fn render_line_chart(f: &mut Frame, area: Rect) {
