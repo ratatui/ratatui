@@ -238,7 +238,7 @@ where
     ///
     /// Returns a [`CompletedFrame`] if successful, otherwise a [`std::io::Error`].
     ///
-    /// If the render function passed to this method can fail, use [`try_draw`] instead.
+    /// If the render callback passed to this method can fail, use [`try_draw`] instead.
     ///
     /// Applications should call `draw` or [`try_draw`] in a loop to continuously render the
     /// terminal. These methods are the main entry points for drawing to the terminal.
@@ -248,7 +248,7 @@ where
     /// This method will:
     ///
     /// - autoresize the terminal if necessary
-    /// - call the rendering parameter, passing it a [`Frame`] reference to render to
+    /// - call the render callback, passing it a [`Frame`] reference to render to
     /// - flush the current internal state by copying the current buffer to the backend
     /// - move the cursor to the last known position if it was set during the rendering closure
     /// - return a [`CompletedFrame`] with the current buffer and the area of the terminal
@@ -256,10 +256,10 @@ where
     /// The [`CompletedFrame`] returned by this method can be useful for debugging or testing
     /// purposes, but it is often not used in regular applicationss.
     ///
-    /// The render function should fully render the entire frame when called, including areas that
+    /// The render callback should fully render the entire frame when called, including areas that
     /// are unchanged from the previous frame. This is because each frame is compared to the
     /// previous frame to determine what has changed, and only the changes are written to the
-    /// terminal. If the render function does not fully render the frame, the terminal will not be
+    /// terminal. If the render callback does not fully render the frame, the terminal will not be
     /// in a consistent state.
     ///
     /// # Examples
@@ -286,12 +286,12 @@ where
     /// }
     /// # io::Result::Ok(())
     /// ```
-    pub fn draw<F>(&mut self, render: F) -> io::Result<CompletedFrame>
+    pub fn draw<F>(&mut self, render_callback: F) -> io::Result<CompletedFrame>
     where
         F: FnOnce(&mut Frame),
     {
         self.try_draw(|frame| {
-            render(frame);
+            render_callback(frame);
             io::Result::Ok(())
         })
     }
@@ -301,8 +301,8 @@ where
     /// Returns [`Result::Ok`] containing a [`CompletedFrame`] if successful, otherwise
     /// [`Result::Err`] containing the [`std::io::Error`] that caused the failure.
     ///
-    /// This is the equivalent of [`Terminal::draw`] but accepts a function or closure that returns
-    /// a `Result` instead of nothing.
+    /// This is the equivalent of [`Terminal::draw`] but the render callback is a function or
+    /// closure that returns a `Result` instead of nothing.
     ///
     /// Applications should call `try_draw` or [`draw`] in a loop to continuously render the
     /// terminal. These methods are the main entry points for drawing to the terminal.
@@ -312,21 +312,21 @@ where
     /// This method will:
     ///
     /// - autoresize the terminal if necessary
-    /// - call the rendering parameter, passing it a [`Frame`] reference to render to
+    /// - call the render callback, passing it a [`Frame`] reference to render to
     /// - flush the current internal state by copying the current buffer to the backend
     /// - move the cursor to the last known position if it was set during the rendering closure
     /// - return a [`CompletedFrame`] with the current buffer and the area of the terminal
     ///
-    /// The render function passed to `try_draw` can return any a [`Result`] with an error type that
+    /// The render callback passed to `try_draw` can return any [`Result`] with an error type that
     /// can be converted into an [`std::io::Error`] using the [`Into`] trait. This makes it possible
     /// to use the `?` operator to propagate errors that occur during rendering. If the render
-    /// function returns an error, the error will be returned from `try_draw` as an
+    /// callback returns an error, the error will be returned from `try_draw` as an
     /// [`std::io::Error`] and the terminal will not be updated.
     ///
     /// The [`CompletedFrame`] returned by this method can be useful for debugging or testing
     /// purposes, but it is often not used in regular applicationss.
     ///
-    /// The render function should fully render the entire frame when called, including areas that
+    /// The render callback should fully render the entire frame when called, including areas that
     /// are unchanged from the previous frame. This is because each frame is compared to the
     /// previous frame to determine what has changed, and only the changes are written to the
     /// terminal. If the render function does not fully render the frame, the terminal will not be
@@ -360,7 +360,7 @@ where
     /// }
     /// # io::Result::Ok(())
     /// ```
-    pub fn try_draw<F, E>(&mut self, render: F) -> io::Result<CompletedFrame>
+    pub fn try_draw<F, E>(&mut self, render_callback: F) -> io::Result<CompletedFrame>
     where
         F: FnOnce(&mut Frame) -> Result<(), E>,
         E: Into<io::Error>,
@@ -370,7 +370,9 @@ where
         self.autoresize()?;
 
         let mut frame = self.get_frame();
-        render(&mut frame).map_err(Into::into)?;
+
+        render_callback(&mut frame).map_err(Into::into)?;
+
         // We can't change the cursor position right away because we have to flush the frame to
         // stdout first. But we also can't keep the frame around, since it holds a &mut to
         // Buffer. Thus, we're taking the important data out of the Frame and dropping it.
