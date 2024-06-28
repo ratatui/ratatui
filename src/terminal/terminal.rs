@@ -298,7 +298,8 @@ where
 
     /// Tries to draw a single frame to the terminal.
     ///
-    /// Returns a [`CompletedFrame`] if successful, otherwise a [`std::io::Error`].
+    /// Returns [`Result::Ok`] containing a [`CompletedFrame`] if successful, otherwise
+    /// [`Result::Err`] containing the [`std::io::Error`] that caused the failure.
     ///
     /// This is the equivalent of [`Terminal::draw`] but accepts a function or closure that returns
     /// a `Result` instead of nothing.
