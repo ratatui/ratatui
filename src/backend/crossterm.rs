@@ -37,7 +37,7 @@ use crate::{
 ///
 /// Convenience methods ([`CrosstermBackend::stdout`] and [`CrosstermBackend::stderr`] are provided
 /// to create a `CrosstermBackend` with [`std::io::stdout`] or [`std::io::stderr`] as the writer
-/// with default settings to enable raw mode and switch to the alternate screen.
+/// with raw mode enabled and the terminal switched to the alternate screen.
 ///
 /// If the default settings are not desired, the `CrosstermBackend` can be configured using the
 /// `with_*` methods. These methods return an [`io::Result`] containing self so that they can be
