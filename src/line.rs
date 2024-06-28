@@ -37,13 +37,13 @@
 #[macro_export]
 macro_rules! line {
     () => {
-        ratatui::text::Line::default()
+        ::ratatui::text::Line::default()
     };
     ($span:expr; $n:expr) => {
-      ratatui::text::Line::from(vec![$span.into(); $n])
+      ::ratatui::text::Line::from(vec![$span.into(); $n])
     };
     ($($span:expr),+ $(,)?) => {{
-        ratatui::text::Line::from(vec![
+        ::ratatui::text::Line::from(vec![
         $(
             $span.into(),
         )+
@@ -56,21 +56,44 @@ mod tests {
     use ratatui::prelude::*;
 
     #[test]
-    fn line() {
-        // literal
+    fn line_literal() {
         let line = line!["hello", "world"];
         assert_eq!(line, Line::from(vec!["hello".into(), "world".into()]));
+    }
 
-        // raw instead line
+    #[test]
+    fn line_raw_instead_of_literal() {
         let line = line![Span::raw("hello"), "world"];
         assert_eq!(line, Line::from(vec!["hello".into(), "world".into()]));
+    }
 
-        // vec count syntax
+    #[test]
+    fn line_vec_count_syntax() {
         let line = line!["hello"; 2];
         assert_eq!(line, Line::from(vec!["hello".into(), "hello".into()]));
+    }
 
-        // vec count syntax with span
+    #[test]
+    fn line_vec_count_syntax_with_span() {
         let line = line![crate::span!("hello"); 2];
         assert_eq!(line, Line::from(vec!["hello".into(), "hello".into()]));
+    }
+
+    #[test]
+    fn line_empty() {
+        let line = line![];
+        assert_eq!(line, Line::default());
+    }
+
+    #[test]
+    fn line_single_span() {
+        let line = line![Span::raw("foo")];
+        assert_eq!(line, Line::from(vec!["foo".into()]));
+    }
+
+    #[test]
+    fn line_repeated_span() {
+        let line = line![Span::raw("foo"); 2];
+        assert_eq!(line, Line::from(vec!["foo".into(), "foo".into()]));
     }
 }

@@ -84,16 +84,16 @@
 #[macro_export]
 macro_rules! span {
     ($string:literal) => {
-        ratatui::text::Span::raw(format!($string))
+        ::ratatui::text::Span::raw(format!($string))
     };
     ($string:literal, $($arg:tt)*) => {
-        ratatui::text::Span::raw(format!($string, $($arg)*))
+        ::ratatui::text::Span::raw(format!($string, $($arg)*))
     };
     ($style:expr, $($arg:tt)*) => {
         compile_error!("first parameter must be a formatting specifier followed by a comma OR a `Style` followed by a semicolon")
     };
     ($style:expr; $($arg:tt)*) => {
-        ratatui::text::Span::styled(format!($($arg)*), $style)
+        ::ratatui::text::Span::styled(format!($($arg)*), $style)
     };
 }
 

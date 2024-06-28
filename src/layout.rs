@@ -18,22 +18,22 @@
 #[macro_export]
 macro_rules! constraint {
     (== $token:tt %) => {
-        ratatui::layout::Constraint::Percentage($token)
+        ::ratatui::layout::Constraint::Percentage($token)
     };
     (>= $expr:expr) => {
-        ratatui::layout::Constraint::Min($expr)
+        ::ratatui::layout::Constraint::Min($expr)
     };
     (<= $expr:expr) => {
-        ratatui::layout::Constraint::Max($expr)
+        ::ratatui::layout::Constraint::Max($expr)
     };
     (== $num:tt / $denom:tt) => {
-        ratatui::layout::Constraint::Ratio($num as u32, $denom as u32)
+        ::ratatui::layout::Constraint::Ratio($num as u32, $denom as u32)
     };
     (== $expr:expr) => {
-        ratatui::layout::Constraint::Length($expr)
+        ::ratatui::layout::Constraint::Length($expr)
     };
     (*= $expr:expr) => {
-        ratatui::layout::Constraint::Fill($expr)
+        ::ratatui::layout::Constraint::Fill($expr)
     };
 }
 
@@ -171,7 +171,7 @@ macro_rules! constraints {
 #[macro_export]
 macro_rules! vertical {
     ($( $constraint:tt )+) => {
-        ratatui::layout::Layout::vertical($crate::constraints!( $($constraint)+ ))
+        ::ratatui::layout::Layout::vertical($crate::constraints!( $($constraint)+ ))
     };
 }
 
@@ -192,6 +192,6 @@ macro_rules! vertical {
 #[macro_export]
 macro_rules! horizontal {
     ($( $constraint:tt )+) => {
-        ratatui::layout::Layout::horizontal($crate::constraints!( $($constraint)+ ))
+        ::ratatui::layout::Layout::horizontal($crate::constraints!( $($constraint)+ ))
     };
 }

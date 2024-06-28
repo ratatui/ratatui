@@ -14,6 +14,15 @@
 /// let row = row!["hello".red(), "world".red().bold()];
 /// ```
 ///
+/// * Create an empty [`Row`]:
+///
+/// ```rust
+/// # use ratatui::prelude::*;
+/// use ratatui_macros::row;
+///
+/// let empty_row = row![];
+/// ```
+///
 /// * Create a [`Row`] from a given [`Cell`] repeated some amount of times:
 ///
 /// ```rust
@@ -40,15 +49,15 @@
 #[macro_export]
 macro_rules! row {
     () => {
-        ratatui::widgets::Row::default()
+        ::ratatui::widgets::Row::default()
     };
     ($cell:expr; $n:expr) => {
-        ratatui::widgets::Row::new(vec![ratatui::widgets::Cell::from($cell); $n])
+        ::ratatui::widgets::Row::new(vec![::ratatui::widgets::Cell::from($cell); $n])
     };
     ($($cell:expr),+ $(,)?) => {{
-        ratatui::widgets::Row::new(vec![
+        ::ratatui::widgets::Row::new(vec![
         $(
-            ratatui::widgets::Cell::from($cell),
+            ::ratatui::widgets::Cell::from($cell),
         )+
         ])
     }};
@@ -63,28 +72,52 @@ mod tests {
     };
 
     #[test]
-    fn row() {
-        // literal
+    fn row_literal() {
         let row = row!["hello", "world"];
         assert_eq!(
             row,
             Row::new(vec![Cell::from("hello"), Cell::from("world")])
         );
+    }
 
-        // explicit use of span and line
+    #[test]
+    fn row_empty() {
+        let row = row![];
+        assert_eq!(row, Row::default());
+    }
+
+    #[test]
+    fn row_single_cell() {
+        let row = row![Cell::from("foo")];
+        assert_eq!(row, Row::new(vec![Cell::from("foo")]));
+    }
+
+    #[test]
+    fn row_repeated_cell() {
+        let row = row![Cell::from("foo"); 2];
+        assert_eq!(row, Row::new(vec![Cell::from("foo"), Cell::from("foo")]));
+    }
+
+    #[test]
+    fn row_explicit_use_of_span_and_line() {
         let row = row![crate::line!("hello"), crate::span!["world"]];
         assert_eq!(
             row,
             Row::new(vec![Cell::from("hello"), Cell::from("world")])
         );
+    }
 
-        // vec count syntax
+    #[test]
+    fn row_vec_count_syntax() {
         let row = row!["hello"; 2];
         assert_eq!(
             row,
             Row::new(vec![Cell::from("hello"), Cell::from("hello")])
         );
+    }
 
+    #[test]
+    fn multiple_rows() {
         use crate::text;
         let rows = [
             row!["Find File", text!["ctrl+f"].right_aligned()],
