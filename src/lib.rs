@@ -2,5 +2,6 @@
 
 mod layout;
 mod line;
+mod row;
 mod span;
 mod text;
