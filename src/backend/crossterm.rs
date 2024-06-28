@@ -203,7 +203,7 @@ impl<W: Write> CrosstermBackend<W> {
         Ok(self)
     }
 
-    /// Enables raw mode for the terminal and switches to the alternate screen.
+    /// Switches to the alternate screen.
     ///
     /// Returns an [`io::Result`] containing self so that it can be chained with other methods.
     ///
