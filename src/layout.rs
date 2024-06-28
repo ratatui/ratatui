@@ -6,7 +6,7 @@
 /// # Examples
 ///
 /// ```
-/// use ratatui::prelude::*;
+/// # use ratatui::prelude::*;
 /// use ratatui_macros::constraint;
 /// assert_eq!(constraint!(>= 3 + 4), Constraint::Min(7));
 /// assert_eq!(constraint!(<= 3 + 4), Constraint::Max(7));
@@ -53,8 +53,8 @@ macro_rules! constraint {
 /// ```
 ///
 /// ```rust
-/// use ratatui::prelude::*;
-/// use ratatui_macros::constraints;
+/// # use ratatui::prelude::*;
+/// # use ratatui_macros::constraints;
 /// assert_eq!(
 ///     constraints![==50, ==30%, >=3, <=1, ==1/2, *=1],
 ///     [

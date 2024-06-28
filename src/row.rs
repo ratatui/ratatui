@@ -18,8 +18,7 @@
 ///
 /// ```rust
 /// # use ratatui::prelude::*;
-/// use ratatui_macros::row;
-///
+/// # use ratatui_macros::row;
 /// let empty_row = row![];
 /// ```
 ///
@@ -27,8 +26,7 @@
 ///
 /// ```rust
 /// # use ratatui::prelude::*;
-/// use ratatui_macros::row;
-///
+/// # use ratatui_macros::row;
 /// let row = row!["hello"; 2];
 /// ```
 ///

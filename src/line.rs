@@ -18,8 +18,7 @@
 ///
 /// ```rust
 /// # use ratatui::prelude::*;
-/// use ratatui_macros::line;
-///
+/// # use ratatui_macros::line;
 /// let line = line!["hello"; 2];
 /// ```
 ///
