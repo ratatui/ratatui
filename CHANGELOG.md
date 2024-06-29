@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2](https://github.com/ratatui-org/ratatui-macros/compare/v0.4.1...v0.4.2) - 2024-06-29
+
+### Added
+- Use `::ratatui` instead of `ratatui` ([#54](https://github.com/ratatui-org/ratatui-macros/pull/54))
+- Add row! macro ([#52](https://github.com/ratatui-org/ratatui-macros/pull/52))
+
+### Other
+- Update README with row! documentation ([#56](https://github.com/ratatui-org/ratatui-macros/pull/56))
+- Make doc examples shorter by removing duplicate imports ([#55](https://github.com/ratatui-org/ratatui-macros/pull/55))
+
 ## [0.4.1](https://github.com/ratatui-org/ratatui-macros/compare/v0.4.0...v0.4.1) - 2024-06-24
 
 ### Other
