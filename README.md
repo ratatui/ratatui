@@ -1,15 +1,14 @@
 # Ratatui Macros
 
-[![Crates.io badge]][ratatui_macros crate]
-[![License badge]](./LICENSE)
-[![Docs.rs badge]][API Docs]
-[![CI Badge]][CI Status]
+[![Crates.io badge]][ratatui_macros crate] [![License badge]](./LICENSE)
+[![Docs.rs badge]][API Docs] [![CI Badge]][CI Status]
 [![Crate Downloads badge]][ratatui_macros crate]
 
 `ratatui-macros` is a Rust crate that provides easy-to-use macros for simplifying boilerplate
 associated with creating UI using [Ratatui].
 
-This is an experimental playground for us to explore macros that would be useful to have in Ratatui proper.
+This is an experimental playground for us to explore macros that would be useful to have in Ratatui
+proper.
 
 ## Features
 
@@ -41,8 +40,7 @@ use ratatui_macros::{
 
 ### Layout
 
-If you are new to Ratatui, check out the [Layout concepts] article on the Ratatui website before
-proceeding.
+If you are new to Ratatui, check out the [Layout concepts] article on the Ratatui website before proceeding.
 
 Use the `constraints!` macro to define layout constraints:
 
@@ -111,7 +109,9 @@ assert_eq!(right.width, 3);
 
 ## Spans
 
-The `span!` macro create raw and styled `Span`s. They each take a format string and arguments. `span!` accepts as the first parameter any value that can be converted to a `Style` followed by a `;` followed by the format string and arguments.
+The `span!` macro create raw and styled `Span`s. They each take a format string and arguments.
+`span!` accepts as the first parameter any value that can be converted to a `Style` followed by a
+`;` followed by the format string and arguments.
 
 ```rust
 use ratatui::prelude::*;
@@ -126,7 +126,8 @@ let styled_greeting = span!(Modifier::BOLD; "hello {name}");
 
 ## Line
 
-The `line!` macro creates a `Line` that contains a sequence of spans. It is similar to the `vec!` macro.
+The `line!` macro creates a `Line` that contains a sequence of spans. It is similar to the `vec!`
+macro.
 
 ```rust
 use ratatui::prelude::*;
@@ -139,7 +140,8 @@ let line = line!["bye"; 2];
 
 ## Text
 
-The `text!` macro creates a `Text` that contains a sequence of lines. It is similar to the `vec!` macro.
+The `text!` macro creates a `Text` that contains a sequence of lines. It is similar to the `vec!`
+macro.
 
 ```rust
 use ratatui::prelude::*;
@@ -159,6 +161,30 @@ let name = "Bye!!!";
 let text = text![line!["hello", "world".bold()], span!(Modifier::BOLD; "{name}")];
 ```
 
+## Row
+
+The `row!` macro creates a `Row` that contains a sequence of `Cell`. It is similar to the `vec!`
+macro. A `Row` represents a sequence of `Cell`s in a single row of a table.
+
+```rust
+use ratatui::prelude::*;
+use ratatui_macros::row;
+
+let rows = [
+    row!["hello", "world"],
+    row!["goodbye", "world"],
+];
+```
+
+It is even possible to use `span!`, `line!` and `text!` in the `row!` macro:
+
+```rust
+use ratatui::prelude::*;
+use ratatui_macros::{span, line, text, row};
+let name = "Bye!!!";
+let text = row![text![line!["hello", "world".bold()]], span!(Modifier::BOLD; "{name}")];
+```
+
 ## Contributing
 
 Contributions to `ratatui-macros` are welcome! Whether it's submitting a bug report, a feature
@@ -166,7 +192,8 @@ request, or a pull request, all forms of contributions are valued and appreciate
 
 [Crates.io badge]: https://img.shields.io/crates/v/ratatui-macros?logo=rust&style=flat-square
 [License badge]: https://img.shields.io/crates/l/ratatui-macros
-[CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui-macros/ci.yml?logo=github&style=flat-square
+[CI Badge]:
+  https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui-macros/ci.yml?logo=github&style=flat-square
 [Docs.rs badge]: https://img.shields.io/docsrs/ratatui-macros?logo=rust&style=flat-square
 [Crate Downloads badge]: https://img.shields.io/crates/d/ratatui-macros?logo=rust&style=flat-square
 [ratatui_macros crate]: https://crates.io/crates/ratatui-macros
