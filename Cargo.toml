@@ -8,7 +8,7 @@ license = "MIT"                                              # or any other appr
 repository = "https://github.com/ratatui-org/ratatui-macros"
 documentation = "https://docs.rs/ratatui-macros"
 keywords = ["ratatui", "macros", "tui", "ui"]
-categories = ["tui", "macro"]
+categories = ["command-line-interface"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
