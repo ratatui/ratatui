@@ -24,8 +24,12 @@
 mod barchart;
 pub mod block;
 mod borders;
-#[cfg(feature = "widget-calendar")]
+#[cfg(any(feature = "widget-calendar", feature = "widget-calendar-chrono"))]
 pub mod calendar;
+#[cfg(all(feature = "widget-calendar", feature = "widget-calendar-chrono"))]
+compile_error!(
+    "These two feature flags are actually conflicting. You are supposed to only use one of them"
+);
 pub mod canvas;
 mod chart;
 mod clear;

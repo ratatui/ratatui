@@ -44,6 +44,7 @@ time = { version = "0.3.11", optional = true, features = ["local-offset"] }
 unicode-segmentation = "1.10"
 unicode-truncate = "1"
 unicode-width = "0.1.13"
+chrono = { version = "0.4.38", optional = true }
 
 [dev-dependencies]
 anyhow = "1.0.71"
@@ -136,6 +137,11 @@ all-widgets = ["widget-calendar"]
 #! dependencies. The available features are:
 ## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
 widget-calendar = ["dep:time"]
+
+#! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
+#! dependencies. The available features are:
+## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`chrono`].
+widget-calendar-chrono = ["dep:chrono"]
 
 #! The following optional features are only available for some backends:
 
