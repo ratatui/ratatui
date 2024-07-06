@@ -220,6 +220,11 @@ required-features = ["crossterm", "widget-calendar"]
 doc-scrape-examples = true
 
 [[example]]
+name = "calendar_chrono"
+required-features = ["crossterm", "widget-calendar-chrono"]
+doc-scrape-examples = true
+
+[[example]]
 name = "canvas"
 required-features = ["crossterm"]
 doc-scrape-examples = true
