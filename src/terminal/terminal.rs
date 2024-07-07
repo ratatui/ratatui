@@ -158,6 +158,7 @@ where
     /// Get a Frame object which provides a consistent view into the terminal state for rendering.
     pub fn get_frame(&mut self) -> Frame {
         let count = self.frame_count;
+        self.current_buffer_mut().cursor_position = None;
         Frame {
             cursor_position: None,
             viewport_area: self.viewport_area,
@@ -266,11 +267,12 @@ where
         self.autoresize()?;
 
         let mut frame = self.get_frame();
+
         f(&mut frame);
         // We can't change the cursor position right away because we have to flush the frame to
         // stdout first. But we also can't keep the frame around, since it holds a &mut to
         // Buffer. Thus, we're taking the important data out of the Frame and dropping it.
-        let cursor_position = frame.cursor_position;
+        let cursor_position = frame.cursor_position.or(frame.buffer.cursor_position);
 
         // Draw to stdout
         self.flush()?;

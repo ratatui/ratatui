@@ -48,6 +48,8 @@ pub struct Buffer {
     /// The content of the buffer. The length of this Vec should always be equal to area.width *
     /// area.height
     pub content: Vec<Cell>,
+    /// The cursor shown for this buffer.
+    pub cursor_position: Option<(u16, u16)>,
 }
 
 impl Buffer {
@@ -62,7 +64,11 @@ impl Buffer {
     pub fn filled(area: Rect, cell: Cell) -> Self {
         let size = area.area() as usize;
         let content = vec![cell; size];
-        Self { area, content }
+        Self {
+            area,
+            content,
+            cursor_position: None,
+        }
     }
 
     /// Returns a Buffer containing the given lines
@@ -180,6 +186,19 @@ impl Buffer {
             self.area.x + (i as u16) % self.area.width,
             self.area.y + (i as u16) / self.area.width,
         )
+    }
+
+    /// After drawing the frame to which this buffer belongs, the cursor is made visible
+    /// and put at the specified (x,y) coordinates. If this method is not called, the
+    /// cursor will be hidden.
+    ///
+    /// Unless the cursor is set at the Frame directly, which takes precedence.
+    ///
+    /// Note that this will interfere with calls to `Terminal::hide_cursor()`,
+    /// `Terminal::show_cursor()`, and `Terminal::set_cursor()`. Pick one of the APIs and stick
+    /// with it.
+    pub fn set_cursor(&mut self, x: u16, y: u16) {
+        self.cursor_position = Some((x, y));
     }
 
     /// Print a string, starting at the position (x, y)
