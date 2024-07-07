@@ -2,8 +2,8 @@
 # To run this script, install vhs and run `vhs ./examples/hello_world.tape`
 Output "target/hyperlink.gif"
 Set Theme "Aardvark Blue"
-Set Width 600
-Set Height 150
+Set Width 1200
+Set Height 200
 Hide
 Type "cargo run --example=hyperlink --features=crossterm,unstable-widget-ref"
 Enter
