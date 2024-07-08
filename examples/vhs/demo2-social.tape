@@ -1,5 +1,5 @@
 # This is a vhs script. See https://github.com/charmbracelet/vhs for more info.
-# To run this script, install vhs and run `vhs ./examples/demo.tape`
+# To run this script, install vhs and run `vhs ./examples/demo2-social.tape`
 
 Output "target/demo2-social.gif"
 Set Theme "Aardvark Blue"

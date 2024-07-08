@@ -1,5 +1,5 @@
 # This is a vhs script. See https://github.com/charmbracelet/vhs for more info.
-# To run this script, install vhs and run `vhs ./examples/layout.tape`
+# To run this script, install vhs and run `vhs ./examples/flex.tape`
 Output "target/flex.gif"
 Set Theme "Aardvark Blue"
 Set Width 1200
