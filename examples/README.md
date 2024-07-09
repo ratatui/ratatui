@@ -141,8 +141,6 @@ of the VHS tape.
 
 <https://github.com/ratatui-org/ratatui/assets/381361/485e775a-e0b5-4133-899b-1e8aeb56e774>
 
-![Constraint Explorer][constraint-explorer.gif]
-
 ## Constraint Explorer
 
 Demonstrates the behaviour of each
@@ -153,13 +151,15 @@ respect to each other across different `Flex` modes.
 cargo run --example=constraint-explorer --features=crossterm
 ```
 
-![Constraints][constraints.gif]
+![Constraint Explorer][constraint-explorer.gif]
 
 ## Constraints
 
 Demonstrates how to use a
 [`Constraint`](https://docs.rs/ratatui/latest/ratatui/layout/enum.Constraint.html) for defining
 layout element sizes.
+
+![Constraints][constraints.gif]
 
 ```shell
 cargo run --example=constraints --features=crossterm
@@ -186,7 +186,7 @@ Source: [gauge.rs](./gauge.rs).
 cargo run --example=gauge --features=crossterm
 ```
 
-![Flex][flex.gif]
+![Gauge][gauge.gif]
 
 ## Flex
 
@@ -197,7 +197,7 @@ modes for controlling layout space distribution.
 cargo run --example=flex --features=crossterm
 ```
 
-![Gauge][gauge.gif]
+![Flex][flex.gif]
 
 ## Line Gauge
 
@@ -209,7 +209,7 @@ Gauge`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.LineGauge.html) wi
 cargo run --example=line_gauge --features=crossterm
 ```
 
-![Hyperlink][hyperlink.gif]
+![LineGauge][line_gauge.gif]
 
 ## Hyperlink
 
@@ -219,7 +219,7 @@ Demonstrates how to use OSC 8 to create hyperlinks in the terminal.
 cargo run --example=hyperlink --features="crossterm unstable-widget-ref"
 ```
 
-![LineGauge][line_gauge.gif]
+![Hyperlink][hyperlink.gif]
 
 ## Inline
 
@@ -265,7 +265,7 @@ Demonstrates the style
 cargo run --example=modifiers --features=crossterm
 ```
 
-![Minimal][minimal.gif]
+![Modifiers][modifiers.gif]
 
 ## Minimal
 
@@ -275,7 +275,7 @@ Demonstrates how to create a minimal Hello, World program.
 cargo run --example=minimal --features=crossterm
 ```
 
-![Modifiers][modifiers.gif]
+![Minimal][minimal.gif]
 
 ## Panic
 
@@ -380,7 +380,7 @@ Demonstrates one approach to accepting user input. Source [user_input.rs](./user
 cargo run --example=user_input --features=crossterm
 ```
 
-![Tracing][tracing.gif]
+![User Input][user_input.gif]
 
 ## Tracing
 
@@ -391,7 +391,7 @@ a file named `tracing.log` in the current directory.
 cargo run --example=tracing --features=crossterm
 ```
 
-![User Input][user_input.gif]
+![Tracing][tracing.gif]
 
 ## How to update these examples
 
