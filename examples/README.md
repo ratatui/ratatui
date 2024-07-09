@@ -155,9 +155,9 @@ cargo run --example=constraint-explorer --features=crossterm
 
 ## Constraints
 
-Demonstrates how to use a
-[`Constraint`](https://docs.rs/ratatui/latest/ratatui/layout/enum.Constraint.html) for defining
-layout element sizes.
+Demonstrates how to use
+[`Constraint`](https://docs.rs/ratatui/latest/ratatui/layout/enum.Constraint.html) modes for
+defining layout element sizes.
 
 ![Constraints][constraints.gif]
 
@@ -269,7 +269,7 @@ cargo run --example=modifiers --features=crossterm
 
 ## Minimal
 
-Demonstrates how to create a minimal Hello, World program.
+Demonstrates how to create a minimal `Hello World!` program.
 
 ```shell
 cargo run --example=minimal --features=crossterm
@@ -368,6 +368,17 @@ cargo run --example=tabs --features=crossterm
 
 ![Tabs][tabs.gif]
 
+## Tracing
+
+Demonstrates how to use the [tracing crate](https://crates.io/crates/tracing) for logging. Creates
+a file named `tracing.log` in the current directory.
+
+```shell
+cargo run --example=tracing --features=crossterm
+```
+
+![Tracing][tracing.gif]
+
 ## User Input
 
 Demonstrates one approach to accepting user input. Source [user_input.rs](./user_input.rs).
@@ -381,17 +392,6 @@ cargo run --example=user_input --features=crossterm
 ```
 
 ![User Input][user_input.gif]
-
-## Tracing
-
-Demonstrates how to use the [tracing crate](https://crates.io/crates/tracing) for logging. Creates
-a file named `tracing.log` in the current directory.
-
-```shell
-cargo run --example=tracing --features=crossterm
-```
-
-![Tracing][tracing.gif]
 
 ## How to update these examples
 
