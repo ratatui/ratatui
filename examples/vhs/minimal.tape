@@ -1,5 +1,5 @@
 # This is a vhs script. See https://github.com/charmbracelet/vhs for more info.
-# To run this script, install vhs and run `vhs ./examples/hello_world.tape`
+# To run this script, install vhs and run `vhs ./examples/minimal.tape`
 Output "target/minimal.gif"
 Set Theme "Aardvark Blue"
 Set Width 1200
