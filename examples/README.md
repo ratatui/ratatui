@@ -156,7 +156,7 @@ cargo run --example=constraint-explorer --features=crossterm
 ## Constraints
 
 Demonstrates how to use
-[`Constraint`](https://docs.rs/ratatui/latest/ratatui/layout/enum.Constraint.html) modes for
+[`Constraint`](https://docs.rs/ratatui/latest/ratatui/layout/enum.Constraint.html) options for
 defining layout element sizes.
 
 ![Constraints][constraints.gif]
