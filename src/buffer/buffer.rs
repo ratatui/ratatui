@@ -192,7 +192,7 @@ impl Buffer {
     }
 
     /// Print at most the first n characters of a string if enough space is available
-    /// until the end of the line.
+    /// until the end of the line. Skips zero-width graphemes and control characters.
     ///
     /// Use [`Buffer::set_string`] when the maximum amount of characters can be printed.
     pub fn set_stringn<T, S>(
