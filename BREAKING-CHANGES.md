@@ -68,6 +68,20 @@ The `List` widget now clamps the selected index to the bounds of the list when n
 Previously selecting an index past the end of the list would show treat the list as having a
 selection which was not visible. Now the last item in the list will be selected instead.
 
+### `StatefulWidgetRef::render_ref` renamed to `render_stateful_ref` [#1184]
+
+[#1184]: https://github.com/ratatui-org/ratatui/pull/1184
+
+This change helps avoid collisions with `WidgetRef::render_ref`.
+
+```diff
+ trait StatefulWidgetRef {
+     type State;
+-    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) { }
++    fn render_stateful_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) { }
+ }
+```
+
 ### Prelude items added / removed ([#1149])
 
 The following items have been removed from the prelude:

@@ -598,14 +598,14 @@ impl StatefulWidget for Table<'_> {
 impl StatefulWidget for &Table<'_> {
     type State = TableState;
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        StatefulWidgetRef::render_ref(self, area, buf, state);
+        self.render_stateful_ref(area, buf, state);
     }
 }
 
 impl StatefulWidgetRef for Table<'_> {
     type State = TableState;
 
-    fn render_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render_stateful_ref(&self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         buf.set_style(area, self.style);
         self.block.render_ref(area, buf);
         let table_area = self.block.inner_if_some(area);
