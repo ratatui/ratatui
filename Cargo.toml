@@ -48,14 +48,12 @@ unicode-width = "0.1.13"
 [dev-dependencies]
 anyhow = "1.0.71"
 argh = "0.1.12"
-better-panic = "0.3.0"
 color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 derive_builder = "0.20.0"
 fakeit = "1.1"
 font8x8 = "0.3.1"
 indoc = "2"
-palette = "0.7.3"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
@@ -231,7 +229,7 @@ doc-scrape-examples = false
 
 [[example]]
 name = "colors_rgb"
-required-features = ["crossterm"]
+required-features = ["crossterm", "palette"]
 doc-scrape-examples = true
 
 [[example]]
@@ -256,7 +254,7 @@ doc-scrape-examples = false
 
 [[example]]
 name = "demo2"
-required-features = ["crossterm", "widget-calendar"]
+required-features = ["crossterm", "palette", "widget-calendar"]
 doc-scrape-examples = true
 
 [[example]]
