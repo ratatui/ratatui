@@ -3,10 +3,10 @@
 Output "target/barchart.gif"
 Set Theme "Aardvark Blue"
 Set Width 1200
-Set Height 800
+Set Height 1200
 Hide
 Type "cargo run --example=barchart"
 Enter
 Sleep 1s
 Show
-Sleep 5s
+Sleep 1s

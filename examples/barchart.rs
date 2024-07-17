@@ -13,32 +13,27 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{
-    io,
-    time::{Duration, Instant},
-};
+use std::iter::zip;
 
-use crossterm::event::{self, Event, KeyCode};
-use itertools::{izip, Itertools};
+use color_eyre::Result;
 use rand::{thread_rng, Rng};
 use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style, Stylize},
+    crossterm::event::{self, Event, KeyCode},
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
     text::Line,
-    widgets::{Bar, BarChart, BarGroup, Block, Paragraph, Widget},
+    widgets::{Bar, BarChart, BarGroup, Block, Borders},
+    Frame,
 };
-use unicode_width::UnicodeWidthStr;
 
-use self::common::Terminal;
+use self::terminal::Terminal;
 
 const COMPANY_COUNT: usize = 3;
 const PERIOD_COUNT: usize = 4;
 
 struct App {
-    exit: bool,
+    should_exit: bool,
     data: Vec<Bar<'static>>,
-    last_update: Instant,
     companies: [Company; COMPANY_COUNT],
     revenues: [Revenues; PERIOD_COUNT],
 }
@@ -49,121 +44,92 @@ struct Revenues {
 }
 
 struct Company {
+    short_name: &'static str,
     name: &'static str,
-    label: &'static str,
     color: Color,
 }
 
-fn main() -> color_eyre::Result<()> {
-    common::install_hooks()?;
-    let mut terminal = common::init_terminal()?;
+fn main() -> Result<()> {
+    let mut terminal = terminal::init()?;
     let app = App::new();
     app.run(&mut terminal)?;
-    common::restore_terminal()?;
+    terminal::restore_terminal()?;
     Ok(())
 }
 
 impl App {
-    // update the data every 250ms
-    const UPDATE_RATE: Duration = Duration::from_millis(250);
-
-    /// Create a new instance of the application
     fn new() -> Self {
         Self {
-            exit: false,
-            data: generate_main_barchart_data(),
-            last_update: Instant::now(),
+            should_exit: false,
+            data: Self::random_barchart_data(),
             companies: Company::fake_companies(),
             revenues: Revenues::fake_revenues(),
         }
     }
 
-    /// Run the application
-    fn run(mut self, terminal: &mut Terminal) -> io::Result<()> {
-        while !self.exit {
+    /// Generate some random data for the main bar chart
+    fn random_barchart_data() -> Vec<Bar<'static>> {
+        let mut rng = thread_rng();
+        (1..50)
+            .map(|index| {
+                let value = rng.gen_range(60..80);
+                let label = format!("{index:>02}:00").into();
+                let text = format!("{value:>3}°");
+                Bar::default().label(label).value(value).text_value(text)
+            })
+            .collect()
+    }
+
+    fn run(mut self, terminal: &mut Terminal) -> Result<()> {
+        while !self.should_exit {
             self.draw(terminal)?;
             self.handle_events()?;
-            self.update_data();
         }
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut Terminal) -> io::Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.size()))?;
+    fn draw(&mut self, terminal: &mut Terminal) -> Result<()> {
+        terminal.draw(|frame| self.render(frame))?;
         Ok(())
     }
 
-    fn handle_events(&mut self) -> io::Result<()> {
-        let timeout = Self::UPDATE_RATE.saturating_sub(self.last_update.elapsed());
-        if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                if key.code == KeyCode::Char('q') {
-                    self.exit = true;
-                }
+    fn handle_events(&mut self) -> Result<()> {
+        if let Event::Key(key) = event::read()? {
+            if key.code == KeyCode::Char('q') {
+                self.should_exit = true;
             }
         }
         Ok(())
     }
 
-    // Rotate the data to simulate a real-time update
-    fn update_data(&mut self) {
-        if self.last_update.elapsed() >= Self::UPDATE_RATE {
-            let value = self.data.pop().unwrap();
-            self.data.insert(0, value);
-            self.last_update = Instant::now();
-        }
+    fn render(&self, frame: &mut Frame) {
+        use Constraint::{Fill, Min};
+        let [top, mid, bottom] = Layout::vertical([Fill(1), Fill(2), Min(17)])
+            .spacing(1)
+            .areas(frame.size());
+
+        frame.render_widget(self.vertical_ungrouped_barchart(), top);
+        frame.render_widget(self.vertical_revenue_barchart(), mid);
+        frame.render_widget(self.horizontal_revenue_barchart(), bottom);
     }
-}
-
-/// Generate some random data for the main bar chart
-fn generate_main_barchart_data() -> Vec<Bar<'static>> {
-    let mut rng = thread_rng();
-    (1..50)
-        .map(|index| {
-            Bar::default()
-                .label(format!("B{index:>02}").into())
-                .value(rng.gen_range(1..15))
-        })
-        .collect()
-}
-
-impl Widget for &App {
-    /// Render the application
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        use Constraint::{Percentage, Ratio};
-        let [top, bottom] = Layout::vertical([Ratio(1, 3), Ratio(2, 3)]).areas(area);
-        let [left, right] = Layout::horizontal([Percentage(50), Percentage(50)]).areas(bottom);
-
-        let left_legend_area = App::legend_area(left);
-        let right_legend_area = App::legend_area(right);
-
-        self.main_barchart().render(top, buf);
-        self.vertical_revenue_barchart().render(left, buf);
-        self.horizontal_revenue_barchart().render(right, buf);
-        self.legend().render(left_legend_area, buf);
-        self.legend().render(right_legend_area, buf);
-    }
-}
-
-impl App {
-    const TOTAL_REVENUE_LABEL: &'static str = "Total Revenue";
 
     /// Create a bar chart with the data from the `data` field.
-    fn main_barchart(&self) -> BarChart<'_> {
+    fn vertical_ungrouped_barchart(&self) -> BarChart<'_> {
         BarChart::default()
-            .block(Block::bordered().title("Vertical Grouped"))
+            .block(Block::new().borders(Borders::TOP).title("Ungrouped"))
             .data(BarGroup::default().bars(&self.data))
             .bar_width(5)
-            .bar_style(Style::new().fg(Color::Yellow))
-            .value_style(Style::new().fg(Color::Black).bg(Color::Yellow))
+            .bar_style(Style::new().fg(Color::LightYellow))
+            .value_style(Style::new().fg(Color::Black).bg(Color::LightYellow))
     }
 
     /// Create a vertical revenue bar chart with the data from the `revenues` field.
     fn vertical_revenue_barchart(&self) -> BarChart<'_> {
         let mut barchart = BarChart::default()
-            .block(Block::bordered().title("Vertical Grouped"))
-            .bar_width(7)
-            .group_gap(3);
+            .block(Block::new().borders(Borders::TOP).title("Vertical Grouped"))
+            .bar_gap(0)
+            .bar_width(6)
+            .group_gap(2);
         for group in self
             .revenues
             .iter()
@@ -177,7 +143,11 @@ impl App {
     /// Create a horizontal revenue bar chart with the data from the `revenues` field.
     fn horizontal_revenue_barchart(&self) -> BarChart<'_> {
         let mut barchart = BarChart::default()
-            .block(Block::bordered().title("Horizontal Grouped"))
+            .block(
+                Block::new()
+                    .borders(Borders::TOP)
+                    .title("Horizontal Grouped"),
+            )
             .bar_width(1)
             .group_gap(1)
             .bar_gap(0)
@@ -191,25 +161,6 @@ impl App {
         }
         barchart
     }
-
-    /// Calculate the area for the legend based on the width of the revenue bar chart.
-    fn legend_area(area: Rect) -> Rect {
-        let height = 6;
-        let width = Self::TOTAL_REVENUE_LABEL.width() as u16 + 2;
-        Rect::new(area.right().saturating_sub(width), area.y, width, height).intersection(area)
-    }
-
-    /// Create a `Paragraph` widget with the legend for the revenue bar charts.
-    fn legend(&self) -> Paragraph<'static> {
-        let mut text = vec![Line::styled(
-            Self::TOTAL_REVENUE_LABEL,
-            (Color::White, Modifier::BOLD),
-        )];
-        for company in &self.companies {
-            text.push(Line::styled(format!("- {}", company.name), company.color));
-        }
-        Paragraph::new(text).block(Block::bordered().white())
-    }
 }
 
 impl Revenues {
@@ -221,18 +172,18 @@ impl Revenues {
     /// Some fake revenue data
     const fn fake_revenues() -> [Self; PERIOD_COUNT] {
         [
-            Self::new("Jan", [9500, 1500, 10500]),
-            Self::new("Feb", [12500, 2500, 10600]),
-            Self::new("Mar", [5300, 3000, 9000]),
-            Self::new("Apr", [8500, 500, 4200]),
+            Self::new("Jan", [8500, 6500, 7000]),
+            Self::new("Feb", [9000, 7500, 8500]),
+            Self::new("Mar", [12500, 4500, 8200]),
+            Self::new("Apr", [6300, 4000, 5000]),
         ]
     }
 
     /// Create a `BarGroup` with vertical bars for each company
     fn to_vertical_bar_group<'a>(&self, companies: &'a [Company]) -> BarGroup<'a> {
-        let bars = izip!(companies, self.revenues)
+        let bars: Vec<Bar> = zip(companies, self.revenues)
             .map(|(company, revenue)| company.vertical_revenue_bar(revenue))
-            .collect_vec();
+            .collect();
         BarGroup::default()
             .label(Line::from(self.period).centered())
             .bars(&bars)
@@ -240,9 +191,9 @@ impl Revenues {
 
     /// Create a `BarGroup` with horizontal bars for each company
     fn to_horizontal_bar_group<'a>(&'a self, companies: &'a [Company]) -> BarGroup<'a> {
-        let bars = izip!(companies, self.revenues)
+        let bars: Vec<Bar> = zip(companies, self.revenues)
             .map(|(company, revenue)| company.horizontal_revenue_bar(revenue))
-            .collect_vec();
+            .collect();
         BarGroup::default()
             .label(Line::from(self.period).centered())
             .bars(&bars)
@@ -251,16 +202,20 @@ impl Revenues {
 
 impl Company {
     /// Create a new instance of `Company`
-    const fn new(name: &'static str, label: &'static str, color: Color) -> Self {
-        Self { name, label, color }
+    const fn new(short_name: &'static str, name: &'static str, color: Color) -> Self {
+        Self {
+            short_name,
+            name,
+            color,
+        }
     }
 
     /// Generate fake company data
     const fn fake_companies() -> [Self; COMPANY_COUNT] {
         [
-            Self::new("Company A", "Comp.A", Color::Green),
-            Self::new("Company B", "Comp.B", Color::Yellow),
-            Self::new("Company C", "Comp.C", Color::White),
+            Self::new("BAKE", "Bake my day", Color::LightRed),
+            Self::new("BITE", "Bits and Bites", Color::Blue),
+            Self::new("TART", "Tart of the Table", Color::White),
         ]
     }
 
@@ -268,9 +223,9 @@ impl Company {
     ///
     /// The label is the short name of the company, and will be displayed under the bar
     fn vertical_revenue_bar(&self, revenue: u32) -> Bar {
-        let text_value = format!("{:.1}", f64::from(revenue) / 1000.);
+        let text_value = format!("{:.1}M", f64::from(revenue) / 1000.);
         Bar::default()
-            .label(self.label.into())
+            .label(self.short_name.into())
             .value(u64::from(revenue))
             .text_value(text_value)
             .style(self.color)
@@ -279,10 +234,10 @@ impl Company {
 
     /// Create a horizontal revenue bar for the company
     ///
-    /// The label is the short name of the company combined with the revenue and will be displayed
+    /// The label is the long name of the company combined with the revenue and will be displayed
     /// on the bar
     fn horizontal_revenue_bar(&self, revenue: u32) -> Bar {
-        let text_value = format!("{} ({:.1} M)", self.label, f64::from(revenue) / 1000.);
+        let text_value = format!("{} ({:.1} M)", self.name, f64::from(revenue) / 1000.);
         Bar::default()
             .value(u64::from(revenue))
             .text_value(text_value)
@@ -292,7 +247,7 @@ impl Company {
 }
 
 /// Contains functions common to all examples
-mod common {
+mod terminal {
     use std::{
         io::{self, stdout, Stdout},
         panic,
@@ -301,15 +256,18 @@ mod common {
     use color_eyre::{
         config::{EyreHook, HookBuilder, PanicHook},
         eyre::{self},
+        Result,
     };
-    use crossterm::{
-        execute,
-        terminal::{
-            disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
-            LeaveAlternateScreen,
+    use ratatui::{
+        backend::CrosstermBackend,
+        crossterm::{
+            execute,
+            terminal::{
+                disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
+                LeaveAlternateScreen,
+            },
         },
     };
-    use ratatui::backend::CrosstermBackend;
 
     // A type alias to simplify the usage of the terminal and make it easier to change the backend
     // or choice of writer.
@@ -319,11 +277,13 @@ mod common {
     ///
     /// This function should be called before the program starts to ensure that the terminal is in
     /// the correct state for the application.
-    pub fn init_terminal() -> io::Result<Terminal> {
+    pub fn init() -> Result<Terminal> {
+        install_hooks()?;
         enable_raw_mode()?;
         execute!(stdout(), EnterAlternateScreen)?;
         let backend = CrosstermBackend::new(stdout());
-        Terminal::new(backend)
+        let terminal = Terminal::new(backend)?;
+        Ok(terminal)
     }
 
     /// Restore the terminal by leaving the alternate screen and disabling raw mode.
@@ -344,7 +304,7 @@ mod common {
     /// Makes the app resilient to panics and errors by restoring the terminal before printing the
     /// panic or error message. This prevents error messages from being messed up by the terminal
     /// state.
-    pub fn install_hooks() -> color_eyre::Result<()> {
+    fn install_hooks() -> Result<()> {
         let (panic_hook, eyre_hook) = HookBuilder::default().into_hooks();
         install_panic_hook(panic_hook);
         install_error_hook(eyre_hook)?;
@@ -361,7 +321,7 @@ mod common {
     }
 
     /// Install an error hook that restores the terminal before printing the error.
-    fn install_error_hook(eyre_hook: EyreHook) -> color_eyre::Result<()> {
+    fn install_error_hook(eyre_hook: EyreHook) -> Result<()> {
         let eyre_hook = eyre_hook.into_eyre_hook();
         eyre::set_hook(Box::new(move |error| {
             let _ = restore_terminal();
