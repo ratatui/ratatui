@@ -33,7 +33,7 @@ fn main() -> Result<()> {
     let mut terminal = terminal::init()?;
     let app = App::new();
     app.run(&mut terminal)?;
-    terminal::restore_terminal()?;
+    terminal::restore()?;
     Ok(())
 }
 
@@ -87,7 +87,7 @@ impl App {
 fn vertical_barchart(temperatures: &[u8]) -> BarChart {
     let bars: Vec<Bar> = temperatures
         .iter()
-        .map(|v| *v as u64)
+        .map(|v| u64::from(*v))
         .enumerate()
         .map(|(i, value)| {
             Bar::default()
@@ -109,7 +109,7 @@ fn vertical_barchart(temperatures: &[u8]) -> BarChart {
 fn horizontal_barchart(temperatures: &[u8]) -> BarChart {
     let bars: Vec<Bar> = temperatures
         .iter()
-        .map(|v| *v as u64)
+        .map(|v| u64::from(*v))
         .enumerate()
         .map(|(i, value)| {
             let style = temperature_style(value);
@@ -181,7 +181,7 @@ mod terminal {
     ///
     /// This function should be called before the program exits to ensure that the terminal is
     /// restored to its original state.
-    pub fn restore_terminal() -> io::Result<()> {
+    pub fn restore() -> io::Result<()> {
         disable_raw_mode()?;
         execute!(
             stdout(),
@@ -206,7 +206,7 @@ mod terminal {
     fn install_panic_hook(panic_hook: PanicHook) {
         let panic_hook = panic_hook.into_panic_hook();
         panic::set_hook(Box::new(move |panic_info| {
-            let _ = restore_terminal();
+            let _ = restore();
             panic_hook(panic_info);
         }));
     }
@@ -215,7 +215,7 @@ mod terminal {
     fn install_error_hook(eyre_hook: EyreHook) -> Result<()> {
         let eyre_hook = eyre_hook.into_eyre_hook();
         eyre::set_hook(Box::new(move |error| {
-            let _ = restore_terminal();
+            let _ = restore();
             eyre_hook(error)
         }))?;
         Ok(())

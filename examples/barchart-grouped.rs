@@ -49,12 +49,12 @@ fn main() -> Result<()> {
     let mut terminal = terminal::init()?;
     let app = App::new();
     app.run(&mut terminal)?;
-    terminal::restore_terminal()?;
+    terminal::restore()?;
     Ok(())
 }
 
 impl App {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             should_exit: false,
             companies: fake_companies(),
@@ -260,7 +260,7 @@ mod terminal {
     ///
     /// This function should be called before the program exits to ensure that the terminal is
     /// restored to its original state.
-    pub fn restore_terminal() -> io::Result<()> {
+    pub fn restore() -> io::Result<()> {
         disable_raw_mode()?;
         execute!(
             stdout(),
@@ -285,7 +285,7 @@ mod terminal {
     fn install_panic_hook(panic_hook: PanicHook) {
         let panic_hook = panic_hook.into_panic_hook();
         panic::set_hook(Box::new(move |panic_info| {
-            let _ = restore_terminal();
+            let _ = restore();
             panic_hook(panic_info);
         }));
     }
@@ -294,7 +294,7 @@ mod terminal {
     fn install_error_hook(eyre_hook: EyreHook) -> Result<()> {
         let eyre_hook = eyre_hook.into_eyre_hook();
         eyre::set_hook(Box::new(move |error| {
-            let _ = restore_terminal();
+            let _ = restore();
             eyre_hook(error)
         }))?;
         Ok(())
