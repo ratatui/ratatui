@@ -61,23 +61,10 @@ impl App {
     fn new() -> Self {
         Self {
             should_exit: false,
-            data: Self::random_barchart_data(),
-            companies: Company::fake_companies(),
-            revenues: Revenues::fake_revenues(),
+            data: random_barchart_data(),
+            companies: fake_companies(),
+            revenues: fake_revenues(),
         }
-    }
-
-    /// Generate some random data for the main bar chart
-    fn random_barchart_data() -> Vec<Bar<'static>> {
-        let mut rng = thread_rng();
-        (1..50)
-            .map(|index| {
-                let value = rng.gen_range(60..80);
-                let label = format!("{index:>02}:00").into();
-                let text = format!("{value:>3}°");
-                Bar::default().label(label).value(value).text_value(text)
-            })
-            .collect()
     }
 
     fn run(mut self, terminal: &mut Terminal) -> Result<()> {
@@ -163,20 +150,42 @@ impl App {
     }
 }
 
+/// Generate some random data for the main bar chart
+fn random_barchart_data() -> Vec<Bar<'static>> {
+    let mut rng = thread_rng();
+    (1..50)
+        .map(|index| {
+            let value = rng.gen_range(60..80);
+            let label = format!("{index:>02}:00").into();
+            let text = format!("{value:>3}°");
+            Bar::default().label(label).value(value).text_value(text)
+        })
+        .collect()
+}
+
+/// Generate fake company data
+const fn fake_companies() -> [Company; COMPANY_COUNT] {
+    [
+        Company::new("BAKE", "Bake my day", Color::LightRed),
+        Company::new("BITE", "Bits and Bites", Color::Blue),
+        Company::new("TART", "Tart of the Table", Color::White),
+    ]
+}
+
+/// Some fake revenue data
+const fn fake_revenues() -> [Revenues; PERIOD_COUNT] {
+    [
+        Revenues::new("Jan", [8500, 6500, 7000]),
+        Revenues::new("Feb", [9000, 7500, 8500]),
+        Revenues::new("Mar", [12500, 4500, 8200]),
+        Revenues::new("Apr", [6300, 4000, 5000]),
+    ]
+}
+
 impl Revenues {
     /// Create a new instance of `Revenues`
     const fn new(period: &'static str, revenues: [u32; COMPANY_COUNT]) -> Self {
         Self { period, revenues }
-    }
-
-    /// Some fake revenue data
-    const fn fake_revenues() -> [Self; PERIOD_COUNT] {
-        [
-            Self::new("Jan", [8500, 6500, 7000]),
-            Self::new("Feb", [9000, 7500, 8500]),
-            Self::new("Mar", [12500, 4500, 8200]),
-            Self::new("Apr", [6300, 4000, 5000]),
-        ]
     }
 
     /// Create a `BarGroup` with vertical bars for each company
@@ -208,15 +217,6 @@ impl Company {
             name,
             color,
         }
-    }
-
-    /// Generate fake company data
-    const fn fake_companies() -> [Self; COMPANY_COUNT] {
-        [
-            Self::new("BAKE", "Bake my day", Color::LightRed),
-            Self::new("BITE", "Bits and Bites", Color::Blue),
-            Self::new("TART", "Tart of the Table", Color::White),
-        ]
     }
 
     /// Create a vertical revenue bar for the company
