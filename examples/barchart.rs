@@ -177,7 +177,7 @@ const fn fake_revenues() -> [Revenues; PERIOD_COUNT] {
     [
         Revenues::new("Jan", [8500, 6500, 7000]),
         Revenues::new("Feb", [9000, 7500, 8500]),
-        Revenues::new("Mar", [12500, 4500, 8200]),
+        Revenues::new("Mar", [9500, 4500, 8200]),
         Revenues::new("Apr", [6300, 4000, 5000]),
     ]
 }
