@@ -1,6 +1,6 @@
 [package]
 name = "ratatui"
-version = "0.26.3" # crate version
+version = "0.27.0" # crate version
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
 description = "A library that's all about cooking up terminal user interfaces"
 documentation = "https://docs.rs/ratatui/latest/ratatui/"
@@ -26,38 +26,41 @@ rust-version = "1.74.0"
 [dependencies]
 bitflags = "2.3"
 cassowary = "0.3"
-compact_str = "0.7.1"
+compact_str = "0.8.0"
 crossterm = { version = "0.27", optional = true }
 document-features = { version = "0.2.7", optional = true }
-itertools = "0.12"
+instability = "0.3.1"
+itertools = "0.13"
 lru = "0.12.0"
 paste = "1.0.2"
+palette = { version = "0.7.6", optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
-stability = "0.2.0"
 strum = { version = "0.26", features = ["derive"] }
-termion = { version = "3.0", optional = true }
+strum_macros = { version = "0.26.3" }
+termion = { version = "4.0.0", optional = true }
 termwiz = { version = "0.22.0", optional = true }
 time = { version = "0.3.11", optional = true, features = ["local-offset"] }
 unicode-segmentation = "1.10"
 unicode-truncate = "1"
-unicode-width = "0.1"
+unicode-width = "0.1.13"
 
 [dev-dependencies]
 anyhow = "1.0.71"
 argh = "0.1.12"
-better-panic = "0.3.0"
 color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
 derive_builder = "0.20.0"
 fakeit = "1.1"
 font8x8 = "0.3.1"
 indoc = "2"
-palette = "0.7.3"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
-rstest = "0.19.0"
+rstest = "0.21.0"
 serde_json = "1.0.109"
+tracing = "0.1.40"
+tracing-appender = "0.2.3"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 
 [lints.rust]
 unsafe_code = "forbid"
@@ -119,6 +122,9 @@ serde = ["dep:serde", "bitflags/serde", "compact_str/serde"]
 
 ## enables the [`border!`] macro.
 macros = []
+
+## enables conversions from colors in the [`palette`] crate to [`Color`](crate::style::Color).
+palette = ["dep:palette"]
 
 ## enables all widgets.
 all-widgets = ["widget-calendar"]
@@ -222,7 +228,7 @@ doc-scrape-examples = false
 
 [[example]]
 name = "colors_rgb"
-required-features = ["crossterm"]
+required-features = ["crossterm", "palette"]
 doc-scrape-examples = true
 
 [[example]]
@@ -247,7 +253,7 @@ doc-scrape-examples = false
 
 [[example]]
 name = "demo2"
-required-features = ["crossterm", "widget-calendar"]
+required-features = ["crossterm", "palette", "widget-calendar"]
 doc-scrape-examples = true
 
 [[example]]
@@ -283,6 +289,11 @@ doc-scrape-examples = true
 [[example]]
 name = "line_gauge"
 required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "hyperlink"
+required-features = ["crossterm", "unstable-widget-ref"]
 doc-scrape-examples = true
 
 [[example]]
@@ -339,6 +350,11 @@ doc-scrape-examples = true
 
 [[example]]
 name = "tabs"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "tracing"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 

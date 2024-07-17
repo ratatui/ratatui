@@ -4,14 +4,16 @@ use std::{borrow::Cow, fmt};
 
 use unicode_truncate::UnicodeTruncateStr;
 
-use super::StyledGrapheme;
-use crate::prelude::*;
+use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 
 /// A line of text, consisting of one or more [`Span`]s.
 ///
 /// [`Line`]s are used wherever text is displayed in the terminal and represent a single line of
 /// text. When a [`Line`] is rendered, it is rendered as a single line of text, with each [`Span`]
 /// being rendered in order (left to right).
+///
+/// Any newlines in the content are removed when creating a [`Line`] using the constructor or
+/// conversion methods.
 ///
 /// # Constructor Methods
 ///
@@ -503,13 +505,13 @@ impl<'a> IntoIterator for &'a mut Line<'a> {
 
 impl<'a> From<String> for Line<'a> {
     fn from(s: String) -> Self {
-        Self::from(vec![Span::from(s)])
+        Self::raw(s)
     }
 }
 
 impl<'a> From<&'a str> for Line<'a> {
     fn from(s: &'a str) -> Self {
-        Self::from(vec![Span::from(s)])
+        Self::raw(s)
     }
 }
 
@@ -645,6 +647,29 @@ fn spans_after_width<'a>(
                 first_grapheme_offset,
             )
         })
+}
+
+/// A trait for converting a value to a [`Line`].
+///
+/// This trait is automatically implemented for any type that implements the [`Display`] trait. As
+/// such, `ToLine` shouln't be implemented directly: [`Display`] should be implemented instead, and
+/// you get the `ToLine` implementation for free.
+///
+/// [`Display`]: std::fmt::Display
+pub trait ToLine {
+    /// Converts the value to a [`Line`].
+    fn to_line(&self) -> Line<'_>;
+}
+
+/// # Panics
+///
+/// In this implementation, the `to_line` method panics if the `Display` implementation returns an
+/// error. This indicates an incorrect `Display` implementation since `fmt::Write for String` never
+/// returns an error itself.
+impl<T: fmt::Display> ToLine for T {
+    fn to_line(&self) -> Line<'_> {
+        Line::from(self.to_string())
+    }
 }
 
 impl fmt::Display for Line<'_> {
@@ -804,14 +829,28 @@ mod tests {
     fn from_string() {
         let s = String::from("Hello, world!");
         let line = Line::from(s);
-        assert_eq!(vec![Span::from("Hello, world!")], line.spans);
+        assert_eq!(line.spans, vec![Span::from("Hello, world!")]);
+
+        let s = String::from("Hello\nworld!");
+        let line = Line::from(s);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
     }
 
     #[test]
     fn from_str() {
         let s = "Hello, world!";
         let line = Line::from(s);
-        assert_eq!(vec![Span::from("Hello, world!")], line.spans);
+        assert_eq!(line.spans, vec![Span::from("Hello, world!")]);
+
+        let s = "Hello\nworld!";
+        let line = Line::from(s);
+        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+    }
+
+    #[test]
+    fn to_line() {
+        let line = 42.to_line();
+        assert_eq!(vec![Span::from("42")], line.spans);
     }
 
     #[test]
@@ -821,7 +860,7 @@ mod tests {
             Span::styled(" world!", Style::default().fg(Color::Green)),
         ];
         let line = Line::from(spans.clone());
-        assert_eq!(spans, line.spans);
+        assert_eq!(line.spans, spans);
     }
 
     #[test]
@@ -854,7 +893,7 @@ mod tests {
     fn from_span() {
         let span = Span::styled("Hello, world!", Style::default().fg(Color::Yellow));
         let line = Line::from(span.clone());
-        assert_eq!(vec![span], line.spans);
+        assert_eq!(line.spans, vec![span],);
     }
 
     #[test]
@@ -864,7 +903,7 @@ mod tests {
             Span::styled(" world!", Style::default().fg(Color::Green)),
         ]);
         let s: String = line.into();
-        assert_eq!("Hello, world!", s);
+        assert_eq!(s, "Hello, world!");
     }
 
     #[test]

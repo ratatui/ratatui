@@ -1881,14 +1881,11 @@ mod tests {
 
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Percentage(10),
-                        Constraint::Max(5),
-                        Constraint::Min(1),
-                    ]
-                    .as_ref(),
-                )
+                .constraints([
+                    Constraint::Percentage(10),
+                    Constraint::Max(5),
+                    Constraint::Min(1),
+                ])
                 .split(target);
 
             assert_eq!(target.height, chunks.iter().map(|r| r.height).sum::<u16>());

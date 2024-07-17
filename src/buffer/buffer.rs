@@ -192,7 +192,7 @@ impl Buffer {
     }
 
     /// Print at most the first n characters of a string if enough space is available
-    /// until the end of the line.
+    /// until the end of the line. Skips zero-width graphemes and control characters.
     ///
     /// Use [`Buffer::set_string`] when the maximum amount of characters can be printed.
     pub fn set_stringn<T, S>(
@@ -210,6 +210,7 @@ impl Buffer {
         let max_width = max_width.try_into().unwrap_or(u16::MAX);
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
+            .filter(|symbol| !symbol.contains(|char: char| char.is_control()))
             .map(|symbol| (symbol, symbol.width() as u16))
             .filter(|(_symbol, width)| *width > 0)
             .map_while(|(symbol, width)| {
@@ -609,16 +610,18 @@ mod tests {
 
     #[test]
     fn set_string_zero_width() {
+        assert_eq!("\u{200B}".width(), 0);
+
         let area = Rect::new(0, 0, 1, 1);
         let mut buffer = Buffer::empty(area);
 
         // Leading grapheme with zero width
-        let s = "\u{1}a";
+        let s = "\u{200B}a";
         buffer.set_stringn(0, 0, s, 1, Style::default());
         assert_eq!(buffer, Buffer::with_lines(["a"]));
 
         // Trailing grapheme with zero with
-        let s = "a\u{1}";
+        let s = "a\u{200B}";
         buffer.set_stringn(0, 0, s, 1, Style::default());
         assert_eq!(buffer, Buffer::with_lines(["a"]));
     }
@@ -928,5 +931,36 @@ mod tests {
         buf.set_string(0, 0, "foo", Style::new().red());
         buf.set_string(0, 1, "bar", Style::new().blue());
         assert_eq!(buf, Buffer::with_lines(["foo".red(), "bar".blue()]));
+    }
+
+    #[test]
+    fn control_sequence_rendered_full() {
+        let text = "I \x1b[0;36mwas\x1b[0m here!";
+
+        let mut buffer = Buffer::filled(Rect::new(0, 0, 25, 3), Cell::new("x"));
+        buffer.set_string(1, 1, text, Style::new());
+
+        let expected = Buffer::with_lines([
+            "xxxxxxxxxxxxxxxxxxxxxxxxx",
+            "xI [0;36mwas[0m here!xxxx",
+            "xxxxxxxxxxxxxxxxxxxxxxxxx",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn control_sequence_rendered_partially() {
+        let text = "I \x1b[0;36mwas\x1b[0m here!";
+
+        let mut buffer = Buffer::filled(Rect::new(0, 0, 11, 3), Cell::new("x"));
+        buffer.set_string(1, 1, text, Style::new());
+
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "xxxxxxxxxxx",
+            "xI [0;36mwa",
+            "xxxxxxxxxxx",
+        ]);
+        assert_eq!(buffer, expected);
     }
 }

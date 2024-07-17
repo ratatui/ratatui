@@ -25,10 +25,10 @@
 
 <div align="center">
 
-[![Crate Badge]][Crate] [![Docs Badge]][API Docs] [![CI Badge]][CI Workflow] [![License
-Badge]](./LICENSE) [![Sponsors Badge]][GitHub Sponsors]<br>
-[![Codecov Badge]][Codecov] [![Deps.rs Badge]][Deps.rs] [![Discord Badge]][Discord Server]
-[![Matrix Badge]][Matrix]<br>
+[![Crate Badge]][Crate] [![Docs Badge]][API Docs] [![CI Badge]][CI Workflow] [![Deps.rs
+Badge]][Deps.rs]<br> [![Codecov Badge]][Codecov] [![License Badge]](./LICENSE) [![Sponsors
+Badge]][GitHub Sponsors]<br> [![Discord Badge]][Discord Server] [![Matrix Badge]][Matrix]
+[![Forum Badge]][Forum]<br>
 
 [Ratatui Website] · [API Docs] · [Examples] · [Changelog] · [Breaking Changes]<br>
 [Contributing] · [Report a bug] · [Request a Feature] · [Create a Pull Request]
@@ -67,6 +67,7 @@ terminal user interfaces and showcases the features of Ratatui, along with a hel
 ## Other documentation
 
 - [Ratatui Website] - explains the library's concepts and provides step-by-step tutorials
+- [Ratatui Forum][Forum] - a place to ask questions and discuss the library
 - [API Docs] - the full API documentation for the library on docs.rs.
 - [Examples] - a collection of examples that demonstrate how to use the library.
 - [Contributing] - Please read this if you are interested in contributing to the project.
@@ -339,6 +340,8 @@ Running this example produces the following output:
 [Docs Badge]: https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square&logoColor=E05D44
 [Matrix Badge]: https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix&color=C43AC3
 [Matrix]: https://matrix.to/#/#ratatui:matrix.org
+[Forum Badge]: https://img.shields.io/discourse/likes?server=https%3A%2F%2Fforum.ratatui.rs&style=flat-square&logo=discourse&label=forum&color=C43AC3
+[Forum]: https://forum.ratatui.rs
 [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui-org?logo=github&style=flat-square&color=1370D3
 
 <!-- cargo-rdme end -->
@@ -354,9 +357,10 @@ In order to organize ourselves, we currently use a [Discord server](https://disc
 feel free to join and come chat! There is also a [Matrix](https://matrix.org/) bridge available at
 [#ratatui:matrix.org](https://matrix.to/#/#ratatui:matrix.org).
 
-While we do utilize Discord for coordinating, it's not essential for contributing.
-Our primary open-source workflow is centered around GitHub.
-For significant discussions, we rely on GitHub — please open an issue, a discussion or a PR.
+While we do utilize Discord for coordinating, it's not essential for contributing. We have recently
+launched the [Ratatui Forum][Forum], and our primary open-source workflow is centered around GitHub.
+For bugs and features, we rely on GitHub. Please [Report a bug], [Request a Feature] or [Create a
+Pull Request].
 
 Please make sure you read the updated [contributing](./CONTRIBUTING.md) guidelines, especially if
 you are interested in working on a PR or issue opened in the previous repository.

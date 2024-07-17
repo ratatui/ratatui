@@ -2,6 +2,7 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::{
     prelude::*,
+    style::Styled,
     text::StyledGrapheme,
     widgets::{
         reflow::{LineComposer, LineTruncator, WordWrapper, WrappedLine},
@@ -269,7 +270,7 @@ impl<'a> Paragraph<'a> {
     /// assert_eq!(paragraph.line_count(20), 1);
     /// assert_eq!(paragraph.line_count(10), 2);
     /// ```
-    #[stability::unstable(
+    #[instability::unstable(
         feature = "rendered-line-info",
         issue = "https://github.com/ratatui-org/ratatui/issues/293"
     )]
@@ -312,7 +313,7 @@ impl<'a> Paragraph<'a> {
     /// let paragraph = Paragraph::new("Hello World\nhi\nHello World!!!");
     /// assert_eq!(paragraph.line_width(), 14);
     /// ```
-    #[stability::unstable(
+    #[instability::unstable(
         feature = "rendered-line-info",
         issue = "https://github.com/ratatui-org/ratatui/issues/293"
     )]
@@ -432,7 +433,7 @@ mod test {
 
     #[test]
     fn zero_width_char_at_end_of_line() {
-        let line = "foo\0";
+        let line = "foo\u{200B}";
         for paragraph in [
             Paragraph::new(line),
             Paragraph::new(line).wrap(Wrap { trim: false }),

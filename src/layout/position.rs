@@ -1,4 +1,6 @@
 #![warn(missing_docs)]
+use std::fmt;
+
 use crate::layout::Rect;
 
 /// Position in the terminal
@@ -61,6 +63,12 @@ impl From<Rect> for Position {
     }
 }
 
+impl fmt::Display for Position {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -93,5 +101,11 @@ mod tests {
         let position = Position::from(rect);
         assert_eq!(position.x, 1);
         assert_eq!(position.y, 2);
+    }
+
+    #[test]
+    fn to_string() {
+        let position = Position::new(1, 2);
+        assert_eq!(position.to_string(), "(1, 2)");
     }
 }
