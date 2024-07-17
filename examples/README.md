@@ -30,8 +30,6 @@ easily be productive in creating applications:
 
 - Each example has an App struct, with methods that implement a main loop, handle events and drawing
   the UI.
-- Each App implements the Widget trait for drawing the UI. The `render` method makes a good point to
-  write tests against.
 - We use color_eyre for handling errors and panics. See [How to use color-eyre with Ratatui] on the
   website for more information about this.
 - Common code is not extracted into a separate file. This makes each example self-contained and easy
