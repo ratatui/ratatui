@@ -13,40 +13,20 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::iter::zip;
-
 use color_eyre::Result;
 use rand::{thread_rng, Rng};
 use ratatui::{
     crossterm::event::{self, Event, KeyCode},
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
-    text::Line,
-    widgets::{Bar, BarChart, BarGroup, Block, Borders},
-    Frame,
+    layout::Direction,
+    prelude::{Color, Constraint, Layout, Line, Style, Stylize},
+    widgets::{Bar, BarChart, BarGroup, Block},
 };
 
 use self::terminal::Terminal;
 
-const COMPANY_COUNT: usize = 3;
-const PERIOD_COUNT: usize = 4;
-
 struct App {
     should_exit: bool,
-    data: Vec<Bar<'static>>,
-    companies: [Company; COMPANY_COUNT],
-    revenues: [Revenues; PERIOD_COUNT],
-}
-
-struct Revenues {
-    period: &'static str,
-    revenues: [u32; COMPANY_COUNT],
-}
-
-struct Company {
-    short_name: &'static str,
-    name: &'static str,
-    color: Color,
+    temperatures: Vec<u8>,
 }
 
 fn main() -> Result<()> {
@@ -59,11 +39,11 @@ fn main() -> Result<()> {
 
 impl App {
     fn new() -> Self {
+        let mut rng = thread_rng();
+        let temperatures = (0..24).map(|_| rng.gen_range(50..90)).collect();
         Self {
             should_exit: false,
-            data: random_barchart_data(),
-            companies: fake_companies(),
-            revenues: fake_revenues(),
+            temperatures,
         }
     }
 
@@ -89,161 +69,72 @@ impl App {
         Ok(())
     }
 
-    fn render(&self, frame: &mut Frame) {
-        use Constraint::{Fill, Min};
-        let [top, mid, bottom] = Layout::vertical([Fill(1), Fill(2), Min(17)])
-            .spacing(1)
-            .areas(frame.size());
-
-        frame.render_widget(self.vertical_ungrouped_barchart(), top);
-        frame.render_widget(self.vertical_revenue_barchart(), mid);
-        frame.render_widget(self.horizontal_revenue_barchart(), bottom);
-    }
-
-    /// Create a bar chart with the data from the `data` field.
-    fn vertical_ungrouped_barchart(&self) -> BarChart<'_> {
-        BarChart::default()
-            .block(Block::new().borders(Borders::TOP).title("Ungrouped"))
-            .data(BarGroup::default().bars(&self.data))
-            .bar_width(5)
-            .bar_style(Style::new().fg(Color::LightYellow))
-            .value_style(Style::new().fg(Color::Black).bg(Color::LightYellow))
-    }
-
-    /// Create a vertical revenue bar chart with the data from the `revenues` field.
-    fn vertical_revenue_barchart(&self) -> BarChart<'_> {
-        let mut barchart = BarChart::default()
-            .block(Block::new().borders(Borders::TOP).title("Vertical Grouped"))
-            .bar_gap(0)
-            .bar_width(6)
-            .group_gap(2);
-        for group in self
-            .revenues
-            .iter()
-            .map(|revenue| revenue.to_vertical_bar_group(&self.companies))
-        {
-            barchart = barchart.data(group);
-        }
-        barchart
-    }
-
-    /// Create a horizontal revenue bar chart with the data from the `revenues` field.
-    fn horizontal_revenue_barchart(&self) -> BarChart<'_> {
-        let mut barchart = BarChart::default()
-            .block(
-                Block::new()
-                    .borders(Borders::TOP)
-                    .title("Horizontal Grouped"),
-            )
-            .bar_width(1)
-            .group_gap(1)
-            .bar_gap(0)
-            .direction(Direction::Horizontal);
-        for group in self
-            .revenues
-            .iter()
-            .map(|revenue| revenue.to_horizontal_bar_group(&self.companies))
-        {
-            barchart = barchart.data(group);
-        }
-        barchart
+    fn render(&mut self, frame: &mut ratatui::Frame) {
+        let [title, vertical, horizontal] = Layout::vertical([
+            Constraint::Length(1),
+            Constraint::Fill(1),
+            Constraint::Fill(1),
+        ])
+        .spacing(1)
+        .areas(frame.size());
+        frame.render_widget("Barchart".bold().into_centered_line(), title);
+        frame.render_widget(vertical_barchart(&self.temperatures), vertical);
+        frame.render_widget(horizontal_barchart(&self.temperatures), horizontal);
     }
 }
 
-/// Generate some random data for the main bar chart
-fn random_barchart_data() -> Vec<Bar<'static>> {
-    let mut rng = thread_rng();
-    (1..50)
-        .map(|index| {
-            let value = rng.gen_range(60..80);
-            let label = format!("{index:>02}:00").into();
-            let text = format!("{value:>3}°");
-            Bar::default().label(label).value(value).text_value(text)
+/// Create a vertical bar chart from the temperatures data.
+fn vertical_barchart(temperatures: &[u8]) -> BarChart {
+    let bars: Vec<Bar> = temperatures
+        .iter()
+        .map(|v| *v as u64)
+        .enumerate()
+        .map(|(i, value)| {
+            Bar::default()
+                .value(value)
+                .label(Line::from(format!("{i:>02}:00")))
+                .text_value(format!("{value:>3}°"))
+                .style(temperature_style(value))
+                .value_style(temperature_style(value).reversed())
         })
-        .collect()
+        .collect();
+    let title = Line::from("Weather (Vertical)").centered();
+    BarChart::default()
+        .data(BarGroup::default().bars(&bars))
+        .block(Block::new().title(title))
+        .bar_width(5)
 }
 
-/// Generate fake company data
-const fn fake_companies() -> [Company; COMPANY_COUNT] {
-    [
-        Company::new("BAKE", "Bake my day", Color::LightRed),
-        Company::new("BITE", "Bits and Bites", Color::Blue),
-        Company::new("TART", "Tart of the Table", Color::White),
-    ]
+/// Create a horizontal bar chart from the temperatures data.
+fn horizontal_barchart(temperatures: &[u8]) -> BarChart {
+    let bars: Vec<Bar> = temperatures
+        .iter()
+        .map(|v| *v as u64)
+        .enumerate()
+        .map(|(i, value)| {
+            let style = temperature_style(value);
+            Bar::default()
+                .value(value)
+                .label(Line::from(format!("{i:>02}:00")))
+                .text_value(format!("{value:>3}°"))
+                .style(style)
+                .value_style(style.reversed())
+        })
+        .collect();
+    let title = Line::from("Weather (Horizontal)").centered();
+    BarChart::default()
+        .block(Block::new().title(title))
+        .data(BarGroup::default().bars(&bars))
+        .bar_width(1)
+        .bar_gap(0)
+        .direction(Direction::Horizontal)
 }
 
-/// Some fake revenue data
-const fn fake_revenues() -> [Revenues; PERIOD_COUNT] {
-    [
-        Revenues::new("Jan", [8500, 6500, 7000]),
-        Revenues::new("Feb", [9000, 7500, 8500]),
-        Revenues::new("Mar", [9500, 4500, 8200]),
-        Revenues::new("Apr", [6300, 4000, 5000]),
-    ]
-}
-
-impl Revenues {
-    /// Create a new instance of `Revenues`
-    const fn new(period: &'static str, revenues: [u32; COMPANY_COUNT]) -> Self {
-        Self { period, revenues }
-    }
-
-    /// Create a `BarGroup` with vertical bars for each company
-    fn to_vertical_bar_group<'a>(&self, companies: &'a [Company]) -> BarGroup<'a> {
-        let bars: Vec<Bar> = zip(companies, self.revenues)
-            .map(|(company, revenue)| company.vertical_revenue_bar(revenue))
-            .collect();
-        BarGroup::default()
-            .label(Line::from(self.period).centered())
-            .bars(&bars)
-    }
-
-    /// Create a `BarGroup` with horizontal bars for each company
-    fn to_horizontal_bar_group<'a>(&'a self, companies: &'a [Company]) -> BarGroup<'a> {
-        let bars: Vec<Bar> = zip(companies, self.revenues)
-            .map(|(company, revenue)| company.horizontal_revenue_bar(revenue))
-            .collect();
-        BarGroup::default()
-            .label(Line::from(self.period).centered())
-            .bars(&bars)
-    }
-}
-
-impl Company {
-    /// Create a new instance of `Company`
-    const fn new(short_name: &'static str, name: &'static str, color: Color) -> Self {
-        Self {
-            short_name,
-            name,
-            color,
-        }
-    }
-
-    /// Create a vertical revenue bar for the company
-    ///
-    /// The label is the short name of the company, and will be displayed under the bar
-    fn vertical_revenue_bar(&self, revenue: u32) -> Bar {
-        let text_value = format!("{:.1}M", f64::from(revenue) / 1000.);
-        Bar::default()
-            .label(self.short_name.into())
-            .value(u64::from(revenue))
-            .text_value(text_value)
-            .style(self.color)
-            .value_style(Style::new().fg(Color::Black).bg(self.color))
-    }
-
-    /// Create a horizontal revenue bar for the company
-    ///
-    /// The label is the long name of the company combined with the revenue and will be displayed
-    /// on the bar
-    fn horizontal_revenue_bar(&self, revenue: u32) -> Bar {
-        let text_value = format!("{} ({:.1} M)", self.name, f64::from(revenue) / 1000.);
-        Bar::default()
-            .value(u64::from(revenue))
-            .text_value(text_value)
-            .style(self.color)
-            .value_style(Style::new().fg(Color::Black).bg(self.color))
-    }
+/// create a yellow to red value based on the value (50-90)
+fn temperature_style(value: u64) -> Style {
+    let green = (255.0 * (1.0 - (value - 50) as f64 / 40.0)) as u8;
+    let color = Color::Rgb(255, green, 0);
+    Style::new().fg(color)
 }
 
 /// Contains functions common to all examples
