@@ -78,6 +78,10 @@ missing_panics_doc = "allow"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
 
+# we often split up a module into multiple files with the main type in a file named after the
+# module, so we want to allow this pattern
+module_inception = "allow"
+
 # nursery or restricted
 as_underscore = "warn"
 deref_by_slicing = "warn"
