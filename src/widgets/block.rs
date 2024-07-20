@@ -218,7 +218,10 @@ impl<'a> Block<'a> {
     /// Note: If the block is too small and multiple titles overlap, the border might get cut off at
     /// a corner.
     ///
-    /// # Example
+    /// # Examples
+    ///
+    /// See the [Block example] for a visual representation of how the various borders and styles
+    /// look when rendered.
     ///
     /// The following example demonstrates:
     /// - Default title alignment
@@ -246,6 +249,8 @@ impl<'a> Block<'a> {
     /// - [`Block::title_style`]
     /// - [`Block::title_alignment`]
     /// - [`Block::title_position`]
+    ///
+    /// [Block example]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md#block
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title<T>(mut self, title: T) -> Self
     where
@@ -313,10 +318,14 @@ impl<'a> Block<'a> {
 
     /// Applies the style to all titles.
     ///
+    /// This style will be applied to all titles of the block. If a title has a style set, it will
+    /// be applied after this style. This style will be applied after any [`Block::style`] or
+    /// [`Block::border_style`] is applied.
+    ///
+    /// See [`Style`] for more information on how merging styles works.
+    ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
-    ///
-    /// If a [`Title`] already has a style, the title's style will add on top of this one.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.titles_style = style.into();
@@ -382,7 +391,10 @@ impl<'a> Block<'a> {
 
     /// Defines the style of the borders.
     ///
-    /// If a [`Block::style`] is defined, `border_style` will be applied on top of it.
+    /// This style is applied only to the areas covered by borders, and is applied to the block
+    /// after any [`Block::style`] is applied.
+    ///
+    /// See [`Style`] for more information on how merging styles works.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
@@ -404,15 +416,14 @@ impl<'a> Block<'a> {
     ///
     /// This is the most generic [`Style`] a block can receive, it will be merged with any other
     /// more specific styles. Elements can be styled further with [`Block::title_style`] and
-    /// [`Block::border_style`], which will be applied on top of this style. If the block is used
-    /// as a container for another widget, the inner widget can also be styled.
+    /// [`Block::border_style`], which will be applied on top of this style. If the block is used as
+    /// a container for another widget (e.g. a [`Paragraph`]), then the style of the widget is
+    /// generally applied before this style.
+    ///
+    /// See [`Style`] for more information on how merging styles works.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
-    ///
-    /// This will also apply to the widget inside that block, the inner widget overrides the style.
-    ///
-    /// See [`Style`] for more information on how merging styles works.
     ///
     /// # Example
     ///
@@ -432,6 +443,8 @@ impl<'a> Block<'a> {
     ///     .block(block)
     ///     .style(Style::new().white().not_bold()); // will be white, and italic
     /// ```
+    ///
+    /// [`Paragraph`]: crate::widgets::Paragraph
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
