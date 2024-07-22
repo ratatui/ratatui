@@ -1,9 +1,12 @@
 /// A macro for creating a [`Span`] using formatting syntax.
 ///
-/// `span!` is similar to the [`format!`] macro, but it returns a [`Span`] instead of a `String`.
+/// `span!` is similar to the [`format!`] macro, but it returns a [`Span`] instead of a `String`. In
+/// addition, it also accepts an expression for the first argument, which will be converted to a
+/// string using the [`format!`] macro.
 ///
-/// If semicolon follows the first argument, then the first argument is a [`Style`] and a styled [`Span`] will be created.
-/// Otherwise, the [`Span`] will be created as a raw span (i.e. with style set to `Style::default()`).
+/// If semicolon follows the first argument, then the first argument is a [`Style`] and a styled
+/// [`Span`] will be created. Otherwise, the [`Span`] will be created as a raw span (i.e. with style
+/// set to `Style::default()`).
 ///
 /// # Examples
 ///
@@ -13,6 +16,10 @@
 ///
 /// let content = "content";
 ///
+/// // expression
+/// let span = span!(content);
+///
+/// // format string
 /// let span = span!("test content");
 /// let span = span!("test {}", "content");
 /// let span = span!("{} {}", "test", "content");
@@ -24,6 +31,11 @@
 /// let span = span!("test {:04}", 123);
 ///
 /// let style = Style::new().green();
+///
+/// // styled expression
+/// let span = span!(style; content);
+///
+/// // styled format string
 /// let span = span!(style; "test content");
 /// let span = span!(style; "test {}", "content");
 /// let span = span!(style; "{} {}", "test", "content");
@@ -42,8 +54,8 @@
 ///
 /// # Note
 ///
-/// The first parameter must be a formatting specifier followed by a comma OR
-/// anything that can be converted into a [`Style`] followed by a semicolon.
+/// The first parameter must be a formatting specifier followed by a comma OR anything that can be
+/// converted into a [`Style`] followed by a semicolon.
 ///
 /// For example, the following will fail to compile:
 ///
@@ -89,11 +101,20 @@ macro_rules! span {
     ($string:literal, $($arg:tt)*) => {
         ::ratatui::text::Span::raw(format!($string, $($arg)*))
     };
+    ($expr:expr) => {
+        ::ratatui::text::Span::raw(format!("{}", $expr))
+    };
     ($style:expr, $($arg:tt)*) => {
         compile_error!("first parameter must be a formatting specifier followed by a comma OR a `Style` followed by a semicolon")
     };
-    ($style:expr; $($arg:tt)*) => {
-        ::ratatui::text::Span::styled(format!($($arg)*), $style)
+    ($style:expr; $string:literal) => {
+        ::ratatui::text::Span::styled(format!($string), $style)
+    };
+    ($style:expr; $string:literal, $($arg:tt)*) => {
+        ::ratatui::text::Span::styled(format!($string, $($arg)*), $style)
+    };
+    ($style:expr; $expr:expr) => {
+        ::ratatui::text::Span::styled(format!("{}", $expr), $style)
     };
 }
 
@@ -146,6 +167,14 @@ mod tests {
         // a number with a format specifier
         let span = span!("test {number:04}");
         assert_eq!(span, Span::raw("test 0123"));
+
+        // directly pass a number expression
+        let span = span!(number);
+        assert_eq!(span, Span::raw("123"));
+
+        // directly pass a string expression
+        let span = span!(test);
+        assert_eq!(span, Span::raw("test"));
     }
 
     #[test]
@@ -202,5 +231,13 @@ mod tests {
 
         let span = span!(Modifier::BOLD; "test {content}");
         assert_eq!(span, Span::styled("test content", Style::new().bold()));
+
+        // directly pass a number expression
+        let span = span!(STYLE; number);
+        assert_eq!(span, Span::styled("123", STYLE));
+
+        // directly pass a string expression
+        let span = span!(STYLE; test);
+        assert_eq!(span, Span::styled("test", STYLE));
     }
 }
