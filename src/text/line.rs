@@ -548,6 +548,37 @@ where
     }
 }
 
+/// Adds a `Span` to a `Line`, returning a new `Line` with the `Span` added.
+impl<'a> std::ops::Add<Span<'a>> for Line<'a> {
+    type Output = Self;
+
+    fn add(mut self, rhs: Span<'a>) -> Self::Output {
+        self.spans.push(rhs);
+        self
+    }
+}
+
+/// Adds two `Line`s together, returning a new `Text` with the contents of the two `Line`s.
+impl<'a> std::ops::Add<Self> for Line<'a> {
+    type Output = Text<'a>;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Text::from(vec![self, rhs])
+    }
+}
+
+impl<'a> std::ops::AddAssign<Span<'a>> for Line<'a> {
+    fn add_assign(&mut self, rhs: Span<'a>) {
+        self.spans.push(rhs);
+    }
+}
+
+impl<'a> Extend<Span<'a>> for Line<'a> {
+    fn extend<T: IntoIterator<Item = Span<'a>>>(&mut self, iter: T) {
+        self.spans.extend(iter);
+    }
+}
+
 impl Widget for Line<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         self.render_ref(area, buf);
@@ -894,6 +925,62 @@ mod tests {
         let span = Span::styled("Hello, world!", Style::default().fg(Color::Yellow));
         let line = Line::from(span.clone());
         assert_eq!(line.spans, vec![span],);
+    }
+
+    #[test]
+    fn add_span() {
+        assert_eq!(
+            Line::raw("Red").red() + Span::raw("blue").blue(),
+            Line {
+                spans: vec![Span::raw("Red"), Span::raw("blue").blue()],
+                style: Style::new().red(),
+                alignment: None,
+            },
+        );
+    }
+
+    #[test]
+    fn add_line() {
+        assert_eq!(
+            Line::raw("Red").red() + Line::raw("Blue").blue(),
+            Text {
+                lines: vec![Line::raw("Red").red(), Line::raw("Blue").blue()],
+                style: Style::default(),
+                alignment: None,
+            }
+        );
+    }
+
+    #[test]
+    fn add_assign_span() {
+        let mut line = Line::raw("Red").red();
+        line += Span::raw("Blue").blue();
+        assert_eq!(
+            line,
+            Line {
+                spans: vec![Span::raw("Red"), Span::raw("Blue").blue()],
+                style: Style::new().red(),
+                alignment: None,
+            },
+        );
+    }
+
+    #[test]
+    fn extend() {
+        let mut line = Line::from("Hello, ");
+        line.extend(vec![Span::raw("world!")]);
+        assert_eq!(line.spans, vec![Span::raw("Hello, "), Span::raw("world!")]);
+
+        let mut line = Line::from("Hello, ");
+        line.extend(vec![Span::raw("world! "), Span::raw("How are you?")]);
+        assert_eq!(
+            line.spans,
+            vec![
+                Span::raw("Hello, "),
+                Span::raw("world! "),
+                Span::raw("How are you?")
+            ]
+        );
     }
 
     #[test]
