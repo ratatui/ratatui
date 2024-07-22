@@ -296,7 +296,7 @@ dependencies = [
 
 [[package]]
 name = "ratatui-macros"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "cargo-husky",
  "ratatui",

@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3](https://github.com/ratatui-org/ratatui-macros/compare/v0.4.2...v0.4.3) - 2024-07-22
+
+### Added
+- allow span macro to accept a bare expression ([#61](https://github.com/ratatui-org/ratatui-macros/pull/61))
+
+### Other
+- *(deps)* bump trybuild from 1.0.96 to 1.0.97 in the cargo-dependencies group ([#59](https://github.com/ratatui-org/ratatui-macros/pull/59))
+
 ## [0.4.2](https://github.com/ratatui-org/ratatui-macros/compare/v0.4.1...v0.4.2) - 2024-06-29
 
 ### Added
