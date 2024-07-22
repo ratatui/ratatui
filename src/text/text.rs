@@ -587,9 +587,9 @@ where
 /// you get the `ToText` implementation for free.
 ///
 /// [`Display`]: std::fmt::Display
-pub trait ToText<'a> {
+pub trait ToText {
     /// Converts the value to a [`Text`].
-    fn to_text(&self) -> Text<'a>;
+    fn to_text(&self) -> Text<'_>;
 }
 
 /// # Panics
@@ -597,8 +597,8 @@ pub trait ToText<'a> {
 /// In this implementation, the `to_text` method panics if the `Display` implementation returns an
 /// error. This indicates an incorrect `Display` implementation since `fmt::Write for String` never
 /// returns an error itself.
-impl<'a, T: fmt::Display> ToText<'a> for T {
-    fn to_text(&self) -> Text<'a> {
+impl<T: fmt::Display> ToText for T {
+    fn to_text(&self) -> Text {
         Text::raw(self.to_string())
     }
 }
