@@ -295,6 +295,8 @@ impl<'a> Paragraph<'a> {
     /// need in order to be fully rendered. For paragraphs that do not use wrapping, this count is
     /// simply the number of lines present in the paragraph.
     ///
+    /// This method will also account for the [`Block`] if one is set through [`Self::block`].
+    ///
     /// Note: The design for text wrapping is not stable and might affect this API.
     ///
     /// # Example
@@ -315,7 +317,13 @@ impl<'a> Paragraph<'a> {
             return 0;
         }
 
-        if let Some(Wrap { trim }) = self.wrap {
+        let (top, bottom) = self
+            .block
+            .as_ref()
+            .map(Block::vertical_space)
+            .unwrap_or_default();
+
+        let count = if let Some(Wrap { trim }) = self.wrap {
             let styled = self.text.iter().map(|line| {
                 let graphemes = line
                     .spans
@@ -332,10 +340,16 @@ impl<'a> Paragraph<'a> {
             count
         } else {
             self.text.height()
-        }
+        };
+
+        count
+            .saturating_add(top as usize)
+            .saturating_add(bottom as usize)
     }
 
     /// Calculates the shortest line width needed to avoid any word being wrapped or truncated.
+    ///
+    /// Accounts for the [`Block`] if a block is set through [`Self::block`].
     ///
     /// Note: The design for text wrapping is not stable and might affect this API.
     ///
@@ -354,7 +368,16 @@ impl<'a> Paragraph<'a> {
         issue = "https://github.com/ratatui-org/ratatui/issues/293"
     )]
     pub fn line_width(&self) -> usize {
-        self.text.iter().map(Line::width).max().unwrap_or_default()
+        let width = self.text.iter().map(Line::width).max().unwrap_or_default();
+        let (left, right) = self
+            .block
+            .as_ref()
+            .map(Block::horizontal_space)
+            .unwrap_or_default();
+
+        width
+            .saturating_add(left as usize)
+            .saturating_add(right as usize)
     }
 }
 
@@ -984,6 +1007,69 @@ mod test {
     }
 
     #[test]
+    fn widgets_paragraph_rendered_line_count_accounts_block() {
+        let block = Block::new();
+        let paragraph = Paragraph::new("Hello World").block(block);
+        assert_eq!(paragraph.line_count(20), 1);
+        assert_eq!(paragraph.line_count(10), 1);
+
+        let block = Block::new().borders(Borders::TOP);
+        let paragraph = paragraph.block(block);
+        assert_eq!(paragraph.line_count(20), 2);
+        assert_eq!(paragraph.line_count(10), 2);
+
+        let block = Block::new().borders(Borders::BOTTOM);
+        let paragraph = paragraph.block(block);
+        assert_eq!(paragraph.line_count(20), 2);
+        assert_eq!(paragraph.line_count(10), 2);
+
+        let block = Block::new().borders(Borders::TOP | Borders::BOTTOM);
+        let paragraph = paragraph.block(block);
+        assert_eq!(paragraph.line_count(20), 3);
+        assert_eq!(paragraph.line_count(10), 3);
+
+        let block = Block::bordered();
+        let paragraph = paragraph.block(block);
+        assert_eq!(paragraph.line_count(20), 3);
+        assert_eq!(paragraph.line_count(10), 3);
+
+        let block = Block::bordered();
+        let paragraph = paragraph.block(block).wrap(Wrap { trim: true });
+        assert_eq!(paragraph.line_count(20), 3);
+        assert_eq!(paragraph.line_count(10), 4);
+
+        let block = Block::bordered();
+        let paragraph = paragraph.block(block).wrap(Wrap { trim: false });
+        assert_eq!(paragraph.line_count(20), 3);
+        assert_eq!(paragraph.line_count(10), 4);
+
+        let text = "Hello World ".repeat(100);
+        let block = Block::new();
+        let paragraph = Paragraph::new(text.trim()).block(block);
+        assert_eq!(paragraph.line_count(11), 1);
+
+        let block = Block::bordered();
+        let paragraph = paragraph.block(block);
+        assert_eq!(paragraph.line_count(11), 3);
+        assert_eq!(paragraph.line_count(6), 3);
+
+        let block = Block::new().borders(Borders::TOP);
+        let paragraph = paragraph.block(block);
+        assert_eq!(paragraph.line_count(11), 2);
+        assert_eq!(paragraph.line_count(6), 2);
+
+        let block = Block::new().borders(Borders::BOTTOM);
+        let paragraph = paragraph.block(block);
+        assert_eq!(paragraph.line_count(11), 2);
+        assert_eq!(paragraph.line_count(6), 2);
+
+        let block = Block::new().borders(Borders::LEFT | Borders::RIGHT);
+        let paragraph = paragraph.block(block);
+        assert_eq!(paragraph.line_count(11), 1);
+        assert_eq!(paragraph.line_count(6), 1);
+    }
+
+    #[test]
     fn widgets_paragraph_line_width() {
         let paragraph = Paragraph::new("Hello World");
         assert_eq!(paragraph.line_width(), 11);
@@ -999,6 +1085,29 @@ mod test {
         assert_eq!(paragraph.line_width(), 1200);
         let paragraph = paragraph.wrap(Wrap { trim: true });
         assert_eq!(paragraph.line_width(), 1200);
+    }
+
+    #[test]
+    fn widgets_paragraph_line_width_accounts_for_block() {
+        let block = Block::bordered();
+        let paragraph = Paragraph::new("Hello World").block(block);
+        assert_eq!(paragraph.line_width(), 13);
+
+        let block = Block::new().borders(Borders::LEFT);
+        let paragraph = Paragraph::new("Hello World").block(block);
+        assert_eq!(paragraph.line_width(), 12);
+
+        let block = Block::new().borders(Borders::LEFT);
+        let paragraph = Paragraph::new("Hello World")
+            .block(block)
+            .wrap(Wrap { trim: true });
+        assert_eq!(paragraph.line_width(), 12);
+
+        let block = Block::new().borders(Borders::LEFT);
+        let paragraph = Paragraph::new("Hello World")
+            .block(block)
+            .wrap(Wrap { trim: false });
+        assert_eq!(paragraph.line_width(), 12);
     }
 
     #[test]
