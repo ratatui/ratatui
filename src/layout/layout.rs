@@ -7,6 +7,7 @@ use cassowary::{
 };
 use itertools::Itertools;
 use lru::LruCache;
+use smallvec::SmallVec;
 
 use self::strengths::{
     ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
@@ -109,7 +110,7 @@ thread_local! {
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,
-    constraints: Vec<Constraint>,
+    constraints: SmallVec<Constraint, 5>,
     margin: Margin,
     flex: Flex,
     spacing: u16,
@@ -1077,6 +1078,8 @@ mod strengths {
 
 #[cfg(test)]
 mod tests {
+    use smallvec::smallvec;
+
     use super::*;
 
     #[test]
@@ -1140,7 +1143,7 @@ mod tests {
             Layout {
                 direction: Direction::Vertical,
                 margin: Margin::new(0, 0),
-                constraints: vec![],
+                constraints: SmallVec::new(),
                 flex: Flex::default(),
                 spacing: 0,
             }
@@ -1153,29 +1156,29 @@ mod tests {
         let fixed_size_array = [Constraint::Min(0)];
         let layout = Layout::new(Direction::Horizontal, fixed_size_array);
         assert_eq!(layout.direction, Direction::Horizontal);
-        assert_eq!(layout.constraints, [Constraint::Min(0)]);
+        assert_eq!(&*layout.constraints, [Constraint::Min(0)]);
 
         // array_ref
         #[allow(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
         let layout = Layout::new(Direction::Horizontal, &[Constraint::Min(0)]);
         assert_eq!(layout.direction, Direction::Horizontal);
-        assert_eq!(layout.constraints, [Constraint::Min(0)]);
+        assert_eq!(&*layout.constraints, [Constraint::Min(0)]);
 
         // vec
         let layout = Layout::new(Direction::Horizontal, vec![Constraint::Min(0)]);
         assert_eq!(layout.direction, Direction::Horizontal);
-        assert_eq!(layout.constraints, [Constraint::Min(0)]);
+        assert_eq!(&*layout.constraints, [Constraint::Min(0)]);
 
         // vec_ref
         #[allow(clippy::needless_borrows_for_generic_args)] // backwards compatibility test
         let layout = Layout::new(Direction::Horizontal, &(vec![Constraint::Min(0)]));
         assert_eq!(layout.direction, Direction::Horizontal);
-        assert_eq!(layout.constraints, [Constraint::Min(0)]);
+        assert_eq!(&*layout.constraints, [Constraint::Min(0)]);
 
         // iterator
         let layout = Layout::new(Direction::Horizontal, iter::once(Constraint::Min(0)));
         assert_eq!(layout.direction, Direction::Horizontal);
-        assert_eq!(layout.constraints, [Constraint::Min(0)]);
+        assert_eq!(&*layout.constraints, [Constraint::Min(0)]);
     }
 
     #[test]
@@ -1185,7 +1188,7 @@ mod tests {
             Layout {
                 direction: Direction::Vertical,
                 margin: Margin::new(0, 0),
-                constraints: vec![Constraint::Min(0)],
+                constraints: smallvec![Constraint::Min(0)],
                 flex: Flex::default(),
                 spacing: 0,
             }
@@ -1199,7 +1202,7 @@ mod tests {
             Layout {
                 direction: Direction::Horizontal,
                 margin: Margin::new(0, 0),
-                constraints: vec![Constraint::Min(0)],
+                constraints: smallvec![Constraint::Min(0)],
                 flex: Flex::default(),
                 spacing: 0,
             }
@@ -1218,14 +1221,14 @@ mod tests {
         const CONSTRAINTS: [Constraint; 2] = [Constraint::Min(0), Constraint::Max(10)];
         let fixed_size_array = CONSTRAINTS;
         assert_eq!(
-            Layout::default().constraints(fixed_size_array).constraints,
+            &*Layout::default().constraints(fixed_size_array).constraints,
             CONSTRAINTS,
             "constraints should be settable with an array"
         );
 
         let slice_of_fixed_size_array = &CONSTRAINTS;
         assert_eq!(
-            Layout::default()
+            &*Layout::default()
                 .constraints(slice_of_fixed_size_array)
                 .constraints,
             CONSTRAINTS,
@@ -1235,34 +1238,34 @@ mod tests {
         let vec = CONSTRAINTS.to_vec();
         let slice_of_vec = vec.as_slice();
         assert_eq!(
-            Layout::default().constraints(slice_of_vec).constraints,
+            &*Layout::default().constraints(slice_of_vec).constraints,
             CONSTRAINTS,
             "constraints should be settable with a slice"
         );
 
         assert_eq!(
-            Layout::default().constraints(vec).constraints,
+            &*Layout::default().constraints(vec).constraints,
             CONSTRAINTS,
             "constraints should be settable with a Vec"
         );
 
         let iter = CONSTRAINTS.iter();
         assert_eq!(
-            Layout::default().constraints(iter).constraints,
+            &*Layout::default().constraints(iter).constraints,
             CONSTRAINTS,
             "constraints should be settable with an iter"
         );
 
         let iterator = CONSTRAINTS.iter().map(ToOwned::to_owned);
         assert_eq!(
-            Layout::default().constraints(iterator).constraints,
+            &*Layout::default().constraints(iterator).constraints,
             CONSTRAINTS,
             "constraints should be settable with an iterator"
         );
 
         let iterator_ref = CONSTRAINTS.iter().map(AsRef::as_ref);
         assert_eq!(
-            Layout::default().constraints(iterator_ref).constraints,
+            &*Layout::default().constraints(iterator_ref).constraints,
             CONSTRAINTS,
             "constraints should be settable with an iterator of refs"
         );
