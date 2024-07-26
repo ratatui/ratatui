@@ -722,7 +722,7 @@ impl Table<'_> {
                     ..row_area
                 };
                 buf.set_style(selection_area, row.style);
-                highlight_symbol.clone().render(selection_area, buf);
+                highlight_symbol.render_ref(selection_area, buf);
             };
             for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
                 cell.render(
