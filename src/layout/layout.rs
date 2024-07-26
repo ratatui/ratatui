@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, iter, num::NonZeroUsize, rc::Rc, sync::OnceLock};
+use std::{cell::RefCell, collections::HashMap, iter, num::NonZeroUsize, rc::Rc};
 
 use cassowary::{
     strength::REQUIRED,
@@ -37,7 +37,7 @@ type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
 thread_local! {
-    static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = const { OnceLock::new() };
+    static LAYOUT_CACHE: RefCell<Option<Cache>> = const { RefCell::new(None) };
 }
 
 /// A layout is a set of constraints that can be applied to a given area to split it into smaller
@@ -210,21 +210,23 @@ impl Layout {
     /// grows until `cache_size` is reached.
     ///
     /// Returns true if the cell's value was set by this call.
-    /// Returns false if the cell's value was not set by this call, this means that another thread
-    /// has set this value or that the cache size is already initialized.
+    /// Returns false if the cell's value was not set by this call, meaning that the cache was
+    /// already initialized.
     ///
     /// Note that a custom cache size will be set only if this function:
     /// * is called before [`Layout::split()`] otherwise, the cache size is
     ///   [`Self::DEFAULT_CACHE_SIZE`].
     /// * is called for the first time, subsequent calls do not modify the cache size.
     pub fn init_cache(cache_size: usize) -> bool {
-        LAYOUT_CACHE
-            .with(|c| {
-                c.set(RefCell::new(LruCache::new(
-                    NonZeroUsize::new(cache_size).unwrap(),
-                )))
-            })
-            .is_ok()
+        LAYOUT_CACHE.with(|c| {
+            let mut cache = c.borrow_mut();
+            if cache.is_none() {
+                *cache = Some(LruCache::new(NonZeroUsize::new(cache_size).unwrap()));
+                true
+            } else {
+                false
+            }
+        })
     }
 
     /// Set the direction of the layout.
@@ -572,16 +574,14 @@ impl Layout {
     /// ```
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
         LAYOUT_CACHE.with(|c| {
-            c.get_or_init(|| {
-                RefCell::new(LruCache::new(
-                    NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap(),
-                ))
-            })
-            .borrow_mut()
-            .get_or_insert((area, self.clone()), || {
-                self.try_split(area).expect("failed to split")
-            })
-            .clone()
+            c.borrow_mut()
+                .get_or_insert_with(|| {
+                    LruCache::new(NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap())
+                })
+                .get_or_insert((area, self.clone()), || {
+                    self.try_split(area).expect("failed to split")
+                })
+                .clone()
         })
     }
 
@@ -1103,7 +1103,7 @@ mod tests {
         assert!(Layout::init_cache(10));
         assert!(!Layout::init_cache(15));
         LAYOUT_CACHE.with(|c| {
-            assert_eq!(c.get().unwrap().borrow().cap().get(), 10);
+            assert_eq!(c.borrow().as_ref().unwrap().cap().get(), 10);
         });
     }
 
@@ -1127,7 +1127,7 @@ mod tests {
         assert!(!Layout::init_cache(15));
         LAYOUT_CACHE.with(|c| {
             assert_eq!(
-                c.get().unwrap().borrow().cap().get(),
+                c.borrow().as_ref().unwrap().cap().get(),
                 Layout::DEFAULT_CACHE_SIZE
             );
         });
