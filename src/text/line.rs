@@ -161,6 +161,13 @@ pub struct Line<'a> {
     pub alignment: Option<Alignment>,
 }
 
+fn cow_to_spans<'a>(content: impl Into<Cow<'a, str>>) -> Vec<Span<'a>> {
+    match content.into() {
+        Cow::Borrowed(s) => s.lines().map(Span::raw).collect(),
+        Cow::Owned(s) => s.lines().map(|v| Span::raw(v.to_string())).collect(),
+    }
+}
+
 impl<'a> Line<'a> {
     /// Create a line with the default style.
     ///
@@ -186,17 +193,14 @@ impl<'a> Line<'a> {
         T: Into<Cow<'a, str>>,
     {
         Self {
-            spans: content
-                .into()
-                .lines()
-                .map(|v| Span::raw(v.to_string()))
-                .collect(),
+            spans: cow_to_spans(content),
             ..Default::default()
         }
     }
 
     /// Create a line with the given style.
-    // `content` can be any type that is convertible to [`Cow<str>`] (e.g. [`&str`], [`String`],
+    ///
+    /// `content` can be any type that is convertible to [`Cow<str>`] (e.g. [`&str`], [`String`],
     /// [`Cow<str>`], or your own type that implements [`Into<Cow<str>>`]).
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
@@ -220,11 +224,7 @@ impl<'a> Line<'a> {
         S: Into<Style>,
     {
         Self {
-            spans: content
-                .into()
-                .lines()
-                .map(|v| Span::raw(v.to_string()))
-                .collect(),
+            spans: cow_to_spans(content),
             style: style.into(),
             ..Default::default()
         }
