@@ -108,7 +108,7 @@ impl StatefulWidgetRef for List<'_> {
             } else {
                 row_area
             };
-            item.content.clone().render(item_area, buf);
+            item.content.render_ref(item_area, buf);
 
             for j in 0..item.content.height() {
                 // if the item is selected, we need to display the highlight symbol:
