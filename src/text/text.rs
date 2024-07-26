@@ -570,6 +570,33 @@ where
     }
 }
 
+impl<'a> std::ops::Add<Line<'a>> for Text<'a> {
+    type Output = Self;
+
+    fn add(mut self, line: Line<'a>) -> Self::Output {
+        self.push_line(line);
+        self
+    }
+}
+
+/// Adds two `Text` together.
+///
+/// This ignores the style and alignment of the second `Text`.
+impl<'a> std::ops::Add<Self> for Text<'a> {
+    type Output = Self;
+
+    fn add(mut self, text: Self) -> Self::Output {
+        self.lines.extend(text.lines);
+        self
+    }
+}
+
+impl<'a> std::ops::AddAssign<Line<'a>> for Text<'a> {
+    fn add_assign(&mut self, line: Line<'a>) {
+        self.push_line(line);
+    }
+}
+
 impl<'a, T> Extend<T> for Text<'a>
 where
     T: Into<Line<'a>>,
@@ -827,6 +854,44 @@ mod tests {
         assert_eq!(iter.next(), Some(Line::from("The first line")));
         assert_eq!(iter.next(), Some(Line::from("The second line")));
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn add_line() {
+        assert_eq!(
+            Text::raw("Red").red() + Line::raw("Blue").blue(),
+            Text {
+                lines: vec![Line::raw("Red"), Line::raw("Blue").blue()],
+                style: Style::new().red(),
+                alignment: None,
+            }
+        );
+    }
+
+    #[test]
+    fn add_text() {
+        assert_eq!(
+            Text::raw("Red").red() + Text::raw("Blue").blue(),
+            Text {
+                lines: vec![Line::raw("Red"), Line::raw("Blue")],
+                style: Style::new().red(),
+                alignment: None,
+            }
+        );
+    }
+
+    #[test]
+    fn add_assign_line() {
+        let mut text = Text::raw("Red").red();
+        text += Line::raw("Blue").blue();
+        assert_eq!(
+            text,
+            Text {
+                lines: vec![Line::raw("Red"), Line::raw("Blue").blue()],
+                style: Style::new().red(),
+                alignment: None,
+            }
+        );
     }
 
     #[test]
