@@ -264,7 +264,7 @@ impl<'a> Block<'a> {
     /// The following example demonstrates:
     /// - Default title alignment
     /// - Multiple titles (notice "Center" is centered according to the full with of the block, not
-    /// the leftover space)
+    ///   the leftover space)
     /// - Two titles with the same alignment (notice the left titles are separated)
     /// ```
     /// use ratatui::{
