@@ -35,7 +35,7 @@ use crate::{
 /// - [`List::highlight_style`] sets the style of the selected item.
 /// - [`List::highlight_symbol`] sets the symbol to be displayed in front of the selected item.
 /// - [`List::repeat_highlight_symbol`] sets whether to repeat the symbol and style over selected
-/// multi-line items
+///   multi-line items
 /// - [`List::direction`] sets the list direction
 ///
 /// # Examples
