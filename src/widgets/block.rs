@@ -6,6 +6,7 @@
 //! [title](Block::title) and [padding](Block::padding).
 
 use itertools::Itertools;
+use smallvec::SmallVec;
 use strum::{Display, EnumString};
 
 use crate::{prelude::*, style::Styled, symbols::border, widgets::Borders};
@@ -108,7 +109,7 @@ pub use title::{Position, Title};
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
     /// List of titles
-    titles: Vec<Title<'a>>,
+    titles: SmallVec<Title<'a>, 2>,
     /// The style to be patched to all titles of the block
     titles_style: Style,
     /// The default alignment of the titles that don't have one
@@ -205,7 +206,7 @@ impl<'a> Block<'a> {
     /// Creates a new block with no [`Borders`] or [`Padding`].
     pub const fn new() -> Self {
         Self {
-            titles: Vec::new(),
+            titles: SmallVec::new(),
             titles_style: Style::new(),
             titles_alignment: Alignment::Left,
             titles_position: Position::Top,
@@ -1221,7 +1222,7 @@ mod tests {
         assert_eq!(
             Block::new(),
             Block {
-                titles: Vec::new(),
+                titles: SmallVec::new(),
                 titles_style: Style::new(),
                 titles_alignment: Alignment::Left,
                 titles_position: Position::Top,
