@@ -161,13 +161,6 @@ pub struct Line<'a> {
     pub alignment: Option<Alignment>,
 }
 
-fn cow_to_spans<'a>(content: impl Into<Cow<'a, str>>) -> Vec<Span<'a>> {
-    match content.into() {
-        Cow::Borrowed(s) => s.lines().map(Span::raw).collect(),
-        Cow::Owned(s) => s.lines().map(|v| Span::raw(v.to_string())).collect(),
-    }
-}
-
 impl<'a> Line<'a> {
     /// Create a line with the default style.
     ///
@@ -176,8 +169,6 @@ impl<'a> Line<'a> {
     ///
     /// A [`Line`] can specify a [`Style`], which will be applied before the style of each [`Span`]
     /// in the line.
-    ///
-    /// Any newlines in the content are removed.
     ///
     /// # Examples
     ///
@@ -193,7 +184,7 @@ impl<'a> Line<'a> {
         T: Into<Cow<'a, str>>,
     {
         Self {
-            spans: cow_to_spans(content),
+            spans: vec![Span::raw(content)],
             ..Default::default()
         }
     }
@@ -207,8 +198,6 @@ impl<'a> Line<'a> {
     /// your own type that implements [`Into<Style>`]).
     ///
     /// # Examples
-    ///
-    /// Any newlines in the content are removed.
     ///
     /// ```rust
     /// # use ratatui::prelude::*;
@@ -224,7 +213,7 @@ impl<'a> Line<'a> {
         S: Into<Style>,
     {
         Self {
-            spans: cow_to_spans(content),
+            spans: vec![Span::raw(content)],
             style: style.into(),
             ..Default::default()
         }
@@ -744,7 +733,7 @@ mod tests {
         assert_eq!(line.alignment, None);
 
         let line = Line::raw("a\nb");
-        assert_eq!(line.spans, vec![Span::raw("a"), Span::raw("b")]);
+        assert_eq!(line.spans, vec![Span::raw("a\nb")]);
         assert_eq!(line.alignment, None);
     }
 
@@ -864,7 +853,7 @@ mod tests {
 
         let s = String::from("Hello\nworld!");
         let line = Line::from(s);
-        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line.spans, vec![Span::from("Hello\nworld!")]);
     }
 
     #[test]
@@ -875,7 +864,7 @@ mod tests {
 
         let s = "Hello\nworld!";
         let line = Line::from(s);
-        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line.spans, vec![Span::from(s)]);
     }
 
     #[test]
