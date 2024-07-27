@@ -342,6 +342,14 @@ where
     }
 }
 
+impl<'a> std::ops::Add<Self> for Span<'a> {
+    type Output = Line<'a>;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Line::from_iter([self, rhs])
+    }
+}
+
 impl<'a> Styled for Span<'a> {
     type Item = Self;
 
@@ -771,6 +779,29 @@ mod tests {
                 Cell::new("l"),
                 Cell::new("o\u{200E}"),
             ]
+        );
+    }
+
+    #[test]
+    fn add() {
+        assert_eq!(
+            Span::default() + Span::default(),
+            Line::from(vec![Span::default(), Span::default()])
+        );
+
+        assert_eq!(
+            Span::default() + Span::raw("test"),
+            Line::from(vec![Span::default(), Span::raw("test")])
+        );
+
+        assert_eq!(
+            Span::raw("test") + Span::default(),
+            Line::from(vec![Span::raw("test"), Span::default()])
+        );
+
+        assert_eq!(
+            Span::raw("test") + Span::raw("content"),
+            Line::from(vec![Span::raw("test"), Span::raw("content")])
         );
     }
 }

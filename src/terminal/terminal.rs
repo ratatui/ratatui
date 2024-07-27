@@ -234,39 +234,145 @@ where
         Ok(())
     }
 
-    /// Synchronizes terminal size, calls the rendering closure, flushes the current internal state
-    /// and prepares for the next draw call.
+    /// Draws a single frame to the terminal.
     ///
-    /// This is the main entry point for drawing to the terminal.
+    /// Returns a [`CompletedFrame`] if successful, otherwise a [`std::io::Error`].
     ///
-    /// The changes drawn to the frame are applied only to the current [`Buffer`]. After the closure
-    /// returns, the current buffer is compared to the previous buffer and only the changes are
-    /// applied to the terminal.
+    /// If the render callback passed to this method can fail, use [`try_draw`] instead.
+    ///
+    /// Applications should call `draw` or [`try_draw`] in a loop to continuously render the
+    /// terminal. These methods are the main entry points for drawing to the terminal.
+    ///
+    /// [`try_draw`]: Terminal::try_draw
+    ///
+    /// This method will:
+    ///
+    /// - autoresize the terminal if necessary
+    /// - call the render callback, passing it a [`Frame`] reference to render to
+    /// - flush the current internal state by copying the current buffer to the backend
+    /// - move the cursor to the last known position if it was set during the rendering closure
+    /// - return a [`CompletedFrame`] with the current buffer and the area of the terminal
+    ///
+    /// The [`CompletedFrame`] returned by this method can be useful for debugging or testing
+    /// purposes, but it is often not used in regular applicationss.
+    ///
+    /// The render callback should fully render the entire frame when called, including areas that
+    /// are unchanged from the previous frame. This is because each frame is compared to the
+    /// previous frame to determine what has changed, and only the changes are written to the
+    /// terminal. If the render callback does not fully render the frame, the terminal will not be
+    /// in a consistent state.
     ///
     /// # Examples
     ///
-    /// ```rust,no_run
-    /// # use std::io::stdout;
-    /// # use ratatui::{prelude::*, widgets::Paragraph};
-    /// let backend = CrosstermBackend::new(stdout());
-    /// let mut terminal = Terminal::new(backend)?;
+    /// ```
+    /// # let backend = ratatui::backend::TestBackend::new(10, 10);
+    /// # let mut terminal = ratatui::Terminal::new(backend)?;
+    /// use std::io;
+    ///
+    /// use ratatui::widgets::Paragraph;
+    ///
+    /// // with a closure
     /// terminal.draw(|frame| {
     ///     let area = frame.size();
     ///     frame.render_widget(Paragraph::new("Hello World!"), area);
     ///     frame.set_cursor(0, 0);
     /// })?;
-    /// # std::io::Result::Ok(())
+    ///
+    /// // or with a function
+    /// terminal.draw(render)?;
+    ///
+    /// fn render(frame: &mut ratatui::Frame) {
+    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.size());
+    /// }
+    /// # io::Result::Ok(())
     /// ```
-    pub fn draw<F>(&mut self, f: F) -> io::Result<CompletedFrame>
+    pub fn draw<F>(&mut self, render_callback: F) -> io::Result<CompletedFrame>
     where
         F: FnOnce(&mut Frame),
+    {
+        self.try_draw(|frame| {
+            render_callback(frame);
+            io::Result::Ok(())
+        })
+    }
+
+    /// Tries to draw a single frame to the terminal.
+    ///
+    /// Returns [`Result::Ok`] containing a [`CompletedFrame`] if successful, otherwise
+    /// [`Result::Err`] containing the [`std::io::Error`] that caused the failure.
+    ///
+    /// This is the equivalent of [`Terminal::draw`] but the render callback is a function or
+    /// closure that returns a `Result` instead of nothing.
+    ///
+    /// Applications should call `try_draw` or [`draw`] in a loop to continuously render the
+    /// terminal. These methods are the main entry points for drawing to the terminal.
+    ///
+    /// [`draw`]: Terminal::draw
+    ///
+    /// This method will:
+    ///
+    /// - autoresize the terminal if necessary
+    /// - call the render callback, passing it a [`Frame`] reference to render to
+    /// - flush the current internal state by copying the current buffer to the backend
+    /// - move the cursor to the last known position if it was set during the rendering closure
+    /// - return a [`CompletedFrame`] with the current buffer and the area of the terminal
+    ///
+    /// The render callback passed to `try_draw` can return any [`Result`] with an error type that
+    /// can be converted into an [`std::io::Error`] using the [`Into`] trait. This makes it possible
+    /// to use the `?` operator to propagate errors that occur during rendering. If the render
+    /// callback returns an error, the error will be returned from `try_draw` as an
+    /// [`std::io::Error`] and the terminal will not be updated.
+    ///
+    /// The [`CompletedFrame`] returned by this method can be useful for debugging or testing
+    /// purposes, but it is often not used in regular applicationss.
+    ///
+    /// The render callback should fully render the entire frame when called, including areas that
+    /// are unchanged from the previous frame. This is because each frame is compared to the
+    /// previous frame to determine what has changed, and only the changes are written to the
+    /// terminal. If the render function does not fully render the frame, the terminal will not be
+    /// in a consistent state.
+    ///
+    /// # Examples
+    ///
+    /// ```should_panic
+    /// # let backend = ratatui::backend::TestBackend::new(10, 10);
+    /// # let mut terminal = ratatui::Terminal::new(backend)?;
+    /// use std::io;
+    ///
+    /// use ratatui::widgets::Paragraph;
+    ///
+    /// // with a closure
+    /// terminal.try_draw(|frame| {
+    ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
+    ///     let area = frame.size();
+    ///     frame.render_widget(Paragraph::new("Hello World!"), area);
+    ///     frame.set_cursor(0, 0);
+    ///     io::Result::Ok(())
+    /// })?;
+    ///
+    /// // or with a function
+    /// terminal.try_draw(render)?;
+    ///
+    /// fn render(frame: &mut ratatui::Frame) -> io::Result<()> {
+    ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
+    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.size());
+    ///     Ok(())
+    /// }
+    /// # io::Result::Ok(())
+    /// ```
+    pub fn try_draw<F, E>(&mut self, render_callback: F) -> io::Result<CompletedFrame>
+    where
+        F: FnOnce(&mut Frame) -> Result<(), E>,
+        E: Into<io::Error>,
     {
         // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
         // and the terminal (if growing), which may OOB.
         self.autoresize()?;
 
         let mut frame = self.get_frame();
-        f(&mut frame);
+
+        render_callback(&mut frame).map_err(Into::into)?;
+
         // We can't change the cursor position right away because we have to flush the frame to
         // stdout first. But we also can't keep the frame around, since it holds a &mut to
         // Buffer. Thus, we're taking the important data out of the Frame and dropping it.

@@ -1,5 +1,5 @@
 # This is a vhs script. See https://github.com/charmbracelet/vhs for more info.
-# To run this script, install vhs and run `vhs ./examples/constraints.tape`
+# To run this script, install vhs and run `vhs ./examples/constraint-explorer.tape`
 Output "target/constraint-explorer.gif"
 Set Theme "Aardvark Blue"
 Set FontSize 18

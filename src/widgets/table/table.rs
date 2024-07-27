@@ -722,7 +722,7 @@ impl Table<'_> {
                     ..row_area
                 };
                 buf.set_style(selection_area, row.style);
-                highlight_symbol.clone().render(selection_area, buf);
+                highlight_symbol.render_ref(selection_area, buf);
             };
             for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
                 cell.render(
@@ -927,6 +927,8 @@ mod tests {
         let table = Table::default().widths([Constraint::Length(100)]);
         assert_eq!(table.widths, [Constraint::Length(100)]);
 
+        // ensure that code that uses &[] continues to work as there is a large amount of code that
+        // uses this pattern
         #[allow(clippy::needless_borrows_for_generic_args)]
         let table = Table::default().widths(&[Constraint::Length(100)]);
         assert_eq!(table.widths, [Constraint::Length(100)]);
@@ -934,6 +936,9 @@ mod tests {
         let table = Table::default().widths(vec![Constraint::Length(100)]);
         assert_eq!(table.widths, [Constraint::Length(100)]);
 
+        // ensure that code that uses &some_vec continues to work as there is a large amount of code
+        // that uses this pattern
+        #[allow(clippy::needless_borrows_for_generic_args)]
         let table = Table::default().widths(&vec![Constraint::Length(100)]);
         assert_eq!(table.widths, [Constraint::Length(100)]);
 
