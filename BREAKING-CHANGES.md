@@ -10,6 +10,8 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [v0.28.0](#v0280)
+  - `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize`
 - [v0.27.0](#v0270)
   - List no clamps the selected index to list
   - Prelude items added / removed
