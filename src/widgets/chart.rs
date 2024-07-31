@@ -144,11 +144,15 @@ pub enum GraphType {
     /// Draw each point. This is the default.
     #[default]
     Scatter,
+
     /// Draw a line between each following point.
     ///
     /// The order of the lines will be the same as the order of the points in the dataset, which
     /// allows this widget to draw lines both left-to-right and right-to-left
     Line,
+
+    /// Draw a bar chart. This will draw a bar for each point in the dataset.
+    Bar,
 }
 
 /// Allow users to specify the position of a legend in a [`Chart`]
@@ -362,9 +366,10 @@ impl<'a> Dataset<'a> {
 
     /// Sets how the dataset should be drawn
     ///
-    /// [`Chart`] can draw either a [scatter](GraphType::Scatter) or [line](GraphType::Line) charts.
-    /// A scatter will draw only the points in the dataset while a line will also draw a line
-    /// between them. See [`GraphType`] for more details
+    /// [`Chart`] can draw [scatter](GraphType::Scatter), [line](GraphType::Line) or
+    /// [bar](GraphType::Bar) charts. A scatter chart draws only the points in the dataset, a line
+    /// char draws a line between each point, and a bar chart draws a line from the x axis to the
+    /// point.  See [`GraphType`] for more details
     ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -998,16 +1003,30 @@ impl WidgetRef for Chart<'_> {
                         coords: dataset.data,
                         color: dataset.style.fg.unwrap_or(Color::Reset),
                     });
-                    if dataset.graph_type == GraphType::Line {
-                        for data in dataset.data.windows(2) {
-                            ctx.draw(&CanvasLine {
-                                x1: data[0].0,
-                                y1: data[0].1,
-                                x2: data[1].0,
-                                y2: data[1].1,
-                                color: dataset.style.fg.unwrap_or(Color::Reset),
-                            });
+                    match dataset.graph_type {
+                        GraphType::Line => {
+                            for data in dataset.data.windows(2) {
+                                ctx.draw(&CanvasLine {
+                                    x1: data[0].0,
+                                    y1: data[0].1,
+                                    x2: data[1].0,
+                                    y2: data[1].1,
+                                    color: dataset.style.fg.unwrap_or(Color::Reset),
+                                });
+                            }
                         }
+                        GraphType::Bar => {
+                            for (x, y) in dataset.data {
+                                ctx.draw(&CanvasLine {
+                                    x1: *x,
+                                    y1: 0.0,
+                                    x2: *x,
+                                    y2: *y,
+                                    color: dataset.style.fg.unwrap_or(Color::Reset),
+                                });
+                            }
+                        }
+                        GraphType::Scatter => {}
                     }
                 })
                 .render(graph_area, buf);
@@ -1194,12 +1213,14 @@ mod tests {
     fn graph_type_to_string() {
         assert_eq!(GraphType::Scatter.to_string(), "Scatter");
         assert_eq!(GraphType::Line.to_string(), "Line");
+        assert_eq!(GraphType::Bar.to_string(), "Bar");
     }
 
     #[test]
     fn graph_type_from_str() {
         assert_eq!("Scatter".parse::<GraphType>(), Ok(GraphType::Scatter));
         assert_eq!("Line".parse::<GraphType>(), Ok(GraphType::Line));
+        assert_eq!("Bar".parse::<GraphType>(), Ok(GraphType::Bar));
         assert_eq!("".parse::<GraphType>(), Err(ParseError::VariantNotFound));
     }
 
@@ -1459,5 +1480,40 @@ mod tests {
             .hidden_legend_constraints((Constraint::Percentage(100), Constraint::Percentage(100)));
         chart.render(buffer.area, &mut buffer);
         assert_eq!(buffer, Buffer::with_lines(expected));
+    }
+
+    #[test]
+    fn bar_chart() {
+        let data = [
+            (0.0, 0.0),
+            (2.0, 1.0),
+            (4.0, 4.0),
+            (6.0, 8.0),
+            (8.0, 9.0),
+            (10.0, 10.0),
+        ];
+        let chart = Chart::new(vec![Dataset::default()
+            .data(&data)
+            .marker(symbols::Marker::Dot)
+            .graph_type(GraphType::Bar)])
+        .x_axis(Axis::default().bounds([0.0, 10.0]))
+        .y_axis(Axis::default().bounds([0.0, 10.0]));
+        let area = Rect::new(0, 0, 11, 11);
+        let mut buffer = Buffer::empty(area);
+        chart.render(buffer.area, &mut buffer);
+        let expected = Buffer::with_lines([
+            "          •",
+            "        • •",
+            "      • • •",
+            "      • • •",
+            "      • • •",
+            "      • • •",
+            "    • • • •",
+            "    • • • •",
+            "    • • • •",
+            "  • • • • •",
+            "• • • • • •",
+        ]);
+        assert_eq!(buffer, expected);
     }
 }

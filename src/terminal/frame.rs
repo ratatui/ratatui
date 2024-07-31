@@ -94,7 +94,7 @@ impl Frame<'_> {
     /// # }
     /// ```
     #[allow(clippy::needless_pass_by_value)]
-    #[stability::unstable(feature = "widget-ref")]
+    #[instability::unstable(feature = "widget-ref")]
     pub fn render_widget_ref<W: WidgetRef>(&mut self, widget: W, area: Rect) {
         widget.render_ref(area, self.buffer);
     }
@@ -152,7 +152,7 @@ impl Frame<'_> {
     /// # }
     /// ```
     #[allow(clippy::needless_pass_by_value)]
-    #[stability::unstable(feature = "widget-ref")]
+    #[instability::unstable(feature = "widget-ref")]
     pub fn render_stateful_widget_ref<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
     where
         W: StatefulWidgetRef,

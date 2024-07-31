@@ -297,7 +297,7 @@ pub trait StatefulWidget {
 /// # }
 /// # }
 /// ```
-#[stability::unstable(feature = "widget-ref")]
+#[instability::unstable(feature = "widget-ref")]
 pub trait WidgetRef {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.
@@ -398,7 +398,7 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 /// }
 /// # }
 /// ```
-#[stability::unstable(feature = "widget-ref")]
+#[instability::unstable(feature = "widget-ref")]
 pub trait StatefulWidgetRef {
     /// State associated with the stateful widget.
     ///
