@@ -58,9 +58,9 @@ This is a quick summary of the sections below:
 
 ## Unreleased
 
-### Backend::size returns `Size` instead of `Rect` ([#todo])
+### `Backend::size` returns `Size` instead of `Rect` ([#1254])
 
-[#todo]
+[#1254]: https://github.com/ratatui-org/ratatui/pull/1254
 
 The `Backend::size` method returns a `Size` instead of a `Rect`.
 There is no need for the position here as it was always 0,0.
