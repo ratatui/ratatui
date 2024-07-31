@@ -370,11 +370,12 @@ impl Widget for Span<'_> {
 
 impl WidgetRef for Span<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        let Rect { mut x, y, .. } = area.intersection(buf.area);
+        let area = area.intersection(buf.area);
+        let Rect { mut x, y, .. } = area;
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
             let symbol_width = grapheme.symbol.width();
             let next_x = x.saturating_add(symbol_width as u16);
-            if next_x > area.intersection(buf.area).right() {
+            if next_x > area.right() {
                 break;
             }
 
