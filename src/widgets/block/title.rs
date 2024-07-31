@@ -36,7 +36,10 @@ use crate::{layout::Alignment, text::Line};
 /// ```
 /// use ratatui::{
 ///     prelude::*,
-///     widgets::{block::*, *},
+///     widgets::{
+///         block::{Position, Title},
+///         Block,
+///     },
 /// };
 ///
 /// Title::from("Title")

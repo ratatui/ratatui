@@ -310,7 +310,7 @@ impl Constraint {
     /// ```rust
     /// # use ratatui::prelude::*;
     /// # let area = Rect::default();
-    /// let constraints = Constraint::from_mins([1, 2, 3]);
+    /// let constraints = Constraint::from_fills([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
     pub fn from_fills<T>(proportional_factors: T) -> Vec<Self>

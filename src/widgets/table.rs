@@ -1,7 +1,6 @@
 mod cell;
 mod highlight_spacing;
 mod row;
-#[allow(clippy::module_inception)]
 mod table;
 mod table_state;
 
