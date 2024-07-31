@@ -8,6 +8,7 @@ use crate::prelude::*;
 /// The width and height are stored as `u16` values and represent the number of columns and rows
 /// respectively.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Size {
     /// The width in columns
     pub width: u16,
