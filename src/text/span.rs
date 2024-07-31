@@ -371,6 +371,9 @@ impl Widget for Span<'_> {
 impl WidgetRef for Span<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
         let Rect { mut x, y, .. } = area;
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
             let symbol_width = grapheme.symbol.width();
@@ -630,8 +633,11 @@ mod tests {
         }
 
         #[rstest]
-        fn render_out_of_bounds(mut small_buf: Buffer) {
-            let out_of_bounds = Rect::new(20, 20, 10, 1);
+        #[case::x(20, 0)]
+        #[case::y(0, 20)]
+        #[case::both(20, 20)]
+        fn render_out_of_bounds(mut small_buf: Buffer, #[case] x: u16, #[case] y: u16) {
+            let out_of_bounds = Rect::new(x, y, 10, 1);
             Span::raw("Hello, World!").render(out_of_bounds, &mut small_buf);
             assert_eq!(small_buf, Buffer::empty(small_buf.area));
         }
