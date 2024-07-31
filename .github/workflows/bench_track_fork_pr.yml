@@ -5,6 +5,10 @@ on:
     workflows: [Run and Cache Benchmarks]
     types: [completed]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   track_fork_pr_branch:
     if: github.event.workflow_run.conclusion == 'success'
