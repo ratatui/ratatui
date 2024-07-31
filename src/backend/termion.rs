@@ -12,7 +12,7 @@ use std::{
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
-    prelude::Rect,
+    layout::Size,
     style::{Color, Modifier, Style},
     termion::{self, color as tcolor, color::Color as _, style as tstyle},
 };
@@ -214,9 +214,9 @@ where
         )
     }
 
-    fn size(&self) -> io::Result<Rect> {
+    fn size(&self) -> io::Result<Size> {
         let terminal = termion::terminal_size()?;
-        Ok(Rect::new(0, 0, terminal.0, terminal.1))
+        Ok(Size::new(terminal.0, terminal.1))
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {

@@ -56,6 +56,15 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
+## Unreleased
+
+### Backend::size returns `Size` instead of `Rect` ([#todo])
+
+[#todo]
+
+The `Backend::size` method returns a `Size` instead of a `Rect`.
+There is no need for the position here as it was always 0,0.
+
 ## [v0.27.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.27.0)
 
 ### List no clamps the selected index to list ([#1159])
