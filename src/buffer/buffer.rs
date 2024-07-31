@@ -963,4 +963,43 @@ mod tests {
         ]);
         assert_eq!(buffer, expected);
     }
+
+    /// Emojis normally contain various characters which should stay part of the Emoji.
+    /// This should work fine by utilizing unicode_segmentation but a testcase is probably helpful
+    /// due to the nature of never perfect Unicode implementations and all of its quirks.
+    #[rstest]
+    // Shrug without gender or skintone. Has a width of 2 like all emojis have.
+    #[case::shrug("🤷", "🤷xxxxx")]
+    // Technically this is a (brown) bear, a zero-width joiner and a snowflake
+    // As it is joined its a single emoji and should therefore have a width of 2.
+    // It's correctly detected as a single grapheme but it's width is 4 for some reason
+    #[case::polarbear("🐻‍❄️", "🐻‍❄️xxx")]
+    // Technically this is an eye, a zero-width joiner and a speech bubble
+    // Both eye and speech bubble include a 'display as emoji' variation selector
+    #[case::eye_speechbubble("👁️‍🗨️", "👁️‍🗨️xxx")]
+    fn renders_emoji(#[case] input: &str, #[case] expected: &str) {
+        use unicode_width::UnicodeWidthChar;
+
+        dbg!(input);
+        dbg!(input.len());
+        dbg!(input
+            .graphemes(true)
+            .map(|symbol| (symbol, symbol.escape_unicode().to_string(), symbol.width()))
+            .collect::<Vec<_>>());
+        dbg!(input
+            .chars()
+            .map(|char| (
+                char,
+                char.escape_unicode().to_string(),
+                char.width(),
+                char.is_control()
+            ))
+            .collect::<Vec<_>>());
+
+        let mut buffer = Buffer::filled(Rect::new(0, 0, 7, 1), Cell::new("x"));
+        buffer.set_string(0, 0, input, Style::new());
+
+        let expected = Buffer::with_lines([expected]); // Emoji followed by 2 spaces
+        assert_eq!(buffer, expected);
+    }
 }
