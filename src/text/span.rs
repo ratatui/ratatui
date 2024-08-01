@@ -757,6 +757,14 @@ mod tests {
                 [Cell::new("a"), Cell::new("b"), Cell::new("c\u{200B}")]
             );
         }
+
+        #[test]
+        fn render_with_newlines() {
+            let span = Span::raw("a\nb");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 2, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(buf.content(), [Cell::new("a"), Cell::new("b")]);
+        }
     }
 
     /// Regression test for <https://github.com/ratatui-org/ratatui/issues/1160> One line contains
