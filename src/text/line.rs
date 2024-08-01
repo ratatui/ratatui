@@ -1386,6 +1386,13 @@ mod tests {
             line.render_ref(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
+
+        #[test]
+        fn render_with_newlines() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 11, 1));
+            Line::from("Hello\nworld!").render(Rect::new(0, 0, 11, 1), &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["Helloworld!"]));
+        }
     }
 
     mod iterators {
