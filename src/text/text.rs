@@ -1,9 +1,9 @@
 #![warn(missing_docs)]
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt};
 
 use itertools::{Itertools, Position};
 
-use crate::prelude::*;
+use crate::{prelude::*, style::Styled};
 
 /// A string split over one or more lines.
 ///
@@ -570,6 +570,33 @@ where
     }
 }
 
+impl<'a> std::ops::Add<Line<'a>> for Text<'a> {
+    type Output = Self;
+
+    fn add(mut self, line: Line<'a>) -> Self::Output {
+        self.push_line(line);
+        self
+    }
+}
+
+/// Adds two `Text` together.
+///
+/// This ignores the style and alignment of the second `Text`.
+impl<'a> std::ops::Add<Self> for Text<'a> {
+    type Output = Self;
+
+    fn add(mut self, text: Self) -> Self::Output {
+        self.lines.extend(text.lines);
+        self
+    }
+}
+
+impl<'a> std::ops::AddAssign<Line<'a>> for Text<'a> {
+    fn add_assign(&mut self, line: Line<'a>) {
+        self.push_line(line);
+    }
+}
+
 impl<'a, T> Extend<T> for Text<'a>
 where
     T: Into<Line<'a>>,
@@ -580,8 +607,31 @@ where
     }
 }
 
-impl std::fmt::Display for Text<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+/// A trait for converting a value to a [`Text`].
+///
+/// This trait is automatically implemented for any type that implements the [`Display`] trait. As
+/// such, `ToText` shouldn't be implemented directly: [`Display`] should be implemented instead, and
+/// you get the `ToText` implementation for free.
+///
+/// [`Display`]: std::fmt::Display
+pub trait ToText {
+    /// Converts the value to a [`Text`].
+    fn to_text(&self) -> Text<'_>;
+}
+
+/// # Panics
+///
+/// In this implementation, the `to_text` method panics if the `Display` implementation returns an
+/// error. This indicates an incorrect `Display` implementation since `fmt::Write for String` never
+/// returns an error itself.
+impl<T: fmt::Display> ToText for T {
+    fn to_text(&self) -> Text {
+        Text::raw(self.to_string())
+    }
+}
+
+impl fmt::Display for Text<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (position, line) in self.iter().with_position() {
             if position == Position::Last {
                 write!(f, "{line}")?;
@@ -747,6 +797,24 @@ mod tests {
         assert_eq!(text.lines, vec![Line::from("The first line")]);
     }
 
+    #[rstest]
+    #[case(42, Text::from("42"))]
+    #[case("just\ntesting", Text::from("just\ntesting"))]
+    #[case(true, Text::from("true"))]
+    #[case(6.66, Text::from("6.66"))]
+    #[case('a', Text::from("a"))]
+    #[case(String::from("hello"), Text::from("hello"))]
+    #[case(-1, Text::from("-1"))]
+    #[case("line1\nline2", Text::from("line1\nline2"))]
+    #[case(
+        "first line\nsecond line\nthird line",
+        Text::from("first line\nsecond line\nthird line")
+    )]
+    #[case("trailing newline\n", Text::from("trailing newline\n"))]
+    fn to_text(#[case] value: impl fmt::Display, #[case] expected: Text) {
+        assert_eq!(value.to_text(), expected);
+    }
+
     #[test]
     fn from_vec_line() {
         let text = Text::from(vec![
@@ -786,6 +854,44 @@ mod tests {
         assert_eq!(iter.next(), Some(Line::from("The first line")));
         assert_eq!(iter.next(), Some(Line::from("The second line")));
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn add_line() {
+        assert_eq!(
+            Text::raw("Red").red() + Line::raw("Blue").blue(),
+            Text {
+                lines: vec![Line::raw("Red"), Line::raw("Blue").blue()],
+                style: Style::new().red(),
+                alignment: None,
+            }
+        );
+    }
+
+    #[test]
+    fn add_text() {
+        assert_eq!(
+            Text::raw("Red").red() + Text::raw("Blue").blue(),
+            Text {
+                lines: vec![Line::raw("Red"), Line::raw("Blue")],
+                style: Style::new().red(),
+                alignment: None,
+            }
+        );
+    }
+
+    #[test]
+    fn add_assign_line() {
+        let mut text = Text::raw("Red").red();
+        text += Line::raw("Blue").blue();
+        assert_eq!(
+            text,
+            Text {
+                lines: vec![Line::raw("Red"), Line::raw("Blue").blue()],
+                style: Style::new().red(),
+                alignment: None,
+            }
+        );
     }
 
     #[test]
@@ -962,19 +1068,14 @@ mod tests {
 
     mod widget {
         use super::*;
-        use crate::assert_buffer_eq;
 
         #[test]
         fn render() {
             let text = Text::from("foo");
-
             let area = Rect::new(0, 0, 5, 1);
             let mut buf = Buffer::empty(area);
             text.render(area, &mut buf);
-
-            let expected_buf = Buffer::with_lines(vec!["foo  "]);
-
-            assert_buffer_eq!(buf, expected_buf);
+            assert_eq!(buf, Buffer::with_lines(["foo  "]));
         }
 
         #[rstest]
@@ -987,40 +1088,28 @@ mod tests {
         #[test]
         fn render_right_aligned() {
             let text = Text::from("foo").alignment(Alignment::Right);
-
             let area = Rect::new(0, 0, 5, 1);
             let mut buf = Buffer::empty(area);
             text.render(area, &mut buf);
-
-            let expected_buf = Buffer::with_lines(vec!["  foo"]);
-
-            assert_buffer_eq!(buf, expected_buf);
+            assert_eq!(buf, Buffer::with_lines(["  foo"]));
         }
 
         #[test]
         fn render_centered_odd() {
             let text = Text::from("foo").alignment(Alignment::Center);
-
             let area = Rect::new(0, 0, 5, 1);
             let mut buf = Buffer::empty(area);
             text.render(area, &mut buf);
-
-            let expected_buf = Buffer::with_lines(vec![" foo "]);
-
-            assert_buffer_eq!(buf, expected_buf);
+            assert_eq!(buf, Buffer::with_lines([" foo "]));
         }
 
         #[test]
         fn render_centered_even() {
             let text = Text::from("foo").alignment(Alignment::Center);
-
             let area = Rect::new(0, 0, 6, 1);
             let mut buf = Buffer::empty(area);
             text.render(area, &mut buf);
-
-            let expected_buf = Buffer::with_lines(vec![" foo  "]);
-
-            assert_buffer_eq!(buf, expected_buf);
+            assert_eq!(buf, Buffer::with_lines([" foo  "]));
         }
 
         #[test]
@@ -1030,14 +1119,10 @@ mod tests {
                 Line::from("bar").alignment(Alignment::Center),
             ])
             .alignment(Alignment::Right);
-
             let area = Rect::new(0, 0, 5, 2);
             let mut buf = Buffer::empty(area);
             text.render(area, &mut buf);
-
-            let expected_buf = Buffer::with_lines(vec!["  foo", " bar "]);
-
-            assert_buffer_eq!(buf, expected_buf);
+            assert_eq!(buf, Buffer::with_lines(["  foo", " bar "]));
         }
 
         #[test]
@@ -1046,10 +1131,9 @@ mod tests {
             let mut buf = Buffer::empty(area);
             Text::from("foo".on_blue()).render(area, &mut buf);
 
-            let mut expected = Buffer::with_lines(vec!["foo  "]);
+            let mut expected = Buffer::with_lines(["foo  "]);
             expected.set_style(Rect::new(0, 0, 3, 1), Style::new().bg(Color::Blue));
-
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1057,10 +1141,9 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 6, 1));
             Text::from("foobar".on_blue()).render(Rect::new(0, 0, 3, 1), &mut buf);
 
-            let mut expected = Buffer::with_lines(vec!["foo   "]);
+            let mut expected = Buffer::with_lines(["foo   "]);
             expected.set_style(Rect::new(0, 0, 3, 1), Style::new().bg(Color::Blue));
-
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
     }
 

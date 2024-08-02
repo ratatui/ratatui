@@ -1,5 +1,5 @@
 # This is a vhs script. See https://github.com/charmbracelet/vhs for more info.
-# To run this script, install vhs and run `vhs ./examples/demo.tape`
+# To run this script, install vhs and run `vhs ./examples/demo2.tape`
 # NOTE: Requires VHS 0.6.1 or later for Screenshot support
 Output "target/demo2.gif"
 Set Theme "Aardvark Blue"

@@ -19,7 +19,7 @@ mod points;
 mod rectangle;
 mod world;
 
-use std::{fmt::Debug, iter::zip};
+use std::{fmt, iter::zip};
 
 use itertools::Itertools;
 
@@ -30,7 +30,7 @@ pub use self::{
     points::Points,
     rectangle::Rectangle,
 };
-use crate::{prelude::*, text::Line as TextLine, widgets::Block};
+use crate::{prelude::*, symbols::Marker, text::Line as TextLine, widgets::Block};
 
 /// Something that can be drawn on a [`Canvas`].
 ///
@@ -70,7 +70,7 @@ struct Layer {
 /// resolution of the grid might exceed the number of rows and columns. For example, a grid of
 /// Braille patterns will have a resolution of 2x4 dots per cell. This means that a grid of 10x10
 /// cells will have a resolution of 20x40 dots.
-trait Grid: Debug {
+trait Grid: fmt::Debug {
     /// Get the resolution of the grid in number of dots.
     ///
     /// This doesn't have to be the same as the number of rows and columns of the grid. For example,
@@ -464,17 +464,17 @@ impl<'a> Context<'a> {
         height: u16,
         x_bounds: [f64; 2],
         y_bounds: [f64; 2],
-        marker: symbols::Marker,
+        marker: Marker,
     ) -> Self {
         let dot = symbols::DOT.chars().next().unwrap();
         let block = symbols::block::FULL.chars().next().unwrap();
         let bar = symbols::bar::HALF.chars().next().unwrap();
         let grid: Box<dyn Grid> = match marker {
-            symbols::Marker::Dot => Box::new(CharGrid::new(width, height, dot)),
-            symbols::Marker::Block => Box::new(CharGrid::new(width, height, block)),
-            symbols::Marker::Bar => Box::new(CharGrid::new(width, height, bar)),
-            symbols::Marker::Braille => Box::new(BrailleGrid::new(width, height)),
-            symbols::Marker::HalfBlock => Box::new(HalfBlockGrid::new(width, height)),
+            Marker::Dot => Box::new(CharGrid::new(width, height, dot)),
+            Marker::Block => Box::new(CharGrid::new(width, height, block)),
+            Marker::Bar => Box::new(CharGrid::new(width, height, bar)),
+            Marker::Braille => Box::new(BrailleGrid::new(width, height)),
+            Marker::HalfBlock => Box::new(HalfBlockGrid::new(width, height)),
         };
         Self {
             x_bounds,
@@ -604,7 +604,7 @@ where
     y_bounds: [f64; 2],
     paint_func: Option<F>,
     background_color: Color,
-    marker: symbols::Marker,
+    marker: Marker,
 }
 
 impl<'a, F> Default for Canvas<'a, F>
@@ -618,7 +618,7 @@ where
             y_bounds: [0.0, 0.0],
             paint_func: None,
             background_color: Color::Reset,
-            marker: symbols::Marker::Braille,
+            marker: Marker::Braille,
         }
     }
 }
@@ -717,7 +717,7 @@ where
     ///     .paint(|ctx| {});
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn marker(mut self, marker: symbols::Marker) -> Self {
+    pub const fn marker(mut self, marker: Marker) -> Self {
         self.marker = marker;
         self
     }
@@ -817,9 +817,7 @@ mod tests {
     // results in the expected output
     fn test_marker(marker: Marker, expected: &str) {
         let area = Rect::new(0, 0, 5, 5);
-        let mut cell = Cell::default();
-        cell.set_char('x');
-        let mut buf = Buffer::filled(area, &cell);
+        let mut buf = Buffer::filled(area, Cell::new("x"));
         let horizontal_line = Line {
             x1: 0.0,
             y1: 0.0,

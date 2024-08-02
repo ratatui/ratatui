@@ -35,7 +35,7 @@ fn widgets_gauge_renders() {
             f.render_widget(gauge, chunks[1]);
         })
         .unwrap();
-    let mut expected = Buffer::with_lines(vec![
+    let mut expected = Buffer::with_lines([
         "                                        ",
         "                                        ",
         "  ┌Percentage────────────────────────┐  ",
@@ -82,7 +82,7 @@ fn widgets_gauge_renders_no_unicode() {
             f.render_widget(gauge, chunks[1]);
         })
         .unwrap();
-    let expected = Buffer::with_lines(vec![
+    terminal.backend().assert_buffer_lines([
         "                                        ",
         "                                        ",
         "  ┌Percentage────────────────────────┐  ",
@@ -94,7 +94,6 @@ fn widgets_gauge_renders_no_unicode() {
         "                                        ",
         "                                        ",
     ]);
-    terminal.backend().assert_buffer(&expected);
 }
 
 #[test]
@@ -119,7 +118,7 @@ fn widgets_gauge_applies_styles() {
             f.render_widget(gauge, f.size());
         })
         .unwrap();
-    let mut expected = Buffer::with_lines(vec![
+    let mut expected = Buffer::with_lines([
         "┌Test──────┐",
         "│████      │",
         "│███43%    │",
@@ -171,8 +170,7 @@ fn widgets_gauge_supports_large_labels() {
             f.render_widget(gauge, f.size());
         })
         .unwrap();
-    let expected = Buffer::with_lines(vec!["4333333333"]);
-    terminal.backend().assert_buffer(&expected);
+    terminal.backend().assert_buffer_lines(["4333333333"]);
 }
 
 #[test]
@@ -182,7 +180,8 @@ fn widgets_line_gauge_renders() {
     terminal
         .draw(|f| {
             let gauge = LineGauge::default()
-                .gauge_style(Style::default().fg(Color::Green).bg(Color::White))
+                .filled_style(Style::default().fg(Color::Green))
+                .unfilled_style(Style::default().fg(Color::White))
                 .ratio(0.43);
             f.render_widget(
                 gauge,
@@ -195,7 +194,7 @@ fn widgets_line_gauge_renders() {
             );
             let gauge = LineGauge::default()
                 .block(Block::bordered().title("Gauge 2"))
-                .gauge_style(Style::default().fg(Color::Green))
+                .filled_style(Style::default().fg(Color::Green))
                 .line_set(symbols::line::THICK)
                 .ratio(0.211_313_934_313_1);
             f.render_widget(
@@ -209,7 +208,7 @@ fn widgets_line_gauge_renders() {
             );
         })
         .unwrap();
-    let mut expected = Buffer::with_lines(vec![
+    let mut expected = Buffer::with_lines([
         "43% ────────────────",
         "┌Gauge 2───────────┐",
         "│21% ━━━━━━━━━━━━━━│",

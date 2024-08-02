@@ -7,11 +7,12 @@ skip_core_tasks = true
 # all features except the backend ones
 ALL_FEATURES = "all-widgets,macros,serde"
 
+[env.ALL_FEATURES_FLAG]
 # Windows does not support building termion, so this avoids the build failure by providing two
 # sets of flags, one for Windows and one for other platforms.
-# Windows: --features=all-widgets,macros,serde,crossterm,termwiz,underline-color
-# Other: --features=all-widgets,macros,serde,crossterm,termion,termwiz,underline-color
-ALL_FEATURES_FLAG = { source = "${CARGO_MAKE_RUST_TARGET_OS}", default_value = "--features=all-widgets,macros,serde,crossterm,termion,termwiz,unstable", mapping = { "windows" = "--features=all-widgets,macros,serde,crossterm,termwiz,unstable" } }
+source = "${CARGO_MAKE_RUST_TARGET_OS}"
+default_value = "--features=all-widgets,macros,serde,crossterm,termion,termwiz,underline-color,unstable"
+mapping = { "windows" = "--features=all-widgets,macros,serde,crossterm,termwiz,underline-color,unstable" }
 
 [tasks.default]
 alias = "ci"

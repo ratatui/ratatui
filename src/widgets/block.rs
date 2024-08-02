@@ -8,7 +8,7 @@
 use itertools::Itertools;
 use strum::{Display, EnumString};
 
-use crate::{prelude::*, symbols::border, widgets::Borders};
+use crate::{prelude::*, style::Styled, symbols::border, widgets::Borders};
 
 mod padding;
 pub mod title;
@@ -27,14 +27,42 @@ pub use title::{Position, Title};
 /// both centered and non-centered titles are rendered, the centered space is calculated based on
 /// the full width of the block, rather than the leftover width.
 ///
-/// Titles are not rendered in the corners of the block unless there is no border on that edge.
-/// If the block is too small and multiple titles overlap, the border may get cut off at a corner.
+/// Titles are not rendered in the corners of the block unless there is no border on that edge. If
+/// the block is too small and multiple titles overlap, the border may get cut off at a corner.
 ///
 /// ```plain
 /// ┌With at least a left border───
 ///
 /// Without left border───
 /// ```
+/// # Constructor methods
+///
+/// - [`Block::new`] creates a new [`Block`] with no border or paddings.
+/// - [`Block::bordered`] Create a new block with all borders shown.
+///
+/// # Setter methods
+///
+/// These methods are fluent setters. They return a new [`Block`] with the specified property set.
+///
+/// - [`Block::borders`] Defines which borders to display.
+/// - [`Block::border_style`] Defines the style of the borders.
+/// - [`Block::border_type`] Sets the symbols used to display the border (e.g. single line, double
+///   line, thick or rounded borders).
+/// - [`Block::padding`] Defines the padding inside a [`Block`].
+/// - [`Block::style`] Sets the base style of the widget.
+/// - [`Block::title`] Adds a title to the block.
+/// - [`Block::title_alignment`] Sets the default [`Alignment`] for all block titles.
+/// - [`Block::title_style`] Applies the style to all titles.
+/// - [`Block::title_top`] Adds a title to the top of the block.
+/// - [`Block::title_bottom`] Adds a title to the bottom of the block.
+/// - [`Block::title_position`] Adds a title to the block.
+///
+/// # Other Methods
+/// - [`Block::inner`] Compute the inner area of a block based on its border visibility rules.
+///
+/// [`Style`]s are applied first to the entire block, then to the borders, and finally to the
+/// titles. If the block is used as a container for another widget, the inner widget can also be
+/// styled. See [`Style`] for more information on how merging styles works.
 ///
 /// # Examples
 ///
@@ -53,12 +81,29 @@ pub use title::{Position, Title};
 /// ```
 /// use ratatui::{
 ///     prelude::*,
-///     widgets::{block::*, *},
+///     widgets::{
+///         block::{Position, Title},
+///         Block,
+///     },
 /// };
 ///
 /// Block::new()
 ///     .title("Title 1")
 ///     .title(Title::from("Title 2").position(Position::Bottom));
+/// ```
+///
+/// You can also pass it as parameters of another widget so that the block surrounds them:
+/// ```
+/// use ratatui::{
+///     prelude::*,
+///     widgets::{Block, Borders, List},
+/// };
+///
+/// let surrounding_block = Block::default()
+///     .borders(Borders::ALL)
+///     .title("Here is a list of items");
+/// let items = ["Item 1", "Item 2", "Item 3"];
+/// let list = List::new(items).block(surrounding_block);
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
@@ -168,7 +213,7 @@ impl<'a> Block<'a> {
             border_style: Style::new(),
             border_set: BorderType::Plain.to_border_set(),
             style: Style::new(),
-            padding: Padding::zero(),
+            padding: Padding::ZERO,
         }
     }
 
@@ -211,12 +256,15 @@ impl<'a> Block<'a> {
     /// Note: If the block is too small and multiple titles overlap, the border might get cut off at
     /// a corner.
     ///
-    /// # Example
+    /// # Examples
+    ///
+    /// See the [Block example] for a visual representation of how the various borders and styles
+    /// look when rendered.
     ///
     /// The following example demonstrates:
     /// - Default title alignment
     /// - Multiple titles (notice "Center" is centered according to the full with of the block, not
-    /// the leftover space)
+    ///   the leftover space)
     /// - Two titles with the same alignment (notice the left titles are separated)
     /// ```
     /// use ratatui::{
@@ -239,6 +287,8 @@ impl<'a> Block<'a> {
     /// - [`Block::title_style`]
     /// - [`Block::title_alignment`]
     /// - [`Block::title_position`]
+    ///
+    /// [Block example]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md#block
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title<T>(mut self, title: T) -> Self
     where
@@ -306,10 +356,14 @@ impl<'a> Block<'a> {
 
     /// Applies the style to all titles.
     ///
+    /// This style will be applied to all titles of the block. If a title has a style set, it will
+    /// be applied after this style. This style will be applied after any [`Block::style`] or
+    /// [`Block::border_style`] is applied.
+    ///
+    /// See [`Style`] for more information on how merging styles works.
+    ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
-    ///
-    /// If a [`Title`] already has a style, the title's style will add on top of this one.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_style<S: Into<Style>>(mut self, style: S) -> Self {
         self.titles_style = style.into();
@@ -354,7 +408,10 @@ impl<'a> Block<'a> {
     /// ```
     /// use ratatui::{
     ///     prelude::*,
-    ///     widgets::{block::*, *},
+    ///     widgets::{
+    ///         block::{Position, Title},
+    ///         Block,
+    ///     },
     /// };
     ///
     /// Block::new()
@@ -372,7 +429,10 @@ impl<'a> Block<'a> {
 
     /// Defines the style of the borders.
     ///
-    /// If a [`Block::style`] is defined, `border_style` will be applied on top of it.
+    /// This style is applied only to the areas covered by borders, and is applied to the block
+    /// after any [`Block::style`] is applied.
+    ///
+    /// See [`Style`] for more information on how merging styles works.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
@@ -390,16 +450,39 @@ impl<'a> Block<'a> {
         self
     }
 
-    /// Defines the block style.
+    /// Defines the style of the entire block.
     ///
     /// This is the most generic [`Style`] a block can receive, it will be merged with any other
-    /// more specific style. Elements can be styled further with [`Block::title_style`] and
-    /// [`Block::border_style`].
+    /// more specific styles. Elements can be styled further with [`Block::title_style`] and
+    /// [`Block::border_style`], which will be applied on top of this style. If the block is used as
+    /// a container for another widget (e.g. a [`Paragraph`]), then the style of the widget is
+    /// generally applied before this style.
+    ///
+    /// See [`Style`] for more information on how merging styles works.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
     ///
-    /// This will also apply to the widget inside that block, unless the inner widget is styled.
+    /// # Example
+    ///
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let block = Block::new().style(Style::new().red().on_black());
+    ///
+    /// // For border and title you can additionally apply styles on top of the block level style.
+    /// let block = Block::new()
+    ///     .style(Style::new().red().bold().italic())
+    ///     .border_style(Style::new().not_italic()) // will be red and bold
+    ///     .title_style(Style::new().not_bold()) // will be red and italic
+    ///     .title("Title");
+    ///
+    /// // To style the inner widget, you can style the widget itself.
+    /// let paragraph = Paragraph::new("Content")
+    ///     .block(block)
+    ///     .style(Style::new().white().not_bold()); // will be white, and italic
+    /// ```
+    ///
+    /// [`Paragraph`]: crate::widgets::Paragraph
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn style<S: Into<Style>>(mut self, style: S) -> Self {
         self.style = style.into();
@@ -469,6 +552,38 @@ impl<'a> Block<'a> {
         self
     }
 
+    /// Defines the padding inside a `Block`.
+    ///
+    /// See [`Padding`] for more information.
+    ///
+    /// # Examples
+    ///
+    /// This renders a `Block` with no padding (the default).
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// Block::bordered().padding(Padding::ZERO);
+    /// // Renders
+    /// // ┌───────┐
+    /// // │content│
+    /// // └───────┘
+    /// ```
+    ///
+    /// This example shows a `Block` with padding left and right ([`Padding::horizontal`]).
+    /// Notice the two spaces before and after the content.
+    /// ```
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// Block::bordered().padding(Padding::horizontal(2));
+    /// // Renders
+    /// // ┌───────────┐
+    /// // │  content  │
+    /// // └───────────┘
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn padding(mut self, padding: Padding) -> Self {
+        self.padding = padding;
+        self
+    }
+
     /// Compute the inner area of a block based on its border visibility rules.
     ///
     /// # Examples
@@ -528,38 +643,6 @@ impl<'a> Block<'a> {
         self.titles
             .iter()
             .any(|title| title.position.unwrap_or(self.titles_position) == position)
-    }
-
-    /// Defines the padding inside a `Block`.
-    ///
-    /// See [`Padding`] for more information.
-    ///
-    /// # Examples
-    ///
-    /// This renders a `Block` with no padding (the default).
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::bordered().padding(Padding::zero());
-    /// // Renders
-    /// // ┌───────┐
-    /// // │content│
-    /// // └───────┘
-    /// ```
-    ///
-    /// This example shows a `Block` with padding left and right ([`Padding::horizontal`]).
-    /// Notice the two spaces before and after the content.
-    /// ```
-    /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::bordered().padding(Padding::horizontal(2));
-    /// // Renders
-    /// // ┌───────────┐
-    /// // │  content  │
-    /// // └───────────┘
-    /// ```
-    #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn padding(mut self, padding: Padding) -> Self {
-        self.padding = padding;
-        self
     }
 }
 
@@ -827,6 +910,35 @@ impl Block<'_> {
             height: 1,
         }
     }
+
+    /// Calculate the left, and right space the [`Block`] will take up.
+    ///
+    /// The result takes the [`Block`]'s, [`Borders`], and [`Padding`] into account.
+    pub(crate) fn horizontal_space(&self) -> (u16, u16) {
+        let left = self
+            .padding
+            .left
+            .saturating_add(u16::from(self.borders.contains(Borders::LEFT)));
+        let right = self
+            .padding
+            .right
+            .saturating_add(u16::from(self.borders.contains(Borders::RIGHT)));
+        (left, right)
+    }
+
+    /// Calculate the top, and bottom space that the [`Block`] will take up.
+    ///
+    /// Takes the [`Padding`], [`Title`]'s position, and the [`Borders`] that are selected into
+    /// account when calculating the result.
+    pub(crate) fn vertical_space(&self) -> (u16, u16) {
+        let has_top =
+            self.borders.contains(Borders::TOP) || self.has_title_at_position(Position::Top);
+        let top = self.padding.top + u16::from(has_top);
+        let has_bottom =
+            self.borders.contains(Borders::BOTTOM) || self.has_title_at_position(Position::Bottom);
+        let bottom = self.padding.bottom + u16::from(has_bottom);
+        (top, bottom)
+    }
 }
 
 /// An extension trait for [`Block`] that provides some convenience methods.
@@ -860,10 +972,10 @@ impl<'a> Styled for Block<'a> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
     use strum::ParseError;
 
     use super::*;
-    use crate::assert_buffer_eq;
 
     #[test]
     fn create_with_all_borders() {
@@ -871,179 +983,65 @@ mod tests {
         assert_eq!(block.borders, Borders::all());
     }
 
-    #[allow(clippy::too_many_lines)]
-    #[test]
-    fn inner_takes_into_account_the_borders() {
-        // No borders
-        assert_eq!(
-            Block::new().inner(Rect::default()),
-            Rect::new(0, 0, 0, 0),
-            "no borders, width=0, height=0"
-        );
-        assert_eq!(
-            Block::new().inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 0, 1, 1),
-            "no borders, width=1, height=1"
-        );
-
-        // Left border
-        assert_eq!(
-            Block::new()
-                .borders(Borders::LEFT)
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 0, 0, 1),
-            "left, width=0"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::LEFT)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(1, 0, 0, 1),
-            "left, width=1"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::LEFT)
-                .inner(Rect::new(0, 0, 2, 1)),
-            Rect::new(1, 0, 1, 1),
-            "left, width=2"
-        );
-
-        // Top border
-        assert_eq!(
-            Block::new()
-                .borders(Borders::TOP)
-                .inner(Rect::new(0, 0, 1, 0)),
-            Rect::new(0, 0, 1, 0),
-            "top, height=0"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::TOP)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 1, 1, 0),
-            "top, height=1"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::TOP)
-                .inner(Rect::new(0, 0, 1, 2)),
-            Rect::new(0, 1, 1, 1),
-            "top, height=2"
-        );
-
-        // Right border
-        assert_eq!(
-            Block::new()
-                .borders(Borders::RIGHT)
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 0, 0, 1),
-            "right, width=0"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::RIGHT)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 0, 0, 1),
-            "right, width=1"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::RIGHT)
-                .inner(Rect::new(0, 0, 2, 1)),
-            Rect::new(0, 0, 1, 1),
-            "right, width=2"
-        );
-
-        // Bottom border
-        assert_eq!(
-            Block::new()
-                .borders(Borders::BOTTOM)
-                .inner(Rect::new(0, 0, 1, 0)),
-            Rect::new(0, 0, 1, 0),
-            "bottom, height=0"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::BOTTOM)
-                .inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(0, 0, 1, 0),
-            "bottom, height=1"
-        );
-        assert_eq!(
-            Block::new()
-                .borders(Borders::BOTTOM)
-                .inner(Rect::new(0, 0, 1, 2)),
-            Rect::new(0, 0, 1, 1),
-            "bottom, height=2"
-        );
-
-        // All borders
-        assert_eq!(
-            Block::bordered().inner(Rect::default()),
-            Rect::new(0, 0, 0, 0),
-            "all borders, width=0, height=0"
-        );
-        assert_eq!(
-            Block::bordered().inner(Rect::new(0, 0, 1, 1)),
-            Rect::new(1, 1, 0, 0),
-            "all borders, width=1, height=1"
-        );
-        assert_eq!(
-            Block::bordered().inner(Rect::new(0, 0, 2, 2)),
-            Rect::new(1, 1, 0, 0),
-            "all borders, width=2, height=2"
-        );
-        assert_eq!(
-            Block::bordered().inner(Rect::new(0, 0, 3, 3)),
-            Rect::new(1, 1, 1, 1),
-            "all borders, width=3, height=3"
-        );
+    #[rstest]
+    #[case::none_0(Borders::NONE, Rect::ZERO, Rect::ZERO)]
+    #[case::none_1(Borders::NONE, Rect::new(0, 0, 1, 1), Rect::new(0, 0, 1, 1))]
+    #[case::left_0(Borders::LEFT, Rect::ZERO, Rect::ZERO)]
+    #[case::left_w1(Borders::LEFT, Rect::new(0, 0, 0, 1), Rect::new(0, 0, 0, 1))]
+    #[case::left_w2(Borders::LEFT, Rect::new(0, 0, 1, 1), Rect::new(1, 0, 0, 1))]
+    #[case::left_w3(Borders::LEFT, Rect::new(0, 0, 2, 1), Rect::new(1, 0, 1, 1))]
+    #[case::top_0(Borders::TOP, Rect::ZERO, Rect::ZERO)]
+    #[case::top_h1(Borders::TOP, Rect::new(0, 0, 1, 0), Rect::new(0, 0, 1, 0))]
+    #[case::top_h2(Borders::TOP, Rect::new(0, 0, 1, 1), Rect::new(0, 1, 1, 0))]
+    #[case::top_h3(Borders::TOP, Rect::new(0, 0, 1, 2), Rect::new(0, 1, 1, 1))]
+    #[case::right_0(Borders::RIGHT, Rect::ZERO, Rect::ZERO)]
+    #[case::right_w1(Borders::RIGHT, Rect::new(0, 0, 0, 1), Rect::new(0, 0, 0, 1))]
+    #[case::right_w2(Borders::RIGHT, Rect::new(0, 0, 1, 1), Rect::new(0, 0, 0, 1))]
+    #[case::right_w3(Borders::RIGHT, Rect::new(0, 0, 2, 1), Rect::new(0, 0, 1, 1))]
+    #[case::bottom_0(Borders::BOTTOM, Rect::ZERO, Rect::ZERO)]
+    #[case::bottom_h1(Borders::BOTTOM, Rect::new(0, 0, 1, 0), Rect::new(0, 0, 1, 0))]
+    #[case::bottom_h2(Borders::BOTTOM, Rect::new(0, 0, 1, 1), Rect::new(0, 0, 1, 0))]
+    #[case::bottom_h3(Borders::BOTTOM, Rect::new(0, 0, 1, 2), Rect::new(0, 0, 1, 1))]
+    #[case::all_0(Borders::ALL, Rect::ZERO, Rect::ZERO)]
+    #[case::all_1(Borders::ALL, Rect::new(0, 0, 1, 1), Rect::new(1, 1, 0, 0))]
+    #[case::all_2(Borders::ALL, Rect::new(0, 0, 2, 2), Rect::new(1, 1, 0, 0))]
+    #[case::all_3(Borders::ALL, Rect::new(0, 0, 3, 3), Rect::new(1, 1, 1, 1))]
+    fn inner_takes_into_account_the_borders(
+        #[case] borders: Borders,
+        #[case] area: Rect,
+        #[case] expected: Rect,
+    ) {
+        let block = Block::new().borders(borders);
+        assert_eq!(block.inner(area), expected);
     }
 
-    #[test]
-    fn inner_takes_into_account_the_title() {
-        assert_eq!(
-            Block::new().title("Test").inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 1, 0, 0),
-        );
-        assert_eq!(
-            Block::new()
-                .title(Title::from("Test").alignment(Alignment::Center))
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 1, 0, 0),
-        );
-        assert_eq!(
-            Block::new()
-                .title(Title::from("Test").alignment(Alignment::Right))
-                .inner(Rect::new(0, 0, 0, 1)),
-            Rect::new(0, 1, 0, 0),
-        );
+    #[rstest]
+    #[case::left(Alignment::Left)]
+    #[case::center(Alignment::Center)]
+    #[case::right(Alignment::Right)]
+    fn inner_takes_into_account_the_title(#[case] alignment: Alignment) {
+        let area = Rect::new(0, 0, 0, 1);
+        let expected = Rect::new(0, 1, 0, 0);
+
+        let block = Block::new().title(Title::from("Test").alignment(alignment));
+        assert_eq!(block.inner(area), expected);
     }
 
-    #[test]
-    fn inner_takes_into_account_border_and_title() {
-        let test_rect = Rect::new(0, 0, 0, 2);
-
-        let top_top = Block::new()
-            .borders(Borders::TOP)
-            .title(Title::from("Test").position(Position::Top));
-        assert_eq!(top_top.inner(test_rect), Rect::new(0, 1, 0, 1));
-
-        let top_bot = Block::new()
-            .borders(Borders::BOTTOM)
-            .title(Title::from("Test").position(Position::Top));
-        assert_eq!(top_bot.inner(test_rect), Rect::new(0, 1, 0, 0));
-
-        let bot_top = Block::new()
-            .borders(Borders::TOP)
-            .title(Title::from("Test").position(Position::Bottom));
-        assert_eq!(bot_top.inner(test_rect), Rect::new(0, 1, 0, 0));
-
-        let bot_bot = Block::new()
-            .borders(Borders::BOTTOM)
-            .title(Title::from("Test").position(Position::Bottom));
-        assert_eq!(bot_bot.inner(test_rect), Rect::new(0, 0, 0, 1));
+    #[rstest]
+    #[case::top_top(Borders::TOP, Position::Top, Rect::new(0, 1, 0, 1))]
+    #[case::top_bot(Borders::BOTTOM, Position::Top, Rect::new(0, 1, 0, 0))]
+    #[case::bot_top(Borders::TOP, Position::Bottom, Rect::new(0, 1, 0, 0))]
+    #[case::top_top(Borders::BOTTOM, Position::Bottom, Rect::new(0, 0, 0, 1))]
+    fn inner_takes_into_account_border_and_title(
+        #[case] borders: Borders,
+        #[case] position: Position,
+        #[case] expected: Rect,
+    ) {
+        let area = Rect::new(0, 0, 0, 2);
+        let block = Block::new()
+            .borders(borders)
+            .title(Title::from("Test").position(position));
+        assert_eq!(block.inner(area), expected);
     }
 
     #[test]
@@ -1093,6 +1091,126 @@ mod tests {
         assert!(block.has_title_at_position(Position::Bottom));
     }
 
+    #[rstest]
+    #[case::none(Borders::NONE, (0, 0))]
+    #[case::top(Borders::TOP, (1, 0))]
+    #[case::right(Borders::RIGHT, (0, 0))]
+    #[case::bottom(Borders::BOTTOM, (0, 1))]
+    #[case::left(Borders::LEFT, (0, 0))]
+    #[case::top_right(Borders::TOP | Borders::RIGHT, (1, 0))]
+    #[case::top_bottom(Borders::TOP | Borders::BOTTOM, (1, 1))]
+    #[case::top_left(Borders::TOP | Borders::LEFT, (1, 0))]
+    #[case::bottom_right(Borders::BOTTOM | Borders::RIGHT, (0, 1))]
+    #[case::bottom_left(Borders::BOTTOM | Borders::LEFT, (0, 1))]
+    #[case::left_right(Borders::LEFT | Borders::RIGHT, (0, 0))]
+    fn vertical_space_takes_into_account_borders(
+        #[case] borders: Borders,
+        #[case] vertical_space: (u16, u16),
+    ) {
+        let block = Block::new().borders(borders);
+        assert_eq!(block.vertical_space(), vertical_space);
+    }
+
+    #[rstest]
+    #[case::top_border_top_p1(Borders::TOP, Padding::new(0, 0, 1, 0), (2, 0))]
+    #[case::right_border_top_p1(Borders::RIGHT, Padding::new(0, 0, 1, 0), (1, 0))]
+    #[case::bottom_border_top_p1(Borders::BOTTOM, Padding::new(0, 0, 1, 0), (1, 1))]
+    #[case::left_border_top_p1(Borders::LEFT, Padding::new(0, 0, 1, 0), (1, 0))]
+    #[case::top_bottom_border_all_p3(Borders::TOP | Borders::BOTTOM, Padding::new(100, 100, 4, 5), (5, 6))]
+    #[case::no_border(Borders::NONE, Padding::new(100, 100, 10, 13), (10, 13))]
+    #[case::all(Borders::ALL, Padding::new(100, 100, 1, 3), (2, 4))]
+    fn vertical_space_takes_into_account_padding(
+        #[case] borders: Borders,
+        #[case] padding: Padding,
+        #[case] vertical_space: (u16, u16),
+    ) {
+        let block = Block::new().borders(borders).padding(padding);
+        assert_eq!(block.vertical_space(), vertical_space);
+    }
+
+    #[test]
+    fn vertical_space_takes_into_account_titles() {
+        let block = Block::new()
+            .title_position(Position::Top)
+            .title(Title::from("Test"));
+
+        assert_eq!(block.vertical_space(), (1, 0));
+
+        let block = Block::new()
+            .title_position(Position::Bottom)
+            .title(Title::from("Test"));
+
+        assert_eq!(block.vertical_space(), (0, 1));
+    }
+
+    #[rstest]
+    #[case::top_border_top_title(Block::new(), Borders::TOP, Position::Top, (1, 0))]
+    #[case::right_border_top_title(Block::new(), Borders::RIGHT, Position::Top, (1, 0))]
+    #[case::bottom_border_top_title(Block::new(), Borders::BOTTOM, Position::Top, (1, 1))]
+    #[case::left_border_top_title(Block::new(), Borders::LEFT, Position::Top, (1, 0))]
+    #[case::top_border_top_title(Block::new(), Borders::TOP, Position::Bottom, (1, 1))]
+    #[case::right_border_top_title(Block::new(), Borders::RIGHT, Position::Bottom, (0, 1))]
+    #[case::bottom_border_top_title(Block::new(), Borders::BOTTOM, Position::Bottom, (0, 1))]
+    #[case::left_border_top_title(Block::new(), Borders::LEFT, Position::Bottom, (0, 1))]
+    fn vertical_space_takes_into_account_borders_and_title(
+        #[case] block: Block,
+        #[case] borders: Borders,
+        #[case] pos: Position,
+        #[case] vertical_space: (u16, u16),
+    ) {
+        let block = block
+            .borders(borders)
+            .title_position(pos)
+            .title(Title::from("Test"));
+        assert_eq!(block.vertical_space(), vertical_space);
+    }
+
+    #[test]
+    fn horizontal_space_takes_into_account_borders() {
+        let block = Block::bordered();
+        assert_eq!(block.horizontal_space(), (1, 1));
+
+        let block = Block::new().borders(Borders::LEFT);
+        assert_eq!(block.horizontal_space(), (1, 0));
+
+        let block = Block::new().borders(Borders::RIGHT);
+        assert_eq!(block.horizontal_space(), (0, 1));
+    }
+
+    #[test]
+    fn horizontal_space_takes_into_account_padding() {
+        let block = Block::new().padding(Padding::new(1, 1, 100, 100));
+        assert_eq!(block.horizontal_space(), (1, 1));
+
+        let block = Block::new().padding(Padding::new(3, 5, 0, 0));
+        assert_eq!(block.horizontal_space(), (3, 5));
+
+        let block = Block::new().padding(Padding::new(0, 1, 100, 100));
+        assert_eq!(block.horizontal_space(), (0, 1));
+
+        let block = Block::new().padding(Padding::new(1, 0, 100, 100));
+        assert_eq!(block.horizontal_space(), (1, 0));
+    }
+
+    #[rstest]
+    #[case::all_bordered_all_padded(Block::bordered(), Padding::new(1, 1, 1, 1), (2, 2))]
+    #[case::all_bordered_left_padded(Block::bordered(), Padding::new(1, 0, 0, 0), (2, 1))]
+    #[case::all_bordered_right_padded(Block::bordered(), Padding::new(0, 1, 0, 0), (1, 2))]
+    #[case::all_bordered_top_padded(Block::bordered(), Padding::new(0, 0, 1, 0), (1, 1))]
+    #[case::all_bordered_bottom_padded(Block::bordered(), Padding::new(0, 0, 0, 1), (1, 1))]
+    #[case::left_bordered_left_padded(Block::new().borders(Borders::LEFT), Padding::new(1, 0, 0, 0), (2, 0))]
+    #[case::left_bordered_right_padded(Block::new().borders(Borders::LEFT), Padding::new(0, 1, 0, 0), (1, 1))]
+    #[case::right_bordered_right_padded(Block::new().borders(Borders::RIGHT), Padding::new(0, 1, 0, 0), (0, 2))]
+    #[case::right_bordered_left_padded(Block::new().borders(Borders::RIGHT), Padding::new(1, 0, 0, 0), (1, 1))]
+    fn horizontal_space_takes_into_account_borders_and_padding(
+        #[case] block: Block,
+        #[case] padding: Padding,
+        #[case] horizontal_space: (u16, u16),
+    ) {
+        let block = block.padding(padding);
+        assert_eq!(block.horizontal_space(), horizontal_space);
+    }
+
     #[test]
     const fn border_type_can_be_const() {
         const _PLAIN: border::Set = BorderType::border_symbols(BorderType::Plain);
@@ -1111,7 +1229,7 @@ mod tests {
                 border_style: Style::new(),
                 border_set: BorderType::Plain.to_border_set(),
                 style: Style::new(),
-                padding: Padding::zero(),
+                padding: Padding::ZERO,
             }
         );
     }
@@ -1191,7 +1309,7 @@ mod tests {
     fn title() {
         use Alignment::*;
         use Position::*;
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 3));
         Block::bordered()
             .title(Title::from("A").position(Top).alignment(Left))
             .title(Title::from("B").position(Top).alignment(Center))
@@ -1200,19 +1318,18 @@ mod tests {
             .title(Title::from("E").position(Bottom).alignment(Center))
             .title(Title::from("F").position(Bottom).alignment(Right))
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┌A─────B─────C┐",
-                "│             │",
-                "└D─────E─────F┘",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌A───B───C┐",
+            "│         │",
+            "└D───E───F┘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn title_top_bottom() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 3));
         Block::bordered()
             .title_top(Line::raw("A").left_aligned())
             .title_top(Line::raw("B").centered())
@@ -1221,14 +1338,13 @@ mod tests {
             .title_bottom(Line::raw("E").centered())
             .title_bottom(Line::raw("F").right_aligned())
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┌A─────B─────C┐",
-                "│             │",
-                "└D─────E─────F┘",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌A───B───C┐",
+            "│         │",
+            "└D───E───F┘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1244,7 +1360,7 @@ mod tests {
                 .title_alignment(alignment)
                 .title("test")
                 .render(buffer.area, &mut buffer);
-            assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+            assert_eq!(buffer, Buffer::with_lines([expected]));
         }
     }
 
@@ -1261,7 +1377,7 @@ mod tests {
                 .title_alignment(block_title_alignment)
                 .title(Title::from("test").alignment(alignment))
                 .render(buffer.area, &mut buffer);
-            assert_buffer_eq!(buffer, Buffer::with_lines(vec![expected]));
+            assert_eq!(buffer, Buffer::with_lines([expected]));
         }
     }
 
@@ -1273,14 +1389,7 @@ mod tests {
             .title_alignment(Alignment::Right)
             .title("")
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "               ",
-                "               ",
-                "               ",
-            ])
-        );
+        assert_eq!(buffer, Buffer::with_lines(["               "; 3]));
     }
 
     #[test]
@@ -1290,7 +1399,7 @@ mod tests {
             .title_position(Position::Bottom)
             .title("test")
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(buffer, Buffer::with_lines(vec!["    ", "test"]));
+        assert_eq!(buffer, Buffer::with_lines(["    ", "test"]));
     }
 
     #[test]
@@ -1301,11 +1410,7 @@ mod tests {
                 .title_alignment(alignment)
                 .title("test".yellow())
                 .render(buffer.area, &mut buffer);
-
-            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
-            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow());
-
-            assert_buffer_eq!(buffer, expected_buffer);
+            assert_eq!(buffer, Buffer::with_lines(["test".yellow()]));
         }
     }
 
@@ -1318,11 +1423,7 @@ mod tests {
                 .title_style(Style::new().yellow())
                 .title("test")
                 .render(buffer.area, &mut buffer);
-
-            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
-            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow());
-
-            assert_buffer_eq!(buffer, expected_buffer);
+            assert_eq!(buffer, Buffer::with_lines(["test".yellow()]));
         }
     }
 
@@ -1335,31 +1436,26 @@ mod tests {
                 .title_style(Style::new().green().on_red())
                 .title("test".yellow())
                 .render(buffer.area, &mut buffer);
-
-            let mut expected_buffer = Buffer::with_lines(vec!["test"]);
-            expected_buffer.set_style(Rect::new(0, 0, 4, 1), Style::new().yellow().on_red());
-
-            assert_buffer_eq!(buffer, expected_buffer);
+            assert_eq!(buffer, Buffer::with_lines(["test".yellow().on_red()]));
         }
     }
 
     #[test]
     fn title_border_style() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .title("test")
             .border_style(Style::new().yellow())
             .render(buffer.area, &mut buffer);
-
-        let mut expected_buffer = Buffer::with_lines(vec![
-            "┌test─────────┐",
-            "│             │",
-            "└─────────────┘",
+        #[rustfmt::skip]
+        let mut expected = Buffer::with_lines([
+            "┌test────┐",
+            "│        │",
+            "└────────┘",
         ]);
-        expected_buffer.set_style(Rect::new(0, 0, 15, 3), Style::new().yellow());
-        expected_buffer.set_style(Rect::new(1, 1, 13, 1), Style::reset());
-
-        assert_buffer_eq!(buffer, expected_buffer);
+        expected.set_style(Rect::new(0, 0, 10, 3), Style::new().yellow());
+        expected.set_style(Rect::new(1, 1, 8, 1), Style::reset());
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -1381,103 +1477,97 @@ mod tests {
 
     #[test]
     fn render_plain_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::Plain)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┌─────────────┐",
-                "│             │",
-                "└─────────────┘"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┌────────┐",
+            "│        │",
+            "└────────┘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_rounded_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::Rounded)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "╭─────────────╮",
-                "│             │",
-                "╰─────────────╯"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "╭────────╮",
+            "│        │",
+            "╰────────╯",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_double_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::Double)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "╔═════════════╗",
-                "║             ║",
-                "╚═════════════╝"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "╔════════╗",
+            "║        ║",
+            "╚════════╝",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_quadrant_inside() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::QuadrantInside)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "▗▄▄▄▄▄▄▄▄▄▄▄▄▄▖",
-                "▐             ▌",
-                "▝▀▀▀▀▀▀▀▀▀▀▀▀▀▘",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "▗▄▄▄▄▄▄▄▄▖",
+            "▐        ▌",
+            "▝▀▀▀▀▀▀▀▀▘",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_border_quadrant_outside() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::QuadrantOutside)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▜",
-                "▌             ▐",
-                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▟",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "▛▀▀▀▀▀▀▀▀▜",
+            "▌        ▐",
+            "▙▄▄▄▄▄▄▄▄▟",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_solid_border() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_type(BorderType::Thick)
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "┏━━━━━━━━━━━━━┓",
-                "┃             ┃",
-                "┗━━━━━━━━━━━━━┛"
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "┏━━━━━━━━┓",
+            "┃        ┃",
+            "┗━━━━━━━━┛",
+        ]);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
     fn render_custom_border_set() {
-        let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
         Block::bordered()
             .border_set(border::Set {
                 top_left: "1",
@@ -1490,13 +1580,12 @@ mod tests {
                 horizontal_bottom: "B",
             })
             .render(buffer.area, &mut buffer);
-        assert_buffer_eq!(
-            buffer,
-            Buffer::with_lines(vec![
-                "1TTTTTTTTTTTTT2",
-                "L             R",
-                "3BBBBBBBBBBBBB4",
-            ])
-        );
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "1TTTTTTTT2",
+            "L        R",
+            "3BBBBBBBB4",
+        ]);
+        assert_eq!(buffer, expected);
     }
 }

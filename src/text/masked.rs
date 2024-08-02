@@ -1,7 +1,4 @@
-use std::{
-    borrow::Cow,
-    fmt::{self, Debug, Display},
-};
+use std::{borrow::Cow, fmt};
 
 use super::Text;
 
@@ -19,7 +16,7 @@ use super::Text;
 /// let password = Masked::new("12345", 'x');
 ///
 /// Paragraph::new(password).render(buffer.area, &mut buffer);
-/// assert_eq!(buffer, Buffer::with_lines(vec!["xxxxx"]));
+/// assert_eq!(buffer, Buffer::with_lines(["xxxxx"]));
 /// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Masked<'a> {
@@ -46,17 +43,18 @@ impl<'a> Masked<'a> {
     }
 }
 
-impl Debug for Masked<'_> {
+impl fmt::Debug for Masked<'_> {
     /// Debug representation of a masked string is the underlying string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.inner, f)
+        // note that calling display instead of Debug here is intentional
+        fmt::Display::fmt(&self.inner, f)
     }
 }
 
-impl Display for Masked<'_> {
+impl fmt::Display for Masked<'_> {
     /// Display representation of a masked string is the masked string
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.value(), f)
+        fmt::Display::fmt(&self.value(), f)
     }
 }
 
@@ -112,12 +110,14 @@ mod tests {
     fn debug() {
         let masked = Masked::new("12345", 'x');
         assert_eq!(format!("{masked:?}"), "12345");
+        assert_eq!(format!("{masked:.3?}"), "123", "Debug truncates");
     }
 
     #[test]
     fn display() {
         let masked = Masked::new("12345", 'x');
         assert_eq!(format!("{masked}"), "xxxxx");
+        assert_eq!(format!("{masked:.3}"), "xxx", "Display truncates");
     }
 
     #[test]

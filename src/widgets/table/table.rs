@@ -1,7 +1,9 @@
 use itertools::Itertools;
 
-use super::*;
-use crate::{layout::Flex, prelude::*, widgets::Block};
+#[allow(unused_imports)] // `Cell` is used in the doc comment but not the code
+use super::Cell;
+use super::{HighlightSpacing, Row, TableState};
+use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 
 /// A widget to display data in formatted columns.
 ///
@@ -18,7 +20,9 @@ use crate::{layout::Flex, prelude::*, widgets::Block};
 /// [`Table`] implements [`Widget`] and so it can be drawn using [`Frame::render_widget`].
 ///
 /// [`Table`] is also a [`StatefulWidget`], which means you can use it with [`TableState`] to allow
-/// the user to scroll through the rows and select one of them.
+/// the user to scroll through the rows and select one of them. When rendering a [`Table`] with a
+/// [`TableState`], the selected row will be highlighted. If the selected row is not visible (based
+/// on the offset), the table will be scrolled to make the selected row visible.
 ///
 /// Note: if the `widths` field is empty, the table will be rendered with equal widths.
 ///
@@ -176,7 +180,11 @@ use crate::{layout::Flex, prelude::*, widgets::Block};
 ///     Row::new(vec!["Row21", "Row22", "Row23"]),
 ///     Row::new(vec!["Row31", "Row32", "Row33"]),
 /// ];
-/// let widths = [Constraint::Length(5), Constraint::Length(5), Constraint::Length(10)];
+/// let widths = [
+///     Constraint::Length(5),
+///     Constraint::Length(5),
+///     Constraint::Length(10),
+/// ];
 /// let table = Table::new(rows, widths)
 ///     .block(Block::new().title("Table"))
 ///     .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
@@ -184,6 +192,7 @@ use crate::{layout::Flex, prelude::*, widgets::Block};
 ///
 /// frame.render_stateful_widget(table, area, &mut table_state);
 /// # }
+/// ```
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Table<'a> {
     /// Data to display in each row
@@ -210,7 +219,7 @@ pub struct Table<'a> {
     /// Style used to render the selected row
     highlight_style: Style,
 
-    /// Symbol in front of the selected rom
+    /// Symbol in front of the selected row
     highlight_symbol: Text<'a>,
 
     /// Decides when to allocate spacing for the row selection
@@ -604,6 +613,14 @@ impl StatefulWidgetRef for Table<'_> {
             return;
         }
 
+        if state.selected.is_some_and(|s| s >= self.rows.len()) {
+            state.select(Some(self.rows.len().saturating_sub(1)));
+        }
+
+        if self.rows.is_empty() {
+            state.select(None);
+        }
+
         let selection_width = self.selection_width(state);
         let columns_widths = self.get_columns_widths(table_area.width, selection_width);
         let (header_area, rows_area, footer_area) = self.layout(table_area);
@@ -705,7 +722,7 @@ impl Table<'_> {
                     ..row_area
                 };
                 buf.set_style(selection_area, row.style);
-                highlight_symbol.clone().render(selection_area, buf);
+                highlight_symbol.render_ref(selection_area, buf);
             };
             for ((x, width), cell) in columns_widths.iter().zip(row.cells.iter()) {
                 cell.render(
@@ -768,7 +785,14 @@ impl Table<'_> {
             end += 1;
         }
 
-        let selected = selected.unwrap_or(0).min(self.rows.len() - 1);
+        let Some(selected) = selected else {
+            return (start, end);
+        };
+
+        // clamp the selected row to the last row
+        let selected = selected.min(self.rows.len() - 1);
+
+        // scroll down until the selected row is visible
         while selected >= end {
             height = height.saturating_add(self.rows[end].height_with_margin());
             end += 1;
@@ -777,6 +801,8 @@ impl Table<'_> {
                 start += 1;
             }
         }
+
+        // scroll up until the selected row is visible
         while selected < start {
             start -= 1;
             height = height.saturating_add(self.rows[start].height_with_margin());
@@ -842,7 +868,7 @@ mod tests {
     use std::vec;
 
     use super::*;
-    use crate::{layout::Constraint::*, style::Style, text::Line};
+    use crate::{layout::Constraint::*, style::Style, text::Line, widgets::Cell};
 
     #[test]
     fn new() {
@@ -901,6 +927,8 @@ mod tests {
         let table = Table::default().widths([Constraint::Length(100)]);
         assert_eq!(table.widths, [Constraint::Length(100)]);
 
+        // ensure that code that uses &[] continues to work as there is a large amount of code that
+        // uses this pattern
         #[allow(clippy::needless_borrows_for_generic_args)]
         let table = Table::default().widths(&[Constraint::Length(100)]);
         assert_eq!(table.widths, [Constraint::Length(100)]);
@@ -908,6 +936,9 @@ mod tests {
         let table = Table::default().widths(vec![Constraint::Length(100)]);
         assert_eq!(table.widths, [Constraint::Length(100)]);
 
+        // ensure that code that uses &some_vec continues to work as there is a large amount of code
+        // that uses this pattern
+        #[allow(clippy::needless_borrows_for_generic_args)]
         let table = Table::default().widths(&vec![Constraint::Length(100)]);
         assert_eq!(table.widths, [Constraint::Length(100)]);
 
@@ -999,9 +1030,64 @@ mod tests {
     }
 
     #[cfg(test)]
+    mod state {
+        use rstest::{fixture, rstest};
+
+        use super::TableState;
+        use crate::{
+            buffer::Buffer,
+            layout::{Constraint, Rect},
+            widgets::{Row, StatefulWidget, Table},
+        };
+
+        #[fixture]
+        fn table_buf() -> Buffer {
+            Buffer::empty(Rect::new(0, 0, 10, 10))
+        }
+
+        #[rstest]
+        fn test_list_state_empty_list(mut table_buf: Buffer) {
+            let mut state = TableState::default();
+
+            let rows: Vec<Row> = Vec::new();
+            let widths = vec![Constraint::Percentage(100)];
+            let table = Table::new(rows, widths);
+            state.select_first();
+            StatefulWidget::render(table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected, None);
+        }
+
+        #[rstest]
+        fn test_list_state_single_item(mut table_buf: Buffer) {
+            let mut state = TableState::default();
+
+            let widths = vec![Constraint::Percentage(100)];
+
+            let items = vec![Row::new(vec!["Item 1"])];
+            let table = Table::new(items, widths);
+            state.select_first();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected, Some(0));
+
+            state.select_last();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected, Some(0));
+
+            state.select_previous();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected, Some(0));
+
+            state.select_next();
+            StatefulWidget::render(&table, table_buf.area, &mut table_buf, &mut state);
+            assert_eq!(state.selected, Some(0));
+        }
+    }
+
+    #[cfg(test)]
     mod render {
+        use rstest::rstest;
+
         use super::*;
-        use crate::assert_buffer_eq;
 
         #[test]
         fn render_empty_area() {
@@ -1009,7 +1095,7 @@ mod tests {
             let rows = vec![Row::new(vec!["Cell1", "Cell2"])];
             let table = Table::new(rows, vec![Constraint::Length(5); 2]);
             Widget::render(table, Rect::new(0, 0, 0, 0), &mut buf);
-            assert_buffer_eq!(buf, Buffer::empty(Rect::new(0, 0, 15, 3)));
+            assert_eq!(buf, Buffer::empty(Rect::new(0, 0, 15, 3)));
         }
 
         #[test]
@@ -1017,7 +1103,7 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
             let table = Table::default();
             Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
-            assert_buffer_eq!(buf, Buffer::empty(Rect::new(0, 0, 15, 3)));
+            assert_eq!(buf, Buffer::empty(Rect::new(0, 0, 15, 3)));
         }
 
         #[test]
@@ -1030,12 +1116,13 @@ mod tests {
             let block = Block::bordered().title("Block");
             let table = Table::new(rows, vec![Constraint::Length(5); 2]).block(block);
             Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
-            let expected = Buffer::with_lines(vec![
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
                 "┌Block────────┐",
                 "│Cell1 Cell2  │",
                 "└─────────────┘",
             ]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1048,12 +1135,13 @@ mod tests {
             ];
             let table = Table::new(rows, [Constraint::Length(5); 2]).header(header);
             Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
-            let expected = Buffer::with_lines(vec![
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
                 "Head1 Head2    ",
                 "Cell1 Cell2    ",
                 "Cell3 Cell4    ",
             ]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1066,12 +1154,13 @@ mod tests {
             ];
             let table = Table::new(rows, [Constraint::Length(5); 2]).footer(footer);
             Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
-            let expected = Buffer::with_lines(vec![
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
                 "Cell1 Cell2    ",
                 "Cell3 Cell4    ",
                 "Foot1 Foot2    ",
             ]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1084,12 +1173,13 @@ mod tests {
                 .header(header)
                 .footer(footer);
             Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
-            let expected = Buffer::with_lines(vec![
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
                 "Head1 Head2    ",
                 "Cell1 Cell2    ",
                 "Foot1 Foot2    ",
             ]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1102,12 +1192,13 @@ mod tests {
             ];
             let table = Table::new(rows, [Constraint::Length(5); 2]).header(header);
             Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
-            let expected = Buffer::with_lines(vec![
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
                 "Head1 Head2    ",
                 "               ",
                 "Cell1 Cell2    ",
             ]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1117,12 +1208,13 @@ mod tests {
             let rows = vec![Row::new(vec!["Cell1", "Cell2"])];
             let table = Table::new(rows, [Constraint::Length(5); 2]).footer(footer);
             Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
-            let expected = Buffer::with_lines(vec![
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
                 "Cell1 Cell2    ",
                 "               ",
                 "Foot1 Foot2    ",
             ]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1134,30 +1226,27 @@ mod tests {
             ];
             let table = Table::new(rows, [Constraint::Length(5); 2]);
             Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
-            let expected = Buffer::with_lines(vec![
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
                 "Cell1 Cell2    ",
                 "               ",
                 "Cell3 Cell4    ",
             ]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[test]
         fn render_with_alignment() {
-            let mut buf = Buffer::empty(Rect::new(0, 0, 15, 3));
+            let mut buf = Buffer::empty(Rect::new(0, 0, 10, 3));
             let rows = vec![
                 Row::new(vec![Line::from("Left").alignment(Alignment::Left)]),
                 Row::new(vec![Line::from("Center").alignment(Alignment::Center)]),
                 Row::new(vec![Line::from("Right").alignment(Alignment::Right)]),
             ];
             let table = Table::new(rows, [Percentage(100)]);
-            Widget::render(table, Rect::new(0, 0, 15, 3), &mut buf);
-            let expected = Buffer::with_lines(vec![
-                "Left           ",
-                "    Center     ",
-                "          Right",
-            ]);
-            assert_buffer_eq!(buf, expected);
+            Widget::render(table, Rect::new(0, 0, 10, 3), &mut buf);
+            let expected = Buffer::with_lines(["Left      ", "  Center  ", "     Right"]);
+            assert_eq!(buf, expected);
         }
 
         #[test]
@@ -1181,19 +1270,48 @@ mod tests {
                 .highlight_symbol(">>");
             let mut state = TableState::new().with_selected(0);
             StatefulWidget::render(table, Rect::new(0, 0, 15, 3), &mut buf, &mut state);
-            let expected = Buffer::with_lines(vec![
+            let expected = Buffer::with_lines([
                 ">>Cell1 Cell2  ".red(),
                 "  Cell3 Cell4  ".into(),
                 "               ".into(),
             ]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
+        }
+
+        /// Note that this includes a regression test for a bug where the table would not render the
+        /// correct rows when there is no selection.
+        /// <https://github.com/ratatui-org/ratatui/issues/1179>
+        #[rstest]
+        #[case::no_selection(None, 50, ["50", "51", "52", "53", "54"])]
+        #[case::selection_before_offset(20, 20, ["20", "21", "22", "23", "24"])]
+        #[case::selection_immediately_before_offset(49, 49, ["49", "50", "51", "52", "53"])]
+        #[case::selection_at_start_of_offset(50, 50, ["50", "51", "52", "53", "54"])]
+        #[case::selection_at_end_of_offset(54, 50, ["50", "51", "52", "53", "54"])]
+        #[case::selection_immediately_after_offset(55, 51, ["51", "52", "53", "54", "55"])]
+        #[case::selection_after_offset(80, 76, ["76", "77", "78", "79", "80"])]
+        fn render_with_selection_and_offset<T: Into<Option<usize>>>(
+            #[case] selected_row: T,
+            #[case] expected_offset: usize,
+            #[case] expected_items: [&str; 5],
+        ) {
+            // render 100 rows offset at 50, with a selected row
+            let rows = (0..100).map(|i| Row::new([i.to_string()]));
+            let table = Table::new(rows, [Constraint::Length(2)]);
+            let mut buf = Buffer::empty(Rect::new(0, 0, 2, 5));
+            let mut state = TableState::new()
+                .with_offset(50)
+                .with_selected(selected_row);
+
+            StatefulWidget::render(table.clone(), Rect::new(0, 0, 5, 5), &mut buf, &mut state);
+
+            assert_eq!(buf, Buffer::with_lines(expected_items));
+            assert_eq!(state.offset, expected_offset);
         }
     }
 
     // test how constraints interact with table column width allocation
     mod column_widths {
         use super::*;
-        use crate::assert_buffer_eq;
 
         #[test]
         fn length_constraint() {
@@ -1387,12 +1505,17 @@ mod tests {
             assert_eq!(table.get_columns_widths(10, 0), [(0, 5), (5, 5)]);
         }
 
-        fn test_table_with_selection(
+        #[track_caller]
+        fn test_table_with_selection<'line, Lines>(
             highlight_spacing: HighlightSpacing,
             columns: u16,
             spacing: u16,
             selection: Option<usize>,
-        ) -> Buffer {
+            expected: Lines,
+        ) where
+            Lines: IntoIterator,
+            Lines::Item: Into<Line<'line>>,
+        {
             let table = Table::default()
                 .rows(vec![Row::new(vec!["ABCDE", "12345"])])
                 .highlight_spacing(highlight_spacing)
@@ -1402,26 +1525,24 @@ mod tests {
             let mut buf = Buffer::empty(area);
             let mut state = TableState::default().with_selected(selection);
             StatefulWidget::render(table, area, &mut buf, &mut state);
-            buf
+            assert_eq!(buf, Buffer::with_lines(expected));
         }
 
         #[test]
         fn excess_area_highlight_symbol_and_column_spacing_allocation() {
             // no highlight_symbol rendered ever
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Never,
-                    15,   // width
-                    0,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Never,
+                15,   // width
+                0,    // spacing
+                None, // selection
+                [
                     "ABCDE  12345   ", /* default layout is Flex::Start but columns length
                                         * constraints are calculated as `max_area / n_columns`,
                                         * i.e. they are distributed amongst available space */
                     "               ", // row 2
                     "               ", // row 3
-                ])
+                ],
             );
 
             let table = Table::default()
@@ -1431,88 +1552,76 @@ mod tests {
             let area = Rect::new(0, 0, 15, 3);
             let mut buf = Buffer::empty(area);
             Widget::render(table, area, &mut buf);
-            assert_buffer_eq!(
-                buf,
-                Buffer::with_lines(vec![
-                    "ABCDE12345     ", /* As reference, this is what happens when you manually
-                                        * specify widths */
-                    "               ", // row 2
-                    "               ", // row 3
-                ])
-            );
+            let expected = Buffer::with_lines([
+                "ABCDE12345     ", /* As reference, this is what happens when you manually
+                                    * specify widths */
+                "               ", // row 2
+                "               ", // row 3
+            ]);
+            assert_eq!(buf, expected);
 
             // no highlight_symbol rendered ever
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Never,
-                    15,      // width
-                    0,       // spacing
-                    Some(0), // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Never,
+                15,      // width
+                0,       // spacing
+                Some(0), // selection
+                [
                     "ABCDE  12345   ", // row 1
                     "               ", // row 2
                     "               ", // row 3
-                ])
+                ],
             );
 
             // no highlight_symbol rendered because no selection is made
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::WhenSelected,
-                    15,   // width
-                    0,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::WhenSelected,
+                15,   // width
+                0,    // spacing
+                None, // selection
+                [
                     "ABCDE  12345   ", // row 1
                     "               ", // row 2
                     "               ", // row 3
-                ])
+                ],
             );
             // highlight_symbol rendered because selection is made
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::WhenSelected,
-                    15,      // width
-                    0,       // spacing
-                    Some(0), // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::WhenSelected,
+                15,      // width
+                0,       // spacing
+                Some(0), // selection
+                [
                     ">>>ABCDE 12345 ", // row 1
                     "               ", // row 2
                     "               ", // row 3
-                ])
+                ],
             );
 
             // highlight_symbol always rendered even no selection is made
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Always,
-                    15,   // width
-                    0,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Always,
+                15,   // width
+                0,    // spacing
+                None, // selection
+                [
                     "   ABCDE 12345 ", // row 1
                     "               ", // row 2
                     "               ", // row 3
-                ])
+                ],
             );
 
             // no highlight_symbol rendered because no selection is made
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Always,
-                    15,      // width
-                    0,       // spacing
-                    Some(0), // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Always,
+                15,      // width
+                0,       // spacing
+                Some(0), // selection
+                [
                     ">>>ABCDE 12345 ", // row 1
                     "               ", // row 2
                     "               ", // row 3
-                ])
+                ],
             );
         }
 
@@ -1520,31 +1629,27 @@ mod tests {
         #[test]
         fn insufficient_area_highlight_symbol_and_column_spacing_allocation() {
             // column spacing is prioritized over every other constraint
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Never,
-                    10,   // width
-                    1,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Never,
+                10,   // width
+                1,    // spacing
+                None, // selection
+                [
                     "ABCDE 1234", // spacing is prioritized and column is cut
                     "          ", // row 2
                     "          ", // row 3
-                ])
+                ],
             );
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::WhenSelected,
-                    10,   // width
-                    1,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::WhenSelected,
+                10,   // width
+                1,    // spacing
+                None, // selection
+                [
                     "ABCDE 1234", // spacing is prioritized and column is cut
                     "          ", // row 2
                     "          ", // row 3
-                ])
+                ],
             );
 
             // this test checks that space for highlight_symbol space is always allocated.
@@ -1555,59 +1660,51 @@ mod tests {
             // Then in a separate step, column widths are calculated.
             // column spacing is prioritized when column widths are calculated and last column here
             // ends up with just 1 wide
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Always,
-                    10,   // width
-                    1,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Always,
+                10,   // width
+                1,    // spacing
+                None, // selection
+                [
                     "   ABC 123", // highlight_symbol and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
-                ])
+                ],
             );
 
             // the following are specification tests
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Always,
-                    9,    // width
-                    1,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Always,
+                9,    // width
+                1,    // spacing
+                None, // selection
+                [
                     "   ABC 12", // highlight_symbol and spacing are prioritized
                     "         ", // row 2
                     "         ", // row 3
-                ])
+                ],
             );
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Always,
-                    8,    // width
-                    1,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Always,
+                8,    // width
+                1,    // spacing
+                None, // selection
+                [
                     "   AB 12", // highlight_symbol and spacing are prioritized
                     "        ", // row 2
                     "        ", // row 3
-                ])
+                ],
             );
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Always,
-                    7,    // width
-                    1,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Always,
+                7,    // width
+                1,    // spacing
+                None, // selection
+                [
                     "   AB 1", // highlight_symbol and spacing are prioritized
                     "       ", // row 2
                     "       ", // row 3
-                ])
+                ],
             );
 
             let table = Table::default()
@@ -1620,10 +1717,13 @@ mod tests {
             let mut buf = Buffer::empty(area);
             Widget::render(table, area, &mut buf);
             // highlight_symbol and spacing are prioritized but columns are evenly distributed
-            assert_buffer_eq!(
-                buf,
-                Buffer::with_lines(vec!["   ABCDE 1", "          ", "          ",])
-            );
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "   ABCDE 1",
+                "          ",
+                "          ",
+            ]);
+            assert_eq!(buf, expected);
 
             let table = Table::default()
                 .rows(vec![Row::new(vec!["ABCDE", "12345"])])
@@ -1635,137 +1735,122 @@ mod tests {
             let mut buf = Buffer::empty(area);
             Widget::render(table, area, &mut buf);
             // highlight_symbol and spacing are prioritized but columns are evenly distributed
-            assert_buffer_eq!(
-                buf,
-                Buffer::with_lines(vec!["   ABC 123", "          ", "          ",])
-            );
+            #[rustfmt::skip]
+            let expected = Buffer::with_lines([
+                "   ABC 123",
+                "          ",
+                "          ",
+            ]);
+            assert_eq!(buf, expected);
 
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Never,
-                    10,      // width
-                    1,       // spacing
-                    Some(0), // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Never,
+                10,      // width
+                1,       // spacing
+                Some(0), // selection
+                [
                     "ABCDE 1234", // spacing is prioritized
                     "          ",
                     "          ",
-                ])
+                ],
             );
 
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::WhenSelected,
-                    10,      // width
-                    1,       // spacing
-                    Some(0), // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::WhenSelected,
+                10,      // width
+                1,       // spacing
+                Some(0), // selection
+                [
                     ">>>ABC 123", // row 1
                     "          ", // row 2
                     "          ", // row 3
-                ])
+                ],
             );
 
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Always,
-                    10,      // width
-                    1,       // spacing
-                    Some(0), // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Always,
+                10,      // width
+                1,       // spacing
+                Some(0), // selection
+                [
                     ">>>ABC 123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
-                ])
+                ],
             );
         }
 
         #[test]
         fn insufficient_area_highlight_symbol_allocation_with_no_column_spacing() {
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Never,
-                    10,   // width
-                    0,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Never,
+                10,   // width
+                0,    // spacing
+                None, // selection
+                [
                     "ABCDE12345", // row 1
                     "          ", // row 2
                     "          ", // row 3
-                ])
+                ],
             );
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::WhenSelected,
-                    10,   // width
-                    0,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::WhenSelected,
+                10,   // width
+                0,    // spacing
+                None, // selection
+                [
                     "ABCDE12345", // row 1
                     "          ", // row 2
                     "          ", // row 3
-                ])
+                ],
             );
             // highlight symbol spacing is prioritized over all constraints
             // even if the constraints are fixed length
             // this is because highlight_symbol column is separated _before_ any of the constraint
             // widths are calculated
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Always,
-                    10,   // width
-                    0,    // spacing
-                    None, // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Always,
+                10,   // width
+                0,    // spacing
+                None, // selection
+                [
                     "   ABCD123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
-                ])
+                ],
             );
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Never,
-                    10,      // width
-                    0,       // spacing
-                    Some(0), // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Never,
+                10,      // width
+                0,       // spacing
+                Some(0), // selection
+                [
                     "ABCDE12345", // row 1
                     "          ", // row 2
                     "          ", // row 3
-                ])
+                ],
             );
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::WhenSelected,
-                    10,      // width
-                    0,       // spacing
-                    Some(0), // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::WhenSelected,
+                10,      // width
+                0,       // spacing
+                Some(0), // selection
+                [
                     ">>>ABCD123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
-                ])
+                ],
             );
-            assert_buffer_eq!(
-                test_table_with_selection(
-                    HighlightSpacing::Always,
-                    10,      // width
-                    0,       // spacing
-                    Some(0), // selection
-                ),
-                Buffer::with_lines(vec![
+            test_table_with_selection(
+                HighlightSpacing::Always,
+                10,      // width
+                0,       // spacing
+                Some(0), // selection
+                [
                     ">>>ABCD123", // highlight column and spacing are prioritized
                     "          ", // row 2
                     "          ", // row 3
-                ])
+                ],
             );
         }
     }

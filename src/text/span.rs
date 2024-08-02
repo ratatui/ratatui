@@ -1,10 +1,9 @@
-use std::{borrow::Cow, fmt::Debug};
+use std::{borrow::Cow, fmt};
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use super::StyledGrapheme;
-use crate::prelude::*;
+use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 
 /// Represents a part of a line that is contiguous and where all characters share the same style.
 ///
@@ -343,6 +342,14 @@ where
     }
 }
 
+impl<'a> std::ops::Add<Self> for Span<'a> {
+    type Output = Line<'a>;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Line::from_iter([self, rhs])
+    }
+}
+
 impl<'a> Styled for Span<'a> {
     type Item = Self;
 
@@ -364,45 +371,85 @@ impl Widget for Span<'_> {
 impl WidgetRef for Span<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
         let area = area.intersection(buf.area);
-        let Rect {
-            x: mut current_x,
-            y,
-            width,
-            ..
-        } = area;
-        let max_x = Ord::min(current_x.saturating_add(width), buf.area.right());
-        for g in self.styled_graphemes(Style::default()) {
-            let symbol_width = g.symbol.width();
-            let next_x = current_x.saturating_add(symbol_width as u16);
-            if next_x > max_x {
+        if area.is_empty() {
+            return;
+        }
+        let Rect { mut x, y, .. } = area;
+        for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
+            let symbol_width = grapheme.symbol.width();
+            let next_x = x.saturating_add(symbol_width as u16);
+            if next_x > area.right() {
                 break;
             }
-            buf.get_mut(current_x, y)
-                .set_symbol(g.symbol)
-                .set_style(g.style);
+
+            if i == 0 {
+                // the first grapheme is always set on the cell
+                buf.get_mut(x, y)
+                    .set_symbol(grapheme.symbol)
+                    .set_style(grapheme.style);
+            } else if x == area.x {
+                // there is one or more zero-width graphemes in the first cell, so the first cell
+                // must be appended to.
+                buf.get_mut(x, y)
+                    .append_symbol(grapheme.symbol)
+                    .set_style(grapheme.style);
+            } else if symbol_width == 0 {
+                // append zero-width graphemes to the previous cell
+                buf.get_mut(x - 1, y)
+                    .append_symbol(grapheme.symbol)
+                    .set_style(grapheme.style);
+            } else {
+                // just a normal grapheme (not first, not zero-width, not overflowing the area)
+                buf.get_mut(x, y)
+                    .set_symbol(grapheme.symbol)
+                    .set_style(grapheme.style);
+            }
 
             // multi-width graphemes must clear the cells of characters that are hidden by the
             // grapheme, otherwise the hidden characters will be re-rendered if the grapheme is
             // overwritten.
-            for i in (current_x + 1)..next_x {
-                buf.get_mut(i, y).reset();
+            for x_hidden in (x + 1)..next_x {
                 // it may seem odd that the style of the hidden cells are not set to the style of
                 // the grapheme, but this is how the existing buffer.set_span() method works.
-                // buf.get_mut(i, y).set_style(g.style);
+                buf.get_mut(x_hidden, y).reset();
             }
-            current_x = next_x;
+            x = next_x;
         }
     }
 }
 
-impl std::fmt::Display for Span<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &self.content)
+/// A trait for converting a value to a [`Span`].
+///
+/// This trait is automatically implemented for any type that implements the [`Display`] trait. As
+/// such, `ToSpan` shouln't be implemented directly: [`Display`] should be implemented instead, and
+/// you get the `ToSpan` implementation for free.
+///
+/// [`Display`]: std::fmt::Display
+pub trait ToSpan {
+    /// Converts the value to a [`Span`].
+    fn to_span(&self) -> Span<'_>;
+}
+
+/// # Panics
+///
+/// In this implementation, the `to_span` method panics if the `Display` implementation returns an
+/// error. This indicates an incorrect `Display` implementation since `fmt::Write for String` never
+/// returns an error itself.
+impl<T: fmt::Display> ToSpan for T {
+    fn to_span(&self) -> Span<'_> {
+        Span::raw(self.to_string())
+    }
+}
+
+impl fmt::Display for Span<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.content, f)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use buffer::Cell;
     use rstest::fixture;
 
     use super::*;
@@ -496,6 +543,12 @@ mod tests {
     }
 
     #[test]
+    fn to_span() {
+        assert_eq!(42.to_span(), Span::raw("42"));
+        assert_eq!("test".to_span(), Span::raw("test"));
+    }
+
+    #[test]
     fn reset_style() {
         let span = Span::styled("test content", Style::new().green()).reset_style();
         assert_eq!(span.style, Style::reset());
@@ -529,15 +582,15 @@ mod tests {
     #[test]
     fn display_span() {
         let span = Span::raw("test content");
-
         assert_eq!(format!("{span}"), "test content");
+        assert_eq!(format!("{span:.4}"), "test");
     }
 
     #[test]
     fn display_styled_span() {
         let stylized_span = Span::styled("stylized test content", Style::new().green());
-
         assert_eq!(format!("{stylized_span}"), "stylized test content");
+        assert_eq!(format!("{stylized_span:.8}"), "stylized");
     }
 
     #[test]
@@ -565,7 +618,6 @@ mod tests {
         use rstest::rstest;
 
         use super::*;
-        use crate::assert_buffer_eq;
 
         #[test]
         fn render() {
@@ -573,17 +625,19 @@ mod tests {
             let span = Span::styled("test content", style);
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
             span.render(buf.area, &mut buf);
-
-            let expected = Buffer::with_lines(vec![Line::from(vec![
+            let expected = Buffer::with_lines([Line::from(vec![
                 "test content".green().on_yellow(),
                 "   ".into(),
             ])]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         #[rstest]
-        fn render_out_of_bounds(mut small_buf: Buffer) {
-            let out_of_bounds = Rect::new(20, 20, 10, 1);
+        #[case::x(20, 0)]
+        #[case::y(0, 20)]
+        #[case::both(20, 20)]
+        fn render_out_of_bounds(mut small_buf: Buffer, #[case] x: u16, #[case] y: u16) {
+            let out_of_bounds = Rect::new(x, y, 10, 1);
             Span::raw("Hello, World!").render(out_of_bounds, &mut small_buf);
             assert_eq!(small_buf, Buffer::empty(small_buf.area));
         }
@@ -598,10 +652,11 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
             span.render(Rect::new(0, 0, 5, 1), &mut buf);
 
-            let mut expected = Buffer::with_lines(vec![Line::from("test      ")]);
-            expected.set_style(Rect::new(0, 0, 5, 1), (Color::Green, Color::Yellow));
-
-            assert_buffer_eq!(buf, expected);
+            let expected = Buffer::with_lines([Line::from(vec![
+                "test ".green().on_yellow(),
+                "     ".into(),
+            ])]);
+            assert_eq!(buf, expected);
         }
 
         /// When there is already a style set on the buffer, the style of the span should be
@@ -613,12 +668,11 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
             buf.set_style(buf.area, Style::new().italic());
             span.render(buf.area, &mut buf);
-
-            let expected = Buffer::with_lines(vec![Line::from(vec![
+            let expected = Buffer::with_lines([Line::from(vec![
                 "test content".green().on_yellow().italic(),
                 "   ".italic(),
             ])]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
 
         /// When the span contains a multi-width grapheme, the grapheme will ensure that the cells
@@ -629,12 +683,11 @@ mod tests {
             let span = Span::styled("test 😃 content", style);
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
             span.render(buf.area, &mut buf);
-
             // The existing code in buffer.set_line() handles multi-width graphemes by clearing the
             // cells of the hidden characters. This test ensures that the existing behavior is
             // preserved.
-            let expected = Buffer::with_lines(vec!["test 😃 content".green().on_yellow()]);
-            assert_buffer_eq!(buf, expected);
+            let expected = Buffer::with_lines(["test 😃 content".green().on_yellow()]);
+            assert_eq!(buf, expected);
         }
 
         /// When the span contains a multi-width grapheme that does not fit in the area passed to
@@ -647,11 +700,9 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 6, 1));
             span.render(buf.area, &mut buf);
 
-            let expected = Buffer::with_lines(vec![Line::from(vec![
-                "test ".green().on_yellow(),
-                " ".into(),
-            ])]);
-            assert_buffer_eq!(buf, expected);
+            let expected =
+                Buffer::with_lines([Line::from(vec!["test ".green().on_yellow(), " ".into()])]);
+            assert_eq!(buf, expected);
         }
 
         /// When the area passed to render overflows the buffer, the content should be truncated
@@ -663,11 +714,101 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 15, 1));
             span.render(Rect::new(10, 0, 20, 1), &mut buf);
 
-            let expected = Buffer::with_lines(vec![Line::from(vec![
+            let expected = Buffer::with_lines([Line::from(vec![
                 "          ".into(),
                 "test ".green().on_yellow(),
             ])]);
-            assert_buffer_eq!(buf, expected);
+            assert_eq!(buf, expected);
         }
+
+        #[test]
+        fn render_first_zero_width() {
+            let span = Span::raw("\u{200B}abc");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [Cell::new("\u{200B}a"), Cell::new("b"), Cell::new("c"),]
+            );
+        }
+
+        #[test]
+        fn render_second_zero_width() {
+            let span = Span::raw("a\u{200B}bc");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [Cell::new("a\u{200B}"), Cell::new("b"), Cell::new("c")]
+            );
+        }
+
+        #[test]
+        fn render_middle_zero_width() {
+            let span = Span::raw("ab\u{200B}c");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [Cell::new("a"), Cell::new("b\u{200B}"), Cell::new("c")]
+            );
+        }
+
+        #[test]
+        fn render_last_zero_width() {
+            let span = Span::raw("abc\u{200B}");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 3, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(
+                buf.content(),
+                [Cell::new("a"), Cell::new("b"), Cell::new("c\u{200B}")]
+            );
+        }
+    }
+
+    /// Regression test for <https://github.com/ratatui-org/ratatui/issues/1160> One line contains
+    /// some Unicode Left-Right-Marks (U+200E)
+    ///
+    /// The issue was that a zero-width character at the end of the buffer causes the buffer bounds
+    /// to be exceeded (due to a position + 1 calculation that fails to account for the possibility
+    /// that the next position might not be available).
+    #[test]
+    fn issue_1160() {
+        let span = Span::raw("Hello\u{200E}");
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
+        span.render(buf.area, &mut buf);
+        assert_eq!(
+            buf.content(),
+            [
+                Cell::new("H"),
+                Cell::new("e"),
+                Cell::new("l"),
+                Cell::new("l"),
+                Cell::new("o\u{200E}"),
+            ]
+        );
+    }
+
+    #[test]
+    fn add() {
+        assert_eq!(
+            Span::default() + Span::default(),
+            Line::from(vec![Span::default(), Span::default()])
+        );
+
+        assert_eq!(
+            Span::default() + Span::raw("test"),
+            Line::from(vec![Span::default(), Span::raw("test")])
+        );
+
+        assert_eq!(
+            Span::raw("test") + Span::default(),
+            Line::from(vec![Span::raw("test"), Span::default()])
+        );
+
+        assert_eq!(
+            Span::raw("test") + Span::raw("content"),
+            Line::from(vec![Span::raw("test"), Span::raw("content")])
+        );
     }
 }

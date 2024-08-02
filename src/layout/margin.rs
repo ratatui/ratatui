@@ -1,6 +1,7 @@
-use std::fmt::{self, Display};
+use std::fmt;
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Margin {
     pub horizontal: u16,
     pub vertical: u16,
@@ -15,7 +16,7 @@ impl Margin {
     }
 }
 
-impl Display for Margin {
+impl fmt::Display for Margin {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}x{}", self.horizontal, self.vertical)
     }

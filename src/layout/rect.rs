@@ -32,7 +32,8 @@ pub struct Rect {
 /// Positive numbers move to the right/bottom and negative to the left/top.
 ///
 /// See [`Rect::offset`]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Offset {
     /// How much to move on the X axis
     pub x: i32,
@@ -47,10 +48,18 @@ impl fmt::Display for Rect {
 }
 
 impl Rect {
+    /// A zero sized Rect at position 0,0
+    pub const ZERO: Self = Self {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+    };
+
     /// Creates a new `Rect`, with width and height limited to keep the area under max `u16`. If
     /// clipped, aspect ratio will be preserved.
     pub fn new(x: u16, y: u16, width: u16, height: u16) -> Self {
-        let max_area = u16::max_value();
+        let max_area = u16::MAX;
         let (clipped_width, clipped_height) =
             if u32::from(width) * u32::from(height) > u32::from(max_area) {
                 let aspect_ratio = f64::from(width) / f64::from(height);
@@ -112,12 +121,12 @@ impl Rect {
     ///
     /// If the margin is larger than the `Rect`, the returned `Rect` will have no area.
     #[must_use = "method returns the modified value"]
-    pub fn inner(self, margin: &Margin) -> Self {
+    pub const fn inner(self, margin: Margin) -> Self {
         let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
         let doubled_margin_vertical = margin.vertical.saturating_mul(2);
 
         if self.width < doubled_margin_horizontal || self.height < doubled_margin_vertical {
-            Self::default()
+            Self::ZERO
         } else {
             Self {
                 x: self.x.saturating_add(margin.horizontal),
@@ -313,6 +322,18 @@ impl Rect {
             height: self.height,
         }
     }
+
+    /// indents the x value of the `Rect` by a given `offset`
+    ///
+    /// This is pub(crate) for now as we need to stabilize the naming / design of this API.
+    #[must_use]
+    pub(crate) const fn indent_x(self, offset: u16) -> Self {
+        Self {
+            x: self.x.saturating_add(offset),
+            width: self.width.saturating_sub(offset),
+            ..self
+        }
+    }
 }
 
 impl From<(Position, Size)> for Rect {
@@ -385,7 +406,7 @@ mod tests {
     #[test]
     fn inner() {
         assert_eq!(
-            Rect::new(1, 2, 3, 4).inner(&Margin::new(1, 2)),
+            Rect::new(1, 2, 3, 4).inner(Margin::new(1, 2)),
             Rect::new(2, 4, 1, 0)
         );
     }

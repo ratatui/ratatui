@@ -27,10 +27,10 @@ pub(crate) use crate::widgets::{StatefulWidgetRef, WidgetRef};
 pub use crate::{
     backend::{self, Backend},
     buffer::{self, Buffer},
-    layout::{self, Alignment, Constraint, Corner, Direction, Layout, Margin, Rect},
-    style::{self, Color, Modifier, Style, Styled, Stylize},
-    symbols::{self, Marker},
-    terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport},
+    layout::{self, Alignment, Constraint, Direction, Layout, Margin, Position, Rect, Size},
+    style::{self, Color, Modifier, Style, Stylize},
+    symbols::{self},
+    terminal::{Frame, Terminal},
     text::{self, Line, Masked, Span, Text},
     widgets::{block::BlockExt, StatefulWidget, Widget},
 };

@@ -1,0 +1,75 @@
+name: Track Benchmarks with Bencher
+
+on:
+  workflow_run:
+    workflows: [Run and Cache Benchmarks]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  track_fork_pr_branch:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      BENCHMARK_RESULTS: benchmark_results.txt
+      PR_EVENT: event.json
+    steps:
+      - name: Download Benchmark Results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            async function downloadArtifact(artifactName) {
+              let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.payload.workflow_run.id,
+              });
+              let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
+                return artifact.name == artifactName
+              })[0];
+              if (!matchArtifact) {
+                core.setFailed(`Failed to find artifact: ${artifactName}`);
+              }
+              let download = await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: matchArtifact.id,
+                archive_format: 'zip',
+              });
+              let fs = require('fs');
+              fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/${artifactName}.zip`, Buffer.from(download.data));
+            }
+            await downloadArtifact(process.env.BENCHMARK_RESULTS);
+            await downloadArtifact(process.env.PR_EVENT);
+      - name: Unzip Benchmark Results
+        run: |
+          unzip $BENCHMARK_RESULTS.zip
+          unzip $PR_EVENT.zip
+      - name: Export PR Event Data
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let fs = require('fs');
+            let prEvent = JSON.parse(fs.readFileSync(process.env.PR_EVENT, {encoding: 'utf8'}));
+            core.exportVariable("PR_HEAD", `${prEvent.number}/merge`);
+            core.exportVariable("PR_BASE", prEvent.pull_request.base.ref);
+            core.exportVariable("PR_BASE_SHA", prEvent.pull_request.base.sha);
+            core.exportVariable("PR_NUMBER", prEvent.number);
+      - uses: bencherdev/bencher@main
+      - name: Track Benchmarks with Bencher
+        run: |
+          bencher run \
+          --project ratatui-org \
+          --token '${{ secrets.BENCHER_API_TOKEN }}' \
+          --branch '${{ env.PR_HEAD }}' \
+          --branch-start-point '${{ env.PR_BASE }}' \
+          --branch-start-point-hash '${{ env.PR_BASE_SHA }}' \
+          --testbed ubuntu-latest \
+          --adapter rust_criterion \
+          --err \
+          --github-actions '${{ secrets.GITHUB_TOKEN }}' \
+          --ci-number '${{ env.PR_NUMBER }}' \
+          --file "$BENCHMARK_RESULTS"

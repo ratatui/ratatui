@@ -1,4 +1,4 @@
-use std::fmt::{self, Display};
+use std::fmt;
 
 use itertools::Itertools;
 use strum::EnumIs;
@@ -310,7 +310,7 @@ impl Constraint {
     /// ```rust
     /// # use ratatui::prelude::*;
     /// # let area = Rect::default();
-    /// let constraints = Constraint::from_mins([1, 2, 3]);
+    /// let constraints = Constraint::from_fills([1, 2, 3]);
     /// let layout = Layout::default().constraints(constraints).split(area);
     /// ```
     pub fn from_fills<T>(proportional_factors: T) -> Vec<Self>
@@ -362,7 +362,7 @@ impl Default for Constraint {
     }
 }
 
-impl Display for Constraint {
+impl fmt::Display for Constraint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Percentage(p) => write!(f, "Percentage({p})"),

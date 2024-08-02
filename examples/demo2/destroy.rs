@@ -1,6 +1,12 @@
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
-use ratatui::{buffer::Cell, layout::Flex, prelude::*};
+use ratatui::{
+    buffer::Buffer,
+    layout::{Flex, Layout, Rect},
+    style::{Color, Style},
+    terminal::Frame,
+    widgets::Widget,
+};
 use unicode_width::UnicodeWidthStr;
 
 use crate::big_text::{BigTextBuilder, PixelSize};
@@ -59,7 +65,7 @@ fn drip(frame_count: usize, area: Rect, buf: &mut Buffer) {
             if rng.gen_ratio(1, 10) {
                 *dest = src;
             } else {
-                *dest = Cell::default();
+                dest.reset();
             }
         } else {
             // move the pixel down one row

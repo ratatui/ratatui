@@ -65,7 +65,7 @@ mod tests {
     use strum::ParseError;
 
     use super::*;
-    use crate::{assert_buffer_eq, prelude::*, widgets::canvas::Canvas};
+    use crate::{prelude::*, symbols::Marker, widgets::canvas::Canvas};
 
     #[test]
     fn map_resolution_to_string() {
@@ -101,7 +101,7 @@ mod tests {
                 context.draw(&Map::default());
             });
         canvas.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec![
+        let expected = Buffer::with_lines([
             "                                                                                ",
             "                   ••••••• •• •• •• •                                           ",
             "            ••••••••••••••       •••      ••••  •••  ••    ••••                 ",
@@ -143,7 +143,7 @@ mod tests {
             "       •                                                                        ",
             "                                                                                ",
         ]);
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 
     #[test]
@@ -160,7 +160,7 @@ mod tests {
                 });
             });
         canvas.render(buffer.area, &mut buffer);
-        let expected = Buffer::with_lines(vec![
+        let expected = Buffer::with_lines([
             "                                                                                ",
             "                  ⢀⣠⠤⠤⠤⠔⢤⣤⡄⠤⡠⣄⠢⠂⢢⠰⣠⡄⣀⡀                      ⣀                   ",
             "            ⢀⣀⡤⣦⠲⢶⣿⣮⣿⡉⣰⢶⢏⡂        ⢀⣟⠁     ⢺⣻⢿⠏   ⠈⠉⠁ ⢀⣀    ⠈⠓⢳⣢⣂⡀               ",
@@ -202,6 +202,6 @@ mod tests {
             "⠶⠔⠲⠤⠠⠜⢗⠤⠄                 ⠘⠉  ⠁                                            ⠈⠉⠒⠔⠤",
             "                                                                                ",
         ]);
-        assert_buffer_eq!(buffer, expected);
+        assert_eq!(buffer, expected);
     }
 }
