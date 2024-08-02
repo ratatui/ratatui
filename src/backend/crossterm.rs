@@ -19,8 +19,7 @@ use crate::{
         },
         terminal::{self, Clear},
     },
-    layout::{Position, Size},
-    prelude::Rect,
+    layout::{Position, Rect, Size},
     style::{Color, Modifier, Style},
 };
 
