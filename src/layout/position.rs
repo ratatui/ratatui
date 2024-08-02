@@ -24,6 +24,7 @@ use crate::layout::Rect;
 /// let (x, y) = position.into();
 /// ```
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Position {
     /// The x coordinate of the position
     ///
