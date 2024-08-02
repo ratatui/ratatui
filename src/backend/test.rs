@@ -11,7 +11,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
-    layout::{Position, Rect, Size},
+    layout::{Rect, Size},
 };
 
 /// A [`Backend`] implementation used for integration testing that renders to an memory buffer.
@@ -38,7 +38,7 @@ pub struct TestBackend {
     buffer: Buffer,
     height: u16,
     cursor: bool,
-    pos: Position,
+    pos: (u16, u16),
 }
 
 /// Returns a string representation of the given buffer for debugging purpose.
@@ -78,7 +78,7 @@ impl TestBackend {
             height,
             buffer: Buffer::empty(Rect::new(0, 0, width, height)),
             cursor: false,
-            pos: Position::ORIGIN,
+            pos: (0, 0),
         }
     }
 
@@ -156,11 +156,11 @@ impl Backend for TestBackend {
     }
 
     fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
-        Ok(self.pos.into())
+        Ok(self.pos)
     }
 
     fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
-        self.pos = Position { x, y };
+        self.pos = (x, y);
         Ok(())
     }
 
@@ -173,21 +173,21 @@ impl Backend for TestBackend {
         let region = match clear_type {
             ClearType::All => return self.clear(),
             ClearType::AfterCursor => {
-                let index = self.buffer.index_of(self.pos.x, self.pos.y) + 1;
+                let index = self.buffer.index_of(self.pos.0, self.pos.1) + 1;
                 &mut self.buffer.content[index..]
             }
             ClearType::BeforeCursor => {
-                let index = self.buffer.index_of(self.pos.x, self.pos.y);
+                let index = self.buffer.index_of(self.pos.0, self.pos.1);
                 &mut self.buffer.content[..index]
             }
             ClearType::CurrentLine => {
-                let line_start_index = self.buffer.index_of(0, self.pos.y);
-                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.y);
+                let line_start_index = self.buffer.index_of(0, self.pos.1);
+                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
                 &mut self.buffer.content[line_start_index..=line_end_index]
             }
             ClearType::UntilNewLine => {
-                let index = self.buffer.index_of(self.pos.x, self.pos.y);
-                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.y);
+                let index = self.buffer.index_of(self.pos.0, self.pos.1);
+                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
                 &mut self.buffer.content[index..=line_end_index]
             }
         };
@@ -271,7 +271,7 @@ mod tests {
                 height: 2,
                 buffer: Buffer::with_lines(["          "; 2]),
                 cursor: false,
-                pos: Position::ORIGIN,
+                pos: (0, 0),
             }
         );
     }
@@ -359,7 +359,7 @@ mod tests {
     fn set_cursor() {
         let mut backend = TestBackend::new(10, 10);
         backend.set_cursor(5, 5).unwrap();
-        assert_eq!(backend.pos, Position { x: 5, y: 5 });
+        assert_eq!(backend.pos, (5, 5));
     }
 
     #[test]
