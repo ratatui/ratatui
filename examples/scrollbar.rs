@@ -31,9 +31,9 @@ use ratatui::{
     layout::{Alignment, Constraint, Layout, Margin},
     style::{Color, Style, Stylize},
     symbols::scrollbar,
-    terminal::{Frame, Terminal},
     text::{Line, Masked, Span},
     widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
+    Frame, Terminal,
 };
 
 #[derive(Default)]

@@ -24,9 +24,9 @@ use ratatui::{
     },
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style, Stylize},
-    terminal::{Frame, Terminal},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Paragraph},
+    Frame, Terminal,
 };
 
 /// Example code for lib.rs

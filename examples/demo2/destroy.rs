@@ -4,8 +4,8 @@ use ratatui::{
     buffer::Buffer,
     layout::{Flex, Layout, Rect},
     style::{Color, Style},
-    terminal::Frame,
     widgets::Widget,
+    Frame,
 };
 use unicode_width::UnicodeWidthStr;
 

@@ -177,7 +177,7 @@ mod common {
         crossterm::terminal::{
             disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
         },
-        terminal::Terminal,
+        Terminal,
     };
 
     // A simple alias for the terminal type used in this example.
