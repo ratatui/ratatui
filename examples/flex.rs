@@ -13,7 +13,10 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::io::{self, stdout};
+use std::{
+    io::{self, stdout},
+    num::NonZeroUsize,
+};
 
 use color_eyre::{config::HookBuilder, Result};
 use ratatui::{
@@ -156,7 +159,9 @@ enum SelectedTab {
 
 fn main() -> Result<()> {
     // assuming the user changes spacing about a 100 times or so
-    Layout::init_cache(EXAMPLE_DATA.len() * SelectedTab::iter().len() * 100);
+    Layout::init_cache(
+        NonZeroUsize::new(EXAMPLE_DATA.len() * SelectedTab::iter().len() * 100).unwrap(),
+    );
     init_error_hooks()?;
     let terminal = init_terminal()?;
     App::default().run(terminal)?;
