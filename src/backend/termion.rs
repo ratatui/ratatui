@@ -12,7 +12,7 @@ use std::{
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
-    prelude::Rect,
+    layout::{Position, Rect},
     style::{Color, Modifier, Style},
     termion::{self, color as tcolor, color::Color as _, style as tstyle},
 };
@@ -176,13 +176,13 @@ where
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
         let mut modifier = Modifier::empty();
-        let mut last_pos: Option<(u16, u16)> = None;
+        let mut last_pos: Option<Position> = None;
         for (x, y, cell) in content {
             // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.0 + 1 && y == p.1) {
+            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
                 write!(string, "{}", termion::cursor::Goto(x + 1, y + 1)).unwrap();
             }
-            last_pos = Some((x, y));
+            last_pos = Some(Position { x, y });
             if cell.modifier != modifier {
                 write!(
                     string,

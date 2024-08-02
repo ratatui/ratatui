@@ -41,8 +41,8 @@ use crossterm::{
 };
 use ratatui::{
     backend::{Backend, CrosstermBackend},
-    terminal::Terminal,
     widgets::{Block, Paragraph},
+    Terminal,
 };
 use tracing::{debug, info, instrument, trace, Level};
 use tracing_appender::{non_blocking, non_blocking::WorkerGuard};

@@ -26,12 +26,12 @@ use ratatui::{
         Color, Modifier, Style, Stylize,
     },
     symbols,
-    terminal::Terminal,
     text::Line,
     widgets::{
         Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
         StatefulWidget, Widget, Wrap,
     },
+    Terminal,
 };
 
 const TODO_HEADER_STYLE: Style = Style::new().fg(SLATE.c100).bg(BLUE.c800);
@@ -304,7 +304,7 @@ mod tui {
             },
             ExecutableCommand,
         },
-        terminal::Terminal,
+        Terminal,
     };
 
     pub fn init_error_hooks() -> color_eyre::Result<()> {

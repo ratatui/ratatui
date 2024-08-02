@@ -8,9 +8,9 @@ use ratatui::{
     crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::Color,
-    terminal::Terminal,
     text::{Line, Span},
     widgets::{Block, Tabs, Widget},
+    Terminal,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
