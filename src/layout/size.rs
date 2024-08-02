@@ -23,21 +23,6 @@ impl Size {
     pub const fn new(width: u16, height: u16) -> Self {
         Self { width, height }
     }
-
-    /// Creates a [`Rect`] from this size at the origin (0,0).
-    pub const fn at_origin(self) -> Rect {
-        self.with_position(Position::ORIGIN)
-    }
-
-    /// Creates a [`Rect`] from this size at the given position.
-    pub const fn with_position(self, position: Position) -> Rect {
-        Rect {
-            x: position.x,
-            y: position.y,
-            width: self.width,
-            height: self.height,
-        }
-    }
 }
 
 impl From<(u16, u16)> for Size {

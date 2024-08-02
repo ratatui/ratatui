@@ -134,7 +134,9 @@ where
     /// ```
     pub fn with_options(mut backend: B, options: TerminalOptions) -> io::Result<Self> {
         let area = match options.viewport {
-            Viewport::Fullscreen | Viewport::Inline(_) => backend.size()?.at_origin(),
+            Viewport::Fullscreen | Viewport::Inline(_) => {
+                Rect::from((Position::ORIGIN, backend.size()?))
+            }
             Viewport::Fixed(area) => area,
         };
         let (viewport_area, cursor_pos) = match options.viewport {
@@ -234,7 +236,7 @@ where
     pub fn autoresize(&mut self) -> io::Result<()> {
         // fixed viewports do not get autoresized
         if matches!(self.viewport, Viewport::Fullscreen | Viewport::Inline(_)) {
-            let area = self.size()?.at_origin();
+            let area = Rect::from((Position::ORIGIN, self.size()?));
             if area != self.last_known_area {
                 self.resize(area)?;
             }
