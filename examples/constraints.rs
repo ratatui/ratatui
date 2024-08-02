@@ -86,9 +86,6 @@ fn main() -> Result<()> {
     init_error_hooks()?;
     let terminal = init_terminal()?;
 
-    // increase the cache size to avoid flickering for indeterminate layouts
-    Layout::init_cache(100);
-
     App::default().run(terminal)?;
 
     restore_terminal()?;
