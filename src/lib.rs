@@ -348,6 +348,6 @@ pub mod layout;
 pub mod prelude;
 pub mod style;
 pub mod symbols;
-pub mod terminal;
+mod terminal;
 pub mod text;
 pub mod widgets;

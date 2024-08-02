@@ -29,9 +29,9 @@ use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     symbols::{self, Marker},
-    terminal::{Frame, Terminal},
     text::Span,
     widgets::{block::Title, Axis, Block, Chart, Dataset, GraphType, LegendPosition},
+    Frame, Terminal,
 };
 
 #[derive(Clone)]

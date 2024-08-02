@@ -28,9 +28,9 @@ use ratatui::{
     },
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    terminal::{Frame, Terminal},
     text::{Line, Span},
     widgets::{Bar, BarChart, BarGroup, Block, Paragraph},
+    Frame, Terminal,
 };
 
 struct Company<'a> {

@@ -26,9 +26,9 @@ use ratatui::{
     },
     layout::{Alignment, Constraint, Layout, Rect},
     style::{palette::tailwind, Color, Style, Stylize},
-    terminal::Terminal,
     text::Span,
     widgets::{block::Title, Block, Borders, Gauge, Padding, Paragraph, Widget},
+    Terminal,
 };
 
 const GAUGE1_COLOR: Color = tailwind::RED.c800;

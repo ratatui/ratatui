@@ -28,9 +28,9 @@ use ratatui::{
     },
     layout::{Constraint, Layout, Rect},
     style::{Color, Style},
-    terminal::{Frame, Terminal},
     text::Line,
     widgets::{Paragraph, Widget},
+    Frame, Terminal,
 };
 
 /// A custom widget that renders a button with a label, theme and state.

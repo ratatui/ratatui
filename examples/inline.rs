@@ -28,10 +28,9 @@ use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
-    terminal::{Frame, Terminal, Viewport},
     text::{Line, Span},
     widgets::{block, Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
-    TerminalOptions,
+    Frame, Terminal, TerminalOptions, Viewport,
 };
 
 const NUM_DOWNLOADS: usize = 10;
