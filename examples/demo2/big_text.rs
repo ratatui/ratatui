@@ -100,9 +100,9 @@ pub enum PixelSize {
 ///     layout::{self, Alignment, Constraint, Direction, Layout, Margin, Rect},
 ///     style::{self, Color, Modifier, Style, Styled, Stylize},
 ///     symbols::{self, Marker},
-///     terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport},
 ///     text::{self, Line, Masked, Span, Text},
 ///     widgets::{block::BlockExt, StatefulWidget, Widget},
+///     CompletedFrame, Frame, Terminal, TerminalOptions, Viewport,
 /// };
 /// use tui_big_text::{BigTextBuilder, PixelSize};
 ///
