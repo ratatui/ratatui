@@ -75,7 +75,8 @@ This is a quick summary of the sections below:
 [#1160]: https://github.com/ratatui-org/ratatui/pull/1160
 
 The `terminal` module is now private and can not be used directly. The types under this module are
-exported from the root of the crate.
+exported from the root of the crate. This reduces clashes with other modules in the backends that
+are also named terminal, and confusion about module exports for newer Rust users.
 
 ```diff
 - use ratatui::terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, ViewPort};
