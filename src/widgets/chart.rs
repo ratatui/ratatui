@@ -408,9 +408,9 @@ impl<'a> Dataset<'a> {
 /// labels, legend, ...).
 struct ChartLayout {
     /// Location of the title of the x axis
-    title_x: Option<(u16, u16)>,
+    title_x: Option<Position>,
     /// Location of the title of the y axis
-    title_y: Option<(u16, u16)>,
+    title_y: Option<Position>,
     /// Location of the first label of the x axis
     label_x: Option<u16>,
     /// Location of the first label of the y axis
@@ -740,7 +740,7 @@ impl<'a> Chart<'a> {
         if let Some(ref title) = self.x_axis.title {
             let w = title.width() as u16;
             if w < graph_area.width && graph_area.height > 2 {
-                title_x = Some((x + graph_area.width - w, y));
+                title_x = Some(Position::new(x + graph_area.width - w, y));
             }
         }
 
@@ -748,7 +748,7 @@ impl<'a> Chart<'a> {
         if let Some(ref title) = self.y_axis.title {
             let w = title.width() as u16;
             if w + 1 < graph_area.width && graph_area.height > 2 {
-                title_y = Some((x, area.top()));
+                title_y = Some(Position::new(x, area.top()));
             }
         }
 
@@ -1032,7 +1032,7 @@ impl WidgetRef for Chart<'_> {
                 .render(graph_area, buf);
         }
 
-        if let Some((x, y)) = layout.title_x {
+        if let Some(Position { x, y }) = layout.title_x {
             let title = self.x_axis.title.as_ref().unwrap();
             let width = graph_area
                 .right()
@@ -1050,7 +1050,7 @@ impl WidgetRef for Chart<'_> {
             buf.set_line(x, y, title, width);
         }
 
-        if let Some((x, y)) = layout.title_y {
+        if let Some(Position { x, y }) = layout.title_y {
             let title = self.y_axis.title.as_ref().unwrap();
             let width = graph_area
                 .right()
