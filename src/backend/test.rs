@@ -243,7 +243,7 @@ impl Backend for TestBackend {
 
     fn window_size(&mut self) -> io::Result<WindowSize> {
         // Some arbitrary window pixel size, probably doesn't need much testing.
-        static WINDOW_PIXEL_SIZE: Size = Size {
+        const WINDOW_PIXEL_SIZE: Size = Size {
             width: 640,
             height: 480,
         };
