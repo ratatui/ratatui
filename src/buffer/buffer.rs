@@ -999,7 +999,7 @@ mod tests {
         let mut buffer = Buffer::filled(Rect::new(0, 0, 7, 1), Cell::new("x"));
         buffer.set_string(0, 0, input, Style::new());
 
-        let expected = Buffer::with_lines([expected]); // Emoji followed by 2 spaces
+        let expected = Buffer::with_lines([expected]);
         assert_eq!(buffer, expected);
     }
 }
