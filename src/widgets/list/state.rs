@@ -231,14 +231,8 @@ impl ListState {
     /// state.scroll_down_by(4);
     /// ```
     pub fn scroll_down_by(&mut self, amount: u16) {
-        match self.selected {
-            Some(index) => {
-                self.select(Some(index.saturating_add(amount as usize)));
-            }
-            None => {
-                self.select(Some(amount as usize));
-            }
-        }
+        let selected = self.selected.unwrap_or_default();
+        self.select(Some(selected.saturating_add(amount as usize)));
     }
 
     /// Scrolls up by a specified `amount` in the list.
@@ -255,14 +249,8 @@ impl ListState {
     /// state.scroll_up_by(4);
     /// ```
     pub fn scroll_up_by(&mut self, amount: u16) {
-        match self.selected {
-            Some(index) => {
-                self.select(Some(index.saturating_sub(amount as usize)));
-            }
-            None => {
-                self.select(Some(0));
-            }
-        }
+        let selected = self.selected.unwrap_or_default();
+        self.select(Some(selected.saturating_sub(amount as usize)));
     }
 }
 
