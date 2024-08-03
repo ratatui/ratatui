@@ -1,7 +1,6 @@
 use std::cmp::max;
 
 use strum::{Display, EnumString};
-use unicode_width::UnicodeWidthStr;
 
 use crate::{
     layout::Flex,
@@ -817,7 +816,7 @@ impl<'a> Chart<'a> {
             .as_ref()
             .and_then(|labels| labels.first())
         {
-            let first_label_width = first_x_label.content.width() as u16;
+            let first_label_width = first_x_label.width() as u16;
             let width_left_of_y_axis = match self.x_axis.labels_alignment {
                 Alignment::Left => {
                     // The last character of the label should be below the Y-Axis when it exists,
