@@ -203,7 +203,7 @@ fn widgets_chart_handles_long_labels<'line, Lines>(
         "          ",
         "          ",
         "──────────",
-        "AAA  B   C",
+        "AAA B    C",
     ],
 )]
 fn widgets_chart_handles_x_axis_labels_alignments<'line, Lines>(
@@ -229,9 +229,9 @@ fn widgets_chart_handles_x_axis_labels_alignments<'line, Lines>(
     "AAAAA              B",
 ])]
 #[case::center(Alignment::Center, [
-    "  D │               ",
+    " D  │               ",
     "    │               ",
-    "  C │               ",
+    " C  │               ",
     "    └───────────────",
     "AAAAA              B",
 ])]
