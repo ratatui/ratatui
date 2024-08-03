@@ -565,6 +565,8 @@ mod tests {
         assert_eq!(Span::raw("").width(), 0);
         assert_eq!(Span::raw("test").width(), 4);
         assert_eq!(Span::raw("test content").width(), 12);
+        // Needs reconsideration: https://github.com/ratatui-org/ratatui/issues/1271
+        assert_eq!(Span::raw("test\ncontent").width(), 12);
     }
 
     #[test]
@@ -766,6 +768,14 @@ mod tests {
                 buf.content(),
                 [Cell::new("a"), Cell::new("b"), Cell::new("c\u{200B}")]
             );
+        }
+
+        #[test]
+        fn render_with_newlines() {
+            let span = Span::raw("a\nb");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 2, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(buf.content(), [Cell::new("a"), Cell::new("b")]);
         }
     }
 
