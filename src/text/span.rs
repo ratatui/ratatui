@@ -439,7 +439,10 @@ impl<T: fmt::Display> ToSpan for T {
 
 impl fmt::Display for Span<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.content, f)
+        for line in self.content.lines() {
+            fmt::Display::fmt(line, f)?;
+        }
+        Ok(())
     }
 }
 
@@ -575,11 +578,18 @@ mod tests {
         assert_eq!(stylized.content, Cow::Borrowed("test content"));
         assert_eq!(stylized.style, Style::new().green().on_yellow().bold());
     }
+
     #[test]
     fn display_span() {
         let span = Span::raw("test content");
         assert_eq!(format!("{span}"), "test content");
         assert_eq!(format!("{span:.4}"), "test");
+    }
+
+    #[test]
+    fn display_newline_span() {
+        let span = Span::raw("test\ncontent");
+        assert_eq!(format!("{span}"), "testcontent");
     }
 
     #[test]
