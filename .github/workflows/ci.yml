@@ -25,54 +25,56 @@ env:
 # formatting, typos, and missing tests as early as possible. This allows us to fix these and
 # resubmit the PR without having to wait for the comprehensive matrix of tests to complete.
 jobs:
-  lint:
+  rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Install Rust nightly
         uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
-      - name: Cache Cargo dependencies
-        uses: Swatinem/rust-cache@v2
-      - name: Check formatting
-        run: cargo make lint-format
-      - name: Check documentation
-        run: cargo make lint-docs
-      - name: Check typos
-        uses: crate-ci/typos@master
-      - name: Lint dependencies
-        uses: EmbarkStudios/cargo-deny-action@v1
-      - name: Lint markdown
-        uses: DavidAnson/markdownlint-cli2-action@v16
-        with:
-          globs: |
-            '**/*.md'
-            '!target'
+      - run: cargo +nightly fmt --all --check
+
+  typos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crate-ci/typos@master
+
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v1
+
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
       - name: Install cargo-make
         uses: taiki-e/install-action@cargo-make
-      - name: Cache Cargo dependencies
-        uses: Swatinem/rust-cache@v2
-      - name: Run cargo make clippy-all
-        run: cargo make clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo make clippy
+
+  markdownlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint markdown
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            '**/*.md'
+            '!target'
 
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -81,8 +83,7 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov,cargo-make
-      - name: Cache Cargo dependencies
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
       - name: Generate coverage
         run: cargo make coverage
       - name: Upload to codecov.io
@@ -99,20 +100,28 @@ jobs:
         toolchain: ["1.74.0", "stable"]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Install Rust {{ matrix.toolchain }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
       - name: Install cargo-make
         uses: taiki-e/install-action@cargo-make
-      - name: Cache Cargo dependencies
-        uses: Swatinem/rust-cache@v2
-      - name: Run cargo make check
-        run: cargo make check
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo make check
         env:
           RUST_BACKTRACE: full
+
+  lint-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo make lint-docs
 
   test-doc:
     strategy:
@@ -121,14 +130,12 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-make
         uses: taiki-e/install-action@cargo-make
-      - name: Cache Cargo dependencies
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
       - name: Test docs
         run: cargo make test-doc
         env:
@@ -147,8 +154,7 @@ jobs:
             backend: termion
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Install Rust ${{ matrix.toolchain }}}
         uses: dtolnay/rust-toolchain@master
         with:
@@ -157,9 +163,7 @@ jobs:
         uses: taiki-e/install-action@cargo-make
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
-      - name: Cache Cargo dependencies
-        uses: Swatinem/rust-cache@v2
-      - name: Test ${{ matrix.backend }}
-        run: cargo make test-backend ${{ matrix.backend }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo make test-backend ${{ matrix.backend }}
         env:
           RUST_BACKTRACE: full

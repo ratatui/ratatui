@@ -141,6 +141,30 @@ of the VHS tape.
 
 <https://github.com/ratatui-org/ratatui/assets/381361/485e775a-e0b5-4133-899b-1e8aeb56e774>
 
+## Constraint Explorer
+
+Demonstrates the behaviour of each
+[`Constraint`](https://docs.rs/ratatui/latest/ratatui/layout/enum.Constraint.html) option with
+respect to each other across different `Flex` modes.
+
+```shell
+cargo run --example=constraint-explorer --features=crossterm
+```
+
+![Constraint Explorer][constraint-explorer.gif]
+
+## Constraints
+
+Demonstrates how to use
+[`Constraint`](https://docs.rs/ratatui/latest/ratatui/layout/enum.Constraint.html) options for
+defining layout element sizes.
+
+![Constraints][constraints.gif]
+
+```shell
+cargo run --example=constraints --features=crossterm
+```
+
 ## Custom Widget
 
 Demonstrates how to implement the
@@ -163,6 +187,39 @@ cargo run --example=gauge --features=crossterm
 ```
 
 ![Gauge][gauge.gif]
+
+## Flex
+
+Demonstrates the different [`Flex`](https://docs.rs/ratatui/latest/ratatui/layout/enum.Flex.html)
+modes for controlling layout space distribution.
+
+```shell
+cargo run --example=flex --features=crossterm
+```
+
+![Flex][flex.gif]
+
+## Line Gauge
+
+Demonstrates the [`Line
+Gauge`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.LineGauge.html) widget. Source:
+[line_gauge.rs](./line_gauge.rs).
+
+```shell
+cargo run --example=line_gauge --features=crossterm
+```
+
+![LineGauge][line_gauge.gif]
+
+## Hyperlink
+
+Demonstrates how to use OSC 8 to create hyperlinks in the terminal.
+
+```shell
+cargo run --example=hyperlink --features="crossterm unstable-widget-ref"
+```
+
+![Hyperlink][hyperlink.gif]
 
 ## Inline
 
@@ -209,6 +266,16 @@ cargo run --example=modifiers --features=crossterm
 ```
 
 ![Modifiers][modifiers.gif]
+
+## Minimal
+
+Demonstrates how to create a minimal `Hello World!` program.
+
+```shell
+cargo run --example=minimal --features=crossterm
+```
+
+![Minimal][minimal.gif]
 
 ## Panic
 
@@ -301,6 +368,17 @@ cargo run --example=tabs --features=crossterm
 
 ![Tabs][tabs.gif]
 
+## Tracing
+
+Demonstrates how to use the [tracing crate](https://crates.io/crates/tracing) for logging. Creates
+a file named `tracing.log` in the current directory.
+
+```shell
+cargo run --example=tracing --features=crossterm
+```
+
+![Tracing][tracing.gif]
+
 ## User Input
 
 Demonstrates one approach to accepting user input. Source [user_input.rs](./user_input.rs).
@@ -338,14 +416,20 @@ examples/vhs/generate.bash
 [canvas.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/canvas.gif?raw=true
 [chart.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/chart.gif?raw=true
 [colors.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/colors.gif?raw=true
+[constraint-explorer.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/constraint-explorer.gif?raw=true
+[constraints.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/constraints.gif?raw=true
 [custom_widget.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/custom_widget.gif?raw=true
 [demo.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/demo.gif?raw=true
 [demo2.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/demo2.gif?raw=true
+[flex.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/flex.gif?raw=true
 [gauge.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/gauge.gif?raw=true
 [hello_world.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/hello_world.gif?raw=true
+[hyperlink.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/hyperlink.gif?raw=true
 [inline.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/inline.gif?raw=true
 [layout.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/layout.gif?raw=true
 [list.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/list.gif?raw=true
+[line_gauge.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/line_gauge.gif?raw=true
+[minimal.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/minimal.gif?raw=true
 [modifiers.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/modifiers.gif?raw=true
 [panic.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/panic.gif?raw=true
 [paragraph.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/paragraph.gif?raw=true
@@ -355,6 +439,7 @@ examples/vhs/generate.bash
 [sparkline.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/sparkline.gif?raw=true
 [table.gif]:  https://vhs.charm.sh/vhs-6njXBytDf0rwPufUtmSSpI.gif
 [tabs.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/tabs.gif?raw=true
+[tracing.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/tracing.gif?raw=true
 [user_input.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/user_input.gif?raw=true
 
 [alpha version of Ratatui]: https://crates.io/crates/ratatui/versions

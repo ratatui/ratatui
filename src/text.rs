@@ -5,7 +5,7 @@
 //! - A single line string where all graphemes have the same style is represented by a [`Span`].
 //! - A single line string where each grapheme may have its own style is represented by [`Line`].
 //! - A multiple line string where each grapheme may have its own style is represented by a
-//! [`Text`].
+//!   [`Text`].
 //!
 //! These types form a hierarchy: [`Line`] is a collection of [`Span`] and each line of [`Text`]
 //! is a [`Line`].
@@ -48,14 +48,13 @@ mod grapheme;
 pub use grapheme::StyledGrapheme;
 
 mod line;
-pub use line::Line;
+pub use line::{Line, ToLine};
 
 mod masked;
 pub use masked::Masked;
 
 mod span;
-pub use span::Span;
+pub use span::{Span, ToSpan};
 
-#[allow(clippy::module_inception)]
 mod text;
-pub use text::Text;
+pub use text::{Text, ToText};

@@ -16,7 +16,7 @@ pub struct Frame<'a> {
     ///
     /// If `None`, the cursor is hidden and its position is controlled by the backend. If `Some((x,
     /// y))`, the cursor is shown and placed at `(x, y)` after the call to `Terminal::draw()`.
-    pub(crate) cursor_position: Option<(u16, u16)>,
+    pub(crate) cursor_position: Option<Position>,
 
     /// The area of the viewport
     pub(crate) viewport_area: Rect,
@@ -94,7 +94,7 @@ impl Frame<'_> {
     /// # }
     /// ```
     #[allow(clippy::needless_pass_by_value)]
-    #[stability::unstable(feature = "widget-ref")]
+    #[instability::unstable(feature = "widget-ref")]
     pub fn render_widget_ref<W: WidgetRef>(&mut self, widget: W, area: Rect) {
         widget.render_ref(area, self.buffer);
     }
@@ -152,7 +152,7 @@ impl Frame<'_> {
     /// # }
     /// ```
     #[allow(clippy::needless_pass_by_value)]
-    #[stability::unstable(feature = "widget-ref")]
+    #[instability::unstable(feature = "widget-ref")]
     pub fn render_stateful_widget_ref<W>(&mut self, widget: W, area: Rect, state: &mut W::State)
     where
         W: StatefulWidgetRef,
@@ -167,7 +167,7 @@ impl Frame<'_> {
     /// `Terminal::show_cursor()`, and `Terminal::set_cursor()`. Pick one of the APIs and stick
     /// with it.
     pub fn set_cursor(&mut self, x: u16, y: u16) {
-        self.cursor_position = Some((x, y));
+        self.cursor_position = Some(Position { x, y });
     }
 
     /// Gets the buffer that this `Frame` draws into as a mutable reference.

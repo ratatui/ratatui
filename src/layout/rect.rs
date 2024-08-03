@@ -32,7 +32,8 @@ pub struct Rect {
 /// Positive numbers move to the right/bottom and negative to the left/top.
 ///
 /// See [`Rect::offset`]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Offset {
     /// How much to move on the X axis
     pub x: i32,
@@ -58,7 +59,7 @@ impl Rect {
     /// Creates a new `Rect`, with width and height limited to keep the area under max `u16`. If
     /// clipped, aspect ratio will be preserved.
     pub fn new(x: u16, y: u16, width: u16, height: u16) -> Self {
-        let max_area = u16::max_value();
+        let max_area = u16::MAX;
         let (clipped_width, clipped_height) =
             if u32::from(width) * u32::from(height) > u32::from(max_area) {
                 let aspect_ratio = f64::from(width) / f64::from(height);
@@ -119,9 +120,8 @@ impl Rect {
     /// Returns a new `Rect` inside the current one, with the given margin on each side.
     ///
     /// If the margin is larger than the `Rect`, the returned `Rect` will have no area.
-    #[allow(clippy::trivially_copy_pass_by_ref)] // See PR #1008
     #[must_use = "method returns the modified value"]
-    pub const fn inner(self, margin: &Margin) -> Self {
+    pub const fn inner(self, margin: Margin) -> Self {
         let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
         let doubled_margin_vertical = margin.vertical.saturating_mul(2);
 
@@ -406,7 +406,7 @@ mod tests {
     #[test]
     fn inner() {
         assert_eq!(
-            Rect::new(1, 2, 3, 4).inner(&Margin::new(1, 2)),
+            Rect::new(1, 2, 3, 4).inner(Margin::new(1, 2)),
             Rect::new(2, 4, 1, 0)
         );
     }

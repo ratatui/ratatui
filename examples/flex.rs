@@ -13,22 +13,33 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::enum_glob_use, clippy::wildcard_imports)]
-
-use std::io::{self, stdout};
+use std::{
+    io::{self, stdout},
+    num::NonZeroUsize,
+};
 
 use color_eyre::{config::HookBuilder, Result};
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use ratatui::{
-    layout::{Constraint::*, Flex},
-    prelude::*,
-    style::palette::tailwind,
-    symbols::line,
-    widgets::{block::Title, *},
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    crossterm::{
+        event::{self, Event, KeyCode, KeyEventKind},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
+    layout::{
+        Alignment,
+        Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio},
+        Flex, Layout, Rect,
+    },
+    style::{palette::tailwind, Color, Modifier, Style, Stylize},
+    symbols::{self, line},
+    text::{Line, Text},
+    widgets::{
+        block::Title, Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        StatefulWidget, Tabs, Widget,
+    },
+    Terminal,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
@@ -148,7 +159,9 @@ enum SelectedTab {
 
 fn main() -> Result<()> {
     // assuming the user changes spacing about a 100 times or so
-    Layout::init_cache(EXAMPLE_DATA.len() * SelectedTab::iter().len() * 100);
+    Layout::init_cache(
+        NonZeroUsize::new(EXAMPLE_DATA.len() * SelectedTab::iter().len() * 100).unwrap(),
+    );
     init_error_hooks()?;
     let terminal = init_terminal()?;
     App::default().run(terminal)?;
@@ -177,18 +190,17 @@ impl App {
     }
 
     fn handle_events(&mut self) -> Result<()> {
-        use KeyCode::*;
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
-                Char('q') | Esc => self.quit(),
-                Char('l') | Right => self.next(),
-                Char('h') | Left => self.previous(),
-                Char('j') | Down => self.down(),
-                Char('k') | Up => self.up(),
-                Char('g') | Home => self.top(),
-                Char('G') | End => self.bottom(),
-                Char('+') => self.increment_spacing(),
-                Char('-') => self.decrement_spacing(),
+                KeyCode::Char('q') | KeyCode::Esc => self.quit(),
+                KeyCode::Char('l') | KeyCode::Right => self.next(),
+                KeyCode::Char('h') | KeyCode::Left => self.previous(),
+                KeyCode::Char('j') | KeyCode::Down => self.down(),
+                KeyCode::Char('k') | KeyCode::Up => self.up(),
+                KeyCode::Char('g') | KeyCode::Home => self.top(),
+                KeyCode::Char('G') | KeyCode::End => self.bottom(),
+                KeyCode::Char('+') => self.increment_spacing(),
+                KeyCode::Char('-') => self.decrement_spacing(),
                 _ => (),
             },
             _ => {}
@@ -364,7 +376,7 @@ impl SelectedTab {
 
     /// Convert a `SelectedTab` into a `Line` to display it by the `Tabs` widget.
     fn to_tab_title(value: Self) -> Line<'static> {
-        use tailwind::*;
+        use tailwind::{INDIGO, ORANGE, SKY};
         let text = value.to_string();
         let color = match value {
             Self::Legacy => ORANGE.c400,
@@ -509,7 +521,7 @@ impl Example {
 }
 
 const fn color_for_constraint(constraint: Constraint) -> Color {
-    use tailwind::*;
+    use tailwind::{BLUE, SLATE};
     match constraint {
         Constraint::Min(_) => BLUE.c900,
         Constraint::Max(_) => BLUE.c800,

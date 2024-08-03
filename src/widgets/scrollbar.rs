@@ -3,8 +3,7 @@
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
-    clippy::module_name_repetitions,
-    clippy::wildcard_imports
+    clippy::module_name_repetitions
 )]
 
 use std::iter;
@@ -12,7 +11,10 @@ use std::iter;
 use strum::{Display, EnumString};
 use unicode_width::UnicodeWidthStr;
 
-use crate::{prelude::*, symbols::scrollbar::*};
+use crate::{
+    prelude::*,
+    symbols::scrollbar::{Set, DOUBLE_HORIZONTAL, DOUBLE_VERTICAL},
+};
 
 /// A widget to display a scrollbar
 ///
@@ -63,7 +65,7 @@ use crate::{prelude::*, symbols::scrollbar::*};
 /// // and the scrollbar, those are separate widgets
 /// frame.render_stateful_widget(
 ///     scrollbar,
-///     area.inner(&Margin {
+///     area.inner(Margin {
 ///         // using an inner vertical margin of 1 unit makes the scrollbar inside the block
 ///         vertical: 1,
 ///         horizontal: 0,
@@ -132,7 +134,7 @@ pub enum ScrollbarOrientation {
 ///
 /// If you don't have multi-line content, you can leave the `viewport_content_length` set to the
 /// default and it'll use the track size as a `viewport_content_length`.
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ScrollbarState {
     /// The total length of the scrollable content.
@@ -388,12 +390,6 @@ impl<'a> Scrollbar<'a> {
         self.begin_style = style;
         self.end_style = style;
         self
-    }
-}
-
-impl Default for ScrollbarState {
-    fn default() -> Self {
-        Self::new(0)
     }
 }
 

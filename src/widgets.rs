@@ -52,7 +52,7 @@ pub use self::{
     table::{Cell, HighlightSpacing, Row, Table, TableState},
     tabs::Tabs,
 };
-use crate::{buffer::Buffer, layout::Rect};
+use crate::{buffer::Buffer, layout::Rect, style::Style};
 
 /// A `Widget` is a type that can be drawn on a [`Buffer`] in a given [`Rect`].
 ///
@@ -297,7 +297,7 @@ pub trait StatefulWidget {
 /// # }
 /// # }
 /// ```
-#[stability::unstable(feature = "widget-ref")]
+#[instability::unstable(feature = "widget-ref")]
 pub trait WidgetRef {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.
@@ -398,7 +398,7 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 /// }
 /// # }
 /// ```
-#[stability::unstable(feature = "widget-ref")]
+#[instability::unstable(feature = "widget-ref")]
 pub trait StatefulWidgetRef {
     /// State associated with the stateful widget.
     ///
@@ -444,7 +444,7 @@ impl Widget for &str {
 /// [`Rect`].
 impl WidgetRef for &str {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_string(area.x, area.y, self, crate::style::Style::default());
+        buf.set_stringn(area.x, area.y, self, area.width as usize, Style::new());
     }
 }
 
@@ -465,7 +465,7 @@ impl Widget for String {
 /// without the need to give up ownership of the underlying text.
 impl WidgetRef for String {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_string(area.x, area.y, self, crate::style::Style::default());
+        buf.set_stringn(area.x, area.y, self, area.width as usize, Style::new());
     }
 }
 
@@ -474,7 +474,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::prelude::*;
+    use crate::text::Line;
 
     #[fixture]
     fn buf() -> Buffer {
@@ -651,6 +651,13 @@ mod tests {
         }
 
         #[rstest]
+        fn render_area(mut buf: Buffer) {
+            let area = Rect::new(buf.area.x, buf.area.y, 11, buf.area.height);
+            "hello world, just hello".render(area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+        }
+
+        #[rstest]
         fn render_ref(mut buf: Buffer) {
             "hello world".render_ref(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines(["hello world         "]));
@@ -674,6 +681,13 @@ mod tests {
         #[rstest]
         fn render(mut buf: Buffer) {
             String::from("hello world").render(buf.area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+        }
+
+        #[rstest]
+        fn render_area(mut buf: Buffer) {
+            let area = Rect::new(buf.area.x, buf.area.y, 11, buf.area.height);
+            String::from("hello world, just hello").render(area, &mut buf);
             assert_eq!(buf, Buffer::with_lines(["hello world         "]));
         }
 

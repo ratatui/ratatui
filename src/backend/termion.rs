@@ -9,13 +9,12 @@ use std::{
     io::{self, Write},
 };
 
-use termion::{color as tcolor, style as tstyle};
-
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
-    prelude::Rect,
+    layout::{Position, Rect},
     style::{Color, Modifier, Style},
+    termion::{self, color as tcolor, color::Color as _, style as tstyle},
 };
 
 /// A [`Backend`] implementation that uses [Termion] to render to the terminal.
@@ -40,8 +39,10 @@ use crate::{
 /// ```rust,no_run
 /// use std::io::{stderr, stdout};
 ///
-/// use ratatui::prelude::*;
-/// use termion::{raw::IntoRawMode, screen::IntoAlternateScreen};
+/// use ratatui::{
+///     prelude::*,
+///     termion::{raw::IntoRawMode, screen::IntoAlternateScreen},
+/// };
 ///
 /// let writer = stdout().into_raw_mode()?.into_alternate_screen()?;
 /// let mut backend = TermionBackend::new(writer);
@@ -87,7 +88,7 @@ where
     }
 
     /// Gets the writer.
-    #[stability::unstable(
+    #[instability::unstable(
         feature = "backend-writer",
         issue = "https://github.com/ratatui-org/ratatui/pull/991"
     )]
@@ -98,7 +99,7 @@ where
     /// Gets the writer as a mutable reference.
     /// Note: writing to the writer may cause incorrect output after the write. This is due to the
     /// way that the Terminal implements diffing Buffers.
-    #[stability::unstable(
+    #[instability::unstable(
         feature = "backend-writer",
         issue = "https://github.com/ratatui-org/ratatui/pull/991"
     )]
@@ -175,13 +176,13 @@ where
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
         let mut modifier = Modifier::empty();
-        let mut last_pos: Option<(u16, u16)> = None;
+        let mut last_pos: Option<Position> = None;
         for (x, y, cell) in content {
             // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.0 + 1 && y == p.1) {
+            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
                 write!(string, "{}", termion::cursor::Goto(x + 1, y + 1)).unwrap();
             }
-            last_pos = Some((x, y));
+            last_pos = Some(Position { x, y });
             if cell.modifier != modifier {
                 write!(
                     string,
@@ -243,7 +244,6 @@ struct ModifierDiff {
 
 impl fmt::Display for Fg {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use termion::color::Color as TermionColor;
         match self.0 {
             Color::Reset => termion::color::Reset.write_fg(f),
             Color::Black => termion::color::Black.write_fg(f),
@@ -269,7 +269,6 @@ impl fmt::Display for Fg {
 }
 impl fmt::Display for Bg {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use termion::color::Color as TermionColor;
         match self.0 {
             Color::Reset => termion::color::Reset.write_bg(f),
             Color::Black => termion::color::Black.write_bg(f),
@@ -295,7 +294,7 @@ impl fmt::Display for Bg {
 }
 
 macro_rules! from_termion_for_color {
-    ($termion_color:ident, $color: ident) => {
+    ($termion_color:ident, $color:ident) => {
         impl From<tcolor::$termion_color> for Color {
             fn from(_: tcolor::$termion_color) -> Self {
                 Color::$color
@@ -436,7 +435,7 @@ impl fmt::Display for ModifierDiff {
 }
 
 macro_rules! from_termion_for_modifier {
-    ($termion_modifier:ident, $modifier: ident) => {
+    ($termion_modifier:ident, $modifier:ident) => {
         impl From<tstyle::$termion_modifier> for Modifier {
             fn from(_: tstyle::$termion_modifier) -> Self {
                 Modifier::$modifier

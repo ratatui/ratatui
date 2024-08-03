@@ -25,10 +25,10 @@
 
 <div align="center">
 
-[![Crate Badge]][Crate] [![Docs Badge]][API Docs] [![CI Badge]][CI Workflow] [![License
-Badge]](./LICENSE) [![Sponsors Badge]][GitHub Sponsors]<br>
-[![Codecov Badge]][Codecov] [![Deps.rs Badge]][Deps.rs] [![Discord Badge]][Discord Server]
-[![Matrix Badge]][Matrix]<br>
+[![Crate Badge]][Crate] [![Docs Badge]][API Docs] [![CI Badge]][CI Workflow] [![Deps.rs
+Badge]][Deps.rs]<br> [![Codecov Badge]][Codecov] [![License Badge]](./LICENSE) [![Sponsors
+Badge]][GitHub Sponsors]<br> [![Discord Badge]][Discord Server] [![Matrix Badge]][Matrix]
+[![Forum Badge]][Forum]<br>
 
 [Ratatui Website] · [API Docs] · [Examples] · [Changelog] · [Breaking Changes]<br>
 [Contributing] · [Report a bug] · [Request a Feature] · [Create a Pull Request]
@@ -43,10 +43,10 @@ Ratatui was forked from the [tui-rs] crate in 2023 in order to continue its deve
 
 ## Installation
 
-Add `ratatui` and `crossterm` as dependencies to your cargo.toml:
+Add `ratatui` as a dependency to your cargo.toml:
 
 ```shell
-cargo add ratatui crossterm
+cargo add ratatui
 ```
 
 Ratatui uses [Crossterm] by default as it works on most platforms. See the [Installation]
@@ -67,6 +67,7 @@ terminal user interfaces and showcases the features of Ratatui, along with a hel
 ## Other documentation
 
 - [Ratatui Website] - explains the library's concepts and provides step-by-step tutorials
+- [Ratatui Forum][Forum] - a place to ask questions and discuss the library
 - [API Docs] - the full API documentation for the library on docs.rs.
 - [Examples] - a collection of examples that demonstrate how to use the library.
 - [Contributing] - Please read this if you are interested in contributing to the project.
@@ -110,7 +111,8 @@ module] and the [Backends] section of the [Ratatui Website] for more info.
 
 The drawing logic is delegated to a closure that takes a [`Frame`] instance as argument. The
 [`Frame`] provides the size of the area to draw to and allows the app to render any [`Widget`]
-using the provided [`render_widget`] method. See the [Widgets] section of the [Ratatui Website]
+using the provided [`render_widget`] method. After this closure returns, a diff is performed and
+only the changes are drawn to the terminal. See the [Widgets] section of the [Ratatui Website]
 for more info.
 
 ### Handling events
@@ -125,12 +127,17 @@ Website] for more info. For example, if you are using [Crossterm], you can use t
 ```rust
 use std::io::{self, stdout};
 
-use crossterm::{
-    event::{self, Event, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
+use ratatui::{
+    crossterm::{
+        event::{self, Event, KeyCode},
+        terminal::{
+            disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+        },
+        ExecutableCommand,
+    },
+    prelude::*,
+    widgets::*,
 };
-use ratatui::{prelude::*, widgets::*};
 
 fn main() -> io::Result<()> {
     enable_raw_mode()?;
@@ -161,8 +168,7 @@ fn handle_events() -> io::Result<bool> {
 
 fn ui(frame: &mut Frame) {
     frame.render_widget(
-        Paragraph::new("Hello World!")
-            .block(Block::bordered().title("Greeting")),
+        Paragraph::new("Hello World!").block(Block::bordered().title("Greeting")),
         frame.size(),
     );
 }
@@ -206,14 +212,8 @@ fn ui(frame: &mut Frame) {
         [Constraint::Percentage(50), Constraint::Percentage(50)],
     )
     .split(main_layout[1]);
-    frame.render_widget(
-        Block::bordered().title("Left"),
-        inner_layout[0],
-    );
-    frame.render_widget(
-        Block::bordered().title("Right"),
-        inner_layout[1],
-    );
+    frame.render_widget(Block::bordered().title("Left"), inner_layout[0]);
+    frame.render_widget(Block::bordered().title("Right"), inner_layout[1]);
 }
 ```
 
@@ -331,18 +331,17 @@ Running this example produces the following output:
 [License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square&color=1370D3
 [CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github
 [CI Workflow]: https://github.com/ratatui-org/ratatui/actions/workflows/ci.yml
-[Codecov Badge]:
-    https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST&color=C43AC3&logoColor=C43AC3
+[Codecov Badge]: https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST&color=C43AC3&logoColor=C43AC3
 [Codecov]: https://app.codecov.io/gh/ratatui-org/ratatui
 [Deps.rs Badge]: https://deps.rs/repo/github/ratatui-org/ratatui/status.svg?style=flat-square
 [Deps.rs]: https://deps.rs/repo/github/ratatui-org/ratatui
-[Discord Badge]:
-    https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square&color=1370D3&logoColor=1370D3
+[Discord Badge]: https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square&color=1370D3&logoColor=1370D3
 [Discord Server]: https://discord.gg/pMCEU9hNEj
 [Docs Badge]: https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square&logoColor=E05D44
-[Matrix Badge]:
-    https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix&color=C43AC3
+[Matrix Badge]: https://img.shields.io/matrix/ratatui-general%3Amatrix.org?style=flat-square&logo=matrix&label=Matrix&color=C43AC3
 [Matrix]: https://matrix.to/#/#ratatui:matrix.org
+[Forum Badge]: https://img.shields.io/discourse/likes?server=https%3A%2F%2Fforum.ratatui.rs&style=flat-square&logo=discourse&label=forum&color=C43AC3
+[Forum]: https://forum.ratatui.rs
 [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui-org?logo=github&style=flat-square&color=1370D3
 
 <!-- cargo-rdme end -->
@@ -358,9 +357,10 @@ In order to organize ourselves, we currently use a [Discord server](https://disc
 feel free to join and come chat! There is also a [Matrix](https://matrix.org/) bridge available at
 [#ratatui:matrix.org](https://matrix.to/#/#ratatui:matrix.org).
 
-While we do utilize Discord for coordinating, it's not essential for contributing.
-Our primary open-source workflow is centered around GitHub.
-For significant discussions, we rely on GitHub — please open an issue, a discussion or a PR.
+While we do utilize Discord for coordinating, it's not essential for contributing. We have recently
+launched the [Ratatui Forum][Forum], and our primary open-source workflow is centered around GitHub.
+For bugs and features, we rely on GitHub. Please [Report a bug], [Request a Feature] or [Create a
+Pull Request].
 
 Please make sure you read the updated [contributing](./CONTRIBUTING.md) guidelines, especially if
 you are interested in working on a PR or issue opened in the previous repository.
