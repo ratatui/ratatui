@@ -443,7 +443,10 @@ impl<T: fmt::Display> ToSpan for T {
 
 impl fmt::Display for Span<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.content, f)
+        for line in self.content.lines() {
+            fmt::Display::fmt(line, f)?;
+        }
+        Ok(())
     }
 }
 
@@ -566,6 +569,8 @@ mod tests {
         assert_eq!(Span::raw("").width(), 0);
         assert_eq!(Span::raw("test").width(), 4);
         assert_eq!(Span::raw("test content").width(), 12);
+        // Needs reconsideration: https://github.com/ratatui-org/ratatui/issues/1271
+        assert_eq!(Span::raw("test\ncontent").width(), 12);
     }
 
     #[test]
@@ -579,11 +584,18 @@ mod tests {
         assert_eq!(stylized.content, Cow::Borrowed("test content"));
         assert_eq!(stylized.style, Style::new().green().on_yellow().bold());
     }
+
     #[test]
     fn display_span() {
         let span = Span::raw("test content");
         assert_eq!(format!("{span}"), "test content");
         assert_eq!(format!("{span:.4}"), "test");
+    }
+
+    #[test]
+    fn display_newline_span() {
+        let span = Span::raw("test\ncontent");
+        assert_eq!(format!("{span}"), "testcontent");
     }
 
     #[test]
@@ -763,6 +775,14 @@ mod tests {
                 buf.content(),
                 [Cell::new("a"), Cell::new("b"), Cell::new("c\u{200B}")]
             );
+        }
+
+        #[test]
+        fn render_with_newlines() {
+            let span = Span::raw("a\nb");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 2, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(buf.content(), [Cell::new("a"), Cell::new("b")]);
         }
     }
 
