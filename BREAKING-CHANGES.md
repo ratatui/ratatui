@@ -13,7 +13,7 @@ This is a quick summary of the sections below:
 - [v0.28.0](#v0280) (unreleased)
   - `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize`
   - `ratatui::terminal` module is now private
-  - `Axis::labels` now accepts `Vec<T: Into<Line>>`
+  - `Axis::labels` now accepts `IntoIterator<Into<Line>>`
 - [v0.27.0](#v0270)
   - List no clamps the selected index to list
   - Prelude items added / removed
@@ -62,10 +62,10 @@ This is a quick summary of the sections below:
 
 ## v0.28.0 (unreleased)
 
-### `Axis::labels()` now accepts `IntoIterator<Into<Line>>` ([#1273] and [#todo])
+### `Axis::labels()` now accepts `IntoIterator<Into<Line>>` ([#1273] and [#1283])
 
 [#1273]: https://github.com/ratatui-org/ratatui/pull/1173
-[#todo]: https://github.com/ratatui-org/ratatui/pulls
+[#1283]: https://github.com/ratatui-org/ratatui/pull/1283
 
 Previously Axis::labels accepted `Vec<Span>`. Any code that uses conversion methods that infer the
 type will need to be rewritten as the compiler cannot infer the correct type.
