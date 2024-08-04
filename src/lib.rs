@@ -1,4 +1,4 @@
-//! ![Demo](https://github.com/ratatui-org/ratatui/blob/1d39444e3dea6f309cf9035be2417ac711c1abc9/examples/demo2-destroy.gif?raw=true)
+//! ![Demo](https://github.com/ratatui-org/ratatui/blob/87ae72dbc756067c97f6400d3e2a58eeb383776e/examples/demo2-destroy.gif?raw=true)
 //!
 //! <div align="center">
 //!
@@ -348,6 +348,6 @@ pub mod layout;
 pub mod prelude;
 pub mod style;
 pub mod symbols;
-pub mod terminal;
+mod terminal;
 pub mod text;
 pub mod widgets;

@@ -38,9 +38,9 @@ use ratatui::{
     },
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style, Stylize},
-    terminal::{Frame, Terminal},
     text::{Line, Span, Text},
     widgets::{Block, List, ListItem, Paragraph},
+    Frame, Terminal,
 };
 
 enum InputMode {

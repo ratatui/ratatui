@@ -26,8 +26,8 @@ use ratatui::{
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    terminal::{Frame, Terminal},
     widgets::Paragraph,
+    Frame, Terminal,
 };
 
 /// This is a bare minimum example. There are many approaches to running an application loop, so

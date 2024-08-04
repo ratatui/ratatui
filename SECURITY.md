@@ -6,4 +6,4 @@ We only support the latest version of this crate.
 
 ## Reporting a Vulnerability
 
-To report secuirity vulnerability, please use the form at https://github.com/ratatui-org/ratatui/security/advisories/new
+To report secuirity vulnerability, please use the form at <https://github.com/ratatui-org/ratatui/security/advisories/new>

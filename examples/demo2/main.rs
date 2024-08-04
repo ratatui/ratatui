@@ -20,7 +20,6 @@
 )]
 
 mod app;
-mod big_text;
 mod colors;
 mod destroy;
 mod errors;

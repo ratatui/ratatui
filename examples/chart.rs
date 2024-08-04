@@ -29,9 +29,9 @@ use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     symbols::{self, Marker},
-    terminal::{Frame, Terminal},
     text::Span,
     widgets::{block::Title, Axis, Block, Chart, Dataset, GraphType, LegendPosition},
+    Frame, Terminal,
 };
 
 #[derive(Clone)]
@@ -325,14 +325,14 @@ fn render_scatter(f: &mut Frame, area: Rect) {
                 .title("Year")
                 .bounds([1960., 2020.])
                 .style(Style::default().fg(Color::Gray))
-                .labels(vec!["1960".into(), "1990".into(), "2020".into()]),
+                .labels(vec!["1960", "1990", "2020"]),
         )
         .y_axis(
             Axis::default()
                 .title("Cost")
                 .bounds([0., 75000.])
                 .style(Style::default().fg(Color::Gray))
-                .labels(vec!["0".into(), "37 500".into(), "75 000".into()]),
+                .labels(vec!["0", "37 500", "75 000"]),
         )
         .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)));
 

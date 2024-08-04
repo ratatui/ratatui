@@ -34,12 +34,12 @@ use ratatui::{
     },
     style::{palette::tailwind, Color, Modifier, Style, Stylize},
     symbols::{self, line},
-    terminal::Terminal,
     text::{Line, Text},
     widgets::{
         block::Title, Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
         StatefulWidget, Tabs, Widget,
     },
+    Terminal,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 

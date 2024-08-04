@@ -32,8 +32,8 @@ use ratatui::{
     },
     layout::{Constraint, Layout},
     style::{Color, Style},
-    terminal::{Frame, Terminal},
     widgets::{Block, Borders, Sparkline},
+    Frame, Terminal,
 };
 
 #[derive(Clone)]

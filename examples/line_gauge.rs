@@ -26,8 +26,8 @@ use ratatui::{
     },
     layout::{Alignment, Constraint, Layout, Rect},
     style::{palette::tailwind, Color, Style, Stylize},
-    terminal::Terminal,
     widgets::{block::Title, Block, Borders, LineGauge, Padding, Paragraph, Widget},
+    Terminal,
 };
 
 const CUSTOM_LABEL_COLOR: Color = tailwind::SLATE.c200;

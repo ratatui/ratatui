@@ -87,7 +87,7 @@ pub struct Paragraph<'a> {
     /// The text to display
     text: Text<'a>,
     /// Scroll
-    scroll: (u16, u16),
+    scroll: Position,
     /// Alignment of the text
     alignment: Alignment,
 }
@@ -155,7 +155,7 @@ impl<'a> Paragraph<'a> {
             style: Style::default(),
             wrap: None,
             text: text.into(),
-            scroll: (0, 0),
+            scroll: Position::ORIGIN,
             alignment: Alignment::Left,
         }
     }
@@ -223,7 +223,10 @@ impl<'a> Paragraph<'a> {
     /// Scrollable Widgets](https://github.com/ratatui-org/ratatui/issues/174) on GitHub.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn scroll(mut self, offset: (Vertical, Horizontal)) -> Self {
-        self.scroll = offset;
+        self.scroll = Position {
+            x: offset.1,
+            y: offset.0,
+        };
         self
     }
 
@@ -414,7 +417,7 @@ impl Paragraph<'_> {
             self.render_text(line_composer, text_area, buf);
         } else {
             let mut line_composer = LineTruncator::new(styled, text_area.width);
-            line_composer.set_horizontal_offset(self.scroll.1);
+            line_composer.set_horizontal_offset(self.scroll.x);
             self.render_text(line_composer, text_area, buf);
         }
     }
@@ -429,7 +432,7 @@ impl<'a> Paragraph<'a> {
             alignment: current_line_alignment,
         }) = composer.next_line()
         {
-            if y >= self.scroll.0 {
+            if y >= self.scroll.y {
                 let mut x = get_line_offset(current_line_width, area.width, current_line_alignment);
                 for StyledGrapheme { symbol, style } in current_line {
                     let width = symbol.width();
@@ -439,14 +442,14 @@ impl<'a> Paragraph<'a> {
                     // If the symbol is empty, the last char which rendered last time will
                     // leave on the line. It's a quick fix.
                     let symbol = if symbol.is_empty() { " " } else { symbol };
-                    buf.get_mut(area.left() + x, area.top() + y - self.scroll.0)
+                    buf.get_mut(area.left() + x, area.top() + y - self.scroll.y)
                         .set_symbol(symbol)
                         .set_style(*style);
                     x += width as u16;
                 }
             }
             y += 1;
-            if y >= area.height + self.scroll.0 {
+            if y >= area.height + self.scroll.y {
                 break;
             }
         }

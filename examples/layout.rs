@@ -29,9 +29,9 @@ use ratatui::{
         Layout, Rect,
     },
     style::{Color, Style, Stylize},
-    terminal::{Frame, Terminal},
     text::Line,
     widgets::{Block, Paragraph},
+    Frame, Terminal,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {

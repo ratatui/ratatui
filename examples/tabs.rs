@@ -27,9 +27,9 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{palette::tailwind, Color, Stylize},
     symbols,
-    terminal::Terminal,
     text::Line,
     widgets::{Block, Padding, Paragraph, Tabs, Widget},
+    Terminal,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
