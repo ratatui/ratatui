@@ -128,6 +128,7 @@ Website] for more info. For example, if you are using [Crossterm], you can use t
 use std::io::{self, stdout};
 
 use ratatui::{
+    backend::CrosstermBackend,
     crossterm::{
         event::{self, Event, KeyCode},
         terminal::{
@@ -135,8 +136,8 @@ use ratatui::{
         },
         ExecutableCommand,
     },
-    prelude::*,
-    widgets::*,
+    widgets::{Block, Paragraph},
+    Frame, Terminal,
 };
 
 fn main() -> io::Result<()> {
@@ -186,34 +187,27 @@ area. This lets you describe a responsive terminal UI by nesting layouts. See th
 section of the [Ratatui Website] for more info.
 
 ```rust
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    layout::{Constraint, Layout},
+    widgets::Block,
+    Frame,
+};
 
 fn ui(frame: &mut Frame) {
-    let main_layout = Layout::new(
-        Direction::Vertical,
-        [
-            Constraint::Length(1),
-            Constraint::Min(0),
-            Constraint::Length(1),
-        ],
-    )
-    .split(frame.size());
-    frame.render_widget(
-        Block::new().borders(Borders::TOP).title("Title Bar"),
-        main_layout[0],
-    );
-    frame.render_widget(
-        Block::new().borders(Borders::TOP).title("Status Bar"),
-        main_layout[2],
-    );
+    let [title_area, main_area, status_area] = Layout::vertical([
+        Constraint::Length(1),
+        Constraint::Min(0),
+        Constraint::Length(1),
+    ])
+    .areas(frame.size());
+    let [left_area, right_area] =
+        Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .areas(main_area);
 
-    let inner_layout = Layout::new(
-        Direction::Horizontal,
-        [Constraint::Percentage(50), Constraint::Percentage(50)],
-    )
-    .split(main_layout[1]);
-    frame.render_widget(Block::bordered().title("Left"), inner_layout[0]);
-    frame.render_widget(Block::bordered().title("Right"), inner_layout[1]);
+    frame.render_widget(Block::bordered().title("Title Bar"), title_area);
+    frame.render_widget(Block::bordered().title("Status Bar"), status_area);
+    frame.render_widget(Block::bordered().title("Left"), left_area);
+    frame.render_widget(Block::bordered().title("Right"), right_area);
 }
 ```
 
@@ -234,48 +228,41 @@ short-hand syntax to apply a style to widgets and text. See the [Styling Text] s
 [Ratatui Website] for more info.
 
 ```rust
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    layout::{Constraint, Layout},
+    style::{Color, Modifier, Style, Stylize},
+    text::{Line, Span},
+    widgets::{Block, Paragraph},
+    Frame,
+};
 
 fn ui(frame: &mut Frame) {
-    let areas = Layout::new(
-        Direction::Vertical,
-        [
-            Constraint::Length(1),
-            Constraint::Length(1),
-            Constraint::Length(1),
-            Constraint::Length(1),
-            Constraint::Min(0),
-        ],
-    )
-    .split(frame.size());
+    let areas = Layout::vertical([Constraint::Length(1); 4]).split(frame.size());
 
-    let span1 = Span::raw("Hello ");
-    let span2 = Span::styled(
-        "World",
-        Style::new()
-            .fg(Color::Green)
-            .bg(Color::White)
-            .add_modifier(Modifier::BOLD),
-    );
-    let span3 = "!".red().on_light_yellow().italic();
+    let line = Line::from(vec![
+        Span::raw("Hello "),
+        Span::styled(
+            "World",
+            Style::new()
+                .fg(Color::Green)
+                .bg(Color::White)
+                .add_modifier(Modifier::BOLD),
+        ),
+        "!".red().on_light_yellow().italic(),
+    ]);
+    frame.render_widget(line, areas[0]);
 
-    let line = Line::from(vec![span1, span2, span3]);
-    let text: Text = Text::from(vec![line]);
+    // using the short-hand syntax and implicit conversions
+    let paragraph = Paragraph::new("Hello World!".red().on_white().bold());
+    frame.render_widget(paragraph, areas[1]);
 
-    frame.render_widget(Paragraph::new(text), areas[0]);
-    // or using the short-hand syntax and implicit conversions
-    frame.render_widget(
-        Paragraph::new("Hello World!".red().on_white().bold()),
-        areas[1],
-    );
+    // style the whole widget instead of just the text
+    let paragraph = Paragraph::new("Hello World!").style(Style::new().red().on_white());
+    frame.render_widget(paragraph, areas[2]);
 
-    // to style the whole widget instead of just the text
-    frame.render_widget(
-        Paragraph::new("Hello World!").style(Style::new().red().on_white()),
-        areas[2],
-    );
-    // or using the short-hand syntax
-    frame.render_widget(Paragraph::new("Hello World!").blue().on_yellow(), areas[3]);
+    // use the simpler short-hand syntax
+    let paragraph = Paragraph::new("Hello World!").blue().on_yellow();
+    frame.render_widget(paragraph, areas[3]);
 }
 ```
 
