@@ -20,7 +20,7 @@ use ratatui::{
     backend::Backend,
     buffer::Buffer,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Gaps, Layout, Rect},
     style::{
         palette::tailwind::{BLUE, GREEN, SLATE},
         Color, Modifier, Style, Stylize,
@@ -28,8 +28,8 @@ use ratatui::{
     symbols,
     text::Line,
     widgets::{
-        Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
-        StatefulWidget, Widget, Wrap,
+        Block, Borders, HighlightSpacing, List, ListItem, ListState, Paragraph, StatefulWidget,
+        Widget, Wrap,
     },
     Terminal,
 };
@@ -261,7 +261,7 @@ impl App {
             .border_set(symbols::border::EMPTY)
             .border_style(TODO_HEADER_STYLE)
             .bg(NORMAL_ROW_BG)
-            .padding(Padding::horizontal(1));
+            .padding(Gaps::horizontal(1));
 
         // We can now render the item info
         Paragraph::new(info)

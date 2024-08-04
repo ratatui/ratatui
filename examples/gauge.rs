@@ -24,10 +24,10 @@ use ratatui::{
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    layout::{Alignment, Constraint, Layout, Rect},
+    layout::{Alignment, Constraint, Gaps, Layout, Rect},
     style::{palette::tailwind, Color, Style, Stylize},
     text::Span,
-    widgets::{block::Title, Block, Borders, Gauge, Padding, Paragraph, Widget},
+    widgets::{block::Title, Block, Borders, Gauge, Paragraph, Widget},
     Terminal,
 };
 
@@ -209,7 +209,7 @@ fn title_block(title: &str) -> Block {
     let title = Title::from(title).alignment(Alignment::Center);
     Block::new()
         .borders(Borders::NONE)
-        .padding(Padding::vertical(1))
+        .padding(Gaps::vertical(1))
         .title(title)
         .fg(CUSTOM_LABEL_COLOR)
 }

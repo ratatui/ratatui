@@ -38,6 +38,7 @@ mod sparkline;
 mod table;
 mod tabs;
 
+#[allow(deprecated)]
 pub use self::{
     barchart::{Bar, BarChart, BarGroup},
     block::{Block, BorderType, Padding},

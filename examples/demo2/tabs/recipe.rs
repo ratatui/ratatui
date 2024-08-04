@@ -1,11 +1,11 @@
 use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Constraint, Layout, Margin, Rect},
+    layout::{Alignment, Constraint, Gaps, Layout, Rect},
     style::{Style, Stylize},
     text::Line,
     widgets::{
-        Block, Clear, Padding, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        Block, Clear, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
         StatefulWidget, Table, TableState, Widget, Wrap,
     },
 };
@@ -114,16 +114,18 @@ impl RecipeTab {
 impl Widget for RecipeTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         RgbSwatch.render(area, buf);
-        let area = area.inner(Margin {
-            vertical: 1,
-            horizontal: 2,
-        });
+        let area = area.inner(Gaps::horizontal_vertical(2, 1));
         Clear.render(area, buf);
         Block::new()
             .title("Ratatouille Recipe".bold().white())
             .title_alignment(Alignment::Center)
             .style(THEME.content)
-            .padding(Padding::new(1, 1, 2, 1))
+            .padding(Gaps {
+                left: 1,
+                right: 1,
+                top: 2,
+                bottom: 1,
+            })
             .render(area, buf);
 
         let scrollbar_area = Rect {
@@ -133,10 +135,7 @@ impl Widget for RecipeTab {
         };
         render_scrollbar(self.row_index, scrollbar_area, buf);
 
-        let area = area.inner(Margin {
-            horizontal: 2,
-            vertical: 1,
-        });
+        let area = area.inner(Gaps::horizontal_vertical(2, 1));
         let [recipe, ingredients] =
             Layout::horizontal([Constraint::Length(44), Constraint::Min(0)]).areas(area);
 
@@ -152,7 +151,7 @@ fn render_recipe(area: Rect, buf: &mut Buffer) {
         .collect_vec();
     Paragraph::new(lines)
         .wrap(Wrap { trim: true })
-        .block(Block::new().padding(Padding::new(0, 1, 0, 0)))
+        .block(Block::new().padding(Gaps::right(1)))
         .render(area, buf);
 }
 

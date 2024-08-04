@@ -1,13 +1,13 @@
 use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Constraint, Layout, Margin, Rect},
+    layout::{Alignment, Constraint, Gaps, Layout, Rect},
     style::{Styled, Stylize},
     symbols::Marker,
     widgets::{
         canvas::{self, Canvas, Map, MapResolution, Points},
-        Block, BorderType, Clear, Padding, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
-        Sparkline, StatefulWidget, Table, TableState, Widget,
+        Block, BorderType, Clear, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Sparkline,
+        StatefulWidget, Table, TableState, Widget,
     },
 };
 
@@ -33,10 +33,7 @@ impl TracerouteTab {
 impl Widget for TracerouteTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         RgbSwatch.render(area, buf);
-        let area = area.inner(Margin {
-            vertical: 1,
-            horizontal: 2,
-        });
+        let area = area.inner(Gaps::horizontal_vertical(2, 1));
         Clear.render(area, buf);
         Block::new().style(THEME.content).render(area, buf);
         let horizontal = Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)]);
@@ -57,7 +54,7 @@ fn render_hops(selected_row: usize, area: Rect, buf: &mut Buffer) {
         .map(|hop| Row::new(vec![hop.host, hop.address]))
         .collect_vec();
     let block = Block::new()
-        .padding(Padding::new(1, 1, 1, 1))
+        .padding(Gaps::all(1))
         .title_alignment(Alignment::Center)
         .title("Traceroute bad.horse".bold().white());
     StatefulWidget::render(
@@ -118,7 +115,12 @@ fn render_map(selected_row: usize, area: Rect, buf: &mut Buffer) {
         .background_color(theme.background_color)
         .block(
             Block::new()
-                .padding(Padding::new(1, 0, 1, 0))
+                .padding(Gaps {
+                    left: 1,
+                    right: 0,
+                    top: 1,
+                    bottom: 0,
+                })
                 .style(theme.style),
         )
         .marker(Marker::HalfBlock)

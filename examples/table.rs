@@ -23,7 +23,7 @@ use ratatui::{
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    layout::{Constraint, Layout, Margin, Rect},
+    layout::{Constraint, Gaps, Layout, Rect},
     style::{self, Color, Modifier, Style, Stylize},
     text::{Line, Text},
     widgets::{
@@ -325,10 +325,7 @@ fn render_scrollbar(f: &mut Frame, app: &mut App, area: Rect) {
             .orientation(ScrollbarOrientation::VerticalRight)
             .begin_symbol(None)
             .end_symbol(None),
-        area.inner(Margin {
-            vertical: 1,
-            horizontal: 1,
-        }),
+        area.inner(Gaps::all(1)),
         &mut app.scroll_state,
     );
 }

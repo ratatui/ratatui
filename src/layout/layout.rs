@@ -112,7 +112,7 @@ thread_local! {
 pub struct Layout {
     direction: Direction,
     constraints: Vec<Constraint>,
-    margin: Margin,
+    margin: Gaps,
     flex: Flex,
     spacing: u16,
 }
@@ -308,10 +308,7 @@ impl Layout {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn margin(mut self, margin: u16) -> Self {
-        self.margin = Margin {
-            horizontal: margin,
-            vertical: margin,
-        };
+        self.margin = Gaps::all(margin);
         self
     }
 
@@ -329,7 +326,8 @@ impl Layout {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn horizontal_margin(mut self, horizontal: u16) -> Self {
-        self.margin.horizontal = horizontal;
+        self.margin.left = horizontal;
+        self.margin.right = horizontal;
         self
     }
 
@@ -347,7 +345,8 @@ impl Layout {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn vertical_margin(mut self, vertical: u16) -> Self {
-        self.margin.vertical = vertical;
+        self.margin.top = vertical;
+        self.margin.bottom = vertical;
         self
     }
 
@@ -1098,7 +1097,7 @@ mod tests {
             Layout::default(),
             Layout {
                 direction: Direction::Vertical,
-                margin: Margin::new(0, 0),
+                margin: Gaps::ZERO,
                 constraints: vec![],
                 flex: Flex::default(),
                 spacing: 0,
@@ -1143,7 +1142,7 @@ mod tests {
             Layout::vertical([Constraint::Min(0)]),
             Layout {
                 direction: Direction::Vertical,
-                margin: Margin::new(0, 0),
+                margin: Gaps::ZERO,
                 constraints: vec![Constraint::Min(0)],
                 flex: Flex::default(),
                 spacing: 0,
@@ -1157,7 +1156,7 @@ mod tests {
             Layout::horizontal([Constraint::Min(0)]),
             Layout {
                 direction: Direction::Horizontal,
-                margin: Margin::new(0, 0),
+                margin: Gaps::ZERO,
                 constraints: vec![Constraint::Min(0)],
                 flex: Flex::default(),
                 spacing: 0,
@@ -1241,21 +1240,21 @@ mod tests {
 
     #[test]
     fn margins() {
-        assert_eq!(Layout::default().margin(10).margin, Margin::new(10, 10));
+        assert_eq!(Layout::default().margin(10).margin, Gaps::all(10));
         assert_eq!(
             Layout::default().horizontal_margin(10).margin,
-            Margin::new(10, 0)
+            Gaps::horizontal(10)
         );
         assert_eq!(
             Layout::default().vertical_margin(10).margin,
-            Margin::new(0, 10)
+            Gaps::vertical(10)
         );
         assert_eq!(
             Layout::default()
                 .horizontal_margin(10)
                 .vertical_margin(20)
                 .margin,
-            Margin::new(10, 20)
+            Gaps::horizontal_vertical(10, 20)
         );
     }
 

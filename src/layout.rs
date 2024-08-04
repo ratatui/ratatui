@@ -4,6 +4,7 @@ mod alignment;
 mod constraint;
 mod direction;
 mod flex;
+mod gaps;
 mod layout;
 mod margin;
 mod position;
@@ -14,7 +15,9 @@ pub use alignment::Alignment;
 pub use constraint::Constraint;
 pub use direction::Direction;
 pub use flex::Flex;
+pub use gaps::Gaps;
 pub use layout::Layout;
+#[allow(deprecated)]
 pub use margin::Margin;
 pub use position::Position;
 pub use rect::*;

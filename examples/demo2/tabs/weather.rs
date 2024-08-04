@@ -2,12 +2,12 @@ use itertools::Itertools;
 use palette::Okhsv;
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Margin, Rect},
+    layout::{Constraint, Direction, Gaps, Layout, Rect},
     style::{Color, Style, Stylize},
     symbols,
     widgets::{
         calendar::{CalendarEventStore, Monthly},
-        Bar, BarChart, BarGroup, Block, Clear, LineGauge, Padding, Widget,
+        Bar, BarChart, BarGroup, Block, Clear, LineGauge, Widget,
     },
 };
 use time::OffsetDateTime;
@@ -34,17 +34,11 @@ impl WeatherTab {
 impl Widget for WeatherTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         RgbSwatch.render(area, buf);
-        let area = area.inner(Margin {
-            vertical: 1,
-            horizontal: 2,
-        });
+        let area = area.inner(Gaps::horizontal_vertical(2, 1));
         Clear.render(area, buf);
         Block::new().style(THEME.content).render(area, buf);
 
-        let area = area.inner(Margin {
-            horizontal: 2,
-            vertical: 1,
-        });
+        let area = area.inner(Gaps::horizontal_vertical(2, 1));
         let [main, _, gauges] = Layout::vertical([
             Constraint::Min(0),
             Constraint::Length(1),
@@ -66,7 +60,7 @@ impl Widget for WeatherTab {
 fn render_calendar(area: Rect, buf: &mut Buffer) {
     let date = OffsetDateTime::now_utc().date();
     Monthly::new(date, CalendarEventStore::today(Style::new().red().bold()))
-        .block(Block::new().padding(Padding::new(0, 0, 2, 0)))
+        .block(Block::new().padding(Gaps::top(2)))
         .show_month_header(Style::new().bold())
         .show_weekdays_header(Style::new().italic())
         .render(area, buf);
@@ -125,7 +119,7 @@ fn render_horizontal_barchart(area: Rect, buf: &mut Buffer) {
     ];
     let group = BarGroup::default().label("GPU".into()).bars(&data);
     BarChart::default()
-        .block(Block::new().padding(Padding::new(0, 0, 2, 0)))
+        .block(Block::new().padding(Gaps::top(2)))
         .direction(Direction::Horizontal)
         .data(group)
         .bar_gap(1)

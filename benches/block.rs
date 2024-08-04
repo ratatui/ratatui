@@ -1,10 +1,10 @@
 use criterion::{criterion_group, criterion_main, BatchSize, Bencher, Criterion};
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Rect},
+    layout::{Alignment, Gaps, Rect},
     widgets::{
         block::{Position, Title},
-        Block, Padding, Widget,
+        Block, Widget,
     },
 };
 
@@ -30,7 +30,7 @@ fn block(c: &mut Criterion) {
         group.bench_with_input(
             format!("render_all_feature/{width}x{height}"),
             &Block::bordered()
-                .padding(Padding::new(5, 5, 2, 2))
+                .padding(Gaps::horizontal_vertical(5, 2))
                 .title("test title")
                 .title(
                     Title::from("bottom left title")

@@ -1,12 +1,12 @@
 use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Layout, Margin, Rect},
+    layout::{Constraint, Gaps, Layout, Rect},
     style::{Styled, Stylize},
     text::Line,
     widgets::{
-        Block, BorderType, Borders, Clear, List, ListItem, ListState, Padding, Paragraph,
-        Scrollbar, ScrollbarState, StatefulWidget, Tabs, Widget,
+        Block, BorderType, Borders, Clear, List, ListItem, ListState, Paragraph, Scrollbar,
+        ScrollbarState, StatefulWidget, Tabs, Widget,
     },
 };
 use unicode_width::UnicodeWidthStr;
@@ -68,10 +68,7 @@ impl EmailTab {
 impl Widget for EmailTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         RgbSwatch.render(area, buf);
-        let area = area.inner(Margin {
-            vertical: 1,
-            horizontal: 2,
-        });
+        let area = area.inner(Gaps::horizontal_vertical(2, 1));
         Clear.render(area, buf);
         let vertical = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]);
         let [inbox, email] = vertical.areas(area);
@@ -129,7 +126,7 @@ fn render_email(selected_index: usize, area: Rect, buf: &mut Buffer) {
     let email = EMAILS.get(selected_index);
     let block = Block::new()
         .style(theme.body)
-        .padding(Padding::new(2, 2, 0, 0))
+        .padding(Gaps::horizontal(2))
         .borders(Borders::TOP)
         .border_type(BorderType::Thick);
     let inner = block.inner(area);

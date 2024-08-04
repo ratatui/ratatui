@@ -8,13 +8,15 @@
 use itertools::Itertools;
 use strum::{Display, EnumString};
 
+#[allow(deprecated)]
+pub use self::{
+    padding::Padding,
+    title::{Position, Title},
+};
 use crate::{prelude::*, style::Styled, symbols::border, widgets::Borders};
 
 mod padding;
 pub mod title;
-
-pub use padding::Padding;
-pub use title::{Position, Title};
 
 /// Base widget to be used to display a box border around all [upper level ones](crate::widgets).
 ///
@@ -125,7 +127,7 @@ pub struct Block<'a> {
     /// Widget style
     style: Style,
     /// Block padding
-    padding: Padding,
+    padding: Gaps,
 }
 
 /// The type of border of a [`Block`].
@@ -202,7 +204,7 @@ pub enum BorderType {
 }
 
 impl<'a> Block<'a> {
-    /// Creates a new block with no [`Borders`] or [`Padding`].
+    /// Creates a new block with no [`Borders`] or padding.
     pub const fn new() -> Self {
         Self {
             titles: Vec::new(),
@@ -213,7 +215,7 @@ impl<'a> Block<'a> {
             border_style: Style::new(),
             border_set: BorderType::Plain.to_border_set(),
             style: Style::new(),
-            padding: Padding::ZERO,
+            padding: Gaps::ZERO,
         }
     }
 
@@ -554,32 +556,30 @@ impl<'a> Block<'a> {
 
     /// Defines the padding inside a `Block`.
     ///
-    /// See [`Padding`] for more information.
-    ///
     /// # Examples
     ///
     /// This renders a `Block` with no padding (the default).
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::bordered().padding(Padding::ZERO);
+    /// Block::bordered().padding(Gaps::ZERO);
     /// // Renders
     /// // ┌───────┐
     /// // │content│
     /// // └───────┘
     /// ```
     ///
-    /// This example shows a `Block` with padding left and right ([`Padding::horizontal`]).
+    /// This example shows a `Block` with padding left and right ([`Gaps::horizontal`]).
     /// Notice the two spaces before and after the content.
     /// ```
     /// # use ratatui::{prelude::*, widgets::*};
-    /// Block::bordered().padding(Padding::horizontal(2));
+    /// Block::bordered().padding(Gaps::horizontal(2));
     /// // Renders
     /// // ┌───────────┐
     /// // │  content  │
     /// // └───────────┘
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub const fn padding(mut self, padding: Padding) -> Self {
+    pub const fn padding(mut self, padding: Gaps) -> Self {
         self.padding = padding;
         self
     }
@@ -1112,16 +1112,16 @@ mod tests {
     }
 
     #[rstest]
-    #[case::top_border_top_p1(Borders::TOP, Padding::new(0, 0, 1, 0), (2, 0))]
-    #[case::right_border_top_p1(Borders::RIGHT, Padding::new(0, 0, 1, 0), (1, 0))]
-    #[case::bottom_border_top_p1(Borders::BOTTOM, Padding::new(0, 0, 1, 0), (1, 1))]
-    #[case::left_border_top_p1(Borders::LEFT, Padding::new(0, 0, 1, 0), (1, 0))]
-    #[case::top_bottom_border_all_p3(Borders::TOP | Borders::BOTTOM, Padding::new(100, 100, 4, 5), (5, 6))]
-    #[case::no_border(Borders::NONE, Padding::new(100, 100, 10, 13), (10, 13))]
-    #[case::all(Borders::ALL, Padding::new(100, 100, 1, 3), (2, 4))]
+    #[case::top_border_top_p1(Borders::TOP, Gaps::top(1), (2, 0))]
+    #[case::right_border_top_p1(Borders::RIGHT, Gaps::top(1), (1, 0))]
+    #[case::bottom_border_top_p1(Borders::BOTTOM, Gaps::top(1), (1, 1))]
+    #[case::left_border_top_p1(Borders::LEFT, Gaps::top(1), (1, 0))]
+    #[case::top_bottom_border_all_p3(Borders::TOP | Borders::BOTTOM, Gaps { left:100, right: 100, top: 4, bottom: 5 }, (5, 6))]
+    #[case::no_border(Borders::NONE, Gaps { left: 100, right: 100, top: 10, bottom: 13 }, (10, 13))]
+    #[case::all(Borders::ALL, Gaps{ left: 100, right: 100, top: 1, bottom: 3 }, (2, 4))]
     fn vertical_space_takes_into_account_padding(
         #[case] borders: Borders,
-        #[case] padding: Padding,
+        #[case] padding: Gaps,
         #[case] vertical_space: (u16, u16),
     ) {
         let block = Block::new().borders(borders).padding(padding);
@@ -1179,32 +1179,47 @@ mod tests {
 
     #[test]
     fn horizontal_space_takes_into_account_padding() {
-        let block = Block::new().padding(Padding::new(1, 1, 100, 100));
+        let block = Block::new().padding(Gaps::horizontal_vertical(1, 100));
         assert_eq!(block.horizontal_space(), (1, 1));
 
-        let block = Block::new().padding(Padding::new(3, 5, 0, 0));
+        let block = Block::new().padding(Gaps {
+            left: 3,
+            right: 5,
+            top: 0,
+            bottom: 0,
+        });
         assert_eq!(block.horizontal_space(), (3, 5));
 
-        let block = Block::new().padding(Padding::new(0, 1, 100, 100));
+        let block = Block::new().padding(Gaps {
+            left: 0,
+            right: 1,
+            top: 100,
+            bottom: 100,
+        });
         assert_eq!(block.horizontal_space(), (0, 1));
 
-        let block = Block::new().padding(Padding::new(1, 0, 100, 100));
+        let block = Block::new().padding(Gaps {
+            left: 1,
+            right: 0,
+            top: 100,
+            bottom: 100,
+        });
         assert_eq!(block.horizontal_space(), (1, 0));
     }
 
     #[rstest]
-    #[case::all_bordered_all_padded(Block::bordered(), Padding::new(1, 1, 1, 1), (2, 2))]
-    #[case::all_bordered_left_padded(Block::bordered(), Padding::new(1, 0, 0, 0), (2, 1))]
-    #[case::all_bordered_right_padded(Block::bordered(), Padding::new(0, 1, 0, 0), (1, 2))]
-    #[case::all_bordered_top_padded(Block::bordered(), Padding::new(0, 0, 1, 0), (1, 1))]
-    #[case::all_bordered_bottom_padded(Block::bordered(), Padding::new(0, 0, 0, 1), (1, 1))]
-    #[case::left_bordered_left_padded(Block::new().borders(Borders::LEFT), Padding::new(1, 0, 0, 0), (2, 0))]
-    #[case::left_bordered_right_padded(Block::new().borders(Borders::LEFT), Padding::new(0, 1, 0, 0), (1, 1))]
-    #[case::right_bordered_right_padded(Block::new().borders(Borders::RIGHT), Padding::new(0, 1, 0, 0), (0, 2))]
-    #[case::right_bordered_left_padded(Block::new().borders(Borders::RIGHT), Padding::new(1, 0, 0, 0), (1, 1))]
+    #[case::all_bordered_all_padded(Block::bordered(), Gaps::all(1), (2, 2))]
+    #[case::all_bordered_left_padded(Block::bordered(), Gaps::left(1), (2, 1))]
+    #[case::all_bordered_right_padded(Block::bordered(), Gaps::right(1), (1, 2))]
+    #[case::all_bordered_top_padded(Block::bordered(), Gaps::top(1), (1, 1))]
+    #[case::all_bordered_bottom_padded(Block::bordered(), Gaps::bottom(1), (1, 1))]
+    #[case::left_bordered_left_padded(Block::new().borders(Borders::LEFT),  Gaps::left(1), (2, 0))]
+    #[case::left_bordered_right_padded(Block::new().borders(Borders::LEFT),  Gaps::right(1), (1, 1))]
+    #[case::right_bordered_right_padded(Block::new().borders(Borders::RIGHT), Gaps::right(1), (0, 2))]
+    #[case::right_bordered_left_padded(Block::new().borders(Borders::RIGHT), Gaps::left(1), (1, 1))]
     fn horizontal_space_takes_into_account_borders_and_padding(
         #[case] block: Block,
-        #[case] padding: Padding,
+        #[case] padding: Gaps,
         #[case] horizontal_space: (u16, u16),
     ) {
         let block = block.padding(padding);
@@ -1229,7 +1244,7 @@ mod tests {
                 border_style: Style::new(),
                 border_set: BorderType::Plain.to_border_set(),
                 style: Style::new(),
-                padding: Padding::ZERO,
+                padding: Gaps::ZERO,
             }
         );
     }
@@ -1237,7 +1252,7 @@ mod tests {
     #[test]
     const fn block_can_be_const() {
         const _DEFAULT_STYLE: Style = Style::new();
-        const _DEFAULT_PADDING: Padding = Padding::uniform(1);
+        const _DEFAULT_PADDING: Gaps = Gaps::all(1);
         const _DEFAULT_BLOCK: Block = Block::bordered()
             // the following methods are no longer const because they use Into<Style>
             // .style(_DEFAULT_STYLE)           // no longer const

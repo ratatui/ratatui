@@ -117,22 +117,22 @@ impl Rect {
         self.y.saturating_add(self.height)
     }
 
-    /// Returns a new `Rect` inside the current one, with the given margin on each side.
+    /// Returns a new `Rect` inside the current one, with the given gaps on each side.
     ///
-    /// If the margin is larger than the `Rect`, the returned `Rect` will have no area.
+    /// If the gaps are larger than the `Rect`, the returned `Rect` will have no area.
     #[must_use = "method returns the modified value"]
-    pub const fn inner(self, margin: Margin) -> Self {
-        let doubled_margin_horizontal = margin.horizontal.saturating_mul(2);
-        let doubled_margin_vertical = margin.vertical.saturating_mul(2);
+    pub const fn inner(self, gaps: Gaps) -> Self {
+        let total_horizontal = gaps.total_horizontal();
+        let total_vertical = gaps.total_vertical();
 
-        if self.width < doubled_margin_horizontal || self.height < doubled_margin_vertical {
+        if self.width < total_horizontal || self.height < total_vertical {
             Self::ZERO
         } else {
             Self {
-                x: self.x.saturating_add(margin.horizontal),
-                y: self.y.saturating_add(margin.vertical),
-                width: self.width.saturating_sub(doubled_margin_horizontal),
-                height: self.height.saturating_sub(doubled_margin_vertical),
+                x: self.x.saturating_add(gaps.left),
+                y: self.y.saturating_add(gaps.top),
+                width: self.width.saturating_sub(total_horizontal),
+                height: self.height.saturating_sub(total_vertical),
             }
         }
     }
@@ -406,7 +406,7 @@ mod tests {
     #[test]
     fn inner() {
         assert_eq!(
-            Rect::new(1, 2, 3, 4).inner(Margin::new(1, 2)),
+            Rect::new(1, 2, 3, 4).inner(Gaps::horizontal_vertical(1, 2)),
             Rect::new(2, 4, 1, 0)
         );
     }

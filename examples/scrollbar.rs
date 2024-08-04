@@ -28,7 +28,7 @@ use ratatui::{
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    layout::{Alignment, Constraint, Layout, Margin},
+    layout::{Alignment, Constraint, Gaps, Layout},
     style::{Color, Style, Stylize},
     symbols::scrollbar,
     text::{Line, Masked, Span},
@@ -193,10 +193,7 @@ fn ui(f: &mut Frame, app: &mut App) {
             .begin_symbol(None)
             .track_symbol(None)
             .end_symbol(None),
-        chunks[2].inner(Margin {
-            vertical: 1,
-            horizontal: 0,
-        }),
+        chunks[2].inner(Gaps::vertical(1)),
         &mut app.vertical_scroll_state,
     );
 
@@ -211,10 +208,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
             .thumb_symbol("🬋")
             .end_symbol(None),
-        chunks[3].inner(Margin {
-            vertical: 0,
-            horizontal: 1,
-        }),
+        chunks[3].inner(Gaps::horizontal(1)),
         &mut app.horizontal_scroll_state,
     );
 
@@ -229,10 +223,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
             .thumb_symbol("░")
             .track_symbol(Some("─")),
-        chunks[4].inner(Margin {
-            vertical: 0,
-            horizontal: 1,
-        }),
+        chunks[4].inner(Gaps::horizontal(1)),
         &mut app.horizontal_scroll_state,
     );
 }

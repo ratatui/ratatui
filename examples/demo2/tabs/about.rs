@@ -1,8 +1,8 @@
 use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Constraint, Layout, Margin, Rect},
-    widgets::{Block, Borders, Clear, Padding, Paragraph, Widget, Wrap},
+    layout::{Alignment, Constraint, Gaps, Layout, Rect},
+    widgets::{Block, Borders, Clear, Paragraph, Widget, Wrap},
 };
 
 use crate::{RgbSwatch, THEME};
@@ -68,16 +68,10 @@ impl Widget for AboutTab {
 }
 
 fn render_crate_description(area: Rect, buf: &mut Buffer) {
-    let area = area.inner(Margin {
-        vertical: 4,
-        horizontal: 2,
-    });
+    let area = area.inner(Gaps::horizontal_vertical(2, 4));
     Clear.render(area, buf); // clear out the color swatches
     Block::new().style(THEME.content).render(area, buf);
-    let area = area.inner(Margin {
-        vertical: 1,
-        horizontal: 2,
-    });
+    let area = area.inner(Gaps::horizontal_vertical(2, 1));
     let text = "- cooking up terminal user interfaces -
 
     Ratatui is a Rust crate that provides widgets (e.g. Paragraph, Table) and draws them to the \
@@ -89,8 +83,7 @@ fn render_crate_description(area: Rect, buf: &mut Buffer) {
                 .title(" Ratatui ")
                 .title_alignment(Alignment::Center)
                 .borders(Borders::TOP)
-                .border_style(THEME.description_title)
-                .padding(Padding::new(0, 0, 0, 0)),
+                .border_style(THEME.description_title),
         )
         .wrap(Wrap { trim: true })
         .scroll((0, 0))
@@ -108,10 +101,7 @@ pub fn render_logo(selected_row: usize, area: Rect, buf: &mut Buffer) {
     } else {
         THEME.logo.rat_eye_alt
     };
-    let area = area.inner(Margin {
-        vertical: 0,
-        horizontal: 2,
-    });
+    let area = area.inner(Gaps::horizontal(2));
     for (y, (line1, line2)) in RATATUI_LOGO.iter().tuples().enumerate() {
         for (x, (ch1, ch2)) in line1.chars().zip(line2.chars()).enumerate() {
             let x = area.left() + x as u16;

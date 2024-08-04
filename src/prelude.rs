@@ -23,11 +23,13 @@ pub use crate::backend::CrosstermBackend;
 pub use crate::backend::TermionBackend;
 #[cfg(feature = "termwiz")]
 pub use crate::backend::TermwizBackend;
+#[allow(deprecated)]
+pub use crate::layout::Margin;
 pub(crate) use crate::widgets::{StatefulWidgetRef, WidgetRef};
 pub use crate::{
     backend::{self, Backend},
     buffer::{self, Buffer},
-    layout::{self, Alignment, Constraint, Direction, Layout, Margin, Position, Rect, Size},
+    layout::{self, Alignment, Constraint, Direction, Gaps, Layout, Position, Rect, Size},
     style::{self, Color, Modifier, Style, Stylize},
     symbols::{self},
     text::{self, Line, Masked, Span, Text},

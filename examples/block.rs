@@ -28,12 +28,12 @@ use ratatui::{
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    layout::{Alignment, Constraint, Layout, Rect},
+    layout::{Alignment, Constraint, Gaps, Layout, Rect},
     style::{Style, Stylize},
     text::Line,
     widgets::{
         block::{Position, Title},
-        Block, BorderType, Borders, Padding, Paragraph, Wrap,
+        Block, BorderType, Borders, Paragraph, Wrap,
     },
     Frame,
 };
@@ -244,7 +244,12 @@ fn render_multiple_title_positions(paragraph: &Paragraph, frame: &mut Frame, are
 
 fn render_padding(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::bordered()
-        .padding(Padding::new(5, 10, 1, 2))
+        .padding(Gaps {
+            left: 5,
+            right: 10,
+            top: 1,
+            bottom: 2,
+        })
         .title("Padding");
     frame.render_widget(paragraph.clone().block(block), area);
 }

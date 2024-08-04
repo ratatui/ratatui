@@ -26,14 +26,14 @@ use ratatui::{
     },
     layout::{
         Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio},
-        Layout, Rect,
+        Gaps, Layout, Rect,
     },
     style::{palette::tailwind, Color, Modifier, Style, Stylize},
     symbols,
     text::Line,
     widgets::{
-        Block, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget,
-        Tabs, Widget,
+        Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget, Tabs,
+        Widget,
     },
     Terminal,
 };
@@ -206,12 +206,7 @@ impl App {
         );
         Paragraph::new(width_bar.dark_gray())
             .centered()
-            .block(Block::new().padding(Padding {
-                left: 0,
-                right: 0,
-                top: 1,
-                bottom: 0,
-            }))
+            .block(Block::new().padding(Gaps::top(1)))
             .render(area, buf);
     }
 

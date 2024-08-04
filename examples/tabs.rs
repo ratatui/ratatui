@@ -24,11 +24,11 @@ use ratatui::{
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Gaps, Layout, Rect},
     style::{palette::tailwind, Color, Stylize},
     symbols,
     text::Line,
-    widgets::{Block, Padding, Paragraph, Tabs, Widget},
+    widgets::{Block, Paragraph, Tabs, Widget},
     Terminal,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
@@ -213,7 +213,7 @@ impl SelectedTab {
     fn block(self) -> Block<'static> {
         Block::bordered()
             .border_set(symbols::border::PROPORTIONAL_TALL)
-            .padding(Padding::horizontal(1))
+            .padding(Gaps::horizontal(1))
             .border_style(self.palette().c700)
     }
 

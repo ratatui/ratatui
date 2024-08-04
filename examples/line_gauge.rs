@@ -24,9 +24,9 @@ use ratatui::{
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    layout::{Alignment, Constraint, Layout, Rect},
+    layout::{Alignment, Constraint, Gaps, Layout, Rect},
     style::{palette::tailwind, Color, Style, Stylize},
-    widgets::{block::Title, Block, Borders, LineGauge, Padding, Paragraph, Widget},
+    widgets::{block::Title, Block, Borders, LineGauge, Paragraph, Widget},
     Terminal,
 };
 
@@ -185,7 +185,7 @@ fn title_block(title: &str) -> Block {
         .title(title)
         .borders(Borders::NONE)
         .fg(CUSTOM_LABEL_COLOR)
-        .padding(Padding::vertical(1))
+        .padding(Gaps::vertical(1))
 }
 
 fn init_error_hooks() -> color_eyre::Result<()> {

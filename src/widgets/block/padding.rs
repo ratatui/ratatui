@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 /// Defines the padding for a [`Block`].
 ///
 /// See the [`padding`] method of [`Block`] to configure its padding.
@@ -23,6 +25,7 @@
 /// [`padding`]: crate::widgets::Block::padding
 /// [CSS padding]: https://developer.mozilla.org/en-US/docs/Web/CSS/padding
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[deprecated = "use ratatui::layout::Gaps"]
 pub struct Padding {
     /// Left padding
     pub left: u16,

@@ -1,9 +1,9 @@
 use ratatui::{
     backend::TestBackend,
     buffer::Buffer,
-    layout::Alignment,
+    layout::{Alignment, Gaps},
     text::{Line, Span, Text},
-    widgets::{Block, Padding, Paragraph, Wrap},
+    widgets::{Block, Paragraph, Wrap},
     Terminal,
 };
 
@@ -192,12 +192,7 @@ fn widgets_paragraph_can_wrap_its_content() {
 
 #[test]
 fn widgets_paragraph_works_with_padding() {
-    let block = Block::bordered().padding(Padding {
-        left: 2,
-        right: 2,
-        top: 1,
-        bottom: 1,
-    });
+    let block = Block::bordered().padding(Gaps::horizontal_vertical(2, 1));
     let paragraph = Paragraph::new(vec![Line::from(SAMPLE_STRING)])
         .block(block.clone())
         .wrap(Wrap { trim: true });
