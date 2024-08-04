@@ -101,7 +101,11 @@ impl<'a> Axis<'a> {
     ///         .labels(vec!["0".bold(), "25".into(), "50".bold()]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn labels<T: Into<Line<'a>>>(mut self, labels: Vec<T>) -> Self {
+    pub fn labels<Labels>(mut self, labels: Labels) -> Self
+    where
+        Labels: IntoIterator,
+        Labels::Item: Into<Line<'a>>,
+    {
         self.labels = Some(labels.into_iter().map(Into::into).collect());
         self
     }

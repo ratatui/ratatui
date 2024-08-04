@@ -62,16 +62,17 @@ This is a quick summary of the sections below:
 
 ## v0.28.0 (unreleased)
 
-### `Axis::labels()` now accepts `Vec<T: Into<Line>>` ([#1273])
+### `Axis::labels()` now accepts `IntoIterator<Into<Line>>` ([#1273] and [#todo])
 
 [#1273]: https://github.com/ratatui-org/ratatui/pull/1173
+[#todo]: https://github.com/ratatui-org/ratatui/pulls
 
 Previously Axis::labels accepted `Vec<Span>`. Any code that uses conversion methods that infer the
 type will need to be rewritten as the compiler cannot infer the correct type.
 
 ```diff
-- Axis::default().labels("a".into(), "b".into())
-+ Axis::default().labels("a", "b")
+- Axis::default().labels(vec!["a".into(), "b".into()])
++ Axis::default().labels(["a", "b"])
 
 ### `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize` ([#1145])
 
