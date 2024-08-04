@@ -165,12 +165,12 @@ fn widgets_chart_handles_long_labels<'line, Lines>(
     let mut x_axis = Axis::default().bounds([0.0, 1.0]);
     if let Some((left_label, right_label)) = x_labels {
         x_axis = x_axis
-            .labels(vec![Span::from(left_label), Span::from(right_label)])
+            .labels([left_label, right_label])
             .labels_alignment(x_alignment);
     }
     let mut y_axis = Axis::default().bounds([0.0, 1.0]);
     if let Some((left_label, right_label)) = y_labels {
-        y_axis = y_axis.labels(vec![Span::from(left_label), Span::from(right_label)]);
+        y_axis = y_axis.labels([left_label, right_label]);
     }
     axis_test_case(10, 5, x_axis, y_axis, expected);
 }
@@ -214,7 +214,7 @@ fn widgets_chart_handles_x_axis_labels_alignments<'line, Lines>(
     Lines::Item: Into<text::Line<'line>>,
 {
     let x_axis = Axis::default()
-        .labels(vec![Span::from("AAAA"), Span::from("B"), Span::from("C")])
+        .labels(["AAAA", "B", "C"])
         .labels_alignment(y_alignment);
     let y_axis = Axis::default();
     axis_test_case(10, 5, x_axis, y_axis, expected);

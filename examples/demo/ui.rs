@@ -221,7 +221,7 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
                     .title("Y Axis")
                     .style(Style::default().fg(Color::Gray))
                     .bounds([-20.0, 20.0])
-                    .labels(vec![
+                    .labels([
                         Span::styled("-20", Style::default().add_modifier(Modifier::BOLD)),
                         Span::raw("0"),
                         Span::styled("20", Style::default().add_modifier(Modifier::BOLD)),
