@@ -92,7 +92,11 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v4
         with:
+          # Check out the merge commit as default.
+          # Reference: actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
           ref: ${{ github.event.pull_request.head.ref }}
+          # Check out from the source (forked repository) rather than the destination.
+          # This helps ensure we are working with the correct source code.
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2
