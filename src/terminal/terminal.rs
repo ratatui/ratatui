@@ -37,7 +37,6 @@ use crate::{backend::ClearType, prelude::*, CompletedFrame, TerminalOptions, Vie
 /// terminal.draw(|frame| {
 ///     let area = frame.size();
 ///     frame.render_widget(Paragraph::new("Hello World!"), area);
-///     frame.set_cursor(0, 0);
 /// })?;
 /// # std::io::Result::Ok(())
 /// ```
@@ -265,17 +264,16 @@ where
     /// # Examples
     ///
     /// ```
+    /// # use ratatui::layout::Position;
     /// # let backend = ratatui::backend::TestBackend::new(10, 10);
     /// # let mut terminal = ratatui::Terminal::new(backend)?;
-    /// use std::io;
-    ///
     /// use ratatui::widgets::Paragraph;
     ///
     /// // with a closure
     /// terminal.draw(|frame| {
     ///     let area = frame.size();
     ///     frame.render_widget(Paragraph::new("Hello World!"), area);
-    ///     frame.set_cursor(0, 0);
+    ///     frame.set_cursor(Position { x: 0, y: 0 });
     /// })?;
     ///
     /// // or with a function
@@ -284,7 +282,7 @@ where
     /// fn render(frame: &mut ratatui::Frame) {
     ///     frame.render_widget(Paragraph::new("Hello World!"), frame.size());
     /// }
-    /// # io::Result::Ok(())
+    /// # std::io::Result::Ok(())
     /// ```
     pub fn draw<F>(&mut self, render_callback: F) -> io::Result<CompletedFrame>
     where
@@ -335,6 +333,7 @@ where
     /// # Examples
     ///
     /// ```should_panic
+    /// # use ratatui::prelude::*;
     /// # let backend = ratatui::backend::TestBackend::new(10, 10);
     /// # let mut terminal = ratatui::Terminal::new(backend)?;
     /// use std::io;
@@ -346,7 +345,7 @@ where
     ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
     ///     let area = frame.size();
     ///     frame.render_widget(Paragraph::new("Hello World!"), area);
-    ///     frame.set_cursor(0, 0);
+    ///     frame.set_cursor(Position { x: 0, y: 0 });
     ///     io::Result::Ok(())
     /// })?;
     ///
@@ -383,9 +382,9 @@ where
 
         match cursor_position {
             None => self.hide_cursor()?,
-            Some(Position { x, y }) => {
+            Some(position) => {
                 self.show_cursor()?;
-                self.set_cursor(x, y)?;
+                self.set_cursor(position)?;
             }
         }
 
@@ -424,14 +423,15 @@ where
     ///
     /// This is the position of the cursor after the last draw call and is returned as a tuple of
     /// `(x, y)` coordinates.
-    pub fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
+    pub fn get_cursor(&mut self) -> io::Result<Position> {
         self.backend.get_cursor()
     }
 
     /// Sets the cursor position.
-    pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
-        self.backend.set_cursor(x, y)?;
-        self.last_known_cursor_pos = Position { x, y };
+    pub fn set_cursor<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
+        let position = position.into();
+        self.backend.set_cursor(position)?;
+        self.last_known_cursor_pos = position;
         Ok(())
     }
 
@@ -440,13 +440,12 @@ where
         match self.viewport {
             Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
             Viewport::Inline(_) => {
-                self.backend
-                    .set_cursor(self.viewport_area.left(), self.viewport_area.top())?;
+                self.backend.set_cursor(self.viewport_area.as_position())?;
                 self.backend.clear_region(ClearType::AfterCursor)?;
             }
             Viewport::Fixed(area) => {
-                for row in area.top()..area.bottom() {
-                    self.backend.set_cursor(0, row)?;
+                for y in area.top()..area.bottom() {
+                    self.backend.set_cursor(Position { x: 0, y })?;
                     self.backend.clear_region(ClearType::AfterCursor)?;
                 }
             }
@@ -561,7 +560,7 @@ where
             });
             self.backend.draw(iter)?;
             self.backend.flush()?;
-            self.set_cursor(self.viewport_area.left(), self.viewport_area.top())?;
+            self.set_cursor(self.viewport_area.as_position())?;
         }
 
         Ok(())
@@ -574,7 +573,7 @@ fn compute_inline_size<B: Backend>(
     size: Rect,
     offset_in_previous_viewport: u16,
 ) -> io::Result<(Rect, Position)> {
-    let pos: Position = backend.get_cursor()?.into();
+    let pos = backend.get_cursor()?;
     let mut row = pos.y;
 
     let max_height = size.height.min(height);

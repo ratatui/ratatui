@@ -166,8 +166,8 @@ impl Frame<'_> {
     /// Note that this will interfere with calls to `Terminal::hide_cursor()`,
     /// `Terminal::show_cursor()`, and `Terminal::set_cursor()`. Pick one of the APIs and stick
     /// with it.
-    pub fn set_cursor(&mut self, x: u16, y: u16) {
-        self.cursor_position = Some(Position { x, y });
+    pub fn set_cursor<P: Into<Position>>(&mut self, position: P) {
+        self.cursor_position = Some(position.into());
     }
 
     /// Gets the buffer that this `Frame` draws into as a mutable reference.

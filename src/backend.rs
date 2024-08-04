@@ -104,7 +104,10 @@ use std::io;
 
 use strum::{Display, EnumString};
 
-use crate::{buffer::Cell, layout::Size, prelude::Rect};
+use crate::{
+    buffer::Cell,
+    layout::{Position, Rect, Size},
+};
 
 #[cfg(feature = "termion")]
 mod termion;
@@ -210,7 +213,7 @@ pub trait Backend {
     /// See [`set_cursor`] for an example.
     ///
     /// [`set_cursor`]: Backend::set_cursor
-    fn get_cursor(&mut self) -> io::Result<(u16, u16)>;
+    fn get_cursor(&mut self) -> io::Result<Position>;
 
     /// Set the cursor position on the terminal screen to the given x and y coordinates.
     ///
@@ -220,14 +223,15 @@ pub trait Backend {
     ///
     /// ```rust
     /// # use ratatui::backend::{Backend, TestBackend};
+    /// # use ratatui::layout::Position;
     /// # let mut backend = TestBackend::new(80, 25);
-    /// backend.set_cursor(10, 20)?;
-    /// assert_eq!(backend.get_cursor()?, (10, 20));
+    /// backend.set_cursor(Position { x: 10, y: 20 })?;
+    /// assert_eq!(backend.get_cursor()?, Position { x: 10, y: 20 });
     /// # std::io::Result::Ok(())
     /// ```
     ///
     /// [`get_cursor`]: Backend::get_cursor
-    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()>;
+    fn set_cursor<P: Into<Position>>(&mut self, position: P) -> io::Result<()>;
 
     /// Clears the whole terminal screen
     ///
