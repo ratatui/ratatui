@@ -10,6 +10,10 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [v0.28.0](#v0280) (unreleased)
+  - `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize`
+  - `ratatui::terminal` module is now private
+  - `Axis::labels` now accepts `Vec<T: Into<Line>>`
 - [v0.27.0](#v0270)
   - List no clamps the selected index to list
   - Prelude items added / removed
@@ -55,6 +59,41 @@ This is a quick summary of the sections below:
 - [v0.20.0](#v0200)
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
+
+## v0.28.0 (unreleased)
+
+### `Axis::labels()` now accepts `Vec<T: Into<Line>>` ([#1273])
+
+[#1273]: https://github.com/ratatui-org/ratatui/pull/1173
+
+Previously Axis::labels accepted `Vec<Span>`. Any code that uses conversion methods that infer the
+type will need to be rewritten as the compiler cannot infer the correct type.
+
+```diff
+- Axis::default().labels("a".into(), "b".into())
++ Axis::default().labels("a", "b")
+
+### `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize` ([#1145])
+
+[#1145]: https://github.com/ratatui-org/ratatui/pull/1145
+
+```diff
+- let is_initialized = Layout::init_cache(100);
++ Layout::init_cache(NonZeroUsize::new(100).unwrap());
+```
+
+### `ratatui::terminal` module is now private ([#1160])
+
+[#1160]: https://github.com/ratatui-org/ratatui/pull/1160
+
+The `terminal` module is now private and can not be used directly. The types under this module are
+exported from the root of the crate. This reduces clashes with other modules in the backends that
+are also named terminal, and confusion about module exports for newer Rust users.
+
+```diff
+- use ratatui::terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, ViewPort};
++ use ratatui::{CompletedFrame, Frame, Terminal, TerminalOptions, ViewPort};
+```
 
 ## [v0.27.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.27.0)
 

@@ -216,6 +216,42 @@ impl ListState {
     pub fn select_last(&mut self) {
         self.select(Some(usize::MAX));
     }
+
+    /// Scrolls down by a specified `amount` in the list.
+    ///
+    /// This method updates the selected index by moving it down by the given `amount`.
+    /// If the `amount` causes the index to go out of bounds (i.e., if the index is greater than
+    /// the length of the list), the last item in the list will be selected.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = ListState::default();
+    /// state.scroll_down_by(4);
+    /// ```
+    pub fn scroll_down_by(&mut self, amount: u16) {
+        let selected = self.selected.unwrap_or_default();
+        self.select(Some(selected.saturating_add(amount as usize)));
+    }
+
+    /// Scrolls up by a specified `amount` in the list.
+    ///
+    /// This method updates the selected index by moving it up by the given `amount`.
+    /// If the `amount` causes the index to go out of bounds (i.e., less than zero),
+    /// the first item in the list will be selected.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use ratatui::{prelude::*, widgets::*};
+    /// let mut state = ListState::default();
+    /// state.scroll_up_by(4);
+    /// ```
+    pub fn scroll_up_by(&mut self, amount: u16) {
+        let selected = self.selected.unwrap_or_default();
+        self.select(Some(selected.saturating_sub(amount as usize)));
+    }
 }
 
 #[cfg(test)]
@@ -285,5 +321,21 @@ mod tests {
         let mut state = ListState::default();
         state.select_previous();
         assert_eq!(state.selected, Some(usize::MAX));
+
+        let mut state = ListState::default();
+        state.select(Some(2));
+        state.scroll_down_by(4);
+        assert_eq!(state.selected, Some(6));
+
+        let mut state = ListState::default();
+        state.scroll_up_by(3);
+        assert_eq!(state.selected, Some(0));
+
+        state.select(Some(6));
+        state.scroll_up_by(4);
+        assert_eq!(state.selected, Some(2));
+
+        state.scroll_up_by(4);
+        assert_eq!(state.selected, Some(0));
     }
 }

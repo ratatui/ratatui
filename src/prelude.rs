@@ -30,7 +30,7 @@ pub use crate::{
     layout::{self, Alignment, Constraint, Direction, Layout, Margin, Position, Rect, Size},
     style::{self, Color, Modifier, Style, Stylize},
     symbols::{self},
-    terminal::{Frame, Terminal},
     text::{self, Line, Masked, Span, Text},
     widgets::{block::BlockExt, StatefulWidget, Widget},
+    Frame, Terminal,
 };

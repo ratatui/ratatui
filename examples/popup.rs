@@ -27,8 +27,8 @@ use ratatui::{
     },
     layout::{Constraint, Layout, Rect},
     style::Stylize,
-    terminal::{Frame, Terminal},
     widgets::{Block, Clear, Paragraph, Wrap},
+    Frame, Terminal,
 };
 
 struct App {

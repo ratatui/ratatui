@@ -1,7 +1,6 @@
 use std::cmp::max;
 
 use strum::{Display, EnumString};
-use unicode_width::UnicodeWidthStr;
 
 use crate::{
     layout::Flex,
@@ -40,7 +39,7 @@ pub struct Axis<'a> {
     /// Bounds for the axis (all data points outside these limits will not be represented)
     bounds: [f64; 2],
     /// A list of labels to put to the left or below the axis
-    labels: Option<Vec<Span<'a>>>,
+    labels: Option<Vec<Line<'a>>>,
     /// The style used to draw the axis itself
     style: Style,
     /// The alignment of the labels of the Axis
@@ -85,6 +84,11 @@ impl<'a> Axis<'a> {
     ///
     /// [issue 334]: https://github.com/ratatui-org/ratatui/issues/334
     ///
+    /// `labels` is a vector of any type that can be converted into a [`Line`] (e.g. `&str`,
+    /// `String`, `&Line`, `Span`, ...). This allows you to style the labels using the methods
+    /// provided by [`Line`]. Any alignment set on the labels will be ignored as the alignment is
+    /// determined by the axis.
+    ///
     /// This is a fluent setter method which must be chained or used as it consumes self
     ///
     /// # Examples
@@ -97,8 +101,8 @@ impl<'a> Axis<'a> {
     ///         .labels(vec!["0".bold(), "25".into(), "50".bold()]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn labels(mut self, labels: Vec<Span<'a>>) -> Self {
-        self.labels = Some(labels);
+    pub fn labels<T: Into<Line<'a>>>(mut self, labels: Vec<T>) -> Self {
+        self.labels = Some(labels.into_iter().map(Into::into).collect());
         self
     }
 
@@ -408,9 +412,9 @@ impl<'a> Dataset<'a> {
 /// labels, legend, ...).
 struct ChartLayout {
     /// Location of the title of the x axis
-    title_x: Option<(u16, u16)>,
+    title_x: Option<Position>,
     /// Location of the title of the y axis
-    title_y: Option<(u16, u16)>,
+    title_y: Option<Position>,
     /// Location of the first label of the x axis
     label_x: Option<u16>,
     /// Location of the first label of the y axis
@@ -470,14 +474,14 @@ struct ChartLayout {
 ///     .title("X Axis".red())
 ///     .style(Style::default().white())
 ///     .bounds([0.0, 10.0])
-///     .labels(vec!["0.0".into(), "5.0".into(), "10.0".into()]);
+///     .labels(vec!["0.0", "5.0", "10.0"]);
 ///
 /// // Create the Y axis and define its properties
 /// let y_axis = Axis::default()
 ///     .title("Y Axis".red())
 ///     .style(Style::default().white())
 ///     .bounds([0.0, 10.0])
-///     .labels(vec!["0.0".into(), "5.0".into(), "10.0".into()]);
+///     .labels(vec!["0.0", "5.0", "10.0"]);
 ///
 /// // Create the chart and link all the parts together
 /// let chart = Chart::new(datasets)
@@ -579,7 +583,7 @@ impl<'a> Chart<'a> {
     ///     Axis::default()
     ///         .title("X Axis")
     ///         .bounds([0.0, 20.0])
-    ///         .labels(vec!["0".into(), "20".into()]),
+    ///         .labels(vec!["0", "20"]),
     /// );
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -602,7 +606,7 @@ impl<'a> Chart<'a> {
     ///     Axis::default()
     ///         .title("Y Axis")
     ///         .bounds([0.0, 20.0])
-    ///         .labels(vec!["0".into(), "20".into()]),
+    ///         .labels(vec!["0", "20"]),
     /// );
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -740,7 +744,7 @@ impl<'a> Chart<'a> {
         if let Some(ref title) = self.x_axis.title {
             let w = title.width() as u16;
             if w < graph_area.width && graph_area.height > 2 {
-                title_x = Some((x + graph_area.width - w, y));
+                title_x = Some(Position::new(x + graph_area.width - w, y));
             }
         }
 
@@ -748,7 +752,7 @@ impl<'a> Chart<'a> {
         if let Some(ref title) = self.y_axis.title {
             let w = title.width() as u16;
             if w + 1 < graph_area.width && graph_area.height > 2 {
-                title_y = Some((x, area.top()));
+                title_y = Some(Position::new(x, area.top()));
             }
         }
 
@@ -808,7 +812,7 @@ impl<'a> Chart<'a> {
             .y_axis
             .labels
             .as_ref()
-            .map(|l| l.iter().map(Span::width).max().unwrap_or_default() as u16)
+            .map(|l| l.iter().map(Line::width).max().unwrap_or_default() as u16)
             .unwrap_or_default();
 
         if let Some(first_x_label) = self
@@ -817,7 +821,7 @@ impl<'a> Chart<'a> {
             .as_ref()
             .and_then(|labels| labels.first())
         {
-            let first_label_width = first_x_label.content.width() as u16;
+            let first_label_width = first_x_label.width() as u16;
             let width_left_of_y_axis = match self.x_axis.labels_alignment {
                 Alignment::Left => {
                     // The last character of the label should be below the Y-Axis when it exists,
@@ -904,17 +908,13 @@ impl<'a> Chart<'a> {
         Rect::new(min_x, y, max_x - min_x, 1)
     }
 
-    fn render_label(buf: &mut Buffer, label: &Span, label_area: Rect, alignment: Alignment) {
-        let label_width = label.width() as u16;
-        let bounded_label_width = label_area.width.min(label_width);
-
-        let x = match alignment {
-            Alignment::Left => label_area.left(),
-            Alignment::Center => label_area.left() + label_area.width / 2 - bounded_label_width / 2,
-            Alignment::Right => label_area.right() - bounded_label_width,
+    fn render_label(buf: &mut Buffer, label: &Line, label_area: Rect, alignment: Alignment) {
+        let label = match alignment {
+            Alignment::Left => label.clone().left_aligned(),
+            Alignment::Center => label.clone().centered(),
+            Alignment::Right => label.clone().right_aligned(),
         };
-
-        buf.set_span(x, label_area.top(), label, bounded_label_width);
+        label.render(label_area, buf);
     }
 
     fn render_y_labels(
@@ -1032,7 +1032,7 @@ impl WidgetRef for Chart<'_> {
                 .render(graph_area, buf);
         }
 
-        if let Some((x, y)) = layout.title_x {
+        if let Some(Position { x, y }) = layout.title_x {
             let title = self.x_axis.title.as_ref().unwrap();
             let width = graph_area
                 .right()
@@ -1050,7 +1050,7 @@ impl WidgetRef for Chart<'_> {
             buf.set_line(x, y, title, width);
         }
 
-        if let Some((x, y)) = layout.title_y {
+        if let Some(Position { x, y }) = layout.title_y {
             let title = self.y_axis.title.as_ref().unwrap();
             let width = graph_area
                 .right()

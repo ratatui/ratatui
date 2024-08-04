@@ -28,11 +28,11 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Stylize},
     symbols::Marker,
-    terminal::{Frame, Terminal},
     widgets::{
         canvas::{Canvas, Circle, Map, MapResolution, Rectangle},
         Block, Widget,
     },
+    Frame, Terminal,
 };
 
 fn main() -> io::Result<()> {
