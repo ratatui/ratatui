@@ -591,6 +591,7 @@ impl WidgetRef for Line<'_> {
         if area.is_empty() {
             return;
         }
+        let area = Rect { height: 1, ..area };
         let line_width = self.width();
         if line_width == 0 {
             return;
@@ -1124,6 +1125,17 @@ mod tests {
         }
 
         #[test]
+        fn render_only_styles_first_line() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 20, 2));
+            hello_world().render(buf.area, &mut buf);
+            let mut expected = Buffer::with_lines(["Hello world!        ", "                    "]);
+            expected.set_style(Rect::new(0, 0, 20, 1), ITALIC);
+            expected.set_style(Rect::new(0, 0, 6, 1), BLUE);
+            expected.set_style(Rect::new(6, 0, 6, 1), GREEN);
+            assert_eq!(buf, expected);
+        }
+
+        #[test]
         fn render_truncates() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 10, 1));
             Line::from("Hello world!").render(Rect::new(0, 0, 5, 1), &mut buf);
@@ -1396,6 +1408,13 @@ mod tests {
             let mut buf = Buffer::empty(Rect::new(0, 0, 32, 1));
             line.render_ref(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines([expected]));
+        }
+
+        #[test]
+        fn render_with_newlines() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 11, 1));
+            Line::from("Hello\nworld!").render(Rect::new(0, 0, 11, 1), &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["Helloworld!"]));
         }
     }
 

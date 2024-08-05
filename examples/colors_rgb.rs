@@ -44,9 +44,9 @@ use ratatui::{
     },
     layout::{Constraint, Layout, Rect},
     style::Color,
-    terminal::Terminal,
     text::Text,
     widgets::Widget,
+    Terminal,
 };
 
 #[derive(Debug, Default)]

@@ -24,6 +24,7 @@ use crate::layout::Rect;
 /// let (x, y) = position.into();
 /// ```
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Position {
     /// The x coordinate of the position
     ///
@@ -39,6 +40,9 @@ pub struct Position {
 }
 
 impl Position {
+    /// Position at the origin, the top left edge at 0,0
+    pub const ORIGIN: Self = Self { x: 0, y: 0 };
+
     /// Create a new position
     pub const fn new(x: u16, y: u16) -> Self {
         Self { x, y }

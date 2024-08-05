@@ -24,9 +24,8 @@ use itertools::izip;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::terminal::{disable_raw_mode, enable_raw_mode},
-    terminal::{Terminal, Viewport},
     widgets::Paragraph,
-    TerminalOptions,
+    Terminal, TerminalOptions, Viewport,
 };
 
 /// A fun example of using half block characters to draw a logo

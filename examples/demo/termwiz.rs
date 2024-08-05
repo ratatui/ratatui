@@ -5,11 +5,11 @@ use std::{
 
 use ratatui::{
     backend::TermwizBackend,
-    terminal::Terminal,
     termwiz::{
         input::{InputEvent, KeyCode},
         terminal::Terminal as TermwizTerminal,
     },
+    Terminal,
 };
 
 use crate::{app::App, ui};

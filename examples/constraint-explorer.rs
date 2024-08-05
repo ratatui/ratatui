@@ -34,9 +34,9 @@ use ratatui::{
         Color, Style, Stylize,
     },
     symbols::{self, line},
-    terminal::Terminal,
     text::{Line, Span, Text},
     widgets::{Block, Paragraph, Widget, Wrap},
+    Terminal,
 };
 use strum::{Display, EnumIter, FromRepr};
 

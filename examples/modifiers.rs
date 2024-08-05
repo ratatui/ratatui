@@ -35,9 +35,9 @@ use ratatui::{
     },
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style, Stylize},
-    terminal::{Frame, Terminal},
     text::Line,
     widgets::Paragraph,
+    Frame, Terminal,
 };
 
 type Result<T> = result::Result<T, Box<dyn Error>>;

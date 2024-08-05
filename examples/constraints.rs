@@ -30,12 +30,12 @@ use ratatui::{
     },
     style::{palette::tailwind, Color, Modifier, Style, Stylize},
     symbols,
-    terminal::Terminal,
     text::Line,
     widgets::{
         Block, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget,
         Tabs, Widget,
     },
+    Terminal,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
@@ -85,9 +85,6 @@ enum AppState {
 fn main() -> Result<()> {
     init_error_hooks()?;
     let terminal = init_terminal()?;
-
-    // increase the cache size to avoid flickering for indeterminate layouts
-    Layout::init_cache(100);
 
     App::default().run(terminal)?;
 

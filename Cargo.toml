@@ -28,7 +28,7 @@ rust-version = "1.74.0"
 bitflags = "2.3"
 cassowary = "0.3"
 compact_str = "0.8.0"
-crossterm = { version = "0.27", optional = true }
+crossterm = { version = "0.28", optional = true }
 document-features = { version = "0.2.7", optional = true }
 instability = "0.3.1"
 itertools = "0.13"
