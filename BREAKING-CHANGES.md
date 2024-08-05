@@ -10,7 +10,7 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [v0.28.0](#v0280) (unreleased)
+- [v0.28.0](#v0280)
   - Ratatui now requires Crossterm 0.28.0
   - `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize`
   - `ratatui::terminal` module is now private
@@ -61,7 +61,7 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## v0.28.0 (unreleased)
+## v0.28.0
 
 ### Ratatui now requires Crossterm 0.28.0 ([#1278])
 
