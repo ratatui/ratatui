@@ -81,6 +81,7 @@ type will need to be rewritten as the compiler cannot infer the correct type.
 ```diff
 - Axis::default().labels("a".into(), "b".into())
 + Axis::default().labels("a", "b")
+```
 
 ### `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize` ([#1145])
 
