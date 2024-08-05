@@ -197,10 +197,10 @@ where
         self.backend.draw(updates.into_iter())
     }
 
-    /// Updates the Terminal so that internal buffers match the requested size.
+    /// Updates the Terminal so that internal buffers match the requested area.
     ///
-    /// Requested size will be saved so the size can remain consistent when rendering. This leads
-    /// to a full clear of the screen.
+    /// Requested area will be saved to remain consistent when rendering. This leads to a full clear
+    /// of the screen.
     pub fn resize(&mut self, area: Rect) -> io::Result<()> {
         let next_area = match self.viewport {
             Viewport::Fullscreen => area,
