@@ -1,4 +1,4 @@
-use std::cmp::max;
+use std::{cmp::max, ops::Not};
 
 use strum::{Display, EnumString};
 
@@ -39,7 +39,7 @@ pub struct Axis<'a> {
     /// Bounds for the axis (all data points outside these limits will not be represented)
     bounds: [f64; 2],
     /// A list of labels to put to the left or below the axis
-    labels: Option<Vec<Line<'a>>>,
+    labels: Vec<Line<'a>>,
     /// The style used to draw the axis itself
     style: Style,
     /// The alignment of the labels of the Axis
@@ -102,7 +102,7 @@ impl<'a> Axis<'a> {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn labels<T: Into<Line<'a>>>(mut self, labels: Vec<T>) -> Self {
-        self.labels = Some(labels.into_iter().map(Into::into).collect());
+        self.labels = labels.into_iter().map(Into::into).collect();
         self
     }
 
@@ -708,22 +708,22 @@ impl<'a> Chart<'a> {
         let mut y = area.bottom() - 1;
 
         let mut label_x = None;
-        if self.x_axis.labels.is_some() && y > area.top() {
+        if !self.x_axis.labels.is_empty() && y > area.top() {
             label_x = Some(y);
             y -= 1;
         }
 
-        let label_y = self.y_axis.labels.as_ref().and(Some(x));
-        x += self.max_width_of_labels_left_of_y_axis(area, self.y_axis.labels.is_some());
+        let label_y = self.y_axis.labels.is_empty().not().then_some(x);
+        x += self.max_width_of_labels_left_of_y_axis(area, !self.y_axis.labels.is_empty());
 
         let mut axis_x = None;
-        if self.x_axis.labels.is_some() && y > area.top() {
+        if !self.x_axis.labels.is_empty() && y > area.top() {
             axis_x = Some(y);
             y -= 1;
         }
 
         let mut axis_y = None;
-        if self.y_axis.labels.is_some() && x + 1 < area.right() {
+        if !self.y_axis.labels.is_empty() && x + 1 < area.right() {
             axis_y = Some(x);
             x += 1;
         }
@@ -811,16 +811,12 @@ impl<'a> Chart<'a> {
         let mut max_width = self
             .y_axis
             .labels
-            .as_ref()
-            .map(|l| l.iter().map(Line::width).max().unwrap_or_default() as u16)
-            .unwrap_or_default();
+            .iter()
+            .map(Line::width)
+            .max()
+            .unwrap_or_default() as u16;
 
-        if let Some(first_x_label) = self
-            .x_axis
-            .labels
-            .as_ref()
-            .and_then(|labels| labels.first())
-        {
+        if let Some(first_x_label) = self.x_axis.labels.first() {
             let first_label_width = first_x_label.width() as u16;
             let width_left_of_y_axis = match self.x_axis.labels_alignment {
                 Alignment::Left => {
@@ -846,7 +842,7 @@ impl<'a> Chart<'a> {
         graph_area: Rect,
     ) {
         let Some(y) = layout.label_x else { return };
-        let labels = self.x_axis.labels.as_ref().unwrap();
+        let labels = &self.x_axis.labels;
         let labels_len = labels.len() as u16;
         if labels_len < 2 {
             return;
@@ -925,7 +921,7 @@ impl<'a> Chart<'a> {
         graph_area: Rect,
     ) {
         let Some(x) = layout.label_y else { return };
-        let labels = self.y_axis.labels.as_ref().unwrap();
+        let labels = &self.y_axis.labels;
         let labels_len = labels.len() as u16;
         for (i, label) in labels.iter().enumerate() {
             let dy = i as u16 * (graph_area.height - 1) / (labels_len - 1);
