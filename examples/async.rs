@@ -158,17 +158,25 @@ impl PullRequestsWidget {
     /// The result of the fetch is then passed to the `on_load` or `on_err` methods.
     fn run(&self) {
         let this = self.clone(); // clone the widget to pass to the background task
-        tokio::spawn(async move {
-            // this runs once, but you could also run this in a loop, using a channel that accepts
-            // messages to refresh on demand, or with an interval timer to refresh every N seconds
-            this.set_loading_state(LoadingState::Loading);
-            match fetch_pulls().await {
-                Ok(page) => this.on_load(&page),
-                Err(err) => this.on_err(&err),
-            }
-        });
+        tokio::spawn(this.fetch_pulls());
     }
 
+    async fn fetch_pulls(self) {
+        // this runs once, but you could also run this in a loop, using a channel that accepts
+        // messages to refresh on demand, or with an interval timer to refresh every N seconds
+        self.set_loading_state(LoadingState::Loading);
+        match octocrab::instance()
+            .pulls("ratatui-org", "ratatui")
+            .list()
+            .sort(Sort::Updated)
+            .direction(Direction::Descending)
+            .send()
+            .await
+        {
+            Ok(page) => self.on_load(&page),
+            Err(err) => self.on_err(&err),
+        }
+    }
     fn on_load(&self, page: &Page<OctoPullRequest>) {
         let prs = page.items.iter().map(Into::into);
         let mut inner = self.inner.write().unwrap();
@@ -194,16 +202,6 @@ impl PullRequestsWidget {
 }
 
 type OctoPullRequest = octocrab::models::pulls::PullRequest;
-
-async fn fetch_pulls() -> octocrab::Result<Page<OctoPullRequest>> {
-    octocrab::instance()
-        .pulls("ratatui-org", "ratatui")
-        .list()
-        .sort(Sort::Updated)
-        .direction(Direction::Descending)
-        .send()
-        .await
-}
 
 impl From<&OctoPullRequest> for PullRequest {
     fn from(pr: &OctoPullRequest) -> Self {
