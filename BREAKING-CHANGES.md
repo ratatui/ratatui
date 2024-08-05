@@ -82,9 +82,9 @@ type will need to be rewritten as the compiler cannot infer the correct type.
 - Axis::default().labels("a".into(), "b".into())
 + Axis::default().labels("a", "b")
 
-### `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize` ([#1145])
+### `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize` ([#1245])
 
-[#1145]: https://github.com/ratatui-org/ratatui/pull/1145
+[#1245]: https://github.com/ratatui-org/ratatui/pull/1245
 
 ```diff
 - let is_initialized = Layout::init_cache(100);
