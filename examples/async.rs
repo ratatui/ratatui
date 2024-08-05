@@ -5,6 +5,9 @@
 //! environment variable named `GITHUB_TOKEN` with a valid GitHub personal access token. The token
 //! does not need any special permissions.
 //!
+//! <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token>
+//! <https://github.com/settings/tokens/new> to create a new token (select classic, and no scopes)
+//!
 //! This example does not cover message passing between threads, it only demonstrates how to manage
 //! shared state between the main thread and a background task, which acts mostly as a one-shot
 //! fetcher. For more complex scenarios, you may need to use channels or other synchronization
@@ -31,7 +34,7 @@ use std::{
     time::Duration,
 };
 
-use color_eyre::Result;
+use color_eyre::{eyre::Context, Result, Section};
 use futures::StreamExt;
 use octocrab::{
     params::{pulls::Sort, Direction},
@@ -59,9 +62,12 @@ async fn main() -> Result<()> {
 }
 
 fn init_octocrab() -> Result<()> {
-    // dotenvy::dotenv()?; // uncomment if you want to use a .env file to load the token
-    // https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token
-    let token = std::env::var("GITHUB_TOKEN")?;
+    let token = std::env::var("GITHUB_TOKEN")
+        .wrap_err("The GITHUB_TOKEN environment variable was not found")
+        .suggestion(
+            "Go to https://github.com/settings/tokens/new to create a token, and re-run:
+            GITHUB_TOKEN=ghp_... cargo run --example async --features crossterm",
+        )?;
     let crab = OctocrabBuilder::new().personal_token(token).build()?;
     octocrab::initialise(crab);
     Ok(())
