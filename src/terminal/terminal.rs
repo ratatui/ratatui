@@ -28,9 +28,10 @@ use crate::{backend::ClearType, prelude::*, CompletedFrame, TerminalOptions, Vie
 /// # Examples
 ///
 /// ```rust,no_run
+/// # use ratatui::prelude::*;
 /// use std::io::stdout;
 ///
-/// use ratatui::{prelude::*, widgets::Paragraph};
+/// use ratatui::widgets::Paragraph;
 ///
 /// let backend = CrosstermBackend::new(stdout());
 /// let mut terminal = Terminal::new(backend)?;
@@ -333,7 +334,7 @@ where
     /// # Examples
     ///
     /// ```should_panic
-    /// # use ratatui::prelude::*;
+    /// # use ratatui::layout::Position;;
     /// # let backend = ratatui::backend::TestBackend::new(10, 10);
     /// # let mut terminal = ratatui::Terminal::new(backend)?;
     /// use std::io;
