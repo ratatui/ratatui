@@ -117,6 +117,19 @@ impl TestBackend {
     {
         self.assert_buffer(&Buffer::with_lines(expected));
     }
+
+    /// Asserts that the `TestBackend`'s cursor position is equal to the expected one.
+    ///
+    /// This is a shortcut for `assert_eq!(self.get_cursor_position().unwrap(), expected)`.
+    ///
+    /// # Panics
+    /// When they are not equal, a panic occurs with a detailed error message showing the
+    /// differences between the expected and actual position.
+    #[track_caller]
+    pub fn assert_cursor_position<P: Into<Position>>(&mut self, position: P) {
+        let actual = self.get_cursor_position().unwrap();
+        assert_eq!(actual, position.into());
+    }
 }
 
 impl fmt::Display for TestBackend {
@@ -347,6 +360,12 @@ mod tests {
     }
 
     #[test]
+    fn assert_cursor_position() {
+        let mut backend = TestBackend::new(10, 2);
+        backend.assert_cursor_position(Position::ORIGIN);
+    }
+
+    #[test]
     fn set_cursor_position() {
         let mut backend = TestBackend::new(10, 10);
         backend
@@ -499,28 +518,16 @@ mod tests {
         // newline simply moves the cursor down and to the right
 
         backend.append_lines(1).unwrap();
-        assert_eq!(
-            backend.get_cursor_position().unwrap(),
-            Position { x: 1, y: 1 }
-        );
+        backend.assert_cursor_position(Position { x: 1, y: 1 });
 
         backend.append_lines(1).unwrap();
-        assert_eq!(
-            backend.get_cursor_position().unwrap(),
-            Position { x: 2, y: 2 }
-        );
+        backend.assert_cursor_position(Position { x: 2, y: 2 });
 
         backend.append_lines(1).unwrap();
-        assert_eq!(
-            backend.get_cursor_position().unwrap(),
-            Position { x: 3, y: 3 }
-        );
+        backend.assert_cursor_position(Position { x: 3, y: 3 });
 
         backend.append_lines(1).unwrap();
-        assert_eq!(
-            backend.get_cursor_position().unwrap(),
-            Position { x: 4, y: 4 }
-        );
+        backend.assert_cursor_position(Position { x: 4, y: 4 });
 
         // As such the buffer should remain unchanged
         backend.assert_buffer_lines([
@@ -561,10 +568,7 @@ mod tests {
 
         // It also moves the cursor to the right, as is common of the behaviour of
         // terminals in raw-mode
-        assert_eq!(
-            backend.get_cursor_position().unwrap(),
-            Position { x: 1, y: 4 }
-        );
+        backend.assert_cursor_position(Position { x: 1, y: 4 });
     }
 
     #[test]
@@ -584,10 +588,7 @@ mod tests {
         // newlines simply moves the cursor n lines down and to the right by 1
 
         backend.append_lines(4).unwrap();
-        assert_eq!(
-            backend.get_cursor_position().unwrap(),
-            Position { x: 1, y: 4 }
-        );
+        backend.assert_cursor_position(Position { x: 1, y: 4 });
 
         // As such the buffer should remain unchanged
         backend.assert_buffer_lines([
@@ -615,10 +616,7 @@ mod tests {
             .unwrap();
 
         backend.append_lines(3).unwrap();
-        assert_eq!(
-            backend.get_cursor_position().unwrap(),
-            Position { x: 1, y: 4 }
-        );
+        backend.assert_cursor_position(Position { x: 1, y: 4 });
 
         backend.assert_buffer_lines([
             "cccccccccc",
@@ -645,10 +643,7 @@ mod tests {
             .unwrap();
 
         backend.append_lines(5).unwrap();
-        assert_eq!(
-            backend.get_cursor_position().unwrap(),
-            Position { x: 1, y: 4 }
-        );
+        backend.assert_cursor_position(Position { x: 1, y: 4 });
 
         backend.assert_buffer_lines([
             "          ",
@@ -673,10 +668,7 @@ mod tests {
         backend.set_cursor_position(Position::ORIGIN).unwrap();
 
         backend.append_lines(5).unwrap();
-        assert_eq!(
-            backend.get_cursor_position().unwrap(),
-            Position { x: 1, y: 4 }
-        );
+        backend.assert_cursor_position(Position { x: 1, y: 4 });
 
         backend.assert_buffer_lines([
             "bbbbbbbbbb",
