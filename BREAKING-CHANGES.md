@@ -11,6 +11,7 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.28.0](#v0280) (unreleased)
+  - Ratatui now requires Crossterm 0.28.0
   - `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize`
   - `ratatui::terminal` module is now private
   - `Axis::labels` now accepts `Vec<T: Into<Line>>`
@@ -62,6 +63,14 @@ This is a quick summary of the sections below:
 
 ## v0.28.0 (unreleased)
 
+### Ratatui now requires Crossterm 0.28.0 ([#1278])
+
+[#1278]: https://github.com/ratatui-org/ratatui/pull/1278
+
+Crossterm is updated to version 0.28.0, which is a semver incompatible version with the previous
+version (0.27.0). Ratatui re-exports the version of crossterm that it is compatible with under
+`ratatui::crossterm`, which can be used to avoid incompatible versions in your dependency list.
+
 ### `Axis::labels()` now accepts `Vec<T: Into<Line>>` ([#1273])
 
 [#1273]: https://github.com/ratatui-org/ratatui/pull/1173
@@ -73,9 +82,9 @@ type will need to be rewritten as the compiler cannot infer the correct type.
 - Axis::default().labels("a".into(), "b".into())
 + Axis::default().labels("a", "b")
 
-### `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize` ([#1145])
+### `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize` ([#1245])
 
-[#1145]: https://github.com/ratatui-org/ratatui/pull/1145
+[#1245]: https://github.com/ratatui-org/ratatui/pull/1245
 
 ```diff
 - let is_initialized = Layout::init_cache(100);
