@@ -61,6 +61,7 @@ async fn main() -> Result<()> {
 
 fn init_octocrab() -> Result<()> {
     // dotenvy::dotenv()?; // uncomment if you want to use a .env file to load the token
+    // https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token
     let token = std::env::var("GITHUB_TOKEN")?;
     let crab = OctocrabBuilder::new().personal_token(token).build()?;
     octocrab::initialise(crab);
