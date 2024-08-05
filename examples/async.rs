@@ -45,7 +45,6 @@ use ratatui::{
         Block, BorderType, HighlightSpacing, Row, StatefulWidget, Table, TableState, Widget,
     },
 };
-use tokio::time::interval;
 
 use self::terminal::Terminal;
 
@@ -80,7 +79,8 @@ impl App {
     pub async fn run(mut self, mut terminal: Terminal) -> Result<()> {
         self.pulls.run();
 
-        let mut interval = interval(Duration::from_secs_f32(1.0 / Self::FRAMES_PER_SECOND));
+        let mut interval =
+            tokio::time::interval(Duration::from_secs_f32(1.0 / Self::FRAMES_PER_SECOND));
         let mut events = EventStream::new();
 
         while !self.should_quit {
