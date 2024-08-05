@@ -485,10 +485,7 @@ mod test {
         let backend = TestBackend::new(expected.area.width, expected.area.height);
         let mut terminal = Terminal::new(backend).unwrap();
         terminal
-            .draw(|f| {
-                let size = f.size();
-                f.render_widget(paragraph.clone(), size);
-            })
+            .draw(|f| f.render_widget(paragraph.clone(), f.area()))
             .unwrap();
         terminal.backend().assert_buffer(expected);
     }

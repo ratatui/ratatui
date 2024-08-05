@@ -82,7 +82,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
 /// draws a greeting.
 fn render_app(frame: &mut Frame) {
     let greeting = Paragraph::new("Hello World! (press 'q' to quit)");
-    frame.render_widget(greeting, frame.size());
+    frame.render_widget(greeting, frame.area());
 }
 
 /// Check if the user has pressed 'q'. This is where you would handle events. This example just

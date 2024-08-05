@@ -90,7 +90,7 @@ fn handle_events() -> Result<ControlFlow<()>> {
 }
 
 fn ui(frame: &mut Frame) {
-    let (title_area, layout) = calculate_layout(frame.size());
+    let (title_area, layout) = calculate_layout(frame.area());
 
     render_title(frame, title_area);
 

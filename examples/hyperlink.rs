@@ -56,7 +56,7 @@ impl App {
 
     fn run(self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
         loop {
-            terminal.draw(|frame| frame.render_widget(&self.hyperlink, frame.size()))?;
+            terminal.draw(|frame| frame.render_widget(&self.hyperlink, frame.area()))?;
             if let Event::Key(key) = event::read()? {
                 if matches!(key.code, KeyCode::Char('q') | KeyCode::Esc) {
                     break;
