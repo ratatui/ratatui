@@ -273,7 +273,7 @@ where
     /// terminal.draw(|frame| {
     ///     let area = frame.size();
     ///     frame.render_widget(Paragraph::new("Hello World!"), area);
-    ///     frame.set_cursor(Position { x: 0, y: 0 });
+    ///     frame.set_cursor_position(Position { x: 0, y: 0 });
     /// })?;
     ///
     /// // or with a function
@@ -345,7 +345,7 @@ where
     ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
     ///     let area = frame.size();
     ///     frame.render_widget(Paragraph::new("Hello World!"), area);
-    ///     frame.set_cursor(Position { x: 0, y: 0 });
+    ///     frame.set_cursor_position(Position { x: 0, y: 0 });
     ///     io::Result::Ok(())
     /// })?;
     ///
@@ -384,7 +384,7 @@ where
             None => self.hide_cursor()?,
             Some(position) => {
                 self.show_cursor()?;
-                self.set_cursor(position)?;
+                self.set_cursor_position(position)?;
             }
         }
 
@@ -423,14 +423,29 @@ where
     ///
     /// This is the position of the cursor after the last draw call and is returned as a tuple of
     /// `(x, y)` coordinates.
-    pub fn get_cursor(&mut self) -> io::Result<Position> {
-        self.backend.get_cursor()
+    #[deprecated = "the method get_cursor_position indicates more clearly what about the cursor to get"]
+    pub fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
+        let Position { x, y } = self.get_cursor_position()?;
+        Ok((x, y))
     }
 
     /// Sets the cursor position.
-    pub fn set_cursor<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
+    #[deprecated = "the method aet_cursor_position indicates more clearly what about the cursor to set"]
+    pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
+        self.set_cursor_position(Position { x, y })
+    }
+
+    /// Gets the current cursor position.
+    ///
+    /// This is the position of the cursor after the last draw call.
+    pub fn get_cursor_position(&mut self) -> io::Result<Position> {
+        self.backend.get_cursor_position()
+    }
+
+    /// Sets the cursor position.
+    pub fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
         let position = position.into();
-        self.backend.set_cursor(position)?;
+        self.backend.set_cursor_position(position)?;
         self.last_known_cursor_pos = position;
         Ok(())
     }
@@ -440,12 +455,13 @@ where
         match self.viewport {
             Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
             Viewport::Inline(_) => {
-                self.backend.set_cursor(self.viewport_area.as_position())?;
+                self.backend
+                    .set_cursor_position(self.viewport_area.as_position())?;
                 self.backend.clear_region(ClearType::AfterCursor)?;
             }
             Viewport::Fixed(area) => {
                 for y in area.top()..area.bottom() {
-                    self.backend.set_cursor(Position { x: 0, y })?;
+                    self.backend.set_cursor_position(Position { x: 0, y })?;
                     self.backend.clear_region(ClearType::AfterCursor)?;
                 }
             }
@@ -560,7 +576,7 @@ where
             });
             self.backend.draw(iter)?;
             self.backend.flush()?;
-            self.set_cursor(self.viewport_area.as_position())?;
+            self.set_cursor_position(self.viewport_area.as_position())?;
         }
 
         Ok(())
@@ -573,7 +589,7 @@ fn compute_inline_size<B: Backend>(
     size: Rect,
     offset_in_previous_viewport: u16,
 ) -> io::Result<(Rect, Position)> {
-    let pos = backend.get_cursor()?;
+    let pos = backend.get_cursor_position()?;
     let mut row = pos.y;
 
     let max_height = size.height.min(height);

@@ -251,7 +251,7 @@ fn ui(f: &mut Frame, app: &App) {
         // Make the cursor visible and ask ratatui to put it at the specified coordinates after
         // rendering
         #[allow(clippy::cast_possible_truncation)]
-        InputMode::Editing => f.set_cursor(Position::new(
+        InputMode::Editing => f.set_cursor_position(Position::new(
             // Draw the cursor at the current position in the input field.
             // This position is can be controlled via the left and right arrow key
             input_area.x + app.character_index as u16 + 1,
