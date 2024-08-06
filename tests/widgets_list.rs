@@ -52,7 +52,7 @@ fn widgets_list_should_highlight_the_selected_item() {
         "   Item 3 ",
     ]);
     for x in 0..10 {
-        expected.get_mut(x, 1).set_bg(Color::Yellow);
+        expected[(x, 1)].set_bg(Color::Yellow);
     }
     terminal.backend().assert_buffer(&expected);
 }
@@ -86,7 +86,7 @@ fn widgets_list_should_highlight_the_selected_item_wide_symbol() {
         "   Item 3 ",
     ]);
     for x in 0..10 {
-        expected.get_mut(x, 1).set_bg(Color::Yellow);
+        expected[(x, 1)].set_bg(Color::Yellow);
     }
     terminal.backend().assert_buffer(&expected);
 }
@@ -217,8 +217,8 @@ fn widgets_list_should_display_multiline_items() {
         "   Item 3c",
     ]);
     for x in 0..10 {
-        expected.get_mut(x, 2).set_bg(Color::Yellow);
-        expected.get_mut(x, 3).set_bg(Color::Yellow);
+        expected[(x, 2)].set_bg(Color::Yellow);
+        expected[(x, 3)].set_bg(Color::Yellow);
     }
     terminal.backend().assert_buffer(&expected);
 }
@@ -252,8 +252,8 @@ fn widgets_list_should_repeat_highlight_symbol() {
         "   Item 3c",
     ]);
     for x in 0..10 {
-        expected.get_mut(x, 2).set_bg(Color::Yellow);
-        expected.get_mut(x, 3).set_bg(Color::Yellow);
+        expected[(x, 2)].set_bg(Color::Yellow);
+        expected[(x, 3)].set_bg(Color::Yellow);
     }
     terminal.backend().assert_buffer(&expected);
 }

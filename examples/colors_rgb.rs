@@ -42,7 +42,7 @@ use ratatui::{
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Layout, Position, Rect},
     style::Color,
     text::Text,
     widgets::Widget,
@@ -224,7 +224,7 @@ impl Widget for &mut ColorsWidget {
                 // pixel below it
                 let fg = colors[yi * 2][xi];
                 let bg = colors[yi * 2 + 1][xi];
-                buf.get_mut(x, y).set_char('▀').set_fg(fg).set_bg(bg);
+                buf[Position::new(x, y)].set_char('▀').set_fg(fg).set_bg(bg);
             }
         }
         self.frame_count += 1;

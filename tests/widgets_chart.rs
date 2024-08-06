@@ -470,7 +470,7 @@ fn widgets_chart_can_have_a_legend() {
     // Set expected background color
     for row in 0..30 {
         for col in 0..60 {
-            expected.get_mut(col, row).set_bg(Color::White);
+            expected[(col, row)].set_bg(Color::White);
         }
     }
 
@@ -532,10 +532,10 @@ fn widgets_chart_can_have_a_legend() {
         (57, 2),
     ];
     for (col, row) in line1 {
-        expected.get_mut(col, row).set_fg(Color::Blue);
+        expected[(col, row)].set_fg(Color::Blue);
     }
     for (col, row) in legend1 {
-        expected.get_mut(col, row).set_fg(Color::Blue);
+        expected[(col, row)].set_fg(Color::Blue);
     }
 
     // Set expected colors of the second dataset
@@ -603,16 +603,16 @@ fn widgets_chart_can_have_a_legend() {
         (57, 3),
     ];
     for (col, row) in line2 {
-        expected.get_mut(col, row).set_fg(Color::Green);
+        expected[(col, row)].set_fg(Color::Green);
     }
     for (col, row) in legend2 {
-        expected.get_mut(col, row).set_fg(Color::Green);
+        expected[(col, row)].set_fg(Color::Green);
     }
 
     // Set expected colors of the x axis
     let x_axis_title = vec![(53, 26), (54, 26), (55, 26), (56, 26), (57, 26), (58, 26)];
     for (col, row) in x_axis_title {
-        expected.get_mut(col, row).set_fg(Color::Yellow);
+        expected[(col, row)].set_fg(Color::Yellow);
     }
     terminal.backend().assert_buffer(&expected);
 }

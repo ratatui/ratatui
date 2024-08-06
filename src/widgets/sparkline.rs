@@ -192,7 +192,7 @@ impl Sparkline<'_> {
                     RenderDirection::LeftToRight => spark_area.left() + i as u16,
                     RenderDirection::RightToLeft => spark_area.right() - i as u16 - 1,
                 };
-                buf.get_mut(x, spark_area.top() + j)
+                buf[(x, spark_area.top() + j)]
                     .set_symbol(symbol)
                     .set_style(self.style);
 
