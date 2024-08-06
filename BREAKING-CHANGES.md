@@ -11,10 +11,12 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.28.0](#v0280) (unreleased)
+  ⁻ `Backend::size` returns `Size` instead of `Rect`
+  - `Backend` trait migrates to `get/set_cursor_position`
   - Ratatui now requires Crossterm 0.28.0
+  - `Axis::labels` now accepts `Vec<T: Into<Line>>`
   - `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize`
   - `ratatui::terminal` module is now private
-  - `Axis::labels` now accepts `Vec<T: Into<Line>>`
   - `ToText` no longer has a lifetime
 - [v0.27.0](#v0270)
   - List no clamps the selected index to list
@@ -70,6 +72,17 @@ This is a quick summary of the sections below:
 
 The `Backend::size` method returns a `Size` instead of a `Rect`.
 There is no need for the position here as it was always 0,0.
+
+### `Backend` trait migrates to `get/set_cursor_position` ([#1284])
+
+[#1284]: https://github.com/ratatui-org/ratatui/pull/1284
+
+If you just use the types implementing the `Backend` trait, you will see deprecation hints but
+nothing is a breaking change for you.
+
+If you implement the Backend trait yourself, you need to update the implementation and add the
+`get/set_cursor_position` method. You can remove the `get/set_cursor` methods as they are deprecated
+and a default implementation for them exists.
 
 ### Ratatui now requires Crossterm 0.28.0 ([#1278])
 
