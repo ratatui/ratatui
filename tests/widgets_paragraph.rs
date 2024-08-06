@@ -14,10 +14,7 @@ fn test_case(paragraph: Paragraph, expected: &Buffer) {
     let backend = TestBackend::new(expected.area.width, expected.area.height);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
-        .draw(|f| {
-            let size = f.size();
-            f.render_widget(paragraph, size);
-        })
+        .draw(|f| f.render_widget(paragraph, f.area()))
         .unwrap();
     terminal.backend().assert_buffer(expected);
 }
@@ -56,12 +53,11 @@ fn widgets_paragraph_renders_mixed_width_graphemes() {
     let s = "aコンピュータ上で文字を扱う場合、";
     terminal
         .draw(|f| {
-            let size = f.size();
             let text = vec![Line::from(s)];
             let paragraph = Paragraph::new(text)
                 .block(Block::bordered())
                 .wrap(Wrap { trim: true });
-            f.render_widget(paragraph, size);
+            f.render_widget(paragraph, f.area());
         })
         .unwrap();
     terminal.backend().assert_buffer_lines([

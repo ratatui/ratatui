@@ -23,7 +23,7 @@ pub fn destroy(frame: &mut Frame<'_>) {
         return;
     }
 
-    let area = frame.size();
+    let area = frame.area();
     let buf = frame.buffer_mut();
 
     drip(frame_count, area, buf);

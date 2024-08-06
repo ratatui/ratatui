@@ -57,7 +57,7 @@ fn main() -> io::Result<()> {
 fn hello_world(frame: &mut Frame) {
     frame.render_widget(
         Paragraph::new("Hello World!").block(Block::bordered().title("Greeting")),
-        frame.size(),
+        frame.area(),
     );
 }
 
@@ -79,7 +79,7 @@ fn layout(frame: &mut Frame) {
         Constraint::Length(1),
     ]);
     let horizontal = Layout::horizontal([Constraint::Ratio(1, 2); 2]);
-    let [title_bar, main_area, status_bar] = vertical.areas(frame.size());
+    let [title_bar, main_area, status_bar] = vertical.areas(frame.area());
     let [left, right] = horizontal.areas(main_area);
 
     frame.render_widget(
@@ -102,7 +102,7 @@ fn styling(frame: &mut Frame) {
         Constraint::Length(1),
         Constraint::Min(0),
     ])
-    .split(frame.size());
+    .split(frame.area());
 
     let span1 = Span::raw("Hello ");
     let span2 = Span::styled(

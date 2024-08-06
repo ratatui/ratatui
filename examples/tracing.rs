@@ -88,11 +88,10 @@ fn handle_events(events: &mut Vec<Event>) -> Result<()> {
 fn ui(frame: &mut ratatui::Frame, events: &[Event]) {
     // To view this event, run the example with `RUST_LOG=tracing=debug cargo run --example tracing`
     trace!(frame_count = frame.count(), event_count = events.len());
-    let area = frame.size();
     let events = events.iter().map(|e| format!("{e:?}")).collect::<Vec<_>>();
     let paragraph = Paragraph::new(events.join("\n"))
         .block(Block::bordered().title("Tracing example. Press 'q' to quit."));
-    frame.render_widget(paragraph, area);
+    frame.render_widget(paragraph, frame.area());
 }
 
 /// Initialize the tracing subscriber to log to a file

@@ -203,7 +203,7 @@ fn ui(frame: &mut Frame, states: [State; 3]) {
         Constraint::Length(1),
         Constraint::Min(0), // ignore remaining space
     ]);
-    let [title, buttons, help, _] = vertical.areas(frame.size());
+    let [title, buttons, help, _] = vertical.areas(frame.area());
 
     frame.render_widget(
         Paragraph::new("Custom Widget Example (mouse enabled)"),

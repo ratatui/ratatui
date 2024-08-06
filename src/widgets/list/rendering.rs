@@ -1151,10 +1151,7 @@ mod tests {
             .scroll_padding(padding)
             .highlight_symbol(">> ");
         terminal
-            .draw(|f| {
-                let size = f.size();
-                f.render_stateful_widget(list, size, &mut state);
-            })
+            .draw(|f| f.render_stateful_widget(list, f.area(), &mut state))
             .unwrap();
         terminal.backend().assert_buffer_lines(expected);
     }
@@ -1177,19 +1174,13 @@ mod tests {
         let list = List::new(items).scroll_padding(3).highlight_symbol(">> ");
 
         terminal
-            .draw(|f| {
-                let size = f.size();
-                f.render_stateful_widget(&list, size, &mut state);
-            })
+            .draw(|f| f.render_stateful_widget(&list, f.area(), &mut state))
             .unwrap();
 
         let offset_after_render = state.offset();
 
         terminal
-            .draw(|f| {
-                let size = f.size();
-                f.render_stateful_widget(&list, size, &mut state);
-            })
+            .draw(|f| f.render_stateful_widget(&list, f.area(), &mut state))
             .unwrap();
 
         // Offset after rendering twice should remain the same as after once
@@ -1213,10 +1204,7 @@ mod tests {
         let list = List::new(items).scroll_padding(1).highlight_symbol(">> ");
 
         terminal
-            .draw(|f| {
-                let size = f.size();
-                f.render_stateful_widget(list, size, &mut state);
-            })
+            .draw(|f| f.render_stateful_widget(list, f.area(), &mut state))
             .unwrap();
 
         #[rustfmt::skip]
@@ -1248,10 +1236,7 @@ mod tests {
         let list = List::new(items).scroll_padding(2).highlight_symbol(">> ");
 
         terminal
-            .draw(|f| {
-                let size = f.size();
-                f.render_stateful_widget(list, size, &mut state);
-            })
+            .draw(|f| f.render_stateful_widget(list, f.area(), &mut state))
             .unwrap();
 
         terminal.backend().assert_buffer_lines([
