@@ -15,15 +15,23 @@
 
 use std::{error::Error, io, ops::ControlFlow, time::Duration};
 
-use crossterm::{
-    event::{
-        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseButton, MouseEvent,
-        MouseEventKind,
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    crossterm::{
+        event::{
+            self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseButton, MouseEvent,
+            MouseEventKind,
+        },
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Style},
+    text::Line,
+    widgets::{Paragraph, Widget},
+    Frame, Terminal,
 };
-use ratatui::{prelude::*, widgets::Paragraph};
 
 /// A custom widget that renders a button with a label, theme and state.
 #[derive(Debug, Clone)]
@@ -195,7 +203,7 @@ fn ui(frame: &mut Frame, states: [State; 3]) {
         Constraint::Length(1),
         Constraint::Min(0), // ignore remaining space
     ]);
-    let [title, buttons, help, _] = vertical.areas(frame.size());
+    let [title, buttons, help, _] = vertical.areas(frame.area());
 
     frame.render_widget(
         Paragraph::new("Custom Widget Example (mouse enabled)"),

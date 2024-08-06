@@ -14,7 +14,6 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
 #![warn(clippy::pedantic)]
-#![allow(clippy::wildcard_imports)]
 
 use std::{
     error::Error,
@@ -22,12 +21,20 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{Alignment, Constraint, Layout, Margin},
+    style::{Color, Style, Stylize},
+    symbols::scrollbar,
+    text::{Line, Masked, Span},
+    widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState},
+    Frame, Terminal,
 };
-use ratatui::{prelude::*, symbols::scrollbar, widgets::*};
 
 #[derive(Default)]
 struct App {
@@ -112,11 +119,11 @@ fn run_app<B: Backend>(
 
 #[allow(clippy::too_many_lines, clippy::cast_possible_truncation)]
 fn ui(f: &mut Frame, app: &mut App) {
-    let size = f.size();
+    let area = f.area();
 
     // Words made "loooong" to demonstrate line breaking.
     let s = "Veeeeeeeeeeeeeeeery    loooooooooooooooooong   striiiiiiiiiiiiiiiiiiiiiiiiiing.   ";
-    let mut long_line = s.repeat(usize::from(size.width) / s.len() + 4);
+    let mut long_line = s.repeat(usize::from(area.width) / s.len() + 4);
     long_line.push('\n');
 
     let chunks = Layout::vertical([
@@ -126,7 +133,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         Constraint::Percentage(25),
         Constraint::Percentage(25),
     ])
-    .split(size);
+    .split(area);
 
     let text = vec![
         Line::from("This is a line "),
@@ -186,7 +193,7 @@ fn ui(f: &mut Frame, app: &mut App) {
             .begin_symbol(None)
             .track_symbol(None)
             .end_symbol(None),
-        chunks[2].inner(&Margin {
+        chunks[2].inner(Margin {
             vertical: 1,
             horizontal: 0,
         }),
@@ -204,7 +211,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
             .thumb_symbol("🬋")
             .end_symbol(None),
-        chunks[3].inner(&Margin {
+        chunks[3].inner(Margin {
             vertical: 0,
             horizontal: 1,
         }),
@@ -222,7 +229,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         Scrollbar::new(ScrollbarOrientation::HorizontalBottom)
             .thumb_symbol("░")
             .track_symbol(Some("─")),
-        chunks[4].inner(&Margin {
+        chunks[4].inner(Margin {
             vertical: 0,
             horizontal: 1,
         }),

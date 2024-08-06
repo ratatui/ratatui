@@ -1,4 +1,4 @@
-use crate::{prelude::*, widgets::Block};
+use crate::{prelude::*, style::Styled, widgets::Block};
 
 mod bar;
 mod bar_group;

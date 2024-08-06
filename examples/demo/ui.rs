@@ -1,13 +1,20 @@
-#[allow(clippy::wildcard_imports)]
 use ratatui::{
-    prelude::*,
-    widgets::{canvas::*, *},
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Modifier, Style},
+    symbols,
+    text::{self, Span},
+    widgets::{
+        canvas::{self, Canvas, Circle, Map, MapResolution, Rectangle},
+        Axis, BarChart, Block, Cell, Chart, Dataset, Gauge, LineGauge, List, ListItem, Paragraph,
+        Row, Sparkline, Table, Tabs, Wrap,
+    },
+    Frame,
 };
 
 use crate::app::App;
 
 pub fn draw(f: &mut Frame, app: &mut App) {
-    let chunks = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(f.size());
+    let chunks = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(f.area());
     let tabs = app
         .tabs
         .titles

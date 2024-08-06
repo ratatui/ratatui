@@ -52,7 +52,7 @@ pub use self::{
     table::{Cell, HighlightSpacing, Row, Table, TableState},
     tabs::Tabs,
 };
-use crate::{buffer::Buffer, layout::Rect};
+use crate::{buffer::Buffer, layout::Rect, style::Style};
 
 /// A `Widget` is a type that can be drawn on a [`Buffer`] in a given [`Rect`].
 ///
@@ -60,14 +60,22 @@ use crate::{buffer::Buffer, layout::Rect};
 /// during rendering. This meant that they were not meant to be stored but used as *commands* to
 /// draw common figures in the UI.
 ///
-/// Starting with Ratatui 0.26.0, we added a new [`WidgetRef`] trait and implemented this on all the
-/// internal widgets. This allows you to store a reference to a widget and render it later. It also
+/// Starting with Ratatui 0.26.0, all the internal widgets implement Widget for a reference to
+/// themselves. This allows you to store a reference to a widget and render it later. Widget crates
+/// should consider also doing this to allow for more flexibility in how widgets are used.
+///
+/// In Ratatui 0.26.0, we also added an unstable [`WidgetRef`] trait and implemented this on all the
+/// internal widgets. In addition to the above benefit of rendering references to widgets, this also
 /// allows you to render boxed widgets. This is useful when you want to store a collection of
 /// widgets with different types. You can then iterate over the collection and render each widget.
+/// See <https://github.com/ratatui-org/ratatui/issues/1287> for more information.
 ///
-/// The `Widget` trait can still be implemented, however, it is recommended to implement `WidgetRef`
-/// and add an implementation of `Widget` that calls `WidgetRef::render_ref`. This pattern should be
-/// used where backwards compatibility is required (all the internal widgets use this approach).
+/// In general where you expect a widget to immutably work on its data, we recommended to implement
+/// `Widget` for a reference to the widget (`impl Widget for &MyWidget`). If you need to store state
+/// between draw calls, implement `StatefulWidget` if you want the Widget to be immutable, or
+/// implement `Widget` for a mutable reference to the widget (`impl Widget for &mut MyWidget`) if
+/// you want the widget to be mutable. The mutable widget pattern is used infrequently in apps, but
+/// can be quite useful.
 ///
 /// A blanket implementation of `Widget` for `&W` where `W` implements `WidgetRef` is provided.
 /// Widget is also implemented for `&str` and `String` types.
@@ -235,9 +243,9 @@ pub trait StatefulWidget {
 /// useful when you want to store a collection of widgets with different types. You can then iterate
 /// over the collection and render each widget.
 ///
-/// This trait was introduced in Ratatui 0.26.0 and is implemented for all the internal widgets.
-/// Implementors should prefer to implement this over the `Widget` trait and add an implementation
-/// of `Widget` that calls `WidgetRef::render_ref` where backwards compatibility is required.
+/// This trait was introduced in Ratatui 0.26.0 and is implemented for all the internal widgets. It
+/// is currently marked as unstable as we are still evaluating the API and may make changes in the
+/// future. See <https://github.com/ratatui-org/ratatui/issues/1287> for more information.
 ///
 /// A blanket implementation of `Widget` for `&W` where `W` implements `WidgetRef` is provided.
 ///
@@ -297,7 +305,7 @@ pub trait StatefulWidget {
 /// # }
 /// # }
 /// ```
-#[stability::unstable(feature = "widget-ref")]
+#[instability::unstable(feature = "widget-ref")]
 pub trait WidgetRef {
     /// Draws the current state of the widget in the given buffer. That is the only method required
     /// to implement a custom widget.
@@ -359,9 +367,9 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 /// to a stateful widget and render it later. It also allows you to render boxed stateful widgets.
 ///
 /// This trait was introduced in Ratatui 0.26.0 and is implemented for all the internal stateful
-/// widgets. Implementors should prefer to implement this over the `StatefulWidget` trait and add an
-/// implementation of `StatefulWidget` that calls `StatefulWidgetRef::render_ref` where backwards
-/// compatibility is required.
+/// widgets. It is currently marked as unstable as we are still evaluating the API and may make
+/// changes in the future. See <https://github.com/ratatui-org/ratatui/issues/1287> for more
+/// information.
 ///
 /// A blanket implementation of `StatefulWidget` for `&W` where `W` implements `StatefulWidgetRef`
 /// is provided.
@@ -398,7 +406,7 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 /// }
 /// # }
 /// ```
-#[stability::unstable(feature = "widget-ref")]
+#[instability::unstable(feature = "widget-ref")]
 pub trait StatefulWidgetRef {
     /// State associated with the stateful widget.
     ///
@@ -444,7 +452,7 @@ impl Widget for &str {
 /// [`Rect`].
 impl WidgetRef for &str {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_string(area.x, area.y, self, crate::style::Style::default());
+        buf.set_stringn(area.x, area.y, self, area.width as usize, Style::new());
     }
 }
 
@@ -465,7 +473,7 @@ impl Widget for String {
 /// without the need to give up ownership of the underlying text.
 impl WidgetRef for String {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        buf.set_string(area.x, area.y, self, crate::style::Style::default());
+        buf.set_stringn(area.x, area.y, self, area.width as usize, Style::new());
     }
 }
 
@@ -474,7 +482,7 @@ mod tests {
     use rstest::{fixture, rstest};
 
     use super::*;
-    use crate::prelude::*;
+    use crate::text::Line;
 
     #[fixture]
     fn buf() -> Buffer {
@@ -651,6 +659,13 @@ mod tests {
         }
 
         #[rstest]
+        fn render_area(mut buf: Buffer) {
+            let area = Rect::new(buf.area.x, buf.area.y, 11, buf.area.height);
+            "hello world, just hello".render(area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+        }
+
+        #[rstest]
         fn render_ref(mut buf: Buffer) {
             "hello world".render_ref(buf.area, &mut buf);
             assert_eq!(buf, Buffer::with_lines(["hello world         "]));
@@ -674,6 +689,13 @@ mod tests {
         #[rstest]
         fn render(mut buf: Buffer) {
             String::from("hello world").render(buf.area, &mut buf);
+            assert_eq!(buf, Buffer::with_lines(["hello world         "]));
+        }
+
+        #[rstest]
+        fn render_area(mut buf: Buffer) {
+            let area = Rect::new(buf.area.x, buf.area.y, 11, buf.area.height);
+            String::from("hello world, just hello").render(area, &mut buf);
             assert_eq!(buf, Buffer::with_lines(["hello world         "]));
         }
 

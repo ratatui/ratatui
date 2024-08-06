@@ -13,21 +13,26 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::wildcard_imports)]
-
 use std::{
     io::{self, stdout, Stdout},
     time::{Duration, Instant},
 };
 
-use crossterm::{
-    event::{self, Event, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use ratatui::{
-    prelude::*,
-    widgets::{canvas::*, *},
+    backend::CrosstermBackend,
+    crossterm::{
+        event::{self, Event, KeyCode},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
+    layout::{Constraint, Layout, Rect},
+    style::{Color, Stylize},
+    symbols::Marker,
+    widgets::{
+        canvas::{Canvas, Circle, Map, MapResolution, Rectangle},
+        Block, Widget,
+    },
+    Frame, Terminal,
 };
 
 fn main() -> io::Result<()> {
@@ -127,7 +132,7 @@ impl App {
         let horizontal =
             Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
         let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let [map, right] = horizontal.areas(frame.size());
+        let [map, right] = horizontal.areas(frame.area());
         let [pong, boxes] = vertical.areas(right);
 
         frame.render_widget(self.map_canvas(), map);

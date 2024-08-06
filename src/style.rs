@@ -71,13 +71,14 @@
 use std::fmt;
 
 use bitflags::bitflags;
-
-mod color;
-mod stylize;
-
 pub use color::{Color, ParseColorError};
 pub use stylize::{Styled, Stylize};
+
+mod color;
 pub mod palette;
+#[cfg(feature = "palette")]
+mod palette_conversion;
+mod stylize;
 
 bitflags! {
     /// Modifier changes the way a piece of text is displayed.

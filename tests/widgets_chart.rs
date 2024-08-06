@@ -30,7 +30,7 @@ fn axis_test_case<'line, Lines>(
     terminal
         .draw(|f| {
             let chart = Chart::new(vec![]).x_axis(x_axis).y_axis(y_axis);
-            f.render_widget(chart, f.size());
+            f.render_widget(chart, f.area());
         })
         .unwrap();
     terminal.backend().assert_buffer_lines(expected);
@@ -63,7 +63,7 @@ fn widgets_chart_can_render_on_small_areas(#[case] width: u16, #[case] height: u
                         .bounds([0.0, 0.0])
                         .labels(create_labels(&["0.0", "1.0"])),
                 );
-            f.render_widget(chart, f.size());
+            f.render_widget(chart, f.area());
         })
         .unwrap();
 }
@@ -203,7 +203,7 @@ fn widgets_chart_handles_long_labels<'line, Lines>(
         "          ",
         "          ",
         "──────────",
-        "AAA  B   C",
+        "AAA B    C",
     ],
 )]
 fn widgets_chart_handles_x_axis_labels_alignments<'line, Lines>(
@@ -229,9 +229,9 @@ fn widgets_chart_handles_x_axis_labels_alignments<'line, Lines>(
     "AAAAA              B",
 ])]
 #[case::center(Alignment::Center, [
-    "  D │               ",
+    " D  │               ",
     "    │               ",
-    "  C │               ",
+    " C  │               ",
     "    └───────────────",
     "AAAAA              B",
 ])]
@@ -639,7 +639,7 @@ fn widgets_chart_top_line_styling_is_correct() {
                     .labels(create_labels(&["a", "b"])),
             )
             .x_axis(Axis::default().bounds([0.0, 1.0]));
-            f.render_widget(widget, f.size());
+            f.render_widget(widget, f.area());
         })
         .unwrap();
 

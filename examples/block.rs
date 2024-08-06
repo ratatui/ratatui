@@ -20,18 +20,22 @@ use std::{
     time::Duration,
 };
 
-use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use itertools::Itertools;
 use ratatui::{
-    prelude::*,
+    backend::CrosstermBackend,
+    crossterm::{
+        event::{self, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{Style, Stylize},
+    text::Line,
     widgets::{
         block::{Position, Title},
         Block, BorderType, Borders, Padding, Paragraph, Wrap,
     },
+    Frame,
 };
 
 // These type aliases are used to make the code more readable by reducing repetition of the generic
@@ -86,7 +90,7 @@ fn handle_events() -> Result<ControlFlow<()>> {
 }
 
 fn ui(frame: &mut Frame) {
-    let (title_area, layout) = calculate_layout(frame.size());
+    let (title_area, layout) = calculate_layout(frame.area());
 
     render_title(frame, title_area);
 

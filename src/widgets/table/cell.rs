@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, style::Styled};
 
 /// A [`Cell`] contains the [`Text`] to be displayed in a [`Row`] of a [`Table`].
 ///
@@ -134,7 +134,7 @@ impl<'a> Cell<'a> {
 impl Cell<'_> {
     pub(crate) fn render(&self, area: Rect, buf: &mut Buffer) {
         buf.set_style(area, self.style);
-        self.content.clone().render(area, buf);
+        self.content.render_ref(area, buf);
     }
 }
 

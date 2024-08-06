@@ -6,21 +6,20 @@ use std::io::{self, Write};
 
 #[cfg(feature = "underline-color")]
 use crossterm::style::SetUnderlineColor;
-use crossterm::{
-    cursor::{Hide, MoveTo, Show},
-    execute, queue,
-    style::{
-        Attribute as CAttribute, Attributes as CAttributes, Color as CColor, Colors, ContentStyle,
-        Print, SetAttribute, SetBackgroundColor, SetColors, SetForegroundColor,
-    },
-    terminal::{self, Clear},
-};
 
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
-    layout::Size,
-    prelude::Rect,
+    crossterm::{
+        cursor::{Hide, MoveTo, Show},
+        execute, queue,
+        style::{
+            Attribute as CAttribute, Attributes as CAttributes, Color as CColor, Colors,
+            ContentStyle, Print, SetAttribute, SetBackgroundColor, SetColors, SetForegroundColor,
+        },
+        terminal::{self, Clear},
+    },
+    layout::{Position, Size},
     style::{Color, Modifier, Style},
 };
 
@@ -45,11 +44,15 @@ use crate::{
 /// ```rust,no_run
 /// use std::io::{stderr, stdout};
 ///
-/// use crossterm::{
-///     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-///     ExecutableCommand,
+/// use ratatui::{
+///     crossterm::{
+///         terminal::{
+///             disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+///         },
+///         ExecutableCommand,
+///     },
+///     prelude::*,
 /// };
-/// use ratatui::prelude::*;
 ///
 /// let mut backend = CrosstermBackend::new(stdout());
 /// // or
@@ -102,7 +105,7 @@ where
     }
 
     /// Gets the writer.
-    #[stability::unstable(
+    #[instability::unstable(
         feature = "backend-writer",
         issue = "https://github.com/ratatui-org/ratatui/pull/991"
     )]
@@ -114,7 +117,7 @@ where
     ///
     /// Note: writing to the writer may cause incorrect output after the write. This is due to the
     /// way that the Terminal implements diffing Buffers.
-    #[stability::unstable(
+    #[instability::unstable(
         feature = "backend-writer",
         issue = "https://github.com/ratatui-org/ratatui/pull/991"
     )]
@@ -151,13 +154,13 @@ where
         #[cfg(feature = "underline-color")]
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
-        let mut last_pos: Option<(u16, u16)> = None;
+        let mut last_pos: Option<Position> = None;
         for (x, y, cell) in content {
             // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.0 + 1 && y == p.1) {
+            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
                 queue!(self.writer, MoveTo(x, y))?;
             }
-            last_pos = Some((x, y));
+            last_pos = Some(Position { x, y });
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -242,9 +245,9 @@ where
         self.writer.flush()
     }
 
-    fn size(&self) -> io::Result<Rect> {
+    fn size(&self) -> io::Result<Size> {
         let (width, height) = terminal::size()?;
-        Ok(Rect::new(0, 0, width, height))
+        Ok(Size { width, height })
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {

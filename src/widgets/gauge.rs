@@ -1,4 +1,4 @@
-use crate::{prelude::*, widgets::Block};
+use crate::{prelude::*, style::Styled, widgets::Block};
 
 /// A widget to display a progress bar.
 ///

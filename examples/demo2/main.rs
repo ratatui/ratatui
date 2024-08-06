@@ -14,15 +14,12 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
 #![allow(
-    clippy::enum_glob_use,
     clippy::missing_errors_doc,
     clippy::module_name_repetitions,
-    clippy::must_use_candidate,
-    clippy::wildcard_imports
+    clippy::must_use_candidate
 )]
 
 mod app;
-mod big_text;
 mod colors;
 mod destroy;
 mod errors;
@@ -30,16 +27,17 @@ mod tabs;
 mod term;
 mod theme;
 
-pub use app::*;
 use color_eyre::Result;
-pub use colors::*;
-pub use term::*;
-pub use theme::*;
+
+pub use self::{
+    colors::{color_from_oklab, RgbSwatch},
+    theme::THEME,
+};
 
 fn main() -> Result<()> {
     errors::init_hooks()?;
     let terminal = &mut term::init()?;
-    App::default().run(terminal)?;
+    app::run(terminal)?;
     term::restore()?;
     Ok(())
 }

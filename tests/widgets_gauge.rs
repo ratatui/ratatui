@@ -19,7 +19,7 @@ fn widgets_gauge_renders() {
                 .direction(Direction::Vertical)
                 .margin(2)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(f.size());
+                .split(f.area());
 
             let gauge = Gauge::default()
                 .block(Block::bordered().title("Percentage"))
@@ -68,7 +68,7 @@ fn widgets_gauge_renders_no_unicode() {
                 .direction(Direction::Vertical)
                 .margin(2)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(f.size());
+                .split(f.area());
 
             let gauge = Gauge::default()
                 .block(Block::bordered().title("Percentage"))
@@ -115,7 +115,7 @@ fn widgets_gauge_applies_styles() {
                         .fg(Color::Green)
                         .add_modifier(Modifier::BOLD),
                 ));
-            f.render_widget(gauge, f.size());
+            f.render_widget(gauge, f.area());
         })
         .unwrap();
     let mut expected = Buffer::with_lines([
@@ -167,7 +167,7 @@ fn widgets_gauge_supports_large_labels() {
             let gauge = Gauge::default()
                 .percent(43)
                 .label("43333333333333333333333333333%");
-            f.render_widget(gauge, f.size());
+            f.render_widget(gauge, f.area());
         })
         .unwrap();
     terminal.backend().assert_buffer_lines(["4333333333"]);

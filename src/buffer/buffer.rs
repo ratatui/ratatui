@@ -57,14 +57,14 @@ impl Buffer {
     /// Returns a Buffer with all cells set to the default one
     #[must_use]
     pub fn empty(area: Rect) -> Self {
-        Self::filled(area, &Cell::EMPTY)
+        Self::filled(area, Cell::EMPTY)
     }
 
     /// Returns a Buffer with all cells initialized with the attributes of the given Cell
     #[must_use]
-    pub fn filled(area: Rect, cell: &Cell) -> Self {
+    pub fn filled(area: Rect, cell: Cell) -> Self {
         let size = area.area() as usize;
-        let content = vec![cell.clone(); size];
+        let content = vec![cell; size];
         Self { area, content }
     }
 
@@ -290,7 +290,7 @@ impl Buffer {
     }
 
     /// Print at most the first n characters of a string if enough space is available
-    /// until the end of the line.
+    /// until the end of the line. Skips zero-width graphemes and control characters.
     ///
     /// Use [`Buffer::set_string`] when the maximum amount of characters can be printed.
     pub fn set_stringn<T, S>(
@@ -308,6 +308,7 @@ impl Buffer {
         let max_width = max_width.try_into().unwrap_or(u16::MAX);
         let mut remaining_width = self.area.right().saturating_sub(x).min(max_width);
         let graphemes = UnicodeSegmentation::graphemes(string.as_ref(), true)
+            .filter(|symbol| !symbol.contains(|char: char| char.is_control()))
             .map(|symbol| (symbol, symbol.width() as u16))
             .filter(|(_symbol, width)| *width > 0)
             .map_while(|(symbol, width)| {
@@ -834,16 +835,18 @@ mod tests {
 
     #[test]
     fn set_string_zero_width() {
+        assert_eq!("\u{200B}".width(), 0);
+
         let area = Rect::new(0, 0, 1, 1);
         let mut buffer = Buffer::empty(area);
 
         // Leading grapheme with zero width
-        let s = "\u{1}a";
+        let s = "\u{200B}a";
         buffer.set_stringn(0, 0, s, 1, Style::default());
         assert_eq!(buffer, Buffer::with_lines(["a"]));
 
         // Trailing grapheme with zero with
-        let s = "a\u{1}";
+        let s = "a\u{200B}";
         buffer.set_stringn(0, 0, s, 1, Style::default());
         assert_eq!(buffer, Buffer::with_lines(["a"]));
     }
@@ -975,7 +978,7 @@ mod tests {
     fn diff_empty_filled() {
         let area = Rect::new(0, 0, 40, 40);
         let prev = Buffer::empty(area);
-        let next = Buffer::filled(area, &Cell::new("a"));
+        let next = Buffer::filled(area, Cell::new("a"));
         let diff = prev.diff(&next);
         assert_eq!(diff.len(), 40 * 40);
     }
@@ -983,8 +986,8 @@ mod tests {
     #[test]
     fn diff_filled_filled() {
         let area = Rect::new(0, 0, 40, 40);
-        let prev = Buffer::filled(area, &Cell::new("a"));
-        let next = Buffer::filled(area, &Cell::new("a"));
+        let prev = Buffer::filled(area, Cell::new("a"));
+        let next = Buffer::filled(area, Cell::new("a"));
         let diff = prev.diff(&next);
         assert_eq!(diff, []);
     }
@@ -1078,8 +1081,8 @@ mod tests {
         Lines: IntoIterator,
         Lines::Item: Into<Line<'line>>,
     {
-        let mut one = Buffer::filled(one, &Cell::new("1"));
-        let two = Buffer::filled(two, &Cell::new("2"));
+        let mut one = Buffer::filled(one, Cell::new("1"));
+        let two = Buffer::filled(two, Cell::new("2"));
         one.merge(&two);
         assert_eq!(one, Buffer::with_lines(expected));
     }
@@ -1093,7 +1096,7 @@ mod tests {
                 width: 2,
                 height: 2,
             },
-            &Cell::new("1"),
+            Cell::new("1"),
         );
         let two = Buffer::filled(
             Rect {
@@ -1102,7 +1105,7 @@ mod tests {
                 width: 3,
                 height: 4,
             },
-            &Cell::new("2"),
+            Cell::new("2"),
         );
         one.merge(&two);
         let mut expected = Buffer::with_lines(["222 ", "222 ", "2221", "2221"]);
@@ -1118,25 +1121,29 @@ mod tests {
     #[rstest]
     #[case(false, true, [false, false, true, true, true, true])]
     #[case(true, false, [true, true, false, false, false, false])]
-    fn merge_skip(#[case] one: bool, #[case] two: bool, #[case] expected: [bool; 6]) {
-        let mut one = Buffer::filled(
-            Rect {
+    fn merge_skip(#[case] skip_one: bool, #[case] skip_two: bool, #[case] expected: [bool; 6]) {
+        let mut one = {
+            let area = Rect {
                 x: 0,
                 y: 0,
                 width: 2,
                 height: 2,
-            },
-            Cell::new("1").set_skip(one),
-        );
-        let two = Buffer::filled(
-            Rect {
+            };
+            let mut cell = Cell::new("1");
+            cell.skip = skip_one;
+            Buffer::filled(area, cell)
+        };
+        let two = {
+            let area = Rect {
                 x: 0,
                 y: 1,
                 width: 2,
                 height: 2,
-            },
-            Cell::new("2").set_skip(two),
-        );
+            };
+            let mut cell = Cell::new("2");
+            cell.skip = skip_two;
+            Buffer::filled(area, cell)
+        };
         one.merge(&two);
         let skipped = one.content().iter().map(|c| c.skip).collect::<Vec<_>>();
         assert_eq!(skipped, expected);
@@ -1149,5 +1156,75 @@ mod tests {
         buf.set_string(0, 0, "foo", Style::new().red());
         buf.set_string(0, 1, "bar", Style::new().blue());
         assert_eq!(buf, Buffer::with_lines(["foo".red(), "bar".blue()]));
+    }
+
+    #[test]
+    fn control_sequence_rendered_full() {
+        let text = "I \x1b[0;36mwas\x1b[0m here!";
+
+        let mut buffer = Buffer::filled(Rect::new(0, 0, 25, 3), Cell::new("x"));
+        buffer.set_string(1, 1, text, Style::new());
+
+        let expected = Buffer::with_lines([
+            "xxxxxxxxxxxxxxxxxxxxxxxxx",
+            "xI [0;36mwas[0m here!xxxx",
+            "xxxxxxxxxxxxxxxxxxxxxxxxx",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn control_sequence_rendered_partially() {
+        let text = "I \x1b[0;36mwas\x1b[0m here!";
+
+        let mut buffer = Buffer::filled(Rect::new(0, 0, 11, 3), Cell::new("x"));
+        buffer.set_string(1, 1, text, Style::new());
+
+        #[rustfmt::skip]
+        let expected = Buffer::with_lines([
+            "xxxxxxxxxxx",
+            "xI [0;36mwa",
+            "xxxxxxxxxxx",
+        ]);
+        assert_eq!(buffer, expected);
+    }
+
+    /// Emojis normally contain various characters which should stay part of the Emoji.
+    /// This should work fine by utilizing unicode_segmentation but a testcase is probably helpful
+    /// due to the nature of never perfect Unicode implementations and all of its quirks.
+    #[rstest]
+    // Shrug without gender or skintone. Has a width of 2 like all emojis have.
+    #[case::shrug("🤷", "🤷xxxxx")]
+    // Technically this is a (brown) bear, a zero-width joiner and a snowflake
+    // As it is joined its a single emoji and should therefore have a width of 2.
+    // It's correctly detected as a single grapheme but it's width is 4 for some reason
+    #[case::polarbear("🐻‍❄️", "🐻‍❄️xxx")]
+    // Technically this is an eye, a zero-width joiner and a speech bubble
+    // Both eye and speech bubble include a 'display as emoji' variation selector
+    #[case::eye_speechbubble("👁️‍🗨️", "👁️‍🗨️xxx")]
+    fn renders_emoji(#[case] input: &str, #[case] expected: &str) {
+        use unicode_width::UnicodeWidthChar;
+
+        dbg!(input);
+        dbg!(input.len());
+        dbg!(input
+            .graphemes(true)
+            .map(|symbol| (symbol, symbol.escape_unicode().to_string(), symbol.width()))
+            .collect::<Vec<_>>());
+        dbg!(input
+            .chars()
+            .map(|char| (
+                char,
+                char.escape_unicode().to_string(),
+                char.width(),
+                char.is_control()
+            ))
+            .collect::<Vec<_>>());
+
+        let mut buffer = Buffer::filled(Rect::new(0, 0, 7, 1), Cell::new("x"));
+        buffer.set_string(0, 0, input, Style::new());
+
+        let expected = Buffer::with_lines([expected]);
+        assert_eq!(buffer, expected);
     }
 }

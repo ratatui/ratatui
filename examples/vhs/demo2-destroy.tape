@@ -1,5 +1,5 @@
 # This is a vhs script. See https://github.com/charmbracelet/vhs for more info.
-# To run this script, install vhs and run `vhs ./examples/demo.tape`
+# To run this script, install vhs and run `vhs ./examples/demo2-destroy.tape`
 # NOTE: Requires VHS 0.6.1 or later for Screenshot support
 Output "target/demo2-destroy.gif"
 Set Theme "Aardvark Blue"
@@ -10,9 +10,9 @@ Set Width 1120
 Set Height 480
 Set Padding 0
 Hide
-Type "cargo run --example demo2 --features crossterm,widget-calendar"
+Type "cargo run --example demo2 --features crossterm,palette,widget-calendar"
 Enter
 Sleep 2s
 Show
 Type "d"
-Sleep 30s
+Sleep 20s

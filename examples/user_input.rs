@@ -29,14 +29,18 @@
 
 use std::{error::Error, io};
 
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use ratatui::{
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{Constraint, Layout},
+    style::{Color, Modifier, Style, Stylize},
+    text::{Line, Span, Text},
     widgets::{Block, List, ListItem, Paragraph},
+    Frame, Terminal,
 };
 
 enum InputMode {
@@ -205,7 +209,7 @@ fn ui(f: &mut Frame, app: &App) {
         Constraint::Length(3),
         Constraint::Min(1),
     ]);
-    let [help_area, input_area, messages_area] = vertical.areas(f.size());
+    let [help_area, input_area, messages_area] = vertical.areas(f.area());
 
     let (msg, style) = match app.input_mode {
         InputMode::Normal => (

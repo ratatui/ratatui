@@ -18,14 +18,17 @@
 
 use std::{error::Error, io};
 
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use ratatui::{
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{Constraint, Layout, Rect},
+    style::Stylize,
     widgets::{Block, Clear, Paragraph, Wrap},
+    Frame, Terminal,
 };
 
 struct App {
@@ -83,7 +86,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui(f: &mut Frame, app: &App) {
-    let area = f.size();
+    let area = f.area();
 
     let vertical = Layout::vertical([Constraint::Percentage(20), Constraint::Percentage(80)]);
     let [instructions, content] = vertical.areas(area);

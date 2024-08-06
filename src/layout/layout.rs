@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, iter, num::NonZeroUsize, rc::Rc, sync::OnceLock};
+use std::{cell::RefCell, collections::HashMap, iter, num::NonZeroUsize, rc::Rc};
 
 use cassowary::{
     strength::REQUIRED,
@@ -37,7 +37,9 @@ type Cache = LruCache<(Rect, Layout), (Segments, Spacers)>;
 const FLOAT_PRECISION_MULTIPLIER: f64 = 100.0;
 
 thread_local! {
-    static LAYOUT_CACHE: OnceLock<RefCell<Cache>> = const { OnceLock::new() };
+    static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(Cache::new(
+        NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
+    ));
 }
 
 /// A layout is a set of constraints that can be applied to a given area to split it into smaller
@@ -209,22 +211,9 @@ impl Layout {
     /// that subsequent calls with the same parameters are faster. The cache is a `LruCache`, and
     /// grows until `cache_size` is reached.
     ///
-    /// Returns true if the cell's value was set by this call.
-    /// Returns false if the cell's value was not set by this call, this means that another thread
-    /// has set this value or that the cache size is already initialized.
-    ///
-    /// Note that a custom cache size will be set only if this function:
-    /// * is called before [`Layout::split()`] otherwise, the cache size is
-    ///   [`Self::DEFAULT_CACHE_SIZE`].
-    /// * is called for the first time, subsequent calls do not modify the cache size.
-    pub fn init_cache(cache_size: usize) -> bool {
-        LAYOUT_CACHE
-            .with(|c| {
-                c.set(RefCell::new(LruCache::new(
-                    NonZeroUsize::new(cache_size).unwrap(),
-                )))
-            })
-            .is_ok()
+    /// By default, the cache size is [`Self::DEFAULT_CACHE_SIZE`].
+    pub fn init_cache(cache_size: NonZeroUsize) {
+        LAYOUT_CACHE.with_borrow_mut(|c| c.resize(cache_size));
     }
 
     /// Set the direction of the layout.
@@ -571,17 +560,10 @@ impl Layout {
     /// );
     /// ```
     pub fn split_with_spacers(&self, area: Rect) -> (Segments, Spacers) {
-        LAYOUT_CACHE.with(|c| {
-            c.get_or_init(|| {
-                RefCell::new(LruCache::new(
-                    NonZeroUsize::new(Self::DEFAULT_CACHE_SIZE).unwrap(),
-                ))
-            })
-            .borrow_mut()
-            .get_or_insert((area, self.clone()), || {
-                self.try_split(area).expect("failed to split")
-            })
-            .clone()
+        LAYOUT_CACHE.with_borrow_mut(|c| {
+            let key = (area, self.clone());
+            c.get_or_insert(key, || self.try_split(area).expect("failed to split"))
+                .clone()
         })
     }
 
@@ -608,7 +590,7 @@ impl Layout {
         // This is equivalent to storing the solver in `Layout` and calling `solver.reset()` here.
         let mut solver = Solver::new();
 
-        let inner_area = area.inner(&self.margin);
+        let inner_area = area.inner(self.margin);
         let (area_start, area_end) = match self.direction {
             Direction::Horizontal => (
                 f64::from(inner_area.x) * FLOAT_PRECISION_MULTIPLIER,
@@ -1099,37 +1081,14 @@ mod tests {
     }
 
     #[test]
-    fn custom_cache_size() {
-        assert!(Layout::init_cache(10));
-        assert!(!Layout::init_cache(15));
-        LAYOUT_CACHE.with(|c| {
-            assert_eq!(c.get().unwrap().borrow().cap().get(), 10);
+    fn cache_size() {
+        LAYOUT_CACHE.with_borrow(|c| {
+            assert_eq!(c.cap().get(), Layout::DEFAULT_CACHE_SIZE);
         });
-    }
 
-    #[test]
-    fn default_cache_size() {
-        let target = Rect {
-            x: 2,
-            y: 2,
-            width: 10,
-            height: 10,
-        };
-
-        Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Percentage(10),
-                Constraint::Max(5),
-                Constraint::Min(1),
-            ])
-            .split(target);
-        assert!(!Layout::init_cache(15));
-        LAYOUT_CACHE.with(|c| {
-            assert_eq!(
-                c.get().unwrap().borrow().cap().get(),
-                Layout::DEFAULT_CACHE_SIZE
-            );
+        Layout::init_cache(NonZeroUsize::new(10).unwrap());
+        LAYOUT_CACHE.with_borrow(|c| {
+            assert_eq!(c.cap().get(), 10);
         });
     }
 
@@ -1881,14 +1840,11 @@ mod tests {
 
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Percentage(10),
-                        Constraint::Max(5),
-                        Constraint::Min(1),
-                    ]
-                    .as_ref(),
-                )
+                .constraints([
+                    Constraint::Percentage(10),
+                    Constraint::Max(5),
+                    Constraint::Min(1),
+                ])
                 .split(target);
 
             assert_eq!(target.height, chunks.iter().map(|r| r.height).sum::<u16>());

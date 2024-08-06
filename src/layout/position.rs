@@ -1,4 +1,6 @@
 #![warn(missing_docs)]
+use std::fmt;
+
 use crate::layout::Rect;
 
 /// Position in the terminal
@@ -22,6 +24,7 @@ use crate::layout::Rect;
 /// let (x, y) = position.into();
 /// ```
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Position {
     /// The x coordinate of the position
     ///
@@ -37,6 +40,9 @@ pub struct Position {
 }
 
 impl Position {
+    /// Position at the origin, the top left edge at 0,0
+    pub const ORIGIN: Self = Self { x: 0, y: 0 };
+
     /// Create a new position
     pub const fn new(x: u16, y: u16) -> Self {
         Self { x, y }
@@ -58,6 +64,12 @@ impl From<Position> for (u16, u16) {
 impl From<Rect> for Position {
     fn from(rect: Rect) -> Self {
         rect.as_position()
+    }
+}
+
+impl fmt::Display for Position {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
     }
 }
 
@@ -93,5 +105,11 @@ mod tests {
         let position = Position::from(rect);
         assert_eq!(position.x, 1);
         assert_eq!(position.y, 2);
+    }
+
+    #[test]
+    fn to_string() {
+        let position = Position::new(1, 2);
+        assert_eq!(position.to_string(), "(1, 2)");
     }
 }

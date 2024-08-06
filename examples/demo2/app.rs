@@ -1,12 +1,24 @@
 use std::time::Duration;
 
 use color_eyre::{eyre::Context, Result};
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    backend::Backend,
+    buffer::Buffer,
+    crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind},
+    layout::{Constraint, Layout, Rect},
+    style::Color,
+    text::{Line, Span},
+    widgets::{Block, Tabs, Widget},
+    Terminal,
+};
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
-use crate::{destroy, tabs::*, term, THEME};
+use crate::{
+    destroy,
+    tabs::{AboutTab, EmailTab, RecipeTab, TracerouteTab, WeatherTab},
+    term, THEME,
+};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct App {
@@ -59,7 +71,7 @@ impl App {
     fn draw(&self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
         terminal
             .draw(|frame| {
-                frame.render_widget(self, frame.size());
+                frame.render_widget(self, frame.area());
                 if self.mode == Mode::Destroy {
                     destroy::destroy(frame);
                 }
@@ -82,14 +94,13 @@ impl App {
     }
 
     fn handle_key_press(&mut self, key: KeyEvent) {
-        use KeyCode::*;
         match key.code {
-            Char('q') | Esc => self.mode = Mode::Quit,
-            Char('h') | Left => self.prev_tab(),
-            Char('l') | Right => self.next_tab(),
-            Char('k') | Up => self.prev(),
-            Char('j') | Down => self.next(),
-            Char('d') | Delete => self.destroy(),
+            KeyCode::Char('q') | KeyCode::Esc => self.mode = Mode::Quit,
+            KeyCode::Char('h') | KeyCode::Left => self.prev_tab(),
+            KeyCode::Char('l') | KeyCode::Right => self.next_tab(),
+            KeyCode::Char('k') | KeyCode::Up => self.prev(),
+            KeyCode::Char('j') | KeyCode::Down => self.next(),
+            KeyCode::Char('d') | KeyCode::Delete => self.destroy(),
             _ => {}
         };
     }

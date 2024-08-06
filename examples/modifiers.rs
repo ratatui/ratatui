@@ -25,13 +25,20 @@ use std::{
     time::Duration,
 };
 
-use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::Paragraph};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{Constraint, Layout},
+    style::{Color, Modifier, Style, Stylize},
+    text::Line,
+    widgets::Paragraph,
+    Frame, Terminal,
+};
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
 
@@ -61,7 +68,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
 
 fn ui(frame: &mut Frame) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
-    let [text_area, main_area] = vertical.areas(frame.size());
+    let [text_area, main_area] = vertical.areas(frame.area());
     frame.render_widget(
         Paragraph::new("Note: not all terminals support all modifiers")
             .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),

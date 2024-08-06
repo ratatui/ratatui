@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::{backend::ClearType, prelude::*};
+use crate::{backend::ClearType, prelude::*, CompletedFrame, TerminalOptions, Viewport};
 
 /// An interface to interact and draw [`Frame`]s on the user's terminal.
 ///
@@ -66,11 +66,11 @@ where
     viewport: Viewport,
     /// Area of the viewport
     viewport_area: Rect,
-    /// Last known size of the terminal. Used to detect if the internal buffers have to be resized.
-    last_known_size: Rect,
+    /// Last known area of the terminal. Used to detect if the internal buffers have to be resized.
+    last_known_area: Rect,
     /// Last known position of the cursor. Used to find the new area when the viewport is inlined
     /// and the terminal resized.
-    last_known_cursor_pos: (u16, u16),
+    last_known_cursor_pos: Position,
     /// Number of frames rendered up until current time.
     frame_count: usize,
 }
@@ -126,21 +126,25 @@ where
     ///
     /// ```rust
     /// # use std::io::stdout;
-    /// # use ratatui::{prelude::*, backend::TestBackend};
+    /// # use ratatui::{prelude::*, backend::TestBackend, Viewport, TerminalOptions};
     /// let backend = CrosstermBackend::new(stdout());
     /// let viewport = Viewport::Fixed(Rect::new(0, 0, 10, 10));
     /// let terminal = Terminal::with_options(backend, TerminalOptions { viewport })?;
     /// # std::io::Result::Ok(())
     /// ```
     pub fn with_options(mut backend: B, options: TerminalOptions) -> io::Result<Self> {
-        let size = match options.viewport {
-            Viewport::Fullscreen | Viewport::Inline(_) => backend.size()?,
+        let area = match options.viewport {
+            Viewport::Fullscreen | Viewport::Inline(_) => {
+                Rect::from((Position::ORIGIN, backend.size()?))
+            }
             Viewport::Fixed(area) => area,
         };
         let (viewport_area, cursor_pos) = match options.viewport {
-            Viewport::Fullscreen => (size, (0, 0)),
-            Viewport::Inline(height) => compute_inline_size(&mut backend, height, size, 0)?,
-            Viewport::Fixed(area) => (area, (area.left(), area.top())),
+            Viewport::Fullscreen => (area, Position::ORIGIN),
+            Viewport::Inline(height) => {
+                compute_inline_size(&mut backend, height, area.as_size(), 0)?
+            }
+            Viewport::Fixed(area) => (area, area.as_position()),
         };
         Ok(Self {
             backend,
@@ -149,7 +153,7 @@ where
             hidden_cursor: false,
             viewport: options.viewport,
             viewport_area,
-            last_known_size: size,
+            last_known_area: area,
             last_known_cursor_pos: cursor_pos,
             frame_count: 0,
         })
@@ -188,31 +192,37 @@ where
         let current_buffer = &self.buffers[self.current];
         let updates = previous_buffer.diff(current_buffer);
         if let Some((col, row, _)) = updates.last() {
-            self.last_known_cursor_pos = (*col, *row);
+            self.last_known_cursor_pos = Position { x: *col, y: *row };
         }
         self.backend.draw(updates.into_iter())
     }
 
-    /// Updates the Terminal so that internal buffers match the requested size.
+    /// Updates the Terminal so that internal buffers match the requested area.
     ///
-    /// Requested size will be saved so the size can remain consistent when rendering. This leads
-    /// to a full clear of the screen.
-    pub fn resize(&mut self, size: Rect) -> io::Result<()> {
+    /// Requested area will be saved to remain consistent when rendering. This leads to a full clear
+    /// of the screen.
+    pub fn resize(&mut self, area: Rect) -> io::Result<()> {
         let next_area = match self.viewport {
-            Viewport::Fullscreen => size,
+            Viewport::Fullscreen => area,
             Viewport::Inline(height) => {
                 let offset_in_previous_viewport = self
                     .last_known_cursor_pos
-                    .1
+                    .y
                     .saturating_sub(self.viewport_area.top());
-                compute_inline_size(&mut self.backend, height, size, offset_in_previous_viewport)?.0
+                compute_inline_size(
+                    &mut self.backend,
+                    height,
+                    area.as_size(),
+                    offset_in_previous_viewport,
+                )?
+                .0
             }
             Viewport::Fixed(area) => area,
         };
         self.set_viewport_area(next_area);
         self.clear()?;
 
-        self.last_known_size = size;
+        self.last_known_area = area;
         Ok(())
     }
 
@@ -226,47 +236,153 @@ where
     pub fn autoresize(&mut self) -> io::Result<()> {
         // fixed viewports do not get autoresized
         if matches!(self.viewport, Viewport::Fullscreen | Viewport::Inline(_)) {
-            let size = self.size()?;
-            if size != self.last_known_size {
-                self.resize(size)?;
+            let area = Rect::from((Position::ORIGIN, self.size()?));
+            if area != self.last_known_area {
+                self.resize(area)?;
             }
         };
         Ok(())
     }
 
-    /// Synchronizes terminal size, calls the rendering closure, flushes the current internal state
-    /// and prepares for the next draw call.
+    /// Draws a single frame to the terminal.
     ///
-    /// This is the main entry point for drawing to the terminal.
+    /// Returns a [`CompletedFrame`] if successful, otherwise a [`std::io::Error`].
     ///
-    /// The changes drawn to the frame are applied only to the current [`Buffer`]. After the closure
-    /// returns, the current buffer is compared to the previous buffer and only the changes are
-    /// applied to the terminal.
+    /// If the render callback passed to this method can fail, use [`try_draw`] instead.
+    ///
+    /// Applications should call `draw` or [`try_draw`] in a loop to continuously render the
+    /// terminal. These methods are the main entry points for drawing to the terminal.
+    ///
+    /// [`try_draw`]: Terminal::try_draw
+    ///
+    /// This method will:
+    ///
+    /// - autoresize the terminal if necessary
+    /// - call the render callback, passing it a [`Frame`] reference to render to
+    /// - flush the current internal state by copying the current buffer to the backend
+    /// - move the cursor to the last known position if it was set during the rendering closure
+    /// - return a [`CompletedFrame`] with the current buffer and the area of the terminal
+    ///
+    /// The [`CompletedFrame`] returned by this method can be useful for debugging or testing
+    /// purposes, but it is often not used in regular applicationss.
+    ///
+    /// The render callback should fully render the entire frame when called, including areas that
+    /// are unchanged from the previous frame. This is because each frame is compared to the
+    /// previous frame to determine what has changed, and only the changes are written to the
+    /// terminal. If the render callback does not fully render the frame, the terminal will not be
+    /// in a consistent state.
     ///
     /// # Examples
     ///
-    /// ```rust,no_run
-    /// # use std::io::stdout;
-    /// # use ratatui::{prelude::*, widgets::Paragraph};
-    /// let backend = CrosstermBackend::new(stdout());
-    /// let mut terminal = Terminal::new(backend)?;
+    /// ```
+    /// # let backend = ratatui::backend::TestBackend::new(10, 10);
+    /// # let mut terminal = ratatui::Terminal::new(backend)?;
+    /// use std::io;
+    ///
+    /// use ratatui::widgets::Paragraph;
+    ///
+    /// // with a closure
     /// terminal.draw(|frame| {
     ///     let area = frame.size();
     ///     frame.render_widget(Paragraph::new("Hello World!"), area);
     ///     frame.set_cursor(0, 0);
     /// })?;
-    /// # std::io::Result::Ok(())
+    ///
+    /// // or with a function
+    /// terminal.draw(render)?;
+    ///
+    /// fn render(frame: &mut ratatui::Frame) {
+    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.size());
+    /// }
+    /// # io::Result::Ok(())
     /// ```
-    pub fn draw<F>(&mut self, f: F) -> io::Result<CompletedFrame>
+    pub fn draw<F>(&mut self, render_callback: F) -> io::Result<CompletedFrame>
     where
         F: FnOnce(&mut Frame),
+    {
+        self.try_draw(|frame| {
+            render_callback(frame);
+            io::Result::Ok(())
+        })
+    }
+
+    /// Tries to draw a single frame to the terminal.
+    ///
+    /// Returns [`Result::Ok`] containing a [`CompletedFrame`] if successful, otherwise
+    /// [`Result::Err`] containing the [`std::io::Error`] that caused the failure.
+    ///
+    /// This is the equivalent of [`Terminal::draw`] but the render callback is a function or
+    /// closure that returns a `Result` instead of nothing.
+    ///
+    /// Applications should call `try_draw` or [`draw`] in a loop to continuously render the
+    /// terminal. These methods are the main entry points for drawing to the terminal.
+    ///
+    /// [`draw`]: Terminal::draw
+    ///
+    /// This method will:
+    ///
+    /// - autoresize the terminal if necessary
+    /// - call the render callback, passing it a [`Frame`] reference to render to
+    /// - flush the current internal state by copying the current buffer to the backend
+    /// - move the cursor to the last known position if it was set during the rendering closure
+    /// - return a [`CompletedFrame`] with the current buffer and the area of the terminal
+    ///
+    /// The render callback passed to `try_draw` can return any [`Result`] with an error type that
+    /// can be converted into an [`std::io::Error`] using the [`Into`] trait. This makes it possible
+    /// to use the `?` operator to propagate errors that occur during rendering. If the render
+    /// callback returns an error, the error will be returned from `try_draw` as an
+    /// [`std::io::Error`] and the terminal will not be updated.
+    ///
+    /// The [`CompletedFrame`] returned by this method can be useful for debugging or testing
+    /// purposes, but it is often not used in regular applicationss.
+    ///
+    /// The render callback should fully render the entire frame when called, including areas that
+    /// are unchanged from the previous frame. This is because each frame is compared to the
+    /// previous frame to determine what has changed, and only the changes are written to the
+    /// terminal. If the render function does not fully render the frame, the terminal will not be
+    /// in a consistent state.
+    ///
+    /// # Examples
+    ///
+    /// ```should_panic
+    /// # let backend = ratatui::backend::TestBackend::new(10, 10);
+    /// # let mut terminal = ratatui::Terminal::new(backend)?;
+    /// use std::io;
+    ///
+    /// use ratatui::widgets::Paragraph;
+    ///
+    /// // with a closure
+    /// terminal.try_draw(|frame| {
+    ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
+    ///     let area = frame.size();
+    ///     frame.render_widget(Paragraph::new("Hello World!"), area);
+    ///     frame.set_cursor(0, 0);
+    ///     io::Result::Ok(())
+    /// })?;
+    ///
+    /// // or with a function
+    /// terminal.try_draw(render)?;
+    ///
+    /// fn render(frame: &mut ratatui::Frame) -> io::Result<()> {
+    ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
+    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.size());
+    ///     Ok(())
+    /// }
+    /// # io::Result::Ok(())
+    /// ```
+    pub fn try_draw<F, E>(&mut self, render_callback: F) -> io::Result<CompletedFrame>
+    where
+        F: FnOnce(&mut Frame) -> Result<(), E>,
+        E: Into<io::Error>,
     {
         // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
         // and the terminal (if growing), which may OOB.
         self.autoresize()?;
 
         let mut frame = self.get_frame();
-        f(&mut frame);
+
+        render_callback(&mut frame).map_err(Into::into)?;
+
         // We can't change the cursor position right away because we have to flush the frame to
         // stdout first. But we also can't keep the frame around, since it holds a &mut to
         // Buffer. Thus, we're taking the important data out of the Frame and dropping it.
@@ -277,7 +393,7 @@ where
 
         match cursor_position {
             None => self.hide_cursor()?,
-            Some((x, y)) => {
+            Some(Position { x, y }) => {
                 self.show_cursor()?;
                 self.set_cursor(x, y)?;
             }
@@ -290,7 +406,7 @@ where
 
         let completed_frame = CompletedFrame {
             buffer: &self.buffers[1 - self.current],
-            area: self.last_known_size,
+            area: self.last_known_area,
             count: self.frame_count,
         };
 
@@ -325,7 +441,7 @@ where
     /// Sets the cursor position.
     pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
         self.backend.set_cursor(x, y)?;
-        self.last_known_cursor_pos = (x, y);
+        self.last_known_cursor_pos = Position { x, y };
         Ok(())
     }
 
@@ -357,7 +473,7 @@ where
     }
 
     /// Queries the real size of the backend.
-    pub fn size(&self) -> io::Result<Rect> {
+    pub fn size(&self) -> io::Result<Size> {
         self.backend.size()
     }
 
@@ -417,7 +533,7 @@ where
         self.clear()?;
 
         // Move the viewport by height, but don't move it past the bottom of the terminal
-        let viewport_at_bottom = self.last_known_size.bottom() - self.viewport_area.height;
+        let viewport_at_bottom = self.last_known_area.bottom() - self.viewport_area.height;
         self.set_viewport_area(Rect {
             y: self
                 .viewport_area
@@ -465,11 +581,11 @@ where
 fn compute_inline_size<B: Backend>(
     backend: &mut B,
     height: u16,
-    size: Rect,
+    size: Size,
     offset_in_previous_viewport: u16,
-) -> io::Result<(Rect, (u16, u16))> {
-    let pos = backend.get_cursor()?;
-    let mut row = pos.1;
+) -> io::Result<(Rect, Position)> {
+    let pos: Position = backend.get_cursor()?.into();
+    let mut row = pos.y;
 
     let max_height = size.height.min(height);
 

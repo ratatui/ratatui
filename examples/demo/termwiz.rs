@@ -3,10 +3,13 @@ use std::{
     time::{Duration, Instant},
 };
 
-use ratatui::prelude::*;
-use termwiz::{
-    input::{InputEvent, KeyCode},
-    terminal::Terminal as TermwizTerminal,
+use ratatui::{
+    backend::TermwizBackend,
+    termwiz::{
+        input::{InputEvent, KeyCode},
+        terminal::Terminal as TermwizTerminal,
+    },
+    Terminal,
 };
 
 use crate::{app::App, ui};

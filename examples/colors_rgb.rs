@@ -33,13 +33,21 @@ use std::{
 };
 
 use color_eyre::{config::HookBuilder, eyre, Result};
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use palette::{convert::FromColorUnclamped, Okhsv, Srgb};
-use ratatui::{layout::Position, prelude::*};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    crossterm::{
+        event::{self, Event, KeyCode, KeyEventKind},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
+    layout::{Constraint, Layout, Position, Rect},
+    style::Color,
+    text::Text,
+    widgets::Widget,
+    Terminal,
+};
 
 #[derive(Debug, Default)]
 struct App {
@@ -105,7 +113,7 @@ impl App {
     /// This is the main event loop for the app.
     pub fn run(mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
         while self.is_running() {
-            terminal.draw(|frame| frame.render_widget(&mut self, frame.size()))?;
+            terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
             self.handle_events()?;
         }
         Ok(())
@@ -141,8 +149,7 @@ impl App {
 /// to update the colors to render.
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        #[allow(clippy::enum_glob_use)]
-        use Constraint::*;
+        use Constraint::{Length, Min};
         let [top, colors] = Layout::vertical([Length(1), Min(0)]).areas(area);
         let [title, fps] = Layout::horizontal([Min(0), Length(8)]).areas(top);
         Text::from("colors_rgb example. Press q to quit")

@@ -19,18 +19,21 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use rand::{
     distributions::{Distribution, Uniform},
     rngs::ThreadRng,
 };
 use ratatui::{
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{Constraint, Layout},
+    style::{Color, Style},
     widgets::{Block, Borders, Sparkline},
+    Frame, Terminal,
 };
 
 #[derive(Clone)]
@@ -148,7 +151,7 @@ fn ui(f: &mut Frame, app: &App) {
         Constraint::Length(3),
         Constraint::Min(0),
     ])
-    .split(f.size());
+    .split(f.area());
     let sparkline = Sparkline::default()
         .block(
             Block::new()

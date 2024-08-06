@@ -32,7 +32,6 @@
 //! [`Buffer`]: crate::buffer::Buffer
 
 mod frame;
-#[allow(clippy::module_inception)]
 mod terminal;
 mod viewport;
 

@@ -23,15 +23,19 @@ use std::{
     time::Duration,
 };
 
-use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use itertools::Itertools;
 use ratatui::{
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{Color, Style, Stylize},
+    text::Line,
     widgets::{Block, Borders, Paragraph},
+    Frame, Terminal,
 };
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
@@ -66,7 +70,7 @@ fn ui(frame: &mut Frame) {
         Constraint::Length(17),
         Constraint::Length(2),
     ])
-    .split(frame.size());
+    .split(frame.area());
 
     render_named_colors(frame, layout[0]);
     render_indexed_colors(frame, layout[1]);

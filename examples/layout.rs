@@ -13,20 +13,25 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::enum_glob_use)]
-
 use std::{error::Error, io};
 
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use itertools::Itertools;
 use ratatui::{
-    layout::Constraint::*,
-    prelude::*,
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{
+        Constraint,
+        Constraint::{Length, Max, Min, Percentage, Ratio},
+        Layout, Rect,
+    },
+    style::{Color, Style, Stylize},
+    text::Line,
     widgets::{Block, Paragraph},
+    Frame, Terminal,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -75,7 +80,7 @@ fn ui(frame: &mut Frame) {
         Length(50), // examples
         Min(0),     // fills remaining space
     ]);
-    let [text_area, examples_area, _] = vertical.areas(frame.size());
+    let [text_area, examples_area, _] = vertical.areas(frame.area());
 
     // title
     frame.render_widget(

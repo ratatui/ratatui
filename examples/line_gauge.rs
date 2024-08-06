@@ -16,15 +16,18 @@
 use std::{io::stdout, time::Duration};
 
 use color_eyre::{config::HookBuilder, Result};
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use ratatui::{
-    prelude::*,
-    style::palette::tailwind,
-    widgets::{block::Title, *},
+    backend::{Backend, CrosstermBackend},
+    buffer::Buffer,
+    crossterm::{
+        event::{self, Event, KeyCode, KeyEventKind},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{palette::tailwind, Color, Style, Stylize},
+    widgets::{block::Title, Block, Borders, LineGauge, Padding, Paragraph, Widget},
+    Terminal,
 };
 
 const CUSTOM_LABEL_COLOR: Color = tailwind::SLATE.c200;
@@ -63,7 +66,7 @@ impl App {
     }
 
     fn draw(&self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
-        terminal.draw(|f| f.render_widget(self, f.size()))?;
+        terminal.draw(|f| f.render_widget(self, f.area()))?;
         Ok(())
     }
 

@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use strum::{Display, EnumString};
 
-use crate::{prelude::*, widgets::Block};
+use crate::{prelude::*, style::Styled, widgets::Block};
 
 /// Widget to render a sparkline over one or more lines.
 ///
@@ -239,7 +239,7 @@ mod tests {
     // filled with x symbols to make it easier to assert on the result
     fn render(widget: Sparkline, width: u16) -> Buffer {
         let area = Rect::new(0, 0, width, 1);
-        let mut buffer = Buffer::filled(area, &Cell::new("x"));
+        let mut buffer = Buffer::filled(area, Cell::new("x"));
         widget.render(area, &mut buffer);
         buffer
     }

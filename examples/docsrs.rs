@@ -15,13 +15,18 @@
 
 use std::io::{self, stdout};
 
-use crossterm::{
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use ratatui::{
-    prelude::*,
+    backend::CrosstermBackend,
+    crossterm::{
+        event::{self, Event, KeyCode},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
+    layout::{Constraint, Layout},
+    style::{Color, Modifier, Style, Stylize},
+    text::{Line, Span, Text},
     widgets::{Block, Borders, Paragraph},
+    Frame, Terminal,
 };
 
 /// Example code for lib.rs
@@ -52,11 +57,10 @@ fn main() -> io::Result<()> {
 fn hello_world(frame: &mut Frame) {
     frame.render_widget(
         Paragraph::new("Hello World!").block(Block::bordered().title("Greeting")),
-        frame.size(),
+        frame.area(),
     );
 }
 
-use crossterm::event::{self, Event, KeyCode};
 fn handle_events() -> io::Result<bool> {
     if event::poll(std::time::Duration::from_millis(50))? {
         if let Event::Key(key) = event::read()? {
@@ -75,7 +79,7 @@ fn layout(frame: &mut Frame) {
         Constraint::Length(1),
     ]);
     let horizontal = Layout::horizontal([Constraint::Ratio(1, 2); 2]);
-    let [title_bar, main_area, status_bar] = vertical.areas(frame.size());
+    let [title_bar, main_area, status_bar] = vertical.areas(frame.area());
     let [left, right] = horizontal.areas(main_area);
 
     frame.render_widget(
@@ -98,7 +102,7 @@ fn styling(frame: &mut Frame) {
         Constraint::Length(1),
         Constraint::Min(0),
     ])
-    .split(frame.size());
+    .split(frame.area());
 
     let span1 = Span::raw("Hello ");
     let span2 = Span::styled(

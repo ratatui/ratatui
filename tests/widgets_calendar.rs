@@ -16,7 +16,7 @@ fn test_render<W: Widget>(widget: W, width: u16, height: u16, expected: &Buffer)
     let backend = TestBackend::new(width, height);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
-        .draw(|f| f.render_widget(widget, f.size()))
+        .draw(|f| f.render_widget(widget, f.area()))
         .unwrap();
     terminal.backend().assert_buffer(expected);
 }

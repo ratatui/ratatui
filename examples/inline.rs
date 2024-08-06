@@ -13,8 +13,6 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-#![allow(clippy::wildcard_imports)]
-
 use std::{
     collections::{BTreeMap, VecDeque},
     error::Error,
@@ -25,7 +23,15 @@ use std::{
 };
 
 use rand::distributions::{Distribution, Uniform};
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{Color, Modifier, Style},
+    symbols,
+    text::{Line, Span},
+    widgets::{block, Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
+    Frame, Terminal, TerminalOptions, Viewport,
+};
 
 const NUM_DOWNLOADS: usize = 10;
 
@@ -234,7 +240,7 @@ fn run_app<B: Backend>(
 }
 
 fn ui(f: &mut Frame, downloads: &Downloads) {
-    let area = f.size();
+    let area = f.area();
 
     let block = Block::new().title(block::Title::from("Progress").alignment(Alignment::Center));
     f.render_widget(block, area);

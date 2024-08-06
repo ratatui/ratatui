@@ -1,5 +1,14 @@
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    buffer::Buffer,
+    layout::{Alignment, Constraint, Layout, Margin, Rect},
+    style::{Style, Stylize},
+    text::Line,
+    widgets::{
+        Block, Clear, Padding, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        StatefulWidget, Table, TableState, Widget, Wrap,
+    },
+};
 
 use crate::{RgbSwatch, THEME};
 
@@ -105,7 +114,7 @@ impl RecipeTab {
 impl Widget for RecipeTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
         RgbSwatch.render(area, buf);
-        let area = area.inner(&Margin {
+        let area = area.inner(Margin {
             vertical: 1,
             horizontal: 2,
         });
@@ -124,7 +133,7 @@ impl Widget for RecipeTab {
         };
         render_scrollbar(self.row_index, scrollbar_area, buf);
 
-        let area = area.inner(&Margin {
+        let area = area.inner(Margin {
             horizontal: 2,
             vertical: 1,
         });
