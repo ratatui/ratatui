@@ -56,7 +56,7 @@ impl App {
         Ok(())
     }
 
-    fn draw(&mut self, terminal: &mut Terminal) -> Result<()> {
+    fn draw(&self, terminal: &mut Terminal) -> Result<()> {
         terminal.draw(|frame| self.render(frame))?;
         Ok(())
     }
@@ -70,7 +70,7 @@ impl App {
         Ok(())
     }
 
-    fn render(&mut self, frame: &mut ratatui::Frame) {
+    fn render(&self, frame: &mut ratatui::Frame) {
         let [title, vertical, horizontal] = Layout::vertical([
             Constraint::Length(1),
             Constraint::Fill(1),

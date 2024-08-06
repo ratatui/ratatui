@@ -71,7 +71,7 @@ impl App {
         Ok(())
     }
 
-    fn draw(&mut self, terminal: &mut Terminal) -> Result<()> {
+    fn draw(&self, terminal: &mut Terminal) -> Result<()> {
         terminal.draw(|frame| self.render(frame))?;
         Ok(())
     }
