@@ -63,6 +63,13 @@ This is a quick summary of the sections below:
 
 ## v0.28.0 (unreleased)
 
+### `Backend::size` returns `Size` instead of `Rect` ([#1254])
+
+[#1254]: https://github.com/ratatui-org/ratatui/pull/1254
+
+The `Backend::size` method returns a `Size` instead of a `Rect`.
+There is no need for the position here as it was always 0,0.
+
 ### Ratatui now requires Crossterm 0.28.0 ([#1278])
 
 [#1278]: https://github.com/ratatui-org/ratatui/pull/1278
