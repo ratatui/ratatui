@@ -59,10 +59,10 @@ fn init_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
 fn restore_terminal() {
     // There's not a lot we can do if these fail, so we just print an error message.
     if let Err(err) = disable_raw_mode() {
-        eprintln!("Error disabling raw mode: {}", err);
+        eprintln!("Error disabling raw mode: {err}");
     }
     if let Err(err) = execute!(io::stdout(), LeaveAlternateScreen) {
-        eprintln!("Error leaving alternate screen: {}", err);
+        eprintln!("Error leaving alternate screen: {err}");
     }
 }
 
