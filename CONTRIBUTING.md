@@ -17,10 +17,10 @@ found.
 
 All contributions are obviously welcome. Please include as many details as possible in your PR
 description to help the reviewer (follow the provided template). Make sure to highlight changes
-which may need additional attention or you are uncertain about. Any idea with a large scale impact
+which may need additional attention, or you are uncertain about. Any idea with a large scale impact
 on the crate or its users should ideally be discussed in a "Feature Request" issue beforehand.
 
-### Keep PRs small, intentional and focused
+### Keep PRs small, intentional, and focused
 
 Try to do one pull request per change. The time taken to review a PR grows exponential with the size
 of the change. Small focused PRs will generally be much more faster to review. PRs that include both
@@ -32,7 +32,7 @@ guarantee that the behavior is unchanged.
 ### Code formatting
 
 Run `cargo make format` before committing to ensure that code is consistently formatted with
-rustfmt. Configuration is in [rustfmt.toml](./rustfmt.toml).
+rustfmt. Configuration is in [`rustfmt.toml`](./rustfmt.toml).
 
 ### Search `tui-rs` for similar work
 
@@ -147,7 +147,7 @@ fn foo() {}
 ```
 
 - Max line length is 100 characters
-See [vscode rewrap extension](https://marketplace.visualstudio.com/items?itemName=stkb.rewrap)
+See [VS Code rewrap extension](https://marketplace.visualstudio.com/items?itemName=stkb.rewrap)
 
 - Doc comments are above macros
 i.e.
@@ -163,19 +163,19 @@ i.e. ``[`Block`]``, **NOT** ``[Block]``
 
 ### Deprecation notice
 
-We generally want to wait at least two versions before removing deprecated items so users have
+We generally want to wait at least two versions before removing deprecated items, so users have
 time to update. However, if a deprecation is blocking for us to implement a new feature we may
 *consider* removing it in a one version notice.
 
 ### Use of unsafe for optimization purposes
 
-We don't currently use any unsafe code in Ratatui, and would like to keep it that way. However there
+We don't currently use any unsafe code in Ratatui, and would like to keep it that way. However, there
 may be specific cases that this becomes necessary in order to avoid slowness. Please see [this
 discussion](https://github.com/ratatui-org/ratatui/discussions/66) for more about the decision.
 
 ## Continuous Integration
 
-We use Github Actions for the CI where we perform the following checks:
+We use GitHub Actions for the CI where we perform the following checks:
 
 - The code should compile on `stable` and the Minimum Supported Rust Version (MSRV).
 - The tests (docs, lib, tests and examples) should pass.
@@ -191,10 +191,10 @@ This project was forked from [`tui-rs`](https://github.com/fdehau/tui-rs/) in Fe
 [blessing of the original author](https://github.com/fdehau/tui-rs/issues/654), Florian Dehau
 ([@fdehau](https://github.com/fdehau)).
 
-The original repository contains all the issues, PRs and discussion that were raised originally, and
+The original repository contains all the issues, PRs, and discussion that were raised originally, and
 it is useful to refer to when contributing code, documentation, or issues with Ratatui.
 
-We imported all the PRs from the original repository and implemented many of the smaller ones and
+We imported all the PRs from the original repository, implemented many of the smaller ones, and
 made notes on the leftovers. These are marked as draft PRs and labelled as [imported from
 tui](https://github.com/ratatui-org/ratatui/pulls?q=is%3Apr+is%3Aopen+label%3A%22imported+from+tui%22).
 We have documented the current state of those PRs, and anyone is welcome to pick them up and
