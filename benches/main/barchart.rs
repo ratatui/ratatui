@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Bencher, BenchmarkId, Criterion};
+use criterion::{criterion_group, Bencher, BenchmarkId, Criterion};
 use rand::Rng;
 use ratatui::{
     buffer::Buffer,
@@ -70,4 +70,3 @@ fn render(bencher: &mut Bencher, barchart: &BarChart) {
 }
 
 criterion_group!(benches, barchart);
-criterion_main!(benches);
