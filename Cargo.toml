@@ -49,7 +49,7 @@ anyhow = "1.0.71"
 argh = "0.1.12"
 color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
-crossterm = { version = "0.28", features = ["event-stream"] }
+crossterm = { version = "0.28.1", features = ["event-stream"] }
 derive_builder = "0.20.0"
 fakeit = "1.1"
 font8x8 = "0.3.1"
