@@ -180,35 +180,11 @@ rustdoc-args = ["--cfg", "docsrs"]
 codegen-units = 1
 lto = true
 
-[[bench]]
-name = "barchart"
-harness = false
-
-[[bench]]
-name = "block"
-harness = false
-
-[[bench]]
-name = "line"
-harness = false
-
-[[bench]]
-name = "list"
-harness = false
-
-[[bench]]
-name = "rect"
-harness = false
-
 [lib]
 bench = false
 
 [[bench]]
-name = "paragraph"
-harness = false
-
-[[bench]]
-name = "sparkline"
+name = "main"
 harness = false
 
 [[example]]

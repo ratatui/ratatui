@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, BatchSize, Bencher, Criterion};
+use criterion::{criterion_group, BatchSize, Bencher, Criterion};
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Rect},
@@ -59,4 +59,3 @@ fn render(bencher: &mut Bencher, block: &Block, size: Rect) {
 }
 
 criterion_group!(benches, block);
-criterion_main!(benches);

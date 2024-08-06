@@ -1,6 +1,4 @@
-use criterion::{
-    black_box, criterion_group, criterion_main, BatchSize, Bencher, BenchmarkId, Criterion,
-};
+use criterion::{black_box, criterion_group, BatchSize, Bencher, BenchmarkId, Criterion};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -94,4 +92,3 @@ fn random_lines(count: u16) -> String {
 }
 
 criterion_group!(benches, paragraph);
-criterion_main!(benches);
