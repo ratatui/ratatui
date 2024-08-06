@@ -46,6 +46,7 @@ struct Company {
 }
 
 fn main() -> Result<()> {
+    color_eyre::install()?;
     let mut terminal = terminal::init()?;
     let app = App::new();
     app.run(&mut terminal)?;
@@ -88,7 +89,7 @@ impl App {
         use Constraint::{Fill, Length, Min};
         let [title, top, bottom] = Layout::vertical([Length(1), Fill(1), Min(20)])
             .spacing(1)
-            .areas(frame.size());
+            .areas(frame.area());
 
         frame.render_widget("Grouped Barchart".bold().into_centered_line(), title);
         frame.render_widget(self.vertical_revenue_barchart(), top);
@@ -223,11 +224,6 @@ mod terminal {
         panic,
     };
 
-    use color_eyre::{
-        config::{EyreHook, HookBuilder, PanicHook},
-        eyre::{self},
-        Result,
-    };
     use ratatui::{
         backend::CrosstermBackend,
         crossterm::{
@@ -247,8 +243,8 @@ mod terminal {
     ///
     /// This function should be called before the program starts to ensure that the terminal is in
     /// the correct state for the application.
-    pub fn init() -> Result<Terminal> {
-        install_hooks()?;
+    pub fn init() -> io::Result<Terminal> {
+        install_panic_hook();
         enable_raw_mode()?;
         execute!(stdout(), EnterAlternateScreen)?;
         let backend = CrosstermBackend::new(stdout());
@@ -269,34 +265,14 @@ mod terminal {
         )
     }
 
-    /// Installs hooks for panic and error handling.
-    ///
-    /// Makes the app resilient to panics and errors by restoring the terminal before printing the
-    /// panic or error message. This prevents error messages from being messed up by the terminal
-    /// state.
-    fn install_hooks() -> Result<()> {
-        let (panic_hook, eyre_hook) = HookBuilder::default().into_hooks();
-        install_panic_hook(panic_hook);
-        install_error_hook(eyre_hook)?;
-        Ok(())
-    }
-
     /// Install a panic hook that restores the terminal before printing the panic.
-    fn install_panic_hook(panic_hook: PanicHook) {
-        let panic_hook = panic_hook.into_panic_hook();
+    ///
+    /// This prevents error messages from being messed up by the terminal state.
+    fn install_panic_hook() {
+        let panic_hook = panic::take_hook();
         panic::set_hook(Box::new(move |panic_info| {
             let _ = restore();
             panic_hook(panic_info);
         }));
-    }
-
-    /// Install an error hook that restores the terminal before printing the error.
-    fn install_error_hook(eyre_hook: EyreHook) -> Result<()> {
-        let eyre_hook = eyre_hook.into_eyre_hook();
-        eyre::set_hook(Box::new(move |error| {
-            let _ = restore();
-            eyre_hook(error)
-        }))?;
-        Ok(())
     }
 }

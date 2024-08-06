@@ -16,21 +16,9 @@
 use color_eyre::Result;
 use rand::{thread_rng, Rng};
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    crossterm::{
-        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
-    widgets::{Bar, BarChart, BarGroup, Block, Paragraph},
-    Frame, Terminal,
-};
     crossterm::event::{self, Event, KeyCode},
-    layout::Direction,
-    prelude::{Color, Constraint, Layout, Line, Style, Stylize},
+    layout::{Constraint, Direction, Layout},
+    prelude::{Color, Line, Style, Stylize},
     widgets::{Bar, BarChart, BarGroup, Block},
 };
 
@@ -42,6 +30,7 @@ struct App {
 }
 
 fn main() -> Result<()> {
+    color_eyre::install()?;
     let mut terminal = terminal::init()?;
     let app = App::new();
     app.run(&mut terminal)?;
@@ -88,7 +77,7 @@ impl App {
             Constraint::Fill(1),
         ])
         .spacing(1)
-        .areas(frame.size());
+        .areas(frame.area());
         frame.render_widget("Barchart".bold().into_centered_line(), title);
         frame.render_widget(vertical_barchart(&self.temperatures), vertical);
         frame.render_widget(horizontal_barchart(&self.temperatures), horizontal);
@@ -156,11 +145,6 @@ mod terminal {
         panic,
     };
 
-    use color_eyre::{
-        config::{EyreHook, HookBuilder, PanicHook},
-        eyre::{self},
-        Result,
-    };
     use ratatui::{
         backend::CrosstermBackend,
         crossterm::{
@@ -180,8 +164,8 @@ mod terminal {
     ///
     /// This function should be called before the program starts to ensure that the terminal is in
     /// the correct state for the application.
-    pub fn init() -> Result<Terminal> {
-        install_hooks()?;
+    pub fn init() -> io::Result<Terminal> {
+        install_panic_hook();
         enable_raw_mode()?;
         execute!(stdout(), EnterAlternateScreen)?;
         let backend = CrosstermBackend::new(stdout());
@@ -202,34 +186,14 @@ mod terminal {
         )
     }
 
-    /// Installs hooks for panic and error handling.
-    ///
-    /// Makes the app resilient to panics and errors by restoring the terminal before printing the
-    /// panic or error message. This prevents error messages from being messed up by the terminal
-    /// state.
-    fn install_hooks() -> Result<()> {
-        let (panic_hook, eyre_hook) = HookBuilder::default().into_hooks();
-        install_panic_hook(panic_hook);
-        install_error_hook(eyre_hook)?;
-        Ok(())
-    }
-
     /// Install a panic hook that restores the terminal before printing the panic.
-    fn install_panic_hook(panic_hook: PanicHook) {
-        let panic_hook = panic_hook.into_panic_hook();
+    ///
+    /// This prevents error messages from being messed up by the terminal state.
+    fn install_panic_hook() {
+        let panic_hook = panic::take_hook();
         panic::set_hook(Box::new(move |panic_info| {
             let _ = restore();
             panic_hook(panic_info);
         }));
-    }
-
-    /// Install an error hook that restores the terminal before printing the error.
-    fn install_error_hook(eyre_hook: EyreHook) -> Result<()> {
-        let eyre_hook = eyre_hook.into_eyre_hook();
-        eyre::set_hook(Box::new(move |error| {
-            let _ = restore();
-            eyre_hook(error)
-        }))?;
-        Ok(())
     }
 }
