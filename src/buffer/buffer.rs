@@ -41,7 +41,7 @@ use crate::{buffer::Cell, layout::Position, prelude::*};
 /// cell.set_symbol("C");
 ///
 /// let cell = buf.cell(Position { x: 0, y: 2 })?;
-/// assert_eq!(cell.symbol() == "C"));
+/// assert_eq!(cell.symbol(), "C");
 ///
 /// buf.set_string(
 ///     3,
