@@ -18,7 +18,6 @@ exclude = [
   "*.log",
   "tags",
 ]
-autoexamples = true
 edition = "2021"
 rust-version = "1.74.0"
 
@@ -215,6 +214,11 @@ doc-scrape-examples = true
 
 [[example]]
 name = "barchart"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
+name = "barchart-grouped"
 required-features = ["crossterm"]
 doc-scrape-examples = true
 
