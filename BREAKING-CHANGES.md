@@ -15,6 +15,7 @@ This is a quick summary of the sections below:
   - `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize`
   - `ratatui::terminal` module is now private
   - `Axis::labels` now accepts `Vec<T: Into<Line>>`
+  - `ToText` no longer has a lifetime
 - [v0.27.0](#v0270)
   - List no clamps the selected index to list
   - Prelude items added / removed
@@ -110,6 +111,12 @@ are also named terminal, and confusion about module exports for newer Rust users
 - use ratatui::terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, ViewPort};
 + use ratatui::{CompletedFrame, Frame, Terminal, TerminalOptions, ViewPort};
 ```
+
+### `ToText` no longer has a lifetime ([#1234])
+
+[#1234]: https://github.com/ratatui-org/ratatui/pull/1234
+
+This change simplifies the trait and makes it easier to implement.
 
 ## [v0.27.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.27.0)
 
