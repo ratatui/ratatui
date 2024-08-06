@@ -45,7 +45,6 @@ unicode-truncate = "1"
 unicode-width = "0.1.13"
 
 [dev-dependencies]
-anyhow = "1.0.71"
 argh = "0.1.12"
 color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
