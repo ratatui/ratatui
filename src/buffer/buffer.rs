@@ -18,7 +18,11 @@ use crate::{buffer::Cell, layout::Position, prelude::*};
 /// # Examples:
 ///
 /// ```
-/// use ratatui::{buffer::{Cell, Buffer}, layout::Position, layout::Rect, style::{Color, Style}};
+/// use ratatui::{
+///     buffer::{Buffer, Cell},
+///     layout::{Position, Rect},
+///     style::{Color, Style},
+/// };
 ///
 /// # fn foo() -> Option<()> {
 /// let mut buf = Buffer::empty(Rect {
@@ -37,7 +41,7 @@ use crate::{buffer::Cell, layout::Position, prelude::*};
 /// assert_eq!(buf[(0, 1)].symbol(), "x");
 ///
 /// // getting an Option instead of panicking if the position is outside the buffer
-/// let cell = buf.cell_mut(Position { x: 0, y: 2})?;
+/// let cell = buf.cell_mut(Position { x: 0, y: 2 })?;
 /// cell.set_symbol("C");
 ///
 /// let cell = buf.cell(Position { x: 0, y: 2 })?;
