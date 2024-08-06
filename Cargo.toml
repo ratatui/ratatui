@@ -196,6 +196,10 @@ harness = false
 name = "list"
 harness = false
 
+[[bench]]
+name = "rect"
+harness = false
+
 [lib]
 bench = false
 
