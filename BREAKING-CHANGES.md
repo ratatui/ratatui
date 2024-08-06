@@ -14,7 +14,7 @@ This is a quick summary of the sections below:
   ⁻ `Backend::size` returns `Size` instead of `Rect`
   - `Backend` trait migrates to `get/set_cursor_position`
   - Ratatui now requires Crossterm 0.28.0
-  - `Axis::labels` now accepts `Vec<T: Into<Line>>`
+  - `Axis::labels` now accepts `IntoIterator<Into<Line>>`
   - `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize`
   - `ratatui::terminal` module is now private
   - `ToText` no longer has a lifetime
@@ -92,16 +92,17 @@ Crossterm is updated to version 0.28.0, which is a semver incompatible version w
 version (0.27.0). Ratatui re-exports the version of crossterm that it is compatible with under
 `ratatui::crossterm`, which can be used to avoid incompatible versions in your dependency list.
 
-### `Axis::labels()` now accepts `Vec<T: Into<Line>>` ([#1273])
+### `Axis::labels()` now accepts `IntoIterator<Into<Line>>` ([#1273] and [#1283])
 
 [#1273]: https://github.com/ratatui-org/ratatui/pull/1173
+[#1283]: https://github.com/ratatui-org/ratatui/pull/1283
 
 Previously Axis::labels accepted `Vec<Span>`. Any code that uses conversion methods that infer the
 type will need to be rewritten as the compiler cannot infer the correct type.
 
 ```diff
-- Axis::default().labels("a".into(), "b".into())
-+ Axis::default().labels("a", "b")
+- Axis::default().labels(vec!["a".into(), "b".into()])
++ Axis::default().labels(["a", "b"])
 ```
 
 ### `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize` ([#1245])
