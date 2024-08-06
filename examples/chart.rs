@@ -200,7 +200,7 @@ fn render_animated_chart(f: &mut Frame, area: Rect, app: &App) {
             Axis::default()
                 .title("Y Axis")
                 .style(Style::default().fg(Color::Gray))
-                .labels(vec!["-20".bold(), "0".into(), "20".bold()])
+                .labels(["-20".bold(), "0".into(), "20".bold()])
                 .bounds([-20.0, 20.0]),
         );
 
@@ -239,13 +239,13 @@ fn render_barchart(frame: &mut Frame, bar_chart: Rect) {
             Axis::default()
                 .style(Style::default().gray())
                 .bounds([0.0, 100.0])
-                .labels(vec!["0".bold(), "50".into(), "100.0".bold()]),
+                .labels(["0".bold(), "50".into(), "100.0".bold()]),
         )
         .y_axis(
             Axis::default()
                 .style(Style::default().gray())
                 .bounds([0.0, 100.0])
-                .labels(vec!["0".bold(), "50".into(), "100.0".bold()]),
+                .labels(["0".bold(), "50".into(), "100.0".bold()]),
         )
         .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)));
 
@@ -273,14 +273,14 @@ fn render_line_chart(f: &mut Frame, area: Rect) {
                 .title("X Axis")
                 .style(Style::default().gray())
                 .bounds([0.0, 5.0])
-                .labels(vec!["0".bold(), "2.5".into(), "5.0".bold()]),
+                .labels(["0".bold(), "2.5".into(), "5.0".bold()]),
         )
         .y_axis(
             Axis::default()
                 .title("Y Axis")
                 .style(Style::default().gray())
                 .bounds([0.0, 5.0])
-                .labels(vec!["0".bold(), "2.5".into(), "5.0".bold()]),
+                .labels(["0".bold(), "2.5".into(), "5.0".bold()]),
         )
         .legend_position(Some(LegendPosition::TopLeft))
         .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)));
@@ -323,14 +323,14 @@ fn render_scatter(f: &mut Frame, area: Rect) {
                 .title("Year")
                 .bounds([1960., 2020.])
                 .style(Style::default().fg(Color::Gray))
-                .labels(vec!["1960", "1990", "2020"]),
+                .labels(["1960", "1990", "2020"]),
         )
         .y_axis(
             Axis::default()
                 .title("Cost")
                 .bounds([0., 75000.])
                 .style(Style::default().fg(Color::Gray))
-                .labels(vec!["0", "37 500", "75 000"]),
+                .labels(["0", "37 500", "75 000"]),
         )
         .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)));
 
