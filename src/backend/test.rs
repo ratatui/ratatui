@@ -133,8 +133,7 @@ impl Backend for TestBackend {
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
         for (x, y, c) in content {
-            let cell = self.buffer.get_mut(x, y);
-            *cell = c.clone();
+            self.buffer[(x, y)] = c.clone();
         }
         Ok(())
     }
@@ -230,13 +229,13 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn size(&self) -> io::Result<Rect> {
-        Ok(self.buffer.area)
+    fn size(&self) -> io::Result<Size> {
+        Ok(self.buffer.area.as_size())
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {
         // Some arbitrary window pixel size, probably doesn't need much testing.
-        static WINDOW_PIXEL_SIZE: Size = Size {
+        const WINDOW_PIXEL_SIZE: Size = Size {
             width: 640,
             height: 480,
         };
@@ -647,7 +646,7 @@ mod tests {
     #[test]
     fn size() {
         let backend = TestBackend::new(10, 2);
-        assert_eq!(backend.size().unwrap(), Rect::new(0, 0, 10, 2));
+        assert_eq!(backend.size().unwrap(), Size::new(10, 2));
     }
 
     #[test]

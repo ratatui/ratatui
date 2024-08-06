@@ -121,7 +121,7 @@ impl TodoItem {
 impl App {
     fn run(&mut self, mut terminal: Terminal<impl Backend>) -> io::Result<()> {
         while !self.should_exit {
-            terminal.draw(|f| f.render_widget(&mut *self, f.size()))?;
+            terminal.draw(|f| f.render_widget(&mut *self, f.area()))?;
             if let Event::Key(key) = event::read()? {
                 self.handle_key(key);
             };

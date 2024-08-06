@@ -352,10 +352,6 @@ Pull Request].
 Please make sure you read the updated [contributing](./CONTRIBUTING.md) guidelines, especially if
 you are interested in working on a PR or issue opened in the previous repository.
 
-## Rust version requirements
-
-Since version 0.23.0, The Minimum Supported Rust Version (MSRV) of `ratatui` is 1.67.0.
-
 ## Widgets
 
 ### Built in

@@ -14,7 +14,7 @@ use ratatui::{
 use crate::app::App;
 
 pub fn draw(f: &mut Frame, app: &mut App) {
-    let chunks = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(f.size());
+    let chunks = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(f.area());
     let tabs = app
         .tabs
         .titles

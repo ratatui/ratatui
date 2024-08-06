@@ -116,7 +116,7 @@ pub fn render_logo(selected_row: usize, area: Rect, buf: &mut Buffer) {
         for (x, (ch1, ch2)) in line1.chars().zip(line2.chars()).enumerate() {
             let x = area.left() + x as u16;
             let y = area.top() + y as u16;
-            let cell = buf.get_mut(x, y);
+            let cell = &mut buf[(x, y)];
             let rat_color = THEME.logo.rat;
             let term_color = THEME.logo.term;
             match (ch1, ch2) {

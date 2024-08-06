@@ -151,9 +151,7 @@ fn run_app<B: Backend>(
 }
 
 fn ui(frame: &mut Frame, app: &App) {
-    let area = frame.size();
-
-    let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(area);
+    let [top, bottom] = Layout::vertical([Constraint::Fill(1); 2]).areas(frame.area());
     let [animated_chart, bar_chart] =
         Layout::horizontal([Constraint::Fill(1), Constraint::Length(29)]).areas(top);
     let [line_chart, scatter] = Layout::horizontal([Constraint::Fill(1); 2]).areas(bottom);

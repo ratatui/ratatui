@@ -25,18 +25,18 @@ fn widgets_canvas_draw_labels() {
                         Span::styled(label.clone(), Style::default().fg(Color::Blue)),
                     );
                 });
-            f.render_widget(canvas, f.size());
+            f.render_widget(canvas, f.area());
         })
         .unwrap();
 
     let mut expected = Buffer::with_lines(["", "", "", "", "test "]);
     for row in 0..5 {
         for col in 0..5 {
-            expected.get_mut(col, row).set_bg(Color::Yellow);
+            expected[(col, row)].set_bg(Color::Yellow);
         }
     }
     for col in 0..4 {
-        expected.get_mut(col, 4).set_fg(Color::Blue);
+        expected[(col, 4)].set_fg(Color::Blue);
     }
     terminal.backend().assert_buffer(&expected);
 }

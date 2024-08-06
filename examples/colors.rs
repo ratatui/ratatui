@@ -70,7 +70,7 @@ fn ui(frame: &mut Frame) {
         Constraint::Length(17),
         Constraint::Length(2),
     ])
-    .split(frame.size());
+    .split(frame.area());
 
     render_named_colors(frame, layout[0]);
     render_indexed_colors(frame, layout[1]);

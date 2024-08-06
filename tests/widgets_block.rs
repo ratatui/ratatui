@@ -34,7 +34,7 @@ fn widgets_block_renders() {
         "          ",
     ]);
     for x in 1..=5 {
-        expected.get_mut(x, 0).set_fg(Color::LightBlue);
+        expected[(x, 0)].set_fg(Color::LightBlue);
     }
     terminal.backend().assert_buffer(&expected);
 }

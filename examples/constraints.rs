@@ -112,7 +112,7 @@ impl App {
     }
 
     fn draw(self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.size()))?;
+        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
 
@@ -247,7 +247,7 @@ impl App {
         for (i, cell) in visible_content.enumerate() {
             let x = i as u16 % area.width;
             let y = i as u16 / area.width;
-            *buf.get_mut(area.x + x, area.y + y) = cell;
+            buf[(area.x + x, area.y + y)] = cell;
         }
 
         if scrollbar_needed {

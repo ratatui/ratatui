@@ -86,7 +86,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui(f: &mut Frame, app: &App) {
-    let area = f.size();
+    let area = f.area();
 
     let vertical = Layout::vertical([Constraint::Percentage(20), Constraint::Percentage(80)]);
     let [instructions, content] = vertical.areas(area);

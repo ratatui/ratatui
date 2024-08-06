@@ -15,6 +15,7 @@ This is a quick summary of the sections below:
   - `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize`
   - `ratatui::terminal` module is now private
   - `Axis::labels` now accepts `IntoIterator<Into<Line>>`
+  - `ToText` no longer has a lifetime
 - [v0.27.0](#v0270)
   - List no clamps the selected index to list
   - Prelude items added / removed
@@ -63,6 +64,13 @@ This is a quick summary of the sections below:
 
 ## v0.28.0 (unreleased)
 
+### `Backend::size` returns `Size` instead of `Rect` ([#1254])
+
+[#1254]: https://github.com/ratatui-org/ratatui/pull/1254
+
+The `Backend::size` method returns a `Size` instead of a `Rect`.
+There is no need for the position here as it was always 0,0.
+
 ### Ratatui now requires Crossterm 0.28.0 ([#1278])
 
 [#1278]: https://github.com/ratatui-org/ratatui/pull/1278
@@ -84,9 +92,9 @@ type will need to be rewritten as the compiler cannot infer the correct type.
 + Axis::default().labels(["a", "b"])
 ```
 
-### `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize` ([#1145])
+### `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize` ([#1245])
 
-[#1145]: https://github.com/ratatui-org/ratatui/pull/1145
+[#1245]: https://github.com/ratatui-org/ratatui/pull/1245
 
 ```diff
 - let is_initialized = Layout::init_cache(100);
@@ -105,6 +113,12 @@ are also named terminal, and confusion about module exports for newer Rust users
 - use ratatui::terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, ViewPort};
 + use ratatui::{CompletedFrame, Frame, Terminal, TerminalOptions, ViewPort};
 ```
+
+### `ToText` no longer has a lifetime ([#1234])
+
+[#1234]: https://github.com/ratatui-org/ratatui/pull/1234
+
+This change simplifies the trait and makes it easier to implement.
 
 ## [v0.27.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.27.0)
 
