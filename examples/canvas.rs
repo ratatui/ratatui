@@ -28,11 +28,11 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Stylize},
     symbols::Marker,
-    terminal::{Frame, Terminal},
     widgets::{
         canvas::{Canvas, Circle, Map, MapResolution, Rectangle},
         Block, Widget,
     },
+    Frame, Terminal,
 };
 
 fn main() -> io::Result<()> {
@@ -132,7 +132,7 @@ impl App {
         let horizontal =
             Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
         let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let [map, right] = horizontal.areas(frame.size());
+        let [map, right] = horizontal.areas(frame.area());
         let [pong, boxes] = vertical.areas(right);
 
         frame.render_widget(self.map_canvas(), map);

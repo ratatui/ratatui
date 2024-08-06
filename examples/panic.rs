@@ -37,9 +37,9 @@ use ratatui::{
         event::{self, Event, KeyCode},
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    terminal::{Frame, Terminal},
     text::Line,
     widgets::{Block, Paragraph},
+    Frame, Terminal,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
@@ -148,5 +148,5 @@ fn ui(f: &mut Frame, app: &App) {
         .block(Block::bordered().title("Panic Handler Demo"))
         .centered();
 
-    f.render_widget(paragraph, f.size());
+    f.render_widget(paragraph, f.area());
 }

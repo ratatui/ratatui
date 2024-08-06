@@ -66,11 +66,11 @@ where
     viewport: Viewport,
     /// Area of the viewport
     viewport_area: Rect,
-    /// Last known size of the terminal. Used to detect if the internal buffers have to be resized.
-    last_known_size: Rect,
+    /// Last known area of the terminal. Used to detect if the internal buffers have to be resized.
+    last_known_area: Rect,
     /// Last known position of the cursor. Used to find the new area when the viewport is inlined
     /// and the terminal resized.
-    last_known_cursor_pos: (u16, u16),
+    last_known_cursor_pos: Position,
     /// Number of frames rendered up until current time.
     frame_count: usize,
 }
@@ -126,21 +126,25 @@ where
     ///
     /// ```rust
     /// # use std::io::stdout;
-    /// # use ratatui::{prelude::*, backend::TestBackend, terminal::{Viewport, TerminalOptions}};
+    /// # use ratatui::{prelude::*, backend::TestBackend, Viewport, TerminalOptions};
     /// let backend = CrosstermBackend::new(stdout());
     /// let viewport = Viewport::Fixed(Rect::new(0, 0, 10, 10));
     /// let terminal = Terminal::with_options(backend, TerminalOptions { viewport })?;
     /// # std::io::Result::Ok(())
     /// ```
     pub fn with_options(mut backend: B, options: TerminalOptions) -> io::Result<Self> {
-        let size = match options.viewport {
-            Viewport::Fullscreen | Viewport::Inline(_) => backend.size()?,
+        let area = match options.viewport {
+            Viewport::Fullscreen | Viewport::Inline(_) => {
+                Rect::from((Position::ORIGIN, backend.size()?))
+            }
             Viewport::Fixed(area) => area,
         };
         let (viewport_area, cursor_pos) = match options.viewport {
-            Viewport::Fullscreen => (size, (0, 0)),
-            Viewport::Inline(height) => compute_inline_size(&mut backend, height, size, 0)?,
-            Viewport::Fixed(area) => (area, (area.left(), area.top())),
+            Viewport::Fullscreen => (area, Position::ORIGIN),
+            Viewport::Inline(height) => {
+                compute_inline_size(&mut backend, height, area.as_size(), 0)?
+            }
+            Viewport::Fixed(area) => (area, area.as_position()),
         };
         Ok(Self {
             backend,
@@ -149,7 +153,7 @@ where
             hidden_cursor: false,
             viewport: options.viewport,
             viewport_area,
-            last_known_size: size,
+            last_known_area: area,
             last_known_cursor_pos: cursor_pos,
             frame_count: 0,
         })
@@ -188,31 +192,37 @@ where
         let current_buffer = &self.buffers[self.current];
         let updates = previous_buffer.diff(current_buffer);
         if let Some((col, row, _)) = updates.last() {
-            self.last_known_cursor_pos = (*col, *row);
+            self.last_known_cursor_pos = Position { x: *col, y: *row };
         }
         self.backend.draw(updates.into_iter())
     }
 
-    /// Updates the Terminal so that internal buffers match the requested size.
+    /// Updates the Terminal so that internal buffers match the requested area.
     ///
-    /// Requested size will be saved so the size can remain consistent when rendering. This leads
-    /// to a full clear of the screen.
-    pub fn resize(&mut self, size: Rect) -> io::Result<()> {
+    /// Requested area will be saved to remain consistent when rendering. This leads to a full clear
+    /// of the screen.
+    pub fn resize(&mut self, area: Rect) -> io::Result<()> {
         let next_area = match self.viewport {
-            Viewport::Fullscreen => size,
+            Viewport::Fullscreen => area,
             Viewport::Inline(height) => {
                 let offset_in_previous_viewport = self
                     .last_known_cursor_pos
-                    .1
+                    .y
                     .saturating_sub(self.viewport_area.top());
-                compute_inline_size(&mut self.backend, height, size, offset_in_previous_viewport)?.0
+                compute_inline_size(
+                    &mut self.backend,
+                    height,
+                    area.as_size(),
+                    offset_in_previous_viewport,
+                )?
+                .0
             }
             Viewport::Fixed(area) => area,
         };
         self.set_viewport_area(next_area);
         self.clear()?;
 
-        self.last_known_size = size;
+        self.last_known_area = area;
         Ok(())
     }
 
@@ -226,9 +236,9 @@ where
     pub fn autoresize(&mut self) -> io::Result<()> {
         // fixed viewports do not get autoresized
         if matches!(self.viewport, Viewport::Fullscreen | Viewport::Inline(_)) {
-            let size = self.size()?;
-            if size != self.last_known_size {
-                self.resize(size)?;
+            let area = Rect::from((Position::ORIGIN, self.size()?));
+            if area != self.last_known_area {
+                self.resize(area)?;
             }
         };
         Ok(())
@@ -383,7 +393,7 @@ where
 
         match cursor_position {
             None => self.hide_cursor()?,
-            Some((x, y)) => {
+            Some(Position { x, y }) => {
                 self.show_cursor()?;
                 self.set_cursor(x, y)?;
             }
@@ -396,7 +406,7 @@ where
 
         let completed_frame = CompletedFrame {
             buffer: &self.buffers[1 - self.current],
-            area: self.last_known_size,
+            area: self.last_known_area,
             count: self.frame_count,
         };
 
@@ -431,7 +441,7 @@ where
     /// Sets the cursor position.
     pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
         self.backend.set_cursor(x, y)?;
-        self.last_known_cursor_pos = (x, y);
+        self.last_known_cursor_pos = Position { x, y };
         Ok(())
     }
 
@@ -463,7 +473,7 @@ where
     }
 
     /// Queries the real size of the backend.
-    pub fn size(&self) -> io::Result<Rect> {
+    pub fn size(&self) -> io::Result<Size> {
         self.backend.size()
     }
 
@@ -523,7 +533,7 @@ where
         self.clear()?;
 
         // Move the viewport by height, but don't move it past the bottom of the terminal
-        let viewport_at_bottom = self.last_known_size.bottom() - self.viewport_area.height;
+        let viewport_at_bottom = self.last_known_area.bottom() - self.viewport_area.height;
         self.set_viewport_area(Rect {
             y: self
                 .viewport_area
@@ -571,11 +581,11 @@ where
 fn compute_inline_size<B: Backend>(
     backend: &mut B,
     height: u16,
-    size: Rect,
+    size: Size,
     offset_in_previous_viewport: u16,
-) -> io::Result<(Rect, (u16, u16))> {
-    let pos = backend.get_cursor()?;
-    let mut row = pos.1;
+) -> io::Result<(Rect, Position)> {
+    let pos: Position = backend.get_cursor()?.into();
+    let mut row = pos.y;
 
     let max_height = size.height.min(height);
 

@@ -12,7 +12,7 @@ use ratatui::{
         ExecutableCommand,
     },
     layout::Rect,
-    terminal::{Terminal, TerminalOptions, Viewport},
+    Terminal, TerminalOptions, Viewport,
 };
 
 pub fn init() -> Result<Terminal<impl Backend>> {

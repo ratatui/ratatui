@@ -32,7 +32,8 @@ pub struct Rect {
 /// Positive numbers move to the right/bottom and negative to the left/top.
 ///
 /// See [`Rect::offset`]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Offset {
     /// How much to move on the X axis
     pub x: i32,
@@ -290,7 +291,7 @@ impl Rect {
     /// # use ratatui::prelude::*;
     /// fn render(area: Rect, buf: &mut Buffer) {
     ///     for position in area.positions() {
-    ///         buf.get_mut(position.x, position.y).set_symbol("x");
+    ///         buf[(position.x, position.y)].set_symbol("x");
     ///     }
     /// }
     /// ```

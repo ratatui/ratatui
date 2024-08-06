@@ -26,8 +26,8 @@ use ratatui::{
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    terminal::{Frame, Terminal},
     widgets::Paragraph,
+    Frame, Terminal,
 };
 
 /// This is a bare minimum example. There are many approaches to running an application loop, so
@@ -82,7 +82,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
 /// draws a greeting.
 fn render_app(frame: &mut Frame) {
     let greeting = Paragraph::new("Hello World! (press 'q' to quit)");
-    frame.render_widget(greeting, frame.size());
+    frame.render_widget(greeting, frame.area());
 }
 
 /// Check if the user has pressed 'q'. This is where you would handle events. This example just

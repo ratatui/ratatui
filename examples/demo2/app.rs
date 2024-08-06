@@ -8,9 +8,9 @@ use ratatui::{
     crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::Color,
-    terminal::Terminal,
     text::{Line, Span},
     widgets::{Block, Tabs, Widget},
+    Terminal,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
@@ -71,7 +71,7 @@ impl App {
     fn draw(&self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
         terminal
             .draw(|frame| {
-                frame.render_widget(self, frame.size());
+                frame.render_widget(self, frame.area());
                 if self.mode == Mode::Destroy {
                     destroy::destroy(frame);
                 }

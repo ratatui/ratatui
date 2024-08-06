@@ -16,6 +16,18 @@
 use color_eyre::Result;
 use rand::{thread_rng, Rng};
 use ratatui::{
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
+    widgets::{Bar, BarChart, BarGroup, Block, Paragraph},
+    Frame, Terminal,
+};
     crossterm::event::{self, Event, KeyCode},
     layout::Direction,
     prelude::{Color, Constraint, Layout, Line, Style, Stylize},

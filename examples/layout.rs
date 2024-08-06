@@ -29,9 +29,9 @@ use ratatui::{
         Layout, Rect,
     },
     style::{Color, Style, Stylize},
-    terminal::{Frame, Terminal},
     text::Line,
     widgets::{Block, Paragraph},
+    Frame, Terminal,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -80,7 +80,7 @@ fn ui(frame: &mut Frame) {
         Length(50), // examples
         Min(0),     // fills remaining space
     ]);
-    let [text_area, examples_area, _] = vertical.areas(frame.size());
+    let [text_area, examples_area, _] = vertical.areas(frame.area());
 
     // title
     frame.render_widget(

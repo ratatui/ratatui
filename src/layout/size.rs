@@ -8,6 +8,7 @@ use crate::prelude::*;
 /// The width and height are stored as `u16` values and represent the number of columns and rows
 /// respectively.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Size {
     /// The width in columns
     pub width: u16,
@@ -16,6 +17,9 @@ pub struct Size {
 }
 
 impl Size {
+    /// A zero sized Size
+    pub const ZERO: Self = Self::new(0, 0);
+
     /// Create a new `Size` struct
     pub const fn new(width: u16, height: u16) -> Self {
         Self { width, height }

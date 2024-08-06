@@ -74,7 +74,7 @@ impl App {
 
     /// Draw the app to the terminal.
     fn draw(&mut self, terminal: &mut Tui) -> io::Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.size()))?;
+        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
 
@@ -177,7 +177,7 @@ mod common {
         crossterm::terminal::{
             disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
         },
-        terminal::Terminal,
+        Terminal,
     };
 
     // A simple alias for the terminal type used in this example.

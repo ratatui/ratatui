@@ -25,12 +25,12 @@ use ratatui::{
     },
     layout::{Constraint, Layout, Margin, Rect},
     style::{self, Color, Modifier, Style, Stylize},
-    terminal::{Frame, Terminal},
     text::{Line, Text},
     widgets::{
         Block, BorderType, Cell, HighlightSpacing, Paragraph, Row, Scrollbar, ScrollbarOrientation,
         ScrollbarState, Table, TableState,
     },
+    Frame, Terminal,
 };
 use style::palette::tailwind;
 use unicode_width::UnicodeWidthStr;
@@ -234,7 +234,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui(f: &mut Frame, app: &mut App) {
-    let rects = Layout::vertical([Constraint::Min(5), Constraint::Length(3)]).split(f.size());
+    let rects = Layout::vertical([Constraint::Min(5), Constraint::Length(3)]).split(f.area());
 
     app.set_colors();
 

@@ -71,7 +71,6 @@ fn widgets_table_column_spacing_can_be_changed<'line, Lines>(
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let size = f.size();
             let table = Table::new(
                 vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -88,7 +87,7 @@ fn widgets_table_column_spacing_can_be_changed<'line, Lines>(
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
             .block(Block::bordered())
             .column_spacing(column_spacing);
-            f.render_widget(table, size);
+            f.render_widget(table, f.area());
         })
         .unwrap();
     terminal.backend().assert_buffer_lines(expected);
@@ -154,7 +153,6 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints<'line, Lines>(
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let size = f.size();
             let table = Table::new(
                 vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -166,7 +164,7 @@ fn widgets_table_columns_widths_can_use_fixed_length_constraints<'line, Lines>(
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
             .block(Block::bordered());
-            f.render_widget(table, size);
+            f.render_widget(table, f.area());
         })
         .unwrap();
     terminal.backend().assert_buffer_lines(expected);
@@ -244,7 +242,6 @@ fn widgets_table_columns_widths_can_use_percentage_constraints<'line, Lines>(
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let size = f.size();
             let table = Table::new(
                 vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -257,7 +254,7 @@ fn widgets_table_columns_widths_can_use_percentage_constraints<'line, Lines>(
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
             .block(Block::bordered())
             .column_spacing(0);
-            f.render_widget(table, size);
+            f.render_widget(table, f.area());
         })
         .unwrap();
     terminal.backend().assert_buffer_lines(expected);
@@ -339,7 +336,6 @@ fn widgets_table_columns_widths_can_use_mixed_constraints<'line, Lines>(
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let size = f.size();
             let table = Table::new(
                 vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -351,7 +347,7 @@ fn widgets_table_columns_widths_can_use_mixed_constraints<'line, Lines>(
             )
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
             .block(Block::bordered());
-            f.render_widget(table, size);
+            f.render_widget(table, f.area());
         })
         .unwrap();
     terminal.backend().assert_buffer_lines(expected);
@@ -425,7 +421,6 @@ fn widgets_table_columns_widths_can_use_ratio_constraints<'line, Lines>(
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let size = f.size();
             let table = Table::new(
                 vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -438,7 +433,7 @@ fn widgets_table_columns_widths_can_use_ratio_constraints<'line, Lines>(
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
             .block(Block::bordered())
             .column_spacing(0);
-            f.render_widget(table, size);
+            f.render_widget(table, f.area());
         })
         .unwrap();
     terminal.backend().assert_buffer_lines(expected);
@@ -509,7 +504,6 @@ fn widgets_table_can_have_rows_with_multi_lines<'line, Lines>(
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let size = f.size();
             let table = Table::new(
                 vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -527,7 +521,7 @@ fn widgets_table_can_have_rows_with_multi_lines<'line, Lines>(
             .block(Block::bordered())
             .highlight_symbol(">> ")
             .column_spacing(1);
-            f.render_stateful_widget(table, size, &mut state);
+            f.render_stateful_widget(table, f.area(), &mut state);
         })
         .unwrap();
     terminal.backend().assert_buffer_lines(expected);
@@ -608,7 +602,6 @@ fn widgets_table_enable_always_highlight_spacing<'line, Lines>(
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let size = f.size();
             let table = Table::new(
                 vec![
                     Row::new(vec!["Row11", "Row12", "Row13"]),
@@ -627,7 +620,7 @@ fn widgets_table_enable_always_highlight_spacing<'line, Lines>(
             .highlight_symbol(">> ")
             .highlight_spacing(space)
             .column_spacing(1);
-            f.render_stateful_widget(table, size, &mut state);
+            f.render_stateful_widget(table, f.area(), &mut state);
         })
         .unwrap();
     terminal.backend().assert_buffer_lines(expected);
@@ -641,7 +634,6 @@ fn widgets_table_can_have_elements_styled_individually() {
     state.select(Some(0));
     terminal
         .draw(|f| {
-            let size = f.size();
             let table = Table::new(
                 vec![
                     Row::new(vec!["Row11", "Row12", "Row13"])
@@ -668,7 +660,7 @@ fn widgets_table_can_have_elements_styled_individually() {
             .highlight_symbol(">> ")
             .highlight_style(Style::default().add_modifier(Modifier::BOLD))
             .column_spacing(1);
-            f.render_stateful_widget(table, size, &mut state);
+            f.render_stateful_widget(table, f.area(), &mut state);
         })
         .unwrap();
 
@@ -680,7 +672,7 @@ fn widgets_table_can_have_elements_styled_individually() {
     ]);
     // First row = row color + highlight style
     for col in 1..=28 {
-        expected.get_mut(col, 2).set_style(
+        expected[(col, 2)].set_style(
             Style::default()
                 .fg(Color::Green)
                 .add_modifier(Modifier::BOLD),
@@ -689,26 +681,18 @@ fn widgets_table_can_have_elements_styled_individually() {
     // Second row:
     // 1. row color
     for col in 1..=28 {
-        expected
-            .get_mut(col, 3)
-            .set_style(Style::default().fg(Color::LightGreen));
+        expected[(col, 3)].set_style(Style::default().fg(Color::LightGreen));
     }
     // 2. cell color
     for col in 11..=16 {
-        expected
-            .get_mut(col, 3)
-            .set_style(Style::default().fg(Color::Yellow));
+        expected[(col, 3)].set_style(Style::default().fg(Color::Yellow));
     }
     for col in 18..=23 {
-        expected
-            .get_mut(col, 3)
-            .set_style(Style::default().fg(Color::Red));
+        expected[(col, 3)].set_style(Style::default().fg(Color::Red));
     }
     // 3. text color
     for col in 21..=22 {
-        expected
-            .get_mut(col, 3)
-            .set_style(Style::default().fg(Color::Blue));
+        expected[(col, 3)].set_style(Style::default().fg(Color::Blue));
     }
     terminal.backend().assert_buffer(&expected);
 }
@@ -719,7 +703,6 @@ fn widgets_table_should_render_even_if_empty() {
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
         .draw(|f| {
-            let size = f.size();
             let table = Table::new(
                 Vec::<Row>::new(),
                 [
@@ -731,7 +714,7 @@ fn widgets_table_should_render_even_if_empty() {
             .header(Row::new(vec!["Head1", "Head2", "Head3"]))
             .block(Block::new().borders(Borders::LEFT | Borders::RIGHT))
             .column_spacing(1);
-            f.render_widget(table, size);
+            f.render_widget(table, f.area());
         })
         .unwrap();
     terminal.backend().assert_buffer_lines([
@@ -768,10 +751,7 @@ fn widgets_table_columns_dont_panic() {
     let backend = TestBackend::new(table_width, 8);
     let mut terminal = Terminal::new(backend).unwrap();
     terminal
-        .draw(|f| {
-            let size = f.size();
-            f.render_stateful_widget(table, size, &mut state);
-        })
+        .draw(|f| f.render_stateful_widget(table, f.area(), &mut state))
         .unwrap();
 }
 
@@ -785,7 +765,6 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
     state.select(Some(5));
     terminal
         .draw(|f| {
-            let size = f.size();
             let table = Table::new(
                 vec![
                     Row::new(vec!["Row01", "Row02", "Row03"]),
@@ -804,7 +783,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
             .block(Block::bordered())
             .column_spacing(1);
-            f.render_stateful_widget(table, size, &mut state);
+            f.render_stateful_widget(table, f.area(), &mut state);
         })
         .unwrap();
     terminal.backend().assert_buffer_lines([
@@ -822,7 +801,6 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
     state.select(Some(1));
     terminal
         .draw(|f| {
-            let size = f.size();
             let table = Table::new(
                 vec![Row::new(vec!["Row31", "Row32", "Row33"])],
                 [
@@ -834,7 +812,7 @@ fn widgets_table_should_clamp_offset_if_rows_are_removed() {
             .header(Row::new(vec!["Head1", "Head2", "Head3"]).bottom_margin(1))
             .block(Block::bordered())
             .column_spacing(1);
-            f.render_stateful_widget(table, size, &mut state);
+            f.render_stateful_widget(table, f.area(), &mut state);
         })
         .unwrap();
     terminal.backend().assert_buffer_lines([

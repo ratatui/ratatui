@@ -19,8 +19,7 @@ use crate::{
         },
         terminal::{self, Clear},
     },
-    layout::Size,
-    prelude::Rect,
+    layout::{Position, Size},
     style::{Color, Modifier, Style},
 };
 
@@ -155,13 +154,13 @@ where
         #[cfg(feature = "underline-color")]
         let mut underline_color = Color::Reset;
         let mut modifier = Modifier::empty();
-        let mut last_pos: Option<(u16, u16)> = None;
+        let mut last_pos: Option<Position> = None;
         for (x, y, cell) in content {
             // Move the cursor if the previous location was not (x - 1, y)
-            if !matches!(last_pos, Some(p) if x == p.0 + 1 && y == p.1) {
+            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
                 queue!(self.writer, MoveTo(x, y))?;
             }
-            last_pos = Some((x, y));
+            last_pos = Some(Position { x, y });
             if cell.modifier != modifier {
                 let diff = ModifierDiff {
                     from: modifier,
@@ -246,9 +245,9 @@ where
         self.writer.flush()
     }
 
-    fn size(&self) -> io::Result<Rect> {
+    fn size(&self) -> io::Result<Size> {
         let (width, height) = terminal::size()?;
-        Ok(Rect::new(0, 0, width, height))
+        Ok(Size { width, height })
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {

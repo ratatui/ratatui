@@ -33,9 +33,9 @@ use ratatui::{
     },
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Style, Stylize},
-    terminal::{Frame, Terminal},
     text::Line,
     widgets::{Block, Borders, Paragraph},
+    Frame, Terminal,
 };
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
@@ -70,7 +70,7 @@ fn ui(frame: &mut Frame) {
         Constraint::Length(17),
         Constraint::Length(2),
     ])
-    .split(frame.size());
+    .split(frame.area());
 
     render_named_colors(frame, layout[0]);
     render_indexed_colors(frame, layout[1]);

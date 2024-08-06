@@ -4,19 +4,17 @@ use ratatui::{
     buffer::Buffer,
     layout::{Flex, Layout, Rect},
     style::{Color, Style},
-    terminal::Frame,
+    text::Text,
     widgets::Widget,
+    Frame,
 };
-use unicode_width::UnicodeWidthStr;
-
-use crate::big_text::{BigTextBuilder, PixelSize};
 
 /// delay the start of the animation so it doesn't start immediately
-const DELAY: usize = 240;
+const DELAY: usize = 120;
 /// higher means more pixels per frame are modified in the animation
-const DRIP_SPEED: usize = 50;
+const DRIP_SPEED: usize = 500;
 /// delay the start of the text animation so it doesn't start immediately after the initial delay
-const TEXT_DELAY: usize = 240;
+const TEXT_DELAY: usize = 180;
 
 /// Destroy mode activated by pressing `d`
 pub fn destroy(frame: &mut Frame<'_>) {
@@ -25,7 +23,7 @@ pub fn destroy(frame: &mut Frame<'_>) {
         return;
     }
 
-    let area = frame.size();
+    let area = frame.area();
     let buf = frame.buffer_mut();
 
     drip(frame_count, area, buf);
@@ -51,7 +49,7 @@ fn drip(frame_count: usize, area: Rect, buf: &mut Buffer) {
     for _ in 0..pixel_count {
         let src_x = rng.gen_range(0..area.width);
         let src_y = rng.gen_range(1..area.height - 2);
-        let src = buf.get_mut(src_x, src_y).clone();
+        let src = buf[(src_x, src_y)].clone();
         // 1% of the time, move a blank or pixel (10:1) to the top line of the screen
         if rng.gen_ratio(1, 100) {
             let dest_x = rng
@@ -59,7 +57,7 @@ fn drip(frame_count: usize, area: Rect, buf: &mut Buffer) {
                 .clamp(area.left(), area.right() - 1);
             let dest_y = area.top() + 1;
 
-            let dest = buf.get_mut(dest_x, dest_y);
+            let dest = &mut buf[(dest_x, dest_y)];
             // copy the cell to the new location about 1/10 of the time blank out the cell the rest
             // of the time. This has the effect of gradually removing the pixels from the screen.
             if rng.gen_ratio(1, 10) {
@@ -72,8 +70,7 @@ fn drip(frame_count: usize, area: Rect, buf: &mut Buffer) {
             let dest_x = src_x;
             let dest_y = src_y.saturating_add(1).min(area.bottom() - 2);
             // copy the cell to the new location
-            let dest = buf.get_mut(dest_x, dest_y);
-            *dest = src;
+            buf[(dest_x, dest_y)] = src;
         }
     }
 }
@@ -86,26 +83,25 @@ fn text(frame_count: usize, area: Rect, buf: &mut Buffer) {
         return;
     }
 
-    let line = "RATATUI";
-    let big_text = BigTextBuilder::default()
-        .lines([line.into()])
-        .pixel_size(PixelSize::Full)
-        .style(Style::new().fg(Color::Rgb(255, 0, 0)))
-        .build()
-        .unwrap();
-
-    // the font size is 8x8 for each character and we have 1 line
-    let area = centered_rect(area, line.width() as u16 * 8, 8);
+    let logo = indoc::indoc! {"
+        ██████      ████    ██████    ████    ██████  ██    ██  ██
+        ██    ██  ██    ██    ██    ██    ██    ██    ██    ██  ██
+        ██████    ████████    ██    ████████    ██    ██    ██  ██
+        ██  ██    ██    ██    ██    ██    ██    ██    ██    ██  ██
+        ██    ██  ██    ██    ██    ██    ██    ██      ████    ██
+    "};
+    let logo_text = Text::styled(logo, Color::Rgb(255, 255, 255));
+    let area = centered_rect(area, logo_text.width() as u16, logo_text.height() as u16);
 
     let mask_buf = &mut Buffer::empty(area);
-    big_text.render(area, mask_buf);
+    logo_text.render(area, mask_buf);
 
     let percentage = (sub_frame as f64 / 480.0).clamp(0.0, 1.0);
 
     for row in area.rows() {
         for col in row.columns() {
-            let cell = buf.get_mut(col.x, col.y);
-            let mask_cell = mask_buf.get(col.x, col.y);
+            let cell = &mut buf[(col.x, col.y)];
+            let mask_cell = &mut mask_buf[(col.x, col.y)];
             cell.set_symbol(mask_cell.symbol());
 
             // blend the mask cell color with the cell color

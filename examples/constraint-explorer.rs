@@ -34,9 +34,9 @@ use ratatui::{
         Color, Style, Stylize,
     },
     symbols::{self, line},
-    terminal::Terminal,
     text::{Line, Span, Text},
     widgets::{Block, Paragraph, Widget, Wrap},
+    Terminal,
 };
 use strum::{Display, EnumIter, FromRepr};
 
@@ -125,7 +125,7 @@ impl App {
     }
 
     fn draw(&self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.size()))?;
+        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
 

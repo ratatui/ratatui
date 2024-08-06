@@ -342,6 +342,14 @@ where
     }
 }
 
+impl<'a> std::ops::Add<Self> for Span<'a> {
+    type Output = Line<'a>;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Line::from_iter([self, rhs])
+    }
+}
+
 impl<'a> Styled for Span<'a> {
     type Item = Self;
 
@@ -362,33 +370,37 @@ impl Widget for Span<'_> {
 
 impl WidgetRef for Span<'_> {
     fn render_ref(&self, area: Rect, buf: &mut Buffer) {
-        let Rect { mut x, y, .. } = area.intersection(buf.area);
+        let area = area.intersection(buf.area);
+        if area.is_empty() {
+            return;
+        }
+        let Rect { mut x, y, .. } = area;
         for (i, grapheme) in self.styled_graphemes(Style::default()).enumerate() {
             let symbol_width = grapheme.symbol.width();
             let next_x = x.saturating_add(symbol_width as u16);
-            if next_x > area.intersection(buf.area).right() {
+            if next_x > area.right() {
                 break;
             }
 
             if i == 0 {
                 // the first grapheme is always set on the cell
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .set_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
             } else if x == area.x {
                 // there is one or more zero-width graphemes in the first cell, so the first cell
                 // must be appended to.
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .append_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
             } else if symbol_width == 0 {
                 // append zero-width graphemes to the previous cell
-                buf.get_mut(x - 1, y)
+                buf[(x - 1, y)]
                     .append_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
             } else {
                 // just a normal grapheme (not first, not zero-width, not overflowing the area)
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .set_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
             }
@@ -399,7 +411,7 @@ impl WidgetRef for Span<'_> {
             for x_hidden in (x + 1)..next_x {
                 // it may seem odd that the style of the hidden cells are not set to the style of
                 // the grapheme, but this is how the existing buffer.set_span() method works.
-                buf.get_mut(x_hidden, y).reset();
+                buf[(x_hidden, y)].reset();
             }
             x = next_x;
         }
@@ -431,7 +443,10 @@ impl<T: fmt::Display> ToSpan for T {
 
 impl fmt::Display for Span<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.content, f)
+        for line in self.content.lines() {
+            fmt::Display::fmt(line, f)?;
+        }
+        Ok(())
     }
 }
 
@@ -554,6 +569,8 @@ mod tests {
         assert_eq!(Span::raw("").width(), 0);
         assert_eq!(Span::raw("test").width(), 4);
         assert_eq!(Span::raw("test content").width(), 12);
+        // Needs reconsideration: https://github.com/ratatui-org/ratatui/issues/1271
+        assert_eq!(Span::raw("test\ncontent").width(), 12);
     }
 
     #[test]
@@ -567,11 +584,18 @@ mod tests {
         assert_eq!(stylized.content, Cow::Borrowed("test content"));
         assert_eq!(stylized.style, Style::new().green().on_yellow().bold());
     }
+
     #[test]
     fn display_span() {
         let span = Span::raw("test content");
         assert_eq!(format!("{span}"), "test content");
         assert_eq!(format!("{span:.4}"), "test");
+    }
+
+    #[test]
+    fn display_newline_span() {
+        let span = Span::raw("test\ncontent");
+        assert_eq!(format!("{span}"), "testcontent");
     }
 
     #[test]
@@ -621,8 +645,11 @@ mod tests {
         }
 
         #[rstest]
-        fn render_out_of_bounds(mut small_buf: Buffer) {
-            let out_of_bounds = Rect::new(20, 20, 10, 1);
+        #[case::x(20, 0)]
+        #[case::y(0, 20)]
+        #[case::both(20, 20)]
+        fn render_out_of_bounds(mut small_buf: Buffer, #[case] x: u16, #[case] y: u16) {
+            let out_of_bounds = Rect::new(x, y, 10, 1);
             Span::raw("Hello, World!").render(out_of_bounds, &mut small_buf);
             assert_eq!(small_buf, Buffer::empty(small_buf.area));
         }
@@ -749,6 +776,14 @@ mod tests {
                 [Cell::new("a"), Cell::new("b"), Cell::new("c\u{200B}")]
             );
         }
+
+        #[test]
+        fn render_with_newlines() {
+            let span = Span::raw("a\nb");
+            let mut buf = Buffer::empty(Rect::new(0, 0, 2, 1));
+            span.render(buf.area, &mut buf);
+            assert_eq!(buf.content(), [Cell::new("a"), Cell::new("b")]);
+        }
     }
 
     /// Regression test for <https://github.com/ratatui-org/ratatui/issues/1160> One line contains
@@ -771,6 +806,29 @@ mod tests {
                 Cell::new("l"),
                 Cell::new("o\u{200E}"),
             ]
+        );
+    }
+
+    #[test]
+    fn add() {
+        assert_eq!(
+            Span::default() + Span::default(),
+            Line::from(vec![Span::default(), Span::default()])
+        );
+
+        assert_eq!(
+            Span::default() + Span::raw("test"),
+            Line::from(vec![Span::default(), Span::raw("test")])
+        );
+
+        assert_eq!(
+            Span::raw("test") + Span::default(),
+            Line::from(vec![Span::raw("test"), Span::default()])
+        );
+
+        assert_eq!(
+            Span::raw("test") + Span::raw("content"),
+            Line::from(vec![Span::raw("test"), Span::raw("content")])
         );
     }
 }

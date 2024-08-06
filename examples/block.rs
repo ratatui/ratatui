@@ -30,12 +30,12 @@ use ratatui::{
     },
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Style, Stylize},
-    terminal::Frame,
     text::Line,
     widgets::{
         block::{Position, Title},
         Block, BorderType, Borders, Padding, Paragraph, Wrap,
     },
+    Frame,
 };
 
 // These type aliases are used to make the code more readable by reducing repetition of the generic
@@ -90,7 +90,7 @@ fn handle_events() -> Result<ControlFlow<()>> {
 }
 
 fn ui(frame: &mut Frame) {
-    let (title_area, layout) = calculate_layout(frame.size());
+    let (title_area, layout) = calculate_layout(frame.area());
 
     render_title(frame, title_area);
 

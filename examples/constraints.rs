@@ -30,12 +30,12 @@ use ratatui::{
     },
     style::{palette::tailwind, Color, Modifier, Style, Stylize},
     symbols,
-    terminal::Terminal,
     text::Line,
     widgets::{
         Block, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget,
         Tabs, Widget,
     },
+    Terminal,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
@@ -86,9 +86,6 @@ fn main() -> Result<()> {
     init_error_hooks()?;
     let terminal = init_terminal()?;
 
-    // increase the cache size to avoid flickering for indeterminate layouts
-    Layout::init_cache(100);
-
     App::default().run(terminal)?;
 
     restore_terminal()?;
@@ -115,7 +112,7 @@ impl App {
     }
 
     fn draw(self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.size()))?;
+        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
 
@@ -250,7 +247,7 @@ impl App {
         for (i, cell) in visible_content.enumerate() {
             let x = i as u16 % area.width;
             let y = i as u16 / area.width;
-            *buf.get_mut(area.x + x, area.y + y) = cell;
+            buf[(area.x + x, area.y + y)] = cell;
         }
 
         if scrollbar_needed {

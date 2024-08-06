@@ -16,7 +16,7 @@ pub struct Frame<'a> {
     ///
     /// If `None`, the cursor is hidden and its position is controlled by the backend. If `Some((x,
     /// y))`, the cursor is shown and placed at `(x, y)` after the call to `Terminal::draw()`.
-    pub(crate) cursor_position: Option<(u16, u16)>,
+    pub(crate) cursor_position: Option<Position>,
 
     /// The area of the viewport
     pub(crate) viewport_area: Rect,
@@ -42,13 +42,25 @@ pub struct CompletedFrame<'a> {
 }
 
 impl Frame<'_> {
-    /// The size of the current frame
+    /// The area of the current frame
     ///
     /// This is guaranteed not to change during rendering, so may be called multiple times.
     ///
     /// If your app listens for a resize event from the backend, it should ignore the values from
     /// the event for any calculations that are used to render the current frame and use this value
-    /// instead as this is the size of the buffer that is used to render the current frame.
+    /// instead as this is the area of the buffer that is used to render the current frame.
+    pub const fn area(&self) -> Rect {
+        self.viewport_area
+    }
+
+    /// The area of the current frame
+    ///
+    /// This is guaranteed not to change during rendering, so may be called multiple times.
+    ///
+    /// If your app listens for a resize event from the backend, it should ignore the values from
+    /// the event for any calculations that are used to render the current frame and use this value
+    /// instead as this is the area of the buffer that is used to render the current frame.
+    #[deprecated = "use .area() as its the more correct name"]
     pub const fn size(&self) -> Rect {
         self.viewport_area
     }
@@ -167,7 +179,7 @@ impl Frame<'_> {
     /// `Terminal::show_cursor()`, and `Terminal::set_cursor()`. Pick one of the APIs and stick
     /// with it.
     pub fn set_cursor(&mut self, x: u16, y: u16) {
-        self.cursor_position = Some((x, y));
+        self.cursor_position = Some(Position { x, y });
     }
 
     /// Gets the buffer that this `Frame` draws into as a mutable reference.

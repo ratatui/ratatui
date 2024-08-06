@@ -27,7 +27,7 @@ rust-version = "1.74.0"
 bitflags = "2.3"
 cassowary = "0.3"
 compact_str = "0.8.0"
-crossterm = { version = "0.27", optional = true }
+crossterm = { version = "0.28", optional = true }
 document-features = { version = "0.2.7", optional = true }
 instability = "0.3.1"
 itertools = "0.13"
@@ -49,15 +49,24 @@ anyhow = "1.0.71"
 argh = "0.1.12"
 color-eyre = "0.6.2"
 criterion = { version = "0.5.1", features = ["html_reports"] }
+crossterm = { version = "0.28", features = ["event-stream"] }
 derive_builder = "0.20.0"
 fakeit = "1.1"
 font8x8 = "0.3.1"
+futures = "0.3.30"
 indoc = "2"
+octocrab = "0.39.0"
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
-rstest = "0.21.0"
+rstest = "0.22.0"
 serde_json = "1.0.109"
+tokio = { version = "1.39.2", features = [
+  "rt",
+  "macros",
+  "time",
+  "rt-multi-thread",
+] }
 tracing = "0.1.40"
 tracing-appender = "0.2.3"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
@@ -76,6 +85,10 @@ missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
+
+# we often split up a module into multiple files with the main type in a file named after the
+# module, so we want to allow this pattern
+module_inception = "allow"
 
 # nursery or restricted
 as_underscore = "warn"
@@ -194,6 +207,10 @@ harness = false
 name = "sparkline"
 harness = false
 
+[[example]]
+name = "async"
+required-features = ["crossterm"]
+doc-scrape-examples = true
 
 [[example]]
 name = "barchart"

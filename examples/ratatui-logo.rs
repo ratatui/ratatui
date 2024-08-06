@@ -24,9 +24,8 @@ use itertools::izip;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::terminal::{disable_raw_mode, enable_raw_mode},
-    terminal::{Terminal, Viewport},
     widgets::Paragraph,
-    TerminalOptions,
+    Terminal, TerminalOptions, Viewport,
 };
 
 /// A fun example of using half block characters to draw a logo
@@ -65,9 +64,7 @@ fn logo() -> String {
 
 fn main() -> io::Result<()> {
     let mut terminal = init()?;
-    terminal.draw(|frame| {
-        frame.render_widget(Paragraph::new(logo()), frame.size());
-    })?;
+    terminal.draw(|frame| frame.render_widget(Paragraph::new(logo()), frame.area()))?;
     sleep(Duration::from_secs(5));
     restore()?;
     println!();

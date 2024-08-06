@@ -34,9 +34,7 @@ use crate::{
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TestBackend {
-    width: u16,
     buffer: Buffer,
-    height: u16,
     cursor: bool,
     pos: (u16, u16),
 }
@@ -74,8 +72,6 @@ impl TestBackend {
     /// Creates a new `TestBackend` with the specified width and height.
     pub fn new(width: u16, height: u16) -> Self {
         Self {
-            width,
-            height,
             buffer: Buffer::empty(Rect::new(0, 0, width, height)),
             cursor: false,
             pos: (0, 0),
@@ -90,8 +86,6 @@ impl TestBackend {
     /// Resizes the `TestBackend` to the specified width and height.
     pub fn resize(&mut self, width: u16, height: u16) {
         self.buffer.resize(Rect::new(0, 0, width, height));
-        self.width = width;
-        self.height = height;
     }
 
     /// Asserts that the `TestBackend`'s buffer is equal to the expected buffer.
@@ -139,8 +133,7 @@ impl Backend for TestBackend {
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
         for (x, y, c) in content {
-            let cell = self.buffer.get_mut(x, y);
-            *cell = c.clone();
+            self.buffer[(x, y)] = c.clone();
         }
         Ok(())
     }
@@ -182,12 +175,12 @@ impl Backend for TestBackend {
             }
             ClearType::CurrentLine => {
                 let line_start_index = self.buffer.index_of(0, self.pos.1);
-                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
+                let line_end_index = self.buffer.index_of(self.buffer.area.width - 1, self.pos.1);
                 &mut self.buffer.content[line_start_index..=line_end_index]
             }
             ClearType::UntilNewLine => {
                 let index = self.buffer.index_of(self.pos.0, self.pos.1);
-                let line_end_index = self.buffer.index_of(self.width - 1, self.pos.1);
+                let line_end_index = self.buffer.index_of(self.buffer.area.width - 1, self.pos.1);
                 &mut self.buffer.content[index..=line_end_index]
             }
         };
@@ -211,24 +204,23 @@ impl Backend for TestBackend {
     /// be added after the current position and the cursor will be moved to the last row.
     fn append_lines(&mut self, n: u16) -> io::Result<()> {
         let (cur_x, cur_y) = self.get_cursor()?;
+        let Rect { width, height, .. } = self.buffer.area;
 
         // the next column ensuring that we don't go past the last column
-        let new_cursor_x = cur_x.saturating_add(1).min(self.width.saturating_sub(1));
+        let new_cursor_x = cur_x.saturating_add(1).min(width.saturating_sub(1));
 
-        let max_y = self.height.saturating_sub(1);
+        let max_y = height.saturating_sub(1);
         let lines_after_cursor = max_y.saturating_sub(cur_y);
         if n > lines_after_cursor {
             let rotate_by = n.saturating_sub(lines_after_cursor).min(max_y);
 
-            if rotate_by == self.height - 1 {
+            if rotate_by == height - 1 {
                 self.clear()?;
             }
 
             self.set_cursor(0, rotate_by)?;
             self.clear_region(ClearType::BeforeCursor)?;
-            self.buffer
-                .content
-                .rotate_left((self.width * rotate_by).into());
+            self.buffer.content.rotate_left((width * rotate_by).into());
         }
 
         let new_cursor_y = cur_y.saturating_add(n).min(max_y);
@@ -237,18 +229,18 @@ impl Backend for TestBackend {
         Ok(())
     }
 
-    fn size(&self) -> io::Result<Rect> {
-        Ok(Rect::new(0, 0, self.width, self.height))
+    fn size(&self) -> io::Result<Size> {
+        Ok(self.buffer.area.as_size())
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {
         // Some arbitrary window pixel size, probably doesn't need much testing.
-        static WINDOW_PIXEL_SIZE: Size = Size {
+        const WINDOW_PIXEL_SIZE: Size = Size {
             width: 640,
             height: 480,
         };
         Ok(WindowSize {
-            columns_rows: (self.width, self.height).into(),
+            columns_rows: self.buffer.area.as_size(),
             pixels: WINDOW_PIXEL_SIZE,
         })
     }
@@ -267,8 +259,6 @@ mod tests {
         assert_eq!(
             TestBackend::new(10, 2),
             TestBackend {
-                width: 10,
-                height: 2,
                 buffer: Buffer::with_lines(["          "; 2]),
                 cursor: false,
                 pos: (0, 0),
@@ -656,7 +646,7 @@ mod tests {
     #[test]
     fn size() {
         let backend = TestBackend::new(10, 2);
-        assert_eq!(backend.size().unwrap(), Rect::new(0, 0, 10, 2));
+        assert_eq!(backend.size().unwrap(), Size::new(10, 2));
     }
 
     #[test]

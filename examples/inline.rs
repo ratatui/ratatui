@@ -28,10 +28,9 @@ use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
-    terminal::{Frame, Terminal, Viewport},
     text::{Line, Span},
     widgets::{block, Block, Gauge, LineGauge, List, ListItem, Paragraph, Widget},
-    TerminalOptions,
+    Frame, Terminal, TerminalOptions, Viewport,
 };
 
 const NUM_DOWNLOADS: usize = 10;
@@ -241,7 +240,7 @@ fn run_app<B: Backend>(
 }
 
 fn ui(f: &mut Frame, downloads: &Downloads) {
-    let area = f.size();
+    let area = f.area();
 
     let block = Block::new().title(block::Title::from("Progress").alignment(Alignment::Center));
     f.render_widget(block, area);
