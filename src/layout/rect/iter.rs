@@ -28,7 +28,11 @@ impl Iterator for Rows {
         if self.current_row >= self.rect.bottom() {
             return None;
         }
-        let row = Rect::new(self.rect.x, self.current_row, self.rect.width, 1);
+        let row = Rect {
+            y: self.current_row,
+            height: 1,
+            ..self.rect
+        };
         self.current_row += 1;
         Some(row)
     }
@@ -62,7 +66,11 @@ impl Iterator for Columns {
         if self.current_column >= self.rect.right() {
             return None;
         }
-        let column = Rect::new(self.current_column, self.rect.y, 1, self.rect.height);
+        let column = Rect {
+            x: self.current_column,
+            width: 1,
+            ..self.rect
+        };
         self.current_column += 1;
         Some(column)
     }
