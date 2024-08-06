@@ -18,16 +18,30 @@ use crate::{buffer::Cell, layout::Position, prelude::*};
 /// # Examples:
 ///
 /// ```
-/// use ratatui::{buffer::Cell, prelude::*};
+/// use ratatui::{buffer::{Cell, Buffer}, layout::Position, layout::Rect, style::{Color, Style}};
 ///
+/// # fn foo() -> Option<()> {
 /// let mut buf = Buffer::empty(Rect {
 ///     x: 0,
 ///     y: 0,
 ///     width: 10,
 ///     height: 5,
 /// });
-/// buf[(0, 2)].set_symbol("x");
-/// assert_eq!(buf[(0, 2)].symbol(), "x");
+///
+/// // indexing using Position
+/// buf[Position { x: 0, y: 0 }].set_symbol("A");
+/// assert_eq!(buf[Position { x: 0, y: 0 }].symbol(), "A");
+///
+/// // indexing using (x, y) tuple (which is converted to Position)
+/// buf[(0, 1)].set_symbol("B");
+/// assert_eq!(buf[(0, 1)].symbol(), "x");
+///
+/// // getting an Option instead of panicking if the position is outside the buffer
+/// let cell = buf.cell_mut(Position { x: 0, y: 2})?;
+/// cell.set_symbol("C");
+///
+/// let cell = buf.cell(Position { x: 0, y: 2 })?;
+/// assert_eq!(cell.symbol() == "C"));
 ///
 /// buf.set_string(
 ///     3,
@@ -35,13 +49,12 @@ use crate::{buffer::Cell, layout::Position, prelude::*};
 ///     "string",
 ///     Style::default().fg(Color::Red).bg(Color::White),
 /// );
-/// let cell = &buf[(5, 0)];
+/// let cell = &buf[(5, 0)]; // cannot move out of buf, so we borrow it
 /// assert_eq!(cell.symbol(), "r");
 /// assert_eq!(cell.fg, Color::Red);
 /// assert_eq!(cell.bg, Color::White);
-///
-/// buf[(5, 0)].set_char('x');
-/// assert_eq!(buf[(5, 0)].symbol(), "x");
+/// # Some(())
+/// # }
 /// ```
 #[derive(Default, Clone, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -155,9 +168,9 @@ impl Buffer {
     /// assert_eq!(buffer.cell((10, 10)), None);
     /// ```
     #[must_use]
-    pub fn cell<P: Into<Position>>(&self, pos: P) -> Option<&Cell> {
-        let pos = pos.into();
-        let index = self.index_of_opt(pos.x, pos.y)?;
+    pub fn cell<P: Into<Position>>(&self, position: P) -> Option<&Cell> {
+        let position = position.into();
+        let index = self.index_of_opt(position)?;
         self.content.get(index)
     }
 
@@ -184,9 +197,9 @@ impl Buffer {
     /// }
     /// ```
     #[must_use]
-    pub fn cell_mut<P: Into<Position>>(&mut self, pos: P) -> Option<&mut Cell> {
-        let pos = pos.into();
-        let index = self.index_of_opt(pos.x, pos.y)?;
+    pub fn cell_mut<P: Into<Position>>(&mut self, position: P) -> Option<&mut Cell> {
+        let position = position.into();
+        let index = self.index_of_opt(position)?;
         self.content.get_mut(index)
     }
 
@@ -217,7 +230,7 @@ impl Buffer {
     #[track_caller]
     #[must_use]
     pub fn index_of(&self, x: u16, y: u16) -> usize {
-        self.index_of_opt(x, y).unwrap_or_else(|| {
+        self.index_of_opt(Position { x, y }).unwrap_or_else(|| {
             panic!(
                 "index outside of buffer: the area is {area:?} but index is ({x}, {y})",
                 area = self.area,
@@ -231,14 +244,14 @@ impl Buffer {
     ///
     /// Note that this is private because of <https://github.com/ratatui-org/ratatui/issues/1122>
     #[must_use]
-    const fn index_of_opt(&self, x: u16, y: u16) -> Option<usize> {
+    const fn index_of_opt(&self, position: Position) -> Option<usize> {
         let area = self.area;
-        if x < area.left() || x >= area.right() || y < area.top() || y >= area.bottom() {
+        if !area.contains(position) {
             return None;
         }
         // remove offset
-        let y = y - self.area.y;
-        let x = x - self.area.x;
+        let y = position.y - self.area.y;
+        let x = position.x - self.area.x;
         Some((y * self.area.width + x) as usize)
     }
 
@@ -492,9 +505,9 @@ impl<P: Into<Position>> Index<P> for Buffer {
     /// let cell = &buf[(0, 0)];
     /// let cell = &buf[Position::new(0, 0)];
     /// ```
-    fn index(&self, pos: P) -> &Self::Output {
-        let pos = pos.into();
-        let index = self.index_of(pos.x, pos.y);
+    fn index(&self, position: P) -> &Self::Output {
+        let position = position.into();
+        let index = self.index_of(position.x, position.y);
         &self.content[index]
     }
 }
@@ -518,9 +531,9 @@ impl<P: Into<Position>> IndexMut<P> for Buffer {
     /// buf[(0, 0)].set_symbol("A");
     /// buf[Position::new(0, 0)].set_symbol("B");
     /// ```
-    fn index_mut(&mut self, pos: P) -> &mut Self::Output {
-        let pos = pos.into();
-        let index = self.index_of(pos.x, pos.y);
+    fn index_mut(&mut self, position: P) -> &mut Self::Output {
+        let position = position.into();
+        let index = self.index_of(position.x, position.y);
         &mut self.content[index]
     }
 }
