@@ -106,7 +106,7 @@ use strum::{Display, EnumString};
 
 use crate::{
     buffer::Cell,
-    layout::{Position, Rect, Size},
+    layout::{Position, Size},
 };
 
 #[cfg(feature = "termion")]
@@ -295,19 +295,19 @@ pub trait Backend {
         }
     }
 
-    /// Get the size of the terminal screen in columns/rows as a [`Rect`].
+    /// Get the size of the terminal screen in columns/rows as a [`Size`].
     ///
-    /// The returned [`Rect`] contains the width and height of the terminal screen.
+    /// The returned [`Size`] contains the width and height of the terminal screen.
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust
     /// # use ratatui::{prelude::*, backend::TestBackend};
     /// let backend = TestBackend::new(80, 25);
-    /// assert_eq!(backend.size()?, Rect::new(0, 0, 80, 25));
+    /// assert_eq!(backend.size()?, Size::new(80, 25));
     /// # std::io::Result::Ok(())
     /// ```
-    fn size(&self) -> io::Result<Rect>;
+    fn size(&self) -> io::Result<Size>;
 
     /// Get the size of the terminal screen in columns/rows and pixels as a [`WindowSize`].
     ///

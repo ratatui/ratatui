@@ -431,7 +431,7 @@ impl BarChart<'_> {
                         } else {
                             self.bar_set.empty
                         };
-                        buf.get_mut(bars_area.left() + x, bar_y)
+                        buf[(bars_area.left() + x, bar_y)]
                             .set_symbol(symbol)
                             .set_style(bar_style);
                     }
@@ -507,7 +507,7 @@ impl BarChart<'_> {
                     let bar_style = self.bar_style.patch(bar.style);
 
                     for x in 0..self.bar_width {
-                        buf.get_mut(bar_x + x, area.top() + j)
+                        buf[(bar_x + x, area.top() + j)]
                             .set_symbol(symbol)
                             .set_style(bar_style);
                     }
@@ -698,7 +698,7 @@ mod tests {
             "f b       ",
         ]);
         for (x, y) in iproduct!([0, 2], [0, 1]) {
-            expected.get_mut(x, y).set_fg(Color::Red);
+            expected[(x, y)].set_fg(Color::Red);
         }
         assert_eq!(buffer, expected);
     }
@@ -790,8 +790,8 @@ mod tests {
             "█1█ █2█   ",
             "foo bar   ",
         ]);
-        expected.get_mut(1, 1).set_fg(Color::Red);
-        expected.get_mut(5, 1).set_fg(Color::Red);
+        expected[(1, 1)].set_fg(Color::Red);
+        expected[(5, 1)].set_fg(Color::Red);
         assert_eq!(buffer, expected);
     }
 
@@ -808,8 +808,8 @@ mod tests {
             "1 2       ",
             "f b       ",
         ]);
-        expected.get_mut(0, 2).set_fg(Color::Red);
-        expected.get_mut(2, 2).set_fg(Color::Red);
+        expected[(0, 2)].set_fg(Color::Red);
+        expected[(2, 2)].set_fg(Color::Red);
         assert_eq!(buffer, expected);
     }
 
@@ -827,7 +827,7 @@ mod tests {
             "f b       ",
         ]);
         for (x, y) in iproduct!(0..10, 0..3) {
-            expected.get_mut(x, y).set_fg(Color::Red);
+            expected[(x, y)].set_fg(Color::Red);
         }
         assert_eq!(buffer, expected);
     }
@@ -958,9 +958,9 @@ mod tests {
         let mut expected = Buffer::with_lines(["label", "5████"]);
 
         // first line has a yellow foreground. first cell contains italic "5"
-        expected.get_mut(0, 1).modifier.insert(Modifier::ITALIC);
+        expected[(0, 1)].modifier.insert(Modifier::ITALIC);
         for x in 0..5 {
-            expected.get_mut(x, 1).set_fg(Color::Yellow);
+            expected[(x, 1)].set_fg(Color::Yellow);
         }
 
         let expected_color = bar_color.unwrap_or(Color::Yellow);
@@ -968,13 +968,13 @@ mod tests {
         // second line contains the word "label". Since the bar value is 2,
         // then the first 2 characters of "label" are italic red.
         // the rest is white (using the Bar's style).
-        let cell = expected.get_mut(0, 0).set_fg(Color::Red);
+        let cell = expected[(0, 0)].set_fg(Color::Red);
         cell.modifier.insert(Modifier::ITALIC);
-        let cell = expected.get_mut(1, 0).set_fg(Color::Red);
+        let cell = expected[(1, 0)].set_fg(Color::Red);
         cell.modifier.insert(Modifier::ITALIC);
-        expected.get_mut(2, 0).set_fg(expected_color);
-        expected.get_mut(3, 0).set_fg(expected_color);
-        expected.get_mut(4, 0).set_fg(expected_color);
+        expected[(2, 0)].set_fg(expected_color);
+        expected[(3, 0)].set_fg(expected_color);
+        expected[(4, 0)].set_fg(expected_color);
 
         assert_eq!(buffer, expected);
     }
@@ -1027,9 +1027,9 @@ mod tests {
         // bold: because of BarChart::label_style
         // red: is included with the label itself
         let mut expected = Buffer::with_lines(["2████", "G1   "]);
-        let cell = expected.get_mut(0, 1).set_fg(Color::Red);
+        let cell = expected[(0, 1)].set_fg(Color::Red);
         cell.modifier.insert(Modifier::BOLD);
-        let cell = expected.get_mut(1, 1).set_fg(Color::Red);
+        let cell = expected[(1, 1)].set_fg(Color::Red);
         cell.modifier.insert(Modifier::BOLD);
 
         assert_eq!(buffer, expected);

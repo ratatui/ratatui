@@ -19,7 +19,7 @@ use crate::{
         },
         terminal::{self, Clear},
     },
-    layout::{Position, Rect, Size},
+    layout::{Position, Size},
     style::{Color, Modifier, Style},
 };
 
@@ -247,9 +247,9 @@ where
         self.writer.flush()
     }
 
-    fn size(&self) -> io::Result<Rect> {
+    fn size(&self) -> io::Result<Size> {
         let (width, height) = terminal::size()?;
-        Ok(Rect::new(0, 0, width, height))
+        Ok(Size { width, height })
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {

@@ -100,7 +100,7 @@ impl App {
 
     fn draw(&self, terminal: &mut Terminal) -> Result<()> {
         terminal.draw(|frame| {
-            let area = frame.size();
+            let area = frame.area();
             frame.render_widget(
                 Line::from("ratatui async example").centered().cyan().bold(),
                 area,

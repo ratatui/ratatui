@@ -63,7 +63,7 @@ where
                     Constraint::Length(10),
                     Constraint::Length(1),
                 ])
-                .split(f.size());
+                .split(f.area());
             let list = List::new(items)
                 .highlight_symbol(">>")
                 .block(Block::new().borders(Borders::RIGHT));

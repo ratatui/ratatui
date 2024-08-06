@@ -71,7 +71,7 @@ impl App {
     fn draw(&self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
         terminal
             .draw(|frame| {
-                frame.render_widget(self, frame.size());
+                frame.render_widget(self, frame.area());
                 if self.mode == Mode::Destroy {
                     destroy::destroy(frame);
                 }

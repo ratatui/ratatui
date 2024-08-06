@@ -442,7 +442,7 @@ impl<'a> Paragraph<'a> {
                     // If the symbol is empty, the last char which rendered last time will
                     // leave on the line. It's a quick fix.
                     let symbol = if symbol.is_empty() { " " } else { symbol };
-                    buf.get_mut(area.left() + x, area.top() + y - self.scroll.y)
+                    buf[(area.left() + x, area.top() + y - self.scroll.y)]
                         .set_symbol(symbol)
                         .set_style(*style);
                     x += width as u16;
@@ -485,10 +485,7 @@ mod test {
         let backend = TestBackend::new(expected.area.width, expected.area.height);
         let mut terminal = Terminal::new(backend).unwrap();
         terminal
-            .draw(|f| {
-                let size = f.size();
-                f.render_widget(paragraph.clone(), size);
-            })
+            .draw(|f| f.render_widget(paragraph.clone(), f.area()))
             .unwrap();
         terminal.backend().assert_buffer(expected);
     }

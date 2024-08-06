@@ -57,7 +57,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn draw(frame: &mut Frame) {
-    let app_area = frame.size();
+    let app_area = frame.area();
 
     let calarea = Rect {
         x: app_area.x + 1,

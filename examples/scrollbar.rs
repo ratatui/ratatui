@@ -119,11 +119,11 @@ fn run_app<B: Backend>(
 
 #[allow(clippy::too_many_lines, clippy::cast_possible_truncation)]
 fn ui(f: &mut Frame, app: &mut App) {
-    let size = f.size();
+    let area = f.area();
 
     // Words made "loooong" to demonstrate line breaking.
     let s = "Veeeeeeeeeeeeeeeery    loooooooooooooooooong   striiiiiiiiiiiiiiiiiiiiiiiiiing.   ";
-    let mut long_line = s.repeat(usize::from(size.width) / s.len() + 4);
+    let mut long_line = s.repeat(usize::from(area.width) / s.len() + 4);
     long_line.push('\n');
 
     let chunks = Layout::vertical([
@@ -133,7 +133,7 @@ fn ui(f: &mut Frame, app: &mut App) {
         Constraint::Percentage(25),
         Constraint::Percentage(25),
     ])
-    .split(size);
+    .split(area);
 
     let text = vec![
         Line::from("This is a line "),

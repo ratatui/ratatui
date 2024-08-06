@@ -959,14 +959,14 @@ impl WidgetRef for Chart<'_> {
         // Sample the style of the entire widget. This sample will be used to reset the style of
         // the cells that are part of the components put on top of the grah area (i.e legend and
         // axis names).
-        let original_style = buf.get(area.left(), area.top()).style();
+        let original_style = buf[(area.left(), area.top())].style();
 
         self.render_x_labels(buf, &layout, chart_area, graph_area);
         self.render_y_labels(buf, &layout, chart_area, graph_area);
 
         if let Some(y) = layout.axis_x {
             for x in graph_area.left()..graph_area.right() {
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .set_symbol(symbols::line::HORIZONTAL)
                     .set_style(self.x_axis.style);
             }
@@ -974,7 +974,7 @@ impl WidgetRef for Chart<'_> {
 
         if let Some(x) = layout.axis_y {
             for y in graph_area.top()..graph_area.bottom() {
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .set_symbol(symbols::line::VERTICAL)
                     .set_style(self.y_axis.style);
             }
@@ -982,7 +982,7 @@ impl WidgetRef for Chart<'_> {
 
         if let Some(y) = layout.axis_x {
             if let Some(x) = layout.axis_y {
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .set_symbol(symbols::line::BOTTOM_LEFT)
                     .set_style(self.x_axis.style);
             }

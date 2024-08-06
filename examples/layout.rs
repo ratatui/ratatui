@@ -80,7 +80,7 @@ fn ui(frame: &mut Frame) {
         Length(50), // examples
         Min(0),     // fills remaining space
     ]);
-    let [text_area, examples_area, _] = vertical.areas(frame.size());
+    let [text_area, examples_area, _] = vertical.areas(frame.area());
 
     // title
     frame.render_widget(
