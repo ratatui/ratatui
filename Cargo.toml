@@ -223,6 +223,11 @@ required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]
+name = "barchart-grouped"
+required-features = ["crossterm"]
+doc-scrape-examples = true
+
+[[example]]
 name = "block"
 required-features = ["crossterm"]
 doc-scrape-examples = true
