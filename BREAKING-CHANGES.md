@@ -18,6 +18,7 @@ This is a quick summary of the sections below:
   - `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize`
   - `ratatui::terminal` module is now private
   - `ToText` no longer has a lifetime
+  - `Frame::size` is deprecated and renamed to `Frame::area`
 - [v0.27.0](#v0270)
   - List no clamps the selected index to list
   - Prelude items added / removed
@@ -132,6 +133,12 @@ are also named terminal, and confusion about module exports for newer Rust users
 [#1234]: https://github.com/ratatui-org/ratatui/pull/1234
 
 This change simplifies the trait and makes it easier to implement.
+
+### `Frame::size` is deprecated and renamed to `Frame::area`
+
+[#1293]: https://github.com/ratatui-org/ratatui/pull/1293
+
+`Frame::size` is renamed to `Frame::area` as its the more correct name.
 
 ## [v0.27.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.27.0)
 
