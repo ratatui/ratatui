@@ -10,7 +10,7 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
-- [v0.28.0](#v0280) (unreleased)
+- [v0.28.0](#v0280)
   ⁻ `Backend::size` returns `Size` instead of `Rect`
   - `Backend` trait migrates to `get/set_cursor_position`
   - Ratatui now requires Crossterm 0.28.0
@@ -18,6 +18,7 @@ This is a quick summary of the sections below:
   - `Layout::init_cache` no longer returns bool and takes a `NonZeroUsize` instead of `usize`
   - `ratatui::terminal` module is now private
   - `ToText` no longer has a lifetime
+  - `Frame::size` is deprecated and renamed to `Frame::area`
 - [v0.27.0](#v0270)
   - List no clamps the selected index to list
   - Prelude items added / removed
@@ -64,7 +65,7 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
-## v0.28.0 (unreleased)
+## v0.28.0
 
 ### `Backend::size` returns `Size` instead of `Rect` ([#1254])
 
@@ -132,6 +133,12 @@ are also named terminal, and confusion about module exports for newer Rust users
 [#1234]: https://github.com/ratatui-org/ratatui/pull/1234
 
 This change simplifies the trait and makes it easier to implement.
+
+### `Frame::size` is deprecated and renamed to `Frame::area`
+
+[#1293]: https://github.com/ratatui-org/ratatui/pull/1293
+
+`Frame::size` is renamed to `Frame::area` as its the more correct name.
 
 ## [v0.27.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.27.0)
 
