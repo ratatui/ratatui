@@ -320,7 +320,6 @@
 /// re-export the `crossterm` crate so that users don't have to add it as a dependency
 #[cfg(feature = "crossterm")]
 pub use crossterm;
-#[doc(inline)]
 pub use terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
 /// re-export the `termion` crate so that users don't have to add it as a dependency
 #[cfg(feature = "termion")]
