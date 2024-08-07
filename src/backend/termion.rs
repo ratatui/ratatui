@@ -12,7 +12,7 @@ use std::{
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
-    layout::{Position, Rect},
+    layout::{Position, Size},
     style::{Color, Modifier, Style},
     termion::{self, color as tcolor, color::Color as _, style as tstyle},
 };
@@ -157,11 +157,13 @@ where
         self.writer.flush()
     }
 
-    fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
-        termion::cursor::DetectCursorPos::cursor_pos(&mut self.writer).map(|(x, y)| (x - 1, y - 1))
+    fn get_cursor_position(&mut self) -> io::Result<Position> {
+        termion::cursor::DetectCursorPos::cursor_pos(&mut self.writer)
+            .map(|(x, y)| Position { x: x - 1, y: y - 1 })
     }
 
-    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
+    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
+        let Position { x, y } = position.into();
         write!(self.writer, "{}", termion::cursor::Goto(x + 1, y + 1))?;
         self.writer.flush()
     }
@@ -214,9 +216,9 @@ where
         )
     }
 
-    fn size(&self) -> io::Result<Rect> {
+    fn size(&self) -> io::Result<Size> {
         let terminal = termion::terminal_size()?;
-        Ok(Rect::new(0, 0, terminal.0, terminal.1))
+        Ok(Size::new(terminal.0, terminal.1))
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {

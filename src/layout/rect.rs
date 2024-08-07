@@ -291,7 +291,7 @@ impl Rect {
     /// # use ratatui::prelude::*;
     /// fn render(area: Rect, buf: &mut Buffer) {
     ///     for position in area.positions() {
-    ///         buf.get_mut(position.x, position.y).set_symbol("x");
+    ///         buf[(position.x, position.y)].set_symbol("x");
     ///     }
     /// }
     /// ```

@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
     execute!(terminal.backend_mut(), EnterAlternateScreen)?;
     loop {
-        terminal.draw(|frame| frame.render_widget(Text::raw("Hello World!"), frame.size()))?;
+        terminal.draw(|frame| frame.render_widget(Text::raw("Hello World!"), frame.area()))?;
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
                 break;

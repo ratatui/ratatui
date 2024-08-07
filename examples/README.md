@@ -23,6 +23,26 @@ This folder might use unreleased code. View the examples for the latest release 
 > We don't keep the CHANGELOG updated with unreleased changes, check the git commit history or run
 > `git-cliff -u` against a cloned version of this repository.
 
+## Design choices
+
+The examples contain some opinionated choices in order to make it easier for newer rustaceans to
+easily be productive in creating applications:
+
+- Each example has an App struct, with methods that implement a main loop, handle events and drawing
+  the UI.
+- We use color_eyre for handling errors and panics. See [How to use color-eyre with Ratatui] on the
+  website for more information about this.
+- Common code is not extracted into a separate file. This makes each example self-contained and easy
+  to read as a whole.
+
+Not every example has been updated with all these points in mind yet, however over time they will
+be. None of the above choices are strictly necessary for Ratatui apps, but these choices make
+examples easier to run, maintain and explain. These choices are designed to help newer users fall
+into the pit of success when incorporating example code into their own apps. We may also eventually
+move some of these design choices into the core of Ratatui to simplify apps.
+
+[How to use color-eyre with Ratatui]: https://ratatui.rs/how-to/develop-apps/color_eyre/
+
 ## Demo2
 
 This is the demo example from the main README and crate page. Source: [demo2](./demo2/).
@@ -67,6 +87,17 @@ cargo run --example=barchart --features=crossterm
 ```
 
 ![Barchart][barchart.gif]
+
+## Barchart (Grouped)
+
+Demonstrates the [`BarChart`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html)
+widget with groups. Source: [barchart-grouped.rs](./barchart-grouped.rs).
+
+```shell
+cargo run --example=barchart-grouped --features=crossterm
+```
+
+![Barchart Grouped][barchart-grouped.gif]
 
 ## Block
 
@@ -411,6 +442,7 @@ examples/vhs/generate.bash
 -->
 
 [barchart.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/barchart.gif?raw=true
+[barchart-grouped.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/barchart-grouped.gif?raw=true
 [block.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/block.gif?raw=true
 [calendar.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/calendar.gif?raw=true
 [canvas.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/canvas.gif?raw=true

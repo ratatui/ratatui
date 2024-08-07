@@ -19,7 +19,7 @@ use crate::{
         },
         terminal::{self, Clear},
     },
-    layout::{Position, Rect, Size},
+    layout::{Position, Size},
     style::{Color, Modifier, Style},
 };
 
@@ -212,12 +212,14 @@ where
         execute!(self.writer, Show)
     }
 
-    fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
+    fn get_cursor_position(&mut self) -> io::Result<Position> {
         crossterm::cursor::position()
+            .map(|(x, y)| Position { x, y })
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 
-    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
+    fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
+        let Position { x, y } = position.into();
         execute!(self.writer, MoveTo(x, y))
     }
 
@@ -245,9 +247,9 @@ where
         self.writer.flush()
     }
 
-    fn size(&self) -> io::Result<Rect> {
+    fn size(&self) -> io::Result<Size> {
         let (width, height) = terminal::size()?;
-        Ok(Rect::new(0, 0, width, height))
+        Ok(Size { width, height })
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {

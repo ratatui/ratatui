@@ -30,7 +30,7 @@ use crate::{
 ///     .title("X Axis")
 ///     .style(Style::default().gray())
 ///     .bounds([0.0, 50.0])
-///     .labels(vec!["0".bold(), "25".into(), "50".bold()]);
+///     .labels(["0".bold(), "25".into(), "50".bold()]);
 /// ```
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Axis<'a> {
@@ -95,13 +95,16 @@ impl<'a> Axis<'a> {
     ///
     /// ```rust
     /// # use ratatui::{prelude::*, widgets::*};
-    /// let axis =
-    ///     Axis::default()
-    ///         .bounds([0.0, 50.0])
-    ///         .labels(vec!["0".bold(), "25".into(), "50".bold()]);
+    /// let axis = Axis::default()
+    ///     .bounds([0.0, 50.0])
+    ///     .labels(["0".bold(), "25".into(), "50".bold()]);
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
-    pub fn labels<T: Into<Line<'a>>>(mut self, labels: Vec<T>) -> Self {
+    pub fn labels<Labels>(mut self, labels: Labels) -> Self
+    where
+        Labels: IntoIterator,
+        Labels::Item: Into<Line<'a>>,
+    {
         self.labels = labels.into_iter().map(Into::into).collect();
         self
     }
@@ -474,14 +477,14 @@ struct ChartLayout {
 ///     .title("X Axis".red())
 ///     .style(Style::default().white())
 ///     .bounds([0.0, 10.0])
-///     .labels(vec!["0.0", "5.0", "10.0"]);
+///     .labels(["0.0", "5.0", "10.0"]);
 ///
 /// // Create the Y axis and define its properties
 /// let y_axis = Axis::default()
 ///     .title("Y Axis".red())
 ///     .style(Style::default().white())
 ///     .bounds([0.0, 10.0])
-///     .labels(vec!["0.0", "5.0", "10.0"]);
+///     .labels(["0.0", "5.0", "10.0"]);
 ///
 /// // Create the chart and link all the parts together
 /// let chart = Chart::new(datasets)
@@ -583,7 +586,7 @@ impl<'a> Chart<'a> {
     ///     Axis::default()
     ///         .title("X Axis")
     ///         .bounds([0.0, 20.0])
-    ///         .labels(vec!["0", "20"]),
+    ///         .labels(["0", "20"]),
     /// );
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -606,7 +609,7 @@ impl<'a> Chart<'a> {
     ///     Axis::default()
     ///         .title("Y Axis")
     ///         .bounds([0.0, 20.0])
-    ///         .labels(vec!["0", "20"]),
+    ///         .labels(["0", "20"]),
     /// );
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -959,14 +962,14 @@ impl WidgetRef for Chart<'_> {
         // Sample the style of the entire widget. This sample will be used to reset the style of
         // the cells that are part of the components put on top of the grah area (i.e legend and
         // axis names).
-        let original_style = buf.get(area.left(), area.top()).style();
+        let original_style = buf[(area.left(), area.top())].style();
 
         self.render_x_labels(buf, &layout, chart_area, graph_area);
         self.render_y_labels(buf, &layout, chart_area, graph_area);
 
         if let Some(y) = layout.axis_x {
             for x in graph_area.left()..graph_area.right() {
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .set_symbol(symbols::line::HORIZONTAL)
                     .set_style(self.x_axis.style);
             }
@@ -974,7 +977,7 @@ impl WidgetRef for Chart<'_> {
 
         if let Some(x) = layout.axis_y {
             for y in graph_area.top()..graph_area.bottom() {
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .set_symbol(symbols::line::VERTICAL)
                     .set_style(self.y_axis.style);
             }
@@ -982,7 +985,7 @@ impl WidgetRef for Chart<'_> {
 
         if let Some(y) = layout.axis_x {
             if let Some(x) = layout.axis_y {
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .set_symbol(symbols::line::BOTTOM_LEFT)
                     .set_style(self.x_axis.style);
             }

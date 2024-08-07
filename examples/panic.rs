@@ -148,5 +148,5 @@ fn ui(f: &mut Frame, app: &App) {
         .block(Block::bordered().title("Panic Handler Demo"))
         .centered();
 
-    f.render_widget(paragraph, f.size());
+    f.render_widget(paragraph, f.area());
 }

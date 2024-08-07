@@ -74,7 +74,7 @@ impl App {
 
     /// Draw the app to the terminal.
     fn draw(&mut self, terminal: &mut Tui) -> io::Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.size()))?;
+        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
 

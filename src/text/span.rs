@@ -384,23 +384,23 @@ impl WidgetRef for Span<'_> {
 
             if i == 0 {
                 // the first grapheme is always set on the cell
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .set_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
             } else if x == area.x {
                 // there is one or more zero-width graphemes in the first cell, so the first cell
                 // must be appended to.
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .append_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
             } else if symbol_width == 0 {
                 // append zero-width graphemes to the previous cell
-                buf.get_mut(x - 1, y)
+                buf[(x - 1, y)]
                     .append_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
             } else {
                 // just a normal grapheme (not first, not zero-width, not overflowing the area)
-                buf.get_mut(x, y)
+                buf[(x, y)]
                     .set_symbol(grapheme.symbol)
                     .set_style(grapheme.style);
             }
@@ -411,7 +411,7 @@ impl WidgetRef for Span<'_> {
             for x_hidden in (x + 1)..next_x {
                 // it may seem odd that the style of the hidden cells are not set to the style of
                 // the grapheme, but this is how the existing buffer.set_span() method works.
-                buf.get_mut(x_hidden, y).reset();
+                buf[(x_hidden, y)].reset();
             }
             x = next_x;
         }

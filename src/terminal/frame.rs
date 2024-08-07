@@ -42,13 +42,25 @@ pub struct CompletedFrame<'a> {
 }
 
 impl Frame<'_> {
-    /// The size of the current frame
+    /// The area of the current frame
     ///
     /// This is guaranteed not to change during rendering, so may be called multiple times.
     ///
     /// If your app listens for a resize event from the backend, it should ignore the values from
     /// the event for any calculations that are used to render the current frame and use this value
-    /// instead as this is the size of the buffer that is used to render the current frame.
+    /// instead as this is the area of the buffer that is used to render the current frame.
+    pub const fn area(&self) -> Rect {
+        self.viewport_area
+    }
+
+    /// The area of the current frame
+    ///
+    /// This is guaranteed not to change during rendering, so may be called multiple times.
+    ///
+    /// If your app listens for a resize event from the backend, it should ignore the values from
+    /// the event for any calculations that are used to render the current frame and use this value
+    /// instead as this is the area of the buffer that is used to render the current frame.
+    #[deprecated = "use .area() as its the more correct name"]
     pub const fn size(&self) -> Rect {
         self.viewport_area
     }
@@ -163,11 +175,22 @@ impl Frame<'_> {
     /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
     /// coordinates. If this method is not called, the cursor will be hidden.
     ///
-    /// Note that this will interfere with calls to `Terminal::hide_cursor()`,
-    /// `Terminal::show_cursor()`, and `Terminal::set_cursor()`. Pick one of the APIs and stick
-    /// with it.
+    /// Note that this will interfere with calls to [`Terminal::hide_cursor`],
+    /// [`Terminal::show_cursor`], and [`Terminal::set_cursor_position`]. Pick one of the APIs and
+    /// stick with it.
+    pub fn set_cursor_position<P: Into<Position>>(&mut self, position: P) {
+        self.cursor_position = Some(position.into());
+    }
+
+    /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
+    /// coordinates. If this method is not called, the cursor will be hidden.
+    ///
+    /// Note that this will interfere with calls to [`Terminal::hide_cursor`],
+    /// [`Terminal::show_cursor`], and [`Terminal::set_cursor_position`]. Pick one of the APIs and
+    /// stick with it.
+    #[deprecated = "the method set_cursor_position indicates more clearly what about the cursor to set"]
     pub fn set_cursor(&mut self, x: u16, y: u16) {
-        self.cursor_position = Some(Position { x, y });
+        self.set_cursor_position(Position { x, y });
     }
 
     /// Gets the buffer that this `Frame` draws into as a mutable reference.

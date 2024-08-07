@@ -11,7 +11,6 @@ use crate::{
     backend::{Backend, WindowSize},
     buffer::Cell,
     layout::Size,
-    prelude::Rect,
     style::{Color, Modifier, Style},
     termwiz::{
         caps::Capabilities,
@@ -192,12 +191,16 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
-    fn get_cursor(&mut self) -> io::Result<(u16, u16)> {
+    fn get_cursor_position(&mut self) -> io::Result<crate::layout::Position> {
         let (x, y) = self.buffered_terminal.cursor_position();
-        Ok((x as u16, y as u16))
+        Ok((x as u16, y as u16).into())
     }
 
-    fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
+    fn set_cursor_position<P: Into<crate::layout::Position>>(
+        &mut self,
+        position: P,
+    ) -> io::Result<()> {
+        let crate::layout::Position { x, y } = position.into();
         self.buffered_terminal.add_change(Change::CursorPosition {
             x: Position::Absolute(x as usize),
             y: Position::Absolute(y as usize),
@@ -212,9 +215,9 @@ impl Backend for TermwizBackend {
         Ok(())
     }
 
-    fn size(&self) -> io::Result<Rect> {
+    fn size(&self) -> io::Result<Size> {
         let (cols, rows) = self.buffered_terminal.dimensions();
-        Ok(Rect::new(0, 0, u16_max(cols), u16_max(rows)))
+        Ok(Size::new(u16_max(cols), u16_max(rows)))
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {

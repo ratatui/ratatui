@@ -56,7 +56,7 @@ impl App {
 
     fn run(self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
         loop {
-            terminal.draw(|frame| frame.render_widget(&self.hyperlink, frame.size()))?;
+            terminal.draw(|frame| frame.render_widget(&self.hyperlink, frame.area()))?;
             if let Event::Key(key) = event::read()? {
                 if matches!(key.code, KeyCode::Char('q') | KeyCode::Esc) {
                     break;
@@ -102,9 +102,7 @@ impl WidgetRef for Hyperlink<'_> {
         {
             let text = two_chars.collect::<String>();
             let hyperlink = format!("\x1B]8;;{}\x07{}\x1B]8;;\x07", self.url, text);
-            buffer
-                .get_mut(area.x + i as u16 * 2, area.y)
-                .set_symbol(hyperlink.as_str());
+            buffer[(area.x + i as u16 * 2, area.y)].set_symbol(hyperlink.as_str());
         }
     }
 }

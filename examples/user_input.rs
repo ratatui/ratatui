@@ -36,7 +36,7 @@ use ratatui::{
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
-    layout::{Constraint, Layout},
+    layout::{Constraint, Layout, Position},
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span, Text},
     widgets::{Block, List, ListItem, Paragraph},
@@ -209,7 +209,7 @@ fn ui(f: &mut Frame, app: &App) {
         Constraint::Length(3),
         Constraint::Min(1),
     ]);
-    let [help_area, input_area, messages_area] = vertical.areas(f.size());
+    let [help_area, input_area, messages_area] = vertical.areas(f.area());
 
     let (msg, style) = match app.input_mode {
         InputMode::Normal => (
@@ -245,22 +245,19 @@ fn ui(f: &mut Frame, app: &App) {
         .block(Block::bordered().title("Input"));
     f.render_widget(input, input_area);
     match app.input_mode {
-        InputMode::Normal =>
-            // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
-            {}
+        // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
+        InputMode::Normal => {}
 
-        InputMode::Editing => {
-            // Make the cursor visible and ask ratatui to put it at the specified coordinates after
-            // rendering
-            #[allow(clippy::cast_possible_truncation)]
-            f.set_cursor(
-                // Draw the cursor at the current position in the input field.
-                // This position is can be controlled via the left and right arrow key
-                input_area.x + app.character_index as u16 + 1,
-                // Move one line down, from the border to the input line
-                input_area.y + 1,
-            );
-        }
+        // Make the cursor visible and ask ratatui to put it at the specified coordinates after
+        // rendering
+        #[allow(clippy::cast_possible_truncation)]
+        InputMode::Editing => f.set_cursor_position(Position::new(
+            // Draw the cursor at the current position in the input field.
+            // This position is can be controlled via the left and right arrow key
+            input_area.x + app.character_index as u16 + 1,
+            // Move one line down, from the border to the input line
+            input_area.y + 1,
+        )),
     }
 
     let messages: Vec<ListItem> = app

@@ -30,7 +30,7 @@ fn axis_test_case<'line, Lines>(
     terminal
         .draw(|f| {
             let chart = Chart::new(vec![]).x_axis(x_axis).y_axis(y_axis);
-            f.render_widget(chart, f.size());
+            f.render_widget(chart, f.area());
         })
         .unwrap();
     terminal.backend().assert_buffer_lines(expected);
@@ -63,7 +63,7 @@ fn widgets_chart_can_render_on_small_areas(#[case] width: u16, #[case] height: u
                         .bounds([0.0, 0.0])
                         .labels(create_labels(&["0.0", "1.0"])),
                 );
-            f.render_widget(chart, f.size());
+            f.render_widget(chart, f.area());
         })
         .unwrap();
 }
@@ -165,12 +165,12 @@ fn widgets_chart_handles_long_labels<'line, Lines>(
     let mut x_axis = Axis::default().bounds([0.0, 1.0]);
     if let Some((left_label, right_label)) = x_labels {
         x_axis = x_axis
-            .labels(vec![Span::from(left_label), Span::from(right_label)])
+            .labels([left_label, right_label])
             .labels_alignment(x_alignment);
     }
     let mut y_axis = Axis::default().bounds([0.0, 1.0]);
     if let Some((left_label, right_label)) = y_labels {
-        y_axis = y_axis.labels(vec![Span::from(left_label), Span::from(right_label)]);
+        y_axis = y_axis.labels([left_label, right_label]);
     }
     axis_test_case(10, 5, x_axis, y_axis, expected);
 }
@@ -214,7 +214,7 @@ fn widgets_chart_handles_x_axis_labels_alignments<'line, Lines>(
     Lines::Item: Into<text::Line<'line>>,
 {
     let x_axis = Axis::default()
-        .labels(vec![Span::from("AAAA"), Span::from("B"), Span::from("C")])
+        .labels(["AAAA", "B", "C"])
         .labels_alignment(y_alignment);
     let y_axis = Axis::default();
     axis_test_case(10, 5, x_axis, y_axis, expected);
@@ -470,7 +470,7 @@ fn widgets_chart_can_have_a_legend() {
     // Set expected background color
     for row in 0..30 {
         for col in 0..60 {
-            expected.get_mut(col, row).set_bg(Color::White);
+            expected[(col, row)].set_bg(Color::White);
         }
     }
 
@@ -532,10 +532,10 @@ fn widgets_chart_can_have_a_legend() {
         (57, 2),
     ];
     for (col, row) in line1 {
-        expected.get_mut(col, row).set_fg(Color::Blue);
+        expected[(col, row)].set_fg(Color::Blue);
     }
     for (col, row) in legend1 {
-        expected.get_mut(col, row).set_fg(Color::Blue);
+        expected[(col, row)].set_fg(Color::Blue);
     }
 
     // Set expected colors of the second dataset
@@ -603,16 +603,16 @@ fn widgets_chart_can_have_a_legend() {
         (57, 3),
     ];
     for (col, row) in line2 {
-        expected.get_mut(col, row).set_fg(Color::Green);
+        expected[(col, row)].set_fg(Color::Green);
     }
     for (col, row) in legend2 {
-        expected.get_mut(col, row).set_fg(Color::Green);
+        expected[(col, row)].set_fg(Color::Green);
     }
 
     // Set expected colors of the x axis
     let x_axis_title = vec![(53, 26), (54, 26), (55, 26), (56, 26), (57, 26), (58, 26)];
     for (col, row) in x_axis_title {
-        expected.get_mut(col, row).set_fg(Color::Yellow);
+        expected[(col, row)].set_fg(Color::Yellow);
     }
     terminal.backend().assert_buffer(&expected);
 }
@@ -639,7 +639,7 @@ fn widgets_chart_top_line_styling_is_correct() {
                     .labels(create_labels(&["a", "b"])),
             )
             .x_axis(Axis::default().bounds([0.0, 1.0]));
-            f.render_widget(widget, f.size());
+            f.render_widget(widget, f.area());
         })
         .unwrap();
 

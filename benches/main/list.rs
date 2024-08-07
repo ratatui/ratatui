@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, BatchSize, Bencher, BenchmarkId, Criterion};
+use criterion::{criterion_group, BatchSize, Bencher, BenchmarkId, Criterion};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -70,4 +70,3 @@ fn render_stateful(bencher: &mut Bencher, list: &List, mut state: ListState) {
 }
 
 criterion_group!(benches, list);
-criterion_main!(benches);
