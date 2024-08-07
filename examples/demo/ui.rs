@@ -49,7 +49,7 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::vertical([
         Constraint::Length(2),
         Constraint::Length(3),
-        Constraint::Length(1),
+        Constraint::Length(2),
     ])
     .margin(1)
     .split(area);
