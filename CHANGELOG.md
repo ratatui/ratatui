@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 _"If you are what you eat, then I only want to eat the good stuff." – Remy_
 
+We are excited to announce the new version of `ratatui` - a Rust library that's all about cooking up TUIs 🐭
+
+In this version, we have upgraded to Crossterm 0.28.0, introducing enhanced functionality and performance improvements.
+New features include GraphType::Bar, lines in bar charts, and enhanced scroll/navigation methods.
+We have also refined the terminal module and added brand new methods for cursor positions and text operations.
+
 ✨ **Release highlights**: <https://ratatui.rs/highlights/v028/>
 
 ⚠️ List of breaking changes can be found [here](https://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md).
