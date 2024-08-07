@@ -424,8 +424,6 @@ We have also refined the terminal module and added brand new methods for cursor 
   >
   > Also shortens the steps a bit by removing obvious names.
 
-
-
 ### New Contributors
 * @SUPERCILEX made their first contribution in [#1239](https://github.com/ratatui-org/ratatui/pull/1239)
 * @josueBarretogit made their first contribution in [#1267](https://github.com/ratatui-org/ratatui/pull/1267)
