@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.28.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.28.0) - 2024-08-05
+## [0.28.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.28.0) - 2024-08-07
 
 _"If you are what you eat, then I only want to eat the good stuff." – Remy_
 
@@ -16,9 +16,57 @@ _"If you are what you eat, then I only want to eat the good stuff." – Remy_
   >
   > Fixes:https://github.com/ratatui-org/ratatui/issues/1272
 
+- [a23ecd9](https://github.com/ratatui-org/ratatui/commit/a23ecd9b456ab2aa4dc858fe31461a6224b40fe3) *(buffer)* Add Buffer::cell, cell_mut and index implementations by @joshka in [#1084](https://github.com/ratatui-org/ratatui/pull/1084)
+
+  > Code which previously called `buf.get(x, y)` or `buf.get_mut(x, y)`
+  > should now use index operators, or be transitioned to `buff.cell()` or
+  > `buf.cell_mut()` for safe access that avoids panics by returning
+  > `Option<&Cell>` and `Option<&mut Cell>`.
+  >
+  > The new methods accept `Into<Position>` instead of `x` and `y`
+  > coordinates, which makes them more ergonomic to use.
+  >
+  > ```rust
+  > let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 10));
+  >
+  > let cell = buf[(0, 0)];
+  > let cell = buf[Position::new(0, 0)];
+  >
+  > let symbol = buf.cell((0, 0)).map(|cell| cell.symbol());
+  > let symbol = buf.cell(Position::new(0, 0)).map(|cell| cell.symbol());
+  >
+  > buf[(0, 0)].set_symbol("🐀");
+  > buf[Position::new(0, 0)].set_symbol("🐀");
+  >
+  > buf.cell_mut((0, 0)).map(|cell| cell.set_symbol("🐀"));
+  > buf.cell_mut(Position::new(0, 0)).map(|cell| cell.set_symbol("🐀"));
+  > ```
+  >
+  > The existing `get()` and `get_mut()` methods are marked as deprecated.
+  > These are fairly widely used and we will leave these methods around on
+  > the buffer for a longer time than our normal deprecation approach (2
+  > major release)
+  >
+  > Addresses part of: https://github.com/ratatui-org/ratatui/issues/1011
+  >
+  > ---------
+
+- [afe1534](https://github.com/ratatui-org/ratatui/commit/afe15349c87efefc5c9f0385f8f145f4b9c42c0a) *(chart)* Accept `IntoIterator` for axis labels by @EdJoPaTo in [#1283](https://github.com/ratatui-org/ratatui/pull/1283) [**breaking**]
+
+  > BREAKING CHANGES: #1273 is already breaking and this only advances the
+  > already breaking part
+
 - [5b51018](https://github.com/ratatui-org/ratatui/commit/5b51018501c859d4e6ee0ff55e010310bda5511f) *(chart)* Add GraphType::Bar by @joshka in [#1205](https://github.com/ratatui-org/ratatui/pull/1205)
 
   > ![Demo](https://vhs.charm.sh/vhs-50v7I5n7lQF7tHCb1VCmFc.gif)
+
+- [f97e07c](https://github.com/ratatui-org/ratatui/commit/f97e07c08a332e257efabdbe3f8bb306aec2a8eb) *(frame)* Replace Frame::size() with Frame::area() by @EdJoPaTo in [#1293](https://github.com/ratatui-org/ratatui/pull/1293)
+
+  > Area is the more correct term for the result of this method.
+  > The Frame::size() method is marked as deprecated and will be
+  > removed around Ratatui version 0.30 or later.
+  >
+  > Fixes:https://github.com/ratatui-org/ratatui/pull/1254#issuecomment-2268061409
 
 - [5b89bd0](https://github.com/ratatui-org/ratatui/commit/5b89bd04a8a4860dc5040150464b45d1909184db) *(layout)* Add Size::ZERO and Position::ORIGIN constants by @EdJoPaTo in [#1253](https://github.com/ratatui-org/ratatui/pull/1253)
 
@@ -68,6 +116,17 @@ _"If you are what you eat, then I only want to eat the good stuff." – Remy_
   >
   > BREAKING CHANGE:The ToText trait no longer has a lifetime parameter.
   > This change simplifies the trait and makes it easier implement.
+
+- [c68ee6c](https://github.com/ratatui-org/ratatui/commit/c68ee6c64a7c48955a7b26db1db57f8427e35e5c) *(uncategorized)* Add `get/set_cursor_position()` methods to Terminal and Backend by @EdJoPaTo in [#1284](https://github.com/ratatui-org/ratatui/pull/1284) [**breaking**]
+
+  > The new methods return/accept `Into<Position>` which can be either a Position or a (u16, u16) tuple.
+  >
+  > ```rust
+  > backend.set_cursor_position(Position { x: 0, y: 20 })?;
+  > let position = backend.get_cursor_position()?;
+  > terminal.set_cursor_position((0, 20))?;
+  > let position = terminal.set_cursor_position()?;
+  > ```
 
 - [b70cd03](https://github.com/ratatui-org/ratatui/commit/b70cd03c029d91acd4709c2b91c735b8d796987c) *(uncategorized)* Add ListState / TableState scroll_down_by() / scroll_up_by() methods by @josueBarretogit in [#1267](https://github.com/ratatui-org/ratatui/pull/1267)
 
@@ -147,6 +206,11 @@ _"If you are what you eat, then I only want to eat the good stuff." – Remy_
 
 ### Refactor
 
+- [bb68bc6](https://github.com/ratatui-org/ratatui/commit/bb68bc6968219dacea8f3c272bb99d142d2f3253) *(backend)* Return `Size` from `Backend::size` instead of `Rect` by @EdJoPaTo in [#1254](https://github.com/ratatui-org/ratatui/pull/1254) [**breaking**]
+
+  > The `Backend::size` method returns a `Size` instead of a `Rect`.
+  > There is no need for the position here as it was always 0,0.
+
 - [e81663b](https://github.com/ratatui-org/ratatui/commit/e81663bec07f46433db7b6eb0154ca48e9389bdb) *(list)* Split up list.rs into smaller modules by @joshka in [#1204](https://github.com/ratatui-org/ratatui/pull/1204)
 
 - [e707ff1](https://github.com/ratatui-org/ratatui/commit/e707ff11d15b5ee10ef2cffc934bb132ee8a1ead) *(uncategorized)* Internally use Position struct by @EdJoPaTo in [#1256](https://github.com/ratatui-org/ratatui/pull/1256)
@@ -166,6 +230,30 @@ _"If you are what you eat, then I only want to eat the good stuff." – Remy_
   > widgets
   >
   > Fixes:https://github.com/ratatui-org/ratatui/issues/914
+
+- [f2fa1ae](https://github.com/ratatui-org/ratatui/commit/f2fa1ae9aa6f456615c519dcb17d7d3b8177bfb8) *(breaking-changes)* Add missing code block by @orhun in [#1291](https://github.com/ratatui-org/ratatui/pull/1291)
+
+- [f687af7](https://github.com/ratatui-org/ratatui/commit/f687af7c0d1dfc87302d2cf3b9ef7c7d58edb2d3) *(breaking-changes)* Mention removed lifetime of ToText trait by @orhun in [#1292](https://github.com/ratatui-org/ratatui/pull/1292)
+
+- [d468463](https://github.com/ratatui-org/ratatui/commit/d468463fc6aff426131f3ff61dc63291b90b37d1) *(breaking-changes)* Fix the PR link by @orhun in [#1294](https://github.com/ratatui-org/ratatui/pull/1294)
+
+- [1b9bdd4](https://github.com/ratatui-org/ratatui/commit/1b9bdd425cb68bbb5f57900175ad88a9b211f607) *(contributing)* Fix minor issues by @EdJoPaTo in [#1300](https://github.com/ratatui-org/ratatui/pull/1300)
+
+- [5f7a7fb](https://github.com/ratatui-org/ratatui/commit/5f7a7fbe19ecf36c5060a6ba8835d92029a15777) *(examples)* Update barcharts gifs by @joshka in [#1306](https://github.com/ratatui-org/ratatui/pull/1306)
+
+- [fe4eeab](https://github.com/ratatui-org/ratatui/commit/fe4eeab676e8db69a1e4f878173cdda0d96d5f7f) *(examples)* Simplify the barchart example by @joshka in [#1079](https://github.com/ratatui-org/ratatui/pull/1079)
+
+  > The `barchart` example has been split into two examples: `barchart` and
+  > `barchart-grouped`. The `barchart` example now shows a simple barchart
+  > with random data, while the `barchart-grouped` example shows a grouped
+  > barchart with fake revenue data.
+  >
+  > This simplifies the examples a bit so they don't cover too much at once.
+  >
+  > - Simplify the rendering functions
+  > - Fix several clippy lints that were marked as allowed
+  >
+  > ---------
 
 - [6e7b4e4](https://github.com/ratatui-org/ratatui/commit/6e7b4e4d55abcfeb3ffa598086ab227604b26ff7) *(examples)* Add async example by @joshka in [#1248](https://github.com/ratatui-org/ratatui/pull/1248)
 
@@ -189,7 +277,21 @@ _"If you are what you eat, then I only want to eat the good stuff." – Remy_
 
 - [272d059](https://github.com/ratatui-org/ratatui/commit/272d0591a7efc09897a2566969fbafcb2423fdbc) *(paragraph)* Update main docs by @joshka in [#1202](https://github.com/ratatui-org/ratatui/pull/1202)
 
+- [bb71e5f](https://github.com/ratatui-org/ratatui/commit/bb71e5ffd484fa3296d014d72d8a0521f56c7876) *(readme)* Remove MSRV by @EdJoPaTo in [#1266](https://github.com/ratatui-org/ratatui/pull/1266)
+
+  > This notice was useful when the `Cargo.toml` had no standardized field
+  > for this. Now it's easier to look it up in the `Cargo.toml` and it's
+  > also a single point of truth. Updating the README was overlooked for
+  > quite some time so it's better to just omit it rather than having
+  > something wrong that will be forgotten again in the future.
+
 - [8857037](https://github.com/ratatui-org/ratatui/commit/8857037bfff52104affa3c764dea0f3370cc702c) *(terminal)* Fix imports by @EdJoPaTo in [#1263](https://github.com/ratatui-org/ratatui/pull/1263)
+
+- [2fd5ae6](https://github.com/ratatui-org/ratatui/commit/2fd5ae64bf1440fccf072c1b6aa3dc03dc9ac1ec) *(widgets)* Document stability of WidgetRef by @joshka in [#1288](https://github.com/ratatui-org/ratatui/pull/1288)
+
+  > Addresses some confusion about when to implement `WidgetRef` vs `impl
+  > Widget for &W`. Notes the stability rationale and links to an issue that
+  > helps explain the context of where we're at in working this out.
 
 - [716c931](https://github.com/ratatui-org/ratatui/commit/716c93136e0c0f11e62364fdc9b32ec58036851e) *(uncategorized)* Document crossterm breaking change by @joshka in [#1281](https://github.com/ratatui-org/ratatui/pull/1281)
 
@@ -211,6 +313,15 @@ _"If you are what you eat, then I only want to eat the good stuff." – Remy_
   > Based on the results of running the "list" benchmark locally;
   > Performance is improved by %1-3 for all `render` benchmarks for `List`.
 
+- [4753b72](https://github.com/ratatui-org/ratatui/commit/4753b7241bf3f33b9d953d301f83baa547e7037c) *(reflow)* Eliminate most WordWrapper allocations by @SUPERCILEX in [#1239](https://github.com/ratatui-org/ratatui/pull/1239)
+
+  > On large paragraphs (~1MB), this saves hundreds of thousands of
+  > allocations.
+  >
+  > TL;DR:reuse as much memory as possible across `next_line` calls.
+  > Instead of allocating new buffers each time, allocate the buffers once
+  > and clear them before reuse.
+
 - [be3eb75](https://github.com/ratatui-org/ratatui/commit/be3eb75ea58127caad6696a21d794f5f99e0dfd6) *(table)* Avoid extra allocations when rendering `Table` by @airblast-dev in [#1242](https://github.com/ratatui-org/ratatui/pull/1242)
 
   > When rendering a `Table` the `Text` stored inside of a `Cell` gets
@@ -218,6 +329,14 @@ _"If you are what you eat, then I only want to eat the good stuff." – Remy_
   > instead, saving us from allocating a `Vec<Line<'_>>` inside `Text`. Also
   > avoids an allocation when rendering the highlight symbol if it contains
   > an owned value.
+
+- [f04bf85](https://github.com/ratatui-org/ratatui/commit/f04bf855cbc28e0ae29eaf678f26425a05f2295e) *(uncategorized)* Add buffer benchmarks by @joshka in [#1303](https://github.com/ratatui-org/ratatui/pull/1303)
+
+- [e6d2e04](https://github.com/ratatui-org/ratatui/commit/e6d2e04bcf2340c901ba1513ddaf84d358751768) *(uncategorized)* Move benchmarks into a single benchmark harness by @joshka in [#1302](https://github.com/ratatui-org/ratatui/pull/1302)
+
+  > Consolidates the benchmarks into a single executable rather than having
+  > to create a new cargo.toml setting per and makes it easier to rearrange
+  > these when adding new benchmarks.
 
 ### Styling
 
@@ -236,6 +355,12 @@ _"If you are what you eat, then I only want to eat the good stuff." – Remy_
 
 ### Miscellaneous Tasks
 
+- [82b70fd](https://github.com/ratatui-org/ratatui/commit/82b70fd329885f8ab3cb972b6fe117bc27e3d96a) *(ci)* Integrate cargo-semver-checks by @orhun in [#1166](https://github.com/ratatui-org/ratatui/pull/1166)
+
+  > >
+  > [`cargo-semver-checks`](https://github.com/obi1kenobi/cargo-semver-checks):
+  > Lint your crate API changes for semver violations.
+
 - [c245c13](https://github.com/ratatui-org/ratatui/commit/c245c13cc14ac8c483c4aeb6e2e3b4f8e387b791) *(ci)* Onboard bencher for tracking benchmarks by @orhun in [#1174](https://github.com/ratatui-org/ratatui/pull/1174)
   >
   > https://bencher.dev/console/projects/ratatui-org
@@ -252,6 +377,8 @@ _"If you are what you eat, then I only want to eat the good stuff." – Remy_
   > Use GitHub organization team in CODEOWNERS and create MAINTAINERS.md
 
 - [3e7458f](https://github.com/ratatui-org/ratatui/commit/3e7458fdb8051b9a62aac551372d5592e7f59eb7) *(github)* Add forums and faqs to the issue template by @joshka in [#1201](https://github.com/ratatui-org/ratatui/pull/1201)
+
+- [45fcab7](https://github.com/ratatui-org/ratatui/commit/45fcab7497650685781434e27abf3ddf0459aead) *(uncategorized)* Add rect::rows benchmark by @joshka in [#1301](https://github.com/ratatui-org/ratatui/pull/1301)
 
 - [edc2af9](https://github.com/ratatui-org/ratatui/commit/edc2af98223229656480dd30e03f1230b0aba919) *(uncategorized)* Replace big_text with hardcoded logo by @joshka in [#1203](https://github.com/ratatui-org/ratatui/pull/1203)
 
@@ -291,8 +418,10 @@ _"If you are what you eat, then I only want to eat the good stuff." – Remy_
   >
   > Also shortens the steps a bit by removing obvious names.
 
+
+
 ### New Contributors
-* @SUPERCILEX made their first contribution in [#1270](https://github.com/ratatui-org/ratatui/pull/1270)
+* @SUPERCILEX made their first contribution in [#1239](https://github.com/ratatui-org/ratatui/pull/1239)
 * @josueBarretogit made their first contribution in [#1267](https://github.com/ratatui-org/ratatui/pull/1267)
 * @airblast-dev made their first contribution in [#1242](https://github.com/ratatui-org/ratatui/pull/1242)
 * @kibibyt3 made their first contribution in [#1225](https://github.com/ratatui-org/ratatui/pull/1225)
