@@ -271,7 +271,7 @@ impl<'a> Span<'a> {
         self.content
             .as_ref()
             .graphemes(true)
-            .filter(|g| *g != "\n")
+            .filter(|g| !g.contains(char::is_control))
             .map(move |g| StyledGrapheme { symbol: g, style })
     }
 
