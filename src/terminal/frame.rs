@@ -175,11 +175,22 @@ impl Frame<'_> {
     /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
     /// coordinates. If this method is not called, the cursor will be hidden.
     ///
-    /// Note that this will interfere with calls to `Terminal::hide_cursor()`,
-    /// `Terminal::show_cursor()`, and `Terminal::set_cursor()`. Pick one of the APIs and stick
-    /// with it.
+    /// Note that this will interfere with calls to [`Terminal::hide_cursor`],
+    /// [`Terminal::show_cursor`], and [`Terminal::set_cursor_position`]. Pick one of the APIs and
+    /// stick with it.
+    pub fn set_cursor_position<P: Into<Position>>(&mut self, position: P) {
+        self.cursor_position = Some(position.into());
+    }
+
+    /// After drawing this frame, make the cursor visible and put it at the specified (x, y)
+    /// coordinates. If this method is not called, the cursor will be hidden.
+    ///
+    /// Note that this will interfere with calls to [`Terminal::hide_cursor`],
+    /// [`Terminal::show_cursor`], and [`Terminal::set_cursor_position`]. Pick one of the APIs and
+    /// stick with it.
+    #[deprecated = "the method set_cursor_position indicates more clearly what about the cursor to set"]
     pub fn set_cursor(&mut self, x: u16, y: u16) {
-        self.cursor_position = Some(Position { x, y });
+        self.set_cursor_position(Position { x, y });
     }
 
     /// Gets the buffer that this `Frame` draws into as a mutable reference.

@@ -88,6 +88,17 @@ cargo run --example=barchart --features=crossterm
 
 ![Barchart][barchart.gif]
 
+## Barchart (Grouped)
+
+Demonstrates the [`BarChart`](https://docs.rs/ratatui/latest/ratatui/widgets/struct.BarChart.html)
+widget with groups. Source: [barchart-grouped.rs](./barchart-grouped.rs).
+
+```shell
+cargo run --example=barchart-grouped --features=crossterm
+```
+
+![Barchart Grouped][barchart-grouped.gif]
+
 ## Block
 
 Demonstrates the [`Block`](https://docs.rs/ratatui/latest/ratatui/widgets/block/struct.Block.html)
@@ -431,6 +442,7 @@ examples/vhs/generate.bash
 -->
 
 [barchart.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/barchart.gif?raw=true
+[barchart-grouped.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/barchart-grouped.gif?raw=true
 [block.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/block.gif?raw=true
 [calendar.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/calendar.gif?raw=true
 [canvas.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/canvas.gif?raw=true

@@ -1,6 +1,6 @@
 use std::hint::black_box;
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, Criterion};
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Rect},
@@ -36,4 +36,3 @@ fn line_render(criterion: &mut Criterion) {
 }
 
 criterion_group!(benches, line_render);
-criterion_main!(benches);
