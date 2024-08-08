@@ -441,7 +441,7 @@ where
     }
 
     /// Sets the cursor position.
-    #[deprecated = "the method aet_cursor_position indicates more clearly what about the cursor to set"]
+    #[deprecated = "the method set_cursor_position indicates more clearly what about the cursor to set"]
     pub fn set_cursor(&mut self, x: u16, y: u16) -> io::Result<()> {
         self.set_cursor_position(Position { x, y })
     }
