@@ -6,10 +6,10 @@ This file documents current and past maintainers.
 - [joshka](https://github.com/joshka)
 - [kdheepak](https://github.com/kdheepak)
 - [Valentin271](https://github.com/Valentin271)
-- [EdJoPaTo](https://github.com/EdJoPaTo)
 
 ## Past Maintainers
 
 - [fdehau](https://github.com/fdehau)
 - [mindoodoo](https://github.com/mindoodoo)
 - [sayanarijit](https://github.com/sayanarijit)
+- [EdJoPaTo](https://github.com/EdJoPaTo)
