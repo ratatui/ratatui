@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4](https://github.com/ratatui-org/ratatui-macros/compare/v0.4.3...v0.4.4) - 2024-08-09
+
+### Other
+- *(deps)* bump ratatui to 0.28.0 ([#66](https://github.com/ratatui-org/ratatui-macros/pull/66))
+- *(deps)* bump trybuild from 1.0.98 to 1.0.99 in the cargo-dependencies group ([#65](https://github.com/ratatui-org/ratatui-macros/pull/65))
+- *(deps)* bump trybuild from 1.0.97 to 1.0.98 in the cargo-dependencies group ([#62](https://github.com/ratatui-org/ratatui-macros/pull/62))
+
 ## [0.4.3](https://github.com/ratatui-org/ratatui-macros/compare/v0.4.2...v0.4.3) - 2024-07-22
 
 ### Added
