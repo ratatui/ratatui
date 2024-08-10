@@ -18,9 +18,11 @@ use std::iter::zip;
 use color_eyre::Result;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode},
-    prelude::{Color, Constraint, Direction, Frame, Layout, Line, Style},
-    style::Stylize,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style, Stylize},
+    text::Line,
     widgets::{Bar, BarChart, BarGroup, Block},
+    Frame,
 };
 
 use self::terminal::Terminal;

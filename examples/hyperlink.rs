@@ -27,14 +27,19 @@ use color_eyre::{
 };
 use itertools::Itertools;
 use ratatui::{
+    backend::CrosstermBackend,
+    buffer::Buffer,
     crossterm::{
         event::{self, Event, KeyCode},
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    prelude::*,
+    layout::Rect,
+    style::Stylize,
+    text::{Line, Text},
     widgets::WidgetRef,
+    Terminal,
 };
 
 fn main() -> Result<()> {
