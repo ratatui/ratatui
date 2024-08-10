@@ -34,13 +34,13 @@ use color_eyre::{
     eyre::{self, Context},
     Result,
 };
-use crossterm::{
-    event::{self, Event, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{self, Event, KeyCode},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
     widgets::{Block, Paragraph},
     Terminal,
 };

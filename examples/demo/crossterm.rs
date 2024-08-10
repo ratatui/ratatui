@@ -54,7 +54,7 @@ fn run_app<B: Backend>(
         terminal.draw(|f| ui::draw(f, &mut app))?;
 
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
-        if crossterm::event::poll(timeout)? {
+        if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
                     match key.code {

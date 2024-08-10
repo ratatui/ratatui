@@ -262,11 +262,15 @@ impl From<&PullRequest> for Row<'_> {
 mod terminal {
     use std::io;
 
-    use crossterm::{
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    use ratatui::{
+        crossterm::{
+            execute,
+            terminal::{
+                disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+            },
+        },
+        prelude::{CrosstermBackend, Terminal as RatatuiTerminal},
     };
-    use ratatui::prelude::{CrosstermBackend, Terminal as RatatuiTerminal};
 
     /// A type alias for the terminal type used in this example.
     pub type Terminal = RatatuiTerminal<CrosstermBackend<io::Stdout>>;
