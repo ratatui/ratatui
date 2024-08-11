@@ -633,7 +633,7 @@ impl<T: fmt::Display> ToText for T {
 impl fmt::Display for Text<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (position, line) in self.iter().with_position() {
-            if position == Position::Last {
+            if position == Position::Last || position == Position::Only {
                 write!(f, "{line}")?;
             } else {
                 writeln!(f, "{line}")?;
@@ -945,11 +945,12 @@ mod tests {
         );
     }
 
-    #[test]
-    fn display_raw_text() {
-        let text = Text::raw("The first line\nThe second line");
-
-        assert_eq!(format!("{text}"), "The first line\nThe second line");
+    #[rstest]
+    #[case::one_line("The first line")]
+    #[case::multiple_lines("The first line\nThe second line")]
+    fn display_raw_text(#[case] value: &str) {
+        let text = Text::raw(value);
+        assert_eq!(format!("{text}"), value);
     }
 
     #[test]
