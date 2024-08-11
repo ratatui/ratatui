@@ -18,10 +18,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crossterm::event::KeyEventKind;
 use ratatui::{
     buffer::Buffer,
-    crossterm::event::{self, Event, KeyCode},
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::{Color, Stylize},
     text::{Line, Masked, Span},
@@ -171,11 +170,13 @@ mod common {
         config::{EyreHook, HookBuilder, PanicHook},
         eyre,
     };
-    use crossterm::ExecutableCommand;
     use ratatui::{
         backend::CrosstermBackend,
-        crossterm::terminal::{
-            disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+        crossterm::{
+            terminal::{
+                disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+            },
+            ExecutableCommand,
         },
         Terminal,
     };

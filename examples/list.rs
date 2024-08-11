@@ -15,11 +15,10 @@
 
 use std::{error::Error, io};
 
-use crossterm::event::KeyEvent;
 use ratatui::{
     backend::Backend,
     buffer::Buffer,
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
+    crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::{
         palette::tailwind::{BLUE, GREEN, SLATE},

@@ -41,9 +41,11 @@ use octocrab::{
     OctocrabBuilder, Page,
 };
 use ratatui::{
+    buffer::Buffer,
     crossterm::event::{Event, EventStream, KeyCode},
-    layout::Offset,
-    prelude::{Buffer, Constraint, Line, Modifier, Rect, Stylize},
+    layout::{Constraint, Offset, Rect},
+    style::{Modifier, Stylize},
+    text::Line,
     widgets::{
         Block, BorderType, HighlightSpacing, Row, StatefulWidget, Table, TableState, Widget,
     },
@@ -262,14 +264,18 @@ impl From<&PullRequest> for Row<'_> {
 mod terminal {
     use std::io;
 
-    use crossterm::{
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    use ratatui::{
+        backend::CrosstermBackend,
+        crossterm::{
+            execute,
+            terminal::{
+                disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+            },
+        },
     };
-    use ratatui::prelude::{CrosstermBackend, Terminal as RatatuiTerminal};
 
     /// A type alias for the terminal type used in this example.
-    pub type Terminal = RatatuiTerminal<CrosstermBackend<io::Stdout>>;
+    pub type Terminal = ratatui::Terminal<CrosstermBackend<io::Stdout>>;
 
     pub fn init() -> io::Result<Terminal> {
         set_panic_hook();

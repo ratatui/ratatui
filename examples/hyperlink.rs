@@ -25,14 +25,22 @@ use color_eyre::{
     config::{EyreHook, HookBuilder, PanicHook},
     eyre, Result,
 };
-use crossterm::{
-    event::{self, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-};
 use itertools::Itertools;
-use ratatui::{prelude::*, widgets::WidgetRef};
+use ratatui::{
+    backend::CrosstermBackend,
+    buffer::Buffer,
+    crossterm::{
+        event::{self, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        ExecutableCommand,
+    },
+    layout::Rect,
+    style::Stylize,
+    text::{Line, Text},
+    widgets::WidgetRef,
+    Terminal,
+};
 
 fn main() -> Result<()> {
     init_error_handling()?;

@@ -18,7 +18,8 @@ use rand::{thread_rng, Rng};
 use ratatui::{
     crossterm::event::{self, Event, KeyCode},
     layout::{Constraint, Direction, Layout},
-    prelude::{Color, Line, Style, Stylize},
+    style::{Color, Style, Stylize},
+    text::Line,
     widgets::{Bar, BarChart, BarGroup, Block},
 };
 
