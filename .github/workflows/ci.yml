@@ -89,12 +89,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust {{ matrix.toolchain }}
-        uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
+      - uses: taiki-e/install-action@cargo-make
       - uses: Swatinem/rust-cache@v2
       - run: cargo make check
         env:
@@ -122,13 +120,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-make
       - uses: Swatinem/rust-cache@v2
-      - name: Test docs
-        run: cargo make test-doc
+      - run: cargo make test-doc
         env:
           RUST_BACKTRACE: full
 
@@ -146,14 +141,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust ${{ matrix.toolchain }}}
-        uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
-      - name: Install cargo-nextest
-        uses: taiki-e/install-action@nextest
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-make,nextest
       - uses: Swatinem/rust-cache@v2
       - run: cargo make test-backend ${{ matrix.backend }}
         env:
