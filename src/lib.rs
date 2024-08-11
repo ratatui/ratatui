@@ -322,7 +322,7 @@
 pub use crossterm;
 pub use terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
 /// re-export the `termion` crate so that users don't have to add it as a dependency
-#[cfg(feature = "termion")]
+#[cfg(all(not(windows), feature = "termion"))]
 pub use termion;
 /// re-export the `termwiz` crate so that users don't have to add it as a dependency
 #[cfg(feature = "termwiz")]

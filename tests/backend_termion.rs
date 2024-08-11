@@ -1,4 +1,4 @@
-#[cfg(feature = "termion")]
+#[cfg(all(not(windows), feature = "termion"))]
 #[test]
 fn backend_termion_should_only_write_diffs() -> Result<(), Box<dyn std::error::Error>> {
     use std::{fmt::Write, io::Cursor};

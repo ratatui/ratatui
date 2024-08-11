@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::{error::Error, io, sync::mpsc, thread, time::Duration};
 
 use ratatui::{
