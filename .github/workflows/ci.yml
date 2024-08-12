@@ -17,20 +17,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-env:
-  # don't install husky hooks during CI as they are only needed for for pre-push
-  CARGO_HUSKY_DONT_INSTALL_HOOKS: true
-
-# lint, clippy and coveraget jobs are intentionally early in the workflow to catch simple
-# formatting, typos, and missing tests as early as possible. This allows us to fix these and
-# resubmit the PR without having to wait for the comprehensive matrix of tests to complete.
+# lint, clippy and coverage jobs are intentionally early in the workflow to catch simple formatting,
+# typos, and missing tests as early as possible. This allows us to fix these and resubmit the PR
+# without having to wait for the comprehensive matrix of tests to complete.
 jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust nightly
-        uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
       - run: cargo +nightly fmt --all --check
@@ -51,12 +46,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
+      - uses: taiki-e/install-action@cargo-make
       - uses: Swatinem/rust-cache@v2
       - run: cargo make clippy
 
@@ -64,8 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Lint markdown
-        uses: DavidAnson/markdownlint-cli2-action@v16
+      - uses: DavidAnson/markdownlint-cli2-action@v16
         with:
           globs: |
             '**/*.md'
@@ -75,19 +67,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools
-      - name: Install cargo-llvm-cov and cargo-make
-        uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov,cargo-make
       - uses: Swatinem/rust-cache@v2
-      - name: Generate coverage
-        run: cargo make coverage
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v4
+      - run: cargo make coverage
+      - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
@@ -101,12 +89,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust {{ matrix.toolchain }}
-        uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
+      - uses: taiki-e/install-action@cargo-make
       - uses: Swatinem/rust-cache@v2
       - run: cargo make check
         env:
@@ -114,14 +100,17 @@ jobs:
 
   lint-docs:
     runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: -Dwarnings
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust nightly
-        uses: dtolnay/rust-toolchain@nightly
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/install@cargo-docs-rs
       - uses: Swatinem/rust-cache@v2
-      - run: cargo make lint-docs
+      # Run cargo rustdoc with the same options that would be used by docs.rs, taking into account
+      # the package.metadata.docs.rs configured in Cargo.toml.
+      # https://github.com/dtolnay/cargo-docs-rs
+      - run: cargo +nightly docs-rs
 
   test-doc:
     strategy:
@@ -131,13 +120,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-make
       - uses: Swatinem/rust-cache@v2
-      - name: Test docs
-        run: cargo make test-doc
+      - run: cargo make test-doc
         env:
           RUST_BACKTRACE: full
 
@@ -155,14 +141,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust ${{ matrix.toolchain }}}
-        uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-      - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
-      - name: Install cargo-nextest
-        uses: taiki-e/install-action@nextest
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-make,nextest
       - uses: Swatinem/rust-cache@v2
       - run: cargo make test-backend ${{ matrix.backend }}
         env:
