@@ -109,9 +109,9 @@ use crate::{
     layout::{Position, Size},
 };
 
-#[cfg(feature = "termion")]
+#[cfg(all(not(windows), feature = "termion"))]
 mod termion;
-#[cfg(feature = "termion")]
+#[cfg(all(not(windows), feature = "termion"))]
 pub use self::termion::TermionBackend;
 
 #[cfg(feature = "crossterm")]
