@@ -145,7 +145,7 @@
 //!     Frame,
 //! };
 //!
-//! fn ui(frame: &mut Frame) {
+//! fn draw(frame: &mut Frame) {
 //!     let [title_area, main_area, status_area] = Layout::vertical([
 //!         Constraint::Length(1),
 //!         Constraint::Min(0),
@@ -188,7 +188,7 @@
 //!     Frame,
 //! };
 //!
-//! fn ui(frame: &mut Frame) {
+//! fn draw(frame: &mut Frame) {
 //!     let areas = Layout::vertical([Constraint::Length(1); 4]).split(frame.size());
 //!
 //!     let line = Line::from(vec![

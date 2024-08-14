@@ -13,18 +13,11 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{
-    io::{self, stdout, Stdout},
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
+use color_eyre::Result;
 use ratatui::{
-    backend::CrosstermBackend,
-    crossterm::{
-        event::{self, Event, KeyCode},
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-        ExecutableCommand,
-    },
+    crossterm::event::{self, Event, KeyCode},
     layout::{Constraint, Layout, Rect},
     style::{Color, Stylize},
     symbols::Marker,
@@ -32,11 +25,15 @@ use ratatui::{
         canvas::{Canvas, Circle, Map, MapResolution, Rectangle},
         Block, Widget,
     },
-    Frame, Terminal,
+    DefaultTerminal, Frame,
 };
 
-fn main() -> io::Result<()> {
-    App::run()
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::new().run(terminal);
+    ratatui::restore();
+    app_result
 }
 
 struct App {
@@ -69,33 +66,30 @@ impl App {
         }
     }
 
-    pub fn run() -> io::Result<()> {
-        let mut terminal = init_terminal()?;
-        let mut app = Self::new();
+    pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         let mut last_tick = Instant::now();
         let tick_rate = Duration::from_millis(16);
         loop {
-            let _ = terminal.draw(|frame| app.ui(frame));
+            terminal.draw(|frame| self.ui(frame))?;
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
                 if let Event::Key(key) = event::read()? {
                     match key.code {
-                        KeyCode::Char('q') => break,
-                        KeyCode::Down | KeyCode::Char('j') => app.y += 1.0,
-                        KeyCode::Up | KeyCode::Char('k') => app.y -= 1.0,
-                        KeyCode::Right | KeyCode::Char('l') => app.x += 1.0,
-                        KeyCode::Left | KeyCode::Char('h') => app.x -= 1.0,
+                        KeyCode::Char('q') => break Ok(()),
+                        KeyCode::Down | KeyCode::Char('j') => self.y += 1.0,
+                        KeyCode::Up | KeyCode::Char('k') => self.y -= 1.0,
+                        KeyCode::Right | KeyCode::Char('l') => self.x += 1.0,
+                        KeyCode::Left | KeyCode::Char('h') => self.x -= 1.0,
                         _ => {}
                     }
                 }
             }
 
             if last_tick.elapsed() >= tick_rate {
-                app.on_tick();
+                self.on_tick();
                 last_tick = Instant::now();
             }
         }
-        restore_terminal()
     }
 
     fn on_tick(&mut self) {
@@ -203,16 +197,4 @@ impl App {
                 }
             })
     }
-}
-
-fn init_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    Terminal::new(CrosstermBackend::new(stdout()))
-}
-
-fn restore_terminal() -> io::Result<()> {
-    disable_raw_mode()?;
-    stdout().execute(LeaveAlternateScreen)?;
-    Ok(())
 }

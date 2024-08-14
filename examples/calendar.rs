@@ -13,47 +13,34 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{error::Error, io};
-
+use color_eyre::Result;
+use crossterm::event::KeyEventKind;
 use ratatui::{
-    backend::CrosstermBackend,
-    crossterm::{
-        event::{self, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
+    crossterm::event::{self, Event, KeyCode},
     layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     widgets::calendar::{CalendarEventStore, DateStyler, Monthly},
-    Frame, Terminal,
+    DefaultTerminal, Frame,
 };
 use time::{Date, Month, OffsetDateTime};
 
-fn main() -> Result<(), Box<dyn Error>> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let result = run(terminal);
+    ratatui::restore();
+    result
+}
 
+fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        let _ = terminal.draw(draw);
-
+        terminal.draw(draw)?;
         if let Event::Key(key) = event::read()? {
-            #[allow(clippy::single_match)]
-            match key.code {
-                KeyCode::Char(_) => {
-                    break;
-                }
-                _ => {}
-            };
+            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                break Ok(());
+            }
         }
     }
-
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
-    Ok(())
 }
 
 fn draw(frame: &mut Frame) {

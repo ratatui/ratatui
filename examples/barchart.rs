@@ -21,22 +21,20 @@ use ratatui::{
     style::{Color, Style, Stylize},
     text::Line,
     widgets::{Bar, BarChart, BarGroup, Block},
+    DefaultTerminal,
 };
 
-use self::terminal::Terminal;
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::new().run(terminal);
+    ratatui::restore();
+    app_result
+}
 
 struct App {
     should_exit: bool,
     temperatures: Vec<u8>,
-}
-
-fn main() -> Result<()> {
-    color_eyre::install()?;
-    let mut terminal = terminal::init()?;
-    let app = App::new();
-    app.run(&mut terminal)?;
-    terminal::restore()?;
-    Ok(())
 }
 
 impl App {
@@ -49,15 +47,15 @@ impl App {
         }
     }
 
-    fn run(mut self, terminal: &mut Terminal) -> Result<()> {
+    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while !self.should_exit {
-            self.draw(terminal)?;
+            self.draw(&mut terminal)?;
             self.handle_events()?;
         }
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut Terminal) -> Result<()> {
+    fn draw(&self, terminal: &mut DefaultTerminal) -> Result<()> {
         terminal.draw(|frame| self.render(frame))?;
         Ok(())
     }
@@ -137,64 +135,4 @@ fn temperature_style(value: u64) -> Style {
     let green = (255.0 * (1.0 - (value - 50) as f64 / 40.0)) as u8;
     let color = Color::Rgb(255, green, 0);
     Style::new().fg(color)
-}
-
-/// Contains functions common to all examples
-mod terminal {
-    use std::{
-        io::{self, stdout, Stdout},
-        panic,
-    };
-
-    use ratatui::{
-        backend::CrosstermBackend,
-        crossterm::{
-            execute,
-            terminal::{
-                disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
-                LeaveAlternateScreen,
-            },
-        },
-    };
-
-    // A type alias to simplify the usage of the terminal and make it easier to change the backend
-    // or choice of writer.
-    pub type Terminal = ratatui::Terminal<CrosstermBackend<Stdout>>;
-
-    /// Initialize the terminal by enabling raw mode and entering the alternate screen.
-    ///
-    /// This function should be called before the program starts to ensure that the terminal is in
-    /// the correct state for the application.
-    pub fn init() -> io::Result<Terminal> {
-        install_panic_hook();
-        enable_raw_mode()?;
-        execute!(stdout(), EnterAlternateScreen)?;
-        let backend = CrosstermBackend::new(stdout());
-        let terminal = Terminal::new(backend)?;
-        Ok(terminal)
-    }
-
-    /// Restore the terminal by leaving the alternate screen and disabling raw mode.
-    ///
-    /// This function should be called before the program exits to ensure that the terminal is
-    /// restored to its original state.
-    pub fn restore() -> io::Result<()> {
-        disable_raw_mode()?;
-        execute!(
-            stdout(),
-            LeaveAlternateScreen,
-            Clear(ClearType::FromCursorDown),
-        )
-    }
-
-    /// Install a panic hook that restores the terminal before printing the panic.
-    ///
-    /// This prevents error messages from being messed up by the terminal state.
-    fn install_panic_hook() {
-        let panic_hook = panic::take_hook();
-        panic::set_hook(Box::new(move |panic_info| {
-            let _ = restore();
-            panic_hook(panic_info);
-        }));
-    }
 }

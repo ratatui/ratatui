@@ -13,10 +13,10 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{error::Error, io, ops::ControlFlow, time::Duration};
+use std::{io::stdout, ops::ControlFlow, time::Duration};
 
+use color_eyre::Result;
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
     buffer::Buffer,
     crossterm::{
         event::{
@@ -24,14 +24,25 @@ use ratatui::{
             MouseEventKind,
         },
         execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
     layout::{Constraint, Layout, Rect},
     style::{Color, Style},
     text::Line,
     widgets::{Paragraph, Widget},
-    Frame, Terminal,
+    DefaultTerminal, Frame,
 };
+
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    execute!(stdout(), EnableMouseCapture)?;
+    let app_result = run_app(terminal);
+    ratatui::restore();
+    if let Err(err) = execute!(stdout(), DisableMouseCapture) {
+        eprintln!("Error disabling mouse capture: {}", err);
+    }
+    app_result
+}
 
 /// A custom widget that renders a button with a label, theme and state.
 #[derive(Debug, Clone)]
@@ -143,38 +154,11 @@ impl Button<'_> {
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    // create app and run it
-    let res = run_app(&mut terminal);
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
-    }
-
-    Ok(())
-}
-
-fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
+fn run_app(mut terminal: DefaultTerminal) -> Result<()> {
     let mut selected_button: usize = 0;
     let mut button_states = [State::Selected, State::Normal, State::Normal];
     loop {
-        terminal.draw(|frame| ui(frame, button_states))?;
+        terminal.draw(|frame| draw(frame, button_states))?;
         if !event::poll(Duration::from_millis(100))? {
             continue;
         }
@@ -196,7 +180,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
     Ok(())
 }
 
-fn ui(frame: &mut Frame, states: [State; 3]) {
+fn draw(frame: &mut Frame, states: [State; 3]) {
     let vertical = Layout::vertical([
         Constraint::Length(1),
         Constraint::Max(3),

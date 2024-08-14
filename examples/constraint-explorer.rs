@@ -13,18 +13,13 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::io::{self, stdout};
+use std::io::{self};
 
-use color_eyre::{config::HookBuilder, Result};
+use color_eyre::Result;
 use itertools::Itertools;
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
     buffer::Buffer,
-    crossterm::{
-        event::{self, Event, KeyCode, KeyEventKind},
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-        ExecutableCommand,
-    },
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{
         Constraint::{self, Fill, Length, Max, Min, Percentage, Ratio},
         Flex, Layout, Rect,
@@ -36,9 +31,17 @@ use ratatui::{
     symbols::{self, line},
     text::{Line, Span, Text},
     widgets::{Block, Paragraph, Widget, Wrap},
-    Terminal,
+    DefaultTerminal,
 };
 use strum::{Display, EnumIter, FromRepr};
+
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::default().run(terminal);
+    ratatui::restore();
+    app_result
+}
 
 #[derive(Default)]
 struct App {
@@ -90,17 +93,9 @@ struct ConstraintBlock {
 /// ```
 struct SpacerBlock;
 
-fn main() -> Result<()> {
-    init_error_hooks()?;
-    let terminal = init_terminal()?;
-    App::default().run(terminal)?;
-    restore_terminal()?;
-    Ok(())
-}
-
 // App behaviour
 impl App {
-    fn run(&mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
+    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         self.insert_test_defaults();
 
         while self.is_running() {
@@ -124,7 +119,7 @@ impl App {
         self.mode == AppMode::Running
     }
 
-    fn draw(&self, terminal: &mut Terminal<impl Backend>) -> io::Result<()> {
+    fn draw(&self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
@@ -620,33 +615,4 @@ impl ConstraintName {
             Self::Max => SKY.c700,
         }
     }
-}
-
-fn init_error_hooks() -> Result<()> {
-    let (panic, error) = HookBuilder::default().into_hooks();
-    let panic = panic.into_panic_hook();
-    let error = error.into_eyre_hook();
-    color_eyre::eyre::set_hook(Box::new(move |e| {
-        let _ = restore_terminal();
-        error(e)
-    }))?;
-    std::panic::set_hook(Box::new(move |info| {
-        let _ = restore_terminal();
-        panic(info);
-    }));
-    Ok(())
-}
-
-fn init_terminal() -> Result<Terminal<impl Backend>> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout());
-    let terminal = Terminal::new(backend)?;
-    Ok(terminal)
-}
-
-fn restore_terminal() -> Result<()> {
-    disable_raw_mode()?;
-    stdout().execute(LeaveAlternateScreen)?;
-    Ok(())
 }

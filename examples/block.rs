@@ -13,21 +13,10 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{
-    error::Error,
-    io::{stdout, Stdout},
-    ops::ControlFlow,
-    time::Duration,
-};
-
+use color_eyre::Result;
 use itertools::Itertools;
 use ratatui::{
-    backend::CrosstermBackend,
-    crossterm::{
-        event::{self, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Style, Stylize},
     text::Line,
@@ -35,61 +24,29 @@ use ratatui::{
         block::{Position, Title},
         Block, BorderType, Borders, Padding, Paragraph, Wrap,
     },
-    Frame,
+    DefaultTerminal, Frame,
 };
 
-// These type aliases are used to make the code more readable by reducing repetition of the generic
-// types. They are not necessary for the functionality of the code.
-type Terminal = ratatui::Terminal<CrosstermBackend<Stdout>>;
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
-
 fn main() -> Result<()> {
-    let mut terminal = setup_terminal()?;
-    let result = run(&mut terminal);
-    restore_terminal(terminal)?;
-
-    if let Err(err) = result {
-        eprintln!("{err:?}");
-    }
-    Ok(())
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let result = run(terminal);
+    ratatui::restore();
+    result
 }
 
-fn setup_terminal() -> Result<Terminal> {
-    enable_raw_mode()?;
-    let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let terminal = Terminal::new(backend)?;
-    Ok(terminal)
-}
-
-fn restore_terminal(mut terminal: Terminal) -> Result<()> {
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    Ok(())
-}
-
-fn run(terminal: &mut Terminal) -> Result<()> {
+fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        terminal.draw(ui)?;
-        if handle_events()?.is_break() {
-            return Ok(());
-        }
-    }
-}
-
-fn handle_events() -> Result<ControlFlow<()>> {
-    if event::poll(Duration::from_millis(100))? {
+        terminal.draw(draw)?;
         if let Event::Key(key) = event::read()? {
-            if key.code == KeyCode::Char('q') {
-                return Ok(ControlFlow::Break(()));
+            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                break Ok(());
             }
         }
     }
-    Ok(ControlFlow::Continue(()))
 }
 
-fn ui(frame: &mut Frame) {
+fn draw(frame: &mut Frame) {
     let (title_area, layout) = calculate_layout(frame.area());
 
     render_title(frame, title_area);
