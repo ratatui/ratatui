@@ -570,9 +570,9 @@ where
         draw_fn(&mut buffer);
 
         // Split buffer into screen-sized chunks and draw
-        let max_chunk_size = (self.viewport_area.top() * area.width).into();
+        let max_chunk_size = (self.viewport_area.top() as usize) * (area.width as usize);
         for buffer_content_chunk in buffer.content.chunks(max_chunk_size) {
-            let chunk_size = buffer_content_chunk.len() as u16 / area.width;
+            let chunk_size = (buffer_content_chunk.len() / (area.width as usize)) as u16;
 
             self.backend
                 .append_lines(self.viewport_area.height.saturating_sub(1) + chunk_size)?;
