@@ -194,8 +194,7 @@ pub fn try_init_with_options(options: TerminalOptions) -> io::Result<DefaultTerm
 /// # Examples
 ///
 /// ```rust,no_run
-/// ratatui::Terminal::restore()?;
-/// # std::io::Result::Ok(())
+/// ratatui::restore();
 /// ```
 pub fn restore() {
     if let Err(err) = try_restore() {
