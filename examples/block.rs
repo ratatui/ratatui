@@ -140,7 +140,6 @@ fn render_styled_block(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     frame.render_widget(paragraph.clone().block(block), area);
 }
 
-// Note: this currently renders incorrectly, see https://github.com/ratatui-org/ratatui/issues/349
 fn render_styled_title(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::bordered()
         .title("Styled title")

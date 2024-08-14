@@ -22,12 +22,12 @@ pub fn run(tick_rate: Duration, enhanced_graphics: bool) -> Result<(), Box<dyn E
 
     // create app and run it
     let app = App::new("Termwiz Demo", enhanced_graphics);
-    let res = run_app(&mut terminal, app, tick_rate);
+    let app_result = run_app(&mut terminal, app, tick_rate);
 
     terminal.show_cursor()?;
     terminal.flush()?;
 
-    if let Err(err) = res {
+    if let Err(err) = app_result {
         println!("{err:?}");
     }
 
@@ -41,7 +41,7 @@ fn run_app(
 ) -> Result<(), Box<dyn Error>> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|f| ui::draw(f, &mut app))?;
+        terminal.draw(|frame| ui::draw(frame, &mut app))?;
 
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if let Some(input) = terminal

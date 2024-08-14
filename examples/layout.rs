@@ -29,12 +29,12 @@ use ratatui::{
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     let terminal = ratatui::init();
-    let app_result = run_app(terminal);
+    let app_result = run(terminal);
     ratatui::restore();
     app_result
 }
 
-fn run_app(mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
+fn run(mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
     loop {
         terminal.draw(draw)?;
         if let Event::Key(key) = event::read()? {

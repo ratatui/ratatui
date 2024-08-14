@@ -16,8 +16,7 @@
 // This example shows all the colors supported by ratatui. It will render a grid of foreground
 // and background colors with their names and indexes.
 
-use std::{error::Error, result};
-
+use color_eyre::Result;
 use itertools::Itertools;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
@@ -27,8 +26,6 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     DefaultTerminal, Frame,
 };
-
-type Result<T> = result::Result<T, Box<dyn Error>>;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

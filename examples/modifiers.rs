@@ -41,7 +41,7 @@ fn main() -> Result<()> {
 
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        terminal.draw(ui)?;
+        terminal.draw(draw)?;
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
                 return Ok(());
@@ -50,7 +50,7 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
     }
 }
 
-fn ui(frame: &mut Frame) {
+fn draw(frame: &mut Frame) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     let [text_area, main_area] = vertical.areas(frame.area());
     frame.render_widget(

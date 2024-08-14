@@ -20,7 +20,7 @@ use ratatui::{
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Paragraph},
-    Frame,
+    DefaultTerminal, Frame,
 };
 
 /// Example code for lib.rs
@@ -29,28 +29,24 @@ use ratatui::{
 /// rather than copied to the lib.rs file.
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let arg = std::env::args().nth(1).unwrap_or_default();
-    let mut terminal = ratatui::init();
+    let first_arg = std::env::args().nth(1).unwrap_or_default();
+    let terminal = ratatui::init();
+    let app_result = run(terminal, &first_arg);
+    ratatui::restore();
+    app_result
+}
 
+fn run(mut terminal: DefaultTerminal, first_arg: &str) -> Result<()> {
     let mut should_quit = false;
     while !should_quit {
-        terminal.draw(match arg.as_str() {
+        terminal.draw(match first_arg {
             "layout" => layout,
             "styling" => styling,
             _ => hello_world,
         })?;
         should_quit = handle_events()?;
     }
-
-    ratatui::restore();
     Ok(())
-}
-
-fn hello_world(frame: &mut Frame) {
-    frame.render_widget(
-        Paragraph::new("Hello World!").block(Block::bordered().title("Greeting")),
-        frame.area(),
-    );
 }
 
 fn handle_events() -> std::io::Result<bool> {
@@ -60,6 +56,13 @@ fn handle_events() -> std::io::Result<bool> {
         }
     }
     Ok(false)
+}
+
+fn hello_world(frame: &mut Frame) {
+    frame.render_widget(
+        Paragraph::new("Hello World!").block(Block::bordered().title("Greeting")),
+        frame.area(),
+    );
 }
 
 fn layout(frame: &mut Frame) {

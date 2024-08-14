@@ -16,19 +16,16 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::io::Stdout;
-
 use color_eyre::Result;
 use itertools::Itertools;
 use ratatui::{
-    backend::CrosstermBackend,
     buffer::Buffer,
     crossterm::event::{self, Event, KeyCode},
     layout::Rect,
     style::Stylize,
     text::{Line, Text},
-    widgets::WidgetRef,
-    Terminal,
+    widgets::Widget,
+    DefaultTerminal,
 };
 
 fn main() -> Result<()> {
@@ -50,7 +47,7 @@ impl App {
         Self { hyperlink }
     }
 
-    fn run(self, mut terminal: Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
+    fn run(self, mut terminal: DefaultTerminal) -> Result<()> {
         loop {
             terminal.draw(|frame| frame.render_widget(&self.hyperlink, frame.area()))?;
             if let Event::Key(key) = event::read()? {
@@ -80,9 +77,9 @@ impl<'content> Hyperlink<'content> {
     }
 }
 
-impl WidgetRef for Hyperlink<'_> {
-    fn render_ref(&self, area: Rect, buffer: &mut Buffer) {
-        self.text.render_ref(area, buffer);
+impl Widget for &Hyperlink<'_> {
+    fn render(self, area: Rect, buffer: &mut Buffer) {
+        (&self.text).render(area, buffer);
 
         // this is a hacky workaround for https://github.com/ratatui-org/ratatui/issues/902, a bug
         // in the terminal code that incorrectly calculates the width of ANSI escape sequences. It

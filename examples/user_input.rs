@@ -153,21 +153,11 @@ impl App {
                     },
                     InputMode::Editing if key.kind == KeyEventKind::Press => match key.code {
                         KeyCode::Enter => self.submit_message(),
-                        KeyCode::Char(to_insert) => {
-                            self.enter_char(to_insert);
-                        }
-                        KeyCode::Backspace => {
-                            self.delete_char();
-                        }
-                        KeyCode::Left => {
-                            self.move_cursor_left();
-                        }
-                        KeyCode::Right => {
-                            self.move_cursor_right();
-                        }
-                        KeyCode::Esc => {
-                            self.input_mode = InputMode::Normal;
-                        }
+                        KeyCode::Char(to_insert) => self.enter_char(to_insert),
+                        KeyCode::Backspace => self.delete_char(),
+                        KeyCode::Left => self.move_cursor_left(),
+                        KeyCode::Right => self.move_cursor_right(),
+                        KeyCode::Esc => self.input_mode = InputMode::Normal,
                         _ => {}
                     },
                     InputMode::Editing => {}

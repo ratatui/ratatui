@@ -60,19 +60,13 @@ impl App {
     /// Run the app until the user exits.
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while !self.should_exit {
-            self.draw(&mut terminal)?;
+            terminal.draw(|frame| frame.render_widget(&self, frame.area()))?;
             self.handle_events()?;
             if self.last_tick.elapsed() >= Self::TICK_RATE {
                 self.on_tick();
                 self.last_tick = Instant::now();
             }
         }
-        Ok(())
-    }
-
-    /// Draw the app to the terminal.
-    fn draw(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
 
@@ -95,7 +89,7 @@ impl App {
     }
 }
 
-impl Widget for &mut App {
+impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let areas = Layout::vertical([Constraint::Max(9); 4]).split(area);
         Paragraph::new(create_lines(area))

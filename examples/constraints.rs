@@ -87,7 +87,7 @@ impl App {
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         self.update_max_scroll_offset();
         while self.is_running() {
-            self.draw(&mut terminal)?;
+            terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
             self.handle_events()?;
         }
         Ok(())
@@ -99,11 +99,6 @@ impl App {
 
     fn is_running(self) -> bool {
         self.state == AppState::Running
-    }
-
-    fn draw(self, terminal: &mut DefaultTerminal) -> Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
-        Ok(())
     }
 
     fn handle_events(&mut self) -> Result<()> {

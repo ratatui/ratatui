@@ -16,7 +16,7 @@
 use color_eyre::Result;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Layout, Margin},
     style::{Color, Modifier, Style},
     widgets::calendar::{CalendarEventStore, DateStyler, Monthly},
     DefaultTerminal, Frame,
@@ -43,14 +43,10 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 }
 
 fn draw(frame: &mut Frame) {
-    let app_area = frame.area();
-
-    let calarea = Rect {
-        x: app_area.x + 1,
-        y: app_area.y + 1,
-        height: app_area.height - 1,
-        width: app_area.width - 1,
-    };
+    let area = frame.area().inner(Margin {
+        vertical: 1,
+        horizontal: 1,
+    });
 
     let mut start = OffsetDateTime::now_local()
         .unwrap()
@@ -62,7 +58,7 @@ fn draw(frame: &mut Frame) {
 
     let list = make_dates(start.year());
 
-    let rows = Layout::vertical([Constraint::Ratio(1, 3); 3]).split(calarea);
+    let rows = Layout::vertical([Constraint::Ratio(1, 3); 3]).split(area);
     let cols = rows.iter().flat_map(|row| {
         Layout::horizontal([Constraint::Ratio(1, 4); 4])
             .split(*row)

@@ -13,8 +13,6 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::io;
-
 use color_eyre::Result;
 use itertools::Itertools;
 use ratatui::{
@@ -99,7 +97,7 @@ impl App {
         self.insert_test_defaults();
 
         while self.is_running() {
-            self.draw(&mut terminal)?;
+            terminal.draw(|frame| frame.render_widget(&self, frame.area()))?;
             self.handle_events()?;
         }
         Ok(())
@@ -117,11 +115,6 @@ impl App {
 
     fn is_running(&self) -> bool {
         self.mode == AppMode::Running
-    }
-
-    fn draw(&self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
-        Ok(())
     }
 
     fn handle_events(&mut self) -> Result<()> {

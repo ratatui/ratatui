@@ -123,56 +123,56 @@ impl App {
             Layout::horizontal([Constraint::Fill(1), Constraint::Length(29)]).areas(top);
         let [line_chart, scatter] = Layout::horizontal([Constraint::Fill(1); 2]).areas(bottom);
 
-        render_animated_chart(frame, animated_chart, self);
+        self.render_animated_chart(frame, animated_chart);
         render_barchart(frame, bar_chart);
         render_line_chart(frame, line_chart);
         render_scatter(frame, scatter);
     }
-}
 
-fn render_animated_chart(f: &mut Frame, area: Rect, app: &App) {
-    let x_labels = vec![
-        Span::styled(
-            format!("{}", app.window[0]),
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
-        Span::raw(format!("{}", (app.window[0] + app.window[1]) / 2.0)),
-        Span::styled(
-            format!("{}", app.window[1]),
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
-    ];
-    let datasets = vec![
-        Dataset::default()
-            .name("data2")
-            .marker(symbols::Marker::Dot)
-            .style(Style::default().fg(Color::Cyan))
-            .data(&app.data1),
-        Dataset::default()
-            .name("data3")
-            .marker(symbols::Marker::Braille)
-            .style(Style::default().fg(Color::Yellow))
-            .data(&app.data2),
-    ];
+    fn render_animated_chart(&self, frame: &mut Frame, area: Rect) {
+        let x_labels = vec![
+            Span::styled(
+                format!("{}", self.window[0]),
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(format!("{}", (self.window[0] + self.window[1]) / 2.0)),
+            Span::styled(
+                format!("{}", self.window[1]),
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
+        ];
+        let datasets = vec![
+            Dataset::default()
+                .name("data2")
+                .marker(symbols::Marker::Dot)
+                .style(Style::default().fg(Color::Cyan))
+                .data(&self.data1),
+            Dataset::default()
+                .name("data3")
+                .marker(symbols::Marker::Braille)
+                .style(Style::default().fg(Color::Yellow))
+                .data(&self.data2),
+        ];
 
-    let chart = Chart::new(datasets)
-        .block(Block::bordered())
-        .x_axis(
-            Axis::default()
-                .title("X Axis")
-                .style(Style::default().fg(Color::Gray))
-                .labels(x_labels)
-                .bounds(app.window),
-        )
-        .y_axis(
-            Axis::default()
-                .title("Y Axis")
-                .style(Style::default().fg(Color::Gray))
-                .labels(["-20".bold(), "0".into(), "20".bold()])
-                .bounds([-20.0, 20.0]),
-        );
+        let chart = Chart::new(datasets)
+            .block(Block::bordered())
+            .x_axis(
+                Axis::default()
+                    .title("X Axis")
+                    .style(Style::default().fg(Color::Gray))
+                    .labels(x_labels)
+                    .bounds(self.window),
+            )
+            .y_axis(
+                Axis::default()
+                    .title("Y Axis")
+                    .style(Style::default().fg(Color::Gray))
+                    .labels(["-20".bold(), "0".into(), "20".bold()])
+                    .bounds([-20.0, 20.0]),
+            );
 
-    f.render_widget(chart, area);
+        frame.render_widget(chart, area);
+    }
 }
 
 fn render_barchart(frame: &mut Frame, bar_chart: Rect) {
@@ -220,7 +220,7 @@ fn render_barchart(frame: &mut Frame, bar_chart: Rect) {
     frame.render_widget(chart, bar_chart);
 }
 
-fn render_line_chart(f: &mut Frame, area: Rect) {
+fn render_line_chart(frame: &mut Frame, area: Rect) {
     let datasets = vec![Dataset::default()
         .name("Line from only 2 points".italic())
         .marker(symbols::Marker::Braille)
@@ -253,10 +253,10 @@ fn render_line_chart(f: &mut Frame, area: Rect) {
         .legend_position(Some(LegendPosition::TopLeft))
         .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)));
 
-    f.render_widget(chart, area);
+    frame.render_widget(chart, area);
 }
 
-fn render_scatter(f: &mut Frame, area: Rect) {
+fn render_scatter(frame: &mut Frame, area: Rect) {
     let datasets = vec![
         Dataset::default()
             .name("Heavy")
@@ -302,7 +302,7 @@ fn render_scatter(f: &mut Frame, area: Rect) {
         )
         .hidden_legend_constraints((Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)));
 
-    f.render_widget(chart, area);
+    frame.render_widget(chart, area);
 }
 
 // Data from https://ourworldindata.org/space-exploration-satellites

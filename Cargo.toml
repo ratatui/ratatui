@@ -295,7 +295,7 @@ doc-scrape-examples = true
 
 [[example]]
 name = "hyperlink"
-required-features = ["crossterm", "unstable-widget-ref"]
+required-features = ["crossterm"]
 doc-scrape-examples = true
 
 [[example]]

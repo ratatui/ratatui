@@ -43,13 +43,11 @@ use octocrab::{
 use ratatui::{
     buffer::Buffer,
     crossterm::event::{Event, EventStream, KeyCode, KeyEventKind},
-    layout::{Constraint, Offset, Rect},
-    style::{Modifier, Stylize},
+    layout::{Constraint, Layout, Rect},
+    style::{Style, Stylize},
     text::Line,
-    widgets::{
-        Block, BorderType, HighlightSpacing, Row, StatefulWidget, Table, TableState, Widget,
-    },
-    DefaultTerminal,
+    widgets::{Block, HighlightSpacing, Row, StatefulWidget, Table, TableState, Widget},
+    DefaultTerminal, Frame,
 };
 
 #[tokio::main]
@@ -77,14 +75,14 @@ fn init_octocrab() -> Result<()> {
 #[derive(Debug, Default)]
 struct App {
     should_quit: bool,
-    pulls: PullRequestsWidget,
+    pull_requests: PullRequestListWidget,
 }
 
 impl App {
     const FRAMES_PER_SECOND: f32 = 60.0;
 
     pub async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
-        self.pulls.run();
+        self.pull_requests.run();
 
         let period = Duration::from_secs_f32(1.0 / Self::FRAMES_PER_SECOND);
         let mut interval = tokio::time::interval(period);
@@ -92,33 +90,28 @@ impl App {
 
         while !self.should_quit {
             tokio::select! {
-                _ = interval.tick() => self.draw(&mut terminal)?,
+                _ = interval.tick() => { terminal.draw(|frame| self.draw(frame))?; },
                 Some(Ok(event)) = events.next() => self.handle_event(&event),
             }
         }
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut DefaultTerminal) -> Result<()> {
-        terminal.draw(|frame| {
-            let area = frame.area();
-            frame.render_widget(
-                Line::from("ratatui async example").centered().cyan().bold(),
-                area,
-            );
-            let area = area.offset(Offset { x: 0, y: 1 }).intersection(area);
-            frame.render_widget(&self.pulls, area);
-        })?;
-        Ok(())
+    fn draw(&self, frame: &mut Frame) {
+        let vertical = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
+        let [title_area, body_area] = vertical.areas(frame.area());
+        let title = Line::from("Ratatui async example").centered().bold();
+        frame.render_widget(title, title_area);
+        frame.render_widget(&self.pull_requests, body_area);
     }
 
     fn handle_event(&mut self, event: &Event) {
         if let Event::Key(key) = event {
             if key.kind == KeyEventKind::Press {
                 match key.code {
-                    KeyCode::Char('q') => self.should_quit = true,
-                    KeyCode::Char('j') => self.pulls.scroll_down(),
-                    KeyCode::Char('k') => self.pulls.scroll_up(),
+                    KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
+                    KeyCode::Char('j') | KeyCode::Down => self.pull_requests.scroll_down(),
+                    KeyCode::Char('k') | KeyCode::Up => self.pull_requests.scroll_up(),
                     _ => {}
                 }
             }
@@ -129,19 +122,19 @@ impl App {
 /// A widget that displays a list of pull requests.
 ///
 /// This is an async widget that fetches the list of pull requests from the GitHub API. It contains
-/// an inner `Arc<RwLock<PullRequests>>` that holds the state of the widget. Cloning the widget
-/// will clone the Arc, so you can pass it around to other threads, and this is used to spawn a
-/// background task to fetch the pull requests.
+/// an inner `Arc<RwLock<PullRequestListState>>` that holds the state of the widget. Cloning the
+/// widget will clone the Arc, so you can pass it around to other threads, and this is used to spawn
+/// a background task to fetch the pull requests.
 #[derive(Debug, Clone, Default)]
-struct PullRequestsWidget {
-    inner: Arc<RwLock<PullRequests>>,
-    selected_index: usize, // no need to lock this since it's only accessed by the main thread
+struct PullRequestListWidget {
+    state: Arc<RwLock<PullRequestListState>>,
 }
 
 #[derive(Debug, Default)]
-struct PullRequests {
-    pulls: Vec<PullRequest>,
+struct PullRequestListState {
+    pull_requests: Vec<PullRequest>,
     loading_state: LoadingState,
+    table_state: TableState,
 }
 
 #[derive(Debug, Clone)]
@@ -160,7 +153,7 @@ enum LoadingState {
     Error(String),
 }
 
-impl PullRequestsWidget {
+impl PullRequestListWidget {
     /// Start fetching the pull requests in the background.
     ///
     /// This method spawns a background task that fetches the pull requests from the GitHub API.
@@ -188,9 +181,12 @@ impl PullRequestsWidget {
     }
     fn on_load(&self, page: &Page<OctoPullRequest>) {
         let prs = page.items.iter().map(Into::into);
-        let mut inner = self.inner.write().unwrap();
-        inner.loading_state = LoadingState::Loaded;
-        inner.pulls.extend(prs);
+        let mut state = self.state.write().unwrap();
+        state.loading_state = LoadingState::Loaded;
+        state.pull_requests.extend(prs);
+        if !state.pull_requests.is_empty() {
+            state.table_state.select(Some(0));
+        }
     }
 
     fn on_err(&self, err: &octocrab::Error) {
@@ -198,15 +194,15 @@ impl PullRequestsWidget {
     }
 
     fn set_loading_state(&self, state: LoadingState) {
-        self.inner.write().unwrap().loading_state = state;
+        self.state.write().unwrap().loading_state = state;
     }
 
-    fn scroll_down(&mut self) {
-        self.selected_index = self.selected_index.saturating_add(1);
+    fn scroll_down(&self) {
+        self.state.write().unwrap().table_state.scroll_down_by(1);
     }
 
-    fn scroll_up(&mut self) {
-        self.selected_index = self.selected_index.saturating_sub(1);
+    fn scroll_up(&self) {
+        self.state.write().unwrap().table_state.scroll_up_by(1);
     }
 }
 
@@ -226,19 +222,19 @@ impl From<&OctoPullRequest> for PullRequest {
     }
 }
 
-impl Widget for &PullRequestsWidget {
+impl Widget for &PullRequestListWidget {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let inner = self.inner.read().unwrap();
+        let mut state = self.state.write().unwrap();
 
-        // a block with a right aligned title with the loading state
-        let loading_state = Line::from(format!("{:?}", inner.loading_state)).right_aligned();
+        // a block with a right aligned title with the loading state on the right
+        let loading_state = Line::from(format!("{:?}", state.loading_state)).right_aligned();
         let block = Block::bordered()
-            .border_type(BorderType::Rounded)
             .title("Pull Requests")
-            .title(loading_state);
+            .title(loading_state)
+            .title_bottom("j/k to scroll, q to quit");
 
         // a table with the list of pull requests
-        let rows = inner.pulls.iter();
+        let rows = state.pull_requests.iter();
         let widths = [
             Constraint::Length(5),
             Constraint::Fill(1),
@@ -248,10 +244,9 @@ impl Widget for &PullRequestsWidget {
             .block(block)
             .highlight_spacing(HighlightSpacing::Always)
             .highlight_symbol(">>")
-            .highlight_style(Modifier::REVERSED);
-        let mut table_state = TableState::new().with_selected(self.selected_index);
+            .highlight_style(Style::new().on_blue());
 
-        StatefulWidget::render(table, area, buf, &mut table_state);
+        StatefulWidget::render(table, area, buf, &mut state.table_state);
     }
 }
 

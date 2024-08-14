@@ -51,17 +51,12 @@ enum AppState {
 }
 
 impl App {
-    fn run(&mut self, mut terminal: DefaultTerminal) -> Result<()> {
+    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while self.state != AppState::Quitting {
-            self.draw(&mut terminal)?;
+            terminal.draw(|frame| frame.render_widget(&self, frame.area()))?;
             self.handle_events()?;
             self.update(terminal.size()?.width);
         }
-        Ok(())
-    }
-
-    fn draw(&self, terminal: &mut DefaultTerminal) -> Result<()> {
-        terminal.draw(|f| f.render_widget(self, f.area()))?;
         Ok(())
     }
 

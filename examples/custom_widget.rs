@@ -36,7 +36,7 @@ fn main() -> Result<()> {
     color_eyre::install()?;
     let terminal = ratatui::init();
     execute!(stdout(), EnableMouseCapture)?;
-    let app_result = run_app(terminal);
+    let app_result = run(terminal);
     ratatui::restore();
     if let Err(err) = execute!(stdout(), DisableMouseCapture) {
         eprintln!("Error disabling mouse capture: {err}");
@@ -154,7 +154,7 @@ impl Button<'_> {
     }
 }
 
-fn run_app(mut terminal: DefaultTerminal) -> Result<()> {
+fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut selected_button: usize = 0;
     let mut button_states = [State::Selected, State::Normal, State::Normal];
     loop {

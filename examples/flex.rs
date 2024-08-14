@@ -13,10 +13,7 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{
-    io::{self},
-    num::NonZeroUsize,
-};
+use std::num::NonZeroUsize;
 
 use color_eyre::Result;
 use ratatui::{
@@ -169,21 +166,15 @@ impl App {
         let cache_size = EXAMPLE_DATA.len() * SelectedTab::iter().len() * 100;
         Layout::init_cache(NonZeroUsize::new(cache_size).unwrap());
 
-        self.draw(&mut terminal)?;
         while self.is_running() {
+            terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
             self.handle_events()?;
-            self.draw(&mut terminal)?;
         }
         Ok(())
     }
 
     fn is_running(self) -> bool {
         self.state == AppState::Running
-    }
-
-    fn draw(self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
-        Ok(())
     }
 
     fn handle_events(&mut self) -> Result<()> {

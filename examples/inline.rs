@@ -111,7 +111,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         w.tx.send(d).unwrap();
     }
 
-    run_app(&mut terminal, workers, downloads, rx)?;
+    run(&mut terminal, workers, downloads, rx)?;
 
     disable_raw_mode()?;
     terminal.clear()?;
@@ -182,8 +182,8 @@ fn downloads() -> Downloads {
 }
 
 #[allow(clippy::needless_pass_by_value)]
-fn run_app<B: Backend>(
-    terminal: &mut Terminal<B>,
+fn run(
+    terminal: &mut Terminal<impl Backend>,
     workers: Vec<Worker>,
     mut downloads: Downloads,
     rx: mpsc::Receiver<Event>,
@@ -191,7 +191,7 @@ fn run_app<B: Backend>(
     let mut redraw = true;
     loop {
         if redraw {
-            terminal.draw(|f| ui(f, &downloads))?;
+            terminal.draw(|frame| draw(frame, &downloads))?;
         }
         redraw = true;
 
@@ -243,11 +243,11 @@ fn run_app<B: Backend>(
     Ok(())
 }
 
-fn ui(f: &mut Frame, downloads: &Downloads) {
-    let area = f.area();
+fn draw(frame: &mut Frame, downloads: &Downloads) {
+    let area = frame.area();
 
     let block = Block::new().title(block::Title::from("Progress").alignment(Alignment::Center));
-    f.render_widget(block, area);
+    frame.render_widget(block, area);
 
     let vertical = Layout::vertical([Constraint::Length(2), Constraint::Length(4)]).margin(1);
     let horizontal = Layout::horizontal([Constraint::Percentage(20), Constraint::Percentage(80)]);
@@ -261,7 +261,7 @@ fn ui(f: &mut Frame, downloads: &Downloads) {
         .filled_style(Style::default().fg(Color::Blue))
         .label(format!("{done}/{NUM_DOWNLOADS}"))
         .ratio(done as f64 / NUM_DOWNLOADS as f64);
-    f.render_widget(progress, progress_area);
+    frame.render_widget(progress, progress_area);
 
     // in progress downloads
     let items: Vec<ListItem> = downloads
@@ -284,7 +284,7 @@ fn ui(f: &mut Frame, downloads: &Downloads) {
         })
         .collect();
     let list = List::new(items);
-    f.render_widget(list, list_area);
+    frame.render_widget(list, list_area);
 
     #[allow(clippy::cast_possible_truncation)]
     for (i, (_, download)) in downloads.in_progress.iter().enumerate() {
@@ -294,7 +294,7 @@ fn ui(f: &mut Frame, downloads: &Downloads) {
         if gauge_area.top().saturating_add(i as u16) > area.bottom() {
             continue;
         }
-        f.render_widget(
+        frame.render_widget(
             gauge,
             Rect {
                 x: gauge_area.left(),

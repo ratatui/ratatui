@@ -67,10 +67,10 @@ impl App {
     }
 
     pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
-        let mut last_tick = Instant::now();
         let tick_rate = Duration::from_millis(16);
+        let mut last_tick = Instant::now();
         loop {
-            terminal.draw(|frame| self.ui(frame))?;
+            terminal.draw(|frame| self.draw(frame))?;
             let timeout = tick_rate.saturating_sub(last_tick.elapsed());
             if event::poll(timeout)? {
                 if let Event::Key(key) = event::read()? {
@@ -122,7 +122,7 @@ impl App {
         self.ball.y += self.vy;
     }
 
-    fn ui(&self, frame: &mut Frame) {
+    fn draw(&self, frame: &mut Frame) {
         let horizontal =
             Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
         let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);

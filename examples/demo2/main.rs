@@ -22,11 +22,11 @@
 mod app;
 mod colors;
 mod destroy;
-mod errors;
 mod tabs;
-mod term;
+mod terminal;
 mod theme;
 
+use app::App;
 use color_eyre::Result;
 
 pub use self::{
@@ -35,9 +35,9 @@ pub use self::{
 };
 
 fn main() -> Result<()> {
-    errors::init_hooks()?;
-    let terminal = &mut term::init()?;
-    app::run(terminal)?;
-    term::restore()?;
-    Ok(())
+    color_eyre::install()?;
+    let terminal = self::terminal::init();
+    let app_result = App::default().run(terminal);
+    self::terminal::restore();
+    app_result
 }

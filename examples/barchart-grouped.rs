@@ -17,7 +17,7 @@ use std::iter::zip;
 
 use color_eyre::Result;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Direction, Layout},
     style::{Color, Style, Stylize},
     text::Line,
@@ -64,31 +64,25 @@ impl App {
 
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while !self.should_exit {
-            self.draw(&mut terminal)?;
+            terminal.draw(|frame| self.draw(frame))?;
             self.handle_events()?;
         }
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut DefaultTerminal) -> Result<()> {
-        terminal.draw(|frame| self.render(frame))?;
-        Ok(())
-    }
-
     fn handle_events(&mut self) -> Result<()> {
         if let Event::Key(key) = event::read()? {
-            if key.code == KeyCode::Char('q') {
+            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
                 self.should_exit = true;
             }
         }
         Ok(())
     }
 
-    fn render(&self, frame: &mut Frame) {
+    fn draw(&self, frame: &mut Frame) {
         use Constraint::{Fill, Length, Min};
-        let [title, top, bottom] = Layout::vertical([Length(1), Fill(1), Min(20)])
-            .spacing(1)
-            .areas(frame.area());
+        let vertical = Layout::vertical([Length(1), Fill(1), Min(20)]).spacing(1);
+        let [title, top, bottom] = vertical.areas(frame.area());
 
         frame.render_widget("Grouped Barchart".bold().into_centered_line(), title);
         frame.render_widget(self.vertical_revenue_barchart(), top);
@@ -97,12 +91,12 @@ impl App {
 
     /// Create a vertical revenue bar chart with the data from the `revenues` field.
     fn vertical_revenue_barchart(&self) -> BarChart<'_> {
-        let title = Line::from("Company revenues (Vertical)").centered();
         let mut barchart = BarChart::default()
-            .block(Block::new().title(title))
+            .block(Block::new().title(Line::from("Company revenues (Vertical)").centered()))
             .bar_gap(0)
             .bar_width(6)
             .group_gap(2);
+
         for group in self
             .revenues
             .iter()

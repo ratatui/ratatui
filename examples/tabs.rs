@@ -26,6 +26,14 @@ use ratatui::{
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::default().run(terminal);
+    ratatui::restore();
+    app_result
+}
+
 #[derive(Default)]
 struct App {
     state: AppState,
@@ -52,25 +60,12 @@ enum SelectedTab {
     Tab4,
 }
 
-fn main() -> Result<()> {
-    color_eyre::install()?;
-    let terminal = ratatui::init();
-    let app_result = App::default().run(terminal);
-    ratatui::restore();
-    app_result
-}
-
 impl App {
     fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while self.state == AppState::Running {
-            self.draw(&mut terminal)?;
+            terminal.draw(|frame| frame.render_widget(&self, frame.area()))?;
             self.handle_events()?;
         }
-        Ok(())
-    }
-
-    fn draw(&self, terminal: &mut DefaultTerminal) -> Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
 
