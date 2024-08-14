@@ -5,9 +5,8 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 
-use crate::{backend::CrosstermBackend, Terminal};
-
 use super::TerminalOptions;
+use crate::{backend::CrosstermBackend, Terminal};
 
 /// A type alias for the default terminal type.
 ///
@@ -121,7 +120,7 @@ pub fn try_init() -> io::Result<DefaultTerminal> {
 /// # Examples
 ///
 /// ```rust,no_run
-/// use ratatui::{Viewport, TerminalOptions};
+/// use ratatui::{TerminalOptions, Viewport};
 ///
 /// let options = TerminalOptions {
 ///     viewport: Viewport::Inline(5),
@@ -137,6 +136,8 @@ pub fn init_with_options(options: TerminalOptions) -> DefaultTerminal {
 /// This function allows the caller to specify a custom [`Viewport`] via the [`TerminalOptions`]. It
 /// will attempt to create a [`DefaultTerminal`] and initialize it with the given options and the
 /// following defaults:
+///
+/// [`Viewport`]: crate::Viewport
 ///
 /// - Raw mode is enabled
 /// - A panic hook is installed that restores the terminal before panicking.
@@ -158,11 +159,11 @@ pub fn init_with_options(options: TerminalOptions) -> DefaultTerminal {
 /// # Examples
 ///
 /// ```no_run
-/// use ratatui::{Viewport, TerminalOptions};
+/// use ratatui::{TerminalOptions, Viewport};
 ///
 /// let options = TerminalOptions {
 ///     viewport: Viewport::Inline(5),
-/// }}
+/// };
 /// let terminal = ratatui::try_init_with_options(options)?;
 /// # Ok::<(), std::io::Error>(())
 /// ```
