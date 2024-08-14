@@ -46,9 +46,9 @@ fn main() -> Result<()> {
     // using vhs in a 1280x640 sized window (github social preview size)
     let viewport = Viewport::Fixed(Rect::new(0, 0, 81, 18));
     let terminal = ratatui::init_with_options(TerminalOptions { viewport });
-    execute!(stdout(), EnterAlternateScreen)?;
+    execute!(stdout(), EnterAlternateScreen).expect("failed to enter alternate screen");
     let app_result = App::default().run(terminal);
-    execute!(stdout(), LeaveAlternateScreen)?;
+    execute!(stdout(), LeaveAlternateScreen).expect("failed to leave alternate screen");
     ratatui::restore();
     app_result
 }
