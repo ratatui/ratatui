@@ -10,8 +10,10 @@ GitHub with a [breaking change] label.
 
 This is a quick summary of the sections below:
 
+- [v0.29.0](#unreleased)
+  - `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const
 - [v0.28.0](#v0280)
-  ⁻ `Backend::size` returns `Size` instead of `Rect`
+  - `Backend::size` returns `Size` instead of `Rect`
   - `Backend` trait migrates to `get/set_cursor_position`
   - Ratatui now requires Crossterm 0.28.0
   - `Axis::labels` now accepts `IntoIterator<Into<Line>>`
@@ -64,6 +66,37 @@ This is a quick summary of the sections below:
 - [v0.20.0](#v0200)
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
+
+## Unreleased
+
+### `Sparkline::data` takes `IntoIterator<Item = SparklineBar>` instead of `&[u64]` and is no longer const ([#1326])
+
+[#1326]: https://github.com/ratatui/ratatui/pull/1326
+
+The `Sparkline::data` method has been modified to accept `IntoIterator<Item = SparklineBar>` 
+instead of `&[u64]`. 
+
+`SparklineBar` is a struct that contains an `Option<u64>` value, which represents an possible 
+_absent_ value, as distinct from a `0` value. This change allows the `Sparkline` to style 
+data points differently, depending on whether they are present or absent.
+
+`SparklineBar` also contains an `Option<Style>` that will be used to apply a style the bar in 
+addition to any other styling applied to the `Sparkline`.
+
+Several `From` implementations have been added to `SparklineBar` to support existing callers who 
+provide `&[u64]` and other types that can be converted to `SparklineBar`, such as `Option<u64>`.
+
+If you encounter any type inference issues, you may need to provide an explicit type for the data
+passed to `Sparkline::data`. For example, if you are passing a single value, you may need to use
+`into()` to convert it to form that can be used as a `SparklineBar`:
+
+```diff
+let value = 1u8;
+- Sparkline::default().data(&[value.into()]);
++ Sparkline::default().data(&[u64::from(value)]);
+```
+
+As a consequence of this change, the `data` method is no longer a `const fn`.
 
 ## v0.28.0
 

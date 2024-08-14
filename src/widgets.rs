@@ -48,7 +48,7 @@ pub use self::{
     list::{List, ListDirection, ListItem, ListState},
     paragraph::{Paragraph, Wrap},
     scrollbar::{ScrollDirection, Scrollbar, ScrollbarOrientation, ScrollbarState},
-    sparkline::{RenderDirection, Sparkline},
+    sparkline::{RenderDirection, Sparkline, SparklineBar},
     table::{Cell, HighlightSpacing, Row, Table, TableState},
     tabs::Tabs,
 };
