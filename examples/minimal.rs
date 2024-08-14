@@ -21,25 +21,20 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode, KeyEventKind},
+    crossterm::event::{self, Event},
     text::Text,
-    DefaultTerminal,
+    Frame,
 };
 
-fn main() -> std::io::Result<()> {
-    let terminal = ratatui::init();
-    let app_result = run(terminal);
-    ratatui::restore();
-    app_result
-}
-
-fn run(mut terminal: DefaultTerminal) -> std::io::Result<()> {
+fn main() {
+    let mut terminal = ratatui::init();
     loop {
-        terminal.draw(|frame| frame.render_widget(Text::raw("Hello World!"), frame.area()))?;
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                return Ok(());
-            }
+        terminal
+            .draw(|frame: &mut Frame| frame.render_widget(Text::raw("Hello World!"), frame.area()))
+            .expect("Failed to draw");
+        if matches!(event::read().expect("failed to read event"), Event::Key(_)) {
+            break;
         }
     }
+    ratatui::restore();
 }
