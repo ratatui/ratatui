@@ -3,14 +3,13 @@ use std::time::Duration;
 use color_eyre::{eyre::Context, Result};
 use itertools::Itertools;
 use ratatui::{
-    backend::Backend,
     buffer::Buffer,
     crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::Color,
     text::{Line, Span},
     widgets::{Block, Tabs, Widget},
-    Terminal,
+    DefaultTerminal,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
@@ -49,13 +48,13 @@ enum Tab {
     Weather,
 }
 
-pub fn run(terminal: &mut Terminal<impl Backend>) -> Result<()> {
+pub fn run(terminal: &mut DefaultTerminal) -> Result<()> {
     App::default().run(terminal)
 }
 
 impl App {
     /// Run the app until the user quits.
-    pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
+    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         while self.is_running() {
             self.draw(terminal)?;
             self.handle_events()?;
@@ -68,7 +67,7 @@ impl App {
     }
 
     /// Draw a single frame of the app.
-    fn draw(&self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
+    fn draw(&self, terminal: &mut DefaultTerminal) -> Result<()> {
         terminal
             .draw(|frame| {
                 frame.render_widget(self, frame.area());

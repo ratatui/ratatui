@@ -13,23 +13,16 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::io::stdout;
-
-use color_eyre::{config::HookBuilder, Result};
+use color_eyre::Result;
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
     buffer::Buffer,
-    crossterm::{
-        event::{self, Event, KeyCode, KeyEventKind},
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-        ExecutableCommand,
-    },
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::{palette::tailwind, Color, Stylize},
     symbols,
     text::Line,
     widgets::{Block, Padding, Paragraph, Tabs, Widget},
-    Terminal,
+    DefaultTerminal,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
@@ -60,23 +53,23 @@ enum SelectedTab {
 }
 
 fn main() -> Result<()> {
-    init_error_hooks()?;
-    let mut terminal = init_terminal()?;
-    App::default().run(&mut terminal)?;
-    restore_terminal()?;
-    Ok(())
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::default().run(terminal);
+    ratatui::restore();
+    app_result
 }
 
 impl App {
-    fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
+    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while self.state == AppState::Running {
-            self.draw(terminal)?;
+            self.draw(&mut terminal)?;
             self.handle_events()?;
         }
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
+    fn draw(&self, terminal: &mut DefaultTerminal) -> Result<()> {
         terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
@@ -225,33 +218,4 @@ impl SelectedTab {
             Self::Tab4 => tailwind::RED,
         }
     }
-}
-
-fn init_error_hooks() -> color_eyre::Result<()> {
-    let (panic, error) = HookBuilder::default().into_hooks();
-    let panic = panic.into_panic_hook();
-    let error = error.into_eyre_hook();
-    color_eyre::eyre::set_hook(Box::new(move |e| {
-        let _ = restore_terminal();
-        error(e)
-    }))?;
-    std::panic::set_hook(Box::new(move |info| {
-        let _ = restore_terminal();
-        panic(info);
-    }));
-    Ok(())
-}
-
-fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout());
-    let terminal = Terminal::new(backend)?;
-    Ok(terminal)
-}
-
-fn restore_terminal() -> color_eyre::Result<()> {
-    disable_raw_mode()?;
-    stdout().execute(LeaveAlternateScreen)?;
-    Ok(())
 }

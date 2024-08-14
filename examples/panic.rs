@@ -29,21 +29,22 @@
 //! That's why this example is set up to show both situations, with and without
 //! the chained panic hook, to see the difference.
 
-use std::{error::Error, io};
-
+use color_eyre::Result;
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    crossterm::{
-        event::{self, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
+    crossterm::event::{self, Event, KeyCode},
     text::Line,
     widgets::{Block, Paragraph},
-    Frame, Terminal,
+    DefaultTerminal, Frame,
 };
 
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::default().run(terminal);
+    ratatui::restore();
+    app_result?;
+    panic!("fix this example - it no longer needs to manually add the panic hook");
+}
 
 #[derive(Default)]
 struct App {
@@ -51,103 +52,56 @@ struct App {
 }
 
 impl App {
-    fn chain_hook(&mut self) {
-        let original_hook = std::panic::take_hook();
+    /// Runs the TUI loop.
+    fn run(self, mut terminal: DefaultTerminal) -> Result<()> {
+        loop {
+            terminal.draw(|frame| self.draw(frame))?;
 
-        std::panic::set_hook(Box::new(move |panic| {
-            reset_terminal().unwrap();
-            original_hook(panic);
-        }));
+            if let Event::Key(key) = event::read()? {
+                match key.code {
+                    KeyCode::Char('p') => {
+                        panic!("intentional demo panic");
+                    }
 
-        self.hook_enabled = true;
-    }
-}
+                    KeyCode::Char('e') => {
+                        // self.chain_hook();
+                    }
 
-fn main() -> Result<()> {
-    let mut terminal = init_terminal()?;
-
-    let mut app = App::default();
-    let res = run_tui(&mut terminal, &mut app);
-
-    reset_terminal()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
-    }
-
-    Ok(())
-}
-
-/// Initializes the terminal.
-fn init_terminal() -> Result<Terminal<CrosstermBackend<io::Stdout>>> {
-    execute!(io::stdout(), EnterAlternateScreen)?;
-    enable_raw_mode()?;
-
-    let backend = CrosstermBackend::new(io::stdout());
-
-    let mut terminal = Terminal::new(backend)?;
-    terminal.hide_cursor()?;
-
-    Ok(terminal)
-}
-
-/// Resets the terminal.
-fn reset_terminal() -> Result<()> {
-    disable_raw_mode()?;
-    execute!(io::stdout(), LeaveAlternateScreen)?;
-
-    Ok(())
-}
-
-/// Runs the TUI loop.
-fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
-    loop {
-        terminal.draw(|f| ui(f, app))?;
-
-        if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('p') => {
-                    panic!("intentional demo panic");
-                }
-
-                KeyCode::Char('e') => {
-                    app.chain_hook();
-                }
-
-                _ => {
-                    return Ok(());
+                    _ => {
+                        return Ok(());
+                    }
                 }
             }
         }
     }
-}
 
-/// Render the TUI.
-fn ui(f: &mut Frame, app: &App) {
-    let text = vec![
-        if app.hook_enabled {
-            Line::from("HOOK IS CURRENTLY **ENABLED**")
-        } else {
-            Line::from("HOOK IS CURRENTLY **DISABLED**")
-        },
-        Line::from(""),
-        Line::from("press `p` to panic"),
-        Line::from("press `e` to enable the terminal-resetting panic hook"),
-        Line::from("press any other key to quit without panic"),
-        Line::from(""),
-        Line::from("when you panic without the chained hook,"),
-        Line::from("you will likely have to reset your terminal afterwards"),
-        Line::from("with the `reset` command"),
-        Line::from(""),
-        Line::from("with the chained panic hook enabled,"),
-        Line::from("you should see the panic report as you would without ratatui"),
-        Line::from(""),
-        Line::from("try first without the panic handler to see the difference"),
-    ];
+    /// Render the TUI.
+    fn draw(&self, frame: &mut Frame) {
+        let text = vec![
+            if self.hook_enabled {
+                Line::from("HOOK IS CURRENTLY **ENABLED**")
+            } else {
+                Line::from("HOOK IS CURRENTLY **DISABLED**")
+            },
+            Line::from(""),
+            Line::from("press `p` to panic"),
+            Line::from("press `e` to enable the terminal-resetting panic hook"),
+            Line::from("press any other key to quit without panic"),
+            Line::from(""),
+            Line::from("when you panic without the chained hook,"),
+            Line::from("you will likely have to reset your terminal afterwards"),
+            Line::from("with the `reset` command"),
+            Line::from(""),
+            Line::from("with the chained panic hook enabled,"),
+            Line::from("you should see the panic report as you would without ratatui"),
+            Line::from(""),
+            Line::from("try first without the panic handler to see the difference"),
+        ];
 
-    let paragraph = Paragraph::new(text)
-        .block(Block::bordered().title("Panic Handler Demo"))
-        .centered();
+        let paragraph = Paragraph::new(text)
+            .block(Block::bordered().title("Panic Handler Demo"))
+            .centered();
 
-    f.render_widget(paragraph, f.area());
+        frame.render_widget(paragraph, frame.area());
+    }
 }

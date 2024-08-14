@@ -42,7 +42,7 @@ use octocrab::{
 };
 use ratatui::{
     buffer::Buffer,
-    crossterm::event::{Event, EventStream, KeyCode},
+    crossterm::event::{Event, EventStream, KeyCode, KeyEventKind},
     layout::{Constraint, Offset, Rect},
     style::{Modifier, Stylize},
     text::Line,
@@ -86,14 +86,14 @@ impl App {
     pub async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         self.pulls.run();
 
-        let mut interval =
-            tokio::time::interval(Duration::from_secs_f32(1.0 / Self::FRAMES_PER_SECOND));
+        let period = Duration::from_secs_f32(1.0 / Self::FRAMES_PER_SECOND);
+        let mut interval = tokio::time::interval(period);
         let mut events = EventStream::new();
 
         while !self.should_quit {
             tokio::select! {
                 _ = interval.tick() => self.draw(&mut terminal)?,
-                Some(Ok(event)) = events.next() =>  self.handle_event(&event),
+                Some(Ok(event)) = events.next() => self.handle_event(&event),
             }
         }
         Ok(())
@@ -113,12 +113,14 @@ impl App {
     }
 
     fn handle_event(&mut self, event: &Event) {
-        if let Event::Key(event) = event {
-            match event.code {
-                KeyCode::Char('q') => self.should_quit = true,
-                KeyCode::Char('j') => self.pulls.scroll_down(),
-                KeyCode::Char('k') => self.pulls.scroll_up(),
-                _ => {}
+        if let Event::Key(key) = event {
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => self.should_quit = true,
+                    KeyCode::Char('j') => self.pulls.scroll_down(),
+                    KeyCode::Char('k') => self.pulls.scroll_up(),
+                    _ => {}
+                }
             }
         }
     }

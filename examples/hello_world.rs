@@ -13,19 +13,12 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{
-    io::{self, Stdout},
-    time::Duration,
-};
+use std::{io::Stdout, time::Duration};
 
 use color_eyre::{eyre::Context, Result};
 use ratatui::{
     backend::CrosstermBackend,
-    crossterm::{
-        event::{self, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
+    crossterm::event::{self, Event, KeyCode},
     widgets::Paragraph,
     Frame, Terminal,
 };
@@ -38,41 +31,10 @@ use ratatui::{
 /// and exits when the user presses 'q'.
 fn main() -> Result<()> {
     color_eyre::install()?; // augment errors / panics with easy to read messages
-    let mut terminal = init_terminal().context("setup failed")?;
+    let mut terminal = ratatui::init();
     let result = run(&mut terminal).context("app loop failed");
-    restore_terminal();
+    ratatui::restore();
     result
-}
-
-/// Setup the terminal. This is where you would enable raw mode, enter the alternate screen, and
-/// hide the cursor. This example does not handle errors.
-fn init_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
-    set_panic_hook();
-    let mut stdout = io::stdout();
-    enable_raw_mode().context("failed to enable raw mode")?;
-    execute!(stdout, EnterAlternateScreen).context("unable to enter alternate screen")?;
-    Terminal::new(CrosstermBackend::new(stdout)).context("creating terminal failed")
-}
-
-/// Restore the terminal. This is where you disable raw mode, leave the alternate screen, and show
-/// the cursor.
-fn restore_terminal() {
-    // There's not a lot we can do if these fail, so we just print an error message.
-    if let Err(err) = disable_raw_mode() {
-        eprintln!("Error disabling raw mode: {err}");
-    }
-    if let Err(err) = execute!(io::stdout(), LeaveAlternateScreen) {
-        eprintln!("Error leaving alternate screen: {err}");
-    }
-}
-
-/// Replace the default panic hook with one that restores the terminal before panicking.
-fn set_panic_hook() {
-    let hook = std::panic::take_hook();
-    std::panic::set_hook(Box::new(move |panic_info| {
-        restore_terminal();
-        hook(panic_info);
-    }));
 }
 
 /// Run the application loop. This is where you would handle events and update the application

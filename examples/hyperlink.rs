@@ -16,25 +16,14 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{
-    io::{self, stdout, Stdout},
-    panic,
-};
+use std::io::Stdout;
 
-use color_eyre::{
-    config::{EyreHook, HookBuilder, PanicHook},
-    eyre, Result,
-};
+use color_eyre::Result;
 use itertools::Itertools;
 use ratatui::{
     backend::CrosstermBackend,
     buffer::Buffer,
-    crossterm::{
-        event::{self, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-        ExecutableCommand,
-    },
+    crossterm::event::{self, Event, KeyCode},
     layout::Rect,
     style::Stylize,
     text::{Line, Text},
@@ -43,12 +32,11 @@ use ratatui::{
 };
 
 fn main() -> Result<()> {
-    init_error_handling()?;
-    let mut terminal = init_terminal()?;
-    let app = App::new();
-    app.run(&mut terminal)?;
-    restore_terminal()?;
-    Ok(())
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::new().run(terminal);
+    ratatui::restore();
+    app_result
 }
 
 struct App {
@@ -62,7 +50,7 @@ impl App {
         Self { hyperlink }
     }
 
-    fn run(self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
+    fn run(self, mut terminal: Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
         loop {
             terminal.draw(|frame| frame.render_widget(&self.hyperlink, frame.area()))?;
             if let Event::Key(key) = event::read()? {
@@ -113,45 +101,4 @@ impl WidgetRef for Hyperlink<'_> {
             buffer[(area.x + i as u16 * 2, area.y)].set_symbol(hyperlink.as_str());
         }
     }
-}
-
-/// Initialize the terminal with raw mode and alternate screen.
-fn init_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    Terminal::new(CrosstermBackend::new(stdout()))
-}
-
-/// Restore the terminal to its original state.
-fn restore_terminal() -> io::Result<()> {
-    disable_raw_mode()?;
-    execute!(stdout(), LeaveAlternateScreen)?;
-    Ok(())
-}
-
-/// Initialize error handling with color-eyre.
-pub fn init_error_handling() -> Result<()> {
-    let (panic_hook, eyre_hook) = HookBuilder::default().into_hooks();
-    set_panic_hook(panic_hook);
-    set_error_hook(eyre_hook)?;
-    Ok(())
-}
-
-/// Install a panic hook that restores the terminal before printing the panic.
-fn set_panic_hook(panic_hook: PanicHook) {
-    let panic_hook = panic_hook.into_panic_hook();
-    panic::set_hook(Box::new(move |panic_info| {
-        let _ = restore_terminal();
-        panic_hook(panic_info);
-    }));
-}
-
-/// Install an error hook that restores the terminal before printing the error.
-fn set_error_hook(eyre_hook: EyreHook) -> Result<()> {
-    let eyre_hook = eyre_hook.into_eyre_hook();
-    eyre::set_hook(Box::new(move |error| {
-        let _ = restore_terminal();
-        eyre_hook(error)
-    }))?;
-    Ok(())
 }

@@ -18,10 +18,9 @@
 
 use std::{error::Error, result};
 
-use crossterm::event::KeyEventKind;
 use itertools::Itertools;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Style, Stylize},
     text::Line,

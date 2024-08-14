@@ -22,10 +22,10 @@ use std::{
 use indoc::indoc;
 use itertools::izip;
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
+    backend::CrosstermBackend,
     crossterm::terminal::{disable_raw_mode, enable_raw_mode},
     widgets::Paragraph,
-    Terminal, TerminalOptions, Viewport,
+    DefaultTerminal, Terminal, TerminalOptions, Viewport,
 };
 
 /// A fun example of using half block characters to draw a logo
@@ -71,7 +71,7 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn init() -> io::Result<Terminal<impl Backend>> {
+fn init() -> io::Result<DefaultTerminal> {
     enable_raw_mode()?;
     let options = TerminalOptions {
         viewport: Viewport::Inline(3),

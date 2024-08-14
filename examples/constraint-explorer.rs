@@ -13,7 +13,7 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::io::{self};
+use std::io;
 
 use color_eyre::Result;
 use itertools::Itertools;

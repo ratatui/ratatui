@@ -14,9 +14,8 @@
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use crossterm::event::KeyEventKind;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     widgets::calendar::{CalendarEventStore, DateStyler, Monthly},

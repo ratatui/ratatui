@@ -13,22 +13,17 @@
 //! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
 
-use std::{io::stdout, time::Duration};
+use std::time::Duration;
 
-use color_eyre::{config::HookBuilder, Result};
+use color_eyre::Result;
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
     buffer::Buffer,
-    crossterm::{
-        event::{self, Event, KeyCode, KeyEventKind},
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-        ExecutableCommand,
-    },
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Alignment, Constraint, Layout, Rect},
     style::{palette::tailwind, Color, Style, Stylize},
     text::Span,
     widgets::{block::Title, Block, Borders, Gauge, Padding, Paragraph, Widget},
-    Terminal,
+    DefaultTerminal,
 };
 
 const GAUGE1_COLOR: Color = tailwind::RED.c800;
@@ -56,15 +51,15 @@ enum AppState {
 }
 
 fn main() -> Result<()> {
-    init_error_hooks()?;
-    let terminal = init_terminal()?;
-    App::default().run(terminal)?;
-    restore_terminal()?;
-    Ok(())
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::default().run(terminal);
+    ratatui::restore();
+    app_result
 }
 
 impl App {
-    fn run(&mut self, mut terminal: Terminal<impl Backend>) -> Result<()> {
+    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while self.state != AppState::Quitting {
             self.draw(&mut terminal)?;
             self.handle_events()?;
@@ -73,7 +68,7 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
+    fn draw(&self, terminal: &mut DefaultTerminal) -> Result<()> {
         terminal.draw(|f| f.render_widget(self, f.area()))?;
         Ok(())
     }
@@ -212,33 +207,4 @@ fn title_block(title: &str) -> Block {
         .padding(Padding::vertical(1))
         .title(title)
         .fg(CUSTOM_LABEL_COLOR)
-}
-
-fn init_error_hooks() -> color_eyre::Result<()> {
-    let (panic, error) = HookBuilder::default().into_hooks();
-    let panic = panic.into_panic_hook();
-    let error = error.into_eyre_hook();
-    color_eyre::eyre::set_hook(Box::new(move |e| {
-        let _ = restore_terminal();
-        error(e)
-    }))?;
-    std::panic::set_hook(Box::new(move |info| {
-        let _ = restore_terminal();
-        panic(info);
-    }));
-    Ok(())
-}
-
-fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout());
-    let terminal = Terminal::new(backend)?;
-    Ok(terminal)
-}
-
-fn restore_terminal() -> color_eyre::Result<()> {
-    disable_raw_mode()?;
-    stdout().execute(LeaveAlternateScreen)?;
-    Ok(())
 }

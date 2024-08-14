@@ -39,7 +39,7 @@ fn main() -> Result<()> {
     let app_result = run_app(terminal);
     ratatui::restore();
     if let Err(err) = execute!(stdout(), DisableMouseCapture) {
-        eprintln!("Error disabling mouse capture: {}", err);
+        eprintln!("Error disabling mouse capture: {err}");
     }
     app_result
 }
