@@ -15,20 +15,16 @@
 
 use std::{
     collections::{BTreeMap, VecDeque},
-    error::Error,
-    io,
     sync::mpsc,
     thread,
     time::{Duration, Instant},
 };
 
+use color_eyre::Result;
 use rand::distributions::{Distribution, Uniform};
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    crossterm::{
-        event,
-        terminal::{disable_raw_mode, enable_raw_mode},
-    },
+    backend::Backend,
+    crossterm::event,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
@@ -37,11 +33,33 @@ use ratatui::{
     Frame, Terminal, TerminalOptions, Viewport,
 };
 
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let mut terminal = ratatui::init_with_options(TerminalOptions {
+        viewport: Viewport::Inline(8),
+    });
+
+    let (tx, rx) = mpsc::channel();
+    input_handling(tx.clone());
+    let workers = workers(tx);
+    let mut downloads = downloads();
+
+    for w in &workers {
+        let d = downloads.next(w.id).unwrap();
+        w.tx.send(d).unwrap();
+    }
+
+    let app_result = run(&mut terminal, workers, downloads, rx);
+
+    ratatui::restore();
+
+    app_result
+}
+
 const NUM_DOWNLOADS: usize = 10;
 
 type DownloadId = usize;
 type WorkerId = usize;
-
 enum Event {
     Input(event::KeyEvent),
     Tick,
@@ -49,7 +67,6 @@ enum Event {
     DownloadUpdate(WorkerId, DownloadId, f64),
     DownloadDone(WorkerId, DownloadId),
 }
-
 struct Downloads {
     pending: VecDeque<Download>,
     in_progress: BTreeMap<WorkerId, DownloadInProgress>,
@@ -73,50 +90,18 @@ impl Downloads {
         }
     }
 }
-
 struct DownloadInProgress {
     id: DownloadId,
     started_at: Instant,
     progress: f64,
 }
-
 struct Download {
     id: DownloadId,
     size: usize,
 }
-
 struct Worker {
     id: WorkerId,
     tx: mpsc::Sender<Download>,
-}
-
-fn main() -> Result<(), Box<dyn Error>> {
-    enable_raw_mode()?;
-    let stdout = io::stdout();
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::with_options(
-        backend,
-        TerminalOptions {
-            viewport: Viewport::Inline(8),
-        },
-    )?;
-
-    let (tx, rx) = mpsc::channel();
-    input_handling(tx.clone());
-    let workers = workers(tx);
-    let mut downloads = downloads();
-
-    for w in &workers {
-        let d = downloads.next(w.id).unwrap();
-        w.tx.send(d).unwrap();
-    }
-
-    run(&mut terminal, workers, downloads, rx)?;
-
-    disable_raw_mode()?;
-    terminal.clear()?;
-
-    Ok(())
 }
 
 fn input_handling(tx: mpsc::Sender<Event>) {
@@ -187,7 +172,7 @@ fn run(
     workers: Vec<Worker>,
     mut downloads: Downloads,
     rx: mpsc::Receiver<Event>,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<()> {
     let mut redraw = true;
     loop {
         if redraw {

@@ -23,11 +23,17 @@ mod app;
 mod colors;
 mod destroy;
 mod tabs;
-mod terminal;
 mod theme;
+
+use std::io::stdout;
 
 use app::App;
 use color_eyre::Result;
+use crossterm::{
+    execute,
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen},
+};
+use ratatui::{layout::Rect, TerminalOptions, Viewport};
 
 pub use self::{
     colors::{color_from_oklab, RgbSwatch},
@@ -36,8 +42,13 @@ pub use self::{
 
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let terminal = self::terminal::init();
+    // this size is to match the size of the terminal when running the demo
+    // using vhs in a 1280x640 sized window (github social preview size)
+    let viewport = Viewport::Fixed(Rect::new(0, 0, 81, 18));
+    let terminal = ratatui::init_with_options(TerminalOptions { viewport });
+    execute!(stdout(), EnterAlternateScreen)?;
     let app_result = App::default().run(terminal);
-    self::terminal::restore();
+    execute!(stdout(), LeaveAlternateScreen)?;
+    ratatui::restore();
     app_result
 }

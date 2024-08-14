@@ -7,6 +7,8 @@ use crossterm::{
 
 use crate::{backend::CrosstermBackend, Terminal};
 
+use super::TerminalOptions;
+
 /// A type alias for the default terminal type.
 ///
 /// This is a [`Terminal`] using the [`CrosstermBackend`] which writes to [`Stdout`]. This is a
@@ -16,7 +18,7 @@ pub type DefaultTerminal = Terminal<CrosstermBackend<Stdout>>;
 
 /// Initialize a terminal with reasonable defaults for most applications.
 ///
-/// A new [`DefaultTerminal`] is created and initialized with the following defaults:
+/// This will create a new [`DefaultTerminal`] and initialize it with the following defaults:
 ///
 /// - Backend: [`CrosstermBackend`] writing to [`Stdout`]
 /// - Raw mode is enabled
@@ -54,7 +56,7 @@ pub fn init() -> DefaultTerminal {
 
 /// Try to initialize a terminal using reasonable defaults for most applications.
 ///
-/// This function will attempt to create a [`DefaultTerminal`] initialized with the following
+/// This function will attempt to create a [`DefaultTerminal`] and initialize it with the following
 /// defaults:
 ///
 /// - Raw mode is enabled
@@ -83,6 +85,92 @@ pub fn try_init() -> io::Result<DefaultTerminal> {
     execute!(stdout(), EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout());
     Terminal::new(backend)
+}
+
+/// Initialize a terminal with the given options and reasonable defaults.
+///
+/// This function allows the caller to specify a custom [`Viewport`] via the [`TerminalOptions`]. It
+/// will create a new [`DefaultTerminal`] and initialize it with the given options and the following
+/// defaults:
+///
+/// [`Viewport`]: crate::Viewport
+///
+/// - Raw mode is enabled
+/// - A panic hook is installed that restores the terminal before panicking.
+///
+/// Unlike [`init`], this function does not enter the alternate screen buffer as this may not be
+/// desired in all cases. If you need the alternate screen buffer, you should enable it manually
+/// after calling this function.
+///
+/// For more control over the terminal initialization, use [`Terminal::with_options`].
+///
+/// Ensure that this method is called *after* your app installs any other panic hooks to ensure the
+/// terminal is restored before the other hooks are called.
+///
+/// Generally, use this function instead of [`try_init_with_options`] to ensure that the terminal is
+/// restored correctly if any of the initialization steps fail. If you need to handle the error
+/// yourself, use [`try_init_with_options`] instead.
+///
+/// # Panics
+///
+/// This function will panic if any of the following steps fail:
+///
+/// - Enabling raw mode
+/// - Creating the terminal fails due to being unable to calculate the terminal size
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use ratatui::{Viewport, TerminalOptions};
+///
+/// let options = TerminalOptions {
+///     viewport: Viewport::Inline(5),
+/// };
+/// let terminal = ratatui::init_with_options(options);
+/// ```
+pub fn init_with_options(options: TerminalOptions) -> DefaultTerminal {
+    try_init_with_options(options).expect("failed to initialize terminal")
+}
+
+/// Try to initialize a terminal with the given options and reasonable defaults.
+///
+/// This function allows the caller to specify a custom [`Viewport`] via the [`TerminalOptions`]. It
+/// will attempt to create a [`DefaultTerminal`] and initialize it with the given options and the
+/// following defaults:
+///
+/// - Raw mode is enabled
+/// - A panic hook is installed that restores the terminal before panicking.
+///
+/// Unlike [`try_init`], this function does not enter the alternate screen buffer as this may not be
+/// desired in all cases. If you need the alternate screen buffer, you should enable it manually
+/// after calling this function.
+///
+/// If any of these steps fail, the error is returned.
+///
+/// Ensure that this method is called *after* your app installs any other panic hooks to ensure the
+/// terminal is restored before the other hooks are called.
+///
+/// Generally, you should use [`init_with_options`] instead of this function, as the panic hook
+/// installed by this function will ensure that any failures during initialization will restore the
+/// terminal before panicking. This function is provided for cases where you need to handle the
+/// error yourself.
+///
+/// # Examples
+///
+/// ```no_run
+/// use ratatui::{Viewport, TerminalOptions};
+///
+/// let options = TerminalOptions {
+///     viewport: Viewport::Inline(5),
+/// }}
+/// let terminal = ratatui::try_init_with_options(options)?;
+/// # Ok::<(), std::io::Error>(())
+/// ```
+pub fn try_init_with_options(options: TerminalOptions) -> io::Result<DefaultTerminal> {
+    set_panic_hook();
+    enable_raw_mode()?;
+    let backend = CrosstermBackend::new(stdout());
+    Terminal::with_options(backend, options)
 }
 
 /// Restores the terminal to its original state.

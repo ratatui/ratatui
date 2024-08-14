@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use color_eyre::{eyre::Context, Result};
+use crossterm::event;
 use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
@@ -16,7 +17,7 @@ use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 use crate::{
     destroy,
     tabs::{AboutTab, EmailTab, RecipeTab, TracerouteTab, WeatherTab},
-    terminal, THEME,
+    THEME,
 };
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -78,8 +79,11 @@ impl App {
     /// 1/50th of a second. This was chosen to try to match the default frame rate of a GIF in VHS.
     fn handle_events(&mut self) -> Result<()> {
         let timeout = Duration::from_secs_f64(1.0 / 50.0);
-        match terminal::next_event(timeout)? {
-            Some(Event::Key(key)) if key.kind == KeyEventKind::Press => self.handle_key_press(key),
+        if !event::poll(timeout)? {
+            return Ok(());
+        }
+        match event::read()? {
+            Event::Key(key) if key.kind == KeyEventKind::Press => self.handle_key_press(key),
             _ => {}
         }
         Ok(())
