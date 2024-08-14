@@ -1,4 +1,4 @@
-use std::io::{self, Stdout};
+use std::io;
 
 use crate::{backend::ClearType, prelude::*, CompletedFrame, TerminalOptions, Viewport};
 
@@ -591,65 +591,6 @@ where
         }
 
         Ok(())
-    }
-}
-
-#[cfg(feature = "crossterm")]
-impl Terminal<CrosstermBackend<Stdout>> {
-    /// Initializes the terminal with reasonable defaults for most applications.
-    ///
-    /// The Terminal is initialized with the following settings:
-    ///
-    /// - Stdout as the output
-    /// - Crossterm backend
-    /// - Raw mode enabled
-    /// - Alternate screen buffer enabled
-    /// - A panic hook that restores the terminal before panicking
-    ///
-    /// For more control over the terminal initialization, use [`Terminal::new`] or
-    /// [`Terminal::with_options`].
-    ///
-    /// # Examples
-    ///
-    /// ```rust,no_run
-    /// let terminal = ratatui::Terminal::init()?;
-    /// # std::io::Result::Ok(())
-    /// ```
-    pub fn init() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
-        Self::set_panic_hook();
-        crossterm::terminal::enable_raw_mode()?;
-        crossterm::execute!(std::io::stdout(), crossterm::terminal::EnterAlternateScreen)?;
-        let backend = CrosstermBackend::new(std::io::stdout());
-        Ok(Terminal::new(backend)?)
-    }
-
-    /// Restores the terminal to its original state.
-    ///
-    /// This function should be called before the program exits to ensure that the terminal is
-    /// restored to its original state. This includes disabling raw mode and leaving the alternate
-    /// screen buffer.
-    ///
-    /// # Examples
-    ///
-    /// ```rust,no_run
-    /// ratatui::Terminal::restore()?;
-    /// # std::io::Result::Ok(())
-    /// ```
-    pub fn restore() -> io::Result<()> {
-        crossterm::execute!(std::io::stdout(), crossterm::terminal::LeaveAlternateScreen)?;
-        crossterm::terminal::disable_raw_mode()?;
-        Ok(())
-    }
-
-    /// Sets a panic hook that restores the terminal before panicking.
-    fn set_panic_hook() {
-        let hook = std::panic::take_hook();
-        std::panic::set_hook(Box::new(move |info| {
-            if let Err(err) = Self::restore() {
-                eprintln!("Failed to restore terminal: {err}");
-            }
-            hook(info);
-        }));
     }
 }
 

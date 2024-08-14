@@ -49,17 +49,16 @@ use ratatui::{
     widgets::{
         Block, BorderType, HighlightSpacing, Row, StatefulWidget, Table, TableState, Widget,
     },
+    DefaultTerminal,
 };
-
-use self::terminal::Terminal;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
+    let terminal = ratatui::try_init()?;
     init_octocrab()?;
-    let terminal = terminal::init()?;
     let app_result = App::default().run(terminal).await;
-    terminal::restore();
+    ratatui::restore();
     app_result
 }
 
@@ -84,7 +83,7 @@ struct App {
 impl App {
     const FRAMES_PER_SECOND: f32 = 60.0;
 
-    pub async fn run(mut self, mut terminal: Terminal) -> Result<()> {
+    pub async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         self.pulls.run();
 
         let mut interval =
@@ -100,7 +99,7 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut Terminal) -> Result<()> {
+    fn draw(&self, terminal: &mut DefaultTerminal) -> Result<()> {
         terminal.draw(|frame| {
             let area = frame.area();
             frame.render_widget(
@@ -258,48 +257,5 @@ impl From<&PullRequest> for Row<'_> {
     fn from(pr: &PullRequest) -> Self {
         let pr = pr.clone();
         Row::new(vec![pr.id, pr.title, pr.url])
-    }
-}
-
-mod terminal {
-    use std::io;
-
-    use ratatui::{
-        backend::CrosstermBackend,
-        crossterm::{
-            execute,
-            terminal::{
-                disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-            },
-        },
-    };
-
-    /// A type alias for the terminal type used in this example.
-    pub type Terminal = ratatui::Terminal<CrosstermBackend<io::Stdout>>;
-
-    pub fn init() -> io::Result<Terminal> {
-        set_panic_hook();
-        enable_raw_mode()?;
-        execute!(io::stdout(), EnterAlternateScreen)?;
-        let backend = CrosstermBackend::new(io::stdout());
-        Terminal::new(backend)
-    }
-
-    fn set_panic_hook() {
-        let hook = std::panic::take_hook();
-        std::panic::set_hook(Box::new(move |info| {
-            restore();
-            hook(info);
-        }));
-    }
-
-    /// Restores the terminal to its original state.
-    pub fn restore() {
-        if let Err(err) = disable_raw_mode() {
-            eprintln!("error disabling raw mode: {err}");
-        }
-        if let Err(err) = execute!(io::stdout(), LeaveAlternateScreen) {
-            eprintln!("error leaving alternate screen: {err}");
-        }
     }
 }
