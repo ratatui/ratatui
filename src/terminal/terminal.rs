@@ -506,13 +506,10 @@ where
         let width: usize = self.last_known_area.width.into();
         let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
         if lines_to_draw > 0 {
-            let iter = to_draw.iter().enumerate().map(|(i, c)| {
-                (
-                    (i % (width as usize)) as u16,
-                    y_offset + (i / (width as usize)) as u16,
-                    c,
-                )
-            });
+            let iter = to_draw
+                .iter()
+                .enumerate()
+                .map(|(i, c)| ((i % width) as u16, y_offset + (i / width) as u16, c));
             self.backend.draw(iter)?;
             self.backend.flush()?;
         }
