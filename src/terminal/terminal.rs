@@ -642,7 +642,7 @@ where
             // with the viewport higher on the screen after this function than before it was
             // called.
             //
-            // In order to prove that our choice of `scroll_up` satisifies these constraints, we
+            // In order to prove that our choice of `scroll_up` satisfies these constraints, we
             // make use of two facts:
             //     (A) X <= Z and Y <= Z implies max(X, Y) <= Z for any X, Y, Z
             //     (B) X >= Z or Y >= Z implies max(X, Y) >= Z for any X, Y, Z
