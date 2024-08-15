@@ -522,7 +522,10 @@ where
     /// Scroll the whole screen up by the given number of lines.
     fn scroll_up(&mut self, lines_to_scroll: u16) -> io::Result<()> {
         if lines_to_scroll > 0 {
-            self.set_cursor_position(Position::new(0, self.last_known_area.height.saturating_sub(1)))?;
+            self.set_cursor_position(Position::new(
+                0,
+                self.last_known_area.height.saturating_sub(1),
+            ))?;
             self.backend.append_lines(lines_to_scroll)?;
         }
         Ok(())
@@ -605,7 +608,7 @@ where
             // progress. So we have:
             //
             //     to_draw = min(buffer_height, screen_height)
-            // 
+            //
             // We may need to scroll the screen up to make room to draw. However, we don't want to
             // scroll the screen up too much and end up with the viewport sitting in the middle of
             // the screen. Figuring out exactly how much to scroll by is a little tricky. It turns
@@ -697,11 +700,7 @@ where
             let to_draw = buffer_height.min(screen_height);
             let scroll_up = 0.max(drawn_height + to_draw - screen_height);
             self.scroll_up(scroll_up as u16)?;
-            buffer = self.draw_lines(
-                (drawn_height - scroll_up) as u16,
-                to_draw as u16,
-                buffer,
-            )?;
+            buffer = self.draw_lines((drawn_height - scroll_up) as u16, to_draw as u16, buffer)?;
             drawn_height += to_draw - scroll_up;
             buffer_height -= to_draw;
         }
@@ -709,7 +708,7 @@ where
         // There is now enough room on the screen for whatever remains of the buffer plus the
         // viewport. However, we may still need to scroll up some of the existing text first. It's
         // possible that by this point we've drained the buffer, but we may still need to scroll up
-        // to make room for the viewport. 
+        // to make room for the viewport.
         //
         // We want to scroll up the exact amount that will leave us completely filling the screen.
         // However, it's possible that the viewport didn't start on the bottom of the screen and
