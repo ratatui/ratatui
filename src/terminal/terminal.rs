@@ -1,6 +1,8 @@
 use std::io;
 
-use crate::{backend::ClearType, prelude::*, CompletedFrame, TerminalOptions, Viewport};
+use crate::{
+    backend::ClearType, buffer::Cell, prelude::*, CompletedFrame, TerminalOptions, Viewport,
+};
 
 /// An interface to interact and draw [`Frame`]s on the user's terminal.
 ///
@@ -493,8 +495,41 @@ where
         self.backend.size()
     }
 
+    /// Draw lines at the given vertical offset. The slice of cells must contain enough cells
+    /// for the requested lines. A slice of the unused cells are returned.
+    fn draw_lines<'a>(
+        &mut self,
+        y_offset: u16,
+        lines_to_draw: u16,
+        cells: &'a [Cell],
+    ) -> io::Result<&'a [Cell]> {
+        let width: usize = self.last_known_area.width.into();
+        let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
+        if lines_to_draw > 0 {
+            let iter = to_draw.iter().enumerate().map(|(i, c)| {
+                (
+                    (i % (width as usize)) as u16,
+                    y_offset + (i / (width as usize)) as u16,
+                    c,
+                )
+            });
+            self.backend.draw(iter)?;
+            self.backend.flush()?;
+        }
+        Ok(remainder)
+    }
+
+    /// Scroll the whole screen up by the given number of lines.
+    fn scroll_up(&mut self, lines_to_scroll: u16) -> io::Result<()> {
+        if lines_to_scroll > 0 {
+            self.set_cursor_position(Position::new(0, self.last_known_area.height.saturating_sub(1)))?;
+            self.backend.append_lines(lines_to_scroll)?;
+        }
+        Ok(())
+    }
+
     /// Insert some content before the current inline viewport. This has no effect when the
-    /// viewport is fullscreen.
+    /// viewport is not inline.
     ///
     /// This function scrolls down the current viewport by the given height. The newly freed space
     /// is then made available to the `draw_fn` closure through a writable `Buffer`.
@@ -545,50 +580,165 @@ where
             return Ok(());
         }
 
-        // Clear the viewport off the screen
-        self.clear()?;
-
-        // Move the viewport by height, but don't move it past the bottom of the terminal
-        let viewport_at_bottom = self.last_known_area.bottom() - self.viewport_area.height;
-        self.set_viewport_area(Rect {
-            y: self
-                .viewport_area
-                .y
-                .saturating_add(height)
-                .min(viewport_at_bottom),
-            ..self.viewport_area
-        });
-
-        // Draw contents into buffer
+        // Draw contents to insert into a buffer. The rest of this function is concerned with
+        // drawing this buffer onto the screen.
         let area = Rect {
-            x: self.viewport_area.left(),
+            x: 0,
             y: 0,
             width: self.viewport_area.width,
             height,
         };
         let mut buffer = Buffer::empty(area);
         draw_fn(&mut buffer);
+        let mut buffer = buffer.content.as_slice();
 
-        // Split buffer into screen-sized chunks and draw
-        let max_chunk_size = (self.viewport_area.top() as usize) * (area.width as usize);
-        for buffer_content_chunk in buffer.content.chunks(max_chunk_size) {
-            let chunk_size = (buffer_content_chunk.len() / (area.width as usize)) as u16;
+        // Use i32 variables so we don't have worry about overflowed u16s when adding, or about
+        // negative results when subtracting.
+        let mut drawn_height: i32 = self.viewport_area.top().into();
+        let mut buffer_height: i32 = height.into();
+        let viewport_height: i32 = self.viewport_area.height.into();
+        let screen_height: i32 = self.last_known_area.height.into();
 
-            self.backend
-                .append_lines(self.viewport_area.height.saturating_sub(1) + chunk_size)?;
+        while buffer_height + viewport_height > screen_height {
+            // There isn't enough room on the screen for the whole buffer and the viewport. We will
+            // draw as much of the buffer as possible on this iteration in order to make forward
+            // progress. So we have:
+            //
+            //     to_draw = min(buffer_height, screen_height)
+            // 
+            // We may need to scroll the screen up to make room to draw. However, we don't want to
+            // scroll the screen up too much and end up with the viewport sitting in the middle of
+            // the screen. Figuring out exactly how much to scroll by is a little tricky. It turns
+            // out to be:
+            //
+            //     scroll_up = max(0, drawn_height + to_draw - screen_height)
+            //
+            // The second term of the max makes sense intuitively: We want to scroll up enough so
+            // that, after drawing, we have use the whole screen. This is easiest to see when
+            // we're drawing a whole screen's worth from the buffer. Things get tricky when
+            // `buffer_height` is less than `screen_height`.
+            //
+            // We choose `scroll_up` so that satisfies four different constraints:
+            //     (1) scroll_up >= 0
+            //     (2) scroll_up <= drawn_height
+            //     (3) drawn_height - scroll_up + to_draw <= screen_height
+            //     or, equivalently:
+            //         scroll_up >= drawn_height + to_draw - screen_height
+            //     (4) drawn_height - scroll_up + to_draw >= screen_height - viewport_height
+            //     or, equivalently:
+            //         scroll_up <= drawn_height + to_draw - screen_height + viewport_height
+            //
+            // (1) says that we don't want to scroll down. That should never be necessary when
+            // inserting data before the inline viewport.
+            //
+            // (2) says that we shouldn't scroll off more data than is currently on the screen. If
+            // we were to do this, we'd end up with blank lines in the scrollback.
+            //
+            // (3) says that after we scroll, we need to have enough room to draw `to_draw` lines
+            // on the screen.
+            //
+            // (4) says that we don't want to end drawing with a gap of more than `viewport_height`
+            // size at the bottom of the screen. If we didn't have this constraint, we could end up
+            // with the viewport higher on the screen after this function than before it was
+            // called.
+            //
+            // In order to prove that our choice of `scroll_up` satisifies these constraints, we
+            // make use of two facts:
+            //     (A) X <= Z and Y <= Z implies max(X, Y) <= Z for any X, Y, Z
+            //     (B) X >= Z or Y >= Z implies max(X, Y) >= Z for any X, Y, Z
+            // In our case, since scroll_up = max(0, drawn_height + to_draw - screen_height), we
+            // use these variable assignments:
+            //     X = 0
+            //     Y = drawn_height + to_draw - screen_height
+            //
+            // (1) is satisfied because (using fact (B)):
+            //     X = 0 >= 0
+            //
+            // (2) is satisfied because (using fact (A)):
+            //     X = 0 <= drawn_height
+            //     and
+            //     Y = drawn_height + to_draw - screen_height
+            //     where
+            //     to_draw = min(buffer_height, screen_height)
+            //         <= screen_height
+            //     combined, implies
+            //     Y <= drawn_height + screen_height - screen_height
+            //         = drawn_height
+            //
+            // (3) is satisfied because (using fact (B)):
+            //     Y = drawn_height + to_draw - screen_height
+            //         >= drawn_height + to_draw - screen_height
+            //
+            // (4) is satistfied because (using fact (A)):
+            //     First we show for X:
+            //         Either (a) buffer_height >= screen_height or
+            //         (b) buffer_height < screen_height.
+            //         If (a):
+            //             to_draw = min(buffer_height, screen_height) = screen_height
+            //             implies
+            //             drawn_height + to_draw - screen_height + viewport_height
+            //                 = drawn_height + screen_height - screen_height + viewport_height
+            //                 = drawn_height + viewport_height >= 0 = X
+            //         If (b):
+            //             to_draw = min(buffer_height, screen_height) = buffer_height
+            //         And the loop invariant tells us:
+            //             buffer_height + viewport_height > screen_height
+            //         So
+            //             drawn_height + to_draw - screen_height + viewport_height
+            //                 = drawn_height + buffer_height - screen_height + viewport_height
+            //                 = drawn_height - screen_height + buffer_height + viewport_height
+            //                 > drawn_height - screen_height + screen_height
+            //                 = drawn_height
+            //                 >= 0 = X
+            //     Now we show for Y:
+            //         Y = drawn_height + to_draw - screen_height
+            //             <= drawn_height + to_draw - screen_height + viewport_height
 
-            let iter = buffer_content_chunk.iter().enumerate().map(|(i, c)| {
-                let (x, y) = buffer.pos_of(i);
-                (
-                    x,
-                    self.viewport_area.top().saturating_sub(chunk_size) + y,
-                    c,
-                )
-            });
-            self.backend.draw(iter)?;
-            self.backend.flush()?;
-            self.set_cursor_position(self.viewport_area.as_position())?;
+            let to_draw = buffer_height.min(screen_height);
+            let scroll_up = 0.max(drawn_height + to_draw - screen_height);
+            self.scroll_up(scroll_up as u16)?;
+            buffer = self.draw_lines(
+                (drawn_height - scroll_up) as u16,
+                to_draw as u16,
+                buffer,
+            )?;
+            drawn_height += to_draw - scroll_up;
+            buffer_height -= to_draw;
         }
+
+        // There is now enough room on the screen for whatever remains of the buffer plus the
+        // viewport. However, we may still need to scroll up some of the existing text first. It's
+        // possible that by this point we've drained the buffer, but we may still need to scroll up
+        // to make room for the viewport. 
+        //
+        // We want to scroll up the exact amount that will leave us completely filling the screen.
+        // However, it's possible that the viewport didn't start on the bottom of the screen and
+        // the added lines weren't enough to push it all the way to the bottom. We deal with this
+        // case by just ensuring that our scroll amount is non-negative.
+        //
+        // We want:
+        //   screen_height = drawn_height - scroll_up + buffer_height + viewport_height
+        // Or, equivalently:
+        //   scroll_up = drawn_height + buffer_height + viewport_height - screen_height
+        let scroll_up = 0.max(drawn_height + buffer_height + viewport_height - screen_height);
+        self.scroll_up(scroll_up as u16)?;
+        self.draw_lines(
+            (drawn_height - scroll_up) as u16,
+            buffer_height as u16,
+            buffer,
+        )?;
+        drawn_height += buffer_height - scroll_up;
+
+        self.set_viewport_area(Rect {
+            y: drawn_height as u16,
+            ..self.viewport_area
+        });
+
+        // Clear the viewport off the screen. We didn't clear earlier for two reasons. First, it
+        // wasn't necessary because the buffer we drew out of isn't sparse, so it overwrote
+        // whatever was on the screen. Second, there is a weird bug with tmux where a full screen
+        // clear plus immediate scrolling causes some garbage to go into the scrollback.
+        self.clear()?;
 
         Ok(())
     }
