@@ -3,7 +3,7 @@
 
 use std::{
     fmt::{self, Write},
-    io,
+    io, iter,
 };
 
 use unicode_width::UnicodeWidthStr;
@@ -35,6 +35,7 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TestBackend {
     buffer: Buffer,
+    scrollback: Buffer,
     cursor: bool,
     pos: (u16, u16),
 }
@@ -73,6 +74,7 @@ impl TestBackend {
     pub fn new(width: u16, height: u16) -> Self {
         Self {
             buffer: Buffer::empty(Rect::new(0, 0, width, height)),
+            scrollback: Buffer::empty(Rect::new(0, 0, width, 0)),
             cursor: false,
             pos: (0, 0),
         }
@@ -83,9 +85,17 @@ impl TestBackend {
         &self.buffer
     }
 
+    /// Returns a reference to the internal scrollback buffer of the `TestBackend`.
+    pub const fn scrollback(&self) -> &Buffer {
+        &self.scrollback
+    }
+
     /// Resizes the `TestBackend` to the specified width and height.
     pub fn resize(&mut self, width: u16, height: u16) {
         self.buffer.resize(Rect::new(0, 0, width, height));
+        let scrollback_height = self.scrollback.area.height;
+        self.scrollback
+            .resize(Rect::new(0, 0, width, scrollback_height));
     }
 
     /// Asserts that the `TestBackend`'s buffer is equal to the expected buffer.
@@ -102,6 +112,38 @@ impl TestBackend {
         crate::assert_buffer_eq!(&self.buffer, expected);
     }
 
+    /// Asserts that the `TestBackend`'s scrollback buffer is equal to the expected buffer.
+    ///
+    /// This is a shortcut for `assert_eq!(self.scrollback(), &expected)`.
+    ///
+    /// # Panics
+    /// When they are not equal, a panic occurs with a detailed error message showing the
+    /// differences between the expected and actual buffers.
+    #[allow(deprecated)]
+    #[track_caller]
+    pub fn assert_scrollback(&self, expected: &Buffer) {
+        // TODO: use assert_eq!()
+        crate::assert_buffer_eq!(&self.scrollback, expected);
+    }
+
+    /// Asserts that the `TestBackend`'s scrollback buffer is empty, but also has the given width.
+    ///
+    /// # Panics
+    /// When the scrollback buffer is not equal, a panic occurs with a detailed error message
+    /// showing the differences between the expected and actual buffers.
+    pub fn assert_empty_scrollback(&self, width: u16) {
+        let expected = Buffer {
+            area: Rect {
+                x: 0,
+                y: 0,
+                width,
+                height: 0,
+            },
+            content: vec![],
+        };
+        self.assert_scrollback(&expected);
+    }
+
     /// Asserts that the `TestBackend`'s buffer is equal to the expected lines.
     ///
     /// This is a shortcut for `assert_eq!(self.buffer(), &Buffer::with_lines(expected))`.
@@ -116,6 +158,22 @@ impl TestBackend {
         Lines::Item: Into<crate::text::Line<'line>>,
     {
         self.assert_buffer(&Buffer::with_lines(expected));
+    }
+
+    /// Asserts that the `TestBackend`'s scrollback buffer is equal to the expected lines.
+    ///
+    /// This is a shortcut for `assert_eq!(self.scrollback(), &Buffer::with_lines(expected))`.
+    ///
+    /// # Panics
+    /// When they are not equal, a panic occurs with a detailed error message showing the
+    /// differences between the expected and actual buffers.
+    #[track_caller]
+    pub fn assert_scrollback_lines<'line, Lines>(&self, expected: Lines)
+    where
+        Lines: IntoIterator,
+        Lines::Item: Into<crate::text::Line<'line>>,
+    {
+        self.assert_scrollback(&Buffer::with_lines(expected));
     }
 
     /// Asserts that the `TestBackend`'s cursor position is equal to the expected one.
@@ -224,16 +282,36 @@ impl Backend for TestBackend {
 
         let max_y = height.saturating_sub(1);
         let lines_after_cursor = max_y.saturating_sub(cur_y);
-        if n > lines_after_cursor {
-            let rotate_by = n.saturating_sub(lines_after_cursor).min(max_y);
 
-            if rotate_by == height - 1 {
-                self.clear()?;
+        if n > lines_after_cursor {
+            // We need to insert blank lines at the bottom and scroll the lines from the top into
+            // scrollback.
+            let scroll_by: usize = (n - lines_after_cursor).into();
+            let width: usize = self.buffer.area.width.into();
+            let to_drain = self.buffer.content.len().min(width * scroll_by);
+
+            self.scrollback
+                .content
+                .extend(self.buffer.content.drain(0..to_drain));
+            if width * scroll_by > to_drain {
+                self.scrollback
+                    .content
+                    .extend(iter::repeat(Cell::EMPTY).take(width * scroll_by - to_drain));
             }
 
-            self.set_cursor_position(Position { x: 0, y: rotate_by })?;
-            self.clear_region(ClearType::BeforeCursor)?;
-            self.buffer.content.rotate_left((width * rotate_by).into());
+            let new_scrollback_height = self.scrollback.area.height as usize + scroll_by;
+            if new_scrollback_height <= u16::MAX as usize {
+                self.scrollback.area.height = new_scrollback_height as u16;
+            } else {
+                self.scrollback
+                    .content
+                    .drain(0..width * (new_scrollback_height - u16::MAX as usize));
+                self.scrollback.area.height = u16::MAX;
+            }
+
+            self.buffer
+                .content
+                .extend(iter::repeat(Cell::EMPTY).take(to_drain));
         }
 
         let new_cursor_y = cur_y.saturating_add(n).min(max_y);
@@ -273,6 +351,7 @@ mod tests {
             TestBackend::new(10, 2),
             TestBackend {
                 buffer: Buffer::with_lines(["          "; 2]),
+                scrollback: Buffer::empty(Rect::new(0, 0, 10, 0)),
                 cursor: false,
                 pos: (0, 0),
             }
@@ -321,6 +400,13 @@ mod tests {
     fn assert_buffer_panics() {
         let backend = TestBackend::new(10, 2);
         backend.assert_buffer_lines(["aaaaaaaaaa"; 2]);
+    }
+
+    #[test]
+    #[should_panic = "buffer areas not equal"]
+    fn assert_scrollback_panics() {
+        let backend = TestBackend::new(10, 2);
+        backend.assert_scrollback_lines(["aaaaaaaaaa"; 2]);
     }
 
     #[test]
@@ -536,6 +622,7 @@ mod tests {
             "dddddddddd",
             "eeeeeeeeee",
         ]);
+        backend.assert_empty_scrollback(10);
     }
 
     #[test]
@@ -557,13 +644,14 @@ mod tests {
 
         backend.append_lines(1).unwrap();
 
-        backend.buffer = Buffer::with_lines([
+        backend.assert_buffer_lines([
             "bbbbbbbbbb",
             "cccccccccc",
             "dddddddddd",
             "eeeeeeeeee",
             "          ",
         ]);
+        backend.assert_scrollback_lines(["aaaaaaaaaa"]);
 
         // It also moves the cursor to the right, as is common of the behaviour of
         // terminals in raw-mode
@@ -597,6 +685,7 @@ mod tests {
             "dddddddddd",
             "eeeeeeeeee",
         ]);
+        backend.assert_empty_scrollback(10);
     }
 
     #[test]
@@ -624,6 +713,7 @@ mod tests {
             "          ",
             "          ",
         ]);
+        backend.assert_scrollback_lines(["aaaaaaaaaa", "bbbbbbbbbb"]);
     }
 
     #[test]
@@ -651,6 +741,13 @@ mod tests {
             "          ",
             "          ",
         ]);
+        backend.assert_scrollback_lines([
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
     }
 
     #[test]
@@ -676,6 +773,118 @@ mod tests {
             "eeeeeeeeee",
             "          ",
         ]);
+        backend.assert_scrollback_lines(["aaaaaaaaaa"]);
+    }
+
+    #[test]
+    fn append_multiple_lines_where_cursor_at_end_appends_more_than_height_lines() {
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::with_lines([
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+        ]);
+
+        backend
+            .set_cursor_position(Position { x: 0, y: 4 })
+            .unwrap();
+
+        backend.append_lines(8).unwrap();
+        backend.assert_cursor_position(Position { x: 1, y: 4 });
+
+        backend.assert_buffer_lines([
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+        ]);
+        backend.assert_scrollback_lines([
+            "aaaaaaaaaa",
+            "bbbbbbbbbb",
+            "cccccccccc",
+            "dddddddddd",
+            "eeeeeeeeee",
+            "          ",
+            "          ",
+            "          ",
+        ]);
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn append_u16_max_plus_10_lines() {
+        let mut backend = TestBackend::new(10, 5);
+        backend.buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
+
+        for i in 0..65546 {
+            let cells = format!("{i:>10}")
+                .drain(..)
+                .map(|c| {
+                    let mut cell = Cell::EMPTY;
+                    cell.set_char(c);
+                    cell
+                })
+                .collect::<Vec<_>>();
+            if i > 4 {
+                backend
+                    .set_cursor_position(Position { x: 0, y: 4 })
+                    .unwrap();
+                backend.append_lines(1).unwrap();
+            }
+            backend
+                .draw(
+                    cells
+                        .iter()
+                        .enumerate()
+                        .map(|(j, c)| (j as u16, 4.min(i) as u16, c)),
+                )
+                .unwrap();
+        }
+
+        backend.assert_buffer_lines([
+            "     65541",
+            "     65542",
+            "     65543",
+            "     65544",
+            "     65545",
+        ]);
+
+        // Make sure the scrollback is the right size.
+        assert_eq!(backend.scrollback.area.width, 10);
+        assert_eq!(backend.scrollback.area.height, 65535);
+        assert_eq!(backend.scrollback.content.len(), 10 * 65535);
+
+        // Compare the first 5 lines of the scrollback.
+        let mut scrollback_top = Buffer::empty(Rect::new(0, 0, 10, 5));
+        scrollback_top.content[0..10 * 5].clone_from_slice(&backend.scrollback.content[0..10 * 5]);
+        crate::assert_buffer_eq!(
+            &scrollback_top,
+            &Buffer::with_lines([
+                "         6",
+                "         7",
+                "         8",
+                "         9",
+                "        10",
+            ])
+        );
+
+        // Compare the last 5 lines of the scrollback.
+        let mut scrollback_bottom = Buffer::empty(Rect::new(0, 0, 10, 5));
+        scrollback_bottom.content[0..10 * 5]
+            .clone_from_slice(&backend.scrollback.content[10 * 65530..10 * 65535]);
+        crate::assert_buffer_eq!(
+            &scrollback_bottom,
+            &Buffer::with_lines([
+                "     65536",
+                "     65537",
+                "     65538",
+                "     65539",
+                "     65540",
+            ])
+        );
     }
 
     #[test]
