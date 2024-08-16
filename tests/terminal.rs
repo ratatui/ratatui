@@ -110,6 +110,7 @@ fn terminal_insert_before_moves_viewport() -> Result<(), Box<dyn Error>> {
         "                    ",
         "                    ",
     ]);
+    terminal.backend().assert_empty_scrollback(20);
 
     Ok(())
 }
@@ -152,6 +153,9 @@ fn terminal_insert_before_scrolls_on_large_input() -> Result<(), Box<dyn Error>>
         "------ Line 5 ------",
         "[---- Viewport ----]",
     ]);
+    terminal
+        .backend()
+        .assert_scrollback_lines(["------ Line 1 ------"]);
 
     Ok(())
 }
@@ -204,6 +208,9 @@ fn terminal_insert_before_scrolls_on_many_inserts() -> Result<(), Box<dyn Error>
         "------ Line 5 ------",
         "[---- Viewport ----]",
     ]);
+    terminal
+        .backend()
+        .assert_scrollback_lines(["------ Line 1 ------"]);
 
     Ok(())
 }
