@@ -300,7 +300,7 @@ impl Backend for TestBackend {
             }
 
             let new_scrollback_height = self.scrollback.area.height as usize + scroll_by;
-            if new_scrollback_height <= u16::MAX as usize {
+            if u16::try_from(new_scrollback_height).is_ok() {
                 self.scrollback.area.height = new_scrollback_height as u16;
             } else {
                 self.scrollback
