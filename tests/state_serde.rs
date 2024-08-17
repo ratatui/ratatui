@@ -35,7 +35,7 @@ impl Default for AppState {
 impl AppState {
     fn select(&mut self, index: usize) {
         self.list.select(Some(index));
-        self.table.select(Some(index));
+        self.table.select_cell(Some((index, index)));
         self.scrollbar = self.scrollbar.position(index);
     }
 }
@@ -98,7 +98,8 @@ const DEFAULT_STATE_REPR: &str = r#"{
   },
   "table": {
     "offset": 0,
-    "selected": null
+    "selected": null,
+    "selected_column": null
   },
   "scrollbar": {
     "content_length": 10,
@@ -135,7 +136,8 @@ const SELECTED_STATE_REPR: &str = r#"{
   },
   "table": {
     "offset": 0,
-    "selected": 1
+    "selected": 1,
+    "selected_column": 0
   },
   "scrollbar": {
     "content_length": 10,
@@ -174,7 +176,8 @@ const SCROLLED_STATE_REPR: &str = r#"{
   },
   "table": {
     "offset": 4,
-    "selected": 8
+    "selected": 8,
+    "selected_column": 0
   },
   "scrollbar": {
     "content_length": 10,
@@ -196,4 +199,24 @@ fn scrolled_state_serialize() {
 fn scrolled_state_deserialize() {
     let mut state: AppState = serde_json::from_str(SCROLLED_STATE_REPR).unwrap();
     assert_buffer(&mut state, SCROLLED_STATE_BUFFER);
+}
+
+// For backwards compatibility these fields should be enough to deserialize the state.
+const OLD_TABLE_DESERIALIZE: &str = r#"{
+    "offset": 0,
+    "selected": 1
+}"#;
+
+const NEW_TABLE_DESERIALIZE: &str = r#"{
+    "offset": 0,
+    "selected": 1,
+    "selected_column": null
+}"#;
+
+// This test is to check for backwards compatibility with the old states.
+#[test]
+fn table_state_backwards_compatibility() {
+    let old_state: TableState = serde_json::from_str(OLD_TABLE_DESERIALIZE).unwrap();
+    let new_state: TableState = serde_json::from_str(NEW_TABLE_DESERIALIZE).unwrap();
+    assert_eq!(old_state, new_state);
 }
