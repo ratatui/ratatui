@@ -1,10 +1,9 @@
 #![allow(clippy::unreadable_literal)]
 
+#[cfg(feature = "palette")]
 mod hsluv;
 
 use std::{fmt, str::FromStr};
-
-use hsluv::hsluv_to_rgb;
 
 /// ANSI Color
 ///
@@ -396,16 +395,16 @@ impl Color {
     }
 
     /// Converts a `HSLuv` representation to a `Color::Rgb` instance.
-    /// 
+    ///
     /// The `from_hsluv` function converts the Hue, Saturation and Lightness values to a
     /// corresponding `Color` RGB equivalent.
-    /// 
+    ///
     /// Hue values should be in the range [0, 360].
     /// Saturation and L values should be in the range [0, 100].
     /// Values that are not in the range are clamped to be within the range.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use ratatui::prelude::*;
     ///
@@ -415,8 +414,9 @@ impl Color {
     /// let color: Color = Color::from_hsluv(0.0, 0.0, 0.0);
     /// assert_eq!(color, Color::Rgb(0, 0, 0));
     /// ```
+    #[cfg(feature = "palette")]
     pub fn from_hsluv(h: f64, s: f64, l: f64) -> Self {
-        let (red, green, blue) = hsluv_to_rgb(h, s, l);
+        let (red, green, blue) = hsluv::hsluv_to_rgb(h, s, l);
 
         scale_rgb(red, green, blue)
     }
@@ -539,6 +539,7 @@ mod tests {
         assert_eq!(color, Color::Rgb(0, 0, 0));
     }
 
+    #[cfg(feature = "palette")]
     #[test]
     fn test_hsluv_to_rgb() {
         // Test with valid HSLuv values
