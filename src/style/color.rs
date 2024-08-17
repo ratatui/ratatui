@@ -471,7 +471,8 @@ fn normalized_hsl_to_rgb(hue: f64, saturation: f64, lightness: f64) -> Color {
     scale_rgb(red, green, blue)
 }
 
-/// Helper function to scale RGB components to the range \[0, 255\] and create a `Color::Rgb` instance
+/// Helper function to scale RGB components to the range \[0, 255\] and create a `Color::Rgb`
+/// instance
 fn scale_rgb(r: f64, g: f64, b: f64) -> Color {
     Color::Rgb(
         (r * 255.0).round() as u8,
