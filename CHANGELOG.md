@@ -451,7 +451,7 @@ improved performance. Also, we added brand new examples for tracing and creating
 
   ```text
   This PR deprecates `gauge_style` in favor of `filled_style` and
-  `unfilled_style` which can have it's foreground and background styled.
+  `unfilled_style` which can have its foreground and background styled.
 
   `cargo run --example=line_gauge --features=crossterm`
   ```
@@ -1292,7 +1292,7 @@ This is a patch release that fixes bugs and adds enhancements, including new ite
   anything that can be a breaking change.
 
   Lints are not enabled as that should be the job of #974. I created this
-  as a separate PR as its mostly independent and would only clutter up the
+  as a separate PR as it's mostly independent and would only clutter up the
   diff of #974 even more.
 
   Also see
@@ -1362,7 +1362,7 @@ compilation.
   *(uncategorized)* Remove literal suffix by @EdJoPaTo
 
   ````text
-  its not needed and can just be assumed
+  it's not needed and can just be assumed
   ````
 
   related:clippy::(un)separated_literal_suffix
