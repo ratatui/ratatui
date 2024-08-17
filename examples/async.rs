@@ -247,7 +247,7 @@ impl Widget for &PullRequestsWidget {
             .block(block)
             .highlight_spacing(HighlightSpacing::Always)
             .highlight_symbol(">>")
-            .highlight_style(Modifier::REVERSED);
+            .row_highlight_style(Modifier::REVERSED);
         let mut table_state = TableState::new().with_selected(self.selected_index);
 
         StatefulWidget::render(table, area, buf, &mut table_state);
