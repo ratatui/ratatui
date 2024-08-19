@@ -198,6 +198,32 @@ impl fmt::Display for TestBackend {
     }
 }
 
+/// Append the provided cells to the bottom of a scrollback buffer. The number of cells must be a
+/// multiple of the buffer's width. If the scrollback buffer ends up larger than 65535 lines tall,
+/// then lines will be removed from the top to get it down to size.
+fn append_to_scrollback(scrollback: &mut Buffer, cells: impl IntoIterator<Item = Cell>) {
+    let width = scrollback.area.width as usize;
+    let len_before = scrollback.content.len();
+    scrollback.content.extend(cells);
+    let cells_appended = scrollback.content.len() - len_before;
+    let lines_appended = cells_appended / width;
+    assert_eq!(
+        cells_appended,
+        lines_appended * width,
+        "count of appended cells not a multiple of scrollback buffer width"
+    );
+
+    let new_scrollback_height = scrollback.area.height as usize + lines_appended as usize;
+    if u16::try_from(new_scrollback_height).is_ok() {
+        scrollback.area.height = new_scrollback_height as u16;
+    } else {
+        scrollback
+            .content
+            .drain(0..width * (new_scrollback_height - u16::MAX as usize));
+        scrollback.area.height = u16::MAX;
+    }
+}
+
 impl Backend for TestBackend {
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
@@ -288,30 +314,20 @@ impl Backend for TestBackend {
             // scrollback.
             let scroll_by: usize = (n - lines_after_cursor).into();
             let width: usize = self.buffer.area.width.into();
-            let to_drain = self.buffer.content.len().min(width * scroll_by);
+            let to_splice = self.buffer.content.len().min(width * scroll_by);
 
-            self.scrollback
-                .content
-                .extend(self.buffer.content.drain(0..to_drain));
-            if width * scroll_by > to_drain {
-                self.scrollback
-                    .content
-                    .extend(iter::repeat(Cell::EMPTY).take(width * scroll_by - to_drain));
-            }
-
-            let new_scrollback_height = self.scrollback.area.height as usize + scroll_by;
-            if u16::try_from(new_scrollback_height).is_ok() {
-                self.scrollback.area.height = new_scrollback_height as u16;
-            } else {
-                self.scrollback
-                    .content
-                    .drain(0..width * (new_scrollback_height - u16::MAX as usize));
-                self.scrollback.area.height = u16::MAX;
-            }
-
-            self.buffer
-                .content
-                .extend(iter::repeat(Cell::EMPTY).take(to_drain));
+            append_to_scrollback(
+                &mut self.scrollback,
+                self.buffer.content.splice(
+                    0..to_splice,
+                    iter::repeat_with(Default::default).take(to_splice),
+                ),
+            );
+            self.buffer.content.rotate_left(to_splice);
+            append_to_scrollback(
+                &mut self.scrollback,
+                iter::repeat_with(Default::default).take(width * scroll_by - to_splice),
+            );
         }
 
         let new_cursor_y = cur_y.saturating_add(n).min(max_y);
