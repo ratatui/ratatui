@@ -213,7 +213,7 @@ fn append_to_scrollback(scrollback: &mut Buffer, cells: impl IntoIterator<Item =
         "count of appended cells not a multiple of scrollback buffer width"
     );
 
-    let new_scrollback_height = scrollback.area.height as usize + lines_appended as usize;
+    let new_scrollback_height = scrollback.area.height as usize + lines_appended;
     if u16::try_from(new_scrollback_height).is_ok() {
         scrollback.area.height = new_scrollback_height as u16;
     } else {
