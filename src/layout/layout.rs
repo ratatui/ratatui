@@ -7,6 +7,7 @@ use cassowary::{
 };
 use itertools::Itertools;
 use lru::LruCache;
+use smallvec::SmallVec;
 
 use self::strengths::{
     ALL_SEGMENT_GROW, FILL_GROW, GROW, LENGTH_SIZE_EQ, MAX_SIZE_EQ, MAX_SIZE_LE, MIN_SIZE_EQ,
@@ -111,7 +112,7 @@ thread_local! {
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,
-    constraints: Vec<Constraint>,
+    constraints: SmallVec<Constraint, 5>,
     margin: Margin,
     flex: Flex,
     spacing: u16,
@@ -1059,6 +1060,8 @@ mod strengths {
 
 #[cfg(test)]
 mod tests {
+    use smallvec::smallvec;
+
     use super::*;
 
     #[test]
@@ -1099,7 +1102,7 @@ mod tests {
             Layout {
                 direction: Direction::Vertical,
                 margin: Margin::new(0, 0),
-                constraints: vec![],
+                constraints: SmallVec::new(),
                 flex: Flex::default(),
                 spacing: 0,
             }
@@ -1144,7 +1147,7 @@ mod tests {
             Layout {
                 direction: Direction::Vertical,
                 margin: Margin::new(0, 0),
-                constraints: vec![Constraint::Min(0)],
+                constraints: smallvec![Constraint::Min(0)],
                 flex: Flex::default(),
                 spacing: 0,
             }
@@ -1158,7 +1161,7 @@ mod tests {
             Layout {
                 direction: Direction::Horizontal,
                 margin: Margin::new(0, 0),
-                constraints: vec![Constraint::Min(0)],
+                constraints: smallvec![Constraint::Min(0)],
                 flex: Flex::default(),
                 spacing: 0,
             }

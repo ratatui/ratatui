@@ -4,6 +4,7 @@ avoid-breaking-exported-api = false
 # ratatui -> bitflags v2.3
 # termwiz -> wezterm-blob-leases -> mac_address -> nix -> bitflags v1.3.2
 # crossterm -> all the windows- deps https://github.com/ratatui-org/ratatui/pull/1064#issuecomment-2078848980
+# crossterm -> parking_lot -> parking_lot_core -> smallvec v1.13.2
 allowed-duplicate-crates = [
     "bitflags",
     "windows-targets",
@@ -14,4 +15,5 @@ allowed-duplicate-crates = [
     "windows_x86_64_gnu",
     "windows_x86_64_gnullvm",
     "windows_x86_64_msvc",
+    "smallvec",
 ]
