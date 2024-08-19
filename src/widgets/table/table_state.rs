@@ -548,6 +548,13 @@ mod tests {
     }
 
     #[test]
+    fn with_selected_cell_none() {
+        let state = TableState::new().with_selected_cell(None);
+        assert_eq!(state.selected, None);
+        assert_eq!(state.selected_column, None);
+    }
+
+    #[test]
     fn offset() {
         let state = TableState::new();
         assert_eq!(state.offset(), 0);
