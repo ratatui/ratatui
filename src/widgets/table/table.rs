@@ -1109,10 +1109,32 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn highlight_style() {
+        let style = Style::default().red().italic();
+        let table = Table::default().highlight_style(style);
+        assert_eq!(table.row_highlight_style, style);
+    }
+
+    #[test]
+    fn row_highlight_style() {
         let style = Style::default().red().italic();
         let table = Table::default().row_highlight_style(style);
         assert_eq!(table.row_highlight_style, style);
+    }
+
+    #[test]
+    fn column_highlight_style() {
+        let style = Style::default().red().italic();
+        let table = Table::default().column_highlight_style(style);
+        assert_eq!(table.column_highlight_style, style);
+    }
+
+    #[test]
+    fn cell_highlight_style() {
+        let style = Style::default().red().italic();
+        let table = Table::default().cell_highlight_style(style);
+        assert_eq!(table.cell_highlight_style, style);
     }
 
     #[test]
