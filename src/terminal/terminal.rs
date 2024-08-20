@@ -614,7 +614,7 @@ where
             //     scroll_up = max(0, drawn_height + to_draw - screen_height)
             //
             // The second term of the max makes sense intuitively: We want to scroll up enough so
-            // that, after drawing, we have use the whole screen. This is easiest to see when
+            // that, after drawing, we have used the whole screen. This is easiest to see when
             // we're drawing a whole screen's worth from the buffer. Things get tricky when
             // `buffer_height` is less than `screen_height`.
             //
