@@ -2150,45 +2150,44 @@ mod tests {
         );
     }
 
-    fn empty_row() -> Row<'static> {
-        Row::new(Vec::<Cell>::new())
-    }
-
     #[rstest]
-    #[case::no_columns(empty_row(), vec![], empty_row(), 0)]
-    #[case::only_header(Row::new(vec!["H1", "H2"]), vec![], empty_row(), 2)]
+    #[case::no_columns(vec![], vec![], vec![], 0)]
+    #[case::only_header(vec!["H1", "H2"], vec![], vec![], 2)]
     #[case::only_rows(
-        empty_row(),
-        vec![Row::new(vec!["C1", "C2"]), Row::new(vec!["C1", "C2", "C3"])],
-        empty_row(),
+        vec![],
+        vec![vec!["C1", "C2"], vec!["C1", "C2", "C3"]],
+        vec![],
         3
     )]
-    #[case::only_footer(empty_row(), vec![], Row::new(vec!["F1", "F2", "F3", "F4"]), 4)]
+    #[case::only_footer(vec![], vec![], vec!["F1", "F2", "F3", "F4"], 4)]
     #[case::rows_longer(
-        Row::new(vec!["H1", "H2", "H3", "H4"]),
-        vec![Row::new(vec!["C1", "C2"]), Row::new(vec!["C1", "C2", "C3"])],
-        Row::new(vec!["F1", "F2"]),
+        vec!["H1", "H2", "H3", "H4"],
+        vec![vec!["C1", "C2"],vec!["C1", "C2", "C3"]],
+        vec!["F1", "F2"],
         4
     )]
     #[case::rows_longer(
-        Row::new(vec!["H1", "H2"]),
-        vec![Row::new(vec!["C1", "C2"]), Row::new(vec!["C1", "C2", "C3", "C4"])],
-        Row::new(vec!["F1", "F2"]),
+        vec!["H1", "H2"],
+        vec![vec!["C1", "C2"], vec!["C1", "C2", "C3", "C4"]],
+        vec!["F1", "F2"],
         4
     )]
     #[case::footer_longer(
-        Row::new(vec!["H1", "H2"]),
-        vec![Row::new(vec!["C1", "C2"]), Row::new(vec!["C1", "C2", "C3"])],
-        Row::new(vec!["F1", "F2", "F3", "F4"]),
+        vec!["H1", "H2"],
+        vec![vec!["C1", "C2"], vec!["C1", "C2", "C3"]],
+        vec!["F1", "F2", "F3", "F4"],
         4
     )]
 
     fn column_count(
-        #[case] header: Row,
-        #[case] rows: Vec<Row>,
-        #[case] footer: Row,
+        #[case] header: Vec<&str>,
+        #[case] rows: Vec<Vec<&str>>,
+        #[case] footer: Vec<&str>,
         #[case] expected: usize,
     ) {
+        let header = Row::new(header);
+        let footer = Row::new(footer);
+        let rows: Vec<Row> = rows.into_iter().map(Row::new).collect();
         let table = Table::new(rows, Vec::<Constraint>::new())
             .header(header)
             .footer(footer);
