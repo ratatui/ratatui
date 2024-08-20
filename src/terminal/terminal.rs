@@ -638,7 +638,7 @@ where
             // with the viewport higher on the screen after this function than before it was
             // called.
             //
-            // A proof that these constraints are satisified by this choice ofi `scroll_up` can be
+            // A proof that these constraints are satisfied by this choice ofi `scroll_up` can be
             // found in PR 1329: https://github.com/ratatui-org/ratatui/pull/1329
             let to_draw = buffer_height.min(screen_height);
             let scroll_up = 0.max(drawn_height + to_draw - screen_height);
