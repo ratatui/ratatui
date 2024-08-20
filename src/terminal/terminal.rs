@@ -618,15 +618,11 @@ where
             // we're drawing a whole screen's worth from the buffer. Things get tricky when
             // `buffer_height` is less than `screen_height`.
             //
-            // We choose `scroll_up` so that satisfies four different constraints:
+            // We choose `scroll_up` so that the following constraints are satisfied:
             //     (1) scroll_up >= 0
             //     (2) scroll_up <= drawn_height
             //     (3) drawn_height - scroll_up + to_draw <= screen_height
-            //     or, equivalently:
-            //         scroll_up >= drawn_height + to_draw - screen_height
             //     (4) drawn_height - scroll_up + to_draw >= screen_height - viewport_height
-            //     or, equivalently:
-            //         scroll_up <= drawn_height + to_draw - screen_height + viewport_height
             //
             // (1) says that we don't want to scroll down. That should never be necessary when
             // inserting data before the inline viewport.
@@ -642,58 +638,8 @@ where
             // with the viewport higher on the screen after this function than before it was
             // called.
             //
-            // In order to prove that our choice of `scroll_up` satisfies these constraints, we
-            // make use of two facts:
-            //     (A) X <= Z and Y <= Z implies max(X, Y) <= Z for any X, Y, Z
-            //     (B) X >= Z or Y >= Z implies max(X, Y) >= Z for any X, Y, Z
-            // In our case, since scroll_up = max(0, drawn_height + to_draw - screen_height), we
-            // use these variable assignments:
-            //     X = 0
-            //     Y = drawn_height + to_draw - screen_height
-            //
-            // (1) is satisfied because (using fact (B)):
-            //     X = 0 >= 0
-            //
-            // (2) is satisfied because (using fact (A)):
-            //     X = 0 <= drawn_height
-            //     and
-            //     Y = drawn_height + to_draw - screen_height
-            //     where
-            //     to_draw = min(buffer_height, screen_height)
-            //         <= screen_height
-            //     combined, implies
-            //     Y <= drawn_height + screen_height - screen_height
-            //         = drawn_height
-            //
-            // (3) is satisfied because (using fact (B)):
-            //     Y = drawn_height + to_draw - screen_height
-            //         >= drawn_height + to_draw - screen_height
-            //
-            // (4) is satistfied because (using fact (A)):
-            //     First we show for X:
-            //         Either (a) buffer_height >= screen_height or
-            //         (b) buffer_height < screen_height.
-            //         If (a):
-            //             to_draw = min(buffer_height, screen_height) = screen_height
-            //             implies
-            //             drawn_height + to_draw - screen_height + viewport_height
-            //                 = drawn_height + screen_height - screen_height + viewport_height
-            //                 = drawn_height + viewport_height >= 0 = X
-            //         If (b):
-            //             to_draw = min(buffer_height, screen_height) = buffer_height
-            //         And the loop invariant tells us:
-            //             buffer_height + viewport_height > screen_height
-            //         So
-            //             drawn_height + to_draw - screen_height + viewport_height
-            //                 = drawn_height + buffer_height - screen_height + viewport_height
-            //                 = drawn_height - screen_height + buffer_height + viewport_height
-            //                 > drawn_height - screen_height + screen_height
-            //                 = drawn_height
-            //                 >= 0 = X
-            //     Now we show for Y:
-            //         Y = drawn_height + to_draw - screen_height
-            //             <= drawn_height + to_draw - screen_height + viewport_height
-
+            // A proof that these constraints are satisified by this choice ofi `scroll_up` can be
+            // found in PR 1329: https://github.com/ratatui-org/ratatui/pull/1329
             let to_draw = buffer_height.min(screen_height);
             let scroll_up = 0.max(drawn_height + to_draw - screen_height);
             self.scroll_up(scroll_up as u16)?;
