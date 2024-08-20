@@ -116,6 +116,46 @@ fn terminal_insert_before_moves_viewport() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
+#[cfg(feature = "scrolling-regions")]
+fn terminal_insert_before_moves_viewport_does_not_clobber() -> Result<(), Box<dyn Error>> {
+    // This is like terminal_insert_before_moves_viewport, except it draws first before calling
+    // insert_before, and doesn't draw again afterwards. When using scrolling regions, we
+    // shouldn't clobber the viewport.
+
+    let backend = TestBackend::new(20, 5);
+    let mut terminal = Terminal::with_options(
+        backend,
+        TerminalOptions {
+            viewport: Viewport::Inline(1),
+        },
+    )?;
+
+    terminal.draw(|f| {
+        let paragraph = Paragraph::new("[---- Viewport ----]");
+        f.render_widget(paragraph, f.area());
+    })?;
+
+    terminal.insert_before(2, |buf| {
+        Paragraph::new(vec![
+            "------ Line 1 ------".into(),
+            "------ Line 2 ------".into(),
+        ])
+        .render(buf.area, buf);
+    })?;
+
+    terminal.backend().assert_scrollback_empty();
+    terminal.backend().assert_buffer_lines([
+        "------ Line 1 ------",
+        "------ Line 2 ------",
+        "[---- Viewport ----]",
+        "                    ",
+        "                    ",
+    ]);
+
+    Ok(())
+}
+
+#[test]
 fn terminal_insert_before_scrolls_on_large_input() -> Result<(), Box<dyn Error>> {
     // When we have a terminal with 5 lines, and a single line viewport, if we insert many
     // lines before the viewport (greater than `terminal height - viewport height`) it should
@@ -156,6 +196,51 @@ fn terminal_insert_before_scrolls_on_large_input() -> Result<(), Box<dyn Error>>
     terminal
         .backend()
         .assert_scrollback_lines(["------ Line 1 ------"]);
+
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "scrolling-regions")]
+fn terminal_insert_before_scrolls_on_large_input_does_not_clobber() -> Result<(), Box<dyn Error>> {
+    // This is like terminal_insert_scrolls_on_large_input, except it draws first before calling
+    // insert_before, and doesn't draw again afterwards. When using scrolling regions, we
+    // shouldn't clobber the viewport.
+
+    let backend = TestBackend::new(20, 5);
+    let mut terminal = Terminal::with_options(
+        backend,
+        TerminalOptions {
+            viewport: Viewport::Inline(1),
+        },
+    )?;
+
+    terminal.draw(|f| {
+        let paragraph = Paragraph::new("[---- Viewport ----]");
+        f.render_widget(paragraph, f.area());
+    })?;
+
+    terminal.insert_before(5, |buf| {
+        Paragraph::new(vec![
+            "------ Line 1 ------".into(),
+            "------ Line 2 ------".into(),
+            "------ Line 3 ------".into(),
+            "------ Line 4 ------".into(),
+            "------ Line 5 ------".into(),
+        ])
+        .render(buf.area, buf);
+    })?;
+
+    terminal
+        .backend()
+        .assert_scrollback_lines(["------ Line 1 ------"]);
+    terminal.backend().assert_buffer_lines([
+        "------ Line 2 ------",
+        "------ Line 3 ------",
+        "------ Line 4 ------",
+        "------ Line 5 ------",
+        "[---- Viewport ----]",
+    ]);
 
     Ok(())
 }
@@ -216,6 +301,60 @@ fn terminal_insert_before_scrolls_on_many_inserts() -> Result<(), Box<dyn Error>
 }
 
 #[test]
+#[cfg(feature = "scrolling-regions")]
+fn terminal_insert_before_scrolls_on_many_inserts_does_not_clobber() -> Result<(), Box<dyn Error>> {
+    // This is like terminal_insert_before_scrolls_on_many_inserts, except it draws first before
+    // calling insert_before, and doesn't draw again afterwards. When using scrolling regions, we
+    // shouldn't clobber the viewport.
+
+    let backend = TestBackend::new(20, 5);
+    let mut terminal = Terminal::with_options(
+        backend,
+        TerminalOptions {
+            viewport: Viewport::Inline(1),
+        },
+    )?;
+
+    terminal.draw(|f| {
+        let paragraph = Paragraph::new("[---- Viewport ----]");
+        f.render_widget(paragraph, f.area());
+    })?;
+
+    terminal.insert_before(1, |buf| {
+        Paragraph::new(vec!["------ Line 1 ------".into()]).render(buf.area, buf);
+    })?;
+
+    terminal.insert_before(1, |buf| {
+        Paragraph::new(vec!["------ Line 2 ------".into()]).render(buf.area, buf);
+    })?;
+
+    terminal.insert_before(1, |buf| {
+        Paragraph::new(vec!["------ Line 3 ------".into()]).render(buf.area, buf);
+    })?;
+
+    terminal.insert_before(1, |buf| {
+        Paragraph::new(vec!["------ Line 4 ------".into()]).render(buf.area, buf);
+    })?;
+
+    terminal.insert_before(1, |buf| {
+        Paragraph::new(vec!["------ Line 5 ------".into()]).render(buf.area, buf);
+    })?;
+
+    terminal
+        .backend()
+        .assert_scrollback_lines(["------ Line 1 ------"]);
+    terminal.backend().assert_buffer_lines([
+        "------ Line 2 ------",
+        "------ Line 3 ------",
+        "------ Line 4 ------",
+        "------ Line 5 ------",
+        "[---- Viewport ----]",
+    ]);
+
+    Ok(())
+}
+
+#[test]
 fn terminal_insert_before_large_viewport() -> Result<(), Box<dyn Error>> {
     // This test covers a bug previously present whereby doing an insert_before when the
     // viewport covered the entire screen would cause a panic.
@@ -259,6 +398,76 @@ fn terminal_insert_before_large_viewport() -> Result<(), Box<dyn Error>> {
             .centered()
             .block(Block::bordered());
         f.render_widget(paragraph, f.area());
+    })?;
+
+    terminal.backend().assert_buffer_lines([
+        "┌──────────────────┐",
+        "│     Viewport     │",
+        "└──────────────────┘",
+    ]);
+    terminal.backend().assert_scrollback_lines([
+        "------ Line 1 ------",
+        "------ Line 2 ------",
+        "------ Line 3 ------",
+        "------ Line 4 ------",
+        "------ Line 5 ------",
+        "------ Line 6 ------",
+        "------ Line 7 ------",
+        "------ Line 8 ------",
+        "------ Line 9 ------",
+        "----- Line 10 ------",
+        "----- Line 11 ------",
+    ]);
+
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "scrolling-regions")]
+fn terminal_insert_before_large_viewport_does_not_clobber() -> Result<(), Box<dyn Error>> {
+    // This is like terminal_insert_before_large_viewport, except it draws first before calling
+    // insert_before, and doesn't draw again afterwards. When using scrolling regions, we shouldn't
+    // clobber the viewport.
+
+    let backend = TestBackend::new(20, 3);
+    let mut terminal = Terminal::with_options(
+        backend,
+        TerminalOptions {
+            viewport: Viewport::Inline(3),
+        },
+    )?;
+
+    terminal.draw(|f| {
+        let paragraph = Paragraph::new("Viewport")
+            .centered()
+            .block(Block::bordered());
+        f.render_widget(paragraph, f.area());
+    })?;
+
+    terminal.insert_before(1, |buf| {
+        Paragraph::new(vec!["------ Line 1 ------".into()]).render(buf.area, buf);
+    })?;
+
+    terminal.insert_before(3, |buf| {
+        Paragraph::new(vec![
+            "------ Line 2 ------".into(),
+            "------ Line 3 ------".into(),
+            "------ Line 4 ------".into(),
+        ])
+        .render(buf.area, buf);
+    })?;
+
+    terminal.insert_before(7, |buf| {
+        Paragraph::new(vec![
+            "------ Line 5 ------".into(),
+            "------ Line 6 ------".into(),
+            "------ Line 7 ------".into(),
+            "------ Line 8 ------".into(),
+            "------ Line 9 ------".into(),
+            "----- Line 10 ------".into(),
+            "----- Line 11 ------".into(),
+        ])
+        .render(buf.area, buf);
     })?;
 
     terminal.backend().assert_buffer_lines([
