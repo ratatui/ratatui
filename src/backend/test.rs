@@ -131,12 +131,12 @@ impl TestBackend {
     /// # Panics
     /// When the scrollback buffer is not equal, a panic occurs with a detailed error message
     /// showing the differences between the expected and actual buffers.
-    pub fn assert_empty_scrollback(&self, width: u16) {
+    pub fn assert_empty_scrollback(&self) {
         let expected = Buffer {
             area: Rect {
                 x: 0,
                 y: 0,
-                width,
+                width: self.scrollback.area.width,
                 height: 0,
             },
             content: vec![],
@@ -638,7 +638,7 @@ mod tests {
             "dddddddddd",
             "eeeeeeeeee",
         ]);
-        backend.assert_empty_scrollback(10);
+        backend.assert_empty_scrollback();
     }
 
     #[test]
@@ -701,7 +701,7 @@ mod tests {
             "dddddddddd",
             "eeeeeeeeee",
         ]);
-        backend.assert_empty_scrollback(10);
+        backend.assert_empty_scrollback();
     }
 
     #[test]
