@@ -1,12 +1,16 @@
 use std::{
     fmt,
     ops::{Index, IndexMut},
+    sync::LazyLock,
 };
 
+use metrics::Histogram;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::{buffer::Cell, layout::Position, prelude::*};
+use crate::{
+    buffer::Cell, duration_histogram, layout::Position, metrics::HistogramExt, prelude::*,
+};
 
 /// A buffer that maps to the desired content of the terminal after the draw call
 ///
@@ -68,6 +72,23 @@ pub struct Buffer {
     /// The content of the buffer. The length of this Vec should always be equal to area.width *
     /// area.height
     pub content: Vec<Cell>,
+}
+
+static METRICS: LazyLock<Metrics> = LazyLock::new(Metrics::new);
+
+struct Metrics {
+    diff_duration: Histogram,
+}
+
+impl Metrics {
+    fn new() -> Self {
+        Self {
+            diff_duration: duration_histogram!(
+                "ratatui.buffer.diff.time",
+                "Time spent diffing buffers"
+            ),
+        }
+    }
 }
 
 impl Buffer {
@@ -464,27 +485,32 @@ impl Buffer {
     /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
     /// ```
     pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)> {
-        let previous_buffer = &self.content;
-        let next_buffer = &other.content;
+        METRICS.diff_duration.measure_duration(|| {
+            let previous_buffer = &self.content;
+            let next_buffer = &other.content;
 
-        let mut updates: Vec<(u16, u16, &Cell)> = vec![];
-        // Cells invalidated by drawing/replacing preceding multi-width characters:
-        let mut invalidated: usize = 0;
-        // Cells from the current buffer to skip due to preceding multi-width characters taking
-        // their place (the skipped cells should be blank anyway), or due to per-cell-skipping:
-        let mut to_skip: usize = 0;
-        for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
-            if !current.skip && (current != previous || invalidated > 0) && to_skip == 0 {
-                let (x, y) = self.pos_of(i);
-                updates.push((x, y, &next_buffer[i]));
+            let mut updates: Vec<(u16, u16, &Cell)> = vec![];
+            // Cells invalidated by drawing/replacing preceding multi-width characters:
+            let mut invalidated: usize = 0;
+            // Cells from the current buffer to skip due to preceding multi-width characters taking
+            // their place (the skipped cells should be blank anyway), or due to per-cell-skipping:
+            let mut to_skip: usize = 0;
+            for (i, (current, previous)) in
+                next_buffer.iter().zip(previous_buffer.iter()).enumerate()
+            {
+                if !current.skip && (current != previous || invalidated > 0) && to_skip == 0 {
+                    let (x, y) = self.pos_of(i);
+                    updates.push((x, y, &next_buffer[i]));
+                }
+
+                to_skip = current.symbol().width().saturating_sub(1);
+
+                let affected_width =
+                    std::cmp::max(current.symbol().width(), previous.symbol().width());
+                invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
             }
-
-            to_skip = current.symbol().width().saturating_sub(1);
-
-            let affected_width = std::cmp::max(current.symbol().width(), previous.symbol().width());
-            invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
-        }
-        updates
+            updates
+        })
     }
 }
 

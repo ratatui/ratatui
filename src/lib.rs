@@ -310,6 +310,7 @@ pub use termwiz;
 pub mod backend;
 pub mod buffer;
 pub mod layout;
+pub(crate) mod metrics;
 pub mod prelude;
 pub mod style;
 pub mod symbols;

@@ -100,12 +100,14 @@
 //! [Backend Comparison]:
 //!     https://ratatui.rs/concepts/backends/comparison/
 //! [Ratatui Website]: https://ratatui.rs
-use std::io;
+use std::{io, sync::LazyLock};
 
+use metrics::{Counter, Histogram};
 use strum::{Display, EnumString};
 
 use crate::{
     buffer::Cell,
+    counter, duration_histogram,
     layout::{Position, Size},
 };
 
@@ -126,6 +128,89 @@ pub use self::termwiz::TermwizBackend;
 
 mod test;
 pub use self::test::TestBackend;
+
+static METRICS: LazyLock<Metrics> = LazyLock::new(Metrics::new);
+
+#[derive(Debug)]
+struct Metrics {
+    pub clear_region_count: Counter,
+    pub clear_region_duration: Histogram,
+    pub draw_count: Counter,
+    pub draw_duration: Histogram,
+    pub append_lines_count: Counter,
+    pub append_lines_duration: Histogram,
+    pub hide_cursor_duration: Histogram,
+    pub show_cursor_duration: Histogram,
+    pub get_cursor_position_duration: Histogram,
+    pub set_cursor_position_duration: Histogram,
+    pub size_duration: Histogram,
+    pub window_size_duration: Histogram,
+    pub flush_count: Counter,
+    pub flush_duration: Histogram,
+}
+
+impl Metrics {
+    fn new() -> Self {
+        Self {
+            clear_region_count: counter!(
+                "ratatui.backend.clear_region.count",
+                "Number of times a region of the backend buffer was cleared"
+            ),
+            clear_region_duration: duration_histogram!(
+                "ratatui.backend.clear.time",
+                "Time spent clearing the backend buffer"
+            ),
+            draw_count: counter!(
+                "ratatui.backend.draw.count",
+                "Number of times the backend buffer was drawn to the terminal"
+            ),
+            draw_duration: duration_histogram!(
+                "ratatui.backend.draw.time",
+                "Time spent drawing the backend buffer to the terminal"
+            ),
+            hide_cursor_duration: duration_histogram!(
+                "ratatui.backend.hide_cursor.time",
+                "Time spent hiding the cursor in the backend"
+            ),
+            show_cursor_duration: duration_histogram!(
+                "ratatui.backend.show_cursor.time",
+                "Time spent showing the cursor in the backend"
+            ),
+            get_cursor_position_duration: duration_histogram!(
+                "ratatui.backend.get_cursor_position.time",
+                "Time spent getting the cursor position from the backend"
+            ),
+            set_cursor_position_duration: duration_histogram!(
+                "ratatui.backend.set_cursor_position.time",
+                "Time spent setting the cursor position in the backend"
+            ),
+            append_lines_count: counter!(
+                "ratatui.backend.append_lines.count",
+                "Number of times lines were appended to the backend buffer"
+            ),
+            append_lines_duration: duration_histogram!(
+                "ratatui.backend.append_lines.time",
+                "Time spent appending lines to the backend buffer"
+            ),
+            size_duration: duration_histogram!(
+                "ratatui.backend.size.time",
+                "Time spent getting the size of the backend buffer"
+            ),
+            window_size_duration: duration_histogram!(
+                "ratatui.backend.window_size.time",
+                "Time spent getting the window size of the backend buffer"
+            ),
+            flush_count: counter!(
+                "ratatui.backend.flush.count",
+                "Number of times the backend buffer was flushed to the terminal"
+            ),
+            flush_duration: duration_histogram!(
+                "ratatui.backend.flush.time",
+                "Time spent flushing the backend buffer to the terminal"
+            ),
+        }
+    }
+}
 
 /// Enum representing the different types of clearing operations that can be performed
 /// on the terminal screen.
