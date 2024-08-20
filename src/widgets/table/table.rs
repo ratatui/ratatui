@@ -995,6 +995,8 @@ where
 mod tests {
     use std::vec;
 
+    use rstest::rstest;
+
     use super::*;
     use crate::{layout::Constraint::*, style::Style, text::Line, widgets::Cell};
 
@@ -2147,8 +2149,6 @@ mod tests {
                 .remove_modifier(Modifier::CROSSED_OUT)
         );
     }
-
-    use rstest::rstest;
 
     fn empty_row() -> Row<'static> {
         Row::new(Vec::<Cell>::new())
