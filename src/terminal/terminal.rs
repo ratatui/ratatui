@@ -495,7 +495,6 @@ where
         self.backend.size()
     }
 
-
     /// Insert some content before the current inline viewport. This has no effect when the
     /// viewport is not inline.
     ///
@@ -700,13 +699,19 @@ where
         if self.viewport_area.height == self.last_known_area.height {
             // We "borrow" the top line of the viewport to use to draw to, and then immediately
             // scroll into scrollback.
+            let mut first = true;
             while !buffer.is_empty() {
-                buffer = self.draw_lines(0, 1, buffer)?;
+                buffer = if first {
+                    self.draw_lines(0, 1, buffer)?
+                } else {
+                    self.draw_lines_over_cleared(0, 1, buffer)?
+                };
+                first = false;
                 self.backend.scroll_region_up(0..1, 1)?;
             }
             let width = self.viewport_area.width as usize;
             let top_line = self.buffers[1 - self.current].content[0..width].to_vec();
-            self.draw_lines(0, 1, &top_line)?;
+            self.draw_lines_over_cleared(0, 1, &top_line)?;
             return Ok(());
         }
 
@@ -719,7 +724,7 @@ where
                 let to_draw = height.min(screen_bottom - viewport_bottom);
                 self.backend
                     .scroll_region_down(viewport_top..viewport_bottom + to_draw, to_draw)?;
-                buffer = self.draw_lines(viewport_top, to_draw, buffer)?;
+                buffer = self.draw_lines_over_cleared(viewport_top, to_draw, buffer)?;
                 self.set_viewport_area(Rect {
                     y: viewport_top + to_draw,
                     ..self.viewport_area
@@ -732,7 +737,7 @@ where
         while height > 0 {
             let to_draw = height.min(viewport_top);
             self.backend.scroll_region_up(0..viewport_top, to_draw)?;
-            buffer = self.draw_lines(viewport_top - to_draw, to_draw, buffer)?;
+            buffer = self.draw_lines_over_cleared(viewport_top - to_draw, to_draw, buffer)?;
             height -= to_draw;
         }
         Ok(())
@@ -754,6 +759,30 @@ where
                 .enumerate()
                 .map(|(i, c)| ((i % width) as u16, y_offset + (i / width) as u16, c));
             self.backend.draw(iter)?;
+            self.backend.flush()?;
+        }
+        Ok(remainder)
+    }
+
+    /// Draw lines at the given vertical offset. The slice of cells must contain enough cells
+    /// for the requested lines. A slice of the unused cells are returned.
+    #[cfg(feature = "scrolling-regions")]
+    fn draw_lines_over_cleared<'a>(
+        &mut self,
+        y_offset: u16,
+        lines_to_draw: u16,
+        cells: &'a [Cell],
+    ) -> io::Result<&'a [Cell]> {
+        let width: usize = self.last_known_area.width.into();
+        let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
+        if lines_to_draw > 0 {
+            let area = Rect::new(0, y_offset, width as u16, y_offset + lines_to_draw);
+            let old = Buffer::empty(area.clone());
+            let new = Buffer {
+                area,
+                content: to_draw.to_vec(),
+            };
+            self.backend.draw(old.diff(&new).into_iter())?;
             self.backend.flush()?;
         }
         Ok(remainder)
