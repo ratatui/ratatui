@@ -273,7 +273,7 @@ impl Backend for TestBackend {
     /// the cursor y position then that number of empty lines (at most the buffer's height in this
     /// case but this limit is instead replaced with scrolling in most backend implementations) will
     /// be added after the current position and the cursor will be moved to the last row.
-    fn append_lines(&mut self, n: u16) -> io::Result<()> {
+    fn append_lines(&mut self, line_count: u16) -> io::Result<()> {
         let Position { x: cur_x, y: cur_y } = self.get_cursor_position()?;
         let Rect { width, height, .. } = self.buffer.area;
 
@@ -283,10 +283,10 @@ impl Backend for TestBackend {
         let max_y = height.saturating_sub(1);
         let lines_after_cursor = max_y.saturating_sub(cur_y);
 
-        if n > lines_after_cursor {
+        if line_count > lines_after_cursor {
             // We need to insert blank lines at the bottom and scroll the lines from the top into
             // scrollback.
-            let scroll_by: usize = (n - lines_after_cursor).into();
+            let scroll_by: usize = (line_count - lines_after_cursor).into();
             let width: usize = self.buffer.area.width.into();
             let to_splice = self.buffer.content.len().min(width * scroll_by);
 
@@ -304,7 +304,7 @@ impl Backend for TestBackend {
             );
         }
 
-        let new_cursor_y = cur_y.saturating_add(n).min(max_y);
+        let new_cursor_y = cur_y.saturating_add(line_count).min(max_y);
         self.set_cursor_position(Position::new(new_cursor_x, new_cursor_y))?;
 
         Ok(())
