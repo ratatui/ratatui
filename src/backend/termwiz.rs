@@ -249,6 +249,42 @@ impl Backend for TermwizBackend {
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
         Ok(())
     }
+
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
+        let (_, rows) = self.buffered_terminal.dimensions();
+        self.buffered_terminal.add_changes(vec![
+            Change::ScrollRegionUp {
+                first_row: region.start as usize,
+                region_size: region.len() as usize,
+                scroll_count: amount as usize,
+            },
+            Change::ScrollRegionUp {
+                first_row: 0,
+                region_size: rows,
+                scroll_count: 0,
+            },
+        ]);
+        Ok(())
+    }
+
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
+        let (_, rows) = self.buffered_terminal.dimensions();
+        self.buffered_terminal.add_changes(vec![
+            Change::ScrollRegionDown {
+                first_row: region.start as usize,
+                region_size: region.len() as usize,
+                scroll_count: amount as usize,
+            },
+            Change::ScrollRegionUp {
+                first_row: 0,
+                region_size: rows,
+                scroll_count: 0,
+            },
+        ]);
+        Ok(())
+    }
 }
 
 impl From<CellAttributes> for Style {
