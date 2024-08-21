@@ -138,7 +138,7 @@ This change simplifies the trait and makes it easier to implement.
 
 [#1293]: https://github.com/ratatui-org/ratatui/pull/1293
 
-`Frame::size` is renamed to `Frame::area` as its the more correct name.
+`Frame::size` is renamed to `Frame::area` as it's the more correct name.
 
 ## [v0.27.0](https://github.com/ratatui-org/ratatui/releases/tag/v0.27.0)
 
