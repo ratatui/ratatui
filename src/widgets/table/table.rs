@@ -995,7 +995,7 @@ where
 mod tests {
     use std::vec;
 
-    use rstest::rstest;
+    use rstest::{fixture, rstest};
 
     use super::*;
     use crate::{layout::Constraint::*, style::Style, text::Line, widgets::Cell};
@@ -1183,9 +1183,8 @@ mod tests {
 
     #[cfg(test)]
     mod state {
-        use rstest::{fixture, rstest};
 
-        use super::TableState;
+        use super::*;
         use crate::{
             buffer::Buffer,
             layout::{Constraint, Rect},
@@ -1264,8 +1263,6 @@ mod tests {
 
     #[cfg(test)]
     mod render {
-        use rstest::rstest;
-
         use super::*;
 
         #[test]
