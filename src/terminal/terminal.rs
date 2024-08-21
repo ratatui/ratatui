@@ -495,39 +495,6 @@ where
         self.backend.size()
     }
 
-    /// Draw lines at the given vertical offset. The slice of cells must contain enough cells
-    /// for the requested lines. A slice of the unused cells are returned.
-    fn draw_lines<'a>(
-        &mut self,
-        y_offset: u16,
-        lines_to_draw: u16,
-        cells: &'a [Cell],
-    ) -> io::Result<&'a [Cell]> {
-        let width: usize = self.last_known_area.width.into();
-        let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
-        if lines_to_draw > 0 {
-            let iter = to_draw
-                .iter()
-                .enumerate()
-                .map(|(i, c)| ((i % width) as u16, y_offset + (i / width) as u16, c));
-            self.backend.draw(iter)?;
-            self.backend.flush()?;
-        }
-        Ok(remainder)
-    }
-
-    /// Scroll the whole screen up by the given number of lines.
-    fn scroll_up(&mut self, lines_to_scroll: u16) -> io::Result<()> {
-        if lines_to_scroll > 0 {
-            self.set_cursor_position(Position::new(
-                0,
-                self.last_known_area.height.saturating_sub(1),
-            ))?;
-            self.backend.append_lines(lines_to_scroll)?;
-        }
-        Ok(())
-    }
-
     /// Insert some content before the current inline viewport. This has no effect when the
     /// viewport is not inline.
     ///
@@ -682,6 +649,39 @@ where
         // clear plus immediate scrolling causes some garbage to go into the scrollback.
         self.clear()?;
 
+        Ok(())
+    }
+
+    /// Draw lines at the given vertical offset. The slice of cells must contain enough cells
+    /// for the requested lines. A slice of the unused cells are returned.
+    fn draw_lines<'a>(
+        &mut self,
+        y_offset: u16,
+        lines_to_draw: u16,
+        cells: &'a [Cell],
+    ) -> io::Result<&'a [Cell]> {
+        let width: usize = self.last_known_area.width.into();
+        let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
+        if lines_to_draw > 0 {
+            let iter = to_draw
+                .iter()
+                .enumerate()
+                .map(|(i, c)| ((i % width) as u16, y_offset + (i / width) as u16, c));
+            self.backend.draw(iter)?;
+            self.backend.flush()?;
+        }
+        Ok(remainder)
+    }
+
+    /// Scroll the whole screen up by the given number of lines.
+    fn scroll_up(&mut self, lines_to_scroll: u16) -> io::Result<()> {
+        if lines_to_scroll > 0 {
+            self.set_cursor_position(Position::new(
+                0,
+                self.last_known_area.height.saturating_sub(1),
+            ))?;
+            self.backend.append_lines(lines_to_scroll)?;
+        }
         Ok(())
     }
 }
