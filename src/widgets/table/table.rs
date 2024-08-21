@@ -832,13 +832,14 @@ impl Table<'_> {
             y_offset += row.height_with_margin();
         }
 
-        let selected_column_area = state.selected_column.map(|s| {
-            let (x, width) = columns_widths[s];
-            Rect {
+        let selected_column_area = state.selected_column.and_then(|s| {
+            // The selection is clamped by the column count. Since a user can manually specify an
+            // incorrect number of widths, we should use panic free methods.
+            columns_widths.get(s).map(|(x, width)| Rect {
                 x: x + area.x,
-                width,
+                width: *width,
                 ..area
-            }
+            })
         });
 
         match (selected_row_area, selected_column_area) {
@@ -1431,6 +1432,16 @@ mod tests {
             let table = Table::new(Vec::<Row>::new(), [Constraint::Min(20); 1])
                 .header(Row::new([Line::from("").alignment(Alignment::Right)]))
                 .footer(Row::new([Line::from("").alignment(Alignment::Right)]));
+            Widget::render(table, Rect::new(0, 0, 20, 3), &mut buf);
+        }
+
+        #[test]
+        fn render_with_incorrect_width_count_does_not_panic() {
+            let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
+            let table = Table::new(
+                vec![Row::new(vec!["Row1", "Row2", "Row3"])],
+                [Constraint::Length(10); 1],
+            );
             Widget::render(table, Rect::new(0, 0, 20, 3), &mut buf);
         }
 
