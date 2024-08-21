@@ -110,7 +110,7 @@ fn terminal_insert_before_moves_viewport() -> Result<(), Box<dyn Error>> {
         "                    ",
         "                    ",
     ]);
-    terminal.backend().assert_empty_scrollback();
+    terminal.backend().assert_scrollback_empty();
 
     Ok(())
 }
