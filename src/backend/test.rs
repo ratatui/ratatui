@@ -198,32 +198,6 @@ impl fmt::Display for TestBackend {
     }
 }
 
-/// Append the provided cells to the bottom of a scrollback buffer. The number of cells must be a
-/// multiple of the buffer's width. If the scrollback buffer ends up larger than 65535 lines tall,
-/// then lines will be removed from the top to get it down to size.
-fn append_to_scrollback(scrollback: &mut Buffer, cells: impl IntoIterator<Item = Cell>) {
-    let width = scrollback.area.width as usize;
-    let len_before = scrollback.content.len();
-    scrollback.content.extend(cells);
-    let cells_appended = scrollback.content.len() - len_before;
-    let lines_appended = cells_appended / width;
-    assert_eq!(
-        cells_appended,
-        lines_appended * width,
-        "count of appended cells not a multiple of scrollback buffer width"
-    );
-
-    let new_scrollback_height = scrollback.area.height as usize + lines_appended;
-    if u16::try_from(new_scrollback_height).is_ok() {
-        scrollback.area.height = new_scrollback_height as u16;
-    } else {
-        scrollback
-            .content
-            .drain(0..width * (new_scrollback_height - u16::MAX as usize));
-        scrollback.area.height = u16::MAX;
-    }
-}
-
 impl Backend for TestBackend {
     fn draw<'a, I>(&mut self, content: I) -> io::Result<()>
     where
@@ -354,6 +328,32 @@ impl Backend for TestBackend {
 
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
+    }
+}
+
+/// Append the provided cells to the bottom of a scrollback buffer. The number of cells must be a
+/// multiple of the buffer's width. If the scrollback buffer ends up larger than 65535 lines tall,
+/// then lines will be removed from the top to get it down to size.
+fn append_to_scrollback(scrollback: &mut Buffer, cells: impl IntoIterator<Item = Cell>) {
+    let width = scrollback.area.width as usize;
+    let len_before = scrollback.content.len();
+    scrollback.content.extend(cells);
+    let cells_appended = scrollback.content.len() - len_before;
+    let lines_appended = cells_appended / width;
+    assert_eq!(
+        cells_appended,
+        lines_appended * width,
+        "count of appended cells not a multiple of scrollback buffer width"
+    );
+
+    let new_scrollback_height = scrollback.area.height as usize + lines_appended;
+    if u16::try_from(new_scrollback_height).is_ok() {
+        scrollback.area.height = new_scrollback_height as u16;
+    } else {
+        scrollback
+            .content
+            .drain(0..width * (new_scrollback_height - u16::MAX as usize));
+        scrollback.area.height = u16::MAX;
     }
 }
 
