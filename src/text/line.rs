@@ -1193,7 +1193,7 @@ mod tests {
             assert_eq!(buf, Buffer::with_lines(["lo wo"]));
         }
 
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         #[test]
         fn regression_1032() {
@@ -1209,7 +1209,7 @@ mod tests {
 
         /// Documentary test to highlight the crab emoji width / length discrepancy
         ///
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         #[test]
         fn crab_emoji_width() {
@@ -1220,7 +1220,7 @@ mod tests {
             assert_eq!(crab.width(), 2); // display width
         }
 
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         #[rstest]
         #[case::left_4(Alignment::Left, 4, "1234")]
@@ -1242,7 +1242,7 @@ mod tests {
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         ///
         /// centering is tricky because there's an ambiguity about whether to take one more char
@@ -1331,7 +1331,7 @@ mod tests {
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         ///
         /// Flag emoji are actually two independent characters, so they can be truncated in the
@@ -1345,7 +1345,7 @@ mod tests {
             assert_eq!(str.width(), 6); // flag is 2 display width
         }
 
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         #[rstest]
         #[case::flag_1(1, " ")]

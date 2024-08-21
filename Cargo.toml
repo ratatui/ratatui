@@ -4,7 +4,7 @@ version = "0.28.0" # crate version
 authors = ["Florian Dehau <work@fdehau.com>", "The Ratatui Developers"]
 description = "A library that's all about cooking up terminal user interfaces"
 documentation = "https://docs.rs/ratatui/latest/ratatui/"
-repository = "https://github.com/ratatui-org/ratatui"
+repository = "https://github.com/ratatui/ratatui"
 homepage = "https://ratatui.rs"
 keywords = ["tui", "terminal", "dashboard"]
 categories = ["command-line-interface"]
@@ -162,7 +162,7 @@ unstable = ["unstable-rendered-line-info", "unstable-widget-ref"]
 ## Enables the [`Paragraph::line_count`](widgets::Paragraph::line_count)
 ## [`Paragraph::line_width`](widgets::Paragraph::line_width) methods
 ## which are experimental and may change in the future.
-## See [Issue 293](https://github.com/ratatui-org/ratatui/issues/293) for more details.
+## See [Issue 293](https://github.com/ratatui/ratatui/issues/293) for more details.
 unstable-rendered-line-info = []
 
 ## Enables the [`WidgetRef`](widgets::WidgetRef) and [`StatefulWidgetRef`](widgets::StatefulWidgetRef) traits which are experimental and may change in

@@ -30,7 +30,7 @@ for tape_path in examples/vhs/*.tape; do
     gif_file=${tape_file/.tape/.gif}        # replace the .tape suffix with .gif
     ~/go/bin/vhs $tape_path --quiet
     # this can be pasted into the examples README.md
-    echo "[${gif_file}]: https://github.com/ratatui-org/ratatui/blob/images/examples/${gif_file}?raw=true"
+    echo "[${gif_file}]: https://github.com/ratatui/ratatui/blob/images/examples/${gif_file}?raw=true"
 done
 git switch images
 git pull --rebase upstream images

@@ -90,7 +90,7 @@ where
     /// Gets the writer.
     #[instability::unstable(
         feature = "backend-writer",
-        issue = "https://github.com/ratatui-org/ratatui/pull/991"
+        issue = "https://github.com/ratatui/ratatui/pull/991"
     )]
     pub const fn writer(&self) -> &W {
         &self.writer
@@ -101,7 +101,7 @@ where
     /// way that the Terminal implements diffing Buffers.
     #[instability::unstable(
         feature = "backend-writer",
-        issue = "https://github.com/ratatui-org/ratatui/pull/991"
+        issue = "https://github.com/ratatui/ratatui/pull/991"
     )]
     pub fn writer_mut(&mut self) -> &mut W {
         &mut self.writer

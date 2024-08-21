@@ -30,7 +30,7 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// directory for a more in depth example of the various configuration options and for how to handle
 /// state.
 ///
-/// [Examples]: https://github.com/ratatui-org/ratatui/blob/master/examples/README.md
+/// [Examples]: https://github.com/ratatui/ratatui/blob/master/examples/README.md
 ///
 /// # Constructor methods
 ///
@@ -1280,7 +1280,7 @@ mod tests {
 
         /// Note that this includes a regression test for a bug where the table would not render the
         /// correct rows when there is no selection.
-        /// <https://github.com/ratatui-org/ratatui/issues/1179>
+        /// <https://github.com/ratatui/ratatui/issues/1179>
         #[rstest]
         #[case::no_selection(None, 50, ["50", "51", "52", "53", "54"])]
         #[case::selection_before_offset(20, 20, ["20", "21", "22", "23", "24"])]
