@@ -318,6 +318,25 @@ pub trait Backend {
 
     /// Flush any buffered content to the terminal screen.
     fn flush(&mut self) -> io::Result<()>;
+
+    /// Scroll the specified region of the screen up by the provided amount of lines.
+    ///
+    /// The position of the cursor afterwards is undefined.
+    ///
+    /// If the region includes row 0, then lines scrolled out of the top of region should be put
+    /// into the scrollback. Otherwise, they are just ovewritten. Empty lines are scrolled into the
+    /// bottom of the region.
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()>;
+
+    /// Scroll the specified region of the screen down by the provided amount of lines.
+    ///
+    /// The position of the cursor afterwards is undefined.
+    ///
+    /// Scrollback will not be affected, even if the region includes row 0. Empty lines are
+    /// scrolled into the top of the region.
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()>;
 }
 
 #[cfg(test)]

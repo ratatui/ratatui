@@ -271,6 +271,26 @@ where
     fn flush(&mut self) -> io::Result<()> {
         self.writer.flush()
     }
+
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
+        let start = region.start as u32 + 1;
+        let end = region.end as u32;
+        queue!(self.writer, Print(format!("\x1B[{start};{end}r")))?;
+        queue!(self.writer, crate::crossterm::terminal::ScrollUp(amount))?;
+        queue!(self.writer, Print(format!("\x1B[r")))?;
+        self.writer.flush()
+    }
+
+    #[cfg(feature = "scrolling-regions")]
+    fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
+        let start = region.start as u32 + 1;
+        let end = region.end as u32;
+        queue!(self.writer, Print(format!("\x1B[{start};{end}r")))?;
+        queue!(self.writer, crate::crossterm::terminal::ScrollDown(amount))?;
+        queue!(self.writer, Print(format!("\x1B[r")))?;
+        self.writer.flush()
+    }
 }
 
 impl From<Color> for CColor {
