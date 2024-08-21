@@ -216,7 +216,7 @@ fn terminal_insert_before_scrolls_on_many_inserts() -> Result<(), Box<dyn Error>
 }
 
 #[test]
-fn terminal_insert_before_lage_viewport() -> Result<(), Box<dyn Error>> {
+fn terminal_insert_before_large_viewport() -> Result<(), Box<dyn Error>> {
     // This test covers a bug previously present whereby doing an insert_before when the
     // viewport covered the entire screen would cause a panic.
 
