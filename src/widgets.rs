@@ -68,7 +68,7 @@ use crate::{buffer::Buffer, layout::Rect, style::Style};
 /// internal widgets. In addition to the above benefit of rendering references to widgets, this also
 /// allows you to render boxed widgets. This is useful when you want to store a collection of
 /// widgets with different types. You can then iterate over the collection and render each widget.
-/// See <https://github.com/ratatui-org/ratatui/issues/1287> for more information.
+/// See <https://github.com/ratatui/ratatui/issues/1287> for more information.
 ///
 /// In general where you expect a widget to immutably work on its data, we recommended to implement
 /// `Widget` for a reference to the widget (`impl Widget for &MyWidget`). If you need to store state
@@ -245,7 +245,7 @@ pub trait StatefulWidget {
 ///
 /// This trait was introduced in Ratatui 0.26.0 and is implemented for all the internal widgets. It
 /// is currently marked as unstable as we are still evaluating the API and may make changes in the
-/// future. See <https://github.com/ratatui-org/ratatui/issues/1287> for more information.
+/// future. See <https://github.com/ratatui/ratatui/issues/1287> for more information.
 ///
 /// A blanket implementation of `Widget` for `&W` where `W` implements `WidgetRef` is provided.
 ///
@@ -368,7 +368,7 @@ impl<W: WidgetRef> WidgetRef for Option<W> {
 ///
 /// This trait was introduced in Ratatui 0.26.0 and is implemented for all the internal stateful
 /// widgets. It is currently marked as unstable as we are still evaluating the API and may make
-/// changes in the future. See <https://github.com/ratatui-org/ratatui/issues/1287> for more
+/// changes in the future. See <https://github.com/ratatui/ratatui/issues/1287> for more
 /// information.
 ///
 /// A blanket implementation of `StatefulWidget` for `&W` where `W` implements `StatefulWidgetRef`

@@ -113,7 +113,7 @@ pub enum Color {
     /// If the terminal does not support true color, code using the  [`TermwizBackend`] will
     /// fallback to the default text color. Crossterm and Termion do not have this capability and
     /// the display will be unpredictable (e.g. Terminal.app may display glitched blinking text).
-    /// See <https://github.com/ratatui-org/ratatui/issues/475> for an example of this problem.
+    /// See <https://github.com/ratatui/ratatui/issues/475> for an example of this problem.
     ///
     /// See also: <https://en.wikipedia.org/wiki/ANSI_escape_code#24-bit>
     ///

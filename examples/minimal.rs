@@ -9,9 +9,9 @@
 //! See the [examples readme] for more information on finding examples that match the version of the
 //! library you are using.
 //!
-//! [Ratatui]: https://github.com/ratatui-org/ratatui
-//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
-//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+//! [Ratatui]: https://github.com/ratatui/ratatui
+//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use ratatui::{
     backend::CrosstermBackend,
@@ -28,8 +28,8 @@ use ratatui::{
 /// this is not meant to be prescriptive. See the [examples] folder for more complete examples.
 /// In particular, the [hello-world] example is a good starting point.
 ///
-/// [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
-/// [hello-world]: https://github.com/ratatui-org/ratatui/blob/main/examples/hello_world.rs
+/// [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+/// [hello-world]: https://github.com/ratatui/ratatui/blob/main/examples/hello_world.rs
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stdout()))?;
     enable_raw_mode()?;

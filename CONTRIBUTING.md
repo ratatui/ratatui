@@ -8,7 +8,7 @@ creating a new issue before making the change, or starting a discussion on
 
 ## Reporting issues
 
-Before reporting an issue on the [issue tracker](https://github.com/ratatui-org/ratatui/issues),
+Before reporting an issue on the [issue tracker](https://github.com/ratatui/ratatui/issues),
 please check that it has not already been reported by searching for some related keywords. Please
 also check [`tui-rs` issues](https://github.com/fdehau/tui-rs/issues/) and link any related issues
 found.
@@ -79,14 +79,14 @@ defaults depending on your platform of choice. Building the project should be as
 `cargo make build`.
 
 ```shell
-git clone https://github.com/ratatui-org/ratatui.git
+git clone https://github.com/ratatui/ratatui.git
 cd ratatui
 cargo make build
 ```
 
 ### Tests
 
-The [test coverage](https://app.codecov.io/gh/ratatui-org/ratatui) of the crate is reasonably
+The [test coverage](https://app.codecov.io/gh/ratatui/ratatui) of the crate is reasonably
 good, but this can always be improved. Focus on keeping the tests simple and obvious and write unit
 tests for all new or modified code. Beside the usual doc and unit tests, one of the most valuable
 test you can write for Ratatui is a test against the `TestBackend`. It allows you to assert the
@@ -171,7 +171,7 @@ time to update. However, if a deprecation is blocking for us to implement a new 
 
 We don't currently use any unsafe code in Ratatui, and would like to keep it that way. However, there
 may be specific cases that this becomes necessary in order to avoid slowness. Please see [this
-discussion](https://github.com/ratatui-org/ratatui/discussions/66) for more about the decision.
+discussion](https://github.com/ratatui/ratatui/discussions/66) for more about the decision.
 
 ## Continuous Integration
 
@@ -196,7 +196,7 @@ it is useful to refer to when contributing code, documentation, or issues with R
 
 We imported all the PRs from the original repository, implemented many of the smaller ones, and
 made notes on the leftovers. These are marked as draft PRs and labelled as [imported from
-tui](https://github.com/ratatui-org/ratatui/pulls?q=is%3Apr+is%3Aopen+label%3A%22imported+from+tui%22).
+tui](https://github.com/ratatui/ratatui/pulls?q=is%3Apr+is%3Aopen+label%3A%22imported+from+tui%22).
 We have documented the current state of those PRs, and anyone is welcome to pick them up and
 continue the work on them.
 

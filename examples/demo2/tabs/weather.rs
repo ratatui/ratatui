@@ -88,7 +88,7 @@ fn render_simple_barchart(area: Rect, buf: &mut Buffer) {
             Bar::default()
                 .value(value)
                 // This doesn't actually render correctly as the text is too wide for the bar
-                // See https://github.com/ratatui-org/ratatui/issues/513 for more info
+                // See https://github.com/ratatui/ratatui/issues/513 for more info
                 // (the demo GIFs hack around this by hacking the calculation in bars.rs)
                 .text_value(format!("{value}°"))
                 .style(if value > 70 {

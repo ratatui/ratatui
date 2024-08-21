@@ -3,7 +3,7 @@ avoid-breaking-exported-api = false
 # https://rust-lang.github.io/rust-clippy/master/index.html#/multiple_crate_versions
 # ratatui -> bitflags v2.3
 # termwiz -> wezterm-blob-leases -> mac_address -> nix -> bitflags v1.3.2
-# crossterm -> all the windows- deps https://github.com/ratatui-org/ratatui/pull/1064#issuecomment-2078848980
+# crossterm -> all the windows- deps https://github.com/ratatui/ratatui/pull/1064#issuecomment-2078848980
 allowed-duplicate-crates = [
     "bitflags",
     "windows-targets",

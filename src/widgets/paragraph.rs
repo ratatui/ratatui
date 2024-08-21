@@ -220,7 +220,7 @@ impl<'a> Paragraph<'a> {
     /// convention across the crate.
     ///
     /// For more information about future scrolling design and concerns, see [RFC: Design of
-    /// Scrollable Widgets](https://github.com/ratatui-org/ratatui/issues/174) on GitHub.
+    /// Scrollable Widgets](https://github.com/ratatui/ratatui/issues/174) on GitHub.
     #[must_use = "method moves the value of self and returns the modified value"]
     pub const fn scroll(mut self, offset: (Vertical, Horizontal)) -> Self {
         self.scroll = Position {
@@ -313,7 +313,7 @@ impl<'a> Paragraph<'a> {
     /// ```
     #[instability::unstable(
         feature = "rendered-line-info",
-        issue = "https://github.com/ratatui-org/ratatui/issues/293"
+        issue = "https://github.com/ratatui/ratatui/issues/293"
     )]
     pub fn line_count(&self, width: u16) -> usize {
         if width < 1 {
@@ -368,7 +368,7 @@ impl<'a> Paragraph<'a> {
     /// ```
     #[instability::unstable(
         feature = "rendered-line-info",
-        issue = "https://github.com/ratatui-org/ratatui/issues/293"
+        issue = "https://github.com/ratatui/ratatui/issues/293"
     )]
     pub fn line_width(&self) -> usize {
         let width = self.text.iter().map(Line::width).max().unwrap_or_default();
@@ -1128,7 +1128,7 @@ mod test {
         assert_eq!(p.alignment, Alignment::Right);
     }
 
-    /// Regression test for <https://github.com/ratatui-org/ratatui/issues/990>
+    /// Regression test for <https://github.com/ratatui/ratatui/issues/990>
     ///
     /// This test ensures that paragraphs with a block and styled text are rendered correctly.
     /// It has been simplified from the original issue but tests the same functionality.
