@@ -794,7 +794,7 @@ mod tests {
     #[test]
     fn from_line() {
         let text = Text::from(Line::from("The first line"));
-        assert_eq!(text.lines, vec![Line::from("The first line")]);
+        assert_eq!(text.lines, [Line::from("The first line")]);
     }
 
     #[rstest]
@@ -1042,7 +1042,7 @@ mod tests {
     fn push_line_empty() {
         let mut text = Text::default();
         text.push_line(Line::from("Hello, world!"));
-        assert_eq!(text.lines, vec![Line::from("Hello, world!")]);
+        assert_eq!(text.lines, [Line::from("Hello, world!")]);
     }
 
     #[test]
@@ -1064,7 +1064,7 @@ mod tests {
     fn push_span_empty() {
         let mut text = Text::default();
         text.push_span(Span::raw("Hello, world!"));
-        assert_eq!(text.lines, vec![Line::from(Span::raw("Hello, world!"))],);
+        assert_eq!(text.lines, [Line::from(Span::raw("Hello, world!"))]);
     }
 
     mod widget {
