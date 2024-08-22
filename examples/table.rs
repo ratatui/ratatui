@@ -294,7 +294,7 @@ fn generate_fake_names() -> Vec<Data> {
             }
         })
         .sorted_by(|a, b| a.name.cmp(&b.name))
-        .collect_vec()
+        .collect()
 }
 
 fn constraint_len_calculator(items: &[Data]) -> (u16, u16, u16) {

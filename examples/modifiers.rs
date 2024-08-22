@@ -19,7 +19,6 @@
 
 use std::{error::Error, iter::once, result};
 
-use itertools::Itertools;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout},
@@ -66,7 +65,7 @@ fn draw(frame: &mut Frame) {
                 .split(*area)
                 .to_vec()
         })
-        .collect_vec();
+        .collect::<Vec<_>>();
 
     let colors = [
         Color::Black,
@@ -77,7 +76,7 @@ fn draw(frame: &mut Frame) {
     ];
     let all_modifiers = once(Modifier::empty())
         .chain(Modifier::all().iter())
-        .collect_vec();
+        .collect::<Vec<_>>();
     let mut index = 0;
     for bg in &colors {
         for fg in &colors {

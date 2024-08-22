@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Margin, Rect},
@@ -96,13 +95,10 @@ fn render_inbox(selected_index: usize, area: Rect, buf: &mut Buffer) {
         .map(|e| e.from.width())
         .max()
         .unwrap_or_default();
-    let items = EMAILS
-        .iter()
-        .map(|e| {
-            let from = format!("{:width$}", e.from, width = from_width).into();
-            ListItem::new(Line::from(vec![from, " ".into(), e.subject.into()]))
-        })
-        .collect_vec();
+    let items = EMAILS.iter().map(|e| {
+        let from = format!("{:width$}", e.from, width = from_width).into();
+        ListItem::new(Line::from(vec![from, " ".into(), e.subject.into()]))
+    });
     let mut state = ListState::default().with_selected(Some(selected_index));
     StatefulWidget::render(
         List::new(items)
@@ -151,7 +147,7 @@ fn render_email(selected_index: usize, area: Rect, buf: &mut Buffer) {
         Paragraph::new(headers)
             .style(theme.body)
             .render(headers_area, buf);
-        let body = email.body.lines().map(Line::from).collect_vec();
+        let body = email.body.lines().map(Line::from).collect::<Vec<_>>();
         Paragraph::new(body)
             .style(theme.body)
             .render(body_area, buf);

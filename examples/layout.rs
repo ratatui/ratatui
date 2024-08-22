@@ -89,9 +89,9 @@ fn draw(frame: &mut Frame) {
             .iter()
             .copied()
             .take(5) // ignore Min(0)
-            .collect_vec()
+            .collect::<Vec<_>>()
         })
-        .collect_vec();
+        .collect::<Vec<_>>();
 
     // the examples are a cartesian product of the following constraints
     // e.g. Len/Len, Len/Min, Len/Max, Len/Perc, Len/Ratio, Min/Len, Min/Min, ...
@@ -150,7 +150,7 @@ fn draw(frame: &mut Frame) {
             .iter()
             .copied()
             .zip(examples_b.iter().copied())
-            .collect_vec();
+            .collect();
         render_example_combination(
             frame,
             example_areas[i],

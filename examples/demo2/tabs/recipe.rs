@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Constraint, Layout, Margin, Rect},
@@ -149,7 +148,7 @@ fn render_recipe(area: Rect, buf: &mut Buffer) {
     let lines = RECIPE
         .iter()
         .map(|(step, text)| Line::from(vec![step.white().bold(), text.gray()]))
-        .collect_vec();
+        .collect::<Vec<_>>();
     Paragraph::new(lines)
         .wrap(Wrap { trim: true })
         .block(Block::new().padding(Padding::new(0, 1, 0, 0)))

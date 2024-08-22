@@ -307,7 +307,7 @@ impl App {
                         .bg(name.color())
                 })
                 .intersperse(Span::from(" "))
-                .collect_vec(),
+                .collect::<Vec<_>>(),
             )
             .centered(),
         )
@@ -346,13 +346,8 @@ impl App {
     }
 
     fn render_user_constraints_legend(&self, area: Rect, buf: &mut Buffer) {
-        let blocks = Layout::horizontal(
-            self.constraints
-                .iter()
-                .map(|_| Constraint::Fill(1))
-                .collect_vec(),
-        )
-        .split(area);
+        let blocks =
+            Layout::horizontal(self.constraints.iter().map(|_| Constraint::Fill(1))).split(area);
 
         for (i, (area, constraint)) in blocks.iter().zip(self.constraints.iter()).enumerate() {
             let selected = self.selected_index == i;

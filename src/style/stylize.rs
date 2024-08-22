@@ -230,8 +230,6 @@ impl Styled for String {
 
 #[cfg(test)]
 mod tests {
-    use itertools::Itertools;
-
     use super::*;
 
     #[test]
@@ -345,8 +343,8 @@ mod tests {
         // format!() is used to create a temporary String inside a closure, which suffers the same
         // issue as above without the `Styled` trait impl for `String`
         let items = [String::from("a"), String::from("b")];
-        let sss = items.iter().map(|s| format!("{s}{s}").red()).collect_vec();
-        assert_eq!(sss, vec![Span::from("aa").red(), Span::from("bb").red()]);
+        let sss = items.iter().map(|s| format!("{s}{s}").red());
+        assert!(sss.eq([Span::from("aa").red(), Span::from("bb").red()]));
     }
 
     #[test]

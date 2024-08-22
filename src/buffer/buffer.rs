@@ -618,7 +618,6 @@ impl fmt::Debug for Buffer {
 mod tests {
     use std::iter;
 
-    use itertools::Itertools;
     use rstest::{fixture, rstest};
 
     use super::*;
@@ -924,7 +923,7 @@ mod tests {
             .content
             .iter()
             .map(Cell::symbol)
-            .join("");
+            .fold(String::new(), |acc, x| acc + x);
         assert_eq!(actual_contents, expected);
 
         let actual_styles = small_one_line_buffer.content.iter().map(|c| c.fg);

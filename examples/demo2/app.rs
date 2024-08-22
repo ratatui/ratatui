@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use color_eyre::{eyre::Context, Result};
 use crossterm::event;
-use itertools::Itertools;
 use ratatui::{
     buffer::Buffer,
     crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind},
@@ -195,7 +194,7 @@ impl App {
                 let desc = Span::styled(format!(" {desc} "), THEME.key_binding.description);
                 [key, desc]
             })
-            .collect_vec();
+            .collect::<Vec<_>>();
         Line::from(spans)
             .centered()
             .style((Color::Indexed(236), Color::Indexed(232)))

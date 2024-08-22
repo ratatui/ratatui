@@ -17,7 +17,6 @@
 // and background colors with their names and indexes.
 
 use color_eyre::Result;
-use itertools::Itertools;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Alignment, Constraint, Layout, Rect},
@@ -107,7 +106,7 @@ fn render_fg_named_colors(frame: &mut Frame, bg: Color, area: Rect) {
                 .split(*area)
                 .to_vec()
         })
-        .collect_vec();
+        .collect::<Vec<_>>();
     for (i, &fg) in NAMED_COLORS.iter().enumerate() {
         let color_name = fg.to_string();
         let paragraph = Paragraph::new(color_name).fg(fg).bg(bg);
@@ -128,7 +127,7 @@ fn render_bg_named_colors(frame: &mut Frame, fg: Color, area: Rect) {
                 .split(*area)
                 .to_vec()
         })
-        .collect_vec();
+        .collect::<Vec<_>>();
     for (i, &bg) in NAMED_COLORS.iter().enumerate() {
         let color_name = bg.to_string();
         let paragraph = Paragraph::new(color_name).fg(fg).bg(bg);
@@ -199,7 +198,7 @@ fn render_indexed_colors(frame: &mut Frame, area: Rect) {
                 .split(area)
                 .to_vec()
         })
-        .collect_vec();
+        .collect::<Vec<_>>();
 
     for i in 16..=231 {
         let color = Color::Indexed(i);
@@ -236,7 +235,7 @@ fn render_indexed_grayscale(frame: &mut Frame, area: Rect) {
             .split(*area)
             .to_vec()
     })
-    .collect_vec();
+    .collect::<Vec<_>>();
 
     for i in 232..=255 {
         let color = Color::Indexed(i);

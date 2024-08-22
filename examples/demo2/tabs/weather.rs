@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use palette::Okhsv;
 use ratatui::{
     buffer::Buffer,
@@ -103,7 +102,7 @@ fn render_simple_barchart(area: Rect, buf: &mut Buffer) {
                 })
                 .label(label.into())
         })
-        .collect_vec();
+        .collect::<Vec<_>>();
     let group = BarGroup::default().bars(&data);
     BarChart::default()
         .data(group)
