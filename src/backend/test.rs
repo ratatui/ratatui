@@ -91,7 +91,7 @@ impl TestBackend {
     /// but that could be accessed by scrolling back in the terminal's history. This would normally
     /// be done using the terminal's scrollbar or an equivalent keyboard shortcut.
     ///
-    /// The scrollback buffer starts out empty. Lines are appeneded when they scroll off the top of
+    /// The scrollback buffer starts out empty. Lines are appended when they scroll off the top of
     /// the main buffer. This happens when lines are appended to the bottom of the main buffer
     /// using [`Backend::append_lines`].
     ///
