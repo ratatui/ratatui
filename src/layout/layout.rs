@@ -5,7 +5,6 @@ use cassowary::{
     AddConstraintError, Expression, Solver, Variable,
     WeightedRelation::{EQ, GE, LE},
 };
-use itertools::Itertools;
 use lru::LruCache;
 
 use self::strengths::{
@@ -40,6 +39,22 @@ thread_local! {
     static LAYOUT_CACHE: RefCell<Cache> = RefCell::new(Cache::new(
         NonZeroUsize::new(Layout::DEFAULT_CACHE_SIZE).unwrap(),
     ));
+}
+
+// Similar to `itertools::Itertools::tuple_combinations`.
+fn tuple_combinations<T, E>(
+    slice: &[T],
+    mut f: impl FnMut((&T, &T)) -> Result<(), E>,
+) -> Result<(), E> {
+    if !slice.is_empty() {
+        for (ind, left) in slice[..slice.len() - 1].iter().enumerate() {
+            for right in &slice[ind + 1..] {
+                f((left, right))?;
+            }
+        }
+    }
+
+    Ok(())
 }
 
 /// A layout is a set of constraints that can be applied to a given area to split it into smaller
@@ -624,18 +639,15 @@ impl Layout {
         let variable_count = self.constraints.len() * 2 + 2;
         let variables = iter::repeat_with(Variable::new)
             .take(variable_count)
-            .collect_vec();
+            .collect::<Vec<_>>();
         let spacers = variables
-            .iter()
-            .tuples()
-            .map(|(a, b)| Element::from((*a, *b)))
-            .collect_vec();
-        let segments = variables
-            .iter()
-            .skip(1)
-            .tuples()
-            .map(|(a, b)| Element::from((*a, *b)))
-            .collect_vec();
+            .chunks_exact(2)
+            .map(|s| Element::from((s[0], s[1])))
+            .collect::<Vec<_>>();
+        let segments = variables[1..]
+            .chunks_exact(2)
+            .map(|s| Element::from((s[0], s[1])))
+            .collect::<Vec<_>>();
 
         let flex = self.flex;
         let spacing = self.spacing;
@@ -649,8 +661,8 @@ impl Layout {
         configure_fill_constraints(&mut solver, &segments, constraints, flex)?;
 
         if !flex.is_legacy() {
-            for (left, right) in segments.iter().tuple_windows() {
-                solver.add_constraint(left.has_size(right, ALL_SEGMENT_GROW))?;
+            for s in segments.windows(2) {
+                solver.add_constraint(s[0].has_size(s[1], ALL_SEGMENT_GROW))?;
             }
         }
 
@@ -688,8 +700,8 @@ fn configure_variable_constraints(
     }
 
     // all variables are in ascending order
-    for (&left, &right) in variables.iter().tuple_windows() {
-        solver.add_constraint(left | LE(REQUIRED) | right)?;
+    for s in variables.windows(2) {
+        solver.add_constraint(s[0] | LE(REQUIRED) | s[1])?;
     }
 
     Ok(())
@@ -759,9 +771,9 @@ fn configure_flex_constraints(
         // all spacers are the same size and will grow to fill any remaining space after the
         // constraints are satisfied
         Flex::SpaceAround => {
-            for (left, right) in spacers.iter().tuple_combinations() {
-                solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))?;
-            }
+            tuple_combinations(spacers, |(left, right)| {
+                solver.add_constraint(left.has_size(right, SPACER_SIZE_EQ))
+            })?;
             for spacer in spacers {
                 solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
                 solver.add_constraint(spacer.has_size(area, SPACE_GROW))?;
@@ -771,9 +783,9 @@ fn configure_flex_constraints(
         // all spacers are the same size and will grow to fill any remaining space after the
         // constraints are satisfied, but the first and last spacers are zero size
         Flex::SpaceBetween => {
-            for (left, right) in spacers_except_first_and_last.iter().tuple_combinations() {
-                solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))?;
-            }
+            tuple_combinations(spacers_except_first_and_last, |(left, right)| {
+                solver.add_constraint(left.has_size(right.size(), SPACER_SIZE_EQ))
+            })?;
             for spacer in spacers_except_first_and_last {
                 solver.add_constraint(spacer.has_min_size(spacing, SPACER_SIZE_EQ))?;
             }
@@ -837,29 +849,30 @@ fn configure_fill_constraints(
     constraints: &[Constraint],
     flex: Flex,
 ) -> Result<(), AddConstraintError> {
-    for ((&left_constraint, &left_element), (&right_constraint, &right_element)) in constraints
-        .iter()
-        .zip(segments.iter())
-        .filter(|(c, _)| c.is_fill() || (!flex.is_legacy() && c.is_min()))
-        .tuple_combinations()
-    {
-        let left_scaling_factor = match left_constraint {
-            Constraint::Fill(scale) => f64::from(scale).max(1e-6),
-            Constraint::Min(_) => 1.0,
-            _ => unreachable!(),
-        };
-        let right_scaling_factor = match right_constraint {
-            Constraint::Fill(scale) => f64::from(scale).max(1e-6),
-            Constraint::Min(_) => 1.0,
-            _ => unreachable!(),
-        };
-        solver.add_constraint(
-            (right_scaling_factor * left_element.size())
-                | EQ(GROW)
-                | (left_scaling_factor * right_element.size()),
-        )?;
-    }
-    Ok(())
+    tuple_combinations(
+        &constraints
+            .iter()
+            .zip(segments)
+            .filter(|(c, _)| c.is_fill() || (!flex.is_legacy() && c.is_min()))
+            .collect::<Vec<_>>(),
+        |((&left_constraint, &left_element), (&right_constraint, &right_element))| {
+            let left_scaling_factor = match left_constraint {
+                Constraint::Fill(scale) => f64::from(scale).max(1e-6),
+                Constraint::Min(_) => 1.0,
+                _ => unreachable!(),
+            };
+            let right_scaling_factor = match right_constraint {
+                Constraint::Fill(scale) => f64::from(scale).max(1e-6),
+                Constraint::Min(_) => 1.0,
+                _ => unreachable!(),
+            };
+            solver.add_constraint(
+                (right_scaling_factor * left_element.size())
+                    | EQ(GROW)
+                    | (left_scaling_factor * right_element.size()),
+            )
+        },
+    )
 }
 
 fn changes_to_rects(

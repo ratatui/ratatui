@@ -21,8 +21,6 @@ mod world;
 
 use std::{fmt, iter::zip};
 
-use itertools::Itertools;
-
 pub use self::{
     circle::Circle,
     line::Line,
@@ -281,11 +279,7 @@ impl Grid for HalfBlockGrid {
 
         // first we join each adjacent row together to get an iterator that contains vertical pairs
         // of pixels, with the lower row being the first element in the pair
-        let vertical_color_pairs = self
-            .pixels
-            .iter()
-            .tuples()
-            .flat_map(|(upper_row, lower_row)| zip(upper_row, lower_row));
+        let vertical_color_pairs = self.pixels.chunks_exact(2).flat_map(|s| zip(&s[0], &s[1]));
 
         // then we work out what character to print for each pair of pixels
         let string = vertical_color_pairs

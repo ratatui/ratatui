@@ -925,20 +925,16 @@ mod tests {
             .iter()
             .map(Cell::symbol)
             .join("");
-        let actual_styles = small_one_line_buffer
-            .content
-            .iter()
-            .map(|c| c.fg)
-            .collect_vec();
+        assert_eq!(actual_contents, expected);
+
+        let actual_styles = small_one_line_buffer.content.iter().map(|c| c.fg);
 
         // set_line only sets the style for non-empty cells (unlike Line::render which sets the
         // style for all cells)
         let expected_styles = iter::repeat(color)
             .take(content.len().min(5))
-            .chain(iter::repeat(Color::default()).take(5_usize.saturating_sub(content.len())))
-            .collect_vec();
-        assert_eq!(actual_contents, expected);
-        assert_eq!(actual_styles, expected_styles);
+            .chain(iter::repeat(Color::default()).take(5_usize.saturating_sub(content.len())));
+        assert!(actual_styles.eq(expected_styles));
     }
 
     #[test]

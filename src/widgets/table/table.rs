@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 #[allow(unused_imports)] // `Cell` is used in the doc comment but not the code
 use super::Cell;
 use super::{HighlightSpacing, Row, TableState};
@@ -276,7 +274,7 @@ impl<'a> Table<'a> {
         C: IntoIterator,
         C::Item: Into<Constraint>,
     {
-        let widths = widths.into_iter().map(Into::into).collect_vec();
+        let widths = widths.into_iter().map(Into::into).collect::<Vec<_>>();
         ensure_percentages_less_than_100(&widths);
 
         let rows = rows.into_iter().map(Into::into).collect();
@@ -390,7 +388,7 @@ impl<'a> Table<'a> {
         I: IntoIterator,
         I::Item: Into<Constraint>,
     {
-        let widths = widths.into_iter().map(Into::into).collect_vec();
+        let widths = widths.into_iter().map(Into::into).collect::<Vec<_>>();
         ensure_percentages_less_than_100(&widths);
         self.widths = widths;
         self

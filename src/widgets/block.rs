@@ -5,7 +5,6 @@
 //! In its simplest form, a `Block` is a [border](Borders) around another widget. It can have a
 //! [title](Block::title) and [padding](Block::padding).
 
-use itertools::Itertools;
 use strum::{Display, EnumString};
 
 use crate::{prelude::*, style::Styled, symbols::border, widgets::Borders};
@@ -827,7 +826,7 @@ impl Block<'_> {
     fn render_center_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self
             .filtered_titles(position, Alignment::Center)
-            .collect_vec();
+            .collect::<Vec<_>>();
         let total_width = titles
             .iter()
             .map(|title| title.content.width() as u16 + 1) // space between titles
