@@ -86,6 +86,18 @@ impl TestBackend {
     }
 
     /// Returns a reference to the internal scrollback buffer of the `TestBackend`.
+    ///
+    /// The scrollback buffer represents the part of the screen that is currently hidden from view,
+    /// but that could be accessed by scrolling back in the terminal's history. This would normally
+    /// be done using the terminal's scrollbar or an equivalent keyboard shortcut.
+    ///
+    /// The scrollback buffer starts out empty. Lines are appeneded when they scroll off the top of
+    /// the main buffer. This happens when lines are appended to the bottom of the main buffer
+    /// using [`Backend::append_lines`].
+    ///
+    /// The scrollback buffer has a maximum height of [`u16::MAX`]. If lines are appended to the
+    /// bottom of the scrollback buffer when it is at its maximum height, a corresponding number of
+    /// lines will be removed from the top.
     pub const fn scrollback(&self) -> &Buffer {
         &self.scrollback
     }
