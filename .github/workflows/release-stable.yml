@@ -1,0 +1,33 @@
+name: Release stable version
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  publish-stable:
+    name: Create an stable release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: BODY.md
+
+      - name: Publish on GitHub
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.NEXT_TAG }}
+          prerelease: false
+          bodyFile: BODY.md

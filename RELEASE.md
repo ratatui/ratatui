@@ -1,5 +1,9 @@
 # Creating a Release
 
+Our release strategy is:
+
+> Release major/minor versions with detailed summaries when necessary, while releasing point/patch versions weekly or as needed without extensive announcements.
+
 [crates.io](https://crates.io/crates/ratatui) releases are automated via [GitHub
 actions](.github/workflows/cd.yml) and triggered by pushing a tag.
 
