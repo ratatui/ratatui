@@ -1436,13 +1436,14 @@ mod tests {
         }
 
         #[test]
-        fn render_with_incorrect_width_count_does_not_panic() {
+        fn render_with_selected_column_and_incorrect_width_count_does_not_panic() {
             let mut buf = Buffer::empty(Rect::new(0, 0, 20, 3));
             let table = Table::new(
                 vec![Row::new(vec!["Row1", "Row2", "Row3"])],
                 [Constraint::Length(10); 1],
             );
-            Widget::render(table, Rect::new(0, 0, 20, 3), &mut buf);
+            let mut state = TableState::new().with_selected_column(2);
+            StatefulWidget::render(table, Rect::new(0, 0, 20, 3), &mut buf, &mut state);
         }
 
         #[test]
