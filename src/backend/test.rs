@@ -288,19 +288,19 @@ impl Backend for TestBackend {
             // scrollback.
             let scroll_by: usize = (line_count - lines_after_cursor).into();
             let width: usize = self.buffer.area.width.into();
-            let to_splice = self.buffer.content.len().min(width * scroll_by);
+            let cells_to_scrollback = self.buffer.content.len().min(width * scroll_by);
 
             append_to_scrollback(
                 &mut self.scrollback,
                 self.buffer.content.splice(
-                    0..to_splice,
-                    iter::repeat_with(Default::default).take(to_splice),
+                    0..cells_to_scrollback,
+                    iter::repeat_with(Default::default).take(cells_to_scrollback),
                 ),
             );
-            self.buffer.content.rotate_left(to_splice);
+            self.buffer.content.rotate_left(cells_to_scrollback);
             append_to_scrollback(
                 &mut self.scrollback,
-                iter::repeat_with(Default::default).take(width * scroll_by - to_splice),
+                iter::repeat_with(Default::default).take(width * scroll_by - cells_to_scrollback),
             );
         }
 
