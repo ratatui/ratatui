@@ -138,7 +138,7 @@ impl TestBackend {
         crate::assert_buffer_eq!(&self.scrollback, expected);
     }
 
-    /// Asserts that the `TestBackend`'s scrollback buffer is empty, but also has the given width.
+    /// Asserts that the `TestBackend`'s scrollback buffer is empty.
     ///
     /// # Panics
     /// When the scrollback buffer is not equal, a panic occurs with a detailed error message
@@ -146,10 +146,8 @@ impl TestBackend {
     pub fn assert_scrollback_empty(&self) {
         let expected = Buffer {
             area: Rect {
-                x: 0,
-                y: 0,
                 width: self.scrollback.area.width,
-                height: 0,
+                ..Rect::ZERO
             },
             content: vec![],
         };
@@ -347,31 +345,21 @@ impl Backend for TestBackend {
 /// multiple of the buffer's width. If the scrollback buffer ends up larger than 65535 lines tall,
 /// then lines will be removed from the top to get it down to size.
 fn append_to_scrollback(scrollback: &mut Buffer, cells: impl IntoIterator<Item = Cell>) {
-    let width = scrollback.area.width as usize;
-    let len_before = scrollback.content.len();
     scrollback.content.extend(cells);
-    let cells_appended = scrollback.content.len() - len_before;
-    let lines_appended = cells_appended / width;
-    assert_eq!(
-        cells_appended,
-        lines_appended * width,
-        "count of appended cells not a multiple of scrollback buffer width"
-    );
-
-    let new_scrollback_height = scrollback.area.height as usize + lines_appended;
-    if u16::try_from(new_scrollback_height).is_ok() {
-        scrollback.area.height = new_scrollback_height as u16;
-    } else {
-        scrollback
-            .content
-            .drain(0..width * (new_scrollback_height - u16::MAX as usize));
-        scrollback.area.height = u16::MAX;
-    }
+    let width = scrollback.area.width as usize;
+    let new_height = (scrollback.content.len() / width).min(u16::MAX as usize);
+    let keep_from = scrollback
+        .content
+        .len()
+        .saturating_sub(width * u16::MAX as usize);
+    scrollback.content.drain(0..keep_from);
+    scrollback.area.height = new_height as u16;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use itertools::Itertools as _;
 
     #[test]
     fn new() {
@@ -843,35 +831,27 @@ mod tests {
 
     #[test]
     #[allow(deprecated)]
-    fn append_u16_max_plus_10_lines() {
+    fn append_lines_truncates_beyond_u16_max() -> io::Result<()> {
         let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
 
-        for i in 0..65546 {
-            let cells = format!("{i:>10}")
-                .drain(..)
-                .map(|c| {
-                    let mut cell = Cell::EMPTY;
-                    cell.set_char(c);
-                    cell
-                })
-                .collect::<Vec<_>>();
-            if i > 4 {
-                backend
-                    .set_cursor_position(Position { x: 0, y: 4 })
-                    .unwrap();
-                backend.append_lines(1).unwrap();
+        //        backend.buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
+
+        // Fill the scrollback with 65535 + 10 lines.
+        let row_count = u16::MAX as usize + 10;
+        for row in 0..=row_count {
+            if row > 4 {
+                backend.set_cursor_position(Position { x: 0, y: 4 })?;
+                backend.append_lines(1)?;
             }
-            backend
-                .draw(
-                    cells
-                        .iter()
-                        .enumerate()
-                        .map(|(j, c)| (j as u16, 4.min(i) as u16, c)),
-                )
-                .unwrap();
+            let cells = format!("{row:>10}").chars().map(Cell::from).collect_vec();
+            let content = cells
+                .iter()
+                .enumerate()
+                .map(|(column, cell)| (column as u16, 4.min(row) as u16, cell));
+            backend.draw(content)?;
         }
 
+        // check that the buffer contains the last 5 lines appended
         backend.assert_buffer_lines([
             "     65541",
             "     65542",
@@ -880,39 +860,47 @@ mod tests {
             "     65545",
         ]);
 
-        // Make sure the scrollback is the right size.
-        assert_eq!(backend.scrollback.area.width, 10);
-        assert_eq!(backend.scrollback.area.height, 65535);
-        assert_eq!(backend.scrollback.content.len(), 10 * 65535);
-
-        // Compare the first 5 lines of the scrollback.
-        let mut scrollback_top = Buffer::empty(Rect::new(0, 0, 10, 5));
-        scrollback_top.content[0..10 * 5].clone_from_slice(&backend.scrollback.content[0..10 * 5]);
-        crate::assert_buffer_eq!(
-            &scrollback_top,
-            &Buffer::with_lines([
+        // TODO: ideally this should be something like:
+        //     let lines = (6..=65545).map(|row| format!("{row:>10}"));
+        //     backend.assert_scrollback_lines(lines);
+        // but there's some truncation happening in Buffer::with_lines that needs to be fixed
+        assert_eq!(
+            Buffer {
+                area: Rect::new(0, 0, 10, 5),
+                content: backend.scrollback.content[0..10 * 5].to_vec(),
+            },
+            Buffer::with_lines([
                 "         6",
                 "         7",
                 "         8",
                 "         9",
                 "        10",
-            ])
+            ]),
+            "first 5 lines of scrollback should have been truncated"
         );
 
-        // Compare the last 5 lines of the scrollback.
-        let mut scrollback_bottom = Buffer::empty(Rect::new(0, 0, 10, 5));
-        scrollback_bottom.content[0..10 * 5]
-            .clone_from_slice(&backend.scrollback.content[10 * 65530..10 * 65535]);
-        crate::assert_buffer_eq!(
-            &scrollback_bottom,
-            &Buffer::with_lines([
+        assert_eq!(
+            Buffer {
+                area: Rect::new(0, 0, 10, 5),
+                content: backend.scrollback.content[10 * 65530..10 * 65535].to_vec(),
+            },
+            Buffer::with_lines([
                 "     65536",
                 "     65537",
                 "     65538",
                 "     65539",
                 "     65540",
-            ])
+            ]),
+            "last 5 lines of scrollback should have been appended"
         );
+
+        // These checks come after the content checks as otherwise we won't see the failing content
+        // when these checks fail.
+        // Make sure the scrollback is the right size.
+        assert_eq!(backend.scrollback.area.width, 10);
+        assert_eq!(backend.scrollback.area.height, 65535);
+        assert_eq!(backend.scrollback.content.len(), 10 * 65535);
+        Ok(())
     }
 
     #[test]
