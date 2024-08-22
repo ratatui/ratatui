@@ -158,7 +158,7 @@ impl<'a> ListItem<'a> {
     /// let item = ListItem::new("Multi-line\nitem");
     /// assert_eq!(item.height(), 2);
     /// ```
-    pub fn height(&self) -> usize {
+    pub const fn height(&self) -> usize {
         self.content.height()
     }
 

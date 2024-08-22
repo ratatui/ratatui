@@ -124,11 +124,13 @@ mod tests {
     fn into_text() {
         let masked = Masked::new("12345", 'x');
 
-        let text: Text = (&masked).into();
-        assert_eq!(text.lines, vec![Line::from("xxxxx")]);
+        {
+            let text: Text = (&masked).into();
+            assert_eq!(&*text.lines, [Line::from("xxxxx")]);
+        }
 
         let text: Text = masked.into();
-        assert_eq!(text.lines, vec![Line::from("xxxxx")]);
+        assert_eq!(&*text.lines, [Line::from("xxxxx")]);
     }
 
     #[test]

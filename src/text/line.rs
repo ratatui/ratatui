@@ -2,6 +2,7 @@
 #![warn(clippy::pedantic, clippy::nursery, clippy::arithmetic_side_effects)]
 use std::{borrow::Cow, fmt};
 
+use smallvec::{smallvec, SmallVec};
 use unicode_truncate::UnicodeTruncateStr;
 
 use crate::{prelude::*, style::Styled, text::StyledGrapheme};
@@ -152,7 +153,7 @@ use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Line<'a> {
     /// The spans that make up this line of text.
-    pub spans: Vec<Span<'a>>,
+    pub spans: SmallVec<Span<'a>, 1>,
 
     /// The style of this line of text.
     pub style: Style,
@@ -161,7 +162,7 @@ pub struct Line<'a> {
     pub alignment: Option<Alignment>,
 }
 
-fn cow_to_spans<'a>(content: impl Into<Cow<'a, str>>) -> Vec<Span<'a>> {
+fn cow_to_spans<'a>(content: impl Into<Cow<'a, str>>) -> SmallVec<Span<'a>, 1> {
     match content.into() {
         Cow::Borrowed(s) => s.lines().map(Span::raw).collect(),
         Cow::Owned(s) => s.lines().map(|v| Span::raw(v.to_string())).collect(),
@@ -478,25 +479,25 @@ impl<'a> Line<'a> {
 
 impl<'a> IntoIterator for Line<'a> {
     type Item = Span<'a>;
-    type IntoIter = std::vec::IntoIter<Span<'a>>;
+    type IntoIter = smallvec::IntoIter<Span<'a>, 1>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.spans.into_iter()
     }
 }
 
-impl<'a> IntoIterator for &'a Line<'a> {
-    type Item = &'a Span<'a>;
-    type IntoIter = std::slice::Iter<'a, Span<'a>>;
+impl<'a, 'b> IntoIterator for &'a Line<'b> {
+    type Item = &'a Span<'b>;
+    type IntoIter = std::slice::Iter<'a, Span<'b>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-impl<'a> IntoIterator for &'a mut Line<'a> {
-    type Item = &'a mut Span<'a>;
-    type IntoIter = std::slice::IterMut<'a, Span<'a>>;
+impl<'a, 'b> IntoIterator for &'a mut Line<'b> {
+    type Item = &'a mut Span<'b>;
+    type IntoIter = std::slice::IterMut<'a, Span<'b>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
@@ -517,6 +518,12 @@ impl<'a> From<&'a str> for Line<'a> {
 
 impl<'a> From<Vec<Span<'a>>> for Line<'a> {
     fn from(spans: Vec<Span<'a>>) -> Self {
+        Self::from(SmallVec::from(spans))
+    }
+}
+
+impl<'a> From<SmallVec<Span<'a>, 1>> for Line<'a> {
+    fn from(spans: SmallVec<Span<'a>, 1>) -> Self {
         Self {
             spans,
             ..Default::default()
@@ -526,7 +533,7 @@ impl<'a> From<Vec<Span<'a>>> for Line<'a> {
 
 impl<'a> From<Span<'a>> for Line<'a> {
     fn from(span: Span<'a>) -> Self {
-        Self::from(vec![span])
+        Self::from(smallvec![span])
     }
 }
 
@@ -741,11 +748,11 @@ mod tests {
     #[test]
     fn raw_str() {
         let line = Line::raw("test content");
-        assert_eq!(line.spans, vec![Span::raw("test content")]);
+        assert_eq!(&*line.spans, [Span::raw("test content")]);
         assert_eq!(line.alignment, None);
 
         let line = Line::raw("a\nb");
-        assert_eq!(line.spans, vec![Span::raw("a"), Span::raw("b")]);
+        assert_eq!(&*line.spans, [Span::raw("a"), Span::raw("b")]);
         assert_eq!(line.alignment, None);
     }
 
@@ -754,7 +761,7 @@ mod tests {
         let style = Style::new().yellow();
         let content = "Hello, world!";
         let line = Line::styled(content, style);
-        assert_eq!(line.spans, vec![Span::raw(content)]);
+        assert_eq!(&*line.spans, [Span::raw(content)]);
         assert_eq!(line.style, style);
     }
 
@@ -763,7 +770,7 @@ mod tests {
         let style = Style::new().yellow();
         let content = String::from("Hello, world!");
         let line = Line::styled(content.clone(), style);
-        assert_eq!(line.spans, vec![Span::raw(content)]);
+        assert_eq!(&*line.spans, [Span::raw(content)]);
         assert_eq!(line.style, style);
     }
 
@@ -772,7 +779,7 @@ mod tests {
         let style = Style::new().yellow();
         let content = Cow::from("Hello, world!");
         let line = Line::styled(content.clone(), style);
-        assert_eq!(line.spans, vec![Span::raw(content)]);
+        assert_eq!(&*line.spans, [Span::raw(content)]);
         assert_eq!(line.style, style);
     }
 
@@ -780,8 +787,8 @@ mod tests {
     fn spans_vec() {
         let line = Line::default().spans(vec!["Hello".blue(), " world!".green()]);
         assert_eq!(
-            line.spans,
-            vec![
+            &*line.spans,
+            [
                 Span::styled("Hello", Style::new().blue()),
                 Span::styled(" world!", Style::new().green()),
             ]
@@ -792,8 +799,8 @@ mod tests {
     fn spans_iter() {
         let line = Line::default().spans([1, 2, 3].iter().map(|i| format!("Item {i}")));
         assert_eq!(
-            line.spans,
-            vec![
+            &*line.spans,
+            [
                 Span::raw("Item 1"),
                 Span::raw("Item 2"),
                 Span::raw("Item 3"),
@@ -861,28 +868,28 @@ mod tests {
     fn from_string() {
         let s = String::from("Hello, world!");
         let line = Line::from(s);
-        assert_eq!(line.spans, vec![Span::from("Hello, world!")]);
+        assert_eq!(&*line.spans, [Span::from("Hello, world!")]);
 
         let s = String::from("Hello\nworld!");
         let line = Line::from(s);
-        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(&*line.spans, [Span::from("Hello"), Span::from("world!")]);
     }
 
     #[test]
     fn from_str() {
         let s = "Hello, world!";
         let line = Line::from(s);
-        assert_eq!(line.spans, vec![Span::from("Hello, world!")]);
+        assert_eq!(&*line.spans, [Span::from("Hello, world!")]);
 
         let s = "Hello\nworld!";
         let line = Line::from(s);
-        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(&*line.spans, [Span::from("Hello"), Span::from("world!")]);
     }
 
     #[test]
     fn to_line() {
         let line = 42.to_line();
-        assert_eq!(vec![Span::from("42")], line.spans);
+        assert_eq!([Span::from("42")], &*line.spans);
     }
 
     #[test]
@@ -892,15 +899,15 @@ mod tests {
             Span::styled(" world!", Style::default().fg(Color::Green)),
         ];
         let line = Line::from(spans.clone());
-        assert_eq!(line.spans, spans);
+        assert_eq!(&*line.spans, spans);
     }
 
     #[test]
     fn from_iter() {
         let line = Line::from_iter(vec!["Hello".blue(), " world!".green()]);
         assert_eq!(
-            line.spans,
-            vec![
+            &*line.spans,
+            [
                 Span::styled("Hello", Style::new().blue()),
                 Span::styled(" world!", Style::new().green()),
             ]
@@ -913,8 +920,8 @@ mod tests {
             .chain(iter::once(" world!".green()))
             .collect();
         assert_eq!(
-            line.spans,
-            vec![
+            &*line.spans,
+            [
                 Span::styled("Hello", Style::new().blue()),
                 Span::styled(" world!", Style::new().green()),
             ]
@@ -925,7 +932,7 @@ mod tests {
     fn from_span() {
         let span = Span::styled("Hello, world!", Style::default().fg(Color::Yellow));
         let line = Line::from(span.clone());
-        assert_eq!(line.spans, vec![span],);
+        assert_eq!(&*line.spans, [span]);
     }
 
     #[test]
@@ -933,7 +940,7 @@ mod tests {
         assert_eq!(
             Line::raw("Red").red() + Span::raw("blue").blue(),
             Line {
-                spans: vec![Span::raw("Red"), Span::raw("blue").blue()],
+                spans: smallvec![Span::raw("Red"), Span::raw("blue").blue()],
                 style: Style::new().red(),
                 alignment: None,
             },
@@ -945,7 +952,7 @@ mod tests {
         assert_eq!(
             Line::raw("Red").red() + Line::raw("Blue").blue(),
             Text {
-                lines: vec![Line::raw("Red").red(), Line::raw("Blue").blue()],
+                lines: smallvec![Line::raw("Red").red(), Line::raw("Blue").blue()],
                 style: Style::default(),
                 alignment: None,
             }
@@ -959,7 +966,7 @@ mod tests {
         assert_eq!(
             line,
             Line {
-                spans: vec![Span::raw("Red"), Span::raw("Blue").blue()],
+                spans: smallvec![Span::raw("Red"), Span::raw("Blue").blue()],
                 style: Style::new().red(),
                 alignment: None,
             },
@@ -970,13 +977,13 @@ mod tests {
     fn extend() {
         let mut line = Line::from("Hello, ");
         line.extend(vec![Span::raw("world!")]);
-        assert_eq!(line.spans, vec![Span::raw("Hello, "), Span::raw("world!")]);
+        assert_eq!(&*line.spans, [Span::raw("Hello, "), Span::raw("world!")]);
 
         let mut line = Line::from("Hello, ");
         line.extend(vec![Span::raw("world! "), Span::raw("How are you?")]);
         assert_eq!(
-            line.spans,
-            vec![
+            &*line.spans,
+            [
                 Span::raw("Hello, "),
                 Span::raw("world! "),
                 Span::raw("How are you?")
@@ -1070,8 +1077,8 @@ mod tests {
         line.push_span(Span::raw("B"));
         line.push_span("C");
         assert_eq!(
-            line.spans,
-            vec![Span::raw("A"), Span::raw("B"), Span::raw("C")]
+            &*line.spans,
+            [Span::raw("A"), Span::raw("B"), Span::raw("C")]
         );
     }
 

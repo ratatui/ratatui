@@ -2,6 +2,7 @@
 use std::{borrow::Cow, fmt};
 
 use itertools::{Itertools, Position};
+use smallvec::{smallvec, SmallVec};
 
 use crate::{prelude::*, style::Styled};
 
@@ -168,7 +169,7 @@ use crate::{prelude::*, style::Styled};
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Text<'a> {
     /// The lines that make up this piece of text.
-    pub lines: Vec<Line<'a>>,
+    pub lines: SmallVec<Line<'a>, 1>,
     /// The style of this text.
     pub style: Style,
     /// The alignment of this text.
@@ -189,13 +190,16 @@ impl<'a> Text<'a> {
     where
         T: Into<Cow<'a, str>>,
     {
-        let lines: Vec<_> = match content.into() {
-            Cow::Borrowed("") => vec![Line::from("")],
-            Cow::Borrowed(s) => s.lines().map(Line::from).collect(),
-            Cow::Owned(s) if s.is_empty() => vec![Line::from("")],
-            Cow::Owned(s) => s.lines().map(|l| Line::from(l.to_owned())).collect(),
-        };
-        Self::from(lines)
+        match content.into() {
+            Cow::Borrowed("") => Self::from(Line::from("")),
+            Cow::Borrowed(s) => Self::from(s.lines().map(Line::from).collect::<SmallVec<_, 1>>()),
+            Cow::Owned(s) if s.is_empty() => Self::from(Line::from("")),
+            Cow::Owned(s) => Self::from(
+                s.lines()
+                    .map(|l| Line::from(l.to_owned()))
+                    .collect::<SmallVec<_, 1>>(),
+            ),
+        }
     }
 
     /// Create some text (potentially multiple lines) with a style.
@@ -243,7 +247,7 @@ impl<'a> Text<'a> {
     /// let text = Text::from("The first line\nThe second line");
     /// assert_eq!(2, text.height());
     /// ```
-    pub fn height(&self) -> usize {
+    pub const fn height(&self) -> usize {
         self.lines.len()
     }
 
@@ -487,25 +491,25 @@ impl<'a> Text<'a> {
 
 impl<'a> IntoIterator for Text<'a> {
     type Item = Line<'a>;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+    type IntoIter = smallvec::IntoIter<Self::Item, 1>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.lines.into_iter()
     }
 }
 
-impl<'a> IntoIterator for &'a Text<'a> {
-    type Item = &'a Line<'a>;
-    type IntoIter = std::slice::Iter<'a, Line<'a>>;
+impl<'a, 'b> IntoIterator for &'a Text<'b> {
+    type Item = &'a Line<'b>;
+    type IntoIter = std::slice::Iter<'a, Line<'b>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-impl<'a> IntoIterator for &'a mut Text<'a> {
-    type Item = &'a mut Line<'a>;
-    type IntoIter = std::slice::IterMut<'a, Line<'a>>;
+impl<'a, 'b> IntoIterator for &'a mut Text<'b> {
+    type Item = &'a mut Line<'b>;
+    type IntoIter = std::slice::IterMut<'a, Line<'b>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
@@ -532,24 +536,24 @@ impl<'a> From<Cow<'a, str>> for Text<'a> {
 
 impl<'a> From<Span<'a>> for Text<'a> {
     fn from(span: Span<'a>) -> Self {
-        Self {
-            lines: vec![Line::from(span)],
-            ..Default::default()
-        }
+        Self::from(Line::from(span))
     }
 }
 
 impl<'a> From<Line<'a>> for Text<'a> {
     fn from(line: Line<'a>) -> Self {
-        Self {
-            lines: vec![line],
-            ..Default::default()
-        }
+        Self::from(smallvec![line])
     }
 }
 
 impl<'a> From<Vec<Line<'a>>> for Text<'a> {
     fn from(lines: Vec<Line<'a>>) -> Self {
+        Self::from(SmallVec::from(lines))
+    }
+}
+
+impl<'a> From<SmallVec<Line<'a>, 1>> for Text<'a> {
+    fn from(lines: SmallVec<Line<'a>, 1>) -> Self {
         Self {
             lines,
             ..Default::default()
@@ -703,8 +707,8 @@ mod tests {
     fn raw() {
         let text = Text::raw("The first line\nThe second line");
         assert_eq!(
-            text.lines,
-            vec![Line::from("The first line"), Line::from("The second line")]
+            &*text.lines,
+            [Line::from("The first line"), Line::from("The second line")]
         );
     }
 
@@ -755,8 +759,8 @@ mod tests {
     fn from_string() {
         let text = Text::from(String::from("The first line\nThe second line"));
         assert_eq!(
-            text.lines,
-            vec![Line::from("The first line"), Line::from("The second line")]
+            &*text.lines,
+            [Line::from("The first line"), Line::from("The second line")]
         );
     }
 
@@ -764,8 +768,8 @@ mod tests {
     fn from_str() {
         let text = Text::from("The first line\nThe second line");
         assert_eq!(
-            text.lines,
-            vec![Line::from("The first line"), Line::from("The second line")]
+            &*text.lines,
+            [Line::from("The first line"), Line::from("The second line")]
         );
     }
 
@@ -773,8 +777,8 @@ mod tests {
     fn from_cow() {
         let text = Text::from(Cow::Borrowed("The first line\nThe second line"));
         assert_eq!(
-            text.lines,
-            vec![Line::from("The first line"), Line::from("The second line")]
+            &*text.lines,
+            [Line::from("The first line"), Line::from("The second line")]
         );
     }
 
@@ -783,10 +787,10 @@ mod tests {
         let style = Style::new().yellow().italic();
         let text = Text::from(Span::styled("The first line\nThe second line", style));
         assert_eq!(
-            text.lines,
-            vec![Line::from(Span::styled(
+            &*text.lines,
+            [Line::from(Span::styled(
                 "The first line\nThe second line",
-                style
+                style,
             ))]
         );
     }
@@ -794,7 +798,7 @@ mod tests {
     #[test]
     fn from_line() {
         let text = Text::from(Line::from("The first line"));
-        assert_eq!(text.lines, vec![Line::from("The first line")]);
+        assert_eq!(&*text.lines, [Line::from("The first line")]);
     }
 
     #[rstest]
@@ -822,8 +826,8 @@ mod tests {
             Line::from("The second line"),
         ]);
         assert_eq!(
-            text.lines,
-            vec![Line::from("The first line"), Line::from("The second line")]
+            &*text.lines,
+            [Line::from("The first line"), Line::from("The second line")]
         );
     }
 
@@ -831,8 +835,8 @@ mod tests {
     fn from_iterator() {
         let text = Text::from_iter(vec!["The first line", "The second line"]);
         assert_eq!(
-            text.lines,
-            vec![Line::from("The first line"), Line::from("The second line")]
+            &*text.lines,
+            [Line::from("The first line"), Line::from("The second line")]
         );
     }
 
@@ -842,8 +846,8 @@ mod tests {
             .chain(iter::once("The second line"))
             .collect();
         assert_eq!(
-            text.lines,
-            vec![Line::from("The first line"), Line::from("The second line")]
+            &*text.lines,
+            [Line::from("The first line"), Line::from("The second line")]
         );
     }
 
@@ -861,7 +865,7 @@ mod tests {
         assert_eq!(
             Text::raw("Red").red() + Line::raw("Blue").blue(),
             Text {
-                lines: vec![Line::raw("Red"), Line::raw("Blue").blue()],
+                lines: smallvec![Line::raw("Red"), Line::raw("Blue").blue()],
                 style: Style::new().red(),
                 alignment: None,
             }
@@ -873,7 +877,7 @@ mod tests {
         assert_eq!(
             Text::raw("Red").red() + Text::raw("Blue").blue(),
             Text {
-                lines: vec![Line::raw("Red"), Line::raw("Blue")],
+                lines: smallvec![Line::raw("Red"), Line::raw("Blue")],
                 style: Style::new().red(),
                 alignment: None,
             }
@@ -887,7 +891,7 @@ mod tests {
         assert_eq!(
             text,
             Text {
-                lines: vec![Line::raw("Red"), Line::raw("Blue").blue()],
+                lines: smallvec![Line::raw("Red"), Line::raw("Blue").blue()],
                 style: Style::new().red(),
                 alignment: None,
             }
@@ -902,8 +906,8 @@ mod tests {
             Line::from("The fourth line"),
         ]);
         assert_eq!(
-            text.lines,
-            vec![
+            &*text.lines,
+            [
                 Line::from("The first line"),
                 Line::from("The second line"),
                 Line::from("The third line"),
@@ -920,8 +924,8 @@ mod tests {
             Line::from("The fourth line"),
         ]);
         assert_eq!(
-            text.lines,
-            vec![
+            &*text.lines,
+            [
                 Line::from("The first line"),
                 Line::from("The second line"),
                 Line::from("The third line"),
@@ -935,8 +939,8 @@ mod tests {
         let mut text = Text::from("The first line\nThe second line");
         text.extend(vec!["The third line", "The fourth line"]);
         assert_eq!(
-            text.lines,
-            vec![
+            &*text.lines,
+            [
                 Line::from("The first line"),
                 Line::from("The second line"),
                 Line::from("The third line"),
@@ -1028,12 +1032,12 @@ mod tests {
         text.push_line(Span::from("C"));
         text.push_line("D");
         assert_eq!(
-            text.lines,
-            vec![
+            &*text.lines,
+            [
                 Line::raw("A"),
                 Line::raw("B"),
                 Line::raw("C"),
-                Line::raw("D")
+                Line::raw("D"),
             ]
         );
     }
@@ -1042,7 +1046,7 @@ mod tests {
     fn push_line_empty() {
         let mut text = Text::default();
         text.push_line(Line::from("Hello, world!"));
-        assert_eq!(text.lines, vec![Line::from("Hello, world!")]);
+        assert_eq!(&*text.lines, [Line::from("Hello, world!")]);
     }
 
     #[test]
@@ -1051,8 +1055,8 @@ mod tests {
         text.push_span(Span::raw("B"));
         text.push_span("C");
         assert_eq!(
-            text.lines,
-            vec![Line::from(vec![
+            &*text.lines,
+            [Line::from(vec![
                 Span::raw("A"),
                 Span::raw("B"),
                 Span::raw("C")
@@ -1064,7 +1068,7 @@ mod tests {
     fn push_span_empty() {
         let mut text = Text::default();
         text.push_span(Span::raw("Hello, world!"));
-        assert_eq!(text.lines, vec![Line::from(Span::raw("Hello, world!"))],);
+        assert_eq!(&*text.lines, [Line::from(Span::raw("Hello, world!"))],);
     }
 
     mod widget {
