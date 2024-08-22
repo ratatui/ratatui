@@ -26,9 +26,9 @@
 //! See the [examples readme] for more information on finding examples that match the version of the
 //! library you are using.
 //!
-//! [Ratatui]: https://github.com/ratatui-org/ratatui
-//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
-//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+//! [Ratatui]: https://github.com/ratatui/ratatui
+//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 use std::{
     sync::{Arc, RwLock},
     time::Duration,
@@ -168,7 +168,7 @@ impl PullRequestListWidget {
         // messages to refresh on demand, or with an interval timer to refresh every N seconds
         self.set_loading_state(LoadingState::Loading);
         match octocrab::instance()
-            .pulls("ratatui-org", "ratatui")
+            .pulls("ratatui", "ratatui")
             .list()
             .sort(Sort::Updated)
             .direction(Direction::Descending)

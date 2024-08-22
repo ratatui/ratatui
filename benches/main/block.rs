@@ -48,7 +48,7 @@ fn block(c: &mut Criterion) {
 fn render(bencher: &mut Bencher, block: &Block, size: Rect) {
     let mut buffer = Buffer::empty(size);
     // We use `iter_batched` to clone the value in the setup function.
-    // See https://github.com/ratatui-org/ratatui/pull/377.
+    // See https://github.com/ratatui/ratatui/pull/377.
     bencher.iter_batched(
         || block.to_owned(),
         |bench_block| {

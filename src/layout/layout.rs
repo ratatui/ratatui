@@ -107,7 +107,7 @@ thread_local! {
 /// example](https://camo.githubusercontent.com/77d22f3313b782a81e5e033ef82814bb48d786d2598699c27f8e757ccee62021/68747470733a2f2f7668732e636861726d2e73682f7668732d315a4e6f4e4c4e6c4c746b4a58706767396e435635652e676966)
 ///
 /// [`cassowary-rs`]: https://crates.io/crates/cassowary
-/// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+/// [Examples]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Layout {
     direction: Direction,
@@ -1888,7 +1888,7 @@ mod tests {
             );
 
             // minimal bug from
-            // https://github.com/ratatui-org/ratatui/pull/404#issuecomment-1681850644
+            // https://github.com/ratatui/ratatui/pull/404#issuecomment-1681850644
             // TODO: check if this bug is now resolved?
             let layout = Layout::default()
                 .constraints([Min(1), Length(0), Min(1)])

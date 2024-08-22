@@ -2,7 +2,7 @@
 # https://git-cliff.org/docs/configuration
 
 [remote.github]
-owner = "ratatui-org"
+owner = "ratatui"
 repo = "ratatui"
 
 [changelog]
@@ -24,11 +24,11 @@ body = """
 {%- if not version %}
 ## [unreleased]
 {% else -%}
-## [{{ version }}](https://github.com/ratatui-org/ratatui/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+## [{{ version }}](https://github.com/ratatui/ratatui/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {% endif -%}
 
 {% macro commit(commit) -%}
-- [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui-org/ratatui/commit/" ~ commit.id }}) \
+- [{{ commit.id | truncate(length=7, end="") }}]({{ "https://github.com/ratatui/ratatui/commit/" ~ commit.id }}) \
   *({{commit.scope | default(value = "uncategorized") | lower }})* {{ commit.message | upper_first | trim }}\
   {% if commit.github.username %} by @{{ commit.github.username }}{%- endif -%}\
   {% if commit.github.pr_number %} in [#{{ commit.github.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.github.pr_number }}){%- endif %}\

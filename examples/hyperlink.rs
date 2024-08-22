@@ -12,9 +12,9 @@
 //! library you are using.
 //!
 //! [OSC 8]: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
-//! [Ratatui]: https://github.com/ratatui-org/ratatui
-//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
-//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+//! [Ratatui]: https://github.com/ratatui/ratatui
+//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
 use itertools::Itertools;
@@ -81,7 +81,7 @@ impl Widget for &Hyperlink<'_> {
     fn render(self, area: Rect, buffer: &mut Buffer) {
         (&self.text).render(area, buffer);
 
-        // this is a hacky workaround for https://github.com/ratatui-org/ratatui/issues/902, a bug
+        // this is a hacky workaround for https://github.com/ratatui/ratatui/issues/902, a bug
         // in the terminal code that incorrectly calculates the width of ANSI escape sequences. It
         // works by rendering the hyperlink as a series of 2-character chunks, which is the
         // calculated width of the hyperlink text.

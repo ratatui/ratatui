@@ -70,7 +70,7 @@ fn paragraph(c: &mut Criterion) {
 fn render(bencher: &mut Bencher, paragraph: &Paragraph, width: u16) {
     let mut buffer = Buffer::empty(Rect::new(0, 0, width, 50));
     // We use `iter_batched` to clone the value in the setup function.
-    // See https://github.com/ratatui-org/ratatui/pull/377.
+    // See https://github.com/ratatui/ratatui/pull/377.
     bencher.iter_batched(
         || paragraph.to_owned(),
         |bench_paragraph| {
