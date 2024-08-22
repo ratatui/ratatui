@@ -1,23 +1,23 @@
 use std::time::Duration;
 
 use color_eyre::{eyre::Context, Result};
+use crossterm::event;
 use itertools::Itertools;
 use ratatui::{
-    backend::Backend,
     buffer::Buffer,
     crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind},
     layout::{Constraint, Layout, Rect},
     style::Color,
     text::{Line, Span},
     widgets::{Block, Tabs, Widget},
-    Terminal,
+    DefaultTerminal, Frame,
 };
 use strum::{Display, EnumIter, FromRepr, IntoEnumIterator};
 
 use crate::{
     destroy,
     tabs::{AboutTab, EmailTab, RecipeTab, TracerouteTab, WeatherTab},
-    term, THEME,
+    THEME,
 };
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -49,15 +49,13 @@ enum Tab {
     Weather,
 }
 
-pub fn run(terminal: &mut Terminal<impl Backend>) -> Result<()> {
-    App::default().run(terminal)
-}
-
 impl App {
     /// Run the app until the user quits.
-    pub fn run(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
+    pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while self.is_running() {
-            self.draw(terminal)?;
+            terminal
+                .draw(|frame| self.draw(frame))
+                .wrap_err("terminal.draw")?;
             self.handle_events()?;
         }
         Ok(())
@@ -68,16 +66,11 @@ impl App {
     }
 
     /// Draw a single frame of the app.
-    fn draw(&self, terminal: &mut Terminal<impl Backend>) -> Result<()> {
-        terminal
-            .draw(|frame| {
-                frame.render_widget(self, frame.area());
-                if self.mode == Mode::Destroy {
-                    destroy::destroy(frame);
-                }
-            })
-            .wrap_err("terminal.draw")?;
-        Ok(())
+    fn draw(&self, frame: &mut Frame) {
+        frame.render_widget(self, frame.area());
+        if self.mode == Mode::Destroy {
+            destroy::destroy(frame);
+        }
     }
 
     /// Handle events from the terminal.
@@ -86,8 +79,11 @@ impl App {
     /// 1/50th of a second. This was chosen to try to match the default frame rate of a GIF in VHS.
     fn handle_events(&mut self) -> Result<()> {
         let timeout = Duration::from_secs_f64(1.0 / 50.0);
-        match term::next_event(timeout)? {
-            Some(Event::Key(key)) if key.kind == KeyEventKind::Press => self.handle_key_press(key),
+        if !event::poll(timeout)? {
+            return Ok(());
+        }
+        match event::read()? {
+            Event::Key(key) if key.kind == KeyEventKind::Press => self.handle_key_press(key),
             _ => {}
         }
         Ok(())

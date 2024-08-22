@@ -16,55 +16,37 @@
 // This example shows all the colors supported by ratatui. It will render a grid of foreground
 // and background colors with their names and indexes.
 
-use std::{
-    error::Error,
-    io::{self, Stdout},
-    result,
-    time::Duration,
-};
-
+use color_eyre::Result;
 use itertools::Itertools;
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    crossterm::{
-        event::{self, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Style, Stylize},
     text::Line,
     widgets::{Block, Borders, Paragraph},
-    Frame, Terminal,
+    DefaultTerminal, Frame,
 };
 
-type Result<T> = result::Result<T, Box<dyn Error>>;
-
 fn main() -> Result<()> {
-    let mut terminal = setup_terminal()?;
-    let res = run_app(&mut terminal);
-    restore_terminal(terminal)?;
-    if let Err(err) = res {
-        eprintln!("{err:?}");
-    }
-    Ok(())
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = run(terminal);
+    ratatui::restore();
+    app_result
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
+fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        terminal.draw(ui)?;
-
-        if event::poll(Duration::from_millis(250))? {
-            if let Event::Key(key) = event::read()? {
-                if key.code == KeyCode::Char('q') {
-                    return Ok(());
-                }
+        terminal.draw(draw)?;
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                return Ok(());
             }
         }
     }
 }
 
-fn ui(frame: &mut Frame) {
+fn draw(frame: &mut Frame) {
     let layout = Layout::vertical([
         Constraint::Length(30),
         Constraint::Length(17),
@@ -270,21 +252,4 @@ fn render_indexed_grayscale(frame: &mut Frame, area: Rect) {
         ]));
         frame.render_widget(paragraph, layout[i as usize - 232]);
     }
-}
-
-fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-    terminal.hide_cursor()?;
-    Ok(terminal)
-}
-
-fn restore_terminal(mut terminal: Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
-    Ok(())
 }
