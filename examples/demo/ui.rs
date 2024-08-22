@@ -13,8 +13,8 @@ use ratatui::{
 
 use crate::app::App;
 
-pub fn draw(f: &mut Frame, app: &mut App) {
-    let chunks = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(f.area());
+pub fn draw(frame: &mut Frame, app: &mut App) {
+    let chunks = Layout::vertical([Constraint::Length(3), Constraint::Min(0)]).split(frame.area());
     let tabs = app
         .tabs
         .titles
@@ -24,28 +24,28 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         .block(Block::bordered().title(app.title))
         .highlight_style(Style::default().fg(Color::Yellow))
         .select(app.tabs.index);
-    f.render_widget(tabs, chunks[0]);
+    frame.render_widget(tabs, chunks[0]);
     match app.tabs.index {
-        0 => draw_first_tab(f, app, chunks[1]),
-        1 => draw_second_tab(f, app, chunks[1]),
-        2 => draw_third_tab(f, app, chunks[1]),
+        0 => draw_first_tab(frame, app, chunks[1]),
+        1 => draw_second_tab(frame, app, chunks[1]),
+        2 => draw_third_tab(frame, app, chunks[1]),
         _ => {}
     };
 }
 
-fn draw_first_tab(f: &mut Frame, app: &mut App, area: Rect) {
+fn draw_first_tab(frame: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::vertical([
         Constraint::Length(9),
         Constraint::Min(8),
         Constraint::Length(7),
     ])
     .split(area);
-    draw_gauges(f, app, chunks[0]);
-    draw_charts(f, app, chunks[1]);
-    draw_text(f, chunks[2]);
+    draw_gauges(frame, app, chunks[0]);
+    draw_charts(frame, app, chunks[1]);
+    draw_text(frame, chunks[2]);
 }
 
-fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
+fn draw_gauges(frame: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::vertical([
         Constraint::Length(2),
         Constraint::Length(3),
@@ -54,7 +54,7 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
     .margin(1)
     .split(area);
     let block = Block::bordered().title("Graphs");
-    f.render_widget(block, area);
+    frame.render_widget(block, area);
 
     let label = format!("{:.2}%", app.progress * 100.0);
     let gauge = Gauge::default()
@@ -68,7 +68,7 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
         .use_unicode(app.enhanced_graphics)
         .label(label)
         .ratio(app.progress);
-    f.render_widget(gauge, chunks[0]);
+    frame.render_widget(gauge, chunks[0]);
 
     let sparkline = Sparkline::default()
         .block(Block::new().title("Sparkline:"))
@@ -79,7 +79,7 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
         } else {
             symbols::bar::THREE_LEVELS
         });
-    f.render_widget(sparkline, chunks[1]);
+    frame.render_widget(sparkline, chunks[1]);
 
     let line_gauge = LineGauge::default()
         .block(Block::new().title("LineGauge:"))
@@ -90,11 +90,11 @@ fn draw_gauges(f: &mut Frame, app: &mut App, area: Rect) {
             symbols::line::NORMAL
         })
         .ratio(app.progress);
-    f.render_widget(line_gauge, chunks[2]);
+    frame.render_widget(line_gauge, chunks[2]);
 }
 
 #[allow(clippy::too_many_lines)]
-fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
+fn draw_charts(frame: &mut Frame, app: &mut App, area: Rect) {
     let constraints = if app.show_chart {
         vec![Constraint::Percentage(50), Constraint::Percentage(50)]
     } else {
@@ -120,7 +120,7 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
                 .block(Block::bordered().title("List"))
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD))
                 .highlight_symbol("> ");
-            f.render_stateful_widget(tasks, chunks[0], &mut app.tasks.state);
+            frame.render_stateful_widget(tasks, chunks[0], &mut app.tasks.state);
 
             // Draw logs
             let info_style = Style::default().fg(Color::Blue);
@@ -146,7 +146,7 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
                 })
                 .collect();
             let logs = List::new(logs).block(Block::bordered().title("List"));
-            f.render_stateful_widget(logs, chunks[1], &mut app.logs.state);
+            frame.render_stateful_widget(logs, chunks[1], &mut app.logs.state);
         }
 
         let barchart = BarChart::default()
@@ -167,7 +167,7 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
             )
             .label_style(Style::default().fg(Color::Yellow))
             .bar_style(Style::default().fg(Color::Green));
-        f.render_widget(barchart, chunks[1]);
+        frame.render_widget(barchart, chunks[1]);
     }
     if app.show_chart {
         let x_labels = vec![
@@ -227,11 +227,11 @@ fn draw_charts(f: &mut Frame, app: &mut App, area: Rect) {
                         Span::styled("20", Style::default().add_modifier(Modifier::BOLD)),
                     ]),
             );
-        f.render_widget(chart, chunks[1]);
+        frame.render_widget(chart, chunks[1]);
     }
 }
 
-fn draw_text(f: &mut Frame, area: Rect) {
+fn draw_text(frame: &mut Frame, area: Rect) {
     let text = vec![
         text::Line::from("This is a paragraph with several lines. You can change style your text the way you want"),
         text::Line::from(""),
@@ -266,10 +266,10 @@ fn draw_text(f: &mut Frame, area: Rect) {
             .add_modifier(Modifier::BOLD),
     ));
     let paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: true });
-    f.render_widget(paragraph, area);
+    frame.render_widget(paragraph, area);
 }
 
-fn draw_second_tab(f: &mut Frame, app: &mut App, area: Rect) {
+fn draw_second_tab(frame: &mut Frame, app: &mut App, area: Rect) {
     let chunks =
         Layout::horizontal([Constraint::Percentage(30), Constraint::Percentage(70)]).split(area);
     let up_style = Style::default().fg(Color::Green);
@@ -298,7 +298,7 @@ fn draw_second_tab(f: &mut Frame, app: &mut App, area: Rect) {
             .bottom_margin(1),
     )
     .block(Block::bordered().title("Servers"));
-    f.render_widget(table, chunks[0]);
+    frame.render_widget(table, chunks[0]);
 
     let map = Canvas::default()
         .block(Block::bordered().title("World"))
@@ -352,10 +352,10 @@ fn draw_second_tab(f: &mut Frame, app: &mut App, area: Rect) {
         })
         .x_bounds([-180.0, 180.0])
         .y_bounds([-90.0, 90.0]);
-    f.render_widget(map, chunks[1]);
+    frame.render_widget(map, chunks[1]);
 }
 
-fn draw_third_tab(f: &mut Frame, _app: &mut App, area: Rect) {
+fn draw_third_tab(frame: &mut Frame, _app: &mut App, area: Rect) {
     let chunks = Layout::horizontal([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)]).split(area);
     let colors = [
         Color::Reset,
@@ -396,5 +396,5 @@ fn draw_third_tab(f: &mut Frame, _app: &mut App, area: Rect) {
         ],
     )
     .block(Block::bordered().title("Colors"));
-    f.render_widget(table, chunks[0]);
+    frame.render_widget(table, chunks[0]);
 }

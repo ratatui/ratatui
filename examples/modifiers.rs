@@ -17,56 +17,40 @@
 // It will render a grid of combinations of foreground and background colors with all
 // modifiers applied to them.
 
-use std::{
-    error::Error,
-    io::{self, Stdout},
-    iter::once,
-    result,
-    time::Duration,
-};
+use std::{error::Error, iter::once, result};
 
 use itertools::Itertools;
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    crossterm::{
-        event::{self, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style, Stylize},
     text::Line,
     widgets::Paragraph,
-    Frame, Terminal,
+    DefaultTerminal, Frame,
 };
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
 
 fn main() -> Result<()> {
-    let mut terminal = setup_terminal()?;
-    let res = run_app(&mut terminal);
-    restore_terminal(terminal)?;
-    if let Err(err) = res {
-        eprintln!("{err:?}");
-    }
-    Ok(())
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = run(terminal);
+    ratatui::restore();
+    app_result
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
+fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        terminal.draw(ui)?;
-
-        if event::poll(Duration::from_millis(250))? {
-            if let Event::Key(key) = event::read()? {
-                if key.code == KeyCode::Char('q') {
-                    return Ok(());
-                }
+        terminal.draw(draw)?;
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                return Ok(());
             }
         }
     }
 }
 
-fn ui(frame: &mut Frame) {
+fn draw(frame: &mut Frame) {
     let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     let [text_area, main_area] = vertical.areas(frame.area());
     frame.render_widget(
@@ -113,21 +97,4 @@ fn ui(frame: &mut Frame) {
             }
         }
     }
-}
-
-fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-    terminal.hide_cursor()?;
-    Ok(terminal)
-}
-
-fn restore_terminal(mut terminal: Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
-    Ok(())
 }

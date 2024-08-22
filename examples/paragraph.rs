@@ -18,6 +18,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use color_eyre::Result;
 use ratatui::{
     buffer::Buffer,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
@@ -25,17 +26,15 @@ use ratatui::{
     style::{Color, Stylize},
     text::{Line, Masked, Span},
     widgets::{Block, Paragraph, Widget, Wrap},
+    DefaultTerminal,
 };
 
-use self::common::{init_terminal, install_hooks, restore_terminal, Tui};
-
-fn main() -> color_eyre::Result<()> {
-    install_hooks()?;
-    let mut terminal = init_terminal()?;
-    let mut app = App::new();
-    app.run(&mut terminal)?;
-    restore_terminal()?;
-    Ok(())
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::new().run(terminal);
+    ratatui::restore();
+    app_result
 }
 
 #[derive(Debug)]
@@ -59,21 +58,15 @@ impl App {
     }
 
     /// Run the app until the user exits.
-    fn run(&mut self, terminal: &mut Tui) -> io::Result<()> {
+    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while !self.should_exit {
-            self.draw(terminal)?;
+            terminal.draw(|frame| frame.render_widget(&self, frame.area()))?;
             self.handle_events()?;
             if self.last_tick.elapsed() >= Self::TICK_RATE {
                 self.on_tick();
                 self.last_tick = Instant::now();
             }
         }
-        Ok(())
-    }
-
-    /// Draw the app to the terminal.
-    fn draw(&mut self, terminal: &mut Tui) -> io::Result<()> {
-        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
 
@@ -96,7 +89,7 @@ impl App {
     }
 }
 
-impl Widget for &mut App {
+impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let areas = Layout::vertical([Constraint::Max(9); 4]).split(area);
         Paragraph::new(create_lines(area))
@@ -157,76 +150,4 @@ fn create_lines(area: Rect) -> Vec<Line<'static>> {
             Span::styled(Masked::new("my secret password", '*'), Color::Red),
         ]),
     ]
-}
-
-/// A module for common functionality used in the examples.
-mod common {
-    use std::{
-        io::{self, stdout, Stdout},
-        panic,
-    };
-
-    use color_eyre::{
-        config::{EyreHook, HookBuilder, PanicHook},
-        eyre,
-    };
-    use ratatui::{
-        backend::CrosstermBackend,
-        crossterm::{
-            terminal::{
-                disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-            },
-            ExecutableCommand,
-        },
-        Terminal,
-    };
-
-    // A simple alias for the terminal type used in this example.
-    pub type Tui = Terminal<CrosstermBackend<Stdout>>;
-
-    /// Initialize the terminal and enter alternate screen mode.
-    pub fn init_terminal() -> io::Result<Tui> {
-        enable_raw_mode()?;
-        stdout().execute(EnterAlternateScreen)?;
-        let backend = CrosstermBackend::new(stdout());
-        Terminal::new(backend)
-    }
-
-    /// Restore the terminal to its original state.
-    pub fn restore_terminal() -> io::Result<()> {
-        disable_raw_mode()?;
-        stdout().execute(LeaveAlternateScreen)?;
-        Ok(())
-    }
-
-    /// Installs hooks for panic and error handling.
-    ///
-    /// Makes the app resilient to panics and errors by restoring the terminal before printing the
-    /// panic or error message. This prevents error messages from being messed up by the terminal
-    /// state.
-    pub fn install_hooks() -> color_eyre::Result<()> {
-        let (panic_hook, eyre_hook) = HookBuilder::default().into_hooks();
-        install_panic_hook(panic_hook);
-        install_error_hook(eyre_hook)?;
-        Ok(())
-    }
-
-    /// Install a panic hook that restores the terminal before printing the panic.
-    fn install_panic_hook(panic_hook: PanicHook) {
-        let panic_hook = panic_hook.into_panic_hook();
-        panic::set_hook(Box::new(move |panic_info| {
-            let _ = restore_terminal();
-            panic_hook(panic_info);
-        }));
-    }
-
-    /// Install an error hook that restores the terminal before printing the error.
-    fn install_error_hook(eyre_hook: EyreHook) -> color_eyre::Result<()> {
-        let eyre_hook = eyre_hook.into_eyre_hook();
-        eyre::set_hook(Box::new(move |error| {
-            let _ = restore_terminal();
-            eyre_hook(error)
-        }))?;
-        Ok(())
-    }
 }

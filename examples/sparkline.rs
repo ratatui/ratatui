@@ -13,28 +13,35 @@
 //! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
-use std::{
-    error::Error,
-    io,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
+use color_eyre::Result;
 use rand::{
     distributions::{Distribution, Uniform},
     rngs::ThreadRng,
 };
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    crossterm::{
-        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
+    crossterm::event::{self, Event, KeyCode},
     layout::{Constraint, Layout},
     style::{Color, Style},
     widgets::{Block, Borders, Sparkline},
-    Frame, Terminal,
+    DefaultTerminal, Frame,
 };
+
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::new().run(terminal);
+    ratatui::restore();
+    app_result
+}
+
+struct App {
+    signal: RandomSignal,
+    data1: Vec<u64>,
+    data2: Vec<u64>,
+    data3: Vec<u64>,
+}
 
 #[derive(Clone)]
 struct RandomSignal {
@@ -56,13 +63,6 @@ impl Iterator for RandomSignal {
     fn next(&mut self) -> Option<u64> {
         Some(self.distribution.sample(&mut self.rng))
     }
-}
-
-struct App {
-    signal: RandomSignal,
-    data1: Vec<u64>,
-    data2: Vec<u64>,
-    data3: Vec<u64>,
 }
 
 impl App {
@@ -90,94 +90,63 @@ impl App {
         self.data3.pop();
         self.data3.insert(0, value);
     }
-}
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
+        let tick_rate = Duration::from_millis(250);
 
-    // create app and run it
-    let tick_rate = Duration::from_millis(250);
-    let app = App::new();
-    let res = run_app(&mut terminal, app, tick_rate);
+        let mut last_tick = Instant::now();
+        loop {
+            terminal.draw(|frame| self.draw(frame))?;
 
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        println!("{err:?}");
-    }
-
-    Ok(())
-}
-
-fn run_app<B: Backend>(
-    terminal: &mut Terminal<B>,
-    mut app: App,
-    tick_rate: Duration,
-) -> io::Result<()> {
-    let mut last_tick = Instant::now();
-    loop {
-        terminal.draw(|f| ui(f, &app))?;
-
-        let timeout = tick_rate.saturating_sub(last_tick.elapsed());
-        if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                if key.code == KeyCode::Char('q') {
-                    return Ok(());
+            let timeout = tick_rate.saturating_sub(last_tick.elapsed());
+            if event::poll(timeout)? {
+                if let Event::Key(key) = event::read()? {
+                    if key.code == KeyCode::Char('q') {
+                        return Ok(());
+                    }
                 }
             }
-        }
-        if last_tick.elapsed() >= tick_rate {
-            app.on_tick();
-            last_tick = Instant::now();
+            if last_tick.elapsed() >= tick_rate {
+                self.on_tick();
+                last_tick = Instant::now();
+            }
         }
     }
-}
 
-fn ui(f: &mut Frame, app: &App) {
-    let chunks = Layout::vertical([
-        Constraint::Length(3),
-        Constraint::Length(3),
-        Constraint::Min(0),
-    ])
-    .split(f.area());
-    let sparkline = Sparkline::default()
-        .block(
-            Block::new()
-                .borders(Borders::LEFT | Borders::RIGHT)
-                .title("Data1"),
-        )
-        .data(&app.data1)
-        .style(Style::default().fg(Color::Yellow));
-    f.render_widget(sparkline, chunks[0]);
-    let sparkline = Sparkline::default()
-        .block(
-            Block::new()
-                .borders(Borders::LEFT | Borders::RIGHT)
-                .title("Data2"),
-        )
-        .data(&app.data2)
-        .style(Style::default().bg(Color::Green));
-    f.render_widget(sparkline, chunks[1]);
-    // Multiline
-    let sparkline = Sparkline::default()
-        .block(
-            Block::new()
-                .borders(Borders::LEFT | Borders::RIGHT)
-                .title("Data3"),
-        )
-        .data(&app.data3)
-        .style(Style::default().fg(Color::Red));
-    f.render_widget(sparkline, chunks[2]);
+    fn draw(&self, frame: &mut Frame) {
+        let chunks = Layout::vertical([
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Min(0),
+        ])
+        .split(frame.area());
+        let sparkline = Sparkline::default()
+            .block(
+                Block::new()
+                    .borders(Borders::LEFT | Borders::RIGHT)
+                    .title("Data1"),
+            )
+            .data(&self.data1)
+            .style(Style::default().fg(Color::Yellow));
+        frame.render_widget(sparkline, chunks[0]);
+        let sparkline = Sparkline::default()
+            .block(
+                Block::new()
+                    .borders(Borders::LEFT | Borders::RIGHT)
+                    .title("Data2"),
+            )
+            .data(&self.data2)
+            .style(Style::default().bg(Color::Green));
+        frame.render_widget(sparkline, chunks[1]);
+        // Multiline
+        let sparkline = Sparkline::default()
+            .block(
+                Block::new()
+                    .borders(Borders::LEFT | Borders::RIGHT)
+                    .title("Data3"),
+            )
+            .data(&self.data3)
+            .style(Style::default().fg(Color::Red));
+        frame.render_widget(sparkline, chunks[2]);
+    }
 }

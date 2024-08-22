@@ -17,15 +17,21 @@ use std::iter::zip;
 
 use color_eyre::Result;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Direction, Layout},
     style::{Color, Style, Stylize},
     text::Line,
     widgets::{Bar, BarChart, BarGroup, Block},
-    Frame,
+    DefaultTerminal, Frame,
 };
 
-use self::terminal::Terminal;
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::new().run(terminal);
+    ratatui::restore();
+    app_result
+}
 
 const COMPANY_COUNT: usize = 3;
 const PERIOD_COUNT: usize = 4;
@@ -47,15 +53,6 @@ struct Company {
     color: Color,
 }
 
-fn main() -> Result<()> {
-    color_eyre::install()?;
-    let mut terminal = terminal::init()?;
-    let app = App::new();
-    app.run(&mut terminal)?;
-    terminal::restore()?;
-    Ok(())
-}
-
 impl App {
     const fn new() -> Self {
         Self {
@@ -65,33 +62,27 @@ impl App {
         }
     }
 
-    fn run(mut self, terminal: &mut Terminal) -> Result<()> {
+    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while !self.should_exit {
-            self.draw(terminal)?;
+            terminal.draw(|frame| self.draw(frame))?;
             self.handle_events()?;
         }
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut Terminal) -> Result<()> {
-        terminal.draw(|frame| self.render(frame))?;
-        Ok(())
-    }
-
     fn handle_events(&mut self) -> Result<()> {
         if let Event::Key(key) = event::read()? {
-            if key.code == KeyCode::Char('q') {
+            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
                 self.should_exit = true;
             }
         }
         Ok(())
     }
 
-    fn render(&self, frame: &mut Frame) {
+    fn draw(&self, frame: &mut Frame) {
         use Constraint::{Fill, Length, Min};
-        let [title, top, bottom] = Layout::vertical([Length(1), Fill(1), Min(20)])
-            .spacing(1)
-            .areas(frame.area());
+        let vertical = Layout::vertical([Length(1), Fill(1), Min(20)]).spacing(1);
+        let [title, top, bottom] = vertical.areas(frame.area());
 
         frame.render_widget("Grouped Barchart".bold().into_centered_line(), title);
         frame.render_widget(self.vertical_revenue_barchart(), top);
@@ -100,12 +91,12 @@ impl App {
 
     /// Create a vertical revenue bar chart with the data from the `revenues` field.
     fn vertical_revenue_barchart(&self) -> BarChart<'_> {
-        let title = Line::from("Company revenues (Vertical)").centered();
         let mut barchart = BarChart::default()
-            .block(Block::new().title(title))
+            .block(Block::new().title(Line::from("Company revenues (Vertical)").centered()))
             .bar_gap(0)
             .bar_width(6)
             .group_gap(2);
+
         for group in self
             .revenues
             .iter()
@@ -216,65 +207,5 @@ impl Company {
             .text_value(text_value)
             .style(self.color)
             .value_style(Style::new().fg(Color::Black).bg(self.color))
-    }
-}
-
-/// Contains functions common to all examples
-mod terminal {
-    use std::{
-        io::{self, stdout, Stdout},
-        panic,
-    };
-
-    use ratatui::{
-        backend::CrosstermBackend,
-        crossterm::{
-            execute,
-            terminal::{
-                disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
-                LeaveAlternateScreen,
-            },
-        },
-    };
-
-    // A type alias to simplify the usage of the terminal and make it easier to change the backend
-    // or choice of writer.
-    pub type Terminal = ratatui::Terminal<CrosstermBackend<Stdout>>;
-
-    /// Initialize the terminal by enabling raw mode and entering the alternate screen.
-    ///
-    /// This function should be called before the program starts to ensure that the terminal is in
-    /// the correct state for the application.
-    pub fn init() -> io::Result<Terminal> {
-        install_panic_hook();
-        enable_raw_mode()?;
-        execute!(stdout(), EnterAlternateScreen)?;
-        let backend = CrosstermBackend::new(stdout());
-        let terminal = Terminal::new(backend)?;
-        Ok(terminal)
-    }
-
-    /// Restore the terminal by leaving the alternate screen and disabling raw mode.
-    ///
-    /// This function should be called before the program exits to ensure that the terminal is
-    /// restored to its original state.
-    pub fn restore() -> io::Result<()> {
-        disable_raw_mode()?;
-        execute!(
-            stdout(),
-            LeaveAlternateScreen,
-            Clear(ClearType::FromCursorDown),
-        )
-    }
-
-    /// Install a panic hook that restores the terminal before printing the panic.
-    ///
-    /// This prevents error messages from being messed up by the terminal state.
-    fn install_panic_hook() {
-        let panic_hook = panic::take_hook();
-        panic::set_hook(Box::new(move |panic_info| {
-            let _ = restore();
-            panic_hook(panic_info);
-        }));
     }
 }
