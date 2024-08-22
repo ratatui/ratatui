@@ -498,29 +498,55 @@ where
     /// Insert some content before the current inline viewport. This has no effect when the
     /// viewport is not inline.
     ///
-    /// This function scrolls down the current viewport by the given height. The newly freed space
-    /// is then made available to the `draw_fn` closure through a writable `Buffer`.
+    /// The `draw_fn` closure will be called to draw into a writable `Buffer` that is `height`
+    /// lines tall. The content of that `Buffer` will then be inserted before the viewport.
+    ///
+    /// If the viewport isn't yet at the bottom of the screen, inserted lines will push it towards
+    /// the bottom. Once the viewport is at the bottom of the screen, inserted lines will scroll
+    /// the area of the screen above the viewport upwards.
     ///
     /// Before:
     /// ```ignore
-    /// +-------------------+
-    /// |                   |
-    /// |      viewport     |
-    /// |                   |
-    /// +-------------------+
+    /// +---------------------+
+    /// | pre-existing line 1 |
+    /// | pre-existing line 2 |
+    /// +---------------------+
+    /// |       viewport      |
+    /// +---------------------+
+    /// |                     |
+    /// |                     |
+    /// +---------------------+
     /// ```
     ///
-    /// After:
+    /// After inserting 2 lines:
     /// ```ignore
-    /// +-------------------+
-    /// |      buffer       |
-    /// +-------------------+
-    /// +-------------------+
-    /// |                   |
-    /// |      viewport     |
-    /// |                   |
-    /// +-------------------+
+    /// +---------------------+
+    /// | pre-existing line 1 |
+    /// | pre-existing line 2 |
+    /// |   inserted line 1   |
+    /// |   inserted line 2   |
+    /// +---------------------+
+    /// |       viewport      |
+    /// +---------------------+
+    /// +---------------------+
     /// ```
+    ///
+    /// After inserting 2 more lines:
+    /// ```ignore
+    /// +---------------------+
+    /// | pre-existing line 2 |
+    /// |   inserted line 1   |
+    /// |   inserted line 2   |
+    /// |   inserted line 3   |
+    /// |   inserted line 4   |
+    /// +---------------------+
+    /// |       viewport      |
+    /// +---------------------+
+    /// ```
+    ///
+    /// If more lines are inserted than there is space on the screen, then the top lines will go
+    /// directly into the terminal's scrollback buffer. At the limit, if the viewport takes up the
+    /// whole screen, all lines will be inserted directly into the scrollback buffer.
     ///
     /// # Examples
     ///
@@ -547,8 +573,9 @@ where
             return Ok(());
         }
 
-        // Draw contents to insert into a buffer. The rest of this function is concerned with
-        // drawing this buffer onto the screen.
+        // The approach of this function is to first render all of the lines to insert into a
+        // temporary buffer, and then to loop drawing chunks from the buffer to the screen. drawing
+        // this buffer onto the screen.
         let area = Rect {
             x: 0,
             y: 0,
@@ -566,47 +593,26 @@ where
         let viewport_height: i32 = self.viewport_area.height.into();
         let screen_height: i32 = self.last_known_area.height.into();
 
+        // The algorithm here is to loop, drawing large chunks of text (up to a screen-full at a
+        // time), until the remainder of the buffer plus the viewport fits on the screen. We choose
+        // this loop condition because it guarantees that we can write the remainder of the buffer
+        // with just one call to Self::draw_lines().
         while buffer_height + viewport_height > screen_height {
-            // There isn't enough room on the screen for the whole buffer and the viewport. We will
-            // draw as much of the buffer as possible on this iteration in order to make forward
-            // progress. So we have:
+            // We will draw as much of the buffer as possible on this iteration in order to make
+            // forward progress. So we have:
             //
             //     to_draw = min(buffer_height, screen_height)
             //
-            // We may need to scroll the screen up to make room to draw. However, we don't want to
-            // scroll the screen up too much and end up with the viewport sitting in the middle of
-            // the screen. Figuring out exactly how much to scroll by is a little tricky. It turns
-            // out to be:
+            // We may need to scroll the screen up to make room to draw. We choose the minimal
+            // possible scroll amount so we don't end up with the viewport sitting in the middle of
+            // the screen when this function is done. The amount to scroll by is:
             //
             //     scroll_up = max(0, drawn_height + to_draw - screen_height)
             //
-            // The second term of the max makes sense intuitively: We want to scroll up enough so
-            // that, after drawing, we have used the whole screen. This is easiest to see when
-            // we're drawing a whole screen's worth from the buffer. Things get tricky when
-            // `buffer_height` is less than `screen_height`.
-            //
-            // We choose `scroll_up` so that the following constraints are satisfied:
-            //     (1) scroll_up >= 0
-            //     (2) scroll_up <= drawn_height
-            //     (3) drawn_height - scroll_up + to_draw <= screen_height
-            //     (4) drawn_height - scroll_up + to_draw >= screen_height - viewport_height
-            //
-            // (1) says that we don't want to scroll down. That should never be necessary when
-            // inserting data before the inline viewport.
-            //
-            // (2) says that we shouldn't scroll off more data than is currently on the screen. If
-            // we were to do this, we'd end up with blank lines in the scrollback.
-            //
-            // (3) says that after we scroll, we need to have enough room to draw `to_draw` lines
-            // on the screen.
-            //
-            // (4) says that we don't want to end drawing with a gap of more than `viewport_height`
-            // size at the bottom of the screen. If we didn't have this constraint, we could end up
-            // with the viewport higher on the screen after this function than before it was
-            // called.
-            //
-            // A proof that these constraints are satisfied by this choice of `scroll_up` can be
-            // found in PR 1329: https://github.com/ratatui-org/ratatui/pull/1329
+            // We want `scroll_up` to be enough so that, after drawing, we have used the whole
+            // screen (drawn_height - scroll_up + to_draw = screen_height). However, there might
+            // already be enough room on the screen to draw without scrolling (drawn_height +
+            // to_draw <= screen_height). In this case, we just don't scroll at all.
             let to_draw = buffer_height.min(screen_height);
             let scroll_up = 0.max(drawn_height + to_draw - screen_height);
             self.scroll_up(scroll_up as u16)?;
@@ -615,10 +621,10 @@ where
             buffer_height -= to_draw;
         }
 
-        // There is now enough room on the screen for whatever remains of the buffer plus the
-        // viewport. However, we may still need to scroll up some of the existing text first. It's
-        // possible that by this point we've drained the buffer, but we may still need to scroll up
-        // to make room for the viewport.
+        // There is now enough room on the screen for the remaining buffer plus the viewport,
+        // though we may still need to scroll up some of the existing text first. It's possible
+        // that by this point we've drained the buffer, but we may still need to scroll up to make
+        // room for the viewport.
         //
         // We want to scroll up the exact amount that will leave us completely filling the screen.
         // However, it's possible that the viewport didn't start on the bottom of the screen and
