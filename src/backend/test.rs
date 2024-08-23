@@ -115,6 +115,7 @@ impl TestBackend {
     /// This is a shortcut for `assert_eq!(self.buffer(), &expected)`.
     ///
     /// # Panics
+    ///
     /// When they are not equal, a panic occurs with a detailed error message showing the
     /// differences between the expected and actual buffers.
     #[allow(deprecated)]
@@ -129,6 +130,7 @@ impl TestBackend {
     /// This is a shortcut for `assert_eq!(self.scrollback(), &expected)`.
     ///
     /// # Panics
+    ///
     /// When they are not equal, a panic occurs with a detailed error message showing the
     /// differences between the expected and actual buffers.
     #[allow(deprecated)]
@@ -141,6 +143,7 @@ impl TestBackend {
     /// Asserts that the `TestBackend`'s scrollback buffer is empty.
     ///
     /// # Panics
+    ///
     /// When the scrollback buffer is not equal, a panic occurs with a detailed error message
     /// showing the differences between the expected and actual buffers.
     pub fn assert_scrollback_empty(&self) {
@@ -159,6 +162,7 @@ impl TestBackend {
     /// This is a shortcut for `assert_eq!(self.buffer(), &Buffer::with_lines(expected))`.
     ///
     /// # Panics
+    ///
     /// When they are not equal, a panic occurs with a detailed error message showing the
     /// differences between the expected and actual buffers.
     #[track_caller]
@@ -175,6 +179,7 @@ impl TestBackend {
     /// This is a shortcut for `assert_eq!(self.scrollback(), &Buffer::with_lines(expected))`.
     ///
     /// # Panics
+    ///
     /// When they are not equal, a panic occurs with a detailed error message showing the
     /// differences between the expected and actual buffers.
     #[track_caller]
@@ -191,6 +196,7 @@ impl TestBackend {
     /// This is a shortcut for `assert_eq!(self.get_cursor_position().unwrap(), expected)`.
     ///
     /// # Panics
+    ///
     /// When they are not equal, a panic occurs with a detailed error message showing the
     /// differences between the expected and actual position.
     #[track_caller]
