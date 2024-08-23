@@ -135,7 +135,7 @@ impl TestBackend {
     /// differences between the expected and actual buffers.
     #[track_caller]
     pub fn assert_scrollback(&self, expected: &Buffer) {
-        assert_eq!(&self.scrollback, expected)
+        assert_eq!(&self.scrollback, expected);
     }
 
     /// Asserts that the `TestBackend`'s scrollback buffer is empty.
