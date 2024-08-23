@@ -835,7 +835,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
     fn append_lines_truncates_beyond_u16_max() -> io::Result<()> {
         let mut backend = TestBackend::new(10, 5);
 
