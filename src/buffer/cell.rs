@@ -159,7 +159,7 @@ impl Default for Cell {
 
 impl From<char> for Cell {
     fn from(ch: char) -> Self {
-        let mut cell = Cell::EMPTY;
+        let mut cell = Self::EMPTY;
         cell.set_char(ch);
         cell
     }

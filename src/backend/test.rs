@@ -358,8 +358,9 @@ fn append_to_scrollback(scrollback: &mut Buffer, cells: impl IntoIterator<Item =
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use itertools::Itertools as _;
+
+    use super::*;
 
     #[test]
     fn new() {
