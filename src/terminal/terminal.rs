@@ -573,7 +573,7 @@ where
             #[cfg(feature = "scrolling-regions")]
             Viewport::Inline(_) => self.insert_before_scrolling_regions(height, draw_fn),
             #[cfg(not(feature = "scrolling-regions"))]
-            Inline(_) => self.insert_before_no_scrolling_regions(height, draw_fn),
+            Viewport::Inline(_) => self.insert_before_no_scrolling_regions(height, draw_fn),
             _ => Ok(()),
         }
     }
