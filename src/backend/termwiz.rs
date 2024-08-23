@@ -256,7 +256,7 @@ impl Backend for TermwizBackend {
         self.buffered_terminal.add_changes(vec![
             Change::ScrollRegionUp {
                 first_row: region.start as usize,
-                region_size: region.len() as usize,
+                region_size: region.len(),
                 scroll_count: amount as usize,
             },
             Change::ScrollRegionUp {
@@ -274,7 +274,7 @@ impl Backend for TermwizBackend {
         self.buffered_terminal.add_changes(vec![
             Change::ScrollRegionDown {
                 first_row: region.start as usize,
-                region_size: region.len() as usize,
+                region_size: region.len(),
                 scroll_count: amount as usize,
             },
             Change::ScrollRegionUp {

@@ -234,8 +234,8 @@ where
 
     #[cfg(feature = "scrolling-regions")]
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
-        let start = region.start as u32 + 1;
-        let end = region.end as u32;
+        let start = region.start.saturating_add(1);
+        let end = region.end;
         write!(self.writer, "\x1B[{start};{end}r")?;
         write!(self.writer, "{}", termion::scroll::Up(amount))?;
         write!(self.writer, "\x1B[r")?;
@@ -244,8 +244,8 @@ where
 
     #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
-        let start = region.start as u32 + 1;
-        let end = region.end as u32;
+        let start = region.start.saturating_add(1);
+        let end = region.end;
         write!(self.writer, "\x1B[{start};{end}r")?;
         write!(self.writer, "{}", termion::scroll::Down(amount))?;
         write!(self.writer, "\x1B[r")?;

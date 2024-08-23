@@ -373,6 +373,10 @@ impl Backend for TestBackend {
                 // Rotate the remaining cells to the front of the buffer.
                 assert_eq!(cells_to_scroll_by, cells_to_splice);
                 self.buffer.content[cell_region].rotate_left(cells_to_splice);
+            } else {
+                // `cells_to_scroll_by` == cell_region.len()
+                // There is no need to rotate the region because we cleared it in its entirety.
+                // There are no extra lines to add to the scrollback.
             }
         } else if cells_to_scroll_by >= cell_region.len() {
             // The scroll amount is large enough to clear the whole region.

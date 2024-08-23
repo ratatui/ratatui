@@ -569,18 +569,12 @@ where
     where
         F: FnOnce(&mut Buffer),
     {
-        if !matches!(self.viewport, Viewport::Inline(_)) {
-            Ok(())
-        } else {
+        match self.viewport {
             #[cfg(feature = "scrolling-regions")]
-            {
-                self.insert_before_scrolling_regions(height, draw_fn)
-            }
-
+            Viewport::Inline(_) => self.insert_before_scrolling_regions(height, draw_fn),
             #[cfg(not(feature = "scrolling-regions"))]
-            {
-                self.insert_before_no_scrolling_regions(height, draw_fn)
-            }
+            Inline(_) => self.insert_before_no_scrolling_regions(height, draw_fn),
+            _ => Ok(()),
         }
     }
 
@@ -778,7 +772,7 @@ where
         let (to_draw, remainder) = cells.split_at(width * lines_to_draw as usize);
         if lines_to_draw > 0 {
             let area = Rect::new(0, y_offset, width as u16, y_offset + lines_to_draw);
-            let old = Buffer::empty(area.clone());
+            let old = Buffer::empty(area);
             let new = Buffer {
                 area,
                 content: to_draw.to_vec(),
