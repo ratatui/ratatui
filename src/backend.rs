@@ -324,8 +324,8 @@ pub trait Backend {
     /// The position of the cursor afterwards is undefined.
     ///
     /// If the region includes row 0, then lines scrolled out of the top of region should be put
-    /// into the scrollback. Otherwise, they are just ovewritten. Empty lines are scrolled into the
-    /// bottom of the region.
+    /// into the scrollback. Otherwise, they are just overwritten. Empty lines are scrolled into
+    /// the bottom of the region.
     #[cfg(feature = "scrolling-regions")]
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()>;
 
