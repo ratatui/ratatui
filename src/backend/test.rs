@@ -841,8 +841,6 @@ mod tests {
     fn append_lines_truncates_beyond_u16_max() -> io::Result<()> {
         let mut backend = TestBackend::new(10, 5);
 
-        //        backend.buffer = Buffer::empty(Rect::new(0, 0, 10, 5));
-
         // Fill the scrollback with 65535 + 10 lines.
         let row_count = u16::MAX as usize + 10;
         for row in 0..=row_count {
