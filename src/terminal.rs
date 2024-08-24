@@ -32,9 +32,15 @@
 //! [`Buffer`]: crate::buffer::Buffer
 
 mod frame;
+#[cfg(feature = "crossterm")]
+mod init;
 mod terminal;
 mod viewport;
 
 pub use frame::{CompletedFrame, Frame};
+#[cfg(feature = "crossterm")]
+pub use init::{
+    init, init_with_options, restore, try_init, try_init_with_options, try_restore, DefaultTerminal,
+};
 pub use terminal::{Options as TerminalOptions, Terminal};
 pub use viewport::Viewport;

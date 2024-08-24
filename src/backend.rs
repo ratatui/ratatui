@@ -96,10 +96,10 @@
 //! [Crossterm]: https://crates.io/crates/crossterm
 //! [Termion]: https://crates.io/crates/termion
 //! [Termwiz]: https://crates.io/crates/termwiz
-//! [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples/README.md
+//! [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
 //! [Backend Comparison]:
 //!     https://ratatui.rs/concepts/backends/comparison/
-//! [Ratatui Website]: https://ratatui-org.github.io/ratatui-book
+//! [Ratatui Website]: https://ratatui.rs
 use std::io;
 
 use strum::{Display, EnumString};

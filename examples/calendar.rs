@@ -9,62 +9,44 @@
 //! See the [examples readme] for more information on finding examples that match the version of the
 //! library you are using.
 //!
-//! [Ratatui]: https://github.com/ratatui-org/ratatui
-//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
-//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+//! [Ratatui]: https://github.com/ratatui/ratatui
+//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
-use std::{error::Error, io};
-
+use color_eyre::Result;
 use ratatui::{
-    backend::CrosstermBackend,
-    crossterm::{
-        event::{self, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
-    layout::{Constraint, Layout, Rect},
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
+    layout::{Constraint, Layout, Margin},
     style::{Color, Modifier, Style},
     widgets::calendar::{CalendarEventStore, DateStyler, Monthly},
-    Frame, Terminal,
+    DefaultTerminal, Frame,
 };
 use time::{Date, Month, OffsetDateTime};
 
-fn main() -> Result<(), Box<dyn Error>> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let result = run(terminal);
+    ratatui::restore();
+    result
+}
 
+fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        let _ = terminal.draw(draw);
-
+        terminal.draw(draw)?;
         if let Event::Key(key) = event::read()? {
-            #[allow(clippy::single_match)]
-            match key.code {
-                KeyCode::Char(_) => {
-                    break;
-                }
-                _ => {}
-            };
+            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                break Ok(());
+            }
         }
     }
-
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
-    Ok(())
 }
 
 fn draw(frame: &mut Frame) {
-    let app_area = frame.area();
-
-    let calarea = Rect {
-        x: app_area.x + 1,
-        y: app_area.y + 1,
-        height: app_area.height - 1,
-        width: app_area.width - 1,
-    };
+    let area = frame.area().inner(Margin {
+        vertical: 1,
+        horizontal: 1,
+    });
 
     let mut start = OffsetDateTime::now_local()
         .unwrap()
@@ -76,7 +58,7 @@ fn draw(frame: &mut Frame) {
 
     let list = make_dates(start.year());
 
-    let rows = Layout::vertical([Constraint::Ratio(1, 3); 3]).split(calarea);
+    let rows = Layout::vertical([Constraint::Ratio(1, 3); 3]).split(area);
     let cols = rows.iter().flat_map(|row| {
         Layout::horizontal([Constraint::Ratio(1, 4); 4])
             .split(*row)

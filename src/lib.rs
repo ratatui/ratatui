@@ -1,4 +1,4 @@
-//! ![Demo](https://github.com/ratatui-org/ratatui/blob/87ae72dbc756067c97f6400d3e2a58eeb383776e/examples/demo2-destroy.gif?raw=true)
+//! ![Demo](https://github.com/ratatui/ratatui/blob/87ae72dbc756067c97f6400d3e2a58eeb383776e/examples/demo2-destroy.gif?raw=true)
 //!
 //! <div align="center">
 //!
@@ -102,53 +102,28 @@
 //! ### Example
 //!
 //! ```rust,no_run
-//! use std::io::{self, stdout};
-//!
 //! use ratatui::{
-//!     backend::CrosstermBackend,
-//!     crossterm::{
-//!         event::{self, Event, KeyCode},
-//!         terminal::{
-//!             disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-//!         },
-//!         ExecutableCommand,
-//!     },
+//!     crossterm::event::{self, Event, KeyCode, KeyEventKind},
 //!     widgets::{Block, Paragraph},
-//!     Frame, Terminal,
 //! };
 //!
-//! fn main() -> io::Result<()> {
-//!     enable_raw_mode()?;
-//!     stdout().execute(EnterAlternateScreen)?;
-//!     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-//!
-//!     let mut should_quit = false;
-//!     while !should_quit {
-//!         terminal.draw(ui)?;
-//!         should_quit = handle_events()?;
-//!     }
-//!
-//!     disable_raw_mode()?;
-//!     stdout().execute(LeaveAlternateScreen)?;
-//!     Ok(())
-//! }
-//!
-//! fn handle_events() -> io::Result<bool> {
-//!     if event::poll(std::time::Duration::from_millis(50))? {
+//! fn main() -> std::io::Result<()> {
+//!     let mut terminal = ratatui::init();
+//!     loop {
+//!         terminal.draw(|frame| {
+//!             frame.render_widget(
+//!                 Paragraph::new("Hello World!").block(Block::bordered().title("Greeting")),
+//!                 frame.area(),
+//!             );
+//!         })?;
 //!         if let Event::Key(key) = event::read()? {
-//!             if key.kind == event::KeyEventKind::Press && key.code == KeyCode::Char('q') {
-//!                 return Ok(true);
+//!             if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+//!                 break;
 //!             }
 //!         }
 //!     }
-//!     Ok(false)
-//! }
-//!
-//! fn ui(frame: &mut Frame) {
-//!     frame.render_widget(
-//!         Paragraph::new("Hello World!").block(Block::bordered().title("Greeting")),
-//!         frame.size(),
-//!     );
+//!     ratatui::restore();
+//!     Ok(())
 //! }
 //! ```
 //!
@@ -170,7 +145,7 @@
 //!     Frame,
 //! };
 //!
-//! fn ui(frame: &mut Frame) {
+//! fn draw(frame: &mut Frame) {
 //!     let [title_area, main_area, status_area] = Layout::vertical([
 //!         Constraint::Length(1),
 //!         Constraint::Min(0),
@@ -213,7 +188,7 @@
 //!     Frame,
 //! };
 //!
-//! fn ui(frame: &mut Frame) {
+//! fn draw(frame: &mut Frame) {
 //!     let areas = Layout::vertical([Constraint::Length(1); 4]).split(frame.size());
 //!
 //!     let line = Line::from(vec![
@@ -259,21 +234,21 @@
 //! [Handling Events]: https://ratatui.rs/concepts/event-handling/
 //! [Layout]: https://ratatui.rs/how-to/layout/
 //! [Styling Text]: https://ratatui.rs/how-to/render/style-text/
-//! [templates]: https://github.com/ratatui-org/templates/
-//! [Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples/README.md
-//! [Report a bug]: https://github.com/ratatui-org/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
-//! [Request a Feature]: https://github.com/ratatui-org/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
-//! [Create a Pull Request]: https://github.com/ratatui-org/ratatui/compare
+//! [templates]: https://github.com/ratatui/templates/
+//! [Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
+//! [Report a bug]: https://github.com/ratatui/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
+//! [Request a Feature]: https://github.com/ratatui/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
+//! [Create a Pull Request]: https://github.com/ratatui/ratatui/compare
 //! [git-cliff]: https://git-cliff.org
 //! [Conventional Commits]: https://www.conventionalcommits.org
 //! [API Docs]: https://docs.rs/ratatui
-//! [Changelog]: https://github.com/ratatui-org/ratatui/blob/main/CHANGELOG.md
-//! [Contributing]: https://github.com/ratatui-org/ratatui/blob/main/CONTRIBUTING.md
-//! [Breaking Changes]: https://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md
+//! [Changelog]: https://github.com/ratatui/ratatui/blob/main/CHANGELOG.md
+//! [Contributing]: https://github.com/ratatui/ratatui/blob/main/CONTRIBUTING.md
+//! [Breaking Changes]: https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md
 //! [FOSDEM 2024 talk]: https://www.youtube.com/watch?v=NU0q6NOLJ20
-//! [docsrs-hello]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-hello.png?raw=true
-//! [docsrs-layout]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-layout.png?raw=true
-//! [docsrs-styling]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-styling.png?raw=true
+//! [docsrs-hello]: https://github.com/ratatui/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-hello.png?raw=true
+//! [docsrs-layout]: https://github.com/ratatui/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-layout.png?raw=true
+//! [docsrs-styling]: https://github.com/ratatui/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-styling.png?raw=true
 //! [`Frame`]: terminal::Frame
 //! [`render_widget`]: terminal::Frame::render_widget
 //! [`Widget`]: widgets::Widget
@@ -292,15 +267,15 @@
 //! [Termion]: https://crates.io/crates/termion
 //! [Termwiz]: https://crates.io/crates/termwiz
 //! [tui-rs]: https://crates.io/crates/tui
-//! [GitHub Sponsors]: https://github.com/sponsors/ratatui-org
+//! [GitHub Sponsors]: https://github.com/sponsors/ratatui
 //! [Crate Badge]: https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square&logoColor=E05D44&color=E05D44
 //! [License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square&color=1370D3
-//! [CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github
-//! [CI Workflow]: https://github.com/ratatui-org/ratatui/actions/workflows/ci.yml
-//! [Codecov Badge]: https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST&color=C43AC3&logoColor=C43AC3
-//! [Codecov]: https://app.codecov.io/gh/ratatui-org/ratatui
-//! [Deps.rs Badge]: https://deps.rs/repo/github/ratatui-org/ratatui/status.svg?style=flat-square
-//! [Deps.rs]: https://deps.rs/repo/github/ratatui-org/ratatui
+//! [CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui/ratatui/ci.yml?style=flat-square&logo=github
+//! [CI Workflow]: https://github.com/ratatui/ratatui/actions/workflows/ci.yml
+//! [Codecov Badge]: https://img.shields.io/codecov/c/github/ratatui/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST&color=C43AC3&logoColor=C43AC3
+//! [Codecov]: https://app.codecov.io/gh/ratatui/ratatui
+//! [Deps.rs Badge]: https://deps.rs/repo/github/ratatui/ratatui/status.svg?style=flat-square
+//! [Deps.rs]: https://deps.rs/repo/github/ratatui/ratatui
 //! [Discord Badge]: https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square&color=1370D3&logoColor=1370D3
 //! [Discord Server]: https://discord.gg/pMCEU9hNEj
 //! [Docs Badge]: https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square&logoColor=E05D44
@@ -308,18 +283,22 @@
 //! [Matrix]: https://matrix.to/#/#ratatui:matrix.org
 //! [Forum Badge]: https://img.shields.io/discourse/likes?server=https%3A%2F%2Fforum.ratatui.rs&style=flat-square&logo=discourse&label=forum&color=C43AC3
 //! [Forum]: https://forum.ratatui.rs
-//! [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui-org?logo=github&style=flat-square&color=1370D3
+//! [Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui?logo=github&style=flat-square&color=1370D3
 
 // show the feature flags in the generated documentation
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(
-    html_logo_url = "https://raw.githubusercontent.com/ratatui-org/ratatui/main/assets/logo.png",
-    html_favicon_url = "https://raw.githubusercontent.com/ratatui-org/ratatui/main/assets/favicon.ico"
+    html_logo_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/logo.png",
+    html_favicon_url = "https://raw.githubusercontent.com/ratatui/ratatui/main/assets/favicon.ico"
 )]
 
 /// re-export the `crossterm` crate so that users don't have to add it as a dependency
 #[cfg(feature = "crossterm")]
 pub use crossterm;
+#[cfg(feature = "crossterm")]
+pub use terminal::{
+    init, init_with_options, restore, try_init, try_init_with_options, try_restore, DefaultTerminal,
+};
 pub use terminal::{CompletedFrame, Frame, Terminal, TerminalOptions, Viewport};
 /// re-export the `termion` crate so that users don't have to add it as a dependency
 #[cfg(all(not(windows), feature = "termion"))]

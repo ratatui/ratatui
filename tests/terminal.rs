@@ -3,7 +3,7 @@ use std::error::Error;
 use ratatui::{
     backend::{Backend, TestBackend},
     layout::Rect,
-    widgets::{Paragraph, Widget},
+    widgets::{Block, Paragraph, Widget},
     Terminal, TerminalOptions, Viewport,
 };
 
@@ -110,6 +110,7 @@ fn terminal_insert_before_moves_viewport() -> Result<(), Box<dyn Error>> {
         "                    ",
         "                    ",
     ]);
+    terminal.backend().assert_scrollback_empty();
 
     Ok(())
 }
@@ -152,6 +153,9 @@ fn terminal_insert_before_scrolls_on_large_input() -> Result<(), Box<dyn Error>>
         "------ Line 5 ------",
         "[---- Viewport ----]",
     ]);
+    terminal
+        .backend()
+        .assert_scrollback_lines(["------ Line 1 ------"]);
 
     Ok(())
 }
@@ -203,6 +207,77 @@ fn terminal_insert_before_scrolls_on_many_inserts() -> Result<(), Box<dyn Error>
         "------ Line 4 ------",
         "------ Line 5 ------",
         "[---- Viewport ----]",
+    ]);
+    terminal
+        .backend()
+        .assert_scrollback_lines(["------ Line 1 ------"]);
+
+    Ok(())
+}
+
+#[test]
+fn terminal_insert_before_large_viewport() -> Result<(), Box<dyn Error>> {
+    // This test covers a bug previously present whereby doing an insert_before when the
+    // viewport covered the entire screen would cause a panic.
+
+    let backend = TestBackend::new(20, 3);
+    let mut terminal = Terminal::with_options(
+        backend,
+        TerminalOptions {
+            viewport: Viewport::Inline(3),
+        },
+    )?;
+
+    terminal.insert_before(1, |buf| {
+        Paragraph::new(vec!["------ Line 1 ------".into()]).render(buf.area, buf);
+    })?;
+
+    terminal.insert_before(3, |buf| {
+        Paragraph::new(vec![
+            "------ Line 2 ------".into(),
+            "------ Line 3 ------".into(),
+            "------ Line 4 ------".into(),
+        ])
+        .render(buf.area, buf);
+    })?;
+
+    terminal.insert_before(7, |buf| {
+        Paragraph::new(vec![
+            "------ Line 5 ------".into(),
+            "------ Line 6 ------".into(),
+            "------ Line 7 ------".into(),
+            "------ Line 8 ------".into(),
+            "------ Line 9 ------".into(),
+            "----- Line 10 ------".into(),
+            "----- Line 11 ------".into(),
+        ])
+        .render(buf.area, buf);
+    })?;
+
+    terminal.draw(|f| {
+        let paragraph = Paragraph::new("Viewport")
+            .centered()
+            .block(Block::bordered());
+        f.render_widget(paragraph, f.area());
+    })?;
+
+    terminal.backend().assert_buffer_lines([
+        "┌──────────────────┐",
+        "│     Viewport     │",
+        "└──────────────────┘",
+    ]);
+    terminal.backend().assert_scrollback_lines([
+        "------ Line 1 ------",
+        "------ Line 2 ------",
+        "------ Line 3 ------",
+        "------ Line 4 ------",
+        "------ Line 5 ------",
+        "------ Line 6 ------",
+        "------ Line 7 ------",
+        "------ Line 8 ------",
+        "------ Line 9 ------",
+        "----- Line 10 ------",
+        "----- Line 11 ------",
     ]);
 
     Ok(())

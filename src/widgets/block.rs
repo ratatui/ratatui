@@ -288,7 +288,7 @@ impl<'a> Block<'a> {
     /// - [`Block::title_alignment`]
     /// - [`Block::title_position`]
     ///
-    /// [Block example]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md#block
+    /// [Block example]: https://github.com/ratatui/ratatui/blob/main/examples/README.md#block
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title<T>(mut self, title: T) -> Self
     where
@@ -787,7 +787,7 @@ impl Block<'_> {
     /// Currently (due to the way lines are truncated), the right side of the leftmost title will
     /// be cut off if the block is too small to fit all titles. This is not ideal and should be
     /// the left side of that leftmost that is cut off. This is due to the line being truncated
-    /// incorrectly. See <https://github.com/ratatui-org/ratatui/issues/932>
+    /// incorrectly. See <https://github.com/ratatui/ratatui/issues/932>
     #[allow(clippy::similar_names)]
     fn render_right_titles(&self, position: Position, area: Rect, buf: &mut Buffer) {
         let titles = self.filtered_titles(position, Alignment::Right);
@@ -1381,7 +1381,7 @@ mod tests {
         }
     }
 
-    /// This is a regression test for bug <https://github.com/ratatui-org/ratatui/issues/929>
+    /// This is a regression test for bug <https://github.com/ratatui/ratatui/issues/929>
     #[test]
     fn render_right_aligned_empty_title() {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 15, 3));

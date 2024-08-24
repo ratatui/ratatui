@@ -10,13 +10,13 @@ This folder might use unreleased code. View the examples for the latest release 
 > There are a few workaround for this problem:
 >
 > - View the examples as they were when the latest version was release by selecting the tag that
->   matches that version. E.g. <https://github.com/ratatui-org/ratatui/tree/v0.26.1/examples>.
+>   matches that version. E.g. <https://github.com/ratatui/ratatui/tree/v0.26.1/examples>.
 > - If you're viewing this file on GitHub, there is a combo box at the top of this page  which
 >   allows you to select any previous tagged version.
 > - To view the code locally, checkout the tag. E.g. `git switch --detach v0.26.1`.
 > - Use the latest [alpha version of Ratatui] in your app. These are released weekly on Saturdays.
 > - Compile your code against the main branch either locally by adding e.g. `path = "../ratatui"` to
->   the dependency, or remotely by adding `git = "https://github.com/ratatui-org/ratatui"`
+>   the dependency, or remotely by adding `git = "https://github.com/ratatui/ratatui"`
 >
 > For a list of unreleased breaking changes, see [BREAKING-CHANGES.md].
 >
@@ -170,7 +170,7 @@ cargo run --example=colors_rgb --features=crossterm
 Note: VHs renders full screen animations poorly, so this is a screen capture rather than the output
 of the VHS tape.
 
-<https://github.com/ratatui-org/ratatui/assets/381361/485e775a-e0b5-4133-899b-1e8aeb56e774>
+<https://github.com/ratatui/ratatui/assets/381361/485e775a-e0b5-4133-899b-1e8aeb56e774>
 
 ## Constraint Explorer
 
@@ -441,38 +441,38 @@ examples/vhs/generate.bash
 ```
 -->
 
-[barchart.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/barchart.gif?raw=true
-[barchart-grouped.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/barchart-grouped.gif?raw=true
-[block.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/block.gif?raw=true
-[calendar.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/calendar.gif?raw=true
-[canvas.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/canvas.gif?raw=true
-[chart.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/chart.gif?raw=true
-[colors.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/colors.gif?raw=true
-[constraint-explorer.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/constraint-explorer.gif?raw=true
-[constraints.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/constraints.gif?raw=true
-[custom_widget.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/custom_widget.gif?raw=true
-[demo.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/demo.gif?raw=true
-[demo2.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/demo2.gif?raw=true
-[flex.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/flex.gif?raw=true
-[gauge.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/gauge.gif?raw=true
-[hello_world.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/hello_world.gif?raw=true
-[hyperlink.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/hyperlink.gif?raw=true
-[inline.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/inline.gif?raw=true
-[layout.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/layout.gif?raw=true
-[list.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/list.gif?raw=true
-[line_gauge.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/line_gauge.gif?raw=true
-[minimal.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/minimal.gif?raw=true
-[modifiers.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/modifiers.gif?raw=true
-[panic.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/panic.gif?raw=true
-[paragraph.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/paragraph.gif?raw=true
-[popup.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/popup.gif?raw=true
-[ratatui-logo.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/ratatui-logo.gif?raw=true
-[scrollbar.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/scrollbar.gif?raw=true
-[sparkline.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/sparkline.gif?raw=true
+[barchart.gif]: https://github.com/ratatui/ratatui/blob/images/examples/barchart.gif?raw=true
+[barchart-grouped.gif]: https://github.com/ratatui/ratatui/blob/images/examples/barchart-grouped.gif?raw=true
+[block.gif]: https://github.com/ratatui/ratatui/blob/images/examples/block.gif?raw=true
+[calendar.gif]: https://github.com/ratatui/ratatui/blob/images/examples/calendar.gif?raw=true
+[canvas.gif]: https://github.com/ratatui/ratatui/blob/images/examples/canvas.gif?raw=true
+[chart.gif]: https://github.com/ratatui/ratatui/blob/images/examples/chart.gif?raw=true
+[colors.gif]: https://github.com/ratatui/ratatui/blob/images/examples/colors.gif?raw=true
+[constraint-explorer.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraint-explorer.gif?raw=true
+[constraints.gif]: https://github.com/ratatui/ratatui/blob/images/examples/constraints.gif?raw=true
+[custom_widget.gif]: https://github.com/ratatui/ratatui/blob/images/examples/custom_widget.gif?raw=true
+[demo.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo.gif?raw=true
+[demo2.gif]: https://github.com/ratatui/ratatui/blob/images/examples/demo2.gif?raw=true
+[flex.gif]: https://github.com/ratatui/ratatui/blob/images/examples/flex.gif?raw=true
+[gauge.gif]: https://github.com/ratatui/ratatui/blob/images/examples/gauge.gif?raw=true
+[hello_world.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hello_world.gif?raw=true
+[hyperlink.gif]: https://github.com/ratatui/ratatui/blob/images/examples/hyperlink.gif?raw=true
+[inline.gif]: https://github.com/ratatui/ratatui/blob/images/examples/inline.gif?raw=true
+[layout.gif]: https://github.com/ratatui/ratatui/blob/images/examples/layout.gif?raw=true
+[list.gif]: https://github.com/ratatui/ratatui/blob/images/examples/list.gif?raw=true
+[line_gauge.gif]: https://github.com/ratatui/ratatui/blob/images/examples/line_gauge.gif?raw=true
+[minimal.gif]: https://github.com/ratatui/ratatui/blob/images/examples/minimal.gif?raw=true
+[modifiers.gif]: https://github.com/ratatui/ratatui/blob/images/examples/modifiers.gif?raw=true
+[panic.gif]: https://github.com/ratatui/ratatui/blob/images/examples/panic.gif?raw=true
+[paragraph.gif]: https://github.com/ratatui/ratatui/blob/images/examples/paragraph.gif?raw=true
+[popup.gif]: https://github.com/ratatui/ratatui/blob/images/examples/popup.gif?raw=true
+[ratatui-logo.gif]: https://github.com/ratatui/ratatui/blob/images/examples/ratatui-logo.gif?raw=true
+[scrollbar.gif]: https://github.com/ratatui/ratatui/blob/images/examples/scrollbar.gif?raw=true
+[sparkline.gif]: https://github.com/ratatui/ratatui/blob/images/examples/sparkline.gif?raw=true
 [table.gif]:  https://vhs.charm.sh/vhs-6njXBytDf0rwPufUtmSSpI.gif
-[tabs.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/tabs.gif?raw=true
-[tracing.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/tracing.gif?raw=true
-[user_input.gif]: https://github.com/ratatui-org/ratatui/blob/images/examples/user_input.gif?raw=true
+[tabs.gif]: https://github.com/ratatui/ratatui/blob/images/examples/tabs.gif?raw=true
+[tracing.gif]: https://github.com/ratatui/ratatui/blob/images/examples/tracing.gif?raw=true
+[user_input.gif]: https://github.com/ratatui/ratatui/blob/images/examples/user_input.gif?raw=true
 
 [alpha version of Ratatui]: https://crates.io/crates/ratatui/versions
-[BREAKING-CHANGES.md]: https://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md
+[BREAKING-CHANGES.md]: https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md

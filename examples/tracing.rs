@@ -9,9 +9,9 @@
 //! See the [examples readme] for more information on finding examples that match the version of the
 //! library you are using.
 //!
-//! [Ratatui]: https://github.com/ratatui-org/ratatui
-//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
-//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+//! [Ratatui]: https://github.com/ratatui/ratatui
+//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 // A simple example demonstrating how to use the [tracing] with Ratatui to log to a file.
 //
@@ -27,39 +27,32 @@
 // [tracing]: https://crates.io/crates/tracing
 // [tui-logger]: https://crates.io/crates/tui-logger
 
-use std::{fs::File, io::stdout, panic, time::Duration};
+use std::{fs::File, time::Duration};
 
-use color_eyre::{
-    config::HookBuilder,
-    eyre::{self, Context},
-    Result,
-};
+use color_eyre::{eyre::Context, Result};
 use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    crossterm::{
-        event::{self, Event, KeyCode},
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-        ExecutableCommand,
-    },
+    crossterm::event::{self, Event, KeyCode},
     widgets::{Block, Paragraph},
-    Terminal,
+    Frame,
 };
 use tracing::{debug, info, instrument, trace, Level};
 use tracing_appender::{non_blocking, non_blocking::WorkerGuard};
 use tracing_subscriber::EnvFilter;
 
 fn main() -> Result<()> {
-    init_error_hooks()?;
+    color_eyre::install()?;
+
     let _guard = init_tracing()?;
     info!("Starting tracing example");
 
-    let mut terminal = init_terminal()?;
+    let mut terminal = ratatui::init();
     let mut events = vec![]; // a buffer to store the recent events to display in the UI
     while !should_exit(&events) {
         handle_events(&mut events)?;
-        terminal.draw(|frame| ui(frame, &events))?;
+        terminal.draw(|frame| draw(frame, &events))?;
     }
-    restore_terminal()?;
+    ratatui::restore();
+
     info!("Exiting tracing example");
     println!("See the tracing.log file for the logs");
     Ok(())
@@ -85,7 +78,7 @@ fn handle_events(events: &mut Vec<Event>) -> Result<()> {
 }
 
 #[instrument(skip_all)]
-fn ui(frame: &mut ratatui::Frame, events: &[Event]) {
+fn draw(frame: &mut Frame, events: &[Event]) {
     // To view this event, run the example with `RUST_LOG=tracing=debug cargo run --example tracing`
     trace!(frame_count = frame.count(), event_count = events.len());
     let events = events.iter().map(|e| format!("{e:?}")).collect::<Vec<_>>();
@@ -115,39 +108,4 @@ fn init_tracing() -> Result<WorkerGuard> {
         .with_env_filter(env_filter)
         .init();
     Ok(guard)
-}
-
-/// Initialize the error hooks to ensure that the terminal is restored to a sane state before
-/// exiting
-fn init_error_hooks() -> Result<()> {
-    let (panic, error) = HookBuilder::default().into_hooks();
-    let panic = panic.into_panic_hook();
-    let error = error.into_eyre_hook();
-    eyre::set_hook(Box::new(move |e| {
-        let _ = restore_terminal();
-        error(e)
-    }))?;
-    panic::set_hook(Box::new(move |info| {
-        let _ = restore_terminal();
-        panic(info);
-    }));
-    Ok(())
-}
-
-#[instrument]
-fn init_terminal() -> Result<Terminal<impl Backend>> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout());
-    let terminal = Terminal::new(backend)?;
-    debug!("terminal initialized");
-    Ok(terminal)
-}
-
-#[instrument]
-fn restore_terminal() -> Result<()> {
-    disable_raw_mode()?;
-    stdout().execute(LeaveAlternateScreen)?;
-    debug!("terminal restored");
-    Ok(())
 }

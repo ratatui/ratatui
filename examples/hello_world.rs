@@ -9,25 +9,17 @@
 //! See the [examples readme] for more information on finding examples that match the version of the
 //! library you are using.
 //!
-//! [Ratatui]: https://github.com/ratatui-org/ratatui
-//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
-//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+//! [Ratatui]: https://github.com/ratatui/ratatui
+//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
-use std::{
-    io::{self, Stdout},
-    time::Duration,
-};
+use std::time::Duration;
 
 use color_eyre::{eyre::Context, Result};
 use ratatui::{
-    backend::CrosstermBackend,
-    crossterm::{
-        event::{self, Event, KeyCode},
-        execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    },
+    crossterm::event::{self, Event, KeyCode},
     widgets::Paragraph,
-    Frame, Terminal,
+    DefaultTerminal, Frame,
 };
 
 /// This is a bare minimum example. There are many approaches to running an application loop, so
@@ -38,50 +30,19 @@ use ratatui::{
 /// and exits when the user presses 'q'.
 fn main() -> Result<()> {
     color_eyre::install()?; // augment errors / panics with easy to read messages
-    let mut terminal = init_terminal().context("setup failed")?;
-    let result = run(&mut terminal).context("app loop failed");
-    restore_terminal();
-    result
-}
-
-/// Setup the terminal. This is where you would enable raw mode, enter the alternate screen, and
-/// hide the cursor. This example does not handle errors.
-fn init_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
-    set_panic_hook();
-    let mut stdout = io::stdout();
-    enable_raw_mode().context("failed to enable raw mode")?;
-    execute!(stdout, EnterAlternateScreen).context("unable to enter alternate screen")?;
-    Terminal::new(CrosstermBackend::new(stdout)).context("creating terminal failed")
-}
-
-/// Restore the terminal. This is where you disable raw mode, leave the alternate screen, and show
-/// the cursor.
-fn restore_terminal() {
-    // There's not a lot we can do if these fail, so we just print an error message.
-    if let Err(err) = disable_raw_mode() {
-        eprintln!("Error disabling raw mode: {err}");
-    }
-    if let Err(err) = execute!(io::stdout(), LeaveAlternateScreen) {
-        eprintln!("Error leaving alternate screen: {err}");
-    }
-}
-
-/// Replace the default panic hook with one that restores the terminal before panicking.
-fn set_panic_hook() {
-    let hook = std::panic::take_hook();
-    std::panic::set_hook(Box::new(move |panic_info| {
-        restore_terminal();
-        hook(panic_info);
-    }));
+    let terminal = ratatui::init();
+    let app_result = run(terminal).context("app loop failed");
+    ratatui::restore();
+    app_result
 }
 
 /// Run the application loop. This is where you would handle events and update the application
 /// state. This example exits when the user presses 'q'. Other styles of application loops are
 /// possible, for example, you could have multiple application states and switch between them based
 /// on events, or you could have a single application state and update it based on events.
-fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
+fn run(mut terminal: DefaultTerminal) -> Result<()> {
     loop {
-        terminal.draw(render_app)?;
+        terminal.draw(draw)?;
         if should_quit()? {
             break;
         }
@@ -89,19 +50,18 @@ fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
     Ok(())
 }
 
-/// Render the application. This is where you would draw the application UI. This example just
-/// draws a greeting.
-fn render_app(frame: &mut Frame) {
+/// Render the application. This is where you would draw the application UI. This example draws a
+/// greeting.
+fn draw(frame: &mut Frame) {
     let greeting = Paragraph::new("Hello World! (press 'q' to quit)");
     frame.render_widget(greeting, frame.area());
 }
 
 /// Check if the user has pressed 'q'. This is where you would handle events. This example just
 /// checks if the user has pressed 'q' and returns true if they have. It does not handle any other
-/// events. There is a 250ms timeout on the event poll so that the application can exit in a timely
-/// manner, and to ensure that the terminal is rendered at least once every 250ms. This allows you
-/// to do other work in the application loop, such as updating the application state, without
-/// blocking the event loop for too long.
+/// events. There is a 250ms timeout on the event poll to ensure that the terminal is rendered at
+/// least once every 250ms. This allows you to do other work in the application loop, such as
+/// updating the application state, without blocking the event loop for too long.
 fn should_quit() -> Result<bool> {
     if event::poll(Duration::from_millis(250)).context("event poll failed")? {
         if let Event::Key(key) = event::read().context("event read failed")? {

@@ -9,14 +9,12 @@
 //! See the [examples readme] for more information on finding examples that match the version of the
 //! library you are using.
 //!
-//! [Ratatui]: https://github.com/ratatui-org/ratatui
-//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
-//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+//! [Ratatui]: https://github.com/ratatui/ratatui
+//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
-use std::{error::Error, io};
-
+use color_eyre::Result;
 use ratatui::{
-    backend::Backend,
     buffer::Buffer,
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
     layout::{Constraint, Layout, Rect},
@@ -30,7 +28,7 @@ use ratatui::{
         Block, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
         StatefulWidget, Widget, Wrap,
     },
-    Terminal,
+    DefaultTerminal,
 };
 
 const TODO_HEADER_STYLE: Style = Style::new().fg(SLATE.c100).bg(BLUE.c800);
@@ -40,15 +38,12 @@ const SELECTED_STYLE: Style = Style::new().bg(SLATE.c800).add_modifier(Modifier:
 const TEXT_FG_COLOR: Color = SLATE.c200;
 const COMPLETED_TEXT_FG_COLOR: Color = GREEN.c500;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    tui::init_error_hooks()?;
-    let terminal = tui::init_terminal()?;
-
-    let mut app = App::default();
-    app.run(terminal)?;
-
-    tui::restore_terminal()?;
-    Ok(())
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::default().run(terminal);
+    ratatui::restore();
+    app_result
 }
 
 /// This struct holds the current state of the app. In particular, it has the `todo_list` field
@@ -118,9 +113,9 @@ impl TodoItem {
 }
 
 impl App {
-    fn run(&mut self, mut terminal: Terminal<impl Backend>) -> io::Result<()> {
+    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while !self.should_exit {
-            terminal.draw(|f| f.render_widget(&mut *self, f.area()))?;
+            terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
             if let Event::Key(key) = event::read()? {
                 self.handle_key(key);
             };
@@ -288,47 +283,5 @@ impl From<&TodoItem> for ListItem<'_> {
             }
         };
         ListItem::new(line)
-    }
-}
-
-mod tui {
-    use std::{io, io::stdout};
-
-    use color_eyre::config::HookBuilder;
-    use ratatui::{
-        backend::{Backend, CrosstermBackend},
-        crossterm::{
-            terminal::{
-                disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-            },
-            ExecutableCommand,
-        },
-        Terminal,
-    };
-
-    pub fn init_error_hooks() -> color_eyre::Result<()> {
-        let (panic, error) = HookBuilder::default().into_hooks();
-        let panic = panic.into_panic_hook();
-        let error = error.into_eyre_hook();
-        color_eyre::eyre::set_hook(Box::new(move |e| {
-            let _ = restore_terminal();
-            error(e)
-        }))?;
-        std::panic::set_hook(Box::new(move |info| {
-            let _ = restore_terminal();
-            panic(info);
-        }));
-        Ok(())
-    }
-
-    pub fn init_terminal() -> io::Result<Terminal<impl Backend>> {
-        stdout().execute(EnterAlternateScreen)?;
-        enable_raw_mode()?;
-        Terminal::new(CrosstermBackend::new(stdout()))
-    }
-
-    pub fn restore_terminal() -> io::Result<()> {
-        stdout().execute(LeaveAlternateScreen)?;
-        disable_raw_mode()
     }
 }

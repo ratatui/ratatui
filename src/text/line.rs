@@ -741,11 +741,11 @@ mod tests {
     #[test]
     fn raw_str() {
         let line = Line::raw("test content");
-        assert_eq!(line.spans, vec![Span::raw("test content")]);
+        assert_eq!(line.spans, [Span::raw("test content")]);
         assert_eq!(line.alignment, None);
 
         let line = Line::raw("a\nb");
-        assert_eq!(line.spans, vec![Span::raw("a"), Span::raw("b")]);
+        assert_eq!(line.spans, [Span::raw("a"), Span::raw("b")]);
         assert_eq!(line.alignment, None);
     }
 
@@ -754,7 +754,7 @@ mod tests {
         let style = Style::new().yellow();
         let content = "Hello, world!";
         let line = Line::styled(content, style);
-        assert_eq!(line.spans, vec![Span::raw(content)]);
+        assert_eq!(line.spans, [Span::raw(content)]);
         assert_eq!(line.style, style);
     }
 
@@ -763,7 +763,7 @@ mod tests {
         let style = Style::new().yellow();
         let content = String::from("Hello, world!");
         let line = Line::styled(content.clone(), style);
-        assert_eq!(line.spans, vec![Span::raw(content)]);
+        assert_eq!(line.spans, [Span::raw(content)]);
         assert_eq!(line.style, style);
     }
 
@@ -772,7 +772,7 @@ mod tests {
         let style = Style::new().yellow();
         let content = Cow::from("Hello, world!");
         let line = Line::styled(content.clone(), style);
-        assert_eq!(line.spans, vec![Span::raw(content)]);
+        assert_eq!(line.spans, [Span::raw(content)]);
         assert_eq!(line.style, style);
     }
 
@@ -861,28 +861,28 @@ mod tests {
     fn from_string() {
         let s = String::from("Hello, world!");
         let line = Line::from(s);
-        assert_eq!(line.spans, vec![Span::from("Hello, world!")]);
+        assert_eq!(line.spans, [Span::from("Hello, world!")]);
 
         let s = String::from("Hello\nworld!");
         let line = Line::from(s);
-        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line.spans, [Span::from("Hello"), Span::from("world!")]);
     }
 
     #[test]
     fn from_str() {
         let s = "Hello, world!";
         let line = Line::from(s);
-        assert_eq!(line.spans, vec![Span::from("Hello, world!")]);
+        assert_eq!(line.spans, [Span::from("Hello, world!")]);
 
         let s = "Hello\nworld!";
         let line = Line::from(s);
-        assert_eq!(line.spans, vec![Span::from("Hello"), Span::from("world!")]);
+        assert_eq!(line.spans, [Span::from("Hello"), Span::from("world!")]);
     }
 
     #[test]
     fn to_line() {
         let line = 42.to_line();
-        assert_eq!(vec![Span::from("42")], line.spans);
+        assert_eq!(line.spans, [Span::from("42")]);
     }
 
     #[test]
@@ -925,7 +925,7 @@ mod tests {
     fn from_span() {
         let span = Span::styled("Hello, world!", Style::default().fg(Color::Yellow));
         let line = Line::from(span.clone());
-        assert_eq!(line.spans, vec![span],);
+        assert_eq!(line.spans, [span]);
     }
 
     #[test]
@@ -969,14 +969,14 @@ mod tests {
     #[test]
     fn extend() {
         let mut line = Line::from("Hello, ");
-        line.extend(vec![Span::raw("world!")]);
-        assert_eq!(line.spans, vec![Span::raw("Hello, "), Span::raw("world!")]);
+        line.extend([Span::raw("world!")]);
+        assert_eq!(line.spans, [Span::raw("Hello, "), Span::raw("world!")]);
 
         let mut line = Line::from("Hello, ");
-        line.extend(vec![Span::raw("world! "), Span::raw("How are you?")]);
+        line.extend([Span::raw("world! "), Span::raw("How are you?")]);
         assert_eq!(
             line.spans,
-            vec![
+            [
                 Span::raw("Hello, "),
                 Span::raw("world! "),
                 Span::raw("How are you?")
@@ -1193,7 +1193,7 @@ mod tests {
             assert_eq!(buf, Buffer::with_lines(["lo wo"]));
         }
 
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         #[test]
         fn regression_1032() {
@@ -1209,7 +1209,7 @@ mod tests {
 
         /// Documentary test to highlight the crab emoji width / length discrepancy
         ///
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         #[test]
         fn crab_emoji_width() {
@@ -1220,7 +1220,7 @@ mod tests {
             assert_eq!(crab.width(), 2); // display width
         }
 
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         #[rstest]
         #[case::left_4(Alignment::Left, 4, "1234")]
@@ -1242,7 +1242,7 @@ mod tests {
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         ///
         /// centering is tricky because there's an ambiguity about whether to take one more char
@@ -1331,7 +1331,7 @@ mod tests {
             assert_eq!(buf, Buffer::with_lines([expected]));
         }
 
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         ///
         /// Flag emoji are actually two independent characters, so they can be truncated in the
@@ -1345,7 +1345,7 @@ mod tests {
             assert_eq!(str.width(), 6); // flag is 2 display width
         }
 
-        /// Part of a regression test for <https://github.com/ratatui-org/ratatui/issues/1032> which
+        /// Part of a regression test for <https://github.com/ratatui/ratatui/issues/1032> which
         /// found panics with truncating lines that contained multi-byte characters.
         #[rstest]
         #[case::flag_1(1, " ")]

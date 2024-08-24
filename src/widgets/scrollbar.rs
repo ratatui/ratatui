@@ -1015,7 +1015,7 @@ mod tests {
         assert_eq!(buffer, Buffer::with_lines([expected]));
     }
 
-    /// Fixes <https://github.com/ratatui-org/ratatui/pull/959> which was a bug that would not
+    /// Fixes <https://github.com/ratatui/ratatui/pull/959> which was a bug that would not
     /// render a thumb when the viewport was very small in comparison to the content length.
     #[rstest]
     #[case::position_0("#----", 0, 100)]
