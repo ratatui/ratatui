@@ -1,4 +1,5 @@
-use std::{cmp::Ordering, f64::consts::PI};
+use std::cmp::Ordering;
+use std::f64::consts::PI;
 
 const M: [[f64; 3]; 3] = [
     [3.240969941904521, -1.537383177570093, -0.498610760293],
