@@ -1,10 +1,6 @@
 #![allow(clippy::unreadable_literal)]
 
-mod hsluv;
-
 use std::{fmt, str::FromStr};
-
-use hsluv::hsluv_to_rgb;
 
 /// ANSI Color
 ///
@@ -394,12 +390,6 @@ impl Color {
         // Delegate to the function for normalized HSL to RGB conversion
         normalized_hsl_to_rgb(h / 360.0, s / 100.0, l / 100.0)
     }
-
-    pub fn from_hsluv(h: f64, s: f64, l: f64) -> Self {
-        let (red, green, blue) = hsluv_to_rgb(h, s, l);
-
-        scale_rgb(red, green, blue)
-    }
 }
 
 /// Converts normalized HSL (Hue, Saturation, Lightness) values to RGB (Red, Green, Blue) color
@@ -448,15 +438,11 @@ fn normalized_hsl_to_rgb(hue: f64, saturation: f64, lightness: f64) -> Color {
         blue = hue_to_rgb(p, q, hue - 1.0 / 3.0);
     }
 
-    scale_rgb(red, green, blue)
-}
-
-/// Helper function to scale RGB components to the range \[0, 255\] and create a `Color::Rgb` instance
-fn scale_rgb(r: f64, g: f64, b: f64) -> Color {
+    // Scale RGB components to the range [0, 255] and create a Color::Rgb instance
     Color::Rgb(
-        (r * 255.0).round() as u8,
-        (g * 255.0).round() as u8,
-        (b * 255.0).round() as u8,
+        (red * 255.0).round() as u8,
+        (green * 255.0).round() as u8,
+        (blue * 255.0).round() as u8,
     )
 }
 
