@@ -13,7 +13,7 @@ pub struct Cell {
     /// This is a [`CompactString`] which is a wrapper around [`String`] that uses a small inline
     /// buffer for short strings.
     ///
-    /// See <https://github.com/ratatui-org/ratatui/pull/601> for more information.
+    /// See <https://github.com/ratatui/ratatui/pull/601> for more information.
     symbol: CompactString,
 
     /// The foreground color of the cell.
@@ -154,6 +154,14 @@ impl Cell {
 impl Default for Cell {
     fn default() -> Self {
         Self::EMPTY
+    }
+}
+
+impl From<char> for Cell {
+    fn from(ch: char) -> Self {
+        let mut cell = Self::EMPTY;
+        cell.set_char(ch);
+        cell
     }
 }
 

@@ -9,34 +9,32 @@
 //! See the [examples readme] for more information on finding examples that match the version of the
 //! library you are using.
 //!
-//! [Ratatui]: https://github.com/ratatui-org/ratatui
-//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
-//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+//! [Ratatui]: https://github.com/ratatui/ratatui
+//! [examples]: https://github.com/ratatui/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
 use rand::{thread_rng, Rng};
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode},
+    crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Direction, Layout},
     style::{Color, Style, Stylize},
     text::Line,
     widgets::{Bar, BarChart, BarGroup, Block},
+    DefaultTerminal, Frame,
 };
 
-use self::terminal::Terminal;
+fn main() -> Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+    let app_result = App::new().run(terminal);
+    ratatui::restore();
+    app_result
+}
 
 struct App {
     should_exit: bool,
     temperatures: Vec<u8>,
-}
-
-fn main() -> Result<()> {
-    color_eyre::install()?;
-    let mut terminal = terminal::init()?;
-    let app = App::new();
-    app.run(&mut terminal)?;
-    terminal::restore()?;
-    Ok(())
 }
 
 impl App {
@@ -49,29 +47,24 @@ impl App {
         }
     }
 
-    fn run(mut self, terminal: &mut Terminal) -> Result<()> {
+    fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while !self.should_exit {
-            self.draw(terminal)?;
+            terminal.draw(|frame| self.draw(frame))?;
             self.handle_events()?;
         }
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut Terminal) -> Result<()> {
-        terminal.draw(|frame| self.render(frame))?;
-        Ok(())
-    }
-
     fn handle_events(&mut self) -> Result<()> {
         if let Event::Key(key) = event::read()? {
-            if key.code == KeyCode::Char('q') {
+            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
                 self.should_exit = true;
             }
         }
         Ok(())
     }
 
-    fn render(&self, frame: &mut ratatui::Frame) {
+    fn draw(&self, frame: &mut Frame) {
         let [title, vertical, horizontal] = Layout::vertical([
             Constraint::Length(1),
             Constraint::Fill(1),
@@ -79,6 +72,7 @@ impl App {
         ])
         .spacing(1)
         .areas(frame.area());
+
         frame.render_widget("Barchart".bold().into_centered_line(), title);
         frame.render_widget(vertical_barchart(&self.temperatures), vertical);
         frame.render_widget(horizontal_barchart(&self.temperatures), horizontal);
@@ -89,16 +83,8 @@ impl App {
 fn vertical_barchart(temperatures: &[u8]) -> BarChart {
     let bars: Vec<Bar> = temperatures
         .iter()
-        .map(|v| u64::from(*v))
         .enumerate()
-        .map(|(i, value)| {
-            Bar::default()
-                .value(value)
-                .label(Line::from(format!("{i:>02}:00")))
-                .text_value(format!("{value:>3}°"))
-                .style(temperature_style(value))
-                .value_style(temperature_style(value).reversed())
-        })
+        .map(|(hour, value)| vertical_bar(hour, value))
         .collect();
     let title = Line::from("Weather (Vertical)").centered();
     BarChart::default()
@@ -107,21 +93,21 @@ fn vertical_barchart(temperatures: &[u8]) -> BarChart {
         .bar_width(5)
 }
 
+fn vertical_bar(hour: usize, temperature: &u8) -> Bar {
+    Bar::default()
+        .value(u64::from(*temperature))
+        .label(Line::from(format!("{hour:>02}:00")))
+        .text_value(format!("{temperature:>3}°"))
+        .style(temperature_style(*temperature))
+        .value_style(temperature_style(*temperature).reversed())
+}
+
 /// Create a horizontal bar chart from the temperatures data.
 fn horizontal_barchart(temperatures: &[u8]) -> BarChart {
     let bars: Vec<Bar> = temperatures
         .iter()
-        .map(|v| u64::from(*v))
         .enumerate()
-        .map(|(i, value)| {
-            let style = temperature_style(value);
-            Bar::default()
-                .value(value)
-                .label(Line::from(format!("{i:>02}:00")))
-                .text_value(format!("{value:>3}°"))
-                .style(style)
-                .value_style(style.reversed())
-        })
+        .map(|(hour, value)| horizontal_bar(hour, value))
         .collect();
     let title = Line::from("Weather (Horizontal)").centered();
     BarChart::default()
@@ -132,69 +118,19 @@ fn horizontal_barchart(temperatures: &[u8]) -> BarChart {
         .direction(Direction::Horizontal)
 }
 
-/// create a yellow to red value based on the value (50-90)
-fn temperature_style(value: u64) -> Style {
-    let green = (255.0 * (1.0 - (value - 50) as f64 / 40.0)) as u8;
-    let color = Color::Rgb(255, green, 0);
-    Style::new().fg(color)
+fn horizontal_bar(hour: usize, temperature: &u8) -> Bar {
+    let style = temperature_style(*temperature);
+    Bar::default()
+        .value(u64::from(*temperature))
+        .label(Line::from(format!("{hour:>02}:00")))
+        .text_value(format!("{temperature:>3}°"))
+        .style(style)
+        .value_style(style.reversed())
 }
 
-/// Contains functions common to all examples
-mod terminal {
-    use std::{
-        io::{self, stdout, Stdout},
-        panic,
-    };
-
-    use ratatui::{
-        backend::CrosstermBackend,
-        crossterm::{
-            execute,
-            terminal::{
-                disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
-                LeaveAlternateScreen,
-            },
-        },
-    };
-
-    // A type alias to simplify the usage of the terminal and make it easier to change the backend
-    // or choice of writer.
-    pub type Terminal = ratatui::Terminal<CrosstermBackend<Stdout>>;
-
-    /// Initialize the terminal by enabling raw mode and entering the alternate screen.
-    ///
-    /// This function should be called before the program starts to ensure that the terminal is in
-    /// the correct state for the application.
-    pub fn init() -> io::Result<Terminal> {
-        install_panic_hook();
-        enable_raw_mode()?;
-        execute!(stdout(), EnterAlternateScreen)?;
-        let backend = CrosstermBackend::new(stdout());
-        let terminal = Terminal::new(backend)?;
-        Ok(terminal)
-    }
-
-    /// Restore the terminal by leaving the alternate screen and disabling raw mode.
-    ///
-    /// This function should be called before the program exits to ensure that the terminal is
-    /// restored to its original state.
-    pub fn restore() -> io::Result<()> {
-        disable_raw_mode()?;
-        execute!(
-            stdout(),
-            LeaveAlternateScreen,
-            Clear(ClearType::FromCursorDown),
-        )
-    }
-
-    /// Install a panic hook that restores the terminal before printing the panic.
-    ///
-    /// This prevents error messages from being messed up by the terminal state.
-    fn install_panic_hook() {
-        let panic_hook = panic::take_hook();
-        panic::set_hook(Box::new(move |panic_info| {
-            let _ = restore();
-            panic_hook(panic_info);
-        }));
-    }
+/// create a yellow to red value based on the value (50-90)
+fn temperature_style(value: u8) -> Style {
+    let green = (255.0 * (1.0 - f64::from(value - 50) / 40.0)) as u8;
+    let color = Color::Rgb(255, green, 0);
+    Style::new().fg(color)
 }

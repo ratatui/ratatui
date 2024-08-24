@@ -500,7 +500,7 @@ mod test {
             .filter(|g| g.chars().any(|c| !c.is_whitespace()))
             .collect();
         assert_eq!(word_wrapper, expected);
-        assert_eq!(line_truncator, vec!["a"]);
+        assert_eq!(line_truncator, ["a"]);
     }
 
     #[test]
@@ -511,8 +511,8 @@ mod test {
                     両端点では、";
         let (word_wrapper, _, _) = run_composer(Composer::WordWrapper { trim: true }, text, width);
         let (line_truncator, _, _) = run_composer(Composer::LineTruncator, text, width);
-        assert_eq!(word_wrapper, vec!["", "a", "a", "a", "a"]);
-        assert_eq!(line_truncator, vec!["", "a", "a"]);
+        assert_eq!(word_wrapper, ["", "a", "a", "a", "a"]);
+        assert_eq!(line_truncator, ["", "a", "a"]);
     }
 
     /// Tests `WordWrapper` with words some of which exceed line length and some not.
@@ -541,8 +541,8 @@ mod test {
         let (word_wrapper, word_wrapper_width, _) =
             run_composer(Composer::WordWrapper { trim: true }, text, width);
         let (line_truncator, _, _) = run_composer(Composer::LineTruncator, text, width);
-        assert_eq!(line_truncator, vec!["コンピュータ上で文字"]);
-        let wrapped = vec![
+        assert_eq!(line_truncator, ["コンピュータ上で文字"]);
+        let wrapped = [
             "コンピュータ上で文字",
             "を扱う場合、典型的に",
             "は文字による通信を行",
@@ -550,7 +550,7 @@ mod test {
             "は、",
         ];
         assert_eq!(word_wrapper, wrapped);
-        assert_eq!(word_wrapper_width, vec![width, width, width, width, 4]);
+        assert_eq!(word_wrapper_width, [width, width, width, width, 4]);
     }
 
     #[test]
@@ -559,8 +559,8 @@ mod test {
         let text = "AAAAAAAAAAAAAAAAAAAA    AAA";
         let (word_wrapper, _, _) = run_composer(Composer::WordWrapper { trim: true }, text, width);
         let (line_truncator, _, _) = run_composer(Composer::LineTruncator, text, width);
-        assert_eq!(word_wrapper, vec!["AAAAAAAAAAAAAAAAAAAA", "AAA",]);
-        assert_eq!(line_truncator, vec!["AAAAAAAAAAAAAAAAAAAA"]);
+        assert_eq!(word_wrapper, ["AAAAAAAAAAAAAAAAAAAA", "AAA"]);
+        assert_eq!(line_truncator, ["AAAAAAAAAAAAAAAAAAAA"]);
     }
 
     /// Tests truncation of leading whitespace.
@@ -570,8 +570,8 @@ mod test {
         let text = "                                                                     ";
         let (word_wrapper, _, _) = run_composer(Composer::WordWrapper { trim: true }, text, width);
         let (line_truncator, _, _) = run_composer(Composer::LineTruncator, text, width);
-        assert_eq!(word_wrapper, vec![""]);
-        assert_eq!(line_truncator, vec!["                    "]);
+        assert_eq!(word_wrapper, [""]);
+        assert_eq!(line_truncator, ["                    "]);
     }
 
     /// Tests an input starting with a letter, followed by spaces - some of the behaviour is
@@ -586,8 +586,8 @@ mod test {
         // after 20 of which a word break occurs (probably shouldn't). The second line break
         // discards all whitespace. The result should probably be vec!["a"] but it doesn't matter
         // that much.
-        assert_eq!(word_wrapper, vec!["a", ""]);
-        assert_eq!(line_truncator, vec!["a                   "]);
+        assert_eq!(word_wrapper, ["a", ""]);
+        assert_eq!(line_truncator, ["a                   "]);
     }
 
     #[test]
@@ -614,7 +614,7 @@ mod test {
             ]
         );
         // Odd-sized lines have a space in them.
-        assert_eq!(word_wrapper_width, vec![8, 20, 17, 17, 20, 4]);
+        assert_eq!(word_wrapper_width, [8, 20, 17, 17, 20, 4]);
     }
 
     /// Ensure words separated by nbsp are wrapped as if they were a single one.
@@ -624,15 +624,15 @@ mod test {
         let text = "AAAAAAAAAAAAAAA AAAA\u{00a0}AAA";
         let (word_wrapper, word_wrapper_widths, _) =
             run_composer(Composer::WordWrapper { trim: true }, text, width);
-        assert_eq!(word_wrapper, vec!["AAAAAAAAAAAAAAA", "AAAA\u{00a0}AAA",]);
-        assert_eq!(word_wrapper_widths, vec![15, 8]);
+        assert_eq!(word_wrapper, ["AAAAAAAAAAAAAAA", "AAAA\u{00a0}AAA"]);
+        assert_eq!(word_wrapper_widths, [15, 8]);
 
         // Ensure that if the character was a regular space, it would be wrapped differently.
         let text_space = text.replace('\u{00a0}', " ");
         let (word_wrapper_space, word_wrapper_widths, _) =
             run_composer(Composer::WordWrapper { trim: true }, text_space, width);
-        assert_eq!(word_wrapper_space, vec!["AAAAAAAAAAAAAAA AAAA", "AAA",]);
-        assert_eq!(word_wrapper_widths, vec![20, 3]);
+        assert_eq!(word_wrapper_space, ["AAAAAAAAAAAAAAA AAAA", "AAA"]);
+        assert_eq!(word_wrapper_widths, [20, 3]);
     }
 
     #[test]
@@ -640,7 +640,7 @@ mod test {
         let width = 20;
         let text = "AAAAAAAAAAAAAAAAAAAA    AAA";
         let (word_wrapper, _, _) = run_composer(Composer::WordWrapper { trim: false }, text, width);
-        assert_eq!(word_wrapper, vec!["AAAAAAAAAAAAAAAAAAAA", "   AAA",]);
+        assert_eq!(word_wrapper, ["AAAAAAAAAAAAAAAAAAAA", "   AAA"]);
     }
 
     #[test]
@@ -678,8 +678,8 @@ mod test {
         let line = "foo\u{200B}";
         let (word_wrapper, _, _) = run_composer(Composer::WordWrapper { trim: true }, line, width);
         let (line_truncator, _, _) = run_composer(Composer::LineTruncator, line, width);
-        assert_eq!(word_wrapper, vec!["foo"]);
-        assert_eq!(line_truncator, vec!["foo\u{200B}"]);
+        assert_eq!(word_wrapper, ["foo"]);
+        assert_eq!(line_truncator, ["foo\u{200B}"]);
     }
 
     #[test]
@@ -716,6 +716,6 @@ mod test {
         let width = 3;
         let line = "foo\u{200b}bar";
         let (word_wrapper, _, _) = run_composer(Composer::WordWrapper { trim: true }, line, width);
-        assert_eq!(word_wrapper, vec!["foo", "bar"]);
+        assert_eq!(word_wrapper, ["foo", "bar"]);
     }
 }

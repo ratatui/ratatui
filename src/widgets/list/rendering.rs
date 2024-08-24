@@ -1250,7 +1250,7 @@ mod tests {
     /// Regression test for a bug where highlight symbol being greater than width caused a panic due
     /// to subtraction with underflow.
     ///
-    /// See [#949](https://github.com/ratatui-org/ratatui/pull/949) for details
+    /// See [#949](https://github.com/ratatui/ratatui/pull/949) for details
     #[rstest]
     #[case::under(">>>>", "Item1", ">>>>Item1 ")] // enough space to render the highlight symbol
     #[case::exact(">>>>>", "Item1", ">>>>>Item1")] // exact space to render the highlight symbol

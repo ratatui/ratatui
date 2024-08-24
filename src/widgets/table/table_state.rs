@@ -19,7 +19,7 @@
 /// [Examples] directory for a more in depth example of the various configuration options and for
 /// how to handle state.
 ///
-/// [Examples]: https://github.com/ratatui-org/ratatui/blob/master/examples/README.md
+/// [Examples]: https://github.com/ratatui/ratatui/blob/master/examples/README.md
 ///
 /// # Example
 ///

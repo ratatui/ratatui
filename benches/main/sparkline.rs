@@ -31,7 +31,7 @@ fn sparkline(c: &mut Criterion) {
 fn render(bencher: &mut Bencher, sparkline: &Sparkline) {
     let mut buffer = Buffer::empty(Rect::new(0, 0, 200, 50));
     // We use `iter_batched` to clone the value in the setup function.
-    // See https://github.com/ratatui-org/ratatui/pull/377.
+    // See https://github.com/ratatui/ratatui/pull/377.
     bencher.iter_batched(
         || sparkline.clone(),
         |bench_sparkline| {

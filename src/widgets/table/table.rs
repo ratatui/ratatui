@@ -31,7 +31,7 @@ use crate::{layout::Flex, prelude::*, style::Styled, widgets::Block};
 /// directory for a more in depth example of the various configuration options and for how to handle
 /// state.
 ///
-/// [Examples]: https://github.com/ratatui-org/ratatui/blob/master/examples/README.md
+/// [Examples]: https://github.com/ratatui/ratatui/blob/master/examples/README.md
 ///
 /// # Constructor methods
 ///
@@ -1022,10 +1022,10 @@ mod tests {
     #[test]
     fn default() {
         let table = Table::default();
-        assert_eq!(table.rows, vec![]);
+        assert_eq!(table.rows, []);
         assert_eq!(table.header, None);
         assert_eq!(table.footer, None);
-        assert_eq!(table.widths, vec![]);
+        assert_eq!(table.widths, []);
         assert_eq!(table.column_spacing, 1);
         assert_eq!(table.block, None);
         assert_eq!(table.style, Style::default());
@@ -1162,24 +1162,24 @@ mod tests {
     fn widths_conversions() {
         let array = [Constraint::Percentage(100)];
         let table = Table::new(Vec::<Row>::new(), array);
-        assert_eq!(table.widths, vec![Constraint::Percentage(100)], "array");
+        assert_eq!(table.widths, [Constraint::Percentage(100)], "array");
 
         let array_ref = &[Constraint::Percentage(100)];
         let table = Table::new(Vec::<Row>::new(), array_ref);
-        assert_eq!(table.widths, vec![Constraint::Percentage(100)], "array ref");
+        assert_eq!(table.widths, [Constraint::Percentage(100)], "array ref");
 
         let vec = vec![Constraint::Percentage(100)];
         let slice = vec.as_slice();
         let table = Table::new(Vec::<Row>::new(), slice);
-        assert_eq!(table.widths, vec![Constraint::Percentage(100)], "slice");
+        assert_eq!(table.widths, [Constraint::Percentage(100)], "slice");
 
         let vec = vec![Constraint::Percentage(100)];
         let table = Table::new(Vec::<Row>::new(), vec);
-        assert_eq!(table.widths, vec![Constraint::Percentage(100)], "vec");
+        assert_eq!(table.widths, [Constraint::Percentage(100)], "vec");
 
         let vec_ref = &vec![Constraint::Percentage(100)];
         let table = Table::new(Vec::<Row>::new(), vec_ref);
-        assert_eq!(table.widths, vec![Constraint::Percentage(100)], "vec ref");
+        assert_eq!(table.widths, [Constraint::Percentage(100)], "vec ref");
     }
 
     #[cfg(test)]
@@ -1567,7 +1567,7 @@ mod tests {
 
         /// Note that this includes a regression test for a bug where the table would not render the
         /// correct rows when there is no selection.
-        /// <https://github.com/ratatui-org/ratatui/issues/1179>
+        /// <https://github.com/ratatui/ratatui/issues/1179>
         #[rstest]
         #[case::no_selection(None, 50, ["50", "51", "52", "53", "54"])]
         #[case::selection_before_offset(20, 20, ["20", "21", "22", "23", "24"])]

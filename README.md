@@ -21,7 +21,7 @@
 
 <!-- cargo-rdme start -->
 
-![Demo](https://github.com/ratatui-org/ratatui/blob/87ae72dbc756067c97f6400d3e2a58eeb383776e/examples/demo2-destroy.gif?raw=true)
+![Demo](https://github.com/ratatui/ratatui/blob/87ae72dbc756067c97f6400d3e2a58eeb383776e/examples/demo2-destroy.gif?raw=true)
 
 <div align="center">
 
@@ -280,21 +280,21 @@ Running this example produces the following output:
 [Handling Events]: https://ratatui.rs/concepts/event-handling/
 [Layout]: https://ratatui.rs/how-to/layout/
 [Styling Text]: https://ratatui.rs/how-to/render/style-text/
-[templates]: https://github.com/ratatui-org/templates/
-[Examples]: https://github.com/ratatui-org/ratatui/tree/main/examples/README.md
-[Report a bug]: https://github.com/ratatui-org/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
-[Request a Feature]: https://github.com/ratatui-org/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
-[Create a Pull Request]: https://github.com/ratatui-org/ratatui/compare
+[templates]: https://github.com/ratatui/templates/
+[Examples]: https://github.com/ratatui/ratatui/tree/main/examples/README.md
+[Report a bug]: https://github.com/ratatui/ratatui/issues/new?labels=bug&projects=&template=bug_report.md
+[Request a Feature]: https://github.com/ratatui/ratatui/issues/new?labels=enhancement&projects=&template=feature_request.md
+[Create a Pull Request]: https://github.com/ratatui/ratatui/compare
 [git-cliff]: https://git-cliff.org
 [Conventional Commits]: https://www.conventionalcommits.org
 [API Docs]: https://docs.rs/ratatui
-[Changelog]: https://github.com/ratatui-org/ratatui/blob/main/CHANGELOG.md
-[Contributing]: https://github.com/ratatui-org/ratatui/blob/main/CONTRIBUTING.md
-[Breaking Changes]: https://github.com/ratatui-org/ratatui/blob/main/BREAKING-CHANGES.md
+[Changelog]: https://github.com/ratatui/ratatui/blob/main/CHANGELOG.md
+[Contributing]: https://github.com/ratatui/ratatui/blob/main/CONTRIBUTING.md
+[Breaking Changes]: https://github.com/ratatui/ratatui/blob/main/BREAKING-CHANGES.md
 [FOSDEM 2024 talk]: https://www.youtube.com/watch?v=NU0q6NOLJ20
-[docsrs-hello]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-hello.png?raw=true
-[docsrs-layout]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-layout.png?raw=true
-[docsrs-styling]: https://github.com/ratatui-org/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-styling.png?raw=true
+[docsrs-hello]: https://github.com/ratatui/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-hello.png?raw=true
+[docsrs-layout]: https://github.com/ratatui/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-layout.png?raw=true
+[docsrs-styling]: https://github.com/ratatui/ratatui/blob/c3c3c289b1eb8d562afb1931adb4dc719cd48490/examples/docsrs-styling.png?raw=true
 [`Frame`]: terminal::Frame
 [`render_widget`]: terminal::Frame::render_widget
 [`Widget`]: widgets::Widget
@@ -313,15 +313,15 @@ Running this example produces the following output:
 [Termion]: https://crates.io/crates/termion
 [Termwiz]: https://crates.io/crates/termwiz
 [tui-rs]: https://crates.io/crates/tui
-[GitHub Sponsors]: https://github.com/sponsors/ratatui-org
+[GitHub Sponsors]: https://github.com/sponsors/ratatui
 [Crate Badge]: https://img.shields.io/crates/v/ratatui?logo=rust&style=flat-square&logoColor=E05D44&color=E05D44
 [License Badge]: https://img.shields.io/crates/l/ratatui?style=flat-square&color=1370D3
-[CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui-org/ratatui/ci.yml?style=flat-square&logo=github
-[CI Workflow]: https://github.com/ratatui-org/ratatui/actions/workflows/ci.yml
-[Codecov Badge]: https://img.shields.io/codecov/c/github/ratatui-org/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST&color=C43AC3&logoColor=C43AC3
-[Codecov]: https://app.codecov.io/gh/ratatui-org/ratatui
-[Deps.rs Badge]: https://deps.rs/repo/github/ratatui-org/ratatui/status.svg?style=flat-square
-[Deps.rs]: https://deps.rs/repo/github/ratatui-org/ratatui
+[CI Badge]: https://img.shields.io/github/actions/workflow/status/ratatui/ratatui/ci.yml?style=flat-square&logo=github
+[CI Workflow]: https://github.com/ratatui/ratatui/actions/workflows/ci.yml
+[Codecov Badge]: https://img.shields.io/codecov/c/github/ratatui/ratatui?logo=codecov&style=flat-square&token=BAQ8SOKEST&color=C43AC3&logoColor=C43AC3
+[Codecov]: https://app.codecov.io/gh/ratatui/ratatui
+[Deps.rs Badge]: https://deps.rs/repo/github/ratatui/ratatui/status.svg?style=flat-square
+[Deps.rs]: https://deps.rs/repo/github/ratatui/ratatui
 [Discord Badge]: https://img.shields.io/discord/1070692720437383208?label=discord&logo=discord&style=flat-square&color=1370D3&logoColor=1370D3
 [Discord Server]: https://discord.gg/pMCEU9hNEj
 [Docs Badge]: https://img.shields.io/docsrs/ratatui?logo=rust&style=flat-square&logoColor=E05D44
@@ -329,7 +329,7 @@ Running this example produces the following output:
 [Matrix]: https://matrix.to/#/#ratatui:matrix.org
 [Forum Badge]: https://img.shields.io/discourse/likes?server=https%3A%2F%2Fforum.ratatui.rs&style=flat-square&logo=discourse&label=forum&color=C43AC3
 [Forum]: https://forum.ratatui.rs
-[Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui-org?logo=github&style=flat-square&color=1370D3
+[Sponsors Badge]: https://img.shields.io/github/sponsors/ratatui?logo=github&style=flat-square&color=1370D3
 
 <!-- cargo-rdme end -->
 
@@ -387,7 +387,7 @@ be installed with `cargo install cargo-make`).
   `ratatui::text::Text`
 - [color-to-tui](https://github.com/uttarayan21/color-to-tui) — Parse hex colors to
   `ratatui::style::Color`
-- [templates](https://github.com/ratatui-org/templates) — Starter templates for
+- [templates](https://github.com/ratatui/templates) — Starter templates for
   bootstrapping a Rust TUI application with Ratatui & crossterm
 - [tui-builder](https://github.com/jkelleyrtp/tui-builder) — Batteries-included MVC framework for
   Tui-rs + Crossterm apps
@@ -411,7 +411,7 @@ be installed with `cargo install cargo-make`).
 
 ## Apps
 
-Check out [awesome-ratatui](https://github.com/ratatui-org/awesome-ratatui) for a curated list of
+Check out [awesome-ratatui](https://github.com/ratatui/awesome-ratatui) for a curated list of
 awesome apps/libraries built with `ratatui`!
 
 ## Alternatives
@@ -422,7 +422,7 @@ to build text user interfaces in Rust.
 ## Acknowledgments
 
 Special thanks to [**Pavel Fomchenkov**](https://github.com/nawok) for his work in designing **an
-awesome logo** for the ratatui project and ratatui-org organization.
+awesome logo** for the ratatui project and ratatui organization.
 
 ## License
 

@@ -569,7 +569,7 @@ mod tests {
         assert_eq!(Span::raw("").width(), 0);
         assert_eq!(Span::raw("test").width(), 4);
         assert_eq!(Span::raw("test content").width(), 12);
-        // Needs reconsideration: https://github.com/ratatui-org/ratatui/issues/1271
+        // Needs reconsideration: https://github.com/ratatui/ratatui/issues/1271
         assert_eq!(Span::raw("test\ncontent").width(), 12);
     }
 
@@ -786,7 +786,7 @@ mod tests {
         }
     }
 
-    /// Regression test for <https://github.com/ratatui-org/ratatui/issues/1160> One line contains
+    /// Regression test for <https://github.com/ratatui/ratatui/issues/1160> One line contains
     /// some Unicode Left-Right-Marks (U+200E)
     ///
     /// The issue was that a zero-width character at the end of the buffer causes the buffer bounds

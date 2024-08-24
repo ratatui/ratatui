@@ -246,7 +246,7 @@ impl Buffer {
     ///
     /// Returns `None` if the given coordinates are outside of the Buffer's area.
     ///
-    /// Note that this is private because of <https://github.com/ratatui-org/ratatui/issues/1122>
+    /// Note that this is private because of <https://github.com/ratatui/ratatui/issues/1122>
     #[must_use]
     const fn index_of_opt(&self, position: Position) -> Option<usize> {
         let area = self.area;

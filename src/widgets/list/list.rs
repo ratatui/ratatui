@@ -28,7 +28,7 @@ use crate::{
 /// See the list in the [Examples] directory for a more in depth example of the various
 /// configuration options and for how to handle state.
 ///
-/// [Examples]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+/// [Examples]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 ///
 /// # Fluent setters
 ///
