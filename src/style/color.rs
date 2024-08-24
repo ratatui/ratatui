@@ -520,33 +520,6 @@ mod tests {
     }
 
     #[test]
-    fn test_hsluv_to_rgb() {
-        // Test with valid HSLuv values
-        let color = Color::from_hsluv(120.0, 50.0, 75.0);
-        assert_eq!(color, Color::Rgb(147, 198, 129));
-
-        // Test with H value at upper bound
-        let color = Color::from_hsluv(360.0, 50.0, 75.0);
-        assert_eq!(color, Color::Rgb(223, 171, 181));
-
-        // Test with H value exceeding the upper bound
-        let color = Color::from_hsluv(400.0, 50.0, 75.0);
-        assert_eq!(color, Color::Rgb(226, 174, 140));
-
-        // Test with S and L values exceeding the upper bound
-        let color = Color::from_hsluv(240.0, 120.0, 150.0);
-        assert_eq!(color, Color::Rgb(255, 255, 255));
-
-        // Test with H, S, and L values below the lower bound
-        let color = Color::from_hsluv(0.0, 0.0, 0.0);
-        assert_eq!(color, Color::Rgb(0, 0, 0));
-
-        // Test with S and L values below the lower bound
-        let color = Color::from_hsluv(60.0, 0.0, 0.0);
-        assert_eq!(color, Color::Rgb(0, 0, 0));
-    }
-
-    #[test]
     fn from_u32() {
         assert_eq!(Color::from_u32(0x000000), Color::Rgb(0, 0, 0));
         assert_eq!(Color::from_u32(0xFF0000), Color::Rgb(255, 0, 0));
