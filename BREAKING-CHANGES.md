@@ -11,6 +11,7 @@ GitHub with a [breaking change] label.
 This is a quick summary of the sections below:
 
 - [v0.29.0](#unreleased)
+  - `Terminal`, `Buffer`, `Cell`, `Frame` are no longer `Sync` / `RefUnwindSafe`
   - Removed public fields from `Rect` iterators
   - `Line` now implements `From<Cow<str>`
   - `Table::highlight_style` is now `Table::row_highlight_style`
@@ -71,6 +72,17 @@ This is a quick summary of the sections below:
   - `List` no longer ignores empty strings
 
 ## Unreleased
+
+### `Terminal`, `Buffer`, `Cell`, `Frame` are no longer `Sync` / `RefUnwindSafe` [#1339]
+
+[#1339]: https://github.com/ratatui/ratatui/pull/1339
+
+In #1339, we added a cache of the Cell width which uses a std::cell::Cell. This causes `Cell` and
+all types that contain this (`Terminal`, `Buffer`, `Frame`, `CompletedFrame`, `TestBackend`) to no
+longer be `Sync`
+
+This change is unlikely to cause problems as these types likely should not be sent between threads
+regardless due to their interaction with various things which mutated externally (e.g. stdio).
 
 ### Removed public fields from `Rect` iterators ([#1358])
 
