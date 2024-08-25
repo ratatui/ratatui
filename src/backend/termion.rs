@@ -234,21 +234,25 @@ where
 
     #[cfg(feature = "scrolling-regions")]
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
-        let start = region.start.saturating_add(1);
-        let end = region.end;
-        write!(self.writer, "\x1B[{start};{end}r")?;
-        write!(self.writer, "{}", termion::scroll::Up(amount))?;
-        write!(self.writer, "\x1B[r")?;
+        write!(
+            self.writer,
+            "{}{}{}",
+            SetRegion(region.start.saturating_add(1), region.end),
+            termion::scroll::Up(amount),
+            ResetRegion,
+        )?;
         self.writer.flush()
     }
 
     #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
-        let start = region.start.saturating_add(1);
-        let end = region.end;
-        write!(self.writer, "\x1B[{start};{end}r")?;
-        write!(self.writer, "{}", termion::scroll::Down(amount))?;
-        write!(self.writer, "\x1B[r")?;
+        write!(
+            self.writer,
+            "{}{}{}",
+            SetRegion(region.start.saturating_add(1), region.end),
+            termion::scroll::Down(amount),
+            ResetRegion,
+        )?;
         self.writer.flush()
     }
 }
@@ -477,6 +481,26 @@ from_termion_for_modifier!(Blink, SLOW_BLINK);
 impl From<termion::style::Reset> for Modifier {
     fn from(_: termion::style::Reset) -> Self {
         Self::empty()
+    }
+}
+
+/// Set scrolling region.
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct SetRegion(pub u16, pub u16);
+
+impl fmt::Display for SetRegion {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "\x1B[{};{}r", self.0, self.1)
+    }
+}
+
+/// Reset scrolling region.
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct ResetRegion;
+
+impl fmt::Display for ResetRegion {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "\x1B[r")
     }
 }
 
