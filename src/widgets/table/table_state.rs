@@ -15,7 +15,7 @@
 /// [`selected`]: TableState::selected()
 /// [`selected_column`]: TableState::selected_column()
 ///
-/// See the `table`` example and the `recipe`` and `traceroute`` tabs in the demo2 example in the
+/// See the `table` example and the `recipe` and `traceroute` tabs in the demo2 example in the
 /// [Examples] directory for a more in depth example of the various configuration options and for
 /// how to handle state.
 ///

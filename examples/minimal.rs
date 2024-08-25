@@ -31,7 +31,7 @@ fn main() {
     loop {
         terminal
             .draw(|frame: &mut Frame| frame.render_widget(Text::raw("Hello World!"), frame.area()))
-            .expect("Failed to draw");
+            .expect("failed to draw frame");
         if matches!(event::read().expect("failed to read event"), Event::Key(_)) {
             break;
         }

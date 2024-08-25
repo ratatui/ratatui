@@ -2,6 +2,183 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.28.1](https://github.com/ratatui/ratatui/releases/tag/v0.28.1) - 2024-08-25
+
+### Features
+
+- [ed51c4b](https://github.com/ratatui/ratatui/commit/ed51c4b3429862201b2c5de6846fea4c237f0ffb) *(terminal)* Add ratatui::init() and restore() methods by @joshka in [#1289](https://github.com/ratatui/ratatui/pull/1289)
+
+  > These are simple opinionated methods for creating a terminal that is
+  > useful to use in most apps. The new init method creates a crossterm
+  > backend writing to stdout, enables raw mode, enters the alternate
+  > screen, and sets a panic handler that restores the terminal on panic.
+  >
+  > A minimal hello world now looks a bit like:
+  >
+  > ```rust
+  > use ratatui::{
+  >     crossterm::event::{self, Event},
+  >     text::Text,
+  >     Frame,
+  > };
+  >
+  > fn main() {
+  >     let mut terminal = ratatui::init();
+  >     loop {
+  >         terminal
+  >             .draw(|frame: &mut Frame| frame.render_widget(Text::raw("Hello World!"), frame.area()))
+  >             .expect("Failed to draw");
+  >         if matches!(event::read().expect("failed to read event"), Event::Key(_)) {
+  >             break;
+  >         }
+  >     }
+  >     ratatui::restore();
+  > }
+  > ```
+  >
+  > A type alias `DefaultTerminal` is added to represent this terminal
+  > type and to simplify any cases where applications need to pass this
+  > terminal around. It is equivalent to:
+  > `Terminal<CrosstermBackend<Stdout>>`
+  >
+  > We also added `ratatui::try_init()` and `try_restore()`, for situations
+  > where you might want to handle initialization errors yourself instead
+  > of letting the panic handler fire and cleanup. Simple Apps should
+  > prefer the `init` and `restore` functions over these functions.
+  >
+  > Corresponding functions to allow passing a `TerminalOptions` with
+  > a `Viewport` (e.g. inline, fixed) are also available
+  > (`init_with_options`,
+  > and `try_init_with_options`).
+  >
+  > The existing code to create a backend and terminal will remain and
+  > is not deprecated by this approach. This just provides a simple one
+  > line initialization using the common options.
+  >
+  > ---------
+
+### Bug Fixes
+
+- [aed60b9](https://github.com/ratatui/ratatui/commit/aed60b98394edc834d9fe8e96c3698510b5922f4) *(terminal)* Terminal::insert_before would crash when called while the viewport filled the screen by @nfachan in [#1329](https://github.com/ratatui/ratatui/pull/1329)
+
+  > Reimplement Terminal::insert_before. The previous implementation would
+  > insert the new lines in chunks into the area between the top of the
+  > screen and the top of the (new) viewport. If the viewport filled the
+  > screen, there would be no area in which to insert lines, and the
+  > function would crash.
+  >
+  > The new implementation uses as much of the screen as it needs to, all
+  > the way up to using the whole screen.
+  >
+  > This commit:
+  > - adds a scrollback buffer to the `TestBackend` so that tests can
+  > inspect and assert the state of the scrollback buffer in addition to the
+  > screen
+  > - adds functions to `TestBackend` to assert the state of the scrollback
+  > - adds and updates `TestBackend` tests to test the behavior of the
+  > scrollback and the new asserting functions
+  > - reimplements `Terminal::insert_before`, including adding two new
+  > helper functions `Terminal::draw_lines` and `Terminal::scroll_up`.
+  > - updates the documentation for `Terminal::insert_before` to clarify
+  > some of the edge cases
+  > - updates terminal tests to assert the state of the scrollback buffer
+  > - adds a new test for the condition that causes the bug
+  > - adds a conversion constructor `Cell::from(char)`
+  >
+  > Fixes:https://github.com/ratatui/ratatui/issues/999
+
+- [fdd5d8c](https://github.com/ratatui/ratatui/commit/fdd5d8c092b33c188b0657f5a2e17fa6712a91ae) *(text)* Remove trailing newline from single-line Display trait impl by @LucasPickering in [#1320](https://github.com/ratatui/ratatui/pull/1320)
+
+- [2fb0b8a](https://github.com/ratatui/ratatui/commit/2fb0b8a741e7e20d4bbef8077e25d63e5ee51d83) *(uncategorized)* Fix u16 overflow in Terminal::insert_before. by @nfachan in [#1323](https://github.com/ratatui/ratatui/pull/1323)
+
+  > If the amount of characters in the screen above the viewport was greater
+  > than u16::MAX, a multiplication would overflow. The multiply was used to
+  > compute the maximum chunk size. The fix is to just do the multiplication
+  > as a usize and also do the subsequent division as a usize.
+  >
+  > There is currently another outstanding issue that limits the amount of
+  > characters that can be inserted when calling Terminal::insert_before to
+  > u16::MAX. However, this bug can still occur even if the viewport and the
+  > amount of characters being inserted are both less than u16::MAX, since
+  > it's dependant on how large the screen is above the viewport.
+  >
+  > Fixes #1322
+
+### Documentation
+
+- [3631b34](https://github.com/ratatui/ratatui/commit/3631b34f538a14840d633de57a0beb59c83bd649) *(examples)* Add widget implementation example by @joshka in [#1147](https://github.com/ratatui/ratatui/pull/1147)
+
+  > This new example documents the various ways to implement widgets in
+  > Ratatui. It demonstrates how to implement the `Widget` trait on a type,
+  > a reference, and a mutable reference. It also shows how to use the
+  > `WidgetRef` trait to render boxed widgets.
+
+- [d5477b5](https://github.com/ratatui/ratatui/commit/d5477b50d54fc43c75924c2b2584331f039ed261) *(examples)* Use ratatui::crossterm in examples by @joshka in [#1315](https://github.com/ratatui/ratatui/pull/1315)
+
+- [730dfd4](https://github.com/ratatui/ratatui/commit/730dfd4940809fb2d8a15ed2976a4016c2227114) *(examples)* Show line gauge in demo example by @montmorill in [#1309](https://github.com/ratatui/ratatui/pull/1309)
+
+- [9ed85fd](https://github.com/ratatui/ratatui/commit/9ed85fd1dddc68757e9258b2e99dbd25f7ba0768) *(table)* Fix incorrect backticks in `TableState` docs by @airblast-dev in [#1342](https://github.com/ratatui/ratatui/pull/1342)
+
+- [6d1bd99](https://github.com/ratatui/ratatui/commit/6d1bd99544ab3b82b2494ca514f307234c6f2477) *(uncategorized)* Minor grammar fixes by @matta in [#1330](https://github.com/ratatui/ratatui/pull/1330)
+
+- [097ee86](https://github.com/ratatui/ratatui/commit/097ee86e399abefdca6505550287035967a7b035) *(uncategorized)* Remove superfluous doc(inline) by @EdJoPaTo in [#1310](https://github.com/ratatui/ratatui/pull/1310)
+
+  > It's no longer needed since #1260
+
+- [3fdb5e8](https://github.com/ratatui/ratatui/commit/3fdb5e8987ca811c094593b0f816a64900880d23) *(uncategorized)* Fix typo in terminal.rs by @mrjackwills in [#1313](https://github.com/ratatui/ratatui/pull/1313)
+
+### Testing
+
+- [0d5f3c0](https://github.com/ratatui/ratatui/commit/0d5f3c091f838888a3cfb69c6de3a0a6af739bbe) *(uncategorized)* Avoid unneeded allocations in assertions by @mo8it in [#1335](https://github.com/ratatui/ratatui/pull/1335)
+
+  > A vector can be compared to an array.
+
+### Miscellaneous Tasks
+
+- [65da535](https://github.com/ratatui/ratatui/commit/65da5357455b11cd395757182f07b0ee22025e4b) *(ci)* Update release strategy by @orhun in [#1337](https://github.com/ratatui/ratatui/pull/1337)
+  >
+  > closes #1232
+  >
+  > Now we can trigger point releases by pushing a tag (follow the
+  > instructions in `RELEASE.md`). This will create a release with generated
+  > changelog.
+  >
+  > There is still a lack of automation (e.g. updating `CHANGELOG.md`), but
+  > this PR is a good start towards improving that.
+
+- [57d8b74](https://github.com/ratatui/ratatui/commit/57d8b742e55b75674e271a83339fc585f62d3a6d) *(ci)* Use cargo-docs-rs to lint docs by @joshka in [#1318](https://github.com/ratatui/ratatui/pull/1318)
+
+- [8b624f5](https://github.com/ratatui/ratatui/commit/8b624f5952af940d570bc95d45b6bd7bf8018dd0) *(maintainers)* Remove EdJoPaTo by @EdJoPaTo in [#1314](https://github.com/ratatui/ratatui/pull/1314)
+
+- [23516bc](https://github.com/ratatui/ratatui/commit/23516bce76af91586b697db339da6b895c9e7151) *(uncategorized)* Rename ratatui-org to ratatui by @joshka in [#1334](https://github.com/ratatui/ratatui/pull/1334)
+
+  > All urls updated to point at https://github.com/ratatui
+  >
+  > To update your repository remotes, you can run the following commands:
+  >
+  > ```shell
+  > git remote set-url origin https://github.com/ratatui/ratatui
+  > ```
+
+### Build
+
+- [0256269](https://github.com/ratatui/ratatui/commit/0256269a7f978c6bba6fcae3e35517b42b3dc846) *(uncategorized)* Simplify Windows build by @joshka in [#1317](https://github.com/ratatui/ratatui/pull/1317)
+
+  > Termion is not supported on Windows, so we need to avoid building it.
+  >
+  > Adds a conditional dependency to the Cargo.toml file to only include
+  > termion when the target is not Windows. This allows contributors to
+  > build using the `--all-features` flag on Windows rather than needing
+  > to specify the features individually.
+
+### New Contributors
+
+* @nfachan made their first contribution in [#1329](https://github.com/ratatui/ratatui/pull/1329)
+* @LucasPickering made their first contribution in [#1320](https://github.com/ratatui/ratatui/pull/1320)
+* @montmorill made their first contribution in [#1309](https://github.com/ratatui/ratatui/pull/1309)
+
+**Full Changelog**: https://github.com/ratatui/ratatui/compare/v0.28.0...v0.28.1
+
 ## [0.28.0](https://github.com/ratatui/ratatui/releases/tag/v0.28.0) - 2024-08-07
 
 _"If you are what you eat, then I only want to eat the good stuff." – Remy_
