@@ -79,7 +79,7 @@ impl Buffer {
     /// Returns a Buffer with all cells set to the default one
     #[must_use]
     pub fn empty(area: Rect) -> Self {
-        Self::filled(area, Cell::EMPTY)
+        Self::filled(area, Cell::empty())
     }
 
     /// Returns a Buffer with all cells initialized with the attributes of the given Cell
@@ -414,7 +414,7 @@ impl Buffer {
         if self.content.len() > length {
             self.content.truncate(length);
         } else {
-            self.content.resize(length, Cell::EMPTY);
+            self.content.resize(length, Cell::empty());
         }
         self.area = area;
     }
@@ -429,7 +429,7 @@ impl Buffer {
     /// Merge an other buffer into this one
     pub fn merge(&mut self, other: &Self) {
         let area = self.area.union(other.area);
-        self.content.resize(area.area() as usize, Cell::EMPTY);
+        self.content.resize(area.area() as usize, Cell::empty());
 
         // Move original content to the appropriate space
         let size = self.area.area() as usize;

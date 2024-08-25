@@ -41,15 +41,18 @@ pub struct Cell {
 
 impl PartialEq for Cell {
     fn eq(&self, other: &Self) -> bool {
-        self.symbol == other.symbol
+        let eq = self.symbol == other.symbol
             && self.fg == other.fg
             && self.bg == other.bg
-            && self.underline_color == other.underline_color
             && self.modifier == other.modifier
-            && self.skip == other.skip
-
+            && self.skip == other.skip;
         // explicitly not comparing width, as it is a cache and may be not set
         // && self.width == other.width
+
+        #[cfg(feature = "underline-color")]
+        return eq && self.underline_color == other.underline_color;
+        #[cfg(not(feature = "underline-color"))]
+        return eq;
     }
 }
 
@@ -58,6 +61,7 @@ impl Hash for Cell {
         self.symbol.hash(state);
         self.fg.hash(state);
         self.bg.hash(state);
+        #[cfg(feature = "underline-color")]
         self.underline_color.hash(state);
         self.modifier.hash(state);
         self.skip.hash(state);
@@ -69,7 +73,7 @@ impl Hash for Cell {
 
 impl Cell {
     /// An empty `Cell`
-    pub const EMPTY: Self = {
+    pub const fn empty() -> Self {
         Self {
             symbol: CompactString::const_new(" "),
             fg: Color::Reset,
@@ -80,7 +84,7 @@ impl Cell {
             skip: false,
             width: std::cell::Cell::new(Some(1)),
         }
-    };
+    }
 
     /// Creates a new `Cell` with the given symbol.
     ///
@@ -217,13 +221,13 @@ impl Cell {
 
 impl Default for Cell {
     fn default() -> Self {
-        Self::EMPTY
+        Self::empty()
     }
 }
 
 impl From<char> for Cell {
     fn from(ch: char) -> Self {
-        let mut cell = Self::EMPTY;
+        let mut cell = Self::empty();
         cell.set_char(ch);
         cell
     }
@@ -253,13 +257,13 @@ mod tests {
 
     #[test]
     fn empty() {
-        let cell = Cell::EMPTY;
+        let cell = Cell::empty();
         assert_eq!(cell.symbol(), " ");
     }
 
     #[test]
     fn set_symbol() {
-        let mut cell = Cell::EMPTY;
+        let mut cell = Cell::empty();
         cell.set_symbol("あ"); // Multi-byte character
         assert_eq!(cell.symbol(), "あ");
         cell.set_symbol("👨‍👩‍👧‍👦"); // Multiple code units combined with ZWJ
@@ -268,7 +272,7 @@ mod tests {
 
     #[test]
     fn append_symbol() {
-        let mut cell = Cell::EMPTY;
+        let mut cell = Cell::empty();
         cell.set_symbol("あ"); // Multi-byte character
         cell.append_symbol("\u{200B}"); // zero-width space
         assert_eq!(cell.symbol(), "あ\u{200B}");
@@ -276,28 +280,28 @@ mod tests {
 
     #[test]
     fn set_char() {
-        let mut cell = Cell::EMPTY;
+        let mut cell = Cell::empty();
         cell.set_char('あ'); // Multi-byte character
         assert_eq!(cell.symbol(), "あ");
     }
 
     #[test]
     fn set_fg() {
-        let mut cell = Cell::EMPTY;
+        let mut cell = Cell::empty();
         cell.set_fg(Color::Red);
         assert_eq!(cell.fg, Color::Red);
     }
 
     #[test]
     fn set_bg() {
-        let mut cell = Cell::EMPTY;
+        let mut cell = Cell::empty();
         cell.set_bg(Color::Red);
         assert_eq!(cell.bg, Color::Red);
     }
 
     #[test]
     fn set_style() {
-        let mut cell = Cell::EMPTY;
+        let mut cell = Cell::empty();
         cell.set_style(Style::new().fg(Color::Red).bg(Color::Blue));
         assert_eq!(cell.fg, Color::Red);
         assert_eq!(cell.bg, Color::Blue);
@@ -305,14 +309,14 @@ mod tests {
 
     #[test]
     fn set_skip() {
-        let mut cell = Cell::EMPTY;
+        let mut cell = Cell::empty();
         cell.set_skip(true);
         assert!(cell.skip);
     }
 
     #[test]
     fn reset() {
-        let mut cell = Cell::EMPTY;
+        let mut cell = Cell::empty();
         cell.set_symbol("あ");
         cell.set_fg(Color::Red);
         cell.set_bg(Color::Blue);
@@ -326,7 +330,7 @@ mod tests {
 
     #[test]
     fn style() {
-        let cell = Cell::EMPTY;
+        let cell = Cell::empty();
         assert_eq!(
             cell.style(),
             Style {
