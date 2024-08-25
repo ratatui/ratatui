@@ -28,6 +28,18 @@ jobs:
       - name: Publish on GitHub
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ env.NEXT_TAG }}
           prerelease: false
           bodyFile: BODY.md
+
+  publish-crate:
+    name: Publish crate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish
+        run: cargo publish --token ${{ secrets.CARGO_TOKEN }}

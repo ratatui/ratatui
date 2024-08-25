@@ -26,11 +26,11 @@ jobs:
       - name: Calculate the next release
         run: .github/workflows/calculate-alpha-release.bash
 
-      - name: Publish on crates.io
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --allow-dirty --token ${{ secrets.CARGO_TOKEN }}
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish
+        run: cargo publish --allow-dirty --token ${{ secrets.CARGO_TOKEN }}
 
       - name: Generate a changelog
         uses: orhun/git-cliff-action@v3
