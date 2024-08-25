@@ -1,9 +1,12 @@
+use std::hash::{Hash, Hasher};
+
 use compact_str::CompactString;
+use unicode_width::UnicodeWidthStr;
 
 use crate::style::{Color, Modifier, Style};
 
 /// A buffer cell
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cell {
     /// The string to be drawn in the cell.
@@ -31,11 +34,53 @@ pub struct Cell {
 
     /// Whether the cell should be skipped when copying (diffing) the buffer to the screen.
     pub skip: bool,
+
+    /// Cache the width of the cell.
+    width: std::cell::Cell<Option<usize>>,
+}
+
+impl PartialEq for Cell {
+    fn eq(&self, other: &Self) -> bool {
+        self.symbol == other.symbol
+            && self.fg == other.fg
+            && self.bg == other.bg
+            && self.underline_color == other.underline_color
+            && self.modifier == other.modifier
+            && self.skip == other.skip
+
+        // explicitly not comparing width, as it is a cache and may be not set
+        // && self.width == other.width
+    }
+}
+
+impl Hash for Cell {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.symbol.hash(state);
+        self.fg.hash(state);
+        self.bg.hash(state);
+        self.underline_color.hash(state);
+        self.modifier.hash(state);
+        self.skip.hash(state);
+
+        // explicitly not hashing width, as it is a cache and not part of the cell's identity
+        // self.width.hash(state);
+    }
 }
 
 impl Cell {
     /// An empty `Cell`
-    pub const EMPTY: Self = Self::new(" ");
+    pub const EMPTY: Self = {
+        Self {
+            symbol: CompactString::const_new(" "),
+            fg: Color::Reset,
+            bg: Color::Reset,
+            #[cfg(feature = "underline-color")]
+            underline_color: Color::Reset,
+            modifier: Modifier::empty(),
+            skip: false,
+            width: std::cell::Cell::new(Some(1)),
+        }
+    };
 
     /// Creates a new `Cell` with the given symbol.
     ///
@@ -52,6 +97,7 @@ impl Cell {
             underline_color: Color::Reset,
             modifier: Modifier::empty(),
             skip: false,
+            width: std::cell::Cell::new(None),
         }
     }
 
@@ -64,6 +110,7 @@ impl Cell {
     /// Sets the symbol of the cell.
     pub fn set_symbol(&mut self, symbol: &str) -> &mut Self {
         self.symbol = CompactString::new(symbol);
+        self.width.set(None);
         self
     }
 
@@ -72,6 +119,7 @@ impl Cell {
     /// This is particularly useful for adding zero-width characters to the cell.
     pub(crate) fn append_symbol(&mut self, symbol: &str) -> &mut Self {
         self.symbol.push_str(symbol);
+        self.width.set(None);
         self
     }
 
@@ -79,6 +127,7 @@ impl Cell {
     pub fn set_char(&mut self, ch: char) -> &mut Self {
         let mut buf = [0; 4];
         self.symbol = CompactString::new(ch.encode_utf8(&mut buf));
+        self.width.set(None);
         self
     }
 
@@ -148,6 +197,21 @@ impl Cell {
         }
         self.modifier = Modifier::empty();
         self.skip = false;
+        self.width.set(Some(1));
+    }
+
+    /// Returns the width of the cell.
+    ///
+    /// This value is cached and will only be recomputed when the cell is modified.
+    #[must_use]
+    pub fn width(&self) -> usize {
+        if let Some(width) = self.width.get() {
+            width
+        } else {
+            let width = self.symbol().width();
+            self.width.set(Some(width));
+            width
+        }
     }
 }
 
@@ -182,6 +246,7 @@ mod tests {
                 underline_color: Color::Reset,
                 modifier: Modifier::empty(),
                 skip: false,
+                width: std::cell::Cell::new(None),
             }
         );
     }
@@ -293,5 +358,13 @@ mod tests {
         let cell1 = Cell::new("あ");
         let cell2 = Cell::new("い");
         assert_ne!(cell1, cell2);
+    }
+
+    #[test]
+    fn width() {
+        let cell = Cell::new("あ");
+        assert_eq!(cell.width, std::cell::Cell::new(None)); // not yet cached
+        assert_eq!(cell.width(), 2);
+        assert_eq!(cell.width, std::cell::Cell::new(Some(2))); // cached
     }
 }

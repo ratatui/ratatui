@@ -499,10 +499,8 @@ impl Buffer {
                 updates.push((x, y, &next_buffer[i]));
             }
 
-            let current_symbol_width = current.symbol().width();
-            let previous_symbol_width = previous.symbol().width();
-            to_skip = current_symbol_width.saturating_sub(1);
-            let affected_width = std::cmp::max(current_symbol_width, previous_symbol_width);
+            to_skip = current.width().saturating_sub(1);
+            let affected_width = std::cmp::max(current.width(), previous.width());
             invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
         }
         updates
@@ -599,7 +597,7 @@ impl fmt::Debug for Buffer {
                 } else {
                     overwritten.push((x, c.symbol()));
                 }
-                skip = std::cmp::max(skip, c.symbol().width()).saturating_sub(1);
+                skip = std::cmp::max(skip, c.width()).saturating_sub(1);
                 #[cfg(feature = "underline-color")]
                 {
                     let style = (c.fg, c.bg, c.underline_color, c.modifier);

@@ -6,8 +6,6 @@ use std::{
     io, iter,
 };
 
-use unicode_width::UnicodeWidthStr;
-
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::{Buffer, Cell},
@@ -52,13 +50,13 @@ fn buffer_view(buffer: &Buffer) -> String {
         let mut overwritten = vec![];
         let mut skip: usize = 0;
         view.push('"');
-        for (x, c) in cells.iter().enumerate() {
+        for (x, cell) in cells.iter().enumerate() {
             if skip == 0 {
-                view.push_str(c.symbol());
+                view.push_str(cell.symbol());
             } else {
-                overwritten.push((x, c.symbol()));
+                overwritten.push((x, cell.symbol()));
             }
-            skip = std::cmp::max(skip, c.symbol().width()).saturating_sub(1);
+            skip = std::cmp::max(skip, cell.width()).saturating_sub(1);
         }
         view.push('"');
         if !overwritten.is_empty() {
