@@ -319,22 +319,28 @@ pub trait Backend {
     /// Flush any buffered content to the terminal screen.
     fn flush(&mut self) -> io::Result<()>;
 
-    /// Scroll the specified region of the screen up by the provided amount of lines.
+    /// Scroll a region of the screen upwards, where a region is a range of rows.
+    ///
+    /// Each row in the region is replaced by the row `amount` rows below it, exept the bottom
+    /// `amount` rows, which are replaced by empty rows. If `amount` is equal to or larger than the
+    /// number of rows in the region, then all rows are replaced with empty rows.
+    ///
+    /// If the region includes row 0, then `amount` rows are copied into the bottom of the
+    /// scrollback buffer. These rows are first taken from the old contents of the region, starting
+    /// from the top. If there aren't sufficient rows in the region, then the remainder are empty
+    /// rows.
     ///
     /// The position of the cursor afterwards is undefined.
-    ///
-    /// If the region includes row 0, then lines scrolled out of the top of region should be put
-    /// into the scrollback. Otherwise, they are just overwritten. Empty lines are scrolled into
-    /// the bottom of the region.
     #[cfg(feature = "scrolling-regions")]
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()>;
 
-    /// Scroll the specified region of the screen down by the provided amount of lines.
+    /// Scroll a region of the screen downwards, where a region is a range of rows.
+    ///
+    /// Each row in the region is replaced by the row `amount` rows above it, exept the top
+    /// `amount` rows, which are replaced by empty rows. If `amount` is equal to or larger than the
+    /// number of rows in the region, then all rows are replaced with empty rows.
     ///
     /// The position of the cursor afterwards is undefined.
-    ///
-    /// Scrollback will not be affected, even if the region includes row 0. Empty lines are
-    /// scrolled into the top of the region.
     #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()>;
 }
