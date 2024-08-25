@@ -2,7 +2,10 @@
 //! the [Crossterm] crate to interact with the terminal.
 //!
 //! [Crossterm]: https://crates.io/crates/crossterm
-use std::io::{self, Write};
+use std::{
+    fmt,
+    io::{self, Write},
+};
 
 #[cfg(feature = "underline-color")]
 use crossterm::style::SetUnderlineColor;
@@ -11,6 +14,7 @@ use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
     crossterm::{
+        csi,
         cursor::{Hide, MoveTo, Show},
         execute, queue,
         style::{
@@ -18,6 +22,7 @@ use crate::{
             ContentStyle, Print, SetAttribute, SetBackgroundColor, SetColors, SetForegroundColor,
         },
         terminal::{self, Clear},
+        Command,
     },
     layout::{Position, Size},
     style::{Color, Modifier, Style},
@@ -274,21 +279,27 @@ where
 
     #[cfg(feature = "scrolling-regions")]
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
-        let start = region.start.saturating_add(1);
-        let end = region.end;
-        queue!(self.writer, Print(format!("\x1B[{start};{end}r")))?;
-        queue!(self.writer, crate::crossterm::terminal::ScrollUp(amount))?;
-        queue!(self.writer, Print("\x1B[r"))?;
+        queue!(
+            self.writer,
+            ScrollUpInRegion {
+                first_row: region.start,
+                last_row: region.end.saturating_sub(1),
+                lines_to_scroll: amount,
+            }
+        )?;
         self.writer.flush()
     }
 
     #[cfg(feature = "scrolling-regions")]
     fn scroll_region_down(&mut self, region: std::ops::Range<u16>, amount: u16) -> io::Result<()> {
-        let start = region.start.saturating_add(1);
-        let end = region.end;
-        queue!(self.writer, Print(format!("\x1B[{start};{end}r")))?;
-        queue!(self.writer, crate::crossterm::terminal::ScrollDown(amount))?;
-        queue!(self.writer, Print("\x1B[r"))?;
+        queue!(
+            self.writer,
+            ScrollDownInRegion {
+                first_row: region.start,
+                last_row: region.end.saturating_sub(1),
+                lines_to_scroll: amount,
+            }
+        )?;
         self.writer.flush()
     }
 }
@@ -499,6 +510,94 @@ impl From<ContentStyle> for Style {
             add_modifier: value.attributes.into(),
             sub_modifier,
         }
+    }
+}
+
+/// A command that scrolls the terminal screen a given number of rows up in a specific scrolling
+/// region.
+///
+/// # Notes
+///
+/// Commands must be executed/queued for execution otherwise they do nothing.
+#[cfg(feature = "scrolling-regions")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ScrollUpInRegion {
+    /// The first row of the scrolling region.
+    pub first_row: u16,
+
+    /// The last row of the scrolling region.
+    pub last_row: u16,
+
+    /// The number of lines to scroll up by.
+    pub lines_to_scroll: u16,
+}
+
+#[cfg(feature = "scrolling-regions")]
+impl Command for ScrollUpInRegion {
+    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+        if self.lines_to_scroll != 0 {
+            write!(
+                f,
+                csi!("{};{}r"),
+                self.first_row.saturating_add(1),
+                self.last_row.saturating_add(1)
+            )?;
+            write!(f, csi!("{}S"), self.lines_to_scroll)?;
+            write!(f, csi!("r"))?;
+        }
+        Ok(())
+    }
+
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> io::Result<()> {
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "command not supported for winapi",
+        ))
+    }
+}
+
+/// A command that scrolls the terminal screen a given number of rows down in a specific scrolling
+/// region.
+///
+/// # Notes
+///
+/// Commands must be executed/queued for execution otherwise they do nothing.
+#[cfg(feature = "scrolling-regions")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ScrollDownInRegion {
+    /// The first row of the scrolling region.
+    pub first_row: u16,
+
+    /// The last row of the scrolling region.
+    pub last_row: u16,
+
+    /// The number of lines to scroll down by.
+    pub lines_to_scroll: u16,
+}
+
+#[cfg(feature = "scrolling-regions")]
+impl Command for ScrollDownInRegion {
+    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+        if self.lines_to_scroll != 0 {
+            write!(
+                f,
+                csi!("{};{}r"),
+                self.first_row.saturating_add(1),
+                self.last_row.saturating_add(1)
+            )?;
+            write!(f, csi!("{}T"), self.lines_to_scroll)?;
+            write!(f, csi!("r"))?;
+        }
+        Ok(())
+    }
+
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> io::Result<()> {
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "command not supported for winapi",
+        ))
     }
 }
 
