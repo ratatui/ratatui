@@ -759,8 +759,8 @@ where
     }
 
     /// Draw lines at the given vertical offset, assuming that the lines they are replacing on the
-    /// screen are cleared. The slice of cells must contain enough cells /// for the requested
-    /// lines. A slice of the unused cells are returned.
+    /// screen are cleared. The slice of cells must contain enough cells for the requested lines. A
+    /// slice of the unused cells are returned.
     #[cfg(feature = "scrolling-regions")]
     fn draw_lines_over_cleared<'a>(
         &mut self,
