@@ -137,11 +137,7 @@ fn draw(frame: &mut Frame) {
     {
         let (name_a, examples_a) = a;
         let (name_b, examples_b) = b;
-        let constraints = examples_a
-            .iter()
-            .copied()
-            .zip(examples_b.iter().copied())
-            .collect_vec();
+        let constraints = examples_a.iter().copied().zip(examples_b.iter().copied());
         render_example_combination(frame, area, &format!("{name_a}/{name_b}"), constraints);
     }
 }
@@ -151,7 +147,7 @@ fn render_example_combination(
     frame: &mut Frame,
     area: Rect,
     title: &str,
-    constraints: Vec<(Constraint, Constraint)>,
+    constraints: impl ExactSizeIterator<Item = (Constraint, Constraint)>,
 ) {
     let block = Block::bordered()
         .title(title.gray())
