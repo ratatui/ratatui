@@ -374,40 +374,39 @@ impl Backend for TestBackend {
         let cell_region = width * region.start as usize..width * region.end as usize;
         let cells_to_scroll_by = width * scroll_by as usize;
 
-        if region.start == 0 {
-            // We need to insert blank lines at the bottom and scroll the lines from the top into
-            // scrollback.
-            let cells_to_splice = cell_region.len().min(cells_to_scroll_by);
+        // Deal with the simple case where nothing needs to be copied into scrollback.
+        if region.start > 0 {
+            if cells_to_scroll_by >= cell_region.len() {
+                // The scroll amount is large enough to clear the whole region.
+                self.buffer.content[cell_region].fill_with(Default::default);
+            } else {
+                // Scroll up by rotating, then filling in the bottom with empty cells.
+                self.buffer.content[cell_region.clone()].rotate_left(cells_to_scroll_by);
+                self.buffer.content[cell_region.end - cells_to_scroll_by..cell_region.end]
+                    .fill_with(Default::default);
+            }
+            return Ok(());
+        }
+
+        // The rows inserted into the scrollback will first come from the buffer, and if that is
+        // insufficient, will then be blank rows.
+        let cells_from_region = cell_region.len().min(cells_to_scroll_by);
+        append_to_scrollback(
+            &mut self.scrollback,
+            self.buffer.content.splice(
+                0..cells_from_region,
+                iter::repeat_with(Default::default).take(cells_from_region),
+            ),
+        );
+        if cells_to_scroll_by < cell_region.len() {
+            // Rotate the remaining cells to the front of the region.
+            self.buffer.content[cell_region].rotate_left(cells_from_region);
+        } else {
+            // Splice cleared out the region. Insert empty rows in scrollback.
             append_to_scrollback(
                 &mut self.scrollback,
-                self.buffer.content.splice(
-                    0..cells_to_splice,
-                    iter::repeat_with(Default::default).take(cells_to_splice),
-                ),
+                iter::repeat_with(Default::default).take(cells_to_scroll_by - cell_region.len()),
             );
-            if cells_to_scroll_by > cells_to_splice {
-                // Splice already cleared out the buffer. Just insert empty lines in scrollback.
-                append_to_scrollback(
-                    &mut self.scrollback,
-                    iter::repeat_with(Default::default).take(cells_to_scroll_by - cells_to_splice),
-                );
-            } else if cells_to_scroll_by < cell_region.len() {
-                // Rotate the remaining cells to the front of the buffer.
-                assert_eq!(cells_to_scroll_by, cells_to_splice);
-                self.buffer.content[cell_region].rotate_left(cells_to_splice);
-            } else {
-                // `cells_to_scroll_by` == cell_region.len()
-                // There is no need to rotate the region because we cleared it in its entirety.
-                // There are no extra lines to add to the scrollback.
-            }
-        } else if cells_to_scroll_by >= cell_region.len() {
-            // The scroll amount is large enough to clear the whole region.
-            self.buffer.content[cell_region].fill_with(Default::default);
-        } else {
-            // Scroll up by rotating, then filling in the bottom with empty cells.
-            self.buffer.content[cell_region.clone()].rotate_left(cells_to_scroll_by);
-            self.buffer.content[cell_region.end - cells_to_scroll_by..cell_region.end]
-                .fill_with(Default::default);
         }
         Ok(())
     }
