@@ -671,14 +671,24 @@ where
     }
 
     /// Implement `Self::insert_before` using scrolling regions.
+    ///
+    /// If a terminal supports scrolling regions, it means that we can define a subset of rows of
+    /// the screen, and then tell the terminal to scroll up or down just within that region. The
+    /// rows outside of the region are not affected.
+    ///
+    /// This function utilizes this feature to avoid having to redraw the viewport. This is done
+    /// either by splitting the screen at the top of the viewport, and then creating a gap by
+    /// either scrolling the viewport down, or scrolling the area above it up. The lines to insert
+    /// are then drawn into the gap created.
     #[cfg(feature = "scrolling-regions")]
     fn insert_before_scrolling_regions(
         &mut self,
         mut height: u16,
         draw_fn: impl FnOnce(&mut Buffer),
     ) -> io::Result<()> {
-        // Draw contents to insert into a buffer. The rest of this function is concerned with
-        // drawing this buffer onto the screen.
+        // The approach of this function is to first render all of the lines to insert into a
+        // temporary buffer, and then to loop drawing chunks from the buffer to the screen. drawing
+        // this buffer onto the screen.
         let area = Rect {
             x: 0,
             y: 0,
@@ -691,8 +701,8 @@ where
 
         // Handle the special case where the viewport takes up the whole screen.
         if self.viewport_area.height == self.last_known_area.height {
-            // We "borrow" the top line of the viewport to use to draw to, and then immediately
-            // scroll into scrollback.
+            // "Borrow" the top line of the viewport. Draw over it, then immediately scroll it into
+            // scrollback. Do this repeatedly until the whole buffer has been put into scrollback.
             let mut first = true;
             while !buffer.is_empty() {
                 buffer = if first {
@@ -703,6 +713,8 @@ where
                 first = false;
                 self.backend.scroll_region_up(0..1, 1)?;
             }
+
+            // Redraw the top line of the viewport.
             let width = self.viewport_area.width as usize;
             let top_line = self.buffers[1 - self.current].content[0..width].to_vec();
             self.draw_lines_over_cleared(0, 1, &top_line)?;
@@ -734,6 +746,7 @@ where
             buffer = self.draw_lines_over_cleared(viewport_top - to_draw, to_draw, buffer)?;
             height -= to_draw;
         }
+
         Ok(())
     }
 
