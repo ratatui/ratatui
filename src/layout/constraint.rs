@@ -1,6 +1,5 @@
 use std::fmt;
 
-use itertools::Itertools;
 use strum::EnumIs;
 
 /// A constraint that defines the size of a layout element.
@@ -229,7 +228,7 @@ impl Constraint {
     where
         T: IntoIterator<Item = u16>,
     {
-        lengths.into_iter().map(Self::Length).collect_vec()
+        lengths.into_iter().map(Self::Length).collect()
     }
 
     /// Convert an iterator of ratios into a vector of constraints
@@ -246,10 +245,7 @@ impl Constraint {
     where
         T: IntoIterator<Item = (u32, u32)>,
     {
-        ratios
-            .into_iter()
-            .map(|(n, d)| Self::Ratio(n, d))
-            .collect_vec()
+        ratios.into_iter().map(|(n, d)| Self::Ratio(n, d)).collect()
     }
 
     /// Convert an iterator of percentages into a vector of constraints
@@ -266,7 +262,7 @@ impl Constraint {
     where
         T: IntoIterator<Item = u16>,
     {
-        percentages.into_iter().map(Self::Percentage).collect_vec()
+        percentages.into_iter().map(Self::Percentage).collect()
     }
 
     /// Convert an iterator of maxes into a vector of constraints
@@ -283,7 +279,7 @@ impl Constraint {
     where
         T: IntoIterator<Item = u16>,
     {
-        maxes.into_iter().map(Self::Max).collect_vec()
+        maxes.into_iter().map(Self::Max).collect()
     }
 
     /// Convert an iterator of mins into a vector of constraints
@@ -300,7 +296,7 @@ impl Constraint {
     where
         T: IntoIterator<Item = u16>,
     {
-        mins.into_iter().map(Self::Min).collect_vec()
+        mins.into_iter().map(Self::Min).collect()
     }
 
     /// Convert an iterator of proportional factors into a vector of constraints
@@ -317,10 +313,7 @@ impl Constraint {
     where
         T: IntoIterator<Item = u16>,
     {
-        proportional_factors
-            .into_iter()
-            .map(Self::Fill)
-            .collect_vec()
+        proportional_factors.into_iter().map(Self::Fill).collect()
     }
 }
 

@@ -74,31 +74,28 @@ fn draw(frame: &mut Frame) {
         Min(0), // fills remaining space
     ])
     .split(examples_area);
-    let example_areas = example_rows
+    let example_areas = example_rows.iter().flat_map(|area| {
+        Layout::horizontal([
+            Length(14),
+            Length(14),
+            Length(14),
+            Length(14),
+            Length(14),
+            Min(0), // fills remaining space
+        ])
+        .split(*area)
         .iter()
-        .flat_map(|area| {
-            Layout::horizontal([
-                Length(14),
-                Length(14),
-                Length(14),
-                Length(14),
-                Length(14),
-                Min(0), // fills remaining space
-            ])
-            .split(*area)
-            .iter()
-            .copied()
-            .take(5) // ignore Min(0)
-            .collect_vec()
-        })
-        .collect_vec();
+        .copied()
+        .take(5) // ignore Min(0)
+        .collect_vec()
+    });
 
     // the examples are a cartesian product of the following constraints
     // e.g. Len/Len, Len/Min, Len/Max, Len/Perc, Len/Ratio, Min/Len, Min/Min, ...
     let examples = [
         (
             "Len",
-            vec![
+            [
                 Length(0),
                 Length(2),
                 Length(3),
@@ -107,17 +104,11 @@ fn draw(frame: &mut Frame) {
                 Length(15),
             ],
         ),
-        (
-            "Min",
-            vec![Min(0), Min(2), Min(3), Min(6), Min(10), Min(15)],
-        ),
-        (
-            "Max",
-            vec![Max(0), Max(2), Max(3), Max(6), Max(10), Max(15)],
-        ),
+        ("Min", [Min(0), Min(2), Min(3), Min(6), Min(10), Min(15)]),
+        ("Max", [Max(0), Max(2), Max(3), Max(6), Max(10), Max(15)]),
         (
             "Perc",
-            vec![
+            [
                 Percentage(0),
                 Percentage(25),
                 Percentage(50),
@@ -128,7 +119,7 @@ fn draw(frame: &mut Frame) {
         ),
         (
             "Ratio",
-            vec![
+            [
                 Ratio(0, 4),
                 Ratio(1, 4),
                 Ratio(2, 4),
@@ -139,24 +130,15 @@ fn draw(frame: &mut Frame) {
         ),
     ];
 
-    for (i, (a, b)) in examples
+    for ((a, b), area) in examples
         .iter()
         .cartesian_product(examples.iter())
-        .enumerate()
+        .zip(example_areas)
     {
         let (name_a, examples_a) = a;
         let (name_b, examples_b) = b;
-        let constraints = examples_a
-            .iter()
-            .copied()
-            .zip(examples_b.iter().copied())
-            .collect_vec();
-        render_example_combination(
-            frame,
-            example_areas[i],
-            &format!("{name_a}/{name_b}"),
-            constraints,
-        );
+        let constraints = examples_a.iter().copied().zip(examples_b.iter().copied());
+        render_example_combination(frame, area, &format!("{name_a}/{name_b}"), constraints);
     }
 }
 
@@ -165,7 +147,7 @@ fn render_example_combination(
     frame: &mut Frame,
     area: Rect,
     title: &str,
-    constraints: Vec<(Constraint, Constraint)>,
+    constraints: impl ExactSizeIterator<Item = (Constraint, Constraint)>,
 ) {
     let block = Block::bordered()
         .title(title.gray())
@@ -174,8 +156,8 @@ fn render_example_combination(
     let inner = block.inner(area);
     frame.render_widget(block, area);
     let layout = Layout::vertical(vec![Length(1); constraints.len() + 1]).split(inner);
-    for (i, (a, b)) in constraints.into_iter().enumerate() {
-        render_single_example(frame, layout[i], vec![a, b, Min(0)]);
+    for ((a, b), &area) in constraints.into_iter().zip(layout.iter()) {
+        render_single_example(frame, area, vec![a, b, Min(0)]);
     }
     // This is to make it easy to visually see the alignment of the examples
     // with the constraints.

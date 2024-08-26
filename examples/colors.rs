@@ -99,19 +99,16 @@ fn render_fg_named_colors(frame: &mut Frame, bg: Color, area: Rect) {
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
-    let layout = Layout::vertical([Constraint::Length(1); 2])
-        .split(inner)
-        .iter()
-        .flat_map(|area| {
-            Layout::horizontal([Constraint::Ratio(1, 8); 8])
-                .split(*area)
-                .to_vec()
-        })
-        .collect_vec();
-    for (i, &fg) in NAMED_COLORS.iter().enumerate() {
+    let vertical = Layout::vertical([Constraint::Length(1); 2]).split(inner);
+    let areas = vertical.iter().flat_map(|area| {
+        Layout::horizontal([Constraint::Ratio(1, 8); 8])
+            .split(*area)
+            .to_vec()
+    });
+    for (fg, area) in NAMED_COLORS.into_iter().zip(areas) {
         let color_name = fg.to_string();
         let paragraph = Paragraph::new(color_name).fg(fg).bg(bg);
-        frame.render_widget(paragraph, layout[i]);
+        frame.render_widget(paragraph, area);
     }
 }
 
@@ -120,19 +117,16 @@ fn render_bg_named_colors(frame: &mut Frame, fg: Color, area: Rect) {
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
-    let layout = Layout::vertical([Constraint::Length(1); 2])
-        .split(inner)
-        .iter()
-        .flat_map(|area| {
-            Layout::horizontal([Constraint::Ratio(1, 8); 8])
-                .split(*area)
-                .to_vec()
-        })
-        .collect_vec();
-    for (i, &bg) in NAMED_COLORS.iter().enumerate() {
+    let vertical = Layout::vertical([Constraint::Length(1); 2]).split(inner);
+    let areas = vertical.iter().flat_map(|area| {
+        Layout::horizontal([Constraint::Ratio(1, 8); 8])
+            .split(*area)
+            .to_vec()
+    });
+    for (bg, area) in NAMED_COLORS.into_iter().zip(areas) {
         let color_name = bg.to_string();
         let paragraph = Paragraph::new(color_name).fg(fg).bg(bg);
-        frame.render_widget(paragraph, layout[i]);
+        frame.render_widget(paragraph, area);
     }
 }
 
