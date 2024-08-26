@@ -2,10 +2,7 @@
 //! the [Crossterm] crate to interact with the terminal.
 //!
 //! [Crossterm]: https://crates.io/crates/crossterm
-use std::{
-    fmt,
-    io::{self, Write},
-};
+use std::io::{self, Write};
 
 #[cfg(feature = "underline-color")]
 use crossterm::style::SetUnderlineColor;
@@ -14,7 +11,6 @@ use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
     crossterm::{
-        csi,
         cursor::{Hide, MoveTo, Show},
         execute, queue,
         style::{
@@ -22,7 +18,6 @@ use crate::{
             ContentStyle, Print, SetAttribute, SetBackgroundColor, SetColors, SetForegroundColor,
         },
         terminal::{self, Clear},
-        Command,
     },
     layout::{Position, Size},
     style::{Color, Modifier, Style},
@@ -533,17 +528,17 @@ pub struct ScrollUpInRegion {
 }
 
 #[cfg(feature = "scrolling-regions")]
-impl Command for ScrollUpInRegion {
-    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+impl crate::crossterm::Command for ScrollUpInRegion {
+    fn write_ansi(&self, f: &mut impl std::fmt::Write) -> std::fmt::Result {
         if self.lines_to_scroll != 0 {
             write!(
                 f,
-                csi!("{};{}r"),
+                crate::crossterm::csi!("{};{}r"),
                 self.first_row.saturating_add(1),
                 self.last_row.saturating_add(1)
             )?;
-            write!(f, csi!("{}S"), self.lines_to_scroll)?;
-            write!(f, csi!("r"))?;
+            write!(f, crate::crossterm::csi!("{}S"), self.lines_to_scroll)?;
+            write!(f, crate::crossterm::csi!("r"))?;
         }
         Ok(())
     }
@@ -577,17 +572,17 @@ pub struct ScrollDownInRegion {
 }
 
 #[cfg(feature = "scrolling-regions")]
-impl Command for ScrollDownInRegion {
-    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+impl crate::crossterm::Command for ScrollDownInRegion {
+    fn write_ansi(&self, f: &mut impl std::fmt::Write) -> std::fmt::Result {
         if self.lines_to_scroll != 0 {
             write!(
                 f,
-                csi!("{};{}r"),
+                crate::crossterm::csi!("{};{}r"),
                 self.first_row.saturating_add(1),
                 self.last_row.saturating_add(1)
             )?;
-            write!(f, csi!("{}T"), self.lines_to_scroll)?;
-            write!(f, csi!("r"))?;
+            write!(f, crate::crossterm::csi!("{}T"), self.lines_to_scroll)?;
+            write!(f, crate::crossterm::csi!("r"))?;
         }
         Ok(())
     }
