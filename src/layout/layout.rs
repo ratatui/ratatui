@@ -1315,9 +1315,9 @@ mod tests {
                 .flex(flex)
                 .split(area);
             let mut buffer = Buffer::empty(area);
-            for (i, c) in ('a'..='z').take(constraints.len()).enumerate() {
+            for (c, &area) in ('a'..='z').take(constraints.len()).zip(layout.iter()) {
                 let s = c.to_string().repeat(area.width as usize);
-                Paragraph::new(s).render(layout[i], &mut buffer);
+                Paragraph::new(s).render(area, &mut buffer);
             }
             assert_eq!(buffer, Buffer::with_lines([expected]));
         }

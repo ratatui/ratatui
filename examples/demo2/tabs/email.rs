@@ -96,13 +96,10 @@ fn render_inbox(selected_index: usize, area: Rect, buf: &mut Buffer) {
         .map(|e| e.from.width())
         .max()
         .unwrap_or_default();
-    let items = EMAILS
-        .iter()
-        .map(|e| {
-            let from = format!("{:width$}", e.from, width = from_width).into();
-            ListItem::new(Line::from(vec![from, " ".into(), e.subject.into()]))
-        })
-        .collect_vec();
+    let items = EMAILS.iter().map(|e| {
+        let from = format!("{:width$}", e.from, width = from_width).into();
+        ListItem::new(Line::from(vec![from, " ".into(), e.subject.into()]))
+    });
     let mut state = ListState::default().with_selected(Some(selected_index));
     StatefulWidget::render(
         List::new(items)
