@@ -117,7 +117,7 @@ use_self = "warn"
 ## By default, we enable the crossterm backend as this is a reasonable choice for most applications
 ## as it is supported on Linux/Mac/Windows systems. We also enable the `underline-color` feature
 ## which allows you to set the underline color of text.
-default = ["crossterm", "underline-color"]
+default = ["crossterm", "underline-color", "scrolling-regions"]
 #! Generally an application will only use one backend, so you should only enable one of the following features:
 ## enables the [`CrosstermBackend`](backend::CrosstermBackend) backend and adds a dependency on [`crossterm`].
 crossterm = ["dep:crossterm"]
