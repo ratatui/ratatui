@@ -80,6 +80,28 @@ impl TestBackend {
         }
     }
 
+    /// Creates a new `TestBackend` with the specified lines as the initial screen state.
+    ///
+    /// The backend's screen size is determined from the initial lines.
+    #[must_use]
+    pub fn with_lines<'line, Lines>(lines: Lines) -> Self
+    where
+        Lines: IntoIterator,
+        Lines::Item: Into<crate::text::Line<'line>>,
+    {
+        let buffer = Buffer::with_lines(lines);
+        let scrollback = Buffer::empty(Rect {
+            width: buffer.area.width,
+            ..Rect::ZERO
+        });
+        Self {
+            buffer,
+            scrollback,
+            cursor: false,
+            pos: (0, 0),
+        }
+    }
+
     /// Returns a reference to the internal buffer of the `TestBackend`.
     pub const fn buffer(&self) -> &Buffer {
         &self.buffer
@@ -562,8 +584,7 @@ mod tests {
 
     #[test]
     fn clear_region_all() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -583,8 +604,7 @@ mod tests {
 
     #[test]
     fn clear_region_after_cursor() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -607,8 +627,7 @@ mod tests {
 
     #[test]
     fn clear_region_before_cursor() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -631,8 +650,7 @@ mod tests {
 
     #[test]
     fn clear_region_current_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -655,8 +673,7 @@ mod tests {
 
     #[test]
     fn clear_region_until_new_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "aaaaaaaaaa",
             "aaaaaaaaaa",
@@ -679,8 +696,7 @@ mod tests {
 
     #[test]
     fn append_lines_not_at_last_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -718,8 +734,7 @@ mod tests {
 
     #[test]
     fn append_lines_at_last_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -751,8 +766,7 @@ mod tests {
 
     #[test]
     fn append_multiple_lines_not_at_last_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -781,8 +795,7 @@ mod tests {
 
     #[test]
     fn append_multiple_lines_past_last_line() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -809,8 +822,7 @@ mod tests {
 
     #[test]
     fn append_multiple_lines_where_cursor_at_end_appends_height_lines() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -843,8 +855,7 @@ mod tests {
 
     #[test]
     fn append_multiple_lines_where_cursor_appends_height_lines() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -869,8 +880,7 @@ mod tests {
 
     #[test]
     fn append_multiple_lines_where_cursor_at_end_appends_more_than_height_lines() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
+        let mut backend = TestBackend::with_lines([
             "aaaaaaaaaa",
             "bbbbbbbbbb",
             "cccccccccc",
@@ -987,785 +997,79 @@ mod tests {
         backend.flush().unwrap();
     }
 
-    #[test]
     #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_whole_screen_by_0() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(0..5, 0).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_whole_screen_by_2() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(0..5, 2).unwrap();
-
-        backend.assert_scrollback_lines(["aaaaaaaaaa", "bbbbbbbbbb"]);
-        backend.assert_buffer_lines([
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-            "          ",
-            "          ",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_whole_screen_by_5() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(0..5, 5).unwrap();
-
-        backend.assert_scrollback_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-        backend.assert_buffer_lines([
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_whole_screen_by_7() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(0..5, 7).unwrap();
-
-        backend.assert_scrollback_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-            "          ",
-            "          ",
-        ]);
-        backend.assert_buffer_lines([
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_top_3_rows_by_0() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(0..3, 0).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_top_3_rows_by_2() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(0..3, 2).unwrap();
-
-        backend.assert_scrollback_lines(["aaaaaaaaaa", "bbbbbbbbbb"]);
-        backend.assert_buffer_lines([
-            "cccccccccc",
-            "          ",
-            "          ",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_top_3_rows_by_3() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(0..3, 3).unwrap();
-
-        backend.assert_scrollback_lines(["aaaaaaaaaa", "bbbbbbbbbb", "cccccccccc"]);
-        backend.assert_buffer_lines([
-            "          ",
-            "          ",
-            "          ",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_top_3_rows_by_4() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(0..3, 4).unwrap();
-
-        backend.assert_scrollback_lines(["aaaaaaaaaa", "bbbbbbbbbb", "cccccccccc", "          "]);
-        backend.assert_buffer_lines([
-            "          ",
-            "          ",
-            "          ",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_middle_3_rows_by_0() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(1..4, 0).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_middle_3_rows_by_2() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(1..4, 2).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "dddddddddd",
-            "          ",
-            "          ",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_middle_3_rows_by_3() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(1..4, 3).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "          ",
-            "          ",
-            "          ",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_middle_3_rows_by_4() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(1..4, 4).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "          ",
-            "          ",
-            "          ",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_top_0_rows_by_0() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(0..0, 0).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_top_0_rows_by_2() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(0..0, 2).unwrap();
-
-        backend.assert_scrollback_lines(["          ", "          "]);
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_middle_0_rows_by_0() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(2..2, 0).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_up_middle_0_rows_by_2() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_up(2..2, 2).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_whole_screen_by_0() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(0..5, 0).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_whole_screen_by_2() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(0..5, 2).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "          ",
-            "          ",
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_whole_screen_by_5() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(0..5, 5).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_whole_screen_by_7() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(0..5, 7).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_top_3_rows_by_0() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(0..3, 0).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_top_3_rows_by_2() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(0..3, 2).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "          ",
-            "          ",
-            "aaaaaaaaaa",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_top_3_rows_by_3() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(0..3, 3).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "          ",
-            "          ",
-            "          ",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_top_3_rows_by_4() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(0..3, 4).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "          ",
-            "          ",
-            "          ",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_middle_3_rows_by_0() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(1..4, 0).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_middle_3_rows_by_2() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(1..4, 2).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "          ",
-            "          ",
-            "bbbbbbbbbb",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_middle_3_rows_by_3() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(1..4, 3).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "          ",
-            "          ",
-            "          ",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_middle_3_rows_by_4() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(1..4, 4).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "          ",
-            "          ",
-            "          ",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_top_0_rows_by_0() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(0..0, 0).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_top_0_rows_by_2() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(0..0, 2).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_middle_0_rows_by_0() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(2..2, 0).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-    }
-
-    #[test]
-    #[cfg(feature = "scrolling-regions")]
-    fn scroll_region_down_middle_0_rows_by_2() {
-        let mut backend = TestBackend::new(10, 5);
-        backend.buffer = Buffer::with_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
-
-        backend.scroll_region_down(2..2, 2).unwrap();
-
-        backend.assert_scrollback_empty();
-        backend.assert_buffer_lines([
-            "aaaaaaaaaa",
-            "bbbbbbbbbb",
-            "cccccccccc",
-            "dddddddddd",
-            "eeeeeeeeee",
-        ]);
+    mod scrolling_regions {
+        use super::*;
+        use rstest::rstest;
+
+        const A: &str = "aaaa";
+        const B: &str = "bbbb";
+        const C: &str = "cccc";
+        const D: &str = "dddd";
+        const E: &str = "eeee";
+        const S: &str = "    ";
+
+        #[rstest]
+        #[case([A, B, C, D, E], 0..5, 0, [],                    [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..5, 2, [A, B],                [C, D, E, S, S])]
+        #[case([A, B, C, D, E], 0..5, 5, [A, B, C, D, E],       [S, S, S, S, S])]
+        #[case([A, B, C, D, E], 0..5, 7, [A, B, C, D, E, S, S], [S, S, S, S, S])]
+        #[case([A, B, C, D, E], 0..3, 0, [],                    [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..3, 2, [A, B],                [C, S, S, D, E])]
+        #[case([A, B, C, D, E], 0..3, 3, [A, B, C],             [S, S, S, D, E])]
+        #[case([A, B, C, D, E], 0..3, 4, [A, B, C, S],          [S, S, S, D, E])]
+        #[case([A, B, C, D, E], 1..4, 0, [],                    [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 1..4, 2, [],                    [A, D, S, S, E])]
+        #[case([A, B, C, D, E], 1..4, 3, [],                    [A, S, S, S, E])]
+        #[case([A, B, C, D, E], 1..4, 4, [],                    [A, S, S, S, E])]
+        #[case([A, B, C, D, E], 0..0, 0, [],                    [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..0, 2, [S, S],                [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 2..2, 0, [],                    [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 2..2, 2, [],                    [A, B, C, D, E])]
+        fn scroll_region_up<const L: usize, const M: usize, const N: usize>(
+            #[case] initial_screen: [&'static str; L],
+            #[case] range: std::ops::Range<u16>,
+            #[case] scroll_by: u16,
+            #[case] expected_scrollback: [&'static str; M],
+            #[case] expected_buffer: [&'static str; N],
+        ) {
+            let mut backend = TestBackend::with_lines(initial_screen);
+            backend.scroll_region_up(range, scroll_by).unwrap();
+            if expected_scrollback.is_empty() {
+                backend.assert_scrollback_empty();
+            } else {
+                backend.assert_scrollback_lines(expected_scrollback);
+            }
+            backend.assert_buffer_lines(expected_buffer);
+        }
+
+        #[rstest]
+        #[case([A, B, C, D, E], 0..5, 0, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..5, 2, [S, S, A, B, C])]
+        #[case([A, B, C, D, E], 0..5, 5, [S, S, S, S, S])]
+        #[case([A, B, C, D, E], 0..5, 7, [S, S, S, S, S])]
+        #[case([A, B, C, D, E], 0..3, 0, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..3, 2, [S, S, A, D, E])]
+        #[case([A, B, C, D, E], 0..3, 3, [S, S, S, D, E])]
+        #[case([A, B, C, D, E], 0..3, 4, [S, S, S, D, E])]
+        #[case([A, B, C, D, E], 1..4, 0, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 1..4, 2, [A, S, S, B, E])]
+        #[case([A, B, C, D, E], 1..4, 3, [A, S, S, S, E])]
+        #[case([A, B, C, D, E], 1..4, 4, [A, S, S, S, E])]
+        #[case([A, B, C, D, E], 0..0, 0, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 0..0, 2, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 2..2, 0, [A, B, C, D, E])]
+        #[case([A, B, C, D, E], 2..2, 2, [A, B, C, D, E])]
+        fn scroll_region_down<const M: usize, const N: usize>(
+            #[case] initial_screen: [&'static str; M],
+            #[case] range: std::ops::Range<u16>,
+            #[case] scroll_by: u16,
+            #[case] expected_buffer: [&'static str; N],
+        ) {
+            let mut backend = TestBackend::with_lines(initial_screen);
+            backend.scroll_region_down(range, scroll_by).unwrap();
+            backend.assert_scrollback_empty();
+            backend.assert_buffer_lines(expected_buffer);
+        }
     }
 }
