@@ -95,7 +95,7 @@ fn draw(frame: &mut Frame) {
     let examples = [
         (
             "Len",
-            vec![
+            [
                 Length(0),
                 Length(2),
                 Length(3),
@@ -104,17 +104,11 @@ fn draw(frame: &mut Frame) {
                 Length(15),
             ],
         ),
-        (
-            "Min",
-            vec![Min(0), Min(2), Min(3), Min(6), Min(10), Min(15)],
-        ),
-        (
-            "Max",
-            vec![Max(0), Max(2), Max(3), Max(6), Max(10), Max(15)],
-        ),
+        ("Min", [Min(0), Min(2), Min(3), Min(6), Min(10), Min(15)]),
+        ("Max", [Max(0), Max(2), Max(3), Max(6), Max(10), Max(15)]),
         (
             "Perc",
-            vec![
+            [
                 Percentage(0),
                 Percentage(25),
                 Percentage(50),
@@ -125,7 +119,7 @@ fn draw(frame: &mut Frame) {
         ),
         (
             "Ratio",
-            vec![
+            [
                 Ratio(0, 4),
                 Ratio(1, 4),
                 Ratio(2, 4),
