@@ -998,8 +998,9 @@ mod tests {
 
     #[cfg(feature = "scrolling-regions")]
     mod scrolling_regions {
-        use super::*;
         use rstest::rstest;
+
+        use super::*;
 
         const A: &str = "aaaa";
         const B: &str = "bbbb";
