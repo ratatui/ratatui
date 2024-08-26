@@ -321,7 +321,7 @@ pub trait Backend {
 
     /// Scroll a region of the screen upwards, where a region is a range of rows.
     ///
-    /// Each row in the region is replaced by the row `amount` rows below it, exept the bottom
+    /// Each row in the region is replaced by the row `amount` rows below it, except the bottom
     /// `amount` rows, which are replaced by empty rows. If `amount` is equal to or larger than the
     /// number of rows in the region, then all rows are replaced with empty rows.
     ///
@@ -336,7 +336,7 @@ pub trait Backend {
 
     /// Scroll a region of the screen downwards, where a region is a range of rows.
     ///
-    /// Each row in the region is replaced by the row `amount` rows above it, exept the top
+    /// Each row in the region is replaced by the row `amount` rows above it, except the top
     /// `amount` rows, which are replaced by empty rows. If `amount` is equal to or larger than the
     /// number of rows in the region, then all rows are replaced with empty rows.
     ///
