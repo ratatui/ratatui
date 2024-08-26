@@ -52,10 +52,7 @@ impl Widget for TracerouteTab {
 
 fn render_hops(selected_row: usize, area: Rect, buf: &mut Buffer) {
     let mut state = TableState::default().with_selected(Some(selected_row));
-    let rows = HOPS
-        .iter()
-        .map(|hop| Row::new(vec![hop.host, hop.address]))
-        .collect_vec();
+    let rows = HOPS.iter().map(|hop| Row::new(vec![hop.host, hop.address]));
     let block = Block::new()
         .padding(Padding::new(1, 1, 1, 1))
         .title_alignment(Alignment::Center)
