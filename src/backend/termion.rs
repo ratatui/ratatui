@@ -76,6 +76,11 @@ where
 {
     /// Creates a new Termion backend with the given writer.
     ///
+    /// Most applications will use either [`stdout`](std::io::stdout) or
+    /// [`stderr`](std::io::stderr) as writer. See the [FAQ] to determine which one to use.
+    ///
+    /// [FAQ]: https://ratatui.rs/faq/#should-i-use-stdout-or-stderr
+    ///
     /// # Example
     ///
     /// ```rust,no_run
