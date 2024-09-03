@@ -257,15 +257,14 @@ where
     /// current backend for drawing.
     pub fn flush(&mut self) -> io::Result<()> {
         METRICS.flush_count.increment(1);
-        METRICS.flush_duration.measure_duration(|| {
-            let previous_buffer = &self.buffers[1 - self.current];
-            let current_buffer = &self.buffers[self.current];
-            let updates = previous_buffer.diff(current_buffer);
-            if let Some((col, row, _)) = updates.last() {
-                self.last_known_cursor_pos = Position { x: *col, y: *row };
-            }
-            self.backend.draw(updates.into_iter())
-        })
+        let _timing = METRICS.flush_duration.start_timing();
+        let previous_buffer = &self.buffers[1 - self.current];
+        let current_buffer = &self.buffers[self.current];
+        let updates = previous_buffer.diff(current_buffer);
+        if let Some((col, row, _)) = updates.last() {
+            self.last_known_cursor_pos = Position { x: *col, y: *row };
+        }
+        self.backend.draw(updates.into_iter())
     }
 
     /// Updates the Terminal so that internal buffers match the requested area.
@@ -274,30 +273,29 @@ where
     /// of the screen.
     pub fn resize(&mut self, area: Rect) -> io::Result<()> {
         METRICS.resize_count.increment(1);
-        METRICS.resize_duration.measure_duration(|| {
-            let next_area = match self.viewport {
-                Viewport::Fullscreen => area,
-                Viewport::Inline(height) => {
-                    let offset_in_previous_viewport = self
-                        .last_known_cursor_pos
-                        .y
-                        .saturating_sub(self.viewport_area.top());
-                    compute_inline_size(
-                        &mut self.backend,
-                        height,
-                        area.as_size(),
-                        offset_in_previous_viewport,
-                    )?
-                    .0
-                }
-                Viewport::Fixed(area) => area,
-            };
-            self.set_viewport_area(next_area);
-            self.clear()?;
+        let _timing = METRICS.resize_duration.start_timing();
+        let next_area = match self.viewport {
+            Viewport::Fullscreen => area,
+            Viewport::Inline(height) => {
+                let offset_in_previous_viewport = self
+                    .last_known_cursor_pos
+                    .y
+                    .saturating_sub(self.viewport_area.top());
+                compute_inline_size(
+                    &mut self.backend,
+                    height,
+                    area.as_size(),
+                    offset_in_previous_viewport,
+                )?
+                .0
+            }
+            Viewport::Fixed(area) => area,
+        };
+        self.set_viewport_area(next_area);
+        self.clear()?;
 
-            self.last_known_area = area;
-            Ok(())
-        })
+        self.last_known_area = area;
+        Ok(())
     }
 
     fn set_viewport_area(&mut self, area: Rect) {
@@ -450,49 +448,48 @@ where
         E: Into<io::Error>,
     {
         METRICS.draw_count.increment(1);
-        METRICS.draw_duration.measure_duration(|| {
-            // Autoresize - otherwise we get glitches if shrinking or potential desync between
-            // widgets and the terminal (if growing), which may OOB.
-            self.autoresize()?;
+        let _timing = METRICS.draw_duration.start_timing();
+        // Autoresize - otherwise we get glitches if shrinking or potential desync between
+        // widgets and the terminal (if growing), which may OOB.
+        self.autoresize()?;
 
-            let mut frame = self.get_frame();
+        let mut frame = self.get_frame();
 
-            METRICS
-                .draw_callback_duration
-                .measure_duration(|| render_callback(&mut frame).map_err(Into::into))?;
+        METRICS
+            .draw_callback_duration
+            .measure_duration(|| render_callback(&mut frame).map_err(Into::into))?;
 
-            // We can't change the cursor position right away because we have to flush the frame to
-            // stdout first. But we also can't keep the frame around, since it holds a &mut to
-            // Buffer. Thus, we're taking the important data out of the Frame and dropping it.
-            let cursor_position = frame.cursor_position;
+        // We can't change the cursor position right away because we have to flush the frame to
+        // stdout first. But we also can't keep the frame around, since it holds a &mut to
+        // Buffer. Thus, we're taking the important data out of the Frame and dropping it.
+        let cursor_position = frame.cursor_position;
 
-            // Draw to stdout
-            self.flush()?;
+        // Draw to stdout
+        self.flush()?;
 
-            match cursor_position {
-                None => self.hide_cursor()?,
-                Some(position) => {
-                    self.show_cursor()?;
-                    self.set_cursor_position(position)?;
-                }
+        match cursor_position {
+            None => self.hide_cursor()?,
+            Some(position) => {
+                self.show_cursor()?;
+                self.set_cursor_position(position)?;
             }
+        }
 
-            self.swap_buffers();
+        self.swap_buffers();
 
-            // Flush
-            self.backend.flush()?;
+        // Flush
+        self.backend.flush()?;
 
-            let completed_frame = CompletedFrame {
-                buffer: &self.buffers[1 - self.current],
-                area: self.last_known_area,
-                count: self.frame_count,
-            };
+        let completed_frame = CompletedFrame {
+            buffer: &self.buffers[1 - self.current],
+            area: self.last_known_area,
+            count: self.frame_count,
+        };
 
-            // increment frame count before returning from draw
-            self.frame_count = self.frame_count.wrapping_add(1);
+        // increment frame count before returning from draw
+        self.frame_count = self.frame_count.wrapping_add(1);
 
-            Ok(completed_frame)
-        })
+        Ok(completed_frame)
     }
 
     /// Hides the cursor.
@@ -542,25 +539,24 @@ where
 
     /// Clear the terminal and force a full redraw on the next draw call.
     pub fn clear(&mut self) -> io::Result<()> {
-        METRICS.clear_duration.measure_duration(|| {
-            match self.viewport {
-                Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
-                Viewport::Inline(_) => {
-                    self.backend
-                        .set_cursor_position(self.viewport_area.as_position())?;
+        let _timing = METRICS.clear_duration.start_timing();
+        match self.viewport {
+            Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
+            Viewport::Inline(_) => {
+                self.backend
+                    .set_cursor_position(self.viewport_area.as_position())?;
+                self.backend.clear_region(ClearType::AfterCursor)?;
+            }
+            Viewport::Fixed(area) => {
+                for y in area.top()..area.bottom() {
+                    self.backend.set_cursor_position(Position { x: 0, y })?;
                     self.backend.clear_region(ClearType::AfterCursor)?;
                 }
-                Viewport::Fixed(area) => {
-                    for y in area.top()..area.bottom() {
-                        self.backend.set_cursor_position(Position { x: 0, y })?;
-                        self.backend.clear_region(ClearType::AfterCursor)?;
-                    }
-                }
             }
-            // Reset the back buffer to make sure the next update will redraw everything.
-            self.buffers[1 - self.current].reset();
-            Ok(())
-        })
+        }
+        // Reset the back buffer to make sure the next update will redraw everything.
+        self.buffers[1 - self.current].reset();
+        Ok(())
     }
 
     /// Clears the inactive buffer and swaps it with the current buffer
@@ -653,95 +649,93 @@ where
         }
 
         METRICS.insert_before_count.increment(1);
-        METRICS.insert_before_duration.measure_duration(|| {
-            // The approach of this function is to first render all of the lines to insert into a
-            // temporary buffer, and then to loop drawing chunks from the buffer to the screen.
-            // drawing this buffer onto the screen.
-            let area = Rect {
-                x: 0,
-                y: 0,
-                width: self.viewport_area.width,
-                height,
-            };
-            let mut buffer = Buffer::empty(area);
-            draw_fn(&mut buffer);
-            let mut buffer = buffer.content.as_slice();
+        let _timing = METRICS.insert_before_duration.start_timing();
+        // The approach of this function is to first render all of the lines to insert into a
+        // temporary buffer, and then to loop drawing chunks from the buffer to the screen.
+        // drawing this buffer onto the screen.
+        let area = Rect {
+            x: 0,
+            y: 0,
+            width: self.viewport_area.width,
+            height,
+        };
+        let mut buffer = Buffer::empty(area);
+        draw_fn(&mut buffer);
+        let mut buffer = buffer.content.as_slice();
 
-            // Use i32 variables so we don't have worry about overflowed u16s when adding, or about
-            // negative results when subtracting.
-            let mut drawn_height: i32 = self.viewport_area.top().into();
-            let mut buffer_height: i32 = height.into();
-            let viewport_height: i32 = self.viewport_area.height.into();
-            let screen_height: i32 = self.last_known_area.height.into();
+        // Use i32 variables so we don't have worry about overflowed u16s when adding, or about
+        // negative results when subtracting.
+        let mut drawn_height: i32 = self.viewport_area.top().into();
+        let mut buffer_height: i32 = height.into();
+        let viewport_height: i32 = self.viewport_area.height.into();
+        let screen_height: i32 = self.last_known_area.height.into();
 
-            // The algorithm here is to loop, drawing large chunks of text (up to a screen-full at a
-            // time), until the remainder of the buffer plus the viewport fits on the screen. We
-            // choose this loop condition because it guarantees that we can write the
-            // remainder of the buffer with just one call to Self::draw_lines().
-            while buffer_height + viewport_height > screen_height {
-                // We will draw as much of the buffer as possible on this iteration in order to make
-                // forward progress. So we have:
-                //
-                //     to_draw = min(buffer_height, screen_height)
-                //
-                // We may need to scroll the screen up to make room to draw. We choose the minimal
-                // possible scroll amount so we don't end up with the viewport sitting in the middle
-                // of the screen when this function is done. The amount to scroll by
-                // is:
-                //
-                //     scroll_up = max(0, drawn_height + to_draw - screen_height)
-                //
-                // We want `scroll_up` to be enough so that, after drawing, we have used the whole
-                // screen (drawn_height - scroll_up + to_draw = screen_height). However, there might
-                // already be enough room on the screen to draw without scrolling (drawn_height +
-                // to_draw <= screen_height). In this case, we just don't scroll at all.
-                let to_draw = buffer_height.min(screen_height);
-                let scroll_up = 0.max(drawn_height + to_draw - screen_height);
-                self.scroll_up(scroll_up as u16)?;
-                buffer =
-                    self.draw_lines((drawn_height - scroll_up) as u16, to_draw as u16, buffer)?;
-                drawn_height += to_draw - scroll_up;
-                buffer_height -= to_draw;
-            }
-
-            // There is now enough room on the screen for the remaining buffer plus the viewport,
-            // though we may still need to scroll up some of the existing text first. It's possible
-            // that by this point we've drained the buffer, but we may still need to scroll up to
-            // make room for the viewport.
+        // The algorithm here is to loop, drawing large chunks of text (up to a screen-full at a
+        // time), until the remainder of the buffer plus the viewport fits on the screen. We
+        // choose this loop condition because it guarantees that we can write the
+        // remainder of the buffer with just one call to Self::draw_lines().
+        while buffer_height + viewport_height > screen_height {
+            // We will draw as much of the buffer as possible on this iteration in order to make
+            // forward progress. So we have:
             //
-            // We want to scroll up the exact amount that will leave us completely filling the
-            // screen. However, it's possible that the viewport didn't start on the
-            // bottom of the screen and the added lines weren't enough to push it all
-            // the way to the bottom. We deal with this case by just ensuring that our
-            // scroll amount is non-negative.
+            //     to_draw = min(buffer_height, screen_height)
             //
-            // We want:
-            //   screen_height = drawn_height - scroll_up + buffer_height + viewport_height
-            // Or, equivalently:
-            //   scroll_up = drawn_height + buffer_height + viewport_height - screen_height
-            let scroll_up = 0.max(drawn_height + buffer_height + viewport_height - screen_height);
+            // We may need to scroll the screen up to make room to draw. We choose the minimal
+            // possible scroll amount so we don't end up with the viewport sitting in the middle
+            // of the screen when this function is done. The amount to scroll by
+            // is:
+            //
+            //     scroll_up = max(0, drawn_height + to_draw - screen_height)
+            //
+            // We want `scroll_up` to be enough so that, after drawing, we have used the whole
+            // screen (drawn_height - scroll_up + to_draw = screen_height). However, there might
+            // already be enough room on the screen to draw without scrolling (drawn_height +
+            // to_draw <= screen_height). In this case, we just don't scroll at all.
+            let to_draw = buffer_height.min(screen_height);
+            let scroll_up = 0.max(drawn_height + to_draw - screen_height);
             self.scroll_up(scroll_up as u16)?;
-            self.draw_lines(
-                (drawn_height - scroll_up) as u16,
-                buffer_height as u16,
-                buffer,
-            )?;
-            drawn_height += buffer_height - scroll_up;
+            buffer = self.draw_lines((drawn_height - scroll_up) as u16, to_draw as u16, buffer)?;
+            drawn_height += to_draw - scroll_up;
+            buffer_height -= to_draw;
+        }
 
-            self.set_viewport_area(Rect {
-                y: drawn_height as u16,
-                ..self.viewport_area
-            });
+        // There is now enough room on the screen for the remaining buffer plus the viewport,
+        // though we may still need to scroll up some of the existing text first. It's possible
+        // that by this point we've drained the buffer, but we may still need to scroll up to
+        // make room for the viewport.
+        //
+        // We want to scroll up the exact amount that will leave us completely filling the
+        // screen. However, it's possible that the viewport didn't start on the
+        // bottom of the screen and the added lines weren't enough to push it all
+        // the way to the bottom. We deal with this case by just ensuring that our
+        // scroll amount is non-negative.
+        //
+        // We want:
+        //   screen_height = drawn_height - scroll_up + buffer_height + viewport_height
+        // Or, equivalently:
+        //   scroll_up = drawn_height + buffer_height + viewport_height - screen_height
+        let scroll_up = 0.max(drawn_height + buffer_height + viewport_height - screen_height);
+        self.scroll_up(scroll_up as u16)?;
+        self.draw_lines(
+            (drawn_height - scroll_up) as u16,
+            buffer_height as u16,
+            buffer,
+        )?;
+        drawn_height += buffer_height - scroll_up;
 
-            // Clear the viewport off the screen. We didn't clear earlier for two reasons. First, it
-            // wasn't necessary because the buffer we drew out of isn't sparse, so it overwrote
-            // whatever was on the screen. Second, there is a weird bug with tmux where a full
-            // screen clear plus immediate scrolling causes some garbage to go into the
-            // scrollback.
-            self.clear()?;
+        self.set_viewport_area(Rect {
+            y: drawn_height as u16,
+            ..self.viewport_area
+        });
 
-            Ok(())
-        })
+        // Clear the viewport off the screen. We didn't clear earlier for two reasons. First, it
+        // wasn't necessary because the buffer we drew out of isn't sparse, so it overwrote
+        // whatever was on the screen. Second, there is a weird bug with tmux where a full
+        // screen clear plus immediate scrolling causes some garbage to go into the
+        // scrollback.
+        self.clear()?;
+
+        Ok(())
     }
 
     /// Draw lines at the given vertical offset. The slice of cells must contain enough cells

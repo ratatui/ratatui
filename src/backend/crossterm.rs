@@ -158,88 +158,84 @@ where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
         METRICS.draw_count.increment(1);
-        METRICS.draw_duration.measure_duration(|| {
-            let mut fg = Color::Reset;
-            let mut bg = Color::Reset;
-            #[cfg(feature = "underline-color")]
-            let mut underline_color = Color::Reset;
-            let mut modifier = Modifier::empty();
-            let mut last_pos: Option<Position> = None;
-            for (x, y, cell) in content {
-                // Move the cursor if the previous location was not (x - 1, y)
-                if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
-                    queue!(self.writer, MoveTo(x, y))?;
-                }
-                last_pos = Some(Position { x, y });
-                if cell.modifier != modifier {
-                    let diff = ModifierDiff {
-                        from: modifier,
-                        to: cell.modifier,
-                    };
-                    diff.queue(&mut self.writer)?;
-                    modifier = cell.modifier;
-                }
-                if cell.fg != fg || cell.bg != bg {
-                    queue!(
-                        self.writer,
-                        SetColors(Colors::new(cell.fg.into(), cell.bg.into()))
-                    )?;
-                    fg = cell.fg;
-                    bg = cell.bg;
-                }
-                #[cfg(feature = "underline-color")]
-                if cell.underline_color != underline_color {
-                    let color = CColor::from(cell.underline_color);
-                    queue!(self.writer, SetUnderlineColor(color))?;
-                    underline_color = cell.underline_color;
-                }
+        let _timing = METRICS.draw_duration.start_timing();
 
-                queue!(self.writer, Print(cell.symbol()))?;
+        let mut fg = Color::Reset;
+        let mut bg = Color::Reset;
+        #[cfg(feature = "underline-color")]
+        let mut underline_color = Color::Reset;
+        let mut modifier = Modifier::empty();
+        let mut last_pos: Option<Position> = None;
+        for (x, y, cell) in content {
+            // Move the cursor if the previous location was not (x - 1, y)
+            if !matches!(last_pos, Some(p) if x == p.x + 1 && y == p.y) {
+                queue!(self.writer, MoveTo(x, y))?;
+            }
+            last_pos = Some(Position { x, y });
+            if cell.modifier != modifier {
+                let diff = ModifierDiff {
+                    from: modifier,
+                    to: cell.modifier,
+                };
+                diff.queue(&mut self.writer)?;
+                modifier = cell.modifier;
+            }
+            if cell.fg != fg || cell.bg != bg {
+                queue!(
+                    self.writer,
+                    SetColors(Colors::new(cell.fg.into(), cell.bg.into()))
+                )?;
+                fg = cell.fg;
+                bg = cell.bg;
+            }
+            #[cfg(feature = "underline-color")]
+            if cell.underline_color != underline_color {
+                let color = CColor::from(cell.underline_color);
+                queue!(self.writer, SetUnderlineColor(color))?;
+                underline_color = cell.underline_color;
             }
 
-            #[cfg(feature = "underline-color")]
-            return queue!(
-                self.writer,
-                SetForegroundColor(CColor::Reset),
-                SetBackgroundColor(CColor::Reset),
-                SetUnderlineColor(CColor::Reset),
-                SetAttribute(CAttribute::Reset),
-            );
-            #[cfg(not(feature = "underline-color"))]
-            return queue!(
-                self.writer,
-                SetForegroundColor(CColor::Reset),
-                SetBackgroundColor(CColor::Reset),
-                SetAttribute(CAttribute::Reset),
-            );
-        })
+            queue!(self.writer, Print(cell.symbol()))?;
+        }
+
+        #[cfg(feature = "underline-color")]
+        return queue!(
+            self.writer,
+            SetForegroundColor(CColor::Reset),
+            SetBackgroundColor(CColor::Reset),
+            SetUnderlineColor(CColor::Reset),
+            SetAttribute(CAttribute::Reset),
+        );
+        #[cfg(not(feature = "underline-color"))]
+        return queue!(
+            self.writer,
+            SetForegroundColor(CColor::Reset),
+            SetBackgroundColor(CColor::Reset),
+            SetAttribute(CAttribute::Reset),
+        );
     }
 
     fn hide_cursor(&mut self) -> io::Result<()> {
-        METRICS
-            .hide_cursor_duration
-            .measure_duration(|| execute!(self.writer, Hide))
+        let _timing = METRICS.hide_cursor_duration.start_timing();
+        execute!(self.writer, Hide)
     }
 
     fn show_cursor(&mut self) -> io::Result<()> {
-        METRICS
-            .show_cursor_duration
-            .measure_duration(|| execute!(self.writer, Show))
+        let _timing = METRICS.show_cursor_duration.start_timing();
+        execute!(self.writer, Show)
     }
 
     fn get_cursor_position(&mut self) -> io::Result<Position> {
-        METRICS.get_cursor_position_duration.measure_duration(|| {
-            cursor::position()
-                .map(|(x, y)| Position { x, y })
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
-        })
+        let _timing = METRICS.get_cursor_position_duration.start_timing();
+        cursor::position()
+            .map(|(x, y)| Position { x, y })
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
-        METRICS.set_cursor_position_duration.measure_duration(|| {
-            let Position { x, y } = position.into();
-            execute!(self.writer, MoveTo(x, y))
-        })
+        let _timing = METRICS.set_cursor_position_duration.start_timing();
+        let Position { x, y } = position.into();
+        execute!(self.writer, MoveTo(x, y))
     }
 
     fn clear(&mut self) -> io::Result<()> {
@@ -248,47 +244,42 @@ where
 
     fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
         METRICS.clear_region_count.increment(1);
-        METRICS.clear_region_duration.measure_duration(|| {
-            execute!(
-                self.writer,
-                Clear(match clear_type {
-                    ClearType::All => crossterm::terminal::ClearType::All,
-                    ClearType::AfterCursor => crossterm::terminal::ClearType::FromCursorDown,
-                    ClearType::BeforeCursor => crossterm::terminal::ClearType::FromCursorUp,
-                    ClearType::CurrentLine => crossterm::terminal::ClearType::CurrentLine,
-                    ClearType::UntilNewLine => crossterm::terminal::ClearType::UntilNewLine,
-                })
-            )
-        })
+        let _timing = METRICS.clear_region_duration.start_timing();
+        execute!(
+            self.writer,
+            Clear(match clear_type {
+                ClearType::All => crossterm::terminal::ClearType::All,
+                ClearType::AfterCursor => crossterm::terminal::ClearType::FromCursorDown,
+                ClearType::BeforeCursor => crossterm::terminal::ClearType::FromCursorUp,
+                ClearType::CurrentLine => crossterm::terminal::ClearType::CurrentLine,
+                ClearType::UntilNewLine => crossterm::terminal::ClearType::UntilNewLine,
+            })
+        )
     }
 
     fn append_lines(&mut self, n: u16) -> io::Result<()> {
         METRICS.append_lines_count.increment(1);
-        METRICS.append_lines_duration.measure_duration(|| {
-            for _ in 0..n {
-                queue!(self.writer, Print("\n"))?;
-            }
-            self.writer.flush()
-        })
+        let _timing = METRICS.append_lines_duration.start_timing();
+        for _ in 0..n {
+            queue!(self.writer, Print("\n"))?;
+        }
+        self.writer.flush()
     }
 
     fn size(&self) -> io::Result<Size> {
-        METRICS
-            .size_duration
-            .measure_duration(|| terminal::size().map(Size::from))
+        let _timing = METRICS.size_duration.start_timing();
+        terminal::size().map(Size::from)
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {
-        METRICS
-            .window_size_duration
-            .measure_duration(|| terminal::window_size().map(WindowSize::from))
+        let _timing = METRICS.window_size_duration.start_timing();
+        terminal::window_size().map(WindowSize::from)
     }
 
     fn flush(&mut self) -> io::Result<()> {
         METRICS.flush_count.increment(1);
-        METRICS
-            .flush_duration
-            .measure_duration(|| self.writer.flush())
+        let _timing = METRICS.flush_duration.start_timing();
+        self.writer.flush()
     }
 }
 

@@ -31,6 +31,8 @@ pub(crate) trait HistogramExt {
     fn measure_duration<F, R>(&self, f: F) -> R
     where
         F: FnOnce() -> R;
+
+    fn start_timing(&self) -> DurationMeasurementGuard;
 }
 
 impl HistogramExt for Histogram {
@@ -42,5 +44,23 @@ impl HistogramExt for Histogram {
         let result = f();
         self.record(start.elapsed().as_secs_f64());
         result
+    }
+
+    fn start_timing(&self) -> DurationMeasurementGuard {
+        DurationMeasurementGuard {
+            start: quanta::Instant::now(),
+            histogram: self.clone(), // this is safe because `Histogram` stores an `Arc`
+        }
+    }
+}
+
+pub struct DurationMeasurementGuard {
+    start: quanta::Instant,
+    histogram: Histogram,
+}
+
+impl Drop for DurationMeasurementGuard {
+    fn drop(&mut self) {
+        self.histogram.record(self.start.elapsed().as_secs_f64());
     }
 }

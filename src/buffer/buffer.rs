@@ -485,32 +485,28 @@ impl Buffer {
     /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
     /// ```
     pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)> {
-        METRICS.diff_duration.measure_duration(|| {
-            let previous_buffer = &self.content;
-            let next_buffer = &other.content;
+        let _timing = METRICS.diff_duration.start_timing();
+        let previous_buffer = &self.content;
+        let next_buffer = &other.content;
 
-            let mut updates: Vec<(u16, u16, &Cell)> = vec![];
-            // Cells invalidated by drawing/replacing preceding multi-width characters:
-            let mut invalidated: usize = 0;
-            // Cells from the current buffer to skip due to preceding multi-width characters taking
-            // their place (the skipped cells should be blank anyway), or due to per-cell-skipping:
-            let mut to_skip: usize = 0;
-            for (i, (current, previous)) in
-                next_buffer.iter().zip(previous_buffer.iter()).enumerate()
-            {
-                if !current.skip && (current != previous || invalidated > 0) && to_skip == 0 {
-                    let (x, y) = self.pos_of(i);
-                    updates.push((x, y, &next_buffer[i]));
-                }
-
-                to_skip = current.symbol().width().saturating_sub(1);
-
-                let affected_width =
-                    std::cmp::max(current.symbol().width(), previous.symbol().width());
-                invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
+        let mut updates: Vec<(u16, u16, &Cell)> = vec![];
+        // Cells invalidated by drawing/replacing preceding multi-width characters:
+        let mut invalidated: usize = 0;
+        // Cells from the current buffer to skip due to preceding multi-width characters taking
+        // their place (the skipped cells should be blank anyway), or due to per-cell-skipping:
+        let mut to_skip: usize = 0;
+        for (i, (current, previous)) in next_buffer.iter().zip(previous_buffer.iter()).enumerate() {
+            if !current.skip && (current != previous || invalidated > 0) && to_skip == 0 {
+                let (x, y) = self.pos_of(i);
+                updates.push((x, y, &next_buffer[i]));
             }
-            updates
-        })
+
+            to_skip = current.symbol().width().saturating_sub(1);
+
+            let affected_width = std::cmp::max(current.symbol().width(), previous.symbol().width());
+            invalidated = std::cmp::max(affected_width, invalidated).saturating_sub(1);
+        }
+        updates
     }
 }
 
