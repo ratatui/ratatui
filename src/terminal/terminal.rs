@@ -219,7 +219,7 @@ where
                 )?
                 .0
             }
-            Viewport::Fixed(area) => area,
+            Viewport::Fixed(_) => area,
         };
         self.set_viewport_area(next_area);
         self.clear()?;
