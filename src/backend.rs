@@ -100,9 +100,10 @@
 //! [Backend Comparison]:
 //!     https://ratatui.rs/concepts/backends/comparison/
 //! [Ratatui Website]: https://ratatui.rs
-use std::{io, sync::LazyLock};
+use std::io;
 
 use metrics::{Counter, Histogram};
+use once_cell::sync::Lazy;
 use strum::{Display, EnumString};
 
 use crate::{
@@ -129,7 +130,7 @@ pub use self::termwiz::TermwizBackend;
 mod test;
 pub use self::test::TestBackend;
 
-static METRICS: LazyLock<Metrics> = LazyLock::new(Metrics::new);
+static METRICS: Lazy<Metrics> = Lazy::new(Metrics::new);
 
 #[derive(Debug)]
 struct Metrics {

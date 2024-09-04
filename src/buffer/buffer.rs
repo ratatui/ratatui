@@ -1,10 +1,10 @@
 use std::{
     fmt,
     ops::{Index, IndexMut},
-    sync::LazyLock,
 };
 
 use metrics::Histogram;
+use once_cell::sync::Lazy;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
@@ -74,7 +74,7 @@ pub struct Buffer {
     pub content: Vec<Cell>,
 }
 
-static METRICS: LazyLock<Metrics> = LazyLock::new(Metrics::new);
+static METRICS: Lazy<Metrics> = Lazy::new(Metrics::new);
 
 struct Metrics {
     diff_duration: Histogram,

@@ -37,7 +37,7 @@ struct App {
 }
 
 impl App {
-    fn new(recorder_widget: RecorderWidget) -> Self {
+    const fn new(recorder_widget: RecorderWidget) -> Self {
         Self {
             should_quit: false,
             recorder_widget,
@@ -82,7 +82,7 @@ impl App {
 
     fn on_key_press(&mut self, key: event::KeyEvent) {
         match key.code {
-            KeyCode::Char('q') => self.should_quit = true,
+            KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
             _ => {}
         }
     }
@@ -174,7 +174,7 @@ impl Widget for &RecorderWidget {
                 let p90 = Duration::from_secs_f64(summary.quantile(0.9).unwrap());
                 let p99 = Duration::from_secs_f64(summary.quantile(0.99).unwrap());
                 let line = format!(
-                    "min:{min:>9.2?}  max:{max:>9.2?}  p50:{p50:>9.2?}  p90:{p90:>9.2?}  p99:{p99:>9.2?}"
+                    "min:{min:>9.2?}  p50:{p50:>9.2?}  p90:{p90:>9.2?}  p99:{p99:>9.2?}  max:{max:>9.2?}"
                 );
                 histograms.push((key.clone(), line));
             }

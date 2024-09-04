@@ -1,6 +1,7 @@
-use std::{io, sync::LazyLock};
+use std::io;
 
 use metrics::{Counter, Histogram};
+use once_cell::sync::Lazy;
 
 use crate::{
     backend::ClearType, buffer::Cell, counter, duration_histogram, metrics::HistogramExt,
@@ -87,7 +88,7 @@ pub struct Options {
     pub viewport: Viewport,
 }
 
-static METRICS: LazyLock<Metrics> = LazyLock::new(Metrics::new);
+static METRICS: Lazy<Metrics> = Lazy::new(Metrics::new);
 
 #[derive(Debug)]
 struct Metrics {
