@@ -149,22 +149,24 @@ impl Widget for &RecorderWidget {
     where
         Self: Sized,
     {
-        let mut lines = Vec::<(Key, String)>::new();
+        let mut counters = vec![];
         self.metrics.registry.visit_counters(|key, counter| {
             let value = counter.load(Ordering::SeqCst);
-            lines.push((key.clone(), value.to_string()));
+            counters.push((key.clone(), value.to_string()));
         });
+        let mut gauges = vec![];
         self.metrics.registry.visit_gauges(|key, gauge| {
             let value = gauge.load(Ordering::SeqCst);
-            lines.push((key.clone(), value.to_string()));
+            gauges.push((key.clone(), value.to_string()));
         });
+        let mut histograms = vec![];
         self.metrics.registry.visit_histograms(|key, histogram| {
             let mut summary = Summary::with_defaults();
             for data in histogram.data() {
                 summary.add(data);
             }
             if summary.is_empty() {
-                lines.push((key.clone(), "empty".to_string()));
+                // histograms.push((key.clone(), "empty".to_string()));
             } else {
                 let min = Duration::from_secs_f64(summary.min());
                 let max = Duration::from_secs_f64(summary.max());
@@ -172,21 +174,27 @@ impl Widget for &RecorderWidget {
                 let p90 = Duration::from_secs_f64(summary.quantile(0.9).unwrap());
                 let p99 = Duration::from_secs_f64(summary.quantile(0.99).unwrap());
                 let line = format!(
-                    "min={min:.2?} max={max:.2?} p50={p50:.2?} p90={p90:.2?} p99={p99:.2?}"
+                    "min:{min:>9.2?}  max:{max:>9.2?}  p50:{p50:>9.2?}  p90:{p90:>9.2?}  p99:{p99:>9.2?}"
                 );
-                lines.push((key.clone(), line));
+                histograms.push((key.clone(), line));
             }
         });
-        lines.sort();
-        let rows = lines
+        counters.sort();
+
+        gauges.sort();
+        histograms.sort();
+        let lines = counters
             .iter()
+            .chain(gauges.iter())
+            .chain(histograms.iter());
+        let rows = lines
             .map(|(key, line)| Row::new([key.name(), line]))
             .enumerate()
             .map(|(i, row)| {
                 if (i % 2) == 0 {
-                    row.on_dark_gray()
+                    row.bg(ratatui::style::palette::tailwind::SLATE.c950)
                 } else {
-                    row.on_black()
+                    row.bg(ratatui::style::palette::tailwind::SLATE.c900)
                 }
             })
             .collect::<Vec<_>>();
