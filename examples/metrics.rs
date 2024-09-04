@@ -5,6 +5,7 @@ use std::{
 
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use itertools::Itertools;
 use metrics::{Counter, Gauge, Histogram, Key, KeyName, Metadata, Recorder, SharedString, Unit};
 use metrics_util::{
     registry::{AtomicStorage, Registry},
@@ -13,7 +14,7 @@ use metrics_util::{
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
-    style::Stylize,
+    style::{palette::tailwind::SLATE, Stylize},
     widgets::{Row, Table, Widget},
     DefaultTerminal, Frame,
 };
@@ -166,6 +167,7 @@ impl Widget for &RecorderWidget {
                 summary.add(data);
             }
             if summary.is_empty() {
+                // we omit the empty histograms, but this is how you would render them
                 // histograms.push((key.clone(), "empty".to_string()));
             } else {
                 let min = Duration::from_secs_f64(summary.min());
@@ -187,17 +189,12 @@ impl Widget for &RecorderWidget {
             .iter()
             .chain(gauges.iter())
             .chain(histograms.iter());
+        let row_colors = [SLATE.c950, SLATE.c900];
         let rows = lines
             .map(|(key, line)| Row::new([key.name(), line]))
-            .enumerate()
-            .map(|(i, row)| {
-                if (i % 2) == 0 {
-                    row.bg(ratatui::style::palette::tailwind::SLATE.c950)
-                } else {
-                    row.bg(ratatui::style::palette::tailwind::SLATE.c900)
-                }
-            })
-            .collect::<Vec<_>>();
+            .zip(row_colors.iter().cycle())
+            .map(|(row, style)| row.bg(*style))
+            .collect_vec();
         Table::new(rows, [Constraint::Length(40), Constraint::Fill(1)]).render(area, buf);
     }
 }
