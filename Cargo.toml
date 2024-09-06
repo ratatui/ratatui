@@ -157,7 +157,11 @@ underline-color = ["dep:crossterm"]
 #! The following features are unstable and may change in the future:
 
 ## Enable all unstable features.
-unstable = ["unstable-rendered-line-info", "unstable-widget-ref"]
+unstable = [
+  "unstable-rendered-line-info",
+  "unstable-widget-ref",
+  "unstable-backend-writer",
+]
 
 ## Enables the [`Paragraph::line_count`](widgets::Paragraph::line_count)
 ## [`Paragraph::line_width`](widgets::Paragraph::line_width) methods
@@ -168,6 +172,9 @@ unstable-rendered-line-info = []
 ## Enables the [`WidgetRef`](widgets::WidgetRef) and [`StatefulWidgetRef`](widgets::StatefulWidgetRef) traits which are experimental and may change in
 ## the future.
 unstable-widget-ref = []
+
+## Enables getting access to backends' writers.
+unstable-backend-writer = []
 
 [package.metadata.docs.rs]
 all-features = true
