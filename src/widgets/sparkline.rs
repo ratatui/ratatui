@@ -237,7 +237,7 @@ mod tests {
 
     // Helper function to render a sparkline to a buffer with a given width
     // filled with x symbols to make it easier to assert on the result
-    fn render(widget: Sparkline, width: u16) -> Buffer {
+    fn render(widget: Sparkline<'_>, width: u16) -> Buffer {
         let area = Rect::new(0, 0, width, 1);
         let mut buffer = Buffer::filled(area, Cell::new("x"));
         widget.render(area, &mut buffer);
@@ -253,6 +253,8 @@ mod tests {
 
     #[test]
     fn it_does_not_panic_if_max_is_set_to_zero() {
+        // see https://github.com/rust-lang/rust-clippy/issues/13191
+        #[allow(clippy::unnecessary_min_or_max)]
         let widget = Sparkline::default().data(&[0, 1, 2]).max(0);
         let buffer = render(widget, 6);
         assert_eq!(buffer, Buffer::with_lines(["   xxx"]));
