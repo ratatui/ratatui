@@ -122,7 +122,7 @@ pub struct TabsState<'a> {
 }
 
 impl<'a> TabsState<'a> {
-    pub fn new(titles: Vec<&'a str>) -> Self {
+    pub const fn new(titles: Vec<&'a str>) -> Self {
         Self { titles, index: 0 }
     }
     pub fn next(&mut self) {

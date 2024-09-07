@@ -205,7 +205,6 @@ where
     /// of the screen.
     pub fn resize(&mut self, area: Rect) -> io::Result<()> {
         let next_area = match self.viewport {
-            Viewport::Fullscreen => area,
             Viewport::Inline(height) => {
                 let offset_in_previous_viewport = self
                     .last_known_cursor_pos
@@ -219,7 +218,7 @@ where
                 )?
                 .0
             }
-            Viewport::Fixed(_) => area,
+            Viewport::Fixed(_) | Viewport::Fullscreen => area,
         };
         self.set_viewport_area(next_area);
         self.clear()?;
