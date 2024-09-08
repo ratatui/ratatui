@@ -4,3 +4,6 @@ Cargo.lock
 *.rs.rustfmt
 .gdb_history
 .idea/
+
+# Nix related artifacts
+flake.lock
