@@ -236,7 +236,7 @@ impl Rect {
     /// ```rust
     /// # use ratatui::prelude::*;
     /// # fn render(frame: &mut Frame) {
-    /// let area = frame.size();
+    /// let area = frame.area();
     /// let rect = Rect::new(0, 0, 100, 100).clamp(area);
     /// # }
     /// ```
