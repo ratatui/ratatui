@@ -595,7 +595,7 @@ impl<'a> Block<'a> {
     /// let outer_block = Block::bordered().title("Outer");
     /// let inner_block = Block::bordered().title("Inner");
     ///
-    /// let outer_area = frame.size();
+    /// let outer_area = frame.area();
     /// let inner_area = outer_block.inner(outer_area);
     ///
     /// frame.render_widget(outer_block, outer_area);

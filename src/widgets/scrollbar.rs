@@ -59,7 +59,7 @@ use crate::{
 ///
 /// let mut scrollbar_state = ScrollbarState::new(items.len()).position(vertical_scroll);
 ///
-/// let area = frame.size();
+/// let area = frame.area();
 /// // Note we render the paragraph
 /// frame.render_widget(paragraph, area);
 /// // and the scrollbar, those are separate widgets

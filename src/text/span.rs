@@ -81,7 +81,7 @@ use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 /// use ratatui::prelude::*;
 ///
 /// # fn render_frame(frame: &mut Frame) {
-/// frame.render_widget("test content".green().on_yellow().italic(), frame.size());
+/// frame.render_widget("test content".green().on_yellow().italic(), frame.area());
 /// # }
 /// ```
 /// [`Line`]: crate::text::Line

@@ -4,14 +4,18 @@
 - [Ratatui](#ratatui)
   - [Installation](#installation)
   - [Introduction](#introduction)
-  - [Other Documentation](#other-documentation)
+  - [Other documentation](#other-documentation)
   - [Quickstart](#quickstart)
+    - [Initialize and restore the terminal](#initialize-and-restore-the-terminal)
+    - [Drawing the UI](#drawing-the-ui)
+    - [Handling events](#handling-events)
+    - [Example](#example)
+  - [Layout](#layout)
+  - [Text and styling](#text-and-styling)
   - [Status of this fork](#status-of-this-fork)
-  - [Rust version requirements](#rust-version-requirements)
   - [Widgets](#widgets)
     - [Built in](#built-in)
-    - [Third\-party libraries, bootstrapping templates and
-      widgets](#third-party-libraries-bootstrapping-templates-and-widgets)
+    - [Third-party libraries, bootstrapping templates and widgets](#third-party-libraries-bootstrapping-templates-and-widgets)
   - [Apps](#apps)
   - [Alternatives](#alternatives)
   - [Acknowledgments](#acknowledgments)
@@ -170,7 +174,7 @@ fn handle_events() -> io::Result<bool> {
 fn ui(frame: &mut Frame) {
     frame.render_widget(
         Paragraph::new("Hello World!").block(Block::bordered().title("Greeting")),
-        frame.size(),
+        frame.area(),
     );
 }
 ```
@@ -199,7 +203,7 @@ fn ui(frame: &mut Frame) {
         Constraint::Min(0),
         Constraint::Length(1),
     ])
-    .areas(frame.size());
+    .areas(frame.area());
     let [left_area, right_area] =
         Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
             .areas(main_area);
@@ -237,7 +241,7 @@ use ratatui::{
 };
 
 fn ui(frame: &mut Frame) {
-    let areas = Layout::vertical([Constraint::Length(1); 4]).split(frame.size());
+    let areas = Layout::vertical([Constraint::Length(1); 4]).split(frame.area());
 
     let line = Line::from(vec![
         Span::raw("Hello "),
