@@ -46,6 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
       - uses: bnjbvr/cargo-machete@v0.6.2
 
   clippy:
