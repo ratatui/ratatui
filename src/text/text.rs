@@ -1,8 +1,6 @@
 #![warn(missing_docs)]
 use std::{borrow::Cow, fmt};
 
-use itertools::{Itertools, Position};
-
 use crate::{prelude::*, style::Styled};
 
 /// A string split over one or more lines.
@@ -632,12 +630,11 @@ impl<T: fmt::Display> ToText for T {
 
 impl fmt::Display for Text<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (position, line) in self.iter().with_position() {
-            if position == Position::Last || position == Position::Only {
-                write!(f, "{line}")?;
-            } else {
+        if let Some((last, rest)) = self.lines.split_last() {
+            for line in rest {
                 writeln!(f, "{line}")?;
             }
+            write!(f, "{last}")?;
         }
         Ok(())
     }

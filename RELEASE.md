@@ -1,5 +1,12 @@
 # Creating a Release
 
+Our release strategy is:
+
+> Release major versions with detailed summaries when necessary, while releasing minor versions
+> weekly or as needed without extensive announcements.
+>
+> Versioning scheme being `0.x.y`, where `x` is the major version and `y` is the minor version.
+
 [crates.io](https://crates.io/crates/ratatui) releases are automated via [GitHub
 actions](.github/workflows/cd.yml) and triggered by pushing a tag.
 
@@ -21,7 +28,7 @@ actions](.github/workflows/cd.yml) and triggered by pushing a tag.
    can be used for generating the entries.
 1. Ensure that any breaking changes are documented in [BREAKING-CHANGES.md](./BREAKING-CHANGES.md)
 1. Commit and push the changes.
-1. Create a new tag: `git tag -a v[X.Y.Z]`
+1. Create a new tag: `git tag -a v[0.x.y]`
 1. Push the tag: `git push --tags`
 1. Wait for [Continuous Deployment](https://github.com/ratatui/ratatui/actions) workflow to
    finish.

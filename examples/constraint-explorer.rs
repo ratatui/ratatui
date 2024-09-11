@@ -346,13 +346,8 @@ impl App {
     }
 
     fn render_user_constraints_legend(&self, area: Rect, buf: &mut Buffer) {
-        let blocks = Layout::horizontal(
-            self.constraints
-                .iter()
-                .map(|_| Constraint::Fill(1))
-                .collect_vec(),
-        )
-        .split(area);
+        let constraints = self.constraints.iter().map(|_| Constraint::Fill(1));
+        let blocks = Layout::horizontal(constraints).split(area);
 
         for (i, (area, constraint)) in blocks.iter().zip(self.constraints.iter()).enumerate() {
             let selected = self.selected_index == i;

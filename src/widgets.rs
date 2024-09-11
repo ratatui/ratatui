@@ -88,7 +88,7 @@ use crate::{buffer::Buffer, layout::Rect, style::Style};
 /// # let mut terminal = Terminal::new(backend).unwrap();
 ///
 /// terminal.draw(|frame| {
-///     frame.render_widget(Clear, frame.size());
+///     frame.render_widget(Clear, frame.area());
 /// });
 /// ```
 ///

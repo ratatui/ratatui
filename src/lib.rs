@@ -151,7 +151,7 @@
 //!         Constraint::Min(0),
 //!         Constraint::Length(1),
 //!     ])
-//!     .areas(frame.size());
+//!     .areas(frame.area());
 //!     let [left_area, right_area] =
 //!         Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
 //!             .areas(main_area);
@@ -189,7 +189,7 @@
 //! };
 //!
 //! fn draw(frame: &mut Frame) {
-//!     let areas = Layout::vertical([Constraint::Length(1); 4]).split(frame.size());
+//!     let areas = Layout::vertical([Constraint::Length(1); 4]).split(frame.area());
 //!
 //!     let line = Line::from(vec![
 //!         Span::raw("Hello "),

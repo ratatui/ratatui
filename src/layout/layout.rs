@@ -428,7 +428,7 @@ impl Layout {
     /// ```rust
     /// # use ratatui::prelude::*;
     /// # fn render(frame: &mut Frame) {
-    /// let area = frame.size();
+    /// let area = frame.area();
     /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     /// let [top, main] = layout.areas(area);
     ///
@@ -460,7 +460,7 @@ impl Layout {
     /// ```rust
     /// # use ratatui::prelude::*;
     /// # fn render(frame: &mut Frame) {
-    /// let area = frame.size();
+    /// let area = frame.area();
     /// let layout = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
     /// let [top, main] = layout.areas(area);
     /// let [before, inbetween, after] = layout.spacers(area);
@@ -1315,9 +1315,9 @@ mod tests {
                 .flex(flex)
                 .split(area);
             let mut buffer = Buffer::empty(area);
-            for (i, c) in ('a'..='z').take(constraints.len()).enumerate() {
+            for (c, &area) in ('a'..='z').take(constraints.len()).zip(layout.iter()) {
                 let s = c.to_string().repeat(area.width as usize);
-                Paragraph::new(s).render(layout[i], &mut buffer);
+                Paragraph::new(s).render(area, &mut buffer);
             }
             assert_eq!(buffer, Buffer::with_lines([expected]));
         }

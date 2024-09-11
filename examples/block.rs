@@ -14,7 +14,6 @@
 //! [examples readme]: https://github.com/ratatui/ratatui/blob/main/examples/README.md
 
 use color_eyre::Result;
-use itertools::Itertools;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Alignment, Constraint, Layout, Rect},
@@ -90,7 +89,7 @@ fn calculate_layout(area: Rect) -> (Rect, Vec<Vec<Rect>>) {
                 .split(area)
                 .to_vec()
         })
-        .collect_vec();
+        .collect();
     (title_area, main_areas)
 }
 

@@ -1,4 +1,4 @@
-name: Continuous Deployment
+name: Release alpha version
 
 on:
   workflow_dispatch:
@@ -6,9 +6,6 @@ on:
     # At 00:00 on Saturday
     # https://crontab.guru/#0_0_*_*_6
     - cron: "0 0 * * 6"
-  push:
-    tags:
-      - "v*.*.*"
 
 defaults:
   run:
@@ -20,7 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    if: ${{ !startsWith(github.event.ref, 'refs/tags/v') }}
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
@@ -30,14 +26,14 @@ jobs:
       - name: Calculate the next release
         run: .github/workflows/calculate-alpha-release.bash
 
-      - name: Publish on crates.io
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --allow-dirty --token ${{ secrets.CARGO_TOKEN }}
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish
+        run: cargo publish --allow-dirty --token ${{ secrets.CARGO_TOKEN }}
 
       - name: Generate a changelog
-        uses: orhun/git-cliff-action@v3
+        uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
           args: --unreleased --tag ${{ env.NEXT_TAG }} --strip header
@@ -50,17 +46,3 @@ jobs:
           tag: ${{ env.NEXT_TAG }}
           prerelease: true
           bodyFile: BODY.md
-
-  publish-stable:
-    name: Create a stable release
-    runs-on: ubuntu-latest
-    if: ${{ startsWith(github.event.ref, 'refs/tags/v') }}
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v4
-
-      - name: Publish on crates.io
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --token ${{ secrets.CARGO_TOKEN }}

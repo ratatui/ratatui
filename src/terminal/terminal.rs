@@ -38,7 +38,7 @@ use crate::{
 /// let backend = CrosstermBackend::new(stdout());
 /// let mut terminal = Terminal::new(backend)?;
 /// terminal.draw(|frame| {
-///     let area = frame.size();
+///     let area = frame.area();
 ///     frame.render_widget(Paragraph::new("Hello World!"), area);
 /// })?;
 /// # std::io::Result::Ok(())
@@ -205,7 +205,6 @@ where
     /// of the screen.
     pub fn resize(&mut self, area: Rect) -> io::Result<()> {
         let next_area = match self.viewport {
-            Viewport::Fullscreen => area,
             Viewport::Inline(height) => {
                 let offset_in_previous_viewport = self
                     .last_known_cursor_pos
@@ -219,7 +218,7 @@ where
                 )?
                 .0
             }
-            Viewport::Fixed(area) => area,
+            Viewport::Fixed(_) | Viewport::Fullscreen => area,
         };
         self.set_viewport_area(next_area);
         self.clear()?;
@@ -284,7 +283,7 @@ where
     ///
     /// // with a closure
     /// terminal.draw(|frame| {
-    ///     let area = frame.size();
+    ///     let area = frame.area();
     ///     frame.render_widget(Paragraph::new("Hello World!"), area);
     ///     frame.set_cursor_position(Position { x: 0, y: 0 });
     /// })?;
@@ -293,7 +292,7 @@ where
     /// terminal.draw(render)?;
     ///
     /// fn render(frame: &mut ratatui::Frame) {
-    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.size());
+    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.area());
     /// }
     /// # std::io::Result::Ok(())
     /// ```
@@ -356,7 +355,7 @@ where
     /// // with a closure
     /// terminal.try_draw(|frame| {
     ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
-    ///     let area = frame.size();
+    ///     let area = frame.area();
     ///     frame.render_widget(Paragraph::new("Hello World!"), area);
     ///     frame.set_cursor_position(Position { x: 0, y: 0 });
     ///     io::Result::Ok(())
@@ -367,7 +366,7 @@ where
     ///
     /// fn render(frame: &mut ratatui::Frame) -> io::Result<()> {
     ///     let value: u8 = "not a number".parse().map_err(io::Error::other)?;
-    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.size());
+    ///     frame.render_widget(Paragraph::new("Hello World!"), frame.area());
     ///     Ok(())
     /// }
     /// # io::Result::Ok(())

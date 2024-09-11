@@ -1,0 +1,45 @@
+name: Release stable version
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  publish-stable:
+    name: Create an stable release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: BODY.md
+
+      - name: Publish on GitHub
+        uses: ncipollo/release-action@v1
+        with:
+          prerelease: false
+          bodyFile: BODY.md
+
+  publish-crate:
+    name: Publish crate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish
+        run: cargo publish --token ${{ secrets.CARGO_TOKEN }}
