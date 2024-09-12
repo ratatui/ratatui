@@ -119,9 +119,9 @@ pub enum Constraint {
     /// Converts the given percentage to a floating-point value and multiplies that with area. This
     /// value is rounded back to a integer as part of the layout split calculation.
     ///
-    /// **Note**: As this value only accepts a `u16`, certain percentages that cannot be represented
-    /// exactly (e.g. 1/3) are not possible. You might want to use [`Constraint::Ratio`] or
-    /// [`Constraint::Fill`] in such cases.
+    /// **Note**: As this value only accepts a `u16`, certain percentages that cannot be
+    /// represented exactly (e.g. 1/3) are not possible. You might want to use
+    /// [`Constraint::Ratio`] or [`Constraint::Fill`] in such cases.
     ///
     /// # Examples
     ///
