@@ -71,6 +71,13 @@ This is a quick summary of the sections below:
 
 ## v0.29.0 (Unreleased)
 
+### `Rect::area()` now returns u32 instead of u16 ([#1378])
+
+[#1378]: https://github.com/ratatui/ratatui/pull/1378
+
+This is likely to impact anything which relies on `Rect::area` maxing out at u16::MAX. It can now
+return up to u16::MAX * u16::MAX (2^32 - 2^17 + 1).
+
 ### `Line` now implements `From<Cow<str>` ([#1373])
 
 [#1373]: https://github.com/ratatui/ratatui/pull/1373

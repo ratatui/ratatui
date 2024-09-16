@@ -269,9 +269,10 @@ impl Buffer {
             return None;
         }
         // remove offset
-        let y = position.y - self.area.y;
-        let x = position.x - self.area.x;
-        Some((y * self.area.width + x) as usize)
+        let y = (position.y - self.area.y) as usize;
+        let x = (position.x - self.area.x) as usize;
+        let width = self.area.width as usize;
+        Some(y * width + x)
     }
 
     /// Returns the (global) coordinates of a cell given its index
