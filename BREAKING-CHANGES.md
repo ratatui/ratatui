@@ -71,7 +71,7 @@ This is a quick summary of the sections below:
 
 [#1373]: https://github.com/ratatui/ratatui/pull/1373
 
-As this adds an extra conversion, ambiguous inferred values may no longer compile.
+As this adds an extra conversion, ambiguous inferred expressions may no longer compile.
 
 ```rust
 // given:
@@ -81,7 +81,7 @@ impl From<Foo> for Cow<str> { ... }
 
 let foo = Foo { ... };
 let line = Line::from(foo); // now fails due to now ambiguous inferred type
-// replace with
+// replace with e.g.
 let line = Line::from(String::from(foo));
 ```
 
@@ -154,7 +154,9 @@ are also named terminal, and confusion about module exports for newer Rust users
 
 This change simplifies the trait and makes it easier to implement.
 
-### `Frame::size` is deprecated and renamed to `Frame::area`
+### `Frame::size` is deprecated and renamed to `Frame::area` ([#1293])
+
+[#1293]: https://github.com/ratatui/ratatui/pull/1293
 
 `Frame::size` is renamed to `Frame::area` as it's the more correct name.
 
