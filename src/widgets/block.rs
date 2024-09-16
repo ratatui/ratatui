@@ -290,9 +290,9 @@ impl<'a> Block<'a> {
     ///
     /// # Future improvements
     ///
-    /// In a future release of Ratatui (likely 0.31) this method will be changed to accept
-    /// `Into<Line>` instead of `Into<Title>`. This allows us to remove the unnecessary `Title`
-    /// struct and store the position in the block itself. For more information see
+    /// In a future release of Ratatui this method will be changed to accept `Into<Line>` instead of
+    /// `Into<Title>`. This allows us to remove the unnecessary `Title` struct and store the
+    /// position in the block itself. For more information see
     /// <https://github.com/ratatui/ratatui/issues/738>.
     ///
     /// [Block example]: https://github.com/ratatui/ratatui/blob/main/examples/README.md#block
