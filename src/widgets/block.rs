@@ -108,7 +108,7 @@ pub use title::{Position, Title};
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
 pub struct Block<'a> {
     /// List of titles
-    titles: Vec<Title<'a>>,
+    titles: Vec<(Option<Position>, Line<'a>)>,
     /// The style to be patched to all titles of the block
     titles_style: Style,
     /// The default alignment of the titles that don't have one
@@ -294,7 +294,13 @@ impl<'a> Block<'a> {
     where
         T: Into<Title<'a>>,
     {
-        self.titles.push(title.into());
+        let title = title.into();
+        let position = title.position;
+        let mut content = title.content;
+        if let Some(alignment) = title.alignment {
+            content = content.alignment(alignment);
+        }
+        self.titles.push((position, content));
         self
     }
 
@@ -321,8 +327,8 @@ impl<'a> Block<'a> {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_top<T: Into<Line<'a>>>(mut self, title: T) -> Self {
-        let title = Title::from(title).position(Position::Top);
-        self.titles.push(title);
+        let line = title.into();
+        self.titles.push((Some(Position::Top), line));
         self
     }
 
@@ -349,8 +355,8 @@ impl<'a> Block<'a> {
     /// ```
     #[must_use = "method moves the value of self and returns the modified value"]
     pub fn title_bottom<T: Into<Line<'a>>>(mut self, title: T) -> Self {
-        let title = Title::from(title).position(Position::Bottom);
-        self.titles.push(title);
+        let line = title.into();
+        self.titles.push((Some(Position::Bottom), line));
         self
     }
 
@@ -642,7 +648,7 @@ impl<'a> Block<'a> {
     fn has_title_at_position(&self, position: Position) -> bool {
         self.titles
             .iter()
-            .any(|title| title.position.unwrap_or(self.titles_position) == position)
+            .any(|(pos, _)| pos.unwrap_or(self.titles_position.into()) == position)
     }
 }
 
@@ -798,7 +804,7 @@ impl Block<'_> {
             if titles_area.is_empty() {
                 break;
             }
-            let title_width = title.content.width() as u16;
+            let title_width = title.width() as u16;
             let title_area = Rect {
                 x: titles_area
                     .right()
@@ -808,7 +814,7 @@ impl Block<'_> {
                 ..titles_area
             };
             buf.set_style(title_area, self.titles_style);
-            title.content.render_ref(title_area, buf);
+            title.render_ref(title_area, buf);
 
             // bump the width of the titles area to the left
             titles_area.width = titles_area
@@ -830,7 +836,7 @@ impl Block<'_> {
             .collect_vec();
         let total_width = titles
             .iter()
-            .map(|title| title.content.width() as u16 + 1) // space between titles
+            .map(|title| title.width() as u16 + 1) // space between titles
             .sum::<u16>()
             .saturating_sub(1); // no space for the last title
 
@@ -843,13 +849,13 @@ impl Block<'_> {
             if titles_area.is_empty() {
                 break;
             }
-            let title_width = title.content.width() as u16;
+            let title_width = title.width() as u16;
             let title_area = Rect {
                 width: title_width.min(titles_area.width),
                 ..titles_area
             };
             buf.set_style(title_area, self.titles_style);
-            title.content.render_ref(title_area, buf);
+            title.render_ref(title_area, buf);
 
             // bump the titles area to the right and reduce its width
             titles_area.x = titles_area.x.saturating_add(title_width + 1);
@@ -866,13 +872,13 @@ impl Block<'_> {
             if titles_area.is_empty() {
                 break;
             }
-            let title_width = title.content.width() as u16;
+            let title_width = title.width() as u16;
             let title_area = Rect {
                 width: title_width.min(titles_area.width),
                 ..titles_area
             };
             buf.set_style(title_area, self.titles_style);
-            title.content.render_ref(title_area, buf);
+            title.render_ref(title_area, buf);
 
             // bump the titles area to the right and reduce its width
             titles_area.x = titles_area.x.saturating_add(title_width + 1);
@@ -885,11 +891,12 @@ impl Block<'_> {
         &self,
         position: Position,
         alignment: Alignment,
-    ) -> impl DoubleEndedIterator<Item = &Title> {
-        self.titles.iter().filter(move |title| {
-            title.position.unwrap_or(self.titles_position) == position
-                && title.alignment.unwrap_or(self.titles_alignment) == alignment
-        })
+    ) -> impl DoubleEndedIterator<Item = &Line> {
+        self.titles
+            .iter()
+            .filter(move |(pos, _)| pos.unwrap_or(self.titles_position.into()) == position.into())
+            .filter(move |(_, line)| line.alignment.unwrap_or(self.titles_alignment) == alignment)
+            .map(|(_, line)| line)
     }
 
     /// An area that is one line tall and spans the width of the block excluding the borders and
