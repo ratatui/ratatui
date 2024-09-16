@@ -65,6 +65,26 @@ This is a quick summary of the sections below:
   - MSRV is now 1.63.0
   - `List` no longer ignores empty strings
 
+## v0.29.0 (Unreleased)
+
+### `Line` now implements `From<Cow<str>` ([#1373])
+
+[#1373]: https://github.com/ratatui/ratatui/pull/1373
+
+As this adds an extra conversion, ambiguous inferred values may no longer compile.
+
+```rust
+// given:
+struct Foo { ... }
+impl From<Foo> for String { ... }
+impl From<Foo> for Cow<str> { ... }
+
+let foo = Foo { ... };
+let line = Line::from(foo); // now fails due to now ambiguous inferred type
+// replace with
+let line = Line::from(String::from(foo));
+```
+
 ## v0.28.0
 
 ### `Backend::size` returns `Size` instead of `Rect` ([#1254])
@@ -135,8 +155,6 @@ are also named terminal, and confusion about module exports for newer Rust users
 This change simplifies the trait and makes it easier to implement.
 
 ### `Frame::size` is deprecated and renamed to `Frame::area`
-
-[#1293]: https://github.com/ratatui/ratatui/pull/1293
 
 `Frame::size` is renamed to `Frame::area` as it's the more correct name.
 
