@@ -4,7 +4,7 @@
 //!
 //! In its simplest form, a `Block` is a [border](Borders) around another widget. It can have a
 //! [title](Block::title) and [padding](Block::padding).
-
+#![allow(deprecated)]
 use itertools::Itertools;
 use strum::{Display, EnumString};
 
@@ -354,6 +354,32 @@ impl<'a> Block<'a> {
         self
     }
 
+    /// Adds a title to a specific position
+    ///
+    /// You can provide any type that can be converted into [`Line`] including: strings, string
+    /// slices (`&str`), borrowed strings (`Cow<str>`), [spans](crate::text::Span), or vectors of
+    /// [spans](crate::text::Span) (`Vec<Span>`).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use ratatui::{ prelude::*, widgets::{*, block::title::Position},  };
+    /// Block::bordered()
+    ///     .title_at_position("Top", Position::Top) // By default in the left corner    
+    ///     .title_at_position("Bottom", Position::Bottom);    
+    /// // Renders
+    /// // ┌Top───────────────────────────────┐
+    /// // │                                  │
+    /// // └Bottom────────────────────────────┘
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn title_at_position<T: Into<Line<'a>>>(self, title: T, position: Position) -> Self {
+        match position {
+            Position::Top => self.title_top(title),
+            Position::Bottom => self.title_bottom(title),
+        }
+    }
+
     /// Applies the style to all titles.
     ///
     /// This style will be applied to all titles of the block. If a title has a style set, it will
@@ -387,7 +413,7 @@ impl<'a> Block<'a> {
     /// Block::new()
     ///     .title_alignment(Alignment::Center)
     ///     // This title won't be aligned in the center
-    ///     .title(Title::from("right").alignment(Alignment::Right))
+    ///     .title(Line::from("right").alignment(Alignment::Right))
     ///     .title("foo")
     ///     .title("bar");
     /// ```
@@ -416,8 +442,8 @@ impl<'a> Block<'a> {
     ///
     /// Block::new()
     ///     .title_position(Position::Bottom)
-    ///     // This title won't be aligned in the center
-    ///     .title(Title::from("top").position(Position::Top))
+    ///     // This title won't be at the ottom
+    ///     .title_top(Line::from("top"))
     ///     .title("foo")
     ///     .title("bar");
     /// ```

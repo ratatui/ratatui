@@ -1,6 +1,6 @@
 //! This module holds the [`Title`] element and its related configuration types.
 //! A title is a piece of [`Block`](crate::widgets::Block) configuration.
-
+#![allow(deprecated)]
 use strum::{Display, EnumString};
 
 use crate::{layout::Alignment, text::Line};
@@ -47,6 +47,7 @@ use crate::{layout::Alignment, text::Line};
 ///     .alignment(Alignment::Right);
 /// ```
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[deprecated = "Title and Line can be used interchangeably, this struct is unnecessary. For specifying title position, use title_top, title_bottom and title_at_position functions."]
 pub struct Title<'a> {
     /// Title content
     pub content: Line<'a>,

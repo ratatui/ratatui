@@ -254,6 +254,7 @@ mod tests {
     #[test]
     fn it_does_not_panic_if_max_is_set_to_zero() {
         // see https://github.com/rust-lang/rust-clippy/issues/13191
+        #[allow(unknown_lints)]
         #[allow(clippy::unnecessary_min_or_max)]
         let widget = Sparkline::default().data(&[0, 1, 2]).max(0);
         let buffer = render(widget, 6);

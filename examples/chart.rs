@@ -21,8 +21,8 @@ use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     symbols::{self, Marker},
-    text::Span,
-    widgets::{block::Title, Axis, Block, Chart, Dataset, GraphType, LegendPosition},
+    text::{Line, Span},
+    widgets::{Axis, Block, Chart, Dataset, GraphType, LegendPosition},
     DefaultTerminal, Frame,
 };
 
@@ -197,11 +197,8 @@ fn render_barchart(frame: &mut Frame, bar_chart: Rect) {
 
     let chart = Chart::new(vec![dataset])
         .block(
-            Block::bordered().title(
-                Title::default()
-                    .content("Bar chart".cyan().bold())
-                    .alignment(Alignment::Center),
-            ),
+            Block::bordered()
+                .title(Line::from("Bar chart".cyan().bold()).alignment(Alignment::Center)),
         )
         .x_axis(
             Axis::default()
@@ -230,11 +227,8 @@ fn render_line_chart(frame: &mut Frame, area: Rect) {
 
     let chart = Chart::new(datasets)
         .block(
-            Block::bordered().title(
-                Title::default()
-                    .content("Line chart".cyan().bold())
-                    .alignment(Alignment::Center),
-            ),
+            Block::bordered()
+                .title(Line::from("Line chart".cyan().bold()).alignment(Alignment::Center)),
         )
         .x_axis(
             Axis::default()
@@ -280,11 +274,8 @@ fn render_scatter(frame: &mut Frame, area: Rect) {
 
     let chart = Chart::new(datasets)
         .block(
-            Block::bordered().title(
-                Title::default()
-                    .content("Scatter chart".cyan().bold())
-                    .alignment(Alignment::Center),
-            ),
+            Block::bordered()
+                .title(Line::from("Scatter chart".cyan().bold()).alignment(Alignment::Center)),
         )
         .x_axis(
             Axis::default()
