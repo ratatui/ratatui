@@ -19,10 +19,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Style, Stylize},
     text::Line,
-    widgets::{
-        block::{Position, Title},
-        Block, BorderType, Borders, Padding, Paragraph, Wrap,
-    },
+    widgets::{Block, BorderType, Borders, Padding, Paragraph, Wrap},
     DefaultTerminal, Frame,
 };
 
@@ -164,36 +161,12 @@ fn render_multiple_titles(paragraph: &Paragraph, frame: &mut Frame, area: Rect) 
 
 fn render_multiple_title_positions(paragraph: &Paragraph, frame: &mut Frame, area: Rect) {
     let block = Block::bordered()
-        .title(
-            Title::from("top left")
-                .position(Position::Top)
-                .alignment(Alignment::Left),
-        )
-        .title(
-            Title::from("top center")
-                .position(Position::Top)
-                .alignment(Alignment::Center),
-        )
-        .title(
-            Title::from("top right")
-                .position(Position::Top)
-                .alignment(Alignment::Right),
-        )
-        .title(
-            Title::from("bottom left")
-                .position(Position::Bottom)
-                .alignment(Alignment::Left),
-        )
-        .title(
-            Title::from("bottom center")
-                .position(Position::Bottom)
-                .alignment(Alignment::Center),
-        )
-        .title(
-            Title::from("bottom right")
-                .position(Position::Bottom)
-                .alignment(Alignment::Right),
-        );
+        .title(Line::from("top left").left_aligned())
+        .title(Line::from("top center").centered())
+        .title(Line::from("top right").right_aligned())
+        .title_bottom(Line::from("bottom left").left_aligned())
+        .title_bottom(Line::from("bottom center").centered())
+        .title_bottom(Line::from("bottom right").right_aligned());
     frame.render_widget(paragraph.clone().block(block), area);
 }
 

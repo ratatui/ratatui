@@ -3,11 +3,8 @@ use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Rect},
     style::{Color, Style},
-    text::Span,
-    widgets::{
-        block::title::{Position, Title},
-        Block, Borders,
-    },
+    text::{Line, Span},
+    widgets::{Block, Borders},
     Terminal,
 };
 use rstest::rstest;
@@ -58,9 +55,9 @@ fn widgets_block_titles_overlap() {
     // Left overrides the center
     test_case(
         Block::new()
-            .title(Title::from("aaaaa").alignment(Alignment::Left))
-            .title(Title::from("bbb").alignment(Alignment::Center))
-            .title(Title::from("ccc").alignment(Alignment::Right)),
+            .title(Line::from("aaaaa").left_aligned())
+            .title(Line::from("bbb").centered())
+            .title(Line::from("ccc").right_aligned()),
         Rect::new(0, 0, 10, 1),
         ["aaaaab ccc"],
     );
@@ -68,9 +65,9 @@ fn widgets_block_titles_overlap() {
     // Left alignment overrides the center alignment which overrides the right alignment
     test_case(
         Block::new()
-            .title(Title::from("aaaaa").alignment(Alignment::Left))
-            .title(Title::from("bbbbb").alignment(Alignment::Center))
-            .title(Title::from("ccccc").alignment(Alignment::Right)),
+            .title(Line::from("aaaaa").left_aligned())
+            .title(Line::from("bbbbb").centered())
+            .title(Line::from("ccccc").right_aligned()),
         Rect::new(0, 0, 11, 1),
         ["aaaaabbbccc"],
     );
@@ -78,10 +75,10 @@ fn widgets_block_titles_overlap() {
     // Multiple left alignment overrides the center alignment and the right alignment
     test_case(
         Block::new()
-            .title(Title::from("aaaaa").alignment(Alignment::Left))
-            .title(Title::from("aaaaa").alignment(Alignment::Left))
-            .title(Title::from("bbbbb").alignment(Alignment::Center))
-            .title(Title::from("ccccc").alignment(Alignment::Right)),
+            .title(Line::from("aaaaa").left_aligned())
+            .title(Line::from("aaaaa").left_aligned())
+            .title(Line::from("bbbbb").centered())
+            .title(Line::from("ccccc").right_aligned()),
         Rect::new(0, 0, 11, 1),
         ["aaaaabaaaaa"],
     );
@@ -89,8 +86,8 @@ fn widgets_block_titles_overlap() {
     // The right alignment doesn't override the center alignment, but pierces through it
     test_case(
         Block::new()
-            .title(Title::from("bbbbb").alignment(Alignment::Center))
-            .title(Title::from("ccccccccccc").alignment(Alignment::Right)),
+            .title(Line::from("bbbbb").centered())
+            .title(Line::from("ccccccccccc").right_aligned()),
         Rect::new(0, 0, 11, 1),
         ["cccbbbbbccc"],
     );
@@ -275,7 +272,7 @@ fn widgets_block_title_alignment_top<'line, Lines>(
 
     let block1 = Block::new()
         .borders(borders)
-        .title(Title::from(Span::raw("Title")).alignment(alignment));
+        .title(Line::from("Title").alignment(alignment));
 
     let block2 = Block::new()
         .borders(borders)
@@ -379,10 +376,8 @@ fn widgets_block_title_alignment_bottom<'line, Lines>(
     let backend = TestBackend::new(15, 3);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    let title = Title::from(Span::styled("Title", Style::default()))
-        .alignment(alignment)
-        .position(Position::Bottom);
-    let block = Block::default().title(title).borders(borders);
+    let title = Line::from("Title").alignment(alignment);
+    let block = Block::default().title_bottom(title).borders(borders);
     let area = Rect::new(1, 0, 13, 3);
     terminal
         .draw(|frame| frame.render_widget(block, area))
@@ -391,84 +386,84 @@ fn widgets_block_title_alignment_bottom<'line, Lines>(
 }
 
 #[rstest]
-#[case::left_with_all_borders(Title::from("foo"), Title::from("bar"), Borders::ALL, [
+#[case::left_with_all_borders(Line::from("foo"), Line::from("bar"), Borders::ALL, [
     " ┌foo─bar────┐ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
-#[case::left_without_top_border(Title::from("foo"), Title::from("bar"), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+#[case::left_without_top_border(Line::from("foo"), Line::from("bar"), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
     " │foo bar    │ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
-#[case::left_without_left_border(Title::from("foo"), Title::from("bar"), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+#[case::left_without_left_border(Line::from("foo"), Line::from("bar"), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
     " foo─bar─────┐ ",
     "             │ ",
     " ────────────┘ ",
 ])]
-#[case::left_without_right_border(Title::from("foo"), Title::from("bar"), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+#[case::left_without_right_border(Line::from("foo"), Line::from("bar"), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
     " ┌foo─bar───── ",
     " │             ",
     " └──────────── ",
 ])]
-#[case::left_without_borders(Title::from("foo"), Title::from("bar"), Borders::NONE, [
+#[case::left_without_borders(Line::from("foo"), Line::from("bar"), Borders::NONE, [
     " foo bar       ",
     "               ",
     "               ",
 ])]
-#[case::center_with_borders(Title::from("foo").alignment(Alignment::Center), Title::from("bar").alignment(Alignment::Center), Borders::ALL, [
+#[case::center_with_borders(Line::from("foo").centered(), Line::from("bar").centered(), Borders::ALL, [
     " ┌──foo─bar──┐ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
-#[case::center_without_top_border(Title::from("foo").alignment(Alignment::Center), Title::from("bar").alignment(Alignment::Center), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+#[case::center_without_top_border(Line::from("foo").centered(), Line::from("bar").centered(), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
     " │  foo bar  │ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
-#[case::center_without_left_border(Title::from("foo").alignment(Alignment::Center), Title::from("bar").alignment(Alignment::Center), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+#[case::center_without_left_border(Line::from("foo").centered(), Line::from("bar").centered(), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
     " ──foo─bar───┐ ",
     "             │ ",
     " ────────────┘ ",
 ])]
-#[case::center_without_right_border(Title::from("foo").alignment(Alignment::Center), Title::from("bar").alignment(Alignment::Center), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+#[case::center_without_right_border(Line::from("foo").centered(), Line::from("bar").centered(), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
     " ┌──foo─bar─── ",
     " │             ",
     " └──────────── ",
 ])]
-#[case::center_without_borders(Title::from("foo").alignment(Alignment::Center), Title::from("bar").alignment(Alignment::Center), Borders::NONE, [
+#[case::center_without_borders(Line::from("foo").centered(), Line::from("bar").centered(), Borders::NONE, [
     "    foo bar    ",
     "               ",
     "               ",
 ])]
-#[case::right_with_all_borders(Title::from("foo").alignment(Alignment::Right), Title::from("bar").alignment(Alignment::Right), Borders::ALL, [
+#[case::right_with_all_borders(Line::from("foo").right_aligned(), Line::from("bar").right_aligned(), Borders::ALL, [
     " ┌────foo─bar┐ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
-#[case::right_without_top_border(Title::from("foo").alignment(Alignment::Right), Title::from("bar").alignment(Alignment::Right), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
+#[case::right_without_top_border(Line::from("foo").right_aligned(), Line::from("bar").right_aligned(), Borders::LEFT | Borders::BOTTOM | Borders::RIGHT, [
     " │    foo bar│ ",
     " │           │ ",
     " └───────────┘ ",
 ])]
-#[case::right_without_left_border(Title::from("foo").alignment(Alignment::Right), Title::from("bar").alignment(Alignment::Right), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
+#[case::right_without_left_border(Line::from("foo").right_aligned(), Line::from("bar").right_aligned(), Borders::TOP | Borders::RIGHT | Borders::BOTTOM, [
     " ─────foo─bar┐ ",
     "             │ ",
     " ────────────┘ ",
 ])]
-#[case::right_without_right_border(Title::from("foo").alignment(Alignment::Right), Title::from("bar").alignment(Alignment::Right), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
+#[case::right_without_right_border(Line::from("foo").right_aligned(), Line::from("bar").right_aligned(), Borders::LEFT | Borders::TOP | Borders::BOTTOM, [
     " ┌─────foo─bar ",
     " │             ",
     " └──────────── ",
 ])]
-#[case::right_without_borders(Title::from("foo").alignment(Alignment::Right), Title::from("bar").alignment(Alignment::Right), Borders::NONE, [
+#[case::right_without_borders(Line::from("foo").right_aligned(), Line::from("bar").right_aligned(), Borders::NONE, [
     "       foo bar ",
     "               ",
     "               ",
 ])]
 fn widgets_block_multiple_titles<'line, Lines>(
-    #[case] title_a: Title,
-    #[case] title_b: Title,
+    #[case] title_a: Line,
+    #[case] title_b: Line,
     #[case] borders: Borders,
     #[case] expected: Lines,
 ) where

@@ -18,11 +18,11 @@ use std::time::{Duration, Instant};
 use color_eyre::Result;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode},
-    layout::{Alignment, Constraint, Layout, Rect},
+    layout::{Constraint, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     symbols::{self, Marker},
-    text::Span,
-    widgets::{block::Title, Axis, Block, Chart, Dataset, GraphType, LegendPosition},
+    text::{Line, Span},
+    widgets::{Axis, Block, Chart, Dataset, GraphType, LegendPosition},
     DefaultTerminal, Frame,
 };
 
@@ -196,13 +196,7 @@ fn render_barchart(frame: &mut Frame, bar_chart: Rect) {
         ]);
 
     let chart = Chart::new(vec![dataset])
-        .block(
-            Block::bordered().title(
-                Title::default()
-                    .content("Bar chart".cyan().bold())
-                    .alignment(Alignment::Center),
-            ),
-        )
+        .block(Block::bordered().title_top(Line::from("Bar chart").cyan().bold().centered()))
         .x_axis(
             Axis::default()
                 .style(Style::default().gray())
@@ -229,13 +223,7 @@ fn render_line_chart(frame: &mut Frame, area: Rect) {
         .data(&[(1., 1.), (4., 4.)])];
 
     let chart = Chart::new(datasets)
-        .block(
-            Block::bordered().title(
-                Title::default()
-                    .content("Line chart".cyan().bold())
-                    .alignment(Alignment::Center),
-            ),
-        )
+        .block(Block::bordered().title(Line::from("Line chart").cyan().bold().centered()))
         .x_axis(
             Axis::default()
                 .title("X Axis")
@@ -279,13 +267,7 @@ fn render_scatter(frame: &mut Frame, area: Rect) {
     ];
 
     let chart = Chart::new(datasets)
-        .block(
-            Block::bordered().title(
-                Title::default()
-                    .content("Scatter chart".cyan().bold())
-                    .alignment(Alignment::Center),
-            ),
-        )
+        .block(Block::bordered().title(Line::from("Scatter chart").cyan().bold().centered()))
         .x_axis(
             Axis::default()
                 .title("Year")

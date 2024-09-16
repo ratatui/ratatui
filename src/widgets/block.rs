@@ -243,9 +243,9 @@ impl<'a> Block<'a> {
     /// [spans](crate::text::Span) (`Vec<Span>`).
     ///
     /// By default, the titles will avoid being rendered in the corners of the block but will align
-    /// against the left or right edge of the block if there is no border on that edge.
-    /// The following demonstrates this behavior, notice the second title is one character off to
-    /// the left.
+    /// against the left or right edge of the block if there is no border on that edge. The
+    /// following demonstrates this behavior, notice the second title is one character off to the
+    /// left.
     ///
     /// ```plain
     /// ┌With at least a left border───
@@ -274,9 +274,9 @@ impl<'a> Block<'a> {
     ///
     /// Block::new()
     ///     .title("Title") // By default in the top left corner
-    ///     .title(Title::from("Left").alignment(Alignment::Left)) // also on the left
-    ///     .title(Title::from("Right").alignment(Alignment::Right))
-    ///     .title(Title::from("Center").alignment(Alignment::Center));
+    ///     .title(Line::from("Left").left_aligned()) // also on the left
+    ///     .title(Line::from("Right").right_aligned())
+    ///     .title(Line::from("Center").centered());
     /// // Renders
     /// // ┌Title─Left────Center─────────Right┐
     /// ```
@@ -287,6 +287,13 @@ impl<'a> Block<'a> {
     /// - [`Block::title_style`]
     /// - [`Block::title_alignment`]
     /// - [`Block::title_position`]
+    ///
+    /// # Future improvements
+    ///
+    /// In a future release of Ratatui (likely 0.31) this method will be changed to accept
+    /// `Into<Line>` instead of `Into<Title>`. This allows us to remove the unnecessary `Title`
+    /// struct and store the position in the block itself. For more information see
+    /// <https://github.com/ratatui/ratatui/issues/738>.
     ///
     /// [Block example]: https://github.com/ratatui/ratatui/blob/main/examples/README.md#block
     #[must_use = "method moves the value of self and returns the modified value"]
@@ -393,7 +400,7 @@ impl<'a> Block<'a> {
     /// Block::new()
     ///     .title_alignment(Alignment::Center)
     ///     // This title won't be aligned in the center
-    ///     .title(Title::from("right").alignment(Alignment::Right))
+    ///     .title(Line::from("right").right_aligned())
     ///     .title("foo")
     ///     .title("bar");
     /// ```
@@ -423,7 +430,7 @@ impl<'a> Block<'a> {
     /// Block::new()
     ///     .title_position(Position::Bottom)
     ///     // This title won't be aligned in the center
-    ///     .title(Title::from("top").position(Position::Top))
+    ///     .title_top("top")
     ///     .title("foo")
     ///     .title("bar");
     /// ```
@@ -648,7 +655,7 @@ impl<'a> Block<'a> {
     fn has_title_at_position(&self, position: Position) -> bool {
         self.titles
             .iter()
-            .any(|(pos, _)| pos.unwrap_or(self.titles_position.into()) == position)
+            .any(|(pos, _)| pos.unwrap_or(self.titles_position) == position)
     }
 }
 
@@ -894,7 +901,7 @@ impl Block<'_> {
     ) -> impl DoubleEndedIterator<Item = &Line> {
         self.titles
             .iter()
-            .filter(move |(pos, _)| pos.unwrap_or(self.titles_position.into()) == position.into())
+            .filter(move |(pos, _)| pos.unwrap_or(self.titles_position) == position)
             .filter(move |(_, line)| line.alignment.unwrap_or(self.titles_alignment) == alignment)
             .map(|(_, line)| line)
     }
@@ -1030,24 +1037,17 @@ mod tests {
         let area = Rect::new(0, 0, 0, 1);
         let expected = Rect::new(0, 1, 0, 0);
 
-        let block = Block::new().title(Title::from("Test").alignment(alignment));
+        let block = Block::new().title(Line::from("Test").alignment(alignment));
         assert_eq!(block.inner(area), expected);
     }
 
     #[rstest]
-    #[case::top_top(Borders::TOP, Position::Top, Rect::new(0, 1, 0, 1))]
-    #[case::top_bot(Borders::BOTTOM, Position::Top, Rect::new(0, 1, 0, 0))]
-    #[case::bot_top(Borders::TOP, Position::Bottom, Rect::new(0, 1, 0, 0))]
-    #[case::top_top(Borders::BOTTOM, Position::Bottom, Rect::new(0, 0, 0, 1))]
-    fn inner_takes_into_account_border_and_title(
-        #[case] borders: Borders,
-        #[case] position: Position,
-        #[case] expected: Rect,
-    ) {
+    #[case::top_top(Block::new().title_top("Test").borders(Borders::TOP), Rect::new(0, 1, 0, 1))]
+    #[case::top_bot(Block::new().title_top("Test").borders(Borders::BOTTOM), Rect::new(0, 1, 0, 0))]
+    #[case::bot_top(Block::new().title_bottom("Test").borders(Borders::TOP), Rect::new(0, 1, 0, 0))]
+    #[case::bot_bot(Block::new().title_bottom("Test").borders(Borders::BOTTOM), Rect::new(0, 0, 0, 1))]
+    fn inner_takes_into_account_border_and_title(#[case] block: Block, #[case] expected: Rect) {
         let area = Rect::new(0, 0, 0, 2);
-        let block = Block::new()
-            .borders(borders)
-            .title(Title::from("Test").position(position));
         assert_eq!(block.inner(area), expected);
     }
 
@@ -1057,32 +1057,33 @@ mod tests {
         assert!(!block.has_title_at_position(Position::Top));
         assert!(!block.has_title_at_position(Position::Bottom));
 
-        let block = Block::new().title(Title::from("Test").position(Position::Top));
+        let block = Block::new().title_top("test");
         assert!(block.has_title_at_position(Position::Top));
         assert!(!block.has_title_at_position(Position::Bottom));
 
-        let block = Block::new().title(Title::from("Test").position(Position::Bottom));
+        let block = Block::new().title_bottom("test");
         assert!(!block.has_title_at_position(Position::Top));
         assert!(block.has_title_at_position(Position::Bottom));
 
+        #[allow(deprecated)] // until Title is removed
         let block = Block::new()
             .title(Title::from("Test").position(Position::Top))
             .title_position(Position::Bottom);
         assert!(block.has_title_at_position(Position::Top));
         assert!(!block.has_title_at_position(Position::Bottom));
 
+        #[allow(deprecated)] // until Title is removed
         let block = Block::new()
             .title(Title::from("Test").position(Position::Bottom))
             .title_position(Position::Top);
         assert!(!block.has_title_at_position(Position::Top));
         assert!(block.has_title_at_position(Position::Bottom));
 
-        let block = Block::new()
-            .title(Title::from("Test").position(Position::Top))
-            .title(Title::from("Test").position(Position::Bottom));
+        let block = Block::new().title_top("test").title_bottom("test");
         assert!(block.has_title_at_position(Position::Top));
         assert!(block.has_title_at_position(Position::Bottom));
 
+        #[allow(deprecated)] // until Title is removed
         let block = Block::new()
             .title(Title::from("Test").position(Position::Top))
             .title(Title::from("Test"))
@@ -1090,6 +1091,7 @@ mod tests {
         assert!(block.has_title_at_position(Position::Top));
         assert!(block.has_title_at_position(Position::Bottom));
 
+        #[allow(deprecated)] // until Title is removed
         let block = Block::new()
             .title(Title::from("Test"))
             .title(Title::from("Test").position(Position::Bottom))
@@ -1137,16 +1139,10 @@ mod tests {
 
     #[test]
     fn vertical_space_takes_into_account_titles() {
-        let block = Block::new()
-            .title_position(Position::Top)
-            .title(Title::from("Test"));
-
+        let block = Block::new().title_top("Test");
         assert_eq!(block.vertical_space(), (1, 0));
 
-        let block = Block::new()
-            .title_position(Position::Bottom)
-            .title(Title::from("Test"));
-
+        let block = Block::new().title_bottom("Test");
         assert_eq!(block.vertical_space(), (0, 1));
     }
 
@@ -1165,10 +1161,7 @@ mod tests {
         #[case] pos: Position,
         #[case] vertical_space: (u16, u16),
     ) {
-        let block = block
-            .borders(borders)
-            .title_position(pos)
-            .title(Title::from("Test"));
+        let block = block.borders(borders).title_position(pos).title("Test");
         assert_eq!(block.vertical_space(), vertical_space);
     }
 
@@ -1317,6 +1310,7 @@ mod tests {
         use Alignment::*;
         use Position::*;
         let mut buffer = Buffer::empty(Rect::new(0, 0, 11, 3));
+        #[allow(deprecated)] // until Title is removed
         Block::bordered()
             .title(Title::from("A").position(Top).alignment(Left))
             .title(Title::from("B").position(Top).alignment(Center))
@@ -1382,7 +1376,7 @@ mod tests {
             let mut buffer = Buffer::empty(Rect::new(0, 0, 8, 1));
             Block::new()
                 .title_alignment(block_title_alignment)
-                .title(Title::from("test").alignment(alignment))
+                .title(Line::from("test").alignment(alignment))
                 .render(buffer.area, &mut buffer);
             assert_eq!(buffer, Buffer::with_lines([expected]));
         }
