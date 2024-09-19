@@ -177,7 +177,9 @@ impl<DS: DateStyler> Monthly<'_, DS> {
                 spans.push(self.format_date(curr_day));
                 curr_day += Duration::DAY;
             }
-            buf.set_line(days_area.x, y, &spans.into(), area.width);
+            if buf.area.height > y {
+                buf.set_line(days_area.x, y, &spans.into(), area.width);
+            }
             y += 1;
         }
     }
