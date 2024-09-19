@@ -10,11 +10,15 @@
 //! [`Monthly`] has several controls for what should be displayed
 use std::collections::HashMap;
 
+#[cfg(feature = "widget-calendar-chrono")]
+use chrono::{Datelike, Days, Duration, Local, NaiveDate};
+#[cfg(feature = "widget-calendar")]
 use time::{Date, Duration, OffsetDateTime};
 
 use crate::{prelude::*, widgets::Block};
 
 /// Display a month calendar for the month containing `display_date`
+#[cfg(feature = "widget-calendar")]
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Monthly<'a, DS: DateStyler> {
     display_date: Date,
@@ -26,9 +30,37 @@ pub struct Monthly<'a, DS: DateStyler> {
     block: Option<Block<'a>>,
 }
 
+/// Display a month calendar for the month containing `display_date`
+#[cfg(feature = "widget-calendar-chrono")]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct Monthly<'a, DS: DateStyler> {
+    display_date: NaiveDate,
+    events: DS,
+    show_surrounding: Option<Style>,
+    show_weekday: Option<Style>,
+    show_month: Option<Style>,
+    default_style: Style,
+    block: Option<Block<'a>>,
+}
+
 impl<'a, DS: DateStyler> Monthly<'a, DS> {
     /// Construct a calendar for the `display_date` and highlight the `events`
+    #[cfg(feature = "widget-calendar")]
     pub const fn new(display_date: Date, events: DS) -> Self {
+        Self {
+            display_date,
+            events,
+            show_surrounding: None,
+            show_weekday: None,
+            show_month: None,
+            default_style: Style::new(),
+            block: None,
+        }
+    }
+
+    /// Construct a calendar for the `display_date` and highlight the `events`
+    #[cfg(feature = "widget-calendar-chrono")]
+    pub const fn new(display_date: NaiveDate, events: DS) -> Self {
         Self {
             display_date,
             events,
@@ -98,7 +130,30 @@ impl<'a, DS: DateStyler> Monthly<'a, DS> {
     }
 
     /// All logic to style a date goes here.
+    #[cfg(feature = "widget-calendar")]
     fn format_date(&self, date: Date) -> Span {
+        if date.month() == self.display_date.month() {
+            Span::styled(
+                format!("{:2?}", date.day()),
+                self.default_style.patch(self.events.get_style(date)),
+            )
+        } else {
+            match self.show_surrounding {
+                None => Span::styled("  ", self.default_bg()),
+                Some(s) => {
+                    let style = self
+                        .default_style
+                        .patch(s)
+                        .patch(self.events.get_style(date));
+                    Span::styled(format!("{:2?}", date.day()), style)
+                }
+            }
+        }
+    }
+
+    /// All logic to style a date goes here.
+    #[cfg(feature = "widget-calendar-chrono")]
+    fn format_date(&self, date: NaiveDate) -> Span {
         if date.month() == self.display_date.month() {
             Span::styled(
                 format!("{:2?}", date.day()),
@@ -134,6 +189,7 @@ impl<DS: DateStyler> WidgetRef for Monthly<'_, DS> {
 }
 
 impl<DS: DateStyler> Monthly<'_, DS> {
+    #[cfg(feature = "widget-calendar")]
     fn render_monthly(&self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::vertical([
             Constraint::Length(self.show_month.is_some().into()),
@@ -181,24 +237,86 @@ impl<DS: DateStyler> Monthly<'_, DS> {
             y += 1;
         }
     }
+    #[cfg(feature = "widget-calendar-chrono")]
+    fn render_monthly(&self, area: Rect, buf: &mut Buffer) {
+        let layout = Layout::vertical([
+            Constraint::Length(self.show_month.is_some().into()),
+            Constraint::Length(self.show_weekday.is_some().into()),
+            Constraint::Fill(1),
+        ]);
+        let [month_header, days_header, days_area] = layout.areas(area);
+
+        // Draw the month name and year
+        if let Some(style) = self.show_month {
+            Line::styled(
+                format!("{} {}", self.display_date.month(), self.display_date.year()),
+                style,
+            )
+            .alignment(Alignment::Center)
+            .render(month_header, buf);
+        }
+
+        // Draw days of week
+        if let Some(style) = self.show_weekday {
+            Span::styled(" Su Mo Tu We Th Fr Sa", style).render(days_header, buf);
+        }
+
+        // Set the start of the calendar to the Sunday before the 1st (or the sunday of the first)
+        let first_of_month =
+            NaiveDate::from_ymd_opt(self.display_date.year(), self.display_date.month(), 1)
+                .unwrap();
+        let offset = Duration::days(first_of_month.weekday().num_days_from_sunday().into());
+        let mut curr_day = first_of_month - offset;
+
+        let mut y = days_area.y;
+        // go through all the weeks containing a day in the target month.
+        while curr_day.month() != self.display_date.month() + 1 {
+            let mut spans = Vec::with_capacity(14);
+            for i in 0..7 {
+                // Draw the gutter. Do it here so we can avoid worrying about
+                // styling the ' ' in the format_date method
+                if i == 0 {
+                    spans.push(Span::styled(" ", Style::default()));
+                } else {
+                    spans.push(Span::styled(" ", self.default_bg()));
+                }
+                spans.push(self.format_date(curr_day));
+                curr_day = curr_day.checked_add_days(Days::new(1)).unwrap();
+            }
+            buf.set_line(days_area.x, y, &spans.into(), area.width);
+            y += 1;
+        }
+    }
 }
 
 /// Provides a method for styling a given date. [Monthly] is generic on this trait, so any type
 /// that implements this trait can be used.
 pub trait DateStyler {
     /// Given a date, return a style for that date
+    #[cfg(feature = "widget-calendar")]
     fn get_style(&self, date: Date) -> Style;
+
+    /// Given a date, return a style for that date
+    #[cfg(feature = "widget-calendar-chrono")]
+    fn get_style(&self, date: NaiveDate) -> Style;
 }
 
 /// A simple `DateStyler` based on a [`HashMap`]
+#[cfg(feature = "widget-calendar")]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CalendarEventStore(pub HashMap<Date, Style>);
+
+/// A simple `DateStyler` based on a [`HashMap`]
+#[cfg(feature = "widget-calendar-chrono")]
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct CalendarEventStore(pub HashMap<NaiveDate, Style>);
 
 impl CalendarEventStore {
     /// Construct a store that has the current date styled.
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    #[cfg(feature = "widget-calendar")]
     pub fn today<S: Into<Style>>(style: S) -> Self {
         let mut res = Self::default();
         res.add(
@@ -210,29 +328,70 @@ impl CalendarEventStore {
         res
     }
 
+    /// Construct a store that has the current date styled.
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    #[cfg(feature = "widget-calendar-chrono")]
+    pub fn today<S: Into<Style>>(style: S) -> Self {
+        let mut res = Self::default();
+        res.add(Local::now().date_naive(), style.into());
+        res
+    }
+
     /// Add a date and style to the store
     ///
     /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
     /// your own type that implements [`Into<Style>`]).
+    #[cfg(feature = "widget-calendar")]
     pub fn add<S: Into<Style>>(&mut self, date: Date, style: S) {
         // to simplify style nonsense, last write wins
         let _ = self.0.insert(date, style.into());
     }
 
+    /// Add a date and style to the store
+    ///
+    /// `style` accepts any type that is convertible to [`Style`] (e.g. [`Style`], [`Color`], or
+    /// your own type that implements [`Into<Style>`]).
+    #[cfg(feature = "widget-calendar-chrono")]
+    pub fn add<S: Into<Style>>(&mut self, date: NaiveDate, style: S) {
+        // to simplify style nonsense, last write wins
+        let _ = self.0.insert(date, style.into());
+    }
+
     /// Helper for trait impls
+    #[cfg(feature = "widget-calendar")]
     fn lookup_style(&self, date: Date) -> Style {
+        self.0.get(&date).copied().unwrap_or_default()
+    }
+
+    /// Helper for trait impls
+    #[cfg(feature = "widget-calendar-chrono")]
+    fn lookup_style(&self, date: NaiveDate) -> Style {
         self.0.get(&date).copied().unwrap_or_default()
     }
 }
 
 impl DateStyler for CalendarEventStore {
+    #[cfg(feature = "widget-calendar")]
     fn get_style(&self, date: Date) -> Style {
+        self.lookup_style(date)
+    }
+
+    #[cfg(feature = "widget-calendar-chrono")]
+    fn get_style(&self, date: NaiveDate) -> Style {
         self.lookup_style(date)
     }
 }
 
 impl DateStyler for &CalendarEventStore {
+    #[cfg(feature = "widget-calendar")]
     fn get_style(&self, date: Date) -> Style {
+        self.lookup_style(date)
+    }
+
+    #[cfg(feature = "widget-calendar-chrono")]
+    fn get_style(&self, date: NaiveDate) -> Style {
         self.lookup_style(date)
     }
 }
@@ -245,11 +404,13 @@ impl Default for CalendarEventStore {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "widget-calendar")]
     use time::Month;
 
     use super::*;
 
     #[test]
+    #[cfg(feature = "widget-calendar")]
     fn event_store() {
         let a = (
             Date::from_calendar_date(2023, Month::January, 1).unwrap(),
@@ -257,6 +418,32 @@ mod tests {
         );
         let b = (
             Date::from_calendar_date(2023, Month::January, 2).unwrap(),
+            Style::default().bg(Color::Red).fg(Color::Blue),
+        );
+        let mut s = CalendarEventStore::default();
+        s.add(b.0, b.1);
+
+        assert_eq!(
+            s.get_style(a.0),
+            a.1,
+            "Date not added to the styler should look up as Style::default()"
+        );
+        assert_eq!(
+            s.get_style(b.0),
+            b.1,
+            "Date added to styler should return the provided style"
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "widget-calendar-chrono")]
+    fn event_store() {
+        let a = (
+            NaiveDate::from_ymd_opt(2023, 1, 1).unwrap(),
+            Style::default(),
+        );
+        let b = (
+            NaiveDate::from_ymd_opt(2023, 1, 2).unwrap(),
             Style::default().bg(Color::Red).fg(Color::Blue),
         );
         let mut s = CalendarEventStore::default();

@@ -39,6 +39,7 @@ time = { version = "0.3.11", optional = true, features = ["local-offset"] }
 unicode-segmentation = "1.10"
 unicode-truncate = "1"
 unicode-width = "0.1.13"
+chrono = { version = "0.4.38", optional = true }
 
 [target.'cfg(not(windows))'.dependencies]
 # termion is not supported on Windows
@@ -145,6 +146,11 @@ all-widgets = ["widget-calendar"]
 ## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`time`].
 widget-calendar = ["dep:time"]
 
+#! Widgets that add dependencies are gated behind feature flags to prevent unused transitive
+#! dependencies. The available features are:
+## enables the [`calendar`](widgets::calendar) widget module and adds a dependency on [`chrono`].
+widget-calendar-chrono = ["dep:chrono"]
+
 #! The following optional features are only available for some backends:
 
 ## enables the backend code that sets the underline color.
@@ -215,6 +221,11 @@ doc-scrape-examples = true
 [[example]]
 name = "calendar"
 required-features = ["crossterm", "widget-calendar"]
+doc-scrape-examples = true
+
+[[example]]
+name = "calendar_chrono"
+required-features = ["crossterm", "widget-calendar-chrono"]
 doc-scrape-examples = true
 
 [[example]]
