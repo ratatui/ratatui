@@ -4,9 +4,11 @@
 //! [Crossterm]: https://crates.io/crates/crossterm
 use std::io::{self, Write};
 
+use crossterm::cursor;
 #[cfg(feature = "underline-color")]
 use crossterm::style::SetUnderlineColor;
 
+use super::METRICS;
 use crate::{
     backend::{Backend, ClearType, WindowSize},
     buffer::Cell,
@@ -20,6 +22,7 @@ use crate::{
         terminal::{self, Clear},
     },
     layout::{Position, Size},
+    metrics::HistogramExt,
     style::{Color, Modifier, Style},
 };
 
@@ -154,6 +157,9 @@ where
     where
         I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
+        METRICS.draw_count.increment(1);
+        let _timing = METRICS.draw_duration.start_timing();
+
         let mut fg = Color::Reset;
         let mut bg = Color::Reset;
         #[cfg(feature = "underline-color")]
@@ -210,20 +216,24 @@ where
     }
 
     fn hide_cursor(&mut self) -> io::Result<()> {
+        let _timing = METRICS.hide_cursor_duration.start_timing();
         execute!(self.writer, Hide)
     }
 
     fn show_cursor(&mut self) -> io::Result<()> {
+        let _timing = METRICS.show_cursor_duration.start_timing();
         execute!(self.writer, Show)
     }
 
     fn get_cursor_position(&mut self) -> io::Result<Position> {
-        crossterm::cursor::position()
+        let _timing = METRICS.get_cursor_position_duration.start_timing();
+        cursor::position()
             .map(|(x, y)| Position { x, y })
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))
     }
 
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {
+        let _timing = METRICS.set_cursor_position_duration.start_timing();
         let Position { x, y } = position.into();
         execute!(self.writer, MoveTo(x, y))
     }
@@ -233,6 +243,8 @@ where
     }
 
     fn clear_region(&mut self, clear_type: ClearType) -> io::Result<()> {
+        METRICS.clear_region_count.increment(1);
+        let _timing = METRICS.clear_region_duration.start_timing();
         execute!(
             self.writer,
             Clear(match clear_type {
@@ -246,6 +258,8 @@ where
     }
 
     fn append_lines(&mut self, n: u16) -> io::Result<()> {
+        METRICS.append_lines_count.increment(1);
+        let _timing = METRICS.append_lines_duration.start_timing();
         for _ in 0..n {
             queue!(self.writer, Print("\n"))?;
         }
@@ -253,28 +267,34 @@ where
     }
 
     fn size(&self) -> io::Result<Size> {
-        let (width, height) = terminal::size()?;
-        Ok(Size { width, height })
+        let _timing = METRICS.size_duration.start_timing();
+        terminal::size().map(Size::from)
     }
 
     fn window_size(&mut self) -> io::Result<WindowSize> {
-        let crossterm::terminal::WindowSize {
-            columns,
-            rows,
-            width,
-            height,
-        } = terminal::window_size()?;
-        Ok(WindowSize {
-            columns_rows: Size {
-                width: columns,
-                height: rows,
-            },
-            pixels: Size { width, height },
-        })
+        let _timing = METRICS.window_size_duration.start_timing();
+        terminal::window_size().map(WindowSize::from)
     }
 
     fn flush(&mut self) -> io::Result<()> {
+        METRICS.flush_count.increment(1);
+        let _timing = METRICS.flush_duration.start_timing();
         self.writer.flush()
+    }
+}
+
+impl From<crossterm::terminal::WindowSize> for WindowSize {
+    fn from(value: crossterm::terminal::WindowSize) -> Self {
+        Self {
+            columns_rows: Size {
+                width: value.columns,
+                height: value.rows,
+            },
+            pixels: Size {
+                width: value.width,
+                height: value.height,
+            },
+        }
     }
 }
 

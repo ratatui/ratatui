@@ -1,7 +1,11 @@
 use std::io;
 
+use metrics::{Counter, Histogram};
+use once_cell::sync::Lazy;
+
 use crate::{
-    backend::ClearType, buffer::Cell, prelude::*, CompletedFrame, TerminalOptions, Viewport,
+    backend::ClearType, buffer::Cell, counter, duration_histogram, metrics::HistogramExt,
+    prelude::*, CompletedFrame, TerminalOptions, Viewport,
 };
 
 /// An interface to interact and draw [`Frame`]s on the user's terminal.
@@ -82,6 +86,69 @@ where
 pub struct Options {
     /// Viewport used to draw to the terminal
     pub viewport: Viewport,
+}
+
+static METRICS: Lazy<Metrics> = Lazy::new(Metrics::new);
+
+#[derive(Debug)]
+struct Metrics {
+    pub clear_duration: Histogram,
+    pub draw_callback_duration: Histogram,
+    pub draw_count: Counter,
+    pub draw_duration: Histogram,
+    pub flush_duration: Histogram,
+    pub flush_count: Counter,
+    pub resize_duration: Histogram,
+    pub resize_count: Counter,
+    pub insert_before_count: Counter,
+    pub insert_before_duration: Histogram,
+}
+
+impl Metrics {
+    fn new() -> Self {
+        Self {
+            clear_duration: duration_histogram!(
+                "ratatui.terminal.clear.time",
+                "Time spent clearing the terminal buffer"
+            ),
+            draw_callback_duration: duration_histogram!(
+                "ratatui.terminal.draw.callback.time",
+                "Time spent calling the draw callback (application code)"
+            ),
+            draw_count: counter!(
+                "ratatui.terminal.draw.count",
+                "Number of times the terminal buffer was drawn to the backend"
+            ),
+            draw_duration: duration_histogram!(
+                "ratatui.terminal.draw.time",
+                "Time spent drawing the terminal buffer to the backend"
+            ),
+            flush_duration: duration_histogram!(
+                "ratatui.terminal.flush.time",
+                "Time spent flushing the terminal buffer to the terminal"
+            ),
+            flush_count: counter!(
+                "ratatui.terminal.flush.count",
+                "Number of times the terminal buffer was flushed to the terminal"
+            ),
+            resize_duration: duration_histogram!(
+                "ratatui.terminal.resize.time",
+                "Time spent resizing the terminal buffer"
+            ),
+            resize_count: counter!(
+                "ratatui.terminal.resize.count",
+                "Number of times the terminal buffer was resized"
+            ),
+            insert_before_count: counter!(
+                "ratatui.terminal.insert_before.count",
+                "Number of times content was inserted before the viewport"
+            ),
+            insert_before_duration: duration_histogram!(
+                "ratatui.terminal.insert_before.time",
+                "Time spent inserting content before the viewport"
+            ),
+        }
+    }
 }
 
 impl<B> Drop for Terminal<B>
@@ -190,6 +257,8 @@ where
     /// Obtains a difference between the previous and the current buffer and passes it to the
     /// current backend for drawing.
     pub fn flush(&mut self) -> io::Result<()> {
+        METRICS.flush_count.increment(1);
+        let _timing = METRICS.flush_duration.start_timing();
         let previous_buffer = &self.buffers[1 - self.current];
         let current_buffer = &self.buffers[self.current];
         let updates = previous_buffer.diff(current_buffer);
@@ -204,6 +273,8 @@ where
     /// Requested area will be saved to remain consistent when rendering. This leads to a full clear
     /// of the screen.
     pub fn resize(&mut self, area: Rect) -> io::Result<()> {
+        METRICS.resize_count.increment(1);
+        let _timing = METRICS.resize_duration.start_timing();
         let next_area = match self.viewport {
             Viewport::Inline(height) => {
                 let offset_in_previous_viewport = self
@@ -376,13 +447,17 @@ where
         F: FnOnce(&mut Frame) -> Result<(), E>,
         E: Into<io::Error>,
     {
-        // Autoresize - otherwise we get glitches if shrinking or potential desync between widgets
-        // and the terminal (if growing), which may OOB.
+        METRICS.draw_count.increment(1);
+        let _timing = METRICS.draw_duration.start_timing();
+        // Autoresize - otherwise we get glitches if shrinking or potential desync between
+        // widgets and the terminal (if growing), which may OOB.
         self.autoresize()?;
 
         let mut frame = self.get_frame();
 
-        render_callback(&mut frame).map_err(Into::into)?;
+        METRICS
+            .draw_callback_duration
+            .measure_duration(|| render_callback(&mut frame).map_err(Into::into))?;
 
         // We can't change the cursor position right away because we have to flush the frame to
         // stdout first. But we also can't keep the frame around, since it holds a &mut to
@@ -464,6 +539,7 @@ where
 
     /// Clear the terminal and force a full redraw on the next draw call.
     pub fn clear(&mut self) -> io::Result<()> {
+        let _timing = METRICS.clear_duration.start_timing();
         match self.viewport {
             Viewport::Fullscreen => self.backend.clear_region(ClearType::All)?,
             Viewport::Inline(_) => {
@@ -572,9 +648,11 @@ where
             return Ok(());
         }
 
+        METRICS.insert_before_count.increment(1);
+        let _timing = METRICS.insert_before_duration.start_timing();
         // The approach of this function is to first render all of the lines to insert into a
-        // temporary buffer, and then to loop drawing chunks from the buffer to the screen. drawing
-        // this buffer onto the screen.
+        // temporary buffer, and then to loop drawing chunks from the buffer to the screen.
+        // drawing this buffer onto the screen.
         let area = Rect {
             x: 0,
             y: 0,
@@ -593,9 +671,9 @@ where
         let screen_height: i32 = self.last_known_area.height.into();
 
         // The algorithm here is to loop, drawing large chunks of text (up to a screen-full at a
-        // time), until the remainder of the buffer plus the viewport fits on the screen. We choose
-        // this loop condition because it guarantees that we can write the remainder of the buffer
-        // with just one call to Self::draw_lines().
+        // time), until the remainder of the buffer plus the viewport fits on the screen. We
+        // choose this loop condition because it guarantees that we can write the
+        // remainder of the buffer with just one call to Self::draw_lines().
         while buffer_height + viewport_height > screen_height {
             // We will draw as much of the buffer as possible on this iteration in order to make
             // forward progress. So we have:
@@ -603,8 +681,9 @@ where
             //     to_draw = min(buffer_height, screen_height)
             //
             // We may need to scroll the screen up to make room to draw. We choose the minimal
-            // possible scroll amount so we don't end up with the viewport sitting in the middle of
-            // the screen when this function is done. The amount to scroll by is:
+            // possible scroll amount so we don't end up with the viewport sitting in the middle
+            // of the screen when this function is done. The amount to scroll by
+            // is:
             //
             //     scroll_up = max(0, drawn_height + to_draw - screen_height)
             //
@@ -622,13 +701,14 @@ where
 
         // There is now enough room on the screen for the remaining buffer plus the viewport,
         // though we may still need to scroll up some of the existing text first. It's possible
-        // that by this point we've drained the buffer, but we may still need to scroll up to make
-        // room for the viewport.
+        // that by this point we've drained the buffer, but we may still need to scroll up to
+        // make room for the viewport.
         //
-        // We want to scroll up the exact amount that will leave us completely filling the screen.
-        // However, it's possible that the viewport didn't start on the bottom of the screen and
-        // the added lines weren't enough to push it all the way to the bottom. We deal with this
-        // case by just ensuring that our scroll amount is non-negative.
+        // We want to scroll up the exact amount that will leave us completely filling the
+        // screen. However, it's possible that the viewport didn't start on the
+        // bottom of the screen and the added lines weren't enough to push it all
+        // the way to the bottom. We deal with this case by just ensuring that our
+        // scroll amount is non-negative.
         //
         // We want:
         //   screen_height = drawn_height - scroll_up + buffer_height + viewport_height
@@ -650,8 +730,9 @@ where
 
         // Clear the viewport off the screen. We didn't clear earlier for two reasons. First, it
         // wasn't necessary because the buffer we drew out of isn't sparse, so it overwrote
-        // whatever was on the screen. Second, there is a weird bug with tmux where a full screen
-        // clear plus immediate scrolling causes some garbage to go into the scrollback.
+        // whatever was on the screen. Second, there is a weird bug with tmux where a full
+        // screen clear plus immediate scrolling causes some garbage to go into the
+        // scrollback.
         self.clear()?;
 
         Ok(())

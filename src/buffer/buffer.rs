@@ -3,10 +3,14 @@ use std::{
     ops::{Index, IndexMut},
 };
 
+use metrics::Histogram;
+use once_cell::sync::Lazy;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-use crate::{buffer::Cell, layout::Position, prelude::*};
+use crate::{
+    buffer::Cell, duration_histogram, layout::Position, metrics::HistogramExt, prelude::*,
+};
 
 /// A buffer that maps to the desired content of the terminal after the draw call
 ///
@@ -68,6 +72,23 @@ pub struct Buffer {
     /// The content of the buffer. The length of this Vec should always be equal to area.width *
     /// area.height
     pub content: Vec<Cell>,
+}
+
+static METRICS: Lazy<Metrics> = Lazy::new(Metrics::new);
+
+struct Metrics {
+    diff_duration: Histogram,
+}
+
+impl Metrics {
+    fn new() -> Self {
+        Self {
+            diff_duration: duration_histogram!(
+                "ratatui.buffer.diff.time",
+                "Time spent diffing buffers"
+            ),
+        }
+    }
 }
 
 impl Buffer {
@@ -464,6 +485,7 @@ impl Buffer {
     /// Updates: `0: a, 1: コ` (double width symbol at index 1 - skip index 2)
     /// ```
     pub fn diff<'a>(&self, other: &'a Self) -> Vec<(u16, u16, &'a Cell)> {
+        let _timing = METRICS.diff_duration.start_timing();
         let previous_buffer = &self.content;
         let next_buffer = &other.content;
 
