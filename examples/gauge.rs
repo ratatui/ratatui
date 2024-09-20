@@ -21,8 +21,8 @@ use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Alignment, Constraint, Layout, Rect},
     style::{palette::tailwind, Color, Style, Stylize},
-    text::Span,
-    widgets::{block::Title, Block, Borders, Gauge, Padding, Paragraph, Widget},
+    text::{Line, Span},
+    widgets::{Block, Borders, Gauge, Padding, Paragraph, Widget},
     DefaultTerminal,
 };
 
@@ -196,7 +196,7 @@ impl App {
 }
 
 fn title_block(title: &str) -> Block {
-    let title = Title::from(title).alignment(Alignment::Center);
+    let title = Line::from(title).centered();
     Block::new()
         .borders(Borders::NONE)
         .padding(Padding::vertical(1))

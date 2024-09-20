@@ -28,8 +28,8 @@ use ratatui::{
     symbols::{self, line},
     text::{Line, Text},
     widgets::{
-        block::Title, Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
-        StatefulWidget, Tabs, Widget,
+        Block, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget, Tabs,
+        Widget,
     },
     DefaultTerminal,
 };
@@ -273,7 +273,7 @@ impl App {
     fn tabs(self) -> impl Widget {
         let tab_titles = SelectedTab::iter().map(SelectedTab::to_tab_title);
         let block = Block::new()
-            .title(Title::from("Flex Layouts ".bold()))
+            .title("Flex Layouts ".bold())
             .title(" Use ◄ ► to change tab, ▲ ▼  to scroll, - + to change spacing ");
         Tabs::new(tab_titles)
             .block(block)
