@@ -71,6 +71,7 @@
 use std::fmt;
 
 use bitflags::bitflags;
+use color::StylizeDebugKind;
 pub use color::{Color, ParseColorError};
 pub use stylize::{Styled, Stylize};
 
@@ -223,7 +224,7 @@ impl fmt::Debug for Modifier {
 ///     buffer[(0, 0)].style(),
 /// );
 /// ```
-#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Default, Clone, Copy, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Style {
     pub fg: Option<Color>,
@@ -232,6 +233,33 @@ pub struct Style {
     pub underline_color: Option<Color>,
     pub add_modifier: Modifier,
     pub sub_modifier: Modifier,
+}
+
+/// A custom debug implementation that prints only the fields that are not the default, and unwraps
+/// the `Option`s.
+impl fmt::Debug for Style {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("Style::new()")?;
+        if let Some(fg) = self.fg {
+            fg.stylize_debug(StylizeDebugKind::Foreground).fmt(f)?;
+        }
+        if let Some(bg) = self.bg {
+            bg.stylize_debug(StylizeDebugKind::Background).fmt(f)?;
+        }
+        #[cfg(feature = "underline-color")]
+        if let Some(underline_color) = self.underline_color {
+            underline_color
+                .stylize_debug(StylizeDebugKind::Underline)
+                .fmt(f)?;
+        }
+        for modifier in self.add_modifier.iter() {
+            write!(f, ".add_modifier(Modifier::{:?})", modifier)?;
+        }
+        for modifier in self.sub_modifier.iter() {
+            write!(f, ".remove_modifier(Modifier::{:?})", modifier)?;
+        }
+        Ok(())
+    }
 }
 
 impl Styled for Style {
@@ -548,6 +576,18 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
+
+    #[rstest]
+    #[case(Style::new(), "Style::new()")]
+    #[case(Style::new().red(), "Style::new().red()")]
+    #[case(Style::new().on_blue(), "Style::new().on_blue()")]
+    // TODO .bold() etc.
+    #[case(Style::new().bold(), "Style::new().add_modifier(Modifier::BOLD)")]
+    // TODO .not_bold() etc.
+    #[case(Style::new().not_italic(), "Style::new().remove_modifier(Modifier::ITALIC)")]
+    fn debug(#[case] style: Style, #[case] expected: &'static str) {
+        assert_eq!(format!("{:?}", style), expected);
+    }
 
     #[test]
     fn combined_patch_gives_same_result_as_individual_patch() {

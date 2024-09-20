@@ -88,12 +88,24 @@ use crate::{prelude::*, style::Styled, text::StyledGrapheme};
 /// [`Paragraph`]: crate::widgets::Paragraph
 /// [`Stylize`]: crate::style::Stylize
 /// [`Cow<str>`]: std::borrow::Cow
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Span<'a> {
-    /// The content of the span as a Clone-on-write string.
-    pub content: Cow<'a, str>,
     /// The style of the span.
     pub style: Style,
+    /// The content of the span as a Clone-on-write string.
+    pub content: Cow<'a, str>,
+}
+
+impl fmt::Debug for Span<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.style == Style::default() {
+            return write!(f, "Span({:?})", self.content);
+        }
+        f.debug_struct("Span")
+            .field("style", &self.style)
+            .field("content", &self.content)
+            .finish()
+    }
 }
 
 impl<'a> Span<'a> {

@@ -163,14 +163,32 @@ use crate::{prelude::*, style::Styled};
 /// ```
 ///
 /// [`Paragraph`]: crate::widgets::Paragraph
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Clone, Eq, PartialEq, Hash)]
 pub struct Text<'a> {
-    /// The lines that make up this piece of text.
-    pub lines: Vec<Line<'a>>,
-    /// The style of this text.
-    pub style: Style,
     /// The alignment of this text.
     pub alignment: Option<Alignment>,
+    /// The style of this text.
+    pub style: Style,
+    /// The lines that make up this piece of text.
+    pub lines: Vec<Line<'a>>,
+}
+
+impl fmt::Debug for Text<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.style == Style::default() && self.alignment == None {
+            f.write_str("Text ")?;
+            return f.debug_list().entries(&self.lines).finish();
+        } else {
+            let mut debug = f.debug_struct("Text");
+            if self.style != Style::default() {
+                debug.field("style", &self.style);
+            }
+            if self.alignment != None {
+                debug.field("alignment", &self.alignment);
+            }
+            debug.field("lines", &self.lines).finish()
+        }
+    }
 }
 
 impl<'a> Text<'a> {
@@ -1230,6 +1248,48 @@ mod tests {
                 result.push_str(line.to_string().as_ref());
             }
             assert_eq!(result, "Hello world!");
+        }
+    }
+
+    mod debug {
+        use super::*;
+
+        #[test]
+        #[ignore = "This is just showing the debug output of the assertions"]
+        fn no_style() {
+            let text = Text::from("single unstyled line");
+            assert_eq!(text, Text::default());
+        }
+
+        #[test]
+        #[ignore = "This is just showing the debug output of the assertions"]
+        fn text_style() {
+            let text = Text::from("single styled line")
+                .red()
+                .on_black()
+                .bold()
+                .not_italic();
+            assert_eq!(text, Text::default());
+        }
+
+        #[test]
+        #[ignore = "This is just showing the debug output of the assertions"]
+        fn line_style() {
+            let text = Text::from(vec![
+                Line::from("first line").red(),
+                Line::from("second line").on_black(),
+            ]);
+            assert_eq!(text, Text::default());
+        }
+
+        #[test]
+        #[ignore = "This is just showing the debug output of the assertions"]
+        fn span_style() {
+            let text = Text::from(Line::from(vec![
+                Span::from("first span").red(),
+                Span::from("second span").on_black(),
+            ]));
+            assert_eq!(text, Text::default());
         }
     }
 }
