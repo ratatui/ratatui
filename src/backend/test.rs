@@ -429,7 +429,8 @@ impl Backend for TestBackend {
             self.buffer.content[cell_region_start..cell_region_end].fill_with(Default::default);
         } else {
             // Scroll up by rotating, then filling in the top with empty cells.
-            self.buffer.content[cell_region_start..cell_region_end].rotate_right(cells_to_scroll_by);
+            self.buffer.content[cell_region_start..cell_region_end]
+                .rotate_right(cells_to_scroll_by);
             self.buffer.content[cell_region_start..cell_region_start + cells_to_scroll_by]
                 .fill_with(Default::default);
         }
