@@ -516,10 +516,10 @@ impl From<ContentStyle> for Style {
 /// A command that scrolls the terminal screen a given number of rows up in a specific scrolling
 /// region.
 ///
-/// This will hopefully be replaced by a struct in crossterm proper. There are two outstanding PRs
-/// that will address this:
-///   - https://github.com/crossterm-rs/crossterm/pull/918
-///   - https://github.com/crossterm-rs/crossterm/pull/923
+/// This will hopefully be replaced by a struct in crossterm proper. There are two outstanding
+/// crossterm PRs that will address this:
+///   - [918](https://github.com/crossterm-rs/crossterm/pull/918)
+///   - [923](https://github.com/crossterm-rs/crossterm/pull/923)
 #[cfg(feature = "scrolling-regions")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct ScrollUpInRegion {
@@ -564,10 +564,10 @@ impl crate::crossterm::Command for ScrollUpInRegion {
 /// A command that scrolls the terminal screen a given number of rows down in a specific scrolling
 /// region.
 ///
-/// This will hopefully be replaced by a struct in crossterm proper. There are two outstanding PRs
-/// that will address this:
-///   - https://github.com/crossterm-rs/crossterm/pull/918
-///   - https://github.com/crossterm-rs/crossterm/pull/923
+/// This will hopefully be replaced by a struct in crossterm proper. There are two outstanding
+/// crossterm PRs that will address this:
+///   - [918](https://github.com/crossterm-rs/crossterm/pull/918)
+///   - [923](https://github.com/crossterm-rs/crossterm/pull/923)
 #[cfg(feature = "scrolling-regions")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct ScrollDownInRegion {
