@@ -369,20 +369,21 @@ impl Backend for TestBackend {
     #[cfg(feature = "scrolling-regions")]
     fn scroll_region_up(&mut self, region: std::ops::Range<u16>, scroll_by: u16) -> io::Result<()> {
         let width: usize = self.buffer.area.width.into();
-        let region =
-            region.start.min(self.buffer.area.height)..region.end.min(self.buffer.area.height);
-        let cell_region = width * region.start as usize..width * region.end as usize;
+        let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
+        let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
+        let cell_region_len = cell_region_end - cell_region_start;
         let cells_to_scroll_by = width * scroll_by as usize;
 
         // Deal with the simple case where nothing needs to be copied into scrollback.
-        if region.start > 0 {
-            if cells_to_scroll_by >= cell_region.len() {
+        if cell_region_start > 0 {
+            if cells_to_scroll_by >= cell_region_len {
                 // The scroll amount is large enough to clear the whole region.
-                self.buffer.content[cell_region].fill_with(Default::default);
+                self.buffer.content[cell_region_start..cell_region_end].fill_with(Default::default);
             } else {
                 // Scroll up by rotating, then filling in the bottom with empty cells.
-                self.buffer.content[cell_region.clone()].rotate_left(cells_to_scroll_by);
-                self.buffer.content[cell_region.end - cells_to_scroll_by..cell_region.end]
+                self.buffer.content[cell_region_start..cell_region_end]
+                    .rotate_left(cells_to_scroll_by);
+                self.buffer.content[cell_region_end - cells_to_scroll_by..cell_region_end]
                     .fill_with(Default::default);
             }
             return Ok(());
@@ -390,7 +391,7 @@ impl Backend for TestBackend {
 
         // The rows inserted into the scrollback will first come from the buffer, and if that is
         // insufficient, will then be blank rows.
-        let cells_from_region = cell_region.len().min(cells_to_scroll_by);
+        let cells_from_region = cell_region_len.min(cells_to_scroll_by);
         append_to_scrollback(
             &mut self.scrollback,
             self.buffer.content.splice(
@@ -398,14 +399,14 @@ impl Backend for TestBackend {
                 iter::repeat_with(Default::default).take(cells_from_region),
             ),
         );
-        if cells_to_scroll_by < cell_region.len() {
+        if cells_to_scroll_by < cell_region_len {
             // Rotate the remaining cells to the front of the region.
-            self.buffer.content[cell_region].rotate_left(cells_from_region);
+            self.buffer.content[cell_region_start..cell_region_end].rotate_left(cells_from_region);
         } else {
             // Splice cleared out the region. Insert empty rows in scrollback.
             append_to_scrollback(
                 &mut self.scrollback,
-                iter::repeat_with(Default::default).take(cells_to_scroll_by - cell_region.len()),
+                iter::repeat_with(Default::default).take(cells_to_scroll_by - cell_region_len),
             );
         }
         Ok(())
@@ -418,18 +419,18 @@ impl Backend for TestBackend {
         scroll_by: u16,
     ) -> io::Result<()> {
         let width: usize = self.buffer.area.width.into();
-        let region =
-            region.start.min(self.buffer.area.height)..region.end.min(self.buffer.area.height);
-        let cell_region = width * region.start as usize..width * region.end as usize;
+        let cell_region_start = width * region.start.min(self.buffer.area.height) as usize;
+        let cell_region_end = width * region.end.min(self.buffer.area.height) as usize;
+        let cell_region_len = cell_region_end - cell_region_start;
         let cells_to_scroll_by = width * scroll_by as usize;
 
-        if cells_to_scroll_by >= cell_region.len() {
+        if cells_to_scroll_by >= cell_region_len {
             // The scroll amount is large enough to clear the whole region.
-            self.buffer.content[cell_region].fill_with(Default::default);
+            self.buffer.content[cell_region_start..cell_region_end].fill_with(Default::default);
         } else {
             // Scroll up by rotating, then filling in the top with empty cells.
-            self.buffer.content[cell_region.clone()].rotate_right(cells_to_scroll_by);
-            self.buffer.content[cell_region.start..cell_region.start + cells_to_scroll_by]
+            self.buffer.content[cell_region_start..cell_region_end].rotate_right(cells_to_scroll_by);
+            self.buffer.content[cell_region_start..cell_region_start + cells_to_scroll_by]
                 .fill_with(Default::default);
         }
         Ok(())
